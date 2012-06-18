@@ -224,12 +224,8 @@ public class Resolve {
 
     JCDiagnostic getVerboseApplicableCandidateDiag(int pos, Symbol sym, Type inst) {
         JCDiagnostic subDiag = null;
-        if (inst.getReturnType().tag == FORALL) {
-            Type diagType = types.createMethodTypeWithReturn(inst.asMethodType(),
-                                                            ((ForAll)inst.getReturnType()).qtype);
-            subDiag = diags.fragment("partial.inst.sig", diagType);
-        } else if (sym.type.tag == FORALL) {
-            subDiag = diags.fragment("full.inst.sig", inst.asMethodType());
+        if (sym.type.tag == FORALL) {
+            subDiag = diags.fragment("partial.inst.sig", inst);
         }
 
         String key = subDiag == null ?
@@ -442,6 +438,7 @@ public class Resolve {
     Type rawInstantiate(Env<AttrContext> env,
                         Type site,
                         Symbol m,
+                        ResultInfo resultInfo,
                         List<Type> argtypes,
                         List<Type> typeargtypes,
                         boolean allowBoxing,
@@ -454,11 +451,7 @@ public class Resolve {
 
         // tvars is the list of formal type variables for which type arguments
         // need to inferred.
-        List<Type> tvars = null;
-        if (env.info.tvars != null) {
-            tvars = types.newInstances(env.info.tvars);
-            mt = types.subst(mt, env.info.tvars, tvars);
-        }
+        List<Type> tvars = List.nil();
         if (typeargtypes == null) typeargtypes = List.nil();
         if (mt.tag != FORALL && typeargtypes.nonEmpty()) {
             // This is not a polymorphic method, but typeargs are supplied
@@ -499,6 +492,7 @@ public class Resolve {
             return infer.instantiateMethod(env,
                                     tvars,
                                     (MethodType)mt,
+                                    resultInfo,
                                     m,
                                     argtypes,
                                     allowBoxing,
@@ -515,13 +509,14 @@ public class Resolve {
     Type instantiate(Env<AttrContext> env,
                      Type site,
                      Symbol m,
+                     ResultInfo resultInfo,
                      List<Type> argtypes,
                      List<Type> typeargtypes,
                      boolean allowBoxing,
                      boolean useVarargs,
                      Warner warn) {
         try {
-            return rawInstantiate(env, site, m, argtypes, typeargtypes,
+            return rawInstantiate(env, site, m, resultInfo, argtypes, typeargtypes,
                                   allowBoxing, useVarargs, warn);
         } catch (InapplicableMethodException ex) {
             return null;
@@ -937,7 +932,7 @@ public class Resolve {
         if (!sym.isInheritedIn(site.tsym, types)) return bestSoFar;
         Assert.check(sym.kind < AMBIGUOUS);
         try {
-            Type mt = rawInstantiate(env, site, sym, argtypes, typeargtypes,
+            Type mt = rawInstantiate(env, site, sym, null, argtypes, typeargtypes,
                                allowBoxing, useVarargs, Warner.noWarnings);
             if (!operator)
                 currentResolutionContext.addApplicableCandidate(sym, mt);
@@ -1071,7 +1066,7 @@ public class Resolve {
     private boolean signatureMoreSpecific(Env<AttrContext> env, Type site, Symbol m1, Symbol m2, boolean allowBoxing, boolean useVarargs) {
         noteWarner.clear();
         Type mtype1 = types.memberType(site, adjustVarargs(m1, m2, useVarargs));
-        Type mtype2 = instantiate(env, site, adjustVarargs(m2, m1, useVarargs),
+        Type mtype2 = instantiate(env, site, adjustVarargs(m2, m1, useVarargs), null,
                 types.lowerBoundArgtypes(mtype1), null,
                 allowBoxing, false, noteWarner);
         return mtype2 != null &&

@@ -284,7 +284,7 @@ public class Utils {
      */
     public static Object newStringConstructor(String type, String param)
             throws Exception {
-        Constructor c = Utils.getClass(type).getConstructor(String.class);
+        Constructor<?> c = Utils.getClass(type).getConstructor(String.class);
         try {
             return c.newInstance(param);
         } catch (InvocationTargetException e) {

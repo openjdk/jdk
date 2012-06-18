@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,4 +82,25 @@ public abstract class CertPathValidatorSpi {
     public abstract CertPathValidatorResult
         engineValidate(CertPath certPath, CertPathParameters params)
         throws CertPathValidatorException, InvalidAlgorithmParameterException;
+
+    /**
+     * Returns a {@code CertPathChecker} that this implementation uses to
+     * check the revocation status of certificates. A PKIX implementation
+     * returns objects of type {@code PKIXRevocationChecker}.
+     *
+     * <p>The primary purpose of this method is to allow callers to specify
+     * additional input parameters and options specific to revocation checking.
+     * See the class description of {@code CertPathValidator} for an example.
+     *
+     * <p>This method was added to version 1.8 of the Java Platform Standard
+     * Edition. In order to maintain backwards compatibility with existing
+     * service providers, this method cannot be abstract and by default throws
+     * an {@code UnsupportedOperationException}.
+     *
+     * @throws UnsupportedOperationException if this method is not supported
+     * @since 1.8
+     */
+    public CertPathChecker engineGetRevocationChecker() {
+        throw new UnsupportedOperationException();
+    }
 }

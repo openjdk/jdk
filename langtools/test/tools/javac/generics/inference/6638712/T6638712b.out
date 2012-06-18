@@ -1,2 +1,2 @@
-T6638712b.java:14:21: compiler.err.prob.found.req.1: (compiler.misc.invalid.inferred.types: T, (compiler.misc.inferred.do.not.conform.to.upper.bounds: java.lang.Integer, java.lang.String,java.lang.Object))
+T6638712b.java:14:21: compiler.err.cant.apply.symbol.1: kindname.method, m, I, T6638712b<java.lang.Integer>, kindname.class, T6638712b<X>, (compiler.misc.inferred.do.not.conform.to.upper.bounds: java.lang.Integer, java.lang.String,java.lang.Object)
 1 error

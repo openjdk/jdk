@@ -43,30 +43,40 @@ class Constants {
         1.0 to 1.3.X 45,3
         1.4 to 1.4.X 46,0
         1.5 to 1.5.X 49,0
-        1.6 to 1.5.x 50,0 NOTE Assumed for now
+        1.6 to 1.5.x 50,0
+        1.7 to 1.6.x 51,0
     */
 
-    public final static short JAVA_MIN_CLASS_MAJOR_VERSION = 45;
-    public final static short JAVA_MIN_CLASS_MINOR_VERSION = 03;
+    public final static Package.Version JAVA_MIN_CLASS_VERSION =
+            Package.Version.of(45, 03);
 
-    public final static short JAVA5_MAX_CLASS_MAJOR_VERSION = 49;
-    public final static short JAVA5_MAX_CLASS_MINOR_VERSION = 0;
+    public final static Package.Version JAVA5_MAX_CLASS_VERSION =
+            Package.Version.of(49, 00);
 
-    public final static short JAVA6_MAX_CLASS_MAJOR_VERSION = 50;
-    public final static short JAVA6_MAX_CLASS_MINOR_VERSION = 0;
+    public final static Package.Version JAVA6_MAX_CLASS_VERSION =
+            Package.Version.of(50, 00);
 
-    public final static short JAVA7_MAX_CLASS_MAJOR_VERSION = 51;
-    public final static short JAVA7_MAX_CLASS_MINOR_VERSION = 0;
+    public final static Package.Version JAVA7_MAX_CLASS_VERSION =
+            Package.Version.of(51, 00);
 
     public final static int JAVA_PACKAGE_MAGIC = 0xCAFED00D;
-    public final static int JAVA5_PACKAGE_MAJOR_VERSION = 150;
-    public final static int JAVA5_PACKAGE_MINOR_VERSION = 7;
 
-    public final static int JAVA6_PACKAGE_MAJOR_VERSION = 160;
-    public final static int JAVA6_PACKAGE_MINOR_VERSION = 1;
+    public final static Package.Version JAVA5_PACKAGE_VERSION =
+            Package.Version.of(150, 7);
 
-    public final static int JAVA7_PACKAGE_MAJOR_VERSION = 170;
-    public final static int JAVA7_PACKAGE_MINOR_VERSION = 1;
+    public final static Package.Version JAVA6_PACKAGE_VERSION =
+            Package.Version.of(160, 1);
+
+    public final static Package.Version JAVA7_PACKAGE_VERSION =
+            Package.Version.of(170, 1);
+
+    // upper limit, should point to the latest class version
+    public final static Package.Version JAVA_MAX_CLASS_VERSION =
+            JAVA7_MAX_CLASS_VERSION;
+
+    // upper limit should point to the latest package version, for version info!.
+    public final static Package.Version MAX_PACKAGE_VERSION =
+            JAVA7_PACKAGE_VERSION;
 
     public final static int CONSTANT_POOL_INDEX_LIMIT  = 0x10000;
     public final static int CONSTANT_POOL_NARROW_LIMIT = 0x00100;

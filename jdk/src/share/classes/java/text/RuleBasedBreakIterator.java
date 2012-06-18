@@ -444,9 +444,9 @@ class RuleBasedBreakIterator extends BreakIterator {
 
         BufferedInputStream is;
         try {
-            is = (BufferedInputStream)AccessController.doPrivileged(
-                new PrivilegedExceptionAction() {
-                    public Object run() throws Exception {
+            is = AccessController.doPrivileged(
+                new PrivilegedExceptionAction<BufferedInputStream>() {
+                    public BufferedInputStream run() throws Exception {
                         return new BufferedInputStream(getClass().getResourceAsStream("/sun/text/resources/" + datafile));
                     }
                 }
