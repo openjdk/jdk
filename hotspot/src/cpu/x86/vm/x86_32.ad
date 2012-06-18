@@ -5555,8 +5555,9 @@ instruct bytes_reverse_long(eRegL dst) %{
   ins_pipe( ialu_reg_reg);
 %}
 
-instruct bytes_reverse_unsigned_short(eRegI dst) %{
+instruct bytes_reverse_unsigned_short(eRegI dst, eFlagsReg cr) %{
   match(Set dst (ReverseBytesUS dst));
+  effect(KILL cr);
 
   format %{ "BSWAP  $dst\n\t" 
             "SHR    $dst,16\n\t" %}
@@ -5567,8 +5568,9 @@ instruct bytes_reverse_unsigned_short(eRegI dst) %{
   ins_pipe( ialu_reg );
 %}
 
-instruct bytes_reverse_short(eRegI dst) %{
+instruct bytes_reverse_short(eRegI dst, eFlagsReg cr) %{
   match(Set dst (ReverseBytesS dst));
+  effect(KILL cr);
 
   format %{ "BSWAP  $dst\n\t" 
             "SAR    $dst,16\n\t" %}
@@ -5729,9 +5731,10 @@ instruct countTrailingZerosL(eRegI dst, eRegL src, eFlagsReg cr) %{
 
 //---------- Population Count Instructions -------------------------------------
 
-instruct popCountI(eRegI dst, eRegI src) %{
+instruct popCountI(eRegI dst, eRegI src, eFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountI src));
+  effect(KILL cr);
 
   format %{ "POPCNT $dst, $src" %}
   ins_encode %{
@@ -5740,9 +5743,10 @@ instruct popCountI(eRegI dst, eRegI src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct popCountI_mem(eRegI dst, memory mem) %{
+instruct popCountI_mem(eRegI dst, memory mem, eFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
+  effect(KILL cr);
 
   format %{ "POPCNT $dst, $mem" %}
   ins_encode %{
@@ -7794,50 +7798,6 @@ instruct loadPLocked(eRegP dst, memory mem) %{
   opcode(0x8B);
   ins_encode( OpcP, RegMem(dst,mem));
   ins_pipe( ialu_reg_mem );
-%}
-
-// LoadLong-locked - same as a volatile long load when used with compare-swap
-instruct loadLLocked(stackSlotL dst, memory mem) %{
-  predicate(UseSSE<=1);
-  match(Set dst (LoadLLocked mem));
-
-  ins_cost(200);
-  format %{ "FILD   $mem\t# Atomic volatile long load\n\t"
-            "FISTp  $dst" %}
-  ins_encode(enc_loadL_volatile(mem,dst));
-  ins_pipe( fpu_reg_mem );
-%}
-
-instruct loadLX_Locked(stackSlotL dst, memory mem, regD tmp) %{
-  predicate(UseSSE>=2);
-  match(Set dst (LoadLLocked mem));
-  effect(TEMP tmp);
-  ins_cost(180);
-  format %{ "MOVSD  $tmp,$mem\t# Atomic volatile long load\n\t"
-            "MOVSD  $dst,$tmp" %}
-  ins_encode %{
-    __ movdbl($tmp$$XMMRegister, $mem$$Address);
-    __ movdbl(Address(rsp, $dst$$disp), $tmp$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct loadLX_reg_Locked(eRegL dst, memory mem, regD tmp) %{
-  predicate(UseSSE>=2);
-  match(Set dst (LoadLLocked mem));
-  effect(TEMP tmp);
-  ins_cost(160);
-  format %{ "MOVSD  $tmp,$mem\t# Atomic volatile long load\n\t"
-            "MOVD   $dst.lo,$tmp\n\t"
-            "PSRLQ  $tmp,32\n\t"
-            "MOVD   $dst.hi,$tmp" %}
-  ins_encode %{
-    __ movdbl($tmp$$XMMRegister, $mem$$Address);
-    __ movdl($dst$$Register, $tmp$$XMMRegister);
-    __ psrlq($tmp$$XMMRegister, 32);
-    __ movdl(HIGH_FROM_LOW($dst$$Register), $tmp$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
 %}
 
 // Conditional-store of the updated heap-top.

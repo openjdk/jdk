@@ -94,7 +94,7 @@ public class TableSorter extends DefaultTableModel implements MouseListener {
     @SuppressWarnings("unchecked")
     private int compare(Object o1, Object o2) {
         // take care of the case where both o1 & o2 are null. Needed to keep
-        // the method symetric. Without this quickSort gives surprising results.
+        // the method symmetric. Without this quickSort gives surprising results.
         if (o1 == o2)
             return 0;
         if (o1==null)

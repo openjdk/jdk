@@ -294,6 +294,7 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, SharedRuntime::lrem);
   FUNCTION_CASE(entry, SharedRuntime::dtrace_method_entry);
   FUNCTION_CASE(entry, SharedRuntime::dtrace_method_exit);
+  FUNCTION_CASE(entry, is_instance_of);
   FUNCTION_CASE(entry, trace_block_entry);
 #ifdef TRACE_HAVE_INTRINSICS
   FUNCTION_CASE(entry, TRACE_TIME_METHOD);
@@ -1267,6 +1268,19 @@ JRT_LEAF(void, Runtime1::oop_arraycopy(HeapWord* src, HeapWord* dst, int num))
     Copy::conjoint_oops_atomic((oop*) src, (oop*) dst, num);
   }
   bs->write_ref_array(dst, num);
+JRT_END
+
+
+JRT_LEAF(int, Runtime1::is_instance_of(oopDesc* mirror, oopDesc* obj))
+  // had to return int instead of bool, otherwise there may be a mismatch
+  // between the C calling convention and the Java one.
+  // e.g., on x86, GCC may clear only %al when returning a bool false, but
+  // JVM takes the whole %eax as the return value, which may misinterpret
+  // the return value as a boolean true.
+
+  assert(mirror != NULL, "should null-check on mirror before calling");
+  klassOop k = java_lang_Class::as_klassOop(mirror);
+  return (k != NULL && obj != NULL && obj->is_a(k)) ? 1 : 0;
 JRT_END
 
 

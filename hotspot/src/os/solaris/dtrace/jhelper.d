@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ dtrace:helper:ustack:
   copyin_offset(OFFSET_Symbol_body);
 
   copyin_offset(OFFSET_methodOopDesc_constMethod);
-  copyin_offset(OFFSET_methodOopDesc_constants);
+  copyin_offset(OFFSET_constMethodOopDesc_constants);
   copyin_offset(OFFSET_constMethodOopDesc_name_index);
   copyin_offset(OFFSET_constMethodOopDesc_signature_index);
 
@@ -359,8 +359,8 @@ dtrace:helper:ustack:
   this->signatureIndex = copyin_uint16(this->constMethod +
       OFFSET_constMethodOopDesc_signature_index);
 
-  this->constantPool = copyin_ptr(this->methodOopPtr +
-      OFFSET_methodOopDesc_constants);
+  this->constantPool = copyin_ptr(this->constMethod +
+      OFFSET_constMethodOopDesc_constants);
 
   this->nameSymbol = copyin_ptr(this->constantPool +
       this->nameIndex * sizeof (pointer) + SIZE_constantPoolOopDesc);

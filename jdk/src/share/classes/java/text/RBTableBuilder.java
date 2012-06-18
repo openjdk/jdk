@@ -85,7 +85,7 @@ final class RBTableBuilder {
             throw new ParseException("Build rules empty.", 0);
 
         // This array maps Unicode characters to their collation ordering
-        mapping = new UCompactIntArray((int)RBCollationTables.UNMAPPED);
+        mapping = new UCompactIntArray(RBCollationTables.UNMAPPED);
         // Normalize the build rules.  Find occurances of all decomposed characters
         // and normalize the rules before feeding into the builder.  By "normalize",
         // we mean that all precomposed Unicode characters must be converted into
@@ -263,7 +263,7 @@ final class RBTableBuilder {
     {
         if (expandTable != null) {
             for (int i = 0; i < expandTable.size(); i++) {
-                int[] valueList = (int [])expandTable.elementAt(i);
+                int[] valueList = expandTable.elementAt(i);
                 for (int j = 0; j < valueList.length; j++) {
                     int order = valueList[j];
                     if (order < RBCollationTables.EXPANDCHARINDEX && order > CHARINDEX) {
@@ -354,7 +354,7 @@ final class RBTableBuilder {
                                           boolean fwd)
     {
         if (contractTable == null) {
-            contractTable = new Vector(INITIALTABLESIZE);
+            contractTable = new Vector<>(INITIALTABLESIZE);
         }
 
         //initial character
@@ -366,12 +366,12 @@ final class RBTableBuilder {
           */
         // See if the initial character of the string already has a contract table.
         int entry = mapping.elementAt(ch);
-        Vector entryTable = getContractValuesImpl(entry - RBCollationTables.CONTRACTCHARINDEX);
+        Vector<EntryPair> entryTable = getContractValuesImpl(entry - RBCollationTables.CONTRACTCHARINDEX);
 
         if (entryTable == null) {
             // We need to create a new table of contract entries for this base char
             int tableIndex = RBCollationTables.CONTRACTCHARINDEX + contractTable.size();
-            entryTable = new Vector(INITIALTABLESIZE);
+            entryTable = new Vector<>(INITIALTABLESIZE);
             contractTable.addElement(entryTable);
 
             // Add the initial character's current ordering first. then
@@ -383,10 +383,10 @@ final class RBTableBuilder {
         // Now add (or replace) this string in the table
         int index = RBCollationTables.getEntry(entryTable, groupChars, fwd);
         if (index != RBCollationTables.UNMAPPED) {
-            EntryPair pair = (EntryPair) entryTable.elementAt(index);
+            EntryPair pair = entryTable.elementAt(index);
             pair.value = anOrder;
         } else {
-            EntryPair pair = (EntryPair)entryTable.lastElement();
+            EntryPair pair = entryTable.lastElement();
 
             // NOTE:  This little bit of logic is here to speed CollationElementIterator
             // .nextContractChar().  This code ensures that the longest sequence in
@@ -426,11 +426,11 @@ final class RBTableBuilder {
             int ch = Character.isHighSurrogate(ch0)?
               Character.toCodePoint(ch0, groupChars.charAt(1)):ch0;
               */
-            Vector entryTable = getContractValues(ch);
+            Vector<EntryPair> entryTable = getContractValues(ch);
             if (entryTable != null) {
                 int index = RBCollationTables.getEntry(entryTable, groupChars, true);
                 if (index != RBCollationTables.UNMAPPED) {
-                    EntryPair pair = (EntryPair) entryTable.elementAt(index);
+                    EntryPair pair = entryTable.elementAt(index);
                     result = pair.value;
                 }
             }
@@ -442,8 +442,8 @@ final class RBTableBuilder {
         int order = mapping.elementAt(ch);
 
         if (order >= RBCollationTables.CONTRACTCHARINDEX) {
-            Vector groupList = getContractValuesImpl(order - RBCollationTables.CONTRACTCHARINDEX);
-            EntryPair pair = (EntryPair)groupList.firstElement();
+            Vector<EntryPair> groupList = getContractValuesImpl(order - RBCollationTables.CONTRACTCHARINDEX);
+            EntryPair pair = groupList.firstElement();
             order = pair.value;
         }
         return order;
@@ -454,17 +454,17 @@ final class RBTableBuilder {
      *  table.
      *  @param ch the starting character of the contracting string
      */
-    private Vector getContractValues(int ch)
+    private Vector<EntryPair> getContractValues(int ch)
     {
         int index = mapping.elementAt(ch);
         return getContractValuesImpl(index - RBCollationTables.CONTRACTCHARINDEX);
     }
 
-    private Vector getContractValuesImpl(int index)
+    private Vector<EntryPair> getContractValuesImpl(int index)
     {
         if (index >= 0)
         {
-            return (Vector)contractTable.elementAt(index);
+            return contractTable.elementAt(index);
         }
         else // not found
         {
@@ -513,7 +513,7 @@ final class RBTableBuilder {
      */
     private int addExpansion(int anOrder, String expandChars) {
         if (expandTable == null) {
-            expandTable = new Vector(INITIALTABLESIZE);
+            expandTable = new Vector<>(INITIALTABLESIZE);
         }
 
         // If anOrder is valid, we want to add it at the beginning of the list
@@ -610,8 +610,8 @@ final class RBTableBuilder {
     private boolean seAsianSwapping = false;
 
     private UCompactIntArray mapping = null;
-    private Vector   contractTable = null;
-    private Vector   expandTable = null;
+    private Vector<Vector<EntryPair>>   contractTable = null;
+    private Vector<int[]>   expandTable = null;
 
     private short maxSecOrder = 0;
     private short maxTerOrder = 0;

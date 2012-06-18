@@ -32,36 +32,44 @@ include JavaCompilation.gmk
 # Setup the java compilers for the JDK build.
 include Setup.gmk
 
-EXCLUDES:=	sun/dc \
-		sun/security/pkcs11 \
-		com/sun/pept \
+JARS :=
+EXFILES :=
+EXCLUDES :=
+
+##########################################################################################
+
+EXCLUDES +=	com/sun/pept \
 		com/sun/tools/example/trace\
 		com/sun/tools/example/debug/bdi\
 		com/sun/tools/example/debug/event\
 		com/sun/tools/example/debug/gui \
-		javax/crypto \
 		com/oracle/security
 
+ifeq ($(PLATFORM)-$(ARCH_DATA_MODEL),windows-64)
+     EXCLUDES += sun/security/pkcs11
+endif
+
 ifdef OPENJDK
-    EXCLUDES+=	com/sun/jmx/snmp \
+    EXCLUDES+=	sun/dc \
+		com/sun/jmx/snmp \
 		sun/management/snmp \
 		com/sun/script
 endif
 
+ifndef OPENJDK
+   # There exists two versions of this file...
+   EXFILES := $(JDK_TOPDIR)/src/share/classes/javax/crypto/JarVerifier.java
+endif
+
 ifneq ($(PLATFORM),solaris)
    # Exclude Solaris nio and two security related files in src/share/classes
-   EXFILES:=SolarisAclFileAttributeView.java \
+   EXFILES += SolarisAclFileAttributeView.java \
 	SolarisFileStore.java \
 	SolarisFileSystem.java \
 	SolarisFileSystemProvider.java \
 	SolarisNativeDispatcher.java \
 	SolarisUserDefinedFileAttributeView.java \
 	SolarisWatchService.java \
-	DevPollArrayWrapper.java \
-	DevPollSelectorImpl.java \
-	DevPollSelectorProvider.java \
-	SolarisAsynchronousChannelProvider.java \
-	SolarisEventPort.java \
 	SolarisAclFileAttributeView.java \
 	SolarisFileStore.java \
 	SolarisFileSystem.java \
@@ -75,8 +83,11 @@ ifneq ($(PLATFORM),solaris)
 	sun/tools/attach/SolarisVirtualMachine.java
 endif
 
-# Why?
-EXFILES+=WrapperGenerator.java
+# In the old build, this isn't excluded on macosx, even though it probably
+# should be.
+ifneq ($(PLATFORM),macosx)
+	EXFILES+=WrapperGenerator.java
+endif
 
 ifneq ($(PLATFORM),windows)
     # Exclude Window security related files in src/share/classes
@@ -86,14 +97,20 @@ ifneq ($(PLATFORM),windows)
 endif
 
 ifeq ($(PLATFORM),windows)
-    # Does nio channels exist on Windows?
-    EXCLUDES+=sun/nio/ch
+    # Don't build GTK L&F on Windows
+    EXCLUDES+=	com/sun/java/swing/plaf/gtk
 endif
 
 ifneq ($(PLATFORM),linux)
-    EXCLUDES+=com/sun/java/swing/plaf/gtk
     EXFILES+=sun/tools/attach/LinuxAttachProvider.java \
-	sun/tools/attach/LinuxVirtualMachine.java
+	sun/tools/attach/LinuxVirtualMachine.java \
+	sun/nio/fs/LinuxDosFileAttributeView.java \
+	sun/nio/fs/LinuxFileStore.java \
+	sun/nio/fs/LinuxFileSystem.java \
+	sun/nio/fs/LinuxFileSystemProvider.java \
+	sun/nio/fs/LinuxNativeDispatcher.java \
+	sun/nio/fs/LinuxUserDefinedFileAttributeView.java \
+	sun/nio/fs/LinuxWatchService.java
 endif
 
 ifneq ($(PLATFORM),macosx)
@@ -104,19 +121,6 @@ ifneq ($(PLATFORM),macosx)
              sun/tools/attach/BsdAttachProvider.java \
              sun/tools/attach/BsdVirtualMachine.java
 endif
-
-# Generated nimbus files that apparently should not be compiled...
-EXFILES+=InternalFrameTitlePanePainter.java \
-	OptionPaneMessageAreaPainter.java \
-        ScrollBarPainter.java \
-	SliderPainter.java \
-	SpinnerPainter.java \
-	SplitPanePainter.java \
-	TabbedPanePainter.java
-
-# New class /java/lang/annotation/ContainerAnnotation.java is not included in old 
-# build
-EXFILES+=java/lang/annotation/ContainerAnnotation.java
 
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
@@ -130,16 +134,17 @@ endif
 
 ifdef OPENJDK
     EXCLUDES+=sun/java2d/cmm/kcms
-else
-    EXCLUDES+=sun/java2d/cmm/lcms
 endif
 
-# Not used on windows
-ifneq ($(PLATFORM), windows)
+# Used on windows and macosx
+ifeq (,$(filter $(PLATFORM), windows macosx))
     EXFILES+=sun/awt/AWTCharset.java
 endif
 
-# Exclude some generated AWT files that were implicitly not included by the old build.
+ifneq ($(PLATFORM), macosx)
+#
+# Not in rt.jar on solaris and linux...(windows not checked)
+#     in rt.jar on macosx ??
 EXFILES+=sun/awt/X11/ScreenFormat.java \
          sun/awt/X11/XArc.java \
          sun/awt/X11/XChar2b.java \
@@ -182,19 +187,15 @@ EXFILES+=sun/awt/X11/ScreenFormat.java \
          sun/awt/X11/XdbeSwapInfo.java \
          sun/awt/X11/XmbTextItem.java \
          sun/awt/X11/XwcTextItem.java
-
-# Exclude sun/security files that should go in a separate jar
-EXFILES+=sun/security/ec/ECDHKeyAgreement.java \
-         sun/security/ec/ECDSASignature.java \
-         sun/security/ec/ECKeyPairGenerator.java \
-         sun/security/ec/SunEC$1.java \
-         sun/security/ec/SunEC.java \
-         sun/security/ec/SunECEntries.java
+endif
 
 # Exclude another implicitly not included file.
 EXFILES+=sun/util/locale/AsciiUtil.java
 
-ifeq ($(PLATFORM), linux)
+ifeq (,$(filter $(PLATFORM), solaris macosx))
+#
+# only solaris and macosx
+#
     EXFILES+=sun/nio/fs/PollingWatchService.java
 endif
 
@@ -205,9 +206,40 @@ EXFILES+=-linux-arm.java \
 
 # TODO: Is this necessary?
 ifeq ($(PLATFORM), windows)
+    EXFILES+=sun/nio/ch/AbstractPollSelectorImpl.java \
+	sun/nio/ch/DevPollArrayWrapper.java \
+	sun/nio/ch/DevPollSelectorImpl.java \
+        sun/nio/ch/DevPollSelectorProvider.java \
+	sun/nio/ch/InheritedChannel.java \
+        sun/nio/ch/PollSelectorProvider.java \
+        sun/nio/ch/PollSelectorImpl.java \
+	sun/nio/ch/Port.java \
+	sun/nio/ch/SimpleAsynchronousFileChannelImpl.java \
+	sun/nio/ch/SolarisAsynchronousChannelProvider.java \
+	sun/nio/ch/SolarisEventPort.java \
+	sun/nio/ch/UnixAsynchronousServerSocketChannelImpl.java \
+	sun/nio/ch/UnixAsynchronousSocketChannelImpl.java
     EXFILES+=sun/net/sdp/SdpProvider.java
 else
     EXFILES+=sun/net/www/protocol/http/ntlm/NTLMAuthSequence.java
+endif
+
+ifdef DISABLE_NIMBUS
+    # TODO: need to check when it happens
+    # Exclude nimus if disabled
+    EXCLUDES+=	javax/swing/plaf/nimbus \
+		com/sun/java/swing/plaf/nimbus
+else
+#
+# These are never put into rt.jar
+#
+EXFILES+=  javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
+           javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
+           javax/swing/plaf/nimbus/ScrollBarPainter.java \
+           javax/swing/plaf/nimbus/SliderPainter.java \
+           javax/swing/plaf/nimbus/SpinnerPainter.java \
+           javax/swing/plaf/nimbus/SplitPanePainter.java \
+           javax/swing/plaf/nimbus/TabbedPanePainter.java
 endif
 
 # Acquire a list of files that should be copied straight over to the classes.
@@ -219,25 +251,105 @@ ifndef OPENJDK
 		     $(JDK_TOPDIR)/src/closed/$(LEGACY_HOST_OS_API)/classes
 endif
 
+MACOSX_SRC_DIRS :=
+ifeq ($(PLATFORM),macosx)
+     MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/classes
+
+     # this files are duplicated in MACOSX_SRC_DIRS
+     EXFILES+= $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/DefaultSelectorProvider.java \
+               $(JDK_TOPDIR)/src/solaris/classes/sun/java2d/BackBufferCapsProvider.java \
+               $(JDK_TOPDIR)/src/solaris/classes/java/net/DefaultInterface.java \
+	       $(JDK_TOPDIR)/src/solaris/classes/java/lang/ClassLoaderHelper.java
+endif
+
+# The exception handling of swing beaninfo
+# These resources violates the convention of having code and resources together under
+# $(JDK_TOPDIR)/src/.../classes directories
+$(JDK_OUTPUTDIR)/classes/javax/swing/beaninfo/images/%.gif: $(JDK_TOPDIR)/make/tools/swing-beans/beaninfo/images/%.gif
+	$(MKDIR) -p $(@D)
+	$(CP) $< $@
+
 $(eval $(call SetupJavaCompilation,BUILD_JDK,\
                 SETUP:=GENERATE_JDKBYTECODE,\
 		SRC:=$(JDK_TOPDIR)/src/share/classes \
 		     $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes \
+		     $(MACOSX_SRC_DIRS) \
 		     $(JDK_OUTPUTDIR)/gensrc \
+		     $(JDK_OUTPUTDIR)/gensrc_swing/javax/swing/beaninfo \
 		     $(CLOSED_SRC_DIRS),\
 		EXCLUDES:=$(EXCLUDES),\
 		EXCLUDE_FILES:=$(EXFILES),\
-		BIN:=$(JDK_OUTPUTDIR)/newclasses,\
+		BIN:=$(JDK_OUTPUTDIR)/classes,\
 		COPY:=$(COPY_PATTERNS),\
 		COPY_FILES:=$(COPY_FILES),\
-		JAR:=$(JDK_OUTPUTDIR)/newrt.jar,\
 		HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers))
 
+##########################################################################################
+# Special handling of header file generation for classes in the jigsaw base module which
+# currently can't add the annotaion GenerateNativeHeaders. For these specific classes the
+# java file and the class have the same names which enables shortcutting the dependencies.
+
+JDK_BASE_HEADER_CLASSES:=java.lang.Integer \
+			 java.lang.Long \
+			 java.net.SocketOptions \
+			 sun.nio.ch.IOStatus
+
+JDK_BASE_HEADER_JAVA_FILES:=$(patsubst %,$(JDK_TOPDIR)/src/share/classes/%.java,\
+				$(subst .,/,$(JDK_BASE_HEADER_CLASSES)))
+
+ifeq ($(PLATFORM),windows)
+    JDK_BASE_HEADER_CLASSES_WINDOWS:=sun.nio.ch.PollArrayWrapper
+    JDK_BASE_HEADER_CLASSES+=$(JDK_BASE_HEADER_CLASSES_WINDOWS)
+    JDK_BASE_HEADER_JAVA_FILES+=$(patsubst %,$(JDK_TOPDIR)/src/windows/classes/%.java,\
+				$(subst .,/,$(JDK_BASE_HEADER_CLASSES_WINDOWS)))
+endif
+
+# Set prereqs to the java files since make doesn't know about the class files. Add BUILD_JDK
+# as an order only dependency to avoid race with the java compilation.
+$(JDK_OUTPUTDIR)/classes/_the.jdk.base.headers: $(JDK_BASE_HEADER_JAVA_FILES) | $(BUILD_JDK)
+	$(ECHO) Generating headers for jdk base classes
+	$(JAVAH) -bootclasspath $(JDK_OUTPUTDIR)/classes -d $(JDK_OUTPUTDIR)/gensrc_headers \
+		$(JDK_BASE_HEADER_CLASSES)
+	$(TOUCH) $@
+
+##########################################################################################
+
+#
+# This is an empty jar (only contains manifest) and fits poorly into framework...
+#   create simple rule instead
+#
+MANAGEMENT_AGENT_JAR_DEPS := $(JDK_TOPDIR)/src/share/classes/sun/management/manifest
+
+$(JDK_OUTPUTDIR)/lib/management-agent.jar : $(JDK_TOPDIR)/src/share/classes/sun/management/manifest
+	$(JAR) cfm $@ $(JDK_TOPDIR)/src/share/classes/sun/management/manifest
+
+JARS += $(JDK_OUTPUTDIR)/lib/management-agent.jar
+
+##########################################################################################
+
+ifndef OPENJDK
+
+$(eval $(call SetupJavaCompilation,BUILD_ALTCLASSES_JAR,\
+		SETUP:=GENERATE_JDKBYTECODE,\
+		SRC:=$(JDK_TOPDIR)/src/closed/share/altclasses, \
+		BIN:=$(JDK_OUTPUTDIR)/altclasses_classes,\
+		JAR:=$(JDK_OUTPUTDIR)/lib/alt-rt.jar))
+
+$(BUILD_ALTCLASSES_JAR): $(BUILD_JDK)
+JARS += $(JDK_OUTPUTDIR)/lib/alt-rt.jar
+
+endif
+
+##########################################################################################
+
+$(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin:
+	$(MKDIR) -p $(@D)
+	$(TOUCH) $@
+
+##########################################################################################
+
 # copy with -a to preserve timestamps so dependencies down the line aren't messed up
-all: $(BUILD_JDK) $(JDK_OUTPUTDIR)/newrt.jar $(COPY_EXTRA)
-	(cd $(JDK_OUTPUTDIR); \
-		$(CP) -rp newclasses/* classes; \
-		$(FIND) classes -name "_the.*" $(FIND_DELETE); \
-		$(TOUCH) $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin)
+all: $(BUILD_JDK) $(JARS) $(COPY_EXTRA) $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
+	$(JDK_OUTPUTDIR)/classes/_the.jdk.base.headers
 
 .PHONY: all

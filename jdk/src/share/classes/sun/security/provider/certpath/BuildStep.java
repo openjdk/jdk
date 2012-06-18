@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.provider.certpath;
 
-import sun.security.util.Debug;
 import java.security.cert.X509Certificate;
 
 /**
@@ -39,7 +38,6 @@ import java.security.cert.X509Certificate;
  */
 public class BuildStep {
 
-    private static final Debug debug = Debug.getInstance("certpath");
     private Vertex          vertex;
     private X509Certificate cert;
     private Throwable       throwable;
@@ -86,7 +84,7 @@ public class BuildStep {
     public BuildStep(Vertex vtx, int res) {
         vertex = vtx;
         if (vertex != null) {
-            cert = (X509Certificate)vertex.getCertificate();
+            cert = vertex.getCertificate();
             throwable = vertex.getThrowable();
         }
         result = res;
@@ -117,7 +115,7 @@ public class BuildStep {
      * @returns String form of issuer name or null, if no certificate.
      */
     public String getIssuerName() {
-        return (cert == null ? null : cert.getIssuerX500Principal().toString());
+        return getIssuerName(null);
     }
 
     /**
@@ -142,7 +140,7 @@ public class BuildStep {
      * @returns String form of subject name or null, if no certificate.
      */
     public String getSubjectName() {
-        return (cert == null ? null : cert.getSubjectX500Principal().toString());
+        return getSubjectName(null);
     }
 
     /**
@@ -191,21 +189,21 @@ public class BuildStep {
     public String resultToString(int res) {
         String resultString = "";
         switch (res) {
-            case BuildStep.POSSIBLE:
+            case POSSIBLE:
                 resultString = "Certificate to be tried.\n";
                 break;
-            case BuildStep.BACK:
+            case BACK:
                 resultString = "Certificate backed out since path does not "
                     + "satisfy build requirements.\n";
                 break;
-            case BuildStep.FOLLOW:
+            case FOLLOW:
                 resultString = "Certificate satisfies conditions.\n";
                 break;
-            case BuildStep.FAIL:
+            case FAIL:
                 resultString = "Certificate backed out since path does not "
                     + "satisfy conditions.\n";
                 break;
-            case BuildStep.SUCCEED:
+            case SUCCEED:
                 resultString = "Certificate satisfies conditions.\n";
                 break;
             default:
@@ -220,6 +218,7 @@ public class BuildStep {
      *
      * @returns String
      */
+    @Override
     public String toString() {
         String out = "Internal Error\n";
         switch (result) {
@@ -273,8 +272,6 @@ public class BuildStep {
      * @returns String
      */
     public String fullToString() {
-        String out = resultToString(getResult());
-        out = out + vertex.toString();
-        return out;
+        return resultToString(getResult()) + vertex.toString();
     }
 }

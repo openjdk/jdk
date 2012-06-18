@@ -356,9 +356,9 @@ class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
         // continues in this way until we either successfully make it all the way
         // across the range, or exhaust all of our combinations of break
         // positions.)
-        Stack currentBreakPositions = new Stack();
-        Stack possibleBreakPositions = new Stack();
-        Vector wrongBreakPositions = new Vector();
+        Stack<Integer> currentBreakPositions = new Stack<>();
+        Stack<Integer> possibleBreakPositions = new Stack<>();
+        Vector<Integer> wrongBreakPositions = new Vector<>();
 
         // the dictionary is implemented as a trie, which is treated as a state
         // machine.  -1 represents the end of a legal word.  Every word in the
@@ -374,7 +374,7 @@ class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
         // farthest as real break positions, and then start over from scratch with
         // the character where the error occurred.
         int farthestEndPoint = text.getIndex();
-        Stack bestBreakPositions = null;
+        Stack<Integer> bestBreakPositions = null;
 
         // initialize (we always exit the loop with a break statement)
         c = getCurrent();
@@ -409,7 +409,11 @@ class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
                 // case there's an error in the text
                 if (text.getIndex() > farthestEndPoint) {
                     farthestEndPoint = text.getIndex();
-                    bestBreakPositions = (Stack)(currentBreakPositions.clone());
+
+                    @SuppressWarnings("unchecked")
+                    Stack<Integer> currentBreakPositionsCopy = (Stack<Integer>) currentBreakPositions.clone();
+
+                    bestBreakPositions = currentBreakPositionsCopy;
                 }
 
                 // wrongBreakPositions is a list of all break positions
@@ -448,7 +452,7 @@ class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
                     }
                     else {
                         if ((currentBreakPositions.size() == 0 ||
-                             ((Integer)(currentBreakPositions.peek())).intValue() != text.getIndex())
+                             currentBreakPositions.peek().intValue() != text.getIndex())
                             && text.getIndex() != startPos) {
                             currentBreakPositions.push(new Integer(text.getIndex()));
                         }
@@ -463,15 +467,15 @@ class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
                 // it.  Then back up to that position and start over from there (i.e.,
                 // treat that position as the beginning of a new word)
                 else {
-                    Integer temp = (Integer)possibleBreakPositions.pop();
-                    Object temp2 = null;
+                    Integer temp = possibleBreakPositions.pop();
+                    Integer temp2 = null;
                     while (!currentBreakPositions.isEmpty() && temp.intValue() <
-                           ((Integer)currentBreakPositions.peek()).intValue()) {
+                           currentBreakPositions.peek().intValue()) {
                         temp2 = currentBreakPositions.pop();
                         wrongBreakPositions.addElement(temp2);
                     }
                     currentBreakPositions.push(temp);
-                    text.setIndex(((Integer)currentBreakPositions.peek()).intValue());
+                    text.setIndex(currentBreakPositions.peek().intValue());
                 }
 
                 // re-sync "c" for the next go-round, and drop out of the loop if
@@ -507,7 +511,7 @@ class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
         cachedBreakPositions[0] = startPos;
 
         for (int i = 0; i < currentBreakPositions.size(); i++) {
-            cachedBreakPositions[i + 1] = ((Integer)currentBreakPositions.elementAt(i)).intValue();
+            cachedBreakPositions[i + 1] = currentBreakPositions.elementAt(i).intValue();
         }
         positionInCache = 0;
     }

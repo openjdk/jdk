@@ -1,2 +1,2 @@
-T6650759m.java:43:36: compiler.err.prob.found.req.1: (compiler.misc.invalid.inferred.types: Z, (compiler.misc.inferred.do.not.conform.to.lower.bounds: java.lang.Integer, java.lang.String))
+T6650759m.java:43:36: compiler.err.cant.apply.symbol.1: kindname.method, m, java.util.List<? extends java.util.List<? super Z>>, java.util.ArrayList<java.util.ArrayList<java.lang.Integer>>, kindname.class, T6650759m, (compiler.misc.inferred.do.not.conform.to.lower.bounds: java.lang.Integer, java.lang.String)
 1 error

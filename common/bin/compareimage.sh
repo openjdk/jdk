@@ -45,7 +45,7 @@
 #
 
 if [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ] || [ "x$1" == "x" ]; then
-    echo "./common/bin/compareimages.sh old_jdk_image new_jdk_image"
+    echo "bash ./common/bin/compareimages.sh old_jdk_image new_jdk_image"
     echo ""
     echo "Compare the directory structure."
     echo "Compare the filenames in the directories."
@@ -55,11 +55,11 @@ if [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ] || [ "x$1" == "x" ]; then
     echo "Compare the native executables"
     echo "Compare the remaining files"
     echo ""
-    echo "./common/bin/compareimages.sh old_jdk_image new_jdk_image [zips jars libs execs other]"
+    echo "bash ./common/bin/compareimages.sh old_jdk_image new_jdk_image [zips jars libs execs other]"
     echo ""
     echo "Compare only the selected subset of the images."
     echo ""
-    echo "./common/bin/compareimages.sh old_jdk_image new_jdk_image CodePointIM.jar"
+    echo "bash ./common/bin/compareimages.sh old_jdk_image new_jdk_image CodePointIM.jar"
     echo ""
     echo "Compare only the CodePointIM.jar file"
     echo "Can be used to compare zips, libraries and executables."
@@ -114,10 +114,10 @@ else
     CMP_OTHER=true
 fi
 
-DIFFJARZIP=`dirname $0`/diffjarzip.sh
-DIFFLIB=`dirname $0`/difflib.sh
-DIFFEXEC=`dirname $0`/diffexec.sh
-export COMPARE_ROOT=/tmp/cimages
+DIFFJARZIP="/bin/bash `dirname $0`/diffjarzip.sh"
+DIFFLIB="/bin/bash `dirname $0`/difflib.sh"
+DIFFEXEC="/bin/bash `dirname $0`/diffexec.sh"
+export COMPARE_ROOT=/tmp/cimages.$USER
 mkdir -p $COMPARE_ROOT
 
 # Load the correct exception list.
@@ -167,15 +167,63 @@ else
     ONLY_OLD=$(diff $COMPARE_ROOT/from_files $COMPARE_ROOT/to_files | grep '<')
     if [ "$ONLY_OLD" ]; then
         echo Only in $OLD
-        echo $ONLY_OLD | sed 's|< ./|\t|g' | sed 's/ /\n/g'
+        echo "$ONLY_OLD" | sed 's|< ./|    |g'
     fi
     # Differences in directories found.
     ONLY_NEW=$(diff $COMPARE_ROOT/from_files $COMPARE_ROOT/to_files | grep '>')
     if [ "$ONLY_NEW" ]; then
         echo Only in $NEW
-        echo $ONLY_NEW | sed 's|> ./|\t|g' | sed 's/ /\n/g'
+        echo "$ONLY_NEW" | sed 's|> ./|    |g'
     fi
 fi
+
+if [ "`uname`" == "SunOS" ]; then
+    PERM="gstat -c%a"
+elif [ $OSTYPE == "cygwin" ]; then
+    PERM=
+elif [ "`uname`" == "Darwin" ]; then
+    PERM="stat -f%p"
+elif [ "`uname`" == "Linux" ]; then
+    PERM="stat -c%A"
+else
+    PERM="stat -c%a"
+fi
+
+if [ "${PERM}" ]
+then
+    echo -n Permissions...
+    found=""
+    for f in `cd $OLD && find . -type f`
+    do
+	if [ ! -f ${OLD}/$f ]; then continue; fi
+	if [ ! -f ${NEW}/$f ]; then continue; fi
+	OP=`${PERM} ${OLD}/$f`
+	NP=`${PERM} ${NEW}/$f`
+	if [ "$OP" != "$NP" ]
+	then
+	    if [ -z "$found" ]; then echo ; found="yes"; fi
+	    printf "\told: ${OP} new: ${NP}\t$f\n"
+	fi
+    done
+    if [ -z "$found" ]; then echo ; found="yes"; fi
+fi
+
+GENERAL_FILES=$(cd $OLD && find . -type f ! -name "*.so" ! -name "*.jar" ! -name "*.zip" \
+                                  ! -name "*.debuginfo" ! -name "*.dylib" ! -name "jexec" \
+                                  ! -name "ct.sym" \
+                              | grep -v "./bin/"  | sort | $FILTER)
+echo General files...
+for f in $GENERAL_FILES
+do
+    if [ -e $NEW/$f ]; then
+        DIFF_OUT=$(diff $OLD/$f $NEW/$f 2>&1)
+        if [ -n "$DIFF_OUT" ]; then
+            echo $f
+            echo "$DIFF_OUT"
+        fi
+    fi
+done
+
 
 if [ "x$CMP_ZIPS" == "xtrue" ]; then
     ZIPS=$(cd $OLD && find . -type f -name "*.zip" | sort | $FILTER)
@@ -194,7 +242,7 @@ if [ "x$CMP_ZIPS" == "xtrue" ]; then
 fi    
 
 if [ "x$CMP_JARS" == "xtrue" ]; then
-    JARS=$(cd $OLD && find . -type f -name "*.jar" | sort | $FILTER)
+    JARS=$(cd $OLD && find . -type f -name "*.jar" -o -name "ct.sym" | sort | $FILTER)
 
     if [ -n "$JARS" ]; then
         echo Jar files...

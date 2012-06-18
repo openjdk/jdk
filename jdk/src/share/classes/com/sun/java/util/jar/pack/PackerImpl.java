@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,8 +164,11 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
             if (verbose > 0) Utils.log.info(props.toString());
         }
 
-        // Here's where the bits are collected before getting packed:
-        final Package pkg = new Package();
+        // Here's where the bits are collected before getting packed, we also
+        // initialize the version numbers now.
+        final Package pkg = new Package(Package.Version.makeVersion(props, "min.class"),
+                                        Package.Version.makeVersion(props, "max.class"),
+                                        Package.Version.makeVersion(props, "package"));
 
         final String unknownAttrCommand;
         {
@@ -277,23 +280,6 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
                 i.set(file);
             }
             if (verbose > 0) Utils.log.info("passFiles = " + passFiles);
-        }
-
-        {
-            // Fill in permitted range of major/minor version numbers.
-            int ver;
-            if ((ver = props.getInteger(Utils.COM_PREFIX+"min.class.majver")) != 0)
-                pkg.min_class_majver = (short) ver;
-            if ((ver = props.getInteger(Utils.COM_PREFIX+"min.class.minver")) != 0)
-                pkg.min_class_minver = (short) ver;
-            if ((ver = props.getInteger(Utils.COM_PREFIX+"max.class.majver")) != 0)
-                pkg.max_class_majver = (short) ver;
-            if ((ver = props.getInteger(Utils.COM_PREFIX+"max.class.minver")) != 0)
-                pkg.max_class_minver = (short) ver;
-            if ((ver = props.getInteger(Utils.COM_PREFIX+"package.minver")) != 0)
-                pkg.package_minver = (short) ver;
-            if ((ver = props.getInteger(Utils.COM_PREFIX+"package.majver")) != 0)
-                pkg.package_majver = (short) ver;
         }
 
         {
@@ -602,9 +588,6 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
             if (props.getBoolean(Utils.COM_PREFIX+"strip.constants"))    pkg.stripAttributeKind("Constant");
             if (props.getBoolean(Utils.COM_PREFIX+"strip.exceptions"))   pkg.stripAttributeKind("Exceptions");
             if (props.getBoolean(Utils.COM_PREFIX+"strip.innerclasses")) pkg.stripAttributeKind("InnerClasses");
-
-            // Must choose an archive version; PackageWriter does not.
-            if (pkg.package_majver <= 0)  pkg.choosePackageVersion();
 
             PackageWriter pw = new PackageWriter(pkg, out);
             pw.archiveNextCount = nextCount;

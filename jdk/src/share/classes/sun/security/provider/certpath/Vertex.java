@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 
 package sun.security.provider.certpath;
 
-import sun.security.util.Debug;
-
-import java.security.cert.Certificate;
+import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
+import sun.security.util.Debug;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import sun.security.x509.KeyIdentifier;
 import sun.security.x509.SubjectKeyIdentifierExtension;
@@ -50,17 +49,17 @@ import sun.security.x509.X509CertImpl;
 public class Vertex {
 
     private static final Debug debug = Debug.getInstance("certpath");
-    private Certificate cert;
-    private int         index;
-    private Throwable   throwable;
+    private X509Certificate cert;
+    private int index;
+    private Throwable throwable;
 
     /**
      * Constructor; creates vertex with index of -1
      * Use setIndex method to set another index.
      *
-     * @param cert Certificate associated with vertex
+     * @param cert X509Certificate associated with vertex
      */
-    Vertex(Certificate cert) {
+    Vertex(X509Certificate cert) {
         this.cert = cert;
         this.index = -1;
     }
@@ -68,9 +67,9 @@ public class Vertex {
     /**
      * return the certificate for this vertex
      *
-     * @returns Certificate
+     * @returns X509Certificate
      */
-    public Certificate getCertificate() {
+    public X509Certificate getCertificate() {
         return cert;
     }
 
@@ -121,6 +120,7 @@ public class Vertex {
      *
      * @returns String representation of vertex
      */
+    @Override
     public String toString() {
         return certToString() + throwableToString() + indexToString();
     }
@@ -132,70 +132,65 @@ public class Vertex {
      * @returns String representation of certificate info
      */
     public String certToString() {
-        String out = "";
-        if (cert == null || ! (cert instanceof X509Certificate))
-            return "Cert:       Not an X509Certificate\n";
+        StringBuilder sb = new StringBuilder();
 
         X509CertImpl x509Cert = null;
         try {
-            x509Cert = X509CertImpl.toImpl((X509Certificate)cert);
+            x509Cert = X509CertImpl.toImpl(cert);
         } catch (CertificateException ce) {
             if (debug != null) {
                 debug.println("Vertex.certToString() unexpected exception");
                 ce.printStackTrace();
             }
-            return out;
+            return sb.toString();
         }
 
-        out =       "Issuer:     " + x509Cert.getIssuerX500Principal() + "\n";
-        out = out + "Subject:    " + x509Cert.getSubjectX500Principal() + "\n";
-        out = out + "SerialNum:  " + (x509Cert.getSerialNumber()).toString(16) + "\n";
-        out = out + "Expires:    " + x509Cert.getNotAfter().toString() + "\n";
+        sb.append("Issuer:     ").append
+                 (x509Cert.getIssuerX500Principal()).append("\n");
+        sb.append("Subject:    ").append
+                 (x509Cert.getSubjectX500Principal()).append("\n");
+        sb.append("SerialNum:  ").append
+                 (x509Cert.getSerialNumber().toString(16)).append("\n");
+        sb.append("Expires:    ").append
+                 (x509Cert.getNotAfter().toString()).append("\n");
         boolean[] iUID = x509Cert.getIssuerUniqueID();
         if (iUID != null) {
-            out = out + "IssuerUID:  ";
-            for (int i=0; i < iUID.length; i++) {
-                out = out + (iUID[i]?1:0);
+            sb.append("IssuerUID:  ");
+            for (boolean b : iUID) {
+                sb.append(b ? 1 : 0);
             }
-            out = out + "\n";
+            sb.append("\n");
         }
         boolean[] sUID = x509Cert.getSubjectUniqueID();
         if (sUID != null) {
-            out = out + "SubjectUID: ";
-            for (int i=0; i< sUID.length; i++) {
-                out = out + (sUID[i]?1:0);
+            sb.append("SubjectUID: ");
+            for (boolean b : sUID) {
+                sb.append(b ? 1 : 0);
             }
-            out = out + "\n";
+            sb.append("\n");
         }
-        SubjectKeyIdentifierExtension sKeyID = null;
         try {
-            sKeyID = x509Cert.getSubjectKeyIdentifierExtension();
+            SubjectKeyIdentifierExtension sKeyID =
+                x509Cert.getSubjectKeyIdentifierExtension();
             if (sKeyID != null) {
                 KeyIdentifier keyID = sKeyID.get(
                         SubjectKeyIdentifierExtension.KEY_ID);
-                out = out + "SubjKeyID:  " + keyID.toString();
+                sb.append("SubjKeyID:  ").append(keyID.toString());
             }
-        } catch (Exception e) {
+            AuthorityKeyIdentifierExtension aKeyID =
+                x509Cert.getAuthorityKeyIdentifierExtension();
+            if (aKeyID != null) {
+                KeyIdentifier keyID = (KeyIdentifier)aKeyID.get(
+                        AuthorityKeyIdentifierExtension.KEY_ID);
+                sb.append("AuthKeyID:  ").append(keyID.toString());
+            }
+        } catch (IOException e) {
             if (debug != null) {
                 debug.println("Vertex.certToString() unexpected exception");
                 e.printStackTrace();
             }
         }
-        AuthorityKeyIdentifierExtension aKeyID = null;
-        try {
-            aKeyID = x509Cert.getAuthorityKeyIdentifierExtension();
-            if (aKeyID != null) {
-                KeyIdentifier keyID = (KeyIdentifier)aKeyID.get(
-                        AuthorityKeyIdentifierExtension.KEY_ID);
-                out = out + "AuthKeyID:  " + keyID.toString();
-            }
-        } catch (Exception e) {
-            if (debug != null) {
-                debug.println("Vertex.certToString() 2 unexpected exception");
-                e.printStackTrace();
-            }
-        }
-        return out;
+        return sb.toString();
     }
 
     /**
@@ -205,13 +200,13 @@ public class Vertex {
      * @returns String form of exception (or "none")
      */
     public String throwableToString() {
-        String out = "Exception:  ";
+        StringBuilder sb = new StringBuilder("Exception:  ");
         if (throwable != null)
-            out = out + throwable.toString();
+            sb.append(throwable.toString());
         else
-            out = out + "null";
-        out = out + "\n";
-        return out;
+            sb.append("null");
+        sb.append("\n");
+        return sb.toString();
     }
 
     /**
@@ -222,10 +217,10 @@ public class Vertex {
      * @returns String form of index as "Last cert?  [Yes/No]
      */
     public String moreToString() {
-        String out = "Last cert?  ";
-        out = out + ((index == -1)?"Yes":"No");
-        out = out + "\n";
-        return out;
+        StringBuilder sb = new StringBuilder("Last cert?  ");
+        sb.append((index == -1) ? "Yes" : "No");
+        sb.append("\n");
+        return sb.toString();
     }
 
     /**
@@ -235,7 +230,6 @@ public class Vertex {
      * @returns String form of index as "Index:     [numeric index]"
      */
     public String indexToString() {
-        String out = "Index:      " + index + "\n";
-        return out;
+        return "Index:      " + index + "\n";
     }
 }

@@ -88,19 +88,19 @@ final class MergeCollation {
     public String getPattern(boolean withWhiteSpace) {
         StringBuffer result = new StringBuffer();
         PatternEntry tmp = null;
-        ArrayList extList = null;
+        ArrayList<PatternEntry> extList = null;
         int i;
         for (i = 0; i < patterns.size(); ++i) {
-            PatternEntry entry = (PatternEntry) patterns.get(i);
+            PatternEntry entry = patterns.get(i);
             if (entry.extension.length() != 0) {
                 if (extList == null)
-                    extList = new ArrayList();
+                    extList = new ArrayList<>();
                 extList.add(entry);
             } else {
                 if (extList != null) {
                     PatternEntry last = findLastWithNoExtension(i-1);
                     for (int j = extList.size() - 1; j >= 0 ; j--) {
-                        tmp = (PatternEntry)(extList.get(j));
+                        tmp = extList.get(j);
                         tmp.addToBuffer(result, false, withWhiteSpace, last);
                     }
                     extList = null;
@@ -111,7 +111,7 @@ final class MergeCollation {
         if (extList != null) {
             PatternEntry last = findLastWithNoExtension(i-1);
             for (int j = extList.size() - 1; j >= 0 ; j--) {
-                tmp = (PatternEntry)(extList.get(j));
+                tmp = extList.get(j);
                 tmp.addToBuffer(result, false, withWhiteSpace, last);
             }
             extList = null;
@@ -121,7 +121,7 @@ final class MergeCollation {
 
     private final PatternEntry findLastWithNoExtension(int i) {
         for (--i;i >= 0; --i) {
-            PatternEntry entry = (PatternEntry) patterns.get(i);
+            PatternEntry entry = patterns.get(i);
             if (entry.extension.length() == 0) {
                 return entry;
             }
@@ -149,7 +149,7 @@ final class MergeCollation {
         StringBuffer result = new StringBuffer();
         for (int i = 0; i < patterns.size(); ++i)
         {
-            PatternEntry entry = (PatternEntry) patterns.get(i);
+            PatternEntry entry = patterns.get(i);
             if (entry != null) {
                 entry.addToBuffer(result, true, withWhiteSpace, null);
             }
@@ -198,13 +198,13 @@ final class MergeCollation {
      * @return the requested pattern entry
      */
     public PatternEntry getItemAt(int index) {
-        return (PatternEntry) patterns.get(index);
+        return patterns.get(index);
     }
 
     //============================================================
     // privates
     //============================================================
-    ArrayList patterns = new ArrayList(); // a list of PatternEntries
+    ArrayList<PatternEntry> patterns = new ArrayList<>(); // a list of PatternEntries
 
     private transient PatternEntry saveEntry = null;
     private transient PatternEntry lastEntry = null;
@@ -326,7 +326,7 @@ final class MergeCollation {
         } else {
             int i;
             for (i = patterns.size() - 1; i >= 0; --i) {
-                PatternEntry e = (PatternEntry) patterns.get(i);
+                PatternEntry e = patterns.get(i);
                 if (e.chars.regionMatches(0,entry.chars,0,
                                               e.chars.length())) {
                     excessChars.append(entry.chars.substring(e.chars.length(),

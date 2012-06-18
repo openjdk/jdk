@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,19 @@
  * questions.
  */
 
-import com.sun.security.jgss.ExtendedGSSContext;
-import java.io.File;
+/*
+ * @test
+ * @bug 6853328 7172701
+ * @run main/othervm OkAsDelegateXRealm false
+ *      KDC no OK-AS-DELEGATE, fail
+ * @run main/othervm -Dtest.kdc.policy.ok-as-delegate OkAsDelegateXRealm true
+ *      KDC set OK-AS-DELEGATE for all, succeed
+ * @run main/othervm -Dtest.kdc.policy.ok-as-delegate=host/host.r3.local OkAsDelegateXRealm false
+ *      KDC set OK-AS-DELEGATE for host/host.r3.local only, fail
+ * @run main/othervm -Dtest.kdc.policy.ok-as-delegate=host/host.r3.local,krbtgt/R2,krbtgt/R3 OkAsDelegateXRealm true
+ *      KDC set OK-AS-DELEGATE for all three, succeed
+ * @summary Support OK-AS-DELEGATE flag
+ */
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.Security;
@@ -31,11 +42,7 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.Config;
 
@@ -50,21 +57,21 @@ public class OkAsDelegateXRealm implements CallbackHandler {
         // Create and start the KDCs. Here we have 3 realms: R1, R2 and R3.
         // R1 is trusted by R2, and R2 trusted by R3.
         KDC kdc1 = KDC.create("R1");
-        kdc1.setPolicy("ok-as-delegate",
+        kdc1.setOption(KDC.Option.OK_AS_DELEGATE,
                 System.getProperty("test.kdc.policy.ok-as-delegate"));
         kdc1.addPrincipal("dummy", "bogus".toCharArray());
         kdc1.addPrincipalRandKey("krbtgt/R1");
         kdc1.addPrincipal("krbtgt/R2@R1", "r1->r2".toCharArray());
 
         KDC kdc2 = KDC.create("R2");
-        kdc2.setPolicy("ok-as-delegate",
+        kdc2.setOption(KDC.Option.OK_AS_DELEGATE,
                 System.getProperty("test.kdc.policy.ok-as-delegate"));
         kdc2.addPrincipalRandKey("krbtgt/R2");
         kdc2.addPrincipal("krbtgt/R2@R1", "r1->r2".toCharArray());
         kdc2.addPrincipal("krbtgt/R3@R2", "r2->r3".toCharArray());
 
         KDC kdc3 = KDC.create("R3");
-        kdc3.setPolicy("ok-as-delegate",
+        kdc3.setOption(KDC.Option.OK_AS_DELEGATE,
                 System.getProperty("test.kdc.policy.ok-as-delegate"));
         kdc3.addPrincipalRandKey("krbtgt/R3");
         kdc3.addPrincipal("krbtgt/R3@R2", "r2->r3".toCharArray());

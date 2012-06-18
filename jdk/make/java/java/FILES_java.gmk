@@ -482,6 +482,7 @@ JAVA_JAVA_java = \
     sun/misc/JavaNioAccess.java \
     sun/misc/Perf.java \
     sun/misc/PerfCounter.java \
+    sun/misc/Hashing.java \
     sun/net/www/protocol/jar/Handler.java \
     sun/net/www/protocol/jar/JarURLConnection.java \
     sun/net/www/protocol/file/Handler.java \

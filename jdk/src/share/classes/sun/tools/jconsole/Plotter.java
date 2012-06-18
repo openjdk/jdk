@@ -38,14 +38,11 @@ import javax.swing.border.*;
 import javax.swing.filechooser.*;
 import javax.swing.filechooser.FileFilter;
 
-import com.sun.tools.jconsole.JConsoleContext;
 
-import static com.sun.tools.jconsole.JConsoleContext.ConnectionState.*;
+import com.sun.tools.jconsole.JConsoleContext;
 
 import static sun.tools.jconsole.Formatter.*;
 import static sun.tools.jconsole.ProxyClient.*;
-import static sun.tools.jconsole.Resources.*;
-import static sun.tools.jconsole.Utilities.*;
 
 @SuppressWarnings("serial")
 public class Plotter extends JComponent
@@ -56,22 +53,22 @@ public class Plotter extends JComponent
     }
 
     static final String[] rangeNames = {
-        Resources.getText(" 1 min"),
-        Resources.getText(" 5 min"),
-        Resources.getText("10 min"),
-        Resources.getText("30 min"),
-        Resources.getText(" 1 hour"),
-        Resources.getText(" 2 hours"),
-        Resources.getText(" 3 hours"),
-        Resources.getText(" 6 hours"),
-        Resources.getText("12 hours"),
-        Resources.getText(" 1 day"),
-        Resources.getText(" 7 days"),
-        Resources.getText(" 1 month"),
-        Resources.getText(" 3 months"),
-        Resources.getText(" 6 months"),
-        Resources.getText(" 1 year"),
-        Resources.getText("All")
+        Messages.ONE_MIN,
+        Messages.FIVE_MIN,
+        Messages.TEN_MIN,
+        Messages.THIRTY_MIN,
+        Messages.ONE_HOUR,
+        Messages.TWO_HOURS,
+        Messages.THREE_HOURS,
+        Messages.SIX_HOURS,
+        Messages.TWELVE_HOURS,
+        Messages.ONE_DAY,
+        Messages.SEVEN_DAYS,
+        Messages.ONE_MONTH,
+        Messages.THREE_MONTHS,
+        Messages.SIX_MONTHS,
+        Messages.ONE_YEAR,
+        Messages.ALL
     };
 
     static final int[] rangeValues = {
@@ -247,9 +244,9 @@ public class Plotter extends JComponent
     @Override
     public JPopupMenu getComponentPopupMenu() {
         if (popupMenu == null) {
-            popupMenu = new JPopupMenu(Resources.getText("Chart:"));
-            timeRangeMenu = new JMenu(Resources.getText("Plotter.timeRangeMenu"));
-            timeRangeMenu.setMnemonic(getMnemonicInt("Plotter.timeRangeMenu"));
+            popupMenu = new JPopupMenu(Messages.CHART_COLON);
+            timeRangeMenu = new JMenu(Messages.PLOTTER_TIME_RANGE_MENU);
+            timeRangeMenu.setMnemonic(Resources.getMnemonicInt(Messages.PLOTTER_TIME_RANGE_MENU));
             popupMenu.add(timeRangeMenu);
             menuRBs = new JRadioButtonMenuItem[rangeNames.length];
             ButtonGroup rbGroup = new ButtonGroup();
@@ -265,8 +262,8 @@ public class Plotter extends JComponent
 
             popupMenu.addSeparator();
 
-            saveAsMI = new JMenuItem(getText("Plotter.saveAsMenuItem"));
-            saveAsMI.setMnemonic(getMnemonicInt("Plotter.saveAsMenuItem"));
+            saveAsMI = new JMenuItem(Messages.PLOTTER_SAVE_AS_MENU_ITEM);
+            saveAsMI.setMnemonic(Resources.getMnemonicInt(Messages.PLOTTER_SAVE_AS_MENU_ITEM));
             saveAsMI.addActionListener(this);
             popupMenu.add(saveAsMI);
         }
@@ -318,9 +315,9 @@ public class Plotter extends JComponent
 
             out.close();
             JOptionPane.showMessageDialog(this,
-                                          getText("FileChooser.savedFile",
-                                                  file.getAbsolutePath(),
-                                                  file.length()));
+                                          Resources.format(Messages.FILE_CHOOSER_SAVED_FILE,
+                                                           file.getAbsolutePath(),
+                                                           file.length()));
         } catch (IOException ex) {
             String msg = ex.getLocalizedMessage();
             String path = file.getAbsolutePath();
@@ -328,9 +325,10 @@ public class Plotter extends JComponent
                 msg = msg.substring(path.length()).trim();
             }
             JOptionPane.showMessageDialog(this,
-                                          getText("FileChooser.saveFailed.message",
-                                                  path, msg),
-                                          getText("FileChooser.saveFailed.title"),
+                                          Resources.format(Messages.FILE_CHOOSER_SAVE_FAILED_MESSAGE,
+                                                           path,
+                                                           msg),
+                                          Messages.FILE_CHOOSER_SAVE_FAILED_TITLE,
                                           JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -1020,13 +1018,13 @@ public class Plotter extends JComponent
                 }
 
                 if (file.exists()) {
-                    String okStr = getText("FileChooser.fileExists.okOption");
-                    String cancelStr = getText("FileChooser.fileExists.cancelOption");
+                    String okStr = Messages.FILE_CHOOSER_FILE_EXISTS_OK_OPTION;
+                    String cancelStr = Messages.FILE_CHOOSER_FILE_EXISTS_CANCEL_OPTION;
                     int ret =
                         JOptionPane.showOptionDialog(this,
-                                                     getText("FileChooser.fileExists.message",
-                                                             file.getName()),
-                                                     getText("FileChooser.fileExists.title"),
+                                                     Resources.format(Messages.FILE_CHOOSER_FILE_EXISTS_MESSAGE,
+                                                                      file.getName()),
+                                                     Messages.FILE_CHOOSER_FILE_EXISTS_TITLE,
                                                      JOptionPane.OK_CANCEL_OPTION,
                                                      JOptionPane.WARNING_MESSAGE,
                                                      null,
@@ -1053,7 +1051,7 @@ public class Plotter extends JComponent
     protected class AccessiblePlotter extends AccessibleJComponent {
         private static final long serialVersionUID = -3847205410473510922L;
         protected AccessiblePlotter() {
-            setAccessibleName(getText("Plotter.accessibleName"));
+            setAccessibleName(Messages.PLOTTER_ACCESSIBLE_NAME);
         }
 
         @Override
@@ -1067,7 +1065,7 @@ public class Plotter extends JComponent
                         String value = "null";
                         if (seq.size > 0) {
                             if (unit == Unit.BYTES) {
-                                value = getText("Size Bytes", seq.value(seq.size - 1));
+                                value = Resources.format(Messages.SIZE_BYTES, seq.value(seq.size - 1));
                             } else {
                                 value =
                                     getFormattedValue(seq.value(seq.size - 1), false) +
@@ -1076,13 +1074,13 @@ public class Plotter extends JComponent
                         }
                         // Assume format string ends with newline
                         keyValueList +=
-                            getText("Plotter.accessibleName.keyAndValue",
+                            Resources.format(Messages.PLOTTER_ACCESSIBLE_NAME_KEY_AND_VALUE,
                                     seq.key, value);
                     }
                 }
                 name += "\n" + keyValueList + ".";
             } else {
-                name += "\n" + getText("Plotter.accessibleName.noData");
+                name += "\n" + Messages.PLOTTER_ACCESSIBLE_NAME_NO_DATA;
             }
             return name;
         }

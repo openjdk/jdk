@@ -24,8 +24,14 @@
 #
 
 INCLUDEDIR = $(JDK_OUTPUTDIR)/include
-# TODO: Platform dir needs to be "win32" on windows /erikj
+
 PLATFORM_INCLUDE = $(INCLUDEDIR)/$(PLATFORM)
+
+ifeq ($(PLATFORM), windows)
+     PLATFORM_INCLUDE = $(INCLUDEDIR)/win32
+else ifeq ($(PLATFORM), macosx)
+     PLATFORM_INCLUDE = $(INCLUDEDIR)/darwin
+endif
 
 #
 # Copy exported header files to outputdir.
@@ -41,12 +47,12 @@ H_TARGET_FILES =$(INCLUDEDIR)/jdwpTransport.h		\
 
 $(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/share/javavm/export/%.h
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
 $(PLATFORM_INCLUDE)/%.h: $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/javavm/export/%.h
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
 COPY_FILES = $(H_TARGET_FILES)
@@ -58,7 +64,7 @@ SERVICETAG_LIBDIR = $(LIBDIR)/servicetag
 
 $(SERVICETAG_LIBDIR)/jdk_header.png: $(JDK_TOPDIR)/src/share/classes/com/sun/servicetag/resources/jdk_header.png
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 	$(CHMOD) 444 $@
 
@@ -73,13 +79,13 @@ MGMT_TARGET_FILES = $(subst $(MGMT_LIB_SRC),$(MGMT_LIBDIR),$(MGMT_SRC_FILES))
 
 $(MGMT_LIBDIR)/management.properties: $(MGMT_LIB_SRC)/management.properties
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 	$(CHMOD) 644 $@
 
 $(MGMT_LIBDIR)/%: $(MGMT_LIB_SRC)/%
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 	$(CHMOD) 444 $@
 
@@ -91,7 +97,7 @@ LOGGING_LIB_SRC = $(JDK_TOPDIR)/src/share/lib
 
 $(LIBDIR)/logging.properties: $(LOGGING_LIB_SRC)/logging.properties
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
 COPY_FILES += $(LIBDIR)/logging.properties
@@ -104,9 +110,9 @@ PSFONTPROPFILE_SRC_DIR = $(JDK_TOPDIR)/src/share/classes/sun/print
 PSFONTPROPFILE_SRCS = $(wildcard $(PSFONTPROPFILE_SRC_DIR)/*.properties*)
 PSFONTPROPFILE_TARGET_FILES = $(subst $(PSFONTPROPFILE_SRC_DIR),$(LIBDIR),$(PSFONTPROPFILE_SRCS))
 
-$(PSFONTPROPFILE_TARGET_FILES): $(PSFONTPROPFILE_SRCS)
+$(LIBDIR)/%: $(PSFONTPROPFILE_SRC_DIR)/%
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
 COPY_FILES += $(PSFONTPROPFILE_TARGET_FILES)
@@ -119,7 +125,7 @@ PLATFORM_LIB_SRC = $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/lib
 
 $(LIBDIR)/flavormap.properties: $(PLATFORM_LIB_SRC)/flavormap.properties
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
 COPY_FILES += $(LIBDIR)/flavormap.properties
@@ -129,7 +135,7 @@ CURSORS_PLATFORM_LIB_SRC = $(PLATFORM_LIB_SRC)/images/cursors
 
 $(CURSORS_DEST_DIR)/cursors.properties: $(CURSORS_PLATFORM_LIB_SRC)/cursors.properties
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
 COPY_FILES += $(CURSORS_DEST_DIR)/cursors.properties
@@ -142,9 +148,9 @@ CURSORS_SRC_FILES = $(CURSORS_LIB_SRC)/invalid32x32.gif $(wildcard $(CURSORS_LIB
 endif # PLATFORM
 CURSORS_TARGET_FILES =  $(subst $(CURSORS_LIB_SRC),$(CURSORS_DEST_DIR),$(CURSORS_SRC_FILES))
 
-$(CURSORS_TARGET_FILES): $(CURSORS_SRC_FILES)
+$(CURSORS_DEST_DIR)/%: $(CURSORS_LIB_SRC)/%
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
 COPY_FILES += $(CURSORS_TARGET_FILES)
@@ -155,10 +161,36 @@ CONTENT_TYPES_SRC=$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/lib
 
 $(LIBDIR)/content-types.properties: $(CONTENT_TYPES_SRC)/content-types.properties
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
 COPY_FILES += $(LIBDIR)/content-types.properties
+
+##########################################################################################
+
+CALENDARS_SRC := $(JDK_TOPDIR)/src/share/lib
+
+$(LIBDIR)/calendars.properties: $(CALENDARS_SRC)/calendars.properties
+	$(MKDIR) -p $(@D)
+	$(RM) -f $@
+	$(CP) $< $@
+
+COPY_FILES += $(LIBDIR)/calendars.properties
+
+##########################################################################################
+
+ifeq ($(PLATFORM),windows)
+
+TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/lib
+
+$(LIBDIR)/tzmappings: $(TZMAPPINGS_SRC)/tzmappings
+	$(MKDIR) -p $(@D)
+	$(RM) -f $@
+	$(CP) $< $@
+
+COPY_FILES += $(LIBDIR)/tzmappings
+
+endif
 
 ##########################################################################################
 
@@ -175,7 +207,7 @@ ICCPROFILE_TARGET_FILES:=$(subst $(ICCPROFILE_SRC_DIR),$(ICCPROFILE_DEST_DIR),$(
 
 $(ICCPROFILE_DEST_DIR)%.pf: $(ICCPROFILE_SRC_DIR)%.pf
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 	$(CHMOD) 444 $@
 
@@ -209,8 +241,11 @@ ifdef OPENJDK
         endif
     endif 
 
-    $(FREETYPE_LIB):
+    $(FREETYPE_LIB): $(FREETYPE2_LIB_PATH)/$(call SHARED_LIBRARY,freetype)
 	$(CP) $(FREETYPE2_LIB_PATH)/$(call SHARED_LIBRARY,freetype) $@
+    ifeq ($(BUILD_OS), windows)
+	$(CHMOD) +rx $@
+    endif
 
     COPY_FILES += $(FREETYPE_LIB)
 endif
@@ -223,10 +258,336 @@ ifeq ($(PLATFORM),windows)
     MSVCRNN_TARGET := $(JDK_OUTPUTDIR)/bin/$(notdir $(MSVCRNN_DLL))
     $(MSVCRNN_TARGET): $(MSVCRNN_DLL)
 	$(MKDIR) -p $(@D)
-	rm -f $@
+	$(RM) -f $@
 	$(CP) $< $@
 
     COPY_FILES += $(MSVCRNN_TARGET)
 endif
+
+##########################################################################################
+
+HPROF_SRC=$(JDK_TOPDIR)/src/share/demo/jvmti/hprof/jvm.hprof.txt
+
+$(LIBDIR)/jvm.hprof.txt : $(HPROF_SRC)
+	$(MKDIR) -p $(@D)
+	$(RM) -f $@
+	$(CP) $< $@
+
+COPY_FILES += $(LIBDIR)/jvm.hprof.txt
+
+##########################################################################################
+
+#
+# How to install jvm.cfg.
+#
+ifeq ($(JVM_VARIANT_ZERO), true)
+JVMCFG_ARCH := zero
+else
+    JVMCFG_ARCH := $(ARCH)
+endif
+
+ifeq ($(PLATFORM),macosx)
+  ifeq ($(JVMCFG_ARCH),amd64)
+      JVMCFG_ARCH := x86_64
+  endif
+  JVMCFG_SRC := $(JDK_TOPDIR)/src/macosx/bin/$(JVMCFG_ARCH)/jvm.cfg
+  JVMCFG_DIR := $(JDK_OUTPUTDIR)/lib
+else
+  JVMCFG_SRC := $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/bin/$(JVMCFG_ARCH)/jvm.cfg
+  JVMCFG_DIR := $(JDK_OUTPUTDIR)/lib/$(LIBARCH)
+endif
+
+JVMCFG := $(JVMCFG_DIR)/jvm.cfg
+
+
+ifeq ($(ARCH_DATA_MODEL),32)
+    # On 32 bit machines, we can have client and/or server libjvms installed.
+    # Since the currently committed jvm.cfg expects clientANDserver, we need 
+    # to patch the jvm.cfg when we have built only a client or only a server.
+    # This should also support -kernel, -zero and -zeroshark.
+    ifeq ($(JVM_VARIANTS),$(COMMA)client$(COMMA))
+        # Create a patched jvm.cfg to use -client by default and alias -server to -client.
+        $(JVMCFG):
+		$(MKDIR) -p $(@D)
+		$(RM) -f $(JVMCFG)
+		$(PRINTF) "-client KNOWN\n">$(JVMCFG)
+		$(PRINTF) "-server IGNORE\n">>$(JVMCFG)
+		$(PRINTF) "-hotspot ALIASED_TO -client\n">>$(JVMCFG)
+		$(PRINTF) "-classic WARN\n">>$(JVMCFG)
+		$(PRINTF) "-native ERROR\n">>$(JVMCFG)
+		$(PRINTF) "-green ERROR\n">>$(JVMCFG)
+
+    else
+        ifeq ($(JVM_VARIANTS),$(COMMA)server$(COMMA))
+            # Create a patched jvm.cfg to use -server by default and alias -client to -server.
+
+            $(JVMCFG):
+		$(MKDIR) -p $(@D)
+		$(RM) -f $(JVMCFG)
+		$(PRINTF) "-server KNOWN\n">$(JVMCFG)
+		$(PRINTF) "-client IGNORE\n">>$(JVMCFG)
+		$(PRINTF) "-hotspot IGNORE\n">>$(JVMCFG)
+		$(PRINTF) "-classic WARN\n">>$(JVMCFG)
+		$(PRINTF) "-native ERROR\n">>$(JVMCFG)
+		$(PRINTF) "-green ERROR\n">>$(JVMCFG)
+        else
+            # Use the default jvm.cfg for this 32 bit setup. 
+            $(JVMCFG): $(JVMCFG_SRC)
+	    	$(MKDIR) -p $(@D)
+		$(RM) -f $@
+		$(CP) $< $@
+        endif
+    endif
+else
+    # Use the default jvm.cfg for this 64 bit setup.
+    $(JVMCFG): $(JVMCFG_SRC)
+		$(MKDIR) -p $(@D)
+		$(RM) -f $@
+		$(CP) $< $@
+endif
+
+COPY_FILES += $(JVMCFG)
+
+##########################################################################################
+
+PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security
+PROPS_DST := $(JDK_OUTPUTDIR)/lib/security/java.security
+
+ifeq ($(PLATFORM), solaris)
+	PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-solaris
+endif
+
+ifeq ($(PLATFORM), windows)
+	PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-windows
+endif
+
+ifeq ($(PLATFORM), macosx)
+	PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-macosx
+endif
+
+$(PROPS_DST): $(PROPS_SRC)
+	$(MKDIR) -p $(@D)
+	$(RM) -f $@
+	$(CP) $< $@
+
+COPY_FILES += $(PROPS_DST)
+
+##########################################################################################
+
+POLICY_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.policy
+POLICY_DST := $(JDK_OUTPUTDIR)/lib/security/java.policy
+
+$(POLICY_DST): $(POLICY_SRC)
+	$(MKDIR) -p $(@D)
+	$(RM) -f $@
+	$(CP) $< $@
+
+COPY_FILES += $(POLICY_DST)
+
+##########################################################################################
+
+CACERTS_SRC := $(CACERTS_FILE)
+CACERTS_DST := $(JDK_OUTPUTDIR)/lib/security/cacerts
+
+$(CACERTS_DST): $(CACERTS_SRC)
+	$(MKDIR) -p $(@D)
+	$(RM) -f $@
+	$(CP) $< $@
+
+COPY_FILES += $(CACERTS_DST)
+
+##########################################################################################
+
+ifndef OPENJDK
+
+BLACKLIST_SRC   := $(JDK_TOPDIR)/src/closed/share/lib/security/blacklist
+BLACKLIST_DST   := $(JDK_OUTPUTDIR)/lib/security/blacklist
+
+TRUSTEDLIBS_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/trusted.libraries
+TRUSTEDLIBS_DST := $(JDK_OUTPUTDIR)/lib/security/trusted.libraries
+
+$(BLACKLIST_DST): $(BLACKLIST_SRC)
+	$(MKDIR) -p $(@D)
+	$(RM) -f $@
+	$(CP) $< $@
+
+COPY_FILES += $(BLACKLIST_DST)
+
+$(TRUSTEDLIBS_DST): $(TRUSTEDLIBS_SRC)
+	$(MKDIR) -p $(@D)
+	$(RM) -f $@
+	$(CP) $< $@
+
+COPY_FILES += $(TRUSTEDLIBS_DST)
+
+endif
+
+##########################################################################################
+
+ifndef OPENJDK
+
+SHARED_FONTS_SRC_DIR := $(JDK_TOPDIR)/src/closed/share/lib/fonts
+SHARED_FONTS_DST_DIR := $(JDK_OUTPUTDIR)/lib/fonts
+SHARED_FONTS_FILES   := \
+	LucidaTypewriterRegular.ttf	\
+	LucidaTypewriterBold.ttf        \
+	LucidaBrightRegular.ttf         \
+	LucidaBrightDemiBold.ttf        \
+	LucidaBrightItalic.ttf          \
+	LucidaBrightDemiItalic.ttf	\
+	LucidaSansRegular.ttf       	\
+	LucidaSansDemiBold.ttf       	\
+
+SHARED_FONTS_SRC := $(foreach F,$(SHARED_FONTS_FILES),$(SHARED_FONTS_SRC_DIR)/$(F))
+SHARED_FONTS_DST := $(foreach F,$(SHARED_FONTS_FILES),$(SHARED_FONTS_DST_DIR)/$(F))
+
+$(SHARED_FONTS_DST_DIR)/%.ttf : $(SHARED_FONTS_SRC_DIR)/%.ttf
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $@
+
+$(SHARED_FONTS_DST_DIR)/fonts.dir : $(JDK_TOPDIR)/src/solaris/classes/sun/awt/motif/java.fonts.dir
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $@
+
+COPY_FILES += $(SHARED_FONTS_DST) $(SHARED_FONTS_DST_DIR)/fonts.dir
+
+ifeq ($(PLATFORM), linux)
+
+# The oblique fonts are only needed/wanted on Linux.
+
+OBL_FONTS_SRC_DIR := $(JDK_TOPDIR)/src/closed/share/lib/fonts/oblique
+OBL_FONTS_DST_DIR := $(JDK_OUTPUTDIR)/lib/oblique-fonts
+OBL_FONTS_FILES   := LucidaTypewriterOblique.ttf LucidaTypewriterBoldOblique.ttf \
+                    LucidaSansOblique.ttf LucidaSansDemiOblique.ttf
+
+OBL_FONTS_SRC := $(foreach F,$(OBL_FONTS_FILES),$(OBL_FONTS_SRC_DIR)/$(F))
+OBL_FONTS_DST := $(foreach F,$(OBL_FONTS_FILES),$(OBL_FONTS_DST_DIR)/$(F))
+
+$(OBL_FONTS_DST_DIR)/%.ttf : $(OBL_FONTS_SRC_DIR)/%.ttf
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $@
+
+$(OBL_FONTS_DST_DIR)/fonts.dir : $(JDK_TOPDIR)/src/solaris/classes/sun/awt/motif/java.oblique-fonts.dir
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $@
+
+COPY_FILES += $(OBL_FONTS_DST) $(OBL_FONTS_DST_DIR)/fonts.dir
+
+endif # linux
+endif # OPENJDK
+
+##########################################################################################
+
+ifndef OPENJDK
+
+JS_RESOURCES_FILES := Messages.properties Messages_fr.properties
+JS_RESOURCES_SRC_DIR := $(JDK_TOPDIR)/src/closed/share/classes/sun/org/mozilla/javascript/internal/resources
+JS_RESOURCES_DST_DIR := $(JDK_OUTPUTDIR)/classes/sun/org/mozilla/javascript/internal/resources
+
+JS_RESOURCES_SRC := $(foreach F,$(JS_RESOURCES_FILES),$(JS_RESOURCES_SRC_DIR)/$(F))
+JS_RESOURCES_DST := $(foreach F,$(JS_RESOURCES_FILES),$(JS_RESOURCES_DST_DIR)/$(F))
+
+$(JS_RESOURCES_DST_DIR)/% : $(JS_RESOURCES_SRC_DIR)/%
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $@
+
+COPY_FILES += $(JS_RESOURCES_DST)
+
+endif
+
+##########################################################################################
+
+ifndef OPENJDK
+
+#
+# Solaris X11 Direct Graphics Access library
+#
+
+_DGALIBS_sparc = \
+	libxinerama.so \
+	libjdgaSUNWcg6.so \
+	libjdgaSUNWffb.so \
+	libjdgaSUNWm64.so \
+	libjdgaSUNWafb.so
+
+_DGALIBS_sparcv9 = \
+	libxinerama.so \
+	libjdgaSUNWcg6.so \
+	libjdgaSUNWffb.so \
+	libjdgaSUNWm64.so \
+	libjdgaSUNWafb.so
+
+_DGALIBS_i586 = 	# no i586 library yet
+
+_DGALIBS_amd64 = 	# no amd64 library yet
+
+DGALIBS = $(_DGALIBS_$(ARCH):%=$(JDK_OUTPUTDIR)/lib/$(LIBARCH)/%)
+
+$(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libxinerama.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(ARCH)/libxinerama.so
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $@
+
+$(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libjdgaSUNW%.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(ARCH)/libjdgaSUNW%.so
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $@
+
+$(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libjdgaSUNWafb.so: $(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libjdgaSUNWffb.so
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(LN) -s $< $@
+
+COPY_FILES += $(DGALIBS)
+
+endif
+
+##########################################################################################
+
+ifeq ($(PLATFORM), solaris)
+
+SUNPKCS11_CFG_SRC := $(JDK_TOPDIR)/src/share/lib/security/sunpkcs11-solaris.cfg
+SUNPKCS11_CFG_DST := $(JDK_OUTPUTDIR)/lib/security/sunpkcs11-solaris.cfg
+
+$(SUNPKCS11_CFG_DST) : $(SUNPKCS11_CFG_SRC)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $@
+
+COPY_FILES += $(SUNPKCS11_CFG_DST)
+
+endif
+
+##########################################################################################
+
+ifndef OPENJDK
+ifeq ($(PLATFORM), solaris)
+
+UCRYPTO_CFG_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/ucrypto-solaris.cfg
+UCRYPTO_CFG_DST := $(JDK_OUTPUTDIR)/lib/security/ucrypto-solaris.cfg
+
+$(UCRYPTO_CFG_DST) : $(UCRYPTO_CFG_SRC)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $@
+
+COPY_FILES += $(UCRYPTO_CFG_DST)
+
+endif
+endif
+
+##########################################################################################
+
+$(JDK_OUTPUTDIR)/lib/sound.properties : $(JDK_TOPDIR)/src/share/lib/sound.properties
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $(@)
+
+COPY_FILES += $(JDK_OUTPUTDIR)/lib/sound.properties
 
 ##########################################################################################
