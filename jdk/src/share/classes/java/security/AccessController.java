@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ public final class AccessController {
         DomainCombiner dc = null;
         AccessControlContext acc = getStackAccessControlContext();
         if (acc == null || (dc = acc.getAssignedCombiner()) == null) {
-            return AccessController.doPrivileged(action);
+            return AccessController.doPrivileged(action, acc);
         }
         return AccessController.doPrivileged(action, preserveCombiner(dc));
     }
@@ -389,7 +389,7 @@ public final class AccessController {
         DomainCombiner dc = null;
         AccessControlContext acc = getStackAccessControlContext();
         if (acc == null || (dc = acc.getAssignedCombiner()) == null) {
-            return AccessController.doPrivileged(action);
+            return AccessController.doPrivileged(action, acc);
         }
         return AccessController.doPrivileged(action, preserveCombiner(dc));
     }
