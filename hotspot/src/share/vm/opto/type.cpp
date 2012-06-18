@@ -2613,18 +2613,26 @@ const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass *klass, bool klass_
 //------------------------------make_from_constant-----------------------------
 // Make a java pointer from an oop constant
 const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_constant) {
-  if (o->is_method_data() || o->is_method() || o->is_cpcache()) {
+  if (o->is_method_data() || o->is_method()) {
     // Treat much like a typeArray of bytes, like below, but fake the type...
-    const Type* etype = (Type*)get_const_basic_type(T_BYTE);
+    const BasicType bt = T_BYTE;
+    const Type* etype = get_const_basic_type(bt);
     const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
-    ciKlass *klass = ciTypeArrayKlass::make((BasicType) T_BYTE);
-    assert(o->can_be_constant(), "method data oops should be tenured");
-    const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
-    return arr;
+    ciKlass* klass = ciArrayKlass::make(ciType::make(bt));
+    assert(o->can_be_constant(), "should be tenured");
+    return TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
+  } else if (o->is_cpcache()) {
+    // Treat much like a objArray, like below, but fake the type...
+    const BasicType bt = T_OBJECT;
+    const Type* etype = get_const_basic_type(bt);
+    const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
+    ciKlass* klass = ciArrayKlass::make(ciType::make(bt));
+    assert(o->can_be_constant(), "should be tenured");
+    return TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
   } else {
     assert(o->is_java_object(), "must be java language object");
     assert(!o->is_null_object(), "null object not yet handled here.");
-    ciKlass *klass = o->klass();
+    ciKlass* klass = o->klass();
     if (klass->is_instance_klass()) {
       // Element is an instance
       if (require_constant) {
@@ -2635,8 +2643,7 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_const
       return TypeInstPtr::make(o);
     } else if (klass->is_obj_array_klass()) {
       // Element is an object array. Recursively call ourself.
-      const Type *etype =
-        TypeOopPtr::make_from_klass_raw(klass->as_obj_array_klass()->element_klass());
+      const Type *etype = make_from_klass_raw(klass->as_obj_array_klass()->element_klass());
       const TypeAry* arr0 = TypeAry::make(etype, TypeInt::make(o->as_array()->length()));
       // We used to pass NotNull in here, asserting that the sub-arrays
       // are all not-null.  This is not true in generally, as code can
@@ -2646,12 +2653,10 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_const
       } else if (!o->should_be_constant()) {
         return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
       }
-      const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
-      return arr;
+      return TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
     } else if (klass->is_type_array_klass()) {
       // Element is an typeArray
-      const Type* etype =
-        (Type*)get_const_basic_type(klass->as_type_array_klass()->element_type());
+      const Type* etype = get_const_basic_type(klass->as_type_array_klass()->element_type());
       const TypeAry* arr0 = TypeAry::make(etype, TypeInt::make(o->as_array()->length()));
       // We used to pass NotNull in here, asserting that the array pointer
       // is not-null. That was not true in general.
@@ -2660,12 +2665,11 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_const
       } else if (!o->should_be_constant()) {
         return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
       }
-      const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
-      return arr;
+      return TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
     }
   }
 
-  ShouldNotReachHere();
+  fatal("unhandled object type");
   return NULL;
 }
 
