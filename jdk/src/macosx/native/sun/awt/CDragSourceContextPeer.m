@@ -39,7 +39,7 @@
 JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_createNativeDragSource
   (JNIEnv *env, jobject jthis, jobject jcomponent, jobject jpeer, jlong jnativepeer, jobject jtransferable,
    jobject jtrigger, jint jdragposx, jint jdragposy, jint jextmodifiers, jint jclickcount, jlong jtimestamp,
-   jobject jcursor, jlong jnsdragimage, jint jdragimageoffsetx, jint jdragimageoffsety,
+   jobject jcursor, jobject jnsdragimage, jint jdragimageoffsetx, jint jdragimageoffsety,
    jint jsourceactions, jlongArray jformats, jobject jformatmap)
 {
     id controlObj = (id) jlong_to_ptr(jnativepeer);

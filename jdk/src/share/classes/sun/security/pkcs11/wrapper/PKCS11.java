@@ -55,6 +55,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * This is the default implementation of the PKCS11 interface. IT connects to
@@ -67,6 +68,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  * @author Martin Schlaeffer <schlaeff@sbox.tugraz.at>
  * @invariants (pkcs11ModulePath_ <> null)
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class PKCS11 {
 
     /**

@@ -87,6 +87,10 @@ public class BadKdc {
             throws Exception {
         System.setProperty("sun.security.krb5.debug", "true");
 
+        // Idle UDP sockets will trigger a SocketTimeoutException, without it,
+        // a PortUnreachableException will be thrown.
+        DatagramSocket d1 = null, d2 = null, d3 = null;
+
         // Make sure KDCs' ports starts with 1 and 2 and 3,
         // useful for checking debug output.
         int p1 = 10000 + new java.util.Random().nextInt(10000);
@@ -109,6 +113,8 @@ public class BadKdc {
         Config.refresh();
 
         // Turn on k3 only
+        d1 = new DatagramSocket(p1);
+        d2 = new DatagramSocket(p2);
         KDC k3 = on(p3);
 
         test(expected[0]);
@@ -117,10 +123,17 @@ public class BadKdc {
         test(expected[2]);
 
         k3.terminate(); // shutdown k3
+        d3 = new DatagramSocket(p3);
+
+        d2.close();
         on(p2);         // k2 is on
+
         test(expected[3]);
+        d1.close();
         on(p1);         // k1 and k2 is on
         test(expected[4]);
+
+        d3.close();
     }
 
     private static KDC on(int p) throws Exception {

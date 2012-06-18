@@ -25,6 +25,8 @@
 
 package java.awt;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The <code>DisplayMode</code> class encapsulates the bit depth, height,
  * width, and refresh rate of a <code>GraphicsDevice</code>. The ability to
@@ -43,6 +45,9 @@ package java.awt;
  * @author Michael Martak
  * @since 1.4
  */
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public final class DisplayMode {
 
     private Dimension size;

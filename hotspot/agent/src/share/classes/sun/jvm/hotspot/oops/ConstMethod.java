@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,7 @@ public class ConstMethod extends Oop {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type                  = db.lookupType("constMethodOopDesc");
-    // Backpointer to non-const methodOop
-    method                     = new OopField(type.getOopField("_method"), 0);
+    constants                  = new OopField(type.getOopField("_constants"), 0);
     // The exception handler table. 4-tuples of ints [start_pc, end_pc,
     // handler_pc, catch_type index] For methods with no exceptions the
     // table is pointing to Universe::the_empty_int_array
@@ -69,6 +68,7 @@ public class ConstMethod extends Oop {
     nameIndex                  = new CIntField(type.getCIntegerField("_name_index"), 0);
     signatureIndex             = new CIntField(type.getCIntegerField("_signature_index"), 0);
     genericSignatureIndex      = new CIntField(type.getCIntegerField("_generic_signature_index"),0);
+    idnum                      = new CIntField(type.getCIntegerField("_method_idnum"), 0);
 
     // start of byte code
     bytecodeOffset = type.getSize();
@@ -85,7 +85,7 @@ public class ConstMethod extends Oop {
   }
 
   // Fields
-  private static OopField  method;
+  private static OopField  constants;
   private static OopField  exceptionTable;
   private static CIntField constMethodSize;
   private static ByteField flags;
@@ -93,6 +93,7 @@ public class ConstMethod extends Oop {
   private static CIntField nameIndex;
   private static CIntField signatureIndex;
   private static CIntField genericSignatureIndex;
+  private static CIntField idnum;
 
   // start of bytecode
   private static long bytecodeOffset;
@@ -100,9 +101,15 @@ public class ConstMethod extends Oop {
   private static long checkedExceptionElementSize;
   private static long localVariableTableElementSize;
 
-  // Accessors for declared fields
   public Method getMethod() {
-    return (Method) method.getValue(this);
+    InstanceKlass ik = (InstanceKlass)getConstants().getPoolHolder();
+    ObjArray methods = ik.getMethods();
+    return (Method)methods.getObjAt(getIdNum());
+  }
+
+  // Accessors for declared fields
+  public ConstantPool getConstants() {
+    return (ConstantPool) constants.getValue(this);
   }
 
   public TypeArray getExceptionTable() {
@@ -131,6 +138,10 @@ public class ConstMethod extends Oop {
 
   public long getGenericSignatureIndex() {
     return genericSignatureIndex.getValue(this);
+  }
+
+  public long getIdNum() {
+    return idnum.getValue(this);
   }
 
   public Symbol getName() {
@@ -223,7 +234,7 @@ public class ConstMethod extends Oop {
   public void iterateFields(OopVisitor visitor, boolean doVMFields) {
     super.iterateFields(visitor, doVMFields);
     if (doVMFields) {
-      visitor.doOop(method, true);
+      visitor.doOop(constants, true);
       visitor.doOop(exceptionTable, true);
       visitor.doCInt(constMethodSize, true);
       visitor.doByte(flags, true);

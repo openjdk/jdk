@@ -27,6 +27,8 @@ package java.awt.print;
 
 import java.awt.Graphics;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The <code>Printable</code> interface is implemented
  * by the <code>print</code> methods of the current
@@ -98,6 +100,8 @@ import java.awt.Graphics;
  * @see java.awt.print.PageFormat
  * @see java.awt.print.PrinterJob
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public interface Printable {
 
     /**

@@ -51,9 +51,6 @@
 -include $(SPEC)
 -include $(VARS)
 
-# Get shared system utilities macros defined
-include $(JDK_MAKE_SHARED_DIR)/Defs-utils.gmk
-
 # Assumes ARCH, PLATFORM, ARCH_VM_SUBDIR, JDK_TOPDIR, etc. have been defined.
 
 # Simple pwd path
@@ -663,4 +660,3 @@ endef
 #   Up until we include this file, we don't know what specific compiler
 #   version is actually being used (i.e. what is in PATH or COMPILER_PATH).
 include $(JDK_MAKE_SHARED_DIR)/Compiler-$(CC_VERSION).gmk
-

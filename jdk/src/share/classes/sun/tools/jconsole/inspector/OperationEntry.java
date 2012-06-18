@@ -25,30 +25,14 @@
 
 package sun.tools.jconsole.inspector;
 
-// java import
 import java.awt.*;
-import java.awt.event.*;
-import java.awt.dnd.*;
-import java.lang.reflect.*;
-import java.io.*;
-//
-
-// swing import
-import javax.swing.border.*;
-import javax.swing.event.*;
 import javax.swing.*;
-//
-
-// jmx import
 import javax.management.*;
-//
-
 
 @SuppressWarnings("serial")
 public class OperationEntry extends JPanel {
     private MBeanOperationInfo operation;
     private JComboBox sigs;
-    private Dimension preferredSize;
     private XTextField inputs[];
 
     public OperationEntry (MBeanOperationInfo operation,
@@ -61,26 +45,10 @@ public class OperationEntry extends JPanel {
         setPanel(isCallable, button, xoperations);
     }
 
-    /**
-     * This method chops off the throws exceptions, removes "java.lang".
-     */
-    private String preProcessSignature(String signature) {
-        int index;
-        if ((index=signature.indexOf(" throws"))>0) {
-            signature = signature.substring(0,index);
-        }
-        while ((index = signature.indexOf("java.lang."))>0) {
-            signature = signature.substring(0,index)+
-                signature.substring(index+10,signature.length());
-        }
-        return signature;
-    }
-
-    private void setPanel(boolean isCallable,
+     private void setPanel(boolean isCallable,
                           JButton button,
                           XOperations xoperations) {
         try {
-            String defaultVal;
             MBeanParameterInfo params[] = operation.getSignature();
             add(new JLabel("(",JLabel.CENTER));
             inputs = new XTextField[params.length];

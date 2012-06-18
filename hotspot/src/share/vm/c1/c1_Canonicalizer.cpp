@@ -42,6 +42,11 @@ void Canonicalizer::set_canonical(Value x) {
   // the instruction stream (because the instruction list is embedded
   // in the instructions).
   if (canonical() != x) {
+#ifndef PRODUCT
+    if (!x->has_printable_bci()) {
+      x->set_printable_bci(bci());
+    }
+#endif
     if (PrintCanonicalization) {
       PrintValueVisitor do_print_value;
       canonical()->input_values_do(&do_print_value);
@@ -451,6 +456,28 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
     }
     break;
   }
+  case vmIntrinsics::_isInstance          : {
+    assert(x->number_of_arguments() == 2, "wrong type");
+
+    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
+    if (c != NULL && !c->value()->is_null_object()) {
+      // ciInstance::java_mirror_type() returns non-NULL only for Java mirrors
+      ciType* t = c->value()->as_instance()->java_mirror_type();
+      if (t->is_klass()) {
+        // substitute cls.isInstance(obj) of a constant Class into
+        // an InstantOf instruction
+        InstanceOf* i = new InstanceOf(t->as_klass(), x->argument_at(1), x->state_before());
+        set_canonical(i);
+        // and try to canonicalize even further
+        do_InstanceOf(i);
+      } else {
+        assert(t->is_primitive_type(), "should be a primitive type");
+        // cls.isInstance(obj) always returns false for primitive classes
+        set_constant(0);
+      }
+    }
+    break;
+  }
   }
 }
 
@@ -677,8 +704,8 @@ void Canonicalizer::do_If(If* x) {
                 return;
             }
           }
-          set_canonical(canon);
           set_bci(cmp->state_before()->bci());
+          set_canonical(canon);
         }
       }
     } else if (l->as_InstanceOf() != NULL) {

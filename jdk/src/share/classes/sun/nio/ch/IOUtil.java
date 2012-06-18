@@ -334,6 +334,8 @@ public class IOUtil {
 
     static native void setfdVal(FileDescriptor fd, int value);
 
+    static native int fdLimit();
+
     static native void initIDs();
 
     static {

@@ -29,7 +29,7 @@
     case "$OS" in
         SunOS )
             ulimit -n 100
-            $TESTJAVA/bin/java -classpath $TESTCLASSES Open ;;
+            $TESTJAVA/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES Open ;;
         * )
             echo "unrecognized system: $OS" ;;
     esac

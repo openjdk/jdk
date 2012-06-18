@@ -1,0 +1,6 @@
+Test3.java:14:1: compiler.err.types.incompatible.diff.ret: B, A, m()
+Test3.java:19:1: compiler.err.types.incompatible.diff.ret: D, C, m()
+Test3.java:27:1: compiler.err.types.incompatible.diff.ret: E<T>, B, m()
+Test3.java:33:1: compiler.err.types.incompatible.diff.ret: F<V>, E<U>, m()
+Test3.java:37:1: compiler.err.types.incompatible.diff.ret: F<V>, E<U>, m()
+5 errors
