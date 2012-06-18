@@ -27,12 +27,16 @@ package java.awt.image;
 
 import java.awt.Image;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * An asynchronous update interface for receiving notifications about
  * Image information as the Image is constructed.
  *
  * @author      Jim Graham
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public interface ImageObserver {
     /**
      * This method is called when information about an image which was

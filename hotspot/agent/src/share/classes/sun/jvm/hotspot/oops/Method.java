@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ public class Method extends Oop {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type                  = db.lookupType("methodOopDesc");
     constMethod                = new OopField(type.getOopField("_constMethod"), 0);
-    constants                  = new OopField(type.getOopField("_constants"), 0);
     methodData                 = new OopField(type.getOopField("_method_data"), 0);
     methodSize                 = new CIntField(type.getCIntegerField("_method_size"), 0);
     maxStack                   = new CIntField(type.getCIntegerField("_max_stack"), 0);
@@ -83,7 +82,6 @@ public class Method extends Oop {
 
   // Fields
   private static OopField  constMethod;
-  private static OopField  constants;
   private static OopField  methodData;
   private static CIntField methodSize;
   private static CIntField maxStack;
@@ -125,7 +123,9 @@ public class Method extends Oop {
 
   // Accessors for declared fields
   public ConstMethod  getConstMethod()                { return (ConstMethod)  constMethod.getValue(this);       }
-  public ConstantPool getConstants()                  { return (ConstantPool) constants.getValue(this);         }
+  public ConstantPool getConstants()                  {
+    return getConstMethod().getConstants();
+  }
   public MethodData   getMethodData()                 { return (MethodData) methodData.getValue(this);          }
   public TypeArray    getExceptionTable()             { return getConstMethod().getExceptionTable();            }
   /** WARNING: this is in words, not useful in this system; use getObjectSize() instead */
@@ -281,7 +281,6 @@ public class Method extends Oop {
     super.iterateFields(visitor, doVMFields);
     if (doVMFields) {
       visitor.doOop(constMethod, true);
-      visitor.doOop(constants, true);
       visitor.doCInt(methodSize, true);
       visitor.doCInt(maxStack, true);
       visitor.doCInt(maxLocals, true);

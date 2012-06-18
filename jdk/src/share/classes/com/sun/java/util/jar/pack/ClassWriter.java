@@ -113,8 +113,8 @@ class ClassWriter {
 
     void writeMagicNumbers() throws IOException {
         writeInt(cls.magic);
-        writeShort(cls.minver);
-        writeShort(cls.majver);
+        writeShort(cls.version.minor);
+        writeShort(cls.version.major);
     }
 
     void writeConstantPool() throws IOException {
