@@ -33,6 +33,8 @@ import java.awt.image.ReplicateScaleFilter;
 
 import sun.awt.image.SurfaceManager;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The abstract class <code>Image</code> is the superclass of all
  * classes that represent graphical images. The image must be
@@ -42,6 +44,8 @@ import sun.awt.image.SurfaceManager;
  * @author      Arthur van Hoff
  * @since       JDK1.0
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public abstract class Image {
 
     /**

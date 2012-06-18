@@ -84,8 +84,8 @@ if [ "$OLD_SUFFIX" != "$NEW_SUFFIX" ]; then
     exit 2
 fi
 
-if [ "$OLD_SUFFIX" != "zip" ] && [ "$OLD_SUFFIX" != "jar" ]; then
-    echo The files have to be zip or jar! They are $OLD_SUFFIX
+if [ "$OLD_SUFFIX" != "zip" ] && [ "$OLD_SUFFIX" != "jar" ] && [ "$OLD_SUFFIX" != "sym" ]; then
+    echo The files have to be zip, jar or sym! They are $OLD_SUFFIX
     exit 2
 fi
 
@@ -128,7 +128,7 @@ if [ -n "$ONLY2" ]; then
         | sed "s|Only in $NEW_TEMPDIR|            |"g | sed 's|: |/|g'
 fi
 
-DIFFTEXT=`dirname $0`/difftext.sh
+DIFFTEXT="/bin/bash `dirname $0`/difftext.sh"
 
 LANG=C $DIFF -rq $DIFF_FLAGS $OLD_TEMPDIR $NEW_TEMPDIR | grep differ | cut -f 2,4 -d ' ' | \
    awk "{ print \"$DIFFTEXT \"\$1\" \"\$2 }" > $COMPARE_ROOT/diffing

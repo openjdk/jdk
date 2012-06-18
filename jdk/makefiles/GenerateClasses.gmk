@@ -30,12 +30,9 @@ include MakeBase.gmk
 include RMICompile.gmk
 
 CLASSES_DIR := $(JDK_OUTPUTDIR)/classes
-# Depend on files in newclasses for now to avoid bad dependency handling caused by
-# copy always updating timestamps in classes.
-NEWCLASSES_DIR := $(JDK_OUTPUTDIR)/newclasses
-# Generate classes into separate dir for now. Can't drop in same dir as JavaCompilation 
-# macros as that will mess up recompile deps.
-STUB_CLASSES_DIR := $(JDK_OUTPUTDIR)/newrmicclasses
+# NOTE: If the smart javac dependency management is reintroduced, these classes risk 
+# interfering with the dependency checking. In that case they will need to be kept separate.
+STUB_CLASSES_DIR := $(JDK_OUTPUTDIR)/rmicclasses
 RMIC_GENSRC_DIR := $(JDK_OUTPUTDIR)/gendocsrc_rmic
 
 GENCLASSES :=
@@ -49,7 +46,7 @@ $(eval $(call SetupRMICompilation,RMI_12,\
 		CLASSES:=sun.rmi.server.Activation$$$$ActivationSystemImpl\
 			 java.rmi.activation.ActivationGroup\
 			 com.sun.jndi.rmi.registry.ReferenceWrapper,\
-		CLASSES_DIR:=$(NEWCLASSES_DIR),\
+		CLASSES_DIR:=$(CLASSES_DIR),\
 		STUB_CLASSES_DIR:=$(STUB_CLASSES_DIR),\
 		RUN_V12:=true))
 GENCLASSES += $(RMI_12)
@@ -57,7 +54,7 @@ GENCLASSES += $(RMI_12)
 $(eval $(call SetupRMICompilation,RMI_11,\
 		CLASSES:=sun.rmi.registry.RegistryImpl\
 			 sun.rmi.transport.DGCImpl,\
-		CLASSES_DIR:=$(NEWCLASSES_DIR),\
+		CLASSES_DIR:=$(CLASSES_DIR),\
 		STUB_CLASSES_DIR:=$(STUB_CLASSES_DIR),\
 		RUN_V11:=true))
 GENCLASSES += $(RMI_11)
@@ -69,7 +66,7 @@ JMAN_RMI_CLASSES:=javax.management.remote.rmi.RMIConnectionImpl\
 		  javax.management.remote.rmi.RMIServerImpl
 $(eval $(call SetupRMICompilation,RMI_IIOP,\
 		CLASSES:=$(JMAN_RMI_CLASSES),\
-		CLASSES_DIR:=$(NEWCLASSES_DIR),\
+		CLASSES_DIR:=$(CLASSES_DIR),\
 		STUB_CLASSES_DIR:=$(STUB_CLASSES_DIR),\
 		RUN_V12:=true,\
 		RUN_IIOP:=true,\
@@ -80,7 +77,7 @@ GENCLASSES += $(RMI_IIOP)
 # so that javadoc can include them in the API (4997471)
 $(eval $(call SetupRMICompilation,RMI_SRC,\
 		CLASSES:=$(JMAN_RMI_CLASSES),\
-		CLASSES_DIR:=$(NEWCLASSES_DIR),\
+		CLASSES_DIR:=$(CLASSES_DIR),\
 		STUB_CLASSES_DIR:=$(RMIC_GENSRC_DIR),\
 		RUN_V12:=true,\
 		KEEP_GENERATED:=true))

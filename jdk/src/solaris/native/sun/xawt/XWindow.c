@@ -175,6 +175,7 @@ KeymapEntry keymapTable[] =
     {java_awt_event_KeyEvent_VK_META, XK_Meta_L, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_LEFT},
     {java_awt_event_KeyEvent_VK_META, XK_Meta_R, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_RIGHT},
     {java_awt_event_KeyEvent_VK_CAPS_LOCK, XK_Caps_Lock, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_CAPS_LOCK, XK_Shift_Lock, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
 
     /* Misc Functions */
     {java_awt_event_KeyEvent_VK_PRINTSCREEN, XK_Print, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
@@ -349,6 +350,24 @@ KeymapEntry keymapTable[] =
     /* VK_KANA_LOCK is handled separately because it generates the
      * same keysym as ALT_GRAPH in spite of its different behavior.
      */
+
+    {java_awt_event_KeyEvent_VK_ALL_CANDIDATES, XK_Zen_Koho, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_ALPHANUMERIC, XK_Eisu_Shift, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_ALPHANUMERIC, XK_Eisu_toggle, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_CODE_INPUT, XK_Kanji_Bangou, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_FULL_WIDTH, XK_Zenkaku, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_HALF_WIDTH, XK_Hankaku, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_HIRAGANA, XK_Hiragana, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_JAPANESE_HIRAGANA, XK_Hiragana, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_KATAKANA, XK_Katakana, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_JAPANESE_KATAKANA, XK_Katakana, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_JAPANESE_ROMAN, XK_Romaji, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_KANA, XK_Kana_Shift, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_KANA_LOCK, XK_Kana_Lock, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_KANJI, XK_Kanji, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_NONCONVERT, XK_Muhenkan, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_PREVIOUS_CANDIDATE, XK_Mae_Koho, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_ROMAN_CHARACTERS, XK_Romaji, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
 
     {java_awt_event_KeyEvent_VK_COMPOSE, XK_Multi_key, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
     {java_awt_event_KeyEvent_VK_ALT_GRAPH, XK_Mode_switch, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},

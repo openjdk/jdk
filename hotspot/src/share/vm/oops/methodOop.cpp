@@ -70,11 +70,11 @@ address methodOopDesc::get_c2i_unverified_entry() {
   return _adapter->get_c2i_unverified_entry();
 }
 
-char* methodOopDesc::name_and_sig_as_C_string() {
+char* methodOopDesc::name_and_sig_as_C_string() const {
   return name_and_sig_as_C_string(Klass::cast(constants()->pool_holder()), name(), signature());
 }
 
-char* methodOopDesc::name_and_sig_as_C_string(char* buf, int size) {
+char* methodOopDesc::name_and_sig_as_C_string(char* buf, int size) const {
   return name_and_sig_as_C_string(Klass::cast(constants()->pool_holder()), name(), signature(), buf, size);
 }
 
@@ -177,7 +177,8 @@ void methodOopDesc::mask_for(int bci, InterpreterOopMap* mask) {
 
 
 int methodOopDesc::bci_from(address bcp) const {
-  assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(), "bcp doesn't belong to this method");
+  assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(),
+         err_msg("bcp doesn't belong to this method: bcp: " INTPTR_FORMAT ", method: %s", bcp, name_and_sig_as_C_string()));
   return bcp - code_base();
 }
 
@@ -531,9 +532,9 @@ int methodOopDesc::line_number_from_bci(int bci) const {
 
 
 bool methodOopDesc::is_klass_loaded_by_klass_index(int klass_index) const {
-  if( _constants->tag_at(klass_index).is_unresolved_klass() ) {
+  if( constants()->tag_at(klass_index).is_unresolved_klass() ) {
     Thread *thread = Thread::current();
-    Symbol* klass_name = _constants->klass_name_at(klass_index);
+    Symbol* klass_name = constants()->klass_name_at(klass_index);
     Handle loader(thread, instanceKlass::cast(method_holder())->class_loader());
     Handle prot  (thread, Klass::cast(method_holder())->protection_domain());
     return SystemDictionary::find(klass_name, loader, prot, thread) != NULL;
@@ -544,7 +545,7 @@ bool methodOopDesc::is_klass_loaded_by_klass_index(int klass_index) const {
 
 
 bool methodOopDesc::is_klass_loaded(int refinfo_index, bool must_be_resolved) const {
-  int klass_index = _constants->klass_ref_index_at(refinfo_index);
+  int klass_index = constants()->klass_ref_index_at(refinfo_index);
   if (must_be_resolved) {
     // Make sure klass is resolved in constantpool.
     if (constants()->tag_at(klass_index).is_unresolved_klass()) return false;
@@ -886,11 +887,13 @@ oop methodOopDesc::method_handle_type() const {
 }
 
 jint* methodOopDesc::method_type_offsets_chain() {
-  static jint pchase[] = { -1, -1, -1 };
+  static jint pchase[] = { -1, -1, -1, -1 };
   if (pchase[0] == -1) {
-    jint step0 = in_bytes(constants_offset());
-    jint step1 = (constantPoolOopDesc::header_size() + _imcp_method_type_value) * HeapWordSize;
+    jint step0 = in_bytes(const_offset());
+    jint step1 = in_bytes(constMethodOopDesc::constants_offset());
+    jint step2 = (constantPoolOopDesc::header_size() + _imcp_method_type_value) * HeapWordSize;
     // do this in reverse to avoid races:
+    OrderAccess::release_store(&pchase[2], step2);
     OrderAccess::release_store(&pchase[1], step1);
     OrderAccess::release_store(&pchase[0], step0);
   }
@@ -1076,9 +1079,7 @@ methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_cod
   assert(m->constMethod()->is_parsable(), "Should remain parsable");
 
   // Reset correct method/const method, method size, and parameter info
-  newcm->set_method(newm());
   newm->set_constMethod(newcm);
-  assert(newcm->method() == newm(), "check");
   newm->constMethod()->set_code_size(new_code_length);
   newm->constMethod()->set_constMethod_size(new_const_method_size);
   newm->set_method_size(new_method_size);
