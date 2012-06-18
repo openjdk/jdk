@@ -63,7 +63,7 @@
     transferable:(jobject)jtransferable triggerEvent:(jobject)jtrigger
     dragPosX:(jint)dragPosX dragPosY:(jint)dragPosY modifiers:(jint)extModifiers clickCount:(jint)clickCount timeStamp:(jlong)timeStamp
     cursor:(jobject)jcursor
-    dragImage:(jlong)jnsdragimage dragImageOffsetX:(jint)jdragimageoffsetx dragImageOffsetY:(jint)jdragimageoffsety
+    dragImage:(jobject)jnsdragimage dragImageOffsetX:(jint)jdragimageoffsetx dragImageOffsetY:(jint)jdragimageoffsety
     sourceActions:(jint)jsourceactions formats:(jlongArray)jformats formatMap:(jobject)jformatmap;
 
 - (void)removeFromView:(JNIEnv *)env;

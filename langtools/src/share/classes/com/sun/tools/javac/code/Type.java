@@ -54,7 +54,7 @@ import static com.sun.tools.javac.code.TypeTags.*;
  *  package types (tag: PACKAGE, class: PackageType),
  *  type variables (tag: TYPEVAR, class: TypeVar),
  *  type arguments (tag: WILDCARD, class: WildcardType),
- *  polymorphic types (tag: FORALL, class: ForAll),
+ *  generic method types (tag: FORALL, class: ForAll),
  *  the error type (tag: ERROR, class: ErrorType).
  *  </pre>
  *
@@ -1108,11 +1108,16 @@ public class Type implements PrimitiveType {
         public boolean isErroneous() { return qtype.isErroneous(); }
     }
 
+    /**
+     * The type of a generic method type. It consists of a method type and
+     * a list of method type-parameters that are used within the method
+     * type.
+     */
     public static class ForAll extends DelegatedType implements ExecutableType {
         public List<Type> tvars;
 
         public ForAll(List<Type> tvars, Type qtype) {
-            super(FORALL, qtype);
+            super(FORALL, (MethodType)qtype);
             this.tvars = tvars;
         }
 
@@ -1131,34 +1136,6 @@ public class Type implements PrimitiveType {
             return qtype.isErroneous();
         }
 
-        /**
-         * Replaces this ForAll's typevars with a set of concrete Java types
-         * and returns the instantiated generic type. Subclasses should override
-         * in order to check that the list of types is a valid instantiation
-         * of the ForAll's typevars.
-         *
-         * @param actuals list of actual types
-         * @param types types instance
-         * @return qtype where all occurrences of tvars are replaced
-         * by types in actuals
-         */
-        public Type inst(List<Type> actuals, Types types) {
-            return types.subst(qtype, tvars, actuals);
-        }
-
-        /**
-         * Get the type-constraints of a given kind for a given type-variable of
-         * this ForAll type. Subclasses should override in order to return more
-         * accurate sets of constraints.
-         *
-         * @param tv the type-variable for which the constraint is to be retrieved
-         * @param ck the constraint kind to be retrieved
-         * @return the list of types specified by the selected constraint
-         */
-        public List<Type> undetvars() {
-            return List.nil();
-        }
-
         public Type map(Mapping f) {
             return f.apply(qtype);
         }
@@ -1168,7 +1145,7 @@ public class Type implements PrimitiveType {
         }
 
         public MethodType asMethodType() {
-            return qtype.asMethodType();
+            return (MethodType)qtype;
         }
 
         public void complete() {

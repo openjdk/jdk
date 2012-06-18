@@ -80,7 +80,7 @@ private:
   bool         _should_initiate_conc_mark;
   bool         _should_retry_gc;
   double       _target_pause_time_ms;
-  unsigned int _full_collections_completed_before;
+  unsigned int _old_marking_cycles_completed_before;
 public:
   VM_G1IncCollectionPause(unsigned int   gc_count_before,
                           size_t         word_size,

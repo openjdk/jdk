@@ -58,10 +58,6 @@ public class AttrContext {
      */
     boolean varArgs = false;
 
-    /** A list of type variables that are all-quantifed in current context.
-     */
-    List<Type> tvars = List.nil();
-
     /** A record of the lint/SuppressWarnings currently in effect
      */
     Lint lint;
@@ -80,7 +76,6 @@ public class AttrContext {
         info.isSelfCall = isSelfCall;
         info.selectSuper = selectSuper;
         info.varArgs = varArgs;
-        info.tvars = tvars;
         info.lint = lint;
         info.enclVar = enclVar;
         return info;

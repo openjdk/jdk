@@ -64,7 +64,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeSetEnabled(long nsWindowPtr, boolean isEnabled);
     private static native void nativeSynthesizeMouseEnteredExitedEvents(long nsWindowPtr);
 
-    private static native int nativeGetScreenNSWindowIsOn_AppKitThread(long nsWindowPtr);
+    private static native int nativeGetNSWindowDisplayID_AppKitThread(long nsWindowPtr);
 
     // Loger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
@@ -452,13 +452,18 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         return new Point(nativeBounds.x, nativeBounds.y);
     }
 
-    @Override // PlatformWindow
-    public int getScreenImOn() {
-    // REMIND: we could also acquire screenID from the
-    // graphicsConfig.getDevice().getCoreGraphicsScreen()
-    // which might look a bit less natural but don't
-    // require new native accessor.
-        return nativeGetScreenNSWindowIsOn_AppKitThread(getNSWindowPtr());
+    @Override
+    public GraphicsDevice getGraphicsDevice() {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        CGraphicsEnvironment cge = (CGraphicsEnvironment)ge;
+        int displayID = nativeGetNSWindowDisplayID_AppKitThread(getNSWindowPtr());
+        GraphicsDevice gd = cge.getScreenDevice(displayID);
+        if (gd == null) {
+            // this could possibly happen during device removal
+            // use the default screen device in this case
+            gd = ge.getDefaultScreenDevice();
+        }
+        return gd;
     }
 
     @Override // PlatformWindow

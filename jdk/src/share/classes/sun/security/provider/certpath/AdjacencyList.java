@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,10 @@
  */
 package sun.security.provider.certpath;
 
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
 
 /**
  * An AdjacencyList is used to store the history of certification paths
@@ -123,124 +121,117 @@ public class AdjacencyList {
      * at the start.
      */
     private boolean buildList(List<List<Vertex>> theList, int index,
-        BuildStep follow) {
+                              BuildStep follow) {
 
         // Each time this method is called, we're examining a new list
         // from the global list. So, we have to start by getting the list
         // that contains the set of Vertexes we're considering.
         List<Vertex> l = theList.get(index);
 
-        try {
-            // we're interested in the case where all indexes are -1...
-            boolean allNegOne = true;
-            // ...and in the case where every entry has a Throwable
-            boolean allXcps = true;
+        // we're interested in the case where all indexes are -1...
+        boolean allNegOne = true;
+        // ...and in the case where every entry has a Throwable
+        boolean allXcps = true;
+
+        for (Vertex v : l) {
+            if (v.getIndex() != -1) {
+                // count an empty list the same as an index of -1...this
+                // is to patch a bug somewhere in the builder
+                if (theList.get(v.getIndex()).size() != 0)
+                    allNegOne = false;
+            } else {
+                if (v.getThrowable() == null)
+                    allXcps = false;
+            }
+            // every entry, regardless of the final use for it, is always
+            // entered as a possible step before we take any actions
+            mStepList.add(new BuildStep(v, BuildStep.POSSIBLE));
+        }
+
+        if (allNegOne) {
+            // There are two cases that we could be looking at here. We
+            // may need to back up, or the build may have succeeded at
+            // this point. This is based on whether or not any
+            // exceptions were found in the list.
+            if (allXcps) {
+                // we need to go back...see if this is the last one
+                if (follow == null)
+                    mStepList.add(new BuildStep(null, BuildStep.FAIL));
+                else
+                    mStepList.add(new BuildStep(follow.getVertex(),
+                                                BuildStep.BACK));
+
+                return false;
+            } else {
+                // we succeeded...now the only question is which is the
+                // successful step? If there's only one entry without
+                // a throwable, then that's the successful step. Otherwise,
+                // we'll have to make some guesses...
+                List<Vertex> possibles = new ArrayList<>();
+                for (Vertex v : l) {
+                    if (v.getThrowable() == null)
+                        possibles.add(v);
+                }
+
+                if (possibles.size() == 1) {
+                    // real easy...we've found the final Vertex
+                    mStepList.add(new BuildStep(possibles.get(0),
+                                                BuildStep.SUCCEED));
+                } else {
+                    // ok...at this point, there is more than one Cert
+                    // which might be the succeed step...how do we know
+                    // which it is? I'm going to assume that our builder
+                    // algorithm is good enough to know which is the
+                    // correct one, and put it first...but a FIXME goes
+                    // here anyway, and we should be comparing to the
+                    // target/initiator Cert...
+                    mStepList.add(new BuildStep(possibles.get(0),
+                                                BuildStep.SUCCEED));
+                }
+
+                return true;
+            }
+        } else {
+            // There's at least one thing that we can try before we give
+            // up and go back. Run through the list now, and enter a new
+            // BuildStep for each path that we try to follow. If none of
+            // the paths we try produce a successful end, we're going to
+            // have to back out ourselves.
+            boolean success = false;
 
             for (Vertex v : l) {
-                if (v.getIndex() != -1) {
-                    // count an empty list the same as an index of -1...this
-                    // is to patch a bug somewhere in the builder
-                    if (theList.get(v.getIndex()).size() != 0)
-                        allNegOne = false;
-                }
-                else
-                    if (v.getThrowable() == null)
-                        allXcps = false;
 
-                // every entry, regardless of the final use for it, is always
-                // entered as a possible step before we take any actions
-                mStepList.add(new BuildStep(v, BuildStep.POSSIBLE));
+                // Note that we'll only find a SUCCEED case when we're
+                // looking at the last possible path, so we don't need to
+                // consider success in the while loop
+
+                if (v.getIndex() != -1) {
+                    if (theList.get(v.getIndex()).size() != 0) {
+                        // If the entry we're looking at doesn't have an
+                        // index of -1, and doesn't lead to an empty list,
+                        // then it's something we follow!
+                        BuildStep bs = new BuildStep(v, BuildStep.FOLLOW);
+                        mStepList.add(bs);
+                        success = buildList(theList, v.getIndex(), bs);
+                    }
+                }
             }
 
-            if (allNegOne) {
-                // There are two cases that we could be looking at here. We
-                // may need to back up, or the build may have succeeded at
-                // this point. This is based on whether or not any
-                // exceptions were found in the list.
-                if (allXcps) {
-                    // we need to go back...see if this is the last one
-                    if (follow == null)
-                        mStepList.add(new BuildStep(null, BuildStep.FAIL));
-                    else
-                        mStepList.add(new BuildStep(follow.getVertex(),
-                                                    BuildStep.BACK));
-
-                    return false;
-                } else {
-                    // we succeeded...now the only question is which is the
-                    // successful step? If there's only one entry without
-                    // a throwable, then that's the successful step. Otherwise,
-                    // we'll have to make some guesses...
-                    List<Vertex> possibles = new ArrayList<Vertex>();
-                    for (Vertex v : l) {
-                        if (v.getThrowable() == null)
-                            possibles.add(v);
-                    }
-
-                    if (possibles.size() == 1) {
-                        // real easy...we've found the final Vertex
-                        mStepList.add(new BuildStep(possibles.get(0),
-                                                    BuildStep.SUCCEED));
-                    } else {
-                        // ok...at this point, there is more than one Cert
-                        // which might be the succeed step...how do we know
-                        // which it is? I'm going to assume that our builder
-                        // algorithm is good enough to know which is the
-                        // correct one, and put it first...but a FIXME goes
-                        // here anyway, and we should be comparing to the
-                        // target/initiator Cert...
-                        mStepList.add(new BuildStep(possibles.get(0),
-                                                    BuildStep.SUCCEED));
-                    }
-
-                    return true;
-                }
+            if (success) {
+                // We're already finished!
+                return true;
             } else {
-                // There's at least one thing that we can try before we give
-                // up and go back. Run through the list now, and enter a new
-                // BuildStep for each path that we try to follow. If none of
-                // the paths we try produce a successful end, we're going to
-                // have to back out ourselves.
-                boolean success = false;
+                // We failed, and we've exhausted all the paths that we
+                // could take. The only choice is to back ourselves out.
+                if (follow == null)
+                    mStepList.add(new BuildStep(null, BuildStep.FAIL));
+                else
+                    mStepList.add(new BuildStep(follow.getVertex(),
+                                                BuildStep.BACK));
 
-                for (Vertex v : l) {
-
-                    // Note that we'll only find a SUCCEED case when we're
-                    // looking at the last possible path, so we don't need to
-                    // consider success in the while loop
-
-                    if (v.getIndex() != -1) {
-                        if (theList.get(v.getIndex()).size() != 0) {
-                            // If the entry we're looking at doesn't have an
-                            // index of -1, and doesn't lead to an empty list,
-                            // then it's something we follow!
-                            BuildStep bs = new BuildStep(v, BuildStep.FOLLOW);
-                            mStepList.add(bs);
-                            success = buildList(theList, v.getIndex(), bs);
-                        }
-                    }
-                }
-
-                if (success) {
-                    // We're already finished!
-                    return true;
-                } else {
-                    // We failed, and we've exhausted all the paths that we
-                    // could take. The only choice is to back ourselves out.
-                    if (follow == null)
-                        mStepList.add(new BuildStep(null, BuildStep.FAIL));
-                    else
-                        mStepList.add(new BuildStep(follow.getVertex(),
-                                                    BuildStep.BACK));
-
-                    return false;
-                }
+                return false;
             }
         }
-        catch (Exception e) {}
-
-        // we'll never get here, but you know java...
-        return false;
     }
 
     /**
@@ -248,23 +239,20 @@ public class AdjacencyList {
      *
      * @return String representation
      */
+    @Override
     public String toString() {
-        String out = "[\n";
+        StringBuilder sb = new StringBuilder("[\n");
 
         int i = 0;
         for (List<Vertex> l : mOrigList) {
-            out = out + "LinkedList[" + i++ + "]:\n";
+            sb.append("LinkedList[").append(i++).append("]:\n");
 
             for (Vertex step : l) {
-                try {
-                    out = out + step.toString();
-                    out = out + "\n";
-                }
-                catch (Exception e) { out = out + "No Such Element\n"; }
+                sb.append(step.toString()).append("\n");
             }
         }
-        out = out + "]\n";
+        sb.append("]\n");
 
-        return out;
+        return sb.toString();
     }
 }

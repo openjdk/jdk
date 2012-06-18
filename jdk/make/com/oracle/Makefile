@@ -30,19 +30,28 @@ PRODUCT = oracle
 #SUBDIRS_MAKEFLAGS += JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation,-path
 include $(BUILDDIR)/common/Defs.gmk
 
+JFR_SRCDIRS_EXIST := $(shell \
+  if [ -d $(CLOSED_SHARE_SRC)/native/oracle/jfr ] ; then \
+    echo true; \
+  else \
+    echo false; \
+  fi)
+
+JFR =
+ifndef OPENJDK
+  ifndef JAVASE_EMBEDDED
+    ifeq ($(JFR_SRCDIRS_EXIST), true)
+      JFR = jfr
+    endif
+  endif
+endif
+
 # build com/oracle/security/ucrypto on Solaris platform for non-OpenJDK builds
 UCRYPTO =
 ifndef OPENJDK
   ifeq ($(PLATFORM), solaris)
     UCRYPTO = security/ucrypto
   endif
-endif
-
-JFR =
-ifndef OPENJDK
-ifndef JAVASE_EMBEDDED
-	JFR = jfr
-endif
 endif
 
 SUBDIRS = $(JFR) net nio util $(UCRYPTO)

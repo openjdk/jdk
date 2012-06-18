@@ -143,7 +143,7 @@ ifeq ($(SYSTEM_UNAME), SunOS)
     REQUIRED_FREE_SPACE=1040000
   endif
   # How much RAM does this machine have:
-  MB_OF_MEMORY=$(shell /etc/prtconf | fgrep 'Memory size:' | expand | cut -d' ' -f3)
+  MB_OF_MEMORY:=$(shell /usr/sbin/prtconf 2>/dev/null | fgrep 'Memory size:' | expand | cut -d' ' -f3)
 endif
 
 # Platform settings specific to Linux

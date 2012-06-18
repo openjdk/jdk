@@ -46,9 +46,9 @@ class XArrayDataViewer {
         if (isViewableValue(value)) {
             Object[] arr;
             if (value instanceof Collection) {
-                arr = ((Collection) value).toArray();
+                arr = ((Collection<?>) value).toArray();
             } else if (value instanceof Map) {
-                arr = ((Map) value).entrySet().toArray();
+                arr = ((Map<?,?>) value).entrySet().toArray();
             } else if (value instanceof Object[]) {
                 arr = (Object[]) value;
             } else {

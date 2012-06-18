@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,8 @@ import java.security.GeneralSecurityException;
 import java.security.cert.*;
 import java.util.*;
 
-import javax.security.auth.x500.X500Principal;
-
 import sun.security.action.GetBooleanAction;
+import sun.security.provider.certpath.PKIX.BuilderParams;
 import sun.security.util.Debug;
 import sun.security.x509.GeneralNames;
 import sun.security.x509.GeneralNameInterface;
@@ -56,9 +55,7 @@ public abstract class Builder {
 
     private static final Debug debug = Debug.getInstance("certpath");
     private Set<String> matchingPolicies;
-    final PKIXBuilderParameters buildParams;
-    final X500Principal targetSubjectDN;
-    final Date date;
+    final BuilderParams buildParams;
     final X509CertSelector targetCertConstraints;
 
     /**
@@ -74,14 +71,10 @@ public abstract class Builder {
      *
      * @param params the parameter set used to build a certification path
      */
-    Builder(PKIXBuilderParameters buildParams, X500Principal targetSubjectDN) {
+    Builder(BuilderParams buildParams) {
         this.buildParams = buildParams;
-        this.targetSubjectDN = targetSubjectDN;
-        // Initialize date if not specified
-        Date paramsDate = buildParams.getDate();
-        this.date = paramsDate != null ? paramsDate : new Date();
         this.targetCertConstraints =
-            (X509CertSelector) buildParams.getTargetCertConstraints();
+            (X509CertSelector)buildParams.targetCertConstraints();
     }
 
     /**
@@ -104,7 +97,8 @@ public abstract class Builder {
      * @param certPathList the certPathList generated thus far
      */
     abstract void verifyCert(X509Certificate cert, State currentState,
-        List<X509Certificate> certPathList) throws GeneralSecurityException;
+                             List<X509Certificate> certPathList)
+        throws GeneralSecurityException;
 
     /**
      * Verifies whether the input certificate completes the path.
@@ -123,7 +117,7 @@ public abstract class Builder {
      * @param certPathList the certification path list
      */
     abstract void addCertToPath(X509Certificate cert,
-        LinkedList<X509Certificate> certPathList);
+                                LinkedList<X509Certificate> certPathList);
 
     /**
      * Removes final certificate from the certPathList
@@ -147,7 +141,8 @@ public abstract class Builder {
      *         is a grandparent, etc.
      */
     static int distance(GeneralNameInterface base,
-        GeneralNameInterface test, int incomparable) {
+                        GeneralNameInterface test, int incomparable)
+    {
         switch (base.constrains(test)) {
         case GeneralNameInterface.NAME_DIFF_TYPE:
             if (debug != null) {
@@ -192,7 +187,8 @@ public abstract class Builder {
      *         some number of down hops.
      */
     static int hops(GeneralNameInterface base, GeneralNameInterface test,
-        int incomparable) {
+                    int incomparable)
+    {
         int baseRtest = base.constrains(test);
         switch (baseRtest) {
         case GeneralNameInterface.NAME_DIFF_TYPE:
@@ -282,9 +278,9 @@ public abstract class Builder {
      * @throws IOException if certificate does not get closer
      */
     static int targetDistance(NameConstraintsExtension constraints,
-            X509Certificate cert, GeneralNameInterface target)
-            throws IOException {
-
+                              X509Certificate cert, GeneralNameInterface target)
+            throws IOException
+    {
         /* ensure that certificate satisfies existing name constraints */
         if (constraints != null && !constraints.verify(cert)) {
             throw new IOException("certificate does not satisfy existing name "
@@ -295,7 +291,7 @@ public abstract class Builder {
         try {
             certImpl = X509CertImpl.toImpl(cert);
         } catch (CertificateException e) {
-            throw (IOException)new IOException("Invalid certificate").initCause(e);
+            throw new IOException("Invalid certificate", e);
         }
         /* see if certificate subject matches target */
         X500Name subject = X500Name.asX500Name(certImpl.getSubjectX500Principal());
@@ -398,13 +394,13 @@ public abstract class Builder {
      */
     Set<String> getMatchingPolicies() {
         if (matchingPolicies != null) {
-            Set<String> initialPolicies = buildParams.getInitialPolicies();
+            Set<String> initialPolicies = buildParams.initialPolicies();
             if ((!initialPolicies.isEmpty()) &&
                 (!initialPolicies.contains(PolicyChecker.ANY_POLICY)) &&
-                (buildParams.isPolicyMappingInhibited()))
+                (buildParams.policyMappingInhibited()))
             {
-                initialPolicies.add(PolicyChecker.ANY_POLICY);
-                matchingPolicies = initialPolicies;
+                matchingPolicies = new HashSet<>(initialPolicies);
+                matchingPolicies.add(PolicyChecker.ANY_POLICY);
             } else {
                 // we just return an empty set to make sure that there is
                 // at least a certificate policies extension in the cert
@@ -429,13 +425,15 @@ public abstract class Builder {
      * Returns true iff resultCerts changed (a cert was added to the collection)
      */
     boolean addMatchingCerts(X509CertSelector selector,
-            Collection<CertStore> certStores,
-            Collection<X509Certificate> resultCerts, boolean checkAll) {
+                             Collection<CertStore> certStores,
+                             Collection<X509Certificate> resultCerts,
+                             boolean checkAll)
+    {
         X509Certificate targetCert = selector.getCertificate();
         if (targetCert != null) {
             // no need to search CertStores
             if (selector.match(targetCert) && !X509CertImpl.isSelfSigned
-                (targetCert, buildParams.getSigProvider())) {
+                (targetCert, buildParams.sigProvider())) {
                 if (debug != null) {
                     debug.println("Builder.addMatchingCerts: adding target cert");
                 }
@@ -450,7 +448,7 @@ public abstract class Builder {
                                         store.getCertificates(selector);
                 for (Certificate cert : certs) {
                     if (!X509CertImpl.isSelfSigned
-                        ((X509Certificate)cert, buildParams.getSigProvider())) {
+                        ((X509Certificate)cert, buildParams.sigProvider())) {
                         if (resultCerts.add((X509Certificate)cert)) {
                             add = true;
                         }
@@ -470,17 +468,5 @@ public abstract class Builder {
             }
         }
         return add;
-    }
-
-    /**
-     * Returns true if CertStore is local. Currently, returns true if
-     * type is Collection or if it has been initialized with
-     * CollectionCertStoreParameters. A new API method should be added
-     * to CertStore that returns local or remote.
-     */
-    static boolean isLocalCertStore(CertStore certStore) {
-        return (certStore.getType().equals("Collection") ||
-                certStore.getCertStoreParameters() instanceof
-                CollectionCertStoreParameters);
     }
 }

@@ -25,7 +25,7 @@
 
 /*
   test %W% %E%
-  @bug 4874070
+  @bug 4874070 7146550
   @summary Tests basic DnD functionality
   @author Your Name: Alexey Utkin area=dnd
   @run applet ImageDecoratedDnDNegative.html
