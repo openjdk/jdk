@@ -27,12 +27,13 @@
 # Makefile for building the corba workspace.
 #
 
+# This must be the first rule
+default: all
+
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
 include IdlCompilation.gmk
-
-default: all
 
 JAVAC_JARS ?= "-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar" \
 		-jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
@@ -105,9 +106,9 @@ $(eval $(call SetupArchive,ARCHIVE_LOGUTIL,$(BUILD_LOGUTIL),\
 $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/%SystemException.java : \
 			$(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
 			$(CORBA_OUTPUTDIR)/btjars/logutil.jar
-	mkdir -p $(@D)
-	rm -f $(@D)/_the_wrappers.d
-	echo Generating class file from $*.mc
+	$(MKDIR) -p $(@D)
+	$(RM) -f $(@D)/_the_wrappers.d
+	$(ECHO) Generating class file from $*.mc
 	$(JAVA) -jar $(CORBA_OUTPUTDIR)/btjars/logutil.jar make-class $< $(@D)
 
 # Generate LogWrapper properties file by concatening resource files 
@@ -120,15 +121,15 @@ $(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/LogStrings.properti
 		$(CORBA_OUTPUTDIR)/logwrappers/ORBUtilSystemException.resource \
 		$(CORBA_OUTPUTDIR)/logwrappers/POASystemException.resource \
 		$(CORBA_OUTPUTDIR)/logwrappers/UtilSystemException.resource
-	mkdir -p $(@D)
-	echo Concatenating 8 resource files into $(@F)
+	$(MKDIR) -p $(@D)
+	$(ECHO) Concatenating 8 resource files into $(@F)
 	$(CAT) $^ > $@
 
 # The resources files are generated from lisp-like .mc files.
 $(CORBA_OUTPUTDIR)/logwrappers/%SystemException.resource : $(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/spi/logging/data/%.mc $(CORBA_OUTPUTDIR)/btjars/logutil.jar
-	mkdir -p $(@D)
-	rm -f $(@D)/_the_wrappers.d
-	echo Generating resource file from $*.mc
+	$(MKDIR) -p $(@D)
+	$(RM) -f $(@D)/_the_wrappers.d
+	$(ECHO) Generating resource file from $*.mc
 	$(JAVA) -jar $(CORBA_OUTPUTDIR)/btjars/logutil.jar make-resource $< $(@D)
 
 
@@ -142,8 +143,8 @@ $(CORBA_OUTPUTDIR)/logwrappers/_the_wrappers.d : $(CORBA_OUTPUTDIR)/btjars/logut
 	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/POASystemException.java \
 	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/UtilSystemException.java \
 	$(CORBA_OUTPUTDIR)/logwrappers/com/sun/corba/se/impl/logging/LogStrings.properties
-	mkdir -p $(@D) 
-	echo LOGWRAPPERS_ARE_CREATED=yes > $@
+	$(MKDIR) -p $(@D) 
+	$(ECHO) LOGWRAPPERS_ARE_CREATED=yes > $@
 
 # Trigger the generation of the logwrappers. After the logwrapper classes and
 # resources have been created, then the makefile will restart and the newly
@@ -167,8 +168,8 @@ ifeq ($(LOGWRAPPERS_ARE_CREATED),yes)
         $(BUILD_IDLS) : $(CORBA_OUTPUTDIR)/btjars/idlj.jar
 
         $(CORBA_OUTPUTDIR)/gensrc/_the_idls.d : $(BUILD_IDLS) $(CORBA_OUTPUTDIR)/btjars/idlj.jar
-		mkdir -p $(@D)
-		echo IDLS_ARE_CREATED=yes > $@
+		$(MKDIR) -p $(@D)
+		$(ECHO) IDLS_ARE_CREATED=yes > $@
 
         -include $(CORBA_OUTPUTDIR)/gensrc/_the_idls.d
 
@@ -229,15 +230,16 @@ ifeq ($(LOGWRAPPERS_ARE_CREATED),yes)
                 # The created src.zip now contains .java and .properties files used to create the classes in classes.jar
                 # and is ready for inclusion into the jdk src.zip
 
-                BIN_FILES:=$(CORBA_TOPDIR)/src/share/classes/org/omg/CORBA/orb.idl $(CORBA_TOPDIR)/src/share/classes/org/omg/CORBA/ir.idl
+                BIN_FILES:=$(CORBA_TOPDIR)/src/share/classes/com/sun/tools/corba/se/idl/orb.idl \
+			   $(CORBA_TOPDIR)/src/share/classes/com/sun/tools/corba/se/idl/ir.idl
 
                 $(CORBA_OUTPUTDIR)/dist/lib/bin.zip : $(BIN_FILES) $(CORBA_OUTPUTDIR)/dist/lib/classes.jar
-			mkdir -p $(CORBA_OUTPUTDIR)/dist/lib
-			mkdir -p $(CORBA_OUTPUTDIR)/lib
-			rm -f $@
-			echo Creating `basename $@`
-			cp $(CORBA_TOPDIR)/src/share/classes/org/omg/CORBA/*.idl $(CORBA_OUTPUTDIR)/lib
-			chmod ug+w $(CORBA_OUTPUTDIR)/lib/*
+			$(MKDIR) -p $(CORBA_OUTPUTDIR)/dist/lib
+			$(MKDIR) -p $(CORBA_OUTPUTDIR)/lib
+			$(RM) -f $@
+			$(ECHO) Creating `basename $@`
+			$(CP) $(BIN_FILES) $(CORBA_OUTPUTDIR)/lib
+			$(CHMOD) ug+w $(CORBA_OUTPUTDIR)/lib/*
 			(cd $(CORBA_OUTPUTDIR); $(ZIP) -q $@ lib/orb.idl lib/ir.idl)
 
                 # The created bin.zip now contains the corba specific binaries: orb.idl, ir.idl
@@ -252,6 +254,6 @@ ifeq ($(LOGWRAPPERS_ARE_CREATED),yes)
 endif
 
 clean:
-	rm -rf $(CORBA_OUTPUTDIR)
+	$(RM) -rf $(CORBA_OUTPUTDIR)
 
 .PHONY: default all clean clobber 

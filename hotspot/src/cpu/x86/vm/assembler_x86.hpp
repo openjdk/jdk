@@ -2395,6 +2395,8 @@ class MacroAssembler: public Assembler {
   // runtime call.
   void fast_pow();
   void fast_exp();
+  void increase_precision();
+  void restore_precision();
 
   // computes exp(x). Fallback to runtime call included.
   void exp_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(true, num_fpu_regs_in_use); }

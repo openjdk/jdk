@@ -230,7 +230,7 @@ void TreeList<Chunk>::return_chunk_at_tail(TreeChunk<Chunk>* chunk) {
   link_tail(chunk);
 
   assert(!tail() || size() == tail()->size(), "Wrong sized chunk in list");
-  FreeList<Chunk>::increment_count();
+  increment_count();
   debug_only(increment_returned_bytes_by(chunk->size()*sizeof(HeapWord));)
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
@@ -258,7 +258,7 @@ void TreeList<Chunk>::return_chunk_at_head(TreeChunk<Chunk>* chunk) {
   }
   head()->link_after(chunk);
   assert(!head() || size() == head()->size(), "Wrong sized chunk in list");
-  FreeList<Chunk>::increment_count();
+  increment_count();
   debug_only(increment_returned_bytes_by(chunk->size()*sizeof(HeapWord));)
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
@@ -909,6 +909,7 @@ class TreeCensusClosure : public StackObj {
 
 template <class Chunk>
 class AscendTreeCensusClosure : public TreeCensusClosure<Chunk> {
+  using TreeCensusClosure<Chunk>::do_list;
  public:
   void do_tree(TreeList<Chunk>* tl) {
     if (tl != NULL) {
@@ -921,6 +922,7 @@ class AscendTreeCensusClosure : public TreeCensusClosure<Chunk> {
 
 template <class Chunk>
 class DescendTreeCensusClosure : public TreeCensusClosure<Chunk> {
+  using TreeCensusClosure<Chunk>::do_list;
  public:
   void do_tree(TreeList<Chunk>* tl) {
     if (tl != NULL) {
@@ -987,6 +989,7 @@ class AscendTreeSearchClosure : public TreeSearchClosure {
 
 template <class Chunk>
 class DescendTreeSearchClosure : public TreeSearchClosure<Chunk> {
+  using TreeSearchClosure<Chunk>::do_list;
  public:
   bool do_tree(TreeList<Chunk>* tl) {
     if (tl != NULL) {

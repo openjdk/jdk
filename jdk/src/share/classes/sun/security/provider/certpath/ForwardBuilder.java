@@ -26,10 +26,9 @@
 package sun.security.provider.certpath;
 
 import java.io.IOException;
-import java.util.*;
-
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXReason;
@@ -40,12 +39,14 @@ import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.cert.X509CertSelector;
+import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
+import sun.security.provider.certpath.PKIX.BuilderParams;
 import sun.security.util.Debug;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
-import sun.security.x509.PKIXExtensions;
+import static sun.security.x509.PKIXExtensions.*;
 import sun.security.x509.PolicyMappingsExtension;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
@@ -72,21 +73,17 @@ class ForwardBuilder extends Builder {
     TrustAnchor trustAnchor;
     private Comparator<X509Certificate> comparator;
     private boolean searchAllCertStores = true;
-    private boolean onlyEECert = false;
 
     /**
      * Initialize the builder with the input parameters.
      *
      * @param params the parameter set used to build a certification path
      */
-    ForwardBuilder(PKIXBuilderParameters buildParams,
-        X500Principal targetSubjectDN, boolean searchAllCertStores,
-        boolean onlyEECert)
-    {
-        super(buildParams, targetSubjectDN);
+    ForwardBuilder(BuilderParams buildParams, boolean searchAllCertStores) {
+        super(buildParams);
 
         // populate sets of trusted certificates and subject DNs
-        trustAnchors = buildParams.getTrustAnchors();
+        trustAnchors = buildParams.trustAnchors();
         trustedCerts = new HashSet<X509Certificate>(trustAnchors.size());
         trustedSubjectDNs = new HashSet<X500Principal>(trustAnchors.size());
         for (TrustAnchor anchor : trustAnchors) {
@@ -100,7 +97,6 @@ class ForwardBuilder extends Builder {
         }
         comparator = new PKIXCertComparator(trustedSubjectDNs);
         this.searchAllCertStores = searchAllCertStores;
-        this.onlyEECert = onlyEECert;
     }
 
     /**
@@ -112,8 +108,9 @@ class ForwardBuilder extends Builder {
      *        Must be an instance of <code>ForwardState</code>
      * @param certStores list of CertStores
      */
-    Collection<X509Certificate> getMatchingCerts
-        (State currentState, List<CertStore> certStores)
+    @Override
+    Collection<X509Certificate> getMatchingCerts(State currentState,
+                                                 List<CertStore> certStores)
         throws CertStoreException, CertificateException, IOException
     {
         if (debug != null) {
@@ -127,7 +124,7 @@ class ForwardBuilder extends Builder {
          * As each cert is added, it is sorted based on the PKIXCertComparator
          * algorithm.
          */
-        Set<X509Certificate> certs = new TreeSet<X509Certificate>(comparator);
+        Set<X509Certificate> certs = new TreeSet<>(comparator);
 
         /*
          * Only look for EE certs if search has just started.
@@ -145,9 +142,10 @@ class ForwardBuilder extends Builder {
      * and requirements specified in the parameters and PKIX state.
      */
     private void getMatchingEECerts(ForwardState currentState,
-        List<CertStore> certStores, Collection<X509Certificate> eeCerts)
-        throws IOException {
-
+                                    List<CertStore> certStores,
+                                    Collection<X509Certificate> eeCerts)
+        throws IOException
+    {
         if (debug != null) {
             debug.println("ForwardBuilder.getMatchingEECerts()...");
         }
@@ -165,12 +163,12 @@ class ForwardBuilder extends Builder {
             /*
              * Match on certificate validity date
              */
-            eeSelector.setCertificateValid(date);
+            eeSelector.setCertificateValid(buildParams.date());
 
             /*
              * Policy processing optimizations
              */
-            if (buildParams.isExplicitPolicyRequired()) {
+            if (buildParams.explicitPolicyRequired()) {
                 eeSelector.setPolicy(getMatchingPolicies());
             }
             /*
@@ -188,9 +186,10 @@ class ForwardBuilder extends Builder {
      * and requirements specified in the parameters and PKIX state.
      */
     private void getMatchingCACerts(ForwardState currentState,
-        List<CertStore> certStores, Collection<X509Certificate> caCerts)
-        throws IOException {
-
+                                    List<CertStore> certStores,
+                                    Collection<X509Certificate> caCerts)
+        throws IOException
+    {
         if (debug != null) {
             debug.println("ForwardBuilder.getMatchingCACerts()...");
         }
@@ -216,8 +215,8 @@ class ForwardBuilder extends Builder {
             }
 
             if (caTargetSelector == null) {
-                caTargetSelector = (X509CertSelector)
-                    targetCertConstraints.clone();
+                caTargetSelector =
+                    (X509CertSelector) targetCertConstraints.clone();
 
                 /*
                  * Since we don't check the validity period of trusted
@@ -229,7 +228,7 @@ class ForwardBuilder extends Builder {
                 /*
                  * Policy processing optimizations
                  */
-                if (buildParams.isExplicitPolicyRequired())
+                if (buildParams.explicitPolicyRequired())
                     caTargetSelector.setPolicy(getMatchingPolicies());
             }
 
@@ -249,7 +248,7 @@ class ForwardBuilder extends Builder {
                 /*
                  * Policy processing optimizations
                  */
-                if (buildParams.isExplicitPolicyRequired())
+                if (buildParams.explicitPolicyRequired())
                     caSelector.setPolicy(getMatchingPolicies());
             }
 
@@ -278,7 +277,7 @@ class ForwardBuilder extends Builder {
              * check the validity period
              */
             caSelector.setValidityPeriod(currentState.cert.getNotBefore(),
-                                            currentState.cert.getNotAfter());
+                                         currentState.cert.getNotAfter());
 
             sel = caSelector;
         }
@@ -307,7 +306,7 @@ class ForwardBuilder extends Builder {
          * The trusted certificate matching is completed. We need to match
          * on certificate validity date.
          */
-        sel.setCertificateValid(date);
+        sel.setCertificateValid(buildParams.date());
 
         /*
          * Require CA certs with a pathLenConstraint that allows
@@ -323,11 +322,12 @@ class ForwardBuilder extends Builder {
          * certificate pairs.
          */
         if (currentState.isInitial() ||
-           (buildParams.getMaxPathLength() == -1) ||
-           (buildParams.getMaxPathLength() > currentState.traversedCACerts))
+           (buildParams.maxPathLength() == -1) ||
+           (buildParams.maxPathLength() > currentState.traversedCACerts))
         {
             if (addMatchingCerts(sel, certStores,
-                    caCerts, searchAllCertStores) && !searchAllCertStores) {
+                                 caCerts, searchAllCertStores)
+                && !searchAllCertStores) {
                 return;
             }
         }
@@ -356,7 +356,8 @@ class ForwardBuilder extends Builder {
     // because of the selector, so the cast is safe
     @SuppressWarnings("unchecked")
     private boolean getCerts(AuthorityInfoAccessExtension aiaExt,
-        Collection<X509Certificate> certs) {
+                             Collection<X509Certificate> certs)
+    {
         if (Builder.USE_AIA == false) {
             return false;
         }
@@ -449,6 +450,7 @@ class ForwardBuilder extends Builder {
          * @throws ClassCastException if either argument is not of type
          * X509Certificate
          */
+        @Override
         public int compare(X509Certificate oCert1, X509Certificate oCert2) {
 
             // if certs are the same, return 0
@@ -651,8 +653,10 @@ class ForwardBuilder extends Builder {
      * @param currentState the current state against which the cert is verified
      * @param certPathList the certPathList generated thus far
      */
+    @Override
     void verifyCert(X509Certificate cert, State currentState,
-        List<X509Certificate> certPathList) throws GeneralSecurityException
+                    List<X509Certificate> certPathList)
+        throws GeneralSecurityException
     {
         if (debug != null) {
             debug.println("ForwardBuilder.verifyCert(SN: "
@@ -686,7 +690,7 @@ class ForwardBuilder extends Builder {
                     debug.println("policyMappingFound = " + policyMappingFound);
                 }
                 if (cert.equals(cpListCert)) {
-                    if ((buildParams.isPolicyMappingInhibited()) ||
+                    if ((buildParams.policyMappingInhibited()) ||
                         (!policyMappingFound)) {
                         if (debug != null) {
                             debug.println("loop detected!!");
@@ -721,7 +725,7 @@ class ForwardBuilder extends Builder {
              * all extensions that all user checkers are capable of
              * processing.
              */
-            for (PKIXCertPathChecker checker : buildParams.getCertPathCheckers()) {
+            for (PKIXCertPathChecker checker : buildParams.certPathCheckers()) {
                 if (!checker.isForwardCheckingSupported()) {
                     Set<String> supportedExts = checker.getSupportedExtensions();
                     if (supportedExts != null) {
@@ -735,23 +739,15 @@ class ForwardBuilder extends Builder {
              * to check. If there are any left, throw an exception!
              */
             if (!unresCritExts.isEmpty()) {
-                unresCritExts.remove(
-                    PKIXExtensions.BasicConstraints_Id.toString());
-                unresCritExts.remove(
-                    PKIXExtensions.NameConstraints_Id.toString());
-                unresCritExts.remove(
-                    PKIXExtensions.CertificatePolicies_Id.toString());
-                unresCritExts.remove(
-                    PKIXExtensions.PolicyMappings_Id.toString());
-                unresCritExts.remove(
-                    PKIXExtensions.PolicyConstraints_Id.toString());
-                unresCritExts.remove(
-                    PKIXExtensions.InhibitAnyPolicy_Id.toString());
-                unresCritExts.remove(
-                    PKIXExtensions.SubjectAlternativeName_Id.toString());
-                unresCritExts.remove(PKIXExtensions.KeyUsage_Id.toString());
-                unresCritExts.remove(
-                    PKIXExtensions.ExtendedKeyUsage_Id.toString());
+                unresCritExts.remove(BasicConstraints_Id.toString());
+                unresCritExts.remove(NameConstraints_Id.toString());
+                unresCritExts.remove(CertificatePolicies_Id.toString());
+                unresCritExts.remove(PolicyMappings_Id.toString());
+                unresCritExts.remove(PolicyConstraints_Id.toString());
+                unresCritExts.remove(InhibitAnyPolicy_Id.toString());
+                unresCritExts.remove(SubjectAlternativeName_Id.toString());
+                unresCritExts.remove(KeyUsage_Id.toString());
+                unresCritExts.remove(ExtendedKeyUsage_Id.toString());
 
                 if (!unresCritExts.isEmpty())
                     throw new CertPathValidatorException
@@ -789,31 +785,12 @@ class ForwardBuilder extends Builder {
          */
 
         /*
-         * Check revocation for the previous cert
-         */
-        if (buildParams.isRevocationEnabled()) {
-
-            // first off, see if this cert can authorize revocation...
-            if (CrlRevocationChecker.certCanSignCrl(cert)) {
-                // And then check to be sure no key requiring key parameters
-                // has been encountered
-                if (!currState.keyParamsNeeded())
-                    // If all that checks out, we can check the
-                    // revocation status of the cert. Otherwise,
-                    // we'll just wait until the end.
-                    currState.crlChecker.check(currState.cert,
-                                               cert.getPublicKey(),
-                                               true);
-            }
-        }
-
-        /*
          * Check signature only if no key requiring key parameters has been
          * encountered.
          */
         if (!currState.keyParamsNeeded()) {
             (currState.cert).verify(cert.getPublicKey(),
-                                    buildParams.getSigProvider());
+                                    buildParams.sigProvider());
         }
     }
 
@@ -829,6 +806,7 @@ class ForwardBuilder extends Builder {
      * @param cert the certificate to test
      * @return a boolean value indicating whether the cert completes the path.
      */
+    @Override
     boolean isPathCompleted(X509Certificate cert) {
         for (TrustAnchor anchor : trustAnchors) {
             if (anchor.getTrustedCert() != null) {
@@ -840,7 +818,7 @@ class ForwardBuilder extends Builder {
                 }
             } else {
                 X500Principal principal = anchor.getCA();
-                java.security.PublicKey publicKey = anchor.getCAPublicKey();
+                PublicKey publicKey = anchor.getCAPublicKey();
 
                 if (principal != null && publicKey != null &&
                         principal.equals(cert.getSubjectX500Principal())) {
@@ -859,21 +837,6 @@ class ForwardBuilder extends Builder {
                 }
             }
 
-            /* Check revocation if it is enabled */
-            if (buildParams.isRevocationEnabled()) {
-                try {
-                    CrlRevocationChecker crlChecker = new CrlRevocationChecker
-                        (anchor, buildParams, null, onlyEECert);
-                    crlChecker.check(cert, anchor.getCAPublicKey(), true);
-                } catch (CertPathValidatorException cpve) {
-                    if (debug != null) {
-                        debug.println("ForwardBuilder.isPathCompleted() cpve");
-                        cpve.printStackTrace();
-                    }
-                    continue;
-                }
-            }
-
             /*
              * Check signature
              */
@@ -882,18 +845,17 @@ class ForwardBuilder extends Builder {
                 // parameters, yet there is no key to inherit the parameters
                 // from.  This is probably such a rare case that it is not worth
                 // trying to detect the situation earlier.
-                cert.verify(anchor.getCAPublicKey(),
-                            buildParams.getSigProvider());
+                cert.verify(anchor.getCAPublicKey(), buildParams.sigProvider());
             } catch (InvalidKeyException ike) {
                 if (debug != null) {
                     debug.println("ForwardBuilder.isPathCompleted() invalid "
-                        + "DSA key found");
+                                  + "DSA key found");
                 }
                 continue;
-            } catch (Exception e){
+            } catch (GeneralSecurityException e){
                 if (debug != null) {
                     debug.println("ForwardBuilder.isPathCompleted() " +
-                        "unexpected exception");
+                                  "unexpected exception");
                     e.printStackTrace();
                 }
                 continue;
@@ -911,8 +873,10 @@ class ForwardBuilder extends Builder {
      * @param cert the certificate to be added
      * @param certPathList the certification path list
      */
+    @Override
     void addCertToPath(X509Certificate cert,
-        LinkedList<X509Certificate> certPathList) {
+                       LinkedList<X509Certificate> certPathList)
+    {
         certPathList.addFirst(cert);
     }
 
@@ -920,6 +884,7 @@ class ForwardBuilder extends Builder {
      *
      * @param certPathList the certification path list
      */
+    @Override
     void removeFinalCertFromPath(LinkedList<X509Certificate> certPathList) {
         certPathList.removeFirst();
     }

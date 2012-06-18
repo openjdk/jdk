@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,10 @@ int constMethodOopDesc::object_size(int code_size,
   return align_object_size(header_size() + extra_words);
 }
 
+methodOop constMethodOopDesc::method() const {
+    return instanceKlass::cast(_constants->pool_holder())->method_with_idnum(
+                               _method_idnum);
+  }
 
 // linenumber table - note that length is unknown until decompression,
 // see class CompressedLineNumberReadStream.
