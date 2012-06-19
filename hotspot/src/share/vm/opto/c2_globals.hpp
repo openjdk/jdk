@@ -299,8 +299,11 @@
   develop(bool, SuperWordRTDepCheck, false,                                 \
           "Enable runtime dependency checks.")                              \
                                                                             \
-  product(bool, TraceSuperWord, false,                                      \
+  notproduct(bool, TraceSuperWord, false,                                   \
           "Trace superword transforms")                                     \
+                                                                            \
+  notproduct(bool, TraceNewVectors, false,                                  \
+          "Trace creation of Vector nodes")                                 \
                                                                             \
   product_pd(bool, OptoBundling,                                            \
           "Generate nops to fill i-cache lines")                            \
