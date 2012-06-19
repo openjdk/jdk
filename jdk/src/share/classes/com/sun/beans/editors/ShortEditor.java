@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,27 @@
  * questions.
  */
 
-package sun.beans.editors;
+
+package com.sun.beans.editors;
 
 /**
- * Property editor for a java builtin "double" type.
+ * Property editor for a java builtin "short" type.
  *
  */
 
 import java.beans.*;
 
-public class DoubleEditor extends NumberEditor {
+public class ShortEditor extends NumberEditor {
+
+    public String getJavaInitializationString() {
+        Object value = getValue();
+        return (value != null)
+                ? "((short)" + value + ")"
+                : "null";
+    }
 
     public void setAsText(String text) throws IllegalArgumentException {
-        setValue((text == null) ? null : Double.valueOf(text));
+        setValue((text == null) ? null : Short.decode(text));
     }
 
 }

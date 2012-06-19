@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  */
 
 import java.beans.PropertyEditorManager;
-import sun.beans.editors.StringEditor;
+import com.sun.beans.editors.StringEditor;
 
 public class Test6963811 implements Runnable {
     private final long time;
