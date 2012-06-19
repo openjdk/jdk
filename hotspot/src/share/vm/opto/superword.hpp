@@ -264,11 +264,14 @@ class SuperWord : public ResourceObj {
                                      _iv = lp->as_CountedLoop()->phi()->as_Phi(); }
   int      iv_stride()             { return lp()->as_CountedLoop()->stride_con(); }
 
-  int vector_width_in_bytes(BasicType bt) {
-    return MIN2(ABS(iv_stride())*type2aelembytes(bt),
-                Matcher::vector_width_in_bytes(bt));
+  int vector_width(Node* n) {
+    BasicType bt = velt_basic_type(n);
+    return MIN2(ABS(iv_stride()), Matcher::max_vector_size(bt));
   }
-
+  int vector_width_in_bytes(Node* n) {
+    BasicType bt = velt_basic_type(n);
+    return vector_width(n)*type2aelembytes(bt);
+  }
   MemNode* align_to_ref()            { return _align_to_ref; }
   void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }
 

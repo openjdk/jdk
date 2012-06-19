@@ -2061,7 +2061,7 @@ instruct Repl8I_imm(vecY dst, immI con) %{
 // Integer could be loaded into xmm register directly from memory.
 instruct Repl2I_mem(vecD dst, memory mem) %{
   predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateI mem));
+  match(Set dst (ReplicateI (LoadVector mem)));
   format %{ "movd    $dst,$mem\n\t"
             "pshufd  $dst,$dst,0x00\t! replicate2I" %}
   ins_encode %{
@@ -2073,7 +2073,7 @@ instruct Repl2I_mem(vecD dst, memory mem) %{
 
 instruct Repl4I_mem(vecX dst, memory mem) %{
   predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateI mem));
+  match(Set dst (ReplicateI (LoadVector mem)));
   format %{ "movd    $dst,$mem\n\t"
             "pshufd  $dst,$dst,0x00\t! replicate4I" %}
   ins_encode %{
@@ -2085,7 +2085,7 @@ instruct Repl4I_mem(vecX dst, memory mem) %{
 
 instruct Repl8I_mem(vecY dst, memory mem) %{
   predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateI mem));
+  match(Set dst (ReplicateI (LoadVector mem)));
   format %{ "movd    $dst,$mem\n\t"
             "pshufd  $dst,$dst,0x00\n\t"
             "vinsertf128h $dst,$dst,$dst\t! replicate8I" %}
@@ -2225,7 +2225,7 @@ instruct Repl4L_imm(vecY dst, immL con) %{
 // Long could be loaded into xmm register directly from memory.
 instruct Repl2L_mem(vecX dst, memory mem) %{
   predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateL mem));
+  match(Set dst (ReplicateL (LoadVector mem)));
   format %{ "movq    $dst,$mem\n\t"
             "movlhps $dst,$dst\t! replicate2L" %}
   ins_encode %{
@@ -2237,7 +2237,7 @@ instruct Repl2L_mem(vecX dst, memory mem) %{
 
 instruct Repl4L_mem(vecY dst, memory mem) %{
   predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateL mem));
+  match(Set dst (ReplicateL (LoadVector mem)));
   format %{ "movq    $dst,$mem\n\t"
             "movlhps $dst,$dst\n\t"
             "vinsertf128h $dst,$dst,$dst\t! replicate4L" %}

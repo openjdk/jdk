@@ -222,7 +222,18 @@ void SuperWord::find_adjacent_refs() {
     // Create initial pack pairs of memory operations for which
     // alignment is set and vectors will be aligned.
     bool create_pack = true;
-    if (memory_alignment(mem_ref, best_iv_adjustment) != 0) {
+    if (memory_alignment(mem_ref, best_iv_adjustment) == 0) {
+      if (!Matcher::misaligned_vectors_ok()) {
+        int vw = vector_width(mem_ref);
+        int vw_best = vector_width(best_align_to_mem_ref);
+        if (vw > vw_best) {
+          // Do not vectorize a memory access with more elements per vector
+          // if unaligned memory access is not allowed because number of
+          // iterations in pre-loop will be not enough to align it.
+          create_pack = false;
+        }
+      }
+    } else {
       if (same_velt_type(mem_ref, best_align_to_mem_ref)) {
         // Can't allow vectorization of unaligned memory accesses with the
         // same type since it could be overlapped accesses to the same array.
@@ -357,7 +368,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
   for (uint j = 0; j < memops.size(); j++) {
     MemNode* s = memops.at(j)->as_Mem();
     if (s->is_Store()) {
-      int vw = vector_width_in_bytes(velt_basic_type(s));
+      int vw = vector_width_in_bytes(s);
       assert(vw > 1, "sanity");
       SWPointer p(s, this);
       if (cmp_ct.at(j) >  max_ct ||
@@ -380,7 +391,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
     for (uint j = 0; j < memops.size(); j++) {
       MemNode* s = memops.at(j)->as_Mem();
       if (s->is_Load()) {
-        int vw = vector_width_in_bytes(velt_basic_type(s));
+        int vw = vector_width_in_bytes(s);
         assert(vw > 1, "sanity");
         SWPointer p(s, this);
         if (cmp_ct.at(j) >  max_ct ||
@@ -440,8 +451,7 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
 
   // If initial offset from start of object is computable,
   // compute alignment within the vector.
-  BasicType bt = velt_basic_type(p.mem());
-  int vw = vector_width_in_bytes(bt);
+  int vw = vector_width_in_bytes(p.mem());
   assert(vw > 1, "sanity");
   if (vw % span == 0) {
     Node* init_nd = pre_end->init_trip();
@@ -468,8 +478,7 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
   SWPointer align_to_ref_p(mem_ref, this);
   int offset = align_to_ref_p.offset_in_bytes();
   int scale  = align_to_ref_p.scale_in_bytes();
-  BasicType bt = velt_basic_type(mem_ref);
-  int vw       = vector_width_in_bytes(bt);
+  int vw       = vector_width_in_bytes(mem_ref);
   assert(vw > 1, "sanity");
   int stride_sign   = (scale * iv_stride()) > 0 ? 1 : -1;
   int iv_adjustment = (stride_sign * vw - (offset % vw)) % vw;
@@ -1361,7 +1370,7 @@ void SuperWord::output() {
       }
       _igvn._worklist.push(vn);
 #ifdef ASSERT
-      if (TraceSuperWord) {
+      if (TraceNewVectors) {
         tty->print("new Vector node: ");
         vn->dump();
       }
@@ -1401,7 +1410,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     _phase->_igvn.register_new_node_with_optimizer(vn);
     _phase->set_ctrl(vn, _phase->get_ctrl(opd));
 #ifdef ASSERT
-    if (TraceSuperWord) {
+    if (TraceNewVectors) {
       tty->print("new Vector node: ");
       vn->dump();
     }
@@ -1424,8 +1433,8 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   _phase->_igvn.register_new_node_with_optimizer(pk);
   _phase->set_ctrl(pk, _phase->get_ctrl(opd));
 #ifdef ASSERT
-    if (TraceSuperWord) {
-      tty->print("new Pack node: ");
+    if (TraceNewVectors) {
+      tty->print("new Vector node: ");
       pk->dump();
     }
 #endif
@@ -1764,7 +1773,7 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust_in_bytes) {
   if (!p.valid()) {
     return bottom_align;
   }
-  int vw = vector_width_in_bytes(velt_basic_type(s));
+  int vw = vector_width_in_bytes(s);
   if (vw < 2) {
     return bottom_align; // No vectors for this type
   }
@@ -1978,12 +1987,12 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   //     N = (V - (e - lim0)) % V
   //     lim = lim0 - (V - (e - lim0)) % V
 
-  int vw = vector_width_in_bytes(velt_basic_type(align_to_ref));
-  assert(vw > 1, "sanity");
+  int vw = vector_width_in_bytes(align_to_ref);
   int stride   = iv_stride();
   int scale    = align_to_ref_p.scale_in_bytes();
   int elt_size = align_to_ref_p.memory_size();
   int v_align  = vw / elt_size;
+  assert(v_align > 1, "sanity");
   int k        = align_to_ref_p.offset_in_bytes() / elt_size;
 
   Node *kn   = _igvn.intcon(k);
