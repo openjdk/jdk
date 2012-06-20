@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,17 @@
 
 package com.sun.tools.javadoc;
 
-import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
-import com.sun.tools.javac.util.List;
+
+import javax.tools.JavaFileObject;
+
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.tree.JCTree.*;
-import javax.tools.JavaFileObject;
+import com.sun.tools.javac.tree.TreeInfo;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.List;
 
 /**
  *  Javadoc's own enter phase does a few things above and beyond that
@@ -77,7 +80,7 @@ public class JavadocEnter extends Enter {
     public void visitTopLevel(JCCompilationUnit tree) {
         super.visitTopLevel(tree);
         if (tree.sourcefile.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE)) {
-            String comment = tree.docComments.get(tree);
+            String comment = TreeInfo.getCommentText(env, tree);
             docenv.makePackageDoc(tree.packge, comment, tree);
         }
     }
@@ -87,7 +90,7 @@ public class JavadocEnter extends Enter {
         super.visitClassDef(tree);
         if (tree.sym == null) return;
         if (tree.sym.kind == Kinds.TYP || tree.sym.kind == Kinds.ERR) {
-            String comment = env.toplevel.docComments.get(tree);
+            String comment = TreeInfo.getCommentText(env, tree);
             ClassSymbol c = tree.sym;
             docenv.makeClassDoc(c, comment, tree, env.toplevel.lineMap);
         }
