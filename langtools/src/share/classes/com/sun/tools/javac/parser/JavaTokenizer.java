@@ -780,6 +780,10 @@ public class JavaTokenizer {
             return null;
         }
 
+        public int getSourcePos(int pos) {
+            return -1;
+        }
+
         public CommentStyle getStyle() {
             return cs;
         }
