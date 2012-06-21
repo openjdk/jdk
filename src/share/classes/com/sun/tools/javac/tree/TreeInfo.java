@@ -285,7 +285,7 @@ public class TreeInfo {
         DocCommentTable docComments = (tree.hasTag(JCTree.Tag.TOPLEVEL))
                 ? ((JCCompilationUnit) tree).docComments
                 : env.toplevel.docComments;
-        return docComments.getCommentText(tree);
+        return (docComments == null) ? null : docComments.getCommentText(tree);
     }
 
     /** The position of the first statement in a block, or the position of
