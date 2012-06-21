@@ -516,7 +516,12 @@ JVM_handle_bsd_signal(int sig,
       }
     }
 
-    if (thread->thread_state() == _thread_in_Java) {
+    // We test if stub is already set (by the stack overflow code
+    // above) so it is not overwritten by the code that follows. This
+    // check is not required on other platforms, because on other
+    // platforms we check for SIGSEGV only or SIGBUS only, where here
+    // we have to check for both SIGSEGV and SIGBUS.
+    if (thread->thread_state() == _thread_in_Java && stub == NULL) {
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
 
