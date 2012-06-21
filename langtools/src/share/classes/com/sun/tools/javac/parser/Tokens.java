@@ -294,6 +294,7 @@ public class Tokens {
         }
 
         String getText();
+        int getSourcePos(int index);
         CommentStyle getStyle();
         boolean isDeprecated();
     }
