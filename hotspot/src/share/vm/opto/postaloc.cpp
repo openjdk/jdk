@@ -308,9 +308,10 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &v
     }
 
     Node *vv = value[reg];
-    if (n_regs > 1) {             // Doubles check for aligned-adjacent pair
-      if( (reg&1)==0 ) continue;  // Wrong half of a pair
-      if( vv != value[reg-1] ) continue; // Not a complete pair
+    if (n_regs > 1) { // Doubles and vectors check for aligned-adjacent set
+      uint last = (n_regs-1); // Looking for the last part of a set
+      if ((reg&last) != last) continue; // Wrong part of a set
+      if (!register_contains_value(vv, reg, n_regs, value)) continue; // Different value
     }
     if( vv == val ||            // Got a direct hit?
         (t && vv && vv->bottom_type() == t && vv->is_Mach() &&
@@ -573,7 +574,6 @@ void PhaseChaitin::post_allocate_copy_removal() {
             // Record other half of doubles
             uint def_ideal_reg = def->ideal_reg();
             int n_regs = RegMask::num_registers(def_ideal_reg);
-            bool is_vec = RegMask::is_vector(def_ideal_reg);
             for (int l = 1; l < n_regs; l++) {
               OptoReg::Name ureg_lo = OptoReg::add(ureg,-l);
               if (!value[ureg_lo] &&
