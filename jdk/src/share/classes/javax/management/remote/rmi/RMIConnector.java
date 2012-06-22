@@ -277,9 +277,9 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             // Check for secure RMIServer stub if the corresponding
             // client-side environment property is set to "true".
             //
-            boolean checkStub = EnvHelp.computeBooleanFromString(
-                    usemap,
-                    "jmx.remote.x.check.stub",false);
+            String stringBoolean =  (String) usemap.get("jmx.remote.x.check.stub");
+            boolean checkStub = EnvHelp.computeBooleanFromString(stringBoolean);
+
             if (checkStub) checkStub(stub, rmiServerImplStubClass);
 
             // Connect IIOP Stub if needed.
