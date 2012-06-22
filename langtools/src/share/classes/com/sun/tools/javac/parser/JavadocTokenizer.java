@@ -428,6 +428,7 @@ public class JavadocTokenizer extends JavaTokenizer {
                 }
             } finally {
                 scanned = true;
+                comment_reader = null;
                 if (docComment != null &&
                         docComment.matches("(?sm).*^\\s*@deprecated( |$).*")) {
                     deprecatedFlag = true;
