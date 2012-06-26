@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ import java.text.MessageFormat;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.file.Files;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.UnsupportedCharsetException;
 import sun.tools.native2ascii.A2NFilter;
@@ -240,9 +241,7 @@ public class Main {
             if (tempDir == null)
                 tempDir = new File(System.getProperty("user.dir"));
 
-            tempFile = File.createTempFile("_N2A",
-                                           ".TMP",
-                                            tempDir);
+            tempFile = Files.createTempFile(tempDir.toPath(), "_N2A", ".TMP").toFile();
             tempFile.deleteOnExit();
 
             try {
@@ -292,9 +291,7 @@ public class Main {
             File tempDir = f.getParentFile();
             if (tempDir == null)
                 tempDir = new File(System.getProperty("user.dir"));
-            tempFile =  File.createTempFile("_N2A",
-                                            ".TMP",
-                                            tempDir);
+            tempFile =  Files.createTempFile(tempDir.toPath(), "_N2A", ".TMP").toFile();
             tempFile.deleteOnExit();
 
             try {
