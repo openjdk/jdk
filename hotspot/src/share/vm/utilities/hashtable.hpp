@@ -217,12 +217,7 @@ protected:
   }
 
   // Free the buckets in this hashtable
-  void free_buckets() {
-    if (NULL != _buckets) {
-      FREE_C_HEAP_ARRAY(HashtableBucket, _buckets);
-      _buckets = NULL;
-    }
-  }
+  void free_buckets();
 
 public:
   int table_size() { return _table_size; }
