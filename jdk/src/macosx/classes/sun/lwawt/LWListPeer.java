@@ -49,8 +49,8 @@ final class LWListPeer
     }
 
     @Override
-    public void initialize() {
-        super.initialize();
+    void initializeImpl() {
+        super.initializeImpl();
         setMultipleMode(getTarget().isMultipleMode());
         final int[] selectedIndices = getTarget().getSelectedIndexes();
         synchronized (getDelegateLock()) {

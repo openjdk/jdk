@@ -47,8 +47,8 @@ final class LWButtonPeer extends LWComponentPeer<Button, JButton>
     }
 
     @Override
-    public void initialize() {
-        super.initialize();
+    void initializeImpl() {
+        super.initializeImpl();
         setLabel(getTarget().getLabel());
         synchronized (getDelegateLock()) {
             getDelegate().addActionListener(this);
