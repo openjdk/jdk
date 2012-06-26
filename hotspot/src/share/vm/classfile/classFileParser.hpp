@@ -113,8 +113,8 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                 objArrayHandle methods_parameter_annotations,
                                 objArrayHandle methods_default_annotations,
                                 TRAPS);
-  typeArrayHandle parse_exception_table(u4 code_length, u4 exception_table_length,
-                                        constantPoolHandle cp, TRAPS);
+  u2* parse_exception_table(u4 code_length, u4 exception_table_length,
+                            constantPoolHandle cp, TRAPS);
   void parse_linenumber_table(
       u4 code_attribute_length, u4 code_length,
       CompressedLineNumberWriteStream** write_stream, TRAPS);

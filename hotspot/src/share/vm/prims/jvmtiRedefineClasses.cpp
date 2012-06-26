@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2478,23 +2478,17 @@ void VM_RedefineClasses::set_new_constant_pool(
     // to use new constant pool indices as needed. The exception table
     // holds quadruple entries of the form:
     //   (beg_bci, end_bci, handler_bci, klass_index)
-    const int beg_bci_offset     = 0;
-    const int end_bci_offset     = 1;
-    const int handler_bci_offset = 2;
-    const int klass_index_offset = 3;
-    const int entry_size         = 4;
 
-    typeArrayHandle ex_table (THREAD, method->exception_table());
-    int ext_length = ex_table->length();
-    assert(ext_length % entry_size == 0, "exception table format has changed");
+    ExceptionTable ex_table(method());
+    int ext_length = ex_table.length();
 
-    for (int j = 0; j < ext_length; j += entry_size) {
-      int cur_index = ex_table->int_at(j + klass_index_offset);
+    for (int j = 0; j < ext_length; j ++) {
+      int cur_index = ex_table.catch_type_index(j);
       int new_index = find_new_index(cur_index);
       if (new_index != 0) {
         RC_TRACE_WITH_THREAD(0x00080000, THREAD,
           ("ext-klass_index change: %d to %d", cur_index, new_index));
-        ex_table->int_at_put(j + klass_index_offset, new_index);
+        ex_table.set_catch_type_index(j, new_index);
       }
     } // end for each exception table entry
 

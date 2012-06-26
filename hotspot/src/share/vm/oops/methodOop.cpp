@@ -111,25 +111,21 @@ char* methodOopDesc::name_and_sig_as_C_string(Klass* klass, Symbol* method_name,
 
 int  methodOopDesc::fast_exception_handler_bci_for(KlassHandle ex_klass, int throw_bci, TRAPS) {
   // exception table holds quadruple entries of the form (beg_bci, end_bci, handler_bci, klass_index)
-  const int beg_bci_offset     = 0;
-  const int end_bci_offset     = 1;
-  const int handler_bci_offset = 2;
-  const int klass_index_offset = 3;
-  const int entry_size         = 4;
   // access exception table
-  typeArrayHandle table (THREAD, constMethod()->exception_table());
-  int length = table->length();
-  assert(length % entry_size == 0, "exception table format has changed");
+  ExceptionTable table(this);
+  int length = table.length();
   // iterate through all entries sequentially
   constantPoolHandle pool(THREAD, constants());
-  for (int i = 0; i < length; i += entry_size) {
-    int beg_bci = table->int_at(i + beg_bci_offset);
-    int end_bci = table->int_at(i + end_bci_offset);
+  for (int i = 0; i < length; i ++) {
+    //reacquire the table in case a GC happened
+    ExceptionTable table(this);
+    int beg_bci = table.start_pc(i);
+    int end_bci = table.end_pc(i);
     assert(beg_bci <= end_bci, "inconsistent exception table");
     if (beg_bci <= throw_bci && throw_bci < end_bci) {
       // exception handler bci range covers throw_bci => investigate further
-      int handler_bci = table->int_at(i + handler_bci_offset);
-      int klass_index = table->int_at(i + klass_index_offset);
+      int handler_bci = table.handler_pc(i);
+      int klass_index = table.catch_type_index(i);
       if (klass_index == 0) {
         return handler_bci;
       } else if (ex_klass.is_null()) {
@@ -980,7 +976,7 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
   {
     int flags_bits = (JVM_MH_INVOKE_BITS | JVM_ACC_PUBLIC | JVM_ACC_FINAL);
     methodOop m_oop = oopFactory::new_method(0, accessFlags_from(flags_bits),
-                                             0, 0, 0, IsSafeConc, CHECK_(empty));
+                                             0, 0, 0, 0, IsSafeConc, CHECK_(empty));
     m = methodHandle(THREAD, m_oop);
   }
   m->set_constants(cp());
@@ -994,7 +990,6 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
   m->set_result_index(rtf.type());
 #endif
   m->compute_size_of_parameters(THREAD);
-  m->set_exception_table(Universe::the_empty_int_array());
   m->init_intrinsic_id();
   assert(m->intrinsic_id() == vmIntrinsics::_invokeExact ||
          m->intrinsic_id() == vmIntrinsics::_invokeGeneric, "must be an invoker");
@@ -1038,6 +1033,7 @@ methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_cod
   AccessFlags flags = m->access_flags();
   int checked_exceptions_len = m->checked_exceptions_length();
   int localvariable_len = m->localvariable_table_length();
+  int exception_table_len = m->exception_table_length();
   // Allocate newm_oop with the is_conc_safe parameter set
   // to IsUnsafeConc to indicate that newm_oop is not yet
   // safe for concurrent processing by a GC.
@@ -1045,6 +1041,7 @@ methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_cod
                                               flags,
                                               new_compressed_linenumber_size,
                                               localvariable_len,
+                                              exception_table_len,
                                               checked_exceptions_len,
                                               IsUnsafeConc,
                                               CHECK_(methodHandle()));
