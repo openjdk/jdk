@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.lang;
 
 import java.io.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The {@link ProcessBuilder#start()} and
@@ -91,7 +92,7 @@ public abstract class Process {
      * @return the output stream connected to the normal input of the
      *         subprocess
      */
-    abstract public OutputStream getOutputStream();
+    public abstract OutputStream getOutputStream();
 
     /**
      * Returns the input stream connected to the normal output of the
@@ -117,7 +118,7 @@ public abstract class Process {
      * @return the input stream connected to the normal output of the
      *         subprocess
      */
-    abstract public InputStream getInputStream();
+    public abstract InputStream getInputStream();
 
     /**
      * Returns the input stream connected to the error output of the
@@ -138,7 +139,7 @@ public abstract class Process {
      * @return the input stream connected to the error output of
      *         the subprocess
      */
-    abstract public InputStream getErrorStream();
+    public abstract InputStream getErrorStream();
 
     /**
      * Causes the current thread to wait, if necessary, until the
@@ -156,7 +157,51 @@ public abstract class Process {
      *         thread while it is waiting, then the wait is ended and
      *         an {@link InterruptedException} is thrown.
      */
-    abstract public int waitFor() throws InterruptedException;
+    public abstract int waitFor() throws InterruptedException;
+
+    /**
+     * Causes the current thread to wait, if necessary, until the
+     * subprocess represented by this {@code Process} object has
+     * terminated, or the specified waiting time elapses.
+     *
+     * <p>If the subprocess has already terminated then this method returns
+     * immediately with the value {@code true}.  If the process has not
+     * terminated and the timeout value is less than, or equal to, zero, then
+     * this method returns immediately with the value {@code false}.
+     *
+     * <p>The default implementation of this methods polls the {@code exitValue}
+     * to check if the process has terminated. Concrete implementations of this
+     * class are strongly encouraged to override this method with a more
+     * efficient implementation.
+     *
+     * @param timeout the maximum time to wait
+     * @param unit the time unit of the {@code timeout} argument
+     * @return {@code true} if the subprocess has exited and {@code false} if
+     *         the waiting time elapsed before the subprocess has exited.
+     * @throws InterruptedException if the current thread is interrupted
+     *         while waiting.
+     * @throws NullPointerException if unit is null
+     * @since 1.8
+     */
+    public boolean waitFor(long timeout, TimeUnit unit)
+        throws InterruptedException
+    {
+        long startTime = System.nanoTime();
+        long rem = unit.toNanos(timeout);
+
+        do {
+            try {
+                exitValue();
+                return true;
+            } catch(IllegalThreadStateException ex) {
+                if (rem > 0)
+                    Thread.sleep(
+                        Math.min(TimeUnit.NANOSECONDS.toMillis(rem) + 1, 100));
+            }
+            rem = unit.toNanos(timeout) - (System.nanoTime() - startTime);
+        } while (rem > 0);
+        return false;
+    }
 
     /**
      * Returns the exit value for the subprocess.
@@ -167,11 +212,54 @@ public abstract class Process {
      * @throws IllegalThreadStateException if the subprocess represented
      *         by this {@code Process} object has not yet terminated
      */
-    abstract public int exitValue();
+    public abstract int exitValue();
+
+    /**
+     * Kills the subprocess. Whether the subprocess represented by this
+     * {@code Process} object is forcibly terminated or not is
+     * implementation dependent.
+     */
+    public abstract void destroy();
 
     /**
      * Kills the subprocess. The subprocess represented by this
      * {@code Process} object is forcibly terminated.
+     *
+     * <p>The default implementation of this method invokes {@link #destroy}
+     * and so may not forcibly terminate the process. Concrete implementations
+     * of this class are strongly encouraged to override this method with a
+     * compliant implementation.  Invoking this method on {@code Process}
+     * objects returned by {@link ProcessBuilder#start} and
+     * {@link Runtime#exec} will forcibly terminate the process.
+     *
+     * <p>Note: The subprocess may not terminate immediately.
+     * i.e. {@code isAlive()} may return true for a brief period
+     * after {@code destroyForcibly()} is called. This method
+     * may be chained to {@code waitFor()} if needed.
+     *
+     * @return the {@code Process} object representing the
+     *         subprocess to be forcibly destroyed.
+     * @since 1.8
      */
-    abstract public void destroy();
+    public Process destroyForcibly() {
+        destroy();
+        return this;
+    }
+
+    /**
+     * Tests whether the subprocess represented by this {@code Process} is
+     * alive.
+     *
+     * @return {@code true} if the subprocess represented by this
+     *         {@code Process} object has not yet terminated.
+     * @since 1.8
+     */
+    public boolean isAlive() {
+        try {
+            exitValue();
+            return false;
+        } catch(IllegalThreadStateException e) {
+            return true;
+        }
+    }
 }

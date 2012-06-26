@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.io.BufferedOutputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.TimeUnit;
 
 /* This class is for the exclusive use of ProcessBuilder.start() to
  * create new processes.
@@ -254,10 +255,43 @@ final class ProcessImpl extends Process {
             throw new InterruptedException();
         return exitValue();
     }
+
     private static native void waitForInterruptibly(long handle);
 
+    @Override
+    public boolean waitFor(long timeout, TimeUnit unit)
+        throws InterruptedException
+    {
+        if (getExitCodeProcess(handle) != STILL_ACTIVE) return true;
+        if (timeout <= 0) return false;
+
+        long msTimeout = unit.toMillis(timeout);
+
+        waitForTimeoutInterruptibly(handle, msTimeout);
+        if (Thread.interrupted())
+            throw new InterruptedException();
+        return (getExitCodeProcess(handle) != STILL_ACTIVE);
+    }
+
+    private static native void waitForTimeoutInterruptibly(
+        long handle, long timeout);
+
     public void destroy() { terminateProcess(handle); }
+
+    @Override
+    public Process destroyForcibly() {
+        destroy();
+        return this;
+    }
+
     private static native void terminateProcess(long handle);
+
+    @Override
+    public boolean isAlive() {
+        return isProcessAlive(handle);
+    }
+
+    private static native boolean isProcessAlive(long handle);
 
     /**
      * Create a process using the win32 function CreateProcess.
