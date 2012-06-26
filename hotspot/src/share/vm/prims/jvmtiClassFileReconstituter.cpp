@@ -191,15 +191,14 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
     }
   }
 
-  typeArrayHandle exception_table(thread(), const_method->exception_table());
-  int exception_table_length = exception_table->length();
-  int exception_table_entries = exception_table_length / 4;
+  ExceptionTable exception_table(method());
+  int exception_table_length = exception_table.length();
   int code_size = const_method->code_size();
   int size =
     2+2+4 +                                // max_stack, max_locals, code_length
     code_size +                            // code
     2 +                                    // exception_table_length
-    (2+2+2+2) * exception_table_entries +  // exception_table
+    (2+2+2+2) * exception_table_length +   // exception_table
     2 +                                    // attributes_count
     attr_size;                             // attributes
 
@@ -209,12 +208,12 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
   write_u2(method->max_locals());
   write_u4(code_size);
   copy_bytecodes(method, (unsigned char*)writeable_address(code_size));
-  write_u2(exception_table_entries);
-  for (int index = 0; index < exception_table_length; ) {
-    write_u2(exception_table->int_at(index++));
-    write_u2(exception_table->int_at(index++));
-    write_u2(exception_table->int_at(index++));
-    write_u2(exception_table->int_at(index++));
+  write_u2(exception_table_length);
+  for (int index = 0; index < exception_table_length; index++) {
+    write_u2(exception_table.start_pc(index));
+    write_u2(exception_table.end_pc(index));
+    write_u2(exception_table.handler_pc(index));
+    write_u2(exception_table.catch_type_index(index));
   }
   write_u2(attr_count);
   if (line_num_cnt != 0) {

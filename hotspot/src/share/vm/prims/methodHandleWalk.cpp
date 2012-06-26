@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1796,7 +1796,7 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) {
   {
     methodOop m_oop = oopFactory::new_method(bytecode_length(),
                                              accessFlags_from(flags_bits),
-                                             0, 0, 0, oopDesc::IsSafeConc, CHECK_(empty));
+                                             0, 0, 0, 0, oopDesc::IsSafeConc, CHECK_(empty));
     m = methodHandle(THREAD, m_oop);
   }
 
@@ -1811,9 +1811,6 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) {
   m->set_max_stack(_max_stack);
   m->set_max_locals(max_locals());
   m->set_size_of_parameters(_num_params);
-
-  typeArrayHandle exception_handlers(THREAD, Universe::the_empty_int_array());
-  m->set_exception_table(exception_handlers());
 
   // Rewrite the method and set up the constant pool cache.
   objArrayOop m_array = oopFactory::new_system_objArray(1, CHECK_(empty));
