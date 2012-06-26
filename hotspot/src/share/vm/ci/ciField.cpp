@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@
 
 // ------------------------------------------------------------------
 // ciField::ciField
-ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with(NULL) {
+ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NULL), _known_to_link_with_get(NULL) {
   ASSERT_IN_VM;
   CompilerThread *thread = CompilerThread::current();
 
@@ -143,7 +143,7 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with(NULL) {
   initialize_from(&field_desc);
 }
 
-ciField::ciField(fieldDescriptor *fd): _known_to_link_with(NULL) {
+ciField::ciField(fieldDescriptor *fd): _known_to_link_with_put(NULL), _known_to_link_with_get(NULL) {
   ASSERT_IN_VM;
 
   _cp_index = -1;
@@ -315,6 +315,10 @@ ciType* ciField::compute_type_impl() {
 bool ciField::will_link(ciInstanceKlass* accessing_klass,
                         Bytecodes::Code bc) {
   VM_ENTRY_MARK;
+  assert(bc == Bytecodes::_getstatic || bc == Bytecodes::_putstatic ||
+         bc == Bytecodes::_getfield  || bc == Bytecodes::_putfield,
+         "unexpected bytecode");
+
   if (_offset == -1) {
     // at creation we couldn't link to our holder so we need to
     // maintain that stance, otherwise there's no safe way to use this
@@ -322,8 +326,22 @@ bool ciField::will_link(ciInstanceKlass* accessing_klass,
     return false;
   }
 
-  if (_known_to_link_with == accessing_klass) {
-    return true;
+  // Check for static/nonstatic mismatch
+  bool is_static = (bc == Bytecodes::_getstatic || bc == Bytecodes::_putstatic);
+  if (is_static != this->is_static()) {
+    return false;
+  }
+
+  // Get and put can have different accessibility rules
+  bool is_put    = (bc == Bytecodes::_putfield  || bc == Bytecodes::_putstatic);
+  if (is_put) {
+    if (_known_to_link_with_put == accessing_klass) {
+      return true;
+    }
+  } else {
+    if (_known_to_link_with_get == accessing_klass) {
+      return true;
+    }
   }
 
   FieldAccessInfo result;
@@ -334,8 +352,13 @@ bool ciField::will_link(ciInstanceKlass* accessing_klass,
                               true, false, KILL_COMPILE_ON_FATAL_(false));
 
   // update the hit-cache, unless there is a problem with memory scoping:
-  if (accessing_klass->is_shared() || !is_shared())
-    _known_to_link_with = accessing_klass;
+  if (accessing_klass->is_shared() || !is_shared()) {
+    if (is_put) {
+      _known_to_link_with_put = accessing_klass;
+    } else {
+      _known_to_link_with_get = accessing_klass;
+    }
+  }
 
   return true;
 }
