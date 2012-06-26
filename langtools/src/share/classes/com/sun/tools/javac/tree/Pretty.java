@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,12 @@ import java.io.*;
 import java.util.*;
 
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
-
+import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.parser.Tokens.Comment;
+import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.code.*;
-
-import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.tree.JCTree.*;
-
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -78,10 +76,10 @@ public class Pretty extends JCTree.Visitor {
      */
     Name enclClassName;
 
-    /** A hashtable mapping trees to their documentation comments
+    /** A table mapping trees to their documentation comments
      *  (can be null)
      */
-    Map<JCTree, String> docComments = null;
+    DocCommentTable docComments = null;
 
     /** Align code to be indented to left margin.
      */
@@ -233,7 +231,7 @@ public class Pretty extends JCTree.Visitor {
      */
     public void printDocComment(JCTree tree) throws IOException {
         if (docComments != null) {
-            String dc = docComments.get(tree);
+            String dc = docComments.getCommentText(tree);
             if (dc != null) {
                 print("/**"); println();
                 int pos = 0;
@@ -480,7 +478,7 @@ public class Pretty extends JCTree.Visitor {
 
     public void visitVarDef(JCVariableDecl tree) {
         try {
-            if (docComments != null && docComments.get(tree) != null) {
+            if (docComments != null && docComments.hasComment(tree)) {
                 println(); align();
             }
             printDocComment(tree);
