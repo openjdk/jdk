@@ -42,7 +42,7 @@ REQUIRED_ALSA_VERSION =
 OTHER_CPPFLAGS += -DJAVASE_EMBEDDED
 
 # Product naming
-PRODUCT_SUFFIX = SE Runtime Environment for Embedded
+PRODUCT_SUFFIX = SE Embedded Runtime Environment
 RUNTIME_NAME = $(PRODUCT_NAME) $(PRODUCT_SUFFIX)
 
 # Reduced JRE locations
