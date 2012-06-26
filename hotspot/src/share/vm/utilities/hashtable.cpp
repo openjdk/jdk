@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -119,8 +120,16 @@ template <class T> void Hashtable<T>::move_to(Hashtable<T>* new_table) {
       // Get a new index relative to the new table (can also change size)
       int index = new_table->hash_to_index(hashValue);
       p->set_hash(hashValue);
+      // Keep the shared bit in the Hashtable entry to indicate that this entry
+      // can't be deleted.   The shared bit is the LSB in the _next field so
+      // walking the hashtable past these entries requires
+      // BasicHashtableEntry::make_ptr() call.
+      bool keep_shared = p->is_shared();
       unlink_entry(p);
       new_table->add_entry(index, p);
+      if (keep_shared) {
+        p->set_shared();
+      }
       p = next;
     }
   }
@@ -134,6 +143,19 @@ template <class T> void Hashtable<T>::move_to(Hashtable<T>* new_table) {
   // to avoid a memory allocation spike at safepoint.
   free_buckets();
 }
+
+void BasicHashtable::free_buckets() {
+  if (NULL != _buckets) {
+    // Don't delete the buckets in the shared space.  They aren't
+    // allocated by os::malloc
+    if (!UseSharedSpaces ||
+        !FileMapInfo::current_info()->is_in_shared_space(_buckets)) {
+       FREE_C_HEAP_ARRAY(HashtableBucket, _buckets);
+    }
+    _buckets = NULL;
+  }
+}
+
 
 // Reverse the order of elements in the hash buckets.
 
