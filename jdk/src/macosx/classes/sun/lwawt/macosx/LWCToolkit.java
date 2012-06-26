@@ -63,9 +63,7 @@ public class LWCToolkit extends LWToolkit {
 
     private static native void initIDs();
 
-    static native void startNativeNestedEventLoop();
-
-    static native void stopNativeNestedEventLoop();
+    static native void executeNextAppKitEvent();
 
     private static CInputMethodDescriptor sInputMethodDescriptor;
 
@@ -361,9 +359,11 @@ public class LWCToolkit extends LWToolkit {
             CWrapper.NSObject.release(screen);
         }
         // Convert between Cocoa's coordinate system and Java.
-        return new Insets(fullScreen.height - workArea.height - workArea.y,
-                          workArea.x, workArea.y,
-                          fullScreen.width - workArea.width - workArea.x);
+        int bottom = workArea.y - fullScreen.y;
+        int top = fullScreen.height - workArea.height - bottom;
+        int left = workArea.x - fullScreen.x;
+        int right = fullScreen.width - workArea.width - left;
+        return  new Insets(top, left, bottom, right);
     }
 
     @Override
