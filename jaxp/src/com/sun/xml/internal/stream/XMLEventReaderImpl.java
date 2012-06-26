@@ -248,8 +248,11 @@ public class XMLEventReaderImpl implements javax.xml.stream.XMLEventReader{
             object = nextEvent();
         }catch(XMLStreamException streamException){
             fLastEvent = null ;
-            //xxx: what should be done in this case ?
-            throw new NoSuchElementException();
+            //don't swallow the cause
+            NoSuchElementException e = new NoSuchElementException(streamException.getMessage());
+            e.initCause(streamException.getCause());
+            throw e;
+
         }
         return object;
     }
