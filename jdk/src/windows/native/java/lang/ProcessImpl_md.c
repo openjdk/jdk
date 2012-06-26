@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,8 +299,27 @@ Java_java_lang_ProcessImpl_waitForInterruptibly(JNIEnv *env, jclass ignored, jlo
 
     if (WaitForMultipleObjects(sizeof(events)/sizeof(events[0]), events,
                                FALSE,    /* Wait for ANY event */
-                               INFINITE) /* Wait forever */
+                               INFINITE)  /* Wait forever */
         == WAIT_FAILED)
+        win32Error(env, "WaitForMultipleObjects");
+}
+
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessImpl_waitForTimeoutInterruptibly(JNIEnv *env,
+                                                       jclass ignored,
+                                                       jlong handle,
+                                                       jlong timeout)
+{
+    HANDLE events[2];
+    DWORD dwTimeout = (DWORD)timeout;
+    DWORD result;
+    events[0] = (HANDLE) handle;
+    events[1] = JVM_GetThreadInterruptEvent();
+    result = WaitForMultipleObjects(sizeof(events)/sizeof(events[0]), events,
+                                    FALSE,    /* Wait for ANY event */
+                                    dwTimeout);  /* Wait for dwTimeout */
+
+    if (result == WAIT_FAILED)
         win32Error(env, "WaitForMultipleObjects");
 }
 
@@ -308,6 +327,14 @@ JNIEXPORT void JNICALL
 Java_java_lang_ProcessImpl_terminateProcess(JNIEnv *env, jclass ignored, jlong handle)
 {
     TerminateProcess((HANDLE) handle, 1);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_java_lang_ProcessImpl_isProcessAlive(JNIEnv *env, jclass ignored, jlong handle)
+{
+    DWORD dwExitStatus;
+    GetExitCodeProcess(handle, &dwExitStatus);
+    return dwExitStatus == STILL_ACTIVE;
 }
 
 JNIEXPORT jboolean JNICALL

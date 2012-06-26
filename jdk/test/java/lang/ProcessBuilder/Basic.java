@@ -26,7 +26,7 @@
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
- *      4947220 7018606 7034570
+ *      4947220 7018606 7034570 4244896
  * @summary Basic tests for Process and Environment Variable code
  * @run main/othervm/timeout=300 Basic
  * @author Martin Buchholz
@@ -38,6 +38,7 @@ import static java.lang.ProcessBuilder.Redirect.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.security.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -634,6 +635,44 @@ public class Basic {
 
         /** Returns true if we can expect English OS error strings */
         static boolean is() { return is; }
+    }
+
+    static class DelegatingProcess extends Process {
+        final Process p;
+
+        DelegatingProcess(Process p) {
+            this.p = p;
+        }
+
+        @Override
+        public void destroy() {
+            p.destroy();
+        }
+
+        @Override
+        public int exitValue() {
+            return p.exitValue();
+        }
+
+        @Override
+        public int waitFor() throws InterruptedException {
+            return p.waitFor();
+        }
+
+        @Override
+        public OutputStream getOutputStream() {
+            return p.getOutputStream();
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            return p.getInputStream();
+        }
+
+        @Override
+        public InputStream getErrorStream() {
+            return p.getErrorStream();
+        }
     }
 
     private static boolean matches(String str, String regex) {
@@ -2090,6 +2129,112 @@ public class Basic {
         policy.setPermissions(new RuntimePermission("setSecurityManager"));
         System.setSecurityManager(null);
 
+        //----------------------------------------------------------------
+        // Check that Process.isAlive() &
+        // Process.waitFor(0, TimeUnit.MILLISECONDS) work as expected.
+        //----------------------------------------------------------------
+        try {
+            List<String> childArgs = new ArrayList<String>(javaChildArgs);
+            childArgs.add("sleep");
+            final Process p = new ProcessBuilder(childArgs).start();
+            long start = System.nanoTime();
+            if (!p.isAlive() || p.waitFor(0, TimeUnit.MILLISECONDS)) {
+                fail("Test failed: Process exited prematurely");
+            }
+            long end = System.nanoTime();
+            // give waitFor(timeout) a wide berth (100ms)
+            if ((end - start) > 100000000)
+                fail("Test failed: waitFor took too long");
+
+            p.destroy();
+            p.waitFor();
+
+            if (p.isAlive() ||
+                !p.waitFor(0, TimeUnit.MILLISECONDS))
+            {
+                fail("Test failed: Process still alive - please terminate " +
+                    p.toString() + " manually");
+            }
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Check that Process.waitFor(timeout, TimeUnit.MILLISECONDS)
+        // works as expected.
+        //----------------------------------------------------------------
+        try {
+            List<String> childArgs = new ArrayList<String>(javaChildArgs);
+            childArgs.add("sleep");
+            final Process p = new ProcessBuilder(childArgs).start();
+            long start = System.nanoTime();
+
+            p.waitFor(1000, TimeUnit.MILLISECONDS);
+
+            long end = System.nanoTime();
+            if ((end - start) < 500000000)
+                fail("Test failed: waitFor didn't take long enough");
+
+            p.destroy();
+
+            start = System.nanoTime();
+            p.waitFor(1000, TimeUnit.MILLISECONDS);
+            end = System.nanoTime();
+            if ((end - start) > 100000000)
+                fail("Test failed: waitFor took too long on a dead process.");
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Check that Process.waitFor(timeout, TimeUnit.MILLISECONDS)
+        // interrupt works as expected.
+        //----------------------------------------------------------------
+        try {
+            List<String> childArgs = new ArrayList<String>(javaChildArgs);
+            childArgs.add("sleep");
+            final Process p = new ProcessBuilder(childArgs).start();
+            final long start = System.nanoTime();
+
+            final Thread thread = new Thread() {
+                public void run() {
+                    try {
+                        try {
+                            p.waitFor(10000, TimeUnit.MILLISECONDS);
+                        } catch (InterruptedException e) {
+                            return;
+                        }
+                        fail("waitFor() wasn't interrupted");
+                    } catch (Throwable t) { unexpected(t); }}};
+
+            thread.start();
+            Thread.sleep(1000);
+            thread.interrupt();
+            p.destroy();
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Check the default implementation for
+        // Process.waitFor(long, TimeUnit)
+        //----------------------------------------------------------------
+        try {
+            List<String> childArgs = new ArrayList<String>(javaChildArgs);
+            childArgs.add("sleep");
+            final Process proc = new ProcessBuilder(childArgs).start();
+            DelegatingProcess p = new DelegatingProcess(proc);
+            long start = System.nanoTime();
+
+            p.waitFor(1000, TimeUnit.MILLISECONDS);
+
+            long end = System.nanoTime();
+            if ((end - start) < 500000000)
+                fail("Test failed: waitFor didn't take long enough");
+
+            p.destroy();
+
+            start = System.nanoTime();
+            p.waitFor(1000, TimeUnit.MILLISECONDS);
+            end = System.nanoTime();
+            // allow for the less accurate default implementation
+            if ((end - start) > 200000000)
+                fail("Test failed: waitFor took too long on a dead process.");
+        } catch (Throwable t) { unexpected(t); }
     }
 
     static void closeStreams(Process p) {
