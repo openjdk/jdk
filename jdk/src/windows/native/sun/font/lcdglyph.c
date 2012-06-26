@@ -409,7 +409,7 @@ Java_sun_font_FileFontStrike__1getGlyphImageFromWindows
      */
     imageSize = bytesWidth*height;
     glyphInfo = (GlyphInfo*)malloc(sizeof(GlyphInfo)+imageSize);
-    if (malloc == NULL) {
+    if (glyphInfo == NULL) {
         FREE_AND_RETURN;
     }
     glyphInfo->cellInfo = NULL;
