@@ -2609,6 +2609,18 @@ protected static final String PARSER_SETTINGS =
         if (str == null) {
             return str;
         }
+        int len = str.length(), i=0, ch;
+        for (; i < len; i++) {
+            ch = str.charAt(i);
+            // if it's not an ASCII 7 character, break here, and use UTF-8 encoding
+            if (ch >= 128)
+                break;
+        }
+
+        // we saw no non-ascii-7 character
+        if (i == len) {
+            return str;
+        }
 
         // get UTF-8 bytes for the string
         StringBuffer buffer = new StringBuffer();
@@ -2620,11 +2632,11 @@ protected static final String PARSER_SETTINGS =
             // should never happen
             return str;
         }
-        int len = bytes.length;
-        int ch;
+
+        len = bytes.length;
 
         // for each byte
-        for (int i = 0; i < len; i++) {
+        for (i = 0; i < len; i++) {
             b = bytes[i];
             // for non-ascii character: make it positive, then escape
             if (b < 0) {
