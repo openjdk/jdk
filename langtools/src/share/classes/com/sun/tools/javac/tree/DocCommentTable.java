@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,36 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tools.javac.parser;
+package com.sun.tools.javac.tree;
 
-import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.parser.Tokens.Comment;
 
 /**
- * Specifies the methods to access a mappings of syntax trees to end positions.
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ * A table giving the doc comment, if any, for any tree node.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own
+ *  risk.  This code and its internal interfaces are subject to change
+ *  or deletion without notice.</b>
  */
-public interface EndPosTable {
+public interface DocCommentTable {
+    /**
+     * Check if a tree node has a corresponding doc comment.
+     */
+    public boolean hasComment(JCTree tree);
 
     /**
-     * This method will return the end position of a given tree, otherwise a
-     * Positions.NOPOS will be returned.
-     * @param tree JCTree
-     * @return position of the source tree or Positions.NOPOS for non-existent mapping
+     * Get the Comment token containing the doc comment, if any, for a tree node.
      */
-    public int getEndPos(JCTree tree);
+    public Comment getComment(JCTree tree);
 
     /**
-     * Give an old tree and a new tree, the old tree will be replaced with
-     * the new tree, the position of the new tree will be that of the old
-     * tree.
-     * not exist.
-     * @param oldtree a JCTree to be replaced
-     * @param newtree a JCTree to be replaced with
-     * @return position of the old tree or Positions.NOPOS for non-existent mapping
+     * Get the plain text of the doc comment, if any, for a tree node.
      */
-    public int replaceTree(JCTree oldtree, JCTree newtree);
+    public String getCommentText(JCTree tree);
+
+    /**
+     * Set the Comment to be associated with a tree node.
+     */
+    public void putComment(JCTree tree, Comment c);
 }

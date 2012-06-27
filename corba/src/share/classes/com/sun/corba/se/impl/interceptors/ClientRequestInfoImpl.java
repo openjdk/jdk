@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ public final class ClientRequestInfoImpl
 
     // ClientRequestInfo validity table (see ptc/00-08-06 table 21-1).
     // Note: These must be in the same order as specified in contants.
-    protected static final boolean validCall[][] = {
+    private static final boolean validCall[][] = {
         // LEGEND:
         // s_req = send_request     r_rep = receive_reply
         // s_pol = send_poll        r_exc = receive_exception
