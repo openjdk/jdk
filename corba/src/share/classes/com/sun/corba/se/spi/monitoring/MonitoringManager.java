@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package com.sun.corba.se.spi.monitoring;
 
+import java.io.Closeable;
 import com.sun.corba.se.spi.orb.ORB;
 import com.sun.corba.se.spi.monitoring.MonitoredObject;
 import java.util.*;
@@ -39,7 +40,7 @@ import java.util.*;
  * @author Hemanth Puttaswamy
  * </p>
  */
-public interface MonitoringManager {
+public interface MonitoringManager extends Closeable {
 
   ///////////////////////////////////////
   // operations
