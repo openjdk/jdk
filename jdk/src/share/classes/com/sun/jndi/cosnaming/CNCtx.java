@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,22 @@ public class CNCtx implements javax.naming.Context {
 
     private final static boolean debug = false;
 
+    /*
+     * Implement one shared ORB among all CNCtx.  However, there is a public constructor
+     * accepting an ORB, so we need the option of using a given ORB.
+     */
+    private static ORB _defaultOrb;
     ORB _orb;                   // used by ExceptionMapper and RMI/IIOP factory
     public NamingContext _nc;   // public for accessing underlying NamingContext
+
+    private synchronized static ORB getDefaultOrb() {
+        if (_defaultOrb == null) {
+            _defaultOrb = CorbaUtils.getOrb(null, -1,
+               new Hashtable<String, java.lang.Object>());
+        }
+        return _defaultOrb;
+    }
+
     private NameComponent[] _name = null;
 
     Hashtable<String, java.lang.Object> _env; // used by ExceptionMapper
@@ -114,8 +128,9 @@ public class CNCtx implements javax.naming.Context {
         // rest is the INS name
         // Return the parsed form to prevent subsequent lookup
         // from parsing the string as a composite name
-        // The caller should be aware that a toString() of the name
-        // will yield its INS syntax, rather than a composite syntax
+        // The caller should be aware that a toString() of the name,
+        // which came from the environment will yield its INS syntax,
+        // rather than a composite syntax
         return new ResolveResult(ctx, parser.parse(rest));
     }
 
@@ -135,10 +150,10 @@ public class CNCtx implements javax.naming.Context {
             if (orb == null || nctx == null)
                 throw new ConfigurationException(
                     "Must supply ORB or NamingContext");
-            _orb = orb;
-            orbTracker = tracker;
-            if (orbTracker != null) {
-                orbTracker.incRefCount();
+            if (orb != null) {
+                _orb = orb;
+            } else {
+                _orb = getDefaultOrb();
             }
             _nc = nctx;
             _env = env;
@@ -212,9 +227,12 @@ public class CNCtx implements javax.naming.Context {
         org.omg.CORBA.ORB inOrb = null;
         String ncIor = null;
 
-        if (env != null) {
+        if (inOrb == null && env != null) {
             inOrb = (org.omg.CORBA.ORB) env.get("java.naming.corba.orb");
         }
+
+        if (inOrb == null)
+            inOrb = getDefaultOrb(); // will create a default ORB if none exists
 
         // Extract PROVIDER_URL from environment
         String provUrl = null;
@@ -226,13 +244,6 @@ public class CNCtx implements javax.naming.Context {
             // Initialize the root naming context by using the IOR supplied
             // in the PROVIDER_URL
             ncIor = getStringifiedIor(provUrl);
-
-            if (inOrb == null) {
-
-                // no ORB instance specified; create one using env and defaults
-                inOrb = CorbaUtils.getOrb(null, -1, env);
-                orbTracker = new OrbReuseTracker(inOrb);
-            }
             setOrbAndRootContext(inOrb, ncIor);
         } else if (provUrl != null) {
             // Initialize the root naming context by using the URL supplied
@@ -258,14 +269,8 @@ public class CNCtx implements javax.naming.Context {
             }
         } else {
             // No PROVIDER_URL supplied; initialize using defaults
-            if (inOrb == null) {
-
-                // No ORB instance specified; create one using env and defaults
-                inOrb = CorbaUtils.getOrb(null, -1, env);
-                orbTracker = new OrbReuseTracker(inOrb);
-                if (debug) {
-                    System.err.println("Getting default ORB: " + inOrb + env);
-                }
+            if (debug) {
+                System.err.println("Getting default ORB: " + inOrb + env);
             }
             setOrbAndRootContext(inOrb, (String)null);
         }
@@ -286,6 +291,10 @@ public class CNCtx implements javax.naming.Context {
      */
     private String initUsingIiopUrl(ORB defOrb, String url, Hashtable<?,?> env)
         throws NamingException {
+
+        if (defOrb == null)
+            defOrb = getDefaultOrb();
+
         try {
             IiopUrl parsedUrl = new IiopUrl(url);
 
@@ -294,19 +303,17 @@ public class CNCtx implements javax.naming.Context {
             for (IiopUrl.Address addr : parsedUrl.getAddresses()) {
 
                 try {
-                    if (defOrb != null) {
-                        try {
-                            String tmpUrl = "corbaloc:iiop:" + addr.host
-                                + ":" + addr.port + "/NameService";
-                            if (debug) {
-                                System.err.println("Using url: " + tmpUrl);
-                            }
-                            org.omg.CORBA.Object rootCtx =
-                                defOrb.string_to_object(tmpUrl);
-                            setOrbAndRootContext(defOrb, rootCtx);
-                            return parsedUrl.getStringName();
-                        } catch (Exception e) {} // keep going
-                    }
+                    try {
+                        String tmpUrl = "corbaloc:iiop:" + addr.host
+                            + ":" + addr.port + "/NameService";
+                        if (debug) {
+                            System.err.println("Using url: " + tmpUrl);
+                        }
+                        org.omg.CORBA.Object rootCtx =
+                            defOrb.string_to_object(tmpUrl);
+                        setOrbAndRootContext(defOrb, rootCtx);
+                        return parsedUrl.getStringName();
+                    } catch (Exception e) {} // keep going
 
                     // Get ORB
                     if (debug) {
@@ -314,12 +321,8 @@ public class CNCtx implements javax.naming.Context {
                             + " and port " + addr.port);
                     }
 
-                    // Get ORB
-                    ORB orb = CorbaUtils.getOrb(addr.host, addr.port, env);
-                    orbTracker = new OrbReuseTracker(orb);
-
                     // Assign to fields
-                    setOrbAndRootContext(orb, (String)null);
+                    setOrbAndRootContext(defOrb, (String)null);
                     return parsedUrl.getStringName();
 
                 } catch (NamingException ne) {
@@ -341,18 +344,16 @@ public class CNCtx implements javax.naming.Context {
      */
     private String initUsingCorbanameUrl(ORB orb, String url, Hashtable<?,?> env)
         throws NamingException {
+
+        if (orb == null)
+                orb = getDefaultOrb();
+
         try {
             CorbanameUrl parsedUrl = new CorbanameUrl(url);
 
             String corbaloc = parsedUrl.getLocation();
             String cosName = parsedUrl.getStringName();
 
-            if (orb == null) {
-
-                // No ORB instance specified; create one using env and defaults
-                orb = CorbaUtils.getOrb(null, -1, env);
-                orbTracker = new OrbReuseTracker(orb);
-            }
             setOrbAndRootContext(orb, corbaloc);
 
             return parsedUrl.getStringName();
@@ -1117,9 +1118,6 @@ public class CNCtx implements javax.naming.Context {
     }
 
     synchronized public void incEnumCount() {
-        if (orbTracker == null) {
-            return;
-        }
         enumCount++;
         if (debug) {
             System.out.println("incEnumCount, new count:" + enumCount);
@@ -1128,9 +1126,6 @@ public class CNCtx implements javax.naming.Context {
 
     synchronized public void decEnumCount()
             throws NamingException {
-        if (orbTracker == null) {
-            return;
-        }
         enumCount--;
         if (debug) {
             System.out.println("decEnumCount, new count:" + enumCount +
@@ -1142,14 +1137,15 @@ public class CNCtx implements javax.naming.Context {
     }
 
     synchronized public void close() throws NamingException {
-        if (orbTracker == null) {
-            return;
-        }
+
         if (enumCount > 0) {
             isCloseCalled = true;
             return;
         }
-        orbTracker.decRefCount();
+
+        // Never destroy an orb in CNCtx.
+        // The orb we have is either the shared/default orb, or one passed in to a constructor
+        // from elsewhere, so that orb is somebody else's reponsibility.
     }
 
     protected void finalize() {
