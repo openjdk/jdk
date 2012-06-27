@@ -30,6 +30,8 @@
     BOOL fHandlesDocumentTypes;
     BOOL fHandlesURLTypes;
 
+    id <NSApplicationDelegate> realDelegate;
+
     NSMutableArray* queue;
 }
 
@@ -39,6 +41,10 @@
 - (void) dealloc;
 
 - (void)processQueuedEventsWithTargetDelegate:(id <NSApplicationDelegate>)delegate;
+
+@property(retain) id <NSApplicationDelegate> realDelegate;
+
+@property(retain) NSMutableArray* queue;
 
 @end
 
