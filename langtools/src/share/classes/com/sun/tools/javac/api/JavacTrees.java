@@ -60,7 +60,7 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.MemberEnter;
 import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.model.JavacElements;
-import com.sun.tools.javac.parser.EndPosTable;
+import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -240,10 +240,11 @@ public class JavacTrees extends Trees {
 
     public String getDocComment(TreePath path) {
         CompilationUnitTree t = path.getCompilationUnit();
-        if (t instanceof JCTree.JCCompilationUnit) {
+        Tree leaf = path.getLeaf();
+        if (t instanceof JCTree.JCCompilationUnit && leaf instanceof JCTree) {
             JCCompilationUnit cu = (JCCompilationUnit) t;
             if (cu.docComments != null) {
-                return cu.docComments.get(path.getLeaf());
+                return cu.docComments.getCommentText((JCTree) leaf);
             }
         }
         return null;

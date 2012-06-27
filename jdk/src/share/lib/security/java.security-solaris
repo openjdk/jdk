@@ -134,10 +134,10 @@ package.access=sun.,com.sun.xml.internal.ws.,com.sun.xml.internal.bind.,com.sun.
 # corresponding RuntimePermission ("defineClassInPackage."+package) has
 # been granted.
 #
-# by default, no packages are restricted for definition, and none of
-# the class loaders supplied with the JDK call checkPackageDefinition.
+# by default, none of the class loaders supplied with the JDK call
+# checkPackageDefinition.
 #
-#package.definition=
+package.definition=sun.,com.sun.xml.internal.ws.,com.sun.xml.internal.bind.,com.sun.imageio.,com.sun.org.apache.xerces.internal.utils.,com.sun.org.apache.xalan.internal.utils.
 
 #
 # Determines whether this properties file can be appended to

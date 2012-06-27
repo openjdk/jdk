@@ -97,6 +97,7 @@ import sun.font.FontUtilities;
 import java.nio.charset.*;
 import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 
 //REMIND: Remove use of this class when IPPPrintService is moved to share directory.
 import java.lang.reflect.Method;
@@ -659,7 +660,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                      * is not removed for some reason, request that it is
                      * removed when the VM exits.
                      */
-                    spoolFile = File.createTempFile("javaprint", ".ps", null);
+                    spoolFile = Files.createTempFile("javaprint", ".ps").toFile();
                     spoolFile.deleteOnExit();
 
                 result = new FileOutputStream(spoolFile);
