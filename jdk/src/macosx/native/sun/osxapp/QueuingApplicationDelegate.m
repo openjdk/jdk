@@ -27,8 +27,6 @@
 
 #import "QueuingApplicationDelegate.h"
 
-static id <NSApplicationDelegate> realDelegate = nil;
-
 @interface NSBundle (EAWTOverrides)
 - (BOOL)_hasEAWTOverride:(NSString *)key;
 @end
@@ -43,6 +41,9 @@ static id <NSApplicationDelegate> realDelegate = nil;
 @end
 
 @implementation QueuingApplicationDelegate
+
+@synthesize realDelegate;
+@synthesize queue;
 
 + (QueuingApplicationDelegate*) sharedDelegate
 {
@@ -62,7 +63,7 @@ static id <NSApplicationDelegate> realDelegate = nil;
         return self;
     }
 
-    self->queue = [[NSMutableArray arrayWithCapacity: 0] retain];
+    self.queue = [NSMutableArray arrayWithCapacity: 0];
 
     // If the java application has a bundle with an Info.plist file with
     //  a CFBundleDocumentTypes entry, then it is set up to handle Open Doc
@@ -100,8 +101,8 @@ static id <NSApplicationDelegate> realDelegate = nil;
     Class clz = [QueuingApplicationDelegate class];
     [ctr removeObserver:clz];
 
-    [self->queue release];
-    self->queue = nil;
+    self.queue = nil;
+    self.realDelegate = nil;
 
     [super dealloc];
 }
@@ -109,16 +110,16 @@ static id <NSApplicationDelegate> realDelegate = nil;
 
 - (void)_handleOpenURLEvent:(NSAppleEventDescriptor *)openURLEvent withReplyEvent:(NSAppleEventDescriptor *)replyEvent
 {
-    [self->queue addObject:^(){
-        [realDelegate _handleOpenURLEvent:openURLEvent withReplyEvent:replyEvent];
-    }];
+    [self.queue addObject:[^(){
+        [self.realDelegate _handleOpenURLEvent:openURLEvent withReplyEvent:replyEvent];
+    } copy]];
 }
 
 - (void)application:(NSApplication *)theApplication openFiles:(NSArray *)fileNames
 {
-    [self->queue addObject:^(){
-        [realDelegate application:theApplication openFiles:fileNames];
-    }];
+    [self.queue addObject:[^(){
+        [self.realDelegate application:theApplication openFiles:fileNames];
+    } copy]];
 }
 
 - (NSApplicationPrintReply)application:(NSApplication *)application printFiles:(NSArray *)fileNames withSettings:(NSDictionary *)printSettings showPrintPanels:(BOOL)showPrintPanels
@@ -127,9 +128,9 @@ static id <NSApplicationDelegate> realDelegate = nil;
         return NSPrintingCancelled;
     }
 
-    [self->queue addObject:^(){
-        [realDelegate application:application printFiles:fileNames withSettings:printSettings showPrintPanels:showPrintPanels];
-    }];
+    [self.queue addObject:[^(){
+        [self.realDelegate application:application printFiles:fileNames withSettings:printSettings showPrintPanels:showPrintPanels];
+    } copy]];
 
     // well, a bit premature, but what else can we do?..
     return NSPrintingSuccess;
@@ -137,76 +138,76 @@ static id <NSApplicationDelegate> realDelegate = nil;
 
 - (void)_willFinishLaunching
 {
-    QueuingApplicationDelegate * q = self;
-    [self->queue addObject:^(){
-        [[realDelegate class] _willFinishLaunching];
-    }];
+    [self.queue addObject:[^(){
+        [[self.realDelegate class] _willFinishLaunching];
+    } copy]];
 }
 
 - (BOOL)applicationShouldHandleReopen:(NSApplication *)theApplication hasVisibleWindows:(BOOL)flag
 {
-    [self->queue addObject:^(){
-        [realDelegate applicationShouldHandleReopen:theApplication hasVisibleWindows:flag];
-    }];
+    [self.queue addObject:[^(){
+        [self.realDelegate applicationShouldHandleReopen:theApplication hasVisibleWindows:flag];
+    } copy]];
     return YES;
 }
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)app
 {
-    [self->queue addObject:^(){
-        [realDelegate applicationShouldTerminate:app];
-    }];
+    [self.queue addObject:[^(){
+        [self.realDelegate applicationShouldTerminate:app];
+    } copy]];
     return NSTerminateLater;
 }
 
 - (void)_systemWillPowerOff
 {
-    [self->queue addObject:^(){
-        [[realDelegate class] _systemWillPowerOff];
-    }];
+    [self.queue addObject:[^(){
+        [[self.realDelegate class] _systemWillPowerOff];
+    } copy]];
 }
 
 - (void)_appDidActivate
 {
-    [self->queue addObject:^(){
-        [[realDelegate class] _appDidActivate];
-    }];
+    [self.queue addObject:[^(){
+        [[self.realDelegate class] _appDidActivate];
+    } copy]];
 }
 
 - (void)_appDidDeactivate
 {
-    [self->queue addObject:^(){
-        [[realDelegate class] _appDidDeactivate];
-    }];
+    [self.queue addObject:[^(){
+        [[self.realDelegate class] _appDidDeactivate];
+    } copy]];
 }
 
 - (void)_appDidHide
 {
-    [self->queue addObject:^(){
-        [[realDelegate class] _appDidHide];
-    }];
+    [self.queue addObject:[^(){
+        [[self.realDelegate class] _appDidHide];
+    } copy]];
 }
 
 - (void)_appDidUnhide
 {
-    [self->queue addObject:^(){
-        [[realDelegate class] _appDidUnhide];
-    }];
+    [self.queue addObject:[^(){
+        [[self.realDelegate class] _appDidUnhide];
+    } copy]];
 }
 
 - (void)processQueuedEventsWithTargetDelegate:(id <NSApplicationDelegate>)delegate
 {
-    NSUInteger i;
-    NSUInteger count = [self->queue count];
+    self.realDelegate = delegate;
 
-    realDelegate = delegate;
+    NSUInteger i;
+    NSUInteger count = [self.queue count];
 
     for (i = 0; i < count; i++) {
-        void (^event)() = (void (^)())[self->queue objectAtIndex: i];
+        void (^event)() = (void (^)())[self.queue objectAtIndex: i];
         event();
+        [event release];
     }
 
-    [self->queue removeAllObjects];
+    [self.queue removeAllObjects];
 }
 
 @end

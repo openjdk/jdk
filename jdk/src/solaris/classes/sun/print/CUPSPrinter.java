@@ -278,14 +278,26 @@ public class CUPSPrinter  {
                                          is);
                     is.close();
 
-                    if (responseMap.length > 0) {
+                    if (responseMap != null && responseMap.length > 0) {
                         defaultMap = responseMap[0];
                     }
 
                     if (defaultMap == null) {
                         os.close();
                         urlConnection.disconnect();
-                        return null;
+
+                        /* CUPS on OS X, as initially configured, considers the
+                         * default printer to be the last one used that's
+                         * presently available. So if no default was
+                         * reported, exec lpstat -d which has all the Apple
+                         * special behaviour for this built in.
+                         */
+                         if (UnixPrintServiceLookup.isMac()) {
+                             return UnixPrintServiceLookup.
+                                                   getDefaultPrinterNameSysV();
+                         } else {
+                             return null;
+                         }
                     }
 
                     AttributeClass attribClass = (AttributeClass)
