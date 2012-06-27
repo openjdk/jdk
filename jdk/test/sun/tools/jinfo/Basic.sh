@@ -43,7 +43,8 @@ set +e
 
 failed=0
 
-runSA=true
+# Skip SA options for now, see 7175133
+runSA=false
 
 if [ $isMacos = true ]; then
     runSA=false

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,23 @@ FILES_ties   = $(subst javax/management/remote/rmi/,javax/management/remote/rmi/
 # so that *_tie classes are generated in package without the prefix
 # org.omg.stub (6375696)
 # 
+# To ensure the latest stub generator files are picked up from corba repo
+# when available, we need to run with latest rmic version available. rmic 
+# launch tool not built at this stage but we can invoke via rmi class.
+
+RMIC_JAVA = $(OUTPUTDIR)/bin/java
+# need to treat 64bit solaris differently
+ifeq ($(PLATFORM)-$(LIBARCH), solaris-amd64)
+RMIC_JAVA = $(OUTPUTDIR)/bin/amd64/java
+endif
+ifeq ($(PLATFORM)-$(LIBARCH), solaris-sparcv9)
+RMIC_JAVA = $(OUTPUTDIR)/bin/sparcv9/java
+endif
+
+ifeq ($(CROSS_COMPILE_ARCH),)
+RMIC = $(RMIC_JAVA) $(JAVA_TOOLS_FLAGS) -cp $(OUTPUTDIR)/classes sun.rmi.rmic.Main
+endif  
+
 $(CLASSDESTDIR)/%_Stub.class: $(CLASSDESTDIR)/%.class
 	$(prep-target)
 	$(RMIC) -classpath "$(CLASSDESTDIR)"    \
