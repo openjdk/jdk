@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package com.sun.corba.se.spi.protocol;
+
+import java.io.Closeable;
 
 import org.omg.PortableInterceptor.ObjectReferenceTemplate ;
 import org.omg.PortableInterceptor.Interceptor ;
@@ -51,7 +53,7 @@ import com.sun.corba.se.impl.protocol.giopmsgheaders.ReplyMessage ;
 /** This interface defines the PI interface that is used to interface the rest of the
  * ORB to the PI implementation.
  */
-public interface PIHandler {
+public interface PIHandler extends Closeable {
     /** Complete the initialization of the PIHandler.  This will execute the methods
     * on the ORBInitializers, if any are defined.  This must be done here so that
     * the ORB can obtain the PIHandler BEFORE the ORBInitializers run, since they
