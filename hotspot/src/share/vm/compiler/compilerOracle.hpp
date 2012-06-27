@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,10 @@ class CompilerOracle : AllStatic {
   static bool _quiet;
 
  public:
+
+  // True if the command file has been specified or is implicit
+  static bool has_command_file();
+
   // Reads from file and adds to lists
   static void parse_from_file();
 

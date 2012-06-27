@@ -26,6 +26,8 @@
  * @bug 4476378
  * @summary Check that SO_REUSEADDR allows a server to restart
  *          after a crash.
+ * @run main Restart
+ * @run main/othervm -Dsun.net.useExclusiveBind Restart
  */
 import java.net.*;
 
@@ -57,6 +59,12 @@ public class Restart {
 
             // close the client socket
             s1.close();
+        } catch (BindException be) {
+            if (System.getProperty("sun.net.useExclusiveBind") != null) {
+                // exclusive bind, expected exception
+            } else {
+                throw be;
+            }
         } finally {
             if (ss != null) ss.close();
             if (s1 != null) s1.close();

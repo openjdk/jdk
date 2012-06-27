@@ -337,7 +337,7 @@ sun_jpeg_fill_suspended_buffer(j_decompress_ptr cinfo)
     /* Save the data currently in the buffer */
     offset = src->pub.bytes_in_buffer;
     if (src->pub.next_input_byte > src->inbuf) {
-        memcpy(src->inbuf, src->pub.next_input_byte, offset);
+        memmove(src->inbuf, src->pub.next_input_byte, offset);
     }
     RELEASE_ARRAYS(env, src);
     buflen = (*env)->GetArrayLength(env, src->hInputBuffer) - offset;

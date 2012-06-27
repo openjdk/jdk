@@ -119,9 +119,13 @@ md_connect(char *hostname, unsigned short port)
 
     /* create a socket */
     fd = socket(AF_INET, SOCK_STREAM, 0);
+    if ( fd < 0 ) {
+        return -1;
+    }
 
     /* find remote host's addr from name */
     if ((hentry = gethostbyname(hostname)) == NULL) {
+        (void)close(fd);
         return -1;
     }
     (void)memset((char *)&s, 0, sizeof(s));
@@ -134,6 +138,7 @@ md_connect(char *hostname, unsigned short port)
 
     /* now try connecting */
     if (-1 == connect(fd, (struct sockaddr*)&s, sizeof(s))) {
+        (void)close(fd);
         return 0;
     }
     return fd;
