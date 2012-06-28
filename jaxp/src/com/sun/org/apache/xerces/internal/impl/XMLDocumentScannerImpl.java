@@ -278,7 +278,7 @@ public class XMLDocumentScannerImpl
         fDoctypeSystemId = null;
         fSeenDoctypeDecl = false;
         fNamespaceContext.reset();
-        fDisallowDoctype = !((Boolean)propertyManager.getProperty(XMLInputFactory.SUPPORT_DTD)).booleanValue();
+        fSupportDTD = ((Boolean)propertyManager.getProperty(XMLInputFactory.SUPPORT_DTD)).booleanValue();
 
         // xerces features
         fLoadExternalDTD = !((Boolean)propertyManager.getProperty(Constants.ZEPHYR_PROPERTY_PREFIX + Constants.IGNORE_EXTERNAL_DTD)).booleanValue();
@@ -628,7 +628,7 @@ public class XMLDocumentScannerImpl
     // scanning methods
 
     /** Scans a doctype declaration. */
-    protected boolean scanDoctypeDecl(boolean ignore) throws IOException, XNIException {
+    protected boolean scanDoctypeDecl(boolean supportDTD) throws IOException, XNIException {
 
         // spaces
         if (!fEntityScanner.skipSpaces()) {
@@ -653,7 +653,7 @@ public class XMLDocumentScannerImpl
         fHasExternalDTD = fDoctypeSystemId != null;
 
         // Attempt to locate an external subset with an external subset resolver.
-        if (!ignore && !fHasExternalDTD && fExternalSubsetResolver != null) {
+        if (supportDTD && !fHasExternalDTD && fExternalSubsetResolver != null) {
             fDTDDescription.setValues(null, null, fEntityManager.getCurrentResourceIdentifier().getExpandedSystemId(), null);
             fDTDDescription.setRootName(fDoctypeName);
             fExternalSubsetSource = fExternalSubsetResolver.getExternalSubset(fDTDDescription);
@@ -661,7 +661,7 @@ public class XMLDocumentScannerImpl
         }
 
         // call handler
-        if (!ignore && fDocumentHandler != null) {
+        if (supportDTD && fDocumentHandler != null) {
             // NOTE: I don't like calling the doctypeDecl callback until
             //       end of the *full* doctype line (including internal
             //       subset) is parsed correctly but SAX2 requires that
@@ -916,6 +916,10 @@ public class XMLDocumentScannerImpl
                     }
 
                     case SCANNER_STATE_DOCTYPE: {
+                        if (fDisallowDoctype) {
+                            reportFatalError("DoctypeNotAllowed", null);
+                        }
+
 
                         if (fSeenDoctypeDecl) {
                             reportFatalError("AlreadySeenDoctype", null);
@@ -924,7 +928,7 @@ public class XMLDocumentScannerImpl
 
                         // scanDoctypeDecl() sends XNI doctypeDecl event that
                         // in SAX is converted to startDTD() event.
-                        if (scanDoctypeDecl(fDisallowDoctype)) {
+                        if (scanDoctypeDecl(fSupportDTD)) {
                             //allow parsing of entity decls to continue in order to stay well-formed
                             setScannerState(SCANNER_STATE_DTD_INTERNAL_DECLS);
                             fSeenInternalSubset = true;
@@ -934,8 +938,6 @@ public class XMLDocumentScannerImpl
                             setDriver(fContentDriver);
                             //always return DTD event, the event however, will not contain any entities
                             return fDTDDriver.next();
-                            // If no DTD support, ignore and continue parsing
-                            //return fDisallowDoctype ? next() : dtdEvent;
                         }
 
                         if(fSeenDoctypeDecl){
@@ -950,7 +952,7 @@ public class XMLDocumentScannerImpl
                         if (fDoctypeSystemId != null) {
                             if (((fValidation || fLoadExternalDTD)
                                 && (fValidationManager == null || !fValidationManager.isCachedDTD()))) {
-                            if (!fDisallowDoctype)
+                            if (fSupportDTD)
                                 setScannerState(SCANNER_STATE_DTD_EXTERNAL);
                             else
                                 setScannerState(SCANNER_STATE_PROLOG);
@@ -967,7 +969,7 @@ public class XMLDocumentScannerImpl
                                 // This handles the case of a DOCTYPE that had neither an internal subset or an external subset.
                                 fDTDScanner.setInputSource(fExternalSubsetSource);
                                 fExternalSubsetSource = null;
-                            if (!fDisallowDoctype)
+                            if (fSupportDTD)
                                 setScannerState(SCANNER_STATE_DTD_EXTERNAL_DECLS);
                             else
                                 setScannerState(SCANNER_STATE_PROLOG);
@@ -1113,7 +1115,7 @@ public class XMLDocumentScannerImpl
                                 }
                                 fMarkupDepth--;
 
-                                if (fDisallowDoctype) {
+                                if (!fSupportDTD) {
                                     //simply reset the entity store without having to mess around
                                     //with the DTD Scanner code
                                     fEntityStore = fEntityManager.getEntityStore();

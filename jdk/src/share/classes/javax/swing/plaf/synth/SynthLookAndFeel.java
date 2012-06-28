@@ -77,26 +77,24 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                   new StringBuffer("com.sun.java.swing.plaf.gtk.StyleCache");
 
     /**
+     * AppContext key to get selectedUI.
+     */
+    private static final Object SELECTED_UI_KEY = new StringBuilder("selectedUI");
+
+    /**
+     * AppContext key to get selectedUIState.
+     */
+    private static final Object SELECTED_UI_STATE_KEY = new StringBuilder("selectedUIState");
+
+    /**
      * The last SynthStyleFactory that was asked for from AppContext
      * <code>lastContext</code>.
      */
     private static SynthStyleFactory lastFactory;
     /**
-     * If this is true it indicates there is more than one AppContext active
-     * and that we need to make sure in getStyleCache the requesting
-     * AppContext matches that of <code>lastContext</code> before returning
-     * it.
-     */
-    private static boolean multipleApps;
-    /**
      * AppContext lastLAF came from.
      */
     private static AppContext lastContext;
-
-    // Refer to setSelectedUI
-    static ComponentUI selectedUI;
-    // Refer to setSelectedUI
-    static int selectedUIState;
 
     /**
      * SynthStyleFactory for the this SynthLookAndFeel.
@@ -111,6 +109,10 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
 
     private Handler _handler;
 
+    static ComponentUI getSelectedUI() {
+        return (ComponentUI) AppContext.getAppContext().get(SELECTED_UI_KEY);
+    }
+
     /**
      * Used by the renderers. For the most part the renderers are implemented
      * as Labels, which is problematic in so far as they are never selected.
@@ -122,8 +124,8 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
     static void setSelectedUI(ComponentUI uix, boolean selected,
                               boolean focused, boolean enabled,
                               boolean rollover) {
-        selectedUI = uix;
-        selectedUIState = 0;
+        int selectedUIState = 0;
+
         if (selected) {
             selectedUIState = SynthConstants.SELECTED;
             if (focused) {
@@ -140,19 +142,32 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
         else {
             if (enabled) {
                 selectedUIState |= SynthConstants.ENABLED;
-                selectedUIState = SynthConstants.FOCUSED;
+                if (focused) {
+                    selectedUIState |= SynthConstants.FOCUSED;
+                }
             }
             else {
                 selectedUIState |= SynthConstants.DISABLED;
             }
         }
+
+        AppContext context = AppContext.getAppContext();
+
+        context.put(SELECTED_UI_KEY, uix);
+        context.put(SELECTED_UI_STATE_KEY, Integer.valueOf(selectedUIState));
+    }
+
+    static int getSelectedUIState() {
+        Integer result = (Integer) AppContext.getAppContext().get(SELECTED_UI_STATE_KEY);
+
+        return result == null ? 0 : result.intValue();
     }
 
     /**
      * Clears out the selected UI that was last set in setSelectedUI.
      */
     static void resetSelectedUI() {
-        selectedUI = null;
+        AppContext.getAppContext().remove(SELECTED_UI_KEY);
     }
 
 
@@ -167,10 +182,6 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
         // for a particular AppContext.
         synchronized(SynthLookAndFeel.class) {
             AppContext context = AppContext.getAppContext();
-            if (!multipleApps && context != lastContext &&
-                                 lastContext != null) {
-                multipleApps = true;
-            }
             lastFactory = cache;
             lastContext = context;
             context.put(STYLE_FACTORY_KEY, cache);
@@ -184,17 +195,13 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      */
     public static SynthStyleFactory getStyleFactory() {
         synchronized(SynthLookAndFeel.class) {
-            if (!multipleApps) {
-                return lastFactory;
-            }
             AppContext context = AppContext.getAppContext();
 
             if (lastContext == context) {
                 return lastFactory;
             }
             lastContext = context;
-            lastFactory = (SynthStyleFactory)AppContext.getAppContext().get
-                                           (STYLE_FACTORY_KEY);
+            lastFactory = (SynthStyleFactory) context.get(STYLE_FACTORY_KEY);
             return lastFactory;
         }
     }
