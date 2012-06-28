@@ -113,6 +113,9 @@ const char* WhiteBox::lookup_jstring(const char* field_name, oop object) {
   int offset = offset_for_field(field_name, object,
       vmSymbols::string_signature());
   oop string = object->obj_field(offset);
+  if (string == NULL) {
+    return NULL;
+  }
   const char* ret = java_lang_String::as_utf8_string(string);
   return ret;
 }
