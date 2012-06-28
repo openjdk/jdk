@@ -20,6 +20,7 @@ public class ParserTest {
         testNanoTime();
         testJLong();
         testBool();
+        testQuotes();
         testMemorySize();
     }
 
@@ -93,6 +94,33 @@ public class ParserTest {
         //Empty commandline to parse, tests default value
         //of the parameter "name"
         parse(name, "false", "", args);
+    }
+
+    public void testQuotes() throws Exception {
+        String name = "name";
+        DiagnosticCommand arg1 = new DiagnosticCommand(name,
+                "desc", DiagnosticArgumentType.STRING,
+                false, null);
+        DiagnosticCommand arg2 = new DiagnosticCommand("arg",
+                "desc", DiagnosticArgumentType.STRING,
+                false, null);
+        DiagnosticCommand[] args = {arg1, arg2};
+
+        // try with a quoted value
+        parse(name, "Recording 1", name + "=\"Recording 1\"", args);
+        // try with a quoted argument
+        parse(name, "myrec", "\"" + name + "\"" + "=myrec", args);
+        // try with both a quoted value and a quoted argument
+        parse(name, "Recording 1", "\"" + name + "\"" + "=\"Recording 1\"", args);
+
+        // now the same thing but with other arguments after
+
+        // try with a quoted value
+        parse(name, "Recording 1", name + "=\"Recording 1\",arg=value", args);
+        // try with a quoted argument
+        parse(name, "myrec", "\"" + name + "\"" + "=myrec,arg=value", args);
+        // try with both a quoted value and a quoted argument
+        parse(name, "Recording 1", "\"" + name + "\"" + "=\"Recording 1\",arg=value", args);
     }
 
     public void testMemorySize() throws Exception {
