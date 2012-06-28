@@ -467,6 +467,32 @@ void VM_Version::get_processor_features() {
   if (!supports_avx ()) // Drop to 0 if no AVX  support
     UseAVX = 0;
 
+#ifdef COMPILER2
+  if (UseFPUForSpilling) {
+    if (UseSSE < 2) {
+      // Only supported with SSE2+
+      FLAG_SET_DEFAULT(UseFPUForSpilling, false);
+    }
+  }
+  if (MaxVectorSize > 0) {
+    if (!is_power_of_2(MaxVectorSize)) {
+      warning("MaxVectorSize must be a power of 2");
+      FLAG_SET_DEFAULT(MaxVectorSize, 32);
+    }
+    if (MaxVectorSize > 32) {
+      FLAG_SET_DEFAULT(MaxVectorSize, 32);
+    }
+    if (MaxVectorSize > 16 && UseAVX == 0) {
+      // Only supported with AVX+
+      FLAG_SET_DEFAULT(MaxVectorSize, 16);
+    }
+    if (UseSSE < 2) {
+      // Only supported with SSE2+
+      FLAG_SET_DEFAULT(MaxVectorSize, 0);
+    }
+  }
+#endif
+
   // On new cpus instructions which update whole XMM register should be used
   // to prevent partial register stall due to dependencies on high half.
   //
@@ -544,6 +570,12 @@ void VM_Version::get_processor_features() {
       }
     }
 
+#ifdef COMPILER2
+    if (MaxVectorSize > 16) {
+      // Limit vectors size to 16 bytes on current AMD cpus.
+      FLAG_SET_DEFAULT(MaxVectorSize, 16);
+    }
+#endif // COMPILER2
   }
 
   if( is_intel() ) { // Intel cpus specific settings
@@ -605,15 +637,6 @@ void VM_Version::get_processor_features() {
     warning("POPCNT instruction is not available on this CPU");
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
-
-#ifdef COMPILER2
-  if (UseFPUForSpilling) {
-    if (UseSSE < 2) {
-      // Only supported with SSE2+
-      FLAG_SET_DEFAULT(UseFPUForSpilling, false);
-    }
-  }
-#endif
 
   assert(0 <= ReadPrefetchInstr && ReadPrefetchInstr <= 3, "invalid value");
   assert(0 <= AllocatePrefetchInstr && AllocatePrefetchInstr <= 3, "invalid value");

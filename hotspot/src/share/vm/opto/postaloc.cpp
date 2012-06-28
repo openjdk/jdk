@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,15 @@
 #include "opto/chaitin.hpp"
 #include "opto/machnode.hpp"
 
-// see if this register kind does not requires two registers
-static bool is_single_register(uint x) {
-#ifdef _LP64
-  return (x != Op_RegD && x != Op_RegL && x != Op_RegP);
-#else
-  return (x != Op_RegD && x != Op_RegL);
-#endif
+// See if this register (or pairs, or vector) already contains the value.
+static bool register_contains_value(Node* val, OptoReg::Name reg, int n_regs,
+                                    Node_List& value) {
+  for (int i = 0; i < n_regs; i++) {
+    OptoReg::Name nreg = OptoReg::add(reg,-i);
+    if (value[nreg] != val)
+      return false;
+  }
+  return true;
 }
 
 //---------------------------may_be_copy_of_callee-----------------------------
@@ -167,9 +169,11 @@ int PhaseChaitin::use_prior_register( Node *n, uint idx, Node *def, Block *curre
   const RegMask &use_mask = n->in_RegMask(idx);
   bool can_use = ( RegMask::can_represent(def_reg) ? (use_mask.Member(def_reg) != 0)
                                                    : (use_mask.is_AllStack() != 0));
-  // Check for a copy to or from a misaligned pair.
-  can_use = can_use && !use_mask.is_misaligned_Pair() && !def_lrg.mask().is_misaligned_Pair();
-
+  if (!RegMask::is_vector(def->ideal_reg())) {
+    // Check for a copy to or from a misaligned pair.
+    // It is workaround for a sparc with misaligned pairs.
+    can_use = can_use && !use_mask.is_misaligned_pair() && !def_lrg.mask().is_misaligned_pair();
+  }
   if (!can_use)
     return 0;
 
@@ -263,18 +267,16 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &v
     val = skip_copies(n->in(k));
   }
 
-  if( val == x ) return blk_adjust; // No progress?
+  if (val == x) return blk_adjust; // No progress?
 
-  bool single = is_single_register(val->ideal_reg());
+  int n_regs = RegMask::num_registers(val->ideal_reg());
   uint val_idx = n2lidx(val);
   OptoReg::Name val_reg = lrgs(val_idx).reg();
 
   // See if it happens to already be in the correct register!
   // (either Phi's direct register, or the common case of the name
   // never-clobbered original-def register)
-  if( value[val_reg] == val &&
-      // Doubles check both halves
-      ( single || value[val_reg-1] == val ) ) {
+  if (register_contains_value(val, val_reg, n_regs, value)) {
     blk_adjust += use_prior_register(n,k,regnd[val_reg],current_block,value,regnd);
     if( n->in(k) == regnd[val_reg] ) // Success!  Quit trying
       return blk_adjust;
@@ -306,9 +308,10 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &v
     }
 
     Node *vv = value[reg];
-    if( !single ) {             // Doubles check for aligned-adjacent pair
-      if( (reg&1)==0 ) continue;  // Wrong half of a pair
-      if( vv != value[reg-1] ) continue; // Not a complete pair
+    if (n_regs > 1) { // Doubles and vectors check for aligned-adjacent set
+      uint last = (n_regs-1); // Looking for the last part of a set
+      if ((reg&last) != last) continue; // Wrong part of a set
+      if (!register_contains_value(vv, reg, n_regs, value)) continue; // Different value
     }
     if( vv == val ||            // Got a direct hit?
         (t && vv && vv->bottom_type() == t && vv->is_Mach() &&
@@ -526,8 +529,9 @@ void PhaseChaitin::post_allocate_copy_removal() {
       if( pidx ) {
         value.map(preg,phi);
         regnd.map(preg,phi);
-        OptoReg::Name preg_lo = OptoReg::add(preg,-1);
-        if( !is_single_register(phi->ideal_reg()) ) {
+        int n_regs = RegMask::num_registers(phi->ideal_reg());
+        for (int l = 1; l < n_regs; l++) {
+          OptoReg::Name preg_lo = OptoReg::add(preg,-l);
           value.map(preg_lo,phi);
           regnd.map(preg_lo,phi);
         }
@@ -568,13 +572,16 @@ void PhaseChaitin::post_allocate_copy_removal() {
             value.map(ureg,valdef); // record improved reaching-def info
             regnd.map(ureg,   def);
             // Record other half of doubles
-            OptoReg::Name ureg_lo = OptoReg::add(ureg,-1);
-            if( !is_single_register(def->ideal_reg()) &&
-                ( !RegMask::can_represent(ureg_lo) ||
-                  lrgs(useidx).mask().Member(ureg_lo) ) && // Nearly always adjacent
-                !value[ureg_lo] ) {
-              value.map(ureg_lo,valdef); // record improved reaching-def info
-              regnd.map(ureg_lo,   def);
+            uint def_ideal_reg = def->ideal_reg();
+            int n_regs = RegMask::num_registers(def_ideal_reg);
+            for (int l = 1; l < n_regs; l++) {
+              OptoReg::Name ureg_lo = OptoReg::add(ureg,-l);
+              if (!value[ureg_lo] &&
+                  (!RegMask::can_represent(ureg_lo) ||
+                   lrgs(useidx).mask().Member(ureg_lo))) { // Nearly always adjacent
+                value.map(ureg_lo,valdef); // record improved reaching-def info
+                regnd.map(ureg_lo,   def);
+              }
             }
           }
         }
@@ -607,7 +614,8 @@ void PhaseChaitin::post_allocate_copy_removal() {
       }
 
       uint n_ideal_reg = n->ideal_reg();
-      if( is_single_register(n_ideal_reg) ) {
+      int n_regs = RegMask::num_registers(n_ideal_reg);
+      if (n_regs == 1) {
         // If Node 'n' does not change the value mapped by the register,
         // then 'n' is a useless copy.  Do not update the register->node
         // mapping so 'n' will go dead.
@@ -623,6 +631,25 @@ void PhaseChaitin::post_allocate_copy_removal() {
           }
         } else if( !may_be_copy_of_callee(n) ) {
           assert( n->is_Copy(), "" );
+          j -= replace_and_yank_if_dead(n, nreg, b, value, regnd);
+        }
+      } else if (RegMask::is_vector(n_ideal_reg)) {
+        // If Node 'n' does not change the value mapped by the register,
+        // then 'n' is a useless copy.  Do not update the register->node
+        // mapping so 'n' will go dead.
+        if (!register_contains_value(val, nreg, n_regs, value)) {
+          // Update the mapping: record new Node defined by the register
+          regnd.map(nreg,n);
+          // Update mapping for defined *value*, which is the defined
+          // Node after skipping all copies.
+          value.map(nreg,val);
+          for (int l = 1; l < n_regs; l++) {
+            OptoReg::Name nreg_lo = OptoReg::add(nreg,-l);
+            regnd.map(nreg_lo, n );
+            value.map(nreg_lo,val);
+          }
+        } else if (n->is_Copy()) {
+          // Note: vector can't be constant and can't be copy of calee.
           j -= replace_and_yank_if_dead(n, nreg, b, value, regnd);
         }
       } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,10 @@ const BasicType Type::_basic_type[Type::lastype] = {
 
   T_ILLEGAL,    // Tuple
   T_ARRAY,      // Array
+  T_ILLEGAL,    // VectorS
+  T_ILLEGAL,    // VectorD
+  T_ILLEGAL,    // VectorX
+  T_ILLEGAL,    // VectorY
 
   T_ADDRESS,    // AnyPtr   // shows up in factory methods for NULL_PTR
   T_ADDRESS,    // RawPtr
@@ -414,6 +418,24 @@ void Type::Initialize_shared(Compile* current) {
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= NULL;
 
+  // Vector predefined types, it needs initialized _const_basic_type[].
+  if (Matcher::vector_size_supported(T_BYTE,4)) {
+    TypeVect::VECTS = TypeVect::make(T_BYTE,4);
+  }
+  if (Matcher::vector_size_supported(T_FLOAT,2)) {
+    TypeVect::VECTD = TypeVect::make(T_FLOAT,2);
+  }
+  if (Matcher::vector_size_supported(T_FLOAT,4)) {
+    TypeVect::VECTX = TypeVect::make(T_FLOAT,4);
+  }
+  if (Matcher::vector_size_supported(T_FLOAT,8)) {
+    TypeVect::VECTY = TypeVect::make(T_FLOAT,8);
+  }
+  mreg2type[Op_VecS] = TypeVect::VECTS;
+  mreg2type[Op_VecD] = TypeVect::VECTD;
+  mreg2type[Op_VecX] = TypeVect::VECTX;
+  mreg2type[Op_VecY] = TypeVect::VECTY;
+
   // Restore working type arena.
   current->set_type_arena(save);
   current->set_type_dict(NULL);
@@ -668,6 +690,10 @@ const Type::TYPES Type::dual_type[Type::lastype] = {
 
   Bad,          // Tuple - handled in v-call
   Bad,          // Array - handled in v-call
+  Bad,          // VectorS - handled in v-call
+  Bad,          // VectorD - handled in v-call
+  Bad,          // VectorX - handled in v-call
+  Bad,          // VectorY - handled in v-call
 
   Bad,          // AnyPtr - handled in v-call
   Bad,          // RawPtr - handled in v-call
@@ -728,8 +754,8 @@ void Type::dump_on(outputStream *st) const {
 //------------------------------data-------------------------------------------
 const char * const Type::msg[Type::lastype] = {
   "bad","control","top","int:","long:","half", "narrowoop:",
-  "tuple:", "aryptr",
-  "anyptr:", "rawptr:", "java:", "inst:", "ary:", "klass:",
+  "tuple:", "array:", "vectors:", "vectord:", "vectorx:", "vectory:",
+  "anyptr:", "rawptr:", "java:", "inst:", "aryptr:", "klass:",
   "func", "abIO", "return_address", "memory",
   "float_top", "ftcon:", "float",
   "double_top", "dblcon:", "double",
@@ -790,7 +816,7 @@ void Type::typerr( const Type *t ) const {
 //------------------------------isa_oop_ptr------------------------------------
 // Return true if type is an oop pointer type.  False for raw pointers.
 static char isa_oop_ptr_tbl[Type::lastype] = {
-  0,0,0,0,0,0,0/*narrowoop*/,0/*tuple*/, 0/*ary*/,
+  0,0,0,0,0,0,0/*narrowoop*/,0/*tuple*/, 0/*array*/, 0, 0, 0, 0/*vector*/,
   0/*anyptr*/,0/*rawptr*/,1/*OopPtr*/,1/*InstPtr*/,1/*AryPtr*/,1/*KlassPtr*/,
   0/*func*/,0,0/*return_address*/,0,
   /*floats*/0,0,0, /*doubles*/0,0,0,
@@ -1926,6 +1952,121 @@ bool TypeAry::ary_must_be_exact() const {
   return false;
 }
 
+//==============================TypeVect=======================================
+// Convenience common pre-built types.
+const TypeVect *TypeVect::VECTS = NULL; //  32-bit vectors
+const TypeVect *TypeVect::VECTD = NULL; //  64-bit vectors
+const TypeVect *TypeVect::VECTX = NULL; // 128-bit vectors
+const TypeVect *TypeVect::VECTY = NULL; // 256-bit vectors
+
+//------------------------------make-------------------------------------------
+const TypeVect* TypeVect::make(const Type *elem, uint length) {
+  BasicType elem_bt = elem->array_element_basic_type();
+  assert(is_java_primitive(elem_bt), "only primitive types in vector");
+  assert(length > 1 && is_power_of_2(length), "vector length is power of 2");
+  assert(Matcher::vector_size_supported(elem_bt, length), "length in range");
+  int size = length * type2aelembytes(elem_bt);
+  switch (Matcher::vector_ideal_reg(size)) {
+  case Op_VecS:
+    return (TypeVect*)(new TypeVectS(elem, length))->hashcons();
+  case Op_VecD:
+  case Op_RegD:
+    return (TypeVect*)(new TypeVectD(elem, length))->hashcons();
+  case Op_VecX:
+    return (TypeVect*)(new TypeVectX(elem, length))->hashcons();
+  case Op_VecY:
+    return (TypeVect*)(new TypeVectY(elem, length))->hashcons();
+  }
+ ShouldNotReachHere();
+  return NULL;
+}
+
+//------------------------------meet-------------------------------------------
+// Compute the MEET of two types.  It returns a new Type object.
+const Type *TypeVect::xmeet( const Type *t ) const {
+  // Perform a fast test for common case; meeting the same types together.
+  if( this == t ) return this;  // Meeting same type-rep?
+
+  // Current "this->_base" is Vector
+  switch (t->base()) {          // switch on original type
+
+  case Bottom:                  // Ye Olde Default
+    return t;
+
+  default:                      // All else is a mistake
+    typerr(t);
+
+  case VectorS:
+  case VectorD:
+  case VectorX:
+  case VectorY: {                // Meeting 2 vectors?
+    const TypeVect* v = t->is_vect();
+    assert(  base() == v->base(), "");
+    assert(length() == v->length(), "");
+    assert(element_basic_type() == v->element_basic_type(), "");
+    return TypeVect::make(_elem->xmeet(v->_elem), _length);
+  }
+  case Top:
+    break;
+  }
+  return this;
+}
+
+//------------------------------xdual------------------------------------------
+// Dual: compute field-by-field dual
+const Type *TypeVect::xdual() const {
+  return new TypeVect(base(), _elem->dual(), _length);
+}
+
+//------------------------------eq---------------------------------------------
+// Structural equality check for Type representations
+bool TypeVect::eq(const Type *t) const {
+  const TypeVect *v = t->is_vect();
+  return (_elem == v->_elem) && (_length == v->_length);
+}
+
+//------------------------------hash-------------------------------------------
+// Type-specific hashing function.
+int TypeVect::hash(void) const {
+  return (intptr_t)_elem + (intptr_t)_length;
+}
+
+//------------------------------singleton--------------------------------------
+// TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
+// constants (Ldi nodes).  Vector is singleton if all elements are the same
+// constant value (when vector is created with Replicate code).
+bool TypeVect::singleton(void) const {
+// There is no Con node for vectors yet.
+//  return _elem->singleton();
+  return false;
+}
+
+bool TypeVect::empty(void) const {
+  return _elem->empty();
+}
+
+//------------------------------dump2------------------------------------------
+#ifndef PRODUCT
+void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
+  switch (base()) {
+  case VectorS:
+    st->print("vectors["); break;
+  case VectorD:
+    st->print("vectord["); break;
+  case VectorX:
+    st->print("vectorx["); break;
+  case VectorY:
+    st->print("vectory["); break;
+  default:
+    ShouldNotReachHere();
+  }
+  st->print("%d]:{", _length);
+  _elem->dump2(d, depth, st);
+  st->print("}");
+}
+#endif
+
+
 //=============================================================================
 // Convenience common pre-built types.
 const TypePtr *TypePtr::NULL_PTR;
@@ -2472,18 +2613,26 @@ const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass *klass, bool klass_
 //------------------------------make_from_constant-----------------------------
 // Make a java pointer from an oop constant
 const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_constant) {
-  if (o->is_method_data() || o->is_method() || o->is_cpcache()) {
+  if (o->is_method_data() || o->is_method()) {
     // Treat much like a typeArray of bytes, like below, but fake the type...
-    const Type* etype = (Type*)get_const_basic_type(T_BYTE);
+    const BasicType bt = T_BYTE;
+    const Type* etype = get_const_basic_type(bt);
     const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
-    ciKlass *klass = ciTypeArrayKlass::make((BasicType) T_BYTE);
-    assert(o->can_be_constant(), "method data oops should be tenured");
-    const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
-    return arr;
+    ciKlass* klass = ciArrayKlass::make(ciType::make(bt));
+    assert(o->can_be_constant(), "should be tenured");
+    return TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
+  } else if (o->is_cpcache()) {
+    // Treat much like a objArray, like below, but fake the type...
+    const BasicType bt = T_OBJECT;
+    const Type* etype = get_const_basic_type(bt);
+    const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
+    ciKlass* klass = ciArrayKlass::make(ciType::make(bt));
+    assert(o->can_be_constant(), "should be tenured");
+    return TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
   } else {
     assert(o->is_java_object(), "must be java language object");
     assert(!o->is_null_object(), "null object not yet handled here.");
-    ciKlass *klass = o->klass();
+    ciKlass* klass = o->klass();
     if (klass->is_instance_klass()) {
       // Element is an instance
       if (require_constant) {
@@ -2494,8 +2643,7 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_const
       return TypeInstPtr::make(o);
     } else if (klass->is_obj_array_klass()) {
       // Element is an object array. Recursively call ourself.
-      const Type *etype =
-        TypeOopPtr::make_from_klass_raw(klass->as_obj_array_klass()->element_klass());
+      const Type *etype = make_from_klass_raw(klass->as_obj_array_klass()->element_klass());
       const TypeAry* arr0 = TypeAry::make(etype, TypeInt::make(o->as_array()->length()));
       // We used to pass NotNull in here, asserting that the sub-arrays
       // are all not-null.  This is not true in generally, as code can
@@ -2505,12 +2653,10 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_const
       } else if (!o->should_be_constant()) {
         return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
       }
-      const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
-      return arr;
+      return TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
     } else if (klass->is_type_array_klass()) {
       // Element is an typeArray
-      const Type* etype =
-        (Type*)get_const_basic_type(klass->as_type_array_klass()->element_type());
+      const Type* etype = get_const_basic_type(klass->as_type_array_klass()->element_type());
       const TypeAry* arr0 = TypeAry::make(etype, TypeInt::make(o->as_array()->length()));
       // We used to pass NotNull in here, asserting that the array pointer
       // is not-null. That was not true in general.
@@ -2519,12 +2665,11 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_const
       } else if (!o->should_be_constant()) {
         return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
       }
-      const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
-      return arr;
+      return TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
     }
   }
 
-  ShouldNotReachHere();
+  fatal("unhandled object type");
   return NULL;
 }
 
@@ -4140,7 +4285,7 @@ void TypeFunc::dump2( Dict &d, uint depth, outputStream *st ) const {
 // Print a 'flattened' signature
 static const char * const flat_type_msg[Type::lastype] = {
   "bad","control","top","int","long","_", "narrowoop",
-  "tuple:", "array:",
+  "tuple:", "array:", "vectors:", "vectord:", "vectorx:", "vectory:",
   "ptr", "rawptr", "ptr", "ptr", "ptr", "ptr",
   "func", "abIO", "return_address", "mem",
   "float_top", "ftcon:", "flt",
