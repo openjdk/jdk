@@ -68,7 +68,7 @@ public class Collisions {
             return Integer.toString(value);
         }
     }
-    private static final int ITEMS = 10000;
+    private static final int ITEMS = 5000;
     private static final Object KEYS[][];
 
     static {
@@ -133,8 +133,8 @@ public class Collisions {
 
     private static void realMain(String[] args) throws Throwable {
         for (Object[] keys_desc : KEYS) {
-            Map<Object, Boolean>[] MAPS = (Map<Object, Boolean>[]) new Map[]{
-//                        new Hashtable<>(),
+            Map<Object, Object>[] MAPS = (Map<Object, Object>[]) new Map[]{
+                        new Hashtable<>(),
                         new HashMap<>(),
                         new IdentityHashMap<>(),
                         new LinkedHashMap<>(),
@@ -144,51 +144,69 @@ public class Collisions {
                         new ConcurrentSkipListMap<>()
                     };
 
-            for (Map<Object, Boolean> map : MAPS) {
+            for (Map<Object, Object> map : MAPS) {
                 String desc = (String) keys_desc[0];
                 Object[] keys = (Object[]) keys_desc[1];
+                try {
                 testMap(map, desc, keys);
+                } catch(Exception all) {
+                    unexpected("Failed for " + map.getClass().getName() + " with " + desc, all);
+                }
             }
         }
     }
 
-    private static <T> void testMap(Map<T, Boolean> map, String keys_desc, T[] keys) {
-        System.err.println(map.getClass() + " : " + keys_desc);
+    private static <T> void testMap(Map<T, T> map, String keys_desc, T[] keys) {
+        System.out.println(map.getClass() + " : " + keys_desc);
+        System.out.flush();
         testInsertion(map, keys_desc, keys);
 
         if (keys[0] instanceof HashableInteger) {
-            testIntegerIteration((Map<HashableInteger, Boolean>) map, (HashableInteger[]) keys);
+            testIntegerIteration((Map<HashableInteger, HashableInteger>) map, (HashableInteger[]) keys);
         } else {
-            testStringIteration((Map<String, Boolean>) map, (String[]) keys);
+            testStringIteration((Map<String, String>) map, (String[]) keys);
         }
 
         testContainsKey(map, keys_desc, keys);
 
         testRemove(map, keys_desc, keys);
 
+        map.clear();
+        testInsertion(map, keys_desc, keys);
+        testKeysIteratorRemove(map, keys_desc, keys);
+
+        map.clear();
+        testInsertion(map, keys_desc, keys);
+        testValuesIteratorRemove(map, keys_desc, keys);
+
+        map.clear();
+        testInsertion(map, keys_desc, keys);
+        testEntriesIteratorRemove(map, keys_desc, keys);
+
         check(map.isEmpty());
     }
 
-    private static <T> void testInsertion(Map<T, Boolean> map, String keys_desc, T[] keys) {
+    private static <T> void testInsertion(Map<T, T> map, String keys_desc, T[] keys) {
         check("map empty", (map.size() == 0) && map.isEmpty());
 
         for (int i = 0; i < keys.length; i++) {
             check(String.format("insertion: map expected size m%d != i%d", map.size(), i),
                     map.size() == i);
-            check(String.format("insertion: put(%s[%d])", keys_desc, i), null == map.put(keys[i], true));
+            check(String.format("insertion: put(%s[%d])", keys_desc, i), null == map.put(keys[i], keys[i]));
             check(String.format("insertion: containsKey(%s[%d])", keys_desc, i), map.containsKey(keys[i]));
+            check(String.format("insertion: containsValue(%s[%d])", keys_desc, i), map.containsValue(keys[i]));
         }
 
         check(String.format("map expected size m%d != k%d", map.size(), keys.length),
                 map.size() == keys.length);
     }
 
-    private static void testIntegerIteration(Map<HashableInteger, Boolean> map, HashableInteger[] keys) {
+    private static void testIntegerIteration(Map<HashableInteger, HashableInteger> map, HashableInteger[] keys) {
         check(String.format("map expected size m%d != k%d", map.size(), keys.length),
                 map.size() == keys.length);
 
         BitSet all = new BitSet(keys.length);
-        for (Map.Entry<HashableInteger, Boolean> each : map.entrySet()) {
+        for (Map.Entry<HashableInteger, HashableInteger> each : map.entrySet()) {
             check("Iteration: key already seen", !all.get(each.getKey().value));
             all.set(each.getKey().value);
         }
@@ -205,7 +223,7 @@ public class Collisions {
         check("Iteration: some keys not visited", all.isEmpty());
 
         int count = 0;
-        for (Boolean each : map.values()) {
+        for (HashableInteger each : map.values()) {
             count++;
         }
 
@@ -213,12 +231,12 @@ public class Collisions {
                 map.size() == count);
     }
 
-    private static void testStringIteration(Map<String, Boolean> map, String[] keys) {
+    private static void testStringIteration(Map<String, String> map, String[] keys) {
         check(String.format("map expected size m%d != k%d", map.size(), keys.length),
                 map.size() == keys.length);
 
         BitSet all = new BitSet(keys.length);
-        for (Map.Entry<String, Boolean> each : map.entrySet()) {
+        for (Map.Entry<String, String> each : map.entrySet()) {
             String key = each.getKey();
             boolean longKey = key.length() > 5;
             int index = key.hashCode() + (longKey ? keys.length / 2 : 0);
@@ -240,7 +258,7 @@ public class Collisions {
         check("some keys not visited", all.isEmpty());
 
         int count = 0;
-        for (Boolean each : map.values()) {
+        for (String each : map.values()) {
             count++;
         }
 
@@ -248,14 +266,14 @@ public class Collisions {
                 map.size() == keys.length);
     }
 
-    private static <T> void testContainsKey(Map<T, Boolean> map, String keys_desc, T[] keys) {
+    private static <T> void testContainsKey(Map<T, T> map, String keys_desc, T[] keys) {
         for (int i = 0; i < keys.length; i++) {
             T each = keys[i];
             check("containsKey: " + keys_desc + "[" + i + "]" + each, map.containsKey(each));
         }
     }
 
-    private static <T> void testRemove(Map<T, Boolean> map, String keys_desc, T[] keys) {
+    private static <T> void testRemove(Map<T, T> map, String keys_desc, T[] keys) {
         check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
                 map.size() == keys.length);
 
@@ -267,6 +285,56 @@ public class Collisions {
         check(String.format("remove: map empty. size=%d", map.size()),
                 (map.size() == 0) && map.isEmpty());
     }
+
+    private static <T> void testKeysIteratorRemove(Map<T, T> map, String keys_desc, T[] keys) {
+        check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
+                map.size() == keys.length);
+
+        Iterator<T> each = map.keySet().iterator();
+        while (each.hasNext()) {
+            T t = each.next();
+            each.remove();
+            check("not removed: " + each, !map.containsKey(t) );
+        }
+
+        check(String.format("remove: map empty. size=%d", map.size()),
+                (map.size() == 0) && map.isEmpty());
+    }
+
+    private static <T> void testValuesIteratorRemove(Map<T, T> map, String keys_desc, T[] keys) {
+        check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
+                map.size() == keys.length);
+
+        Iterator<T> each = map.values().iterator();
+        while (each.hasNext()) {
+            T t = each.next();
+            each.remove();
+            check("not removed: " + each, !map.containsValue(t) );
+        }
+
+        check(String.format("remove: map empty. size=%d", map.size()),
+                (map.size() == 0) && map.isEmpty());
+    }
+
+    private static <T> void testEntriesIteratorRemove(Map<T, T> map, String keys_desc, T[] keys) {
+        check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
+                map.size() == keys.length);
+
+        Iterator<Map.Entry<T,T>> each = map.entrySet().iterator();
+        while (each.hasNext()) {
+            Map.Entry<T,T> t = each.next();
+            T key = t.getKey();
+            T value = t.getValue();
+            each.remove();
+            check("not removed: " + each, (map instanceof IdentityHashMap) || !map.entrySet().contains(t) );
+            check("not removed: " + each, !map.containsKey(key) );
+            check("not removed: " + each, !map.containsValue(value));
+        }
+
+        check(String.format("remove: map empty. size=%d", map.size()),
+                (map.size() == 0) && map.isEmpty());
+    }
+
     //--------------------- Infrastructure ---------------------------
     static volatile int passed = 0, failed = 0;
 

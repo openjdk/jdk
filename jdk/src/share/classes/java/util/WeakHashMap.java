@@ -295,13 +295,11 @@ public class WeakHashMap<K,V>
      * otherwise encounter collisions for hashCodes that do not differ
      * in lower bits.
      */
-    int hash(Object k) {
-        int h = hashSeed;
+    final int hash(Object k) {
         if (k instanceof String) {
             return ((String) k).hash32();
-        } else {
-            h ^= k.hashCode();
         }
+        int  h = hashSeed ^ k.hashCode();
 
         // This function ensures that hashCodes that differ only by
         // constant multiples at each bit position have a bounded

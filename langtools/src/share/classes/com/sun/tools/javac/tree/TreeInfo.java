@@ -25,15 +25,14 @@
 
 package com.sun.tools.javac.tree;
 
+
 import com.sun.source.tree.Tree;
+import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
-import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.parser.EndPosTable;
-import com.sun.tools.javac.tree.JCTree.*;
-
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
@@ -280,6 +279,13 @@ public class TreeInfo {
             return false;
         JCLiteral lit = (JCLiteral) tree;
         return (lit.typetag == TypeTags.BOT);
+    }
+
+    public static String getCommentText(Env<?> env, JCTree tree) {
+        DocCommentTable docComments = (tree.hasTag(JCTree.Tag.TOPLEVEL))
+                ? ((JCCompilationUnit) tree).docComments
+                : env.toplevel.docComments;
+        return (docComments == null) ? null : docComments.getCommentText(tree);
     }
 
     /** The position of the first statement in a block, or the position of
