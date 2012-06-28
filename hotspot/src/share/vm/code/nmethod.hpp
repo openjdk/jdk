@@ -31,7 +31,7 @@
 // This class is used internally by nmethods, to cache
 // exception/pc/handler information.
 
-class ExceptionCache : public CHeapObj {
+class ExceptionCache : public CHeapObj<mtCode> {
   friend class VMStructs;
  private:
   enum { cache_size = 16 };

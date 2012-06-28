@@ -77,7 +77,7 @@ bool WorkGang::initialize_workers() {
                   name(),
                   total_workers());
   }
-  _gang_workers = NEW_C_HEAP_ARRAY(GangWorker*, total_workers());
+  _gang_workers = NEW_C_HEAP_ARRAY(GangWorker*, total_workers(), mtInternal);
   if (gang_workers() == NULL) {
     vm_exit_out_of_memory(0, "Cannot create GangWorker array.");
     return false;
@@ -241,6 +241,7 @@ void GangWorker::run() {
 
 void GangWorker::initialize() {
   this->initialize_thread_local_storage();
+  this->record_stack_base_and_size();
   assert(_gang != NULL, "No gang to run in");
   os::set_priority(this, NearMaxPriority);
   if (TraceWorkGang) {
@@ -421,7 +422,7 @@ void WorkGangBarrierSync::enter() {
 
 SubTasksDone::SubTasksDone(uint n) :
   _n_tasks(n), _n_threads(1), _tasks(NULL) {
-  _tasks = NEW_C_HEAP_ARRAY(uint, n);
+  _tasks = NEW_C_HEAP_ARRAY(uint, n, mtInternal);
   guarantee(_tasks != NULL, "alloc failure");
   clear();
 }
@@ -476,7 +477,7 @@ void SubTasksDone::all_tasks_completed() {
 
 
 SubTasksDone::~SubTasksDone() {
-  if (_tasks != NULL) FREE_C_HEAP_ARRAY(jint, _tasks);
+  if (_tasks != NULL) FREE_C_HEAP_ARRAY(jint, _tasks, mtInternal);
 }
 
 // *** SequentialSubTasksDone

@@ -122,16 +122,16 @@ class MarkSweep : AllStatic {
   //
  protected:
   // Traversal stacks used during phase1
-  static Stack<oop>                      _marking_stack;
-  static Stack<ObjArrayTask>             _objarray_stack;
+  static Stack<oop, mtGC>                      _marking_stack;
+  static Stack<ObjArrayTask, mtGC>             _objarray_stack;
   // Stack for live klasses to revisit at end of marking phase
-  static Stack<Klass*>                   _revisit_klass_stack;
+  static Stack<Klass*, mtGC>                   _revisit_klass_stack;
   // Set (stack) of MDO's to revisit at end of marking phase
-  static Stack<DataLayout*>              _revisit_mdo_stack;
+  static Stack<DataLayout*, mtGC>              _revisit_mdo_stack;
 
   // Space for storing/restoring mark word
-  static Stack<markOop>                  _preserved_mark_stack;
-  static Stack<oop>                      _preserved_oop_stack;
+  static Stack<markOop, mtGC>                  _preserved_mark_stack;
+  static Stack<oop, mtGC>                      _preserved_oop_stack;
   static size_t                          _preserved_count;
   static size_t                          _preserved_count_max;
   static PreservedMark*                  _preserved_marks;

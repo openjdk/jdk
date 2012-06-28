@@ -228,7 +228,7 @@ void NMethodSweeper::possibly_sweep() {
 #ifdef ASSERT
     if (LogSweeper && _records == NULL) {
       // Create the ring buffer for the logging code
-      _records = NEW_C_HEAP_ARRAY(SweeperRecord, SweeperLogEntries);
+      _records = NEW_C_HEAP_ARRAY(SweeperRecord, SweeperLogEntries, mtGC);
       memset(_records, 0, sizeof(SweeperRecord) * SweeperLogEntries);
     }
 #endif

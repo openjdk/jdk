@@ -1916,14 +1916,14 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   assert(n_rem_sets > 0, "Invariant.");
 
   HeapRegionRemSetIterator** iter_arr =
-    NEW_C_HEAP_ARRAY(HeapRegionRemSetIterator*, n_queues);
+    NEW_C_HEAP_ARRAY(HeapRegionRemSetIterator*, n_queues, mtGC);
   for (int i = 0; i < n_queues; i++) {
     iter_arr[i] = new HeapRegionRemSetIterator();
   }
   _rem_set_iterator = iter_arr;
 
-  _worker_cset_start_region = NEW_C_HEAP_ARRAY(HeapRegion*, n_queues);
-  _worker_cset_start_region_time_stamp = NEW_C_HEAP_ARRAY(unsigned int, n_queues);
+  _worker_cset_start_region = NEW_C_HEAP_ARRAY(HeapRegion*, n_queues, mtGC);
+  _worker_cset_start_region_time_stamp = NEW_C_HEAP_ARRAY(unsigned int, n_queues, mtGC);
 
   for (int i = 0; i < n_queues; i++) {
     RefToScanQueue* q = new RefToScanQueue();
@@ -2082,7 +2082,7 @@ jint G1CollectedHeap::initialize() {
 
    _in_cset_fast_test_length = max_regions();
    _in_cset_fast_test_base =
-                   NEW_C_HEAP_ARRAY(bool, (size_t) _in_cset_fast_test_length);
+                   NEW_C_HEAP_ARRAY(bool, (size_t) _in_cset_fast_test_length, mtGC);
 
    // We're biasing _in_cset_fast_test to avoid subtracting the
    // beginning of the heap every time we want to index; basically
@@ -3505,7 +3505,7 @@ void
 G1CollectedHeap::setup_surviving_young_words() {
   assert(_surviving_young_words == NULL, "pre-condition");
   uint array_length = g1_policy()->young_cset_region_length();
-  _surviving_young_words = NEW_C_HEAP_ARRAY(size_t, (size_t) array_length);
+  _surviving_young_words = NEW_C_HEAP_ARRAY(size_t, (size_t) array_length, mtGC);
   if (_surviving_young_words == NULL) {
     vm_exit_out_of_memory(sizeof(size_t) * array_length,
                           "Not enough space for young surv words summary.");
@@ -3530,7 +3530,7 @@ G1CollectedHeap::update_surviving_young_words(size_t* surv_young_words) {
 void
 G1CollectedHeap::cleanup_surviving_young_words() {
   guarantee( _surviving_young_words != NULL, "pre-condition" );
-  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words);
+  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words, mtGC);
   _surviving_young_words = NULL;
 }
 
@@ -4073,7 +4073,7 @@ void G1CollectedHeap::abandon_gc_alloc_regions() {
 void G1CollectedHeap::init_for_evac_failure(OopsInHeapRegionClosure* cl) {
   _drain_in_progress = false;
   set_evac_failure_closure(cl);
-  _evac_failure_scan_stack = new (ResourceObj::C_HEAP) GrowableArray<oop>(40, true);
+  _evac_failure_scan_stack = new (ResourceObj::C_HEAP, mtGC) GrowableArray<oop>(40, true);
 }
 
 void G1CollectedHeap::finalize_for_evac_failure() {
@@ -4207,9 +4207,9 @@ void G1CollectedHeap::preserve_mark_if_necessary(oop obj, markOop m) {
     if (_objs_with_preserved_marks == NULL) {
       assert(_preserved_marks_of_objs == NULL, "Both or none.");
       _objs_with_preserved_marks =
-        new (ResourceObj::C_HEAP) GrowableArray<oop>(40, true);
+        new (ResourceObj::C_HEAP, mtGC) GrowableArray<oop>(40, true);
       _preserved_marks_of_objs =
-        new (ResourceObj::C_HEAP) GrowableArray<markOop>(40, true);
+        new (ResourceObj::C_HEAP, mtGC) GrowableArray<markOop>(40, true);
     }
     _objs_with_preserved_marks->push(obj);
     _preserved_marks_of_objs->push(m);
@@ -4269,7 +4269,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num)
   uint array_length = PADDING_ELEM_NUM +
                       real_length +
                       PADDING_ELEM_NUM;
-  _surviving_young_words_base = NEW_C_HEAP_ARRAY(size_t, array_length);
+  _surviving_young_words_base = NEW_C_HEAP_ARRAY(size_t, array_length, mtGC);
   if (_surviving_young_words_base == NULL)
     vm_exit_out_of_memory(array_length * sizeof(size_t),
                           "Not enough space for young surv histo.");

@@ -39,7 +39,7 @@ public class HashtableBucket extends VMObject {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("HashtableBucket");
+    Type type = db.lookupType("HashtableBucket<mtInternal>");
     entryField = type.getAddressField("_entry");
   }
 

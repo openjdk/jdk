@@ -88,6 +88,9 @@ class CodeCache : AllStatic {
   // Lookup that does not fail if you lookup a zombie method (if you call this, be sure to know
   // what you are doing)
   static CodeBlob* find_blob_unsafe(void* start) {
+    // NMT can walk the stack before code cache is created
+    if (_heap == NULL) return NULL;
+
     CodeBlob* result = (CodeBlob*)_heap->find_start(start);
     // this assert is too strong because the heap code will return the
     // heapblock containing start. That block can often be larger than

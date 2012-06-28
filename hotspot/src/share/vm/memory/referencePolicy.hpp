@@ -29,7 +29,7 @@
 // should be cleared.
 
 
-class ReferencePolicy : public CHeapObj {
+class ReferencePolicy : public CHeapObj<mtGC> {
  public:
   virtual bool should_clear_reference(oop p, jlong timestamp_clock) {
     ShouldNotReachHere();

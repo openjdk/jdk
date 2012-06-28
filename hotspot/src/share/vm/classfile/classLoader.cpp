@@ -153,7 +153,7 @@ MetaIndex::MetaIndex(char** meta_package_names, int num_meta_package_names) {
     _meta_package_names = NULL;
     _num_meta_package_names = 0;
   } else {
-    _meta_package_names = NEW_C_HEAP_ARRAY(char*, num_meta_package_names);
+    _meta_package_names = NEW_C_HEAP_ARRAY(char*, num_meta_package_names, mtClass);
     _num_meta_package_names = num_meta_package_names;
     memcpy(_meta_package_names, meta_package_names, num_meta_package_names * sizeof(char*));
   }
@@ -161,7 +161,7 @@ MetaIndex::MetaIndex(char** meta_package_names, int num_meta_package_names) {
 
 
 MetaIndex::~MetaIndex() {
-  FREE_C_HEAP_ARRAY(char*, _meta_package_names);
+  FREE_C_HEAP_ARRAY(char*, _meta_package_names, mtClass);
 }
 
 
@@ -192,7 +192,7 @@ bool ClassPathEntry::is_lazy() {
 }
 
 ClassPathDirEntry::ClassPathDirEntry(char* dir) : ClassPathEntry() {
-  _dir = NEW_C_HEAP_ARRAY(char, strlen(dir)+1);
+  _dir = NEW_C_HEAP_ARRAY(char, strlen(dir)+1, mtClass);
   strcpy(_dir, dir);
 }
 
@@ -229,7 +229,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name) {
 
 ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name) : ClassPathEntry() {
   _zip = zip;
-  _zip_name = NEW_C_HEAP_ARRAY(char, strlen(zip_name)+1);
+  _zip_name = NEW_C_HEAP_ARRAY(char, strlen(zip_name)+1, mtClass);
   strcpy(_zip_name, zip_name);
 }
 
@@ -237,7 +237,7 @@ ClassPathZipEntry::~ClassPathZipEntry() {
   if (ZipClose != NULL) {
     (*ZipClose)(_zip);
   }
-  FREE_C_HEAP_ARRAY(char, _zip_name);
+  FREE_C_HEAP_ARRAY(char, _zip_name, mtClass);
 }
 
 ClassFileStream* ClassPathZipEntry::open_stream(const char* name) {
@@ -454,11 +454,11 @@ void ClassLoader::setup_bootstrap_search_path() {
     while (sys_class_path[end] && sys_class_path[end] != os::path_separator()[0]) {
       end++;
     }
-    char* path = NEW_C_HEAP_ARRAY(char, end-start+1);
+    char* path = NEW_C_HEAP_ARRAY(char, end-start+1, mtClass);
     strncpy(path, &sys_class_path[start], end-start);
     path[end-start] = '\0';
     update_class_path_entry_list(path, false);
-    FREE_C_HEAP_ARRAY(char, path);
+    FREE_C_HEAP_ARRAY(char, path, mtClass);
     while (sys_class_path[end] == os::path_separator()[0]) {
       end++;
     }
@@ -652,13 +652,13 @@ void ClassLoader::load_zip_library() {
 // in the classpath must be the same files, in the same order, even
 // though the exact name is not the same.
 
-class PackageInfo: public BasicHashtableEntry {
+class PackageInfo: public BasicHashtableEntry<mtClass> {
 public:
   const char* _pkgname;       // Package name
   int _classpath_index;       // Index of directory or JAR file loaded from
 
   PackageInfo* next() {
-    return (PackageInfo*)BasicHashtableEntry::next();
+    return (PackageInfo*)BasicHashtableEntry<mtClass>::next();
   }
 
   const char* pkgname()           { return _pkgname; }
@@ -674,7 +674,7 @@ public:
 };
 
 
-class PackageHashtable : public BasicHashtable {
+class PackageHashtable : public BasicHashtable<mtClass> {
 private:
   inline unsigned int compute_hash(const char *s, int n) {
     unsigned int val = 0;
@@ -685,7 +685,7 @@ private:
   }
 
   PackageInfo* bucket(int index) {
-    return (PackageInfo*)BasicHashtable::bucket(index);
+    return (PackageInfo*)BasicHashtable<mtClass>::bucket(index);
   }
 
   PackageInfo* get_entry(int index, unsigned int hash,
@@ -702,10 +702,10 @@ private:
 
 public:
   PackageHashtable(int table_size)
-    : BasicHashtable(table_size, sizeof(PackageInfo)) {}
+    : BasicHashtable<mtClass>(table_size, sizeof(PackageInfo)) {}
 
-  PackageHashtable(int table_size, HashtableBucket* t, int number_of_entries)
-    : BasicHashtable(table_size, sizeof(PackageInfo), t, number_of_entries) {}
+  PackageHashtable(int table_size, HashtableBucket<mtClass>* t, int number_of_entries)
+    : BasicHashtable<mtClass>(table_size, sizeof(PackageInfo), t, number_of_entries) {}
 
   PackageInfo* get_entry(const char* pkgname, int n) {
     unsigned int hash = compute_hash(pkgname, n);
@@ -715,14 +715,14 @@ public:
   PackageInfo* new_entry(char* pkgname, int n) {
     unsigned int hash = compute_hash(pkgname, n);
     PackageInfo* pp;
-    pp = (PackageInfo*)BasicHashtable::new_entry(hash);
+    pp = (PackageInfo*)BasicHashtable<mtClass>::new_entry(hash);
     pp->set_pkgname(pkgname);
     return pp;
   }
 
   void add_entry(PackageInfo* pp) {
     int index = hash_to_index(pp->hash());
-    BasicHashtable::add_entry(index, pp);
+    BasicHashtable<mtClass>::add_entry(index, pp);
   }
 
   void copy_pkgnames(const char** packages) {
@@ -742,7 +742,7 @@ public:
 void PackageHashtable::copy_table(char** top, char* end,
                                   PackageHashtable* table) {
   // Copy (relocate) the table to the shared space.
-  BasicHashtable::copy_table(top, end);
+  BasicHashtable<mtClass>::copy_table(top, end);
 
   // Calculate the space needed for the package name strings.
   int i;
@@ -815,7 +815,7 @@ bool ClassLoader::add_package(const char *pkgname, int classpath_index, TRAPS) {
       // Package prefix found
       int n = cp - pkgname + 1;
 
-      char* new_pkgname = NEW_C_HEAP_ARRAY(char, n + 1);
+      char* new_pkgname = NEW_C_HEAP_ARRAY(char, n + 1, mtClass);
       if (new_pkgname == NULL) {
         return false;
       }
@@ -929,10 +929,10 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
 }
 
 
-void ClassLoader::create_package_info_table(HashtableBucket *t, int length,
+void ClassLoader::create_package_info_table(HashtableBucket<mtClass> *t, int length,
                                             int number_of_entries) {
   assert(_package_hash_table == NULL, "One package info table allowed.");
-  assert(length == package_hash_table_size * sizeof(HashtableBucket),
+  assert(length == package_hash_table_size * sizeof(HashtableBucket<mtClass>),
          "bad shared package info size.");
   _package_hash_table = new PackageHashtable(package_hash_table_size, t,
                                              number_of_entries);

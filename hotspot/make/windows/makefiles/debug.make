@@ -38,7 +38,8 @@ default:: $(BUILD_PCH_FILE) $(AOUT) launcher checkAndBuildSA wb
 !include ../local.make
 !include compile.make
 
-CXX_FLAGS=$(CXX_FLAGS) $(DEBUG_OPT_OPTION)
+# _NMT_NOINLINE_ informs NMT that no inlining by Compiler
+CXX_FLAGS=$(CXX_FLAGS) $(DEBUG_OPT_OPTION) /D "_NMT_NOINLINE_"
 
 !include $(WorkSpace)/make/windows/makefiles/vm.make
 !include local.make

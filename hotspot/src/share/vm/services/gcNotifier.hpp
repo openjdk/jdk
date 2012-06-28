@@ -30,7 +30,7 @@
 #include "services/memoryService.hpp"
 #include "services/memoryManager.hpp"
 
-class GCNotificationRequest : public CHeapObj {
+class GCNotificationRequest : public CHeapObj<mtInternal> {
   friend class GCNotifier;
   GCNotificationRequest *next;
   jlong timestamp;

@@ -132,7 +132,7 @@ void CompactingPermGenGen::initialize_oops() {
   buffer += sizeof(intptr_t);
   int number_of_entries = *(intptr_t*)buffer;
   buffer += sizeof(intptr_t);
-  SymbolTable::create_table((HashtableBucket*)buffer, symbolTableLen,
+  SymbolTable::create_table((HashtableBucket<mtSymbol>*)buffer, symbolTableLen,
                             number_of_entries);
   buffer += symbolTableLen;
 
@@ -144,7 +144,7 @@ void CompactingPermGenGen::initialize_oops() {
   buffer += sizeof(intptr_t);
   number_of_entries = *(intptr_t*)buffer;
   buffer += sizeof(intptr_t);
-  StringTable::create_table((HashtableBucket*)buffer, stringTableLen,
+  StringTable::create_table((HashtableBucket<mtSymbol>*)buffer, stringTableLen,
                             number_of_entries);
   buffer += stringTableLen;
 
@@ -157,7 +157,7 @@ void CompactingPermGenGen::initialize_oops() {
   buffer += sizeof(intptr_t);
   number_of_entries = *(intptr_t*)buffer;
   buffer += sizeof(intptr_t);
-  SystemDictionary::set_shared_dictionary((HashtableBucket*)buffer,
+  SystemDictionary::set_shared_dictionary((HashtableBucket<mtClass>*)buffer,
                                           sharedDictionaryLen,
                                           number_of_entries);
   buffer += sharedDictionaryLen;
@@ -171,7 +171,7 @@ void CompactingPermGenGen::initialize_oops() {
   buffer += sizeof(intptr_t);
   number_of_entries = *(intptr_t*)buffer;
   buffer += sizeof(intptr_t);
-  ClassLoader::create_package_info_table((HashtableBucket*)buffer, pkgInfoLen,
+  ClassLoader::create_package_info_table((HashtableBucket<mtClass>*)buffer, pkgInfoLen,
                                          number_of_entries);
   buffer += pkgInfoLen;
   ClassLoader::verify();

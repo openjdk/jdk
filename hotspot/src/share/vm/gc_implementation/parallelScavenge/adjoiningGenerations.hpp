@@ -40,7 +40,7 @@
 // must be shrunk.  Adjusting the boundary between the generations
 // is called for in this class.
 
-class AdjoiningGenerations : public CHeapObj {
+class AdjoiningGenerations : public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
   // The young generation and old generation, respectively

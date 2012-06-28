@@ -310,7 +310,7 @@ public:
 // manages the status of the diagnostic command (hidden, enabled). A DCmdFactory
 // has to be registered to make the diagnostic command available (see
 // management.cpp)
-class DCmdFactory: public CHeapObj {
+class DCmdFactory: public CHeapObj<mtInternal> {
 private:
   static Mutex*       _dcmdFactory_lock;
   // Pointer to the next factory in the singly-linked list of registered
@@ -368,7 +368,7 @@ public:
     DCmdFactory(DCmdClass::num_arguments(), enabled, hidden) { }
   // Returns a C-heap allocated instance
   virtual DCmd* create_Cheap_instance(outputStream* output) {
-    return new (ResourceObj::C_HEAP) DCmdClass(output, true);
+    return new (ResourceObj::C_HEAP, mtInternal) DCmdClass(output, true);
   }
   // Returns a resourceArea allocated instance
   virtual DCmd* create_resource_instance(outputStream* output) {

@@ -58,9 +58,9 @@
 #endif
 
 GrowableArray<MemoryPool*>* MemoryService::_pools_list =
-  new (ResourceObj::C_HEAP) GrowableArray<MemoryPool*>(init_pools_list_size, true);
+  new (ResourceObj::C_HEAP, mtInternal) GrowableArray<MemoryPool*>(init_pools_list_size, true);
 GrowableArray<MemoryManager*>* MemoryService::_managers_list =
-  new (ResourceObj::C_HEAP) GrowableArray<MemoryManager*>(init_managers_list_size, true);
+  new (ResourceObj::C_HEAP, mtInternal) GrowableArray<MemoryManager*>(init_managers_list_size, true);
 
 GCMemoryManager* MemoryService::_minor_gc_manager = NULL;
 GCMemoryManager* MemoryService::_major_gc_manager = NULL;

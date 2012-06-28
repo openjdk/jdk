@@ -40,6 +40,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/vmError.hpp"
 
 PSYoungGen*  ParallelScavengeHeap::_young_gen = NULL;
@@ -160,6 +161,8 @@ jint ParallelScavengeHeap::initialize() {
       }
     }
   }
+
+  MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtJavaHeap);
 
   os::trace_page_sizes("ps perm", pg_min_size, pg_max_size, pg_page_sz,
                        heap_rs.base(), pg_max_size);

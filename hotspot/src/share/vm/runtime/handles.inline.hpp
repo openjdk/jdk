@@ -85,7 +85,7 @@ inline void HandleMark::pop_and_restore() {
   area->_chunk = _chunk;
   area->_hwm = _hwm;
   area->_max = _max;
-  NOT_PRODUCT(area->set_size_in_bytes(_size_in_bytes);)
+  area->set_size_in_bytes(_size_in_bytes);
   debug_only(area->_handle_mark_nesting--);
 }
 

@@ -63,7 +63,7 @@
 class OopClosure;
 class MemoryPool;
 
-class ThresholdSupport : public CHeapObj {
+class ThresholdSupport : public CHeapObj<mtInternal> {
  private:
   bool            _support_high_threshold;
   bool            _support_low_threshold;
@@ -112,7 +112,7 @@ class ThresholdSupport : public CHeapObj {
   }
 };
 
-class SensorInfo : public CHeapObj {
+class SensorInfo : public CHeapObj<mtInternal> {
 private:
   instanceOop     _sensor_obj;
   bool            _sensor_on;

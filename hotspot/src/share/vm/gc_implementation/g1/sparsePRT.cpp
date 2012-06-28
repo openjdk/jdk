@@ -148,8 +148,8 @@ void SparsePRTEntry::copy_cards(SparsePRTEntry* e) const {
 RSHashTable::RSHashTable(size_t capacity) :
   _capacity(capacity), _capacity_mask(capacity-1),
   _occupied_entries(0), _occupied_cards(0),
-  _entries((SparsePRTEntry*)NEW_C_HEAP_ARRAY(char, SparsePRTEntry::size() * capacity)),
-  _buckets(NEW_C_HEAP_ARRAY(int, capacity)),
+  _entries((SparsePRTEntry*)NEW_C_HEAP_ARRAY(char, SparsePRTEntry::size() * capacity, mtGC)),
+  _buckets(NEW_C_HEAP_ARRAY(int, capacity, mtGC)),
   _free_list(NullEntry), _free_region(0)
 {
   clear();
@@ -157,11 +157,11 @@ RSHashTable::RSHashTable(size_t capacity) :
 
 RSHashTable::~RSHashTable() {
   if (_entries != NULL) {
-    FREE_C_HEAP_ARRAY(SparsePRTEntry, _entries);
+    FREE_C_HEAP_ARRAY(SparsePRTEntry, _entries, mtGC);
     _entries = NULL;
   }
   if (_buckets != NULL) {
-    FREE_C_HEAP_ARRAY(int, _buckets);
+    FREE_C_HEAP_ARRAY(int, _buckets, mtGC);
     _buckets = NULL;
   }
 }

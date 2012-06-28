@@ -63,7 +63,7 @@
 class MutableNUMASpace : public MutableSpace {
   friend class VMStructs;
 
-  class LGRPSpace : public CHeapObj {
+  class LGRPSpace : public CHeapObj<mtGC> {
     int _lgrp_id;
     MutableSpace* _space;
     MemRegion _invalid_region;

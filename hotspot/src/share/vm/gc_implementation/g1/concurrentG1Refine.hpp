@@ -34,7 +34,7 @@
 class ConcurrentG1RefineThread;
 class G1RemSet;
 
-class ConcurrentG1Refine: public CHeapObj {
+class ConcurrentG1Refine: public CHeapObj<mtGC> {
   ConcurrentG1RefineThread** _threads;
   int _n_threads;
   int _n_worker_threads;

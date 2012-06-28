@@ -348,7 +348,7 @@ void OopMapCacheEntry::allocate_bit_mask() {
   if (mask_size() > small_mask_limit) {
     assert(_bit_mask[0] == 0, "bit mask should be new or just flushed");
     _bit_mask[0] = (intptr_t)
-      NEW_C_HEAP_ARRAY(uintptr_t, mask_word_size());
+      NEW_C_HEAP_ARRAY(uintptr_t, mask_word_size(), mtClass);
   }
 }
 
@@ -356,7 +356,7 @@ void OopMapCacheEntry::deallocate_bit_mask() {
   if (mask_size() > small_mask_limit && _bit_mask[0] != 0) {
     assert(!Thread::current()->resource_area()->contains((void*)_bit_mask[0]),
       "This bit mask should not be in the resource area");
-    FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0]);
+    FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0], mtClass);
     debug_only(_bit_mask[0] = 0;)
   }
 }
@@ -506,7 +506,7 @@ inline unsigned int OopMapCache::hash_value_for(methodHandle method, int bci) {
 OopMapCache::OopMapCache() :
   _mut(Mutex::leaf, "An OopMapCache lock", true)
 {
-  _array  = NEW_C_HEAP_ARRAY(OopMapCacheEntry, _size);
+  _array  = NEW_C_HEAP_ARRAY(OopMapCacheEntry, _size, mtClass);
   // Cannot call flush for initialization, since flush
   // will check if memory should be deallocated
   for(int i = 0; i < _size; i++) _array[i].initialize();
@@ -520,7 +520,7 @@ OopMapCache::~OopMapCache() {
   flush();
   // Deallocate array
   NOT_PRODUCT(_total_memory_usage -= sizeof(OopMapCache) + (sizeof(OopMapCacheEntry) * _size);)
-  FREE_C_HEAP_ARRAY(OopMapCacheEntry, _array);
+  FREE_C_HEAP_ARRAY(OopMapCacheEntry, _array, mtClass);
 }
 
 OopMapCacheEntry* OopMapCache::entry_at(int i) const {
@@ -639,9 +639,9 @@ void OopMapCache::lookup(methodHandle method,
 
 void OopMapCache::compute_one_oop_map(methodHandle method, int bci, InterpreterOopMap* entry) {
   // Due to the invariants above it's tricky to allocate a temporary OopMapCacheEntry on the stack
-  OopMapCacheEntry* tmp = NEW_C_HEAP_ARRAY(OopMapCacheEntry, 1);
+  OopMapCacheEntry* tmp = NEW_C_HEAP_ARRAY(OopMapCacheEntry, 1, mtClass);
   tmp->initialize();
   tmp->fill(method, bci);
   entry->resource_copy(tmp);
-  FREE_C_HEAP_ARRAY(OopMapCacheEntry, tmp);
+  FREE_C_HEAP_ARRAY(OopMapCacheEntry, tmp, mtInternal);
 }

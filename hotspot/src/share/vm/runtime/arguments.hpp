@@ -44,7 +44,7 @@ class SysClassPath;
 
 // Element describing System and User (-Dkey=value flags) defined property.
 
-class SystemProperty: public CHeapObj {
+class SystemProperty: public CHeapObj<mtInternal> {
  private:
   char*           _key;
   char*           _value;
@@ -63,7 +63,7 @@ class SystemProperty: public CHeapObj {
       if (_value != NULL) {
         FreeHeap(_value);
       }
-      _value = AllocateHeap(strlen(value)+1);
+      _value = AllocateHeap(strlen(value)+1, mtInternal);
       if (_value != NULL) {
         strcpy(_value, value);
       }
@@ -80,7 +80,7 @@ class SystemProperty: public CHeapObj {
       if (_value != NULL) {
         len += strlen(_value);
       }
-      sp = AllocateHeap(len+2);
+      sp = AllocateHeap(len+2, mtInternal);
       if (sp != NULL) {
         if (_value != NULL) {
           strcpy(sp, _value);
@@ -100,13 +100,13 @@ class SystemProperty: public CHeapObj {
     if (key == NULL) {
       _key = NULL;
     } else {
-      _key = AllocateHeap(strlen(key)+1);
+      _key = AllocateHeap(strlen(key)+1, mtInternal);
       strcpy(_key, key);
     }
     if (value == NULL) {
       _value = NULL;
     } else {
-      _value = AllocateHeap(strlen(value)+1);
+      _value = AllocateHeap(strlen(value)+1, mtInternal);
       strcpy(_value, value);
     }
     _next = NULL;
@@ -116,7 +116,7 @@ class SystemProperty: public CHeapObj {
 
 
 // For use by -agentlib, -agentpath and -Xrun
-class AgentLibrary : public CHeapObj {
+class AgentLibrary : public CHeapObj<mtInternal> {
   friend class AgentLibraryList;
  private:
   char*           _name;
@@ -136,12 +136,12 @@ class AgentLibrary : public CHeapObj {
 
   // Constructor
   AgentLibrary(const char* name, const char* options, bool is_absolute_path, void* os_lib) {
-    _name = AllocateHeap(strlen(name)+1);
+    _name = AllocateHeap(strlen(name)+1, mtInternal);
     strcpy(_name, name);
     if (options == NULL) {
       _options = NULL;
     } else {
-      _options = AllocateHeap(strlen(options)+1);
+      _options = AllocateHeap(strlen(options)+1, mtInternal);
       strcpy(_options, options);
     }
     _is_absolute_path = is_absolute_path;

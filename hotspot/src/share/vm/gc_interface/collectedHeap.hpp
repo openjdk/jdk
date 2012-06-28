@@ -74,7 +74,7 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 //     G1CollectedHeap
 //   ParallelScavengeHeap
 //
-class CollectedHeap : public CHeapObj {
+class CollectedHeap : public CHeapObj<mtInternal> {
   friend class VMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
   friend class constantPoolCacheKlass; // allocate() method inserts is_conc_safe
