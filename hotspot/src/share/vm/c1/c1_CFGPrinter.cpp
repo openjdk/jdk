@@ -33,7 +33,7 @@
 #ifndef PRODUCT
 
 
-class CFGPrinterOutput : public CHeapObj {
+class CFGPrinterOutput : public CHeapObj<mtCompiler> {
  private:
   outputStream* _output;
 
@@ -106,7 +106,7 @@ void CFGPrinter::print_intervals(IntervalList* intervals, const char* name) {
 
 
 CFGPrinterOutput::CFGPrinterOutput()
- : _output(new(ResourceObj::C_HEAP) fileStream("output.cfg"))
+ : _output(new(ResourceObj::C_HEAP, mtCompiler) fileStream("output.cfg"))
 {
 }
 

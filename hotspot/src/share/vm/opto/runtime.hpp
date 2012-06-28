@@ -55,7 +55,7 @@ class CallInfo;
 // code in various ways.  Currently they are used by the lock coarsening code
 //
 
-class NamedCounter : public CHeapObj {
+class NamedCounter : public CHeapObj<mtCompiler> {
 public:
     enum CounterTag {
     NoTag,

@@ -546,7 +546,7 @@ static bool find_processors_in_pset(psetid_t        pset,
   // Find the number of processors in the processor set.
   if (pset_info(pset, NULL, id_length, NULL) == 0) {
     // Make up an array to hold their ids.
-    *id_array = NEW_C_HEAP_ARRAY(processorid_t, *id_length);
+    *id_array = NEW_C_HEAP_ARRAY(processorid_t, *id_length, mtInternal);
     // Fill in the array with their processor ids.
     if (pset_info(pset, NULL, id_length, *id_array) == 0) {
       result = true;
@@ -577,7 +577,7 @@ static bool find_processors_online(processorid_t** id_array,
   // Find the number of processors online.
   *id_length = sysconf(_SC_NPROCESSORS_ONLN);
   // Make up an array to hold their ids.
-  *id_array = NEW_C_HEAP_ARRAY(processorid_t, *id_length);
+  *id_array = NEW_C_HEAP_ARRAY(processorid_t, *id_length, mtInternal);
   // Processors need not be numbered consecutively.
   long found = 0;
   processorid_t next = 0;
@@ -629,7 +629,7 @@ static bool assign_distribution(processorid_t* id_array,
   // The next id, to limit loops.
   const processorid_t limit_id = max_id + 1;
   // Make up markers for available processors.
-  bool* available_id = NEW_C_HEAP_ARRAY(bool, limit_id);
+  bool* available_id = NEW_C_HEAP_ARRAY(bool, limit_id, mtInternal);
   for (uint c = 0; c < limit_id; c += 1) {
     available_id[c] = false;
   }
@@ -666,7 +666,7 @@ static bool assign_distribution(processorid_t* id_array,
     }
   }
   if (available_id != NULL) {
-    FREE_C_HEAP_ARRAY(bool, available_id);
+    FREE_C_HEAP_ARRAY(bool, available_id, mtInternal);
   }
   return true;
 }
@@ -698,7 +698,7 @@ bool os::distribute_processes(uint length, uint* distribution) {
     }
   }
   if (id_array != NULL) {
-    FREE_C_HEAP_ARRAY(processorid_t, id_array);
+    FREE_C_HEAP_ARRAY(processorid_t, id_array, mtInternal);
   }
   return result;
 }
@@ -771,8 +771,8 @@ void os::init_system_properties_values() {
   // code needs to be changed accordingly.
 
   // The next few definitions allow the code to be verbatim:
-#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n))
-#define free(p) FREE_C_HEAP_ARRAY(char, p)
+#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n), mtInternal)
+#define free(p) FREE_C_HEAP_ARRAY(char, p, mtInternal)
 #define getenv(n) ::getenv(n)
 
 #define EXTENSIONS_DIR  "/lib/ext"
@@ -1927,11 +1927,11 @@ void os::dll_build_name(char* buffer, size_t buflen,
     // release the storage
     for (int i = 0 ; i < n ; i++) {
       if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i]);
+        FREE_C_HEAP_ARRAY(char, pelements[i], mtInternal);
       }
     }
     if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements);
+      FREE_C_HEAP_ARRAY(char*, pelements, mtInternal);
     }
   } else {
     snprintf(buffer, buflen, "%s/lib%s.so", pname, fname);
@@ -2662,17 +2662,17 @@ void os::Solaris::init_signal_mem() {
 
   // pending_signals has one int per signal
   // The additional signal is for SIGEXIT - exit signal to signal_thread
-  pending_signals = (jint *)os::malloc(sizeof(jint) * (Sigexit+1));
+  pending_signals = (jint *)os::malloc(sizeof(jint) * (Sigexit+1), mtInternal);
   memset(pending_signals, 0, (sizeof(jint) * (Sigexit+1)));
 
   if (UseSignalChaining) {
      chainedsigactions = (struct sigaction *)malloc(sizeof(struct sigaction)
-       * (Maxsignum + 1));
+       * (Maxsignum + 1), mtInternal);
      memset(chainedsigactions, 0, (sizeof(struct sigaction) * (Maxsignum + 1)));
-     preinstalled_sigs = (int *)os::malloc(sizeof(int) * (Maxsignum + 1));
+     preinstalled_sigs = (int *)os::malloc(sizeof(int) * (Maxsignum + 1), mtInternal);
      memset(preinstalled_sigs, 0, (sizeof(int) * (Maxsignum + 1)));
   }
-  ourSigFlags = (int*)malloc(sizeof(int) * (Maxsignum + 1 ));
+  ourSigFlags = (int*)malloc(sizeof(int) * (Maxsignum + 1 ), mtInternal);
   memset(ourSigFlags, 0, sizeof(int) * (Maxsignum + 1));
 }
 
@@ -2760,7 +2760,7 @@ int os::vm_allocation_granularity() {
   return page_size;
 }
 
-bool os::commit_memory(char* addr, size_t bytes, bool exec) {
+bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   size_t size = bytes;
   char *res = Solaris::mmap_chunk(addr, size, MAP_PRIVATE|MAP_FIXED, prot);
@@ -2773,7 +2773,7 @@ bool os::commit_memory(char* addr, size_t bytes, bool exec) {
   return false;
 }
 
-bool os::commit_memory(char* addr, size_t bytes, size_t alignment_hint,
+bool os::pd_commit_memory(char* addr, size_t bytes, size_t alignment_hint,
                        bool exec) {
   if (commit_memory(addr, bytes, exec)) {
     if (UseMPSS && alignment_hint > (size_t)vm_page_size()) {
@@ -2803,14 +2803,14 @@ bool os::commit_memory(char* addr, size_t bytes, size_t alignment_hint,
 }
 
 // Uncommit the pages in a specified region.
-void os::free_memory(char* addr, size_t bytes, size_t alignment_hint) {
+void os::pd_free_memory(char* addr, size_t bytes, size_t alignment_hint) {
   if (madvise(addr, bytes, MADV_FREE) < 0) {
     debug_only(warning("MADV_FREE failed."));
     return;
   }
 }
 
-bool os::create_stack_guard_pages(char* addr, size_t size) {
+bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   return os::commit_memory(addr, size);
 }
 
@@ -2819,7 +2819,7 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 }
 
 // Change the page size in a given range.
-void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   assert((intptr_t)addr % alignment_hint == 0, "Address should be aligned.");
   assert((intptr_t)(addr + bytes) % alignment_hint == 0, "End should be aligned.");
   if (UseLargePages && UseMPSS) {
@@ -3006,7 +3006,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
   return end;
 }
 
-bool os::uncommit_memory(char* addr, size_t bytes) {
+bool os::pd_uncommit_memory(char* addr, size_t bytes) {
   size_t size = bytes;
   // Map uncommitted pages PROT_NONE so we fail early if we touch an
   // uncommitted page. Otherwise, the read/write might succeed if we
@@ -3045,7 +3045,7 @@ char* os::Solaris::anon_mmap(char* requested_addr, size_t bytes, size_t alignmen
   return mmap_chunk(addr, bytes, flags, PROT_NONE);
 }
 
-char* os::reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
+char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
   char* addr = Solaris::anon_mmap(requested_addr, bytes, alignment_hint, (requested_addr != NULL));
 
   guarantee(requested_addr == NULL || requested_addr == addr,
@@ -3056,7 +3056,7 @@ char* os::reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hi
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 
-char* os::attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
+char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   const int max_tries = 10;
   char* base[max_tries];
   size_t size[max_tries];
@@ -3178,7 +3178,7 @@ char* os::attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   return (i < max_tries) ? requested_addr : NULL;
 }
 
-bool os::release_memory(char* addr, size_t bytes) {
+bool os::pd_release_memory(char* addr, size_t bytes) {
   size_t size = bytes;
   return munmap(addr, size) == 0;
 }
@@ -4792,7 +4792,7 @@ bool isT2_libthread() {
   lwpSize = 16*1024;
   for (;;) {
     ::lseek64 (lwpFile, 0, SEEK_SET);
-    lwpArray = (prheader_t *)NEW_C_HEAP_ARRAY(char, lwpSize);
+    lwpArray = (prheader_t *)NEW_C_HEAP_ARRAY(char, lwpSize, mtInternal);
     if (::read(lwpFile, lwpArray, lwpSize) < 0) {
       if (ThreadPriorityVerbose) warning("Error reading /proc/self/lstatus\n");
       break;
@@ -4810,10 +4810,10 @@ bool isT2_libthread() {
       break;
     }
     lwpSize = lwpArray->pr_nent * lwpArray->pr_entsize;
-    FREE_C_HEAP_ARRAY(char, lwpArray);  // retry.
+    FREE_C_HEAP_ARRAY(char, lwpArray, mtInternal);  // retry.
   }
 
-  FREE_C_HEAP_ARRAY(char, lwpArray);
+  FREE_C_HEAP_ARRAY(char, lwpArray, mtInternal);
   ::close (lwpFile);
   if (ThreadPriorityVerbose) {
     if (isT2) tty->print_cr("We are running with a T2 libthread\n");
@@ -5137,9 +5137,9 @@ jint os::init_2(void) {
       UseNUMA = false;
     } else {
       size_t lgrp_limit = os::numa_get_groups_num();
-      int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit);
+      int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit, mtInternal);
       size_t lgrp_num = os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
-      FREE_C_HEAP_ARRAY(int, lgrp_ids);
+      FREE_C_HEAP_ARRAY(int, lgrp_ids, mtInternal);
       if (lgrp_num < 2) {
         // There's only one locality group, disable NUMA.
         UseNUMA = false;
@@ -5485,7 +5485,7 @@ int os::available(int fd, jlong *bytes) {
 }
 
 // Map a block of memory.
-char* os::map_memory(int fd, const char* file_name, size_t file_offset,
+char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                      char *addr, size_t bytes, bool read_only,
                      bool allow_exec) {
   int prot;
@@ -5517,7 +5517,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 
 
 // Remap a block of memory.
-char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
+char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
                        char *addr, size_t bytes, bool read_only,
                        bool allow_exec) {
   // same as map_memory() on this OS
@@ -5527,7 +5527,7 @@ char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
 
 
 // Unmap a block of memory.
-bool os::unmap_memory(char* addr, size_t bytes) {
+bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return munmap(addr, bytes) == 0;
 }
 

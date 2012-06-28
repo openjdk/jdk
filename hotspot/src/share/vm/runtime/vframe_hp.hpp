@@ -89,7 +89,7 @@ class compiledVFrame: public javaVFrame {
 // any updated locals.
 
 class jvmtiDeferredLocalVariable;
-class jvmtiDeferredLocalVariableSet : public CHeapObj {
+class jvmtiDeferredLocalVariableSet : public CHeapObj<mtCompiler> {
 private:
 
   methodOop _method;           // must be GC'd
@@ -119,7 +119,7 @@ private:
 
 };
 
-class jvmtiDeferredLocalVariable : public CHeapObj {
+class jvmtiDeferredLocalVariable : public CHeapObj<mtCompiler> {
   public:
 
     jvmtiDeferredLocalVariable(int index, BasicType type, jvalue value);

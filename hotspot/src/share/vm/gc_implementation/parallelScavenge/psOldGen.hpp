@@ -34,7 +34,7 @@
 
 class PSMarkSweepDecorator;
 
-class PSOldGen : public CHeapObj {
+class PSOldGen : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class PSPromotionManager; // Uses the cas_allocate methods
   friend class ParallelScavengeHeap;

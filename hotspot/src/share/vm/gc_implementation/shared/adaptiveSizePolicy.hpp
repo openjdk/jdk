@@ -38,7 +38,7 @@
 class elapsedTimer;
 class CollectorPolicy;
 
-class AdaptiveSizePolicy : public CHeapObj {
+class AdaptiveSizePolicy : public CHeapObj<mtGC> {
  friend class GCAdaptivePolicyCounters;
  friend class PSGCAdaptivePolicyCounters;
  friend class CMSGCAdaptivePolicyCounters;

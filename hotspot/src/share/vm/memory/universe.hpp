@@ -43,7 +43,7 @@ class DeferredObjAllocEvent;
 // Common parts of a methodOop cache. This cache safely interacts with
 // the RedefineClasses API.
 //
-class CommonMethodOopCache : public CHeapObj {
+class CommonMethodOopCache : public CHeapObj<mtClass> {
   // We save the klassOop and the idnum of methodOop in order to get
   // the current cached methodOop.
  private:
@@ -455,7 +455,7 @@ class Universe: AllStatic {
   static int base_vtable_size()               { return _base_vtable_size; }
 };
 
-class DeferredObjAllocEvent : public CHeapObj {
+class DeferredObjAllocEvent : public CHeapObj<mtInternal> {
   private:
     oop    _oop;
     size_t _bytesize;

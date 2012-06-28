@@ -31,7 +31,7 @@
 
 class LoaderConstraintEntry;
 
-class LoaderConstraintTable : public Hashtable<klassOop> {
+class LoaderConstraintTable : public Hashtable<klassOop, mtClass> {
   friend class VMStructs;
 private:
 
@@ -53,11 +53,11 @@ public:
   void free_entry(LoaderConstraintEntry *entry);
 
   LoaderConstraintEntry* bucket(int i) {
-    return (LoaderConstraintEntry*)Hashtable<klassOop>::bucket(i);
+    return (LoaderConstraintEntry*)Hashtable<klassOop, mtClass>::bucket(i);
   }
 
   LoaderConstraintEntry** bucket_addr(int i) {
-    return (LoaderConstraintEntry**)Hashtable<klassOop>::bucket_addr(i);
+    return (LoaderConstraintEntry**)Hashtable<klassOop, mtClass>::bucket_addr(i);
   }
 
   // GC support
@@ -94,7 +94,7 @@ public:
 #endif
 };
 
-class LoaderConstraintEntry : public HashtableEntry<klassOop> {
+class LoaderConstraintEntry : public HashtableEntry<klassOop, mtClass> {
   friend class VMStructs;
 private:
   Symbol*                _name;                   // class name
@@ -109,14 +109,14 @@ public:
   void set_klass(klassOop k) { set_literal(k); }
 
   LoaderConstraintEntry* next() {
-    return (LoaderConstraintEntry*)HashtableEntry<klassOop>::next();
+    return (LoaderConstraintEntry*)HashtableEntry<klassOop, mtClass>::next();
   }
 
   LoaderConstraintEntry** next_addr() {
-    return (LoaderConstraintEntry**)HashtableEntry<klassOop>::next_addr();
+    return (LoaderConstraintEntry**)HashtableEntry<klassOop, mtClass>::next_addr();
   }
   void set_next(LoaderConstraintEntry* next) {
-    HashtableEntry<klassOop>::set_next(next);
+    HashtableEntry<klassOop, mtClass>::set_next(next);
   }
 
   Symbol* name() { return _name; }

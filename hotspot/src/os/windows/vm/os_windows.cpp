@@ -96,7 +96,6 @@
 #include <io.h>
 #include <process.h>              // For _beginthreadex(), _endthreadex()
 #include <imagehlp.h>             // For os::dll_address_to_function_name
-
 /* for enumerating dll libraries */
 #include <vdmdbg.h>
 
@@ -214,13 +213,13 @@ void os::init_system_properties_values() {
           }
       }
 
-      home_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + 1);
+      home_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + 1, mtInternal);
       if (home_path == NULL)
           return;
       strcpy(home_path, home_dir);
       Arguments::set_java_home(home_path);
 
-      dll_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + strlen(bin) + 1);
+      dll_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + strlen(bin) + 1, mtInternal);
       if (dll_path == NULL)
           return;
       strcpy(dll_path, home_dir);
@@ -251,7 +250,7 @@ void os::init_system_properties_values() {
     char *path_str = ::getenv("PATH");
 
     library_path = NEW_C_HEAP_ARRAY(char, MAX_PATH * 5 + sizeof(PACKAGE_DIR) +
-        sizeof(BIN_DIR) + (path_str ? strlen(path_str) : 0) + 10);
+        sizeof(BIN_DIR) + (path_str ? strlen(path_str) : 0) + 10, mtInternal);
 
     library_path[0] = '\0';
 
@@ -280,7 +279,7 @@ void os::init_system_properties_values() {
     strcat(library_path, ";.");
 
     Arguments::set_library_path(library_path);
-    FREE_C_HEAP_ARRAY(char, library_path);
+    FREE_C_HEAP_ARRAY(char, library_path, mtInternal);
   }
 
   /* Default extensions directory */
@@ -300,7 +299,7 @@ void os::init_system_properties_values() {
   {
     #define ENDORSED_DIR "\\lib\\endorsed"
     size_t len = strlen(Arguments::get_java_home()) + sizeof(ENDORSED_DIR);
-    char * buf = NEW_C_HEAP_ARRAY(char, len);
+    char * buf = NEW_C_HEAP_ARRAY(char, len, mtInternal);
     sprintf(buf, "%s%s", Arguments::get_java_home(), ENDORSED_DIR);
     Arguments::set_endorsed_dirs(buf);
     #undef ENDORSED_DIR
@@ -323,6 +322,23 @@ void os::breakpoint() {
 extern "C" void breakpoint() {
   os::breakpoint();
 }
+
+/*
+ * RtlCaptureStackBackTrace Windows API may not exist prior to Windows XP.
+ * So far, this method is only used by Native Memory Tracking, which is
+ * only supported on Windows XP or later.
+ */
+address os::get_caller_pc(int n) {
+#ifdef _NMT_NOINLINE_
+  n ++;
+#endif
+  address pc;
+  if (os::Kernel32Dll::RtlCaptureStackBackTrace(n + 1, 1, (PVOID*)&pc, NULL) == 1) {
+    return pc;
+  }
+  return NULL;
+}
+
 
 // os::current_stack_base()
 //
@@ -1014,7 +1030,7 @@ DIR *
 os::opendir(const char *dirname)
 {
     assert(dirname != NULL, "just checking");   // hotspot change
-    DIR *dirp = (DIR *)malloc(sizeof(DIR));
+    DIR *dirp = (DIR *)malloc(sizeof(DIR), mtInternal);
     DWORD fattr;                                // hotspot change
     char alt_dirname[4] = { 0, 0, 0, 0 };
 
@@ -1036,9 +1052,9 @@ os::opendir(const char *dirname)
         dirname = alt_dirname;
     }
 
-    dirp->path = (char *)malloc(strlen(dirname) + 5);
+    dirp->path = (char *)malloc(strlen(dirname) + 5, mtInternal);
     if (dirp->path == 0) {
-        free(dirp);
+        free(dirp, mtInternal);
         errno = ENOMEM;
         return 0;
     }
@@ -1046,13 +1062,13 @@ os::opendir(const char *dirname)
 
     fattr = GetFileAttributes(dirp->path);
     if (fattr == 0xffffffff) {
-        free(dirp->path);
-        free(dirp);
+        free(dirp->path, mtInternal);
+        free(dirp, mtInternal);
         errno = ENOENT;
         return 0;
     } else if ((fattr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-        free(dirp->path);
-        free(dirp);
+        free(dirp->path, mtInternal);
+        free(dirp, mtInternal);
         errno = ENOTDIR;
         return 0;
     }
@@ -1070,8 +1086,8 @@ os::opendir(const char *dirname)
     dirp->handle = FindFirstFile(dirp->path, &dirp->find_data);
     if (dirp->handle == INVALID_HANDLE_VALUE) {
         if (GetLastError() != ERROR_FILE_NOT_FOUND) {
-            free(dirp->path);
-            free(dirp);
+            free(dirp->path, mtInternal);
+            free(dirp, mtInternal);
             errno = EACCES;
             return 0;
         }
@@ -1114,8 +1130,8 @@ os::closedir(DIR *dirp)
         }
         dirp->handle = INVALID_HANDLE_VALUE;
     }
-    free(dirp->path);
-    free(dirp);
+    free(dirp->path, mtInternal);
+    free(dirp, mtInternal);
     return 0;
 }
 
@@ -1176,11 +1192,11 @@ void os::dll_build_name(char *buffer, size_t buflen,
     // release the storage
     for (int i = 0 ; i < n ; i++) {
       if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i]);
+        FREE_C_HEAP_ARRAY(char, pelements[i], mtInternal);
       }
     }
     if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements);
+      FREE_C_HEAP_ARRAY(char*, pelements, mtInternal);
     }
   } else {
     jio_snprintf(buffer, buflen, "%s\\%s.dll", pname, fname);
@@ -2637,7 +2653,7 @@ private:
 
   void free_node_list() {
     if (_numa_used_node_list != NULL) {
-      FREE_C_HEAP_ARRAY(int, _numa_used_node_list);
+      FREE_C_HEAP_ARRAY(int, _numa_used_node_list, mtInternal);
     }
   }
 
@@ -2659,7 +2675,7 @@ public:
     ULONG highest_node_number;
     if (!os::Kernel32Dll::GetNumaHighestNodeNumber(&highest_node_number)) return false;
     free_node_list();
-    _numa_used_node_list = NEW_C_HEAP_ARRAY(int, highest_node_number + 1);
+    _numa_used_node_list = NEW_C_HEAP_ARRAY(int, highest_node_number + 1, mtInternal);
     for (unsigned int i = 0; i <= highest_node_number; i++) {
       ULONGLONG proc_mask_numa_node;
       if (!os::Kernel32Dll::GetNumaNodeProcessorMask(i, &proc_mask_numa_node)) return false;
@@ -2918,7 +2934,7 @@ void os::large_page_init() {
 // On win32, one cannot release just a part of reserved memory, it's an
 // all or nothing deal.  When we split a reservation, we must break the
 // reservation into two reservations.
-void os::split_reserved_memory(char *base, size_t size, size_t split,
+void os::pd_split_reserved_memory(char *base, size_t size, size_t split,
                               bool realloc) {
   if (size > 0) {
     release_memory(base, size);
@@ -2931,7 +2947,7 @@ void os::split_reserved_memory(char *base, size_t size, size_t split,
   }
 }
 
-char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
+char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_allocation_granularity() == 0, "reserve block size");
@@ -2964,7 +2980,7 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
+char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   // Windows os::reserve_memory() fails of the requested address range is
   // not avilable.
   return reserve_memory(bytes, requested_addr);
@@ -3027,7 +3043,7 @@ bool os::release_memory_special(char* base, size_t bytes) {
 void os::print_statistics() {
 }
 
-bool os::commit_memory(char* addr, size_t bytes, bool exec) {
+bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
   if (bytes == 0) {
     // Don't bother the OS with noops.
     return true;
@@ -3075,26 +3091,26 @@ bool os::commit_memory(char* addr, size_t bytes, bool exec) {
   return true;
 }
 
-bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
+bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
                        bool exec) {
   return commit_memory(addr, size, exec);
 }
 
-bool os::uncommit_memory(char* addr, size_t bytes) {
+bool os::pd_uncommit_memory(char* addr, size_t bytes) {
   if (bytes == 0) {
     // Don't bother the OS with noops.
     return true;
   }
   assert((size_t) addr % os::vm_page_size() == 0, "uncommit on page boundaries");
   assert(bytes % os::vm_page_size() == 0, "uncommit in page-sized chunks");
-  return VirtualFree(addr, bytes, MEM_DECOMMIT) != 0;
+  return (VirtualFree(addr, bytes, MEM_DECOMMIT) != 0);
 }
 
-bool os::release_memory(char* addr, size_t bytes) {
+bool os::pd_release_memory(char* addr, size_t bytes) {
   return VirtualFree(addr, 0, MEM_RELEASE) != 0;
 }
 
-bool os::create_stack_guard_pages(char* addr, size_t size) {
+bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   return os::commit_memory(addr, size);
 }
 
@@ -3141,8 +3157,8 @@ bool os::unguard_memory(char* addr, size_t bytes) {
   return VirtualProtect(addr, bytes, PAGE_READWRITE, &old_status) != 0;
 }
 
-void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
-void os::free_memory(char *addr, size_t bytes, size_t alignment_hint)    { }
+void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
+void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) { }
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
@@ -4276,14 +4292,14 @@ static int stdinAvailable(int fd, long *pbytes) {
     numEvents = MAX_INPUT_EVENTS;
   }
 
-  lpBuffer = (INPUT_RECORD *)os::malloc(numEvents * sizeof(INPUT_RECORD));
+  lpBuffer = (INPUT_RECORD *)os::malloc(numEvents * sizeof(INPUT_RECORD), mtInternal);
   if (lpBuffer == NULL) {
     return FALSE;
   }
 
   error = ::PeekConsoleInput(han, lpBuffer, numEvents, &numEventsRead);
   if (error == 0) {
-    os::free(lpBuffer);
+    os::free(lpBuffer, mtInternal);
     return FALSE;
   }
 
@@ -4304,7 +4320,7 @@ static int stdinAvailable(int fd, long *pbytes) {
   }
 
   if(lpBuffer != NULL) {
-    os::free(lpBuffer);
+    os::free(lpBuffer, mtInternal);
   }
 
   *pbytes = (long) actualLength;
@@ -4312,7 +4328,7 @@ static int stdinAvailable(int fd, long *pbytes) {
 }
 
 // Map a block of memory.
-char* os::map_memory(int fd, const char* file_name, size_t file_offset,
+char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                      char *addr, size_t bytes, bool read_only,
                      bool allow_exec) {
   HANDLE hFile;
@@ -4432,7 +4448,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 
 
 // Remap a block of memory.
-char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
+char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
                        char *addr, size_t bytes, bool read_only,
                        bool allow_exec) {
   // This OS does not allow existing memory maps to be remapped so we
@@ -4445,15 +4461,15 @@ char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
   // call above and the map_memory() call below where a thread in native
   // code may be able to access an address that is no longer mapped.
 
-  return os::map_memory(fd, file_name, file_offset, addr, bytes, read_only,
-                        allow_exec);
+  return os::map_memory(fd, file_name, file_offset, addr, bytes,
+           read_only, allow_exec);
 }
 
 
 // Unmap a block of memory.
 // Returns true=success, otherwise false.
 
-bool os::unmap_memory(char* addr, size_t bytes) {
+bool os::pd_unmap_memory(char* addr, size_t bytes) {
   BOOL result = UnmapViewOfFile(addr);
   if (result == 0) {
     if (PrintMiscellaneous && Verbose) {
@@ -4931,11 +4947,15 @@ typedef SIZE_T (WINAPI* GetLargePageMinimum_Fn)(void);
 typedef LPVOID (WINAPI *VirtualAllocExNuma_Fn) (HANDLE, LPVOID, SIZE_T, DWORD, DWORD, DWORD);
 typedef BOOL (WINAPI *GetNumaHighestNodeNumber_Fn) (PULONG);
 typedef BOOL (WINAPI *GetNumaNodeProcessorMask_Fn) (UCHAR, PULONGLONG);
+typedef USHORT (WINAPI* RtlCaptureStackBackTrace_Fn)(ULONG, ULONG, PVOID*, PULONG);
 
 GetLargePageMinimum_Fn      os::Kernel32Dll::_GetLargePageMinimum = NULL;
 VirtualAllocExNuma_Fn       os::Kernel32Dll::_VirtualAllocExNuma = NULL;
 GetNumaHighestNodeNumber_Fn os::Kernel32Dll::_GetNumaHighestNodeNumber = NULL;
 GetNumaNodeProcessorMask_Fn os::Kernel32Dll::_GetNumaNodeProcessorMask = NULL;
+RtlCaptureStackBackTrace_Fn os::Kernel32Dll::_RtlCaptureStackBackTrace = NULL;
+
+
 BOOL                        os::Kernel32Dll::initialized = FALSE;
 SIZE_T os::Kernel32Dll::GetLargePageMinimum() {
   assert(initialized && _GetLargePageMinimum != NULL,
@@ -4978,6 +4998,19 @@ BOOL os::Kernel32Dll::GetNumaNodeProcessorMask(UCHAR node, PULONGLONG proc_mask)
   return _GetNumaNodeProcessorMask(node, proc_mask);
 }
 
+USHORT os::Kernel32Dll::RtlCaptureStackBackTrace(ULONG FrameToSkip,
+  ULONG FrameToCapture, PVOID* BackTrace, PULONG BackTraceHash) {
+    if (!initialized) {
+      initialize();
+    }
+
+    if (_RtlCaptureStackBackTrace != NULL) {
+      return _RtlCaptureStackBackTrace(FrameToSkip, FrameToCapture,
+        BackTrace, BackTraceHash);
+    } else {
+      return 0;
+    }
+}
 
 void os::Kernel32Dll::initializeCommon() {
   if (!initialized) {
@@ -4987,6 +5020,7 @@ void os::Kernel32Dll::initializeCommon() {
     _VirtualAllocExNuma = (VirtualAllocExNuma_Fn)::GetProcAddress(handle, "VirtualAllocExNuma");
     _GetNumaHighestNodeNumber = (GetNumaHighestNodeNumber_Fn)::GetProcAddress(handle, "GetNumaHighestNodeNumber");
     _GetNumaNodeProcessorMask = (GetNumaNodeProcessorMask_Fn)::GetProcAddress(handle, "GetNumaNodeProcessorMask");
+    _RtlCaptureStackBackTrace = (RtlCaptureStackBackTrace_Fn)::GetProcAddress(handle, "RtlCaptureStackBackTrace");
     initialized = TRUE;
   }
 }
@@ -5101,7 +5135,6 @@ Module32First_Fn            os::Kernel32Dll::_Module32First = NULL;
 Module32Next_Fn             os::Kernel32Dll::_Module32Next = NULL;
 GetNativeSystemInfo_Fn      os::Kernel32Dll::_GetNativeSystemInfo = NULL;
 
-
 void os::Kernel32Dll::initialize() {
   if (!initialized) {
     HMODULE handle = ::GetModuleHandle("Kernel32.dll");
@@ -5178,8 +5211,6 @@ void os::Kernel32Dll::GetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo) {
 
   _GetNativeSystemInfo(lpSystemInfo);
 }
-
-
 
 // PSAPI API
 

@@ -1012,7 +1012,7 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-      new (ResourceObj::C_HEAP) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, true);
+      new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, true);
 
   uint32_t debug_bits = 0;
   if (is_thread_fully_suspended(java_thread, true, &debug_bits)) {
@@ -1057,7 +1057,7 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-         new (ResourceObj::C_HEAP) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, true);
+         new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, true);
 
   uint32_t debug_bits = 0;
   if (is_thread_fully_suspended(java_thread, true, &debug_bits)) {

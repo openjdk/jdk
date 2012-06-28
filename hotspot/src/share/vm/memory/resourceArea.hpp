@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public:
     if (UseMallocOnly) {
       // use malloc, but save pointer in res. area for later freeing
       char** save = (char**)internal_malloc_4(sizeof(char*));
-      return (*save = (char*)os::malloc(size));
+      return (*save = (char*)os::malloc(size, mtThread));
     }
 #endif
     return (char*)Amalloc(size);
@@ -93,18 +93,17 @@ protected:
   ResourceArea *_area;          // Resource area to stack allocate
   Chunk *_chunk;                // saved arena chunk
   char *_hwm, *_max;
-  NOT_PRODUCT(size_t _size_in_bytes;)
+  size_t _size_in_bytes;
 
   void initialize(Thread *thread) {
     _area = thread->resource_area();
     _chunk = _area->_chunk;
     _hwm = _area->_hwm;
     _max= _area->_max;
-    NOT_PRODUCT(_size_in_bytes = _area->size_in_bytes();)
+    _size_in_bytes = _area->size_in_bytes();
     debug_only(_area->_nesting++;)
     assert( _area->_nesting > 0, "must stack allocate RMs" );
   }
-
  public:
 
 #ifndef ASSERT
@@ -120,7 +119,7 @@ protected:
 
   ResourceMark( ResourceArea *r ) :
     _area(r), _chunk(r->_chunk), _hwm(r->_hwm), _max(r->_max) {
-    NOT_PRODUCT(_size_in_bytes = _area->size_in_bytes();)
+    _size_in_bytes = r->_size_in_bytes;
     debug_only(_area->_nesting++;)
     assert( _area->_nesting > 0, "must stack allocate RMs" );
   }
@@ -148,7 +147,7 @@ protected:
 
  private:
   void free_malloced_objects()                                         PRODUCT_RETURN;
-  size_t size_in_bytes()       NOT_PRODUCT({ return _size_in_bytes; }) PRODUCT_RETURN0;
+  size_t size_in_bytes() { return _size_in_bytes; }
 };
 
 //------------------------------DeoptResourceMark-----------------------------------
@@ -180,19 +179,19 @@ protected:
 // and they would be stack allocated. This leaves open the possibilty of accidental
 // misuse so we simple duplicate the ResourceMark functionality here.
 
-class DeoptResourceMark: public CHeapObj {
+class DeoptResourceMark: public CHeapObj<mtInternal> {
 protected:
   ResourceArea *_area;          // Resource area to stack allocate
   Chunk *_chunk;                // saved arena chunk
   char *_hwm, *_max;
-  NOT_PRODUCT(size_t _size_in_bytes;)
+  size_t _size_in_bytes;
 
   void initialize(Thread *thread) {
     _area = thread->resource_area();
     _chunk = _area->_chunk;
     _hwm = _area->_hwm;
     _max= _area->_max;
-    NOT_PRODUCT(_size_in_bytes = _area->size_in_bytes();)
+    _size_in_bytes = _area->size_in_bytes();
     debug_only(_area->_nesting++;)
     assert( _area->_nesting > 0, "must stack allocate RMs" );
   }
@@ -212,7 +211,7 @@ protected:
 
   DeoptResourceMark( ResourceArea *r ) :
     _area(r), _chunk(r->_chunk), _hwm(r->_hwm), _max(r->_max) {
-    NOT_PRODUCT(_size_in_bytes = _area->size_in_bytes();)
+    _size_in_bytes = _area->size_in_bytes();
     debug_only(_area->_nesting++;)
     assert( _area->_nesting > 0, "must stack allocate RMs" );
   }
@@ -240,7 +239,7 @@ protected:
 
  private:
   void free_malloced_objects()                                         PRODUCT_RETURN;
-  size_t size_in_bytes()       NOT_PRODUCT({ return _size_in_bytes; }) PRODUCT_RETURN0;
+  size_t size_in_bytes() { return _size_in_bytes; };
 };
 
 #endif // SHARE_VM_MEMORY_RESOURCEAREA_HPP

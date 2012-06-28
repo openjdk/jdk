@@ -44,7 +44,7 @@
 // to KlassInfoEntry's and is used to sort
 // the entries.
 
-class KlassInfoEntry: public CHeapObj {
+class KlassInfoEntry: public CHeapObj<mtInternal> {
  private:
   KlassInfoEntry* _next;
   klassOop        _klass;
@@ -72,7 +72,7 @@ class KlassInfoClosure: public StackObj {
   virtual void do_cinfo(KlassInfoEntry* cie) = 0;
 };
 
-class KlassInfoBucket: public CHeapObj {
+class KlassInfoBucket: public CHeapObj<mtInternal> {
  private:
   KlassInfoEntry* _list;
   KlassInfoEntry* list()           { return _list; }

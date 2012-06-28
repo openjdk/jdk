@@ -41,10 +41,10 @@ public class BasicHashtable extends VMObject {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("BasicHashtable");
+    Type type = db.lookupType("BasicHashtable<mtInternal>");
     tableSizeField = type.getCIntegerField("_table_size");
     bucketsField   = type.getAddressField("_buckets");
-    bucketSize = db.lookupType("HashtableBucket").getSize();
+    bucketSize = db.lookupType("HashtableBucket<mtInternal>").getSize();
   }
 
   // Fields

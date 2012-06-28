@@ -2467,12 +2467,12 @@ void LinearScan::compute_oop_map(IntervalWalker* iw, const LIR_OpVisitState &vis
 // Allocate them with new so they are never destroyed (otherwise, a
 // forced exit could destroy these objects while they are still in
 // use).
-ConstantOopWriteValue* LinearScan::_oop_null_scope_value = new (ResourceObj::C_HEAP) ConstantOopWriteValue(NULL);
-ConstantIntValue*      LinearScan::_int_m1_scope_value = new (ResourceObj::C_HEAP) ConstantIntValue(-1);
-ConstantIntValue*      LinearScan::_int_0_scope_value =  new (ResourceObj::C_HEAP) ConstantIntValue(0);
-ConstantIntValue*      LinearScan::_int_1_scope_value =  new (ResourceObj::C_HEAP) ConstantIntValue(1);
-ConstantIntValue*      LinearScan::_int_2_scope_value =  new (ResourceObj::C_HEAP) ConstantIntValue(2);
-LocationValue*         _illegal_value = new (ResourceObj::C_HEAP) LocationValue(Location());
+ConstantOopWriteValue* LinearScan::_oop_null_scope_value = new (ResourceObj::C_HEAP, mtCompiler) ConstantOopWriteValue(NULL);
+ConstantIntValue*      LinearScan::_int_m1_scope_value = new (ResourceObj::C_HEAP, mtCompiler) ConstantIntValue(-1);
+ConstantIntValue*      LinearScan::_int_0_scope_value =  new (ResourceObj::C_HEAP, mtCompiler) ConstantIntValue(0);
+ConstantIntValue*      LinearScan::_int_1_scope_value =  new (ResourceObj::C_HEAP, mtCompiler) ConstantIntValue(1);
+ConstantIntValue*      LinearScan::_int_2_scope_value =  new (ResourceObj::C_HEAP, mtCompiler) ConstantIntValue(2);
+LocationValue*         _illegal_value = new (ResourceObj::C_HEAP, mtCompiler) LocationValue(Location());
 
 void LinearScan::init_compute_debug_info() {
   // cache for frequently used scope values

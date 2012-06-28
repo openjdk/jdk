@@ -46,7 +46,7 @@ GCTaskThread::GCTaskThread(GCTaskManager* manager,
     vm_exit_out_of_memory(0, "Cannot create GC thread. Out of system resources.");
 
   if (PrintGCTaskTimeStamps) {
-    _time_stamps = NEW_C_HEAP_ARRAY(GCTaskTimeStamp, GCTaskTimeStampEntries );
+    _time_stamps = NEW_C_HEAP_ARRAY(GCTaskTimeStamp, GCTaskTimeStampEntries, mtGC);
 
     guarantee(_time_stamps != NULL, "Sanity");
   }
@@ -56,7 +56,7 @@ GCTaskThread::GCTaskThread(GCTaskManager* manager,
 
 GCTaskThread::~GCTaskThread() {
   if (_time_stamps != NULL) {
-    FREE_C_HEAP_ARRAY(GCTaskTimeStamp, _time_stamps);
+    FREE_C_HEAP_ARRAY(GCTaskTimeStamp, _time_stamps, mtGC);
   }
 }
 

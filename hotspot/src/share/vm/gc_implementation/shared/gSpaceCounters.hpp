@@ -34,7 +34,7 @@
 // A GSpaceCounter is a holder class for performance counters
 // that track a space;
 
-class GSpaceCounters: public CHeapObj {
+class GSpaceCounters: public CHeapObj<mtGC> {
   friend class VMStructs;
 
  private:
@@ -54,7 +54,7 @@ class GSpaceCounters: public CHeapObj {
                  GenerationCounters* gc, bool sampled=true);
 
   ~GSpaceCounters() {
-    if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
+    if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space, mtGC);
   }
 
   inline void update_capacity() {

@@ -71,7 +71,7 @@ class TempNewSymbol : public StackObj {
   operator Symbol*()                             { return _temp; }
 };
 
-class SymbolTable : public Hashtable<Symbol*> {
+class SymbolTable : public Hashtable<Symbol*, mtSymbol> {
   friend class VMStructs;
   friend class ClassFileParser;
 
@@ -113,10 +113,10 @@ private:
   Symbol* lookup(int index, const char* name, int len, unsigned int hash);
 
   SymbolTable()
-    : Hashtable<Symbol*>(symbol_table_size, sizeof (HashtableEntry<Symbol*>)) {}
+    : Hashtable<Symbol*, mtSymbol>(symbol_table_size, sizeof (HashtableEntry<Symbol*, mtSymbol>)) {}
 
-  SymbolTable(HashtableBucket* t, int number_of_entries)
-    : Hashtable<Symbol*>(symbol_table_size, sizeof (HashtableEntry<Symbol*>), t,
+  SymbolTable(HashtableBucket<mtSymbol>* t, int number_of_entries)
+    : Hashtable<Symbol*, mtSymbol>(symbol_table_size, sizeof (HashtableEntry<Symbol*, mtSymbol>), t,
                 number_of_entries) {}
 
   // Arena for permanent symbols (null class loader) that are never unloaded
@@ -145,10 +145,10 @@ public:
     initialize_symbols(symbol_alloc_arena_size);
   }
 
-  static void create_table(HashtableBucket* t, int length,
+  static void create_table(HashtableBucket<mtSymbol>* t, int length,
                            int number_of_entries) {
     assert(_the_table == NULL, "One symbol table allowed.");
-    assert(length == symbol_table_size * sizeof(HashtableBucket),
+    assert(length == symbol_table_size * sizeof(HashtableBucket<mtSymbol>),
            "bad shared symbol size.");
     _the_table = new SymbolTable(t, number_of_entries);
     // if CDS give symbol table a default arena size since most symbols
@@ -224,13 +224,13 @@ public:
 
   // Sharing
   static void copy_buckets(char** top, char*end) {
-    the_table()->Hashtable<Symbol*>::copy_buckets(top, end);
+    the_table()->Hashtable<Symbol*, mtSymbol>::copy_buckets(top, end);
   }
   static void copy_table(char** top, char*end) {
-    the_table()->Hashtable<Symbol*>::copy_table(top, end);
+    the_table()->Hashtable<Symbol*, mtSymbol>::copy_table(top, end);
   }
   static void reverse(void* boundary = NULL) {
-    the_table()->Hashtable<Symbol*>::reverse(boundary);
+    the_table()->Hashtable<Symbol*, mtSymbol>::reverse(boundary);
   }
 
   // Rehash the symbol table if it gets out of balance
@@ -238,8 +238,7 @@ public:
   static bool needs_rehashing()         { return _needs_rehashing; }
 };
 
-
-class StringTable : public Hashtable<oop> {
+class StringTable : public Hashtable<oop, mtSymbol> {
   friend class VMStructs;
 
 private:
@@ -256,11 +255,11 @@ private:
 
   oop lookup(int index, jchar* chars, int length, unsigned int hashValue);
 
-  StringTable() : Hashtable<oop>((int)StringTableSize,
-                                 sizeof (HashtableEntry<oop>)) {}
+  StringTable() : Hashtable<oop, mtSymbol>((int)StringTableSize,
+                              sizeof (HashtableEntry<oop, mtSymbol>)) {}
 
-  StringTable(HashtableBucket* t, int number_of_entries)
-    : Hashtable<oop>((int)StringTableSize, sizeof (HashtableEntry<oop>), t,
+  StringTable(HashtableBucket<mtSymbol>* t, int number_of_entries)
+    : Hashtable<oop, mtSymbol>((int)StringTableSize, sizeof (HashtableEntry<oop, mtSymbol>), t,
                      number_of_entries) {}
 
   static bool use_alternate_hashcode()  { return _seed != 0; }
@@ -276,10 +275,10 @@ public:
     _the_table = new StringTable();
   }
 
-  static void create_table(HashtableBucket* t, int length,
+  static void create_table(HashtableBucket<mtSymbol>* t, int length,
                            int number_of_entries) {
     assert(_the_table == NULL, "One string table allowed.");
-    assert((size_t)length == StringTableSize * sizeof(HashtableBucket),
+    assert((size_t)length == StringTableSize * sizeof(HashtableBucket<mtSymbol>),
            "bad shared string size.");
     _the_table = new StringTable(t, number_of_entries);
   }
@@ -313,13 +312,13 @@ public:
 
   // Sharing
   static void copy_buckets(char** top, char*end) {
-    the_table()->Hashtable<oop>::copy_buckets(top, end);
+    the_table()->Hashtable<oop, mtSymbol>::copy_buckets(top, end);
   }
   static void copy_table(char** top, char*end) {
-    the_table()->Hashtable<oop>::copy_table(top, end);
+    the_table()->Hashtable<oop, mtSymbol>::copy_table(top, end);
   }
   static void reverse() {
-    the_table()->Hashtable<oop>::reverse();
+    the_table()->Hashtable<oop, mtSymbol>::reverse();
   }
 
   // Rehash the symbol table if it gets out of balance

@@ -50,7 +50,7 @@ class PSPermGen;
 class PermGen;
 class ThresholdSupport;
 
-class MemoryPool : public CHeapObj {
+class MemoryPool : public CHeapObj<mtInternal> {
   friend class MemoryManager;
  public:
   enum PoolType {

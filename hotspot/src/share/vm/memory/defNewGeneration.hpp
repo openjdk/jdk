@@ -89,8 +89,8 @@ protected:
 
   // Together, these keep <object with a preserved mark, mark value> pairs.
   // They should always contain the same number of elements.
-  Stack<oop>     _objs_with_preserved_marks;
-  Stack<markOop> _preserved_marks_of_objs;
+  Stack<oop, mtGC>     _objs_with_preserved_marks;
+  Stack<markOop, mtGC> _preserved_marks_of_objs;
 
   // Promotion failure handling
   OopClosure *_promo_failure_scan_stack_closure;
@@ -98,7 +98,7 @@ protected:
     _promo_failure_scan_stack_closure = scan_stack_closure;
   }
 
-  Stack<oop> _promo_failure_scan_stack;
+  Stack<oop, mtGC> _promo_failure_scan_stack;
   void drain_promo_failure_scan_stack(void);
   bool _promo_failure_drain_in_progress;
 

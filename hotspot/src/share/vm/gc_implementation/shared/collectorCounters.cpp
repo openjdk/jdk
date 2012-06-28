@@ -34,7 +34,7 @@ CollectorCounters::CollectorCounters(const char* name, int ordinal) {
 
     const char* cns = PerfDataManager::name_space("collector", ordinal);
 
-    _name_space = NEW_C_HEAP_ARRAY(char, strlen(cns)+1);
+    _name_space = NEW_C_HEAP_ARRAY(char, strlen(cns)+1, mtGC);
     strcpy(_name_space, cns);
 
     char* cname = PerfDataManager::counter_name(_name_space, "name");

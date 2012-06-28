@@ -1008,7 +1008,7 @@ inline u2 instanceKlass::next_method_idnum() {
 
 
 /* JNIid class for jfieldIDs only */
-class JNIid: public CHeapObj {
+class JNIid: public CHeapObj<mtClass> {
   friend class VMStructs;
  private:
   klassOop           _holder;
@@ -1059,7 +1059,7 @@ class BreakpointInfo;
 // reference must be used because a weak reference would be seen as
 // collectible. A GrowableArray of PreviousVersionNodes is attached
 // to the instanceKlass as needed. See PreviousVersionWalker below.
-class PreviousVersionNode : public CHeapObj {
+class PreviousVersionNode : public CHeapObj<mtClass> {
  private:
   // A shared ConstantPool is never collected so we'll always have
   // a reference to it so we can update items in the cache. We'll
@@ -1154,7 +1154,7 @@ class PreviousVersionWalker : public StackObj {
 // noticed since an nmethod should be removed as many times are it's
 // added.
 //
-class nmethodBucket: public CHeapObj {
+class nmethodBucket: public CHeapObj<mtClass> {
   friend class VMStructs;
  private:
   nmethod*       _nmethod;

@@ -35,7 +35,7 @@
 class PLABStats;
 
 // A per-thread allocation buffer used during GC.
-class ParGCAllocBuffer: public CHeapObj {
+class ParGCAllocBuffer: public CHeapObj<mtGC> {
 protected:
   char head[32];
   size_t _word_sz;          // in HeapWord units

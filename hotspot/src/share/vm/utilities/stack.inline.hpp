@@ -27,7 +27,7 @@
 
 #include "utilities/stack.hpp"
 
-StackBase::StackBase(size_t segment_size, size_t max_cache_size,
+template <MEMFLAGS F> StackBase<F>::StackBase(size_t segment_size, size_t max_cache_size,
                      size_t max_size):
   _seg_size(segment_size),
   _max_cache_size(max_cache_size),
@@ -36,7 +36,7 @@ StackBase::StackBase(size_t segment_size, size_t max_cache_size,
   assert(_max_size % _seg_size == 0, "not a multiple");
 }
 
-size_t StackBase::adjust_max_size(size_t max_size, size_t seg_size)
+template <MEMFLAGS F> size_t StackBase<F>::adjust_max_size(size_t max_size, size_t seg_size)
 {
   assert(seg_size > 0, "cannot be 0");
   assert(max_size >= seg_size || max_size == 0, "max_size too small");
@@ -47,54 +47,54 @@ size_t StackBase::adjust_max_size(size_t max_size, size_t seg_size)
   return (max_size + seg_size - 1) / seg_size * seg_size;
 }
 
-template <class E>
-Stack<E>::Stack(size_t segment_size, size_t max_cache_size, size_t max_size):
-  StackBase(adjust_segment_size(segment_size), max_cache_size, max_size)
+template <class E, MEMFLAGS F>
+Stack<E, F>::Stack(size_t segment_size, size_t max_cache_size, size_t max_size):
+  StackBase<F>(adjust_segment_size(segment_size), max_cache_size, max_size)
 {
   reset(true);
 }
 
-template <class E>
-void Stack<E>::push(E item)
+template <class E, MEMFLAGS F>
+void Stack<E, F>::push(E item)
 {
   assert(!is_full(), "pushing onto a full stack");
-  if (_cur_seg_size == _seg_size) {
+  if (this->_cur_seg_size == this->_seg_size) {
     push_segment();
   }
-  _cur_seg[_cur_seg_size] = item;
-  ++_cur_seg_size;
+  this->_cur_seg[this->_cur_seg_size] = item;
+  ++this->_cur_seg_size;
 }
 
-template <class E>
-E Stack<E>::pop()
+template <class E, MEMFLAGS F>
+E Stack<E, F>::pop()
 {
   assert(!is_empty(), "popping from an empty stack");
-  if (_cur_seg_size == 1) {
-    E tmp = _cur_seg[--_cur_seg_size];
+  if (this->_cur_seg_size == 1) {
+    E tmp = _cur_seg[--this->_cur_seg_size];
     pop_segment();
     return tmp;
   }
-  return _cur_seg[--_cur_seg_size];
+  return this->_cur_seg[--this->_cur_seg_size];
 }
 
-template <class E>
-void Stack<E>::clear(bool clear_cache)
+template <class E, MEMFLAGS F>
+void Stack<E, F>::clear(bool clear_cache)
 {
   free_segments(_cur_seg);
   if (clear_cache) free_segments(_cache);
   reset(clear_cache);
 }
 
-template <class E>
-size_t Stack<E>::default_segment_size()
+template <class E, MEMFLAGS F>
+size_t Stack<E, F>::default_segment_size()
 {
   // Number of elements that fit in 4K bytes minus the size of two pointers
   // (link field and malloc header).
   return (4096 - 2 * sizeof(E*)) / sizeof(E);
 }
 
-template <class E>
-size_t Stack<E>::adjust_segment_size(size_t seg_size)
+template <class E, MEMFLAGS F>
+size_t Stack<E, F>::adjust_segment_size(size_t seg_size)
 {
   const size_t elem_sz = sizeof(E);
   const size_t ptr_sz = sizeof(E*);
@@ -105,93 +105,93 @@ size_t Stack<E>::adjust_segment_size(size_t seg_size)
   return seg_size;
 }
 
-template <class E>
-size_t Stack<E>::link_offset() const
+template <class E, MEMFLAGS F>
+size_t Stack<E, F>::link_offset() const
 {
-  return align_size_up(_seg_size * sizeof(E), sizeof(E*));
+  return align_size_up(this->_seg_size * sizeof(E), sizeof(E*));
 }
 
-template <class E>
-size_t Stack<E>::segment_bytes() const
+template <class E, MEMFLAGS F>
+size_t Stack<E, F>::segment_bytes() const
 {
   return link_offset() + sizeof(E*);
 }
 
-template <class E>
-E** Stack<E>::link_addr(E* seg) const
+template <class E, MEMFLAGS F>
+E** Stack<E, F>::link_addr(E* seg) const
 {
   return (E**) ((char*)seg + link_offset());
 }
 
-template <class E>
-E* Stack<E>::get_link(E* seg) const
+template <class E, MEMFLAGS F>
+E* Stack<E, F>::get_link(E* seg) const
 {
   return *link_addr(seg);
 }
 
-template <class E>
-E* Stack<E>::set_link(E* new_seg, E* old_seg)
+template <class E, MEMFLAGS F>
+E* Stack<E, F>::set_link(E* new_seg, E* old_seg)
 {
   *link_addr(new_seg) = old_seg;
   return new_seg;
 }
 
-template <class E>
-E* Stack<E>::alloc(size_t bytes)
+template <class E, MEMFLAGS F>
+E* Stack<E, F>::alloc(size_t bytes)
 {
-  return (E*) NEW_C_HEAP_ARRAY(char, bytes);
+  return (E*) NEW_C_HEAP_ARRAY(char, bytes, F);
 }
 
-template <class E>
-void Stack<E>::free(E* addr, size_t bytes)
+template <class E, MEMFLAGS F>
+void Stack<E, F>::free(E* addr, size_t bytes)
 {
-  FREE_C_HEAP_ARRAY(char, (char*) addr);
+  FREE_C_HEAP_ARRAY(char, (char*) addr, F);
 }
 
-template <class E>
-void Stack<E>::push_segment()
+template <class E, MEMFLAGS F>
+void Stack<E, F>::push_segment()
 {
-  assert(_cur_seg_size == _seg_size, "current segment is not full");
+  assert(this->_cur_seg_size == this->_seg_size, "current segment is not full");
   E* next;
-  if (_cache_size > 0) {
+  if (this->_cache_size > 0) {
     // Use a cached segment.
     next = _cache;
     _cache = get_link(_cache);
-    --_cache_size;
+    --this->_cache_size;
   } else {
     next = alloc(segment_bytes());
     DEBUG_ONLY(zap_segment(next, true);)
   }
   const bool at_empty_transition = is_empty();
-  _cur_seg = set_link(next, _cur_seg);
-  _cur_seg_size = 0;
-  _full_seg_size += at_empty_transition ? 0 : _seg_size;
+  this->_cur_seg = set_link(next, _cur_seg);
+  this->_cur_seg_size = 0;
+  this->_full_seg_size += at_empty_transition ? 0 : this->_seg_size;
   DEBUG_ONLY(verify(at_empty_transition);)
 }
 
-template <class E>
-void Stack<E>::pop_segment()
+template <class E, MEMFLAGS F>
+void Stack<E, F>::pop_segment()
 {
-  assert(_cur_seg_size == 0, "current segment is not empty");
+  assert(this->_cur_seg_size == 0, "current segment is not empty");
   E* const prev = get_link(_cur_seg);
-  if (_cache_size < _max_cache_size) {
+  if (this->_cache_size < this->_max_cache_size) {
     // Add the current segment to the cache.
     DEBUG_ONLY(zap_segment(_cur_seg, false);)
     _cache = set_link(_cur_seg, _cache);
-    ++_cache_size;
+    ++this->_cache_size;
   } else {
     DEBUG_ONLY(zap_segment(_cur_seg, true);)
     free(_cur_seg, segment_bytes());
   }
   const bool at_empty_transition = prev == NULL;
-  _cur_seg = prev;
-  _cur_seg_size = _seg_size;
-  _full_seg_size -= at_empty_transition ? 0 : _seg_size;
+  this->_cur_seg = prev;
+  this->_cur_seg_size = this->_seg_size;
+  this->_full_seg_size -= at_empty_transition ? 0 : this->_seg_size;
   DEBUG_ONLY(verify(at_empty_transition);)
 }
 
-template <class E>
-void Stack<E>::free_segments(E* seg)
+template <class E, MEMFLAGS F>
+void Stack<E, F>::free_segments(E* seg)
 {
   const size_t bytes = segment_bytes();
   while (seg != NULL) {
@@ -201,37 +201,37 @@ void Stack<E>::free_segments(E* seg)
   }
 }
 
-template <class E>
-void Stack<E>::reset(bool reset_cache)
+template <class E, MEMFLAGS F>
+void Stack<E, F>::reset(bool reset_cache)
 {
-  _cur_seg_size = _seg_size; // So push() will alloc a new segment.
-  _full_seg_size = 0;
+  this->_cur_seg_size = this->_seg_size; // So push() will alloc a new segment.
+  this->_full_seg_size = 0;
   _cur_seg = NULL;
   if (reset_cache) {
-    _cache_size = 0;
+    this->_cache_size = 0;
     _cache = NULL;
   }
 }
 
 #ifdef ASSERT
-template <class E>
-void Stack<E>::verify(bool at_empty_transition) const
+template <class E, MEMFLAGS F>
+void Stack<E, F>::verify(bool at_empty_transition) const
 {
-  assert(size() <= max_size(), "stack exceeded bounds");
-  assert(cache_size() <= max_cache_size(), "cache exceeded bounds");
-  assert(_cur_seg_size <= segment_size(), "segment index exceeded bounds");
+  assert(size() <= this->max_size(), "stack exceeded bounds");
+  assert(this->cache_size() <= this->max_cache_size(), "cache exceeded bounds");
+  assert(this->_cur_seg_size <= this->segment_size(), "segment index exceeded bounds");
 
-  assert(_full_seg_size % _seg_size == 0, "not a multiple");
+  assert(this->_full_seg_size % this->_seg_size == 0, "not a multiple");
   assert(at_empty_transition || is_empty() == (size() == 0), "mismatch");
-  assert((_cache == NULL) == (cache_size() == 0), "mismatch");
+  assert((_cache == NULL) == (this->cache_size() == 0), "mismatch");
 
   if (is_empty()) {
-    assert(_cur_seg_size == segment_size(), "sanity");
+    assert(this->_cur_seg_size == this->segment_size(), "sanity");
   }
 }
 
-template <class E>
-void Stack<E>::zap_segment(E* seg, bool zap_link_field) const
+template <class E, MEMFLAGS F>
+void Stack<E, F>::zap_segment(E* seg, bool zap_link_field) const
 {
   if (!ZapStackSegments) return;
   const size_t zap_bytes = segment_bytes() - (zap_link_field ? 0 : sizeof(E*));
@@ -243,28 +243,28 @@ void Stack<E>::zap_segment(E* seg, bool zap_link_field) const
 }
 #endif
 
-template <class E>
-E* ResourceStack<E>::alloc(size_t bytes)
+template <class E, MEMFLAGS F>
+E* ResourceStack<E, F>::alloc(size_t bytes)
 {
   return (E*) resource_allocate_bytes(bytes);
 }
 
-template <class E>
-void ResourceStack<E>::free(E* addr, size_t bytes)
+template <class E, MEMFLAGS F>
+void ResourceStack<E, F>::free(E* addr, size_t bytes)
 {
   resource_free_bytes((char*) addr, bytes);
 }
 
-template <class E>
-void StackIterator<E>::sync()
+template <class E, MEMFLAGS F>
+void StackIterator<E, F>::sync()
 {
   _full_seg_size = _stack._full_seg_size;
   _cur_seg_size = _stack._cur_seg_size;
   _cur_seg = _stack._cur_seg;
 }
 
-template <class E>
-E* StackIterator<E>::next_addr()
+template <class E, MEMFLAGS F>
+E* StackIterator<E, F>::next_addr()
 {
   assert(!is_empty(), "no items left");
   if (_cur_seg_size == 1) {
