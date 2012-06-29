@@ -137,13 +137,13 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(XLIBJVM_DB_G_DEBUGINFO) ] || { ln -s $(XLIBJVM_DB_DEBUGINFO) $(XLIBJVM_DB_G_DEBUGINFO); }
+	[ -f $(XLIBJVM_DB_G_DEBUGINFO) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO); }
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
 # Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR) is not
 # in the archived name:
 	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -y $(LIBJVM_DB_DIZ) $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO) )
 	$(RM) $(XLIBJVM_DB_DEBUGINFO) $(XLIBJVM_DB_G_DEBUGINFO)
-	[ -f $(XLIBJVM_DB_G_DIZ) ] || { ln -s $(XLIBJVM_DB_DIZ) $(XLIBJVM_DB_G_DIZ); }
+	[ -f $(XLIBJVM_DB_G_DIZ) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DB_DIZ) $(LIBJVM_DB_G_DIZ); }
   endif
 endif
 
@@ -170,13 +170,13 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(XLIBJVM_DTRACE_G_DEBUGINFO) ] || { ln -s $(XLIBJVM_DTRACE_DEBUGINFO) $(XLIBJVM_DTRACE_G_DEBUGINFO); }
+	[ -f $(XLIBJVM_DTRACE_G_DEBUGINFO) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO); }
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
 # Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR) is not
 # in the archived name:
 	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -y $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO) )
 	$(RM) $(XLIBJVM_DTRACE_DEBUGINFO) $(XLIBJVM_DTRACE_G_DEBUGINFO)
-	[ -f $(XLIBJVM_DTRACE_G_DIZ) ] || { ln -s $(XLIBJVM_DTRACE_DIZ) $(XLIBJVM_DTRACE_G_DIZ); }
+	[ -f $(XLIBJVM_DTRACE_G_DIZ) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_G_DIZ); }
   endif
 endif
 
