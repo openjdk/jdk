@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,29 +39,38 @@ package java.lang;
  * that is consistent with the order of the method calls made by each of
  * the individual threads involved.
  * <p>
- * The principal operations on a <code>StringBuffer</code> are the
- * <code>append</code> and <code>insert</code> methods, which are
+ * The principal operations on a {@code StringBuffer} are the
+ * {@code append} and {@code insert} methods, which are
  * overloaded so as to accept data of any type. Each effectively
  * converts a given datum to a string and then appends or inserts the
  * characters of that string to the string buffer. The
- * <code>append</code> method always adds these characters at the end
- * of the buffer; the <code>insert</code> method adds the characters at
+ * {@code append} method always adds these characters at the end
+ * of the buffer; the {@code insert} method adds the characters at
  * a specified point.
  * <p>
- * For example, if <code>z</code> refers to a string buffer object
- * whose current contents are "<code>start</code>", then
- * the method call <code>z.append("le")</code> would cause the string
- * buffer to contain "<code>startle</code>", whereas
- * <code>z.insert(4, "le")</code> would alter the string buffer to
- * contain "<code>starlet</code>".
+ * For example, if {@code z} refers to a string buffer object
+ * whose current contents are {@code "start"}, then
+ * the method call {@code z.append("le")} would cause the string
+ * buffer to contain {@code "startle"}, whereas
+ * {@code z.insert(4, "le")} would alter the string buffer to
+ * contain {@code "starlet"}.
  * <p>
- * In general, if sb refers to an instance of a <code>StringBuffer</code>,
- * then <code>sb.append(x)</code> has the same effect as
- * <code>sb.insert(sb.length(),&nbsp;x)</code>.
+ * In general, if sb refers to an instance of a {@code StringBuffer},
+ * then {@code sb.append(x)} has the same effect as
+ * {@code sb.insert(sb.length(),&nbsp;x)}.
  * <p>
  * Whenever an operation occurs involving a source sequence (such as
- * appending or inserting from a source sequence) this class synchronizes
+ * appending or inserting from a source sequence), this class synchronizes
  * only on the string buffer performing the operation, not on the source.
+ * Note that while {@code StringBuffer} is designed to be safe to use
+ * concurrently from multiple threads, if the constructor or the
+ * {@code append} or {@code insert} operation is passed a source sequence
+ * that is shared across threads, the calling code must ensure
+ * that the operation has a consistent and unchanging view of the source
+ * sequence for the duration of the operation.
+ * This could be satisfied by the caller holding a lock during the
+ * operation's call, by using an immutable source sequence, or by not
+ * sharing the source sequence across threads.
  * <p>
  * Every string buffer has a capacity. As long as the length of the
  * character sequence contained in the string buffer does not exceed
@@ -101,8 +110,8 @@ package java.lang;
      * the specified initial capacity.
      *
      * @param      capacity  the initial capacity.
-     * @exception  NegativeArraySizeException  if the <code>capacity</code>
-     *               argument is less than <code>0</code>.
+     * @exception  NegativeArraySizeException  if the {@code capacity}
+     *               argument is less than {@code 0}.
      */
     public StringBuffer(int capacity) {
         super(capacity);
@@ -111,10 +120,10 @@ package java.lang;
     /**
      * Constructs a string buffer initialized to the contents of the
      * specified string. The initial capacity of the string buffer is
-     * <code>16</code> plus the length of the string argument.
+     * {@code 16} plus the length of the string argument.
      *
      * @param   str   the initial contents of the buffer.
-     * @exception NullPointerException if <code>str</code> is <code>null</code>
+     * @exception NullPointerException if {@code str} is {@code null}
      */
     public StringBuffer(String str) {
         super(str.length() + 16);
@@ -123,16 +132,16 @@ package java.lang;
 
     /**
      * Constructs a string buffer that contains the same characters
-     * as the specified <code>CharSequence</code>. The initial capacity of
-     * the string buffer is <code>16</code> plus the length of the
-     * <code>CharSequence</code> argument.
+     * as the specified {@code CharSequence}. The initial capacity of
+     * the string buffer is {@code 16} plus the length of the
+     * {@code CharSequence} argument.
      * <p>
-     * If the length of the specified <code>CharSequence</code> is
+     * If the length of the specified {@code CharSequence} is
      * less than or equal to zero, then an empty buffer of capacity
-     * <code>16</code> is returned.
+     * {@code 16} is returned.
      *
      * @param      seq   the sequence to copy.
-     * @exception NullPointerException if <code>seq</code> is <code>null</code>
+     * @exception NullPointerException if {@code seq} is {@code null}
      * @since 1.5
      */
     public StringBuffer(CharSequence seq) {
@@ -253,10 +262,10 @@ package java.lang;
      * the new character sequence is equal to the character at index <i>k</i>
      * in the old character sequence, if <i>k</i> is less than <i>n</i>;
      * otherwise, it is equal to the character at index <i>k-n</i> in the
-     * argument <code>sb</code>.
+     * argument {@code sb}.
      * <p>
-     * This method synchronizes on <code>this</code> (the destination)
-     * object but does not synchronize on the source (<code>sb</code>).
+     * This method synchronizes on {@code this}, the destination
+     * object, but does not synchronize on the source ({@code sb}).
      *
      * @param   sb   the <tt>StringBuffer</tt> to append.
      * @return  a reference to this object.
@@ -269,23 +278,23 @@ package java.lang;
 
 
     /**
-     * Appends the specified <code>CharSequence</code> to this
+     * Appends the specified {@code CharSequence} to this
      * sequence.
      * <p>
-     * The characters of the <code>CharSequence</code> argument are appended,
+     * The characters of the {@code CharSequence} argument are appended,
      * in order, increasing the length of this sequence by the length of the
      * argument.
      *
      * <p>The result of this method is exactly the same as if it were an
      * invocation of this.append(s, 0, s.length());
      *
-     * <p>This method synchronizes on this (the destination)
-     * object but does not synchronize on the source (<code>s</code>).
+     * <p>This method synchronizes on {@code this}, the destination
+     * object, but does not synchronize on the source ({@code s}).
      *
-     * <p>If <code>s</code> is <code>null</code>, then the four characters
-     * <code>"null"</code> are appended.
+     * <p>If {@code s} is {@code null}, then the four characters
+     * {@code "null"} are appended.
      *
-     * @param   s the <code>CharSequence</code> to append.
+     * @param   s the {@code CharSequence} to append.
      * @return  a reference to this object.
      * @since 1.5
      */
