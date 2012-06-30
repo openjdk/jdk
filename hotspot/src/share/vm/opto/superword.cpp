@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,10 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 
 //------------------------------transform_loop---------------------------
 void SuperWord::transform_loop(IdealLoopTree* lpt) {
+  assert(UseSuperWord, "should be");
+  // Do vectors exist on this architecture?
+  if (Matcher::vector_width_in_bytes(T_BYTE) < 2) return;
+
   assert(lpt->_head->is_CountedLoop(), "must be");
   CountedLoopNode *cl = lpt->_head->as_CountedLoop();
 
@@ -89,15 +93,12 @@ void SuperWord::transform_loop(IdealLoopTree* lpt) {
   Node *pre_opaq1 = pre_end->limit();
   if (pre_opaq1->Opcode() != Op_Opaque1) return;
 
-  // Do vectors exist on this architecture?
-  if (vector_width_in_bytes() == 0) return;
-
   init(); // initialize data structures
 
   set_lpt(lpt);
   set_lp(cl);
 
- // For now, define one block which is the entire loop body
+  // For now, define one block which is the entire loop body
   set_bb(cl);
 
   assert(_packset.length() == 0, "packset must be empty");
@@ -177,7 +178,7 @@ void SuperWord::find_adjacent_refs() {
   Node_List memops;
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
-    if (n->is_Mem() && in_bb(n) &&
+    if (n->is_Mem() && !n->is_LoadStore() && in_bb(n) &&
         is_java_primitive(n->as_Mem()->memory_type())) {
       int align = memory_alignment(n->as_Mem(), 0);
       if (align != bottom_align) {
@@ -185,54 +186,141 @@ void SuperWord::find_adjacent_refs() {
       }
     }
   }
-  if (memops.size() == 0) return;
 
-  // Find a memory reference to align to.  The pre-loop trip count
-  // is modified to align this reference to a vector-aligned address
-  find_align_to_ref(memops);
-  if (align_to_ref() == NULL) return;
+  Node_List align_to_refs;
+  int best_iv_adjustment = 0;
+  MemNode* best_align_to_mem_ref = NULL;
 
-  SWPointer align_to_ref_p(align_to_ref(), this);
-  int offset = align_to_ref_p.offset_in_bytes();
-  int scale  = align_to_ref_p.scale_in_bytes();
-  int vw              = vector_width_in_bytes();
-  int stride_sign     = (scale * iv_stride()) > 0 ? 1 : -1;
-  int iv_adjustment   = (stride_sign * vw - (offset % vw)) % vw;
+  while (memops.size() != 0) {
+    // Find a memory reference to align to.
+    MemNode* mem_ref = find_align_to_ref(memops);
+    if (mem_ref == NULL) break;
+    align_to_refs.push(mem_ref);
+    int iv_adjustment = get_iv_adjustment(mem_ref);
 
-#ifndef PRODUCT
-  if (TraceSuperWord)
-    tty->print_cr("\noffset = %d iv_adjustment = %d  elt_align = %d scale = %d iv_stride = %d",
-                  offset, iv_adjustment, align_to_ref_p.memory_size(), align_to_ref_p.scale_in_bytes(), iv_stride());
-#endif
-
-  // Set alignment relative to "align_to_ref"
-  for (int i = memops.size() - 1; i >= 0; i--) {
-    MemNode* s = memops.at(i)->as_Mem();
-    SWPointer p2(s, this);
-    if (p2.comparable(align_to_ref_p)) {
-      int align = memory_alignment(s, iv_adjustment);
-      set_alignment(s, align);
-    } else {
-      memops.remove(i);
+    if (best_align_to_mem_ref == NULL) {
+      // Set memory reference which is the best from all memory operations
+      // to be used for alignment. The pre-loop trip count is modified to align
+      // this reference to a vector-aligned address.
+      best_align_to_mem_ref = mem_ref;
+      best_iv_adjustment = iv_adjustment;
     }
-  }
 
-  // Create initial pack pairs of memory operations
-  for (uint i = 0; i < memops.size(); i++) {
-    Node* s1 = memops.at(i);
-    for (uint j = 0; j < memops.size(); j++) {
-      Node* s2 = memops.at(j);
-      if (s1 != s2 && are_adjacent_refs(s1, s2)) {
-        int align = alignment(s1);
-        if (stmts_can_pack(s1, s2, align)) {
-          Node_List* pair = new Node_List();
-          pair->push(s1);
-          pair->push(s2);
-          _packset.append(pair);
+    SWPointer align_to_ref_p(mem_ref, this);
+    // Set alignment relative to "align_to_ref" for all related memory operations.
+    for (int i = memops.size() - 1; i >= 0; i--) {
+      MemNode* s = memops.at(i)->as_Mem();
+      if (isomorphic(s, mem_ref)) {
+        SWPointer p2(s, this);
+        if (p2.comparable(align_to_ref_p)) {
+          int align = memory_alignment(s, iv_adjustment);
+          set_alignment(s, align);
         }
       }
     }
-  }
+
+    // Create initial pack pairs of memory operations for which
+    // alignment is set and vectors will be aligned.
+    bool create_pack = true;
+    if (memory_alignment(mem_ref, best_iv_adjustment) == 0) {
+      if (!Matcher::misaligned_vectors_ok()) {
+        int vw = vector_width(mem_ref);
+        int vw_best = vector_width(best_align_to_mem_ref);
+        if (vw > vw_best) {
+          // Do not vectorize a memory access with more elements per vector
+          // if unaligned memory access is not allowed because number of
+          // iterations in pre-loop will be not enough to align it.
+          create_pack = false;
+        }
+      }
+    } else {
+      if (same_velt_type(mem_ref, best_align_to_mem_ref)) {
+        // Can't allow vectorization of unaligned memory accesses with the
+        // same type since it could be overlapped accesses to the same array.
+        create_pack = false;
+      } else {
+        // Allow independent (different type) unaligned memory operations
+        // if HW supports them.
+        if (!Matcher::misaligned_vectors_ok()) {
+          create_pack = false;
+        } else {
+          // Check if packs of the same memory type but
+          // with a different alignment were created before.
+          for (uint i = 0; i < align_to_refs.size(); i++) {
+            MemNode* mr = align_to_refs.at(i)->as_Mem();
+            if (same_velt_type(mr, mem_ref) &&
+                memory_alignment(mr, iv_adjustment) != 0)
+              create_pack = false;
+          }
+        }
+      }
+    }
+    if (create_pack) {
+      for (uint i = 0; i < memops.size(); i++) {
+        Node* s1 = memops.at(i);
+        int align = alignment(s1);
+        if (align == top_align) continue;
+        for (uint j = 0; j < memops.size(); j++) {
+          Node* s2 = memops.at(j);
+          if (alignment(s2) == top_align) continue;
+          if (s1 != s2 && are_adjacent_refs(s1, s2)) {
+            if (stmts_can_pack(s1, s2, align)) {
+              Node_List* pair = new Node_List();
+              pair->push(s1);
+              pair->push(s2);
+              _packset.append(pair);
+            }
+          }
+        }
+      }
+    } else { // Don't create unaligned pack
+      // First, remove remaining memory ops of the same type from the list.
+      for (int i = memops.size() - 1; i >= 0; i--) {
+        MemNode* s = memops.at(i)->as_Mem();
+        if (same_velt_type(s, mem_ref)) {
+          memops.remove(i);
+        }
+      }
+
+      // Second, remove already constructed packs of the same type.
+      for (int i = _packset.length() - 1; i >= 0; i--) {
+        Node_List* p = _packset.at(i);
+        MemNode* s = p->at(0)->as_Mem();
+        if (same_velt_type(s, mem_ref)) {
+          remove_pack_at(i);
+        }
+      }
+
+      // If needed find the best memory reference for loop alignment again.
+      if (same_velt_type(mem_ref, best_align_to_mem_ref)) {
+        // Put memory ops from remaining packs back on memops list for
+        // the best alignment search.
+        uint orig_msize = memops.size();
+        for (int i = 0; i < _packset.length(); i++) {
+          Node_List* p = _packset.at(i);
+          MemNode* s = p->at(0)->as_Mem();
+          assert(!same_velt_type(s, mem_ref), "sanity");
+          memops.push(s);
+        }
+        MemNode* best_align_to_mem_ref = find_align_to_ref(memops);
+        if (best_align_to_mem_ref == NULL) break;
+        best_iv_adjustment = get_iv_adjustment(best_align_to_mem_ref);
+        // Restore list.
+        while (memops.size() > orig_msize)
+          (void)memops.pop();
+      }
+    } // unaligned memory accesses
+
+    // Remove used mem nodes.
+    for (int i = memops.size() - 1; i >= 0; i--) {
+      MemNode* m = memops.at(i)->as_Mem();
+      if (alignment(m) != top_align) {
+        memops.remove(i);
+      }
+    }
+
+  } // while (memops.size() != 0
+  set_align_to_ref(best_align_to_mem_ref);
 
 #ifndef PRODUCT
   if (TraceSuperWord) {
@@ -246,7 +334,7 @@ void SuperWord::find_adjacent_refs() {
 // Find a memory reference to align the loop induction variable to.
 // Looks first at stores then at loads, looking for a memory reference
 // with the largest number of references similar to it.
-void SuperWord::find_align_to_ref(Node_List &memops) {
+MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
   GrowableArray<int> cmp_ct(arena(), memops.size(), memops.size(), 0);
 
   // Count number of comparable memory ops
@@ -270,20 +358,28 @@ void SuperWord::find_align_to_ref(Node_List &memops) {
     }
   }
 
-  // Find Store (or Load) with the greatest number of "comparable" references
+  // Find Store (or Load) with the greatest number of "comparable" references,
+  // biggest vector size, smallest data size and smallest iv offset.
   int max_ct        = 0;
+  int max_vw        = 0;
   int max_idx       = -1;
   int min_size      = max_jint;
   int min_iv_offset = max_jint;
   for (uint j = 0; j < memops.size(); j++) {
     MemNode* s = memops.at(j)->as_Mem();
     if (s->is_Store()) {
+      int vw = vector_width_in_bytes(s);
+      assert(vw > 1, "sanity");
       SWPointer p(s, this);
-      if (cmp_ct.at(j) > max_ct ||
-          cmp_ct.at(j) == max_ct && (data_size(s) < min_size ||
-                                     data_size(s) == min_size &&
-                                        p.offset_in_bytes() < min_iv_offset)) {
+      if (cmp_ct.at(j) >  max_ct ||
+          cmp_ct.at(j) == max_ct &&
+            (vw >  max_vw ||
+             vw == max_vw &&
+              (data_size(s) <  min_size ||
+               data_size(s) == min_size &&
+                 (p.offset_in_bytes() < min_iv_offset)))) {
         max_ct = cmp_ct.at(j);
+        max_vw = vw;
         max_idx = j;
         min_size = data_size(s);
         min_iv_offset = p.offset_in_bytes();
@@ -295,12 +391,18 @@ void SuperWord::find_align_to_ref(Node_List &memops) {
     for (uint j = 0; j < memops.size(); j++) {
       MemNode* s = memops.at(j)->as_Mem();
       if (s->is_Load()) {
+        int vw = vector_width_in_bytes(s);
+        assert(vw > 1, "sanity");
         SWPointer p(s, this);
-        if (cmp_ct.at(j) > max_ct ||
-            cmp_ct.at(j) == max_ct && (data_size(s) < min_size ||
-                                       data_size(s) == min_size &&
-                                          p.offset_in_bytes() < min_iv_offset)) {
+        if (cmp_ct.at(j) >  max_ct ||
+            cmp_ct.at(j) == max_ct &&
+              (vw >  max_vw ||
+               vw == max_vw &&
+                (data_size(s) <  min_size ||
+                 data_size(s) == min_size &&
+                   (p.offset_in_bytes() < min_iv_offset)))) {
           max_ct = cmp_ct.at(j);
+          max_vw = vw;
           max_idx = j;
           min_size = data_size(s);
           min_iv_offset = p.offset_in_bytes();
@@ -309,10 +411,7 @@ void SuperWord::find_align_to_ref(Node_List &memops) {
     }
   }
 
-  if (max_ct > 0)
-    set_align_to_ref(memops.at(max_idx)->as_Mem());
-
-#ifndef PRODUCT
+#ifdef ASSERT
   if (TraceSuperWord && Verbose) {
     tty->print_cr("\nVector memops after find_align_to_refs");
     for (uint i = 0; i < memops.size(); i++) {
@@ -321,6 +420,17 @@ void SuperWord::find_align_to_ref(Node_List &memops) {
     }
   }
 #endif
+
+  if (max_ct > 0) {
+#ifdef ASSERT
+    if (TraceSuperWord) {
+      tty->print("\nVector align to node: ");
+      memops.at(max_idx)->as_Mem()->dump();
+    }
+#endif
+    return memops.at(max_idx)->as_Mem();
+  }
+  return NULL;
 }
 
 //------------------------------ref_is_alignable---------------------------
@@ -341,7 +451,8 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
 
   // If initial offset from start of object is computable,
   // compute alignment within the vector.
-  int vw = vector_width_in_bytes();
+  int vw = vector_width_in_bytes(p.mem());
+  assert(vw > 1, "sanity");
   if (vw % span == 0) {
     Node* init_nd = pre_end->init_trip();
     if (init_nd->is_Con() && p.invar() == NULL) {
@@ -359,6 +470,25 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
     }
   }
   return false;
+}
+
+//---------------------------get_iv_adjustment---------------------------
+// Calculate loop's iv adjustment for this memory ops.
+int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
+  SWPointer align_to_ref_p(mem_ref, this);
+  int offset = align_to_ref_p.offset_in_bytes();
+  int scale  = align_to_ref_p.scale_in_bytes();
+  int vw       = vector_width_in_bytes(mem_ref);
+  assert(vw > 1, "sanity");
+  int stride_sign   = (scale * iv_stride()) > 0 ? 1 : -1;
+  int iv_adjustment = (stride_sign * vw - (offset % vw)) % vw;
+
+#ifndef PRODUCT
+  if (TraceSuperWord)
+    tty->print_cr("\noffset = %d iv_adjust = %d elt_size = %d scale = %d iv_stride = %d vect_size %d",
+                  offset, iv_adjustment, align_to_ref_p.memory_size(), scale, iv_stride(), vw);
+#endif
+  return iv_adjustment;
 }
 
 //---------------------------dependence_graph---------------------------
@@ -488,9 +618,13 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
 bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
 
   // Do not use superword for non-primitives
-  if((s1->is_Mem() && !is_java_primitive(s1->as_Mem()->memory_type())) ||
-     (s2->is_Mem() && !is_java_primitive(s2->as_Mem()->memory_type())))
+  BasicType bt1 = velt_basic_type(s1);
+  BasicType bt2 = velt_basic_type(s2);
+  if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
     return false;
+  if (Matcher::max_vector_size(bt1) < 2) {
+    return false; // No vectors for this type
+  }
 
   if (isomorphic(s1, s2)) {
     if (independent(s1, s2)) {
@@ -552,7 +686,7 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
   if (s1->Opcode() != s2->Opcode()) return false;
   if (s1->req() != s2->req()) return false;
   if (s1->in(0) != s2->in(0)) return false;
-  if (velt_type(s1) != velt_type(s2)) return false;
+  if (!same_velt_type(s1, s2)) return false;
   return true;
 }
 
@@ -595,14 +729,16 @@ bool SuperWord::independent_path(Node* shallow, Node* deep, uint dp) {
 //------------------------------set_alignment---------------------------
 void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
   set_alignment(s1, align);
-  set_alignment(s2, align + data_size(s1));
+  if (align == top_align || align == bottom_align) {
+    set_alignment(s2, align);
+  } else {
+    set_alignment(s2, align + data_size(s1));
+  }
 }
 
 //------------------------------data_size---------------------------
 int SuperWord::data_size(Node* s) {
-  const Type* t = velt_type(s);
-  BasicType  bt = t->array_element_basic_type();
-  int bsize = type2aelembytes(bt);
+  int bsize = type2aelembytes(velt_basic_type(s));
   assert(bsize != 0, "valid size");
   return bsize;
 }
@@ -631,9 +767,9 @@ void SuperWord::extend_packlist() {
 //------------------------------follow_use_defs---------------------------
 // Extend the packset by visiting operand definitions of nodes in pack p
 bool SuperWord::follow_use_defs(Node_List* p) {
+  assert(p->size() == 2, "just checking");
   Node* s1 = p->at(0);
   Node* s2 = p->at(1);
-  assert(p->size() == 2, "just checking");
   assert(s1->req() == s2->req(), "just checking");
   assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
@@ -718,7 +854,12 @@ bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
     for (i1++; i1 < ct; i1++) if (u1->in(i1) == d1) break;
     for (i2++; i2 < ct; i2++) if (u2->in(i2) == d2) break;
     if (i1 != i2) {
-      return false;
+      if ((i1 == (3-i2)) && (u2->is_Add() || u2->is_Mul())) {
+        // Further analysis relies on operands position matching.
+        u2->swap_edges(i1, i2);
+      } else {
+        return false;
+      }
     }
   } while (i1 < ct);
   return true;
@@ -727,7 +868,7 @@ bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
 //------------------------------est_savings---------------------------
 // Estimate the savings from executing s1 and s2 as a pack
 int SuperWord::est_savings(Node* s1, Node* s2) {
-  int save = 2 - 1; // 2 operations per instruction in packed form
+  int save_in = 2 - 1; // 2 operations per instruction in packed form
 
   // inputs
   for (uint i = 1; i < s1->req(); i++) {
@@ -735,17 +876,18 @@ int SuperWord::est_savings(Node* s1, Node* s2) {
     Node* x2 = s2->in(i);
     if (x1 != x2) {
       if (are_adjacent_refs(x1, x2)) {
-        save += adjacent_profit(x1, x2);
+        save_in += adjacent_profit(x1, x2);
       } else if (!in_packset(x1, x2)) {
-        save -= pack_cost(2);
+        save_in -= pack_cost(2);
       } else {
-        save += unpack_cost(2);
+        save_in += unpack_cost(2);
       }
     }
   }
 
   // uses of result
   uint ct = 0;
+  int save_use = 0;
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
     Node* s1_use = s1->fast_out(i);
     for (int j = 0; j < _packset.length(); j++) {
@@ -756,7 +898,7 @@ int SuperWord::est_savings(Node* s1, Node* s2) {
           if (p->at(p->size()-1) == s2_use) {
             ct++;
             if (are_adjacent_refs(s1_use, s2_use)) {
-              save += adjacent_profit(s1_use, s2_use);
+              save_use += adjacent_profit(s1_use, s2_use);
             }
           }
         }
@@ -764,10 +906,10 @@ int SuperWord::est_savings(Node* s1, Node* s2) {
     }
   }
 
-  if (ct < s1->outcnt()) save += unpack_cost(1);
-  if (ct < s2->outcnt()) save += unpack_cost(1);
+  if (ct < s1->outcnt()) save_use += unpack_cost(1);
+  if (ct < s2->outcnt()) save_use += unpack_cost(1);
 
-  return save;
+  return MAX2(save_in, save_use);
 }
 
 //------------------------------costs---------------------------
@@ -778,8 +920,9 @@ int SuperWord::unpack_cost(int ct) { return ct; }
 //------------------------------combine_packs---------------------------
 // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
 void SuperWord::combine_packs() {
-  bool changed;
-  do {
+  bool changed = true;
+  // Combine packs regardless max vector size.
+  while (changed) {
     changed = false;
     for (int i = 0; i < _packset.length(); i++) {
       Node_List* p1 = _packset.at(i);
@@ -787,6 +930,7 @@ void SuperWord::combine_packs() {
       for (int j = 0; j < _packset.length(); j++) {
         Node_List* p2 = _packset.at(j);
         if (p2 == NULL) continue;
+        if (i == j) continue;
         if (p1->at(p1->size()-1) == p2->at(0)) {
           for (uint k = 1; k < p2->size(); k++) {
             p1->push(p2->at(k));
@@ -796,8 +940,39 @@ void SuperWord::combine_packs() {
         }
       }
     }
-  } while (changed);
+  }
 
+  // Split packs which have size greater then max vector size.
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p1 = _packset.at(i);
+    if (p1 != NULL) {
+      BasicType bt = velt_basic_type(p1->at(0));
+      uint max_vlen = Matcher::max_vector_size(bt); // Max elements in vector
+      assert(is_power_of_2(max_vlen), "sanity");
+      uint psize = p1->size();
+      if (!is_power_of_2(psize)) {
+        // Skip pack which can't be vector.
+        // case1: for(...) { a[i] = i; }    elements values are different (i+x)
+        // case2: for(...) { a[i] = b[i+1]; }  can't align both, load and store
+        _packset.at_put(i, NULL);
+        continue;
+      }
+      if (psize > max_vlen) {
+        Node_List* pack = new Node_List();
+        for (uint j = 0; j < psize; j++) {
+          pack->push(p1->at(j));
+          if (pack->size() >= max_vlen) {
+            assert(is_power_of_2(pack->size()), "sanity");
+            _packset.append(pack);
+            pack = new Node_List();
+          }
+        }
+        _packset.at_put(i, NULL);
+      }
+    }
+  }
+
+  // Compress list.
   for (int i = _packset.length() - 1; i >= 0; i--) {
     Node_List* p1 = _packset.at(i);
     if (p1 == NULL) {
@@ -880,8 +1055,7 @@ void SuperWord::filter_packs() {
 // Can code be generated for pack p?
 bool SuperWord::implemented(Node_List* p) {
   Node* p0 = p->at(0);
-  int vopc = VectorNode::opcode(p0->Opcode(), p->size(), velt_type(p0));
-  return vopc > 0 && Matcher::has_match_rule(vopc);
+  return VectorNode::implemented(p0->Opcode(), p->size(), velt_basic_type(p0));
 }
 
 //------------------------------profitable---------------------------
@@ -939,36 +1113,36 @@ void SuperWord::schedule() {
 }
 
 //-------------------------------remove_and_insert-------------------
-//remove "current" from its current position in the memory graph and insert
-//it after the appropriate insertion point (lip or uip)
+// Remove "current" from its current position in the memory graph and insert
+// it after the appropriate insertion point (lip or uip).
 void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
                                   Node *uip, Unique_Node_List &sched_before) {
   Node* my_mem = current->in(MemNode::Memory);
-  _igvn.rehash_node_delayed(current);
-  _igvn.hash_delete(my_mem);
+  bool sched_up = sched_before.member(current);
 
-  //remove current_store from its current position in the memmory graph
+  // remove current_store from its current position in the memmory graph
   for (DUIterator i = current->outs(); current->has_out(i); i++) {
     Node* use = current->out(i);
     if (use->is_Mem()) {
       assert(use->in(MemNode::Memory) == current, "must be");
-      _igvn.rehash_node_delayed(use);
       if (use == prev) { // connect prev to my_mem
-        use->set_req(MemNode::Memory, my_mem);
+          _igvn.replace_input_of(use, MemNode::Memory, my_mem);
+          --i; //deleted this edge; rescan position
       } else if (sched_before.member(use)) {
-        _igvn.hash_delete(uip);
-        use->set_req(MemNode::Memory, uip);
+        if (!sched_up) { // Will be moved together with current
+          _igvn.replace_input_of(use, MemNode::Memory, uip);
+          --i; //deleted this edge; rescan position
+        }
       } else {
-        _igvn.hash_delete(lip);
-        use->set_req(MemNode::Memory, lip);
+        if (sched_up) { // Will be moved together with current
+          _igvn.replace_input_of(use, MemNode::Memory, lip);
+          --i; //deleted this edge; rescan position
+        }
       }
-      --i; //deleted this edge; rescan position
     }
   }
 
-  bool sched_up = sched_before.member(current);
   Node *insert_pt =  sched_up ?  uip : lip;
-  _igvn.hash_delete(insert_pt);
 
   // all uses of insert_pt's memory state should use current's instead
   for (DUIterator i = insert_pt->outs(); insert_pt->has_out(i); i++) {
@@ -988,7 +1162,7 @@ void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
   }
 
   //connect current to insert_pt
-  current->set_req(MemNode::Memory, insert_pt);
+  _igvn.replace_input_of(current, MemNode::Memory, insert_pt);
 }
 
 //------------------------------co_locate_pack----------------------------------
@@ -1025,7 +1199,7 @@ void SuperWord::co_locate_pack(Node_List* pk) {
         if (use->is_Mem() && use != previous)
           memops.push(use);
       }
-      if(current == first) break;
+      if (current == first) break;
       previous = current;
       current  = current->in(MemNode::Memory)->as_Mem();
     }
@@ -1038,27 +1212,37 @@ void SuperWord::co_locate_pack(Node_List* pk) {
           Node *s2 = memops.at(j);
           if (!independent(s1, s2)) {
             if (in_pack(s2, pk) || schedule_before_pack.member(s2)) {
-              schedule_before_pack.push(s1); //s1 must be scheduled before
+              schedule_before_pack.push(s1); // s1 must be scheduled before
               Node_List* mem_pk = my_pack(s1);
               if (mem_pk != NULL) {
                 for (uint ii = 0; ii < mem_pk->size(); ii++) {
-                  Node* s = mem_pk->at(ii); // follow partner
+                  Node* s = mem_pk->at(ii);  // follow partner
                   if (memops.member(s) && !schedule_before_pack.member(s))
                     schedule_before_pack.push(s);
                 }
               }
+              break;
             }
           }
         }
       }
     }
 
-    MemNode* lower_insert_pt = last;
     Node*    upper_insert_pt = first->in(MemNode::Memory);
+    // Following code moves loads connected to upper_insert_pt below aliased stores.
+    // Collect such loads here and reconnect them back to upper_insert_pt later.
+    memops.clear();
+    for (DUIterator i = upper_insert_pt->outs(); upper_insert_pt->has_out(i); i++) {
+      Node* use = upper_insert_pt->out(i);
+      if (!use->is_Store())
+        memops.push(use);
+    }
+
+    MemNode* lower_insert_pt = last;
     previous                 = last; //previous store in pk
     current                  = last->in(MemNode::Memory)->as_Mem();
 
-    //start scheduling from "last" to "first"
+    // start scheduling from "last" to "first"
     while (true) {
       assert(in_bb(current), "stay in block");
       assert(in_pack(previous, pk), "previous stays in pack");
@@ -1066,16 +1250,13 @@ void SuperWord::co_locate_pack(Node_List* pk) {
 
       if (in_pack(current, pk)) {
         // Forward users of my memory state (except "previous) to my input memory state
-        _igvn.hash_delete(current);
         for (DUIterator i = current->outs(); current->has_out(i); i++) {
           Node* use = current->out(i);
           if (use->is_Mem() && use != previous) {
             assert(use->in(MemNode::Memory) == current, "must be");
             if (schedule_before_pack.member(use)) {
-              _igvn.hash_delete(upper_insert_pt);
               _igvn.replace_input_of(use, MemNode::Memory, upper_insert_pt);
             } else {
-              _igvn.hash_delete(lower_insert_pt);
               _igvn.replace_input_of(use, MemNode::Memory, lower_insert_pt);
             }
             --i; // deleted this edge; rescan position
@@ -1089,6 +1270,14 @@ void SuperWord::co_locate_pack(Node_List* pk) {
       if (current == first) break;
       current = my_mem->as_Mem();
     } // end while
+
+    // Reconnect loads back to upper_insert_pt.
+    for (uint i = 0; i < memops.size(); i++) {
+      Node *ld = memops.at(i);
+      if (ld->in(MemNode::Memory) != upper_insert_pt) {
+        _igvn.replace_input_of(ld, MemNode::Memory, upper_insert_pt);
+      }
+    }
   } else if (pk->at(0)->is_Load()) { //load
     // all loads in the pack should have the same memory state. By default,
     // we use the memory state of the last load. However, if any load could
@@ -1149,35 +1338,30 @@ void SuperWord::output() {
       Node* vn = NULL;
       Node* low_adr = p->at(0);
       Node* first   = executed_first(p);
+      int   opc = n->Opcode();
       if (n->is_Load()) {
-        int   opc = n->Opcode();
         Node* ctl = n->in(MemNode::Control);
         Node* mem = first->in(MemNode::Memory);
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        vn = VectorLoadNode::make(_phase->C, opc, ctl, mem, adr, atyp, vlen);
-
+        vn = LoadVectorNode::make(_phase->C, opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n));
       } else if (n->is_Store()) {
         // Promote value to be stored to vector
         Node* val = vector_opd(p, MemNode::ValueIn);
-
-        int   opc = n->Opcode();
         Node* ctl = n->in(MemNode::Control);
         Node* mem = first->in(MemNode::Memory);
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        vn = VectorStoreNode::make(_phase->C, opc, ctl, mem, adr, atyp, val, vlen);
-
+        vn = StoreVectorNode::make(_phase->C, opc, ctl, mem, adr, atyp, val, vlen);
       } else if (n->req() == 3) {
         // Promote operands to vector
         Node* in1 = vector_opd(p, 1);
         Node* in2 = vector_opd(p, 2);
-        vn = VectorNode::make(_phase->C, n->Opcode(), in1, in2, vlen, velt_type(n));
-
+        vn = VectorNode::make(_phase->C, opc, in1, in2, vlen, velt_basic_type(n));
       } else {
         ShouldNotReachHere();
       }
-
+      assert(vn != NULL, "sanity");
       _phase->_igvn.register_new_node_with_optimizer(vn);
       _phase->set_ctrl(vn, _phase->get_ctrl(p->at(0)));
       for (uint j = 0; j < p->size(); j++) {
@@ -1185,6 +1369,12 @@ void SuperWord::output() {
         _igvn.replace_node(pm, vn);
       }
       _igvn._worklist.push(vn);
+#ifdef ASSERT
+      if (TraceNewVectors) {
+        tty->print("new Vector node: ");
+        vn->dump();
+      }
+#endif
     }
   }
 }
@@ -1207,10 +1397,10 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   }
 
   if (same_opd) {
-    if (opd->is_Vector() || opd->is_VectorLoad()) {
+    if (opd->is_Vector() || opd->is_LoadVector()) {
       return opd; // input is matching vector
     }
-    assert(!opd->is_VectorStore(), "such vector is not expected here");
+    assert(!opd->is_StoreVector(), "such vector is not expected here");
     // Convert scalar input to vector with the same number of elements as
     // p0's vector. Use p0's type because size of operand's container in
     // vector should match p0's size regardless operand's size.
@@ -1219,12 +1409,18 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
 
     _phase->_igvn.register_new_node_with_optimizer(vn);
     _phase->set_ctrl(vn, _phase->get_ctrl(opd));
+#ifdef ASSERT
+    if (TraceNewVectors) {
+      tty->print("new Vector node: ");
+      vn->dump();
+    }
+#endif
     return vn;
   }
 
   // Insert pack operation
-  const Type* p0_t = velt_type(p0);
-  PackNode* pk = PackNode::make(_phase->C, opd, p0_t);
+  BasicType bt = velt_basic_type(p0);
+  PackNode* pk = PackNode::make(_phase->C, opd, vlen, bt);
   DEBUG_ONLY( const BasicType opd_bt = opd->bottom_type()->basic_type(); )
 
   for (uint i = 1; i < vlen; i++) {
@@ -1232,10 +1428,16 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     Node* in = pi->in(opd_idx);
     assert(my_pack(in) == NULL, "Should already have been unpacked");
     assert(opd_bt == in->bottom_type()->basic_type(), "all same type");
-    pk->add_opd(in);
+    pk->add_opd(i, in);
   }
   _phase->_igvn.register_new_node_with_optimizer(pk);
   _phase->set_ctrl(pk, _phase->get_ctrl(opd));
+#ifdef ASSERT
+    if (TraceNewVectors) {
+      tty->print("new Vector node: ");
+      pk->dump();
+    }
+#endif
   return pk;
 }
 
@@ -1273,16 +1475,15 @@ void SuperWord::insert_extracts(Node_List* p) {
     // Insert extract operation
     _igvn.hash_delete(def);
     int def_pos = alignment(def) / data_size(def);
-    const Type* def_t = velt_type(def);
 
-    Node* ex = ExtractNode::make(_phase->C, def, def_pos, def_t);
+    Node* ex = ExtractNode::make(_phase->C, def, def_pos, velt_basic_type(def));
     _phase->_igvn.register_new_node_with_optimizer(ex);
     _phase->set_ctrl(ex, _phase->get_ctrl(def));
     _igvn.replace_input_of(use, idx, ex);
     _igvn._worklist.push(def);
 
     bb_insert_after(ex, bb_idx(def));
-    set_velt_type(ex, def_t);
+    set_velt_type(ex, velt_type(def));
   }
 }
 
@@ -1509,10 +1710,7 @@ void SuperWord::compute_vector_element_type() {
   // Initial type
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
-    const Type* t  = n->is_Mem() ? Type::get_const_basic_type(n->as_Mem()->memory_type())
-                                 : _igvn.type(n);
-    const Type* vt = container_type(t);
-    set_velt_type(n, vt);
+    set_velt_type(n, container_type(n));
   }
 
   // Propagate narrowed type backwards through operations
@@ -1543,7 +1741,7 @@ void SuperWord::compute_vector_element_type() {
             bool same_type = true;
             for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
               Node *use = in->fast_out(k);
-              if (!in_bb(use) || velt_type(use) != vt) {
+              if (!in_bb(use) || !same_velt_type(use, n)) {
                 same_type = false;
                 break;
               }
@@ -1575,20 +1773,24 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust_in_bytes) {
   if (!p.valid()) {
     return bottom_align;
   }
+  int vw = vector_width_in_bytes(s);
+  if (vw < 2) {
+    return bottom_align; // No vectors for this type
+  }
   int offset  = p.offset_in_bytes();
   offset     += iv_adjust_in_bytes;
-  int off_rem = offset % vector_width_in_bytes();
-  int off_mod = off_rem >= 0 ? off_rem : off_rem + vector_width_in_bytes();
+  int off_rem = offset % vw;
+  int off_mod = off_rem >= 0 ? off_rem : off_rem + vw;
   return off_mod;
 }
 
 //---------------------------container_type---------------------------
 // Smallest type containing range of values
-const Type* SuperWord::container_type(const Type* t) {
-  const Type* tp = t->make_ptr();
-  if (tp && tp->isa_aryptr()) {
-    t = tp->is_aryptr()->elem();
+const Type* SuperWord::container_type(Node* n) {
+  if (n->is_Mem()) {
+    return Type::get_const_basic_type(n->as_Mem()->memory_type());
   }
+  const Type* t = _igvn.type(n);
   if (t->basic_type() == T_INT) {
     if (t->higher_equal(TypeInt::BOOL))  return TypeInt::BOOL;
     if (t->higher_equal(TypeInt::BYTE))  return TypeInt::BYTE;
@@ -1599,11 +1801,22 @@ const Type* SuperWord::container_type(const Type* t) {
   return t;
 }
 
+bool SuperWord::same_velt_type(Node* n1, Node* n2) {
+  const Type* vt1 = velt_type(n1);
+  const Type* vt2 = velt_type(n1);
+  if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
+    // Compare vectors element sizes for integer types.
+    return data_size(n1) == data_size(n2);
+  }
+  return vt1 == vt2;
+}
+
 //-------------------------vector_opd_range-----------------------
 // (Start, end] half-open range defining which operands are vector
 void SuperWord::vector_opd_range(Node* n, uint* start, uint* end) {
   switch (n->Opcode()) {
-  case Op_LoadB:   case Op_LoadUS:
+  case Op_LoadB:   case Op_LoadUB:
+  case Op_LoadS:   case Op_LoadUS:
   case Op_LoadI:   case Op_LoadL:
   case Op_LoadF:   case Op_LoadD:
   case Op_LoadP:
@@ -1721,6 +1934,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   assert(orig_limit != NULL && _igvn.type(orig_limit) != Type::TOP, "");
 
   SWPointer align_to_ref_p(align_to_ref, this);
+  assert(align_to_ref_p.valid(), "sanity");
 
   // Given:
   //     lim0 == original pre loop limit
@@ -1773,10 +1987,12 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   //     N = (V - (e - lim0)) % V
   //     lim = lim0 - (V - (e - lim0)) % V
 
+  int vw = vector_width_in_bytes(align_to_ref);
   int stride   = iv_stride();
   int scale    = align_to_ref_p.scale_in_bytes();
   int elt_size = align_to_ref_p.memory_size();
-  int v_align  = vector_width_in_bytes() / elt_size;
+  int v_align  = vw / elt_size;
+  assert(v_align > 1, "sanity");
   int k        = align_to_ref_p.offset_in_bytes() / elt_size;
 
   Node *kn   = _igvn.intcon(k);
@@ -1793,6 +2009,25 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
     } else {
       e = new (_phase->C, 3) AddINode(e, aref);
     }
+    _phase->_igvn.register_new_node_with_optimizer(e);
+    _phase->set_ctrl(e, pre_ctrl);
+  }
+  if (vw > ObjectAlignmentInBytes) {
+    // incorporate base e +/- base && Mask >>> log2(elt)
+    Node* mask = _igvn.MakeConX(~(-1 << exact_log2(vw)));
+    Node* xbase = new(_phase->C, 2) CastP2XNode(NULL, align_to_ref_p.base());
+    _phase->_igvn.register_new_node_with_optimizer(xbase);
+    Node* masked_xbase  = new (_phase->C, 3) AndXNode(xbase, mask);
+    _phase->_igvn.register_new_node_with_optimizer(masked_xbase);
+#ifdef _LP64
+    masked_xbase  = new (_phase->C, 2) ConvL2INode(masked_xbase);
+    _phase->_igvn.register_new_node_with_optimizer(masked_xbase);
+#endif
+    Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
+    Node* bref     = new (_phase->C, 3) URShiftINode(masked_xbase, log2_elt);
+    _phase->_igvn.register_new_node_with_optimizer(bref);
+    _phase->set_ctrl(bref, pre_ctrl);
+    e = new (_phase->C, 3) AddINode(e, bref);
     _phase->_igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }

@@ -111,6 +111,10 @@
   template(getBootClassPathEntryForClass_name,        "getBootClassPathEntryForClass")            \
   template(sun_misc_PostVMInitHook,                   "sun/misc/PostVMInitHook")                  \
                                                                                                   \
+  /* Java runtime version access */                                                               \
+  template(sun_misc_Version,                          "sun/misc/Version")                         \
+  template(java_runtime_name_name,                    "java_runtime_name")                        \
+                                                                                                  \
   /* class file format tags */                                                                    \
   template(tag_source_file,                           "SourceFile")                               \
   template(tag_inner_classes,                         "InnerClasses")                             \

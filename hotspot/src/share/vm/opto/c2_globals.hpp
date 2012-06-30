@@ -81,6 +81,13 @@
   product(intx, MaxLoopPad, (OptoLoopAlignment-1),                          \
           "Align a loop if padding size in bytes is less or equal to this value") \
                                                                             \
+  product(intx, MaxVectorSize, 32,                                          \
+          "Max vector size in bytes, "                                      \
+          "actual size could be less depending on elements type")           \
+                                                                            \
+  product(bool, AlignVector, false,                                         \
+          "Perform vector store/load alignment in loop")                    \
+                                                                            \
   product(intx, NumberOfLoopInstrToAlign, 4,                                \
           "Number of first instructions in a loop to align")                \
                                                                             \
@@ -292,8 +299,11 @@
   develop(bool, SuperWordRTDepCheck, false,                                 \
           "Enable runtime dependency checks.")                              \
                                                                             \
-  product(bool, TraceSuperWord, false,                                      \
+  notproduct(bool, TraceSuperWord, false,                                   \
           "Trace superword transforms")                                     \
+                                                                            \
+  notproduct(bool, TraceNewVectors, false,                                  \
+          "Trace creation of Vector nodes")                                 \
                                                                             \
   product_pd(bool, OptoBundling,                                            \
           "Generate nops to fill i-cache lines")                            \
