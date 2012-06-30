@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,18 +141,19 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
   public static String stringOopToString(Oop stringOop) {
     if (offsetField == null) {
       InstanceKlass k = (InstanceKlass) stringOop.getKlass();
-      offsetField = (IntField) k.findField("offset", "I");
-      countField  = (IntField) k.findField("count",  "I");
+      offsetField = (IntField) k.findField("offset", "I");   // optional
+      countField  = (IntField) k.findField("count",  "I");   // optional
       valueField  = (OopField) k.findField("value",  "[C");
       if (Assert.ASSERTS_ENABLED) {
-        Assert.that(offsetField != null &&
-                    countField != null &&
-                    valueField != null, "must find all java.lang.String fields");
+         Assert.that(valueField != null, "Field \'value\' of java.lang.String not found");
       }
     }
-    return charArrayToString((TypeArray) valueField.getValue(stringOop),
-                             offsetField.getValue(stringOop),
-                             countField.getValue(stringOop));
+    if (offsetField != null && countField != null) {
+      return charArrayToString((TypeArray) valueField.getValue(stringOop),
+                               offsetField.getValue(stringOop),
+                               countField.getValue(stringOop));
+    }
+    return  charArrayToString((TypeArray) valueField.getValue(stringOop));
   }
 
   public static String stringOopToEscapedString(Oop stringOop) {

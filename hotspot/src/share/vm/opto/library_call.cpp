@@ -3592,8 +3592,10 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     }
 
     // Bail out if length is negative.
-    // ...Not needed, since the new_array will throw the right exception.
-    //generate_negative_guard(length, bailout, &length);
+    // Without this the new_array would throw
+    // NegativeArraySizeException but IllegalArgumentException is what
+    // should be thrown
+    generate_negative_guard(length, bailout, &length);
 
     if (bailout->req() > 1) {
       PreserveJVMState pjvms(this);
@@ -3617,7 +3619,9 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       // Extreme case:  Arrays.copyOf((Integer[])x, 10, String[].class).
       // This will fail a store-check if x contains any non-nulls.
       bool disjoint_bases = true;
-      bool length_never_negative = true;
+      // if start > orig_length then the length of the copy may be
+      // negative.
+      bool length_never_negative = !is_copyOfRange;
       generate_arraycopy(TypeAryPtr::OOPS, T_OBJECT,
                          original, start, newcopy, intcon(0), moved,
                          disjoint_bases, length_never_negative);

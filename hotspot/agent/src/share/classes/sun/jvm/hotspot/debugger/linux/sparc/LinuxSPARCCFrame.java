@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ final public class LinuxSPARCCFrame extends BasicCFrame {
       return sp;
    }
 
-   public CFrame sender() {
+   public CFrame sender(ThreadProxy thread) {
       if (sp == null) {
         return null;
       }
