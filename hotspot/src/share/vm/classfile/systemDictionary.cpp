@@ -2771,7 +2771,6 @@ class ClassStatistics: AllStatic {
     nmethods++;
     method_size += m->size();
     // class loader uses same objArray for empty vectors, so don't count these
-    if (m->exception_table()->length() != 0)   method_size += m->exception_table()->size();
     if (m->has_stackmap_table()) {
       method_size += m->stackmap_data()->size();
     }

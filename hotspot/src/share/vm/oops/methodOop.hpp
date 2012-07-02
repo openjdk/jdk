@@ -282,12 +282,12 @@ class methodOopDesc : public oopDesc {
   }
 
   // exception handler table
-  typeArrayOop exception_table() const
-                                   { return constMethod()->exception_table(); }
-  void set_exception_table(typeArrayOop e)
-                                     { constMethod()->set_exception_table(e); }
   bool has_exception_handler() const
                              { return constMethod()->has_exception_handler(); }
+  int exception_table_length() const
+                             { return constMethod()->exception_table_length(); }
+  ExceptionTableElement* exception_table_start() const
+                             { return constMethod()->exception_table_start(); }
 
   // Finds the first entry point bci of an exception handler for an
   // exception of klass ex_klass thrown at throw_bci. A value of NULL
@@ -833,6 +833,68 @@ class BreakpointInfo : public CHeapObj {
 
   void set(methodOop method);
   void clear(methodOop method);
+};
+
+// Utility class for access exception handlers
+class ExceptionTable : public StackObj {
+ private:
+  ExceptionTableElement* _table;
+  u2  _length;
+
+ public:
+  ExceptionTable(methodOop m) {
+    if (m->has_exception_handler()) {
+      _table = m->exception_table_start();
+      _length = m->exception_table_length();
+    } else {
+      _table = NULL;
+      _length = 0;
+    }
+  }
+
+  int length() const {
+    return _length;
+  }
+
+  u2 start_pc(int idx) const {
+    assert(idx < _length, "out of bounds");
+    return _table[idx].start_pc;
+  }
+
+  void set_start_pc(int idx, u2 value) {
+    assert(idx < _length, "out of bounds");
+    _table[idx].start_pc = value;
+  }
+
+  u2 end_pc(int idx) const {
+    assert(idx < _length, "out of bounds");
+    return _table[idx].end_pc;
+  }
+
+  void set_end_pc(int idx, u2 value) {
+    assert(idx < _length, "out of bounds");
+    _table[idx].end_pc = value;
+  }
+
+  u2 handler_pc(int idx) const {
+    assert(idx < _length, "out of bounds");
+    return _table[idx].handler_pc;
+  }
+
+  void set_handler_pc(int idx, u2 value) {
+    assert(idx < _length, "out of bounds");
+    _table[idx].handler_pc = value;
+  }
+
+  u2 catch_type_index(int idx) const {
+    assert(idx < _length, "out of bounds");
+    return _table[idx].catch_type_index;
+  }
+
+  void set_catch_type_index(int idx, u2 value) {
+    assert(idx < _length, "out of bounds");
+    _table[idx].catch_type_index = value;
+  }
 };
 
 #endif // SHARE_VM_OOPS_METHODOOP_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ ciMethod::ciMethod(methodHandle h_m) : ciObject(h_m) {
   _max_locals         = h_m()->max_locals();
   _code_size          = h_m()->code_size();
   _intrinsic_id       = h_m()->intrinsic_id();
-  _handler_count      = h_m()->exception_table()->length() / 4;
+  _handler_count      = h_m()->exception_table_length();
   _uses_monitors      = h_m()->access_flags().has_monitor_bytecodes();
   _balanced_monitors  = !_uses_monitors || h_m()->access_flags().is_monitor_matching();
   _is_c1_compilable   = !h_m()->is_not_c1_compilable();
@@ -198,7 +198,7 @@ void ciMethod::load_code() {
   }
 
   // And load the exception table.
-  typeArrayOop exc_table = me->exception_table();
+  ExceptionTable exc_table(me);
 
   // Allocate one extra spot in our list of exceptions.  This
   // last entry will be used to represent the possibility that
@@ -209,13 +209,12 @@ void ciMethod::load_code() {
                                          * (_handler_count + 1));
   if (_handler_count > 0) {
     for (int i=0; i<_handler_count; i++) {
-      int base = i*4;
       _exception_handlers[i] = new (arena) ciExceptionHandler(
                                 holder(),
-            /* start    */      exc_table->int_at(base),
-            /* limit    */      exc_table->int_at(base+1),
-            /* goto pc  */      exc_table->int_at(base+2),
-            /* cp index */      exc_table->int_at(base+3));
+            /* start    */      exc_table.start_pc(i),
+            /* limit    */      exc_table.end_pc(i),
+            /* goto pc  */      exc_table.handler_pc(i),
+            /* cp index */      exc_table.catch_type_index(i));
     }
   }
 
