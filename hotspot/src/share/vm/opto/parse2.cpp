@@ -1278,9 +1278,9 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
        // or the narrowOop equivalent.
        const Type* obj_type = _gvn.type(obj);
        const TypeOopPtr* tboth = obj_type->join(con_type)->isa_oopptr();
-       if (tboth != NULL && tboth != obj_type && tboth->higher_equal(obj_type)) {
+       if (tboth != NULL && tboth->klass_is_exact() && tboth != obj_type &&
+           tboth->higher_equal(obj_type)) {
           // obj has to be of the exact type Foo if the CmpP succeeds.
-          assert(tboth->klass_is_exact(), "klass should be exact");
           int obj_in_map = map()->find_edge(obj);
           JVMState* jvms = this->jvms();
           if (obj_in_map >= 0 &&
