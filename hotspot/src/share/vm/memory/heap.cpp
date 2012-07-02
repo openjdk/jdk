@@ -26,7 +26,7 @@
 #include "memory/heap.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/os.hpp"
-
+#include "services/memTracker.hpp"
 
 size_t CodeHeap::header_size() {
   return sizeof(HeapBlock);
@@ -130,6 +130,9 @@ bool CodeHeap::reserve(size_t reserved_size, size_t committed_size,
   if (!_segmap.initialize(align_to_page_size(_number_of_reserved_segments), align_to_page_size(_number_of_committed_segments))) {
     return false;
   }
+
+  MemTracker::record_virtual_memory_type((address)_segmap.low_boundary(), mtCode);
+
   assert(_segmap.committed_size() >= (size_t) _number_of_committed_segments, "could not commit  enough space for segment map");
   assert(_segmap.reserved_size()  >= (size_t) _number_of_reserved_segments , "could not reserve enough space for segment map");
   assert(_segmap.reserved_size()  >= _segmap.committed_size()     , "just checking");

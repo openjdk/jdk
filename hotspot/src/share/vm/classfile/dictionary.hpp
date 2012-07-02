@@ -36,7 +36,7 @@ class DictionaryEntry;
 // The data structure for the system dictionary (and the shared system
 // dictionary).
 
-class Dictionary : public TwoOopHashtable<klassOop> {
+class Dictionary : public TwoOopHashtable<klassOop, mtClass> {
   friend class VMStructs;
 private:
   // current iteration index.
@@ -48,22 +48,22 @@ private:
                              Symbol* name, Handle loader);
 
   DictionaryEntry* bucket(int i) {
-    return (DictionaryEntry*)Hashtable<klassOop>::bucket(i);
+    return (DictionaryEntry*)Hashtable<klassOop, mtClass>::bucket(i);
   }
 
   // The following method is not MT-safe and must be done under lock.
   DictionaryEntry** bucket_addr(int i) {
-    return (DictionaryEntry**)Hashtable<klassOop>::bucket_addr(i);
+    return (DictionaryEntry**)Hashtable<klassOop, mtClass>::bucket_addr(i);
   }
 
   void add_entry(int index, DictionaryEntry* new_entry) {
-    Hashtable<klassOop>::add_entry(index, (HashtableEntry<oop>*)new_entry);
+    Hashtable<klassOop, mtClass>::add_entry(index, (HashtableEntry<oop, mtClass>*)new_entry);
   }
 
 
 public:
   Dictionary(int table_size);
-  Dictionary(int table_size, HashtableBucket* t, int number_of_entries);
+  Dictionary(int table_size, HashtableBucket<mtClass>* t, int number_of_entries);
 
   DictionaryEntry* new_entry(unsigned int hash, klassOop klass, oop loader);
 
@@ -129,7 +129,7 @@ public:
 // The following classes can be in dictionary.cpp, but we need these
 // to be in header file so that SA's vmStructs can access.
 
-class ProtectionDomainEntry :public CHeapObj {
+class ProtectionDomainEntry :public CHeapObj<mtClass> {
   friend class VMStructs;
  public:
   ProtectionDomainEntry* _next;
@@ -147,7 +147,7 @@ class ProtectionDomainEntry :public CHeapObj {
 // An entry in the system dictionary, this describes a class as
 // { klassOop, loader, protection_domain }.
 
-class DictionaryEntry : public HashtableEntry<klassOop> {
+class DictionaryEntry : public HashtableEntry<klassOop, mtClass> {
   friend class VMStructs;
  private:
   // Contains the set of approved protection domains that can access
@@ -166,11 +166,11 @@ class DictionaryEntry : public HashtableEntry<klassOop> {
   klassOop* klass_addr() { return (klassOop*)literal_addr(); }
 
   DictionaryEntry* next() const {
-    return (DictionaryEntry*)HashtableEntry<klassOop>::next();
+    return (DictionaryEntry*)HashtableEntry<klassOop, mtClass>::next();
   }
 
   DictionaryEntry** next_addr() {
-    return (DictionaryEntry**)HashtableEntry<klassOop>::next_addr();
+    return (DictionaryEntry**)HashtableEntry<klassOop, mtClass>::next_addr();
   }
 
   oop loader() const { return _loader; }
@@ -228,7 +228,7 @@ class DictionaryEntry : public HashtableEntry<klassOop> {
 
 // Entry in a SymbolPropertyTable, mapping a single Symbol*
 // to a managed and an unmanaged pointer.
-class SymbolPropertyEntry : public HashtableEntry<Symbol*> {
+class SymbolPropertyEntry : public HashtableEntry<Symbol*, mtSymbol> {
   friend class VMStructs;
  private:
   intptr_t _symbol_mode;  // secondary key
@@ -248,11 +248,11 @@ class SymbolPropertyEntry : public HashtableEntry<Symbol*> {
   void set_property_data(address p) { _property_data = p; }
 
   SymbolPropertyEntry* next() const {
-    return (SymbolPropertyEntry*)HashtableEntry<Symbol*>::next();
+    return (SymbolPropertyEntry*)HashtableEntry<Symbol*, mtSymbol>::next();
   }
 
   SymbolPropertyEntry** next_addr() {
-    return (SymbolPropertyEntry**)HashtableEntry<Symbol*>::next_addr();
+    return (SymbolPropertyEntry**)HashtableEntry<Symbol*, mtSymbol>::next_addr();
   }
 
   oop* property_oop_addr()          { return &_property_oop; }
@@ -278,16 +278,16 @@ class SymbolPropertyEntry : public HashtableEntry<Symbol*> {
 // A system-internal mapping of symbols to pointers, both managed
 // and unmanaged.  Used to record the auto-generation of each method
 // MethodHandle.invoke(S)T, for all signatures (S)T.
-class SymbolPropertyTable : public Hashtable<Symbol*> {
+class SymbolPropertyTable : public Hashtable<Symbol*, mtSymbol> {
   friend class VMStructs;
 private:
   SymbolPropertyEntry* bucket(int i) {
-    return (SymbolPropertyEntry*) Hashtable<Symbol*>::bucket(i);
+    return (SymbolPropertyEntry*) Hashtable<Symbol*, mtSymbol>::bucket(i);
   }
 
   // The following method is not MT-safe and must be done under lock.
   SymbolPropertyEntry** bucket_addr(int i) {
-    return (SymbolPropertyEntry**) Hashtable<Symbol*>::bucket_addr(i);
+    return (SymbolPropertyEntry**) Hashtable<Symbol*, mtSymbol>::bucket_addr(i);
   }
 
   void add_entry(int index, SymbolPropertyEntry* new_entry) {
@@ -298,7 +298,7 @@ private:
   }
 
   SymbolPropertyEntry* new_entry(unsigned int hash, Symbol* symbol, intptr_t symbol_mode) {
-    SymbolPropertyEntry* entry = (SymbolPropertyEntry*) Hashtable<Symbol*>::new_entry(hash, symbol);
+    SymbolPropertyEntry* entry = (SymbolPropertyEntry*) Hashtable<Symbol*, mtSymbol>::new_entry(hash, symbol);
     // Hashtable with Symbol* literal must increment and decrement refcount.
     symbol->increment_refcount();
     entry->set_symbol_mode(symbol_mode);
@@ -309,17 +309,17 @@ private:
 
 public:
   SymbolPropertyTable(int table_size);
-  SymbolPropertyTable(int table_size, HashtableBucket* t, int number_of_entries);
+  SymbolPropertyTable(int table_size, HashtableBucket<mtSymbol>* t, int number_of_entries);
 
   void free_entry(SymbolPropertyEntry* entry) {
     // decrement Symbol refcount here because hashtable doesn't.
     entry->literal()->decrement_refcount();
-    Hashtable<Symbol*>::free_entry(entry);
+    Hashtable<Symbol*, mtSymbol>::free_entry(entry);
   }
 
   unsigned int compute_hash(Symbol* sym, intptr_t symbol_mode) {
     // Use the regular identity_hash.
-    return Hashtable<Symbol*>::compute_hash(sym) ^ symbol_mode;
+    return Hashtable<Symbol*, mtSymbol>::compute_hash(sym) ^ symbol_mode;
   }
 
   int index_for(Symbol* name, intptr_t symbol_mode) {

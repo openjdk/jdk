@@ -84,7 +84,7 @@ class ParkEvent ;
 // The default length of monitor name is chosen to be 64 to avoid false sharing.
 static const int MONITOR_NAME_LEN = 64;
 
-class Monitor : public CHeapObj {
+class Monitor : public CHeapObj<mtInternal> {
 
  public:
   // A special lock: Is a lock where you are guaranteed not to block while you are

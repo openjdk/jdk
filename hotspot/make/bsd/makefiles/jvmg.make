@@ -27,7 +27,9 @@
 # Compiler specific DEBUG_CFLAGS are passed in from gcc.make, sparcWorks.make
 DEBUG_CFLAGS/DEFAULT= $(DEBUG_CFLAGS)
 DEBUG_CFLAGS/BYFILE = $(DEBUG_CFLAGS/$@)$(DEBUG_CFLAGS/DEFAULT$(DEBUG_CFLAGS/$@))
-CFLAGS += $(DEBUG_CFLAGS/BYFILE)
+
+# _NMT_NOINLINE_ informs NMT that no inlining by Compiler
+CFLAGS += $(DEBUG_CFLAGS/BYFILE) -D_NMT_NOINLINE_
 
 # Set the environment variable HOTSPARC_GENERIC to "true"
 # to inhibit the effect of the previous line on CFLAGS.

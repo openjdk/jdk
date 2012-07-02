@@ -70,12 +70,12 @@ IntervalData*     FlatProfiler::interval_data       = NULL;
 ThreadProfiler::ThreadProfiler() {
   // Space for the ProfilerNodes
   const int area_size = 1 * ProfilerNodeSize * 1024;
-  area_bottom = AllocateHeap(area_size, "fprofiler");
+  area_bottom = AllocateHeap(area_size, mtInternal);
   area_top    = area_bottom;
   area_limit  = area_bottom + area_size;
 
   // ProfilerNode pointer table
-  table = NEW_C_HEAP_ARRAY(ProfilerNode*, table_size);
+  table = NEW_C_HEAP_ARRAY(ProfilerNode*, table_size, mtInternal);
   initialize();
   engaged = false;
 }
@@ -157,7 +157,7 @@ address PCRecorder::base     = NULL;
 void PCRecorder::init() {
   MutexLockerEx lm(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   int s = size();
-  counters = NEW_C_HEAP_ARRAY(int, s);
+  counters = NEW_C_HEAP_ARRAY(int, s, mtInternal);
   for (int index = 0; index < s; index++) {
     counters[index] = 0;
   }
@@ -850,7 +850,7 @@ void FlatProfiler::record_thread_ticks() {
   if (Threads_lock->try_lock()) {
     {  // Threads_lock scope
       maxthreads = Threads::number_of_threads();
-      threadsList = NEW_C_HEAP_ARRAY(JavaThread *, maxthreads);
+      threadsList = NEW_C_HEAP_ARRAY(JavaThread *, maxthreads, mtInternal);
       suspendedthreadcount = 0;
       for (JavaThread* tp = Threads::first(); tp != NULL; tp = tp->next()) {
         if (tp->is_Compiler_thread()) {
@@ -1195,8 +1195,8 @@ void ThreadProfiler::reset() {
 
 void FlatProfiler::allocate_table() {
   { // Bytecode table
-    bytecode_ticks      = NEW_C_HEAP_ARRAY(int, Bytecodes::number_of_codes);
-    bytecode_ticks_stub = NEW_C_HEAP_ARRAY(int, Bytecodes::number_of_codes);
+    bytecode_ticks      = NEW_C_HEAP_ARRAY(int, Bytecodes::number_of_codes, mtInternal);
+    bytecode_ticks_stub = NEW_C_HEAP_ARRAY(int, Bytecodes::number_of_codes, mtInternal);
     for(int index = 0; index < Bytecodes::number_of_codes; index++) {
       bytecode_ticks[index]      = 0;
       bytecode_ticks_stub[index] = 0;
@@ -1205,7 +1205,7 @@ void FlatProfiler::allocate_table() {
 
   if (ProfilerRecordPC) PCRecorder::init();
 
-  interval_data         = NEW_C_HEAP_ARRAY(IntervalData, interval_print_size);
+  interval_data         = NEW_C_HEAP_ARRAY(IntervalData, interval_print_size, mtInternal);
   FlatProfiler::interval_reset();
 }
 

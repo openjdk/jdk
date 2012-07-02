@@ -42,6 +42,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "services/memTracker.hpp"
 
 // Concurrent marking bit map wrapper
 
@@ -52,6 +53,8 @@ CMBitMapRO::CMBitMapRO(ReservedSpace rs, int shifter) :
   _bmWordSize  = rs.size()/HeapWordSize;    // rs.size() is in bytes
   ReservedSpace brs(ReservedSpace::allocation_align_size_up(
                      (_bmWordSize >> (_shifter + LogBitsPerByte)) + 1));
+
+  MemTracker::record_virtual_memory_type((address)brs.base(), mtGC);
 
   guarantee(brs.is_reserved(), "couldn't allocate concurrent marking bit map");
   // For now we'll just commit all of the bit map up fromt.
@@ -161,7 +164,7 @@ CMMarkStack::CMMarkStack(ConcurrentMark* cm) :
 {}
 
 void CMMarkStack::allocate(size_t size) {
-  _base = NEW_C_HEAP_ARRAY(oop, size);
+  _base = NEW_C_HEAP_ARRAY(oop, size, mtGC);
   if (_base == NULL) {
     vm_exit_during_initialization("Failed to allocate CM region mark stack");
   }
@@ -173,7 +176,7 @@ void CMMarkStack::allocate(size_t size) {
 
 CMMarkStack::~CMMarkStack() {
   if (_base != NULL) {
-    FREE_C_HEAP_ARRAY(oop, _base);
+    FREE_C_HEAP_ARRAY(oop, _base, mtGC);
   }
 }
 
@@ -480,11 +483,11 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs, uint max_regions) :
 
   _root_regions.init(_g1h, this);
 
-  _tasks = NEW_C_HEAP_ARRAY(CMTask*, _max_task_num);
-  _accum_task_vtime = NEW_C_HEAP_ARRAY(double, _max_task_num);
+  _tasks = NEW_C_HEAP_ARRAY(CMTask*, _max_task_num, mtGC);
+  _accum_task_vtime = NEW_C_HEAP_ARRAY(double, _max_task_num, mtGC);
 
-  _count_card_bitmaps = NEW_C_HEAP_ARRAY(BitMap,  _max_task_num);
-  _count_marked_bytes = NEW_C_HEAP_ARRAY(size_t*, _max_task_num);
+  _count_card_bitmaps = NEW_C_HEAP_ARRAY(BitMap,  _max_task_num, mtGC);
+  _count_marked_bytes = NEW_C_HEAP_ARRAY(size_t*, _max_task_num, mtGC);
 
   BitMap::idx_t card_bm_size = _card_bm.size();
 
@@ -496,7 +499,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs, uint max_regions) :
     _task_queues->register_queue(i, task_queue);
 
     _count_card_bitmaps[i] = BitMap(card_bm_size, false);
-    _count_marked_bytes[i] = NEW_C_HEAP_ARRAY(size_t, (size_t) max_regions);
+    _count_marked_bytes[i] = NEW_C_HEAP_ARRAY(size_t, (size_t) max_regions, mtGC);
 
     _tasks[i] = new CMTask(i, this,
                            _count_marked_bytes[i],

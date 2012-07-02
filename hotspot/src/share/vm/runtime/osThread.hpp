@@ -58,7 +58,7 @@ enum ThreadState {
 // the main thread into its own Thread at will.
 
 
-class OSThread: public CHeapObj {
+class OSThread: public CHeapObj<mtThread> {
   friend class VMStructs;
  private:
   OSThreadStartFunc _start_proc;  // Thread start routine

@@ -1368,7 +1368,7 @@ class Classfile_LVT_Element VALUE_OBJ_CLASS_SPEC {
 };
 
 
-class LVT_Hash: public CHeapObj {
+class LVT_Hash: public CHeapObj<mtClass> {
  public:
   LocalVariableTableElement  *_elem;  // element
   LVT_Hash*                   _next;  // Next entry in hash table

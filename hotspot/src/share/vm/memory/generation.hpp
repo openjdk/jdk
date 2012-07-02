@@ -86,7 +86,7 @@ struct ScratchBlock {
 };
 
 
-class Generation: public CHeapObj {
+class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
   jlong _time_of_last_gc; // time when last gc on this generation happened (ms)

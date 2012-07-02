@@ -35,7 +35,7 @@
 // The string table represents a string table section in an elf file.
 // Whenever there is enough memory, it will load whole string table as
 // one blob. Otherwise, it will load string from file when requested.
-class ElfStringTable: CHeapObj {
+class ElfStringTable: CHeapObj<mtInternal> {
   friend class ElfFile;
  public:
   ElfStringTable(FILE* file, Elf_Shdr shdr, int index);

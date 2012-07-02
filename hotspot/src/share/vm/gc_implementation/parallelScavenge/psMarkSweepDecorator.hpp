@@ -34,7 +34,7 @@
 
 class ObjectStartArray;
 
-class PSMarkSweepDecorator: public CHeapObj {
+class PSMarkSweepDecorator: public CHeapObj<mtGC> {
  private:
   static PSMarkSweepDecorator* _destination_decorator;
 

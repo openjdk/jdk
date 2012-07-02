@@ -47,7 +47,7 @@
 // relation) to a count.
 
 
-class IntHistogram : public CHeapObj {
+class IntHistogram : public CHeapObj<mtInternal> {
  protected:
   int _max;
   int _tot;

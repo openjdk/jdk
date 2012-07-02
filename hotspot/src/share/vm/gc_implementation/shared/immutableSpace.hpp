@@ -33,7 +33,7 @@
 // Invariant: bottom() and end() are on page_size boundaries and
 // bottom() <= end()
 
-class ImmutableSpace: public CHeapObj {
+class ImmutableSpace: public CHeapObj<mtGC> {
   friend class VMStructs;
  protected:
   HeapWord* _bottom;

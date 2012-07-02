@@ -55,7 +55,7 @@
 // and the tag value. In addition an entry includes a next pointer which
 // is used to chain entries together.
 
-class JvmtiTagHashmapEntry : public CHeapObj {
+class JvmtiTagHashmapEntry : public CHeapObj<mtInternal> {
  private:
   friend class JvmtiTagMap;
 
@@ -106,7 +106,7 @@ class JvmtiTagHashmapEntry : public CHeapObj {
 // entries. It also provides a function to iterate over all entries
 // in the hashmap.
 
-class JvmtiTagHashmap : public CHeapObj {
+class JvmtiTagHashmap : public CHeapObj<mtInternal> {
  private:
   friend class JvmtiTagMap;
 
@@ -150,7 +150,7 @@ class JvmtiTagHashmap : public CHeapObj {
     _resize_threshold = (int)(_load_factor * _size);
     _resizing_enabled = true;
     size_t s = initial_size * sizeof(JvmtiTagHashmapEntry*);
-    _table = (JvmtiTagHashmapEntry**)os::malloc(s);
+    _table = (JvmtiTagHashmapEntry**)os::malloc(s, mtInternal);
     if (_table == NULL) {
       vm_exit_out_of_memory(s, "unable to allocate initial hashtable for jvmti object tags");
     }
@@ -188,7 +188,7 @@ class JvmtiTagHashmap : public CHeapObj {
 
     // allocate new table
     size_t s = new_size * sizeof(JvmtiTagHashmapEntry*);
-    JvmtiTagHashmapEntry** new_table = (JvmtiTagHashmapEntry**)os::malloc(s);
+    JvmtiTagHashmapEntry** new_table = (JvmtiTagHashmapEntry**)os::malloc(s, mtInternal);
     if (new_table == NULL) {
       warning("unable to allocate larger hashtable for jvmti object tags");
       set_resizing_enabled(false);
@@ -776,7 +776,7 @@ jlong JvmtiTagMap::get_tag(jobject object) {
 // For each field it holds the field index (as defined by the JVMTI specification),
 // the field type, and the offset.
 
-class ClassFieldDescriptor: public CHeapObj {
+class ClassFieldDescriptor: public CHeapObj<mtInternal> {
  private:
   int _field_index;
   int _field_offset;
@@ -790,7 +790,7 @@ class ClassFieldDescriptor: public CHeapObj {
   int field_offset() const  { return _field_offset; }
 };
 
-class ClassFieldMap: public CHeapObj {
+class ClassFieldMap: public CHeapObj<mtInternal> {
  private:
   enum {
     initial_field_count = 5
@@ -821,7 +821,8 @@ class ClassFieldMap: public CHeapObj {
 };
 
 ClassFieldMap::ClassFieldMap() {
-  _fields = new (ResourceObj::C_HEAP) GrowableArray<ClassFieldDescriptor*>(initial_field_count, true);
+  _fields = new (ResourceObj::C_HEAP, mtInternal)
+    GrowableArray<ClassFieldDescriptor*>(initial_field_count, true);
 }
 
 ClassFieldMap::~ClassFieldMap() {
@@ -892,7 +893,7 @@ ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
 // heap iteration and avoid creating a field map for each object in the heap
 // (only need to create the map when the first instance of a class is encountered).
 //
-class JvmtiCachedClassFieldMap : public CHeapObj {
+class JvmtiCachedClassFieldMap : public CHeapObj<mtInternal> {
  private:
    enum {
      initial_class_count = 200
@@ -957,7 +958,8 @@ bool ClassFieldMapCacheMark::_is_active;
 // record that the given instanceKlass is caching a field map
 void JvmtiCachedClassFieldMap::add_to_class_list(instanceKlass* ik) {
   if (_class_list == NULL) {
-    _class_list = new (ResourceObj::C_HEAP) GrowableArray<instanceKlass*>(initial_class_count, true);
+    _class_list = new (ResourceObj::C_HEAP, mtInternal)
+      GrowableArray<instanceKlass*>(initial_class_count, true);
   }
   _class_list->push(ik);
 }
@@ -1526,8 +1528,8 @@ class TagObjectCollector : public JvmtiTagHashmapEntryClosure {
     _env = env;
     _tags = (jlong*)tags;
     _tag_count = tag_count;
-    _object_results = new (ResourceObj::C_HEAP) GrowableArray<jobject>(1,true);
-    _tag_results = new (ResourceObj::C_HEAP) GrowableArray<uint64_t>(1,true);
+    _object_results = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jobject>(1,true);
+    _tag_results = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<uint64_t>(1,true);
   }
 
   ~TagObjectCollector() {
@@ -1672,8 +1674,8 @@ void ObjectMarker::init() {
   Universe::heap()->ensure_parsability(false);  // no need to retire TLABs
 
   // create stacks for interesting headers
-  _saved_mark_stack = new (ResourceObj::C_HEAP) GrowableArray<markOop>(4000, true);
-  _saved_oop_stack = new (ResourceObj::C_HEAP) GrowableArray<oop>(4000, true);
+  _saved_mark_stack = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<markOop>(4000, true);
+  _saved_oop_stack = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<oop>(4000, true);
 
   if (UseBiasedLocking) {
     BiasedLocking::preserve_marks();
@@ -2712,7 +2714,7 @@ class VM_HeapWalkOperation: public VM_Operation {
   bool _reporting_string_values;
 
   GrowableArray<oop>* create_visit_stack() {
-    return new (ResourceObj::C_HEAP) GrowableArray<oop>(initial_visit_stack_size, true);
+    return new (ResourceObj::C_HEAP, mtInternal) GrowableArray<oop>(initial_visit_stack_size, true);
   }
 
   // accessors

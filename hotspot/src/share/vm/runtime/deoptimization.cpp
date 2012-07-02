@@ -101,7 +101,7 @@ Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
   _number_of_frames          = number_of_frames;
   _frame_sizes               = frame_sizes;
   _frame_pcs                 = frame_pcs;
-  _register_block            = NEW_C_HEAP_ARRAY(intptr_t, RegisterMap::reg_count * 2);
+  _register_block            = NEW_C_HEAP_ARRAY(intptr_t, RegisterMap::reg_count * 2, mtCompiler);
   _return_type               = return_type;
   _initial_info              = 0;
   // PD (x86 only)
@@ -114,9 +114,9 @@ Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
 
 
 Deoptimization::UnrollBlock::~UnrollBlock() {
-  FREE_C_HEAP_ARRAY(intptr_t, _frame_sizes);
-  FREE_C_HEAP_ARRAY(intptr_t, _frame_pcs);
-  FREE_C_HEAP_ARRAY(intptr_t, _register_block);
+  FREE_C_HEAP_ARRAY(intptr_t, _frame_sizes, mtCompiler);
+  FREE_C_HEAP_ARRAY(intptr_t, _frame_pcs, mtCompiler);
+  FREE_C_HEAP_ARRAY(intptr_t, _register_block, mtCompiler);
 }
 
 
@@ -358,9 +358,9 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   // Compute the vframes' sizes.  Note that frame_sizes[] entries are ordered from outermost to innermost
   // virtual activation, which is the reverse of the elements in the vframes array.
-  intptr_t* frame_sizes = NEW_C_HEAP_ARRAY(intptr_t, number_of_frames);
+  intptr_t* frame_sizes = NEW_C_HEAP_ARRAY(intptr_t, number_of_frames, mtCompiler);
   // +1 because we always have an interpreter return address for the final slot.
-  address* frame_pcs = NEW_C_HEAP_ARRAY(address, number_of_frames + 1);
+  address* frame_pcs = NEW_C_HEAP_ARRAY(address, number_of_frames + 1, mtCompiler);
   int popframe_extra_args = 0;
   // Create an interpreter return address for the stub to use as its return
   // address so the skeletal frames are perfectly walkable

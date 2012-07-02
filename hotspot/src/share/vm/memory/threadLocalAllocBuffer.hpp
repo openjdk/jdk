@@ -36,7 +36,7 @@ class GlobalTLABStats;
 //            It is thread-private at any time, but maybe multiplexed over
 //            time across multiple threads. The park()/unpark() pair is
 //            used to make it avaiable for such multiplexing.
-class ThreadLocalAllocBuffer: public CHeapObj {
+class ThreadLocalAllocBuffer: public CHeapObj<mtThread> {
   friend class VMStructs;
 private:
   HeapWord* _start;                              // address of TLAB
@@ -172,7 +172,7 @@ public:
   void verify();
 };
 
-class GlobalTLABStats: public CHeapObj {
+class GlobalTLABStats: public CHeapObj<mtThread> {
 private:
 
   // Accumulate perfdata in private variables because

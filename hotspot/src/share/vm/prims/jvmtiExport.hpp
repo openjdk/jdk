@@ -350,7 +350,7 @@ class JvmtiExport : public AllStatic {
 
 // Support class used by JvmtiDynamicCodeEventCollector and others. It
 // describes a single code blob by name and address range.
-class JvmtiCodeBlobDesc : public CHeapObj {
+class JvmtiCodeBlobDesc : public CHeapObj<mtInternal> {
  private:
   char _name[64];
   address _code_begin;

@@ -62,8 +62,8 @@ class ConcurrentMarkThread;
 class ConcurrentG1Refine;
 class GenerationCounters;
 
-typedef OverflowTaskQueue<StarTask>         RefToScanQueue;
-typedef GenericTaskQueueSet<RefToScanQueue> RefToScanQueueSet;
+typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
+typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
 
 typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
@@ -74,7 +74,7 @@ enum GCAllocPurpose {
   GCAllocPurposeCount
 };
 
-class YoungList : public CHeapObj {
+class YoungList : public CHeapObj<mtGC> {
 private:
   G1CollectedHeap* _g1h;
 
@@ -1772,7 +1772,7 @@ public:
   G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num);
 
   ~G1ParScanThreadState() {
-    FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
+    FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base, mtGC);
   }
 
   RefToScanQueue*   refs()            { return _refs;             }

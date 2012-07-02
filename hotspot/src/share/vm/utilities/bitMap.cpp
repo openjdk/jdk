@@ -65,8 +65,8 @@ void BitMap::resize(idx_t size_in_bits, bool in_resource_area) {
   if (in_resource_area) {
     _map = NEW_RESOURCE_ARRAY(bm_word_t, new_size_in_words);
   } else {
-    if (old_map != NULL) FREE_C_HEAP_ARRAY(bm_word_t, _map);
-    _map = NEW_C_HEAP_ARRAY(bm_word_t, new_size_in_words);
+    if (old_map != NULL) FREE_C_HEAP_ARRAY(bm_word_t, _map, mtInternal);
+    _map = NEW_C_HEAP_ARRAY(bm_word_t, new_size_in_words, mtInternal);
   }
   Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) _map,
                        MIN2(old_size_in_words, new_size_in_words));
@@ -469,7 +469,7 @@ BitMap::idx_t* BitMap::_pop_count_table = NULL;
 
 void BitMap::init_pop_count_table() {
   if (_pop_count_table == NULL) {
-    BitMap::idx_t *table = NEW_C_HEAP_ARRAY(idx_t, 256);
+    BitMap::idx_t *table = NEW_C_HEAP_ARRAY(idx_t, 256, mtInternal);
     for (uint i = 0; i < 256; i++) {
       table[i] = num_set_bits(i);
     }
@@ -479,7 +479,7 @@ void BitMap::init_pop_count_table() {
                                        (intptr_t)  NULL_WORD);
     if (res != NULL_WORD) {
       guarantee( _pop_count_table == (void*) res, "invariant" );
-      FREE_C_HEAP_ARRAY(bm_word_t, table);
+      FREE_C_HEAP_ARRAY(bm_word_t, table, mtInternal);
     }
   }
 }

@@ -108,7 +108,8 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   _num_q               = MAX2(1U, mt_processing_degree);
   _max_num_q           = MAX2(_num_q, mt_discovery_degree);
   _discovered_refs     = NEW_C_HEAP_ARRAY(DiscoveredList,
-                                          _max_num_q * number_of_subclasses_of_ref());
+            _max_num_q * number_of_subclasses_of_ref(), mtGC);
+
   if (_discovered_refs == NULL) {
     vm_exit_during_initialization("Could not allocated RefProc Array");
   }

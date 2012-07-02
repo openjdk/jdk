@@ -23,6 +23,7 @@
 */
 
 #include "prims/jvm.h"
+#include "runtime/frame.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/vmError.hpp"
 
@@ -59,6 +60,23 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
     }
   }
   VMError::report_coredump_status(buffer, success);
+}
+
+address os::get_caller_pc(int n) {
+#ifdef _NMT_NOINLINE_
+  n ++;
+#endif
+  frame fr = os::current_frame();
+  while (n > 0 && fr.pc() &&
+    !os::is_first_C_frame(&fr) && fr.sender_pc()) {
+    fr = os::get_sender_for_C_frame(&fr);
+    n --;
+  }
+  if (n == 0) {
+    return fr.pc();
+  } else {
+    return NULL;
+  }
 }
 
 int os::get_last_error() {

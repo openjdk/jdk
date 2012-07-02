@@ -43,7 +43,7 @@
 //
 // This serves as our best estimate of a future unknown.
 //
-class AdaptiveWeightedAverage : public CHeapObj {
+class AdaptiveWeightedAverage : public CHeapObj<mtGC> {
  private:
   float            _average;        // The last computed average
   unsigned         _sample_count;   // How often we've sampled this average
@@ -146,7 +146,7 @@ class AdaptivePaddedAverage : public AdaptiveWeightedAverage {
   // Placement support
   void* operator new(size_t ignored, void* p) { return p; }
   // Allocator
-  void* operator new(size_t size) { return CHeapObj::operator new(size); }
+  void* operator new(size_t size) { return CHeapObj<mtGC>::operator new(size); }
 
   // Accessor
   float padded_average() const         { return _padded_avg; }
@@ -192,7 +192,7 @@ public:
 // equation.
 //              y = intercept + slope * x
 
-class LinearLeastSquareFit : public CHeapObj {
+class LinearLeastSquareFit : public CHeapObj<mtGC> {
   double _sum_x;        // sum of all independent data points x
   double _sum_x_squared; // sum of all independent data points x**2
   double _sum_y;        // sum of all dependent data points y

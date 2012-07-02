@@ -30,8 +30,8 @@
 
 class G1CollectedHeap;
 class CMTask;
-typedef GenericTaskQueue<oop>            CMTaskQueue;
-typedef GenericTaskQueueSet<CMTaskQueue> CMTaskQueueSet;
+typedef GenericTaskQueue<oop, mtGC>            CMTaskQueue;
+typedef GenericTaskQueueSet<CMTaskQueue, mtGC> CMTaskQueueSet;
 
 // Closure used by CM during concurrent reference discovery
 // and reference processing (during remarking) to determine
@@ -343,7 +343,7 @@ public:
 
 class ConcurrentMarkThread;
 
-class ConcurrentMark : public CHeapObj {
+class ConcurrentMark: public CHeapObj<mtGC> {
   friend class ConcurrentMarkThread;
   friend class CMTask;
   friend class CMBitMapClosure;

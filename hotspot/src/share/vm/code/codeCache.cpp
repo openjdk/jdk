@@ -856,7 +856,7 @@ void CodeCache::print_internals() {
 
   int bucketSize = 512;
   int bucketLimit = maxCodeSize / bucketSize + 1;
-  int *buckets = NEW_C_HEAP_ARRAY(int, bucketLimit);
+  int *buckets = NEW_C_HEAP_ARRAY(int, bucketLimit, mtCode);
   memset(buckets,0,sizeof(int) * bucketLimit);
 
   for (cb = first(); cb != NULL; cb = next(cb)) {
@@ -893,7 +893,7 @@ void CodeCache::print_internals() {
     }
   }
 
-  FREE_C_HEAP_ARRAY(int, buckets);
+  FREE_C_HEAP_ARRAY(int, buckets, mtCode);
 }
 
 void CodeCache::print() {

@@ -41,7 +41,7 @@ public class BasicHashtableEntry extends VMObject {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("BasicHashtableEntry");
+    Type type = db.lookupType("BasicHashtableEntry<mtInternal>");
     hashField      = type.getCIntegerField("_hash");
     nextField      = type.getAddressField("_next");
   }

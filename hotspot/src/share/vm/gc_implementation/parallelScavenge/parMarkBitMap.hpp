@@ -32,7 +32,7 @@
 class oopDesc;
 class ParMarkBitMapClosure;
 
-class ParMarkBitMap: public CHeapObj
+class ParMarkBitMap: public CHeapObj<mtGC>
 {
 public:
   typedef BitMap::idx_t idx_t;

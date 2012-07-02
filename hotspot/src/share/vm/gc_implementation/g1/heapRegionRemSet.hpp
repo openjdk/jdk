@@ -165,7 +165,7 @@ public:
   static void print_from_card_cache();
 };
 
-class HeapRegionRemSet : public CHeapObj {
+class HeapRegionRemSet : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class HeapRegionRemSetIterator;
 
@@ -332,7 +332,7 @@ public:
 #endif
 };
 
-class HeapRegionRemSetIterator : public CHeapObj {
+class HeapRegionRemSetIterator : public CHeapObj<mtGC> {
 
   // The region over which we're iterating.
   const HeapRegionRemSet* _hrrs;

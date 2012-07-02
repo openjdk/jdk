@@ -764,7 +764,7 @@ jint universe_init() {
 
   FileMapInfo* mapinfo = NULL;
   if (UseSharedSpaces) {
-    mapinfo = NEW_C_HEAP_OBJ(FileMapInfo);
+    mapinfo = NEW_C_HEAP_OBJ(FileMapInfo, mtInternal);
     memset(mapinfo, 0, sizeof(FileMapInfo));
 
     // Open the shared archive file, read and validate the header. If
@@ -1546,7 +1546,7 @@ void ActiveMethodOopsCache::add_previous_version(const methodOop method) {
     // This is the first previous version so make some space.
     // Start with 2 elements under the assumption that the class
     // won't be redefined much.
-    _prev_methods = new (ResourceObj::C_HEAP) GrowableArray<jweak>(2, true);
+    _prev_methods = new (ResourceObj::C_HEAP, mtClass) GrowableArray<jweak>(2, true);
   }
 
   // RC_TRACE macro has an embedded ResourceMark
