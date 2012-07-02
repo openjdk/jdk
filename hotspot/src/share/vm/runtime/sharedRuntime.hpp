@@ -610,7 +610,7 @@ class SharedRuntime: AllStatic {
 // used by the adapters.  The code generation happens here because it's very
 // similar to what the adapters have to do.
 
-class AdapterHandlerEntry : public BasicHashtableEntry {
+class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
   friend class AdapterHandlerTable;
 
  private:
@@ -656,7 +656,7 @@ class AdapterHandlerEntry : public BasicHashtableEntry {
   AdapterFingerPrint* fingerprint()  { return _fingerprint; }
 
   AdapterHandlerEntry* next() {
-    return (AdapterHandlerEntry*)BasicHashtableEntry::next();
+    return (AdapterHandlerEntry*)BasicHashtableEntry<mtCode>::next();
   }
 
 #ifdef ASSERT

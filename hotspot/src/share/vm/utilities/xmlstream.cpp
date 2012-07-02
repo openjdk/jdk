@@ -43,7 +43,7 @@ void xmlStream::initialize(outputStream* out) {
 #ifdef ASSERT
   _element_depth = 0;
   int   init_len = 100;
-  char* init_buf = NEW_C_HEAP_ARRAY(char, init_len);
+  char* init_buf = NEW_C_HEAP_ARRAY(char, init_len, mtInternal);
   _element_close_stack_low  = init_buf;
   _element_close_stack_high = init_buf + init_len;
   _element_close_stack_ptr  = init_buf + init_len - 1;
@@ -58,7 +58,7 @@ void xmlStream::initialize(outputStream* out) {
 
 #ifdef ASSERT
 xmlStream::~xmlStream() {
-  FREE_C_HEAP_ARRAY(char, _element_close_stack_low);
+  FREE_C_HEAP_ARRAY(char, _element_close_stack_low, mtInternal);
 }
 #endif
 
@@ -155,14 +155,14 @@ void xmlStream::see_tag(const char* tag, bool push) {
     int old_len = _element_close_stack_high - old_ptr;
     int new_len = old_len * 2;
     if (new_len < 100)  new_len = 100;
-    char* new_low  = NEW_C_HEAP_ARRAY(char, new_len);
+    char* new_low  = NEW_C_HEAP_ARRAY(char, new_len, mtInternal);
     char* new_high = new_low + new_len;
     char* new_ptr  = new_high - old_len;
     memcpy(new_ptr, old_ptr, old_len);
     _element_close_stack_high = new_high;
     _element_close_stack_low  = new_low;
     _element_close_stack_ptr  = new_ptr;
-    FREE_C_HEAP_ARRAY(char, old_low);
+    FREE_C_HEAP_ARRAY(char, old_low, mtInternal);
     push_ptr = new_ptr - (tag_len+1);
   }
   assert(push_ptr >= _element_close_stack_low, "in range");

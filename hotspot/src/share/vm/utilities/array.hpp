@@ -79,7 +79,7 @@ class ResourceArray: public ResourceObj {
 };
 
 
-class CHeapArray: public CHeapObj {
+template <MEMFLAGS F>class CHeapArray: public CHeapObj<F> {
  protected:
   int   _length;                                 // the number of array elements
   void* _data;                                   // the array memory
@@ -94,7 +94,7 @@ class CHeapArray: public CHeapObj {
   CHeapArray(size_t esize, int length) {
     assert(length >= 0, "illegal length");
     _length  = length;
-    _data    = (void*) NEW_C_HEAP_ARRAY(char *, esize * length);
+    _data    = (void*) NEW_C_HEAP_ARRAY(char *, esize * length, F);
   }
 
 #ifdef ASSERT

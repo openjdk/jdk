@@ -29,6 +29,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "services/memTracker.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
 #endif
@@ -61,6 +62,9 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   ReservedSpace rs(bytes, rs_align, rs_align > 0);
   os::trace_page_sizes("par bitmap", raw_bytes, raw_bytes, page_sz,
                        rs.base(), rs.size());
+
+  MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
+
   _virtual_space = new PSVirtualSpace(rs, page_sz);
   if (_virtual_space != NULL && _virtual_space->expand_by(bytes)) {
     _region_start = covered_region.start();

@@ -67,7 +67,7 @@ void ResolutionErrorEntry::set_error(Symbol* e) {
 ResolutionErrorEntry* ResolutionErrorTable::new_entry(int hash, constantPoolOop pool,
                                                       int cp_index, Symbol* error)
 {
-  ResolutionErrorEntry* entry = (ResolutionErrorEntry*)Hashtable<constantPoolOop>::new_entry(hash, pool);
+  ResolutionErrorEntry* entry = (ResolutionErrorEntry*)Hashtable<constantPoolOop, mtClass>::new_entry(hash, pool);
   entry->set_cp_index(cp_index);
   NOT_PRODUCT(entry->set_error(NULL);)
   entry->set_error(error);
@@ -79,13 +79,13 @@ void ResolutionErrorTable::free_entry(ResolutionErrorEntry *entry) {
   // decrement error refcount
   assert(entry->error() != NULL, "error should be set");
   entry->error()->decrement_refcount();
-  Hashtable<constantPoolOop>::free_entry(entry);
+  Hashtable<constantPoolOop, mtClass>::free_entry(entry);
 }
 
 
 // create resolution error table
 ResolutionErrorTable::ResolutionErrorTable(int table_size)
-    : Hashtable<constantPoolOop>(table_size, sizeof(ResolutionErrorEntry)) {
+    : Hashtable<constantPoolOop, mtClass>(table_size, sizeof(ResolutionErrorEntry)) {
 }
 
 // GC support

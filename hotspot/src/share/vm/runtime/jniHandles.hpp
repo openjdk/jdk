@@ -109,7 +109,7 @@ class JNIHandles : AllStatic {
 
 // JNI handle blocks holding local/global JNI handles
 
-class JNIHandleBlock : public CHeapObj {
+class JNIHandleBlock : public CHeapObj<mtInternal> {
   friend class VMStructs;
   friend class CppInterpreter;
 

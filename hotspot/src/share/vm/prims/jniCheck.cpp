@@ -1308,7 +1308,7 @@ JNI_ENTRY_CHECKED(const jchar *,
     assert (isCopy == NULL || *isCopy == JNI_TRUE, "GetStringChars didn't return a copy as expected");
 
     size_t len = UNCHECKED()->GetStringLength(env,str) + 1; // + 1 for NULL termination
-    jint* tagLocation = (jint*) AllocateHeap(len * sizeof(jchar) + sizeof(jint), "checked_jni_GetStringChars");
+    jint* tagLocation = (jint*) AllocateHeap(len * sizeof(jchar) + sizeof(jint), mtInternal);
     *tagLocation = STRING_TAG;
     jchar* newResult = (jchar*) (tagLocation + 1);
     memcpy(newResult, result, len * sizeof(jchar));
@@ -1378,13 +1378,13 @@ JNI_ENTRY_CHECKED(const char *,
     assert (isCopy == NULL || *isCopy == JNI_TRUE, "GetStringUTFChars didn't return a copy as expected");
 
     size_t len = strlen(result) + 1; // + 1 for NULL termination
-    jint* tagLocation = (jint*) AllocateHeap(len + sizeof(jint), "checked_jni_GetStringUTFChars");
+    jint* tagLocation = (jint*) AllocateHeap(len + sizeof(jint), mtInternal);
     *tagLocation = STRING_UTF_TAG;
     char* newResult = (char*) (tagLocation + 1);
     strcpy(newResult, result);
     // Avoiding call to UNCHECKED()->ReleaseStringUTFChars() since that will fire unexpected dtrace probes
     // Note that the dtrace arguments for the allocated memory will not match up with this solution.
-    FreeHeap((char*)result);
+    FreeHeap((char*)result, mtInternal);
 
     functionExit(env);
     return newResult;

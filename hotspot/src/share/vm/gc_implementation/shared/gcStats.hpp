@@ -27,7 +27,7 @@
 
 #include "gc_implementation/shared/gcUtil.hpp"
 
-class GCStats : public CHeapObj {
+class GCStats : public CHeapObj<mtGC> {
  protected:
   // Avg amount promoted; used for avoiding promotion undo
   // This class does not update deviations if the sample is zero.

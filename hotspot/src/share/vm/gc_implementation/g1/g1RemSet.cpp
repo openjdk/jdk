@@ -75,7 +75,7 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
 {
   _seq_task = new SubTasksDone(NumSeqTasks);
   guarantee(n_workers() > 0, "There should be some workers");
-  _cset_rs_update_cl = NEW_C_HEAP_ARRAY(OopsInHeapRegionClosure*, n_workers());
+  _cset_rs_update_cl = NEW_C_HEAP_ARRAY(OopsInHeapRegionClosure*, n_workers(), mtGC);
   for (uint i = 0; i < n_workers(); i++) {
     _cset_rs_update_cl[i] = NULL;
   }
@@ -86,7 +86,7 @@ G1RemSet::~G1RemSet() {
   for (uint i = 0; i < n_workers(); i++) {
     assert(_cset_rs_update_cl[i] == NULL, "it should be");
   }
-  FREE_C_HEAP_ARRAY(OopsInHeapRegionClosure*, _cset_rs_update_cl);
+  FREE_C_HEAP_ARRAY(OopsInHeapRegionClosure*, _cset_rs_update_cl, mtGC);
 }
 
 void CountNonCleanMemRegionClosure::do_MemRegion(MemRegion mr) {
@@ -416,7 +416,7 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
     // _seq_task->set_n_termination((int)n_workers());
   }
   guarantee( _cards_scanned == NULL, "invariant" );
-  _cards_scanned = NEW_C_HEAP_ARRAY(size_t, n_workers());
+  _cards_scanned = NEW_C_HEAP_ARRAY(size_t, n_workers(), mtGC);
   for (uint i = 0; i < n_workers(); ++i) {
     _cards_scanned[i] = 0;
   }
@@ -487,7 +487,7 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   for (uint i = 0; i < n_workers(); ++i) {
     _total_cards_scanned += _cards_scanned[i];
   }
-  FREE_C_HEAP_ARRAY(size_t, _cards_scanned);
+  FREE_C_HEAP_ARRAY(size_t, _cards_scanned, mtGC);
   _cards_scanned = NULL;
   // Cleanup after copy
   _g1->set_refine_cte_cl_concurrency(true);

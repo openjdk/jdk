@@ -101,7 +101,7 @@ class Stub VALUE_OBJ_CLASS_SPEC {
 // of the concrete stub (see also macro below). There's exactly
 // one stub interface instance required per stub queue.
 
-class StubInterface: public CHeapObj {
+class StubInterface: public CHeapObj<mtCode> {
  public:
   // Initialization/finalization
   virtual void    initialize(Stub* self, int size)         = 0; // called after creation (called twice if allocated via (request, commit))
@@ -152,7 +152,7 @@ class StubInterface: public CHeapObj {
 // A StubQueue maintains a queue of stubs.
 // Note: All sizes (spaces) are given in bytes.
 
-class StubQueue: public CHeapObj {
+class StubQueue: public CHeapObj<mtCode> {
   friend class VMStructs;
  private:
   StubInterface* _stub_interface;                // the interface prototype

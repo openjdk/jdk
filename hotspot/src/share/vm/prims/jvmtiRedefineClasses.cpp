@@ -831,7 +831,7 @@ bool VM_RedefineClasses::is_unresolved_string_mismatch(constantPoolHandle cp1,
 jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
   // For consistency allocate memory using os::malloc wrapper.
   _scratch_classes = (instanceKlassHandle *)
-    os::malloc(sizeof(instanceKlassHandle) * _class_count);
+    os::malloc(sizeof(instanceKlassHandle) * _class_count, mtInternal);
   if (_scratch_classes == NULL) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }

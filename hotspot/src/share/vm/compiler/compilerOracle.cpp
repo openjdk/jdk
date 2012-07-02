@@ -34,7 +34,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 
-class MethodMatcher : public CHeapObj {
+class MethodMatcher : public CHeapObj<mtCompiler> {
  public:
   enum Mode {
     Exact,

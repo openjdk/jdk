@@ -36,16 +36,16 @@ int               Dictionary::_current_class_index =    0;
 
 
 Dictionary::Dictionary(int table_size)
-  : TwoOopHashtable<klassOop>(table_size, sizeof(DictionaryEntry)) {
+  : TwoOopHashtable<klassOop, mtClass>(table_size, sizeof(DictionaryEntry)) {
   _current_class_index = 0;
   _current_class_entry = NULL;
 };
 
 
 
-Dictionary::Dictionary(int table_size, HashtableBucket* t,
+Dictionary::Dictionary(int table_size, HashtableBucket<mtClass>* t,
                        int number_of_entries)
-  : TwoOopHashtable<klassOop>(table_size, sizeof(DictionaryEntry), t, number_of_entries) {
+  : TwoOopHashtable<klassOop, mtClass>(table_size, sizeof(DictionaryEntry), t, number_of_entries) {
   _current_class_index = 0;
   _current_class_entry = NULL;
 };
@@ -54,7 +54,7 @@ Dictionary::Dictionary(int table_size, HashtableBucket* t,
 DictionaryEntry* Dictionary::new_entry(unsigned int hash, klassOop klass,
                                        oop loader) {
   DictionaryEntry* entry;
-  entry = (DictionaryEntry*)Hashtable<klassOop>::new_entry(hash, klass);
+  entry = (DictionaryEntry*)Hashtable<klassOop, mtClass>::new_entry(hash, klass);
   entry->set_loader(loader);
   entry->set_pd_set(NULL);
   return entry;
@@ -62,7 +62,7 @@ DictionaryEntry* Dictionary::new_entry(unsigned int hash, klassOop klass,
 
 
 DictionaryEntry* Dictionary::new_entry() {
-  DictionaryEntry* entry = (DictionaryEntry*)Hashtable<klassOop>::new_entry(0L, NULL);
+  DictionaryEntry* entry = (DictionaryEntry*)Hashtable<klassOop, mtClass>::new_entry(0L, NULL);
   entry->set_loader(NULL);
   entry->set_pd_set(NULL);
   return entry;
@@ -76,7 +76,7 @@ void Dictionary::free_entry(DictionaryEntry* entry) {
     entry->set_pd_set(to_delete->next());
     delete to_delete;
   }
-  Hashtable<klassOop>::free_entry(entry);
+  Hashtable<klassOop, mtClass>::free_entry(entry);
 }
 
 
@@ -554,12 +554,12 @@ void Dictionary::reorder_dictionary() {
 }
 
 SymbolPropertyTable::SymbolPropertyTable(int table_size)
-  : Hashtable<Symbol*>(table_size, sizeof(SymbolPropertyEntry))
+  : Hashtable<Symbol*, mtSymbol>(table_size, sizeof(SymbolPropertyEntry))
 {
 }
-SymbolPropertyTable::SymbolPropertyTable(int table_size, HashtableBucket* t,
+SymbolPropertyTable::SymbolPropertyTable(int table_size, HashtableBucket<mtSymbol>* t,
                                          int number_of_entries)
-  : Hashtable<Symbol*>(table_size, sizeof(SymbolPropertyEntry), t, number_of_entries)
+  : Hashtable<Symbol*, mtSymbol>(table_size, sizeof(SymbolPropertyEntry), t, number_of_entries)
 {
 }
 
@@ -584,7 +584,7 @@ SymbolPropertyEntry* SymbolPropertyTable::add_entry(int index, unsigned int hash
   assert(find_entry(index, hash, sym, sym_mode) == NULL, "no double entry");
 
   SymbolPropertyEntry* p = new_entry(hash, sym, sym_mode);
-  Hashtable<Symbol*>::add_entry(index, p);
+  Hashtable<Symbol*, mtSymbol>::add_entry(index, p);
   return p;
 }
 

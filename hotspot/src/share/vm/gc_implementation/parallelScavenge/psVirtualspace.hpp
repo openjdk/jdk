@@ -32,7 +32,7 @@
 // VirtualSpace is data structure for committing a previously reserved address
 // range in smaller chunks.
 
-class PSVirtualSpace : public CHeapObj {
+class PSVirtualSpace : public CHeapObj<mtGC> {
   friend class VMStructs;
  protected:
   // The space is committed/uncommited in chunks of size _alignment.  The

@@ -55,7 +55,7 @@ Compiler::~Compiler() {
 
 void Compiler::initialize_all() {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  Arena* arena = new Arena();
+  Arena* arena = new (mtCompiler) Arena();
   Runtime1::initialize(buffer_blob);
   FrameMap::initialize();
   // initialize data structures

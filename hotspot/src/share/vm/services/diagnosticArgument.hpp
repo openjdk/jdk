@@ -31,17 +31,17 @@
 #include "runtime/thread.hpp"
 #include "utilities/exceptions.hpp"
 
-class StringArrayArgument : public CHeapObj {
+class StringArrayArgument : public CHeapObj<mtInternal> {
 private:
   GrowableArray<char*>* _array;
 public:
   StringArrayArgument() {
-    _array = new(ResourceObj::C_HEAP)GrowableArray<char *>(32, true);
+    _array = new(ResourceObj::C_HEAP, mtInternal)GrowableArray<char *>(32, true);
     assert(_array != NULL, "Sanity check");
   }
   void add(const char* str, size_t len) {
     if (str != NULL) {
-      char* ptr = NEW_C_HEAP_ARRAY(char, len+1);
+      char* ptr = NEW_C_HEAP_ARRAY(char, len+1, mtInternal);
       strncpy(ptr, str, len);
       ptr[len] = 0;
       _array->append(ptr);
@@ -53,7 +53,7 @@ public:
   ~StringArrayArgument() {
     for (int i=0; i<_array->length(); i++) {
       if(_array->at(i) != NULL) { // Safety check
-        FREE_C_HEAP_ARRAY(char, _array->at(i));
+        FREE_C_HEAP_ARRAY(char, _array->at(i), mtInternal);
       }
     }
     delete _array;

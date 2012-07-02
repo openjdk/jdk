@@ -23,7 +23,6 @@
  */
 
 provider hs_private {
-  probe hashtable__new_entry(void*, uintptr_t, void*); 
   probe safepoint__begin();
   probe safepoint__end();
   probe cms__initmark__begin();

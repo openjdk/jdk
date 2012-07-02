@@ -120,7 +120,7 @@ static void save_memory_to_file(char* addr, size_t size) {
     }
   }
 
-  FREE_C_HEAP_ARRAY(char, destfile);
+  FREE_C_HEAP_ARRAY(char, destfile, mtInternal);
 }
 
 // Shared Memory Implementation Details
@@ -157,7 +157,7 @@ static char* get_user_tmp_dir(const char* user) {
   const char* tmpdir = os::get_temp_directory();
   const char* perfdir = PERFDATA_NAME;
   size_t nbytes = strlen(tmpdir) + strlen(perfdir) + strlen(user) + 3;
-  char* dirname = NEW_C_HEAP_ARRAY(char, nbytes);
+  char* dirname = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
 
   // construct the path name to user specific tmp directory
   _snprintf(dirname, nbytes, "%s\\%s_%s", tmpdir, perfdir, user);
@@ -281,7 +281,7 @@ static char* get_user_name() {
     }
   }
 
-  char* user_name = NEW_C_HEAP_ARRAY(char, strlen(user)+1);
+  char* user_name = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
   strcpy(user_name, user);
 
   return user_name;
@@ -315,7 +315,7 @@ static char* get_user_name_slow(int vmid) {
   // to determine the user name for the process id.
   //
   struct dirent* dentry;
-  char* tdbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(tmpdirname));
+  char* tdbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(tmpdirname), mtInternal);
   errno = 0;
   while ((dentry = os::readdir(tmpdirp, (struct dirent *)tdbuf)) != NULL) {
 
@@ -325,7 +325,7 @@ static char* get_user_name_slow(int vmid) {
     }
 
     char* usrdir_name = NEW_C_HEAP_ARRAY(char,
-                              strlen(tmpdirname) + strlen(dentry->d_name) + 2);
+        strlen(tmpdirname) + strlen(dentry->d_name) + 2, mtInternal);
     strcpy(usrdir_name, tmpdirname);
     strcat(usrdir_name, "\\");
     strcat(usrdir_name, dentry->d_name);
@@ -333,7 +333,7 @@ static char* get_user_name_slow(int vmid) {
     DIR* subdirp = os::opendir(usrdir_name);
 
     if (subdirp == NULL) {
-      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      FREE_C_HEAP_ARRAY(char, usrdir_name, mtInternal);
       continue;
     }
 
@@ -344,13 +344,13 @@ static char* get_user_name_slow(int vmid) {
     // symlink can be exploited.
     //
     if (!is_directory_secure(usrdir_name)) {
-      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      FREE_C_HEAP_ARRAY(char, usrdir_name, mtInternal);
       os::closedir(subdirp);
       continue;
     }
 
     struct dirent* udentry;
-    char* udbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(usrdir_name));
+    char* udbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(usrdir_name), mtInternal);
     errno = 0;
     while ((udentry = os::readdir(subdirp, (struct dirent *)udbuf)) != NULL) {
 
@@ -358,20 +358,20 @@ static char* get_user_name_slow(int vmid) {
         struct stat statbuf;
 
         char* filename = NEW_C_HEAP_ARRAY(char,
-                            strlen(usrdir_name) + strlen(udentry->d_name) + 2);
+           strlen(usrdir_name) + strlen(udentry->d_name) + 2, mtInternal);
 
         strcpy(filename, usrdir_name);
         strcat(filename, "\\");
         strcat(filename, udentry->d_name);
 
         if (::stat(filename, &statbuf) == OS_ERR) {
-           FREE_C_HEAP_ARRAY(char, filename);
+           FREE_C_HEAP_ARRAY(char, filename, mtInternal);
            continue;
         }
 
         // skip over files that are not regular files.
         if ((statbuf.st_mode & S_IFMT) != S_IFREG) {
-          FREE_C_HEAP_ARRAY(char, filename);
+          FREE_C_HEAP_ARRAY(char, filename, mtInternal);
           continue;
         }
 
@@ -393,22 +393,22 @@ static char* get_user_name_slow(int vmid) {
         if (statbuf.st_ctime > latest_ctime) {
           char* user = strchr(dentry->d_name, '_') + 1;
 
-          if (latest_user != NULL) FREE_C_HEAP_ARRAY(char, latest_user);
-          latest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1);
+          if (latest_user != NULL) FREE_C_HEAP_ARRAY(char, latest_user, mtInternal);
+          latest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
 
           strcpy(latest_user, user);
           latest_ctime = statbuf.st_ctime;
         }
 
-        FREE_C_HEAP_ARRAY(char, filename);
+        FREE_C_HEAP_ARRAY(char, filename, mtInternal);
       }
     }
     os::closedir(subdirp);
-    FREE_C_HEAP_ARRAY(char, udbuf);
-    FREE_C_HEAP_ARRAY(char, usrdir_name);
+    FREE_C_HEAP_ARRAY(char, udbuf, mtInternal);
+    FREE_C_HEAP_ARRAY(char, usrdir_name, mtInternal);
   }
   os::closedir(tmpdirp);
-  FREE_C_HEAP_ARRAY(char, tdbuf);
+  FREE_C_HEAP_ARRAY(char, tdbuf, mtInternal);
 
   return(latest_user);
 }
@@ -453,7 +453,7 @@ static char *get_sharedmem_objectname(const char* user, int vmid) {
   // about a name containing a '-' characters.
   //
   nbytes += UINT_CHARS;
-  char* name = NEW_C_HEAP_ARRAY(char, nbytes);
+  char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
   _snprintf(name, nbytes, "%s_%s_%u", PERFDATA_NAME, user, vmid);
 
   return name;
@@ -469,7 +469,7 @@ static char* get_sharedmem_filename(const char* dirname, int vmid) {
   // add 2 for the file separator and a null terminator.
   size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
 
-  char* name = NEW_C_HEAP_ARRAY(char, nbytes);
+  char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
   _snprintf(name, nbytes, "%s\\%d", dirname, vmid);
 
   return name;
@@ -485,7 +485,7 @@ static char* get_sharedmem_filename(const char* dirname, int vmid) {
 static void remove_file(const char* dirname, const char* filename) {
 
   size_t nbytes = strlen(dirname) + strlen(filename) + 2;
-  char* path = NEW_C_HEAP_ARRAY(char, nbytes);
+  char* path = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
 
   strcpy(path, dirname);
   strcat(path, "\\");
@@ -500,7 +500,7 @@ static void remove_file(const char* dirname, const char* filename) {
     }
   }
 
-  FREE_C_HEAP_ARRAY(char, path);
+  FREE_C_HEAP_ARRAY(char, path, mtInternal);
 }
 
 // returns true if the process represented by pid is alive, otherwise
@@ -638,7 +638,7 @@ static void cleanup_sharedmem_resources(const char* dirname) {
   // opendir/readdir.
   //
   struct dirent* entry;
-  char* dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(dirname));
+  char* dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(dirname), mtInternal);
   errno = 0;
   while ((entry = os::readdir(dirp, (struct dirent *)dbuf)) != NULL) {
 
@@ -681,7 +681,7 @@ static void cleanup_sharedmem_resources(const char* dirname) {
     errno = 0;
   }
   os::closedir(dirp);
-  FREE_C_HEAP_ARRAY(char, dbuf);
+  FREE_C_HEAP_ARRAY(char, dbuf, mtInternal);
 }
 
 // create a file mapping object with the requested name, and size
@@ -747,11 +747,11 @@ static void free_security_desc(PSECURITY_DESCRIPTOR pSD) {
     // be an ACL we enlisted. free the resources.
     //
     if (success && exists && pACL != NULL && !isdefault) {
-      FREE_C_HEAP_ARRAY(char, pACL);
+      FREE_C_HEAP_ARRAY(char, pACL, mtInternal);
     }
 
     // free the security descriptor
-    FREE_C_HEAP_ARRAY(char, pSD);
+    FREE_C_HEAP_ARRAY(char, pSD, mtInternal);
   }
 }
 
@@ -766,7 +766,7 @@ static void free_security_attr(LPSECURITY_ATTRIBUTES lpSA) {
     lpSA->lpSecurityDescriptor = NULL;
 
     // free the security attributes structure
-    FREE_C_HEAP_ARRAY(char, lpSA);
+    FREE_C_HEAP_ARRAY(char, lpSA, mtInternal);
   }
 }
 
@@ -805,7 +805,7 @@ static PSID get_user_sid(HANDLE hProcess) {
     }
   }
 
-  token_buf = (PTOKEN_USER) NEW_C_HEAP_ARRAY(char, rsize);
+  token_buf = (PTOKEN_USER) NEW_C_HEAP_ARRAY(char, rsize, mtInternal);
 
   // get the user token information
   if (!GetTokenInformation(hAccessToken, TokenUser, token_buf, rsize, &rsize)) {
@@ -813,28 +813,28 @@ static PSID get_user_sid(HANDLE hProcess) {
       warning("GetTokenInformation failure: lasterror = %d,"
               " rsize = %d\n", GetLastError(), rsize);
     }
-    FREE_C_HEAP_ARRAY(char, token_buf);
+    FREE_C_HEAP_ARRAY(char, token_buf, mtInternal);
     CloseHandle(hAccessToken);
     return NULL;
   }
 
   DWORD nbytes = GetLengthSid(token_buf->User.Sid);
-  PSID pSID = NEW_C_HEAP_ARRAY(char, nbytes);
+  PSID pSID = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
 
   if (!CopySid(nbytes, pSID, token_buf->User.Sid)) {
     if (PrintMiscellaneous && Verbose) {
       warning("GetTokenInformation failure: lasterror = %d,"
               " rsize = %d\n", GetLastError(), rsize);
     }
-    FREE_C_HEAP_ARRAY(char, token_buf);
-    FREE_C_HEAP_ARRAY(char, pSID);
+    FREE_C_HEAP_ARRAY(char, token_buf, mtInternal);
+    FREE_C_HEAP_ARRAY(char, pSID, mtInternal);
     CloseHandle(hAccessToken);
     return NULL;
   }
 
   // close the access token.
   CloseHandle(hAccessToken);
-  FREE_C_HEAP_ARRAY(char, token_buf);
+  FREE_C_HEAP_ARRAY(char, token_buf, mtInternal);
 
   return pSID;
 }
@@ -912,13 +912,13 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
   }
 
   // create the new ACL
-  newACL = (PACL) NEW_C_HEAP_ARRAY(char, newACLsize);
+  newACL = (PACL) NEW_C_HEAP_ARRAY(char, newACLsize, mtInternal);
 
   if (!InitializeAcl(newACL, newACLsize, ACL_REVISION)) {
     if (PrintMiscellaneous && Verbose) {
       warning("InitializeAcl failure: lasterror = %d \n", GetLastError());
     }
-    FREE_C_HEAP_ARRAY(char, newACL);
+    FREE_C_HEAP_ARRAY(char, newACL, mtInternal);
     return false;
   }
 
@@ -931,7 +931,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
         if (PrintMiscellaneous && Verbose) {
           warning("InitializeAcl failure: lasterror = %d \n", GetLastError());
         }
-        FREE_C_HEAP_ARRAY(char, newACL);
+        FREE_C_HEAP_ARRAY(char, newACL, mtInternal);
         return false;
       }
       if (((ACCESS_ALLOWED_ACE *)ace)->Header.AceFlags && INHERITED_ACE) {
@@ -958,7 +958,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
           if (PrintMiscellaneous && Verbose) {
             warning("AddAce failure: lasterror = %d \n", GetLastError());
           }
-          FREE_C_HEAP_ARRAY(char, newACL);
+          FREE_C_HEAP_ARRAY(char, newACL, mtInternal);
           return false;
         }
       }
@@ -974,7 +974,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
         warning("AddAccessAllowedAce failure: lasterror = %d \n",
                 GetLastError());
       }
-      FREE_C_HEAP_ARRAY(char, newACL);
+      FREE_C_HEAP_ARRAY(char, newACL, mtInternal);
       return false;
     }
   }
@@ -989,7 +989,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
         if (PrintMiscellaneous && Verbose) {
           warning("InitializeAcl failure: lasterror = %d \n", GetLastError());
         }
-        FREE_C_HEAP_ARRAY(char, newACL);
+        FREE_C_HEAP_ARRAY(char, newACL, mtInternal);
         return false;
       }
       if (!AddAce(newACL, ACL_REVISION, MAXDWORD, ace,
@@ -997,7 +997,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
         if (PrintMiscellaneous && Verbose) {
           warning("AddAce failure: lasterror = %d \n", GetLastError());
         }
-        FREE_C_HEAP_ARRAY(char, newACL);
+        FREE_C_HEAP_ARRAY(char, newACL, mtInternal);
         return false;
       }
       ace_index++;
@@ -1010,7 +1010,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
       warning("SetSecurityDescriptorDacl failure:"
               " lasterror = %d \n", GetLastError());
     }
-    FREE_C_HEAP_ARRAY(char, newACL);
+    FREE_C_HEAP_ARRAY(char, newACL, mtInternal);
     return false;
   }
 
@@ -1030,7 +1030,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
         warning("SetSecurityDescriptorControl failure:"
                 " lasterror = %d \n", GetLastError());
       }
-      FREE_C_HEAP_ARRAY(char, newACL);
+      FREE_C_HEAP_ARRAY(char, newACL, mtInternal);
       return false;
     }
   }
@@ -1054,7 +1054,7 @@ static LPSECURITY_ATTRIBUTES make_security_attr(ace_data_t aces[], int count) {
 
   // allocate space for a security descriptor
   PSECURITY_DESCRIPTOR pSD = (PSECURITY_DESCRIPTOR)
-                         NEW_C_HEAP_ARRAY(char, SECURITY_DESCRIPTOR_MIN_LENGTH);
+     NEW_C_HEAP_ARRAY(char, SECURITY_DESCRIPTOR_MIN_LENGTH, mtInternal);
 
   // initialize the security descriptor
   if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION)) {
@@ -1076,7 +1076,7 @@ static LPSECURITY_ATTRIBUTES make_security_attr(ace_data_t aces[], int count) {
   // return it to the caller.
   //
   LPSECURITY_ATTRIBUTES lpSA = (LPSECURITY_ATTRIBUTES)
-                            NEW_C_HEAP_ARRAY(char, sizeof(SECURITY_ATTRIBUTES));
+    NEW_C_HEAP_ARRAY(char, sizeof(SECURITY_ATTRIBUTES), mtInternal);
   lpSA->nLength = sizeof(SECURITY_ATTRIBUTES);
   lpSA->lpSecurityDescriptor = pSD;
   lpSA->bInheritHandle = FALSE;
@@ -1147,7 +1147,7 @@ static LPSECURITY_ATTRIBUTES make_user_everybody_admin_security_attr(
   // create a security attributes structure with access control
   // entries as initialized above.
   LPSECURITY_ATTRIBUTES lpSA = make_security_attr(aces, 3);
-  FREE_C_HEAP_ARRAY(char, aces[0].pSid);
+  FREE_C_HEAP_ARRAY(char, aces[0].pSid, mtInternal);
   FreeSid(everybodySid);
   FreeSid(administratorsSid);
   return(lpSA);
@@ -1462,15 +1462,15 @@ static char* mapping_create_shared(size_t size) {
   assert(((size != 0) && (size % os::vm_page_size() == 0)),
          "unexpected PerfMemry region size");
 
-  FREE_C_HEAP_ARRAY(char, user);
+  FREE_C_HEAP_ARRAY(char, user, mtInternal);
 
   // create the shared memory resources
   sharedmem_fileMapHandle =
                create_sharedmem_resources(dirname, filename, objectname, size);
 
-  FREE_C_HEAP_ARRAY(char, filename);
-  FREE_C_HEAP_ARRAY(char, objectname);
-  FREE_C_HEAP_ARRAY(char, dirname);
+  FREE_C_HEAP_ARRAY(char, filename, mtInternal);
+  FREE_C_HEAP_ARRAY(char, objectname, mtInternal);
+  FREE_C_HEAP_ARRAY(char, dirname, mtInternal);
 
   if (sharedmem_fileMapHandle == NULL) {
     return NULL;
@@ -1621,7 +1621,7 @@ static void open_file_mapping(const char* user, int vmid,
   // store file, we also don't following them when attaching
   //
   if (!is_directory_secure(dirname)) {
-    FREE_C_HEAP_ARRAY(char, dirname);
+    FREE_C_HEAP_ARRAY(char, dirname, mtInternal);
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Process not found");
   }
@@ -1640,10 +1640,10 @@ static void open_file_mapping(const char* user, int vmid,
   strcpy(robjectname, objectname);
 
   // free the c heap resources that are no longer needed
-  if (luser != user) FREE_C_HEAP_ARRAY(char, luser);
-  FREE_C_HEAP_ARRAY(char, dirname);
-  FREE_C_HEAP_ARRAY(char, filename);
-  FREE_C_HEAP_ARRAY(char, objectname);
+  if (luser != user) FREE_C_HEAP_ARRAY(char, luser, mtInternal);
+  FREE_C_HEAP_ARRAY(char, dirname, mtInternal);
+  FREE_C_HEAP_ARRAY(char, filename, mtInternal);
+  FREE_C_HEAP_ARRAY(char, objectname, mtInternal);
 
   if (*sizep == 0) {
     size = sharedmem_filesize(rfilename, CHECK);

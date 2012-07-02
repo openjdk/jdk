@@ -90,7 +90,7 @@ protected:
   void set_is_working(bool v) { _is_working = v; }
 };
 
-class GCTaskTimeStamp : public CHeapObj
+class GCTaskTimeStamp : public CHeapObj<mtGC>
 {
  private:
   jlong  _entry_time;

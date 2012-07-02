@@ -32,7 +32,7 @@
 // A CSpaceCounters is a holder class for performance counters
 // that track a space;
 
-class CSpaceCounters: public CHeapObj {
+class CSpaceCounters: public CHeapObj<mtGC> {
   friend class VMStructs;
 
  private:
@@ -52,7 +52,7 @@ class CSpaceCounters: public CHeapObj {
                  ContiguousSpace* s, GenerationCounters* gc);
 
   ~CSpaceCounters() {
-      if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
+      if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space, mtInternal);
   }
 
   inline void update_capacity() {

@@ -27,6 +27,7 @@
 #include "memory/space.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "services/memTracker.hpp"
 
 //////////////////////////////////////////////////////////////////////
 // G1BlockOffsetSharedArray
@@ -44,6 +45,9 @@ G1BlockOffsetSharedArray::G1BlockOffsetSharedArray(MemRegion reserved,
   if (!_vs.initialize(rs, 0)) {
     vm_exit_during_initialization("Could not reserve enough space for heap offset array");
   }
+
+  MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
+
   _offset_array = (u_char*)_vs.low_boundary();
   resize(init_word_size);
   if (TraceBlockOffsetTable) {
