@@ -2026,6 +2026,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
     }
 
+    @SuppressWarnings("fallthrough")
     /**
      * Parsing of sequences between alternations.
      */
@@ -2140,6 +2141,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         return head;
     }
 
+    @SuppressWarnings("fallthrough")
     /**
      * Parse and add a new Single or Slice.
      */
@@ -2978,6 +2980,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         return head;
     }
 
+    @SuppressWarnings("fallthrough")
     /**
      * Parses inlined match flags and set them appropriately.
      */
@@ -3019,6 +3022,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
     }
 
+    @SuppressWarnings("fallthrough")
     /**
      * Parses the second part of inlined match flags and turns off
      * flags appropriately.
