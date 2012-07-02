@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,16 +392,16 @@ void Relocator::change_jumps(int break_bci, int delta) {
 // The width of instruction at "pc" is changing by "delta".  Adjust the
 // exception table, if any, of "rc->mb".
 void Relocator::adjust_exception_table(int bci, int delta) {
-  typeArrayOop table = method()->exception_table();
-  for (int index = 0; index < table->length(); index +=4) {
-    if (table->int_at(index) > bci) {
-      table->int_at_put(index+0, table->int_at(index+0) + delta);
-      table->int_at_put(index+1, table->int_at(index+1) + delta);
-    } else if (bci < table->int_at(index+1)) {
-      table->int_at_put(index+1, table->int_at(index+1) + delta);
+  ExceptionTable table(_method());
+  for (int index = 0; index < table.length(); index ++) {
+    if (table.start_pc(index) > bci) {
+      table.set_start_pc(index, table.start_pc(index) + delta);
+      table.set_end_pc(index, table.end_pc(index) + delta);
+    } else if (bci < table.end_pc(index)) {
+      table.set_end_pc(index, table.end_pc(index) + delta);
     }
-    if (table->int_at(index+2) > bci)
-      table->int_at_put(index+2, table->int_at(index+2) + delta);
+    if (table.handler_pc(index) > bci)
+      table.set_handler_pc(index, table.handler_pc(index) + delta);
   }
 }
 
