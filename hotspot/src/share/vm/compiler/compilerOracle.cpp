@@ -550,10 +550,12 @@ void CompilerOracle::parse_from_line(char* line) {
   }
 }
 
+static const char* default_cc_file = ".hotspot_compiler";
+
 static const char* cc_file() {
 #ifdef ASSERT
   if (CompileCommandFile == NULL)
-    return ".hotspot_compiler";
+    return default_cc_file;
 #endif
   return CompileCommandFile;
 }
@@ -636,10 +638,17 @@ void compilerOracle_init() {
   CompilerOracle::parse_from_string(CompileOnly, CompilerOracle::parse_compile_only);
   if (CompilerOracle::has_command_file()) {
     CompilerOracle::parse_from_file();
+  } else {
+    struct stat buf;
+    if (os::stat(default_cc_file, &buf) == 0) {
+      warning("%s file is present but has been ignored.  "
+              "Run with -XX:CompileCommandFile=%s to load the file.",
+              default_cc_file, default_cc_file);
+    }
   }
   if (lists[PrintCommand] != NULL) {
     if (PrintAssembly) {
-      warning("CompileCommand and/or .hotspot_compiler file contains 'print' commands, but PrintAssembly is also enabled");
+      warning("CompileCommand and/or %s file contains 'print' commands, but PrintAssembly is also enabled", default_cc_file);
     } else if (FLAG_IS_DEFAULT(DebugNonSafepoints)) {
       warning("printing of assembly code is enabled; turning on DebugNonSafepoints to gain additional output");
       DebugNonSafepoints = true;

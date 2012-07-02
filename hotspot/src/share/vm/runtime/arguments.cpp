@@ -2971,7 +2971,10 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   const char* tail;
 
   // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
+  const char* hotspotrc = ".hotspotrc";
   bool settings_file_specified = false;
+  bool needs_hotspotrc_warning = false;
+
   const char* flags_file;
   int index;
   for (index = 0; index < args->nOptions; index++) {
@@ -3015,16 +3018,19 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     if (!process_settings_file(flags_file, true, args->ignoreUnrecognized)) {
       return JNI_EINVAL;
     }
-  }
-
+  } else {
 #ifdef ASSERT
-  // Parse default .hotspotrc settings file
-  if (!settings_file_specified) {
+    // Parse default .hotspotrc settings file
     if (!process_settings_file(".hotspotrc", false, args->ignoreUnrecognized)) {
       return JNI_EINVAL;
     }
-  }
+#else
+    struct stat buf;
+    if (os::stat(hotspotrc, &buf) == 0) {
+      needs_hotspotrc_warning = true;
+    }
 #endif
+  }
 
   if (PrintVMOptions) {
     for (index = 0; index < args->nOptions; index++) {
@@ -3039,6 +3045,14 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   jint result = parse_vm_init_args(args);
   if (result != JNI_OK) {
     return result;
+  }
+
+  // Delay warning until here so that we've had a chance to process
+  // the -XX:-PrintWarnings flag
+  if (needs_hotspotrc_warning) {
+    warning("%s file is present but has been ignored.  "
+            "Run with -XX:Flags=%s to load the file.",
+            hotspotrc, hotspotrc);
   }
 
 #if (defined JAVASE_EMBEDDED || defined ARM)
