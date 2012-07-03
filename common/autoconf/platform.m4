@@ -23,272 +23,59 @@
 # questions.
 #
 
-AC_DEFUN([CHECK_FIND_DELETE],
-[
-    # Test if find supports -delete
-    AC_MSG_CHECKING([if find supports -delete])
-    FIND_DELETE="-delete"
-
-    DELETEDIR=`mktemp -d tmp.XXXXXXXXXX` || (echo Could not create temporary directory!; exit $?)
-
-    echo Hejsan > $DELETEDIR/TestIfFindSupportsDelete
-
-    TEST_DELETE=`$FIND "$DELETEDIR" -name TestIfFindSupportsDelete $FIND_DELETE 2>&1`
-    if test -f $DELETEDIR/TestIfFindSupportsDelete; then
-        # No, it does not.
-        rm $DELETEDIR/TestIfFindSupportsDelete
-        FIND_DELETE="-exec rm \{\} \+"
-        AC_MSG_RESULT([no])    
-    else
-        AC_MSG_RESULT([yes])    
-    fi
-    rmdir $DELETEDIR
-])
-
-AC_DEFUN([CHECK_NONEMPTY],
-[
-    # Test that variable $1 is not empty.
-    if test "" = "[$]$1"; then AC_MSG_ERROR(Could not find translit($1,A-Z,a-z) !); fi
-])
-
-AC_DEFUN([ADD_JVM_ARG_IF_OK],
-[
-    # Test if $1 is a valid argument to $3 (often is $JAVA passed as $3)
-    # If so, then append $1 to $2
-    FOUND_WARN=`$3 $1 -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$3 $1 -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        $2="[$]$2 $1"
-    fi
-])
-
-AC_DEFUN([WHICHCMD],
-[
-    # Translate "gcc -E" into "`which gcc` -E" ie
-    # extract the full path to the binary and at the
-    # same time maintain any arguments passed to it.
-    # The command MUST exist in the path, or else!
-    tmp="[$]$1"
-    car="${tmp%% *}"
-    tmp="[$]$1 EOL"
-    cdr="${tmp#* }"
-    # On windows we want paths without spaces.
-    if test "x$BUILD_OS" = "xwindows"; then
-        WHICHCMD_SPACESAFE(car)
-    else
-        # "which" is not portable, but is used here
-        # because we know that the command exists!
-        car=`which $car`
-    fi
-    if test "x$cdr" != xEOL; then
-        $1="$car ${cdr% *}"
-    else
-        $1="$car"
-    fi
-])
-
-AC_DEFUN([SPACESAFE],
-[
-    # Fail with message $2 if var $1 contains a path with no spaces in it.
-    # Unless on Windows, where we can rewrite the path.
-    HAS_SPACE=`echo "[$]$1" | grep " "`
-    if test "x$HAS_SPACE" != x; then
-        if test "x$BUILD_OS" = "xwindows"; then
-            $1=`$CYGPATH -s -m -a "[$]$1"`
-            $1=`$CYGPATH -u "[$]$1"`            
-        else
-            AC_MSG_ERROR([You cannot have spaces in $2! "[$]$1"])
-        fi
-    fi
-])
-
-AC_DEFUN([WHICHCMD_SPACESAFE],
-[
-    # Translate long cygdrive or C:\sdfsf path
-    # into a short mixed mode path that has no
-    # spaces in it.
-    tmp="[$]$1"
-    if test "x$BUILD_OS" = "xwindows"; then
-        tmp=`$CYGPATH -u "[$]$1"`
-        tmp=`which "$tmp"`
-        # If file exists with .exe appended, that's the real filename
-        # and cygpath needs that to convert to short style path.
-        if test -f "${tmp}.exe"; then
-           tmp="${tmp}.exe"
-        elif test -f "${tmp}.cmd"; then
-           tmp="${tmp}.cmd"
-        fi
-        # Convert to C:/ mixed style path without spaces.
-         tmp=`$CYGPATH -s -m "$tmp"`
-    fi
-    $1="$tmp"
-])
-
-AC_DEFUN([REMOVE_SYMBOLIC_LINKS],
-[
-    if test "x$BUILD_OS" != xwindows; then
-        # Follow a chain of symbolic links. Use readlink
-        # where it exists, else fall back to horribly
-        # complicated shell code.
-        AC_PATH_PROG(READLINK, readlink)
-        if test "x$READLINK_TESTED" != yes; then
-            # On MacOSX there is a readlink tool with a different
-            # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | grep GNU`
-            if test "x$ISGNU" = x; then
-                 # A readlink that we do not know how to use.
-                 # Are there other non-GNU readlinks out there?
-                 READLINK_TESTED=yes
-                 READLINK=
-            fi
-        fi
-
-        if test "x$READLINK" != x; then
-            $1=`$READLINK -f [$]$1`
-        else
-            STARTDIR=$PWD
-            COUNTER=0
-            DIR=`dirname [$]$1`
-            FIL=`basename [$]$1`
-            while test $COUNTER -lt 20; do
-                ISLINK=`ls -l $DIR/$FIL | grep '\->' | sed -e 's/.*-> \(.*\)/\1/'`
-                if test "x$ISLINK" == x; then
-                    # This is not a symbolic link! We are done!
-                    break
-                fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $DIR
-                cd `dirname $ISLINK`
-                DIR=`pwd`
-                FIL=`basename $ISLINK`
-                let COUNTER=COUNTER+1
-            done
-            cd $STARTDIR
-            $1=$DIR/$FIL
-        fi
-    fi
-])
-
-AC_DEFUN([TESTFOR_PROG_CCACHE],
-[
-    AC_ARG_ENABLE([ccache],
-	      [AS_HELP_STRING([--disable-ccache],
-	      		      [use ccache to speed up recompilations @<:@enabled@:>@])],
-              [ENABLE_CCACHE=${enable_ccache}], [ENABLE_CCACHE=yes])
-    if test "x$ENABLE_CCACHE" = xyes; then
-        AC_PATH_PROG(CCACHE, ccache)
-    else
-        AC_MSG_CHECKING([for ccache])
-        AC_MSG_RESULT([explicitly disabled])    
-        CCACHE=
-    fi    
-    AC_SUBST(CCACHE)
-
-    AC_ARG_WITH([ccache-dir],
-	      [AS_HELP_STRING([--with-ccache-dir],
-	      		      [where to store ccache files @<:@~/.ccache@:>@])])
-
-    if test "x$with_ccache_dir" != x; then
-        # When using a non home ccache directory, assume the use is to share ccache files
-        # with other users. Thus change the umask.
-        SET_CCACHE_DIR="CCACHE_DIR=$with_ccache_dir CCACHE_UMASK=002"
-    fi
-    CCACHE_FOUND=""
-    if test "x$CCACHE" != x; then
-        SETUP_CCACHE_USAGE
-    fi    
-])
-
-AC_DEFUN([SETUP_CCACHE_USAGE],
-[
-    if test "x$CCACHE" != x; then
-        CCACHE_FOUND="true"
-        # Only use ccache if it is 3.1.4 or later, which supports
-        # precompiled headers.
-        AC_MSG_CHECKING([if ccache supports precompiled headers])
-        HAS_GOOD_CCACHE=`($CCACHE --version | head -n 1 | grep -E 3.1.@<:@456789@:>@) 2> /dev/null`
-        if test "x$HAS_GOOD_CCACHE" = x; then
-            AC_MSG_RESULT([no, disabling ccache])
-            CCACHE=
-        else
-            AC_MSG_RESULT([yes])
-            AC_MSG_CHECKING([if C-compiler supports ccache precompiled headers])
-            PUSHED_FLAGS="$CXXFLAGS"
-            CXXFLAGS="-fpch-preprocess $CXXFLAGS"
-            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])], [CC_KNOWS_CCACHE_TRICK=yes], [CC_KNOWS_CCACHE_TRICK=no])
-            CXXFLAGS="$PUSHED_FLAGS"
-            if test "x$CC_KNOWS_CCACHE_TRICK" = xyes; then
-                AC_MSG_RESULT([yes])
-            else
-                AC_MSG_RESULT([no, disabling ccaching of precompiled headers])
-                CCACHE=
-            fi
-        fi
-    fi
-
-    if test "x$CCACHE" != x; then
-        CCACHE_SLOPPINESS=time_macros
-        CCACHE="CCACHE_COMPRESS=1 $SET_CCACHE_DIR CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS $CCACHE"
-        CCACHE_FLAGS=-fpch-preprocess
-
-        if test "x$SET_CCACHE_DIR" != x; then
-            mkdir -p $CCACHE_DIR > /dev/null 2>&1
-	    chmod a+rwxs $CCACHE_DIR > /dev/null 2>&1
-        fi
-    fi
-])
-
-AC_DEFUN([EXTRACT_HOST_AND_BUILD_AND_LEGACY_VARS],
+AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD_AND_LEGACY_VARS],
 [
     # Expects $host_os $host_cpu $build_os and $build_cpu
-    # and $with_data_model to have been setup!
+    # and $with_target_bits to have been setup!
     #
     # Translate the standard triplet(quadruplet) definition
-    # of the host/build system into
-    # HOST_OS=aix,bsd,hpux,linux,macosx,solaris,windows
-    # HOST_OS_FAMILY=bsd,gnu,sysv,win32,wince
-    # HOST_OS_API=posix,winapi
+    # of the target/build system into
+    # OPENJDK_TARGET_OS=aix,bsd,hpux,linux,macosx,solaris,windows
+    # OPENJDK_TARGET_OS_FAMILY=bsd,gnu,sysv,win32,wince
+    # OPENJDK_TARGET_OS_API=posix,winapi
     # 
-    # HOST_CPU=ia32,x64,sparc,sparcv9,arm,arm64,ppc,ppc64
-    # HOST_CPU_ARCH=x86,sparc,pcc,arm
-    # HOST_CPU_BITS=32,64
-    # HOST_CPU_ENDIAN=big,little
+    # OPENJDK_TARGET_CPU=ia32,x64,sparc,sparcv9,arm,arm64,ppc,ppc64
+    # OPENJDK_TARGET_CPU_ARCH=x86,sparc,pcc,arm
+    # OPENJDK_TARGET_CPU_BITS=32,64
+    # OPENJDK_TARGET_CPU_ENDIAN=big,little
     #
     # The same values are setup for BUILD_...
     # 
     # And the legacy variables, for controlling the old makefiles.
-    # LEGACY_HOST_CPU1=i586,amd64/x86_64,sparc,sparcv9,arm,arm64...
-    # LEGACY_HOST_CPU2=i386,amd64,sparc,sparcv9,arm,arm64...
-    # LEGACY_HOST_CPU3=sparcv9,amd64 (but only on solaris)
-    # LEGACY_HOST_OS_API=solaris,windows
+    # LEGACY_OPENJDK_TARGET_CPU1=i586,amd64/x86_64,sparc,sparcv9,arm,arm64...
+    # LEGACY_OPENJDK_TARGET_CPU2=i386,amd64,sparc,sparcv9,arm,arm64...
+    # LEGACY_OPENJDK_TARGET_CPU3=sparcv9,amd64 (but only on solaris)
+    # LEGACY_OPENJDK_TARGET_OS_API=solaris,windows
     #
     # We also copy the autoconf trip/quadruplet
-    # verbatim to HOST and BUILD
-    AC_SUBST(HOST, ${host})
-    AC_SUBST(BUILD, ${build})
+    # verbatim to OPENJDK_TARGET_SYSTEM (from the autoconf "host") and OPENJDK_BUILD_SYSTEM
+    OPENJDK_TARGET_SYSTEM="$host"
+    OPENJDK_BUILD_SYSTEM="$build"
+    AC_SUBST(OPENJDK_TARGET_SYSTEM)
+    AC_SUBST(OPENJDK_BUILD_SYSTEM)
     
-    EXTRACT_VARS_FROM_OS_TO(HOST,$host_os)
-    EXTRACT_VARS_FROM_CPU_TO(HOST,$host_cpu)
+    PLATFORM_EXTRACT_VARS_FROM_OS_TO(OPENJDK_TARGET,$host_os)
+    PLATFORM_EXTRACT_VARS_FROM_CPU_TO(OPENJDK_TARGET,$host_cpu)
 
-    EXTRACT_VARS_FROM_OS_TO(BUILD,$build_os)
-    EXTRACT_VARS_FROM_CPU_TO(BUILD,$build_cpu)
+    PLATFORM_EXTRACT_VARS_FROM_OS_TO(OPENJDK_BUILD,$build_os)
+    PLATFORM_EXTRACT_VARS_FROM_CPU_TO(OPENJDK_BUILD,$build_cpu)
 
-    if test "x$HOST_OS" != xsolaris; then
-        LEGACY_HOST_CPU3=""
-        LEGACY_BUILD_CPU3=""
+    if test "x$OPENJDK_TARGET_OS" != xsolaris; then
+        LEGACY_OPENJDK_TARGET_CPU3=""
+        LEGACY_OPENJDK_BUILD_CPU3=""
     fi
 
-    # On MacOSX and MacOSX only, we have a different name for the x64 CPU in ARCH (LEGACY_HOST_CPU1) ...
-    if test "x$HOST_OS" = xmacosx && test "x$HOST_CPU" = xx64; then
-        LEGACY_HOST_CPU1="x86_64"
+    # On MacOSX and MacOSX only, we have a different name for the x64 CPU in ARCH (LEGACY_OPENJDK_TARGET_CPU1) ...
+    if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$OPENJDK_TARGET_CPU" = xx64; then
+        LEGACY_OPENJDK_TARGET_CPU1="x86_64"
     fi
 
-    SET_RELEASE_FILE_OS_VALUES()
+    PLATFORM_SET_RELEASE_FILE_OS_VALUES
 ])
 
-AC_DEFUN([EXTRACT_VARS_FROM_OS_TO],
+AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS_TO],
 [
-    EXTRACT_VARS_FROM_OS($2)
+    PLATFORM_EXTRACT_VARS_FROM_OS($2)
     $1_OS="$VAR_OS"
     $1_OS_FAMILY="$VAR_OS_FAMILY"
     $1_OS_API="$VAR_OS_API"
@@ -306,9 +93,9 @@ AC_DEFUN([EXTRACT_VARS_FROM_OS_TO],
     AC_SUBST(LEGACY_$1_OS_API)    
 ])
 
-AC_DEFUN([EXTRACT_VARS_FROM_CPU_TO],
+AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU_TO],
 [
-    EXTRACT_VARS_FROM_CPU($2)
+    PLATFORM_EXTRACT_VARS_FROM_CPU($2)
     $1_CPU="$VAR_CPU"
     $1_CPU_ARCH="$VAR_CPU_ARCH"
     $1_CPU_BITS="$VAR_CPU_BITS"
@@ -339,12 +126,12 @@ AC_DEFUN([EXTRACT_VARS_FROM_CPU_TO],
         LEGACY_$1_CPU3=amd64
     fi
     if test "x$$1_CPU" = xsparcv9; then 
-        LEGACY_$1_CPU3=sparvc9
+        LEGACY_$1_CPU3=sparcv9
     fi
     AC_SUBST(LEGACY_$1_CPU3)
 ])
 
-AC_DEFUN([EXTRACT_VARS_FROM_CPU],
+AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
 [
   # First argument is the cpu name from the trip/quad
   case "$1" in
@@ -372,8 +159,8 @@ AC_DEFUN([EXTRACT_VARS_FROM_CPU],
     arm*)
       VAR_CPU=arm
       VAR_CPU_ARCH=arm
-      VAR_CPU_BITS=3264
-      VAR_CPU_ENDIAN=big
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
       VAR_LEGACY_CPU=arm
       ;;
     mips)
@@ -401,7 +188,7 @@ AC_DEFUN([EXTRACT_VARS_FROM_CPU],
       VAR_CPU=ppc64
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=64
-      VAR_CPU_ENDIAN=32
+      VAR_CPU_ENDIAN=big
       VAR_LEGACY_CPU=ppc64
        ;;
     sparc)
@@ -416,7 +203,7 @@ AC_DEFUN([EXTRACT_VARS_FROM_CPU],
       VAR_CPU_ARCH=sparc
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=big
-      VAR_LEGACY_CPU=sparc_sparcv9
+      VAR_LEGACY_CPU=sparcv9
        ;;
     s390)
       VAR_CPU=s390
@@ -452,21 +239,37 @@ AC_DEFUN([EXTRACT_VARS_FROM_CPU],
       fi
   fi
 
+  # on solaris x86...default seems to be 32-bit
+  if test "x$VAR_OS" = "xsolaris" && \
+     test "x$with_target_bits" = "x" && \
+     test "x$VAR_CPU_ARCH" = "xx86"
+  then
+      with_target_bits=32
+  fi
+
   if test "x$VAR_CPU_ARCH" = "xx86"; then
-      if test "x$with_data_model" = "x64"; then
+      if test "x$with_target_bits" = "x64"; then
           VAR_CPU=x64
           VAR_CPU_BITS=64
           VAR_LEGACY_CPU=amd64
       fi
-      if test "x$with_data_model" = "x32"; then
+      if test "x$with_target_bits" = "x32"; then
           VAR_CPU=ia32
           VAR_CPU_BITS=32
           VAR_LEGACY_CPU=i586
       fi
   fi 
+
+  if test "x$VAR_CPU_ARCH" = "xsparc"; then
+      if test "x$with_target_bits" = "x64"; then
+          VAR_CPU=sparcv9
+          VAR_CPU_BITS=64
+          VAR_LEGACY_CPU=sparcv9
+      fi
+  fi 
 ])
 
-AC_DEFUN([EXTRACT_VARS_FROM_OS],
+AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
 [
   case "$1" in
     *linux*)
@@ -495,53 +298,201 @@ AC_DEFUN([EXTRACT_VARS_FROM_OS],
       VAR_OS_FAMILY=windows
       ;;
     *)
-      AC_MSG_ERROR([unsupported host operating system $1])
+      AC_MSG_ERROR([unsupported operating system $1])
       ;;
   esac
 ])
 
-AC_DEFUN([CHECK_COMPILER_VERSION],
+AC_DEFUN([PLATFORM_SET_RELEASE_FILE_OS_VALUES],
 [
-    # Test the compilers that their versions are new enough.
-#    AC_MSG_CHECKING([version of GCC])
-    gcc_ver=`${CC} -dumpversion`
-    gcc_major_ver=`echo ${gcc_ver}|cut -d'.' -f1`
-    gcc_minor_ver=`echo ${gcc_ver}|cut -d'.' -f2`
-#    AM_CONDITIONAL(GCC_OLD, test ! ${gcc_major_ver} -ge 4 -a ${gcc_minor_ver} -ge 3)
-#    AC_MSG_RESULT([${gcc_ver} (major version ${gcc_major_ver}, minor version ${gcc_minor_ver})])
-]) 
-
-# Fixes paths on windows hosts to be mixed mode short.
-AC_DEFUN([WIN_FIX_PATH],
-[
-    if test "x$BUILD_OS" = "xwindows"; then
-        AC_PATH_PROG(CYGPATH, cygpath)
-        tmp="[$]$1"
-        # Convert to C:/ mixed style path without spaces.
-        tmp=`$CYGPATH -s -m "$tmp"`
-        $1="$tmp"
-    fi
-])
-
-AC_DEFUN([SET_RELEASE_FILE_OS_VALUES],
-[
-    if test "x$HOST_OS" = "xsolaris"; then
+    if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
        REQUIRED_OS_NAME=SunOS
        REQUIRED_OS_VERSION=5.10
     fi
-    if test "x$HOST_OS" = "xlinux"; then
+    if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
        REQUIRED_OS_NAME=Linux
        REQUIRED_OS_VERSION=2.6
     fi
-    if test "x$HOST_OS" = "xwindows"; then
+    if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
         REQUIRED_OS_NAME=Windows
         REQUIRED_OS_VERSION=5.1
     fi
-    if test "x$HOST_OS" = "xmacosx"; then
+    if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
         REQUIRED_OS_NAME=Darwin
         REQUIRED_OS_VERSION=11.2
     fi
 
     AC_SUBST(REQUIRED_OS_NAME)
     AC_SUBST(REQUIRED_OS_VERSION)
+])
+
+#%%% Build and target systems %%%
+AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET],
+[
+# Figure out the build and target systems. # Note that in autoconf terminology, "build" is obvious, but "target"
+# is confusing; it assumes you are cross-compiling a cross-compiler (!)  and "target" is thus the target of the
+# product you're building. The target of this build is called "host". Since this is confusing to most people, we
+# have not adopted that system, but use "target" as the platform we are building for. In some places though we need
+# to use the configure naming style.
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+
+AC_ARG_WITH(target-bits, [AS_HELP_STRING([--with-target-bits],
+   [build 32-bit or 64-bit binaries (for platforms that support it), e.g. --with-target-bits=32 @<:@guessed@:>@])])
+
+if test "x$with_target_bits" != x && \
+   test "x$with_target_bits" != x32 && \
+   test "x$with_target_bits" != x64 ; then
+    AC_MSG_ERROR([--with-target-bits can only be 32 or 64, you specified $with_target_bits!])
+fi
+# Translate the standard cpu-vendor-kernel-os quadruplets into
+# the new TARGET_.... and BUILD_... and the legacy names used by
+# the openjdk build.
+# It uses $host_os $host_cpu $build_os $build_cpu and $with_target_bits
+PLATFORM_EXTRACT_TARGET_AND_BUILD_AND_LEGACY_VARS
+
+# The LEGACY_OPENJDK_TARGET_CPU3 is the setting for ISA_DIR.
+if test "x$LEGACY_OPENJDK_TARGET_CPU3" != x; then
+   LEGACY_OPENJDK_TARGET_CPU3="/${LEGACY_OPENJDK_TARGET_CPU3}"
+fi
+
+# Now the following vars are defined.
+# OPENJDK_TARGET_OS=aix,bsd,hpux,linux,macosx,solaris,windows
+# OPENJDK_TARGET_OS_FAMILY=bsd,gnu,sysv,win32,wince
+# OPENJDK_TARGET_OS_API=posix,winapi
+#
+# OPENJDK_TARGET_CPU=ia32,x64,sparc,sparcv9,arm,arm64,ppc,ppc64
+# OPENJDK_TARGET_CPU_ARCH=x86,sparc,pcc,arm
+# OPENJDK_TARGET_CPU_BITS=32,64
+# OPENJDK_TARGET_CPU_ENDIAN=big,little
+#
+# There is also a:
+# LEGACY_OPENJDK_TARGET_CPU1=i586,amd64,....  # used to set the old var ARCH
+# LEGACY_OPENJDK_TARGET_CPU2=i386,amd64,.... # used to set the old var LIBARCH
+# LEGACY_OPENJDK_TARGET_CPU3=only sparcv9,amd64 # used to set the ISA_DIR on Solaris
+# There was also a BUILDARCH that had i486,amd64,... but we do not use that
+# in the new build.
+# LEGACY_OPENJDK_TARGET_OS_API=solaris,windows # used to select source roots
+])
+
+AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION],
+[
+###############################################################################
+
+# Note that this is the build platform OS version!
+
+OS_VERSION="`uname -r | ${SED} 's!\.! !g' | ${SED} 's!-! !g'`"
+OS_VERSION_MAJOR="`${ECHO} ${OS_VERSION} | ${CUT} -f 1 -d ' '`"
+OS_VERSION_MINOR="`${ECHO} ${OS_VERSION} | ${CUT} -f 2 -d ' '`"
+OS_VERSION_MICRO="`${ECHO} ${OS_VERSION} | ${CUT} -f 3 -d ' '`"
+AC_SUBST(OS_VERSION_MAJOR)
+AC_SUBST(OS_VERSION_MINOR)
+AC_SUBST(OS_VERSION_MICRO)
+])
+
+AC_DEFUN_ONCE([PLATFORM_TEST_OPENJDK_TARGET_BITS],
+[
+###############################################################################
+#
+# Now we check if libjvm.so will use 32 or 64 bit pointers for the C/C++ code.
+# (The JVM can use 32 or 64 bit Java pointers but that decision
+# is made at runtime.)
+#
+AC_LANG_PUSH(C++)
+OLD_CXXFLAGS="$CXXFLAGS"
+if test "x$OPENJDK_TARGET_OS" != xwindows && test "x$with_target_bits" != x; then
+	CXXFLAGS="-m${with_target_bits} $CXXFLAGS"
+fi
+AC_CHECK_SIZEOF([int *], [1111])
+CXXFLAGS="$OLD_CXXFLAGS"
+AC_LANG_POP(C++)
+
+# keep track of c/cxx flags that we added outselves...
+#   to prevent emitting warning...
+ADDED_CFLAGS=
+ADDED_CXXFLAGS=
+ADDED_LDFLAGS=
+
+if test "x$ac_cv_sizeof_int_p" = x0; then 
+    # The test failed, lets pick the assumed value.
+    ARCH_DATA_MODEL=$OPENJDK_TARGET_CPU_BITS
+else
+    ARCH_DATA_MODEL=`expr 8 \* $ac_cv_sizeof_int_p`
+
+    if test "x$OPENJDK_TARGET_OS" != xwindows && test "x$with_target_bits" != x; then
+       ADDED_CFLAGS=" -m${with_target_bits}"
+       ADDED_CXXFLAGS=" -m${with_target_bits}"
+       ADDED_LDFLAGS=" -m${with_target_bits}"
+
+       CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
+       CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
+       LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
+
+       CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
+       CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
+       LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
+    fi
+fi
+
+if test "x$ARCH_DATA_MODEL" = x64; then
+    A_LP64="LP64:="
+    ADD_LP64="-D_LP64=1"
+fi
+AC_MSG_CHECKING([for target address size])
+AC_MSG_RESULT([$ARCH_DATA_MODEL bits])
+AC_SUBST(LP64,$A_LP64)
+AC_SUBST(ARCH_DATA_MODEL)
+
+if test "x$ARCH_DATA_MODEL" != "x$OPENJDK_TARGET_CPU_BITS"; then
+    AC_MSG_ERROR([The tested number of bits in the target ($ARCH_DATA_MODEL) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)])
+fi
+
+#
+# NOTE: check for -mstackrealign needs to be below potential addition of -m32
+#
+if test "x$OPENJDK_TARGET_CPU_BITS" = x32 && test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # On 32-bit MacOSX the OS requires C-entry points to be 16 byte aligned.
+    # While waiting for a better solution, the current workaround is to use -mstackrealign.
+    CFLAGS="$CFLAGS -mstackrealign"
+    AC_MSG_CHECKING([if 32-bit compiler supports -mstackrealign])
+    AC_LINK_IFELSE([AC_LANG_SOURCE([[int main() { return 0; }]])],
+                   [
+		        AC_MSG_RESULT([yes])
+                   ],
+	           [
+		        AC_MSG_RESULT([no])
+	                AC_MSG_ERROR([The selected compiler $CXX does not support -mstackrealign! Try to put another compiler in the path.])
+	           ])
+fi
+])
+
+AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_ENDIANNESS],
+[
+###############################################################################
+#
+# Is the target little of big endian?
+#
+AC_C_BIGENDIAN([ENDIAN="big"],[ENDIAN="little"],[ENDIAN="unknown"],[ENDIAN="universal_endianness"])
+
+if test "x$ENDIAN" = xuniversal_endianness; then
+    AC_MSG_ERROR([Building with both big and little endianness is not supported])
+fi
+if test "x$ENDIAN" = xunknown; then
+    ENDIAN="$OPENJDK_TARGET_CPU_ENDIAN"
+fi
+if test "x$ENDIAN" != "x$OPENJDK_TARGET_CPU_ENDIAN"; then
+    AC_MSG_WARN([The tested endian in the target ($ENDIAN) differs from the endian expected to be found in the target ($OPENJDK_TARGET_CPU_ENDIAN)])
+    ENDIAN="$OPENJDK_TARGET_CPU_ENDIAN"
+fi
+AC_SUBST(ENDIAN)
+])
+
+AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_ISADIR],
+[
+###############################################################################
+#
+# Could someone enlighten this configure script with a comment about libCrun?
+#
+#
 ])

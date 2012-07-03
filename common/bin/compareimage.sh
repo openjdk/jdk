@@ -177,40 +177,44 @@ else
     fi
 fi
 
-if [ "`uname`" == "SunOS" ]; then
-    PERM="gstat -c%a"
-elif [ $OSTYPE == "cygwin" ]; then
-    PERM=
-elif [ "`uname`" == "Darwin" ]; then
-    PERM="stat -f%p"
-elif [ "`uname`" == "Linux" ]; then
-    PERM="stat -c%A"
-else
-    PERM="stat -c%a"
-fi
+echo -n Permissions...
+found=""
+for f in `cd $OLD && find . -type f`
+do
+    if [ ! -f ${OLD}/$f ]; then continue; fi
+    if [ ! -f ${NEW}/$f ]; then continue; fi
+    OP=`ls -l ${OLD}/$f | awk '{printf("%.10s\n", $1);}'`
+    NP=`ls -l ${NEW}/$f | awk '{printf("%.10s\n", $1);}'`
+    if [ "$OP" != "$NP" ]
+    then
+	if [ -z "$found" ]; then echo ; found="yes"; fi
+	printf "\told: ${OP} new: ${NP}\t$f\n"
+    fi
 
-if [ "${PERM}" ]
-then
-    echo -n Permissions...
-    found=""
-    for f in `cd $OLD && find . -type f`
-    do
-	if [ ! -f ${OLD}/$f ]; then continue; fi
-	if [ ! -f ${NEW}/$f ]; then continue; fi
-	OP=`${PERM} ${OLD}/$f`
-	NP=`${PERM} ${NEW}/$f`
-	if [ "$OP" != "$NP" ]
+    OF=`cd ${OLD} && file $f`
+    NF=`cd ${NEW} && file $f`
+    if [ "$f" = "./src.zip" ]
+    then
+	if [ "`echo $OF | grep -ic zip`" -gt 0 -a "`echo $NF | grep -ic zip`" -gt 0 ]
 	then
-	    if [ -z "$found" ]; then echo ; found="yes"; fi
-	    printf "\told: ${OP} new: ${NP}\t$f\n"
+	    # the way we produces zip-files make it so that directories are stored in old file
+	    # but not in new (only files with full-path)
+	    # this makes file-5.09 report them as different
+	    continue;
 	fi
-    done
-    if [ -z "$found" ]; then echo ; found="yes"; fi
-fi
+    fi
+
+    if [ "$OF" != "$NF" ]
+    then
+	if [ -z "$found" ]; then echo ; found="yes"; fi
+	printf "\tFILE: old: ${OF} new: ${NF}\t$f\n"
+    fi
+done
+if [ -z "$found" ]; then echo ; found="yes"; fi
 
 GENERAL_FILES=$(cd $OLD && find . -type f ! -name "*.so" ! -name "*.jar" ! -name "*.zip" \
                                   ! -name "*.debuginfo" ! -name "*.dylib" ! -name "jexec" \
-                                  ! -name "ct.sym" \
+                                  ! -name "ct.sym" ! -name "*.diz" \
                               | grep -v "./bin/"  | sort | $FILTER)
 echo General files...
 for f in $GENERAL_FILES

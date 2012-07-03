@@ -22,5 +22,19 @@
 # questions.
 #
 
-autoconf -W all configure.ac > configure
-rm -rf config.status config.log autom4te.cache
+script_dir=`dirname $0`
+closed_script_dir="$script_dir/../../jdk/make/closed/autoconf"
+
+# Create a timestamp as seconds since epoch
+TIMESTAMP=`date +%s`
+
+cat $script_dir/configure.ac  | sed -e "s|@DATE_WHEN_GENERATED@|$TIMESTAMP|" | autoconf -W all -I$script_dir - > $script_dir/generated-configure.sh
+rm -rf autom4te.cache
+
+if test -e $closed_script_dir/closed-hook.m4; then
+  # We have closed sources available; also generate configure script
+  # with closed hooks compiled in.
+  cat $script_dir/configure.ac | sed -e "s|@DATE_WHEN_GENERATED@|$TIMESTAMP|" | \
+    sed -e "s|AC_DEFUN_ONCE(\[CLOSED_HOOK\])|m4_include([$closed_script_dir/closed-hook.m4])|" | autoconf -W all -I$script_dir - > $closed_script_dir/generated-configure.sh
+  rm -rf autom4te.cache
+fi

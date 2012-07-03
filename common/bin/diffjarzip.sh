@@ -72,7 +72,11 @@ else
 fi
 
 if [ "`uname`" == "SunOS" ]; then
-    DIFF=gdiff
+    if [ -f "`which gdiff`" ]; then
+        DIFF=gdiff
+    else
+        DIFF=diff
+    fi
 else
     DIFF=diff
 fi

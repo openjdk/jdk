@@ -87,6 +87,8 @@ $(if $6,$1_$(strip $6))
 $(if $7,$1_$(strip $7))
 $(if $8,$1_$(strip $8))
 $(if $9,$1_$(strip $9))
+$(if $(10),$(error Internal makefile error: Too many arguments to SetupIdlCompilation, please update IdlCompilation.gmk))
+
 # Remove any relative addressing in the paths.
 $1_SRC := $$(abspath $$($1_SRC))
 $1_BIN := $$(abspath $$($1_BIN))
@@ -111,4 +113,3 @@ $$(foreach p,$$($1),$$(eval $$(call add_idl_package,$1,$$($1_SRC),$$($1_BIN),$$(
 endef
 
 .SUFFIXES: .java .class .package
-
