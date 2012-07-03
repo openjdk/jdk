@@ -25,12 +25,12 @@
 
 INCLUDEDIR = $(JDK_OUTPUTDIR)/include
 
-PLATFORM_INCLUDE = $(INCLUDEDIR)/$(PLATFORM)
+OPENJDK_TARGET_OS_INCLUDE = $(INCLUDEDIR)/$(OPENJDK_TARGET_OS)
 
-ifeq ($(PLATFORM), windows)
-     PLATFORM_INCLUDE = $(INCLUDEDIR)/win32
-else ifeq ($(PLATFORM), macosx)
-     PLATFORM_INCLUDE = $(INCLUDEDIR)/darwin
+ifeq ($(OPENJDK_TARGET_OS), windows)
+     OPENJDK_TARGET_OS_INCLUDE = $(INCLUDEDIR)/win32
+else ifeq ($(OPENJDK_TARGET_OS), macosx)
+     OPENJDK_TARGET_OS_INCLUDE = $(INCLUDEDIR)/darwin
 endif
 
 #
@@ -42,15 +42,15 @@ H_TARGET_FILES =$(INCLUDEDIR)/jdwpTransport.h		\
 		$(INCLUDEDIR)/jvmticmlr.h		\
 		$(INCLUDEDIR)/classfile_constants.h	\
 		$(INCLUDEDIR)/jawt.h			\
-		$(PLATFORM_INCLUDE)/jni_md.h		\
-		$(PLATFORM_INCLUDE)/jawt_md.h
+		$(OPENJDK_TARGET_OS_INCLUDE)/jni_md.h		\
+		$(OPENJDK_TARGET_OS_INCLUDE)/jawt_md.h
 
 $(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/share/javavm/export/%.h
 	$(MKDIR) -p $(@D)
 	$(RM) -f $@
 	$(CP) $< $@
 
-$(PLATFORM_INCLUDE)/%.h: $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/javavm/export/%.h
+$(OPENJDK_TARGET_OS_INCLUDE)/%.h: $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/javavm/export/%.h
 	$(MKDIR) -p $(@D)
 	$(RM) -f $@
 	$(CP) $< $@
@@ -78,6 +78,13 @@ MGMT_SRC_FILES = $(wildcard $(MGMT_LIB_SRC)/*)
 MGMT_TARGET_FILES = $(subst $(MGMT_LIB_SRC),$(MGMT_LIBDIR),$(MGMT_SRC_FILES))
 
 $(MGMT_LIBDIR)/management.properties: $(MGMT_LIB_SRC)/management.properties
+	$(MKDIR) -p $(@D)
+	$(RM) -f $@
+	$(CP) $< $@
+	$(CHMOD) 644 $@
+
+# this file has different permissions...don't know why...
+$(MGMT_LIBDIR)/jmxremote.access: $(MGMT_LIB_SRC)/jmxremote.access
 	$(MKDIR) -p $(@D)
 	$(RM) -f $@
 	$(CP) $< $@
@@ -121,9 +128,13 @@ COPY_FILES += $(PSFONTPROPFILE_TARGET_FILES)
 #
 # Copy flavormap.properties, cursor.properties and cursors gif files to LIBDIR
 #
-PLATFORM_LIB_SRC = $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/lib
+ifneq ($(OPENJDK_TARGET_OS), macosx)
+OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/lib
+else
+OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/macosx/lib
+endif
 
-$(LIBDIR)/flavormap.properties: $(PLATFORM_LIB_SRC)/flavormap.properties
+$(LIBDIR)/flavormap.properties: $(OPENJDK_TARGET_OS_LIB_SRC)/flavormap.properties
 	$(MKDIR) -p $(@D)
 	$(RM) -f $@
 	$(CP) $< $@
@@ -131,9 +142,9 @@ $(LIBDIR)/flavormap.properties: $(PLATFORM_LIB_SRC)/flavormap.properties
 COPY_FILES += $(LIBDIR)/flavormap.properties
 
 CURSORS_DEST_DIR = $(LIBDIR)/images/cursors
-CURSORS_PLATFORM_LIB_SRC = $(PLATFORM_LIB_SRC)/images/cursors
+CURSORS_OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/lib/images/cursors
 
-$(CURSORS_DEST_DIR)/cursors.properties: $(CURSORS_PLATFORM_LIB_SRC)/cursors.properties
+$(CURSORS_DEST_DIR)/cursors.properties: $(CURSORS_OPENJDK_TARGET_OS_LIB_SRC)/cursors.properties
 	$(MKDIR) -p $(@D)
 	$(RM) -f $@
 	$(CP) $< $@
@@ -141,11 +152,11 @@ $(CURSORS_DEST_DIR)/cursors.properties: $(CURSORS_PLATFORM_LIB_SRC)/cursors.prop
 COPY_FILES += $(CURSORS_DEST_DIR)/cursors.properties
 
 CURSORS_LIB_SRC = $(JDK_TOPDIR)/src/share/lib/images/cursors
-ifeq ($(PLATFORM), windows)
+ifeq ($(OPENJDK_TARGET_OS), windows)
 CURSORS_SRC_FILES = $(CURSORS_LIB_SRC)/invalid32x32.gif $(wildcard $(CURSORS_LIB_SRC)/win32_*.gif)
-else # PLATFORM
+else # OPENJDK_TARGET_OS
 CURSORS_SRC_FILES = $(CURSORS_LIB_SRC)/invalid32x32.gif $(wildcard $(CURSORS_LIB_SRC)/motif_*.gif)
-endif # PLATFORM
+endif # OPENJDK_TARGET_OS
 CURSORS_TARGET_FILES =  $(subst $(CURSORS_LIB_SRC),$(CURSORS_DEST_DIR),$(CURSORS_SRC_FILES))
 
 $(CURSORS_DEST_DIR)/%: $(CURSORS_LIB_SRC)/%
@@ -157,7 +168,7 @@ COPY_FILES += $(CURSORS_TARGET_FILES)
 
 ##########################################################################################
 
-CONTENT_TYPES_SRC=$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/lib
+CONTENT_TYPES_SRC=$(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/lib
 
 $(LIBDIR)/content-types.properties: $(CONTENT_TYPES_SRC)/content-types.properties
 	$(MKDIR) -p $(@D)
@@ -179,9 +190,9 @@ COPY_FILES += $(LIBDIR)/calendars.properties
 
 ##########################################################################################
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(OPENJDK_TARGET_OS),windows)
 
-TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/lib
+TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/lib
 
 $(LIBDIR)/tzmappings: $(TZMAPPINGS_SRC)/tzmappings
 	$(MKDIR) -p $(@D)
@@ -233,7 +244,7 @@ COPY_FILES += $(ICCPROFILE_TARGET_FILES)
 #TODO: rework this to avoid hardcoding library name in the makefile
 #
 ifdef OPENJDK
-    ifeq ($(PLATFORM), windows)
+    ifeq ($(OPENJDK_TARGET_OS), windows)
         FREETYPE_LIB = $(JDK_OUTPUTDIR)/bin/$(call SHARED_LIBRARY,freetype)
     else 
         ifeq ($(USING_SYSTEM_FT_LIB), false)
@@ -243,7 +254,7 @@ ifdef OPENJDK
 
     $(FREETYPE_LIB): $(FREETYPE2_LIB_PATH)/$(call SHARED_LIBRARY,freetype)
 	$(CP) $(FREETYPE2_LIB_PATH)/$(call SHARED_LIBRARY,freetype) $@
-    ifeq ($(BUILD_OS), windows)
+    ifeq ($(OPENJDK_BUILD_OS), windows)
 	$(CHMOD) +rx $@
     endif
 
@@ -254,7 +265,7 @@ endif
 
 # Copy msvcr100.dll on windows
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(OPENJDK_TARGET_OS),windows)
     MSVCRNN_TARGET := $(JDK_OUTPUTDIR)/bin/$(notdir $(MSVCRNN_DLL))
     $(MSVCRNN_TARGET): $(MSVCRNN_DLL)
 	$(MKDIR) -p $(@D)
@@ -286,14 +297,14 @@ else
     JVMCFG_ARCH := $(ARCH)
 endif
 
-ifeq ($(PLATFORM),macosx)
+ifeq ($(OPENJDK_TARGET_OS),macosx)
   ifeq ($(JVMCFG_ARCH),amd64)
       JVMCFG_ARCH := x86_64
   endif
   JVMCFG_SRC := $(JDK_TOPDIR)/src/macosx/bin/$(JVMCFG_ARCH)/jvm.cfg
   JVMCFG_DIR := $(JDK_OUTPUTDIR)/lib
 else
-  JVMCFG_SRC := $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/bin/$(JVMCFG_ARCH)/jvm.cfg
+  JVMCFG_SRC := $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/bin/$(JVMCFG_ARCH)/jvm.cfg
   JVMCFG_DIR := $(JDK_OUTPUTDIR)/lib/$(LIBARCH)
 endif
 
@@ -353,15 +364,15 @@ COPY_FILES += $(JVMCFG)
 PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security
 PROPS_DST := $(JDK_OUTPUTDIR)/lib/security/java.security
 
-ifeq ($(PLATFORM), solaris)
+ifeq ($(OPENJDK_TARGET_OS), solaris)
 	PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-solaris
 endif
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(OPENJDK_TARGET_OS), windows)
 	PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-windows
 endif
 
-ifeq ($(PLATFORM), macosx)
+ifeq ($(OPENJDK_TARGET_OS), macosx)
 	PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-macosx
 endif
 
@@ -453,7 +464,7 @@ $(SHARED_FONTS_DST_DIR)/fonts.dir : $(JDK_TOPDIR)/src/solaris/classes/sun/awt/mo
 
 COPY_FILES += $(SHARED_FONTS_DST) $(SHARED_FONTS_DST_DIR)/fonts.dir
 
-ifeq ($(PLATFORM), linux)
+ifeq ($(OPENJDK_TARGET_OS), linux)
 
 # The oblique fonts are only needed/wanted on Linux.
 
@@ -532,11 +543,13 @@ $(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libxinerama.so: $(JDK_TOPDIR)/src/closed/solaris
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@
+	$(CHMOD) 755 $@
 
 $(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libjdgaSUNW%.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(ARCH)/libjdgaSUNW%.so
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@
+	$(CHMOD) 755 $@
 
 $(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libjdgaSUNWafb.so: $(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libjdgaSUNWffb.so
 	$(MKDIR) -p $(@D)
@@ -549,7 +562,7 @@ endif
 
 ##########################################################################################
 
-ifeq ($(PLATFORM), solaris)
+ifeq ($(OPENJDK_TARGET_OS), solaris)
 
 SUNPKCS11_CFG_SRC := $(JDK_TOPDIR)/src/share/lib/security/sunpkcs11-solaris.cfg
 SUNPKCS11_CFG_DST := $(JDK_OUTPUTDIR)/lib/security/sunpkcs11-solaris.cfg
@@ -566,7 +579,7 @@ endif
 ##########################################################################################
 
 ifndef OPENJDK
-ifeq ($(PLATFORM), solaris)
+ifeq ($(OPENJDK_TARGET_OS), solaris)
 
 UCRYPTO_CFG_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/ucrypto-solaris.cfg
 UCRYPTO_CFG_DST := $(JDK_OUTPUTDIR)/lib/security/ucrypto-solaris.cfg

@@ -53,9 +53,9 @@ GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc_misc/sun/tools/jconsole/Version.java
 
 ##########################################################################################
 
-ifeq ($(HOST_OS_API),posix)
-    UPSUFFIX:=$(PLATFORM)
-    ifeq ($(PLATFORM),macosx)
+ifeq ($(OPENJDK_TARGET_OS_API),posix)
+    UPSUFFIX:=$(OPENJDK_TARGET_OS)
+    ifeq ($(OPENJDK_TARGET_OS),macosx)
         UPSUFFIX:=bsd
     endif
     # UNIXProcess.java is different for solaris and linux. We need to copy
@@ -64,7 +64,7 @@ ifeq ($(HOST_OS_API),posix)
     $(JDK_OUTPUTDIR)/gensrc_misc/java/lang/UNIXProcess.java : \
               $(JDK_TOPDIR)/src/solaris/classes/java/lang/UNIXProcess.java.$(UPSUFFIX)
 	$(MKDIR) -p $(@D)
-	$(ECHO) Copying UNIXProcess.java.$(PLATFORM) to java/lang/UNIXProcess.java
+	$(ECHO) Copying UNIXProcess.java.$(OPENJDK_TARGET_OS) to java/lang/UNIXProcess.java
 	$(CP) $< $@
 	$(CHMOD) u+rw $@
 
@@ -74,8 +74,8 @@ endif
 ##########################################################################################
 
 ifndef OPENJDK
-ifneq ($(PLATFORM), windows)
-ifneq ($(PLATFORM), macosx)
+ifneq ($(OPENJDK_TARGET_OS), windows)
+ifneq ($(OPENJDK_TARGET_OS), macosx)
     # These file(s) are needed for building fake .so libs on !windows for jdbcodbc
 
     $(JDK_OUTPUTDIR)/gensrc_c/libjdbcodbc/dummyodbc1.c : 
@@ -101,85 +101,98 @@ GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/ch/SocketOptionRegistry.java
 
 GENSRC_SOR_SRC := $(JDK_TOPDIR)/src/share/native/sun/nio/ch
 GENSRC_SOR_SRC_FILE := genSocketOptionRegistry.c
-GENSRC_SOR_BIN := $(JDK_OUTPUTDIR)/objs/gensrc/genSocketOptionRegistry
-GENSRC_SOR_EXE := $(GENSRC_SOR_BIN)/genSocketOptionRegistry$(EXE_SUFFIX)
+GENSRC_SOR_BIN := $(JDK_OUTPUTDIR)/gensrc_misc/genSocketOptionRegistry
 
 SOR_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSRC_SOR_SRC)/$(GENSRC_SOR_SRC_FILE) | \
 	$(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }') 
-
-$(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/ch/SocketOptionRegistry.java : $(GENSRC_SOR_EXE)
-	$(MKDIR) -p $(@D)
-	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/makefiles/scripts/addNotices.sh "$(SOR_COPYRIGHT_YEARS)" > $@.tmp
-	$(GENSRC_SOR_EXE) >> $@.tmp
-	$(MV) $@.tmp $@
-
 
 $(eval $(call SetupNativeCompilation,BUILD_GENSRC_SOR_EXE,\
 		SRC:=$(GENSRC_SOR_SRC),\
 		INCLUDE_FILES:=$(GENSRC_SOR_SRC_FILE),\
 		LANG:=C,\
-		CFLAGS:=$(CFLAGS_JDKLIB),\
-		BIN:=$(GENSRC_SOR_BIN),\
-		EXE:=$(GENSRC_SOR_EXE)))
+		CC:=$(HOST_CC),\
+		LDEXE:=$(HOST_LD),\
+		OBJECT_DIR:=$(GENSRC_SOR_BIN),\
+		OUTPUT_DIR:=$(GENSRC_SOR_BIN),\
+                PROGRAM:=genSocketOptionRegistry))
+
+ifneq ($(JAVASE_EMBEDDED), true)
+$(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/ch/SocketOptionRegistry.java : $(BUILD_GENSRC_SOR_EXE)
+	$(MKDIR) -p $(@D)
+	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/makefiles/scripts/addNotices.sh "$(SOR_COPYRIGHT_YEARS)" > $@.tmp
+	$(BUILD_GENSRC_SOR_EXE) >> $@.tmp
+	$(MV) $@.tmp $@
+else
+$(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/ch/SocketOptionRegistry.java : $(JDK_TOPDIR)/src/closed/solaris/classes/sun/nio/ch/SocketOptionRegistry-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java
+	$(MKDIR) -p $(@D)
+	$(CP) $< $@
+endif
 
 ##########################################################################################
 
-ifneq ($(PLATFORM),windows)
+ifneq ($(OPENJDK_TARGET_OS),windows)
 
 GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/fs/UnixConstants.java
 
-GENSRC_UC_SRC := $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/nio/fs
+GENSRC_UC_SRC := $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/native/sun/nio/fs
 GENSRC_UC_SRC_FILE := genUnixConstants.c
-GENSRC_UC_BIN := $(JDK_OUTPUTDIR)/objs/gensrc/genUnixConstants
-GENSRC_UC_EXE := $(GENSRC_UC_BIN)/genUnixConstants$(EXE_SUFFIX)
+GENSRC_UC_BIN := $(JDK_OUTPUTDIR)/gensrc_misc/genUnixConstants
 
 UC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSRC_UC_SRC)/$(GENSRC_UC_SRC_FILE) | \
 	$(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }') 
-
-$(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/fs/UnixConstants.java : $(GENSRC_UC_EXE)
-	$(MKDIR) -p $(@D)
-	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/makefiles/scripts/addNotices.sh "$(UC_COPYRIGHT_YEARS)" > $@.tmp
-	$(GENSRC_UC_EXE) >> $@.tmp
-	$(MV) $@.tmp $@
-
 
 $(eval $(call SetupNativeCompilation,BUILD_GENSRC_UC_EXE,\
 		SRC:=$(GENSRC_UC_SRC),\
 		INCLUDE_FILES:=$(GENSRC_UC_SRC_FILE),\
 		LANG:=C,\
-		CFLAGS:=$(CFLAGS_JDKLIB),\
-		BIN:=$(GENSRC_UC_BIN),\
-		EXE:=$(GENSRC_UC_EXE)))
+		CC:=$(HOST_CC),\
+		LDEXE:=$(HOST_CC),\
+		OBJECT_DIR:=$(GENSRC_UC_BIN),\
+                OUTPUT_DIR:=$(GENSRC_UC_BIN),\
+		PROGRAM:=genUnixConstants))
+
+ifneq ($(JAVASE_EMBEDDED), true)
+$(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/fs/UnixConstants.java : $(BUILD_GENSRC_UC_EXE)
+	$(MKDIR) -p $(@D)
+	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/makefiles/scripts/addNotices.sh "$(UC_COPYRIGHT_YEARS)" > $@.tmp
+	$(BUILD_GENSRC_UC_EXE) >> $@.tmp
+	$(MV) $@.tmp $@
+else
+$(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/fs/UnixConstants.java : $(JDK_TOPDIR)/src/closed/solaris/classes/sun/nio/fs/UnixConstants-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java
+	$(MKDIR) -p $(@D)
+	$(CP) $< $@
+endif
 
 endif
 
 ##########################################################################################
 
-ifeq ($(PLATFORM),solaris)
+ifeq ($(OPENJDK_TARGET_OS),solaris)
 
 GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/fs/SolarisConstants.java
 
-GENSRC_SOL_SRC := $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/nio/fs
+GENSRC_SOL_SRC := $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/native/sun/nio/fs
 GENSRC_SOL_SRC_FILE := genSolarisConstants.c
-GENSRC_SOL_BIN := $(JDK_OUTPUTDIR)/objs/gensrc/genSolarisConstants
-GENSRC_SOL_EXE := $(GENSRC_SOL_BIN)/genSolarisConstants$(EXE_SUFFIX)
+GENSRC_SOL_BIN := $(JDK_OUTPUTDIR)/gensrc_misc/genSolarisConstants
 
 SOL_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSRC_SOL_SRC)/$(GENSRC_SOL_SRC_FILE) | \
 	$(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }') 
-
-$(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/fs/SolarisConstants.java : $(GENSRC_SOL_EXE)
-	$(MKDIR) -p $(@D)
-	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/makefiles/scripts/addNotices.sh "$(SOL_COPYRIGHT_YEARS)" > $@.tmp
-	$(GENSRC_SOL_EXE) >> $@.tmp
-	$(MV) $@.tmp $@
-
 
 $(eval $(call SetupNativeCompilation,BUILD_GENSRC_SOL_EXE,\
 		SRC:=$(GENSRC_SOL_SRC),\
 		INCLUDE_FILES:=$(GENSRC_SOL_SRC_FILE),\
 		LANG:=C,\
-		CFLAGS:=$(CFLAGS_JDKLIB),\
-		BIN:=$(GENSRC_SOL_BIN),\
-		EXE:=$(GENSRC_SOL_EXE)))
+		CC:=$(HOST_CC),\
+		LDEXE:=$(HOST_CC),\
+		OBJECT_DIR:=$(GENSRC_SOL_BIN),\
+		OUTPUT_DIR:=$(GENSRC_SOL_BIN),\
+		PROGRAM:=genSolarisConstants))
+
+$(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/fs/SolarisConstants.java : $(BUILD_GENSRC_SOL_EXE)
+	$(MKDIR) -p $(@D)
+	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/makefiles/scripts/addNotices.sh "$(SOL_COPYRIGHT_YEARS)" > $@.tmp
+	$(BUILD_GENSRC_SOL_EXE) >> $@.tmp
+	$(MV) $@.tmp $@
+
 
 endif

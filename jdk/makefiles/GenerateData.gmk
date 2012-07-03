@@ -69,6 +69,7 @@ $(GENDATA_CURDATA): $(JDK_TOPDIR)/src/share/classes/java/util/CurrencyData.prope
 	$(RM) $@
 	$(TOOL_GENERATECURRENCYDATA) -o $@.temp < $<
 	$(MV) $@.temp $@
+	$(CHMOD) 444 $@
 
 GENDATA += $(GENDATA_CURDATA)
 

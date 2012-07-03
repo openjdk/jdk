@@ -133,7 +133,7 @@ COPY_FILES += \
   $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/icons/ocean/*.png) \
   $(wildcard $(SWING_PLAF_METAL_RESOURCES_DIR)/sounds/*.wav)
 
-ifneq ($(PLATFORM), windows)
+ifneq ($(OPENJDK_TARGET_OS), windows)
   # Only copy GTK resources on Solaris/Linux
   SWING_PLAF_GTK_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk
   COPY_FILES += \
@@ -174,11 +174,11 @@ COPY_FILES += \
 $(shell $(MKDIR) -p $(JDK_OUTPUTDIR)/classes/META-INF/services)
 # Find all META-INF/services/* files
 ALL_META-INF_DIRS_share:=$(shell $(FIND) $(JDK_TOPDIR)/src/share/classes -type d -a -name META-INF)
-ALL_META-INF_DIRS_hostapi:=$(shell $(FIND) $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes -type d -a -name META-INF)
+ALL_META-INF_DIRS_targetapi:=$(shell $(FIND) $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes -type d -a -name META-INF)
 # Platform specific overrides shared
-ifneq ($(ALL_META-INF_DIRS_hostapi),)
-    ALL_META-INF_DIRS:=$(ALL_META-INF_DIRS_hostapi) \
-	$(filter-out %$(patsubst $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes%,%,$(ALL_META-INF_DIRS_hostapi)),\
+ifneq ($(ALL_META-INF_DIRS_targetapi),)
+    ALL_META-INF_DIRS:=$(ALL_META-INF_DIRS_targetapi) \
+	$(filter-out %$(patsubst $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes%,%,$(ALL_META-INF_DIRS_targetapi)),\
 		$(ALL_META-INF_DIRS_share))
 else
     ALL_META-INF_DIRS:=$(ALL_META-INF_DIRS_share)
@@ -189,7 +189,7 @@ ifdef OPENJDK
 endif
 
 ifndef OPENJDK
-ifneq ($(PLATFORM), macosx)
+ifneq ($(OPENJDK_TARGET_OS), macosx)
     ALL_META-INF_DIRS += $(JDK_TOPDIR)/src/closed/share/classes/sun/jdbc/odbc/META-INF
 endif
 endif
@@ -216,9 +216,9 @@ OUT_SERVICES_FILES:=$(addprefix $(JDK_OUTPUTDIR)/classes/META-INF/services/,\
 	$(shell $(PRINTF) "$(SRC_SERVICES_FILES)\n" | $(SED) -e 's|/[^ ]*/META-INF/services/||g'))
 OUT_SERVICES_FILES_COLON:=$(addsuffix :,$(OUT_SERVICES_FILES))
 # Exception handling for print services with no META-INF directory
-SRC_SERVICES_FILES_PRINT = $(wildcard $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes/sun/print/services/*)
+SRC_SERVICES_FILES_PRINT = $(wildcard $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes/sun/print/services/*)
 OUT_SERVICES_FILES_PRINT = $(addprefix $(JDK_OUTPUTDIR)/classes/META-INF/services/,\
-	$(patsubst $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes/sun/print/services/%,%,\
+	$(patsubst $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes/sun/print/services/%,%,\
 		$(SRC_SERVICES_FILES_PRINT)))
 OUT_SERVICES_FILES_PRINT_COLON = $(addsuffix :,$(OUT_SERVICES_FILES_PRINT))
 RULES_SERVICES_PRINT = $(join $(OUT_SERVICES_FILES_PRINT_COLON),$(SRC_SERVICES_FILES_PRINT))
@@ -229,7 +229,7 @@ META-INF_RULES_SERVICES:=$(RULES_SERVICES_PRINT) $(join $(OUT_SERVICES_FILES_COL
 define addto_meta-inf_services
 $1
 	echo Installing META-INF/services/$$(@F) 
-	$(CAT) $$< | $(SED) -e "s/^#\[$(PLATFORM)\]//" > $$@
+	$(CAT) $$< | $(SED) -e "s/^#\[$(OPENJDK_TARGET_OS)\]//" > $$@
 endef
 $(foreach i,$(META-INF_RULES_SERVICES),$(eval $(call addto_meta-inf_services,$i)))
 # Here is the generic rule, whose receipt the above rules will trigger.
@@ -261,13 +261,13 @@ JAVAX_SOUND_SRC_FILES := \
 
 COPY_EXTRA += $(foreach F,$(notdir $(JAVAX_SOUND_SRC_FILES)),$(JDK_OUTPUTDIR)/classes/META-INF/services/${F})
 
-ifeq ($(PLATFORM)-$(ARCH),windows-ia64)
+ifeq ($(OPENJDK_TARGET_OS)-$(ARCH),windows-ia64)
 	JAVAX_SOUND_SRC_FILES += windows-ia64/javax.sound.sampled.spi.MixerProvider
 	COPY_EXTRA += $(JDK_OUTPUTDIR)/classes/META-INF/services/javax.sound.sampled.spi.MixerProvider
-else ifeq ($(PLATFORM),windows)
+else ifeq ($(OPENJDK_TARGET_OS),windows)
 	JAVAX_SOUND_SRC_FILES += windows-i586/javax.sound.sampled.spi.MixerProvider
 	COPY_EXTRA += $(JDK_OUTPUTDIR)/classes/META-INF/services/javax.sound.sampled.spi.MixerProvider
-else ifeq ($(PLATFORM)-$(ARCH),linux-i586)
+else ifeq ($(OPENJDK_TARGET_OS)-$(ARCH),linux-i586)
 	JAVAX_SOUND_SRC_FILES += linux-i586/javax.sound.sampled.spi.MixerProvider
 	COPY_EXTRA += $(JDK_OUTPUTDIR)/classes/META-INF/services/javax.sound.sampled.spi.MixerProvider
 else

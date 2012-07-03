@@ -1,0 +1,243 @@
+#
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+
+#######
+
+IMPORT_TARGET_FILES :=
+
+IMPORT_CLASSES := CORBA JAXP JAXWS LANGTOOLS
+IMPORT_SOURCES := CORBA JAXP JAXWS LANGTOOLS
+# Only Corba has binaries
+IMPORT_BINARIES := CORBA
+
+#######
+
+# Put the libraries here. Different locations for different target apis.
+ifeq ($(OPENJDK_TARGET_OS_API),posix)
+    ifneq ($(OPENJDK_TARGET_OS),macosx)
+        INSTALL_LIBRARIES_HERE:=$(JDK_OUTPUTDIR)/lib/$(LIBARCH)
+    else
+        INSTALL_LIBRARIES_HERE:=$(JDK_OUTPUTDIR)/lib
+    endif
+    HOTSPOT_LIB_DIR:=$(HOTSPOT_DIST)/jre/lib/$(LIBARCH)
+else
+    INSTALL_LIBRARIES_HERE:=$(JDK_OUTPUTDIR)/bin
+    HOTSPOT_LIB_DIR:=$(HOTSPOT_DIST)/jre/bin
+endif
+
+#######
+
+#
+# jar xf/unzip fails when executing them all in parallel
+#   introduce artificial dependency (_DEP) buuhhh 
+
+define ImportClasses
+$1_CLASSES_DEP := $$(IMPORT_TARGET_CLASSES)
+IMPORT_TARGET_CLASSES += $(JDK_OUTPUTDIR)/classes/_the.$1.classes.imported
+
+$(JDK_OUTPUTDIR)/classes/_the.$1.classes.imported : $$($1_DIST)/lib/classes.jar $$($1_CLASSES_DEP)
+	$(ECHO) Importing $1 classes.jar
+	$(MKDIR) -p $$(@D)
+	($(CD) $$(@D) && $(JAR) xvf $$< > $$@.tmp)
+	$(MV) $$@.tmp $$@
+endef
+
+define ImportSources
+$1_SOURCES_DEP := $$(IMPORT_TARGET_SOURCES)
+IMPORT_TARGET_SOURCES += $(JDK_OUTPUTDIR)/impsrc/_the.$1.src.imported
+
+$(JDK_OUTPUTDIR)/impsrc/_the.$1.src.imported : $$($1_DIST)/lib/src.zip $$($1_SOURCES_DEP)
+	$(ECHO) Importing $1 src.zip
+	$(MKDIR) -p $$(@D)
+	($(CD) $$(@D) && $(JAR) xvf $$< > $$@.tmp)
+	$(MV) $$@.tmp $$@
+endef
+
+define ImportBinaries
+$1_BINARIES_DEP := $$(IMPORT_TARGET_BINARIES)
+IMPORT_TARGET_BINARIES += $(JDK_OUTPUTDIR)/_the.$1.binaries.imported
+
+$(JDK_OUTPUTDIR)/_the.$1.binaries.imported : $$($1_DIST)/lib/bin.zip $$($1_BINARIES_DEP)
+	$(ECHO) Importing $1 bin.zip
+	$(MKDIR) -p $$(@D)
+	($(CD) $$(@D) && $(JAR) xvf $$< > $$@.tmp)
+	$(MV) $$@.tmp $$@
+endef
+
+#######
+
+$(foreach I,$(IMPORT_CLASSES), $(eval $(call ImportClasses,$I)))
+$(foreach I,$(IMPORT_SOURCES), $(eval $(call ImportSources,$I)))
+$(foreach I,$(IMPORT_BINARIES), $(eval $(call ImportBinaries,$I)))
+
+IMPORT_TARGET_FILES += $(IMPORT_TARGET_CLASSES) $(IMPORT_TARGET_SOURCES) $(IMPORT_TARGET_BINARIES)
+
+#######
+
+ifeq ($(OPENJDK_TARGET_OS),solaris)
+define do-install-file
+	$(MKDIR) -p $$(@D)
+	$(CP) -r -P '$$<' '$$(@D)'
+endef
+else ifeq ($(OPENJDK_TARGET_OS),macosx)
+define do-install-file
+	$(MKDIR) -p $$(@D)
+	$(CP) -pRP '$$<' '$$@'
+endef
+else
+define do-install-file
+	$(MKDIR) -p $$(@D)
+	$(CP) -P '$$<' '$$@'
+endef
+endif
+
+define CopyDir
+        $1_SRC_FILES := $(shell $(FIND) $2 -type f)
+        $1_DST_FILES := $$(patsubst $2/%,$3/%,$$($1_SRC_FILES))
+        IMPORT_TARGET_FILES += $$($1_DST_FILES)
+$3/% : $2/%
+	$(ECHO) Copying $$(@F)
+	$(do-install-file)
+endef
+
+#######
+
+#
+# Import hotspot
+#
+
+$(eval $(call CopyDir,HOTSPOT0, $(HOTSPOT_LIB_DIR), $(INSTALL_LIBRARIES_HERE)))
+$(eval $(call CopyDir,HOTSPOT1, $(HOTSPOT_DIST)/lib, $(JDK_OUTPUTDIR)/lib))
+
+JSIG_DEBUGINFO := $(wildcard $(HOTSPOT_DIST)/jre/lib/$(LIBARCH)/libjsig.debuginfo) \
+                  $(wildcard $(HOTSPOT_DIST)/jre/lib/$(LIBARCH)/libjsig.diz)
+
+ifneq ($(OPENJDK_TARGET_OS), windows)
+    ifeq ($(JVM_VARIANT_SERVER), true)
+        IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/server/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+        ifneq (,$(JSIG_DEBUGINFO))
+            IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/server/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+        endif
+    endif
+    ifeq ($(JVM_VARIANT_CLIENT), true)
+        IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+        ifneq (,$(JSIG_DEBUGINFO))
+            IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+        endif
+    endif
+endif
+
+$(INSTALL_LIBRARIES_HERE)/server/%$(SHARED_LIBRARY_SUFFIX) : $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
+	$(RM) -f $@
+	$(LN) -s ../$(@F) $@
+
+$(INSTALL_LIBRARIES_HERE)/server/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debuginfo
+	$(RM) -f $@
+	$(LN) -s ../$(@F) $@
+
+$(INSTALL_LIBRARIES_HERE)/server/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
+	$(RM) -f $@
+ifeq (REALLY_WEIRD,1)
+	$(LN) -s ../$(@F) $@
+else
+#
+# TODO: Check if this is what they really want...a zip containing a symlink
+#
+	$(RM) -f $(basename $@).debuginfo
+	$(LN) -s ../$(basename $(@F)).debuginfo $(basename $@).debuginfo
+	$(ZIP) -q -y $@ $(basename $@).debuginfo
+	$(RM) -f $(basename $@).debuginfo
+endif
+
+$(INSTALL_LIBRARIES_HERE)/client/%$(SHARED_LIBRARY_SUFFIX) : $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
+	$(RM) -f $@
+	$(LN) -s ../$(@F) $@
+
+$(INSTALL_LIBRARIES_HERE)/client/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debuginfo
+	$(RM) -f $@
+	$(LN) -s ../$(@F) $@
+
+$(INSTALL_LIBRARIES_HERE)/client/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
+	$(RM) -f $@
+ifeq (REALLY_WEIRD,1)
+	$(LN) -s ../$(@F) $@
+else
+#
+# TODO: Check if this is what they really want...a zip containing a symlink
+#
+	$(RM) -f $(basename $@).debuginfo
+	$(LN) -s ../$(basename $(@F)).debuginfo $(basename $@).debuginfo
+	$(ZIP) -q -y $@ $(basename $@).debuginfo
+	$(RM) -f $(basename $@).debuginfo
+endif
+
+#######
+
+ifeq ($(OPENJDK_TARGET_OS),solaris)
+define install-file
+	$(MKDIR) -p $(@D)
+	$(CP) -r -P '$<' '$(@D)'
+endef
+else ifeq ($(OPENJDK_TARGET_OS),macosx)
+define install-file
+	$(MKDIR) -p $(@D)
+	$(CP) -pRP '$<' '$@'
+endef
+else
+define install-file
+	$(MKDIR) -p $(@D)
+	$(CP) -P '$<' '$@'
+endef
+endif
+
+ifndef OPENJDK
+
+IMPORT_TARGET_FILES += \
+            $(JDK_OUTPUTDIR)/lib/security/US_export_policy.jar \
+            $(JDK_OUTPUTDIR)/lib/security/local_policy.jar \
+            $(JDK_OUTPUTDIR)/lib/jce.jar
+
+$(JDK_OUTPUTDIR)/lib/jce.jar : $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
+	$(ECHO) Copying $(@F)
+	$(install-file)
+
+$(JDK_OUTPUTDIR)/lib/security/local_policy.jar: $(JDK_TOPDIR)/make/closed/tools/crypto/jce/local_policy.jar
+	$(ECHO) Copying $(@F)
+	$(install-file)
+
+$(JDK_OUTPUTDIR)/lib/security/US_export_policy.jar: $(JDK_TOPDIR)/make/closed/tools/crypto/jce/US_export_policy.jar
+	$(ECHO) Copying $(@F)
+	$(install-file)
+
+endif # OPENJDK
+
+#######
+
+all: $(IMPORT_TARGET_FILES)

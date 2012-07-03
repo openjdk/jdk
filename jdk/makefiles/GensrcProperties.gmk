@@ -46,7 +46,7 @@ define add_properties_to_compile
 
   # Strip away prefix and suffix,
   # leaving for example: sun/util/resources/CurrencyNames_sv
-  $1_PROPPATHS:=$$(patsubst $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes/%.properties,%,\
+  $1_PROPPATHS:=$$(patsubst $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes/%.properties,%,\
                 $$(patsubst $(JDK_TOPDIR)/src/share/classes/%.properties,%,$2))
 
   # Apply optional name transformation, example: hz_TW -> hz_HK
@@ -75,7 +75,7 @@ define add_properties_to_clean
 
   # Strip away prefix and suffix,
   # leaving for example: sun/util/resources/CurrencyNames_sv
-  $1_PROPPATHS:=$$(patsubst $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes/%.properties,%,\
+  $1_PROPPATHS:=$$(patsubst $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes/%.properties,%,\
                 $$(patsubst $(JDK_TOPDIR)/src/share/classes/%.properties,%,$2))
 
   # Apply optional name transformation, example: hz_TW -> hz_HK
@@ -124,7 +124,7 @@ $(eval $(call add_properties_to_compile,COM_SUN_ACCESSIBILITY_HK,\
 $(eval $(call add_properties_to_clean,COM_SUN_IMAGEIO,\
 	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/imageio -name "*.properties")))
 #com/sun/java/swing/plaf/gtk/resources
-ifneq ($(PLATFORM), windows)
+ifneq ($(OPENJDK_TARGET_OS), windows)
 # Only compile GTK resource bundles on Solaris/Linux
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_GTK,\
 	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk/resources -name "*.properties"),\
@@ -263,6 +263,10 @@ $(eval $(call add_properties_to_compile,SUN_TOOLS_JAR_HK,\
 # but the old build system didn't copy them.
 $(eval $(call add_properties_to_clean,SUN_TOOLS_SERIALVER,\
 	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/tools/javac/resources -name "javac.properties")))
+
+#sun/tools/jconsole/resources
+$(eval $(call add_properties_to_clean,SUN_TOOLS_JCONSOLE,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/tools/jconsole/resources -name "*.properties")))
 
 #sun/tools/serialver
 $(eval $(call add_properties_to_clean,SUN_TOOLS_SERIALVER,\

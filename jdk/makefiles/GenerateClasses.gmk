@@ -27,7 +27,13 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include RMICompile.gmk
+include RMICompilation.gmk
+
+# To ensure the latest stub generator files are picked up from corba repo
+# when available, we need to run with latest rmic version available. 
+ifeq ($(CROSS_COMPILE_ARCH),)
+    RMIC := $(UNCYGDRIVE) $(JDK_OUTPUTDIR)/bin/rmic
+endif  
 
 CLASSES_DIR := $(JDK_OUTPUTDIR)/classes
 # NOTE: If the smart javac dependency management is reintroduced, these classes risk 
