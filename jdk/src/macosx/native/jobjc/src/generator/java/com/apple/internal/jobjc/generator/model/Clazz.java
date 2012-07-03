@@ -147,4 +147,8 @@ public class Clazz extends Element<Framework> implements OutputFileGenerator {
 
         return null;
     }
+
+    int compareTo(Clazz o) {
+      return toString().compareTo(o.toString());
+    }
 }

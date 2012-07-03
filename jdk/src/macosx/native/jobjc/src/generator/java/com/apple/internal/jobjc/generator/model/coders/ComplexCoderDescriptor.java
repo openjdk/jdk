@@ -25,7 +25,7 @@
 package com.apple.internal.jobjc.generator.model.coders;
 
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.TreeSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,7 +40,7 @@ import com.apple.jobjc.JObjCRuntime;
  */
 public class ComplexCoderDescriptor extends CoderDescriptor {
     static Map<Pair<NType,NType>, ComplexCoderDescriptor> cache = new HashMap<Pair<NType,NType>, ComplexCoderDescriptor>();
-    static Set<MixedEncodingDescriptor> mixedEncodingDescriptors = new HashSet<MixedEncodingDescriptor>();
+    static Set<MixedEncodingDescriptor> mixedEncodingDescriptors = new TreeSet<MixedEncodingDescriptor>();
 
     public static Set<MixedEncodingDescriptor> getMixedEncoders() { return mixedEncodingDescriptors; }
 
@@ -76,7 +76,7 @@ public class ComplexCoderDescriptor extends CoderDescriptor {
     // ** Subclasses
     // -------------
 
-    public static class MixedEncodingDescriptor extends ComplexCoderDescriptor {
+    public static class MixedEncodingDescriptor extends ComplexCoderDescriptor implements java.lang.Comparable {
         protected final PrimitiveCoderDescriptor desc32;
 
         public MixedEncodingDescriptor(final PrimitiveCoderDescriptor desc32, final PrimitiveCoderDescriptor desc64) {
@@ -97,5 +97,6 @@ public class ComplexCoderDescriptor extends CoderDescriptor {
         }
 
         static String getBaseNameOfCoder(final String coderName) { return coderName.substring(0, coderName.indexOf("Coder")); }
+        public int compareTo(Object _o) { MixedEncodingDescriptor o = (MixedEncodingDescriptor)_o; return getMixedName().compareTo(o.getMixedName()); }
     }
 }

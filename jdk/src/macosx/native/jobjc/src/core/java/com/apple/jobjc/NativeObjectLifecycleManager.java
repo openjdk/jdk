@@ -24,6 +24,10 @@
  */
 package com.apple.jobjc;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public abstract class NativeObjectLifecycleManager {
     private static native void retainNativeObject(final long ptr);
     private static native void releaseNativeObject(final long ptr);
@@ -33,6 +37,8 @@ public abstract class NativeObjectLifecycleManager {
     abstract void end(final long ptr);
     boolean shouldPreRetain() { return false; }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class CFRetainRelease extends NativeObjectLifecycleManager {
         public static final NativeObjectLifecycleManager INST = new CFRetainRelease();
         @Override void begin(final long ptr) { retainNativeObject(ptr); }
@@ -40,12 +46,16 @@ public abstract class NativeObjectLifecycleManager {
         @Override boolean shouldPreRetain() { return true; }
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class Free extends NativeObjectLifecycleManager {
         public static final NativeObjectLifecycleManager INST = new Free();
         @Override void begin(final long ptr) { }
         @Override void end(final long ptr) { freeNativeObject(ptr); }
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class Nothing extends NativeObjectLifecycleManager {
         public static final NativeObjectLifecycleManager INST = new Nothing();
         @Override void begin(final long ptr) { }
