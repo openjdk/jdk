@@ -49,21 +49,24 @@ then
 fi
 
 if [ "`uname`" == "SunOS" ]; then
-    NM=gnm
-    STAT="gstat -c%s"
+    if [ -f "`which nm`" ]; then
+        NM=nm
+    elif [ -f "`which gnm`" ]; then
+        NM=gnm
+    else
+        echo "No nm command found"
+        exit 10
+    fi
     LDD=ldd
 elif [ $OSTYPE == "cygwin" ]; then
     NM="$VS100COMNTOOLS/../../VC/bin/amd64/dumpbin.exe"
     NM_ARGS=/exports
-    STAT="stat -c%s"
     LDD=
 elif [ "`uname`" == "Darwin" ]; then
     NM=nm
-    STAT="stat -f%z"
     LDD="otool -L"
 else
     NM=nm
-    STAT="stat -c%s"
     LDD=ldd
 fi
 
@@ -79,8 +82,8 @@ fi
 OLD=$(cd $(dirname $1) && pwd)/$(basename $1)
 NEW=$(cd $(dirname $2) && pwd)/$(basename $2)
 
-OLD_SIZE=$($STAT "$OLD")
-NEW_SIZE=$($STAT "$NEW")
+OLD_SIZE=$(ls -l "$OLD" | awk '{ print $5 }')
+NEW_SIZE=$(ls -l "$NEW" | awk '{ print $5 }')
 
 if [ $# -gt 3 ]
 then
