@@ -3705,7 +3705,7 @@ class CommandLineFlags {
                                                                             \
   /* Properties for Java libraries  */                                      \
                                                                             \
-  product(intx, MaxDirectMemorySize, -1,                                    \
+  product(uintx, MaxDirectMemorySize, 0,                                    \
           "Maximum total size of NIO direct-buffer allocations")            \
                                                                             \
   /* temporary developer defined flags  */                                  \

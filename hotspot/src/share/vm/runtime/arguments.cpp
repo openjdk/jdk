@@ -2709,6 +2709,17 @@ SOLARIS_ONLY(
         return JNI_EINVAL;
       }
       FLAG_SET_CMDLINE(uintx, ConcGCThreads, conc_threads);
+    } else if (match_option(option, "-XX:MaxDirectMemorySize=", &tail)) {
+      julong max_direct_memory_size = 0;
+      ArgsRange errcode = parse_memory_size(tail, &max_direct_memory_size, 0);
+      if (errcode != arg_in_range) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid maximum direct memory size: %s\n",
+                    option->optionString);
+        describe_range_error(errcode);
+        return JNI_EINVAL;
+      }
+      FLAG_SET_CMDLINE(uintx, MaxDirectMemorySize, max_direct_memory_size);
     } else if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
       // Skip -XX:Flags= since that case has already been handled
       if (strncmp(tail, "Flags=", strlen("Flags=")) != 0) {
