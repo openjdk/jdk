@@ -46,7 +46,7 @@ ifndef OPENJDK
     SAMPLE_TARGET += $(SAMPLE_CLOSED_TARGET)
 endif
 
-ifneq (, $(filter $(PLATFORM), solaris macosx))
+ifneq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx))
     SAMPLE_SOLARIS_SOURCE := $(shell $(FIND) $(SAMPLE_SOLARIS_SOURCE_DIR) -type f -print)
     SAMPLE_SOLARIS_TARGET := $(subst $(SAMPLE_SOLARIS_SOURCE_DIR),$(SAMPLE_TARGET_DIR),$(SAMPLE_SOLARIS_SOURCE))
     SAMPLE_TARGET += $(SAMPLE_SOLARIS_TARGET)
@@ -72,4 +72,3 @@ COPY_FILES += $(SAMPLE_TARGET)
 all: $(COPY_FILES) 
 
 .PHONY: all
-

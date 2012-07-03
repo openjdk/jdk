@@ -35,10 +35,10 @@
 #
 TEXT_SRCDIR = $(JDK_TOPDIR)/src/share/classes
 TEXT_PKG  = sun/text/resources
-TEXT_SOURCES = 	%$(TEXT_PKG)/BreakIteratorRules.java \
-		%$(TEXT_PKG)/BreakIteratorInfo.java \
-		%$(TEXT_PKG)/BreakIteratorRules_th.java \
-		%$(TEXT_PKG)/BreakIteratorInfo_th.java
+TEXT_SOURCES = 	$(TEXT_PKG)/BreakIteratorRules.java \
+		$(TEXT_PKG)/BreakIteratorInfo.java \
+		$(TEXT_PKG)/BreakIteratorRules_th.java \
+		$(TEXT_PKG)/BreakIteratorInfo_th.java
 
 # Generate BreakIteratorData
 BREAK_ITERATOR_DIR = $(JDK_OUTPUTDIR)/break_iterator
