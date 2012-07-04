@@ -665,6 +665,10 @@ class os: AllStatic {
   // On Windows this will create an actual minidump, on Linux/Solaris it will simply check core dump limits
   static void check_or_create_dump(void* exceptionRecord, void* contextRecord, char* buffer, size_t bufferSize);
 
+  // Get the default path to the core file
+  // Returns the length of the string
+  static int get_core_path(char* buffer, size_t bufferSize);
+
   // JVMTI & JVM monitoring and management support
   // The thread_cpu_time() and current_thread_cpu_time() are only
   // supported if is_thread_cpu_time_supported() returns true.

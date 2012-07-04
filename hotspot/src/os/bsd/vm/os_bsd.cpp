@@ -5801,3 +5801,14 @@ bool os::is_headless_jre() {
 
     return true;
 }
+
+// Get the default path to the core file
+// Returns the length of the string
+int os::get_core_path(char* buffer, size_t bufferSize) {
+  int n = jio_snprintf(buffer, bufferSize, "/cores");
+
+  // Truncate if theoretical string was longer than bufferSize
+  n = MIN2(n, (int)bufferSize);
+
+  return n;
+}
