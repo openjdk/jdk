@@ -24,6 +24,456 @@
 
 // X86 Common Architecture Description File
 
+//----------REGISTER DEFINITION BLOCK------------------------------------------
+// This information is used by the matcher and the register allocator to
+// describe individual registers and classes of registers within the target
+// archtecture.
+
+register %{
+//----------Architecture Description Register Definitions----------------------
+// General Registers
+// "reg_def"  name ( register save type, C convention save type,
+//                   ideal register type, encoding );
+// Register Save Types:
+//
+// NS  = No-Save:       The register allocator assumes that these registers
+//                      can be used without saving upon entry to the method, &
+//                      that they do not need to be saved at call sites.
+//
+// SOC = Save-On-Call:  The register allocator assumes that these registers
+//                      can be used without saving upon entry to the method,
+//                      but that they must be saved at call sites.
+//
+// SOE = Save-On-Entry: The register allocator assumes that these registers
+//                      must be saved before using them upon entry to the
+//                      method, but they do not need to be saved at call
+//                      sites.
+//
+// AS  = Always-Save:   The register allocator assumes that these registers
+//                      must be saved before using them upon entry to the
+//                      method, & that they must be saved at call sites.
+//
+// Ideal Register Type is used to determine how to save & restore a
+// register.  Op_RegI will get spilled with LoadI/StoreI, Op_RegP will get
+// spilled with LoadP/StoreP.  If the register supports both, use Op_RegI.
+//
+// The encoding number is the actual bit-pattern placed into the opcodes.
+
+// XMM registers.  256-bit registers or 8 words each, labeled (a)-h.
+// Word a in each register holds a Float, words ab hold a Double.
+// The whole registers are used in SSE4.2 version intrinsics,
+// array copy stubs and superword operations (see UseSSE42Intrinsics,
+// UseXMMForArrayCopy and UseSuperword flags).
+// XMM8-XMM15 must be encoded with REX (VEX for UseAVX).
+// Linux ABI:   No register preserved across function calls
+//              XMM0-XMM7 might hold parameters
+// Windows ABI: XMM6-XMM15 preserved across function calls
+//              XMM0-XMM3 might hold parameters
+
+reg_def XMM0 ( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg());
+reg_def XMM0b( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next());
+reg_def XMM0c( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next());
+reg_def XMM0d( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next()->next());
+reg_def XMM0e( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next()->next()->next());
+reg_def XMM0f( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM0g( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM0h( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM1 ( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg());
+reg_def XMM1b( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next());
+reg_def XMM1c( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next());
+reg_def XMM1d( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next()->next());
+reg_def XMM1e( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next()->next()->next());
+reg_def XMM1f( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM1g( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM1h( SOC, SOC, Op_RegF, 1, xmm1->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM2 ( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg());
+reg_def XMM2b( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next());
+reg_def XMM2c( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next());
+reg_def XMM2d( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next()->next());
+reg_def XMM2e( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next()->next()->next());
+reg_def XMM2f( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM2g( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM2h( SOC, SOC, Op_RegF, 2, xmm2->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM3 ( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg());
+reg_def XMM3b( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next());
+reg_def XMM3c( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next());
+reg_def XMM3d( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next()->next());
+reg_def XMM3e( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next()->next()->next());
+reg_def XMM3f( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM3g( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM3h( SOC, SOC, Op_RegF, 3, xmm3->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM4 ( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg());
+reg_def XMM4b( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next());
+reg_def XMM4c( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next());
+reg_def XMM4d( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next()->next());
+reg_def XMM4e( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next()->next()->next());
+reg_def XMM4f( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM4g( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM4h( SOC, SOC, Op_RegF, 4, xmm4->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM5 ( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg());
+reg_def XMM5b( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next());
+reg_def XMM5c( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next());
+reg_def XMM5d( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next()->next());
+reg_def XMM5e( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next()->next()->next());
+reg_def XMM5f( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM5g( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM5h( SOC, SOC, Op_RegF, 5, xmm5->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+#ifdef _WIN64
+
+reg_def XMM6 ( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg());
+reg_def XMM6b( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next());
+reg_def XMM6c( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next());
+reg_def XMM6d( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next());
+reg_def XMM6e( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next());
+reg_def XMM6f( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM6g( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM6h( SOC, SOE, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM7 ( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg());
+reg_def XMM7b( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next());
+reg_def XMM7c( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next());
+reg_def XMM7d( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next());
+reg_def XMM7e( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next());
+reg_def XMM7f( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM7g( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM7h( SOC, SOE, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM8 ( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg());
+reg_def XMM8b( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next());
+reg_def XMM8c( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next());
+reg_def XMM8d( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next());
+reg_def XMM8e( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next());
+reg_def XMM8f( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM8g( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM8h( SOC, SOE, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM9 ( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg());
+reg_def XMM9b( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next());
+reg_def XMM9c( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next());
+reg_def XMM9d( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next());
+reg_def XMM9e( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next());
+reg_def XMM9f( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM9g( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM9h( SOC, SOE, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM10 ( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg());
+reg_def XMM10b( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next());
+reg_def XMM10c( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next());
+reg_def XMM10d( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next());
+reg_def XMM10e( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next());
+reg_def XMM10f( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM10g( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM10h( SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM11 ( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg());
+reg_def XMM11b( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next());
+reg_def XMM11c( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next());
+reg_def XMM11d( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next());
+reg_def XMM11e( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next());
+reg_def XMM11f( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM11g( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM11h( SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM12 ( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg());
+reg_def XMM12b( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next());
+reg_def XMM12c( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next());
+reg_def XMM12d( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next());
+reg_def XMM12e( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next());
+reg_def XMM12f( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM12g( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM12h( SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM13 ( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg());
+reg_def XMM13b( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next());
+reg_def XMM13c( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next());
+reg_def XMM13d( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next());
+reg_def XMM13e( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next());
+reg_def XMM13f( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM13g( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM13h( SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM14 ( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg());
+reg_def XMM14b( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next());
+reg_def XMM14c( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next());
+reg_def XMM14d( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next());
+reg_def XMM14e( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next());
+reg_def XMM14f( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM14g( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM14h( SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM15 ( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg());
+reg_def XMM15b( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next());
+reg_def XMM15c( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next());
+reg_def XMM15d( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next());
+reg_def XMM15e( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next());
+reg_def XMM15f( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM15g( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM15h( SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+#else // _WIN64
+
+reg_def XMM6 ( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg());
+reg_def XMM6b( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next());
+reg_def XMM6c( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next());
+reg_def XMM6d( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next());
+reg_def XMM6e( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next());
+reg_def XMM6f( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM6g( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM6h( SOC, SOC, Op_RegF, 6, xmm6->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM7 ( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg());
+reg_def XMM7b( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next());
+reg_def XMM7c( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next());
+reg_def XMM7d( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next());
+reg_def XMM7e( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next());
+reg_def XMM7f( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM7g( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM7h( SOC, SOC, Op_RegF, 7, xmm7->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+#ifdef _LP64
+
+reg_def XMM8 ( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg());
+reg_def XMM8b( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next());
+reg_def XMM8c( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next());
+reg_def XMM8d( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next());
+reg_def XMM8e( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next());
+reg_def XMM8f( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM8g( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM8h( SOC, SOC, Op_RegF, 8, xmm8->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM9 ( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg());
+reg_def XMM9b( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next());
+reg_def XMM9c( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next());
+reg_def XMM9d( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next());
+reg_def XMM9e( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next());
+reg_def XMM9f( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM9g( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM9h( SOC, SOC, Op_RegF, 9, xmm9->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM10 ( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg());
+reg_def XMM10b( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next());
+reg_def XMM10c( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next());
+reg_def XMM10d( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next());
+reg_def XMM10e( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next());
+reg_def XMM10f( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM10g( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM10h( SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM11 ( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg());
+reg_def XMM11b( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next());
+reg_def XMM11c( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next());
+reg_def XMM11d( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next());
+reg_def XMM11e( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next());
+reg_def XMM11f( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM11g( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM11h( SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM12 ( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg());
+reg_def XMM12b( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next());
+reg_def XMM12c( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next());
+reg_def XMM12d( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next());
+reg_def XMM12e( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next());
+reg_def XMM12f( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM12g( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM12h( SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM13 ( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg());
+reg_def XMM13b( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next());
+reg_def XMM13c( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next());
+reg_def XMM13d( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next());
+reg_def XMM13e( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next());
+reg_def XMM13f( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM13g( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM13h( SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM14 ( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg());
+reg_def XMM14b( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next());
+reg_def XMM14c( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next());
+reg_def XMM14d( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next());
+reg_def XMM14e( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next());
+reg_def XMM14f( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM14g( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM14h( SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+reg_def XMM15 ( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg());
+reg_def XMM15b( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next());
+reg_def XMM15c( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next());
+reg_def XMM15d( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next());
+reg_def XMM15e( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next());
+reg_def XMM15f( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next());
+reg_def XMM15g( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next()->next());
+reg_def XMM15h( SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next()->next()->next()->next()->next()->next()->next());
+
+#endif // _LP64
+
+#endif // _WIN64
+
+#ifdef _LP64
+reg_def RFLAGS(SOC, SOC, 0, 16, VMRegImpl::Bad());
+#else
+reg_def RFLAGS(SOC, SOC, 0, 8, VMRegImpl::Bad());
+#endif // _LP64
+
+alloc_class chunk1(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,  XMM0h,
+                   XMM1,  XMM1b,  XMM1c,  XMM1d,  XMM1e,  XMM1f,  XMM1g,  XMM1h,
+                   XMM2,  XMM2b,  XMM2c,  XMM2d,  XMM2e,  XMM2f,  XMM2g,  XMM2h,
+                   XMM3,  XMM3b,  XMM3c,  XMM3d,  XMM3e,  XMM3f,  XMM3g,  XMM3h,
+                   XMM4,  XMM4b,  XMM4c,  XMM4d,  XMM4e,  XMM4f,  XMM4g,  XMM4h,
+                   XMM5,  XMM5b,  XMM5c,  XMM5d,  XMM5e,  XMM5f,  XMM5g,  XMM5h,
+                   XMM6,  XMM6b,  XMM6c,  XMM6d,  XMM6e,  XMM6f,  XMM6g,  XMM6h,
+                   XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h
+#ifdef _LP64
+                  ,XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,
+                   XMM9,  XMM9b,  XMM9c,  XMM9d,  XMM9e,  XMM9f,  XMM9g,  XMM9h,
+                   XMM10, XMM10b, XMM10c, XMM10d, XMM10e, XMM10f, XMM10g, XMM10h,
+                   XMM11, XMM11b, XMM11c, XMM11d, XMM11e, XMM11f, XMM11g, XMM11h,
+                   XMM12, XMM12b, XMM12c, XMM12d, XMM12e, XMM12f, XMM12g, XMM12h,
+                   XMM13, XMM13b, XMM13c, XMM13d, XMM13e, XMM13f, XMM13g, XMM13h,
+                   XMM14, XMM14b, XMM14c, XMM14d, XMM14e, XMM14f, XMM14g, XMM14h,
+                   XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h
+#endif
+                   );
+
+// flags allocation class should be last.
+alloc_class chunk2(RFLAGS);
+
+// Singleton class for condition codes
+reg_class int_flags(RFLAGS);
+
+// Class for all float registers
+reg_class float_reg(XMM0,
+                    XMM1,
+                    XMM2,
+                    XMM3,
+                    XMM4,
+                    XMM5,
+                    XMM6,
+                    XMM7
+#ifdef _LP64
+                   ,XMM8,
+                    XMM9,
+                    XMM10,
+                    XMM11,
+                    XMM12,
+                    XMM13,
+                    XMM14,
+                    XMM15
+#endif
+                    );
+
+// Class for all double registers
+reg_class double_reg(XMM0,  XMM0b,
+                     XMM1,  XMM1b,
+                     XMM2,  XMM2b,
+                     XMM3,  XMM3b,
+                     XMM4,  XMM4b,
+                     XMM5,  XMM5b,
+                     XMM6,  XMM6b,
+                     XMM7,  XMM7b
+#ifdef _LP64
+                    ,XMM8,  XMM8b,
+                     XMM9,  XMM9b,
+                     XMM10, XMM10b,
+                     XMM11, XMM11b,
+                     XMM12, XMM12b,
+                     XMM13, XMM13b,
+                     XMM14, XMM14b,
+                     XMM15, XMM15b
+#endif
+                     );
+
+// Class for all 32bit vector registers
+reg_class vectors_reg(XMM0,
+                      XMM1,
+                      XMM2,
+                      XMM3,
+                      XMM4,
+                      XMM5,
+                      XMM6,
+                      XMM7
+#ifdef _LP64
+                     ,XMM8,
+                      XMM9,
+                      XMM10,
+                      XMM11,
+                      XMM12,
+                      XMM13,
+                      XMM14,
+                      XMM15
+#endif
+                      );
+
+// Class for all 64bit vector registers
+reg_class vectord_reg(XMM0,  XMM0b,
+                      XMM1,  XMM1b,
+                      XMM2,  XMM2b,
+                      XMM3,  XMM3b,
+                      XMM4,  XMM4b,
+                      XMM5,  XMM5b,
+                      XMM6,  XMM6b,
+                      XMM7,  XMM7b
+#ifdef _LP64
+                     ,XMM8,  XMM8b,
+                      XMM9,  XMM9b,
+                      XMM10, XMM10b,
+                      XMM11, XMM11b,
+                      XMM12, XMM12b,
+                      XMM13, XMM13b,
+                      XMM14, XMM14b,
+                      XMM15, XMM15b
+#endif
+                      );
+
+// Class for all 128bit vector registers
+reg_class vectorx_reg(XMM0,  XMM0b,  XMM0c,  XMM0d,
+                      XMM1,  XMM1b,  XMM1c,  XMM1d,
+                      XMM2,  XMM2b,  XMM2c,  XMM2d,
+                      XMM3,  XMM3b,  XMM3c,  XMM3d,
+                      XMM4,  XMM4b,  XMM4c,  XMM4d,
+                      XMM5,  XMM5b,  XMM5c,  XMM5d,
+                      XMM6,  XMM6b,  XMM6c,  XMM6d,
+                      XMM7,  XMM7b,  XMM7c,  XMM7d
+#ifdef _LP64
+                     ,XMM8,  XMM8b,  XMM8c,  XMM8d,
+                      XMM9,  XMM9b,  XMM9c,  XMM9d,
+                      XMM10, XMM10b, XMM10c, XMM10d,
+                      XMM11, XMM11b, XMM11c, XMM11d,
+                      XMM12, XMM12b, XMM12c, XMM12d,
+                      XMM13, XMM13b, XMM13c, XMM13d,
+                      XMM14, XMM14b, XMM14c, XMM14d,
+                      XMM15, XMM15b, XMM15c, XMM15d
+#endif
+                      );
+
+// Class for all 256bit vector registers
+reg_class vectory_reg(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,  XMM0h,
+                      XMM1,  XMM1b,  XMM1c,  XMM1d,  XMM1e,  XMM1f,  XMM1g,  XMM1h,
+                      XMM2,  XMM2b,  XMM2c,  XMM2d,  XMM2e,  XMM2f,  XMM2g,  XMM2h,
+                      XMM3,  XMM3b,  XMM3c,  XMM3d,  XMM3e,  XMM3f,  XMM3g,  XMM3h,
+                      XMM4,  XMM4b,  XMM4c,  XMM4d,  XMM4e,  XMM4f,  XMM4g,  XMM4h,
+                      XMM5,  XMM5b,  XMM5c,  XMM5d,  XMM5e,  XMM5f,  XMM5g,  XMM5h,
+                      XMM6,  XMM6b,  XMM6c,  XMM6d,  XMM6e,  XMM6f,  XMM6g,  XMM6h,
+                      XMM7,  XMM7b,  XMM7c,  XMM7d,  XMM7e,  XMM7f,  XMM7g,  XMM7h
+#ifdef _LP64
+                     ,XMM8,  XMM8b,  XMM8c,  XMM8d,  XMM8e,  XMM8f,  XMM8g,  XMM8h,
+                      XMM9,  XMM9b,  XMM9c,  XMM9d,  XMM9e,  XMM9f,  XMM9g,  XMM9h,
+                      XMM10, XMM10b, XMM10c, XMM10d, XMM10e, XMM10f, XMM10g, XMM10h,
+                      XMM11, XMM11b, XMM11c, XMM11d, XMM11e, XMM11f, XMM11g, XMM11h,
+                      XMM12, XMM12b, XMM12c, XMM12d, XMM12e, XMM12f, XMM12g, XMM12h,
+                      XMM13, XMM13b, XMM13c, XMM13d, XMM13e, XMM13f, XMM13g, XMM13h,
+                      XMM14, XMM14b, XMM14c, XMM14d, XMM14e, XMM14f, XMM14g, XMM14h,
+                      XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h
+#endif
+                      );
+
+%}
+
 source %{
   // Float masks come from different places depending on platform.
 #ifdef _LP64
@@ -37,6 +487,252 @@ source %{
   static address double_signmask() { return (address)double_signmask_pool; }
   static address double_signflip() { return (address)double_signflip_pool; }
 #endif
+
+// Map Types to machine register types
+const int Matcher::base2reg[Type::lastype] = {
+  Node::NotAMachineReg,0,0, Op_RegI, Op_RegL, 0, Op_RegN,
+  Node::NotAMachineReg, Node::NotAMachineReg, /* tuple, array */
+  Op_VecS, Op_VecD, Op_VecX, Op_VecY, /* Vectors */
+  Op_RegP, Op_RegP, Op_RegP, Op_RegP, Op_RegP, Op_RegP, /* the pointers */
+  0, 0/*abio*/,
+  Op_RegP /* Return address */, 0, /* the memories */
+  Op_RegF, Op_RegF, Op_RegF, Op_RegD, Op_RegD, Op_RegD,
+  0  /*bottom*/
+};
+
+// Max vector size in bytes. 0 if not supported.
+const int Matcher::vector_width_in_bytes(BasicType bt) {
+  assert(is_java_primitive(bt), "only primitive type vectors");
+  if (UseSSE < 2) return 0;
+  // SSE2 supports 128bit vectors for all types.
+  // AVX2 supports 256bit vectors for all types.
+  int size = (UseAVX > 1) ? 32 : 16;
+  // AVX1 supports 256bit vectors only for FLOAT and DOUBLE.
+  if (UseAVX > 0 && (bt == T_FLOAT || bt == T_DOUBLE))
+    size = 32;
+  // Use flag to limit vector size.
+  size = MIN2(size,(int)MaxVectorSize);
+  // Minimum 2 values in vector (or 4 for bytes).
+  switch (bt) {
+  case T_DOUBLE:
+  case T_LONG:
+    if (size < 16) return 0;
+  case T_FLOAT:
+  case T_INT:
+    if (size < 8) return 0;
+  case T_BOOLEAN:
+  case T_BYTE:
+  case T_CHAR:
+  case T_SHORT:
+    if (size < 4) return 0;
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+  return size;
+}
+
+// Limits on vector size (number of elements) loaded into vector.
+const int Matcher::max_vector_size(const BasicType bt) {
+  return vector_width_in_bytes(bt)/type2aelembytes(bt);
+}
+const int Matcher::min_vector_size(const BasicType bt) {
+  int max_size = max_vector_size(bt);
+  // Min size which can be loaded into vector is 4 bytes.
+  int size = (type2aelembytes(bt) == 1) ? 4 : 2;
+  return MIN2(size,max_size);
+}
+
+// Vector ideal reg corresponding to specidied size in bytes
+const int Matcher::vector_ideal_reg(int size) {
+  assert(MaxVectorSize >= size, "");
+  switch(size) {
+    case  4: return Op_VecS;
+    case  8: return Op_VecD;
+    case 16: return Op_VecX;
+    case 32: return Op_VecY;
+  }
+  ShouldNotReachHere();
+  return 0;
+}
+
+// x86 supports misaligned vectors store/load.
+const bool Matcher::misaligned_vectors_ok() {
+  return !AlignVector; // can be changed by flag
+}
+
+// Helper methods for MachSpillCopyNode::implementation().
+static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+                          int src_hi, int dst_hi, uint ireg, outputStream* st) {
+  // In 64-bit VM size calculation is very complex. Emitting instructions
+  // into scratch buffer is used to get size in 64-bit VM.
+  LP64_ONLY( assert(!do_size, "this method calculates size only for 32-bit VM"); )
+  assert(ireg == Op_VecS || // 32bit vector
+         (src_lo & 1) == 0 && (src_lo + 1) == src_hi &&
+         (dst_lo & 1) == 0 && (dst_lo + 1) == dst_hi,
+         "no non-adjacent vector moves" );
+  if (cbuf) {
+    MacroAssembler _masm(cbuf);
+    int offset = __ offset();
+    switch (ireg) {
+    case Op_VecS: // copy whole register
+    case Op_VecD:
+    case Op_VecX:
+      __ movdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
+      break;
+    case Op_VecY:
+      __ vmovdqu(as_XMMRegister(Matcher::_regEncode[dst_lo]), as_XMMRegister(Matcher::_regEncode[src_lo]));
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+    int size = __ offset() - offset;
+#ifdef ASSERT
+    // VEX_2bytes prefix is used if UseAVX > 0, so it takes the same 2 bytes as SIMD prefix.
+    assert(!do_size || size == 4, "incorrect size calculattion");
+#endif
+    return size;
+#ifndef PRODUCT
+  } else if (!do_size) {
+    switch (ireg) {
+    case Op_VecS:
+    case Op_VecD:
+    case Op_VecX:
+      st->print("movdqu  %s,%s\t# spill",Matcher::regName[dst_lo],Matcher::regName[src_lo]);
+      break;
+    case Op_VecY:
+      st->print("vmovdqu %s,%s\t# spill",Matcher::regName[dst_lo],Matcher::regName[src_lo]);
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+#endif
+  }
+  // VEX_2bytes prefix is used if UseAVX > 0, and it takes the same 2 bytes as SIMD prefix.
+  return 4;
+}
+
+static int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
+                            int stack_offset, int reg, uint ireg, outputStream* st) {
+  // In 64-bit VM size calculation is very complex. Emitting instructions
+  // into scratch buffer is used to get size in 64-bit VM.
+  LP64_ONLY( assert(!do_size, "this method calculates size only for 32-bit VM"); )
+  if (cbuf) {
+    MacroAssembler _masm(cbuf);
+    int offset = __ offset();
+    if (is_load) {
+      switch (ireg) {
+      case Op_VecS:
+        __ movdl(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
+        break;
+      case Op_VecD:
+        __ movq(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
+        break;
+      case Op_VecX:
+        __ movdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
+        break;
+      case Op_VecY:
+        __ vmovdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
+        break;
+      default:
+        ShouldNotReachHere();
+      }
+    } else { // store
+      switch (ireg) {
+      case Op_VecS:
+        __ movdl(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
+        break;
+      case Op_VecD:
+        __ movq(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
+        break;
+      case Op_VecX:
+        __ movdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
+        break;
+      case Op_VecY:
+        __ vmovdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
+        break;
+      default:
+        ShouldNotReachHere();
+      }
+    }
+    int size = __ offset() - offset;
+#ifdef ASSERT
+    int offset_size = (stack_offset == 0) ? 0 : ((stack_offset < 0x80) ? 1 : 4);
+    // VEX_2bytes prefix is used if UseAVX > 0, so it takes the same 2 bytes as SIMD prefix.
+    assert(!do_size || size == (5+offset_size), "incorrect size calculattion");
+#endif
+    return size;
+#ifndef PRODUCT
+  } else if (!do_size) {
+    if (is_load) {
+      switch (ireg) {
+      case Op_VecS:
+        st->print("movd    %s,[rsp + %d]\t# spill", Matcher::regName[reg], stack_offset);
+        break;
+      case Op_VecD:
+        st->print("movq    %s,[rsp + %d]\t# spill", Matcher::regName[reg], stack_offset);
+        break;
+       case Op_VecX:
+        st->print("movdqu  %s,[rsp + %d]\t# spill", Matcher::regName[reg], stack_offset);
+        break;
+      case Op_VecY:
+        st->print("vmovdqu %s,[rsp + %d]\t# spill", Matcher::regName[reg], stack_offset);
+        break;
+      default:
+        ShouldNotReachHere();
+      }
+    } else { // store
+      switch (ireg) {
+      case Op_VecS:
+        st->print("movd    [rsp + %d],%s\t# spill", stack_offset, Matcher::regName[reg]);
+        break;
+      case Op_VecD:
+        st->print("movq    [rsp + %d],%s\t# spill", stack_offset, Matcher::regName[reg]);
+        break;
+       case Op_VecX:
+        st->print("movdqu  [rsp + %d],%s\t# spill", stack_offset, Matcher::regName[reg]);
+        break;
+      case Op_VecY:
+        st->print("vmovdqu [rsp + %d],%s\t# spill", stack_offset, Matcher::regName[reg]);
+        break;
+      default:
+        ShouldNotReachHere();
+      }
+    }
+#endif
+  }
+  int offset_size = (stack_offset == 0) ? 0 : ((stack_offset < 0x80) ? 1 : 4);
+  // VEX_2bytes prefix is used if UseAVX > 0, so it takes the same 2 bytes as SIMD prefix.
+  return 5+offset_size;
+}
+
+static inline jfloat replicate4_imm(int con, int width) {
+  // Load a constant of "width" (in bytes) and replicate it to fill 32bit.
+  assert(width == 1 || width == 2, "only byte or short types here");
+  int bit_width = width * 8;
+  jint val = con;
+  val &= (1 << bit_width) - 1;  // mask off sign bits
+  while(bit_width < 32) {
+    val |= (val << bit_width);
+    bit_width <<= 1;
+  }
+  jfloat fval = *((jfloat*) &val);  // coerce to float type
+  return fval;
+}
+
+static inline jdouble replicate8_imm(int con, int width) {
+  // Load a constant of "width" (in bytes) and replicate it to fill 64bit.
+  assert(width == 1 || width == 2 || width == 4, "only byte, short or int types here");
+  int bit_width = width * 8;
+  jlong val = con;
+  val &= (((jlong) 1) << bit_width) - 1;  // mask off sign bits
+  while(bit_width < 64) {
+    val |= (val << bit_width);
+    bit_width <<= 1;
+  }
+  jdouble dval = *((jdouble*) &val);  // coerce to double type
+  return dval;
+}
 
 #ifndef PRODUCT
   void MachNopNode::format(PhaseRegAlloc*, outputStream* st) const {
@@ -102,6 +798,46 @@ encode %{
   %}
 
 %}
+
+
+//----------OPERANDS-----------------------------------------------------------
+// Operand definitions must precede instruction definitions for correct parsing
+// in the ADLC because operands constitute user defined types which are used in
+// instruction definitions.
+
+// Vectors
+operand vecS() %{
+  constraint(ALLOC_IN_RC(vectors_reg));
+  match(VecS);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecD() %{
+  constraint(ALLOC_IN_RC(vectord_reg));
+  match(VecD);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecX() %{
+  constraint(ALLOC_IN_RC(vectorx_reg));
+  match(VecX);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecY() %{
+  constraint(ALLOC_IN_RC(vectory_reg));
+  match(VecY);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 
 // INSTRUCTIONS -- Platform independent definitions (same for 32- and 64-bit)
 
@@ -850,5 +1586,799 @@ instruct sqrtD_imm(regD dst, immD con) %{
     __ sqrtsd($dst$$XMMRegister, $constantaddress($con));
   %}
   ins_pipe(pipe_slow);
+%}
+
+
+// ====================VECTOR INSTRUCTIONS=====================================
+
+// Load vectors (4 bytes long)
+instruct loadV4(vecS dst, memory mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 4);
+  match(Set dst (LoadVector mem));
+  ins_cost(125);
+  format %{ "movd    $dst,$mem\t! load vector (4 bytes)" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $mem$$Address);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Load vectors (8 bytes long)
+instruct loadV8(vecD dst, memory mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 8);
+  match(Set dst (LoadVector mem));
+  ins_cost(125);
+  format %{ "movq    $dst,$mem\t! load vector (8 bytes)" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $mem$$Address);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Load vectors (16 bytes long)
+instruct loadV16(vecX dst, memory mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 16);
+  match(Set dst (LoadVector mem));
+  ins_cost(125);
+  format %{ "movdqu  $dst,$mem\t! load vector (16 bytes)" %}
+  ins_encode %{
+    __ movdqu($dst$$XMMRegister, $mem$$Address);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Load vectors (32 bytes long)
+instruct loadV32(vecY dst, memory mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 32);
+  match(Set dst (LoadVector mem));
+  ins_cost(125);
+  format %{ "vmovdqu $dst,$mem\t! load vector (32 bytes)" %}
+  ins_encode %{
+    __ vmovdqu($dst$$XMMRegister, $mem$$Address);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Store vectors
+instruct storeV4(memory mem, vecS src) %{
+  predicate(n->as_StoreVector()->memory_size() == 4);
+  match(Set mem (StoreVector mem src));
+  ins_cost(145);
+  format %{ "movd    $mem,$src\t! store vector (4 bytes)" %}
+  ins_encode %{
+    __ movdl($mem$$Address, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct storeV8(memory mem, vecD src) %{
+  predicate(n->as_StoreVector()->memory_size() == 8);
+  match(Set mem (StoreVector mem src));
+  ins_cost(145);
+  format %{ "movq    $mem,$src\t! store vector (8 bytes)" %}
+  ins_encode %{
+    __ movq($mem$$Address, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct storeV16(memory mem, vecX src) %{
+  predicate(n->as_StoreVector()->memory_size() == 16);
+  match(Set mem (StoreVector mem src));
+  ins_cost(145);
+  format %{ "movdqu  $mem,$src\t! store vector (16 bytes)" %}
+  ins_encode %{
+    __ movdqu($mem$$Address, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct storeV32(memory mem, vecY src) %{
+  predicate(n->as_StoreVector()->memory_size() == 32);
+  match(Set mem (StoreVector mem src));
+  ins_cost(145);
+  format %{ "vmovdqu $mem,$src\t! store vector (32 bytes)" %}
+  ins_encode %{
+    __ vmovdqu($mem$$Address, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate byte scalar to be vector
+instruct Repl4B(vecS dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateB src));
+  format %{ "movd    $dst,$src\n\t"
+            "punpcklbw $dst,$dst\n\t"
+            "pshuflw $dst,$dst,0x00\t! replicate4B" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8B(vecD dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateB src));
+  format %{ "movd    $dst,$src\n\t"
+            "punpcklbw $dst,$dst\n\t"
+            "pshuflw $dst,$dst,0x00\t! replicate8B" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16B(vecX dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (ReplicateB src));
+  format %{ "movd    $dst,$src\n\t"
+            "punpcklbw $dst,$dst\n\t"
+            "pshuflw $dst,$dst,0x00\n\t"
+            "movlhps $dst,$dst\t! replicate16B" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32B(vecY dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 32);
+  match(Set dst (ReplicateB src));
+  format %{ "movd    $dst,$src\n\t"
+            "punpcklbw $dst,$dst\n\t"
+            "pshuflw $dst,$dst,0x00\n\t"
+            "movlhps $dst,$dst\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate32B" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate byte scalar immediate to be vector by loading from const table.
+instruct Repl4B_imm(vecS dst, immI con) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateB con));
+  format %{ "movss   $dst,[$constantaddress]\t! replicate4B($con)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $constantaddress(replicate4_imm($con$$constant, 1)));
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8B_imm(vecD dst, immI con) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateB con));
+  format %{ "movsd   $dst,[$constantaddress]\t! replicate8B($con)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16B_imm(vecX dst, immI con) %{
+  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (ReplicateB con));
+  format %{ "movsd   $dst,[$constantaddress]\t! replicate16B($con)\n\t"
+            "movlhps $dst,$dst" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32B_imm(vecY dst, immI con) %{
+  predicate(n->as_Vector()->length() == 32);
+  match(Set dst (ReplicateB con));
+  format %{ "movsd   $dst,[$constantaddress]\t! lreplicate32B($con)\n\t"
+            "movlhps $dst,$dst\n\t"
+            "vinsertf128h $dst,$dst,$dst" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate byte scalar zero to be vector
+instruct Repl4B_zero(vecS dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateB zero));
+  format %{ "pxor    $dst,$dst\t! replicate4B zero" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl8B_zero(vecD dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateB zero));
+  format %{ "pxor    $dst,$dst\t! replicate8B zero" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl16B_zero(vecX dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (ReplicateB zero));
+  format %{ "pxor    $dst,$dst\t! replicate16B zero" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl32B_zero(vecY dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 32);
+  match(Set dst (ReplicateB zero));
+  format %{ "vxorpd  $dst,$dst,$dst\t! replicate32B zero" %}
+  ins_encode %{
+    // Use vxorpd since AVX does not have vpxor for 256-bit (AVX2 will have it).
+    bool vector256 = true;
+    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Replicate char/short (2 byte) scalar to be vector
+instruct Repl2S(vecS dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateS src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshuflw $dst,$dst,0x00\t! replicate2S" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4S(vecD dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateS src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshuflw $dst,$dst,0x00\t! replicate4S" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl8S(vecX dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateS src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshuflw $dst,$dst,0x00\n\t"
+            "movlhps $dst,$dst\t! replicate8S" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16S(vecY dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (ReplicateS src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshuflw $dst,$dst,0x00\n\t"
+            "movlhps $dst,$dst\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate16S" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate char/short (2 byte) scalar immediate to be vector by loading from const table.
+instruct Repl2S_imm(vecS dst, immI con) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateS con));
+  format %{ "movss   $dst,[$constantaddress]\t! replicate2S($con)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $constantaddress(replicate4_imm($con$$constant, 2)));
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4S_imm(vecD dst, immI con) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateS con));
+  format %{ "movsd   $dst,[$constantaddress]\t! replicate4S($con)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl8S_imm(vecX dst, immI con) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateS con));
+  format %{ "movsd   $dst,[$constantaddress]\t! replicate8S($con)\n\t"
+            "movlhps $dst,$dst" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16S_imm(vecY dst, immI con) %{
+  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (ReplicateS con));
+  format %{ "movsd   $dst,[$constantaddress]\t! replicate16S($con)\n\t"
+            "movlhps $dst,$dst\n\t"
+            "vinsertf128h $dst,$dst,$dst" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate char/short (2 byte) scalar zero to be vector
+instruct Repl2S_zero(vecS dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateS zero));
+  format %{ "pxor    $dst,$dst\t! replicate2S zero" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4S_zero(vecD dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateS zero));
+  format %{ "pxor    $dst,$dst\t! replicate4S zero" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl8S_zero(vecX dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateS zero));
+  format %{ "pxor    $dst,$dst\t! replicate8S zero" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl16S_zero(vecY dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (ReplicateS zero));
+  format %{ "vxorpd  $dst,$dst,$dst\t! replicate16S zero" %}
+  ins_encode %{
+    // Use vxorpd since AVX does not have vpxor for 256-bit (AVX2 will have it).
+    bool vector256 = true;
+    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Replicate integer (4 byte) scalar to be vector
+instruct Repl2I(vecD dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateI src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshufd  $dst,$dst,0x00\t! replicate2I" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4I(vecX dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateI src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshufd  $dst,$dst,0x00\t! replicate4I" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8I(vecY dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateI src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshufd  $dst,$dst,0x00\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate8I" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate integer (4 byte) scalar immediate to be vector by loading from const table.
+instruct Repl2I_imm(vecD dst, immI con) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateI con));
+  format %{ "movsd   $dst,[$constantaddress]\t! replicate2I($con)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4I_imm(vecX dst, immI con) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateI con));
+  format %{ "movsd   $dst,[$constantaddress]\t! replicate4I($con)\n\t"
+            "movlhps $dst,$dst" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8I_imm(vecY dst, immI con) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateI con));
+  format %{ "movsd   $dst,[$constantaddress]\t! replicate8I($con)\n\t"
+            "movlhps $dst,$dst\n\t"
+            "vinsertf128h $dst,$dst,$dst" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Integer could be loaded into xmm register directly from memory.
+instruct Repl2I_mem(vecD dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateI (LoadVector mem)));
+  format %{ "movd    $dst,$mem\n\t"
+            "pshufd  $dst,$dst,0x00\t! replicate2I" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $mem$$Address);
+    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4I_mem(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateI (LoadVector mem)));
+  format %{ "movd    $dst,$mem\n\t"
+            "pshufd  $dst,$dst,0x00\t! replicate4I" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $mem$$Address);
+    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8I_mem(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateI (LoadVector mem)));
+  format %{ "movd    $dst,$mem\n\t"
+            "pshufd  $dst,$dst,0x00\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate8I" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $mem$$Address);
+    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate integer (4 byte) scalar zero to be vector
+instruct Repl2I_zero(vecD dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateI zero));
+  format %{ "pxor    $dst,$dst\t! replicate2I" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4I_zero(vecX dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateI zero));
+  format %{ "pxor    $dst,$dst\t! replicate4I zero)" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl8I_zero(vecY dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateI zero));
+  format %{ "vxorpd  $dst,$dst,$dst\t! replicate8I zero" %}
+  ins_encode %{
+    // Use vxorpd since AVX does not have vpxor for 256-bit (AVX2 will have it).
+    bool vector256 = true;
+    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Replicate long (8 byte) scalar to be vector
+#ifdef _LP64
+instruct Repl2L(vecX dst, rRegL src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateL src));
+  format %{ "movdq   $dst,$src\n\t"
+            "movlhps $dst,$dst\t! replicate2L" %}
+  ins_encode %{
+    __ movdq($dst$$XMMRegister, $src$$Register);
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4L(vecY dst, rRegL src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateL src));
+  format %{ "movdq   $dst,$src\n\t"
+            "movlhps $dst,$dst\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate4L" %}
+  ins_encode %{
+    __ movdq($dst$$XMMRegister, $src$$Register);
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#else // _LP64
+instruct Repl2L(vecX dst, eRegL src, regD tmp) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateL src));
+  effect(TEMP dst, USE src, TEMP tmp);
+  format %{ "movdl   $dst,$src.lo\n\t"
+            "movdl   $tmp,$src.hi\n\t"
+            "punpckldq $dst,$tmp\n\t"
+            "movlhps $dst,$dst\t! replicate2L"%}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
+    __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4L(vecY dst, eRegL src, regD tmp) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateL src));
+  effect(TEMP dst, USE src, TEMP tmp);
+  format %{ "movdl   $dst,$src.lo\n\t"
+            "movdl   $tmp,$src.hi\n\t"
+            "punpckldq $dst,$tmp\n\t"
+            "movlhps $dst,$dst\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate4L" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
+    __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#endif // _LP64
+
+// Replicate long (8 byte) scalar immediate to be vector by loading from const table.
+instruct Repl2L_imm(vecX dst, immL con) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateL con));
+  format %{ "movsd   $dst,[$constantaddress]\t! replicate2L($con)\n\t"
+            "movlhps $dst,$dst" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress($con));
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4L_imm(vecY dst, immL con) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateL con));
+  format %{ "movsd   $dst,[$constantaddress]\t! replicate4L($con)\n\t"
+            "movlhps $dst,$dst\n\t"
+            "vinsertf128h $dst,$dst,$dst" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress($con));
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Long could be loaded into xmm register directly from memory.
+instruct Repl2L_mem(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateL (LoadVector mem)));
+  format %{ "movq    $dst,$mem\n\t"
+            "movlhps $dst,$dst\t! replicate2L" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $mem$$Address);
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4L_mem(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateL (LoadVector mem)));
+  format %{ "movq    $dst,$mem\n\t"
+            "movlhps $dst,$dst\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate4L" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $mem$$Address);
+    __ movlhps($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate long (8 byte) scalar zero to be vector
+instruct Repl2L_zero(vecX dst, immL0 zero) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateL zero));
+  format %{ "pxor    $dst,$dst\t! replicate2L zero" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4L_zero(vecY dst, immL0 zero) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateL zero));
+  format %{ "vxorpd  $dst,$dst,$dst\t! replicate4L zero" %}
+  ins_encode %{
+    // Use vxorpd since AVX does not have vpxor for 256-bit (AVX2 will have it).
+    bool vector256 = true;
+    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Replicate float (4 byte) scalar to be vector
+instruct Repl2F(vecD dst, regF src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateF src));
+  format %{ "pshufd  $dst,$dst,0x00\t! replicate2F" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4F(vecX dst, regF src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateF src));
+  format %{ "pshufd  $dst,$dst,0x00\t! replicate4F" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8F(vecY dst, regF src) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateF src));
+  format %{ "pshufd  $dst,$src,0x00\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate8F" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate float (4 byte) scalar zero to be vector
+instruct Repl2F_zero(vecD dst, immF0 zero) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateF zero));
+  format %{ "xorps   $dst,$dst\t! replicate2F zero" %}
+  ins_encode %{
+    __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4F_zero(vecX dst, immF0 zero) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateF zero));
+  format %{ "xorps   $dst,$dst\t! replicate4F zero" %}
+  ins_encode %{
+    __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl8F_zero(vecY dst, immF0 zero) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateF zero));
+  format %{ "vxorps  $dst,$dst,$dst\t! replicate8F zero" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vxorps($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Replicate double (8 bytes) scalar to be vector
+instruct Repl2D(vecX dst, regD src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateD src));
+  format %{ "pshufd  $dst,$src,0x44\t! replicate2D" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4D(vecY dst, regD src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateD src));
+  format %{ "pshufd  $dst,$src,0x44\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate4D" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate double (8 byte) scalar zero to be vector
+instruct Repl2D_zero(vecX dst, immD0 zero) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateD zero));
+  format %{ "xorpd   $dst,$dst\t! replicate2D zero" %}
+  ins_encode %{
+    __ xorpd($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4D_zero(vecY dst, immD0 zero) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateD zero));
+  format %{ "vxorpd  $dst,$dst,$dst,vect256\t! replicate4D zero" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
+  %}
+  ins_pipe( fpu_reg_reg );
 %}
 

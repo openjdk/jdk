@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -416,6 +416,7 @@ uint PhaseChaitin::count_int_pressure( IndexSet *liveout ) {
     if( lrgs(lidx).mask().is_UP() &&
         lrgs(lidx).mask_size() &&
         !lrgs(lidx)._is_float &&
+        !lrgs(lidx)._is_vector &&
         lrgs(lidx).mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) )
       cnt += lrgs(lidx).reg_pressure();
   }
@@ -430,7 +431,7 @@ uint PhaseChaitin::count_float_pressure( IndexSet *liveout ) {
   while ((lidx = elements.next()) != 0) {
     if( lrgs(lidx).mask().is_UP() &&
         lrgs(lidx).mask_size() &&
-        lrgs(lidx)._is_float )
+        (lrgs(lidx)._is_float || lrgs(lidx)._is_vector))
       cnt += lrgs(lidx).reg_pressure();
   }
   return cnt;
@@ -439,8 +440,8 @@ uint PhaseChaitin::count_float_pressure( IndexSet *liveout ) {
 //------------------------------lower_pressure---------------------------------
 // Adjust register pressure down by 1.  Capture last hi-to-low transition,
 static void lower_pressure( LRG *lrg, uint where, Block *b, uint *pressure, uint *hrp_index ) {
-  if( lrg->mask().is_UP() && lrg->mask_size() ) {
-    if( lrg->_is_float ) {
+  if (lrg->mask().is_UP() && lrg->mask_size()) {
+    if (lrg->_is_float || lrg->_is_vector) {
       pressure[1] -= lrg->reg_pressure();
       if( pressure[1] == (uint)FLOATPRESSURE ) {
         hrp_index[1] = where;
@@ -522,8 +523,8 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
       LRG &lrg = lrgs(lidx);
       lrg._area += cost;
       // Compute initial register pressure
-      if( lrg.mask().is_UP() && lrg.mask_size() ) {
-        if( lrg._is_float ) {   // Count float pressure
+      if (lrg.mask().is_UP() && lrg.mask_size()) {
+        if (lrg._is_float || lrg._is_vector) {   // Count float pressure
           pressure[1] += lrg.reg_pressure();
 #ifdef EXACT_PRESSURE
           if( pressure[1] > b->_freg_pressure )
@@ -681,13 +682,10 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
         // according to its bindings.
         const RegMask &rmask = lrgs(r).mask();
         if( lrgs(r).is_bound() && !(n->rematerialize()) && rmask.is_NotEmpty() ) {
-          // Smear odd bits; leave only aligned pairs of bits.
-          RegMask r2mask = rmask;
-          r2mask.SmearToPairs();
           // Check for common case
           int r_size = lrgs(r).num_regs();
           OptoReg::Name r_reg = (r_size == 1) ? rmask.find_first_elem() : OptoReg::Physical;
-
+          // Smear odd bits
           IndexSetIterator elements(&liveout);
           uint l;
           while ((l = elements.next()) != 0) {
@@ -701,10 +699,15 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
             // Remove the bits from LRG 'r' from LRG 'l' so 'l' no
             // longer interferes with 'r'.  If 'l' requires aligned
             // adjacent pairs, subtract out bit pairs.
-            if( lrg.num_regs() == 2 && !lrg._fat_proj ) {
+            assert(!lrg._is_vector || !lrg._fat_proj, "sanity");
+            if (lrg.num_regs() > 1 && !lrg._fat_proj) {
+              RegMask r2mask = rmask;
+              // Leave only aligned set of bits.
+              r2mask.smear_to_sets(lrg.num_regs());
+              // It includes vector case.
               lrg.SUBTRACT( r2mask );
               lrg.compute_set_mask_size();
-            } else if( r_size != 1 ) {
+            } else if( r_size != 1 ) { // fat proj
               lrg.SUBTRACT( rmask );
               lrg.compute_set_mask_size();
             } else {            // Common case: size 1 bound removal
@@ -763,8 +766,8 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
             // Newly live things assumed live from here to top of block
             lrg._area += cost;
             // Adjust register pressure
-            if( lrg.mask().is_UP() && lrg.mask_size() ) {
-              if( lrg._is_float ) {
+            if (lrg.mask().is_UP() && lrg.mask_size()) {
+              if (lrg._is_float || lrg._is_vector) {
                 pressure[1] += lrg.reg_pressure();
 #ifdef EXACT_PRESSURE
                 if( pressure[1] > b->_freg_pressure )

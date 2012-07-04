@@ -24,8 +24,11 @@
 
 # Rules to build fix_empty_sec_hdr_flags, used by vm.make on Solaris
 
-GENERATED                       = ../generated
-FIX_EMPTY_SEC_HDR_FLAGS         = $(GENERATED)/fix_empty_sec_hdr_flags
+# Allow $(FIX_EMPTY_SEC_HDR_FLAGS) to be called from any directory.
+# We don't set or use the GENERATED macro to avoid affecting
+# other HotSpot Makefiles.
+TOPDIR                          = $(shell echo `pwd`)
+FIX_EMPTY_SEC_HDR_FLAGS         = $(TOPDIR)/../generated/fix_empty_sec_hdr_flags
 
 FIX_EMPTY_SEC_HDR_FLAGS_DIR     = $(GAMMADIR)/src/os/solaris/fix_empty_sec_hdr_flags
 FIX_EMPTY_SEC_HDR_FLAGS_SRC     = $(FIX_EMPTY_SEC_HDR_FLAGS_DIR)/fix_empty_sec_hdr_flags.c
