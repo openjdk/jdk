@@ -112,6 +112,8 @@ public class LWWindowPeer
 
     private static final Color nonOpaqueBackground = new Color(0, 0, 0, 0);
 
+    private volatile boolean textured;
+
     /**
      * Current modal blocker or null.
      *
@@ -442,9 +444,23 @@ public class LWWindowPeer
     public void updateWindow() {
     }
 
+    public final boolean isTextured() {
+        return textured;
+    }
+
+    public final void setTextured(final boolean isTextured) {
+        textured = isTextured;
+    }
+
     public final boolean isTranslucent() {
         synchronized (getStateLock()) {
-            return !isOpaque || isShaped();
+            /*
+             * Textured window is a special case of translucent window.
+             * The difference is only in nswindow background. So when we set
+             * texture property our peer became fully translucent. It doesn't
+             * fill background, create non opaque backbuffers and layer etc.
+             */
+            return !isOpaque || isShaped() || isTextured();
         }
     }
 
@@ -613,11 +629,13 @@ public class LWWindowPeer
                     g.setColor(nonOpaqueBackground);
                     g.fillRect(0, 0, w, h);
                 }
-                if (g instanceof SunGraphics2D) {
-                    SG2DConstraint((SunGraphics2D) g, getRegion());
+                if (!isTextured()) {
+                    if (g instanceof SunGraphics2D) {
+                        SG2DConstraint((SunGraphics2D) g, getRegion());
+                    }
+                    g.setColor(getBackground());
+                    g.fillRect(0, 0, w, h);
                 }
-                g.setColor(getBackground());
-                g.fillRect(0, 0, w, h);
             } finally {
                 g.dispose();
             }
@@ -982,8 +1000,10 @@ public class LWWindowPeer
                     if (g instanceof SunGraphics2D) {
                         SG2DConstraint((SunGraphics2D) g, getRegion());
                     }
-                    g.setColor(getBackground());
-                    g.fillRect(0, 0, r.width, r.height);
+                    if (!isTextured()) {
+                        g.setColor(getBackground());
+                        g.fillRect(0, 0, r.width, r.height);
+                    }
                     if (oldBB != null) {
                         // Draw the old back buffer to the new one
                         g.drawImage(oldBB, 0, 0, null);
