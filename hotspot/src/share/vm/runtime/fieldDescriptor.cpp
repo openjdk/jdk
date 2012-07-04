@@ -39,6 +39,10 @@ oop fieldDescriptor::loader() const {
 }
 
 Symbol* fieldDescriptor::generic_signature() const {
+  if (!has_generic_signature()) {
+    return NULL;
+  }
+
   int idx = 0;
   instanceKlass* ik = instanceKlass::cast(field_holder());
   for (AllFieldStream fs(ik); !fs.done(); fs.next()) {

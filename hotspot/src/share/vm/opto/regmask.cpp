@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,11 +129,34 @@ const RegMask RegMask::Empty(
   0
 );
 
+//=============================================================================
+bool RegMask::is_vector(uint ireg) {
+  return (ireg == Op_VecS || ireg == Op_VecD || ireg == Op_VecX || ireg == Op_VecY);
+}
+
+int RegMask::num_registers(uint ireg) {
+    switch(ireg) {
+      case Op_VecY:
+        return 8;
+      case Op_VecX:
+        return 4;
+      case Op_VecD:
+      case Op_RegD:
+      case Op_RegL:
+#ifdef _LP64
+      case Op_RegP:
+#endif
+        return 2;
+    }
+    // Op_VecS and the rest ideal registers.
+    return 1;
+}
+
 //------------------------------find_first_pair--------------------------------
 // Find the lowest-numbered register pair in the mask.  Return the
 // HIGHEST register number in the pair, or BAD if no pairs.
 OptoReg::Name RegMask::find_first_pair() const {
-  VerifyPairs();
+  verify_pairs();
   for( int i = 0; i < RM_SIZE; i++ ) {
     if( _A[i] ) {               // Found some bits
       int bit = _A[i] & -_A[i]; // Extract low bit
@@ -146,30 +169,30 @@ OptoReg::Name RegMask::find_first_pair() const {
 
 //------------------------------ClearToPairs-----------------------------------
 // Clear out partial bits; leave only bit pairs
-void RegMask::ClearToPairs() {
+void RegMask::clear_to_pairs() {
   for( int i = 0; i < RM_SIZE; i++ ) {
     int bits = _A[i];
     bits &= ((bits & 0x55555555)<<1); // 1 hi-bit set for each pair
     bits |= (bits>>1);          // Smear 1 hi-bit into a pair
     _A[i] = bits;
   }
-  VerifyPairs();
+  verify_pairs();
 }
 
 //------------------------------SmearToPairs-----------------------------------
 // Smear out partial bits; leave only bit pairs
-void RegMask::SmearToPairs() {
+void RegMask::smear_to_pairs() {
   for( int i = 0; i < RM_SIZE; i++ ) {
     int bits = _A[i];
     bits |= ((bits & 0x55555555)<<1); // Smear lo bit hi per pair
     bits |= ((bits & 0xAAAAAAAA)>>1); // Smear hi bit lo per pair
     _A[i] = bits;
   }
-  VerifyPairs();
+  verify_pairs();
 }
 
 //------------------------------is_aligned_pairs-------------------------------
-bool RegMask::is_aligned_Pairs() const {
+bool RegMask::is_aligned_pairs() const {
   // Assert that the register mask contains only bit pairs.
   for( int i = 0; i < RM_SIZE; i++ ) {
     int bits = _A[i];
@@ -204,7 +227,7 @@ int RegMask::is_bound1() const {
 
 //------------------------------is_bound2--------------------------------------
 // Return TRUE if the mask contains an adjacent pair of bits and no other bits.
-int RegMask::is_bound2() const {
+int RegMask::is_bound_pair() const {
   if( is_AllStack() ) return false;
 
   int bit = -1;                 // Set to hold the one bit allowed
@@ -223,6 +246,132 @@ int RegMask::is_bound2() const {
     }
   }
   // True for both the empty mask and for a bit pair
+  return true;
+}
+
+static int low_bits[3] = { 0x55555555, 0x11111111, 0x01010101 };
+//------------------------------find_first_set---------------------------------
+// Find the lowest-numbered register set in the mask.  Return the
+// HIGHEST register number in the set, or BAD if no sets.
+// Works also for size 1.
+OptoReg::Name RegMask::find_first_set(int size) const {
+  verify_sets(size);
+  for (int i = 0; i < RM_SIZE; i++) {
+    if (_A[i]) {                // Found some bits
+      int bit = _A[i] & -_A[i]; // Extract low bit
+      // Convert to bit number, return hi bit in pair
+      return OptoReg::Name((i<<_LogWordBits)+find_lowest_bit(bit)+(size-1));
+    }
+  }
+  return OptoReg::Bad;
+}
+
+//------------------------------clear_to_sets----------------------------------
+// Clear out partial bits; leave only aligned adjacent bit pairs
+void RegMask::clear_to_sets(int size) {
+  if (size == 1) return;
+  assert(2 <= size && size <= 8, "update low bits table");
+  assert(is_power_of_2(size), "sanity");
+  int low_bits_mask = low_bits[size>>2];
+  for (int i = 0; i < RM_SIZE; i++) {
+    int bits = _A[i];
+    int sets = (bits & low_bits_mask);
+    for (int j = 1; j < size; j++) {
+      sets = (bits & (sets<<1)); // filter bits which produce whole sets
+    }
+    sets |= (sets>>1);           // Smear 1 hi-bit into a set
+    if (size > 2) {
+      sets |= (sets>>2);         // Smear 2 hi-bits into a set
+      if (size > 4) {
+        sets |= (sets>>4);       // Smear 4 hi-bits into a set
+      }
+    }
+    _A[i] = sets;
+  }
+  verify_sets(size);
+}
+
+//------------------------------smear_to_sets----------------------------------
+// Smear out partial bits to aligned adjacent bit sets
+void RegMask::smear_to_sets(int size) {
+  if (size == 1) return;
+  assert(2 <= size && size <= 8, "update low bits table");
+  assert(is_power_of_2(size), "sanity");
+  int low_bits_mask = low_bits[size>>2];
+  for (int i = 0; i < RM_SIZE; i++) {
+    int bits = _A[i];
+    int sets = 0;
+    for (int j = 0; j < size; j++) {
+      sets |= (bits & low_bits_mask);  // collect partial bits
+      bits  = bits>>1;
+    }
+    sets |= (sets<<1);           // Smear 1 lo-bit  into a set
+    if (size > 2) {
+      sets |= (sets<<2);         // Smear 2 lo-bits into a set
+      if (size > 4) {
+        sets |= (sets<<4);       // Smear 4 lo-bits into a set
+      }
+    }
+    _A[i] = sets;
+  }
+  verify_sets(size);
+}
+
+//------------------------------is_aligned_set--------------------------------
+bool RegMask::is_aligned_sets(int size) const {
+  if (size == 1) return true;
+  assert(2 <= size && size <= 8, "update low bits table");
+  assert(is_power_of_2(size), "sanity");
+  int low_bits_mask = low_bits[size>>2];
+  // Assert that the register mask contains only bit sets.
+  for (int i = 0; i < RM_SIZE; i++) {
+    int bits = _A[i];
+    while (bits) {              // Check bits for pairing
+      int bit = bits & -bits;   // Extract low bit
+      // Low bit is not odd means its mis-aligned.
+      if ((bit & low_bits_mask) == 0) return false;
+      // Do extra work since (bit << size) may overflow.
+      int hi_bit = bit << (size-1); // high bit
+      int set = hi_bit + ((hi_bit-1) & ~(bit-1));
+      // Check for aligned adjacent bits in this set
+      if ((bits & set) != set) return false;
+      bits -= set;  // Remove this set
+    }
+  }
+  return true;
+}
+
+//------------------------------is_bound_set-----------------------------------
+// Return TRUE if the mask contains one adjacent set of bits and no other bits.
+// Works also for size 1.
+int RegMask::is_bound_set(int size) const {
+  if( is_AllStack() ) return false;
+  assert(1 <= size && size <= 8, "update low bits table");
+  int bit = -1;                 // Set to hold the one bit allowed
+  for (int i = 0; i < RM_SIZE; i++) {
+    if (_A[i] ) {               // Found some bits
+      if (bit != -1)
+       return false;            // Already had bits, so fail
+      bit = _A[i] & -_A[i];     // Extract 1 bit from mask
+      int hi_bit = bit << (size-1); // high bit
+      if (hi_bit != 0) {        // Bit set stays in same word?
+        int set = hi_bit + ((hi_bit-1) & ~(bit-1));
+        if (set != _A[i])
+          return false;         // Require adjacent bit set and no more bits
+      } else {                  // Else its a split-set case
+        if (((-1) & ~(bit-1)) != _A[i])
+          return false;         // Found many bits, so fail
+        i++;                    // Skip iteration forward and check high part
+        assert(size <= 8, "update next code");
+        // The lower 24 bits should be 0 since it is split case and size <= 8.
+        int set = bit>>24;
+        set = set & -set; // Remove sign extension.
+        set = (((set << size) - 1) >> 8);
+        if (_A[i] != set) return false; // Require 1 lo bit in next word
+      }
+    }
+  }
+  // True for both the empty mask and for a bit set
   return true;
 }
 
