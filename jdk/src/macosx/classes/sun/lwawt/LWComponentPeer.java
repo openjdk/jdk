@@ -81,19 +81,10 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     // lock is not used as there are many peers related ops
     // to be done on the toolkit thread, and we don't want to
     // depend on a public lock on this thread
-    private final static Object peerTreeLock =
+    private static final Object peerTreeLock =
             new StringBuilder("LWComponentPeer.peerTreeLock");
 
-    /**
-     * A custom tree-lock used for the hierarchy of the delegate Swing
-     * components.
-     * The lock synchronizes access to the delegate
-     * internal state. Think of it as a 'virtual EDT'.
-     */
-//    private final Object delegateTreeLock =
-//        new StringBuilder("LWComponentPeer.delegateTreeLock");
-
-    private T target;
+    private final T target;
 
     // Container peer. It may not be the peer of the target's direct
     // parent, for example, in the case of hw/lw mixing. However,
@@ -108,10 +99,10 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     // be updated when the component is reparented to another container
     private LWWindowPeer windowPeer;
 
-    private AtomicBoolean disposed = new AtomicBoolean(false);
+    private final AtomicBoolean disposed = new AtomicBoolean(false);
 
     // Bounds are relative to parent peer
-    private Rectangle bounds = new Rectangle();
+    private final Rectangle bounds = new Rectangle();
     private Region region;
 
     // Component state. Should be accessed under the state lock
@@ -122,9 +113,11 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     private Color foreground;
     private Font font;
 
-    // Paint area to coalesce all the paint events and store
-    // the target dirty area
-    private RepaintArea targetPaintArea;
+    /**
+     * Paint area to coalesce all the paint events and store the target dirty
+     * area.
+     */
+    private final RepaintArea targetPaintArea;
 
     //   private volatile boolean paintPending;
     private volatile boolean isLayouting;
@@ -137,7 +130,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     private int fNumDropTargets = 0;
     private CDropTarget fDropTarget = null;
 
-    private PlatformComponent platformComponent;
+    private final PlatformComponent platformComponent;
 
     private final class DelegateContainer extends Container {
         {
@@ -175,6 +168,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     public LWComponentPeer(T target, PlatformComponent platformComponent) {
+        targetPaintArea = new LWRepaintArea();
         this.target = target;
         this.platformComponent = platformComponent;
 
@@ -201,10 +195,13 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                 synchronized (getDelegateLock()) {
                     delegate = createDelegate();
                     if (delegate != null) {
+                        delegate.setVisible(false);
                         delegateContainer = new DelegateContainer();
                         delegateContainer.add(delegate);
                         delegateContainer.addNotify();
                         delegate.addNotify();
+                        resetColorsAndFont(delegate);
+                        delegate.setOpaque(true);
                     } else {
                         return;
                     }
@@ -278,27 +275,28 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         return getDelegate();
     }
 
-    /*
-     * Initializes this peer by fetching all the properties from the target.
-     * The call to initialize() is not placed to LWComponentPeer ctor to
-     * let the subclass ctor to finish completely first. Instead, it's the
-     * LWToolkit object who is responsible for initialization.
+    /**
+     * Initializes this peer. The call to initialize() is not placed to
+     * LWComponentPeer ctor to let the subclass ctor to finish completely first.
+     * Instead, it's the LWToolkit object who is responsible for initialization.
+     * Note that we call setVisible() at the end of initialization.
      */
-    public void initialize() {
+    public final void initialize() {
         platformComponent.initialize(target, this, getPlatformWindow());
-        targetPaintArea = new LWRepaintArea();
-        if (getDelegate() != null) {
-            synchronized (getDelegateLock()) {
-                resetColorsAndFont(delegate);
-                getDelegate().setOpaque(true);
-            }
-        }
+        initializeImpl();
+        setVisible(target.isVisible());
+    }
+
+    /**
+     * Fetching general properties from the target. Should be overridden in
+     * subclasses to initialize specific peers properties.
+     */
+    void initializeImpl() {
         setBackground(target.getBackground());
         setForeground(target.getForeground());
         setFont(target.getFont());
         setBounds(target.getBounds());
         setEnabled(target.isEnabled());
-        setVisible(target.isVisible());
     }
 
     private static void resetColorsAndFont(final Container c) {
@@ -314,15 +312,18 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         return stateLock;
     }
 
-    // Synchronize all operations with the Swing delegates under
-    // AWT tree lock, using a new separate lock to synchronize
-    // access to delegates may lead deadlocks
+    /**
+     * Synchronize all operations with the Swing delegates under AWT tree lock,
+     * using a new separate lock to synchronize access to delegates may lead
+     * deadlocks. Think of it as a 'virtual EDT'.
+     *
+     * @return DelegateLock
+     */
     final Object getDelegateLock() {
-        //return delegateTreeLock;
         return getTarget().getTreeLock();
     }
 
-    protected final static Object getPeerTreeLock() {
+    protected static final Object getPeerTreeLock() {
         return peerTreeLock;
     }
 
@@ -758,14 +759,17 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     @Override
-    public void setVisible(boolean v) {
+    public void setVisible(final boolean v) {
         synchronized (getStateLock()) {
             if (visible == v) {
                 return;
             }
             visible = v;
         }
+        setVisibleImpl(v);
+    }
 
+    protected void setVisibleImpl(final boolean v) {
         final D delegate = getDelegate();
 
         if (delegate != null) {
@@ -1355,7 +1359,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
      *
      * @see #isVisible()
      */
-    protected boolean isShowing() {
+    protected final boolean isShowing() {
         synchronized (getPeerTreeLock()) {
             if (isVisible()) {
                 final LWContainerPeer container = getContainerPeer();
