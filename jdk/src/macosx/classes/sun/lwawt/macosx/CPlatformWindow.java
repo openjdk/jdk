@@ -298,7 +298,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         // If the target is a dialog, popup or tooltip we want it to ignore the brushed metal look.
         if (isPopup) {
-            styleBits = SET(styleBits, TEXTURED, true);
+            styleBits = SET(styleBits, TEXTURED, false);
             // Popups in applets don't activate applet's process
             styleBits = SET(styleBits, NONACTIVATING, true);
         }
@@ -371,6 +371,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 styleBits = SET(styleBits, DRAGGABLE_BACKGROUND, Boolean.parseBoolean(prop.toString()));
             }
         }
+
+        peer.setTextured(IS(TEXTURED, styleBits));
 
         return styleBits;
     }
@@ -733,7 +735,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     @Override
     public void setOpaque(boolean isOpaque) {
         CWrapper.NSWindow.setOpaque(getNSWindowPtr(), isOpaque);
-        if (!isOpaque) {
+        if (!isOpaque && !peer.isTextured()) {
             long clearColor = CWrapper.NSColor.clearColor();
             CWrapper.NSWindow.setBackgroundColor(getNSWindowPtr(), clearColor);
         }
