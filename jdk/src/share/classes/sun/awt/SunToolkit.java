@@ -1985,6 +1985,13 @@ public abstract class SunToolkit extends Toolkit
     }
 
     /**
+     * Returns true if swing backbuffer should be translucent.
+     */
+    public boolean isSwingBackbufferTranslucencySupported() {
+        return false;
+    }
+
+    /**
      * Returns whether or not a containing top level window for the passed
      * component is
      * {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT PERPIXEL_TRANSLUCENT}.
