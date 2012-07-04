@@ -4750,9 +4750,6 @@ public:
       _g1h->g1_policy()->record_thread_age_table(pss.age_table());
       _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
 
-      // Clean up any par-expanded rem sets.
-      HeapRegionRemSet::par_cleanup();
-
       if (ParallelGCVerbose) {
         MutexLocker x(stats_lock());
         pss.print_termination_stats(worker_id);

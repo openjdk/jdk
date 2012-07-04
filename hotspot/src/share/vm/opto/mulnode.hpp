@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@ class PhaseTransform;
 class MulNode : public Node {
   virtual uint hash() const;
 public:
-  MulNode( Node *in1, Node *in2 ): Node(0,in1,in2) {}
+  MulNode( Node *in1, Node *in2 ): Node(0,in1,in2) {
+    init_class_id(Class_Mul);
+  }
 
   // Handle algebraic identities here.  If we have an identity, return the Node
   // we are equivalent to.  We look for "add of zero" as an identity.
