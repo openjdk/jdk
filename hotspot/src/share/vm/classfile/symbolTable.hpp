@@ -81,7 +81,6 @@ private:
 
   // Set if one bucket is out of balance due to hash algorithm deficiency
   static bool _needs_rehashing;
-  static jint _seed;
 
   // For statistics
   static int symbols_removed;
@@ -124,11 +123,6 @@ private:
   static Arena* arena() { return _arena; }  // called for statistics
 
   static void initialize_symbols(int arena_alloc_size = 0);
-
-  static bool use_alternate_hashcode()  { return _seed != 0; }
-  static jint seed()                    { return _seed; }
-
-  unsigned int new_hash(Symbol* sym);
 public:
   enum {
     symbol_alloc_batch_size = 8,
@@ -247,7 +241,6 @@ private:
 
   // Set if one bucket is out of balance due to hash algorithm deficiency
   static bool _needs_rehashing;
-  static jint _seed;
 
   static oop intern(Handle string_or_null, jchar* chars, int length, TRAPS);
   oop basic_add(int index, Handle string_or_null, jchar* name, int len,
@@ -261,11 +254,6 @@ private:
   StringTable(HashtableBucket<mtSymbol>* t, int number_of_entries)
     : Hashtable<oop, mtSymbol>((int)StringTableSize, sizeof (HashtableEntry<oop, mtSymbol>), t,
                      number_of_entries) {}
-
-  static bool use_alternate_hashcode()  { return _seed != 0; }
-  static jint seed()                    { return _seed; }
-
-  unsigned int new_hash(oop s);
 public:
   // The string table
   static StringTable* the_table() { return _the_table; }

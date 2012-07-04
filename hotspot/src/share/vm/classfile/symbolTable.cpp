@@ -43,7 +43,6 @@ SymbolTable* SymbolTable::_the_table = NULL;
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = NULL;
 bool SymbolTable::_needs_rehashing = false;
-jint SymbolTable::_seed = 0;
 
 Symbol* SymbolTable::allocate_symbol(const u1* name, int len, bool c_heap, TRAPS) {
   assert (len <= Symbol::max_length(), "should be checked by caller");
@@ -130,12 +129,6 @@ void SymbolTable::unlink() {
   }
 }
 
-unsigned int SymbolTable::new_hash(Symbol* sym) {
-  ResourceMark rm;
-  // Use alternate hashing algorithm on this symbol.
-  return AltHashing::murmur3_32(seed(), (const jbyte*)sym->as_C_string(), sym->utf8_length());
-}
-
 // Create a new table and using alternate hash code, populate the new table
 // with the existing strings.   Set flag to use the alternate hash code afterwards.
 void SymbolTable::rehash_table() {
@@ -144,10 +137,6 @@ void SymbolTable::rehash_table() {
   if (DumpSharedSpaces) return;
   // Create a new symbol table
   SymbolTable* new_table = new SymbolTable();
-
-  // Initialize the global seed for hashing.
-  _seed = AltHashing::compute_seed();
-  assert(seed() != 0, "shouldn't be zero");
 
   the_table()->move_to(new_table);
 
@@ -620,7 +609,6 @@ class StableMemoryChecker : public StackObj {
 StringTable* StringTable::_the_table = NULL;
 
 bool StringTable::_needs_rehashing = false;
-jint StringTable::_seed = 0;
 
 // Pick hashing algorithm
 unsigned int StringTable::hash_string(const jchar* s, int len) {
@@ -837,14 +825,6 @@ void StringTable::dump(outputStream* st) {
 }
 
 
-unsigned int StringTable::new_hash(oop string) {
-  ResourceMark rm;
-  int length;
-  jchar* chars = java_lang_String::as_unicode_string(string, length);
-  // Use alternate hashing algorithm on the string
-  return AltHashing::murmur3_32(seed(), chars, length);
-}
-
 // Create a new table and using alternate hash code, populate the new table
 // with the existing strings.   Set flag to use the alternate hash code afterwards.
 void StringTable::rehash_table() {
@@ -852,10 +832,6 @@ void StringTable::rehash_table() {
   // This should never happen with -Xshare:dump but it might in testing mode.
   if (DumpSharedSpaces) return;
   StringTable* new_table = new StringTable();
-
-  // Initialize new global seed for hashing.
-  _seed = AltHashing::compute_seed();
-  assert(seed() != 0, "shouldn't be zero");
 
   // Rehash the table
   the_table()->move_to(new_table);
