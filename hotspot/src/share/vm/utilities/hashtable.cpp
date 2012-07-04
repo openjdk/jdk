@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/altHashing.hpp"
+#include "classfile/javaClasses.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
@@ -90,12 +92,33 @@ template <MEMFLAGS F> bool BasicHashtable<F>::check_rehash_table(int count) {
   return false;
 }
 
+template <class T, MEMFLAGS F> jint Hashtable<T, F>::_seed = 0;
+
+template <class T, MEMFLAGS F> unsigned int Hashtable<T, F>::new_hash(Symbol* sym) {
+  ResourceMark rm;
+  // Use alternate hashing algorithm on this symbol.
+  return AltHashing::murmur3_32(seed(), (const jbyte*)sym->as_C_string(), sym->utf8_length());
+}
+
+template <class T, MEMFLAGS F> unsigned int Hashtable<T, F>::new_hash(oop string) {
+  ResourceMark rm;
+  int length;
+  jchar* chars = java_lang_String::as_unicode_string(string, length);
+  // Use alternate hashing algorithm on the string
+  return AltHashing::murmur3_32(seed(), chars, length);
+}
+
 // Create a new table and using alternate hash code, populate the new table
 // with the existing elements.   This can be used to change the hash code
 // and could in the future change the size of the table.
 
 template <class T, MEMFLAGS F> void Hashtable<T, F>::move_to(Hashtable<T, F>* new_table) {
-  int saved_entry_count = BasicHashtable<F>::number_of_entries();
+
+  // Initialize the global seed for hashing.
+  _seed = AltHashing::compute_seed();
+  assert(seed() != 0, "shouldn't be zero");
+
+  int saved_entry_count = this->number_of_entries();
 
   // Iterate through the table and create a new entry for the new table
   for (int i = 0; i < new_table->table_size(); ++i) {

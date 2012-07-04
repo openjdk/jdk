@@ -278,7 +278,14 @@ protected:
 
   // Function to move these elements into the new table.
   void move_to(Hashtable<T, F>* new_table);
-  virtual unsigned int new_hash(T) { ShouldNotReachHere(); return 0; } // should be overridden
+  static bool use_alternate_hashcode()  { return _seed != 0; }
+  static jint seed()                    { return _seed; }
+
+ private:
+  static jint _seed;
+
+  unsigned int new_hash(Symbol* s);
+  unsigned int new_hash(oop string);
 };
 
 
