@@ -5447,6 +5447,18 @@ bool os::is_headless_jre() {
     return true;
 }
 
+// Get the default path to the core file
+// Returns the length of the string
+int os::get_core_path(char* buffer, size_t bufferSize) {
+  const char* p = get_current_directory(buffer, bufferSize);
+
+  if (p == NULL) {
+    assert(p != NULL, "failed to get current directory");
+    return 0;
+  }
+
+  return strlen(buffer);
+}
 
 #ifdef JAVASE_EMBEDDED
 //
