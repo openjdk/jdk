@@ -57,9 +57,17 @@ public class Main {
         System.gc();
         System.gc();
         loader = null;
-        System.gc();
-        System.gc();
-        if (c.get() != null) throw new AssertionError();
+
+        // Might require multiple calls to System.gc() for weak-references
+        // processing to be complete. If the weak-reference is not cleared as
+        // expected we will hang here until timed out by the test harness.
+        while (true) {
+            System.gc();
+            Thread.sleep(20);
+            if (c.get() == null) {
+                break;
+            }
+        }
     }
 }
 
