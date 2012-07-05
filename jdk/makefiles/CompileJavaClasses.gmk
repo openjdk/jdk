@@ -45,7 +45,7 @@ EXCLUDES +=	com/sun/pept \
 		com/sun/tools/example/debug/gui \
 		com/oracle/security
 
-ifeq ($(PLATFORM)-$(ARCH_DATA_MODEL),windows-64)
+ifeq ($(OPENJDK_TARGET_OS)-$(ARCH_DATA_MODEL),windows-64)
      EXCLUDES += sun/security/pkcs11
 endif
 
@@ -61,7 +61,7 @@ ifndef OPENJDK
    EXFILES := $(JDK_TOPDIR)/src/share/classes/javax/crypto/JarVerifier.java
 endif
 
-ifneq ($(PLATFORM),solaris)
+ifneq ($(OPENJDK_TARGET_OS),solaris)
    # Exclude Solaris nio and two security related files in src/share/classes
    EXFILES += SolarisAclFileAttributeView.java \
 	SolarisFileStore.java \
@@ -71,37 +71,34 @@ ifneq ($(PLATFORM),solaris)
 	SolarisUserDefinedFileAttributeView.java \
 	SolarisWatchService.java \
 	SolarisAclFileAttributeView.java \
-	SolarisFileStore.java \
-	SolarisFileSystem.java \
-	SolarisFileSystemProvider.java \
-	SolarisUserDefinedFileAttributeView.java \
-	SolarisNativeDispatcher.java \
-	SolarisWatchService.java \
 	SolarisLoginModule.java \
 	SolarisSystem.java \
+	sun/nio/ch/EventPortSelectorImpl.java \
+	sun/nio/ch/EventPortSelectorProvider.java \
+	sun/nio/ch/EventPortWrapper.java \
 	sun/tools/attach/SolarisAttachProvider.java \
 	sun/tools/attach/SolarisVirtualMachine.java
 endif
 
 # In the old build, this isn't excluded on macosx, even though it probably
 # should be.
-ifneq ($(PLATFORM),macosx)
+ifneq ($(OPENJDK_TARGET_OS),macosx)
 	EXFILES+=WrapperGenerator.java
 endif
 
-ifneq ($(PLATFORM),windows)
+ifneq ($(OPENJDK_TARGET_OS),windows)
     # Exclude Window security related files in src/share/classes
     EXFILES+=NTLoginModule.java \
              NTSystem.java
 
 endif
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(OPENJDK_TARGET_OS),windows)
     # Don't build GTK L&F on Windows
     EXCLUDES+=	com/sun/java/swing/plaf/gtk
 endif
 
-ifneq ($(PLATFORM),linux)
+ifneq ($(OPENJDK_TARGET_OS),linux)
     EXFILES+=sun/tools/attach/LinuxAttachProvider.java \
 	sun/tools/attach/LinuxVirtualMachine.java \
 	sun/nio/fs/LinuxDosFileAttributeView.java \
@@ -113,7 +110,7 @@ ifneq ($(PLATFORM),linux)
 	sun/nio/fs/LinuxWatchService.java
 endif
 
-ifneq ($(PLATFORM),macosx)
+ifneq ($(OPENJDK_TARGET_OS),macosx)
     EXFILES+=sun/nio/fs/BsdFileStore.java \
 	     sun/nio/fs/BsdFileSystem.java \
              sun/nio/fs/BsdFileSystemProvider.java \
@@ -137,11 +134,11 @@ ifdef OPENJDK
 endif
 
 # Used on windows and macosx
-ifeq (,$(filter $(PLATFORM), windows macosx))
+ifeq (,$(filter $(OPENJDK_TARGET_OS), windows macosx))
     EXFILES+=sun/awt/AWTCharset.java
 endif
 
-ifneq ($(PLATFORM), macosx)
+ifneq ($(OPENJDK_TARGET_OS), macosx)
 #
 # Not in rt.jar on solaris and linux...(windows not checked)
 #     in rt.jar on macosx ??
@@ -192,7 +189,7 @@ endif
 # Exclude another implicitly not included file.
 EXFILES+=sun/util/locale/AsciiUtil.java
 
-ifeq (,$(filter $(PLATFORM), solaris macosx))
+ifeq (,$(filter $(OPENJDK_TARGET_OS), solaris macosx))
 #
 # only solaris and macosx
 #
@@ -205,7 +202,7 @@ EXFILES+=-linux-arm.java \
 	 -linux-ppc.java
 
 # TODO: Is this necessary?
-ifeq ($(PLATFORM), windows)
+ifeq ($(OPENJDK_TARGET_OS), windows)
     EXFILES+=sun/nio/ch/AbstractPollSelectorImpl.java \
 	sun/nio/ch/DevPollArrayWrapper.java \
 	sun/nio/ch/DevPollSelectorImpl.java \
@@ -248,18 +245,24 @@ include CopyIntoClasses.gmk
 
 ifndef OPENJDK
     CLOSED_SRC_DIRS:=$(JDK_TOPDIR)/src/closed/share/classes \
-		     $(JDK_TOPDIR)/src/closed/$(LEGACY_HOST_OS_API)/classes
+		     $(JDK_TOPDIR)/src/closed/$(LEGACY_OPENJDK_TARGET_OS_API)/classes
 endif
 
 MACOSX_SRC_DIRS :=
-ifeq ($(PLATFORM),macosx)
+ifeq ($(OPENJDK_TARGET_OS),macosx)
      MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/classes
 
      # this files are duplicated in MACOSX_SRC_DIRS
      EXFILES+= $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/DefaultSelectorProvider.java \
                $(JDK_TOPDIR)/src/solaris/classes/sun/java2d/BackBufferCapsProvider.java \
                $(JDK_TOPDIR)/src/solaris/classes/java/net/DefaultInterface.java \
-	       $(JDK_TOPDIR)/src/solaris/classes/java/lang/ClassLoaderHelper.java
+               $(JDK_TOPDIR)/src/solaris/classes/java/lang/ClassLoaderHelper.java
+
+     # JObjC.jar contains 1.5 byte-code...so skip it here :-(
+     # MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/native/jobjc/src
+     # EXCLUDES+= tests/java/com/apple/jobjc
+
+     EXCLUDES+= com/apple/jobjc
 endif
 
 # The exception handling of swing beaninfo
@@ -272,7 +275,7 @@ $(JDK_OUTPUTDIR)/classes/javax/swing/beaninfo/images/%.gif: $(JDK_TOPDIR)/make/t
 $(eval $(call SetupJavaCompilation,BUILD_JDK,\
                 SETUP:=GENERATE_JDKBYTECODE,\
 		SRC:=$(JDK_TOPDIR)/src/share/classes \
-		     $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes \
+		     $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes \
 		     $(MACOSX_SRC_DIRS) \
 		     $(JDK_OUTPUTDIR)/gensrc \
 		     $(JDK_OUTPUTDIR)/gensrc_swing/javax/swing/beaninfo \
@@ -297,7 +300,7 @@ JDK_BASE_HEADER_CLASSES:=java.lang.Integer \
 JDK_BASE_HEADER_JAVA_FILES:=$(patsubst %,$(JDK_TOPDIR)/src/share/classes/%.java,\
 				$(subst .,/,$(JDK_BASE_HEADER_CLASSES)))
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(OPENJDK_TARGET_OS),windows)
     JDK_BASE_HEADER_CLASSES_WINDOWS:=sun.nio.ch.PollArrayWrapper
     JDK_BASE_HEADER_CLASSES+=$(JDK_BASE_HEADER_CLASSES_WINDOWS)
     JDK_BASE_HEADER_JAVA_FILES+=$(patsubst %,$(JDK_TOPDIR)/src/windows/classes/%.java,\
@@ -345,6 +348,53 @@ endif
 $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin:
 	$(MKDIR) -p $(@D)
 	$(TOUCH) $@
+
+##########################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS),macosx)
+#
+# JObjC.jar is compiled with BOOT_JAVAC which (may) not support the "-h" flag.
+#   so we first compile classes with BOOT_JAVAC and then with JDK_JAVAC :-(
+#
+$(eval $(call SetupJavaCompiler,GENERATE_15BYTECODE,\
+     JAVAC:=$(JAVAC),\
+     FLAGS:=-source 1.5 -target 1.5 -g -bootclasspath $(BOOT_RTJAR) -cp $(JDK_OUTPUTDIR)/../langtools/dist/lib/classes.jar $(DISABLE_WARNINGS),\
+     SERVER_DIR:=$(JAVAC_SERVERS),\
+     SERVER_JVM:=$(SERVER_JAVA),\
+     MODE:=$(JAVAC_USE_MODE),\
+     USE_DEPS:=$(JAVAC_USE_DEPS)))
+
+$(eval $(call SetupJavaCompilation,BUILD_JOBJC_JAR,\
+		SETUP:=GENERATE_15BYTECODE,\
+		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
+		     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
+		     $(JDK_OUTPUTDIR)/gensrc, \
+		INCLUDES := com/apple/jobjc,\
+                EXCLUDES := tests/java/com/apple/jobjc,\
+		BIN:=$(JDK_OUTPUTDIR)/jobjc_classes,\
+		JAR:=$(JDK_OUTPUTDIR)/lib/JObjC.jar, \
+		JARINDEX := true))
+
+$(BUILD_JOBJC_JAR) : $(BUILD_JDK)
+
+JARS += $(JDK_OUTPUTDIR)/lib/JObjC.jar
+
+$(eval $(call SetupJavaCompilation,BUILD_JOBJC_HEADERS_JAR,\
+		SETUP:=GENERATE_JDKBYTECODE,\
+		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
+		     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
+		     $(JDK_OUTPUTDIR)/gensrc, \
+		INCLUDES := com/apple/jobjc,\
+                EXCLUDES := tests/java/com/apple/jobjc,\
+		BIN:=$(JDK_OUTPUTDIR)/jobjc_classes_headers,\
+		JAR:=$(JDK_OUTPUTDIR)/jobjc_classes_headers/dummy.jar, \
+		HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers))
+
+$(BUILD_JOBJC_HEADERS_JAR) : $(BUILD_JDK)
+
+JARS += $(JDK_OUTPUTDIR)/jobjc_classes_headers/dummy.jar
+
+endif
 
 ##########################################################################################
 
