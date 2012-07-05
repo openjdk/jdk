@@ -122,9 +122,6 @@
 
 # jdk_lang
 
-# 7123972
-java/lang/annotation/loaderLeak/Main.java			generic-all
-
 # 6944188
 java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
 
