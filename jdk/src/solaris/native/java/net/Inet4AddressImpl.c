@@ -196,7 +196,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 struct addrinfo *next
                     = (struct addrinfo*) malloc(sizeof(struct addrinfo));
                 if (!next) {
-                    JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+                    JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
                     ret = NULL;
                     goto cleanupAndReturn;
                 }
@@ -465,7 +465,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 struct addrinfo *next
                     = (struct addrinfo*) malloc(sizeof(struct addrinfo));
                 if (!next) {
-                    JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+                    JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
                     ret = NULL;
                     goto cleanupAndReturn;
                 }
