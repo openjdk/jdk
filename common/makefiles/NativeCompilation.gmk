@@ -451,13 +451,14 @@ define SetupNativeCompilation
 			$(RM) $$@
 			$(FIX_EMPTY_SEC_HDR_FLAGS) $$<
 			$(OBJCOPY) --only-keep-debug $$< $$@
-			$(ADD_GNU_DEBUGLINK) $$@ $$<
+			$(CD) $$(@D) && $(ADD_GNU_DEBUGLINK) $$(@F) $$<
                 else # not solaris
                     $$($1_OBJECT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo : $$($1_TARGET)
 			$(RM) $$@
 			$(OBJCOPY) --only-keep-debug $$< $$@
-			$(OBJCOPY) --add-gnu-debuglink=$$@ $$<
-                endif
+			$(CD) $$(@D) && $(OBJCOPY) --add-gnu-debuglink=$$(@F) $$<
+                endif # Touch to not retrigger rule on rebuild
+			$(TOUCH) $$@
 
                 ifeq ($(ZIP_DEBUGINFO_FILES), 1)
                     $1 += $$($1_OUTPUT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).diz
@@ -526,13 +527,14 @@ define SetupNativeCompilation
 			$(RM) $$@
 			$(FIX_EMPTY_SEC_HDR_FLAGS) $$<
 			$(OBJCOPY) --only-keep-debug $$< $$@
-			$(ADD_GNU_DEBUGLINK) $$@ $$<
+			$(CD) $$(@D) && $(ADD_GNU_DEBUGLINK) $$(@F) $$<
                 else # not solaris
                     $$($1_OBJECT_DIR)/$$($1_PROGRAM).debuginfo : $$($1_TARGET)
 			$(RM) $$@
 			$(OBJCOPY) --only-keep-debug $$< $$@
-			$(OBJCOPY) --add-gnu-debuglink=$$@ $$<
+			$(CD) $$(@D) && $(OBJCOPY) --add-gnu-debuglink=$$(@F) $$<
                 endif
+			$(TOUCH) $$@
 
                 ifeq ($(ZIP_DEBUGINFO_FILES), 1)
                     $1 += $$($1_OUTPUT_DIR)/$$($1_PROGRAM).diz
