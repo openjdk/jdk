@@ -1082,6 +1082,7 @@ methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_cod
   newm->set_method_size(new_method_size);
   assert(newm->code_size() == new_code_length, "check");
   assert(newm->checked_exceptions_length() == checked_exceptions_len, "check");
+  assert(newm->exception_table_length() == exception_table_len, "check");
   assert(newm->localvariable_table_length() == localvariable_len, "check");
   // Copy new byte codes
   memcpy(newm->code_base(), new_code, new_code_length);
@@ -1096,6 +1097,12 @@ methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_cod
     memcpy(newm->checked_exceptions_start(),
            m->checked_exceptions_start(),
            checked_exceptions_len * sizeof(CheckedExceptionElement));
+  }
+  // Copy exception table
+  if (exception_table_len > 0) {
+    memcpy(newm->exception_table_start(),
+           m->exception_table_start(),
+           exception_table_len * sizeof(ExceptionTableElement));
   }
   // Copy local variable number table
   if (localvariable_len > 0) {
