@@ -56,10 +56,10 @@ define add_idl_package
         $4_OLDIMPLBASE_MSG:=with -oldImplBase
     endif
     $5 : $4
-	mkdir -p $3/$$($4_TMPDIR)
-	rm -rf $3/$$($4_TMPDIR)
-	mkdir -p $(dir $5)
-	echo Compiling IDL $(patsubst $2/%,%,$4) 
+	$(MKDIR) -p $3/$$($4_TMPDIR)
+	$(RM) -rf $3/$$($4_TMPDIR)
+	$(MKDIR) -p $(dir $5)
+	$(ECHO) Compiling IDL $(patsubst $2/%,%,$4) 
 	$8 -td $3/$$($4_TMPDIR) \
 		-i $2/org/omg/CORBA \
 		-i $2/org/omg/PortableInterceptor \
@@ -69,10 +69,10 @@ define add_idl_package
 		$$($4_OLDIMPLBASE) \
 		$(PREFIXES) \
 		$4
-	rm -f $$(addprefix $3/$$($4_TMPDIR)/,$6)
-	cp -rp $3/$$($4_TMPDIR)/* $3
-	(cd $3/$$($4_TMPDIR); find . -type f | sed 's!\./!$3/!g' | awk '{ print $$$$1 ": $4" }' > $5)
-	rm -rf $3/$$($4_TMPDIR)
+	$(RM) -f $$(addprefix $3/$$($4_TMPDIR)/,$6)
+	$(CP) -rp $3/$$($4_TMPDIR)/* $3
+	($(CD) $3/$$($4_TMPDIR); find . -type f | sed 's!\./!$3/!g' | awk '{ print $$$$1 ": $4" }' > $5)
+	$(RM) -rf $3/$$($4_TMPDIR)
 endef
 
 define SetupIdlCompilation
@@ -93,7 +93,7 @@ $(if $(10),$(error Internal makefile error: Too many arguments to SetupIdlCompil
 $1_SRC := $$(abspath $$($1_SRC))
 $1_BIN := $$(abspath $$($1_BIN))
 # Find all existing java files and existing class files.
-$$(shell mkdir -p $$($1_SRC) $$($1_BIN))
+$$(shell $(MKDIR) -p $$($1_SRC) $$($1_BIN))
 $1_SRCS     := $$(shell find $$($1_SRC) -name "*.idl")
 $1_BINS     := $$(shell find $$($1_BIN) -name "*.java")
 # Prepend the source/bin path to the filter expressions.
