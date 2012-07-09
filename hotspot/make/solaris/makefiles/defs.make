@@ -203,10 +203,18 @@ ifeq ($(JVM_VARIANT_SERVER),true)
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.diz
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.diz
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.diz
+      ifeq ($(ARCH_DATA_MODEL),32)
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.diz
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.diz
+      endif
     else
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.debuginfo
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.debuginfo
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.debuginfo
+      ifeq ($(ARCH_DATA_MODEL),32)
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.debuginfo
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.debuginfo
+      endif
     endif
   endif
 endif

@@ -585,7 +585,7 @@ class CallbackWrapper : public StackObj {
     _o = klassOop_if_java_lang_Class(o);
 
     // object size
-    _obj_size = _o->size() * wordSize;
+    _obj_size = (jlong)_o->size() * wordSize;
 
     // record the context
     _tag_map = tag_map;

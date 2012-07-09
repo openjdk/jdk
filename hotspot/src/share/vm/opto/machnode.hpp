@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,6 +319,7 @@ public:
 class MachTypeNode : public MachNode {
   virtual uint size_of() const { return sizeof(*this); } // Size is bigger
 public:
+  MachTypeNode( ) {}
   const Type *_bottom_type;
 
   virtual const class Type *bottom_type() const { return _bottom_type; }
@@ -370,12 +371,12 @@ public:
 
 //------------------------------MachConstantNode-------------------------------
 // Machine node that holds a constant which is stored in the constant table.
-class MachConstantNode : public MachNode {
+class MachConstantNode : public MachTypeNode {
 protected:
   Compile::Constant _constant;  // This node's constant.
 
 public:
-  MachConstantNode() : MachNode() {
+  MachConstantNode() : MachTypeNode() {
     init_class_id(Class_MachConstant);
   }
 

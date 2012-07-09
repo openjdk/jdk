@@ -829,7 +829,7 @@ oop Reflection::new_field(fieldDescriptor* fd, bool intern_name, TRAPS) {
   java_lang_reflect_Field::set_modifiers(rh(), fd->access_flags().as_int() & JVM_RECOGNIZED_FIELD_MODIFIERS);
   java_lang_reflect_Field::set_override(rh(), false);
   if (java_lang_reflect_Field::has_signature_field() &&
-      fd->generic_signature() != NULL) {
+      fd->has_generic_signature()) {
     Symbol*  gs = fd->generic_signature();
     Handle sig = java_lang_String::create_from_symbol(gs, CHECK_NULL);
     java_lang_reflect_Field::set_signature(rh(), sig());
