@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -83,6 +84,76 @@ template <class T> HashtableEntry<T>* Hashtable<T>::new_entry(unsigned int hashV
     this, hashValue, (uintptr_t) obj, entry);
 #endif /* USDT2 */
   return entry;
+}
+
+
+// Check to see if the hashtable is unbalanced.  The caller set a flag to
+// rehash at the next safepoint.  If this bucket is 60 times greater than the
+// expected average bucket length, it's an unbalanced hashtable.
+// This is somewhat an arbitrary heuristic but if one bucket gets to
+// rehash_count which is currently 100, there's probably something wrong.
+
+bool BasicHashtable::check_rehash_table(int count) {
+  assert(table_size() != 0, "underflow");
+  if (count > (((double)number_of_entries()/(double)table_size())*rehash_multiple)) {
+    // Set a flag for the next safepoint, which should be at some guaranteed
+    // safepoint interval.
+    return true;
+  }
+  return false;
+}
+
+// Create a new table and using alternate hash code, populate the new table
+// with the existing elements.   This can be used to change the hash code
+// and could in the future change the size of the table.
+
+template <class T> void Hashtable<T>::move_to(Hashtable<T>* new_table) {
+  int saved_entry_count = number_of_entries();
+
+  // Iterate through the table and create a new entry for the new table
+  for (int i = 0; i < new_table->table_size(); ++i) {
+    for (HashtableEntry<T>* p = bucket(i); p != NULL; ) {
+      HashtableEntry<T>* next = p->next();
+      T string = p->literal();
+      // Use alternate hashing algorithm on the symbol in the first table
+      unsigned int hashValue = new_hash(string);
+      // Get a new index relative to the new table (can also change size)
+      int index = new_table->hash_to_index(hashValue);
+      p->set_hash(hashValue);
+      // Keep the shared bit in the Hashtable entry to indicate that this entry
+      // can't be deleted.   The shared bit is the LSB in the _next field so
+      // walking the hashtable past these entries requires
+      // BasicHashtableEntry::make_ptr() call.
+      bool keep_shared = p->is_shared();
+      unlink_entry(p);
+      new_table->add_entry(index, p);
+      if (keep_shared) {
+        p->set_shared();
+      }
+      p = next;
+    }
+  }
+  // give the new table the free list as well
+  new_table->copy_freelist(this);
+  assert(new_table->number_of_entries() == saved_entry_count, "lost entry on dictionary copy?");
+
+  // Destroy memory used by the buckets in the hashtable.  The memory
+  // for the elements has been used in a new table and is not
+  // destroyed.  The memory reuse will benefit resizing the SystemDictionary
+  // to avoid a memory allocation spike at safepoint.
+  free_buckets();
+}
+
+void BasicHashtable::free_buckets() {
+  if (NULL != _buckets) {
+    // Don't delete the buckets in the shared space.  They aren't
+    // allocated by os::malloc
+    if (!UseSharedSpaces ||
+        !FileMapInfo::current_info()->is_in_shared_space(_buckets)) {
+       FREE_C_HEAP_ARRAY(HashtableBucket, _buckets);
+    }
+    _buckets = NULL;
+  }
 }
 
 

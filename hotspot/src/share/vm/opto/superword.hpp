@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,8 +264,14 @@ class SuperWord : public ResourceObj {
                                      _iv = lp->as_CountedLoop()->phi()->as_Phi(); }
   int      iv_stride()             { return lp()->as_CountedLoop()->stride_con(); }
 
-  int vector_width_in_bytes()      { return Matcher::vector_width_in_bytes(); }
-
+  int vector_width(Node* n) {
+    BasicType bt = velt_basic_type(n);
+    return MIN2(ABS(iv_stride()), Matcher::max_vector_size(bt));
+  }
+  int vector_width_in_bytes(Node* n) {
+    BasicType bt = velt_basic_type(n);
+    return vector_width(n)*type2aelembytes(bt);
+  }
   MemNode* align_to_ref()            { return _align_to_ref; }
   void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }
 
@@ -298,7 +304,9 @@ class SuperWord : public ResourceObj {
 
   // vector element type
   const Type* velt_type(Node* n)             { return _node_info.adr_at(bb_idx(n))->_velt_type; }
+  BasicType velt_basic_type(Node* n)         { return velt_type(n)->array_element_basic_type(); }
   void set_velt_type(Node* n, const Type* t) { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_velt_type = t; }
+  bool same_velt_type(Node* n1, Node* n2);
 
   // my_pack
   Node_List* my_pack(Node* n)                { return !in_bb(n) ? NULL : _node_info.adr_at(bb_idx(n))->_my_pack; }
@@ -311,7 +319,9 @@ class SuperWord : public ResourceObj {
   // Find the adjacent memory references and create pack pairs for them.
   void find_adjacent_refs();
   // Find a memory reference to align the loop induction variable to.
-  void find_align_to_ref(Node_List &memops);
+  MemNode* find_align_to_ref(Node_List &memops);
+  // Calculate loop's iv adjustment for this memory ops.
+  int get_iv_adjustment(MemNode* mem);
   // Can the preloop align the reference to position zero in the vector?
   bool ref_is_alignable(SWPointer& p);
   // Construct dependency graph.
@@ -394,7 +404,7 @@ class SuperWord : public ResourceObj {
   // (Start, end] half-open range defining which operands are vector
   void vector_opd_range(Node* n, uint* start, uint* end);
   // Smallest type containing range of values
-  static const Type* container_type(const Type* t);
+  const Type* container_type(Node* n);
   // Adjust pre-loop limit so that in main loop, a load/store reference
   // to align_to_ref will be a position zero in the vector.
   void align_initial_loop_index(MemNode* align_to_ref);
@@ -462,6 +472,7 @@ class SWPointer VALUE_OBJ_CLASS_SPEC {
 
   Node* base()            { return _base; }
   Node* adr()             { return _adr; }
+  MemNode* mem()          { return _mem; }
   int   scale_in_bytes()  { return _scale; }
   Node* invar()           { return _invar; }
   bool  negate_invar()    { return _negate_invar; }

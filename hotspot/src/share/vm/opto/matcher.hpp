@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,10 +250,21 @@ public:
   static const bool convL2FSupported(void);
 
   // Vector width in bytes
-  static const uint vector_width_in_bytes(void);
+  static const int vector_width_in_bytes(BasicType bt);
+
+  // Limits on vector size (number of elements).
+  static const int max_vector_size(const BasicType bt);
+  static const int min_vector_size(const BasicType bt);
+  static const bool vector_size_supported(const BasicType bt, int size) {
+    return (Matcher::max_vector_size(bt) >= size &&
+            Matcher::min_vector_size(bt) <= size);
+  }
 
   // Vector ideal reg
-  static const uint vector_ideal_reg(void);
+  static const int vector_ideal_reg(int len);
+
+  // CPU supports misaligned vectors store/load.
+  static const bool misaligned_vectors_ok();
 
   // Used to determine a "low complexity" 64-bit constant.  (Zero is simple.)
   // The standard of comparison is one (StoreL ConL) vs. two (StoreI ConI).
