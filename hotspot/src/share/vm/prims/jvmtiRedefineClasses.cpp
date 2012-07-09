@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3236,7 +3236,9 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 
   // Copy the "source debug extension" attribute from new class version
   the_class->set_source_debug_extension(
-    scratch_class->source_debug_extension());
+    scratch_class->source_debug_extension(),
+    scratch_class->source_debug_extension() == NULL ? 0 :
+    (int)strlen(scratch_class->source_debug_extension()));
 
   // Use of javac -g could be different in the old and the new
   if (scratch_class->access_flags().has_localvariable_table() !=

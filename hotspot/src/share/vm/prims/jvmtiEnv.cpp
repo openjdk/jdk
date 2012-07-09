@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2541,15 +2541,12 @@ JvmtiEnv::GetSourceDebugExtension(oop k_mirror, char** source_debug_extension_pt
     if (!Klass::cast(k)->oop_is_instance()) {
       return JVMTI_ERROR_ABSENT_INFORMATION;
     }
-    Symbol* sdeOop = instanceKlass::cast(k)->source_debug_extension();
-    NULL_CHECK(sdeOop, JVMTI_ERROR_ABSENT_INFORMATION);
+    char* sde = instanceKlass::cast(k)->source_debug_extension();
+    NULL_CHECK(sde, JVMTI_ERROR_ABSENT_INFORMATION);
 
     {
-      JavaThread* current_thread  = JavaThread::current();
-      ResourceMark rm(current_thread);
-      const char* sdecp = (const char*) sdeOop->as_C_string();
-      *source_debug_extension_ptr = (char *) jvmtiMalloc(strlen(sdecp)+1);
-      strcpy(*source_debug_extension_ptr, sdecp);
+      *source_debug_extension_ptr = (char *) jvmtiMalloc(strlen(sde)+1);
+      strcpy(*source_debug_extension_ptr, sde);
     }
   }
 
