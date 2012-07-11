@@ -42,6 +42,7 @@ define SetupRMICompilation
     $(if $7,$1_$(strip $7))
     $(if $8,$1_$(strip $8))
     $(if $9,$1_$(strip $9))
+    $(if $(10),$(error Internal makefile error: Too many arguments to SetupRMICompilation, please update RMICompilation.gmk))
 
 
     $1_DEP_FILE := $$($1_STUB_CLASSES_DIR)/$1_rmic
