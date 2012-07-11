@@ -33,6 +33,7 @@
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1ErgoVerbose.hpp"
 #include "gc_implementation/g1/g1EvacFailure.hpp"
+#include "gc_implementation/g1/g1GCPhaseTimes.hpp"
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1MarkSweep.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
@@ -2274,7 +2275,7 @@ void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
   while (dcqs.apply_closure_to_completed_buffer(cl, worker_i, 0, true)) {
     n_completed_buffers++;
   }
-  g1_policy()->record_update_rs_processed_buffers(worker_i,
+  g1_policy()->phase_times()->record_update_rs_processed_buffers(worker_i,
                                                   (double) n_completed_buffers);
   dcqs.clear_n_completed_buffers();
   assert(!dcqs.completed_buffers_exist_dirty(), "Completed buffers exist!");
@@ -3633,10 +3634,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
-    GCCauseString gc_cause_str = GCCauseString("GC pause", gc_cause())
-      .append(g1_policy()->gcs_are_young() ? " (young)" : " (mixed)")
-      .append(g1_policy()->during_initial_mark_pause() ? " (initial-mark)" : "");
-    TraceTime t(gc_cause_str, G1Log::fine() && !G1Log::finer(), true, gclog_or_tty);
+    int active_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
+                                workers()->active_workers() : 1);
+    g1_policy()->phase_times()->note_gc_start(os::elapsedTime(), active_workers,
+      g1_policy()->gcs_are_young(), g1_policy()->during_initial_mark_pause(), gc_cause());
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
@@ -3699,9 +3700,15 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // before the start GC event.
         _hr_printer.start_gc(false /* full */, (size_t) total_collections());
 
+        // This timing is only used by the ergonomics to handle our pause target.
+        // It is unclear why this should not include the full pause. We will
+        // investigate this in CR 7178365.
+        //
+        // Preserving the old comment here if that helps the investigation:
+        //
         // The elapsed time induced by the start time below deliberately elides
         // the possible verification above.
-        double start_time_sec = os::elapsedTime();
+        double sample_start_time_sec = os::elapsedTime();
         size_t start_used_bytes = used();
 
 #if YOUNG_LIST_VERBOSE
@@ -3710,7 +3717,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
 #endif // YOUNG_LIST_VERBOSE
 
-        g1_policy()->record_collection_pause_start(start_time_sec,
+        g1_policy()->record_collection_pause_start(sample_start_time_sec,
                                                    start_used_bytes);
 
         double scan_wait_start = os::elapsedTime();
@@ -3719,11 +3726,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // objects on them have been correctly scanned before we start
         // moving them during the GC.
         bool waited = _cm->root_regions()->wait_until_scan_finished();
+        double wait_time_ms = 0.0;
         if (waited) {
           double scan_wait_end = os::elapsedTime();
-          double wait_time_ms = (scan_wait_end - scan_wait_start) * 1000.0;
-          g1_policy()->record_root_region_scan_wait_time(wait_time_ms);
+          wait_time_ms = (scan_wait_end - scan_wait_start) * 1000.0;
         }
+        g1_policy()->phase_times()->record_root_region_scan_wait_time(wait_time_ms);
 
 #if YOUNG_LIST_VERBOSE
         gclog_or_tty->print_cr("\nAfter recording pause start.\nYoung_list:");
@@ -3877,12 +3885,16 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
                                  true  /* verify_fingers */);
         _cm->note_end_of_gc();
 
-        double end_time_sec = os::elapsedTime();
-        double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
-        g1_policy()->record_pause_time_ms(pause_time_ms);
-        int active_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
-                                workers()->active_workers() : 1);
-        g1_policy()->record_collection_pause_end(active_workers);
+        // Collect thread local data to allow the ergonomics to use
+        // the collected information
+        g1_policy()->phase_times()->collapse_par_times();
+
+        // This timing is only used by the ergonomics to handle our pause target.
+        // It is unclear why this should not include the full pause. We will
+        // investigate this in CR 7178365.
+        double sample_end_time_sec = os::elapsedTime();
+        double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
+        g1_policy()->record_collection_pause_end(pause_time_ms);
 
         MemoryService::track_memory_usage();
 
@@ -3929,9 +3941,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // RETIRE events are generated before the end GC event.
       _hr_printer.end_gc(false /* full */, (size_t) total_collections());
 
-      // We have to do this after we decide whether to expand the heap or not.
-      g1_policy()->print_heap_transition();
-
       if (mark_in_progress()) {
         concurrent_mark()->update_g1_committed();
       }
@@ -3941,13 +3950,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 #endif
 
       gc_epilogue(false);
+
+      g1_policy()->phase_times()->note_gc_end(os::elapsedTime());
+
+      // We have to do this after we decide whether to expand the heap or not.
+      g1_policy()->print_heap_transition();
     }
 
-    // The closing of the inner scope, immediately above, will complete
-    // logging at the "fine" level. The record_collection_pause_end() call
-    // above will complete logging at the "finer" level.
-    //
-    // It is not yet to safe, however, to tell the concurrent mark to
+    // It is not yet to safe to tell the concurrent mark to
     // start as we have some optional output below. We don't want the
     // output from the concurrent mark thread interfering with this
     // logging output either.
@@ -4695,7 +4705,7 @@ public:
     if (worker_id >= _n_workers) return;  // no work needed this round
 
     double start_time_ms = os::elapsedTime() * 1000.0;
-    _g1h->g1_policy()->record_gc_worker_start_time(worker_id, start_time_ms);
+    _g1h->g1_policy()->phase_times()->record_gc_worker_start_time(worker_id, start_time_ms);
 
     {
       ResourceMark rm;
@@ -4744,8 +4754,8 @@ public:
         evac.do_void();
         double elapsed_ms = (os::elapsedTime()-start)*1000.0;
         double term_ms = pss.term_time()*1000.0;
-        _g1h->g1_policy()->record_obj_copy_time(worker_id, elapsed_ms-term_ms);
-        _g1h->g1_policy()->record_termination(worker_id, term_ms, pss.term_attempts());
+        _g1h->g1_policy()->phase_times()->record_obj_copy_time(worker_id, elapsed_ms-term_ms);
+        _g1h->g1_policy()->phase_times()->record_termination(worker_id, term_ms, pss.term_attempts());
       }
       _g1h->g1_policy()->record_thread_age_table(pss.age_table());
       _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
@@ -4763,7 +4773,7 @@ public:
     }
 
     double end_time_ms = os::elapsedTime() * 1000.0;
-    _g1h->g1_policy()->record_gc_worker_end_time(worker_id, end_time_ms);
+    _g1h->g1_policy()->phase_times()->record_gc_worker_end_time(worker_id, end_time_ms);
   }
 };
 
@@ -4874,15 +4884,15 @@ g1_process_strong_roots(bool collecting_perm_gen,
 
   double ext_roots_end = os::elapsedTime();
 
-  g1_policy()->reset_obj_copy_time(worker_i);
+  g1_policy()->phase_times()->reset_obj_copy_time(worker_i);
   double obj_copy_time_sec = buf_scan_perm.closure_app_seconds() +
                                 buf_scan_non_heap_roots.closure_app_seconds();
-  g1_policy()->record_obj_copy_time(worker_i, obj_copy_time_sec * 1000.0);
+  g1_policy()->phase_times()->record_obj_copy_time(worker_i, obj_copy_time_sec * 1000.0);
 
   double ext_root_time_ms =
     ((ext_roots_end - ext_roots_start) - obj_copy_time_sec) * 1000.0;
 
-  g1_policy()->record_ext_root_scan_time(worker_i, ext_root_time_ms);
+  g1_policy()->phase_times()->record_ext_root_scan_time(worker_i, ext_root_time_ms);
 
   // During conc marking we have to filter the per-thread SATB buffers
   // to make sure we remove any oops into the CSet (which will show up
@@ -4893,7 +4903,7 @@ g1_process_strong_roots(bool collecting_perm_gen,
     }
   }
   double satb_filtering_ms = (os::elapsedTime() - ext_roots_end) * 1000.0;
-  g1_policy()->record_satb_filtering_time(worker_i, satb_filtering_ms);
+  g1_policy()->phase_times()->record_satb_filtering_time(worker_i, satb_filtering_ms);
 
   // Now scan the complement of the collection set.
   if (scan_rs != NULL) {
@@ -5393,7 +5403,7 @@ void G1CollectedHeap::process_discovered_references() {
   assert(pss.refs()->is_empty(), "both queue and overflow should be empty");
 
   double ref_proc_time = os::elapsedTime() - ref_proc_start;
-  g1_policy()->record_ref_proc_time(ref_proc_time * 1000.0);
+  g1_policy()->phase_times()->record_ref_proc_time(ref_proc_time * 1000.0);
 }
 
 // Weak Reference processing during an evacuation pause (part 2).
@@ -5430,7 +5440,7 @@ void G1CollectedHeap::enqueue_discovered_references() {
   // and could signicantly increase the pause time.
 
   double ref_enq_time = os::elapsedTime() - ref_enq_start;
-  g1_policy()->record_ref_enq_time(ref_enq_time * 1000.0);
+  g1_policy()->phase_times()->record_ref_enq_time(ref_enq_time * 1000.0);
 }
 
 void G1CollectedHeap::evacuate_collection_set() {
@@ -5493,11 +5503,11 @@ void G1CollectedHeap::evacuate_collection_set() {
   }
 
   double par_time_ms = (end_par_time_sec - start_par_time_sec) * 1000.0;
-  g1_policy()->record_par_time(par_time_ms);
+  g1_policy()->phase_times()->record_par_time(par_time_ms);
 
   double code_root_fixup_time_ms =
         (os::elapsedTime() - end_par_time_sec) * 1000.0;
-  g1_policy()->record_code_root_fixup_time(code_root_fixup_time_ms);
+  g1_policy()->phase_times()->record_code_root_fixup_time(code_root_fixup_time_ms);
 
   set_par_threads(0);
 
@@ -5759,7 +5769,7 @@ void G1CollectedHeap::cleanUpCardTable() {
   }
 
   double elapsed = os::elapsedTime() - start;
-  g1_policy()->record_clear_ct_time(elapsed * 1000.0);
+  g1_policy()->phase_times()->record_clear_ct_time(elapsed * 1000.0);
 }
 
 void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
@@ -5868,8 +5878,8 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
                                     NULL /* old_proxy_set */,
                                     NULL /* humongous_proxy_set */,
                                     false /* par */);
-  policy->record_young_free_cset_time_ms(young_time_ms);
-  policy->record_non_young_free_cset_time_ms(non_young_time_ms);
+  policy->phase_times()->record_young_free_cset_time_ms(young_time_ms);
+  policy->phase_times()->record_non_young_free_cset_time_ms(non_young_time_ms);
 }
 
 // This routine is similar to the above but does not record
