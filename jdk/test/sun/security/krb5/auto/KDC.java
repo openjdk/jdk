@@ -606,9 +606,8 @@ public class KDC {
         TGSReq tgsReq = new TGSReq(in);
         PrincipalName service = tgsReq.reqBody.sname;
         if (options.containsKey(KDC.Option.RESP_NT)) {
-            service = new PrincipalName(service.getNameStrings(),
-                    (int)options.get(KDC.Option.RESP_NT));
-            service.setRealm(service.getRealm());
+            service = new PrincipalName((int)options.get(KDC.Option.RESP_NT),
+                    service.getNameStrings(), service.getRealm());
         }
         try {
             System.out.println(realm + "> " + tgsReq.reqBody.cname +
@@ -632,7 +631,6 @@ public class KDC {
                         EncryptedData ed = apReq.authenticator;
                         tkt = apReq.ticket;
                         int te = tkt.encPart.getEType();
-                        tkt.sname.setRealm(tkt.realm);
                         EncryptionKey kkey = keyForUser(tkt.sname, te, true);
                         byte[] bb = tkt.encPart.decrypt(kkey, KeyUsage.KU_TICKET);
                         DerInputStream derIn = new DerInputStream(bb);
@@ -693,7 +691,6 @@ public class KDC {
             EncTicketPart enc = new EncTicketPart(
                     tFlags,
                     key,
-                    etp.crealm,
                     etp.cname,
                     new TransitedEncoding(1, new byte[0]),  // TODO
                     new KerberosTime(new Date()),
@@ -709,7 +706,6 @@ public class KDC {
                 throw new KrbException(Krb5.KDC_ERR_SUMTYPE_NOSUPP); // TODO
             }
             Ticket t = new Ticket(
-                    body.crealm,
                     service,
                     new EncryptedData(skey, enc.asn1Encode(), KeyUsage.KU_TICKET)
             );
@@ -725,7 +721,6 @@ public class KDC {
                     new KerberosTime(new Date()),
                     body.from,
                     till, body.rtime,
-                    body.crealm,
                     service,
                     body.addresses != null  // always set caddr
                             ? body.addresses
@@ -734,7 +729,6 @@ public class KDC {
                     );
             EncryptedData edata = new EncryptedData(ckey, enc_part.asn1Encode(), KeyUsage.KU_ENC_TGS_REP_PART_SESSKEY);
             TGSRep tgsRep = new TGSRep(null,
-                    etp.crealm,
                     etp.cname,
                     t,
                     edata);
@@ -756,8 +750,8 @@ public class KDC {
                         new KerberosTime(new Date()),
                         0,
                         ke.returnCode(),
-                        body.crealm, body.cname,
-                        new Realm(getRealm()), service,
+                        body.cname,
+                        service,
                         KrbException.errorMessage(ke.returnCode()),
                         null);
             }
@@ -780,7 +774,6 @@ public class KDC {
         if (options.containsKey(KDC.Option.RESP_NT)) {
             service = new PrincipalName(service.getNameStrings(),
                     (int)options.get(KDC.Option.RESP_NT));
-            service.setRealm(service.getRealm());
         }
         try {
             System.out.println(realm + "> " + asReq.reqBody.cname +
@@ -788,7 +781,6 @@ public class KDC {
                     service);
 
             KDCReqBody body = asReq.reqBody;
-            body.cname.setRealm(getRealm());
 
             eTypes = KDCReqBodyDotEType(body);
             int eType = eTypes[0];
@@ -971,7 +963,6 @@ public class KDC {
             EncTicketPart enc = new EncTicketPart(
                     tFlags,
                     key,
-                    body.crealm,
                     body.cname,
                     new TransitedEncoding(1, new byte[0]),
                     new KerberosTime(new Date()),
@@ -980,7 +971,6 @@ public class KDC {
                     body.addresses,
                     null);
             Ticket t = new Ticket(
-                    body.crealm,
                     service,
                     new EncryptedData(skey, enc.asn1Encode(), KeyUsage.KU_TICKET)
             );
@@ -996,14 +986,12 @@ public class KDC {
                     new KerberosTime(new Date()),
                     body.from,
                     till, body.rtime,
-                    body.crealm,
                     service,
                     body.addresses
                     );
             EncryptedData edata = new EncryptedData(ckey, enc_part.asn1Encode(), KeyUsage.KU_ENC_AS_REP_PART);
             ASRep asRep = new ASRep(
                     outPAs.toArray(new PAData[outPAs.size()]),
-                    body.crealm,
                     body.cname,
                     t,
                     edata);
@@ -1024,7 +1012,6 @@ public class KDC {
                 asRep.encKDCRepPart = enc_part;
                 sun.security.krb5.internal.ccache.Credentials credentials =
                     new sun.security.krb5.internal.ccache.Credentials(asRep);
-                asReq.reqBody.cname.setRealm(getRealm());
                 CredentialsCache cache =
                     CredentialsCache.create(asReq.reqBody.cname, ccache);
                 if (cache == null) {
@@ -1059,8 +1046,8 @@ public class KDC {
                         new KerberosTime(new Date()),
                         0,
                         ke.returnCode(),
-                        body.crealm, body.cname,
-                        new Realm(getRealm()), service,
+                        body.cname,
+                        service,
                         KrbException.errorMessage(ke.returnCode()),
                         eData);
             }
