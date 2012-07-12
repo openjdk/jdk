@@ -190,32 +190,36 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         @Override
         String debugString() { return addTypeString(name, this); }
 
-        int getFieldI(Object /*C*/ obj) { return unsafe.getInt(obj, offset); }
-        void setFieldI(Object /*C*/ obj, int x) { unsafe.putInt(obj, offset, x); }
-        long getFieldJ(Object /*C*/ obj) { return unsafe.getLong(obj, offset); }
-        void setFieldJ(Object /*C*/ obj, long x) { unsafe.putLong(obj, offset, x); }
-        float getFieldF(Object /*C*/ obj) { return unsafe.getFloat(obj, offset); }
-        void setFieldF(Object /*C*/ obj, float x) { unsafe.putFloat(obj, offset, x); }
-        double getFieldD(Object /*C*/ obj) { return unsafe.getDouble(obj, offset); }
-        void setFieldD(Object /*C*/ obj, double x) { unsafe.putDouble(obj, offset, x); }
-        boolean getFieldZ(Object /*C*/ obj) { return unsafe.getBoolean(obj, offset); }
-        void setFieldZ(Object /*C*/ obj, boolean x) { unsafe.putBoolean(obj, offset, x); }
-        byte getFieldB(Object /*C*/ obj) { return unsafe.getByte(obj, offset); }
-        void setFieldB(Object /*C*/ obj, byte x) { unsafe.putByte(obj, offset, x); }
-        short getFieldS(Object /*C*/ obj) { return unsafe.getShort(obj, offset); }
-        void setFieldS(Object /*C*/ obj, short x) { unsafe.putShort(obj, offset, x); }
-        char getFieldC(Object /*C*/ obj) { return unsafe.getChar(obj, offset); }
-        void setFieldC(Object /*C*/ obj, char x) { unsafe.putChar(obj, offset, x); }
-        Object /*V*/ getFieldL(Object /*C*/ obj) { return unsafe.getObject(obj, offset); }
-        void setFieldL(Object /*C*/ obj, Object /*V*/ x) { unsafe.putObject(obj, offset, x); }
-        // cast (V) is OK here, since we wrap convertArguments around the MH.
+        private static Object nullCheck(Object obj) {
+            obj.getClass();  // NPE
+            return obj;
+        }
+
+        int getFieldI(Object /*C*/ obj) { return unsafe.getInt(nullCheck(obj), offset); }
+        void setFieldI(Object /*C*/ obj, int x) { unsafe.putInt(nullCheck(obj), offset, x); }
+        long getFieldJ(Object /*C*/ obj) { return unsafe.getLong(nullCheck(obj), offset); }
+        void setFieldJ(Object /*C*/ obj, long x) { unsafe.putLong(nullCheck(obj), offset, x); }
+        float getFieldF(Object /*C*/ obj) { return unsafe.getFloat(nullCheck(obj), offset); }
+        void setFieldF(Object /*C*/ obj, float x) { unsafe.putFloat(nullCheck(obj), offset, x); }
+        double getFieldD(Object /*C*/ obj) { return unsafe.getDouble(nullCheck(obj), offset); }
+        void setFieldD(Object /*C*/ obj, double x) { unsafe.putDouble(nullCheck(obj), offset, x); }
+        boolean getFieldZ(Object /*C*/ obj) { return unsafe.getBoolean(nullCheck(obj), offset); }
+        void setFieldZ(Object /*C*/ obj, boolean x) { unsafe.putBoolean(nullCheck(obj), offset, x); }
+        byte getFieldB(Object /*C*/ obj) { return unsafe.getByte(nullCheck(obj), offset); }
+        void setFieldB(Object /*C*/ obj, byte x) { unsafe.putByte(nullCheck(obj), offset, x); }
+        short getFieldS(Object /*C*/ obj) { return unsafe.getShort(nullCheck(obj), offset); }
+        void setFieldS(Object /*C*/ obj, short x) { unsafe.putShort(nullCheck(obj), offset, x); }
+        char getFieldC(Object /*C*/ obj) { return unsafe.getChar(nullCheck(obj), offset); }
+        void setFieldC(Object /*C*/ obj, char x) { unsafe.putChar(nullCheck(obj), offset, x); }
+        Object /*V*/ getFieldL(Object /*C*/ obj) { return unsafe.getObject(nullCheck(obj), offset); }
+        void setFieldL(Object /*C*/ obj, Object /*V*/ x) { unsafe.putObject(nullCheck(obj), offset, x); }
 
         static Object staticBase(final MemberName field) {
             if (!field.isStatic())  return null;
             return AccessController.doPrivileged(new PrivilegedAction<Object>() {
                     public Object run() {
                         try {
-                            Class c = field.getDeclaringClass();
+                            Class<?> c = field.getDeclaringClass();
                             // FIXME:  Should not have to create 'f' to get this value.
                             java.lang.reflect.Field f = c.getDeclaredField(field.getName());
                             return unsafe.staticFieldBase(f);
@@ -242,7 +246,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         void setStaticS(short x) { unsafe.putShort(base, offset, x); }
         char getStaticC() { return unsafe.getChar(base, offset); }
         void setStaticC(char x) { unsafe.putChar(base, offset, x); }
-        @SuppressWarnings("unchecked")  // (V) is for internal clarity but triggers warning
         Object /*V*/ getStaticL() { return unsafe.getObject(base, offset); }
         void setStaticL(Object /*V*/ x) { unsafe.putObject(base, offset, x); }
 
