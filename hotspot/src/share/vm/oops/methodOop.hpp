@@ -122,8 +122,9 @@ class methodOopDesc : public oopDesc {
   u2                _max_locals;                 // Number of local variables used by this method
   u2                _size_of_parameters;         // size of the parameter block (receiver + arguments) in words
   u1                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
-  u1                _jfr_towrite : 1,            // Flags
-                                 : 7;
+  u1                _jfr_towrite  : 1,           // Flags
+                    _force_inline : 1,
+                                  : 6;
   u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
   u2                _number_of_breakpoints;      // fullspeed debugging support
   InvocationCounter _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
@@ -654,6 +655,9 @@ class methodOopDesc : public oopDesc {
 
   bool jfr_towrite()                 { return _jfr_towrite; }
   void set_jfr_towrite(bool towrite) { _jfr_towrite = towrite; }
+
+  bool force_inline()            { return _force_inline; }
+  void set_force_inline(bool fi) { _force_inline = fi; }
 
   // On-stack replacement support
   bool has_osr_nmethod(int level, bool match_level) {
