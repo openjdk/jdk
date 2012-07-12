@@ -280,6 +280,8 @@ public class MethodHandlesTest {
                     { param = c; break; }
             }
         }
+        if (param.isInterface() && param.isAssignableFrom(List.class))
+            return Arrays.asList("#"+nextArg());
         if (param.isInterface() || param.isAssignableFrom(String.class))
             return "#"+nextArg();
         else
@@ -457,6 +459,7 @@ public class MethodHandlesTest {
             @Override public String toString() { return name; }
         }
     }
+    static interface SubIntExample extends IntExample { }
 
     static final Object[][][] ACCESS_CASES = {
         { { false, PUBLIC }, { false, PACKAGE }, { false, PRIVATE }, { false, EXAMPLE } }, //[0]: all false
@@ -960,7 +963,7 @@ public class MethodHandlesTest {
         }
     }
 
-    static final int TEST_UNREFLECT = 1, TEST_FIND_FIELD = 2, TEST_FIND_STATIC = 3, TEST_SETTER = 0x10;
+    static final int TEST_UNREFLECT = 1, TEST_FIND_FIELD = 2, TEST_FIND_STATIC = 3, TEST_SETTER = 0x10, TEST_NPE = 0x20;
     static boolean testModeMatches(int testMode, boolean isStatic) {
         switch (testMode) {
         case TEST_FIND_STATIC:          return isStatic;
@@ -990,6 +993,8 @@ public class MethodHandlesTest {
         for (Object[] c : HasFields.CASES) {
             boolean positive = (c[1] != Error.class);
             testGetter(positive, lookup, c[0], c[1], testMode);
+            if (positive)
+                testGetter(positive, lookup, c[0], c[1], testMode | TEST_NPE);
         }
         testGetter(true, lookup,
                    new Object[]{ true,  System.class, "out", java.io.PrintStream.class },
@@ -1005,12 +1010,14 @@ public class MethodHandlesTest {
         testAccessor(positive, lookup, fieldRef, value, testMode);
     }
 
-    public void testAccessor(boolean positive, MethodHandles.Lookup lookup,
+    public void testAccessor(boolean positive0, MethodHandles.Lookup lookup,
                              Object fieldRef, Object value, int testMode0) throws Throwable {
         if (verbosity >= 4)
-            System.out.println("testAccessor"+Arrays.asList(positive, lookup, fieldRef, value, testMode0));
+            System.out.println("testAccessor"+Arrays.deepToString(new Object[]{positive0, lookup, fieldRef, value, testMode0}));
         boolean isGetter = ((testMode0 & TEST_SETTER) == 0);
-        int testMode = testMode0 & ~TEST_SETTER;
+        boolean testNPE  = ((testMode0 & TEST_NPE) != 0);
+        int testMode = testMode0 & ~(TEST_SETTER | TEST_NPE);
+        boolean positive = positive0 && !testNPE;
         boolean isStatic;
         Class<?> fclass;
         String   fname;
@@ -1035,6 +1042,7 @@ public class MethodHandlesTest {
         }
         if (!testModeMatches(testMode, isStatic))  return;
         if (f == null && testMode == TEST_UNREFLECT)  return;
+        if (testNPE && isStatic)  return;
         countTest(positive);
         MethodType expType;
         if (isGetter)
@@ -1045,7 +1053,7 @@ public class MethodHandlesTest {
         Exception noAccess = null;
         MethodHandle mh;
         try {
-            switch (testMode0) {
+            switch (testMode0 & ~TEST_NPE) {
             case TEST_UNREFLECT:   mh = lookup.unreflectGetter(f);                      break;
             case TEST_FIND_FIELD:  mh = lookup.findGetter(fclass, fname, ftype);        break;
             case TEST_FIND_STATIC: mh = lookup.findStaticGetter(fclass, fname, ftype);  break;
@@ -1070,15 +1078,17 @@ public class MethodHandlesTest {
             System.out.println("find"+(isStatic?"Static":"")+(isGetter?"Getter":"Setter")+" "+fclass.getName()+"."+fname+"/"+ftype
                                +" => "+mh
                                +(noAccess == null ? "" : " !! "+noAccess));
-        if (positive && noAccess != null)  throw new RuntimeException(noAccess);
-        assertEquals(positive ? "positive test" : "negative test erroneously passed", positive, mh != null);
-        if (!positive)  return; // negative test failed as expected
+        if (positive && !testNPE && noAccess != null)  throw new RuntimeException(noAccess);
+        assertEquals(positive0 ? "positive test" : "negative test erroneously passed", positive0, mh != null);
+        if (!positive && !testNPE)  return; // negative access test failed as expected
         assertEquals((isStatic ? 0 : 1)+(isGetter ? 0 : 1), mh.type().parameterCount());
 
 
         assertSame(mh.type(), expType);
         assertNameStringContains(mh, fname);
         HasFields fields = new HasFields();
+        HasFields fieldsForMH = fields;
+        if (testNPE)  fieldsForMH = null;  // perturb MH argument to elicit expected error
         Object sawValue;
         Class<?> vtype = ftype;
         if (ftype != int.class)  vtype = Object.class;
@@ -1094,6 +1104,7 @@ public class MethodHandlesTest {
         if (f != null && f.getDeclaringClass() == HasFields.class) {
             assertEquals(f.get(fields), value);  // clean to start with
         }
+        Throwable caughtEx = null;
         if (isGetter) {
             Object expValue = value;
             for (int i = 0; i <= 1; i++) {
@@ -1103,10 +1114,18 @@ public class MethodHandlesTest {
                     else
                         sawValue = mh.invokeExact();
                 } else {
-                    if (ftype == int.class)
-                        sawValue = (int) mh.invokeExact((Object) fields);
-                    else
-                        sawValue = mh.invokeExact((Object) fields);
+                    sawValue = null;  // make DA rules happy under try/catch
+                    try {
+                        if (ftype == int.class)
+                            sawValue = (int) mh.invokeExact((Object) fieldsForMH);
+                        else
+                            sawValue = mh.invokeExact((Object) fieldsForMH);
+                    } catch (RuntimeException ex) {
+                        if (ex instanceof NullPointerException && testNPE) {
+                            caughtEx = ex;
+                            break;
+                        }
+                    }
                 }
                 assertEquals(sawValue, expValue);
                 if (f != null && f.getDeclaringClass() == HasFields.class
@@ -1127,10 +1146,17 @@ public class MethodHandlesTest {
                     else
                         mh.invokeExact(putValue);
                 } else {
-                    if (ftype == int.class)
-                        mh.invokeExact((Object) fields, (int)putValue);
-                    else
-                        mh.invokeExact((Object) fields, putValue);
+                    try {
+                        if (ftype == int.class)
+                            mh.invokeExact((Object) fieldsForMH, (int)putValue);
+                        else
+                            mh.invokeExact((Object) fieldsForMH, putValue);
+                    } catch (RuntimeException ex) {
+                        if (ex instanceof NullPointerException && testNPE) {
+                            caughtEx = ex;
+                            break;
+                        }
+                    }
                 }
                 if (f != null && f.getDeclaringClass() == HasFields.class) {
                     assertEquals(f.get(fields), putValue);
@@ -1139,6 +1165,14 @@ public class MethodHandlesTest {
         }
         if (f != null && f.getDeclaringClass() == HasFields.class) {
             f.set(fields, value);  // put it back
+        }
+        if (testNPE) {
+            if (caughtEx == null || !(caughtEx instanceof NullPointerException))
+                throw new RuntimeException("failed to catch NPE exception"+(caughtEx == null ? " (caughtEx=null)" : ""), caughtEx);
+            caughtEx = null;  // nullify expected exception
+        }
+        if (caughtEx != null) {
+            throw new RuntimeException("unexpected exception", caughtEx);
         }
     }
 
@@ -1164,6 +1198,8 @@ public class MethodHandlesTest {
         for (Object[] c : HasFields.CASES) {
             boolean positive = (c[1] != Error.class);
             testSetter(positive, lookup, c[0], c[1], testMode);
+            if (positive)
+                testSetter(positive, lookup, c[0], c[1], testMode | TEST_NPE);
         }
         for (int isStaticN = 0; isStaticN <= 1; isStaticN++) {
             testSetter(false, lookup,
@@ -1188,24 +1224,71 @@ public class MethodHandlesTest {
         testArrayElementGetterSetter(true);
     }
 
+    private static final int TEST_ARRAY_NONE = 0, TEST_ARRAY_NPE = 1, TEST_ARRAY_OOB = 2, TEST_ARRAY_ASE = 3;
+
     public void testArrayElementGetterSetter(boolean testSetter) throws Throwable {
-        testArrayElementGetterSetter(new Object[10], testSetter);
-        testArrayElementGetterSetter(new String[10], testSetter);
-        testArrayElementGetterSetter(new boolean[10], testSetter);
-        testArrayElementGetterSetter(new byte[10], testSetter);
-        testArrayElementGetterSetter(new char[10], testSetter);
-        testArrayElementGetterSetter(new short[10], testSetter);
-        testArrayElementGetterSetter(new int[10], testSetter);
-        testArrayElementGetterSetter(new float[10], testSetter);
-        testArrayElementGetterSetter(new long[10], testSetter);
-        testArrayElementGetterSetter(new double[10], testSetter);
+        testArrayElementGetterSetter(testSetter, TEST_ARRAY_NONE);
     }
 
-    public void testArrayElementGetterSetter(Object array, boolean testSetter) throws Throwable {
-        countTest(true);
-        if (verbosity > 2)  System.out.println("array type = "+array.getClass().getComponentType().getName()+"["+Array.getLength(array)+"]");
+    @Test
+    public void testArrayElementErrors() throws Throwable {
+        startTest("arrayElementErrors");
+        testArrayElementGetterSetter(false, TEST_ARRAY_NPE);
+        testArrayElementGetterSetter(true, TEST_ARRAY_NPE);
+        testArrayElementGetterSetter(false, TEST_ARRAY_OOB);
+        testArrayElementGetterSetter(true, TEST_ARRAY_OOB);
+        testArrayElementGetterSetter(new Object[10], true, TEST_ARRAY_ASE);
+        testArrayElementGetterSetter(new Example[10], true, TEST_ARRAY_ASE);
+        testArrayElementGetterSetter(new IntExample[10], true, TEST_ARRAY_ASE);
+    }
+
+    public void testArrayElementGetterSetter(boolean testSetter, int negTest) throws Throwable {
+        testArrayElementGetterSetter(new String[10], testSetter, negTest);
+        testArrayElementGetterSetter(new Iterable<?>[10], testSetter, negTest);
+        testArrayElementGetterSetter(new Example[10], testSetter, negTest);
+        testArrayElementGetterSetter(new IntExample[10], testSetter, negTest);
+        testArrayElementGetterSetter(new Object[10], testSetter, negTest);
+        testArrayElementGetterSetter(new boolean[10], testSetter, negTest);
+        testArrayElementGetterSetter(new byte[10], testSetter, negTest);
+        testArrayElementGetterSetter(new char[10], testSetter, negTest);
+        testArrayElementGetterSetter(new short[10], testSetter, negTest);
+        testArrayElementGetterSetter(new int[10], testSetter, negTest);
+        testArrayElementGetterSetter(new float[10], testSetter, negTest);
+        testArrayElementGetterSetter(new long[10], testSetter, negTest);
+        testArrayElementGetterSetter(new double[10], testSetter, negTest);
+    }
+
+    public void testArrayElementGetterSetter(Object array, boolean testSetter, int negTest) throws Throwable {
+        boolean positive = (negTest == TEST_ARRAY_NONE);
+        int length = java.lang.reflect.Array.getLength(array);
         Class<?> arrayType = array.getClass();
         Class<?> elemType = arrayType.getComponentType();
+        Object arrayToMH = array;
+        // this stanza allows negative tests to make argument perturbations:
+        switch (negTest) {
+        case TEST_ARRAY_NPE:
+            arrayToMH = null;
+            break;
+        case TEST_ARRAY_OOB:
+            assert(length > 0);
+            arrayToMH = java.lang.reflect.Array.newInstance(elemType, 0);
+            break;
+        case TEST_ARRAY_ASE:
+            assert(testSetter && !elemType.isPrimitive());
+            if (elemType == Object.class)
+                arrayToMH = new StringBuffer[length];  // very random subclass of Object!
+            else if (elemType == Example.class)
+                arrayToMH = new SubExample[length];
+            else if (elemType == IntExample.class)
+                arrayToMH = new SubIntExample[length];
+            else
+                return;  // can't make an ArrayStoreException test
+            assert(arrayType.isInstance(arrayToMH))
+                : Arrays.asList(arrayType, arrayToMH.getClass(), testSetter, negTest);
+            break;
+        }
+        countTest(positive);
+        if (verbosity > 2)  System.out.println("array type = "+array.getClass().getComponentType().getName()+"["+length+"]"+(positive ? "" : " negative test #"+negTest+" using "+Arrays.deepToString(new Object[]{arrayToMH})));
         MethodType expType = !testSetter
                 ? MethodType.methodType(elemType,   arrayType, int.class)
                 : MethodType.methodType(void.class, arrayType, int.class, elemType);
@@ -1214,25 +1297,29 @@ public class MethodHandlesTest {
                 : MethodHandles.arrayElementSetter(arrayType);
         assertSame(mh.type(), expType);
         if (elemType != int.class && elemType != boolean.class) {
-            // FIXME: change Integer.class and (Integer) below to int.class and (int) below.
-            MethodType gtype = mh.type().generic().changeParameterType(1, Integer.class);
+            MethodType gtype = mh.type().generic().changeParameterType(1, int.class);
             if (testSetter)  gtype = gtype.changeReturnType(void.class);
             mh = mh.asType(gtype);
         }
         Object sawValue, expValue;
         List<Object> model = array2list(array);
-        int length = Array.getLength(array);
+        Throwable caughtEx = null;
         for (int i = 0; i < length; i++) {
             // update array element
             Object random = randomArg(elemType);
             model.set(i, random);
             if (testSetter) {
-                if (elemType == int.class)
-                    mh.invokeExact((int[]) array, i, (int)random);
-                else if (elemType == boolean.class)
-                    mh.invokeExact((boolean[]) array, i, (boolean)random);
-                else
-                    mh.invokeExact(array, (Integer)i, random);
+                try {
+                    if (elemType == int.class)
+                        mh.invokeExact((int[]) arrayToMH, i, (int)random);
+                    else if (elemType == boolean.class)
+                        mh.invokeExact((boolean[]) arrayToMH, i, (boolean)random);
+                    else
+                        mh.invokeExact(arrayToMH, i, random);
+                } catch (RuntimeException ex) {
+                    caughtEx = ex;
+                    break;
+                }
                 assertEquals(model, array2list(array));
             } else {
                 Array.set(array, i, random);
@@ -1247,15 +1334,38 @@ public class MethodHandlesTest {
             sawValue = Array.get(array, i);
             if (!testSetter) {
                 expValue = sawValue;
-                if (elemType == int.class)
-                    sawValue = (int) mh.invokeExact((int[]) array, i);
-                else if (elemType == boolean.class)
-                    sawValue = (boolean) mh.invokeExact((boolean[]) array, i);
-                else
-                    sawValue = mh.invokeExact(array, (Integer)i);
+                try {
+                    if (elemType == int.class)
+                        sawValue = (int) mh.invokeExact((int[]) arrayToMH, i);
+                    else if (elemType == boolean.class)
+                        sawValue = (boolean) mh.invokeExact((boolean[]) arrayToMH, i);
+                    else
+                        sawValue = mh.invokeExact(arrayToMH, i);
+                } catch (RuntimeException ex) {
+                    caughtEx = ex;
+                    break;
+                }
                 assertEquals(sawValue, expValue);
                 assertEquals(model, array2list(array));
             }
+        }
+        if (!positive) {
+            if (caughtEx == null)
+                throw new RuntimeException("failed to catch exception for negTest="+negTest);
+            // test the kind of exception
+            Class<?> reqType = null;
+            switch (negTest) {
+            case TEST_ARRAY_ASE:  reqType = ArrayStoreException.class; break;
+            case TEST_ARRAY_OOB:  reqType = ArrayIndexOutOfBoundsException.class; break;
+            case TEST_ARRAY_NPE:  reqType = NullPointerException.class; break;
+            default:              assert(false);
+            }
+            if (reqType.isInstance(caughtEx)) {
+                caughtEx = null;  // nullify expected exception
+            }
+        }
+        if (caughtEx != null) {
+            throw new RuntimeException("unexpected exception", caughtEx);
         }
     }
 
