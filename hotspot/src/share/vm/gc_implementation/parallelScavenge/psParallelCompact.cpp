@@ -53,6 +53,7 @@
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
 #include "services/memoryService.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/events.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -405,6 +406,9 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   ReservedSpace rs(bytes, rs_align, rs_align > 0);
   os::trace_page_sizes("par compact", raw_bytes, raw_bytes, page_sz, rs.base(),
                        rs.size());
+
+  MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
+
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
   if (vspace != 0) {
     if (vspace->expand_by(bytes)) {
@@ -2732,7 +2736,7 @@ PSParallelCompact::follow_weak_klass_links() {
   for (uint i = 0; i < ParallelGCThreads + 1; i++) {
     ParCompactionManager* cm = ParCompactionManager::manager_array(i);
     KeepAliveClosure keep_alive_closure(cm);
-    Stack<Klass*>* const rks = cm->revisit_klass_stack();
+    Stack<Klass*, mtGC>* const rks = cm->revisit_klass_stack();
     if (PrintRevisitStats) {
       gclog_or_tty->print_cr("Revisit klass stack[%u] length = " SIZE_FORMAT,
                              i, rks->size());
@@ -2765,7 +2769,7 @@ void PSParallelCompact::follow_mdo_weak_refs() {
   }
   for (uint i = 0; i < ParallelGCThreads + 1; i++) {
     ParCompactionManager* cm = ParCompactionManager::manager_array(i);
-    Stack<DataLayout*>* rms = cm->revisit_mdo_stack();
+    Stack<DataLayout*, mtGC>* rms = cm->revisit_mdo_stack();
     if (PrintRevisitStats) {
       gclog_or_tty->print_cr("Revisit MDO stack[%u] size = " SIZE_FORMAT,
                              i, rms->size());

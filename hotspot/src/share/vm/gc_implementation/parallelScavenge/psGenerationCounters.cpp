@@ -40,7 +40,7 @@ PSGenerationCounters::PSGenerationCounters(const char* name,
 
     const char* cns = PerfDataManager::name_space("generation", ordinal);
 
-    _name_space = NEW_C_HEAP_ARRAY(char, strlen(cns)+1);
+    _name_space = NEW_C_HEAP_ARRAY(char, strlen(cns)+1, mtGC);
     strcpy(_name_space, cns);
 
     const char* cname = PerfDataManager::counter_name(_name_space, "name");

@@ -190,7 +190,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 
 #endif // no compilers
 
-
 // string type aliases used only in this file
 typedef const char* ccstr;
 typedef const char* ccstrlist;   // represents string arguments which accumulate
@@ -895,6 +894,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, UseFakeTimers, false,                                       \
           "Tells whether the VM should use system time or a fake timer")    \
+                                                                            \
+  product(ccstr, NativeMemoryTracking, "off",                               \
+          "Native memory tracking options")                                 \
                                                                             \
   diagnostic(bool, LogCompilation, false,                                   \
           "Log compilation activity in detail to hotspot.log or LogFile")   \
@@ -3703,7 +3705,7 @@ class CommandLineFlags {
                                                                             \
   /* Properties for Java libraries  */                                      \
                                                                             \
-  product(intx, MaxDirectMemorySize, -1,                                    \
+  product(uintx, MaxDirectMemorySize, 0,                                    \
           "Maximum total size of NIO direct-buffer allocations")            \
                                                                             \
   /* temporary developer defined flags  */                                  \

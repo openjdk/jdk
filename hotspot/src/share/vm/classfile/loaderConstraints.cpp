@@ -31,7 +31,7 @@
 #include "utilities/hashtable.inline.hpp"
 
 LoaderConstraintTable::LoaderConstraintTable(int nof_buckets)
-  : Hashtable<klassOop>(nof_buckets, sizeof(LoaderConstraintEntry)) {};
+  : Hashtable<klassOop, mtClass>(nof_buckets, sizeof(LoaderConstraintEntry)) {};
 
 
 LoaderConstraintEntry* LoaderConstraintTable::new_entry(
@@ -39,7 +39,7 @@ LoaderConstraintEntry* LoaderConstraintTable::new_entry(
                                  klassOop klass, int num_loaders,
                                  int max_loaders) {
   LoaderConstraintEntry* entry;
-  entry = (LoaderConstraintEntry*)Hashtable<klassOop>::new_entry(hash, klass);
+  entry = (LoaderConstraintEntry*)Hashtable<klassOop, mtClass>::new_entry(hash, klass);
   entry->set_name(name);
   entry->set_num_loaders(num_loaders);
   entry->set_max_loaders(max_loaders);
@@ -49,7 +49,7 @@ LoaderConstraintEntry* LoaderConstraintTable::new_entry(
 void LoaderConstraintTable::free_entry(LoaderConstraintEntry *entry) {
   // decrement name refcount before freeing
   entry->name()->decrement_refcount();
-  Hashtable<klassOop>::free_entry(entry);
+  Hashtable<klassOop, mtClass>::free_entry(entry);
 }
 
 
@@ -164,7 +164,7 @@ void LoaderConstraintTable::purge_loader_constraints(BoolObjectClosure* is_alive
 
         // Purge entry
         *p = probe->next();
-        FREE_C_HEAP_ARRAY(oop, probe->loaders());
+        FREE_C_HEAP_ARRAY(oop, probe->loaders(), mtClass);
         free_entry(probe);
       } else {
 #ifdef ASSERT
@@ -224,7 +224,7 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
         int index = hash_to_index(hash);
         LoaderConstraintEntry* p;
         p = new_entry(hash, class_name, klass, 2, 2);
-        p->set_loaders(NEW_C_HEAP_ARRAY(oop, 2));
+        p->set_loaders(NEW_C_HEAP_ARRAY(oop, 2, mtClass));
         p->set_loader(0, class_loader1());
         p->set_loader(1, class_loader2());
         p->set_klass(klass);
@@ -340,10 +340,10 @@ void LoaderConstraintTable::ensure_loader_constraint_capacity(
                                                     int nfree) {
     if (p->max_loaders() - p->num_loaders() < nfree) {
         int n = nfree + p->num_loaders();
-        oop* new_loaders = NEW_C_HEAP_ARRAY(oop, n);
+        oop* new_loaders = NEW_C_HEAP_ARRAY(oop, n, mtClass);
         memcpy(new_loaders, p->loaders(), sizeof(oop) * p->num_loaders());
         p->set_max_loaders(n);
-        FREE_C_HEAP_ARRAY(oop, p->loaders());
+        FREE_C_HEAP_ARRAY(oop, p->loaders(), mtClass);
         p->set_loaders(new_loaders);
     }
 }
@@ -425,7 +425,7 @@ void LoaderConstraintTable::merge_loader_constraints(
   }
 
   *pp2 = p2->next();
-  FREE_C_HEAP_ARRAY(oop, p2->loaders());
+  FREE_C_HEAP_ARRAY(oop, p2->loaders(), mtClass);
   free_entry(p2);
   return;
 }

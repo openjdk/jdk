@@ -43,7 +43,6 @@ SymbolTable* SymbolTable::_the_table = NULL;
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = NULL;
 bool SymbolTable::_needs_rehashing = false;
-jint SymbolTable::_seed = 0;
 
 Symbol* SymbolTable::allocate_symbol(const u1* name, int len, bool c_heap, TRAPS) {
   assert (len <= Symbol::max_length(), "should be checked by caller");
@@ -64,9 +63,9 @@ Symbol* SymbolTable::allocate_symbol(const u1* name, int len, bool c_heap, TRAPS
 void SymbolTable::initialize_symbols(int arena_alloc_size) {
   // Initialize the arena for global symbols, size passed in depends on CDS.
   if (arena_alloc_size == 0) {
-    _arena = new Arena();
+    _arena = new (mtSymbol) Arena();
   } else {
-    _arena = new Arena(arena_alloc_size);
+    _arena = new (mtSymbol) Arena(arena_alloc_size);
   }
 }
 
@@ -74,7 +73,7 @@ void SymbolTable::initialize_symbols(int arena_alloc_size) {
 void SymbolTable::symbols_do(SymbolClosure *cl) {
   const int n = the_table()->table_size();
   for (int i = 0; i < n; i++) {
-    for (HashtableEntry<Symbol*>* p = the_table()->bucket(i);
+    for (HashtableEntry<Symbol*, mtSymbol>* p = the_table()->bucket(i);
          p != NULL;
          p = p->next()) {
       cl->do_symbol(p->literal_addr());
@@ -92,8 +91,8 @@ void SymbolTable::unlink() {
   int total = 0;
   size_t memory_total = 0;
   for (int i = 0; i < the_table()->table_size(); ++i) {
-    HashtableEntry<Symbol*>** p = the_table()->bucket_addr(i);
-    HashtableEntry<Symbol*>* entry = the_table()->bucket(i);
+    HashtableEntry<Symbol*, mtSymbol>** p = the_table()->bucket_addr(i);
+    HashtableEntry<Symbol*, mtSymbol>* entry = the_table()->bucket(i);
     while (entry != NULL) {
       // Shared entries are normally at the end of the bucket and if we run into
       // a shared entry, then there is nothing more to remove. However, if we
@@ -117,7 +116,7 @@ void SymbolTable::unlink() {
         p = entry->next_addr();
       }
       // get next entry
-      entry = (HashtableEntry<Symbol*>*)HashtableEntry<Symbol*>::make_ptr(*p);
+      entry = (HashtableEntry<Symbol*, mtSymbol>*)HashtableEntry<Symbol*, mtSymbol>::make_ptr(*p);
     }
   }
   symbols_removed += removed;
@@ -130,12 +129,6 @@ void SymbolTable::unlink() {
   }
 }
 
-unsigned int SymbolTable::new_hash(Symbol* sym) {
-  ResourceMark rm;
-  // Use alternate hashing algorithm on this symbol.
-  return AltHashing::murmur3_32(seed(), (const jbyte*)sym->as_C_string(), sym->utf8_length());
-}
-
 // Create a new table and using alternate hash code, populate the new table
 // with the existing strings.   Set flag to use the alternate hash code afterwards.
 void SymbolTable::rehash_table() {
@@ -144,10 +137,6 @@ void SymbolTable::rehash_table() {
   if (DumpSharedSpaces) return;
   // Create a new symbol table
   SymbolTable* new_table = new SymbolTable();
-
-  // Initialize the global seed for hashing.
-  _seed = AltHashing::compute_seed();
-  assert(seed() != 0, "shouldn't be zero");
 
   the_table()->move_to(new_table);
 
@@ -164,7 +153,7 @@ void SymbolTable::rehash_table() {
 Symbol* SymbolTable::lookup(int index, const char* name,
                               int len, unsigned int hash) {
   int count = 0;
-  for (HashtableEntry<Symbol*>* e = bucket(index); e != NULL; e = e->next()) {
+  for (HashtableEntry<Symbol*, mtSymbol>* e = bucket(index); e != NULL; e = e->next()) {
     count++;  // count all entries in this bucket, not just ones with same hash
     if (e->hash() == hash) {
       Symbol* sym = e->literal();
@@ -176,7 +165,7 @@ Symbol* SymbolTable::lookup(int index, const char* name,
     }
   }
   // If the bucket size is too deep check if this hash code is insufficient.
-  if (count >= BasicHashtable::rehash_count && !needs_rehashing()) {
+  if (count >= BasicHashtable<mtSymbol>::rehash_count && !needs_rehashing()) {
     _needs_rehashing = check_rehash_table(count);
   }
   return NULL;
@@ -268,7 +257,7 @@ Symbol** SymbolTable::lookup_symbol_addr(Symbol* sym){
   unsigned int hash = hash_symbol((char*)sym->bytes(), sym->utf8_length());
   int index = the_table()->hash_to_index(hash);
 
-  for (HashtableEntry<Symbol*>* e = the_table()->bucket(index); e != NULL; e = e->next()) {
+  for (HashtableEntry<Symbol*, mtSymbol>* e = the_table()->bucket(index); e != NULL; e = e->next()) {
     if (e->hash() == hash) {
       Symbol* literal_sym = e->literal();
       if (sym == literal_sym) {
@@ -387,7 +376,7 @@ Symbol* SymbolTable::basic_add(int index_arg, u1 *name, int len,
   Symbol* sym = allocate_symbol(name, len, c_heap, CHECK_NULL);
   assert(sym->equals((char*)name, len), "symbol must be properly initialized");
 
-  HashtableEntry<Symbol*>* entry = new_entry(hashValue, sym);
+  HashtableEntry<Symbol*, mtSymbol>* entry = new_entry(hashValue, sym);
   add_entry(index, entry);
   return sym;
 }
@@ -435,7 +424,7 @@ bool SymbolTable::basic_add(Handle class_loader, constantPoolHandle cp,
       bool c_heap = class_loader() != NULL;
       Symbol* sym = allocate_symbol((const u1*)names[i], lengths[i], c_heap, CHECK_(false));
       assert(sym->equals(names[i], lengths[i]), "symbol must be properly initialized");  // why wouldn't it be???
-      HashtableEntry<Symbol*>* entry = new_entry(hashValue, sym);
+      HashtableEntry<Symbol*, mtSymbol>* entry = new_entry(hashValue, sym);
       add_entry(index, entry);
       cp->symbol_at_put(cp_indices[i], sym);
     }
@@ -446,7 +435,7 @@ bool SymbolTable::basic_add(Handle class_loader, constantPoolHandle cp,
 
 void SymbolTable::verify() {
   for (int i = 0; i < the_table()->table_size(); ++i) {
-    HashtableEntry<Symbol*>* p = the_table()->bucket(i);
+    HashtableEntry<Symbol*, mtSymbol>* p = the_table()->bucket(i);
     for ( ; p != NULL; p = p->next()) {
       Symbol* s = (Symbol*)(p->literal());
       guarantee(s != NULL, "symbol is NULL");
@@ -462,7 +451,7 @@ void SymbolTable::dump(outputStream* st) {
   NumberSeq summary;
   for (int i = 0; i < the_table()->table_size(); ++i) {
     int count = 0;
-    for (HashtableEntry<Symbol*>* e = the_table()->bucket(i);
+    for (HashtableEntry<Symbol*, mtSymbol>* e = the_table()->bucket(i);
        e != NULL; e = e->next()) {
       count++;
     }
@@ -499,7 +488,7 @@ void SymbolTable::print_histogram() {
   int memory_total = 0;
   int count = 0;
   for (i = 0; i < the_table()->table_size(); i++) {
-    HashtableEntry<Symbol*>* p = the_table()->bucket(i);
+    HashtableEntry<Symbol*, mtSymbol>* p = the_table()->bucket(i);
     for ( ; p != NULL; p = p->next()) {
       memory_total += p->literal()->object_size();
       count++;
@@ -560,15 +549,15 @@ void SymbolTable::print_histogram() {
 
 void SymbolTable::print() {
   for (int i = 0; i < the_table()->table_size(); ++i) {
-    HashtableEntry<Symbol*>** p = the_table()->bucket_addr(i);
-    HashtableEntry<Symbol*>* entry = the_table()->bucket(i);
+    HashtableEntry<Symbol*, mtSymbol>** p = the_table()->bucket_addr(i);
+    HashtableEntry<Symbol*, mtSymbol>* entry = the_table()->bucket(i);
     if (entry != NULL) {
       while (entry != NULL) {
         tty->print(PTR_FORMAT " ", entry->literal());
         entry->literal()->print();
         tty->print(" %d", entry->literal()->refcount());
         p = entry->next_addr();
-        entry = (HashtableEntry<Symbol*>*)HashtableEntry<Symbol*>::make_ptr(*p);
+        entry = (HashtableEntry<Symbol*, mtSymbol>*)HashtableEntry<Symbol*, mtSymbol>::make_ptr(*p);
       }
       tty->cr();
     }
@@ -620,7 +609,6 @@ class StableMemoryChecker : public StackObj {
 StringTable* StringTable::_the_table = NULL;
 
 bool StringTable::_needs_rehashing = false;
-jint StringTable::_seed = 0;
 
 // Pick hashing algorithm
 unsigned int StringTable::hash_string(const jchar* s, int len) {
@@ -631,7 +619,7 @@ unsigned int StringTable::hash_string(const jchar* s, int len) {
 oop StringTable::lookup(int index, jchar* name,
                         int len, unsigned int hash) {
   int count = 0;
-  for (HashtableEntry<oop>* l = bucket(index); l != NULL; l = l->next()) {
+  for (HashtableEntry<oop, mtSymbol>* l = bucket(index); l != NULL; l = l->next()) {
     count++;
     if (l->hash() == hash) {
       if (java_lang_String::equals(l->literal(), name, len)) {
@@ -640,7 +628,7 @@ oop StringTable::lookup(int index, jchar* name,
     }
   }
   // If the bucket size is too deep check if this hash code is insufficient.
-  if (count >= BasicHashtable::rehash_count && !needs_rehashing()) {
+  if (count >= BasicHashtable<mtSymbol>::rehash_count && !needs_rehashing()) {
     _needs_rehashing = check_rehash_table(count);
   }
   return NULL;
@@ -676,7 +664,7 @@ oop StringTable::basic_add(int index_arg, Handle string, jchar* name,
     return test;
   }
 
-  HashtableEntry<oop>* entry = new_entry(hashValue, string());
+  HashtableEntry<oop, mtSymbol>* entry = new_entry(hashValue, string());
   add_entry(index, entry);
   return string();
 }
@@ -761,8 +749,8 @@ void StringTable::unlink(BoolObjectClosure* is_alive) {
   // entries at a safepoint.
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   for (int i = 0; i < the_table()->table_size(); ++i) {
-    HashtableEntry<oop>** p = the_table()->bucket_addr(i);
-    HashtableEntry<oop>* entry = the_table()->bucket(i);
+    HashtableEntry<oop, mtSymbol>** p = the_table()->bucket_addr(i);
+    HashtableEntry<oop, mtSymbol>* entry = the_table()->bucket(i);
     while (entry != NULL) {
       // Shared entries are normally at the end of the bucket and if we run into
       // a shared entry, then there is nothing more to remove. However, if we
@@ -778,15 +766,15 @@ void StringTable::unlink(BoolObjectClosure* is_alive) {
         *p = entry->next();
         the_table()->free_entry(entry);
       }
-      entry = (HashtableEntry<oop>*)HashtableEntry<oop>::make_ptr(*p);
+      entry = (HashtableEntry<oop, mtSymbol>*)HashtableEntry<oop, mtSymbol>::make_ptr(*p);
     }
   }
 }
 
 void StringTable::oops_do(OopClosure* f) {
   for (int i = 0; i < the_table()->table_size(); ++i) {
-    HashtableEntry<oop>** p = the_table()->bucket_addr(i);
-    HashtableEntry<oop>* entry = the_table()->bucket(i);
+    HashtableEntry<oop, mtSymbol>** p = the_table()->bucket_addr(i);
+    HashtableEntry<oop, mtSymbol>* entry = the_table()->bucket(i);
     while (entry != NULL) {
       f->do_oop((oop*)entry->literal_addr());
 
@@ -798,14 +786,14 @@ void StringTable::oops_do(OopClosure* f) {
       } else {
         p = entry->next_addr();
       }
-      entry = (HashtableEntry<oop>*)HashtableEntry<oop>::make_ptr(*p);
+      entry = (HashtableEntry<oop, mtSymbol>*)HashtableEntry<oop, mtSymbol>::make_ptr(*p);
     }
   }
 }
 
 void StringTable::verify() {
   for (int i = 0; i < the_table()->table_size(); ++i) {
-    HashtableEntry<oop>* p = the_table()->bucket(i);
+    HashtableEntry<oop, mtSymbol>* p = the_table()->bucket(i);
     for ( ; p != NULL; p = p->next()) {
       oop s = p->literal();
       guarantee(s != NULL, "interned string is NULL");
@@ -821,7 +809,7 @@ void StringTable::verify() {
 void StringTable::dump(outputStream* st) {
   NumberSeq summary;
   for (int i = 0; i < the_table()->table_size(); ++i) {
-    HashtableEntry<oop>* p = the_table()->bucket(i);
+    HashtableEntry<oop, mtSymbol>* p = the_table()->bucket(i);
     int count = 0;
     for ( ; p != NULL; p = p->next()) {
       count++;
@@ -837,14 +825,6 @@ void StringTable::dump(outputStream* st) {
 }
 
 
-unsigned int StringTable::new_hash(oop string) {
-  ResourceMark rm;
-  int length;
-  jchar* chars = java_lang_String::as_unicode_string(string, length);
-  // Use alternate hashing algorithm on the string
-  return AltHashing::murmur3_32(seed(), chars, length);
-}
-
 // Create a new table and using alternate hash code, populate the new table
 // with the existing strings.   Set flag to use the alternate hash code afterwards.
 void StringTable::rehash_table() {
@@ -852,10 +832,6 @@ void StringTable::rehash_table() {
   // This should never happen with -Xshare:dump but it might in testing mode.
   if (DumpSharedSpaces) return;
   StringTable* new_table = new StringTable();
-
-  // Initialize new global seed for hashing.
-  _seed = AltHashing::compute_seed();
-  assert(seed() != 0, "shouldn't be zero");
 
   // Rehash the table
   the_table()->move_to(new_table);

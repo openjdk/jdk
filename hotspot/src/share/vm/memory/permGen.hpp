@@ -42,7 +42,7 @@ class CSpaceCounters;
 
 // PermGen models the part of the heap used to allocate class meta-data.
 
-class PermGen : public CHeapObj {
+class PermGen : public CHeapObj<mtGC> {
   friend class VMStructs;
  protected:
   size_t _capacity_expansion_limit;  // maximum expansion allowed without a

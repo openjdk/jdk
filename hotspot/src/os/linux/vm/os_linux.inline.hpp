@@ -99,7 +99,7 @@ inline bool os::allocate_stack_guard_pages() {
 
 
 // On Linux, reservations are made on a page by page basis, nothing to do.
-inline void os::split_reserved_memory(char *base, size_t size,
+inline void os::pd_split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc) {
 }
 

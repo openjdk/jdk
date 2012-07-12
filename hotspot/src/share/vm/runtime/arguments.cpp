@@ -35,6 +35,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "services/management.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/taskqueue.hpp"
 #ifdef TARGET_OS_FAMILY_linux
@@ -368,7 +369,7 @@ inline void SysClassPath::add_suffix(const char* suffix) {
 inline void SysClassPath::reset_item_at(int index) {
   assert(index < _scp_nitems && index != _scp_base, "just checking");
   if (_items[index] != NULL) {
-    FREE_C_HEAP_ARRAY(char, _items[index]);
+    FREE_C_HEAP_ARRAY(char, _items[index], mtInternal);
     _items[index] = NULL;
   }
 }
@@ -400,11 +401,11 @@ void SysClassPath::expand_endorsed() {
       expanded_path = add_jars_to_path(expanded_path, path);
       path = end;
     } else {
-      char* dirpath = NEW_C_HEAP_ARRAY(char, tmp_end - path + 1);
+      char* dirpath = NEW_C_HEAP_ARRAY(char, tmp_end - path + 1, mtInternal);
       memcpy(dirpath, path, tmp_end - path);
       dirpath[tmp_end - path] = '\0';
       expanded_path = add_jars_to_path(expanded_path, dirpath);
-      FREE_C_HEAP_ARRAY(char, dirpath);
+      FREE_C_HEAP_ARRAY(char, dirpath, mtInternal);
       path = tmp_end + 1;
     }
   }
@@ -435,7 +436,7 @@ char* SysClassPath::combined_path() {
   assert(total_len > 0, "empty sysclasspath not allowed");
 
   // Copy the _items to a single string.
-  char* cp = NEW_C_HEAP_ARRAY(char, total_len);
+  char* cp = NEW_C_HEAP_ARRAY(char, total_len, mtInternal);
   char* cp_tmp = cp;
   for (i = 0; i < _scp_nitems; ++i) {
     if (_items[i] != NULL) {
@@ -456,7 +457,7 @@ SysClassPath::add_to_path(const char* path, const char* str, bool prepend) {
   assert(str != NULL, "just checking");
   if (path == NULL) {
     size_t len = strlen(str) + 1;
-    cp = NEW_C_HEAP_ARRAY(char, len);
+    cp = NEW_C_HEAP_ARRAY(char, len, mtInternal);
     memcpy(cp, str, len);                       // copy the trailing null
   } else {
     const char separator = *os::path_separator();
@@ -465,15 +466,15 @@ SysClassPath::add_to_path(const char* path, const char* str, bool prepend) {
     size_t len = old_len + str_len + 2;
 
     if (prepend) {
-      cp = NEW_C_HEAP_ARRAY(char, len);
+      cp = NEW_C_HEAP_ARRAY(char, len, mtInternal);
       char* cp_tmp = cp;
       memcpy(cp_tmp, str, str_len);
       cp_tmp += str_len;
       *cp_tmp = separator;
       memcpy(++cp_tmp, path, old_len + 1);      // copy the trailing null
-      FREE_C_HEAP_ARRAY(char, path);
+      FREE_C_HEAP_ARRAY(char, path, mtInternal);
     } else {
-      cp = REALLOC_C_HEAP_ARRAY(char, path, len);
+      cp = REALLOC_C_HEAP_ARRAY(char, path, len, mtInternal);
       char* cp_tmp = cp + old_len;
       *cp_tmp = separator;
       memcpy(++cp_tmp, str, str_len + 1);       // copy the trailing null
@@ -495,7 +496,7 @@ char* SysClassPath::add_jars_to_path(char* path, const char* directory) {
 
   /* Scan the directory for jars/zips, appending them to path. */
   struct dirent *entry;
-  char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(directory));
+  char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(directory), mtInternal);
   while ((entry = os::readdir(dir, (dirent *) dbuf)) != NULL) {
     const char* name = entry->d_name;
     const char* ext = name + strlen(name) - 4;
@@ -503,13 +504,13 @@ char* SysClassPath::add_jars_to_path(char* path, const char* directory) {
       (os::file_name_strcmp(ext, ".jar") == 0 ||
        os::file_name_strcmp(ext, ".zip") == 0);
     if (isJarOrZip) {
-      char* jarpath = NEW_C_HEAP_ARRAY(char, directory_len + 2 + strlen(name));
+      char* jarpath = NEW_C_HEAP_ARRAY(char, directory_len + 2 + strlen(name), mtInternal);
       sprintf(jarpath, "%s%s%s", directory, dir_sep, name);
       path = add_to_path(path, jarpath, false);
-      FREE_C_HEAP_ARRAY(char, jarpath);
+      FREE_C_HEAP_ARRAY(char, jarpath, mtInternal);
     }
   }
-  FREE_C_HEAP_ARRAY(char, dbuf);
+  FREE_C_HEAP_ARRAY(char, dbuf, mtInternal);
   os::closedir(dir);
   return path;
 }
@@ -631,7 +632,7 @@ static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
 static bool set_string_flag(char* name, const char* value, FlagValueOrigin origin) {
   if (!CommandLineFlags::ccstrAtPut(name, &value, origin))  return false;
   // Contract:  CommandLineFlags always returns a pointer that needs freeing.
-  FREE_C_HEAP_ARRAY(char, value);
+  FREE_C_HEAP_ARRAY(char, value, mtInternal);
   return true;
 }
 
@@ -647,7 +648,7 @@ static bool append_to_string_flag(char* name, const char* new_value, FlagValueOr
   } else if (new_len == 0) {
     value = old_value;
   } else {
-    char* buf = NEW_C_HEAP_ARRAY(char, old_len + 1 + new_len + 1);
+    char* buf = NEW_C_HEAP_ARRAY(char, old_len + 1 + new_len + 1, mtInternal);
     // each new setting adds another LINE to the switch:
     sprintf(buf, "%s\n%s", old_value, new_value);
     value = buf;
@@ -655,10 +656,10 @@ static bool append_to_string_flag(char* name, const char* new_value, FlagValueOr
   }
   (void) CommandLineFlags::ccstrAtPut(name, &value, origin);
   // CommandLineFlags always returns a pointer that needs freeing.
-  FREE_C_HEAP_ARRAY(char, value);
+  FREE_C_HEAP_ARRAY(char, value, mtInternal);
   if (free_this_too != NULL) {
     // CommandLineFlags made its own copy, so I must delete my own temp. buffer.
-    FREE_C_HEAP_ARRAY(char, free_this_too);
+    FREE_C_HEAP_ARRAY(char, free_this_too, mtInternal);
   }
   return true;
 }
@@ -735,9 +736,9 @@ void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
   // expand the array and add arg to the last element
   (*count)++;
   if (*bldarray == NULL) {
-    *bldarray = NEW_C_HEAP_ARRAY(char*, *count);
+    *bldarray = NEW_C_HEAP_ARRAY(char*, *count, mtInternal);
   } else {
-    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, *count);
+    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, *count, mtInternal);
   }
   (*bldarray)[index] = strdup(arg);
 }
@@ -917,13 +918,13 @@ bool Arguments::add_property(const char* prop) {
   char* value = (char *)ns;
 
   size_t key_len = (eq == NULL) ? strlen(prop) : (eq - prop);
-  key = AllocateHeap(key_len + 1, "add_property");
+  key = AllocateHeap(key_len + 1, mtInternal);
   strncpy(key, prop, key_len);
   key[key_len] = '\0';
 
   if (eq != NULL) {
     size_t value_len = strlen(prop) - key_len - 1;
-    value = AllocateHeap(value_len + 1, "add_property");
+    value = AllocateHeap(value_len + 1, mtInternal);
     strncpy(value, &prop[key_len + 1], value_len + 1);
   }
 
@@ -2058,12 +2059,12 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
     const char* altclasses_jar = "alt-rt.jar";
     size_t altclasses_path_len = strlen(get_meta_index_dir()) + 1 +
                                  strlen(altclasses_jar);
-    char* altclasses_path = NEW_C_HEAP_ARRAY(char, altclasses_path_len);
+    char* altclasses_path = NEW_C_HEAP_ARRAY(char, altclasses_path_len, mtInternal);
     strcpy(altclasses_path, get_meta_index_dir());
     strcat(altclasses_path, altclasses_jar);
     scp.add_suffix_to_prefix(altclasses_path);
     scp_assembly_required = true;
-    FREE_C_HEAP_ARRAY(char, altclasses_path);
+    FREE_C_HEAP_ARRAY(char, altclasses_path, mtInternal);
   }
 
   if (WhiteBoxAPI) {
@@ -2071,12 +2072,12 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
     const char* wb_jar = "wb.jar";
     size_t wb_path_len = strlen(get_meta_index_dir()) + 1 +
                          strlen(wb_jar);
-    char* wb_path = NEW_C_HEAP_ARRAY(char, wb_path_len);
+    char* wb_path = NEW_C_HEAP_ARRAY(char, wb_path_len, mtInternal);
     strcpy(wb_path, get_meta_index_dir());
     strcat(wb_path, wb_jar);
     scp.add_suffix(wb_path);
     scp_assembly_required = true;
-    FREE_C_HEAP_ARRAY(char, wb_path);
+    FREE_C_HEAP_ARRAY(char, wb_path, mtInternal);
   }
 
   // Parse _JAVA_OPTIONS environment variable (if present) (mimics classic VM)
@@ -2161,13 +2162,13 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       if (tail != NULL) {
         const char* pos = strchr(tail, ':');
         size_t len = (pos == NULL) ? strlen(tail) : pos - tail;
-        char* name = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len + 1), tail, len);
+        char* name = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len + 1, mtInternal), tail, len);
         name[len] = '\0';
 
         char *options = NULL;
         if(pos != NULL) {
           size_t len2 = strlen(pos+1) + 1; // options start after ':'.  Final zero must be copied.
-          options = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len2), pos+1, len2);
+          options = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len2, mtInternal), pos+1, len2);
         }
 #ifdef JVMTI_KERNEL
         if ((strcmp(name, "hprof") == 0) || (strcmp(name, "jdwp") == 0)) {
@@ -2182,12 +2183,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       if(tail != NULL) {
         const char* pos = strchr(tail, '=');
         size_t len = (pos == NULL) ? strlen(tail) : pos - tail;
-        char* name = strncpy(NEW_C_HEAP_ARRAY(char, len + 1), tail, len);
+        char* name = strncpy(NEW_C_HEAP_ARRAY(char, len + 1, mtInternal), tail, len);
         name[len] = '\0';
 
         char *options = NULL;
         if(pos != NULL) {
-          options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(pos + 1) + 1), pos + 1);
+          options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(pos + 1) + 1, mtInternal), pos + 1);
         }
 #ifdef JVMTI_KERNEL
         if ((strcmp(name, "hprof") == 0) || (strcmp(name, "jdwp") == 0)) {
@@ -2200,7 +2201,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -javaagent
     } else if (match_option(option, "-javaagent:", &tail)) {
       if(tail != NULL) {
-        char *options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(tail) + 1), tail);
+        char *options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(tail) + 1, mtInternal), tail);
         add_init_agent("instrument", options, false);
       }
     // -Xnoclassgc
@@ -2708,6 +2709,17 @@ SOLARIS_ONLY(
         return JNI_EINVAL;
       }
       FLAG_SET_CMDLINE(uintx, ConcGCThreads, conc_threads);
+    } else if (match_option(option, "-XX:MaxDirectMemorySize=", &tail)) {
+      julong max_direct_memory_size = 0;
+      ArgsRange errcode = parse_memory_size(tail, &max_direct_memory_size, 0);
+      if (errcode != arg_in_range) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid maximum direct memory size: %s\n",
+                    option->optionString);
+        describe_range_error(errcode);
+        return JNI_EINVAL;
+      }
+      FLAG_SET_CMDLINE(uintx, MaxDirectMemorySize, max_direct_memory_size);
     } else if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
       // Skip -XX:Flags= since that case has already been handled
       if (strncmp(tail, "Flags=", strlen("Flags=")) != 0) {
@@ -2958,7 +2970,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   char *end = strrchr(jvm_path, *os::file_separator());
   if (end != NULL) *end = '\0';
   char *shared_archive_path = NEW_C_HEAP_ARRAY(char, strlen(jvm_path) +
-                                        strlen(os::file_separator()) + 20);
+      strlen(os::file_separator()) + 20, mtInternal);
   if (shared_archive_path == NULL) return JNI_ENOMEM;
   strcpy(shared_archive_path, jvm_path);
   strcat(shared_archive_path, os::file_separator());
@@ -2999,6 +3011,10 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       CommandLineFlags::printFlags(tty, false);
       vm_exit(0);
     }
+    if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
+      MemTracker::init_tracking_options(tail);
+    }
+
 
 #ifndef PRODUCT
     if (match_option(option, "-XX:+PrintFlagsWithComments", &tail)) {
@@ -3347,7 +3363,7 @@ char *Arguments::get_kernel_properties() {
     }
   }
   // Add one for null terminator.
-  char *props = AllocateHeap(length + 1, "get_kernel_properties");
+  char *props = AllocateHeap(length + 1, mtInternal);
   if (length != 0) {
     int pos = 0;
     for (prop = _system_properties; prop != NULL; prop = prop->next()) {
