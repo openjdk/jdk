@@ -622,8 +622,12 @@ import static java.lang.invoke.MethodHandleStatics.*;
             MemberName[] buf = { m };
             int n = MethodHandleNatives.getMembers(m.getDeclaringClass(),
                     m.getName(), matchSig, matchFlags, lookupClass, 0, buf);
-            if (n != 1)  return false;
-            return m.isResolved();
+            if (n == 0 || !m.isResolved())
+                return false;  // no result
+            else if (n == 1 || m.clazz.isInterface())
+                return true;   // unique result, or multiple inheritance is OK
+            else
+                return false;  // ambiguous result (can this happen?)
         }
         /** Produce a resolved version of the given member.
          *  Super types are searched (for inherited members) if {@code searchSupers} is true.
