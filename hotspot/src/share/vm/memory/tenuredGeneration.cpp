@@ -65,7 +65,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   if (UseParNewGC && ParallelGCThreads > 0) {
     typedef ParGCAllocBufferWithBOT* ParGCAllocBufferWithBOTPtr;
     _alloc_buffers = NEW_C_HEAP_ARRAY(ParGCAllocBufferWithBOTPtr,
-                                      ParallelGCThreads);
+                                      ParallelGCThreads, mtGC);
     if (_alloc_buffers == NULL)
       vm_exit_during_initialization("Could not allocate alloc_buffers");
     for (uint i = 0; i < ParallelGCThreads; i++) {

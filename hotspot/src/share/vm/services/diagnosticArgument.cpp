@@ -140,7 +140,7 @@ template <> void DCmdArgument<char*>::parse_value(const char* str,
   if (str == NULL) {
     _value = NULL;
   } else {
-    _value = NEW_C_HEAP_ARRAY(char, len+1);
+    _value = NEW_C_HEAP_ARRAY(char, len+1, mtInternal);
     strncpy(_value, str, len);
     _value[len] = 0;
   }
@@ -159,7 +159,7 @@ template <> void DCmdArgument<char*>::init_value(TRAPS) {
 
 template <> void DCmdArgument<char*>::destroy_value() {
   if (_value != NULL) {
-    FREE_C_HEAP_ARRAY(char, _value);
+    FREE_C_HEAP_ARRAY(char, _value, mtInternal);
     set_value(NULL);
   }
 }

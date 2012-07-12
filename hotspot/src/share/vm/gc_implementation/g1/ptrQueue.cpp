@@ -126,7 +126,7 @@ void** PtrQueueSet::allocate_buffer() {
     return res;
   } else {
     // Allocate space for the BufferNode in front of the buffer.
-    char *b =  NEW_C_HEAP_ARRAY(char, _sz + BufferNode::aligned_size());
+    char *b =  NEW_C_HEAP_ARRAY(char, _sz + BufferNode::aligned_size(), mtGC);
     return BufferNode::make_buffer_from_block(b);
   }
 }
@@ -149,7 +149,7 @@ void PtrQueueSet::reduce_free_list() {
     assert(_buf_free_list != NULL, "_buf_free_list_sz must be wrong.");
     void* b = BufferNode::make_block_from_node(_buf_free_list);
     _buf_free_list = _buf_free_list->next();
-    FREE_C_HEAP_ARRAY(char, b);
+    FREE_C_HEAP_ARRAY(char, b, mtGC);
     _buf_free_list_sz --;
     n--;
   }

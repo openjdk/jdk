@@ -216,7 +216,7 @@ protected:
 
 // A GCTaskQueue that can be synchronized.
 // This "has-a" GCTaskQueue and a mutex to do the exclusion.
-class SynchronizedGCTaskQueue : public CHeapObj {
+class SynchronizedGCTaskQueue : public CHeapObj<mtGC> {
 private:
   // Instance state.
   GCTaskQueue* _unsynchronized_queue;   // Has-a unsynchronized queue.
@@ -278,7 +278,7 @@ protected:
 
 // This is an abstract base class for getting notifications
 // when a GCTaskManager is done.
-class NotifyDoneClosure : public CHeapObj {
+class NotifyDoneClosure : public CHeapObj<mtGC> {
 public:
   // The notification callback method.
   virtual void notify(GCTaskManager* manager) = 0;
@@ -355,7 +355,7 @@ protected:
 // held in the GCTaskThread** _thread array in GCTaskManager.
 
 
-class GCTaskManager : public CHeapObj {
+class GCTaskManager : public CHeapObj<mtGC> {
  friend class ParCompactionManager;
  friend class PSParallelCompact;
  friend class PSScavenge;

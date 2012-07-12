@@ -42,7 +42,7 @@ ElfStringTable::ElfStringTable(FILE* file, Elf_Shdr shdr, int index) {
 
   // try to load the string table
   long cur_offset = ftell(file);
-  m_table = (char*)os::malloc(sizeof(char) * shdr.sh_size);
+  m_table = (char*)os::malloc(sizeof(char) * shdr.sh_size, mtInternal);
   if (m_table != NULL) {
     // if there is an error, mark the error
     if (fseek(file, shdr.sh_offset, SEEK_SET) ||
