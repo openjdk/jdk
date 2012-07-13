@@ -746,6 +746,7 @@ public class Flow {
                 pendingExits = prevPendingExits;
                 alive = true;
                 scanStat(tree.finalizer);
+                tree.finallyCanCompleteNormally = alive;
                 if (!alive) {
                     // discard exits and exceptions from try and finally
                     thrown = chk.union(thrown, thrownPrev);
@@ -764,7 +765,6 @@ public class Flow {
                     }
                     alive = aliveEnd;
                 }
-                tree.finallyCanCompleteNormally = alive;
             } else {
                 thrown = chk.union(thrown, chk.diff(thrownInTry, caughtInTry));
                 alive = aliveEnd;
