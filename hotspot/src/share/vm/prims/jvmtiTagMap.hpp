@@ -41,7 +41,7 @@ class JvmtiTagHashmap;
 class JvmtiTagHashmapEntry;
 class JvmtiTagHashmapEntryClosure;
 
-class JvmtiTagMap :  public CHeapObj {
+class JvmtiTagMap :  public CHeapObj<mtInternal> {
  private:
 
   enum{

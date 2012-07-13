@@ -26,10 +26,13 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threadCritical.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/ostream.hpp"
+
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
 #endif
@@ -43,32 +46,16 @@
 # include "os_bsd.inline.hpp"
 #endif
 
-void* CHeapObj::operator new(size_t size){
-  return (void *) AllocateHeap(size, "CHeapObj-new");
-}
-
-void* CHeapObj::operator new (size_t size, const std::nothrow_t&  nothrow_constant) {
-  char* p = (char*) os::malloc(size);
-#ifdef ASSERT
-  if (PrintMallocFree) trace_heap_malloc(size, "CHeapObj-new", p);
-#endif
-  return p;
-}
-
-void CHeapObj::operator delete(void* p){
- FreeHeap(p);
-}
-
 void* StackObj::operator new(size_t size)  { ShouldNotCallThis(); return 0; };
 void  StackObj::operator delete(void* p)   { ShouldNotCallThis(); };
 void* _ValueObj::operator new(size_t size)  { ShouldNotCallThis(); return 0; };
 void  _ValueObj::operator delete(void* p)   { ShouldNotCallThis(); };
 
-void* ResourceObj::operator new(size_t size, allocation_type type) {
+void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flags) {
   address res;
   switch (type) {
    case C_HEAP:
-    res = (address)AllocateHeap(size, "C_Heap: ResourceOBJ");
+    res = (address)AllocateHeap(size, flags, CALLER_PC);
     DEBUG_ONLY(set_allocation_type(res, C_HEAP);)
     break;
    case RESOURCE_AREA:
@@ -184,7 +171,7 @@ bool warn_new_operator = false; // see vm_main
 
 // MT-safe pool of chunks to reduce malloc/free thrashing
 // NB: not using Mutex because pools are used before Threads are initialized
-class ChunkPool {
+class ChunkPool: public CHeapObj<mtInternal> {
   Chunk*       _first;        // first cached Chunk; its first word points to next chunk
   size_t       _num_chunks;   // number of unused chunks in pool
   size_t       _num_used;     // number of chunks currently checked out
@@ -210,14 +197,16 @@ class ChunkPool {
    ChunkPool(size_t size) : _size(size) { _first = NULL; _num_chunks = _num_used = 0; }
 
   // Allocate a new chunk from the pool (might expand the pool)
-  void* allocate(size_t bytes) {
+  _NOINLINE_ void* allocate(size_t bytes) {
     assert(bytes == _size, "bad size");
     void* p = NULL;
+    // No VM lock can be taken inside ThreadCritical lock, so os::malloc
+    // should be done outside ThreadCritical lock due to NMT
     { ThreadCritical tc;
       _num_used++;
       p = get_first();
-      if (p == NULL) p = os::malloc(bytes);
     }
+    if (p == NULL) p = os::malloc(bytes, mtChunk, CURRENT_PC);
     if (p == NULL)
       vm_exit_out_of_memory(bytes, "ChunkPool::allocate");
 
@@ -238,28 +227,34 @@ class ChunkPool {
 
   // Prune the pool
   void free_all_but(size_t n) {
+    Chunk* cur = NULL;
+    Chunk* next;
+    {
     // if we have more than n chunks, free all of them
     ThreadCritical tc;
     if (_num_chunks > n) {
       // free chunks at end of queue, for better locality
-      Chunk* cur = _first;
+        cur = _first;
       for (size_t i = 0; i < (n - 1) && cur != NULL; i++) cur = cur->next();
 
       if (cur != NULL) {
-        Chunk* next = cur->next();
+          next = cur->next();
         cur->set_next(NULL);
         cur = next;
 
-        // Free all remaining chunks
-        while(cur != NULL) {
-          next = cur->next();
-          os::free(cur);
-          _num_chunks--;
-          cur = next;
+          _num_chunks = n;
         }
       }
     }
-  }
+
+    // Free all remaining chunks, outside of ThreadCritical
+    // to avoid deadlock with NMT
+        while(cur != NULL) {
+          next = cur->next();
+      os::free(cur, mtChunk);
+          cur = next;
+        }
+      }
 
   // Accessors to preallocated pool's
   static ChunkPool* large_pool()  { assert(_large_pool  != NULL, "must be initialized"); return _large_pool;  }
@@ -323,7 +318,7 @@ void* Chunk::operator new(size_t requested_size, size_t length) {
    case Chunk::medium_size: return ChunkPool::medium_pool()->allocate(bytes);
    case Chunk::init_size:   return ChunkPool::small_pool()->allocate(bytes);
    default: {
-     void *p =  os::malloc(bytes);
+     void *p =  os::malloc(bytes, mtChunk, CALLER_PC);
      if (p == NULL)
        vm_exit_out_of_memory(bytes, "Chunk::new");
      return p;
@@ -337,7 +332,7 @@ void Chunk::operator delete(void* p) {
    case Chunk::size:        ChunkPool::large_pool()->free(c); break;
    case Chunk::medium_size: ChunkPool::medium_pool()->free(c); break;
    case Chunk::init_size:   ChunkPool::small_pool()->free(c); break;
-   default:                 os::free(c);
+   default:                 os::free(c, mtChunk);
   }
 }
 
@@ -374,6 +369,7 @@ void Chunk::start_chunk_pool_cleaner_task() {
 }
 
 //------------------------------Arena------------------------------------------
+NOT_PRODUCT(volatile jint Arena::_instance_count = 0;)
 
 Arena::Arena(size_t init_size) {
   size_t round_size = (sizeof (char *)) - 1;
@@ -382,6 +378,7 @@ Arena::Arena(size_t init_size) {
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   set_size_in_bytes(init_size);
+  NOT_PRODUCT(Atomic::inc(&_instance_count);)
 }
 
 Arena::Arena() {
@@ -389,11 +386,14 @@ Arena::Arena() {
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   set_size_in_bytes(Chunk::init_size);
+  NOT_PRODUCT(Atomic::inc(&_instance_count);)
 }
 
 Arena::Arena(Arena *a) : _chunk(a->_chunk), _hwm(a->_hwm), _max(a->_max), _first(a->_first) {
   set_size_in_bytes(a->size_in_bytes());
+  NOT_PRODUCT(Atomic::inc(&_instance_count);)
 }
+
 
 Arena *Arena::move_contents(Arena *copy) {
   copy->destruct_contents();
@@ -409,6 +409,42 @@ Arena *Arena::move_contents(Arena *copy) {
 
 Arena::~Arena() {
   destruct_contents();
+  NOT_PRODUCT(Atomic::dec(&_instance_count);)
+}
+
+void* Arena::operator new(size_t size) {
+  assert(false, "Use dynamic memory type binding");
+  return NULL;
+}
+
+void* Arena::operator new (size_t size, const std::nothrow_t&  nothrow_constant) {
+  assert(false, "Use dynamic memory type binding");
+  return NULL;
+}
+
+  // dynamic memory type binding
+void* Arena::operator new(size_t size, MEMFLAGS flags) {
+#ifdef ASSERT
+  void* p = (void*)AllocateHeap(size, flags|otArena, CALLER_PC);
+  if (PrintMallocFree) trace_heap_malloc(size, "Arena-new", p);
+  return p;
+#else
+  return (void *) AllocateHeap(size, flags|otArena, CALLER_PC);
+#endif
+}
+
+void* Arena::operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags) {
+#ifdef ASSERT
+  void* p = os::malloc(size, flags|otArena, CALLER_PC);
+  if (PrintMallocFree) trace_heap_malloc(size, "Arena-new", p);
+  return p;
+#else
+  return os::malloc(size, flags|otArena, CALLER_PC);
+#endif
+}
+
+void Arena::operator delete(void* p) {
+  FreeHeap(p);
 }
 
 // Destroy this arenas contents and reset to empty
@@ -421,6 +457,14 @@ void Arena::destruct_contents() {
   reset();
 }
 
+// This is high traffic method, but many calls actually don't
+// change the size
+void Arena::set_size_in_bytes(size_t size) {
+  if (_size_in_bytes != size) {
+    _size_in_bytes = size;
+    MemTracker::record_arena_size((address)this, size);
+  }
+}
 
 // Total of all Chunks in arena
 size_t Arena::used() const {
@@ -448,7 +492,6 @@ void* Arena::grow( size_t x ) {
   if (_chunk == NULL) {
     signal_out_of_memory(len * Chunk::aligned_overhead_size(), "Arena::grow");
   }
-
   if (k) k->set_next(_chunk);   // Append new chunk to end of linked list
   else _first = _chunk;
   _hwm  = _chunk->bottom();     // Save the cached hwm, max
@@ -538,7 +581,7 @@ void* Arena::malloc(size_t size) {
   assert(UseMallocOnly, "shouldn't call");
   // use malloc, but save pointer in res. area for later freeing
   char** save = (char**)internal_malloc_4(sizeof(char*));
-  return (*save = (char*)os::malloc(size));
+  return (*save = (char*)os::malloc(size, mtChunk));
 }
 
 // for debugging with UseMallocOnly

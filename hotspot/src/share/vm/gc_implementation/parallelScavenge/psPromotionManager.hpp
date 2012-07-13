@@ -49,7 +49,7 @@ class MutableSpace;
 class PSOldGen;
 class ParCompactionManager;
 
-class PSPromotionManager : public CHeapObj {
+class PSPromotionManager : public CHeapObj<mtGC> {
   friend class PSScavenge;
   friend class PSRefProcTaskExecutor;
  private:
@@ -77,7 +77,7 @@ class PSPromotionManager : public CHeapObj {
   bool                                _old_gen_is_full;
 
   OopStarTaskQueue                    _claimed_stack_depth;
-  OverflowTaskQueue<oop>              _claimed_stack_breadth;
+  OverflowTaskQueue<oop, mtGC>        _claimed_stack_breadth;
 
   bool                                _totally_drain;
   uint                                _target_stack_size;

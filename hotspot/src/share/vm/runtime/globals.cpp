@@ -465,13 +465,13 @@ bool CommandLineFlags::ccstrAtPut(char* name, size_t len, ccstr* value, FlagValu
   ccstr old_value = result->get_ccstr();
   char* new_value = NULL;
   if (*value != NULL) {
-    new_value = NEW_C_HEAP_ARRAY(char, strlen(*value)+1);
+    new_value = NEW_C_HEAP_ARRAY(char, strlen(*value)+1, mtInternal);
     strcpy(new_value, *value);
   }
   result->set_ccstr(new_value);
   if (result->origin == DEFAULT && old_value != NULL) {
     // Prior value is NOT heap allocated, but was a literal constant.
-    char* old_value_to_free = NEW_C_HEAP_ARRAY(char, strlen(old_value)+1);
+    char* old_value_to_free = NEW_C_HEAP_ARRAY(char, strlen(old_value)+1, mtInternal);
     strcpy(old_value_to_free, old_value);
     old_value = old_value_to_free;
   }
@@ -485,12 +485,12 @@ void CommandLineFlagsEx::ccstrAtPut(CommandLineFlagWithType flag, ccstr value, F
   Flag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_ccstr(), "wrong flag type");
   ccstr old_value = faddr->get_ccstr();
-  char* new_value = NEW_C_HEAP_ARRAY(char, strlen(value)+1);
+  char* new_value = NEW_C_HEAP_ARRAY(char, strlen(value)+1, mtInternal);
   strcpy(new_value, value);
   faddr->set_ccstr(new_value);
   if (faddr->origin != DEFAULT && old_value != NULL) {
     // Prior value is heap allocated so free it.
-    FREE_C_HEAP_ARRAY(char, old_value);
+    FREE_C_HEAP_ARRAY(char, old_value, mtInternal);
   }
   faddr->origin = origin;
 }
@@ -511,7 +511,7 @@ void CommandLineFlags::printSetFlags(outputStream* out) {
   while (flagTable[length].name != NULL) length++;
 
   // Sort
-  Flag** array = NEW_C_HEAP_ARRAY(Flag*, length);
+  Flag** array = NEW_C_HEAP_ARRAY(Flag*, length, mtInternal);
   for (int index = 0; index < length; index++) {
     array[index] = &flagTable[index];
   }
@@ -525,7 +525,7 @@ void CommandLineFlags::printSetFlags(outputStream* out) {
     }
   }
   out->cr();
-  FREE_C_HEAP_ARRAY(Flag*, array);
+  FREE_C_HEAP_ARRAY(Flag*, array, mtInternal);
 }
 
 #ifndef PRODUCT
@@ -547,7 +547,7 @@ void CommandLineFlags::printFlags(outputStream* out, bool withComments) {
   while (flagTable[length].name != NULL) length++;
 
   // Sort
-  Flag** array = NEW_C_HEAP_ARRAY(Flag*, length);
+  Flag** array = NEW_C_HEAP_ARRAY(Flag*, length, mtInternal);
   for (int index = 0; index < length; index++) {
     array[index] = &flagTable[index];
   }
@@ -560,5 +560,5 @@ void CommandLineFlags::printFlags(outputStream* out, bool withComments) {
       array[i]->print_on(out, withComments);
     }
   }
-  FREE_C_HEAP_ARRAY(Flag*, array);
+  FREE_C_HEAP_ARRAY(Flag*, array, mtInternal);
 }
