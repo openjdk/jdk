@@ -238,7 +238,6 @@ DEF_KLASS_HANDLE(constantPoolCacheKlass, oop_is_constantPool  )
 
 //------------------------------------------------------------------------------------------------------------------------
 // Thread local handle area
-
 class HandleArea: public Arena {
   friend class HandleMark;
   friend class NoHandleMark;
@@ -312,7 +311,7 @@ class HandleMark {
   HandleArea *_area;            // saved handle area
   Chunk *_chunk;                // saved arena chunk
   char *_hwm, *_max;            // saved arena info
-  NOT_PRODUCT(size_t _size_in_bytes;) // size of handle area
+  size_t _size_in_bytes;        // size of handle area
   // Link to previous active HandleMark in thread
   HandleMark* _previous_handle_mark;
 

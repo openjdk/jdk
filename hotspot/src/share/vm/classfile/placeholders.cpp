@@ -34,7 +34,7 @@
 PlaceholderEntry* PlaceholderTable::new_entry(int hash, Symbol* name,
                                               oop loader, bool havesupername,
                                               Symbol* supername) {
-  PlaceholderEntry* entry = (PlaceholderEntry*)Hashtable<Symbol*>::new_entry(hash, name);
+  PlaceholderEntry* entry = (PlaceholderEntry*)Hashtable<Symbol*, mtClass>::new_entry(hash, name);
   // Hashtable with Symbol* literal must increment and decrement refcount.
   name->increment_refcount();
   entry->set_loader(loader);
@@ -52,7 +52,7 @@ void PlaceholderTable::free_entry(PlaceholderEntry* entry) {
   // decrement Symbol refcount here because Hashtable doesn't.
   entry->literal()->decrement_refcount();
   if (entry->supername() != NULL) entry->supername()->decrement_refcount();
-  Hashtable<Symbol*>::free_entry(entry);
+  Hashtable<Symbol*, mtClass>::free_entry(entry);
 }
 
 
@@ -166,7 +166,7 @@ void PlaceholderTable::find_and_remove(int index, unsigned int hash,
   }
 
 PlaceholderTable::PlaceholderTable(int table_size)
-    : TwoOopHashtable<Symbol*>(table_size, sizeof(PlaceholderEntry)) {
+    : TwoOopHashtable<Symbol*, mtClass>(table_size, sizeof(PlaceholderEntry)) {
 }
 
 
