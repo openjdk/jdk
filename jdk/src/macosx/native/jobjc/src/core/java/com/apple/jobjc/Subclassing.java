@@ -33,6 +33,10 @@ import com.apple.jobjc.Coder.PrimitivePointerCoder;
 import com.apple.jobjc.Coder.VoidCoder;
 import com.apple.jobjc.Invoke.MsgSend;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 final class Subclassing {
     static native long allocateClassPair(long superClass, String name);
     static native boolean addIVarForJObj(long clazz);

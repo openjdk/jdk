@@ -30,7 +30,7 @@
 // GCPolicyCounters is a holder class for performance counters
 // that track a generation
 
-class GCPolicyCounters: public CHeapObj {
+class GCPolicyCounters: public CHeapObj<mtGC> {
   friend class VMStructs;
 
   private:

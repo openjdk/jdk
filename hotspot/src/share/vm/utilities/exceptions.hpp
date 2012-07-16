@@ -57,7 +57,7 @@ class JavaCallArguments;
 // field of the Thread class w/o having access to the Thread's interface (for
 // include hierachy reasons).
 
-class ThreadShadow: public CHeapObj {
+class ThreadShadow: public CHeapObj<mtThread> {
   friend class VMStructs;
 
  protected:

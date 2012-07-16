@@ -46,7 +46,7 @@
 // Encapsulates both queue management and
 // and priority policy
 //
-class VMOperationQueue : public CHeapObj {
+class VMOperationQueue : public CHeapObj<mtInternal> {
  private:
   enum Priorities {
      SafepointPriority, // Highest priority (operation executed at a safepoint)

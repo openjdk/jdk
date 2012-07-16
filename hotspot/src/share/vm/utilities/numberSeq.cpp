@@ -133,13 +133,13 @@ void NumberSeq::add(double val) {
 
 TruncatedSeq::TruncatedSeq(int length, double alpha):
   AbsSeq(alpha), _length(length), _next(0) {
-  _sequence = NEW_C_HEAP_ARRAY(double, _length);
+  _sequence = NEW_C_HEAP_ARRAY(double, _length, mtInternal);
   for (int i = 0; i < _length; ++i)
     _sequence[i] = 0.0;
 }
 
 TruncatedSeq::~TruncatedSeq() {
-  FREE_C_HEAP_ARRAY(double, _sequence);
+  FREE_C_HEAP_ARRAY(double, _sequence, mtGC);
 }
 
 void TruncatedSeq::add(double val) {

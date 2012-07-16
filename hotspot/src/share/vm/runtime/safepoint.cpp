@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -47,6 +48,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
+#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/events.hpp"
 #ifdef TARGET_ARCH_x86
@@ -526,12 +528,28 @@ void SafepointSynchronize::do_cleanup_tasks() {
     CompilationPolicy::policy()->do_safepoint_work();
   }
 
-  TraceTime t4("sweeping nmethods", TraceSafepointCleanupTime);
-  NMethodSweeper::scan_stacks();
+  {
+    TraceTime t4("sweeping nmethods", TraceSafepointCleanupTime);
+    NMethodSweeper::scan_stacks();
+  }
+
+  if (SymbolTable::needs_rehashing()) {
+    TraceTime t5("rehashing symbol table", TraceSafepointCleanupTime);
+    SymbolTable::rehash_table();
+  }
+
+  if (StringTable::needs_rehashing()) {
+    TraceTime t6("rehashing string table", TraceSafepointCleanupTime);
+    StringTable::rehash_table();
+  }
 
   // rotate log files?
   if (UseGCLogFileRotation) {
     gclog_or_tty->rotate_log();
+  }
+
+  if (MemTracker::is_on()) {
+    MemTracker::sync();
   }
 }
 
@@ -1144,7 +1162,7 @@ void SafepointSynchronize::deferred_initialize_stat() {
     stats_array_size = PrintSafepointStatisticsCount;
   }
   _safepoint_stats = (SafepointStats*)os::malloc(stats_array_size
-                                                 * sizeof(SafepointStats));
+                                                 * sizeof(SafepointStats), mtInternal);
   guarantee(_safepoint_stats != NULL,
             "not enough memory for safepoint instrumentation data");
 
