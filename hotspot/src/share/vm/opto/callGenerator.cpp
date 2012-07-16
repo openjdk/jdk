@@ -172,9 +172,11 @@ public:
 
 JVMState* DynamicCallGenerator::generate(JVMState* jvms) {
   GraphKit kit(jvms);
+  Compile* C = kit.C;
+  PhaseGVN& gvn = kit.gvn();
 
-  if (kit.C->log() != NULL) {
-    kit.C->log()->elem("dynamic_call bci='%d'", jvms->bci());
+  if (C->log() != NULL) {
+    C->log()->elem("dynamic_call bci='%d'", jvms->bci());
   }
 
   // Get the constant pool cache from the caller class.
@@ -190,18 +192,21 @@ JVMState* DynamicCallGenerator::generate(JVMState* jvms) {
   size_t call_site_offset = cpcache->get_f1_offset(index);
 
   // Load the CallSite object from the constant pool cache.
-  const TypeOopPtr* cpcache_ptr = TypeOopPtr::make_from_constant(cpcache);
-  Node* cpcache_adr = kit.makecon(cpcache_ptr);
-  Node* call_site_adr = kit.basic_plus_adr(cpcache_adr, cpcache_adr, call_site_offset);
-  Node* call_site = kit.make_load(kit.control(), call_site_adr, TypeInstPtr::BOTTOM, T_OBJECT, Compile::AliasIdxRaw);
+  const TypeOopPtr* cpcache_type   = TypeOopPtr::make_from_constant(cpcache);  // returns TypeAryPtr of type T_OBJECT
+  const TypeOopPtr* call_site_type = TypeOopPtr::make_from_klass(C->env()->CallSite_klass());
+  Node* cpcache_adr   = kit.makecon(cpcache_type);
+  Node* call_site_adr = kit.basic_plus_adr(cpcache_adr, call_site_offset);
+  // The oops in the constant pool cache are not compressed; load then as raw pointers.
+  Node* call_site     = kit.make_load(kit.control(), call_site_adr, call_site_type, T_ADDRESS, Compile::AliasIdxRaw);
 
   // Load the target MethodHandle from the CallSite object.
-  Node* target_mh_adr = kit.basic_plus_adr(call_site, call_site, java_lang_invoke_CallSite::target_offset_in_bytes());
-  Node* target_mh = kit.make_load(kit.control(), target_mh_adr, TypeInstPtr::BOTTOM, T_OBJECT);
+  const TypeOopPtr* target_type = TypeOopPtr::make_from_klass(C->env()->MethodHandle_klass());
+  Node* target_mh_adr = kit.basic_plus_adr(call_site, java_lang_invoke_CallSite::target_offset_in_bytes());
+  Node* target_mh     = kit.make_load(kit.control(), target_mh_adr, target_type, T_OBJECT);
 
   address resolve_stub = SharedRuntime::get_resolve_opt_virtual_call_stub();
 
-  CallStaticJavaNode *call = new (kit.C, tf()->domain()->cnt()) CallStaticJavaNode(tf(), resolve_stub, method(), kit.bci());
+  CallStaticJavaNode* call = new (C, tf()->domain()->cnt()) CallStaticJavaNode(tf(), resolve_stub, method(), kit.bci());
   // invokedynamic is treated as an optimized invokevirtual.
   call->set_optimized_virtual(true);
   // Take extra care (in the presence of argument motion) not to trash the SP:
@@ -785,9 +790,10 @@ CallGenerator* CallGenerator::for_invokedynamic_inline(ciCallSite* call_site, JV
 
 JVMState* PredictedDynamicCallGenerator::generate(JVMState* jvms) {
   GraphKit kit(jvms);
+  Compile* C = kit.C;
   PhaseGVN& gvn = kit.gvn();
 
-  CompileLog* log = kit.C->log();
+  CompileLog* log = C->log();
   if (log != NULL) {
     log->elem("predicted_dynamic_call bci='%d'", jvms->bci());
   }
@@ -803,8 +809,8 @@ JVMState* PredictedDynamicCallGenerator::generate(JVMState* jvms) {
     Node* receiver = kit.argument(0);
 
     // Check if the MethodHandle is the expected one
-    Node* cmp = gvn.transform(new(kit.C, 3) CmpPNode(receiver, predicted_mh));
-    bol = gvn.transform(new(kit.C, 2) BoolNode(cmp, BoolTest::eq) );
+    Node* cmp = gvn.transform(new (C, 3) CmpPNode(receiver, predicted_mh));
+    bol = gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::eq) );
   } else {
     // Get the constant pool cache from the caller class.
     ciMethod* caller_method = jvms->method();
@@ -818,22 +824,25 @@ JVMState* PredictedDynamicCallGenerator::generate(JVMState* jvms) {
     size_t call_site_offset = cpcache->get_f1_offset(index);
 
     // Load the CallSite object from the constant pool cache.
-    const TypeOopPtr* cpcache_ptr = TypeOopPtr::make_from_constant(cpcache);
-    Node* cpcache_adr   = kit.makecon(cpcache_ptr);
-    Node* call_site_adr = kit.basic_plus_adr(cpcache_adr, cpcache_adr, call_site_offset);
-    Node* call_site     = kit.make_load(kit.control(), call_site_adr, TypeInstPtr::BOTTOM, T_OBJECT, Compile::AliasIdxRaw);
+    const TypeOopPtr* cpcache_type   = TypeOopPtr::make_from_constant(cpcache);  // returns TypeAryPtr of type T_OBJECT
+    const TypeOopPtr* call_site_type = TypeOopPtr::make_from_klass(C->env()->CallSite_klass());
+    Node* cpcache_adr   = kit.makecon(cpcache_type);
+    Node* call_site_adr = kit.basic_plus_adr(cpcache_adr, call_site_offset);
+    // The oops in the constant pool cache are not compressed; load then as raw pointers.
+    Node* call_site     = kit.make_load(kit.control(), call_site_adr, call_site_type, T_ADDRESS, Compile::AliasIdxRaw);
 
     // Load the target MethodHandle from the CallSite object.
+    const TypeOopPtr* target_type = TypeOopPtr::make_from_klass(C->env()->MethodHandle_klass());
     Node* target_adr = kit.basic_plus_adr(call_site, call_site, java_lang_invoke_CallSite::target_offset_in_bytes());
-    Node* target_mh  = kit.make_load(kit.control(), target_adr, TypeInstPtr::BOTTOM, T_OBJECT);
+    Node* target_mh  = kit.make_load(kit.control(), target_adr, target_type, T_OBJECT);
 
     // Check if the MethodHandle is still the same.
-    Node* cmp = gvn.transform(new(kit.C, 3) CmpPNode(target_mh, predicted_mh));
-    bol = gvn.transform(new(kit.C, 2) BoolNode(cmp, BoolTest::eq) );
+    Node* cmp = gvn.transform(new (C, 3) CmpPNode(target_mh, predicted_mh));
+    bol = gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::eq) );
   }
   IfNode* iff = kit.create_and_xform_if(kit.control(), bol, _hit_prob, COUNT_UNKNOWN);
-  kit.set_control( gvn.transform(new(kit.C, 1) IfTrueNode (iff)));
-  Node* slow_ctl = gvn.transform(new(kit.C, 1) IfFalseNode(iff));
+  kit.set_control( gvn.transform(new (C, 1) IfTrueNode (iff)));
+  Node* slow_ctl = gvn.transform(new (C, 1) IfFalseNode(iff));
 
   SafePointNode* slow_map = NULL;
   JVMState* slow_jvms;
@@ -882,7 +891,7 @@ JVMState* PredictedDynamicCallGenerator::generate(JVMState* jvms) {
 
   // Finish the diamond.
   kit.C->set_has_split_ifs(true); // Has chance for split-if optimization
-  RegionNode* region = new (kit.C, 3) RegionNode(3);
+  RegionNode* region = new (C, 3) RegionNode(3);
   region->init_req(1, kit.control());
   region->init_req(2, slow_map->control());
   kit.set_control(gvn.transform(region));

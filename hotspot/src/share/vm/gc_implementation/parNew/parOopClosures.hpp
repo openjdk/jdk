@@ -32,7 +32,7 @@
 class ParScanThreadState;
 class ParNewGeneration;
 typedef Padded<OopTaskQueue> ObjToScanQueue;
-typedef GenericTaskQueueSet<ObjToScanQueue> ObjToScanQueueSet;
+typedef GenericTaskQueueSet<ObjToScanQueue, mtGC> ObjToScanQueueSet;
 class ParallelTaskTerminator;
 
 class ParScanClosure: public OopsInGenClosure {
