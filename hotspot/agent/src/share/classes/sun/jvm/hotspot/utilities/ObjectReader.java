@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,21 @@ public class ObjectReader {
       this(new ProcImageClassLoader());
    }
 
+   static void debugPrintln(String msg) {
+      if (DEBUG) {
+         System.err.println("DEBUG>" + msg);
+      }
+   }
+
+   static void debugPrintStackTrace(Exception exp) {
+      if (DEBUG) {
+         StackTraceElement[] els = exp.getStackTrace();
+         for (int i = 0; i < els.length; i++) {
+            System.err.println("DEBUG>" + els[i].toString());
+         }
+      }
+   }
+
    public Object readObject(Oop oop) throws ClassNotFoundException {
       if (oop instanceof Instance) {
          return readInstance((Instance) oop);
@@ -120,11 +135,94 @@ public class ObjectReader {
    }
 
    protected Symbol javaLangString;
+   protected Symbol javaUtilHashtableEntry;
+   protected Symbol javaUtilHashtable;
+   protected Symbol javaUtilProperties;
+
+   protected Symbol getVMSymbol(String name) {
+      return VM.getVM().getSymbolTable().probe(name);
+   }
+
    protected Symbol javaLangString() {
       if (javaLangString == null) {
-         javaLangString = VM.getVM().getSymbolTable().probe("java/lang/String");
+         javaLangString = getVMSymbol("java/lang/String");
       }
       return javaLangString;
+   }
+
+   protected Symbol javaUtilHashtableEntry() {
+      if (javaUtilHashtableEntry == null) {
+         javaUtilHashtableEntry = getVMSymbol("java/util/Hashtable$Entry");
+      }
+      return javaUtilHashtableEntry;
+   }
+
+   protected Symbol javaUtilHashtable() {
+      if (javaUtilHashtable == null) {
+         javaUtilHashtable = getVMSymbol("java/util/Hashtable");
+      }
+      return javaUtilHashtable;
+   }
+
+   protected Symbol javaUtilProperties() {
+      if (javaUtilProperties == null) {
+         javaUtilProperties = getVMSymbol("java/util/Properties");
+      }
+      return javaUtilProperties;
+   }
+
+   private void setHashtableEntry(java.util.Hashtable p, Oop oop) {
+      InstanceKlass ik = (InstanceKlass)oop.getKlass();
+      OopField keyField = (OopField)ik.findField("key", "Ljava/lang/Object;");
+      OopField valueField = (OopField)ik.findField("value", "Ljava/lang/Object;");
+      OopField nextField = (OopField)ik.findField("next", "Ljava/util/Hashtable$Entry;");
+      if (DEBUG) {
+         if (Assert.ASSERTS_ENABLED) {
+            Assert.that(ik.getName().equals(javaUtilHashtableEntry()), "Not a Hashtable$Entry?");
+            Assert.that(keyField != null && valueField != null && nextField != null, "Invalid fields!");
+         }
+      }
+
+      Object key = null;
+      Object value = null;
+      Oop next = null;
+      try {
+         key = readObject(keyField.getValue(oop));
+         value = readObject(valueField.getValue(oop));
+         next =  (Oop)nextField.getValue(oop);
+         // For Properties, should use setProperty(k, v). Since it only runs in SA
+         // using put(k, v) should be OK.
+         p.put(key, value);
+         if (next != null) {
+            setHashtableEntry(p, next);
+         }
+      } catch (ClassNotFoundException ce) {
+         if( DEBUG) {
+            debugPrintln("Class not found " + ce);
+            debugPrintStackTrace(ce);
+         }
+      }
+   }
+
+   protected Object getHashtable(Instance oop, boolean isProperties) {
+      InstanceKlass k = (InstanceKlass)oop.getKlass();
+      OopField tableField = (OopField)k.findField("table", "[Ljava/util/Hashtable$Entry;");
+      if (tableField == null) {
+         debugPrintln("Could not find field of [Ljava/util/Hashtable$Entry;");
+         return null;
+      }
+      java.util.Hashtable table = (isProperties) ? new java.util.Properties()
+                                                 : new java.util.Hashtable();
+      ObjArray kvs = (ObjArray)tableField.getValue(oop);
+      long size = kvs.getLength();
+      debugPrintln("Hashtable$Entry Size = " + size);
+      for (long i=0; i<size; i++) {
+         Oop entry = kvs.getObjAt(i);
+         if (entry != null && entry.isInstance()) {
+            setHashtableEntry(table, entry);
+         }
+      }
+      return table;
    }
 
    public Object readInstance(Instance oop) throws ClassNotFoundException {
@@ -134,9 +232,19 @@ public class ObjectReader {
          // Handle java.lang.String instances differently. As part of JSR-133, fields of immutable
          // classes have been made final. The algorithm below will not be able to read Strings from
          // debuggee (can't use reflection to set final fields). But, need to read Strings is very
-         // important. FIXME: need a framework to handle many other special cases.
+         // important.
+         // Same for Hashtable, key and hash are final, could not be set in the algorithm too.
+         // FIXME: need a framework to handle many other special cases.
          if (kls.getName().equals(javaLangString())) {
             return OopUtilities.stringOopToString(oop);
+         }
+
+         if (kls.getName().equals(javaUtilHashtable())) {
+            return getHashtable(oop, false);
+         }
+
+         if (kls.getName().equals(javaUtilProperties())) {
+            return getHashtable(oop, true);
          }
 
          Class clz = readClass(kls);
@@ -164,8 +272,8 @@ public class ObjectReader {
                   break;
                } catch (Exception exp) {
                   if (DEBUG) {
-                     System.err.println("Can't create object using " + c);
-                     exp.printStackTrace();
+                     debugPrintln("Can't create object using " + c);
+                     debugPrintStackTrace(exp);
                   }
                }
             }
@@ -329,8 +437,8 @@ public class ObjectReader {
                                      arrayObj[ifd.getIndex()] = readObject(field.getValue(getObj()));
                                   } catch (Exception e) {
                                      if (DEBUG) {
-                                        System.err.println("Array element set failed for " + ifd);
-                                        e.printStackTrace();
+                                        debugPrintln("Array element set failed for " + ifd);
+                                        debugPrintStackTrace(e);
                                      }
                                   }
                                }
@@ -348,8 +456,8 @@ public class ObjectReader {
 
       private void printFieldSetError(java.lang.reflect.Field f, Exception ex) {
          if (DEBUG) {
-            if (f != null) System.err.println("Field set failed for " + f);
-            ex.printStackTrace();
+            if (f != null) debugPrintln("Field set failed for " + f);
+            debugPrintStackTrace(ex);
          }
       }
 
@@ -601,7 +709,7 @@ public class ObjectReader {
             return Class.forName(className, true, cl);
          } catch (Exception e) {
             if (DEBUG) {
-               System.err.println("Can't load class " + className);
+               debugPrintln("Can't load class " + className);
             }
             throw new RuntimeException(e);
          }

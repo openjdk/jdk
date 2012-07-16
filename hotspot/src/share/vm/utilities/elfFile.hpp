@@ -82,7 +82,7 @@ class ElfSymbolTable;
 // in "error" state, so there are scenarios, lookup will fail. We want this
 // part of code to be very defensive, and bait out if anything went wrong.
 
-class ElfFile: public CHeapObj {
+class ElfFile: public CHeapObj<mtInternal> {
   friend class ElfDecoder;
  public:
   ElfFile(const char* filepath);

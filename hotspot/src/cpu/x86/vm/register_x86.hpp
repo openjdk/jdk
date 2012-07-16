@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ class XMMRegisterImpl: public AbstractRegisterImpl {
   XMMRegister successor() const                          { return as_XMMRegister(encoding() + 1); }
 
   // accessors
-  int   encoding() const                          { assert(is_valid(), "invalid register"); return (intptr_t)this; }
+  int   encoding() const                          { assert(is_valid(), err_msg("invalid register (%d)", (int)(intptr_t)this )); return (intptr_t)this; }
   bool  is_valid() const                          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
   const char* name() const;
 };
@@ -216,7 +216,7 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
                                RegisterImpl::number_of_registers +  // "H" half of a 64bit register
 #endif // AMD64
                            2 * FloatRegisterImpl::number_of_registers +
-                           2 * XMMRegisterImpl::number_of_registers +
+                           8 * XMMRegisterImpl::number_of_registers +
                            1 // eflags
   };
 

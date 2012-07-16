@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,46 +27,26 @@
 
 #include "memory/allocation.inline.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/dtrace.hpp"
 
 // Inline function definitions for hashtable.hpp.
-
-
-// --------------------------------------------------------------------------
-// Hash function
-
-// We originally used hashpjw, but hash P(31) gives just as good results
-// and is slighly faster. We would like a hash function that looks at every
-// character, since package names have large common prefixes, and also because
-// hash_or_fail does error checking while iterating.
-
-// hash P(31) from Kernighan & Ritchie
-
-inline unsigned int BasicHashtable::hash_symbol(const char* s, int len) {
-  unsigned int h = 0;
-  while (len-- > 0) {
-    h = 31*h + (unsigned) *s;
-    s++;
-  }
-  return h;
-}
-
 
 // --------------------------------------------------------------------------
 
 // Initialize a table.
 
-inline BasicHashtable::BasicHashtable(int table_size, int entry_size) {
+template <MEMFLAGS F> inline BasicHashtable<F>::BasicHashtable(int table_size, int entry_size) {
   // Called on startup, no locking needed
   initialize(table_size, entry_size, 0);
-  _buckets = NEW_C_HEAP_ARRAY(HashtableBucket, table_size);
+  _buckets = NEW_C_HEAP_ARRAY2(HashtableBucket<F>, table_size, F, CURRENT_PC);
   for (int index = 0; index < _table_size; index++) {
     _buckets[index].clear();
   }
 }
 
 
-inline BasicHashtable::BasicHashtable(int table_size, int entry_size,
-                                      HashtableBucket* buckets,
+template <MEMFLAGS F> inline BasicHashtable<F>::BasicHashtable(int table_size, int entry_size,
+                                      HashtableBucket<F>* buckets,
                                       int number_of_entries) {
   // Called on startup, no locking needed
   initialize(table_size, entry_size, number_of_entries);
@@ -74,7 +54,7 @@ inline BasicHashtable::BasicHashtable(int table_size, int entry_size,
 }
 
 
-inline void BasicHashtable::initialize(int table_size, int entry_size,
+template <MEMFLAGS F> inline void BasicHashtable<F>::initialize(int table_size, int entry_size,
                                        int number_of_entries) {
   // Called on startup, no locking needed
   _table_size = table_size;
@@ -91,12 +71,12 @@ inline void BasicHashtable::initialize(int table_size, int entry_size,
 
 
 // The following method is MT-safe and may be used with caution.
-inline BasicHashtableEntry* BasicHashtable::bucket(int i) {
+template <MEMFLAGS F> inline BasicHashtableEntry<F>* BasicHashtable<F>::bucket(int i) {
   return _buckets[i].get_entry();
 }
 
 
-inline void HashtableBucket::set_entry(BasicHashtableEntry* l) {
+template <MEMFLAGS F> inline void HashtableBucket<F>::set_entry(BasicHashtableEntry<F>* l) {
   // Warning: Preserve store ordering.  The SystemDictionary is read
   //          without locks.  The new SystemDictionaryEntry must be
   //          complete before other threads can be allowed to see it
@@ -105,27 +85,27 @@ inline void HashtableBucket::set_entry(BasicHashtableEntry* l) {
 }
 
 
-inline BasicHashtableEntry* HashtableBucket::get_entry() const {
+template <MEMFLAGS F> inline BasicHashtableEntry<F>* HashtableBucket<F>::get_entry() const {
   // Warning: Preserve load ordering.  The SystemDictionary is read
   //          without locks.  The new SystemDictionaryEntry must be
   //          complete before other threads can be allowed to see it
   //          via a store to _buckets[index].
-  return (BasicHashtableEntry*) OrderAccess::load_ptr_acquire(&_entry);
+  return (BasicHashtableEntry<F>*) OrderAccess::load_ptr_acquire(&_entry);
 }
 
 
-inline void BasicHashtable::set_entry(int index, BasicHashtableEntry* entry) {
+template <MEMFLAGS F> inline void BasicHashtable<F>::set_entry(int index, BasicHashtableEntry<F>* entry) {
   _buckets[index].set_entry(entry);
 }
 
 
-inline void BasicHashtable::add_entry(int index, BasicHashtableEntry* entry) {
+template <MEMFLAGS F> inline void BasicHashtable<F>::add_entry(int index, BasicHashtableEntry<F>* entry) {
   entry->set_next(bucket(index));
   _buckets[index].set_entry(entry);
   ++_number_of_entries;
 }
 
-inline void BasicHashtable::free_entry(BasicHashtableEntry* entry) {
+template <MEMFLAGS F> inline void BasicHashtable<F>::free_entry(BasicHashtableEntry<F>* entry) {
   entry->set_next(_free_list);
   _free_list = entry;
   --_number_of_entries;
