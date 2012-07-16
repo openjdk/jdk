@@ -37,7 +37,7 @@
 class CompileTask;
 class CompileQueue;
 
-class CompilationPolicy : public CHeapObj {
+class CompilationPolicy : public CHeapObj<mtCompiler> {
   static CompilationPolicy* _policy;
   // Accumulated time
   static elapsedTimer       _accumulated_time;

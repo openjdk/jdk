@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.lang;
 
 import java.io.*;
+import java.util.concurrent.TimeUnit;
 
 /* java.lang.Process subclass in the UNIX environment.
  *
@@ -158,6 +159,24 @@ final class UNIXProcess extends Process {
         return exitcode;
     }
 
+    @Override
+    public synchronized boolean waitFor(long timeout, TimeUnit unit)
+        throws InterruptedException
+    {
+        if (hasExited) return true;
+        if (timeout <= 0) return false;
+
+        long timeoutAsNanos = unit.toNanos(timeout);
+        long startTime = System.nanoTime();
+        long rem = timeoutAsNanos;
+
+        while (!hasExited && (rem > 0)) {
+            wait(Math.max(TimeUnit.NANOSECONDS.toMillis(rem), 1));
+            rem = timeoutAsNanos - (System.nanoTime() - startTime);
+        }
+        return hasExited;
+    }
+
     public synchronized int exitValue() {
         if (!hasExited) {
             throw new IllegalThreadStateException("process hasn't exited");
@@ -165,8 +184,8 @@ final class UNIXProcess extends Process {
         return exitcode;
     }
 
-    private static native void destroyProcess(int pid);
-    public synchronized void destroy() {
+    private static native void destroyProcess(int pid, boolean force);
+    private synchronized void destroy(boolean force) {
         // There is a risk that pid will be recycled, causing us to
         // kill the wrong process!  So we only terminate processes
         // that appear to still be running.  Even with this check,
@@ -174,7 +193,7 @@ final class UNIXProcess extends Process {
         // is very small, and OSes try hard to not recycle pids too
         // soon, so this is quite safe.
         if (!hasExited)
-            destroyProcess(pid);
+            destroyProcess(pid, force);
         try {
             stdin_stream.close();
             if (stdout_inner_stream != null)
@@ -185,6 +204,21 @@ final class UNIXProcess extends Process {
         } catch (IOException e) {
             // ignore
         }
+    }
+
+    public void destroy() {
+        destroy(false);
+    }
+
+    @Override
+    public Process destroyForcibly() {
+        destroy(true);
+        return this;
+    }
+
+    @Override
+    public synchronized boolean isAlive() {
+        return !hasExited;
     }
 
     // A FileInputStream that supports the deferment of the actual close

@@ -53,21 +53,27 @@ then
 fi
 
 if [ "`uname`" == "SunOS" ]; then
-    NM=gnm
-    STAT="gstat -c%s"
+    if [ -f "`which gnm`" ]; then
+        NM=gnm
+# Jonas 2012-05-29: solaris native nm produces radically different output than gnm
+#                   so if using that...we need different filter than "cut -f 2-"
+#
+    elif [ -f "`which nm`" ]; then
+        NM=nm
+    else
+        echo "No nm command found"
+        exit 10
+    fi
     LDD=ldd
 elif [ $OSTYPE == "cygwin" ]; then
     NM="$VS100COMNTOOLS/../../VC/bin/amd64/dumpbin.exe"
     NM_ARGS=/exports
-    STAT="stat -c%s"
     LDD=
 elif [ "`uname`" == "Darwin" ]; then
     NM=nm
-    STAT="stat -f%z"
     LDD="otool -L"
 else
     NM=nm
-    STAT="stat -c%s"
     LDD=ldd
 fi
 
@@ -83,8 +89,8 @@ fi
 OLD=$(cd $(dirname $1) && pwd)/$(basename $1)
 NEW=$(cd $(dirname $2) && pwd)/$(basename $2)
 
-OLD_SIZE=$($STAT "$OLD")
-NEW_SIZE=$($STAT "$NEW")
+OLD_SIZE=$(ls -l "$OLD" | awk '{ print $5 }')
+NEW_SIZE=$(ls -l "$NEW" | awk '{ print $5 }')
 
 if [ $# -gt 3 ]
 then
@@ -122,8 +128,8 @@ then
     exit 0
 fi
 
-OLD_SYMBOLS=$COMPARE_ROOT/$OLD_NAME.old
-NEW_SYMBOLS=$COMPARE_ROOT/$NEW_NAME.new
+OLD_SYMBOLS=$COMPARE_ROOT/nm.$OLD_NAME.old
+NEW_SYMBOLS=$COMPARE_ROOT/nm.$NEW_NAME.new
 
 mkdir -p $(dirname $OLD_SYMBOLS)
 mkdir -p $(dirname $NEW_SYMBOLS)

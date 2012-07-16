@@ -38,7 +38,7 @@
  * of the elf file into memory. Otherwise, it will walk the section in file
  * to look up the symbol that nearest the given address.
  */
-class ElfSymbolTable: public CHeapObj {
+class ElfSymbolTable: public CHeapObj<mtInternal> {
   friend class ElfFile;
  public:
   ElfSymbolTable(FILE* file, Elf_Shdr shdr);

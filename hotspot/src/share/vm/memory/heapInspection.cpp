@@ -116,7 +116,7 @@ void KlassInfoBucket::empty() {
 KlassInfoTable::KlassInfoTable(int size, HeapWord* ref) {
   _size = 0;
   _ref = ref;
-  _buckets = NEW_C_HEAP_ARRAY(KlassInfoBucket, size);
+  _buckets = NEW_C_HEAP_ARRAY(KlassInfoBucket, size, mtInternal);
   if (_buckets != NULL) {
     _size = size;
     for (int index = 0; index < _size; index++) {
@@ -130,7 +130,7 @@ KlassInfoTable::~KlassInfoTable() {
     for (int index = 0; index < _size; index++) {
       _buckets[index].empty();
     }
-    FREE_C_HEAP_ARRAY(KlassInfoBucket, _buckets);
+    FREE_C_HEAP_ARRAY(KlassInfoBucket, _buckets, mtInternal);
     _size = 0;
   }
 }
@@ -179,7 +179,7 @@ int KlassInfoHisto::sort_helper(KlassInfoEntry** e1, KlassInfoEntry** e2) {
 
 KlassInfoHisto::KlassInfoHisto(const char* title, int estimatedCount) :
   _title(title) {
-  _elements = new (ResourceObj::C_HEAP) GrowableArray<KlassInfoEntry*>(estimatedCount,true);
+  _elements = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<KlassInfoEntry*>(estimatedCount,true);
 }
 
 KlassInfoHisto::~KlassInfoHisto() {

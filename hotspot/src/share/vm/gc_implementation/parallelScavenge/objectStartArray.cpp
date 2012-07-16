@@ -28,6 +28,7 @@
 #include "memory/cardTableModRefBS.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "services/memTracker.hpp"
 
 void ObjectStartArray::initialize(MemRegion reserved_region) {
   // We're based on the assumption that we use the same
@@ -50,6 +51,7 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
   if (!backing_store.is_reserved()) {
     vm_exit_during_initialization("Could not reserve space for ObjectStartArray");
   }
+  MemTracker::record_virtual_memory_type((address)backing_store.base(), mtGC);
 
   // We do not commit any memory initially
   if (!_virtual_space.initialize(backing_store, 0)) {
@@ -57,9 +59,13 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
   }
 
   _raw_base = (jbyte*)_virtual_space.low_boundary();
+
   if (_raw_base == NULL) {
     vm_exit_during_initialization("Could not get raw_base address");
   }
+
+  MemTracker::record_virtual_memory_type((address)_raw_base, mtGC);
+
 
   _offset_base = _raw_base - (size_t(reserved_region.start()) >> block_shift);
 

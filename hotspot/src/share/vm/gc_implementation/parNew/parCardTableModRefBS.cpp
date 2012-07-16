@@ -457,12 +457,12 @@ get_LNC_array_for_space(Space* sp,
         if (_lowest_non_clean[i] != NULL) {
           assert(n_chunks != _lowest_non_clean_chunk_size[i],
                  "logical consequence");
-          FREE_C_HEAP_ARRAY(CardPtr, _lowest_non_clean[i]);
+          FREE_C_HEAP_ARRAY(CardPtr, _lowest_non_clean[i], mtGC);
           _lowest_non_clean[i] = NULL;
         }
         // Now allocate a new one if necessary.
         if (_lowest_non_clean[i] == NULL) {
-          _lowest_non_clean[i]                  = NEW_C_HEAP_ARRAY(CardPtr, n_chunks);
+          _lowest_non_clean[i]                  = NEW_C_HEAP_ARRAY(CardPtr, n_chunks, mtGC);
           _lowest_non_clean_chunk_size[i]       = n_chunks;
           _lowest_non_clean_base_chunk_index[i] = addr_to_chunk_index(covered.start());
           for (int j = 0; j < (int)n_chunks; j++)
