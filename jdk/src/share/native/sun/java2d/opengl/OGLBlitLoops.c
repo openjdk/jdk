@@ -393,7 +393,16 @@ OGLBlitSwToTexture(SurfaceDataRasInfo *srcInfo, OGLPixelFormat *pf,
                    OGLSDOps *dstOps,
                    jint dx1, jint dy1, jint dx2, jint dy2)
 {
+    jboolean adjustAlpha = (pf != NULL && !pf->hasAlpha);
     j2d_glBindTexture(dstOps->textureTarget, dstOps->textureID);
+
+    if (adjustAlpha) {
+        // if the source surface does not have an alpha channel,
+        // we need to ensure that the alpha values are forced to 1.0f
+        j2d_glPixelTransferf(GL_ALPHA_SCALE, 0.0f);
+        j2d_glPixelTransferf(GL_ALPHA_BIAS, 1.0f);
+    }
+
     // in case pixel stride is not a multiple of scanline stride the copy
     // has to be done line by line (see 6207877)
     if (srcInfo->scanStride % srcInfo->pixelStride != 0) {
@@ -412,6 +421,11 @@ OGLBlitSwToTexture(SurfaceDataRasInfo *srcInfo, OGLPixelFormat *pf,
         j2d_glTexSubImage2D(dstOps->textureTarget, 0,
                             dx1, dy1, dx2-dx1, dy2-dy1,
                             pf->format, pf->type, srcInfo->rasBase);
+    }
+    if (adjustAlpha) {
+        // restore scale/bias to their original values
+        j2d_glPixelTransferf(GL_ALPHA_SCALE, 1.0f);
+        j2d_glPixelTransferf(GL_ALPHA_BIAS, 0.0f);
     }
 }
 
