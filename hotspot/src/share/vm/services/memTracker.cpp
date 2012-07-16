@@ -54,7 +54,7 @@ void SyncThreadRecorderClosure::do_thread(Thread* thread) {
 MemRecorder*                    MemTracker::_global_recorder = NULL;
 MemSnapshot*                    MemTracker::_snapshot = NULL;
 MemBaseline                     MemTracker::_baseline;
-Mutex                           MemTracker::_query_lock(Monitor::native, "NMT_queryLock");
+Mutex*                          MemTracker::_query_lock = NULL;
 volatile MemRecorder*           MemTracker::_merge_pending_queue = NULL;
 volatile MemRecorder*           MemTracker::_pooled_recorders = NULL;
 MemTrackWorker*                 MemTracker::_worker_thread = NULL;
@@ -86,6 +86,12 @@ void MemTracker::bootstrap_single_thread() {
     // runtime performance when this flag is on.
     if (UseMallocOnly) {
       shutdown(NMT_use_malloc_only);
+      return;
+    }
+
+    _query_lock = new (std::nothrow) Mutex(Monitor::max_nonleaf, "NMT_queryLock");
+    if (_query_lock == NULL) {
+      shutdown(NMT_out_of_memory);
       return;
     }
 
@@ -164,7 +170,7 @@ void MemTracker::final_shutdown() {
   {
     // shared baseline and snapshot are the only objects needed to
     // create query results
-    MutexLockerEx locker(&_query_lock, true);
+    MutexLockerEx locker(_query_lock, true);
     // cleanup baseline data and snapshot
     _baseline.clear();
     delete _snapshot;
@@ -534,7 +540,7 @@ void MemTracker::thread_exiting(JavaThread* thread) {
 
 // baseline current memory snapshot
 bool MemTracker::baseline() {
-  MutexLockerEx lock(&_query_lock, true);
+  MutexLockerEx lock(_query_lock, true);
   MemSnapshot* snapshot = get_snapshot();
   if (snapshot != NULL) {
     return _baseline.baseline(*snapshot, false);
@@ -545,7 +551,7 @@ bool MemTracker::baseline() {
 // print memory usage from current snapshot
 bool MemTracker::print_memory_usage(BaselineOutputer& out, size_t unit, bool summary_only) {
   MemBaseline  baseline;
-  MutexLockerEx lock(&_query_lock, true);
+  MutexLockerEx lock(_query_lock, true);
   MemSnapshot* snapshot = get_snapshot();
   if (snapshot != NULL && baseline.baseline(*snapshot, summary_only)) {
     BaselineReporter reporter(out, unit);
@@ -557,7 +563,7 @@ bool MemTracker::print_memory_usage(BaselineOutputer& out, size_t unit, bool sum
 
 // compare memory usage between current snapshot and baseline
 bool MemTracker::compare_memory_usage(BaselineOutputer& out, size_t unit, bool summary_only) {
-  MutexLockerEx lock(&_query_lock, true);
+  MutexLockerEx lock(_query_lock, true);
   if (_baseline.baselined()) {
     MemBaseline baseline;
     MemSnapshot* snapshot = get_snapshot();
