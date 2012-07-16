@@ -351,12 +351,6 @@ void MemTracker::create_memory_record(address addr, MEMFLAGS flags,
     }
 
     if (thread != NULL) {
-#ifdef ASSERT
-      // cause assertion on stack base. This ensures that threads call
-      // Thread::record_stack_base_and_size() method, which will create
-      // thread native stack records.
-      thread->stack_base();
-#endif
       // for a JavaThread, if it is running in native state, we need to transition it to
       // VM state, so it can stop at safepoint. JavaThread running in VM state does not
       // need lock to write records.
