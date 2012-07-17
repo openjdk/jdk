@@ -127,7 +127,6 @@ public class Method extends Oop {
     return getConstMethod().getConstants();
   }
   public MethodData   getMethodData()                 { return (MethodData) methodData.getValue(this);          }
-  public TypeArray    getExceptionTable()             { return getConstMethod().getExceptionTable();            }
   /** WARNING: this is in words, not useful in this system; use getObjectSize() instead */
   public long         getMethodSize()                 { return                methodSize.getValue(this);        }
   public long         getMaxStack()                   { return                maxStack.getValue(this);          }
@@ -326,6 +325,14 @@ public class Method extends Oop {
     }
 
     return null;
+  }
+
+  public boolean hasExceptionTable() {
+    return getConstMethod().hasExceptionTable();
+  }
+
+  public ExceptionTableElement[] getExceptionTable() {
+    return getConstMethod().getExceptionTable();
   }
 
   public boolean hasCheckedExceptions() {
