@@ -2117,7 +2117,7 @@ void SharedRuntime::print_call_statistics(int comp_total) {
 
 // A simple wrapper class around the calling convention information
 // that allows sharing of adapters for the same calling convention.
-class AdapterFingerPrint : public CHeapObj {
+class AdapterFingerPrint : public CHeapObj<mtCode> {
  private:
   union {
     int  _compact[3];
@@ -2174,7 +2174,7 @@ class AdapterFingerPrint : public CHeapObj {
       ptr = _value._compact;
     } else {
       _length = len;
-      _value._fingerprint = NEW_C_HEAP_ARRAY(int, _length);
+      _value._fingerprint = NEW_C_HEAP_ARRAY(int, _length, mtCode);
       ptr = _value._fingerprint;
     }
 
@@ -2193,7 +2193,7 @@ class AdapterFingerPrint : public CHeapObj {
 
   ~AdapterFingerPrint() {
     if (_length > 0) {
-      FREE_C_HEAP_ARRAY(int, _value._fingerprint);
+      FREE_C_HEAP_ARRAY(int, _value._fingerprint, mtCode);
     }
   }
 
@@ -2251,7 +2251,7 @@ class AdapterFingerPrint : public CHeapObj {
 
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
-class AdapterHandlerTable : public BasicHashtable {
+class AdapterHandlerTable : public BasicHashtable<mtCode> {
   friend class AdapterHandlerTableIterator;
 
  private:
@@ -2265,16 +2265,16 @@ class AdapterHandlerTable : public BasicHashtable {
 #endif
 
   AdapterHandlerEntry* bucket(int i) {
-    return (AdapterHandlerEntry*)BasicHashtable::bucket(i);
+    return (AdapterHandlerEntry*)BasicHashtable<mtCode>::bucket(i);
   }
 
  public:
   AdapterHandlerTable()
-    : BasicHashtable(293, sizeof(AdapterHandlerEntry)) { }
+    : BasicHashtable<mtCode>(293, sizeof(AdapterHandlerEntry)) { }
 
   // Create a new entry suitable for insertion in the table
   AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry, address c2i_unverified_entry) {
-    AdapterHandlerEntry* entry = (AdapterHandlerEntry*)BasicHashtable::new_entry(fingerprint->compute_hash());
+    AdapterHandlerEntry* entry = (AdapterHandlerEntry*)BasicHashtable<mtCode>::new_entry(fingerprint->compute_hash());
     entry->init(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry);
     return entry;
   }
@@ -2287,7 +2287,7 @@ class AdapterHandlerTable : public BasicHashtable {
 
   void free_entry(AdapterHandlerEntry* entry) {
     entry->deallocate();
-    BasicHashtable::free_entry(entry);
+    BasicHashtable<mtCode>::free_entry(entry);
   }
 
   // Find a entry with the same fingerprint if it exists
@@ -2572,8 +2572,8 @@ void AdapterHandlerEntry::relocate(address new_base) {
 void AdapterHandlerEntry::deallocate() {
   delete _fingerprint;
 #ifdef ASSERT
-  if (_saved_code) FREE_C_HEAP_ARRAY(unsigned char, _saved_code);
-  if (_saved_sig)  FREE_C_HEAP_ARRAY(Basictype, _saved_sig);
+  if (_saved_code) FREE_C_HEAP_ARRAY(unsigned char, _saved_code, mtCode);
+  if (_saved_sig)  FREE_C_HEAP_ARRAY(Basictype, _saved_sig, mtCode);
 #endif
 }
 
@@ -2583,11 +2583,11 @@ void AdapterHandlerEntry::deallocate() {
 // against other versions.  If the code is captured after relocation
 // then relative instructions won't be equivalent.
 void AdapterHandlerEntry::save_code(unsigned char* buffer, int length, int total_args_passed, BasicType* sig_bt) {
-  _saved_code = NEW_C_HEAP_ARRAY(unsigned char, length);
+  _saved_code = NEW_C_HEAP_ARRAY(unsigned char, length, mtCode);
   _code_length = length;
   memcpy(_saved_code, buffer, length);
   _total_args_passed = total_args_passed;
-  _saved_sig = NEW_C_HEAP_ARRAY(BasicType, _total_args_passed);
+  _saved_sig = NEW_C_HEAP_ARRAY(BasicType, _total_args_passed, mtCode);
   memcpy(_saved_sig, sig_bt, _total_args_passed * sizeof(BasicType));
 }
 
@@ -2893,7 +2893,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
   int max_locals = moop->max_locals();
   // Allocate temp buffer, 1 word per local & 2 per active monitor
   int buf_size_words = max_locals + active_monitor_count*2;
-  intptr_t *buf = NEW_C_HEAP_ARRAY(intptr_t,buf_size_words);
+  intptr_t *buf = NEW_C_HEAP_ARRAY(intptr_t,buf_size_words, mtCode);
 
   // Copy the locals.  Order is preserved so that loading of longs works.
   // Since there's no GC I can copy the oops blindly.
@@ -2923,7 +2923,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
 JRT_END
 
 JRT_LEAF(void, SharedRuntime::OSR_migration_end( intptr_t* buf) )
-  FREE_C_HEAP_ARRAY(intptr_t,buf);
+  FREE_C_HEAP_ARRAY(intptr_t,buf, mtCode);
 JRT_END
 
 bool AdapterHandlerLibrary::contains(CodeBlob* b) {

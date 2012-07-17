@@ -105,7 +105,7 @@ class SpaceMemRegionOopsIterClosure: public OopClosure {
 // bottom() <= top() <= end()
 // top() is inclusive and end() is exclusive.
 
-class Space: public CHeapObj {
+class Space: public CHeapObj<mtGC> {
   friend class VMStructs;
  protected:
   HeapWord* _bottom;

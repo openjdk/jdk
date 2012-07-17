@@ -34,7 +34,7 @@ class PlaceholderEntry;
 // being loaded, as well as arrays of primitives.
 //
 
-class PlaceholderTable : public TwoOopHashtable<Symbol*> {
+class PlaceholderTable : public TwoOopHashtable<Symbol*, mtClass> {
   friend class VMStructs;
 
 public:
@@ -44,15 +44,15 @@ public:
   void free_entry(PlaceholderEntry* entry);
 
   PlaceholderEntry* bucket(int i) {
-    return (PlaceholderEntry*)Hashtable<Symbol*>::bucket(i);
+    return (PlaceholderEntry*)Hashtable<Symbol*, mtClass>::bucket(i);
   }
 
   PlaceholderEntry** bucket_addr(int i) {
-    return (PlaceholderEntry**)Hashtable<Symbol*>::bucket_addr(i);
+    return (PlaceholderEntry**)Hashtable<Symbol*, mtClass>::bucket_addr(i);
   }
 
   void add_entry(int index, PlaceholderEntry* new_entry) {
-    Hashtable<Symbol*>::add_entry(index, (HashtableEntry<Symbol*>*)new_entry);
+    Hashtable<Symbol*, mtClass>::add_entry(index, (HashtableEntry<Symbol*, mtClass>*)new_entry);
   }
 
   void add_entry(int index, unsigned int hash, Symbol* name,
@@ -116,7 +116,7 @@ public:
 // For DEFINE_CLASS, the head of the queue owns the
 // define token and the rest of the threads wait to return the
 // result the first thread gets.
-class SeenThread: public CHeapObj {
+class SeenThread: public CHeapObj<mtInternal> {
 private:
    Thread *_thread;
    SeenThread* _stnext;
@@ -152,7 +152,7 @@ public:
 // on store ordering here.
 // The system dictionary is the only user of this class.
 
-class PlaceholderEntry : public HashtableEntry<Symbol*> {
+class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   friend class VMStructs;
 
 
@@ -206,11 +206,11 @@ class PlaceholderEntry : public HashtableEntry<Symbol*> {
   void               set_defineThreadQ(SeenThread* SeenThread) { _defineThreadQ = SeenThread; }
 
   PlaceholderEntry* next() const {
-    return (PlaceholderEntry*)HashtableEntry<Symbol*>::next();
+    return (PlaceholderEntry*)HashtableEntry<Symbol*, mtClass>::next();
   }
 
   PlaceholderEntry** next_addr() {
-    return (PlaceholderEntry**)HashtableEntry<Symbol*>::next_addr();
+    return (PlaceholderEntry**)HashtableEntry<Symbol*, mtClass>::next_addr();
   }
 
   // Test for equality

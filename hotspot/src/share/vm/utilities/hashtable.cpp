@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/altHashing.hpp"
+#include "classfile/javaClasses.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
@@ -33,11 +35,6 @@
 #include "utilities/hashtable.inline.hpp"
 
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL4(hs_private, hashtable__new_entry,
-  void*, unsigned int, void*, void*);
-#endif /* !USDT2 */
-
 // This is a generic hashtable, designed to be used for the symbol
 // and string tables.
 //
@@ -46,8 +43,8 @@ HS_DTRACE_PROBE_DECL4(hs_private, hashtable__new_entry,
 // %note:
 //  - HashtableEntrys are allocated in blocks to reduce the space overhead.
 
-BasicHashtableEntry* BasicHashtable::new_entry(unsigned int hashValue) {
-  BasicHashtableEntry* entry;
+template <MEMFLAGS F> BasicHashtableEntry<F>* BasicHashtable<F>::new_entry(unsigned int hashValue) {
+  BasicHashtableEntry<F>* entry;
 
   if (_free_list) {
     entry = _free_list;
@@ -58,10 +55,10 @@ BasicHashtableEntry* BasicHashtable::new_entry(unsigned int hashValue) {
       int len = _entry_size * block_size;
       len = 1 << log2_intptr(len); // round down to power of 2
       assert(len >= _entry_size, "");
-      _first_free_entry = NEW_C_HEAP_ARRAY(char, len);
+      _first_free_entry = NEW_C_HEAP_ARRAY2(char, len, F, CURRENT_PC);
       _end_block = _first_free_entry + len;
     }
-    entry = (BasicHashtableEntry*)_first_free_entry;
+    entry = (BasicHashtableEntry<F>*)_first_free_entry;
     _first_free_entry += _entry_size;
   }
 
@@ -71,21 +68,13 @@ BasicHashtableEntry* BasicHashtable::new_entry(unsigned int hashValue) {
 }
 
 
-template <class T> HashtableEntry<T>* Hashtable<T>::new_entry(unsigned int hashValue, T obj) {
-  HashtableEntry<T>* entry;
+template <class T, MEMFLAGS F> HashtableEntry<T, F>* Hashtable<T, F>::new_entry(unsigned int hashValue, T obj) {
+  HashtableEntry<T, F>* entry;
 
-  entry = (HashtableEntry<T>*)BasicHashtable::new_entry(hashValue);
+  entry = (HashtableEntry<T, F>*)BasicHashtable<F>::new_entry(hashValue);
   entry->set_literal(obj);
-#ifndef USDT2
-  HS_DTRACE_PROBE4(hs_private, hashtable__new_entry,
-    this, hashValue, obj, entry);
-#else /* USDT2 */
-  HS_PRIVATE_HASHTABLE_NEW_ENTRY(
-    this, hashValue, (uintptr_t) obj, entry);
-#endif /* USDT2 */
   return entry;
 }
-
 
 // Check to see if the hashtable is unbalanced.  The caller set a flag to
 // rehash at the next safepoint.  If this bucket is 60 times greater than the
@@ -93,7 +82,7 @@ template <class T> HashtableEntry<T>* Hashtable<T>::new_entry(unsigned int hashV
 // This is somewhat an arbitrary heuristic but if one bucket gets to
 // rehash_count which is currently 100, there's probably something wrong.
 
-bool BasicHashtable::check_rehash_table(int count) {
+template <MEMFLAGS F> bool BasicHashtable<F>::check_rehash_table(int count) {
   assert(table_size() != 0, "underflow");
   if (count > (((double)number_of_entries()/(double)table_size())*rehash_multiple)) {
     // Set a flag for the next safepoint, which should be at some guaranteed
@@ -103,17 +92,38 @@ bool BasicHashtable::check_rehash_table(int count) {
   return false;
 }
 
+template <class T, MEMFLAGS F> jint Hashtable<T, F>::_seed = 0;
+
+template <class T, MEMFLAGS F> unsigned int Hashtable<T, F>::new_hash(Symbol* sym) {
+  ResourceMark rm;
+  // Use alternate hashing algorithm on this symbol.
+  return AltHashing::murmur3_32(seed(), (const jbyte*)sym->as_C_string(), sym->utf8_length());
+}
+
+template <class T, MEMFLAGS F> unsigned int Hashtable<T, F>::new_hash(oop string) {
+  ResourceMark rm;
+  int length;
+  jchar* chars = java_lang_String::as_unicode_string(string, length);
+  // Use alternate hashing algorithm on the string
+  return AltHashing::murmur3_32(seed(), chars, length);
+}
+
 // Create a new table and using alternate hash code, populate the new table
 // with the existing elements.   This can be used to change the hash code
 // and could in the future change the size of the table.
 
-template <class T> void Hashtable<T>::move_to(Hashtable<T>* new_table) {
-  int saved_entry_count = number_of_entries();
+template <class T, MEMFLAGS F> void Hashtable<T, F>::move_to(Hashtable<T, F>* new_table) {
+
+  // Initialize the global seed for hashing.
+  _seed = AltHashing::compute_seed();
+  assert(seed() != 0, "shouldn't be zero");
+
+  int saved_entry_count = this->number_of_entries();
 
   // Iterate through the table and create a new entry for the new table
   for (int i = 0; i < new_table->table_size(); ++i) {
-    for (HashtableEntry<T>* p = bucket(i); p != NULL; ) {
-      HashtableEntry<T>* next = p->next();
+    for (HashtableEntry<T, F>* p = bucket(i); p != NULL; ) {
+      HashtableEntry<T, F>* next = p->next();
       T string = p->literal();
       // Use alternate hashing algorithm on the symbol in the first table
       unsigned int hashValue = new_hash(string);
@@ -141,16 +151,16 @@ template <class T> void Hashtable<T>::move_to(Hashtable<T>* new_table) {
   // for the elements has been used in a new table and is not
   // destroyed.  The memory reuse will benefit resizing the SystemDictionary
   // to avoid a memory allocation spike at safepoint.
-  free_buckets();
+  BasicHashtable<F>::free_buckets();
 }
 
-void BasicHashtable::free_buckets() {
+template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
   if (NULL != _buckets) {
     // Don't delete the buckets in the shared space.  They aren't
     // allocated by os::malloc
     if (!UseSharedSpaces ||
         !FileMapInfo::current_info()->is_in_shared_space(_buckets)) {
-       FREE_C_HEAP_ARRAY(HashtableBucket, _buckets);
+       FREE_C_HEAP_ARRAY(HashtableBucket, _buckets, F);
     }
     _buckets = NULL;
   }
@@ -159,13 +169,13 @@ void BasicHashtable::free_buckets() {
 
 // Reverse the order of elements in the hash buckets.
 
-void BasicHashtable::reverse() {
+template <MEMFLAGS F> void BasicHashtable<F>::reverse() {
 
   for (int i = 0; i < _table_size; ++i) {
-    BasicHashtableEntry* new_list = NULL;
-    BasicHashtableEntry* p = bucket(i);
+    BasicHashtableEntry<F>* new_list = NULL;
+    BasicHashtableEntry<F>* p = bucket(i);
     while (p != NULL) {
-      BasicHashtableEntry* next = p->next();
+      BasicHashtableEntry<F>* next = p->next();
       p->set_next(new_list);
       new_list = p;
       p = next;
@@ -177,7 +187,7 @@ void BasicHashtable::reverse() {
 
 // Copy the table to the shared space.
 
-void BasicHashtable::copy_table(char** top, char* end) {
+template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char** top, char* end) {
 
   // Dump the hash table entries.
 
@@ -186,13 +196,13 @@ void BasicHashtable::copy_table(char** top, char* end) {
 
   int i;
   for (i = 0; i < _table_size; ++i) {
-    for (BasicHashtableEntry** p = _buckets[i].entry_addr();
+    for (BasicHashtableEntry<F>** p = _buckets[i].entry_addr();
                               *p != NULL;
                                p = (*p)->next_addr()) {
       if (*top + entry_size() > end) {
         report_out_of_shared_space(SharedMiscData);
       }
-      *p = (BasicHashtableEntry*)memcpy(*top, *p, entry_size());
+      *p = (BasicHashtableEntry<F>*)memcpy(*top, *p, entry_size());
       *top += entry_size();
     }
   }
@@ -201,7 +211,7 @@ void BasicHashtable::copy_table(char** top, char* end) {
   // Set the shared bit.
 
   for (i = 0; i < _table_size; ++i) {
-    for (BasicHashtableEntry* p = bucket(i); p != NULL; p = p->next()) {
+    for (BasicHashtableEntry<F>* p = bucket(i); p != NULL; p = p->next()) {
       p->set_shared();
     }
   }
@@ -211,15 +221,15 @@ void BasicHashtable::copy_table(char** top, char* end) {
 
 // Reverse the order of elements in the hash buckets.
 
-template <class T> void Hashtable<T>::reverse(void* boundary) {
+template <class T, MEMFLAGS F> void Hashtable<T, F>::reverse(void* boundary) {
 
-  for (int i = 0; i < table_size(); ++i) {
-    HashtableEntry<T>* high_list = NULL;
-    HashtableEntry<T>* low_list = NULL;
-    HashtableEntry<T>* last_low_entry = NULL;
-    HashtableEntry<T>* p = bucket(i);
+  for (int i = 0; i < this->table_size(); ++i) {
+    HashtableEntry<T, F>* high_list = NULL;
+    HashtableEntry<T, F>* low_list = NULL;
+    HashtableEntry<T, F>* last_low_entry = NULL;
+    HashtableEntry<T, F>* p = bucket(i);
     while (p != NULL) {
-      HashtableEntry<T>* next = p->next();
+      HashtableEntry<T, F>* next = p->next();
       if ((void*)p->literal() >= boundary) {
         p->set_next(high_list);
         high_list = p;
@@ -244,8 +254,8 @@ template <class T> void Hashtable<T>::reverse(void* boundary) {
 
 // Dump the hash table buckets.
 
-void BasicHashtable::copy_buckets(char** top, char* end) {
-  intptr_t len = _table_size * sizeof(HashtableBucket);
+template <MEMFLAGS F> void BasicHashtable<F>::copy_buckets(char** top, char* end) {
+  intptr_t len = _table_size * sizeof(HashtableBucket<F>);
   *(intptr_t*)(*top) = len;
   *top += sizeof(intptr_t);
 
@@ -255,18 +265,18 @@ void BasicHashtable::copy_buckets(char** top, char* end) {
   if (*top + len > end) {
     report_out_of_shared_space(SharedMiscData);
   }
-  _buckets = (HashtableBucket*)memcpy(*top, _buckets, len);
+  _buckets = (HashtableBucket<F>*)memcpy(*top, _buckets, len);
   *top += len;
 }
 
 
 #ifndef PRODUCT
 
-template <class T> void Hashtable<T>::print() {
+template <class T, MEMFLAGS F> void Hashtable<T, F>::print() {
   ResourceMark rm;
 
-  for (int i = 0; i < table_size(); i++) {
-    HashtableEntry<T>* entry = bucket(i);
+  for (int i = 0; i < BasicHashtable<F>::table_size(); i++) {
+    HashtableEntry<T, F>* entry = bucket(i);
     while(entry != NULL) {
       tty->print("%d : ", i);
       entry->literal()->print();
@@ -277,10 +287,10 @@ template <class T> void Hashtable<T>::print() {
 }
 
 
-void BasicHashtable::verify() {
+template <MEMFLAGS F> void BasicHashtable<F>::verify() {
   int count = 0;
   for (int i = 0; i < table_size(); i++) {
-    for (BasicHashtableEntry* p = bucket(i); p != NULL; p = p->next()) {
+    for (BasicHashtableEntry<F>* p = bucket(i); p != NULL; p = p->next()) {
       ++count;
     }
   }
@@ -293,7 +303,7 @@ void BasicHashtable::verify() {
 
 #ifdef ASSERT
 
-void BasicHashtable::verify_lookup_length(double load) {
+template <MEMFLAGS F> void BasicHashtable<F>::verify_lookup_length(double load) {
   if ((double)_lookup_length / (double)_lookup_count > load * 2.0) {
     warning("Performance bug: SystemDictionary lookup_count=%d "
             "lookup_length=%d average=%lf load=%f",
@@ -303,10 +313,22 @@ void BasicHashtable::verify_lookup_length(double load) {
 }
 
 #endif
-
 // Explicitly instantiate these types
-template class Hashtable<constantPoolOop>;
-template class Hashtable<Symbol*>;
-template class Hashtable<klassOop>;
-template class Hashtable<oop>;
-
+template class Hashtable<constantPoolOop, mtClass>;
+template class Hashtable<Symbol*, mtSymbol>;
+template class Hashtable<klassOop, mtClass>;
+template class Hashtable<oop, mtClass>;
+#ifdef SOLARIS
+template class Hashtable<oop, mtSymbol>;
+#endif
+template class Hashtable<oopDesc*, mtSymbol>;
+template class Hashtable<Symbol*, mtClass>;
+template class HashtableEntry<Symbol*, mtSymbol>;
+template class HashtableEntry<Symbol*, mtClass>;
+template class HashtableEntry<oop, mtSymbol>;
+template class BasicHashtableEntry<mtSymbol>;
+template class BasicHashtableEntry<mtCode>;
+template class BasicHashtable<mtClass>;
+template class BasicHashtable<mtSymbol>;
+template class BasicHashtable<mtCode>;
+template class BasicHashtable<mtInternal>;

@@ -31,7 +31,7 @@
 // This class provides the interface between a barrier implementation and
 // the rest of the system.
 
-class BarrierSet: public CHeapObj {
+class BarrierSet: public CHeapObj<mtGC> {
   friend class VMStructs;
 public:
   enum Name {

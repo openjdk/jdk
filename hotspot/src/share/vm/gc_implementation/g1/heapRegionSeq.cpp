@@ -86,7 +86,7 @@ void HeapRegionSeq::initialize(HeapWord* bottom, HeapWord* end,
   _allocated_length = 0;
   _max_length = max_length;
 
-  _regions = NEW_C_HEAP_ARRAY(HeapRegion*, max_length);
+  _regions = NEW_C_HEAP_ARRAY(HeapRegion*, max_length, mtGC);
   memset(_regions, 0, (size_t) max_length * sizeof(HeapRegion*));
   _regions_biased = _regions - ((uintx) bottom >> _region_shift);
 
