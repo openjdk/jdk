@@ -140,14 +140,15 @@ klassOop oopFactory::new_instanceKlass(Symbol* name, int vtable_len, int itable_
 constMethodOop oopFactory::new_constMethod(int byte_code_size,
                                            int compressed_line_number_size,
                                            int localvariable_table_length,
+                                           int exception_table_length,
                                            int checked_exceptions_length,
                                            bool is_conc_safe,
                                            TRAPS) {
   klassOop cmkObj = Universe::constMethodKlassObj();
   constMethodKlass* cmk = constMethodKlass::cast(cmkObj);
   return cmk->allocate(byte_code_size, compressed_line_number_size,
-                       localvariable_table_length, checked_exceptions_length,
-                       is_conc_safe,
+                       localvariable_table_length, exception_table_length,
+                       checked_exceptions_length, is_conc_safe,
                        CHECK_NULL);
 }
 
@@ -155,6 +156,7 @@ constMethodOop oopFactory::new_constMethod(int byte_code_size,
 methodOop oopFactory::new_method(int byte_code_size, AccessFlags access_flags,
                                  int compressed_line_number_size,
                                  int localvariable_table_length,
+                                 int exception_table_length,
                                  int checked_exceptions_length,
                                  bool is_conc_safe,
                                  TRAPS) {
@@ -164,6 +166,7 @@ methodOop oopFactory::new_method(int byte_code_size, AccessFlags access_flags,
   constMethodOop cm = new_constMethod(byte_code_size,
                                       compressed_line_number_size,
                                       localvariable_table_length,
+                                      exception_table_length,
                                       checked_exceptions_length,
                                       is_conc_safe, CHECK_NULL);
   constMethodHandle rw(THREAD, cm);
