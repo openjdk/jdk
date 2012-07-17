@@ -35,7 +35,7 @@
 //   ...
 //   pf.disenroll();
 
-class PeriodicTask: public CHeapObj {
+class PeriodicTask: public CHeapObj<mtInternal> {
  public:
   // Useful constants.
   // The interval constants are used to ensure the declared interval

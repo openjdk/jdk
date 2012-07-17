@@ -79,7 +79,7 @@ ConcurrentG1Refine::ConcurrentG1Refine() :
   _n_threads = _n_worker_threads + 1;
   reset_threshold_step();
 
-  _threads = NEW_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _n_threads);
+  _threads = NEW_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _n_threads, mtGC);
   int worker_id_offset = (int)DirtyCardQueueSet::num_par_ids();
   ConcurrentG1RefineThread *next = NULL;
   for (int i = _n_threads - 1; i >= 0; i--) {
@@ -157,7 +157,7 @@ void ConcurrentG1Refine::init() {
     _def_use_cache = true;
     _use_cache = true;
     _hot_cache_size = (1 << G1ConcRSLogCacheSize);
-    _hot_cache = NEW_C_HEAP_ARRAY(jbyte*, _hot_cache_size);
+    _hot_cache = NEW_C_HEAP_ARRAY(jbyte*, _hot_cache_size, mtGC);
     _n_hot = 0;
     _hot_cache_idx = 0;
 
@@ -191,18 +191,18 @@ ConcurrentG1Refine::~ConcurrentG1Refine() {
     // Please see the comment in allocate_card_count_cache
     // for why we call os::malloc() and os::free() directly.
     assert(_card_counts != NULL, "Logic");
-    os::free(_card_counts);
+    os::free(_card_counts, mtGC);
     assert(_card_epochs != NULL, "Logic");
-    os::free(_card_epochs);
+    os::free(_card_epochs, mtGC);
 
     assert(_hot_cache != NULL, "Logic");
-    FREE_C_HEAP_ARRAY(jbyte*, _hot_cache);
+    FREE_C_HEAP_ARRAY(jbyte*, _hot_cache, mtGC);
   }
   if (_threads != NULL) {
     for (int i = 0; i < _n_threads; i++) {
       delete _threads[i];
     }
-    FREE_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _threads);
+    FREE_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _threads, mtGC);
   }
 }
 
@@ -436,17 +436,17 @@ bool ConcurrentG1Refine::allocate_card_count_cache(size_t n,
   size_t counts_size = n * sizeof(CardCountCacheEntry);
   size_t epochs_size = n * sizeof(CardEpochCacheEntry);
 
-  *counts = (CardCountCacheEntry*) os::malloc(counts_size);
+  *counts = (CardCountCacheEntry*) os::malloc(counts_size, mtGC);
   if (*counts == NULL) {
     // allocation was unsuccessful
     return false;
   }
 
-  *epochs = (CardEpochCacheEntry*) os::malloc(epochs_size);
+  *epochs = (CardEpochCacheEntry*) os::malloc(epochs_size, mtGC);
   if (*epochs == NULL) {
     // allocation was unsuccessful - free counts array
     assert(*counts != NULL, "must be");
-    os::free(*counts);
+    os::free(*counts, mtGC);
     *counts = NULL;
     return false;
   }
@@ -479,8 +479,8 @@ bool ConcurrentG1Refine::expand_card_count_cache(int cache_size_idx) {
         // Allocation was successful.
         // We can just free the old arrays; we're
         // not interested in preserving the contents
-        if (_card_counts != NULL) os::free(_card_counts);
-        if (_card_epochs != NULL) os::free(_card_epochs);
+        if (_card_counts != NULL) os::free(_card_counts, mtGC);
+        if (_card_epochs != NULL) os::free(_card_epochs, mtGC);
 
         // Cache the size of the arrays and the index that got us there.
         _n_card_counts = cache_size;

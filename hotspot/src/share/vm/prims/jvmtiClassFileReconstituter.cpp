@@ -268,14 +268,18 @@ void JvmtiClassFileReconstituter::write_source_file_attribute() {
 // JSR45|   SourceDebugExtension_attribute {
 // JSR45|       u2 attribute_name_index;
 // JSR45|       u4 attribute_length;
-// JSR45|       u2 sourcefile_index;
+// JSR45|       u1 debug_extension[attribute_length];
 // JSR45|   }
 void JvmtiClassFileReconstituter::write_source_debug_extension_attribute() {
   assert(ikh()->source_debug_extension() != NULL, "caller must check");
 
   write_attribute_name_index("SourceDebugExtension");
-  write_u4(2);  // always length 2
-  write_u2(symbol_to_cpool_index(ikh()->source_debug_extension()));
+  int len = (int)strlen(ikh()->source_debug_extension());
+  write_u4(len);
+  u1* ext = (u1*)ikh()->source_debug_extension();
+  for (int i=0; i<len; i++) {
+    write_u1(ext[i]);
+  }
 }
 
 // Write (generic) Signature attribute

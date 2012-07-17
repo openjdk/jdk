@@ -345,9 +345,13 @@ JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
   // Do this after setting user properties to prevent people
   // from setting the value with a -D option, as requested.
   {
-    char as_chars[256];
-    jio_snprintf(as_chars, sizeof(as_chars), INTX_FORMAT, MaxDirectMemorySize);
-    PUTPROP(props, "sun.nio.MaxDirectMemorySize", as_chars);
+    if (FLAG_IS_DEFAULT(MaxDirectMemorySize)) {
+      PUTPROP(props, "sun.nio.MaxDirectMemorySize", "-1");
+    } else {
+      char as_chars[256];
+      jio_snprintf(as_chars, sizeof(as_chars), UINTX_FORMAT, MaxDirectMemorySize);
+      PUTPROP(props, "sun.nio.MaxDirectMemorySize", as_chars);
+    }
   }
 
   // JVM monitoring and management support

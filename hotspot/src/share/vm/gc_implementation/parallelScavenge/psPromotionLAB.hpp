@@ -36,7 +36,7 @@
 
 class ObjectStartArray;
 
-class PSPromotionLAB : public CHeapObj {
+class PSPromotionLAB : public CHeapObj<mtGC> {
  protected:
   static size_t filler_header_size;
 

@@ -23,7 +23,7 @@
 # questions.
 #
 
-AC_DEFUN([BDEPS_SCAN_FOR_BUILDDEPS],
+AC_DEFUN_ONCE([BDEPS_SCAN_FOR_BUILDDEPS],
 [
     define(LIST_OF_BUILD_DEPENDENCIES,)
     if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
@@ -50,27 +50,27 @@ AC_DEFUN([BDEPS_SCAN_FOR_BUILDDEPS],
                AC_MSG_ERROR([Could not find any builddeps.conf at all!])
            fi
         fi
-        # Create build and host names that use _ instead of "-" and ".".
+        # Create build and target names that use _ instead of "-" and ".".
         # This is necessary to use them in variable names.
-        build_var=`echo ${build} | tr '-' '_' | tr '.' '_'`
-        host_var=`echo ${host} | tr '-' '_' | tr '.' '_'`
-        # Extract rewrite information for build and host
+        build_var=`echo ${OPENJDK_BUILD_SYSTEM} | tr '-' '_' | tr '.' '_'`
+        target_var=`echo ${OPENJDK_TARGET_SYSTEM} | tr '-' '_' | tr '.' '_'`
+        # Extract rewrite information for build and target
         eval rewritten_build=\${REWRITE_${build_var}}
         if test "x$rewritten_build" = x; then
-            rewritten_build=${build}
+            rewritten_build=${OPENJDK_BUILD_SYSTEM}
             echo Build stays the same $rewritten_build
         else
             echo Rewriting build for builddeps into $rewritten_build
         fi
-        eval rewritten_host=\${REWRITE_${host_var}}
-        if test "x$rewritten_host" = x; then
-            rewritten_host=${host}
-            echo Host stays the same $rewritten_host
+        eval rewritten_target=\${REWRITE_${target_var}}
+        if test "x$rewritten_target" = x; then
+            rewritten_target=${OPENJDK_TARGET_SYSTEM}
+            echo Target stays the same $rewritten_target
         else
-            echo Rewriting host for builddeps into $rewritten_host
+            echo Rewriting target for builddeps into $rewritten_target
         fi
         rewritten_build_var=`echo ${rewritten_build} | tr '-' '_' | tr '.' '_'`
-        rewritten_host_var=`echo ${rewritten_host} | tr '-' '_' | tr '.' '_'`        
+        rewritten_target_var=`echo ${rewritten_target} | tr '-' '_' | tr '.' '_'`        
     fi
     AC_CHECK_PROGS(BDEPS_UNZIP, [7z unzip])
     if test "x$BDEPS_UNZIP" = x7z; then
@@ -127,11 +127,11 @@ AC_DEFUN([BDEPS_CHECK_MODULE],
     if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
         # Source the builddeps file again, to make sure it uses the latest variables!
         . $builddepsfile
-        # Look for a host and build machine specific resource!
-        eval resource=\${builddep_$2_BUILD_${rewritten_build_var}_HOST_${rewritten_host_var}}
+        # Look for a target and build machine specific resource!
+        eval resource=\${builddep_$2_BUILD_${rewritten_build_var}_TARGET_${rewritten_target_var}}
         if test "x$resource" = x; then
-            # Ok, lets instead look for a host specific resource
-            eval resource=\${builddep_$2_HOST_${rewritten_host_var}}
+            # Ok, lets instead look for a target specific resource
+            eval resource=\${builddep_$2_TARGET_${rewritten_target_var}}
         fi
         if test "x$resource" = x; then
             # Ok, lets instead look for a build specific resource
@@ -227,4 +227,34 @@ AC_DEFUN([BDEPS_FETCH],
     if test -f $installdir/$filename.unpacked; then
         $5=$installdir
     fi
+])
+
+AC_DEFUN_ONCE([BDEPS_CONFIGURE_BUILDDEPS],
+[
+AC_ARG_WITH(builddeps-conf, [AS_HELP_STRING([--with-builddeps-conf],
+    [use this configuration file for the builddeps])])
+
+AC_ARG_WITH(builddeps-server, [AS_HELP_STRING([--with-builddeps-server],
+    [download and use build dependencies from this server url, e.g. --with-builddeps-server=ftp://example.com/dir])])
+
+AC_ARG_WITH(builddeps-dir, [AS_HELP_STRING([--with-builddeps-dir],
+    [store downloaded build dependencies here @<:@d/localhome/builddeps@:>@])],
+    [],
+    [with_builddeps_dir=/localhome/builddeps])
+
+AC_ARG_WITH(builddeps-group, [AS_HELP_STRING([--with-builddeps-group],
+    [chgrp the downloaded build dependencies to this group])])
+
+AC_ARG_ENABLE([list-builddeps], [AS_HELP_STRING([--enable-list-builddeps],
+	[list all build dependencies known to the configure script])],
+	[LIST_BUILDDEPS="${enableval}"], [LIST_BUILDDEPS='no'])
+
+if test "x$LIST_BUILDDEPS" = xyes; then
+    echo
+    echo List of build dependencies known to the configure script,
+    echo that can be used in builddeps.conf files:
+    cat $AUTOCONF_DIR/*.ac $AUTOCONF_DIR/*.m4 | grep BDEPS_CHECK_MODUL[E]\( | cut -f 2 -d ',' | tr -d ' ' | sort
+    echo
+    exit 1
+fi
 ])

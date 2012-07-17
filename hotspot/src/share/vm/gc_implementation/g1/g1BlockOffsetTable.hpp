@@ -117,7 +117,7 @@ public:
 
 // Here is the shared array type.
 
-class G1BlockOffsetSharedArray: public CHeapObj {
+class G1BlockOffsetSharedArray: public CHeapObj<mtGC> {
   friend class G1BlockOffsetArray;
   friend class G1BlockOffsetArrayContigSpace;
   friend class VMStructs;

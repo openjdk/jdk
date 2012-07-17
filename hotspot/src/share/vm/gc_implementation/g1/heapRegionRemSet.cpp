@@ -36,7 +36,7 @@
 
 // OtherRegionsTable
 
-class PerRegionTable: public CHeapObj {
+class PerRegionTable: public CHeapObj<mtGC> {
   friend class OtherRegionsTable;
   friend class HeapRegionRemSetIterator;
 
@@ -272,9 +272,9 @@ void OtherRegionsTable::init_from_card_cache(size_t max_regions) {
   _from_card_cache_max_regions = max_regions;
 
   int n_par_rs = HeapRegionRemSet::num_par_rem_sets();
-  _from_card_cache = NEW_C_HEAP_ARRAY(int*, n_par_rs);
+  _from_card_cache = NEW_C_HEAP_ARRAY(int*, n_par_rs, mtGC);
   for (int i = 0; i < n_par_rs; i++) {
-    _from_card_cache[i] = NEW_C_HEAP_ARRAY(int, max_regions);
+    _from_card_cache[i] = NEW_C_HEAP_ARRAY(int, max_regions, mtGC);
     for (size_t j = 0; j < max_regions; j++) {
       _from_card_cache[i][j] = -1;  // An invalid value.
     }
@@ -977,9 +977,9 @@ void HeapRegionRemSet::record(HeapRegion* hr, OopOrNarrowOopStar f) {
            && _recorded_cards == NULL
            && _recorded_regions == NULL,
            "Inv");
-    _recorded_oops    = NEW_C_HEAP_ARRAY(OopOrNarrowOopStar, MaxRecorded);
-    _recorded_cards   = NEW_C_HEAP_ARRAY(HeapWord*,          MaxRecorded);
-    _recorded_regions = NEW_C_HEAP_ARRAY(HeapRegion*,        MaxRecorded);
+    _recorded_oops    = NEW_C_HEAP_ARRAY(OopOrNarrowOopStar, MaxRecorded, mtGC);
+    _recorded_cards   = NEW_C_HEAP_ARRAY(HeapWord*,          MaxRecorded, mtGC);
+    _recorded_regions = NEW_C_HEAP_ARRAY(HeapRegion*,        MaxRecorded, mtGC);
   }
   if (_n_recorded == MaxRecorded) {
     gclog_or_tty->print_cr("Filled up 'recorded' (%d).", MaxRecorded);
@@ -1000,8 +1000,8 @@ void HeapRegionRemSet::record_event(Event evnt) {
     assert(_n_recorded_events == 0
            && _recorded_event_index == NULL,
            "Inv");
-    _recorded_events = NEW_C_HEAP_ARRAY(Event, MaxRecordedEvents);
-    _recorded_event_index = NEW_C_HEAP_ARRAY(int, MaxRecordedEvents);
+    _recorded_events = NEW_C_HEAP_ARRAY(Event, MaxRecordedEvents, mtGC);
+    _recorded_event_index = NEW_C_HEAP_ARRAY(int, MaxRecordedEvents, mtGC);
   }
   if (_n_recorded_events == MaxRecordedEvents) {
     gclog_or_tty->print_cr("Filled up 'recorded_events' (%d).", MaxRecordedEvents);

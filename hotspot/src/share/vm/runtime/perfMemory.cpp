@@ -112,7 +112,7 @@ void PerfMemory::initialize() {
       warning("Could not create PerfData Memory region, reverting to malloc");
     }
 
-    _prologue = NEW_C_HEAP_OBJ(PerfDataPrologue);
+    _prologue = NEW_C_HEAP_OBJ(PerfDataPrologue, mtInternal);
   }
   else {
 
@@ -244,10 +244,10 @@ char* PerfMemory::get_perfdata_file_path() {
   if (PerfDataSaveFile != NULL) {
     // dest_file_name stores the validated file name if file_name
     // contains %p which will be replaced by pid.
-    dest_file = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN);
+    dest_file = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtInternal);
     if(!Arguments::copy_expand_pid(PerfDataSaveFile, strlen(PerfDataSaveFile),
                                    dest_file, JVM_MAXPATHLEN)) {
-      FREE_C_HEAP_ARRAY(char, dest_file);
+      FREE_C_HEAP_ARRAY(char, dest_file, mtInternal);
       if (PrintMiscellaneous && Verbose) {
         warning("Invalid performance data file path name specified, "\
                 "fall back to a default name");
@@ -257,7 +257,7 @@ char* PerfMemory::get_perfdata_file_path() {
     }
   }
   // create the name of the file for retaining the instrumentation memory.
-  dest_file = NEW_C_HEAP_ARRAY(char, PERFDATA_FILENAME_LEN);
+  dest_file = NEW_C_HEAP_ARRAY(char, PERFDATA_FILENAME_LEN, mtInternal);
   jio_snprintf(dest_file, PERFDATA_FILENAME_LEN,
                "%s_%d", PERFDATA_NAME, os::current_process_id());
 
