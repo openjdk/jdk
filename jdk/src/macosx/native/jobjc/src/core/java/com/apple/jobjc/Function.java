@@ -24,6 +24,10 @@
  */
 package com.apple.jobjc;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class Function {
     private static native long getFxnPtrForFunctionName(final String functionName);
     private static native long getFxnPtrForFunctionNameAndLib(final long libPtr, final String functionName);
