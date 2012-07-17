@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,6 @@ public class NoConsoleOutput {
     }
 
     public static class DoRMIStuff {
-        private static final int PORT = 2020;
         private interface Foo extends Remote {
             Object echo(Object obj) throws RemoteException;
         }
@@ -99,8 +98,9 @@ public class NoConsoleOutput {
             public Object echo(Object obj) { return obj; }
         }
         public static void main(String[] args) throws Exception {
-            LocateRegistry.createRegistry(PORT);
-            Registry reg = LocateRegistry.getRegistry("", PORT);
+            Registry registry = TestLibrary.createRegistryOnUnusedPort();
+            int registryPort = TestLibrary.getRegistryPort(registry);
+            Registry reg = LocateRegistry.getRegistry("", registryPort);
             FooImpl fooimpl = new FooImpl();
             UnicastRemoteObject.exportObject(fooimpl, 0);
             reg.rebind("foo", fooimpl);

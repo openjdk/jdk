@@ -158,9 +158,6 @@ java/lang/Math/WorstCaseTests.java				generic-all
 # 6988950
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
-# Need to be marked othervm, or changed to be samevm safe
-com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java generic-all
-
 # 7162111
 demo/jvmti/mtrace/TraceJFrame.java                              macosx-all
 javax/script/CauseExceptionTest.java                            macosx-all
@@ -265,18 +262,11 @@ java/nio/channels/Selector/OutOfBand.java                       macosx-all
 
 # jdk_rmi
 
-# 7140992
-java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java generic-all
-
 # 7146541
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java	linux-all
 
 # 7132247
 java/rmi/registry/readTest/readTest.sh				windows-all
-
-# 7142596
-java/rmi/transport/pinClientSocketFactory/PinClientSocketFactory.java generic-all
-
 ############################################################################
 
 # jdk_security
