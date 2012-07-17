@@ -44,7 +44,7 @@ static const int JVM_ARCH_MAX = 12;
 
 
 
-class FileMapInfo : public CHeapObj {
+class FileMapInfo : public CHeapObj<mtInternal> {
 private:
   enum {
     _invalid_version = -1,

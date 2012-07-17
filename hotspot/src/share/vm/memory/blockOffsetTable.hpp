@@ -100,7 +100,7 @@ public:
 //////////////////////////////////////////////////////////////////////////
 // BlockOffsetSharedArray
 //////////////////////////////////////////////////////////////////////////
-class BlockOffsetSharedArray: public CHeapObj {
+class BlockOffsetSharedArray: public CHeapObj<mtGC> {
   friend class BlockOffsetArray;
   friend class BlockOffsetArrayNonContigSpace;
   friend class BlockOffsetArrayContigSpace;

@@ -35,7 +35,7 @@
 // A SpaceCounter is a holder class for performance counters
 // that track a space;
 
-class SpaceCounters: public CHeapObj {
+class SpaceCounters: public CHeapObj<mtGC> {
   friend class VMStructs;
 
  private:
@@ -55,7 +55,7 @@ class SpaceCounters: public CHeapObj {
                 MutableSpace* m, GenerationCounters* gc);
 
   ~SpaceCounters() {
-    if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
+    if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space, mtGC);
   }
 
   inline void update_capacity() {

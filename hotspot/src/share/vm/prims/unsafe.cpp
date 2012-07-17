@@ -596,7 +596,7 @@ UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory(JNIEnv *env, jobject unsafe, jlong siz
     return 0;
   }
   sz = round_to(sz, HeapWordSize);
-  void* x = os::malloc(sz);
+  void* x = os::malloc(sz, mtInternal);
   if (x == NULL) {
     THROW_0(vmSymbols::java_lang_OutOfMemoryError());
   }
@@ -616,7 +616,7 @@ UNSAFE_ENTRY(jlong, Unsafe_ReallocateMemory(JNIEnv *env, jobject unsafe, jlong a
     return 0;
   }
   sz = round_to(sz, HeapWordSize);
-  void* x = (p == NULL) ? os::malloc(sz) : os::realloc(p, sz);
+  void* x = (p == NULL) ? os::malloc(sz, mtInternal) : os::realloc(p, sz, mtInternal);
   if (x == NULL) {
     THROW_0(vmSymbols::java_lang_OutOfMemoryError());
   }
@@ -877,7 +877,7 @@ static jclass Unsafe_DefineClass(JNIEnv *env, jstring name, jbyteArray data, int
         return 0;
     }
 
-    body = NEW_C_HEAP_ARRAY(jbyte, length);
+    body = NEW_C_HEAP_ARRAY(jbyte, length, mtInternal);
 
     if (body == 0) {
         throw_new(env, "OutOfMemoryError");
@@ -893,7 +893,7 @@ static jclass Unsafe_DefineClass(JNIEnv *env, jstring name, jbyteArray data, int
         uint len = env->GetStringUTFLength(name);
         int unicode_len = env->GetStringLength(name);
         if (len >= sizeof(buf)) {
-            utfName = NEW_C_HEAP_ARRAY(char, len + 1);
+            utfName = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
             if (utfName == NULL) {
                 throw_new(env, "OutOfMemoryError");
                 goto free_body;
@@ -913,10 +913,10 @@ static jclass Unsafe_DefineClass(JNIEnv *env, jstring name, jbyteArray data, int
     result = JVM_DefineClass(env, utfName, loader, body, length, pd);
 
     if (utfName && utfName != buf)
-        FREE_C_HEAP_ARRAY(char, utfName);
+        FREE_C_HEAP_ARRAY(char, utfName, mtInternal);
 
  free_body:
-    FREE_C_HEAP_ARRAY(jbyte, body);
+    FREE_C_HEAP_ARRAY(jbyte, body, mtInternal);
     return result;
   }
 }
@@ -1011,7 +1011,7 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
 
   jint length = typeArrayOop(JNIHandles::resolve_non_null(data))->length();
   jint word_length = (length + sizeof(HeapWord)-1) / sizeof(HeapWord);
-  HeapWord* body = NEW_C_HEAP_ARRAY(HeapWord, word_length);
+  HeapWord* body = NEW_C_HEAP_ARRAY(HeapWord, word_length, mtInternal);
   if (body == NULL) {
     THROW_0(vmSymbols::java_lang_OutOfMemoryError());
   }
@@ -1095,7 +1095,7 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass(JNIEnv *env, jobject unsafe, jc
 
   // try/finally clause:
   if (temp_alloc != NULL) {
-    FREE_C_HEAP_ARRAY(HeapWord, temp_alloc);
+    FREE_C_HEAP_ARRAY(HeapWord, temp_alloc, mtInternal);
   }
 
   return (jclass) res_jh;

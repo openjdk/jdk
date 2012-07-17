@@ -144,7 +144,7 @@ void CodeBlob::set_oop_maps(OopMapSet* p) {
   // chunk of memory, its your job to free it.
   if (p != NULL) {
     // We need to allocate a chunk big enough to hold the OopMapSet and all of its OopMaps
-    _oop_maps = (OopMapSet* )NEW_C_HEAP_ARRAY(unsigned char, p->heap_size());
+    _oop_maps = (OopMapSet* )NEW_C_HEAP_ARRAY(unsigned char, p->heap_size(), mtCode);
     p->copy_to((address)_oop_maps);
   } else {
     _oop_maps = NULL;
@@ -180,7 +180,7 @@ void CodeBlob::trace_new_stub(CodeBlob* stub, const char* name1, const char* nam
 
 void CodeBlob::flush() {
   if (_oop_maps) {
-    FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
+    FREE_C_HEAP_ARRAY(unsigned char, _oop_maps, mtCode);
     _oop_maps = NULL;
   }
   _comments.free();

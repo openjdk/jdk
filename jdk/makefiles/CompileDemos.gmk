@@ -215,7 +215,7 @@ define SetupJVMTIDemo
      # Param 5 = libs for posix
      # Param 6 = libs for winapi
      # Param 7 = libs for solaris
-     BUILD_DEMO_JVMTI_$1_EXTRA_SRC:=	$$(wildcard $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/demo/jvmti/$1) \
+     BUILD_DEMO_JVMTI_$1_EXTRA_SRC:=	$$(wildcard $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/demo/jvmti/$1) \
 					$$(wildcard $$(addprefix $(JDK_TOPDIR)/src/share/demo/jvmti/,$2))
      BUILD_DEMO_JVMTI_$1_EXTRA_INC:=$$(addprefix -I,$$(BUILD_DEMO_JVMTI_$1_EXTRA_SRC))
      BUILD_DEMO_JVMTI_$1_LANG:=C
@@ -227,18 +227,26 @@ define SetupJVMTIDemo
          $1_EXTRA_CXX:=$(LIBCXX)
          BUILD_DEMO_JVMTI_$1_O_FLAG:=$(CXX_O_FLAG_NORM)
      endif
+
+     $1_CXXFLAGS:=$(CXXFLAGS_JDKLIB) $$(BUILD_DEMO_JVMTI_$1_O_FLAG) -I$(JDK_TOPDIR)/src/share/demo/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_INC) $3
+     ifeq ($1-$(OPENJDK_TARGET_CPU_ARCH),waiters-sparc)
+       $1_FILTER:=-xregs=no%appl
+       $1_CXXFLAGS:=$$(filter-out $$($1_FILTER),$$($1_CXXFLAGS))
+     endif
+
      $$(eval $$(call SetupNativeCompilation,BUILD_DEMO_JVMTI_$1,\
 		SRC:=$(JDK_TOPDIR)/src/share/demo/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_SRC),\
 		LANG:=$$(BUILD_DEMO_JVMTI_$1_LANG),\
 		CFLAGS:=$(CFLAGS_JDKLIB) $$(BUILD_DEMO_JVMTI_$1_O_FLAG) -I$(JDK_TOPDIR)/src/share/demo/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_INC) $3,\
-		CXXFLAGS:=$(CXXFLAGS_JDKLIB) $$(BUILD_DEMO_JVMTI_$1_O_FLAG) -I$(JDK_TOPDIR)/src/share/demo/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_INC) $3,\
+		CXXFLAGS:=$$($1_CXXFLAGS),\
 		LDFLAGS:=$(LDFLAGS_JDKLIB),\
 		LDFLAGS_SUFFIX:=$$($1_EXTRA_CXX),\
 		LDFLAGS_SUFFIX_posix:=$5,\
 		LDFLAGS_SUFFIX_winapi:=$6,\
 		LDFLAGS_SUFFIX_solaris:=-lc $7,\
-		BIN:=$(JDK_OUTPUTDIR)/newdemoobjs/jvmti/$1,\
-		LIB:=$(JDK_OUTPUTDIR)/newdemo/jvmti/$1/lib/$(LIBRARY_PREFIX)$1$(SHARED_LIBRARY_SUFFIX)))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/newdemoobjs/jvmti/$1,\
+		OUTPUT_DIR:=$(JDK_OUTPUTDIR)/newdemo/jvmti/$1/lib,\
+		LIBRARY:=$1))
 
     $$(eval $$(call SetupZipArchive,BUILD_DEMO_JVMTI_SRC_$1,\
 		SRC:=$(JDK_TOPDIR)/src/share/demo/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_SRC),\
@@ -262,7 +270,7 @@ define SetupJVMTIDemo
          BUILD_DEMOS += $(JDK_OUTPUTDIR)/newdemo/jvmti/$1/$1.jar
      endif
 
-     BUILD_DEMOS += 	$(JDK_OUTPUTDIR)/newdemo/jvmti/$1/lib/$(LIBRARY_PREFIX)$1$(SHARED_LIBRARY_SUFFIX) \
+     BUILD_DEMOS += 	$$(BUILD_DEMO_JVMTI_$1) \
 			$(JDK_OUTPUTDIR)/newdemo/jvmti/$1/src.zip \
 			$(JDK_OUTPUTDIR)/newdemo/jvmti/$1/README.txt
 endef
@@ -274,7 +282,7 @@ $(eval $(call SetupJVMTIDemo,heapViewer,		agent_util))
 # hprof contains error messages using __FILE__ macro. These expand to the absolute path
 # in the new build system and relative in the old, causing the binaries to differ.
 $(eval $(call SetupJVMTIDemo,hprof,			java_crw_demo,\
-		-I$(JDK_TOPDIR)/src/share/npt -I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/npt,C,\
+		-I$(JDK_TOPDIR)/src/share/npt -I$(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/npt,C,\
 		-ldl,ws2_32.lib winmm.lib,-lsocket -lnsl))
 
 $(eval $(call SetupJVMTIDemo,minst,			agent_util java_crw_demo))
@@ -349,7 +357,7 @@ BUILD_DEMOS += $(JDK_OUTPUTDIR)/newdemo/README
 
 ##################################################################################################
 
-ifeq ($(PLATFORM), solaris)
+ifeq ($(OPENJDK_TARGET_OS), solaris)
 
 $(JDK_OUTPUTDIR)/newdemoclasses/jni/Poller/% : $(JDK_TOPDIR)/src/solaris/demo/jni/Poller/%
 		$(MKDIR) -p $(@D)
@@ -386,8 +394,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBPOLLER,\
 		CFLAGS:=$(CFLAGS_JDKLIB) $(C_O_FLAG_NORM) $(SHARED_LIBRARY_FLAGS) \
                         -I$(JDK_OUTPUTDIR)/newdemoclasses/jni/Poller, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB), \
-		BIN:=$(JDK_OUTPUTDIR)/newdemoobjs/jni/Poller,\
-		LIB:=$(JDK_OUTPUTDIR)/newdemoobjs/$(LIBRARY_PREFIX)Poller$(SHARED_LIBRARY_SUFFIX)))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/newdemoobjs/jni/Poller,\
+                OUTPUT_DIR:=$(JDK_OUTPUTDIR)/newdemoobjs, \
+		LIBRARY:=Poller))
 
 #
 # We can only compile native code after jar has been build (since we depend on generated .h files)

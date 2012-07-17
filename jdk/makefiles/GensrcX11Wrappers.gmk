@@ -30,10 +30,10 @@ GENSRC_SIZER_SRC := $(JDK_TOPDIR)/src/solaris/classes/sun/awt/X11/generator
 
 GENSRC_SIZES :=
 
-ifeq ($(PLATFORM)-$(LIBARCH), solaris-i386)
+ifeq ($(OPENJDK_TARGET_OS)-$(LIBARCH), solaris-i386)
 GENSRC_SIZES := sizes.32 sizes.64
-else ifeq ($(PLATFORM), solaris)
-isalist:=$(shell $(ISAINFO))
+else ifeq ($(OPENJDK_TARGET_OS), solaris)
+isalist:=$(shell isainfo)
 ifneq (,$(findstring sparcv9, $(isalist)))
 # On sparcv9 we generate both 32 and 64-bit sizers in spite of ARCH_DATA_MODEL.
 GENSRC_SIZES := sizes.32 sizes.64
@@ -46,7 +46,7 @@ GENSRC_SIZES := sizes.32
 endif # amd64
 endif # sparcv9
 else # !solaris
-ifeq ($(PLATFORM), macosx)
+ifeq ($(OPENJDK_TARGET_OS), macosx)
 GENSRC_SIZES := sizes.32 sizes.64
 else # !macosx
 GENSRC_SIZES := sizes.$(ARCH_DATA_MODEL)
@@ -62,18 +62,23 @@ $(GENSRC_X11WRAPPERS_TMP)/sizer/sizer.%.c : $(GENSRC_SIZER_SRC)/xlibtypes.txt
 	$(TOOL_WRAPPERGENERATOR) $(@D) $< "sizer" $*
 
 $(GENSRC_X11WRAPPERS_TMP)/sizer/sizer.%.exe : $(GENSRC_X11WRAPPERS_TMP)/sizer/sizer.%.c
-	(cd $(@D) && $(CC) -m$* -o $@ $< $(CFLAGS_JDKLIB) \
+	(cd $(@D) && $(HOST_CC) -m$* -o $@ $< \
+              -I$(JDK_OUTPUTDIR)/include \
+              -I$(JDK_TOPDIR)/src/share/javavm/export \
+              -I$(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/javavm/export \
+              -I$(JDK_TOPDIR)//src/share/native/common \
+              -I$(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/native/common \
               -I$(JDK_TOPDIR)/src/solaris/native/sun/awt \
 	      -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
 	      -I$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils -lc)
 
-ifeq ($(PLATFORM)-$(LIBARCH), solaris-i386)
+ifeq ($(OPENJDK_TARGET_OS)-$(LIBARCH), solaris-i386)
 
 $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.32 : $(GENSRC_X11WRAPPERS_TMP)/sizer/sizer.32.exe
 	$< > $@.tmp
 	$(MV) $@.tmp $@
 
-$(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.64 : $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes/sun/awt/X11/generator/sizes.64-$(PLATFORM)-$(LIBARCH)
+$(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.64 : $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes/sun/awt/X11/generator/sizes.64-$(OPENJDK_TARGET_OS)-$(LIBARCH)
 	$(MKDIR) -p $(@D)
 	$(CP) $< $@
 else
@@ -88,9 +93,9 @@ $(GENSRC_X11WRAPPERS_TMP)/classes/_the.classes : $(foreach S,$(GENSRC_SIZES),$(G
 	$(MKDIR) -p $(@D)/sun/awt/X11
 	$(RM) $(@D)/sun/awt/X11/*
 	$(TOOL_WRAPPERGENERATOR) $(@D)/sun/awt/X11 $(GENSRC_SIZER_SRC)/xlibtypes.txt "gen" $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes
-ifeq ($(PLATFORM)-$(LIBARCH), solaris-amd64)
-	$(ECHO) COMPARING $@ and $(GENSRC_SIZER_SRC)/sizes.64-$(PLATFORM)-i386
-	$(DIFF) $(GENSRC_X11WRAPPERS_TMP)/sizes.64 $(GENSRC_SIZER_SRC)/sizes.64-$(PLATFORM)-i386
+ifeq ($(OPENJDK_TARGET_OS)-$(LIBARCH), solaris-amd64)
+	$(ECHO) COMPARING $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.64 and $(GENSRC_SIZER_SRC)/sizes.64-$(OPENJDK_TARGET_OS)-i386
+	$(DIFF) $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.64 $(GENSRC_SIZER_SRC)/sizes.64-$(OPENJDK_TARGET_OS)-i386
 endif
 	$(TOUCH) $@
 

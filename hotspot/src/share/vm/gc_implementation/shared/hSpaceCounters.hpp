@@ -37,7 +37,7 @@
 class HeapSpaceUsedHelper;
 class G1SpaceMonitoringSupport;
 
-class HSpaceCounters: public CHeapObj {
+class HSpaceCounters: public CHeapObj<mtGC> {
   friend class VMStructs;
 
  private:
@@ -55,7 +55,7 @@ class HSpaceCounters: public CHeapObj {
                  size_t initial_capacity, GenerationCounters* gc);
 
   ~HSpaceCounters() {
-    if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
+    if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space, mtGC);
   }
 
   inline void update_capacity(size_t v) {

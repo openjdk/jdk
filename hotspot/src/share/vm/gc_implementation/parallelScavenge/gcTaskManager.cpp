@@ -116,7 +116,7 @@ GCTaskQueue* GCTaskQueue::create() {
 }
 
 GCTaskQueue* GCTaskQueue::create_on_c_heap() {
-  GCTaskQueue* result = new(ResourceObj::C_HEAP) GCTaskQueue(true);
+  GCTaskQueue* result = new(ResourceObj::C_HEAP, mtGC) GCTaskQueue(true);
   if (TraceGCTaskQueue) {
     tty->print_cr("GCTaskQueue::create_on_c_heap()"
                   " returns " INTPTR_FORMAT,
@@ -403,19 +403,19 @@ void GCTaskManager::initialize() {
   _queue = SynchronizedGCTaskQueue::create(unsynchronized_queue, lock());
   _noop_task = NoopGCTask::create_on_c_heap();
   _idle_inactive_task = WaitForBarrierGCTask::create_on_c_heap();
-  _resource_flag = NEW_C_HEAP_ARRAY(bool, workers());
+  _resource_flag = NEW_C_HEAP_ARRAY(bool, workers(), mtGC);
   {
     // Set up worker threads.
     //     Distribute the workers among the available processors,
     //     unless we were told not to, or if the os doesn't want to.
-    uint* processor_assignment = NEW_C_HEAP_ARRAY(uint, workers());
+    uint* processor_assignment = NEW_C_HEAP_ARRAY(uint, workers(), mtGC);
     if (!BindGCTaskThreadsToCPUs ||
         !os::distribute_processes(workers(), processor_assignment)) {
       for (uint a = 0; a < workers(); a += 1) {
         processor_assignment[a] = sentinel_worker();
       }
     }
-    _thread = NEW_C_HEAP_ARRAY(GCTaskThread*, workers());
+    _thread = NEW_C_HEAP_ARRAY(GCTaskThread*, workers(), mtGC);
     for (uint t = 0; t < workers(); t += 1) {
       set_thread(t, GCTaskThread::create(this, t, processor_assignment[t]));
     }
@@ -426,7 +426,7 @@ void GCTaskManager::initialize() {
       }
       tty->cr();
     }
-    FREE_C_HEAP_ARRAY(uint, processor_assignment);
+    FREE_C_HEAP_ARRAY(uint, processor_assignment, mtGC);
   }
   reset_busy_workers();
   set_unblocked();
@@ -455,11 +455,11 @@ GCTaskManager::~GCTaskManager() {
       GCTaskThread::destroy(thread(i));
       set_thread(i, NULL);
     }
-    FREE_C_HEAP_ARRAY(GCTaskThread*, _thread);
+    FREE_C_HEAP_ARRAY(GCTaskThread*, _thread, mtGC);
     _thread = NULL;
   }
   if (_resource_flag != NULL) {
-    FREE_C_HEAP_ARRAY(bool, _resource_flag);
+    FREE_C_HEAP_ARRAY(bool, _resource_flag, mtGC);
     _resource_flag = NULL;
   }
   if (queue() != NULL) {
@@ -817,7 +817,7 @@ NoopGCTask* NoopGCTask::create() {
 }
 
 NoopGCTask* NoopGCTask::create_on_c_heap() {
-  NoopGCTask* result = new(ResourceObj::C_HEAP) NoopGCTask(true);
+  NoopGCTask* result = new(ResourceObj::C_HEAP, mtGC) NoopGCTask(true);
   return result;
 }
 
@@ -848,7 +848,7 @@ IdleGCTask* IdleGCTask::create() {
 }
 
 IdleGCTask* IdleGCTask::create_on_c_heap() {
-  IdleGCTask* result = new(ResourceObj::C_HEAP) IdleGCTask(true);
+  IdleGCTask* result = new(ResourceObj::C_HEAP, mtGC) IdleGCTask(true);
   assert(UseDynamicNumberOfGCThreads,
     "Should only be used with dynamic GC thread");
   return result;
@@ -984,7 +984,7 @@ WaitForBarrierGCTask* WaitForBarrierGCTask::create() {
 
 WaitForBarrierGCTask* WaitForBarrierGCTask::create_on_c_heap() {
   WaitForBarrierGCTask* result =
-    new (ResourceObj::C_HEAP) WaitForBarrierGCTask(true);
+    new (ResourceObj::C_HEAP, mtGC) WaitForBarrierGCTask(true);
   return result;
 }
 
@@ -1114,7 +1114,7 @@ Monitor* MonitorSupply::reserve() {
     // Lazy initialization.
     if (freelist() == NULL) {
       _freelist =
-        new(ResourceObj::C_HEAP) GrowableArray<Monitor*>(ParallelGCThreads,
+        new(ResourceObj::C_HEAP, mtGC) GrowableArray<Monitor*>(ParallelGCThreads,
                                                          true);
     }
     if (! freelist()->is_empty()) {
