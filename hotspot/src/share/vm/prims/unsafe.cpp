@@ -178,17 +178,6 @@ jint Unsafe_invocation_key_to_method_slot(jint key) {
     v = *(oop*)index_oop_from_field_offset_long(p, offset);                 \
   }
 
-#define GET_OOP_FIELD_VOLATILE(obj, offset, v) \
-  oop p = JNIHandles::resolve(obj);   \
-  volatile oop v;                     \
-  if (UseCompressedOops) {            \
-    volatile narrowOop n = *(volatile narrowOop*)index_oop_from_field_offset_long(p, offset); \
-    v = oopDesc::decode_heap_oop(n);                               \
-  } else {                            \
-    v = *(volatile oop*)index_oop_from_field_offset_long(p, offset);       \
-  } \
-  OrderAccess::acquire();
-
 
 // Get/SetObject must be special-cased, since it works with handles.
 
@@ -296,28 +285,21 @@ UNSAFE_END
 
 UNSAFE_ENTRY(jobject, Unsafe_GetObjectVolatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset))
   UnsafeWrapper("Unsafe_GetObjectVolatile");
-  GET_OOP_FIELD_VOLATILE(obj, offset, v)
+  oop p = JNIHandles::resolve(obj);
+  void* addr = index_oop_from_field_offset_long(p, offset);
+  volatile oop v;
+  if (UseCompressedOops) {
+    volatile narrowOop n = *(volatile narrowOop*) addr;
+    v = oopDesc::decode_heap_oop(n);
+  } else {
+    v = *(volatile oop*) addr;
+  }
+  OrderAccess::acquire();
   return JNIHandles::make_local(env, v);
 UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_SetObjectVolatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject x_h))
   UnsafeWrapper("Unsafe_SetObjectVolatile");
-  {
-    // Catch VolatileCallSite.target stores (via
-    // CallSite.setTargetVolatile) and check call site dependencies.
-    oop p = JNIHandles::resolve(obj);
-    if ((offset == java_lang_invoke_CallSite::target_offset_in_bytes()) && p->is_a(SystemDictionary::CallSite_klass())) {
-      Handle call_site    (THREAD, p);
-      Handle method_handle(THREAD, JNIHandles::resolve(x_h));
-      assert(call_site    ->is_a(SystemDictionary::CallSite_klass()),     "must be");
-      assert(method_handle->is_a(SystemDictionary::MethodHandle_klass()), "must be");
-      {
-        // Walk all nmethods depending on this call site.
-        MutexLocker mu(Compile_lock, thread);
-        Universe::flush_dependents_on(call_site(), method_handle());
-      }
-    }
-  }
   oop x = JNIHandles::resolve(x_h);
   oop p = JNIHandles::resolve(obj);
   void* addr = index_oop_from_field_offset_long(p, offset);
