@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
  * @build Ping
  * @build UseCustomRef_Stub
  * @build UseCustomRef_Skel
+ * @build TestLibrary
  * @run main/othervm/policy=security.policy/secure=java.rmi.RMISecurityManager/timeout=120 UseCustomRef
  *
  * This test was failing to run because the synthetic access
@@ -84,8 +85,9 @@ public class UseCustomRef
             TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
 
             System.err.println("creating Registry...");
-            registry = LocateRegistry.createRegistry(TestLibrary.REGISTRY_PORT);
 
+            registry = TestLibrary.createRegistryOnUnusedPort();
+            int port = TestLibrary.getRegistryPort(registry);
             /*
              * create object with custom ref and bind in registry
              */
@@ -97,7 +99,7 @@ public class UseCustomRef
                                 "instanceof CustomServerRef");
             }
 
-            String name = "//:" + TestLibrary.REGISTRY_PORT + "/UseCustomRef";
+            String name = "//:" + port + "/UseCustomRef";
             //      String name = "UseCustomRef";
             System.err.println("binding object in registry...");
             Naming.rebind(name, cr);

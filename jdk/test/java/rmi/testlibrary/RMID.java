@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 import java.io.*;
 import java.rmi.*;
 import java.rmi.activation.*;
-import java.util.Properties;
 
 /**
  * Utility class that creates an instance of rmid with a policy
@@ -133,7 +132,7 @@ public class RMID extends JavaVM {
                                   boolean debugExec)
     {
         return createRMID(out, err, debugExec, true,
-                          TestLibrary.RMID_PORT);
+                          TestLibrary.getUnusedRandomPort());
     }
 
     public static RMID createRMID(OutputStream out, OutputStream err,
@@ -208,7 +207,7 @@ public class RMID extends JavaVM {
         // if rmid is already running, then the test will fail with
         // a well recognized exception (port already in use...).
 
-        mesg("starting rmid...");
+        mesg("starting rmid on port #" + port + "...");
         super.start();
 
         int slopFactor = 1;
@@ -235,6 +234,14 @@ public class RMID extends JavaVM {
 
             // Checking if rmid is present
             if (ActivationLibrary.rmidRunning(port)) {
+                /**
+                 * We need to set the java.rmi.activation.port value as the
+                 * activation system will use the property to determine the
+                 * port #.  The activation system will use this value if set.
+                 * If it isn't set, the activation system will set it to an
+                 * incorrect value.
+                 */
+                System.setProperty("java.rmi.activation.port", Integer.toString(port));
                 mesg("finished starting rmid.");
                 return;
             }
@@ -259,10 +266,6 @@ public class RMID extends JavaVM {
      * Shutdown does not nullify possible references to the rmid
      * process object (destroy does though).
      */
-    public static void shutdown() {
-        shutdown(TestLibrary.RMID_PORT);
-    }
-
     public static void shutdown(int port) {
 
         try {
@@ -301,9 +304,7 @@ public class RMID extends JavaVM {
      * if rmid is a child process of the current VM.
      */
     public void destroy() {
-
-        // attempt graceful shutdown of the activation system on
-        // TestLibrary.RMID_PORT
+        // attempt graceful shutdown of the activation system
         shutdown(port);
 
         if (vm != null) {
@@ -357,4 +358,6 @@ public class RMID extends JavaVM {
             vm = null;
         }
     }
+
+    public int getPort() {return port;}
 }
