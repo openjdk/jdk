@@ -33,7 +33,7 @@
 
 
 // Meta-index (optional, to be able to skip opening boot classpath jar files)
-class MetaIndex: public CHeapObj {
+class MetaIndex: public CHeapObj<mtClass> {
  private:
   char** _meta_package_names;
   int    _num_meta_package_names;
@@ -46,7 +46,7 @@ class MetaIndex: public CHeapObj {
 
 // Class path entry (directory or zip file)
 
-class ClassPathEntry: public CHeapObj {
+class ClassPathEntry: public CHeapObj<mtClass> {
  private:
   ClassPathEntry* _next;
  public:
@@ -141,7 +141,7 @@ class LazyClassPathEntry: public ClassPathEntry {
 
 class PackageHashtable;
 class PackageInfo;
-class HashtableBucket;
+template <MEMFLAGS F> class HashtableBucket;
 
 class ClassLoader: AllStatic {
  public:
@@ -299,7 +299,7 @@ class ClassLoader: AllStatic {
   // Initialization
   static void initialize();
   static void create_package_info_table();
-  static void create_package_info_table(HashtableBucket *t, int length,
+  static void create_package_info_table(HashtableBucket<mtClass> *t, int length,
                                         int number_of_entries);
   static int compute_Object_vtable();
 
