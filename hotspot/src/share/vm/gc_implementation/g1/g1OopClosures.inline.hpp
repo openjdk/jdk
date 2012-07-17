@@ -29,6 +29,7 @@
 #include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1OopClosures.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
 
 /*
  * This really ought to be an inline function, but apparently the C++
@@ -182,6 +183,7 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_nv(T* p) {
 #endif // ASSERT
 
   assert(_from != NULL, "from region must be non-NULL");
+  assert(_from->is_in_reserved(p), "p is not in from");
 
   HeapRegion* to = _g1->heap_region_containing(obj);
   if (to != NULL && _from != to) {
@@ -212,14 +214,16 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_nv(T* p) {
       // or processed (if an evacuation failure occurs) at the end
       // of the collection.
       // See G1RemSet::cleanup_after_oops_into_collection_set_do().
-    } else {
-      // We either don't care about pushing references that point into the
-      // collection set (i.e. we're not during an evacuation pause) _or_
-      // the reference doesn't point into the collection set. Either way
-      // we add the reference directly to the RSet of the region containing
-      // the referenced object.
-      _g1_rem_set->par_write_ref(_from, p, _worker_i);
+      return;
     }
+
+    // We either don't care about pushing references that point into the
+    // collection set (i.e. we're not during an evacuation pause) _or_
+    // the reference doesn't point into the collection set. Either way
+    // we add the reference directly to the RSet of the region containing
+    // the referenced object.
+    assert(to->rem_set() != NULL, "Need per-region 'into' remsets.");
+    to->rem_set()->add_reference(p, _worker_i);
   }
 }
 
