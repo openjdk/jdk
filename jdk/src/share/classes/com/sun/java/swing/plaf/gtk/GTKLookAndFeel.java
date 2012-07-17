@@ -796,9 +796,10 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             "Menu.margin", zeroInsets,
             "Menu.cancelMode", "hideMenuTree",
             "Menu.alignAcceleratorText", Boolean.FALSE,
+            "Menu.useMenuBarForTopLevelMenus", Boolean.TRUE,
 
 
-            "MenuBar.windowBindings", new Object[] {
+                "MenuBar.windowBindings", new Object[] {
                 "F10", "takeFocus" },
             "MenuBar.font", new FontLazyValue(Region.MENU_BAR),
 

@@ -63,7 +63,7 @@ class DTraceJSDT : AllStatic {
   static jboolean is_supported();
 };
 
-class RegisteredProbes : public CHeapObj {
+class RegisteredProbes : public CHeapObj<mtInternal> {
  private:
   nmethod** _nmethods;      // all the probe methods
   size_t    _count;         // number of probe methods
@@ -72,7 +72,7 @@ class RegisteredProbes : public CHeapObj {
  public:
   RegisteredProbes(size_t count) {
     _count = count;
-    _nmethods = NEW_C_HEAP_ARRAY(nmethod*, count);
+    _nmethods = NEW_C_HEAP_ARRAY(nmethod*, count, mtInternal);
   }
 
   ~RegisteredProbes() {
@@ -81,7 +81,7 @@ class RegisteredProbes : public CHeapObj {
       _nmethods[i]->make_not_entrant();
       _nmethods[i]->method()->clear_code();
     }
-    FREE_C_HEAP_ARRAY(nmethod*, _nmethods);
+    FREE_C_HEAP_ARRAY(nmethod*, _nmethods, mtInternal);
     _nmethods = NULL;
     _count = 0;
   }

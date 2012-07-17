@@ -1,0 +1,185 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################
+#
+# This file contains helper functions for the top-level Makefile that does
+# not depend on the spec.gmk file having been read. (The purpose of this 
+# file is ju to avoid cluttering the top-level Makefile.)
+#
+################################################################
+
+ifndef _MAKEHELPERS_GMK
+_MAKEHELPERS_GMK := 1
+
+##############################
+# Stuff to run at include time
+##############################
+
+# Find out which variables were passed explicitely on the make command line. These
+# will be passed on to sub-makes, overriding spec.gmk settings.
+MAKE_ARGS=$(foreach var,$(subst =command,,$(filter %=command,$(foreach var,$(.VARIABLES),$(var)=$(firstword $(origin $(var)))))),$(var)=$($(var)))
+
+list_alt_overrides_with_origins=$(filter ALT_%=environment ALT_%=command,$(foreach var,$(.VARIABLES),$(var)=$(firstword $(origin $(var)))))
+list_alt_overrides=$(subst =command,,$(subst =environment,,$(list_alt_overrides_with_origins)))
+
+##############################
+# Functions
+##############################
+
+define fatal-error
+    # If the user specificed a "global" target (e.g. 'help'), do not exit but continue running
+    $$(if $$(findstring help,$$(MAKECMDGOALS)),,$$(error Cannot continue))
+endef
+
+define ParseLogLevel
+    ifeq ($$(origin VERBOSE),undefined)
+        # Setup logging according to LOG (but only if VERBOSE is not given)
+        ifeq ($$(LOG),)
+            # Set LOG to "warn" as default if not set (and no VERBOSE given)
+            LOG=warn
+        endif
+        ifeq ($$(LOG),warn)
+            VERBOSE=-s
+        else ifeq ($$(LOG),info)
+            VERBOSE=
+        else ifeq ($$(LOG),debug)
+            VERBOSE=
+        else ifeq ($$(LOG),trace)
+            VERBOSE=-d -p
+        else
+            $$(info Error: LOG must be one of: warn, info, debug or trace.)
+            $$(eval $$(call fatal-error))
+        endif
+    else
+        ifneq ($$(LOG),)
+            # We have both a VERBOSE and a LOG argument. This is OK only if this is a repeated call by ourselves,
+            # but complain if this is the top-level make call.
+            ifeq ($$(MAKELEVEL),0)
+                $$(info Cannot use LOG=$$(LOG) and VERBOSE=$$(VERBOSE) at the same time. Choose one.)
+                $$(eval $$(call fatal-error))
+            endif
+        endif
+    endif
+endef
+
+# TODO: Fix duplication in MakeBase.gmk
+define SetupLogging
+    ifneq ($(findstring $(LOG),debug trace),)
+        # Shell redefinition trick inspired by http://www.cmcrossroads.com/ask-mr-make/6535-tracing-rule-execution-in-gnu-make
+        OLD_SHELL:=$$(SHELL)
+        SHELL = $$(warning Building $$@$$(if $$<, (from $$<))$(if $$?, ($$? newer)))$$(OLD_SHELL) -x
+    endif
+endef
+
+define ParseConfAndSpec
+    ifneq ($$(origin SPEC),undefined)
+        # We have been given a SPEC, check that it works out properly
+        ifeq ($$(wildcard $$(SPEC)),)
+            $$(info Cannot locate spec.gmk, given by SPEC=$$(SPEC))
+            $$(eval $$(call fatal-error))
+        endif
+        ifneq ($$(origin CONF),undefined)
+            # We also have a CONF argument. This is OK only if this is a repeated call by ourselves,
+            # but complain if this is the top-level make call.
+            ifeq ($$(MAKELEVEL),0)
+                $$(info Cannot use CONF=$$(CONF) and SPEC=$$(SPEC) at the same time. Choose one.)
+                $$(eval $$(call fatal-error))
+            endif
+        endif
+        # ... OK, we're satisfied, we'll use this SPEC later on
+    else
+        # Find all spec.gmk files in the build output directory
+        output_dir=$$(root_dir)/build
+        all_spec_files=$$(wildcard $$(output_dir)/*/spec.gmk)
+        ifeq ($$(all_spec_files),)
+            $$(info No configurations found for $$(root_dir)! Please run configure to create a configuration.)
+            $$(eval $$(call fatal-error))
+        endif
+        # Extract the configuration names from the path
+        all_confs=$$(patsubst %/spec.gmk,%,$$(patsubst $$(output_dir)/%,%,$$(all_spec_files)))
+
+        ifneq ($$(origin CONF),undefined)
+            # User have given a CONF= argument.
+            ifeq ($$(CONF),)
+                # If given CONF=, match all configurations
+                matching_confs=$$(strip $$(all_confs))
+            else
+                # Otherwise select those that contain the given CONF string
+                matching_confs=$$(strip $$(foreach var,$$(all_confs),$$(if $$(findstring $$(CONF),$$(var)),$$(var))))
+            endif
+            ifeq ($$(matching_confs),)
+                $$(info No configurations found matching CONF=$$(CONF))
+                $$(info Available configurations:)
+                $$(foreach var,$$(all_confs),$$(info * $$(var)))
+                $$(eval $$(call fatal-error))
+            else
+                ifeq ($$(words $$(matching_confs)),1)
+                    $$(info Building '$$(matching_confs)' (matching CONF=$$(CONF)))
+                else
+                    $$(info Building the following configurations (matching CONF=$$(CONF)):)
+                    $$(foreach var,$$(matching_confs),$$(info * $$(var)))
+                endif
+            endif
+
+            # Create a SPEC definition. This will contain the path to one or more spec.gmk files.
+            SPEC=$$(addsuffix /spec.gmk,$$(addprefix $$(output_dir)/,$$(matching_confs)))
+        else
+            # No CONF or SPEC given, check the available configurations
+            ifneq ($$(words $$(all_spec_files)),1)
+                $$(info No CONF or SPEC given, but more than one spec.gmk found in $$(output_dir).)
+                $$(info Available configurations:)
+                $$(foreach var,$$(all_confs),$$(info * $$(var)))
+                $$(info Please retry building with CONF=<config> or SPEC=<specfile>)
+                $$(eval $$(call fatal-error))
+            endif
+
+            # We found exactly one configuration, use it
+            SPEC=$$(strip $$(all_spec_files))
+        endif
+    endif
+endef
+
+define CheckEnvironment
+    # Find all environment or command line variables that begin with ALT.
+    $(if $(list_alt_overrides),
+        @$(PRINTF) "\nWARNING: You have the following ALT_ variables set:\n"
+    @$(PRINTF) "$(foreach var,$(list_alt_overrides),$(var)=$$$(var))\n"
+    @$(PRINTF) "ALT_ variables are deprecated and will be ignored. Please clean your environment.\n\n"
+    )
+endef
+
+define PrintStartMessage
+    $(if $(VERBOSE),,@$(ECHO) Running make as $(MAKE) $(MFLAGS) $(MAKE_ARGS))
+    $(call CheckEnvironment)
+    @$(ECHO) "Building OpenJDK for target $(if $(MAKECMDGOALS),'$(MAKECMDGOALS)','all') in configuration '$(CONF_NAME)'"
+endef
+
+define PrintEndMessage
+    @$(ECHO) "Finished building OpenJDK for target '$@'"
+    $(call CheckEnvironment)
+endef
+
+endif # _MAKEHELPERS_GMK

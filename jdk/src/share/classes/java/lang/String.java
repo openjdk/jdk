@@ -1921,17 +1921,17 @@ public final class String
      * <blockquote><pre>
      * str.substring(begin,&nbsp;end)</pre></blockquote>
      *
-     * This method is defined so that the <tt>String</tt> class can implement
+     * This method is defined so that the {@code String} class can implement
      * the {@link CharSequence} interface. </p>
      *
-     * @param      beginIndex   the begin index, inclusive.
-     * @param      endIndex     the end index, exclusive.
-     * @return     the specified subsequence.
+     * @param   beginIndex   the begin index, inclusive.
+     * @param   endIndex     the end index, exclusive.
+     * @return  the specified subsequence.
      *
      * @throws  IndexOutOfBoundsException
-     *          if <tt>beginIndex</tt> or <tt>endIndex</tt> are negative,
-     *          if <tt>endIndex</tt> is greater than <tt>length()</tt>,
-     *          or if <tt>beginIndex</tt> is greater than <tt>startIndex</tt>
+     *          if {@code beginIndex} or {@code endIndex} is negative,
+     *          if {@code endIndex} is greater than {@code length()},
+     *          or if {@code beginIndex} is greater than {@code endIndex}
      *
      * @since 1.4
      * @spec JSR-51

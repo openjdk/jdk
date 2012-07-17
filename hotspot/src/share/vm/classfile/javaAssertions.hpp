@@ -68,7 +68,7 @@ private:
   static OptionList*    _packages;      // Options for package trees.
 };
 
-class JavaAssertions::OptionList: public CHeapObj {
+class JavaAssertions::OptionList: public CHeapObj<mtClass> {
 public:
   inline OptionList(const char* name, bool enable, OptionList* next);
 

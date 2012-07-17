@@ -40,7 +40,7 @@ class CollectionSetChooser;
 // TraceGen0Time collects data on _both_ young and mixed evacuation pauses
 // (the latter may contain non-young regions - i.e. regions that are
 // technically in Gen1) while TraceGen1Time collects data about full GCs.
-class TraceGen0TimeData : public CHeapObj {
+class TraceGen0TimeData : public CHeapObj<mtGC> {
  private:
   unsigned  _young_pause_num;
   unsigned  _mixed_pause_num;
@@ -86,7 +86,7 @@ public:
   void print() const;
 };
 
-class TraceGen1TimeData : public CHeapObj {
+class TraceGen1TimeData : public CHeapObj<mtGC> {
  private:
   NumberSeq _all_full_gc_times;
 
@@ -131,7 +131,7 @@ class TraceGen1TimeData : public CHeapObj {
 //
 // NewSize and MaxNewSize override NewRatio. So, NewRatio is ignored if it is
 // combined with either NewSize or MaxNewSize. (A warning message is printed.)
-class G1YoungGenSizer : public CHeapObj {
+class G1YoungGenSizer : public CHeapObj<mtGC> {
 private:
   enum SizerKind {
     SizerDefaults,

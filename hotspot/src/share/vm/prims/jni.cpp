@@ -33,6 +33,7 @@
 #ifndef SERIALGC
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #endif // SERIALGC
+#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "memory/oopFactory.hpp"
@@ -3270,7 +3271,7 @@ JNI_QUICK_ENTRY(const jchar*, jni_GetStringChars(
   int s_len = java_lang_String::length(s);
   typeArrayOop s_value = java_lang_String::value(s);
   int s_offset = java_lang_String::offset(s);
-  jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len + 1);  // add one for zero termination
+  jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len + 1, mtInternal);  // add one for zero termination
   if (s_len > 0) {
     memcpy(buf, s_value->char_at_addr(s_offset), sizeof(jchar)*s_len);
   }
@@ -3363,7 +3364,7 @@ JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboole
 #endif /* USDT2 */
   oop java_string = JNIHandles::resolve_non_null(string);
   size_t length = java_lang_String::utf8_length(java_string);
-  char* result = AllocateHeap(length + 1, "GetStringUTFChars");
+  char* result = AllocateHeap(length + 1, mtInternal);
   java_lang_String::as_utf8_string(java_string, result, (int) length + 1);
   if (isCopy != NULL) *isCopy = JNI_TRUE;
 #ifndef USDT2
@@ -3619,7 +3620,7 @@ JNI_QUICK_ENTRY(ElementType*, \
      * Avoid asserts in typeArrayOop. */ \
     result = (ElementType*)get_bad_address(); \
   } else { \
-    result = NEW_C_HEAP_ARRAY(ElementType, len); \
+    result = NEW_C_HEAP_ARRAY(ElementType, len, mtInternal); \
     /* copy the array to the c chunk */ \
     memcpy(result, a->Tag##_at_addr(0), sizeof(ElementType)*len); \
   } \
@@ -3656,7 +3657,7 @@ JNI_QUICK_ENTRY(ElementType*, \
      * Avoid asserts in typeArrayOop. */ \
     result = (ElementType*)get_bad_address(); \
   } else { \
-    result = NEW_C_HEAP_ARRAY(ElementType, len); \
+    result = NEW_C_HEAP_ARRAY(ElementType, len, mtInternal); \
     /* copy the array to the c chunk */ \
     memcpy(result, a->Tag##_at_addr(0), sizeof(ElementType)*len); \
   } \

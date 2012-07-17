@@ -764,7 +764,7 @@ class constantPoolOopDesc : public oopDesc {
                         unsigned char *bytes);
 };
 
-class SymbolHashMapEntry : public CHeapObj {
+class SymbolHashMapEntry : public CHeapObj<mtSymbol> {
  private:
   unsigned int        _hash;   // 32-bit hash for item
   SymbolHashMapEntry* _next;   // Next element in the linked list for this bucket
@@ -790,7 +790,7 @@ class SymbolHashMapEntry : public CHeapObj {
 }; // End SymbolHashMapEntry class
 
 
-class SymbolHashMapBucket : public CHeapObj {
+class SymbolHashMapBucket : public CHeapObj<mtSymbol> {
 
 private:
   SymbolHashMapEntry*    _entry;
@@ -803,7 +803,7 @@ public:
 }; // End SymbolHashMapBucket class
 
 
-class SymbolHashMap: public CHeapObj {
+class SymbolHashMap: public CHeapObj<mtSymbol> {
 
  private:
   // Default number of entries in the table
@@ -816,7 +816,7 @@ class SymbolHashMap: public CHeapObj {
 
   void initialize_table(int table_size) {
     _table_size = table_size;
-    _buckets = NEW_C_HEAP_ARRAY(SymbolHashMapBucket, table_size);
+    _buckets = NEW_C_HEAP_ARRAY(SymbolHashMapBucket, table_size, mtSymbol);
     for (int index = 0; index < table_size; index++) {
       _buckets[index].clear();
     }

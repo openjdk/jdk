@@ -27,7 +27,7 @@
 
 IntHistogram::IntHistogram(int est, int max) : _max(max), _tot(0) {
   assert(0 <= est && est <= max, "Preconditions");
-  _elements = new (ResourceObj::C_HEAP) GrowableArray<int>(est, true);
+  _elements = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(est, true);
   guarantee(_elements != NULL, "alloc failure");
 }
 

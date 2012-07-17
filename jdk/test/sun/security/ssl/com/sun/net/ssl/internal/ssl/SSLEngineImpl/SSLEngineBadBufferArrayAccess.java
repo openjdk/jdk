@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,18 +287,27 @@ public class SSLEngineBadBufferArrayAccess {
                     if (serverClose) {
                         serverEngine.closeOutbound();
                     }
+                }
+
+                if (closed && isEngineClosed(serverEngine)) {
                     serverIn.flip();
 
                     /*
                      * A sanity check to ensure we got what was sent.
                      */
                     if (serverIn.remaining() != clientMsg.length) {
-                        throw new Exception("Client:  Data length error");
+                        throw new Exception("Client: Data length error -" +
+                            " IF THIS FAILS, PLEASE REPORT THIS TO THE" +
+                            " SECURITY TEAM.  WE HAVE BEEN UNABLE TO" +
+                            " RELIABLY DUPLICATE.");
                     }
 
                     for (int i = 0; i < clientMsg.length; i++) {
                         if (clientMsg[i] != serverIn.get()) {
-                            throw new Exception("Client:  Data content error");
+                            throw new Exception("Client: Data content error -" +
+                            " IF THIS FAILS, PLEASE REPORT THIS TO THE" +
+                            " SECURITY TEAM.  WE HAVE BEEN UNABLE TO" +
+                            " RELIABLY DUPLICATE.");
                         }
                     }
                     serverIn.compact();

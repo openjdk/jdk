@@ -235,7 +235,6 @@
 #ifndef REG_COUNT
   #define REG_COUNT 0
 #endif
-
 // whole purpose of this function is to work around bug c++/27724 in gcc 4.1.1
 // with optimization turned on it doesn't affect produced code
 static inline uint64_t cast_uint64_t(size_t x)
@@ -243,6 +242,16 @@ static inline uint64_t cast_uint64_t(size_t x)
   return x;
 }
 
+
+typedef HashtableEntry<intptr_t, mtInternal>  IntptrHashtableEntry;
+typedef Hashtable<intptr_t, mtInternal>       IntptrHashtable;
+typedef Hashtable<Symbol*, mtSymbol>          SymbolHashtable;
+typedef HashtableEntry<Symbol*, mtClass>      SymbolHashtableEntry;
+typedef Hashtable<oop, mtSymbol>              StringHashtable;
+typedef TwoOopHashtable<klassOop, mtClass>    klassOopTwoOopHashtable;
+typedef Hashtable<klassOop, mtClass>          klassOopHashtable;
+typedef HashtableEntry<klassOop, mtClass>     klassHashtableEntry;
+typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
 
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
@@ -299,7 +308,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _protection_domain,                            oop)                                   \
   nonstatic_field(instanceKlass,               _signers,                                      objArrayOop)                           \
   nonstatic_field(instanceKlass,               _source_file_name,                             Symbol*)                               \
-  nonstatic_field(instanceKlass,               _source_debug_extension,                       Symbol*)                               \
+  nonstatic_field(instanceKlass,               _source_debug_extension,                       char*)                                 \
   nonstatic_field(instanceKlass,               _inner_classes,                                typeArrayOop)                          \
   nonstatic_field(instanceKlass,               _nonstatic_field_size,                         int)                                   \
   nonstatic_field(instanceKlass,               _static_field_size,                            int)                                   \
@@ -711,26 +720,26 @@ static inline uint64_t cast_uint64_t(size_t x)
   /* HashtableBucket */                                                                                                              \
   /*******************/                                                                                                              \
                                                                                                                                      \
-  nonstatic_field(HashtableBucket,             _entry,                                        BasicHashtableEntry*)                  \
+  nonstatic_field(HashtableBucket<mtInternal>,  _entry,                                        BasicHashtableEntry<mtInternal>*)     \
                                                                                                                                      \
   /******************/                                                                                                               \
   /* HashtableEntry */                                                                                                               \
   /******************/                                                                                                               \
                                                                                                                                      \
-  nonstatic_field(BasicHashtableEntry,         _next,                                         BasicHashtableEntry*)                  \
-  nonstatic_field(BasicHashtableEntry,         _hash,                                         unsigned int)                          \
-  nonstatic_field(HashtableEntry<intptr_t>,    _literal,                                      intptr_t) \
+  nonstatic_field(BasicHashtableEntry<mtInternal>, _next,                                     BasicHashtableEntry<mtInternal>*)      \
+  nonstatic_field(BasicHashtableEntry<mtInternal>, _hash,                                     unsigned int)                          \
+  nonstatic_field(IntptrHashtableEntry,            _literal,                                  intptr_t)                              \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* Hashtable */                                                                                                                    \
   /*************/                                                                                                                    \
                                                                                                                                      \
-  nonstatic_field(BasicHashtable,              _table_size,                                   int)                                   \
-  nonstatic_field(BasicHashtable,              _buckets,                                      HashtableBucket*)                      \
-  nonstatic_field(BasicHashtable,              _free_list,                                    BasicHashtableEntry*)                  \
-  nonstatic_field(BasicHashtable,              _first_free_entry,                             char*)                                 \
-  nonstatic_field(BasicHashtable,              _end_block,                                    char*)                                 \
-  nonstatic_field(BasicHashtable,              _entry_size,                                   int)                                   \
+  nonstatic_field(BasicHashtable<mtInternal>, _table_size,                                   int)                                   \
+  nonstatic_field(BasicHashtable<mtInternal>, _buckets,                                      HashtableBucket<mtInternal>*)          \
+  nonstatic_field(BasicHashtable<mtInternal>, _free_list,                                    BasicHashtableEntry<mtInternal>*)      \
+  nonstatic_field(BasicHashtable<mtInternal>, _first_free_entry,                             char*)                                 \
+  nonstatic_field(BasicHashtable<mtInternal>, _end_block,                                    char*)                                 \
+  nonstatic_field(BasicHashtable<mtInternal>, _entry_size,                                   int)                                   \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* DictionaryEntry */                                                                                                              \
@@ -1538,20 +1547,20 @@ static inline uint64_t cast_uint64_t(size_t x)
   /* SymbolTable, SystemDictionary */                                     \
   /*********************************/                                     \
                                                                           \
-  declare_toplevel_type(BasicHashtable)                                   \
-    declare_type(Hashtable<intptr_t>, BasicHashtable)                     \
-  declare_type(SymbolTable, Hashtable<Symbol*>)                           \
-  declare_type(StringTable, Hashtable<oop>)                               \
-    declare_type(LoaderConstraintTable, Hashtable<klassOop>)              \
-    declare_type(TwoOopHashtable<klassOop>, Hashtable<klassOop>)          \
-    declare_type(Dictionary, TwoOopHashtable<klassOop>)                   \
-    declare_type(PlaceholderTable, TwoOopHashtable<Symbol*>)              \
-  declare_toplevel_type(BasicHashtableEntry)                              \
-  declare_type(HashtableEntry<intptr_t>, BasicHashtableEntry)             \
-    declare_type(DictionaryEntry, HashtableEntry<klassOop>)               \
-    declare_type(PlaceholderEntry, HashtableEntry<Symbol*>)               \
-    declare_type(LoaderConstraintEntry, HashtableEntry<klassOop>)         \
-  declare_toplevel_type(HashtableBucket)                                  \
+  declare_toplevel_type(BasicHashtable<mtInternal>)                       \
+    declare_type(IntptrHashtable, BasicHashtable<mtInternal>)             \
+  declare_type(SymbolTable, SymbolHashtable)                              \
+  declare_type(StringTable, StringHashtable)                              \
+    declare_type(LoaderConstraintTable, klassOopHashtable)                \
+    declare_type(klassOopTwoOopHashtable, klassOopHashtable)              \
+    declare_type(Dictionary, klassOopTwoOopHashtable)                     \
+    declare_type(PlaceholderTable, SymbolTwoOopHashtable)                 \
+  declare_toplevel_type(BasicHashtableEntry<mtInternal>)                  \
+  declare_type(IntptrHashtableEntry, BasicHashtableEntry<mtInternal>)     \
+    declare_type(DictionaryEntry, klassHashtableEntry)                    \
+    declare_type(PlaceholderEntry, SymbolHashtableEntry)                  \
+    declare_type(LoaderConstraintEntry, klassHashtableEntry)              \
+  declare_toplevel_type(HashtableBucket<mtInternal>)                      \
   declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmSymbols)                                        \
   declare_toplevel_type(ProtectionDomainEntry)                            \
