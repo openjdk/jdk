@@ -312,7 +312,7 @@ public:
 };
 
 
-class PlatformEvent : public CHeapObj {
+class PlatformEvent : public CHeapObj<mtInternal> {
   private:
     double CachePad [4] ;   // increase odds that _mutex is sole occupant of cache line
     volatile int _Event ;
@@ -347,7 +347,7 @@ class PlatformEvent : public CHeapObj {
     void SetAssociation (Thread * a) { _Assoc = a ; }
 } ;
 
-class PlatformParker : public CHeapObj {
+class PlatformParker : public CHeapObj<mtInternal> {
   protected:
     pthread_mutex_t _mutex [1] ;
     pthread_cond_t  _cond  [1] ;

@@ -70,7 +70,7 @@ class SpaceDecorator: public AllStatic {
 // These subclasses abstract the differences in the types of spaces used
 // by each heap.
 
-class SpaceMangler: public CHeapObj {
+class SpaceMangler: public CHeapObj<mtGC> {
   friend class VMStructs;
 
   // High water mark for allocations.  Typically, the space above

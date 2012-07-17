@@ -47,6 +47,7 @@
 #include "services/jmm.h"
 #include "services/lowMemoryDetector.hpp"
 #include "services/gcNotifier.hpp"
+#include "services/nmtDCmd.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
@@ -121,6 +122,7 @@ void Management::init() {
   // Registration of the diagnostic commands
   DCmdRegistrant::register_dcmds();
   DCmdRegistrant::register_dcmds_ext();
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(true, false));
 }
 
 void Management::initialize(TRAPS) {

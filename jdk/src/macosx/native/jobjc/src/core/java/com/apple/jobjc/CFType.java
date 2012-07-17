@@ -24,6 +24,10 @@
  */
 package com.apple.jobjc;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class CFType extends Pointer<Void> {
     protected CFType(long ptr) { super(ptr); }
     protected CFType(Pointer<?> ptr) { super(ptr.ptr); }
