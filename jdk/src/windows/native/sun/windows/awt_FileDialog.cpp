@@ -156,6 +156,7 @@ FileDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
             HIMC hIMC = ::ImmGetContext(hdlg);
             if (hIMC != NULL) {
                 ::ImmNotifyIME(hIMC, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+                ::ImmReleaseContext(hdlg, hIMC);
             }
 
             WNDPROC lpfnWndProc = (WNDPROC)(::GetProp(parent, NativeDialogWndProcProp));
