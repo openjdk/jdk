@@ -292,7 +292,7 @@ void HeapRegionLinkedList::add_as_head(HeapRegionLinkedList* from_list) {
     assert(length() >  0 && _tail != NULL, hrs_ext_msg(this, "invariant"));
     from_list->_tail->set_next(_head);
   } else {
-    assert(length() == 0 && _head == NULL, hrs_ext_msg(this, "invariant"));
+    assert(length() == 0 && _tail == NULL, hrs_ext_msg(this, "invariant"));
     _tail = from_list->_tail;
   }
   _head = from_list->_head;
