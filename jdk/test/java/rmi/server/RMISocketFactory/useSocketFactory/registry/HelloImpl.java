@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,9 @@ public class HelloImpl
             if (args.length >= 1)
                 protocol = args[0];
 
+            int registryPort = Integer.parseInt(System.getProperty("rmi.registry.port"));
             registry = java.rmi.registry.LocateRegistry.
-                getRegistry("localhost", TestLibrary.REGISTRY_PORT,
+                getRegistry("localhost", registryPort,
                             new Compress.CompressRMIClientSocketFactory());
             UseCustomSocketFactory.checkStub(registry, "RMIClientSocket");
             hello = (Hello) registry.lookup("/HelloServer");

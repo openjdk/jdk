@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ class LinuxWatchService
                 return x.asIOException(dir);
             }
             if (!attrs.isDirectory()) {
-                return new NotDirectoryException(dir.getPathForExecptionMessage());
+                return new NotDirectoryException(dir.getPathForExceptionMessage());
             }
 
             // register with inotify (replaces existing mask if already registered)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @bug 4290727
  * @summary Verify that ConnectException will trigger HTTP fallback if
  *          sun.rmi.transport.proxy.eagerHttpFallback system property is set.
+ * @library ../../../../java/rmi/testlibrary
+ * @build TestLibrary
  * @run main/othervm EagerHttpFallback
  */
 
@@ -33,8 +35,8 @@ import java.rmi.registry.*;
 
 public class EagerHttpFallback {
 
-    static final int INITIAL_PORT = 7070;
-    static final int FALLBACK_PORT = 7071;
+    static final int INITIAL_PORT = TestLibrary.getUnusedRandomPort();
+    static final int FALLBACK_PORT = TestLibrary.getUnusedRandomPort();
 
     public static void main(String[] args) throws Exception {
         System.setProperty("http.proxyHost", "127.0.0.1");
