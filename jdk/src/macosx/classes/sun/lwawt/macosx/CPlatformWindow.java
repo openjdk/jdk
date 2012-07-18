@@ -209,6 +209,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private boolean undecorated; // initialized in getInitialStyleBits()
     private Rectangle normalBounds = null; // not-null only for undecorated maximized windows
     private CPlatformResponder responder;
+    private volatile boolean zoomed = false; // from native perspective
 
     public CPlatformWindow(final PeerType peerType) {
         super(0, true);
@@ -298,7 +299,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         // If the target is a dialog, popup or tooltip we want it to ignore the brushed metal look.
         if (isPopup) {
-            styleBits = SET(styleBits, TEXTURED, true);
+            styleBits = SET(styleBits, TEXTURED, false);
             // Popups in applets don't activate applet's process
             styleBits = SET(styleBits, NONACTIVATING, true);
         }
@@ -371,6 +372,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 styleBits = SET(styleBits, DRAGGABLE_BACKGROUND, Boolean.parseBoolean(prop.toString()));
             }
         }
+
+        peer.setTextured(IS(TEXTURED, styleBits));
 
         return styleBits;
     }
@@ -467,26 +470,42 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         nativeSetNSWindowBounds(getNSWindowPtr(), x, y, w, h);
     }
 
-    private void zoom() {
+    private boolean isMaximized() {
+        return undecorated ? this.normalBounds != null : zoomed;
+    }
+
+    private void maximize() {
+        if (isMaximized()) {
+            return;
+        }
         if (!undecorated) {
+            zoomed = true;
             CWrapper.NSWindow.zoom(getNSWindowPtr());
         } else {
-            // OS X handles -zoom incorrectly for undecorated windows
-            final boolean isZoomed = this.normalBounds == null;
-            deliverZoom(isZoomed);
+            deliverZoom(true);
 
-            Rectangle toBounds;
-            if (isZoomed) {
-                this.normalBounds = peer.getBounds();
-                long screen = CWrapper.NSWindow.screen(getNSWindowPtr());
-                toBounds = CWrapper.NSScreen.visibleFrame(screen).getBounds();
-                // Flip the y coordinate
-                Rectangle frame = CWrapper.NSScreen.frame(screen).getBounds();
-                toBounds.y = frame.height - toBounds.y - toBounds.height;
-            } else {
-                toBounds = normalBounds;
-                this.normalBounds = null;
-            }
+            this.normalBounds = peer.getBounds();
+            long screen = CWrapper.NSWindow.screen(getNSWindowPtr());
+            Rectangle toBounds = CWrapper.NSScreen.visibleFrame(screen).getBounds();
+            // Flip the y coordinate
+            Rectangle frame = CWrapper.NSScreen.frame(screen).getBounds();
+            toBounds.y = frame.height - toBounds.y - toBounds.height;
+            setBounds(toBounds.x, toBounds.y, toBounds.width, toBounds.height);
+        }
+    }
+
+    private void unmaximize() {
+        if (!isMaximized()) {
+            return;
+        }
+        if (!undecorated) {
+            zoomed = false;
+            CWrapper.NSWindow.zoom(getNSWindowPtr());
+        } else {
+            deliverZoom(false);
+
+            Rectangle toBounds = this.normalBounds;
+            this.normalBounds = null;
             setBounds(toBounds.x, toBounds.y, toBounds.width, toBounds.height);
         }
     }
@@ -499,9 +518,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public void setVisible(boolean visible) {
         final long nsWindowPtr = getNSWindowPtr();
 
-        // 1. Process parent-child relationship when hiding
+        // Process parent-child relationship when hiding
         if (!visible) {
-            // 1a. Unparent my children
+            // Unparent my children
             for (Window w : target.getOwnedWindows()) {
                 WindowPeer p = (WindowPeer)w.getPeer();
                 if (p instanceof LWWindowPeer) {
@@ -512,30 +531,17 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 }
             }
 
-            // 1b. Unparent myself
+            // Unparent myself
             if (owner != null && owner.isVisible()) {
                 CWrapper.NSWindow.removeChildWindow(owner.getNSWindowPtr(), nsWindowPtr);
             }
         }
 
-        // 2. Configure stuff
+        // Configure stuff
         updateIconImages();
         updateFocusabilityForAutoRequestFocus(false);
 
-        // 3. Manage the extended state when hiding
-        if (!visible) {
-            // Cancel out the current native state of the window
-            switch (peer.getState()) {
-                case Frame.ICONIFIED:
-                    CWrapper.NSWindow.deminiaturize(nsWindowPtr);
-                    break;
-                case Frame.MAXIMIZED_BOTH:
-                    zoom();
-                    break;
-            }
-        }
-
-        // 4. Actually show or hide the window
+        // Actually show or hide the window
         LWWindowPeer blocker = peer.getBlocker();
         if (blocker == null || !visible) {
             // If it ain't blocked, or is being hidden, go regular way
@@ -564,16 +570,19 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
         this.visible = visible;
 
-        // 5. Manage the extended state when showing
+        // Manage the extended state when showing
         if (visible) {
-            // Re-apply the extended state as expected in shared code
+            // Apply the extended state as expected in shared code
             if (target instanceof Frame) {
                 switch (((Frame)target).getExtendedState()) {
                     case Frame.ICONIFIED:
                         CWrapper.NSWindow.miniaturize(nsWindowPtr);
                         break;
                     case Frame.MAXIMIZED_BOTH:
-                        zoom();
+                        maximize();
+                        break;
+                    default: // NORMAL
+                        unmaximize(); // in case it was maximized, otherwise this is a no-op
                         break;
                 }
             }
@@ -581,12 +590,12 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         nativeSynthesizeMouseEnteredExitedEvents(nsWindowPtr);
 
-        // 6. Configure stuff #2
+        // Configure stuff #2
         updateFocusabilityForAutoRequestFocus(true);
 
-        // 7. Manage parent-child relationship when showing
+        // Manage parent-child relationship when showing
         if (visible) {
-            // 7a. Add myself as a child
+            // Add myself as a child
             if (owner != null && owner.isVisible()) {
                 CWrapper.NSWindow.addChildWindow(owner.getNSWindowPtr(), nsWindowPtr, CWrapper.NSWindow.NSWindowAbove);
                 if (target.isAlwaysOnTop()) {
@@ -594,7 +603,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 }
             }
 
-            // 7b. Add my own children to myself
+            // Add my own children to myself
             for (Window w : target.getOwnedWindows()) {
                 WindowPeer p = (WindowPeer)w.getPeer();
                 if (p instanceof LWWindowPeer) {
@@ -609,7 +618,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         }
 
-        // 8. Deal with the blocker of the window being shown
+        // Deal with the blocker of the window being shown
         if (blocker != null && visible) {
             // Make sure the blocker is above its siblings
             ((CPlatformWindow)blocker.getPlatformWindow()).orderAboveSiblings();
@@ -733,10 +742,19 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     @Override
     public void setOpaque(boolean isOpaque) {
         CWrapper.NSWindow.setOpaque(getNSWindowPtr(), isOpaque);
-        if (!isOpaque) {
+        if (!isOpaque && !peer.isTextured()) {
             long clearColor = CWrapper.NSColor.clearColor();
             CWrapper.NSWindow.setBackgroundColor(getNSWindowPtr(), clearColor);
         }
+
+        //This is a temporary workaround. Looks like after 7124236 will be fixed
+        //the correct place for invalidateShadow() is CGLayer.drawInCGLContext.
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                invalidateShadow();
+            }
+        });
     }
 
     @Override
@@ -767,7 +785,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 if (prevWindowState == Frame.MAXIMIZED_BOTH) {
                     // let's return into the normal states first
                     // the zoom call toggles between the normal and the max states
-                    zoom();
+                    unmaximize();
                 }
                 CWrapper.NSWindow.miniaturize(nsWindowPtr);
                 break;
@@ -776,14 +794,14 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     // let's return into the normal states first
                     CWrapper.NSWindow.deminiaturize(nsWindowPtr);
                 }
-                zoom();
+                maximize();
                 break;
             case Frame.NORMAL:
                 if (prevWindowState == Frame.ICONIFIED) {
                     CWrapper.NSWindow.deminiaturize(nsWindowPtr);
                 } else if (prevWindowState == Frame.MAXIMIZED_BOTH) {
                     // the zoom call toggles between the normal and the max states
-                    zoom();
+                    unmaximize();
                 }
                 break;
             default:
@@ -803,6 +821,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
 
         nativeSetEnabled(getNSWindowPtr(), !blocked);
+    }
+
+    public final void invalidateShadow(){
+        nativeRevalidateNSWindowShadow(getNSWindowPtr());
     }
 
     // ----------------------------------------------------------------------
