@@ -30,8 +30,7 @@
  * @run main ContextWithNullProperties
  */
 
-import com.sun.jndi.rmi.registry.RegistryContextsun.jndi.rmi.RegistryContext;
-import java.rmi.RemoteException;
+import com.sun.jndi.rmi.registry.RegistryContext;
 import java.rmi.registry.Registry;
 
 public class ContextWithNullProperties {

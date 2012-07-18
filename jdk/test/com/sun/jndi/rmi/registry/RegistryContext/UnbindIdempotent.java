@@ -32,6 +32,7 @@
  */
 
 import java.rmi.registry.Registry;
+import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
