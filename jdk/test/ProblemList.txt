@@ -271,9 +271,6 @@ java/rmi/registry/readTest/readTest.sh				windows-all
 
 # jdk_security
 
-# 7177556
-com/sun/crypto/provider/KeyFactory/TestProviderLeak.java        generic-all
-
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
 
