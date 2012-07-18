@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,22 +49,21 @@ import java.rmi.registry.*;
 import java.rmi.server.*;
 
 public class Reexport {
-    static public final int regport = TestLibrary.REGISTRY_PORT;
-
     static public void main(String[] argv) {
 
         Registry reg = null;
+        int regPort = TestLibrary.getUnusedRandomPort();
 
         try {
             System.err.println("\nregression test for 4120329\n");
 
             // establish the registry (we hope)
-            System.err.println("Starting registry on port " + regport);
-            Reexport.makeRegistry(regport);
+            System.err.println("Starting registry on port " + regPort);
+            Reexport.makeRegistry(regPort);
 
             // Get a handle to the registry
             System.err.println("Creating duplicate registry, this should fail...");
-            reg = createReg(true);
+            reg = createReg(true, regPort);
 
             if (reg != null) {
                 TestLibrary.bomb("failed was able to duplicate the registry?!?");
@@ -73,7 +72,7 @@ public class Reexport {
             // Kill the first registry.
             System.err.println("Bringing down the first registry");
             try {
-                Reexport.killRegistry();
+                Reexport.killRegistry(regPort);
             } catch (Exception foo) {
             }
 
@@ -81,7 +80,7 @@ public class Reexport {
             System.err.println("Trying again to start our own " +
                                "registry... this should work");
 
-            reg = createReg(false);
+            reg = createReg(false, regPort);
 
             if (reg == null) {
                 TestLibrary.bomb("Could not create registry on second try");
@@ -93,17 +92,17 @@ public class Reexport {
             TestLibrary.bomb(e);
         } finally {
             // dont leave the registry around to affect other tests.
-            killRegistry();
+            killRegistry(regPort);
 
             reg = null;
         }
     }
 
-    static Registry createReg(boolean remoteOk) {
+    static Registry createReg(boolean remoteOk, int port) {
         Registry reg = null;
 
         try {
-            reg = LocateRegistry.createRegistry(regport);
+            reg = LocateRegistry.createRegistry(port);
         } catch (Throwable e) {
             if (remoteOk) {
                 System.err.println("EXPECTING PORT IN USE EXCEPTION:");
@@ -140,10 +139,10 @@ public class Reexport {
     }
     private static Process subreg = null;
 
-    public static void killRegistry() {
+    public static void killRegistry(int port) {
         if (Reexport.subreg != null) {
 
-            RegistryRunner.requestExit();
+            RegistryRunner.requestExit(port);
 
             try {
                 Reexport.subreg.waitFor();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,8 +128,9 @@ public class EchoImpl
             ActivationGroup.createGroup(groupID, groupDesc, 0);
 
             EchoImpl impl = new EchoImpl(protocol);
-            System.out.println("EchoServer: binding in registry");
-            Naming.rebind("//:" + UseCustomSocketFactory.REGISTRY_PORT +
+            int registryPort = Integer.parseInt(System.getProperty("rmi.registry.port"));
+            System.out.println("EchoServer: binding in registry on port:" + registryPort);
+            Naming.rebind("//:" + registryPort +
                           "/EchoServer", impl);
             System.out.println("EchoServer ready.");
         } catch (Exception e) {

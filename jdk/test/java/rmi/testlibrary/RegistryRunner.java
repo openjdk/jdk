@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,12 +56,13 @@ public class RegistryRunner extends UnicastRemoteObject
      * Request that the registry process exit and handle
      * related exceptions.
      */
-    public static void requestExit() {
+    public static void requestExit(int port) {
+
         try {
             RemoteExiter exiter =
                 (RemoteExiter)
                 Naming.lookup("rmi://localhost:" +
-                              TestLibrary.REGISTRY_PORT +
+                              port +
                               "/RemoteExiter");
             try {
                 exiter.exit();
@@ -84,7 +85,7 @@ public class RegistryRunner extends UnicastRemoteObject
                 System.err.println("Usage: <port>");
                 System.exit(0);
             }
-            int port = TestLibrary.REGISTRY_PORT;
+            int port = -1;
             try {
                 port = Integer.parseInt(args[0]);
             } catch (NumberFormatException nfe) {

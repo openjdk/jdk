@@ -641,7 +641,7 @@ Java_java_util_prefs_MacOSXPreferencesFile_removeNode
 
 
 // child must end with '/'
-JNIEXPORT void JNICALL
+JNIEXPORT Boolean JNICALL
 Java_java_util_prefs_MacOSXPreferencesFile_addChildToNode
 (JNIEnv *env, jobject klass, jobject jpath, jobject jchild,
  jobject jname, jlong juser, jlong jhost)
@@ -656,6 +656,7 @@ Java_java_util_prefs_MacOSXPreferencesFile_addChildToNode
     CFDictionaryRef node;
     CFStringRef topKey;
     CFMutableDictionaryRef topValue;
+    Boolean beforeAdd = false;
 
     if (!path  ||  !child  ||  !name) goto badparams;
 
@@ -665,9 +666,12 @@ Java_java_util_prefs_MacOSXPreferencesFile_addChildToNode
     // copyMutableNode creates the node if necessary
     parent = copyMutableNode(path, name, user, host, &topKey, &topValue);
     throwIfNull(parent, "copyMutableNode failed");
-
+    beforeAdd = CFDictionaryContainsKey(parent, child);
     CFDictionaryAddValue(parent, child, node);
-
+    if (!beforeAdd)
+        beforeAdd = CFDictionaryContainsKey(parent, child);
+    else
+        beforeAdd = false;
     CFPreferencesSetValue(topKey, topValue, name, user, host);
 
     CFRelease(parent);
@@ -680,6 +684,7 @@ Java_java_util_prefs_MacOSXPreferencesFile_addChildToNode
     if (path) CFRelease(path);
     if (child) CFRelease(child);
     if (name) CFRelease(name);
+    return beforeAdd;
 }
 
 
