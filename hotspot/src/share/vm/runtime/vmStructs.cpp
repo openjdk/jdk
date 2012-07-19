@@ -308,7 +308,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(instanceKlass,               _protection_domain,                            oop)                                   \
   nonstatic_field(instanceKlass,               _signers,                                      objArrayOop)                           \
   nonstatic_field(instanceKlass,               _source_file_name,                             Symbol*)                               \
-  nonstatic_field(instanceKlass,               _source_debug_extension,                       Symbol*)                               \
+  nonstatic_field(instanceKlass,               _source_debug_extension,                       char*)                                 \
   nonstatic_field(instanceKlass,               _inner_classes,                                typeArrayOop)                          \
   nonstatic_field(instanceKlass,               _nonstatic_field_size,                         int)                                   \
   nonstatic_field(instanceKlass,               _static_field_size,                            int)                                   \

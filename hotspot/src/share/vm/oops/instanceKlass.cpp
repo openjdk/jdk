@@ -847,7 +847,6 @@ void instanceKlass::shared_symbols_iterate(SymbolClosure* closure) {
   Klass::shared_symbols_iterate(closure);
   closure->do_symbol(&_generic_signature);
   closure->do_symbol(&_source_file_name);
-  closure->do_symbol(&_source_debug_extension);
 
   for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
     int name_index = fs.name_index();
@@ -1944,9 +1943,10 @@ void instanceKlass::release_C_heap_structures() {
   // class can't be referenced anymore).
   if (_array_name != NULL)  _array_name->decrement_refcount();
   if (_source_file_name != NULL) _source_file_name->decrement_refcount();
-  if (_source_debug_extension != NULL) _source_debug_extension->decrement_refcount();
   // walk constant pool and decrement symbol reference counts
   _constants->unreference_symbols();
+
+  if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension, mtClass);
 }
 
 void instanceKlass::set_source_file_name(Symbol* n) {
@@ -1954,9 +1954,22 @@ void instanceKlass::set_source_file_name(Symbol* n) {
   if (_source_file_name != NULL) _source_file_name->increment_refcount();
 }
 
-void instanceKlass::set_source_debug_extension(Symbol* n) {
-  _source_debug_extension = n;
-  if (_source_debug_extension != NULL) _source_debug_extension->increment_refcount();
+void instanceKlass::set_source_debug_extension(char* array, int length) {
+  if (array == NULL) {
+    _source_debug_extension = NULL;
+  } else {
+    // Adding one to the attribute length in order to store a null terminator
+    // character could cause an overflow because the attribute length is
+    // already coded with an u4 in the classfile, but in practice, it's
+    // unlikely to happen.
+    assert((length+1) > length, "Overflow checking");
+    char* sde = NEW_C_HEAP_ARRAY(char, (length + 1), mtClass);
+    for (int i = 0; i < length; i++) {
+      sde[i] = array[i];
+    }
+    sde[length] = '\0';
+    _source_debug_extension = sde;
+  }
 }
 
 address instanceKlass::static_field_addr(int offset) {

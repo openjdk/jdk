@@ -226,7 +226,9 @@ class instanceKlass: public Klass {
   // Name of source file containing this klass, NULL if not specified.
   Symbol*         _source_file_name;
   // the source debug extension for this klass, NULL if not specified.
-  Symbol*         _source_debug_extension;
+  // Specified as UTF-8 string without terminating zero byte in the classfile,
+  // it is stored in the instanceklass as a NULL-terminated UTF-8 string
+  char*           _source_debug_extension;
   // Generic signature, or null if none.
   Symbol*         _generic_signature;
   // Array name derived from this class which needs unreferencing
@@ -542,8 +544,8 @@ class instanceKlass: public Klass {
   void set_major_version(u2 major_version) { _major_version = major_version; }
 
   // source debug extension
-  Symbol* source_debug_extension() const   { return _source_debug_extension; }
-  void set_source_debug_extension(Symbol* n);
+  char* source_debug_extension() const     { return _source_debug_extension; }
+  void set_source_debug_extension(char* array, int length);
 
   // symbol unloading support (refcount already added)
   Symbol* array_name()                     { return _array_name; }
