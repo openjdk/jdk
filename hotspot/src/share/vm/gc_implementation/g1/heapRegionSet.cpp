@@ -35,14 +35,6 @@ void HeapRegionSetBase::set_unrealistically_long_length(uint len) {
   _unrealistically_long_length = len;
 }
 
-uint HeapRegionSetBase::calculate_region_num(HeapRegion* hr) {
-  assert(hr->startsHumongous(), "pre-condition");
-  assert(hr->capacity() % HeapRegion::GrainBytes == 0, "invariant");
-  uint region_num = (uint) (hr->capacity() >> HeapRegion::LogOfHRGrainBytes);
-  assert(region_num > 0, "sanity");
-  return region_num;
-}
-
 void HeapRegionSetBase::fill_in_ext_msg(hrs_ext_msg* msg, const char* message) {
   msg->append("[%s] %s ln: %u rn: %u cy: "SIZE_FORMAT" ud: "SIZE_FORMAT,
               name(), message, length(), region_num(),
@@ -152,11 +144,7 @@ void HeapRegionSetBase::verify_next_region(HeapRegion* hr) {
   guarantee(verify_region(hr, this), hrs_ext_msg(this, "region verification"));
 
   _calc_length               += 1;
-  if (!hr->isHumongous()) {
-    _calc_region_num         += 1;
-  } else {
-    _calc_region_num         += calculate_region_num(hr);
-  }
+  _calc_region_num           += hr->region_num();
   _calc_total_capacity_bytes += hr->capacity();
   _calc_total_used_bytes     += hr->used();
 }

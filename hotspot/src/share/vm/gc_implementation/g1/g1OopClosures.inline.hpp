@@ -36,24 +36,14 @@
  * compiler sometimes sees fit to ignore inline declarations.  Sigh.
  */
 
-// This must a ifdef'ed because the counting it controls is in a
-// perf-critical inner loop.
-#define FILTERINTOCSCLOSURE_DOHISTOGRAMCOUNT 0
-
 template <class T>
 inline void FilterIntoCSClosure::do_oop_nv(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop) &&
       _g1->obj_in_cs(oopDesc::decode_heap_oop_not_null(heap_oop))) {
     _oc->do_oop(p);
-#if FILTERINTOCSCLOSURE_DOHISTOGRAMCOUNT
-    if (_dcto_cl != NULL)
-      _dcto_cl->incr_count();
-#endif
   }
 }
-
-#define FILTEROUTOFREGIONCLOSURE_DOHISTOGRAMCOUNT 0
 
 template <class T>
 inline void FilterOutOfRegionClosure::do_oop_nv(T* p) {
@@ -62,9 +52,6 @@ inline void FilterOutOfRegionClosure::do_oop_nv(T* p) {
     HeapWord* obj_hw = (HeapWord*)oopDesc::decode_heap_oop_not_null(heap_oop);
     if (obj_hw < _r_bottom || obj_hw >= _r_end) {
       _oc->do_oop(p);
-#if FILTEROUTOFREGIONCLOSURE_DOHISTOGRAMCOUNT
-      _out_of_region++;
-#endif
     }
   }
 }
