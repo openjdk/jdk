@@ -326,7 +326,7 @@ class MemTracker : AllStatic {
   static void create_memory_record(address addr, MEMFLAGS type,
                    size_t size, address pc, Thread* thread);
   static void create_record_in_recorder(address addr, MEMFLAGS type,
-                   size_t size, address pc, Thread* thread);
+                   size_t size, address pc, JavaThread* thread);
 
  private:
   // global memory snapshot
