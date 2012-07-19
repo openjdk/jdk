@@ -562,7 +562,7 @@ void VM_Version::get_processor_features() {
         AllocatePrefetchInstr = 3;
       }
       // On family 15h processors use XMM and UnalignedLoadStores for Array Copy
-      if( FLAG_IS_DEFAULT(UseXMMForArrayCopy) ) {
+      if( supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy) ) {
         UseXMMForArrayCopy = true;
       }
       if( FLAG_IS_DEFAULT(UseUnalignedLoadStores) && UseXMMForArrayCopy ) {
