@@ -170,12 +170,12 @@ public abstract class GraphicsEnvironment {
                         if (System.getProperty("javaplugin.version") != null) {
                             headless = defaultHeadless = Boolean.FALSE;
                         } else {
-                            if ("sun.awt.HeadlessGraphicsEnvironment".equals(
-                                    System.getProperty("java.awt.graphicsenv")))
+                            String osName = System.getProperty("os.name");
+                            if (osName.contains("OS X") && "sun.awt.HToolkit".equals(
+                                    System.getProperty("awt.toolkit")))
                             {
                                 headless = defaultHeadless = Boolean.TRUE;
                             } else {
-                                String osName = System.getProperty("os.name");
                                 headless = defaultHeadless =
                                     Boolean.valueOf(("Linux".equals(osName) ||
                                                      "SunOS".equals(osName) ||
