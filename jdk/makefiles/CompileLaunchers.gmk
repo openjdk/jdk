@@ -32,17 +32,25 @@ include NativeCompilation.gmk
 # Setup the java compilers for the JDK build.
 include Setup.gmk
 
+# Build tools
+include Tools.gmk
+
 BUILD_LAUNCHERS=
 
 define SetupLauncher
     # TODO: Fix mapfile on solaris. Won't work with ld as linker.
     # Parameter 1 is the name of the launcher (java,javac,jar...)
-    # Parameter 2 are extra CFLAGS
-    # Parameter 3 are extra LDFLAGS
-    # Parameter 4 are extra LDFLAGS_SUFFIX_posix
-    # Parameter 5 are extra LDFLAGS_SUFFIX_winapi
+    # Parameter 2 is extra CFLAGS
+    # Parameter 3 is extra LDFLAGS
+    # Parameter 4 is extra LDFLAGS_SUFFIX_posix
+    # Parameter 5 is extra LDFLAGS_SUFFIX_winapi
+    # Parameter 6 is optional Windows JLI library (full path)
+    # Parameter 7 is optional Windows resource (RC) flags
+    # Parameter 8 is optional Windows version resource file (.rc)
+    # Parameter 9  is different output dir
+    # Parameter 10 is FULL DEBUG SYMBOLS (set value to turn OFF, since most(all) seems to have it)
 
-    $1_WINDOWS_JLI_LIB:=$(JDK_OUTPUTDIR)/objs/jli.lib
+    $1_WINDOWS_JLI_LIB:=$(JDK_OUTPUTDIR)/objs/libjli/jli.lib
     ifneq ($6,)
         $1_WINDOWS_JLI_LIB:=$6
     endif
@@ -51,33 +59,73 @@ define SetupLauncher
         $1_VERSION_INFO_RESOURCE:=$8
     endif
 
+    $1_LDFLAGS := $3
+    ifeq ($(OPENJDK_TARGET_OS), macosx)
+        $1_LDFLAGS += -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+                       -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks
+    endif
+
+    $1_LDFLAGS_SUFFIX :=
+    ifeq ($(USE_EXTERNAL_LIBZ), true)
+        $1_LDFLAGS_SUFFIX += -lz
+    endif
+
+    ifeq ($(OPENJDK_TARGET_OS), macosx)
+        $1_LDFLAGS_SUFFIX += -Wl,-all_load $(JDK_OUTPUTDIR)/objs/libjli_static.a \
+                             -framework Cocoa -framework Security -framework ApplicationServices \
+                             -sectcreate __TEXT __info_plist $(JDK_TOPDIR)/src/macosx/lib/Info-cmdline.plist
+    endif
+
+
+    $1_OUTPUT_DIR_ARG:=$9
+    ifeq (,$$($1_OUTPUT_DIR_ARG))
+        $1_OUTPUT_DIR_ARG:=$(JDK_OUTPUTDIR)/bin
+    endif
+
+    $1_DEBUG_SYMBOLS:=yes
+    ifneq (,$(10))
+      $1_DEBUG_SYMBOLS:=
+    endif
+
+    $1_OPTIMIZATION:= LOW
+
+    # TODO: maybe it's better to move this if-statement out of this function
+    ifeq ($(1),java)
+      $1_OPTIMIZATION:=HIGH
+    endif
+
     $(call SetupNativeCompilation,BUILD_LAUNCHER_$1,\
 	SRC:=$(JDK_TOPDIR)/src/share/bin,\
 	INCLUDE_FILES:=main.c,\
 	LANG:=C,\
-	CFLAGS:=$(CFLAGS_JDKEXE) $(C_O_FLAG_NORM) \
+	OPTIMIZATION :=$$($1_OPTIMIZATION), \
+	CFLAGS:=$(CFLAGS_JDKEXE) \
 		-I$(JDK_TOPDIR)/src/share/bin \
-		-I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/bin \
-		-I$(JDK_TOPDIR)/src/$(PLATFORM)/bin \
+		-I$(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/bin \
+		-I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS)/bin \
                 -DFULL_VERSION='"$(FULL_VERSION)"' \
                 -DJDK_MAJOR_VERSION='"$(JDK_MAJOR_VERSION)"' \
                 -DJDK_MINOR_VERSION='"$(JDK_MINOR_VERSION)"' \
 		-DLIBARCHNAME='"$(ARCH)"' \
-		-DLAUNCHER_NAME='"openjdk"' \
+		-DLAUNCHER_NAME='"java"' \
 		-DPROGNAME='"$1"' $(DPACKAGEPATH) \
 		$2,\
 	CFLAGS_linux:=-fPIC,\
+        CFLAGS_solaris:=-KPIC -DHAVE_GETHRTIME,\
 	LDFLAGS:=$(LDFLAGS_JDKEXE) \
                  $(call SET_SHARED_LIBRARY_ORIGIN,../lib/$(LIBARCH)/jli) \
                  $(call SET_SHARED_LIBRARY_ORIGIN,../jre/lib/$(LIBARCH)/jli) \
-		 $3,\
+		 $$($1_LDFLAGS),\
 	MAPFILE := $(JDK_TOPDIR)/makefiles/mapfiles/launchers/mapfile-$(ARCH), \
-        LDFLAGS_SUFFIX:=$(LDFLAGS_JDKEXE_SUFFIX),\
+        LDFLAGS_SUFFIX:=$(LDFLAGS_JDKEXE_SUFFIX) $$($1_LDFLAGS_SUFFIX),\
 	LDFLAGS_SUFFIX_posix:=$4 -lc,\
 	LDFLAGS_SUFFIX_winapi:=$$($1_WINDOWS_JLI_LIB) \
-			       $(JDK_OUTPUTDIR)/objs/java.lib advapi32.lib $5,\
-	BIN:=$(JDK_OUTPUTDIR)/objs/$1_objs,\
-	EXE:=$(JDK_OUTPUTDIR)/objs/$1$(EXE_SUFFIX),\
+			       $(JDK_OUTPUTDIR)/objs/libjava/java.lib advapi32.lib $5,\
+	LDFLAGS_SUFFIX_solaris := -lthread $(LIBDL), \
+	OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/$1_objs,\
+	OUTPUT_DIR:=$$($1_OUTPUT_DIR_ARG),\
+	PROGRAM:=$1,\
+	DEBUG_SYMBOLS:=$$($1_DEBUG_SYMBOLS),\
 	VERSIONINFO_RESOURCE:=$$($1_VERSION_INFO_RESOURCE),\
 	RC_FLAGS:=$(RC_FLAGS)\
 		  /D "JDK_FNAME=$1$(EXE_SUFFIX)" \
@@ -86,13 +134,22 @@ define SetupLauncher
 		  $7,\
 	MANIFEST:=$(JDK_TOPDIR)/src/windows/resource/java.manifest)
 
-    BUILD_LAUNCHERS += $(JDK_OUTPUTDIR)/bin/$1$(EXE_SUFFIX)
+    BUILD_LAUNCHERS += $$(BUILD_LAUNCHER_$1)
+
+    ifeq ($(OPENJDK_TARGET_OS),macosx)
+        $$(BUILD_LAUNCHER_$1) : $(JDK_OUTPUTDIR)/objs/libjli_static.a
+    endif
+
+    ifeq ($(OPENJDK_TARGET_OS),windows)
+        $$(BUILD_LAUNCHER_$1) : $(JDK_OUTPUTDIR)/objs/libjava/java.lib \
+				$$($1_WINDOWS_JLI_LIB)
+    endif    	 
 endef
 
 ##########################################################################################
 
-XLIBS:=-lX11
-ifeq ($(PLATFORM),macosx)
+XLIBS:=$(X_LIBS) -lX11
+ifeq ($(OPENJDK_TARGET_OS),macosx)
     DPACKAGEPATH:=-DPACKAGE_PATH='"$(PACKAGE_PATH)"'
     XLIBS:=
 endif
@@ -108,17 +165,17 @@ $(eval $(call SetupLauncher,java,\
     $(JDK_OUTPUTDIR)/objs/jli_static.lib,$(JAVA_RC_FLAGS),\
     $(JDK_TOPDIR)/src/windows/resource/java.rc))
 
-ifeq ($(HOST_OS),windows)
+ifeq ($(OPENJDK_TARGET_OS),windows)
     $(eval $(call SetupLauncher,javaw,\
         -DEXPAND_CLASSPATH_WILDCARDS,,,user32.lib comctl32.lib,\
         $(JDK_OUTPUTDIR)/objs/jli_static.lib,$(JAVA_RC_FLAGS),\
         $(JDK_TOPDIR)/src/windows/resource/java.rc))
 endif
 
-ifeq ($(PLATFORM),solaris)
+ifeq ($(OPENJDK_TARGET_OS),solaris)
     THREAD_LIB:=-lthread
 endif
-ifeq ($(PLATFORM),linux)
+ifeq ($(OPENJDK_TARGET_OS),linux)
     THREAD_LIB:=-lpthread
 endif
 
@@ -271,7 +328,7 @@ $(eval $(call SetupLauncher,rmiregistry,\
 $(eval $(call SetupLauncher,jcmd,\
     -DJAVA_ARGS='{	"-J-ms8m"$(COMMA) "sun.tools.jcmd.JCmd"$(COMMA) }'))
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(OPENJDK_TARGET_OS),windows)
     $(eval $(call SetupLauncher,kinit,\
         -DJAVA_ARGS='{	"-J-ms8m"$(COMMA) "sun.security.krb5.internal.tools.Kinit"$(COMMA) }'))
 
@@ -286,8 +343,10 @@ endif
 # The order of the object files on the link command line affects the size of the resulting
 # binary (at least on linux) which causes the size to differ between old and new build.
 ifeq ($(USE_EXTERNAL_LIBZ), true)
+UNPACKEXE_CFLAGS := -DSYSTEM_ZLIB
 UNPACKEXE_ZIPOBJS := -lz
 else
+UNPACKEXE_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.5
 UNPACKEXE_ZIPOBJS := 	$(JDK_OUTPUTDIR)/objs/libzip/zcrc32$(OBJ_SUFFIX) \
 		     	$(JDK_OUTPUTDIR)/objs/libzip/deflate$(OBJ_SUFFIX) \
 			$(JDK_OUTPUTDIR)/objs/libzip/trees$(OBJ_SUFFIX) \
@@ -299,27 +358,31 @@ UNPACKEXE_ZIPOBJS := 	$(JDK_OUTPUTDIR)/objs/libzip/zcrc32$(OBJ_SUFFIX) \
 			$(JDK_OUTPUTDIR)/objs/libzip/inftrees$(OBJ_SUFFIX) \
 			$(JDK_OUTPUTDIR)/objs/libzip/inffast$(OBJ_SUFFIX)
 
+endif
 
-$(JDK_OUTPUTDIR)/bin/unpack200$(EXE_SUFFIX): $(UNPACKEXE_ZIPOBJS)
-
+ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
+     UNPACKEXE_CFLAGS += -xregs=no%appl
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE,\
                 SRC:=$(JDK_TOPDIR)/src/share/native/com/sun/java/util/jar/pack,\
 		EXCLUDE_FILES:=jni.cpp,\
 		LANG:=C,\
-		CFLAGS:=$(CXXFLAGS_JDKEXE) $(CXX_O_FLAG_NORM) \
-			 -DFULL \
-			 -I$(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.5,\
+		OPTIMIZATION := LOW, \
+		CFLAGS:=$(UNPACKEXE_CFLAGS) $(CXXFLAGS_JDKEXE)\
+			 -DFULL, \
 		CFLAGS_release:=-DPRODUCT,\
 		CFLAGS_linux:=-fPIC,\
+		CFLAGS_solaris := -KPIC, \
+		CFLAGS_macosx := -fPIC, \
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libunpack/mapfile-vers-unpack200, \
 		LDFLAGS:=$(LDFLAGS_JDKEXE) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN), \
 		LDFLAGS_SUFFIX:=$(UNPACKEXE_ZIPOBJS) $(LIBCXX),\
 		LDFLAGS_SUFFIX_solaris:=-lc,\
-		BIN:=$(JDK_OUTPUTDIR)/objs/unpackexe,\
-		EXE:=$(JDK_OUTPUTDIR)/objs/unpack200$(EXE_SUFFIX),\
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/unpackexe,\
+		OUTPUT_DIR:=$(JDK_OUTPUTDIR)/bin,\
+		PROGRAM:=unpack200,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  /D "JDK_FNAME=unpack200.exe" \
@@ -327,7 +390,13 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE,\
 			  /D "JDK_FTYPE=0x1L",\
 		MANIFEST:=$(JDK_TOPDIR)/src/windows/resource/unpack200_proto.exe.manifest))
 
-BUILD_LAUNCHERS += $(JDK_OUTPUTDIR)/bin/unpack200$(EXE_SUFFIX)
+ifneq ($(USE_EXTERNAL_LIBZ), true)
+
+$(BUILD_UNPACKEXE) : $(UNPACKEXE_ZIPOBJS)
+
+endif
+
+BUILD_LAUNCHERS += $(BUILD_UNPACKEXE)
 
 ##########################################################################################
 
@@ -335,7 +404,7 @@ BUILD_LAUNCHERS += $(JDK_OUTPUTDIR)/bin/unpack200$(EXE_SUFFIX)
 BUILD_JEXEC := 
 BUILD_JEXEC_SRC :=
 BUILD_JEXEC_INC :=
-BUILD_JEXEC_DST := $(JDK_OUTPUTDIR)/lib/$(LIBARCH)/jexec$(EXE_SUFFIX)
+BUILD_JEXEC_DST_DIR := $(JDK_OUTPUTDIR)/lib/$(LIBARCH)
 
 #
 # UNHANDLED:
@@ -345,30 +414,30 @@ BUILD_JEXEC_DST := $(JDK_OUTPUTDIR)/lib/$(LIBARCH)/jexec$(EXE_SUFFIX)
 #
 # jdk/make/java/Makefile
 #
-ifeq ($(PLATFORM), solaris)
+ifeq ($(OPENJDK_TARGET_OS), solaris)
 	ifeq ($(ARCH_DATA_MODEL), 32)
 		BUILD_JEXEC := 1
 	endif
 endif
 
-ifeq ($(PLATFORM), linux)
+ifeq ($(OPENJDK_TARGET_OS), linux)
 	BUILD_JEXEC := 1
-endif # PLATFORM
+endif # OPENJDK_TARGET_OS
 
 #
 # jdk/make/java/jexec/Makefile
 #
 ifeq ($(BUILD_JEXEC), 1)
 
-	ifeq ($(PLATFORM),windows)
-	else ifeq ($(PLATFORM),macosx)
+	ifeq ($(OPENJDK_TARGET_OS),windows)
+	else ifeq ($(OPENJDK_TARGET_OS),macosx)
 		BUILD_JEXEC_SRC := $(JDK_TOPDIR)/src/macosx/bin
 	else
 		BUILD_JEXEC_SRC := $(JDK_TOPDIR)/src/solaris/bin
 	endif
 
-	ifeq ($(PLATFORM), linux)
-		BUILD_JEXEC_DST := $(JDK_OUTPUTDIR)/lib/jexec$(EXE_SUFFIX)
+	ifeq ($(OPENJDK_TARGET_OS), linux)
+                BUILD_JEXEC_DST_DIR := $(JDK_OUTPUTDIR)/lib
 		BUILD_JEXEC_INC += -I$(JDK_TOPDIR)/src/share/bin
 	endif
 endif
@@ -382,13 +451,15 @@ ifneq ($(BUILD_JEXEC_SRC),)
 		SRC:=$(BUILD_JEXEC_SRC),\
 		INCLUDE_FILES:=jexec.c,\
 		LANG:=C,\
-		CFLAGS:=$(CFLAGS_JDKEXE) $(C_O_FLAG_NORM) \
+		OPTIMIZATION := LOW, \
+		CFLAGS:=$(CFLAGS_JDKEXE)\
                         $(BUILD_JEXEC_INC), \
 		LDFLAGS:=$(LDFLAGS_JDKEXE), \
-		BIN:=$(JDK_OUTPUTDIR)/objs/jexec_obj,\
-		EXE:=$(BUILD_JEXEC_DST)))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/jexec_obj,\
+		OUTPUT_DIR:=$(BUILD_JEXEC_DST_DIR),\
+		PROGRAM:=jexec))
 
-	BUILD_LAUNCHERS += $(BUILD_JEXEC_DST)
+	BUILD_LAUNCHERS += $(BUILD_JEXEC)
 endif
 
 ##########################################################################################
@@ -397,10 +468,10 @@ endif
 # The java-rmi.cgi script in bin/ only gets delivered in certain situations
 #
 JAVA_RMI_CGI:=$(JDK_OUTPUTDIR)/bin/java-rmi.cgi
-ifeq ($(PLATFORM), linux)
+ifeq ($(OPENJDK_TARGET_OS), linux)
   BUILD_LAUNCHERS += $(JAVA_RMI_CGI)
 endif
-ifeq ($(PLATFORM), solaris)
+ifeq ($(OPENJDK_TARGET_OS), solaris)
   ifeq ($(ARCH_DATA_MODEL), 32)
     BUILD_LAUNCHERS += $(JAVA_RMI_CGI)
   endif
@@ -413,12 +484,13 @@ endif
 # images bin dir. This weird behavior is mimicked here in the converted makefiles for
 # now. Should probably just be deleted.
 # http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6512052
-ifeq ($(HOST_OS_API),winapi)
+ifeq ($(OPENJDK_TARGET_OS_API),winapi)
     $(eval $(call SetupLauncher,java-rmi,\
         -DEXPAND_CLASSPATH_WILDCARDS,\
-        $(call SET_SHARED_LIBRARY_MAPFILE,$(JDK_TOPDIR)/makefiles/java/main/java/mapfile-$(ARCH))))
+        $(call SET_SHARED_LIBRARY_MAPFILE,$(JDK_TOPDIR)/makefiles/java/main/java/mapfile-$(ARCH)),\
+        ,,,,,$(JDK_OUTPUTDIR)/objs))
 
-    $(JAVA_RMI_CGI): $(JDK_OUTPUTDIR)/objs/java-rmi$(EXE_SUFFIX)
+    $(JAVA_RMI_CGI): $(BUILD_LAUNCHER_java-rmi)
 	$(MKDIR) -p $(@D)
 	$(CP) $< $@
 
@@ -431,11 +503,6 @@ else
 endif
 
 ##########################################################################################
-
-$(JDK_OUTPUTDIR)/bin/% : $(JDK_OUTPUTDIR)/objs/%
-	$(ECHO) Copying $(@F)
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
 
 $(BUILD_LAUNCHERS) : $(JDK_TOPDIR)/makefiles/CompileLaunchers.gmk
 

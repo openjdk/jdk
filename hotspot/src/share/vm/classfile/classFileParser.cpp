@@ -2337,12 +2337,7 @@ void ClassFileParser::parse_classfile_source_debug_extension_attribute(constantP
 
   // Don't bother storing it if there is no way to retrieve it
   if (JvmtiExport::can_get_source_debug_extension()) {
-    // Optimistically assume that only 1 byte UTF format is used
-    // (common case)
-    TempNewSymbol sde_symbol = SymbolTable::new_symbol((const char*)sde_buffer, length, CHECK);
-    k->set_source_debug_extension(sde_symbol);
-    // Note that set_source_debug_extension() increments the reference count
-    // for its copy of the Symbol*, so use a TempNewSymbol here.
+    k->set_source_debug_extension((char*)sde_buffer, length);
   }
   // Got utf8 string, set stream position forward
   cfs->skip_u1(length, CHECK);

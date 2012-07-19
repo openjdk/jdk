@@ -2,10 +2,9 @@
 
 ##
 ## @test
-## @bug 7020373 7055247
+## @bug 7020373 7055247 7053586
 ## @key cte_test
 ## @summary JSR rewriting can overflow memory address size variables
-## @ignore Ignore it until 7053586 fixed
 ## @run shell Test7020373.sh
 ##
 
@@ -30,7 +29,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"
@@ -66,7 +65,7 @@ then
     echo "Test Failed"
     exit 1
 else
-    grep "java.lang.LinkageError" test.out
+    egrep "java.lang.LinkageError|java.lang.NoSuchMethodError|Main method not found in class OOMCrashClass4000_1|insufficient memory" test.out
     if [ $? = 0 ]
     then
         echo "Test Passed"

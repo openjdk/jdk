@@ -238,6 +238,16 @@ public:
   static const char* name() { return "No Name";}
   static const char* description() { return "No Help";}
   static const char* disabled_message() { return "Diagnostic command currently disabled"; }
+  // The impact() method returns a description of the intrusiveness of the diagnostic
+  // command on the Java Virtual Machine behavior. The rational for this method is that some
+  // diagnostic commands can seriously disrupt the behavior of the Java Virtual Machine
+  // (for instance a Thread Dump for an application with several tens of thousands of threads,
+  // or a Head Dump with a 40GB+ heap size) and other diagnostic commands have no serious
+  // impact on the JVM (for instance, getting the command line arguments or the JVM version).
+  // The recommended format for the description is <impact level>: [longer description],
+  // where the impact level is selected among this list: {Low, Medium, High}. The optional
+  // longer description can provide more specific details like the fact that Thread Dump
+  // impact depends on the heap size.
   static const char* impact() { return "Low: No impact"; }
   static int num_arguments() { return 0; }
   outputStream* output() { return _output; }
@@ -250,7 +260,7 @@ public:
     bool has_arg = iter.next(CHECK);
     if (has_arg) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                "Unknown argument in diagnostic command");
+                "The argument list of this diagnostic command should be empty.");
     }
   }
   virtual void execute(TRAPS) { }
