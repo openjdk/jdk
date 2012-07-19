@@ -249,9 +249,9 @@ class MemRecorder : public CHeapObj<mtNMT|otNMTRecorder> {
 
   SequencedRecordIterator pointer_itr();
 
- public:
+ protected:
   // number of MemRecorder instance
-  debug_only(static volatile jint _instance_count;)
+  static volatile jint _instance_count;
 
  private:
   // sorting function, sort records into following order
