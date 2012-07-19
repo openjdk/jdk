@@ -191,9 +191,6 @@ com/sun/net/httpserver/Test9a.java                              generic-all
 # 7079145 java/net/ipv6tests/UdpTest.java hang at IPv6 only data exchange
 java/net/ipv6tests/UdpTest.java                                 linux-all
 
-# 7081476
-java/net/InetSocketAddress/B6469803.java                        generic-all
-
 # 7102670
 java/net/InetAddress/CheckJNI.java                              linux-all
 
