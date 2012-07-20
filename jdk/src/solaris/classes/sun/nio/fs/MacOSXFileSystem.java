@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,36 +25,45 @@
 
 package sun.nio.fs;
 
+import java.nio.file.*;
+import java.io.IOException;
+import java.util.*;
+import java.util.regex.Pattern;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
+import sun.security.action.GetPropertyAction;
+
+import static sun.nio.fs.MacOSXNativeDispatcher.*;
 
 /**
- * Bsd specific system calls.
+ * MacOS implementation of FileSystem
  */
 
-class BsdNativeDispatcher extends UnixNativeDispatcher {
-    protected BsdNativeDispatcher() { }
+class MacOSXFileSystem extends BsdFileSystem {
 
-   /**
-    * struct fsstat_iter *getfsstat();
-    */
-    static native long getfsstat() throws UnixException;
-
-   /**
-    * int fsstatEntry(struct fsstat_iter * iter, UnixMountEntry entry);
-    */
-    static native int fsstatEntry(long iter, UnixMountEntry entry)
-        throws UnixException;
-
-   /**
-    * void endfsstat(struct fsstat_iter * iter);
-    */
-    static native void endfsstat(long iter) throws UnixException;
-
-    // initialize field IDs
-    private static native void initIDs();
-
-    static {
-         initIDs();
+    MacOSXFileSystem(UnixFileSystemProvider provider, String dir) {
+        super(provider, dir);
     }
+
+    // match in unicode canon_eq
+    Pattern compilePathMatchPattern(String expr) {
+        return Pattern.compile(expr, Pattern.CANON_EQ) ;
+    }
+
+    char[] normalizeNativePath(char[] path) {
+        for (char c : path) {
+            if (c > 0x80)
+                return normalizepath(path, kCFStringNormalizationFormD);
+        }
+        return path;
+    }
+
+    String normalizeJavaPath(String path) {
+        for (int i = 0; i < path.length(); i++) {
+            if (path.charAt(i) > 0x80)
+                return new String(normalizepath(path.toCharArray(),
+                                  kCFStringNormalizationFormC));
+        }
+        return path;
+    }
+
 }
