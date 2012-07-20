@@ -54,7 +54,7 @@ void SyncThreadRecorderClosure::do_thread(Thread* thread) {
 MemRecorder*                    MemTracker::_global_recorder = NULL;
 MemSnapshot*                    MemTracker::_snapshot = NULL;
 MemBaseline                     MemTracker::_baseline;
-Mutex                           MemTracker::_query_lock(Monitor::native, "NMT_queryLock");
+Mutex*                          MemTracker::_query_lock = NULL;
 volatile MemRecorder*           MemTracker::_merge_pending_queue = NULL;
 volatile MemRecorder*           MemTracker::_pooled_recorders = NULL;
 MemTrackWorker*                 MemTracker::_worker_thread = NULL;
@@ -86,6 +86,12 @@ void MemTracker::bootstrap_single_thread() {
     // runtime performance when this flag is on.
     if (UseMallocOnly) {
       shutdown(NMT_use_malloc_only);
+      return;
+    }
+
+    _query_lock = new (std::nothrow) Mutex(Monitor::max_nonleaf, "NMT_queryLock");
+    if (_query_lock == NULL) {
+      shutdown(NMT_out_of_memory);
       return;
     }
 
@@ -164,7 +170,7 @@ void MemTracker::final_shutdown() {
   {
     // shared baseline and snapshot are the only objects needed to
     // create query results
-    MutexLockerEx locker(&_query_lock, true);
+    MutexLockerEx locker(_query_lock, true);
     // cleanup baseline data and snapshot
     _baseline.clear();
     delete _snapshot;
@@ -351,21 +357,17 @@ void MemTracker::create_memory_record(address addr, MEMFLAGS flags,
     }
 
     if (thread != NULL) {
-#ifdef ASSERT
-      // cause assertion on stack base. This ensures that threads call
-      // Thread::record_stack_base_and_size() method, which will create
-      // thread native stack records.
-      thread->stack_base();
-#endif
-      // for a JavaThread, if it is running in native state, we need to transition it to
-      // VM state, so it can stop at safepoint. JavaThread running in VM state does not
-      // need lock to write records.
       if (thread->is_Java_thread() && ((JavaThread*)thread)->is_safepoint_visible()) {
-        if (((JavaThread*)thread)->thread_state() == _thread_in_native) {
-          ThreadInVMfromNative trans((JavaThread*)thread);
-          create_record_in_recorder(addr, flags, size, pc, thread);
+        JavaThread*      java_thread = static_cast<JavaThread*>(thread);
+        JavaThreadState  state = java_thread->thread_state();
+        if (SafepointSynchronize::safepoint_safe(java_thread, state)) {
+          // JavaThreads that are safepoint safe, can run through safepoint,
+          // so ThreadCritical is needed to ensure no threads at safepoint create
+          // new records while the records are being gathered and the sequence number is changing
+          ThreadCritical tc;
+          create_record_in_recorder(addr, flags, size, pc, java_thread);
         } else {
-          create_record_in_recorder(addr, flags, size, pc, thread);
+          create_record_in_recorder(addr, flags, size, pc, java_thread);
         }
       } else {
         // other threads, such as worker and watcher threads, etc. need to
@@ -390,10 +392,9 @@ void MemTracker::create_memory_record(address addr, MEMFLAGS flags,
 // write a record to proper recorder. No lock can be taken from this method
 // down.
 void MemTracker::create_record_in_recorder(address addr, MEMFLAGS flags,
-    size_t size, address pc, Thread* thread) {
-    assert(thread == NULL || thread->is_Java_thread(), "wrong thread");
+    size_t size, address pc, JavaThread* thread) {
 
-    MemRecorder* rc = get_thread_recorder((JavaThread*)thread);
+    MemRecorder* rc = get_thread_recorder(thread);
     if (rc != NULL) {
       rc->record(addr, flags, size, pc);
     }
@@ -460,17 +461,18 @@ void MemTracker::sync() {
       }
     }
     _sync_point_skip_count = 0;
-    // walk all JavaThreads to collect recorders
-    SyncThreadRecorderClosure stc;
-    Threads::threads_do(&stc);
-
-    _thread_count = stc.get_thread_count();
-    MemRecorder* pending_recorders = get_pending_recorders();
-
     {
       // This method is running at safepoint, with ThreadCritical lock,
       // it should guarantee that NMT is fully sync-ed.
       ThreadCritical tc;
+
+      // walk all JavaThreads to collect recorders
+      SyncThreadRecorderClosure stc;
+      Threads::threads_do(&stc);
+
+      _thread_count = stc.get_thread_count();
+      MemRecorder* pending_recorders = get_pending_recorders();
+
       if (_global_recorder != NULL) {
         _global_recorder->set_next(pending_recorders);
         pending_recorders = _global_recorder;
@@ -486,8 +488,6 @@ void MemTracker::sync() {
 
   // now, it is the time to shut whole things off
   if (_state == NMT_final_shutdown) {
-    _tracking_level = NMT_off;
-
     // walk all JavaThreads to delete all recorders
     SyncThreadRecorderClosure stc;
     Threads::threads_do(&stc);
@@ -499,8 +499,16 @@ void MemTracker::sync() {
         _global_recorder = NULL;
       }
     }
-
-    _state = NMT_shutdown;
+    MemRecorder* pending_recorders = get_pending_recorders();
+    if (pending_recorders != NULL) {
+      delete pending_recorders;
+    }
+    // try at a later sync point to ensure MemRecorder instance drops to zero to
+    // completely shutdown NMT
+    if (MemRecorder::_instance_count == 0) {
+      _state = NMT_shutdown;
+      _tracking_level = NMT_off;
+    }
   }
 }
 
@@ -534,7 +542,7 @@ void MemTracker::thread_exiting(JavaThread* thread) {
 
 // baseline current memory snapshot
 bool MemTracker::baseline() {
-  MutexLockerEx lock(&_query_lock, true);
+  MutexLockerEx lock(_query_lock, true);
   MemSnapshot* snapshot = get_snapshot();
   if (snapshot != NULL) {
     return _baseline.baseline(*snapshot, false);
@@ -545,7 +553,7 @@ bool MemTracker::baseline() {
 // print memory usage from current snapshot
 bool MemTracker::print_memory_usage(BaselineOutputer& out, size_t unit, bool summary_only) {
   MemBaseline  baseline;
-  MutexLockerEx lock(&_query_lock, true);
+  MutexLockerEx lock(_query_lock, true);
   MemSnapshot* snapshot = get_snapshot();
   if (snapshot != NULL && baseline.baseline(*snapshot, summary_only)) {
     BaselineReporter reporter(out, unit);
@@ -557,7 +565,7 @@ bool MemTracker::print_memory_usage(BaselineOutputer& out, size_t unit, bool sum
 
 // compare memory usage between current snapshot and baseline
 bool MemTracker::compare_memory_usage(BaselineOutputer& out, size_t unit, bool summary_only) {
-  MutexLockerEx lock(&_query_lock, true);
+  MutexLockerEx lock(_query_lock, true);
   if (_baseline.baselined()) {
     MemBaseline baseline;
     MemSnapshot* snapshot = get_snapshot();
