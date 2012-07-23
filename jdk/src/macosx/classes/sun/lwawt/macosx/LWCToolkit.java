@@ -42,7 +42,7 @@ import java.util.concurrent.Callable;
 import sun.awt.*;
 import sun.lwawt.*;
 import sun.lwawt.LWWindowPeer.PeerType;
-
+import sun.security.action.GetBooleanAction;
 
 class NamedCursor extends Cursor {
     NamedCursor(String name) {
@@ -693,7 +693,7 @@ public class LWCToolkit extends LWToolkit {
     public synchronized static boolean getSunAwtDisableCALayers() {
         if (sunAwtDisableCALayers == null) {
             sunAwtDisableCALayers = AccessController.doPrivileged(
-                new GetBooleanAction("sun.awt.disableCALayers")));
+                new GetBooleanAction("sun.awt.disableCALayers"));
         }
         return sunAwtDisableCALayers.booleanValue();
     }
