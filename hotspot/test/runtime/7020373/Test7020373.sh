@@ -2,9 +2,10 @@
 
 ##
 ## @test
-## @bug 7020373 7055247 7053586
+## @bug 7020373 7055247 7053586 7185550
 ## @key cte_test
 ## @summary JSR rewriting can overflow memory address size variables
+## @ignore Ignore it as 7053586 test uses lots of memory. See bug report for detail.
 ## @run shell Test7020373.sh
 ##
 
