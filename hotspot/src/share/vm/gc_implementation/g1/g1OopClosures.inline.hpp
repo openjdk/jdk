@@ -29,15 +29,12 @@
 #include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1OopClosures.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
 
 /*
  * This really ought to be an inline function, but apparently the C++
  * compiler sometimes sees fit to ignore inline declarations.  Sigh.
  */
-
-// This must a ifdef'ed because the counting it controls is in a
-// perf-critical inner loop.
-#define FILTERINTOCSCLOSURE_DOHISTOGRAMCOUNT 0
 
 template <class T>
 inline void FilterIntoCSClosure::do_oop_nv(T* p) {
@@ -45,14 +42,8 @@ inline void FilterIntoCSClosure::do_oop_nv(T* p) {
   if (!oopDesc::is_null(heap_oop) &&
       _g1->obj_in_cs(oopDesc::decode_heap_oop_not_null(heap_oop))) {
     _oc->do_oop(p);
-#if FILTERINTOCSCLOSURE_DOHISTOGRAMCOUNT
-    if (_dcto_cl != NULL)
-      _dcto_cl->incr_count();
-#endif
   }
 }
-
-#define FILTEROUTOFREGIONCLOSURE_DOHISTOGRAMCOUNT 0
 
 template <class T>
 inline void FilterOutOfRegionClosure::do_oop_nv(T* p) {
@@ -61,9 +52,6 @@ inline void FilterOutOfRegionClosure::do_oop_nv(T* p) {
     HeapWord* obj_hw = (HeapWord*)oopDesc::decode_heap_oop_not_null(heap_oop);
     if (obj_hw < _r_bottom || obj_hw >= _r_end) {
       _oc->do_oop(p);
-#if FILTEROUTOFREGIONCLOSURE_DOHISTOGRAMCOUNT
-      _out_of_region++;
-#endif
     }
   }
 }
@@ -182,6 +170,7 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_nv(T* p) {
 #endif // ASSERT
 
   assert(_from != NULL, "from region must be non-NULL");
+  assert(_from->is_in_reserved(p), "p is not in from");
 
   HeapRegion* to = _g1->heap_region_containing(obj);
   if (to != NULL && _from != to) {
@@ -212,14 +201,16 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_nv(T* p) {
       // or processed (if an evacuation failure occurs) at the end
       // of the collection.
       // See G1RemSet::cleanup_after_oops_into_collection_set_do().
-    } else {
-      // We either don't care about pushing references that point into the
-      // collection set (i.e. we're not during an evacuation pause) _or_
-      // the reference doesn't point into the collection set. Either way
-      // we add the reference directly to the RSet of the region containing
-      // the referenced object.
-      _g1_rem_set->par_write_ref(_from, p, _worker_i);
+      return;
     }
+
+    // We either don't care about pushing references that point into the
+    // collection set (i.e. we're not during an evacuation pause) _or_
+    // the reference doesn't point into the collection set. Either way
+    // we add the reference directly to the RSet of the region containing
+    // the referenced object.
+    assert(to->rem_set() != NULL, "Need per-region 'into' remsets.");
+    to->rem_set()->add_reference(p, _worker_i);
   }
 }
 
