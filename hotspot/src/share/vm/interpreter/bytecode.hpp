@@ -80,6 +80,7 @@ class Bytecode: public StackObj {
 
   Bytecodes::Code code() const                   { return _code; }
   Bytecodes::Code java_code() const              { return Bytecodes::java_code(code()); }
+  Bytecodes::Code invoke_code() const            { return (code() == Bytecodes::_invokehandle) ? code() : java_code(); }
 
   // Static functions for parsing bytecodes in place.
   int get_index_u1(Bytecodes::Code bc) const {
@@ -195,10 +196,14 @@ class Bytecode_member_ref: public Bytecode {
   Bytecode_member_ref(methodHandle method, int bci)  : Bytecode(method(), method()->bcp_from(bci)), _method(method) {}
 
   methodHandle method() const                    { return _method; }
+  constantPoolOop constants() const              { return _method->constants(); }
+  constantPoolCacheOop cpcache() const           { return _method->constants()->cache(); }
+  ConstantPoolCacheEntry* cpcache_entry() const;
 
  public:
   int          index() const;                    // cache index (loaded from instruction)
   int          pool_index() const;               // constant pool index
+  Symbol*      klass() const;                    // returns the klass of the method or field
   Symbol*      name() const;                     // returns the name of the method or field
   Symbol*      signature() const;                // returns the signature of the method or field
 
@@ -218,13 +223,15 @@ class Bytecode_invoke: public Bytecode_member_ref {
 
   // Attributes
   methodHandle static_target(TRAPS);             // "specified" method   (from constant pool)
+  Handle       appendix(TRAPS);                  // if CPCE::has_appendix (from constant pool)
 
   // Testers
-  bool is_invokeinterface() const                { return java_code() == Bytecodes::_invokeinterface; }
-  bool is_invokevirtual() const                  { return java_code() == Bytecodes::_invokevirtual; }
-  bool is_invokestatic() const                   { return java_code() == Bytecodes::_invokestatic; }
-  bool is_invokespecial() const                  { return java_code() == Bytecodes::_invokespecial; }
-  bool is_invokedynamic() const                  { return java_code() == Bytecodes::_invokedynamic; }
+  bool is_invokeinterface() const                { return invoke_code() == Bytecodes::_invokeinterface; }
+  bool is_invokevirtual() const                  { return invoke_code() == Bytecodes::_invokevirtual; }
+  bool is_invokestatic() const                   { return invoke_code() == Bytecodes::_invokestatic; }
+  bool is_invokespecial() const                  { return invoke_code() == Bytecodes::_invokespecial; }
+  bool is_invokedynamic() const                  { return invoke_code() == Bytecodes::_invokedynamic; }
+  bool is_invokehandle() const                   { return invoke_code() == Bytecodes::_invokehandle; }
 
   bool has_receiver() const                      { return !is_invokestatic() && !is_invokedynamic(); }
 
@@ -232,15 +239,12 @@ class Bytecode_invoke: public Bytecode_member_ref {
                                                           is_invokevirtual()   ||
                                                           is_invokestatic()    ||
                                                           is_invokespecial()   ||
-                                                          is_invokedynamic(); }
+                                                          is_invokedynamic()   ||
+                                                          is_invokehandle(); }
 
-  bool is_method_handle_invoke() const {
-    return (is_invokedynamic() ||
-            (is_invokevirtual() &&
-             method()->constants()->klass_ref_at_noresolve(index()) == vmSymbols::java_lang_invoke_MethodHandle() &&
-             methodOopDesc::is_method_handle_invoke_name(name())));
-  }
+  bool has_appendix()                            { return cpcache_entry()->has_appendix(); }
 
+ private:
   // Helper to skip verification.   Used is_valid() to check if the result is really an invoke
   inline friend Bytecode_invoke Bytecode_invoke_check(methodHandle method, int bci);
 };

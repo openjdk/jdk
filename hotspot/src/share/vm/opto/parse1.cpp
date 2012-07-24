@@ -398,7 +398,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   if (PrintCompilation || PrintOpto) {
     // Make sure I have an inline tree, so I can print messages about it.
     JVMState* ilt_caller = is_osr_parse() ? caller->caller() : caller;
-    InlineTree::find_subtree_from_root(C->ilt(), ilt_caller, parse_method, true);
+    InlineTree::find_subtree_from_root(C->ilt(), ilt_caller, parse_method);
   }
   _max_switch_depth = 0;
   _est_switch_depth = 0;
@@ -1398,8 +1398,8 @@ void Parse::do_one_block() {
 #ifdef ASSERT
     int pre_bc_sp = sp();
     int inputs, depth;
-    bool have_se = !stopped() && compute_stack_effects(inputs, depth);
-    assert(!have_se || pre_bc_sp >= inputs, "have enough stack to execute this BC");
+    bool have_se = !stopped() && compute_stack_effects(inputs, depth, /*for_parse*/ true);
+    assert(!have_se || pre_bc_sp >= inputs, err_msg("have enough stack to execute this BC: pre_bc_sp=%d, inputs=%d", pre_bc_sp, inputs));
 #endif //ASSERT
 
     do_one_bytecode();

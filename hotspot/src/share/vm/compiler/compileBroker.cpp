@@ -407,7 +407,10 @@ void CompileTask::print_compilation_impl(outputStream* st, methodOop method, int
     if (is_osr_method) {
       st->print(" @ %d", osr_bci);
     }
-    st->print(" (%d bytes)", method->code_size());
+    if (method->is_native())
+      st->print(" (native)");
+    else
+      st->print(" (%d bytes)", method->code_size());
   }
 
   if (msg != NULL) {
@@ -427,12 +430,17 @@ void CompileTask::print_inlining(outputStream* st, ciMethod* method, int inline_
   st->print("     ");        // print compilation number
 
   // method attributes
-  const char sync_char      = method->is_synchronized()        ? 's' : ' ';
-  const char exception_char = method->has_exception_handlers() ? '!' : ' ';
-  const char monitors_char  = method->has_monitor_bytecodes()  ? 'm' : ' ';
+  if (method->is_loaded()) {
+    const char sync_char      = method->is_synchronized()        ? 's' : ' ';
+    const char exception_char = method->has_exception_handlers() ? '!' : ' ';
+    const char monitors_char  = method->has_monitor_bytecodes()  ? 'm' : ' ';
 
-  // print method attributes
-  st->print(" %c%c%c  ", sync_char, exception_char, monitors_char);
+    // print method attributes
+    st->print(" %c%c%c  ", sync_char, exception_char, monitors_char);
+  } else {
+    //         %s!bn
+    st->print("      ");     // print method attributes
+  }
 
   if (TieredCompilation) {
     st->print("  ");
@@ -444,7 +452,10 @@ void CompileTask::print_inlining(outputStream* st, ciMethod* method, int inline_
 
   st->print("@ %d  ", bci);  // print bci
   method->print_short_name(st);
-  st->print(" (%d bytes)", method->code_size());
+  if (method->is_loaded())
+    st->print(" (%d bytes)", method->code_size());
+  else
+    st->print(" (not loaded)");
 
   if (msg != NULL) {
     st->print("   %s", msg);
@@ -1018,6 +1029,7 @@ void CompileBroker::compile_method_base(methodHandle method,
          "sanity check");
   assert(!instanceKlass::cast(method->method_holder())->is_not_initialized(),
          "method holder must be initialized");
+  assert(!method->is_method_handle_intrinsic(), "do not enqueue these guys");
 
   if (CIPrintRequests) {
     tty->print("request: ");
@@ -1231,7 +1243,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
   //
   // Note: A native method implies non-osr compilation which is
   //       checked with an assertion at the entry of this method.
-  if (method->is_native()) {
+  if (method->is_native() && !method->is_method_handle_intrinsic()) {
     bool in_base_library;
     address adr = NativeLookup::lookup(method, in_base_library, THREAD);
     if (HAS_PENDING_EXCEPTION) {
@@ -1264,7 +1276,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
 
   // do the compilation
   if (method->is_native()) {
-    if (!PreferInterpreterNativeStubs) {
+    if (!PreferInterpreterNativeStubs || method->is_method_handle_intrinsic()) {
       // Acquire our lock.
       int compile_id;
       {

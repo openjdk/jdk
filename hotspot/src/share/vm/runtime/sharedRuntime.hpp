@@ -61,7 +61,6 @@ class SharedRuntime: AllStatic {
   static RuntimeStub*        _resolve_static_call_blob;
 
   static DeoptimizationBlob* _deopt_blob;
-  static RicochetBlob*       _ricochet_blob;
 
   static SafepointBlob*      _polling_page_safepoint_handler_blob;
   static SafepointBlob*      _polling_page_return_handler_blob;
@@ -187,7 +186,6 @@ class SharedRuntime: AllStatic {
   static void    throw_NullPointerException(JavaThread* thread);
   static void    throw_NullPointerException_at_call(JavaThread* thread);
   static void    throw_StackOverflowError(JavaThread* thread);
-  static void    throw_WrongMethodTypeException(JavaThread* thread, oopDesc* required, oopDesc* actual);
   static address continuation_for_implicit_exception(JavaThread* thread,
                                                      address faulting_pc,
                                                      ImplicitExceptionKind exception_kind);
@@ -222,16 +220,6 @@ class SharedRuntime: AllStatic {
     assert(_resolve_static_call_blob != NULL, "oops");
     return _resolve_static_call_blob->entry_point();
   }
-
-  static RicochetBlob* ricochet_blob() {
-#ifdef X86
-    // Currently only implemented on x86
-    assert(!EnableInvokeDynamic || _ricochet_blob != NULL, "oops");
-#endif
-    return _ricochet_blob;
-  }
-
-  static void generate_ricochet_blob();
 
   static SafepointBlob* polling_page_return_handler_blob()     { return _polling_page_return_handler_blob; }
   static SafepointBlob* polling_page_safepoint_handler_blob()  { return _polling_page_safepoint_handler_blob; }
@@ -289,27 +277,6 @@ class SharedRuntime: AllStatic {
    * in order to correctly free the result.
    */
   static char* generate_class_cast_message(JavaThread* thr, const char* name);
-
-  /**
-   * Fill in the message for a WrongMethodTypeException
-   *
-   * @param thr the current thread
-   * @param mtype (optional) expected method type (or argument class)
-   * @param mhandle (optional) actual method handle (or argument)
-   * @return the dynamically allocated exception message
-   *
-   * BCP for the frame on top of the stack must refer to an
-   * 'invokevirtual' op for a method handle, or an 'invokedyamic' op.
-   * The caller (or one of its callers) must use a ResourceMark
-   * in order to correctly free the result.
-   */
-  static char* generate_wrong_method_type_message(JavaThread* thr,
-                                                  oopDesc* mtype = NULL,
-                                                  oopDesc* mhandle = NULL);
-
-  /** Return non-null if the mtype is a klass or Class, not a MethodType. */
-  static oop wrong_method_type_is_for_single_argument(JavaThread* thr,
-                                                      oopDesc* mtype);
 
   /**
    * Fill in the "X cannot be cast to a Y" message for ClassCastException
@@ -453,6 +420,10 @@ class SharedRuntime: AllStatic {
   // convention (handlizes oops, etc), transitions to native, makes the call,
   // returns to java state (possibly blocking), unhandlizes any result and
   // returns.
+  //
+  // The wrapper may contain special-case code if the given method
+  // is a JNI critical method, or a compiled method handle adapter,
+  // such as _invokeBasic, _linkToVirtual, etc.
   static nmethod *generate_native_wrapper(MacroAssembler* masm,
                                           methodHandle method,
                                           int compile_id,
@@ -647,13 +618,14 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
   AdapterHandlerEntry();
 
  public:
-  address get_i2c_entry()            { return _i2c_entry; }
-  address get_c2i_entry()            { return _c2i_entry; }
-  address get_c2i_unverified_entry() { return _c2i_unverified_entry; }
+  address get_i2c_entry()            const { return _i2c_entry; }
+  address get_c2i_entry()            const { return _c2i_entry; }
+  address get_c2i_unverified_entry() const { return _c2i_unverified_entry; }
 
+  address base_address();
   void relocate(address new_base);
 
-  AdapterFingerPrint* fingerprint()  { return _fingerprint; }
+  AdapterFingerPrint* fingerprint() const { return _fingerprint; }
 
   AdapterHandlerEntry* next() {
     return (AdapterHandlerEntry*)BasicHashtableEntry<mtCode>::next();
@@ -665,7 +637,8 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
   bool compare_code(unsigned char* code, int length, int total_args_passed, BasicType* sig_bt);
 #endif
 
-  void print();
+  //virtual void print_on(outputStream* st) const;  DO NOT USE
+  void print_adapter_on(outputStream* st) const;
 };
 
 class AdapterHandlerLibrary: public AllStatic {

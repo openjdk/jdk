@@ -332,7 +332,14 @@ methodOop vmIntrinsics::method_for(vmIntrinsics::ID id) {
   if (cname == NULL || mname == NULL || msig == NULL)  return NULL;
   klassOop k = SystemDictionary::find_well_known_klass(cname);
   if (k == NULL)  return NULL;
-  return instanceKlass::cast(k)->find_method(mname, msig);
+  methodOop m = instanceKlass::cast(k)->find_method(mname, msig);
+  if (m == NULL &&
+      cname == vmSymbols::java_lang_invoke_MethodHandle() &&
+      msig == vmSymbols::star_name()) {
+    // Any signature polymorphic method is represented by a fixed concrete signature:
+    m = instanceKlass::cast(k)->find_method(mname, vmSymbols::object_array_object_signature());
+  }
+  return m;
 }
 
 

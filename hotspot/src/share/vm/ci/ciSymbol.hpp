@@ -107,6 +107,8 @@ public:
 
   // Are two ciSymbols equal?
   bool equals(ciSymbol* obj) { return this->_symbol == obj->get_symbol(); }
+
+  bool is_signature_polymorphic_name() const;
 };
 
 #endif // SHARE_VM_CI_CISYMBOL_HPP

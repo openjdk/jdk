@@ -55,9 +55,6 @@ enum {
   JVM_ACC_IS_OBSOLETE             = 0x00020000,     // RedefineClasses() has made method obsolete
   JVM_ACC_IS_PREFIXED_NATIVE      = 0x00040000,     // JVMTI has prefixed this native method
 
-  JVM_MH_INVOKE_BITS           // = 0x10001100      // MethodHandle.invoke quasi-native
-                                  = (JVM_ACC_NATIVE | JVM_ACC_SYNTHETIC | JVM_ACC_MONITOR_MATCH),
-
   // klassOop flags
   JVM_ACC_HAS_MIRANDA_METHODS     = 0x10000000,     // True if this class has miranda methods in it's vtable
   JVM_ACC_HAS_VANILLA_CONSTRUCTOR = 0x20000000,     // True if klass has a vanilla default constructor
@@ -132,15 +129,6 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   bool is_old                  () const { return (_flags & JVM_ACC_IS_OLD                 ) != 0; }
   bool is_obsolete             () const { return (_flags & JVM_ACC_IS_OBSOLETE            ) != 0; }
   bool is_prefixed_native      () const { return (_flags & JVM_ACC_IS_PREFIXED_NATIVE     ) != 0; }
-
-  // JSR 292:  A method of the form MethodHandle.invoke(A...)R method is
-  // neither bytecoded nor a JNI native, but rather a fast call through
-  // a lightweight method handle object.  Because it is not bytecoded,
-  // it has the native bit set, but the monitor-match bit is also set
-  // to distinguish it from a JNI native (which never has the match bit set).
-  // The synthetic bit is also present, because such a method is never
-  // explicitly defined in Java code.
-  bool is_method_handle_invoke () const { return (_flags & JVM_MH_INVOKE_BITS) == JVM_MH_INVOKE_BITS; }
 
   // klassOop flags
   bool has_miranda_methods     () const { return (_flags & JVM_ACC_HAS_MIRANDA_METHODS    ) != 0; }
