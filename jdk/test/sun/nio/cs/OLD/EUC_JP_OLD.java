@@ -23,7 +23,8 @@
  * questions.
  */
 
-package sun.nio.cs.ext;
+/*
+ */
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -33,15 +34,13 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.Surrogate;
-import sun.nio.cs.SingleByte;
-import static sun.nio.cs.CharsetMapping.*;
 
-public class EUC_JP
+public class EUC_JP_OLD
     extends Charset
     implements HistoricallyNamedCharset
 {
-    public EUC_JP() {
-        super("EUC-JP", ExtendedCharsets.aliasesFor("EUC-JP"));
+    public EUC_JP_OLD() {
+        super("EUC-JP_OLD", null);
     }
 
     public String historicalName() {
@@ -50,10 +49,10 @@ public class EUC_JP
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
-                || (cs instanceof JIS_X_0201)
-                || (cs instanceof JIS_X_0208)
-                || (cs instanceof JIS_X_0212)
-                || (cs instanceof EUC_JP));
+                || (cs instanceof JIS_X_0201_OLD)
+                || (cs instanceof JIS_X_0208_OLD)
+                || (cs instanceof JIS_X_0212_OLD)
+                || (cs instanceof EUC_JP_OLD));
     }
 
     public CharsetDecoder newDecoder() {
@@ -61,47 +60,51 @@ public class EUC_JP
     }
 
     public CharsetEncoder newEncoder() {
-        return new Encoder(this);
+
+        // Need to force the replacement byte to 0x3f
+        // because JIS_X_0208_Encoder defines its own
+        // alternative 2 byte substitution to permit it
+        // to exist as a self-standing Encoder
+
+        byte[] replacementBytes = { (byte)0x3f };
+        return new Encoder(this).replaceWith(replacementBytes);
     }
 
-    static class Decoder extends CharsetDecoder
-        implements DelegatableDecoder {
 
-        final static SingleByte.Decoder DEC0201 =
-            (SingleByte.Decoder)new JIS_X_0201().newDecoder();
+    static class Decoder extends JIS_X_0208_Decoder {
 
-        final static DoubleByte.Decoder DEC0208 =
-            (DoubleByte.Decoder)new JIS_X_0208().newDecoder();
+        JIS_X_0201_OLD.Decoder decoderJ0201;
+        JIS_X_0212_Decoder decoderJ0212;
 
-        final static DoubleByte.Decoder DEC0212 =
-            (DoubleByte.Decoder)new JIS_X_0212().newDecoder();
-
-        private final SingleByte.Decoder dec0201;
-        private final DoubleByte.Decoder dec0208;
-        private final DoubleByte.Decoder dec0212;
+        private static final short[] j0208Index1 =
+          JIS_X_0208_Decoder.getIndex1();
+        private static final String[] j0208Index2 =
+          JIS_X_0208_Decoder.getIndex2();
 
         protected Decoder(Charset cs) {
-            this(cs, 0.5f, 1.0f, DEC0201, DEC0208, DEC0212);
+            super(cs);
+            decoderJ0201 = new JIS_X_0201_OLD.Decoder(cs);
+            decoderJ0212 = new JIS_X_0212_Decoder(cs);
+            start = 0xa1;
+            end = 0xfe;
         }
-
-        protected Decoder(Charset cs, float avgCpb, float maxCpb,
-                          SingleByte.Decoder dec0201,
-                          DoubleByte.Decoder dec0208,
-                          DoubleByte.Decoder dec0212) {
-            super(cs, avgCpb, maxCpb);
-            this.dec0201 = dec0201;
-            this.dec0208 = dec0208;
-            this.dec0212 = dec0212;
+        protected char decode0212(int byte1, int byte2) {
+             return decoderJ0212.decodeDouble(byte1, byte2);
         }
-
 
         protected char decodeDouble(int byte1, int byte2) {
             if (byte1 == 0x8e) {
-                if (byte2 < 0x80)
-                    return UNMAPPABLE_DECODING;
-                return dec0201.decode((byte)byte2);
+                return decoderJ0201.decode(byte2 - 256);
             }
-            return dec0208.decodeDouble(byte1 - 0x80, byte2 - 0x80);
+            // Fix for bug 4121358 - similar fix for bug 4117820 put
+            // into ByteToCharDoubleByte.getUnicode()
+            if (((byte1 < 0) || (byte1 > getIndex1().length))
+                || ((byte2 < start) || (byte2 > end)))
+                return REPLACE_CHAR;
+
+            int n = (j0208Index1[byte1 - 0x80] & 0xf) * (end - start + 1)
+                    + (byte2 - start);
+            return j0208Index2[j0208Index1[byte1 - 0x80] >> 4].charAt(n);
         }
 
         private CoderResult decodeArrayLoop(ByteBuffer src,
@@ -121,7 +124,8 @@ public class EUC_JP
 
             int b1 = 0, b2 = 0;
             int inputSize = 0;
-            char outputChar = UNMAPPABLE_DECODING;
+            char outputChar = REPLACE_CHAR; // U+FFFD;
+
             try {
                 while (sp < sl) {
                     b1 = sa[sp] & 0xff;
@@ -129,17 +133,17 @@ public class EUC_JP
 
                     if ((b1 & 0x80) == 0) {
                         outputChar = (char)b1;
-                    } else {                        // Multibyte char
-                        if (b1 == 0x8f) {           // JIS0212
+                    }
+                    else {      // Multibyte char
+                        if ((b1 & 0xff) == 0x8f) {   // JIS0212
                             if (sp + 3 > sl)
                                return CoderResult.UNDERFLOW;
                             b1 = sa[sp + 1] & 0xff;
                             b2 = sa[sp + 2] & 0xff;
                             inputSize += 2;
-                            if (dec0212 == null)    // JIS02012 not supported
-                                return CoderResult.unmappableForLength(inputSize);
-                            outputChar = dec0212.decodeDouble(b1-0x80, b2-0x80);
-                        } else {                     // JIS0201, JIS0208
+                            outputChar = decode0212(b1-0x80, b2-0x80);
+                        } else {
+                          // JIS0208
                             if (sp + 2 > sl)
                                return CoderResult.UNDERFLOW;
                             b2 = sa[sp + 1] & 0xff;
@@ -147,7 +151,7 @@ public class EUC_JP
                             outputChar = decodeDouble(b1, b2);
                         }
                     }
-                    if (outputChar == UNMAPPABLE_DECODING) { // can't be decoded
+                    if (outputChar == REPLACE_CHAR) { // can't be decoded
                         return CoderResult.unmappableForLength(inputSize);
                     }
                     if (dp + 1 > dl)
@@ -168,25 +172,26 @@ public class EUC_JP
             int mark = src.position();
             int b1 = 0, b2 = 0;
             int inputSize = 0;
-            char outputChar = UNMAPPABLE_DECODING;
+
+            char outputChar = REPLACE_CHAR; // U+FFFD;
 
             try {
                 while (src.hasRemaining()) {
                     b1 = src.get() & 0xff;
                     inputSize = 1;
+
                     if ((b1 & 0x80) == 0) {
                         outputChar = (char)b1;
-                    } else {                         // Multibyte char
-                        if (b1 == 0x8f) {   // JIS0212
+                    } else {    // Multibyte char
+                        if ((b1 & 0xff) == 0x8f) {   // JIS0212
                             if (src.remaining() < 2)
                                return CoderResult.UNDERFLOW;
                             b1 = src.get() & 0xff;
                             b2 = src.get() & 0xff;
                             inputSize += 2;
-                            if (dec0212 == null)    // JIS02012 not supported
-                                return CoderResult.unmappableForLength(inputSize);
-                            outputChar = dec0212.decodeDouble(b1-0x80, b2-0x80);
-                        } else {                     // JIS0201 JIS0208
+                            outputChar = decode0212(b1-0x80, b2-0x80);
+                        } else {
+                          // JIS0208
                             if (src.remaining() < 1)
                                return CoderResult.UNDERFLOW;
                             b2 = src.get() & 0xff;
@@ -194,7 +199,8 @@ public class EUC_JP
                             outputChar = decodeDouble(b1, b2);
                         }
                     }
-                    if (outputChar == UNMAPPABLE_DECODING) {
+
+                    if (outputChar == REPLACE_CHAR) {
                         return CoderResult.unmappableForLength(inputSize);
                     }
                 if (dst.remaining() < 1)
@@ -224,67 +230,65 @@ public class EUC_JP
     }
 
 
-    static class Encoder extends CharsetEncoder {
+    static class Encoder extends JIS_X_0208_Encoder {
 
-        final static SingleByte.Encoder ENC0201 =
-            (SingleByte.Encoder)new JIS_X_0201().newEncoder();
+        JIS_X_0201_OLD.Encoder encoderJ0201;
+        JIS_X_0212_Encoder encoderJ0212;
 
-        final static DoubleByte.Encoder ENC0208 =
-            (DoubleByte.Encoder)new JIS_X_0208().newEncoder();
-
-        final static DoubleByte.Encoder ENC0212 =
-            (DoubleByte.Encoder)new JIS_X_0212().newEncoder();
+        private static final short[] j0208Index1 =
+          JIS_X_0208_Encoder.getIndex1();
+        private static final String[] j0208Index2 =
+          JIS_X_0208_Encoder.getIndex2();
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
 
-
-        private final SingleByte.Encoder enc0201;
-        private final DoubleByte.Encoder enc0208;
-        private final DoubleByte.Encoder enc0212;
-
         protected Encoder(Charset cs) {
-            this(cs, 3.0f, 3.0f, ENC0201, ENC0208, ENC0212);
-        }
-
-        protected Encoder(Charset cs, float avgBpc, float maxBpc,
-                          SingleByte.Encoder enc0201,
-                          DoubleByte.Encoder enc0208,
-                          DoubleByte.Encoder enc0212) {
-            super(cs, avgBpc, maxBpc);
-            this.enc0201 = enc0201;
-            this.enc0208 = enc0208;
-            this.enc0212 = enc0212;
+            super(cs, 3.0f, 3.0f);
+            encoderJ0201 = new JIS_X_0201_OLD.Encoder(cs);
+            encoderJ0212 = new JIS_X_0212_Encoder(cs);
         }
 
         public boolean canEncode(char c) {
             byte[]  encodedBytes = new byte[3];
-            return encodeSingle(c, encodedBytes) != 0 ||
-                   encodeDouble(c) != UNMAPPABLE_ENCODING;
+
+            if (encodeSingle(c, encodedBytes) == 0) { //doublebyte
+                if (encodeDouble(c) == 0)
+                    return false;
+            }
+            return true;
         }
 
         protected int encodeSingle(char inputChar, byte[] outputByte) {
-            int b = enc0201.encode(inputChar);
-            if (b == UNMAPPABLE_ENCODING)
-                return 0;
-            if (b >= 0 && b < 128) {
-                outputByte[0] = (byte)b;
+            byte b;
+
+            if (inputChar == 0) {
+                outputByte[0] = (byte)0;
                 return 1;
             }
+
+            if ((b = encoderJ0201.encode(inputChar)) == 0)
+                return 0;
+
+            if (b > 0 && b < 128) {
+                outputByte[0] = b;
+                return 1;
+            }
+
             outputByte[0] = (byte)0x8e;
-            outputByte[1] = (byte)b;
+            outputByte[1] = b;
             return 2;
         }
 
         protected int encodeDouble(char ch) {
-            int b = enc0208.encodeChar(ch);
-            if (b != UNMAPPABLE_ENCODING)
-                return b + 0x8080;
-            if (enc0212 != null) {
-                b = enc0212.encodeChar(ch);
-                if (b != UNMAPPABLE_ENCODING)
-                    b += 0x8F8080;
-            }
-            return b;
+            int offset = j0208Index1[((ch & 0xff00) >> 8 )] << 8;
+            int r = j0208Index2[offset >> 12].charAt((offset & 0xfff) +
+                    (ch & 0xff));
+            if (r != 0)
+                return r + 0x8080;
+            r = encoderJ0212.encodeDouble(ch);
+            if (r == 0)
+                return r;
+            return r + 0x8F8080;
         }
 
         private CoderResult encodeArrayLoop(CharBuffer src,
@@ -310,15 +314,18 @@ public class EUC_JP
                 while (sp < sl) {
                     outputByte = tmpBuf;
                     char c = sa[sp];
+
                     if (Character.isSurrogate(c)) {
                         if (sgp.parse(c, sa, sp, sl) < 0)
                             return sgp.error();
                         return sgp.unmappableResult();
                     }
+
                     outputSize = encodeSingle(c, outputByte);
+
                     if (outputSize == 0) { // DoubleByte
                         int ncode = encodeDouble(c);
-                        if (ncode != UNMAPPABLE_ENCODING) {
+                        if (ncode != 0 ) {
                             if ((ncode & 0xFF0000) == 0) {
                                 outputByte[0] = (byte) ((ncode & 0xff00) >> 8);
                                 outputByte[1] = (byte) (ncode & 0xff);
@@ -330,7 +337,7 @@ public class EUC_JP
                                 outputSize = 3;
                             }
                         } else {
-                            return CoderResult.unmappableForLength(1);
+                                return CoderResult.unmappableForLength(1);
                         }
                     }
                     if (dl - dp < outputSize)
@@ -367,10 +374,11 @@ public class EUC_JP
                             return sgp.error();
                         return sgp.unmappableResult();
                     }
+
                     outputSize = encodeSingle(c, outputByte);
                     if (outputSize == 0) { // DoubleByte
                         int ncode = encodeDouble(c);
-                        if (ncode != UNMAPPABLE_ENCODING) {
+                        if (ncode != 0 ) {
                             if ((ncode & 0xFF0000) == 0) {
                                 outputByte[0] = (byte) ((ncode & 0xff00) >> 8);
                                 outputByte[1] = (byte) (ncode & 0xff);
@@ -382,9 +390,10 @@ public class EUC_JP
                                 outputSize = 3;
                             }
                         } else {
-                            return CoderResult.unmappableForLength(1);
+                                return CoderResult.unmappableForLength(1);
                         }
                     }
+
                     if (dst.remaining() < outputSize)
                         return CoderResult.OVERFLOW;
                     // Put the byte in the output buffer

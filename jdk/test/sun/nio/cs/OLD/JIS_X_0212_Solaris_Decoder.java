@@ -26,15 +26,13 @@
 /*
  */
 
-package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 
-public class JIS_X_0212_Decoder extends DoubleByteDecoder
+public class JIS_X_0212_Solaris_Decoder extends DoubleByteDecoder
 {
-    public JIS_X_0212_Decoder(Charset cs) {
+    public JIS_X_0212_Solaris_Decoder(Charset cs) {
         super(cs,
               index1,
               index2,
@@ -861,7 +859,31 @@ public class JIS_X_0212_Decoder extends DoubleByteDecoder
         "\u9FA2\u9FA3\u9FA5\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
         "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
         "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
-        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD";
+        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        "\u2170\u2171\u2172\u2173\u2174\u2175\u2176\u2177"+
+        "\u2178\u2179\u2160\u2161\u2162\u2163\u2164\u2165"+
+        "\u2166\u2167\u2168\u2169\uFF07\uFF02\u3231\u2116"+
+        "\u2121\u70BB\u4EFC\u50F4\u51EC\u5307\u5324\uFA0E"+
+        "\u548A\u5759\uFA0F\uFA10\u589E\u5BEC\u5CF5\u5D53"+
+        "\uFA11\u5FB7\u6085\u6120\u654E\u663B\u6665\uFA12"+
+        "\uF929\u6801\uFA13\uFA14\u6A6B\u6AE2\u6DF8\u6DF2"+
+        "\u7028\uFA15\uFA16\u7501\u7682\u769E\uFA17\u7930"+
+        "\uFA18\uFA19\uFA1A\uFA1B\u7AE7\uFA1C\uFA1D\u7DA0"+
+        "\u7DD6\uFA1E\u8362\uFA1F\u85B0\uFA20\uFA21\u8807"+
+        "\uFA22\u8B7F\u8CF4\u8D76\uFA23\uFA24\uFA25\u90DE"+
+        "\uFA26\u9115\uFA27\uFA28\u9592\uF9DC\uFA29\u973B"+
+        "\u974D\u9751\uFA2A\uFA2B\uFA2C\u999E\u9AD9\u9B72"+
+        "\uFA2D\u9ED1";
 
     private final static short index1[] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -871,7 +893,7 @@ public class JIS_X_0212_Decoder extends DoubleByteDecoder
         23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
         39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
         55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 69, 70, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

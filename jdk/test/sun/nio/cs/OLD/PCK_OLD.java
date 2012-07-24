@@ -26,8 +26,6 @@
 /*
  */
 
-package sun.nio.cs.ext;
-
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
@@ -36,13 +34,13 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import sun.nio.cs.HistoricallyNamedCharset;
 
-public class PCK
+public class PCK_OLD
     extends Charset
     implements HistoricallyNamedCharset
 {
 
-    public PCK() {
-        super("x-PCK", ExtendedCharsets.aliasesFor("x-PCK"));
+    public PCK_OLD() {
+        super("x-PCK_OLD", null);
     }
 
     public String historicalName() {
@@ -51,8 +49,8 @@ public class PCK
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
-                || (cs instanceof JIS_X_0201)
-                || (cs instanceof PCK));
+                || (cs instanceof JIS_X_0201_OLD)
+                || (cs instanceof PCK_OLD));
     }
 
     public CharsetDecoder newDecoder() {
@@ -70,7 +68,7 @@ public class PCK
         return new Encoder(this).replaceWith(replacementBytes);
     }
 
-    private static class Decoder extends SJIS.Decoder {
+    private static class Decoder extends SJIS_OLD.Decoder {
 
         JIS_X_0208_Solaris_Decoder jis0208;
         private static final char REPLACE_CHAR='\uFFFD';
@@ -98,9 +96,9 @@ public class PCK
         }
     }
 
-    private static class Encoder extends SJIS.Encoder {
+    private static class Encoder extends SJIS_OLD.Encoder {
 
-        private JIS_X_0201.Encoder jis0201;
+        private JIS_X_0201_OLD.Encoder jis0201;
 
         private static final short[] j0208Index1 =
             JIS_X_0208_Solaris_Encoder.getIndex1();
@@ -109,7 +107,7 @@ public class PCK
 
         private Encoder(Charset cs) {
             super(cs);
-            jis0201 = new JIS_X_0201.Encoder(cs);
+            jis0201 = new JIS_X_0201_OLD.Encoder(cs);
         }
 
         protected int encodeDouble(char ch) {
