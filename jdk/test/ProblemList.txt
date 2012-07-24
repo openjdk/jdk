@@ -384,8 +384,4 @@ java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
 # 7041639, Solaris DSA keypair generation bug
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all
 
-# 7150557
-java/util/prefs/RemoveReadOnlyNode.java                         macosx-all
-java/util/prefs/RemoveUnregedListener.java                      macosx-all
-
 ############################################################################

@@ -221,9 +221,14 @@ class MacOSXPreferences extends AbstractPreferences {
         // Flush should *not* check for removal, unlike sync, but should
         // prevent simultaneous removal.
         synchronized(lock) {
-            // fixme! overkill
-            if (!MacOSXPreferencesFile.flushWorld()) {
-                throw new BackingStoreException("Synchronization failed for node '" + path + "'");
+            if (isUser) {
+                if (!MacOSXPreferencesFile.flushUser()) {
+                    throw new BackingStoreException("Synchronization failed for node '" + path + "'");
+                }
+            } else {
+                if (!MacOSXPreferencesFile.flushWorld()) {
+                    throw new BackingStoreException("Synchronization failed for node '" + path + "'");
+                }
             }
         }
     }
