@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import sun.invoke.util.BytecodeDescriptor;
 import static java.lang.invoke.MethodHandleStatics.*;
+import sun.invoke.util.VerifyType;
 
 /**
  * A method type represents the arguments and return type accepted and
@@ -108,6 +109,8 @@ class MethodType implements java.io.Serializable {
     /*trusted*/ Class<?> rtype() { return rtype; }
     /*trusted*/ Class<?>[] ptypes() { return ptypes; }
 
+    void setForm(MethodTypeForm f) { form = f; }
+
     private static void checkRtype(Class<?> rtype) {
         rtype.equals(rtype);  // null check
     }
@@ -127,7 +130,7 @@ class MethodType implements java.io.Serializable {
         checkSlotCount(ptypes.length + slots);
         return slots;
     }
-    private static void checkSlotCount(int count) {
+    static void checkSlotCount(int count) {
         if ((count & 0xFF) != count)
             throw newIllegalArgumentException("bad parameter count "+count);
     }
@@ -238,8 +241,7 @@ class MethodType implements java.io.Serializable {
             ptypes = NO_PTYPES; trusted = true;
         }
         MethodType mt1 = new MethodType(rtype, ptypes);
-        MethodType mt0;
-        mt0 = internTable.get(mt1);
+        MethodType mt0 = internTable.get(mt1);
         if (mt0 != null)
             return mt0;
         if (!trusted)
@@ -248,10 +250,6 @@ class MethodType implements java.io.Serializable {
         // promote the object to the Real Thing, and reprobe
         MethodTypeForm form = MethodTypeForm.findForm(mt1);
         mt1.form = form;
-        if (form.erasedType == mt1) {
-            // This is a principal (erased) type; show it to the JVM.
-            MethodHandleNatives.init(mt1);
-        }
         return internTable.add(mt1);
     }
     private static final MethodType[] objectOnlyTypes = new MethodType[20];
@@ -385,6 +383,32 @@ class MethodType implements java.io.Serializable {
         return insertParameterTypes(parameterCount(), ptypesToInsert);
     }
 
+     /**
+     * Finds or creates a method type with modified parameter types.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * @param start  the position (zero-based) of the first replaced parameter type(s)
+     * @param end    the position (zero-based) after the last replaced parameter type(s)
+     * @param ptypesToInsert zero or more new parameter types to insert into the parameter list
+     * @return the same type, except with the selected parameter(s) replaced
+     * @throws IndexOutOfBoundsException if {@code start} is negative or greater than {@code parameterCount()}
+     *                                  or if {@code end} is negative or greater than {@code parameterCount()}
+     *                                  or if {@code start} is greater than {@code end}
+     * @throws IllegalArgumentException if any element of {@code ptypesToInsert} is {@code void.class}
+     *                                  or if the resulting method type would have more than 255 parameter slots
+     * @throws NullPointerException if {@code ptypesToInsert} or any of its elements is null
+     */
+    /*non-public*/ MethodType replaceParameterTypes(int start, int end, Class<?>... ptypesToInsert) {
+        if (start == end)
+            return insertParameterTypes(start, ptypesToInsert);
+        int len = ptypes.length;
+        if (!(0 <= start && start <= end && end <= len))
+            throw newIndexOutOfBoundsException("start="+start+" end="+end);
+        int ilen = ptypesToInsert.length;
+        if (ilen == 0)
+            return dropParameterTypes(start, end);
+        return dropParameterTypes(start, end).insertParameterTypes(start, ptypesToInsert);
+    }
+
     /**
      * Finds or creates a method type with some parameter types omitted.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
@@ -462,6 +486,23 @@ class MethodType implements java.io.Serializable {
      */
     public MethodType erase() {
         return form.erasedType();
+    }
+
+    /**
+     * Erases all reference types to {@code Object}, and all subword types to {@code int}.
+     * This is the reduced type polymorphism used by private methods
+     * such as {@link MethodHandle#invokeBasic invokeBasic}.
+     * @return a version of the original type with all reference and subword types replaced
+     */
+    /*non-public*/ MethodType basicType() {
+        return form.basicType();
+    }
+
+    /**
+     * @return a version of the original type with MethodHandle prepended as the first argument
+     */
+    /*non-public*/ MethodType invokerType() {
+        return insertParameterTypes(0, MethodHandle.class);
     }
 
     /**
@@ -558,6 +599,11 @@ class MethodType implements java.io.Serializable {
         return Collections.unmodifiableList(Arrays.asList(ptypes));
     }
 
+    /*non-public*/ Class<?> lastParameterType() {
+        int len = ptypes.length;
+        return len == 0 ? void.class : ptypes[len-1];
+    }
+
     /**
      * Presents the parameter types as an array (a convenience method).
      * Changes to the array will not result in changes to the type.
@@ -626,6 +672,26 @@ class MethodType implements java.io.Serializable {
     }
 
 
+    /*non-public*/
+    boolean isViewableAs(MethodType newType) {
+        if (!VerifyType.isNullConversion(returnType(), newType.returnType()))
+            return false;
+        int argc = parameterCount();
+        if (argc != newType.parameterCount())
+            return false;
+        for (int i = 0; i < argc; i++) {
+            if (!VerifyType.isNullConversion(newType.parameterType(i), parameterType(i)))
+                return false;
+        }
+        return true;
+    }
+    /*non-public*/
+    boolean isCastableTo(MethodType newType) {
+        int argc = parameterCount();
+        if (argc != newType.parameterCount())
+            return false;
+        return true;
+    }
     /*non-public*/
     boolean isConvertibleTo(MethodType newType) {
         if (!canConvert(returnType(), newType.returnType()))
@@ -809,6 +875,10 @@ class MethodType implements java.io.Serializable {
         return BytecodeDescriptor.unparse(this);
     }
 
+    /*non-public*/ static String toFieldDescriptorString(Class<?> cls) {
+        return BytecodeDescriptor.unparse(cls);
+    }
+
     /// Serialization.
 
     /**
@@ -881,18 +951,17 @@ s.writeObject(this.parameterArray());
         // store them into the implementation-specific final fields.
         checkRtype(rtype);
         checkPtypes(ptypes);
-        unsafe.putObject(this, rtypeOffset, rtype);
-        unsafe.putObject(this, ptypesOffset, ptypes);
+        UNSAFE.putObject(this, rtypeOffset, rtype);
+        UNSAFE.putObject(this, ptypesOffset, ptypes);
     }
 
     // Support for resetting final fields while deserializing
-    private static final sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
     private static final long rtypeOffset, ptypesOffset;
     static {
         try {
-            rtypeOffset = unsafe.objectFieldOffset
+            rtypeOffset = UNSAFE.objectFieldOffset
                 (MethodType.class.getDeclaredField("rtype"));
-            ptypesOffset = unsafe.objectFieldOffset
+            ptypesOffset = UNSAFE.objectFieldOffset
                 (MethodType.class.getDeclaredField("ptypes"));
         } catch (Exception ex) {
             throw new Error(ex);
