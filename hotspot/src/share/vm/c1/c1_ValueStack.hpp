@@ -142,6 +142,10 @@ class ValueStack: public CompilationResourceObj {
     return x;
   }
 
+  void stack_at_put(int i, Value x) {
+    _stack.at_put(i, x);
+  }
+
   // pinning support
   void pin_stack_for_linear_scan();
 

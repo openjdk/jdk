@@ -363,7 +363,7 @@ protected:
 #endif
 
   // Reference to the i'th input Node.  Error if out of bounds.
-  Node* in(uint i) const { assert(i < _max,"oob"); return _in[i]; }
+  Node* in(uint i) const { assert(i < _max, err_msg("oob: i=%d, _max=%d", i, _max)); return _in[i]; }
   // Reference to the i'th output Node.  Error if out of bounds.
   // Use this accessor sparingly.  We are going trying to use iterators instead.
   Node* raw_out(uint i) const { assert(i < _outcnt,"oob"); return _out[i]; }
@@ -394,7 +394,7 @@ protected:
   void ins_req( uint i, Node *n ); // Insert a NEW required input
   void set_req( uint i, Node *n ) {
     assert( is_not_dead(n), "can not use dead node");
-    assert( i < _cnt, "oob");
+    assert( i < _cnt, err_msg("oob: i=%d, _cnt=%d", i, _cnt));
     assert( !VerifyHashTableKeys || _hash_lock == 0,
             "remove node from hash table before modifying it");
     Node** p = &_in[i];    // cache this._in, across the del_out call

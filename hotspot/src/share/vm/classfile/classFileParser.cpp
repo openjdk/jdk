@@ -1773,6 +1773,15 @@ ClassFileParser::AnnotationCollector::ID ClassFileParser::AnnotationCollector::a
   case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_ForceInline_signature):
     if (_location != _in_method)  break;  // only allow for methods
     return _method_ForceInline;
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_DontInline_signature):
+    if (_location != _in_method)  break;  // only allow for methods
+    return _method_DontInline;
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_LambdaForm_Compiled_signature):
+    if (_location != _in_method)  break;  // only allow for methods
+    return _method_LambdaForm_Compiled;
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_LambdaForm_Hidden_signature):
+    if (_location != _in_method)  break;  // only allow for methods
+    return _method_LambdaForm_Hidden;
   default: break;
   }
   return AnnotationCollector::_unknown;
@@ -1785,6 +1794,12 @@ void ClassFileParser::FieldAnnotationCollector::apply_to(FieldInfo* f) {
 void ClassFileParser::MethodAnnotationCollector::apply_to(methodHandle m) {
   if (has_annotation(_method_ForceInline))
     m->set_force_inline(true);
+  if (has_annotation(_method_DontInline))
+    m->set_dont_inline(true);
+  if (has_annotation(_method_LambdaForm_Compiled) && m->intrinsic_id() == vmIntrinsics::_none)
+    m->set_intrinsic_id(vmIntrinsics::_compiledLambdaForm);
+  if (has_annotation(_method_LambdaForm_Hidden))
+    m->set_hidden(true);
 }
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(instanceKlassHandle k) {
@@ -2334,12 +2349,6 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
       signature == vmSymbols::void_method_signature() &&
       m->is_vanilla_constructor()) {
     _has_vanilla_constructor = true;
-  }
-
-  if (EnableInvokeDynamic && (m->is_method_handle_invoke() ||
-                              m->is_method_handle_adapter())) {
-    THROW_MSG_(vmSymbols::java_lang_VirtualMachineError(),
-               "Method handle invokers must be defined internally to the VM", nullHandle);
   }
 
   return m;

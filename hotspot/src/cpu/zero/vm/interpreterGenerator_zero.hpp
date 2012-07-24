@@ -38,6 +38,5 @@
   address generate_empty_entry();
   address generate_accessor_entry();
   address generate_Reference_get_entry();
-  address generate_method_handle_entry();
 
 #endif // CPU_ZERO_VM_INTERPRETERGENERATOR_ZERO_HPP
