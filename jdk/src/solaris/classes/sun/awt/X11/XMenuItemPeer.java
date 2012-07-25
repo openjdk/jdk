@@ -202,7 +202,8 @@ public class XMenuItemPeer implements MenuItemPeer {
         if (target == null) {
             return "";
         }
-        return AWTAccessor.getMenuItemAccessor().getLabel(target);
+        String label = AWTAccessor.getMenuItemAccessor().getLabel(target);
+        return (label == null) ? "" : label;
     }
 
     boolean isTargetEnabled() {
