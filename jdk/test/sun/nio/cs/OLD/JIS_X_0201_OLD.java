@@ -30,8 +30,6 @@
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-import sun.nio.cs.SingleByteEncoder;
-import sun.nio.cs.SingleByteDecoder;
 
 public class JIS_X_0201_OLD
     extends Charset
