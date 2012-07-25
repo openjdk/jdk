@@ -807,8 +807,7 @@ SRC_ZIP_INCLUDES = \
 	org/ietf			\
 	org/omg				\
 	org/w3c/dom			\
-	org/xml/sax			\
-	sunw
+	org/xml/sax
 
 SRC_ZIP_SRCS = $(JDK_TOPDIR)/src/share/classes $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes
 SRC_ZIP_SRCS += $(JDK_OUTPUTDIR)/gensrc
