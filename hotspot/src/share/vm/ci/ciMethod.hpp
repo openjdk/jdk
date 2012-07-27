@@ -160,6 +160,8 @@ class ciMethod : public ciObject {
   // Code size for inlining decisions.
   int code_size_for_inlining();
 
+  bool force_inline() { return get_methodOop()->force_inline(); }
+
   int comp_level();
   int highest_osr_comp_level();
 
