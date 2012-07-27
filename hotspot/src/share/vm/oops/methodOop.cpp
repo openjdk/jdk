@@ -582,7 +582,8 @@ void methodOopDesc::set_native_function(address function, bool post_event_flag) 
 
 
 bool methodOopDesc::has_native_function() const {
-  assert(!is_method_handle_intrinsic(), "");
+  if (is_method_handle_intrinsic())
+    return false;  // special-cased in SharedRuntime::generate_native_wrapper
   address func = native_function();
   return (func != NULL && func != SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
 }
@@ -611,6 +612,9 @@ void methodOopDesc::set_signature_handler(address handler) {
 bool methodOopDesc::is_not_compilable(int comp_level) const {
   if (number_of_breakpoints() > 0) {
     return true;
+  }
+  if (is_method_handle_intrinsic()) {
+    return !is_synthetic();  // the generated adapters must be compiled
   }
   if (comp_level == CompLevel_any) {
     return is_not_c1_compilable() || is_not_c2_compilable();

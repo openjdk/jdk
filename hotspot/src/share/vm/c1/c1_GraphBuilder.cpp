@@ -1569,31 +1569,33 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       ObjectType* obj_type = obj->type()->as_ObjectType();
       if (obj_type->is_constant() && !PatchALot) {
         ciObject* const_oop = obj_type->constant_value();
-        if (field->is_constant()) {
-          ciConstant field_val = field->constant_value_of(const_oop);
-          BasicType field_type = field_val.basic_type();
-          switch (field_type) {
-          case T_ARRAY:
-          case T_OBJECT:
-            if (field_val.as_object()->should_be_constant()) {
+        if (!const_oop->is_null_object()) {
+          if (field->is_constant()) {
+            ciConstant field_val = field->constant_value_of(const_oop);
+            BasicType field_type = field_val.basic_type();
+            switch (field_type) {
+            case T_ARRAY:
+            case T_OBJECT:
+              if (field_val.as_object()->should_be_constant()) {
+                constant = new Constant(as_ValueType(field_val));
+              }
+              break;
+            default:
               constant = new Constant(as_ValueType(field_val));
             }
-            break;
-          default:
-            constant = new Constant(as_ValueType(field_val));
-          }
-        } else {
-          // For constant CallSites treat the target field as a compile time constant.
-          if (const_oop->is_call_site()) {
-            ciCallSite* call_site = const_oop->as_call_site();
-            if (field->is_call_site_target()) {
-              ciMethodHandle* target = call_site->get_target();
-              if (target != NULL) {  // just in case
-                ciConstant field_val(T_OBJECT, target);
-                constant = new Constant(as_ValueType(field_val));
-                // Add a dependence for invalidation of the optimization.
-                if (!call_site->is_constant_call_site()) {
-                  dependency_recorder()->assert_call_site_target_value(call_site, target);
+          } else {
+            // For CallSite objects treat the target field as a compile time constant.
+            if (const_oop->is_call_site()) {
+              ciCallSite* call_site = const_oop->as_call_site();
+              if (field->is_call_site_target()) {
+                ciMethodHandle* target = call_site->get_target();
+                if (target != NULL) {  // just in case
+                  ciConstant field_val(T_OBJECT, target);
+                  constant = new Constant(as_ValueType(field_val));
+                  // Add a dependence for invalidation of the optimization.
+                  if (!call_site->is_constant_call_site()) {
+                    dependency_recorder()->assert_call_site_target_value(call_site, target);
+                  }
                 }
               }
             }
