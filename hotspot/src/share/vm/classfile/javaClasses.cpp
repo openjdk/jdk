@@ -1462,7 +1462,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle met
   nmethod* nm = NULL;
   bool skip_fillInStackTrace_check = false;
   bool skip_throwableInit_check = false;
-  bool skip_hidden = false;
+  bool skip_hidden = !ShowHiddenFrames;
 
   for (frame fr = thread->last_frame(); max_depth != total_count;) {
     methodOop method = NULL;
@@ -1544,9 +1544,6 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle met
     }
     if (method->is_hidden()) {
       if (skip_hidden)  continue;
-    } else {
-      // start skipping hidden frames after first non-hidden frame
-      skip_hidden = !ShowHiddenFrames;
     }
     bt.push(method, bci, CHECK);
     total_count++;
