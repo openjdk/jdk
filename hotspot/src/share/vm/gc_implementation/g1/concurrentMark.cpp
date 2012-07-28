@@ -1226,9 +1226,7 @@ protected:
     } else {
       // Starts humongous case: calculate how many regions are part of
       // this humongous region and then set the bit range.
-      G1CollectedHeap* g1h = G1CollectedHeap::heap();
-      HeapRegion *last_hr = g1h->heap_region_containing_raw(hr->end() - 1);
-      BitMap::idx_t end_index = (BitMap::idx_t) last_hr->hrs_index() + 1;
+      BitMap::idx_t end_index = (BitMap::idx_t) hr->last_hc_index();
       _region_bm->par_at_put_range(index, end_index, true);
     }
   }
@@ -1645,26 +1643,27 @@ public:
   size_t freed_bytes() { return _freed_bytes; }
 
   bool doHeapRegion(HeapRegion *hr) {
+    if (hr->continuesHumongous()) {
+      return false;
+    }
     // We use a claim value of zero here because all regions
     // were claimed with value 1 in the FinalCount task.
-    hr->reset_gc_time_stamp();
-    if (!hr->continuesHumongous()) {
-      double start = os::elapsedTime();
-      _regions_claimed++;
-      hr->note_end_of_marking();
-      _max_live_bytes += hr->max_live_bytes();
-      _g1->free_region_if_empty(hr,
-                                &_freed_bytes,
-                                _local_cleanup_list,
-                                _old_proxy_set,
-                                _humongous_proxy_set,
-                                _hrrs_cleanup_task,
-                                true /* par */);
-      double region_time = (os::elapsedTime() - start);
-      _claimed_region_time += region_time;
-      if (region_time > _max_region_time) {
-        _max_region_time = region_time;
-      }
+    _g1->reset_gc_time_stamps(hr);
+    double start = os::elapsedTime();
+    _regions_claimed++;
+    hr->note_end_of_marking();
+    _max_live_bytes += hr->max_live_bytes();
+    _g1->free_region_if_empty(hr,
+                              &_freed_bytes,
+                              _local_cleanup_list,
+                              _old_proxy_set,
+                              _humongous_proxy_set,
+                              _hrrs_cleanup_task,
+                              true /* par */);
+    double region_time = (os::elapsedTime() - start);
+    _claimed_region_time += region_time;
+    if (region_time > _max_region_time) {
+      _max_region_time = region_time;
     }
     return false;
   }
@@ -1881,6 +1880,7 @@ void ConcurrentMark::cleanup() {
   } else {
     g1_par_note_end_task.work(0);
   }
+  g1h->check_gc_time_stamps();
 
   if (!cleanup_list_is_empty()) {
     // The cleanup list is not empty, so we'll have to process it
@@ -2449,24 +2449,8 @@ public:
     } else {
       HeapRegion* hr  = _g1h->heap_region_containing(obj);
       guarantee(hr != NULL, "invariant");
-      bool over_tams = false;
-      bool marked = false;
-
-      switch (_vo) {
-        case VerifyOption_G1UsePrevMarking:
-          over_tams = hr->obj_allocated_since_prev_marking(obj);
-          marked = _g1h->isMarkedPrev(obj);
-          break;
-        case VerifyOption_G1UseNextMarking:
-          over_tams = hr->obj_allocated_since_next_marking(obj);
-          marked = _g1h->isMarkedNext(obj);
-          break;
-        case VerifyOption_G1UseMarkWord:
-          marked = obj->is_gc_marked();
-          break;
-        default:
-          ShouldNotReachHere();
-      }
+      bool over_tams = _g1h->allocated_since_marking(obj, hr, _vo);
+      bool marked = _g1h->is_marked(obj, _vo);
 
       if (over_tams) {
         str = " >";
@@ -2502,24 +2486,8 @@ public:
     _out(out), _vo(vo), _all(all), _hr(hr) { }
 
   void do_object(oop o) {
-    bool over_tams = false;
-    bool marked = false;
-
-    switch (_vo) {
-      case VerifyOption_G1UsePrevMarking:
-        over_tams = _hr->obj_allocated_since_prev_marking(o);
-        marked = _g1h->isMarkedPrev(o);
-        break;
-      case VerifyOption_G1UseNextMarking:
-        over_tams = _hr->obj_allocated_since_next_marking(o);
-        marked = _g1h->isMarkedNext(o);
-        break;
-      case VerifyOption_G1UseMarkWord:
-        marked = o->is_gc_marked();
-        break;
-      default:
-        ShouldNotReachHere();
-    }
+    bool over_tams = _g1h->allocated_since_marking(o, _hr, _vo);
+    bool marked = _g1h->is_marked(o, _vo);
     bool print_it = _all || over_tams || marked;
 
     if (print_it) {
@@ -2533,32 +2501,17 @@ public:
 
 class PrintReachableRegionClosure : public HeapRegionClosure {
 private:
-  outputStream* _out;
-  VerifyOption  _vo;
-  bool          _all;
+  G1CollectedHeap* _g1h;
+  outputStream*    _out;
+  VerifyOption     _vo;
+  bool             _all;
 
 public:
   bool doHeapRegion(HeapRegion* hr) {
     HeapWord* b = hr->bottom();
     HeapWord* e = hr->end();
     HeapWord* t = hr->top();
-    HeapWord* p = NULL;
-
-    switch (_vo) {
-      case VerifyOption_G1UsePrevMarking:
-        p = hr->prev_top_at_mark_start();
-        break;
-      case VerifyOption_G1UseNextMarking:
-        p = hr->next_top_at_mark_start();
-        break;
-      case VerifyOption_G1UseMarkWord:
-        // When we are verifying marking using the mark word
-        // TAMS has no relevance.
-        assert(p == NULL, "post-condition");
-        break;
-      default:
-        ShouldNotReachHere();
-    }
+    HeapWord* p = _g1h->top_at_mark_start(hr, _vo);
     _out->print_cr("** ["PTR_FORMAT", "PTR_FORMAT"] top: "PTR_FORMAT" "
                    "TAMS: "PTR_FORMAT, b, e, t, p);
     _out->cr();
@@ -2580,19 +2533,8 @@ public:
   PrintReachableRegionClosure(outputStream* out,
                               VerifyOption  vo,
                               bool          all) :
-    _out(out), _vo(vo), _all(all) { }
+    _g1h(G1CollectedHeap::heap()), _out(out), _vo(vo), _all(all) { }
 };
-
-static const char* verify_option_to_tams(VerifyOption vo) {
-  switch (vo) {
-    case VerifyOption_G1UsePrevMarking:
-      return "PTAMS";
-    case VerifyOption_G1UseNextMarking:
-      return "NTAMS";
-    default:
-      return "NONE";
-  }
-}
 
 void ConcurrentMark::print_reachable(const char* str,
                                      VerifyOption vo,
@@ -2622,7 +2564,7 @@ void ConcurrentMark::print_reachable(const char* str,
   }
 
   outputStream* out = &fout;
-  out->print_cr("-- USING %s", verify_option_to_tams(vo));
+  out->print_cr("-- USING %s", _g1h->top_at_mark_start_str(vo));
   out->cr();
 
   out->print_cr("--- ITERATING OVER REGIONS");
