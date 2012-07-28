@@ -533,7 +533,17 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
         if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
           CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
           if (csj->method() != NULL &&
-              csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString) {
+              csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString &&
+              arg->outcnt() == 1) {
+            // _control is the list of StringBuilder calls nodes which
+            // will be replaced by new String code after this optimization.
+            // Integer::toString() call is not part of StringBuilder calls
+            // chain. It could be eliminated only if its result is used
+            // only by this SB calls chain.
+            // Another limitation: it should be used only once because
+            // it is unknown that it is used only by this SB calls chain
+            // until all related SB calls nodes are collected.
+            assert(arg->unique_out() == cnode, "sanity");
             sc->add_control(csj);
             sc->push_int(csj->in(TypeFunc::Parms));
             continue;

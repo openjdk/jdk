@@ -59,7 +59,6 @@ public class FileCredentialsCache extends CredentialsCache
     public int version;
     public Tag tag; // optional
     public PrincipalName primaryPrincipal;
-    public Realm primaryRealm;
     private Vector<Credentials> credentialsList;
     private static String dir;
     private static boolean DEBUG = Krb5.DEBUG;
@@ -79,7 +78,6 @@ public class FileCredentialsCache extends CredentialsCache
             }
             if (principal != null) {
                 fcc.primaryPrincipal = principal;
-                fcc.primaryRealm = principal.getRealm();
             }
             fcc.load(cacheName);
             return fcc;
@@ -153,7 +151,6 @@ public class FileCredentialsCache extends CredentialsCache
     synchronized void init(PrincipalName principal, String name)
         throws IOException, KrbException {
         primaryPrincipal = principal;
-        primaryRealm = principal.getRealm();
         CCacheOutputStream cos =
             new CCacheOutputStream(new FileOutputStream(name));
         version = KRB5_FCC_FVNO_3;
@@ -183,7 +180,6 @@ public class FileCredentialsCache extends CredentialsCache
             }
         } else
             primaryPrincipal = p;
-        primaryRealm = primaryPrincipal.getRealm();
         credentialsList = new Vector<Credentials> ();
         while (cis.available() > 0) {
             Credentials cred = cis.readCred(version);
@@ -291,18 +287,16 @@ public class FileCredentialsCache extends CredentialsCache
 
     }
 
-    public Credentials getCreds(LoginOptions options,
-                                PrincipalName sname, Realm srealm) {
+    public Credentials getCreds(LoginOptions options, PrincipalName sname) {
         if (options == null) {
-            return getCreds(sname, srealm);
+            return getCreds(sname);
         } else {
             Credentials[] list = getCredsList();
             if (list == null) {
                 return null;
             } else {
                 for (int i = 0; i < list.length; i++) {
-                    if (sname.match(list[i].sname) &&
-                        (srealm.toString().equals(list[i].srealm.toString()))) {
+                    if (sname.match(list[i].sname)) {
                         if (list[i].flags.match(options)) {
                             return list[i];
                         }
@@ -317,16 +311,14 @@ public class FileCredentialsCache extends CredentialsCache
     /**
      * Gets a credentials for a specified service.
      * @param sname service principal name.
-     * @param srealm the realm that the service belongs to.
      */
-    public Credentials getCreds(PrincipalName sname, Realm srealm) {
+    public Credentials getCreds(PrincipalName sname) {
         Credentials[] list = getCredsList();
         if (list == null) {
             return null;
         } else {
             for (int i = 0; i < list.length; i++) {
-                if (sname.match(list[i].sname) &&
-                    (srealm.toString().equals(list[i].srealm.toString()))) {
+                if (sname.match(list[i].sname)) {
                     return list[i];
                 }
             }
@@ -343,7 +335,7 @@ public class FileCredentialsCache extends CredentialsCache
                 if (list[i].sname.toString().startsWith("krbtgt")) {
                     String[] nameStrings = list[i].sname.getNameStrings();
                     // find the TGT for the current realm krbtgt/realm@realm
-                    if (nameStrings[1].equals(list[i].srealm.toString())) {
+                    if (nameStrings[1].equals(list[i].sname.getRealm().toString())) {
                        return list[i];
                     }
                 }

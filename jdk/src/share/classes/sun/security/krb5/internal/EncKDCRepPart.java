@@ -74,7 +74,6 @@ public class EncKDCRepPart {
     public KerberosTime starttime; //optional
     public KerberosTime endtime;
     public KerberosTime renewTill; //optional
-    public Realm srealm;
     public PrincipalName sname;
     public HostAddresses caddr; //optional
     public int msgType; //not included in sequence
@@ -89,7 +88,6 @@ public class EncKDCRepPart {
             KerberosTime new_starttime,
             KerberosTime new_endtime,
             KerberosTime new_renewTill,
-            Realm new_srealm,
             PrincipalName new_sname,
             HostAddresses new_caddr,
             int new_msgType) {
@@ -102,7 +100,6 @@ public class EncKDCRepPart {
         starttime = new_starttime;
         endtime = new_endtime;
         renewTill = new_renewTill;
-        srealm = new_srealm;
         sname = new_sname;
         caddr = new_caddr;
         msgType = new_msgType;
@@ -158,8 +155,8 @@ public class EncKDCRepPart {
         starttime = KerberosTime.parse(der.getData(), (byte) 0x06, true);
         endtime = KerberosTime.parse(der.getData(), (byte) 0x07, false);
         renewTill = KerberosTime.parse(der.getData(), (byte) 0x08, true);
-        srealm = Realm.parse(der.getData(), (byte) 0x09, false);
-        sname = PrincipalName.parse(der.getData(), (byte) 0x0A, false);
+        Realm srealm = Realm.parse(der.getData(), (byte) 0x09, false);
+        sname = PrincipalName.parse(der.getData(), (byte) 0x0A, false, srealm);
         if (der.getData().available() > 0) {
             caddr = HostAddresses.parse(der.getData(), (byte) 0x0B, true);
         }
@@ -206,7 +203,7 @@ public class EncKDCRepPart {
                     true, (byte) 0x08), renewTill.asn1Encode());
         }
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                true, (byte) 0x09), srealm.asn1Encode());
+                true, (byte) 0x09), sname.getRealm().asn1Encode());
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x0A), sname.asn1Encode());
         if (caddr != null) {

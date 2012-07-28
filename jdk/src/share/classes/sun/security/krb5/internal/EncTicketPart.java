@@ -65,7 +65,6 @@ public class EncTicketPart {
 
     public TicketFlags flags;
     public EncryptionKey key;
-    public Realm crealm;
     public PrincipalName cname;
     public TransitedEncoding transited;
     public KerberosTime authtime;
@@ -78,7 +77,6 @@ public class EncTicketPart {
     public EncTicketPart(
             TicketFlags new_flags,
             EncryptionKey new_key,
-            Realm new_crealm,
             PrincipalName new_cname,
             TransitedEncoding new_transited,
             KerberosTime new_authtime,
@@ -89,7 +87,6 @@ public class EncTicketPart {
             AuthorizationData new_authorizationData) {
         flags = new_flags;
         key = new_key;
-        crealm = new_crealm;
         cname = new_cname;
         transited = new_transited;
         authtime = new_authtime;
@@ -151,8 +148,8 @@ public class EncTicketPart {
         }
         flags = TicketFlags.parse(der.getData(), (byte) 0x00, false);
         key = EncryptionKey.parse(der.getData(), (byte) 0x01, false);
-        crealm = Realm.parse(der.getData(), (byte) 0x02, false);
-        cname = PrincipalName.parse(der.getData(), (byte) 0x03, false);
+        Realm crealm = Realm.parse(der.getData(), (byte) 0x02, false);
+        cname = PrincipalName.parse(der.getData(), (byte) 0x03, false, crealm);
         transited = TransitedEncoding.parse(der.getData(), (byte) 0x04, false);
         authtime = KerberosTime.parse(der.getData(), (byte) 0x05, false);
         starttime = KerberosTime.parse(der.getData(), (byte) 0x06, true);
@@ -186,7 +183,7 @@ public class EncTicketPart {
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x01), key.asn1Encode());
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                true, (byte) 0x02), crealm.asn1Encode());
+                true, (byte) 0x02), cname.getRealm().asn1Encode());
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x03), cname.asn1Encode());
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,

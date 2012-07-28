@@ -72,7 +72,6 @@ import java.math.BigInteger;
 public class KDCReqBody {
     public KDCOptions kdcOptions;
     public PrincipalName cname; //optional in ASReq only
-    public Realm crealm;
     public PrincipalName sname; //optional
     public KerberosTime from; //optional
     public KerberosTime till;
@@ -87,7 +86,6 @@ public class KDCReqBody {
     public KDCReqBody(
             KDCOptions new_kdcOptions,
             PrincipalName new_cname, //optional in ASReq only
-            Realm new_crealm,
             PrincipalName new_sname, //optional
             KerberosTime new_from, //optional
             KerberosTime new_till,
@@ -100,7 +98,6 @@ public class KDCReqBody {
             ) throws IOException {
         kdcOptions = new_kdcOptions;
         cname = new_cname;
-        crealm = new_crealm;
         sname = new_sname;
         from = new_from;
         till = new_till;
@@ -142,12 +139,22 @@ public class KDCReqBody {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }
         kdcOptions = KDCOptions.parse(encoding.getData(), (byte)0x00, false);
-        cname = PrincipalName.parse(encoding.getData(), (byte)0x01, true);
+
+        // cname only appears in AS-REQ and it shares the realm field with
+        // sname. This is the only place where realm comes after the name.
+        // We first give cname a fake realm and reassign it the correct
+        // realm after the realm field is read.
+        cname = PrincipalName.parse(encoding.getData(), (byte)0x01, true,
+                new Realm("PLACEHOLDER"));
         if ((msgType != Krb5.KRB_AS_REQ) && (cname != null)) {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }
-        crealm = Realm.parse(encoding.getData(), (byte)0x02, false);
-        sname = PrincipalName.parse(encoding.getData(), (byte)0x03, true);
+        Realm realm = Realm.parse(encoding.getData(), (byte)0x02, false);
+        if (cname != null) {
+            cname = new PrincipalName(
+                    cname.getNameType(), cname.getNameStrings(), realm);
+        }
+        sname = PrincipalName.parse(encoding.getData(), (byte)0x03, true, realm);
         from = KerberosTime.parse(encoding.getData(), (byte)0x04, true);
         till = KerberosTime.parse(encoding.getData(), (byte)0x05, false);
         rtime = KerberosTime.parse(encoding.getData(), (byte)0x06, true);
@@ -223,9 +230,11 @@ public class KDCReqBody {
                 v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x01), cname.asn1Encode()));
             }
         }
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x02), crealm.asn1Encode()));
         if (sname != null) {
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x02), sname.getRealm().asn1Encode()));
             v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x03), sname.asn1Encode()));
+        } else if (cname != null) {
+            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x02), cname.getRealm().asn1Encode()));
         }
         if (from != null) {
             v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x04), from.asn1Encode()));

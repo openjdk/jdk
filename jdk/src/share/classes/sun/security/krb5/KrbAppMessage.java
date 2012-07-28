@@ -48,8 +48,7 @@ abstract class KrbAppMessage {
                HostAddress rAddress,
                boolean timestampRequired,
                boolean seqNumberRequired,
-               PrincipalName packetPrincipal,
-               Realm packetRealm)
+               PrincipalName packetPrincipal)
         throws KrbApErrException {
 
         if (!Krb5.AP_EMPTY_ADDRESSES_ALLOWED || sAddress != null) {

@@ -45,11 +45,11 @@ MemPointer* SequencedRecordIterator::next_record() {
 }
 
 
-debug_only(volatile jint MemRecorder::_instance_count = 0;)
+volatile jint MemRecorder::_instance_count = 0;
 
 MemRecorder::MemRecorder() {
   assert(MemTracker::is_on(), "Native memory tracking is off");
-  debug_only(Atomic::inc(&_instance_count);)
+  Atomic::inc(&_instance_count);
   debug_only(set_generation();)
 
   if (MemTracker::track_callsite()) {
@@ -83,9 +83,7 @@ MemRecorder::~MemRecorder() {
     delete _next;
   }
 
-#ifdef ASSERT
   Atomic::dec(&_instance_count);
-#endif
 }
 
 // Sorting order:

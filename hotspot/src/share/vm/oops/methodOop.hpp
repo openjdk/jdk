@@ -122,8 +122,9 @@ class methodOopDesc : public oopDesc {
   u2                _max_locals;                 // Number of local variables used by this method
   u2                _size_of_parameters;         // size of the parameter block (receiver + arguments) in words
   u1                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
-  u1                _jfr_towrite : 1,            // Flags
-                                 : 7;
+  u1                _jfr_towrite  : 1,           // Flags
+                    _force_inline : 1,
+                                  : 6;
   u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
   u2                _number_of_breakpoints;      // fullspeed debugging support
   InvocationCounter _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
@@ -282,12 +283,12 @@ class methodOopDesc : public oopDesc {
   }
 
   // exception handler table
-  typeArrayOop exception_table() const
-                                   { return constMethod()->exception_table(); }
-  void set_exception_table(typeArrayOop e)
-                                     { constMethod()->set_exception_table(e); }
   bool has_exception_handler() const
                              { return constMethod()->has_exception_handler(); }
+  int exception_table_length() const
+                             { return constMethod()->exception_table_length(); }
+  ExceptionTableElement* exception_table_start() const
+                             { return constMethod()->exception_table_start(); }
 
   // Finds the first entry point bci of an exception handler for an
   // exception of klass ex_klass thrown at throw_bci. A value of NULL
@@ -655,6 +656,9 @@ class methodOopDesc : public oopDesc {
   bool jfr_towrite()                 { return _jfr_towrite; }
   void set_jfr_towrite(bool towrite) { _jfr_towrite = towrite; }
 
+  bool force_inline()            { return _force_inline; }
+  void set_force_inline(bool fi) { _force_inline = fi; }
+
   // On-stack replacement support
   bool has_osr_nmethod(int level, bool match_level) {
    return instanceKlass::cast(method_holder())->lookup_osr_nmethod(this, InvocationEntryBci, level, match_level) != NULL;
@@ -833,6 +837,68 @@ class BreakpointInfo : public CHeapObj<mtClass> {
 
   void set(methodOop method);
   void clear(methodOop method);
+};
+
+// Utility class for access exception handlers
+class ExceptionTable : public StackObj {
+ private:
+  ExceptionTableElement* _table;
+  u2  _length;
+
+ public:
+  ExceptionTable(methodOop m) {
+    if (m->has_exception_handler()) {
+      _table = m->exception_table_start();
+      _length = m->exception_table_length();
+    } else {
+      _table = NULL;
+      _length = 0;
+    }
+  }
+
+  int length() const {
+    return _length;
+  }
+
+  u2 start_pc(int idx) const {
+    assert(idx < _length, "out of bounds");
+    return _table[idx].start_pc;
+  }
+
+  void set_start_pc(int idx, u2 value) {
+    assert(idx < _length, "out of bounds");
+    _table[idx].start_pc = value;
+  }
+
+  u2 end_pc(int idx) const {
+    assert(idx < _length, "out of bounds");
+    return _table[idx].end_pc;
+  }
+
+  void set_end_pc(int idx, u2 value) {
+    assert(idx < _length, "out of bounds");
+    _table[idx].end_pc = value;
+  }
+
+  u2 handler_pc(int idx) const {
+    assert(idx < _length, "out of bounds");
+    return _table[idx].handler_pc;
+  }
+
+  void set_handler_pc(int idx, u2 value) {
+    assert(idx < _length, "out of bounds");
+    _table[idx].handler_pc = value;
+  }
+
+  u2 catch_type_index(int idx) const {
+    assert(idx < _length, "out of bounds");
+    return _table[idx].catch_type_index;
+  }
+
+  void set_catch_type_index(int idx, u2 value) {
+    assert(idx < _length, "out of bounds");
+    _table[idx].catch_type_index = value;
+  }
 };
 
 #endif // SHARE_VM_OOPS_METHODOOP_HPP
