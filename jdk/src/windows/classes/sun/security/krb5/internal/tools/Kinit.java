@@ -206,9 +206,7 @@ public class Kinit {
             System.out.println(">>> Kinit realm name is " + realm);
         }
 
-        PrincipalName sname = new PrincipalName("krbtgt" + "/" + realm,
-                                        PrincipalName.KRB_NT_SRV_INST);
-        sname.setRealm(realm);
+        PrincipalName sname = PrincipalName.tgsService(realm, realm);
         builder.setTarget(sname);
 
         if (DEBUG) {

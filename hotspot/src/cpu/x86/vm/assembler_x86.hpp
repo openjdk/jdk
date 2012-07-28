@@ -1466,6 +1466,9 @@ private:
   void punpckldq(XMMRegister dst, XMMRegister src);
   void punpckldq(XMMRegister dst, Address src);
 
+  // Interleave Low Quadwords
+  void punpcklqdq(XMMRegister dst, XMMRegister src);
+
 #ifndef _LP64 // no 32bit push/pop on amd64
   void pushl(Address src);
 #endif
@@ -1606,13 +1609,11 @@ private:
 
   void set_byte_if_not_zero(Register dst); // sets reg to 1 if not zero, otherwise 0
 
-  // AVX 3-operands instructions (encoded with VEX prefix)
+  // AVX 3-operands scalar instructions (encoded with VEX prefix)
   void vaddsd(XMMRegister dst, XMMRegister nds, Address src);
   void vaddsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vaddss(XMMRegister dst, XMMRegister nds, Address src);
   void vaddss(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vandpd(XMMRegister dst, XMMRegister nds, Address src);
-  void vandps(XMMRegister dst, XMMRegister nds, Address src);
   void vdivsd(XMMRegister dst, XMMRegister nds, Address src);
   void vdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vdivss(XMMRegister dst, XMMRegister nds, Address src);
@@ -1625,13 +1626,17 @@ private:
   void vsubsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vsubss(XMMRegister dst, XMMRegister nds, Address src);
   void vsubss(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vxorpd(XMMRegister dst, XMMRegister nds, Address src);
-  void vxorps(XMMRegister dst, XMMRegister nds, Address src);
 
   // AVX Vector instrucitons.
+  void vandpd(XMMRegister dst, XMMRegister nds, Address src);
+  void vandps(XMMRegister dst, XMMRegister nds, Address src);
+  void vxorpd(XMMRegister dst, XMMRegister nds, Address src);
+  void vxorps(XMMRegister dst, XMMRegister nds, Address src);
   void vxorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
   void vxorps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
   void vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
   // AVX instruction which is used to clear upper 128 bits of YMM registers and
   // to avoid transaction penalty between AVX and SSE states. There is no
@@ -2563,6 +2568,20 @@ public:
   void vxorps(XMMRegister dst, XMMRegister nds, Address src) { Assembler::vxorps(dst, nds, src); }
   void vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src);
 
+  void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+    if (UseAVX > 1 || !vector256) // vpxor 256 bit is available only in AVX2
+      Assembler::vpxor(dst, nds, src, vector256);
+    else
+      Assembler::vxorpd(dst, nds, src, vector256);
+  }
+
+  // Move packed integer values from low 128 bit to hign 128 bit in 256 bit vector.
+  void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+    if (UseAVX > 1) // vinserti128h is available only in AVX2
+      Assembler::vinserti128h(dst, nds, src);
+    else
+      Assembler::vinsertf128h(dst, nds, src);
+  }
 
   // Data
 
@@ -2614,6 +2633,13 @@ public:
 
   // to avoid hiding movb
   void movbyte(ArrayAddress dst, int src);
+
+  // Import other mov() methods from the parent class or else
+  // they will be hidden by the following overriding declaration.
+  using Assembler::movdl;
+  using Assembler::movq;
+  void movdl(XMMRegister dst, AddressLiteral src);
+  void movq(XMMRegister dst, AddressLiteral src);
 
   // Can push value or effective address
   void pushptr(AddressLiteral src);

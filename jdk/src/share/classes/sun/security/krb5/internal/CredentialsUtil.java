@@ -72,23 +72,9 @@ rs.
     public static Credentials acquireServiceCreds(
                 String service, Credentials ccreds)
     throws KrbException, IOException {
-        ServiceName sname = new ServiceName(service);
+        PrincipalName sname = new PrincipalName(service);
         String serviceRealm = sname.getRealmString();
         String localRealm = ccreds.getClient().getRealmString();
-        String defaultRealm = Config.getInstance().getDefaultRealm();
-
-        if (localRealm == null) {
-            PrincipalName temp = null;
-            if ((temp = ccreds.getServer()) != null)
-                localRealm = temp.getRealmString();
-        }
-        if (localRealm == null) {
-            localRealm = defaultRealm;
-        }
-        if (serviceRealm == null) {
-            serviceRealm = localRealm;
-            sname.setRealm(serviceRealm);
-        }
 
         /*
           if (!localRealm.equalsIgnoreCase(serviceRealm)) { //do cross-realm auth entication
@@ -128,13 +114,12 @@ rs.
 
         int i = 0, k = 0;
         Credentials cTgt = null, newTgt = null, theTgt = null;
-        ServiceName tempService = null;
+        PrincipalName tempService = null;
         String realm = null, newTgtRealm = null, theTgtRealm = null;
 
         for (cTgt = ccreds, i = 0; i < realms.length;)
         {
-            tempService = new ServiceName(PrincipalName.TGS_DEFAULT_SRV_NAME,
-                                          serviceRealm, realms[i]);
+            tempService = PrincipalName.tgsService(serviceRealm, realms[i]);
 
             if (DEBUG)
             {
@@ -164,9 +149,7 @@ rs.
                      newTgt == null && k > i; k--)
                 {
 
-                    tempService = new ServiceName(
-                                       PrincipalName.TGS_DEFAULT_SRV_NAME,
-                                       realms[k], realms[i]);
+                    tempService = PrincipalName.tgsService(realms[k], realms[i]);
                     if (DEBUG)
                     {
                         System.out.println(">>> Credentials acquireServiceCreds: inner loop: [" + k +"] tempService=" + tempService);
@@ -306,7 +289,7 @@ rs.
     * This method does the real job to request the service credential.
     */
     private static Credentials serviceCreds(
-            ServiceName service, Credentials ccreds)
+            PrincipalName service, Credentials ccreds)
             throws KrbException, IOException {
         return new KrbTgsReq(ccreds, service).sendAndGetCreds();
     }

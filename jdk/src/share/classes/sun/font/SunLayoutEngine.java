@@ -137,8 +137,9 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
 
         LayoutEngine e = (LayoutEngine)cache.get(key);
         if (e == null) {
-            e = new SunLayoutEngine(key.copy());
-            cache.put(key, e);
+            LayoutEngineKey copy = key.copy();
+            e = new SunLayoutEngine(copy);
+            cache.put(copy, e);
         }
         return e;
     }

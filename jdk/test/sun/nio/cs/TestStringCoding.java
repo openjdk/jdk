@@ -24,7 +24,7 @@
  */
 
 /* @test
-   @bug 6636323 6636319 7040220 7096080
+   @bug 6636323 6636319 7040220 7096080 7183053
    @summary Test if StringCoding and NIO result have the same de/encoding result
  * @run main/othervm/timeout=2000 TestStringCoding
  */
@@ -70,9 +70,60 @@ public class TestStringCoding {
                     }
                     test(cs, Arrays.copyOf(bmpCA, clen), Arrays.copyOf(sbBA, blen));
                 }
+
+                testMixed(cs);
                 System.out.println("done!");
             }
         }
+    }
+
+    static void testMixed(Charset cs) throws Throwable {
+        CharsetDecoder dec = cs.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPLACE)
+            .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        CharsetEncoder enc = cs.newEncoder()
+            .onMalformedInput(CodingErrorAction.REPLACE)
+            .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        List<Integer> cps = new ArrayList<>(0x10000);
+        int off = 0;
+        int cp = 0;
+        while (cp < 0x10000) {
+            if (enc.canEncode((char)cp)) {
+               cps.add(cp);
+            }
+            cp++;
+        }
+        Collections.shuffle(cps);
+        char[] bmpCA = new char[cps.size()];
+        for (int i = 0; i < cps.size(); i++)
+            bmpCA[i] = (char)(int)cps.get(i);
+        String bmpStr = new String(bmpCA);
+        //getBytes(csn);
+        byte[] bmpBA = bmpStr.getBytes(cs.name());
+        ByteBuffer bf = enc.reset().encode(CharBuffer.wrap(bmpCA));
+        byte[] baNIO = new byte[bf.limit()];
+        bf.get(baNIO, 0, baNIO.length);
+        if (!Arrays.equals(bmpBA, baNIO)) {
+            throw new RuntimeException("getBytes(csn) failed  -> " + cs.name());
+        }
+
+        //getBytes(cs);
+        bmpBA = bmpStr.getBytes(cs);
+        if (!Arrays.equals(bmpBA, baNIO))
+            throw new RuntimeException("getBytes(cs) failed  -> " + cs.name());
+
+        //new String(csn);
+        String strSC = new String(bmpBA, cs.name());
+        String strNIO = dec.reset().decode(ByteBuffer.wrap(bmpBA)).toString();
+        if(!strNIO.equals(strSC)) {
+            throw new RuntimeException("new String(csn) failed  -> " + cs.name());
+        }
+
+        //new String(cs);
+        strSC = new String(bmpBA, cs);
+        if (!strNIO.equals(strSC))
+            throw new RuntimeException("new String(cs) failed  -> " + cs.name());
+
     }
 
     static void test(Charset cs, char[] bmpCA, byte[] sbBA) throws Throwable {
@@ -100,6 +151,7 @@ public class TestStringCoding {
         //new String(csn);
         String strSC = new String(sbBA, cs.name());
         String strNIO = dec.reset().decode(ByteBuffer.wrap(sbBA)).toString();
+
         if(!strNIO.equals(strSC))
             throw new RuntimeException("new String(csn) failed  -> " + cs.name());
 
@@ -112,7 +164,7 @@ public class TestStringCoding {
         if (enc instanceof sun.nio.cs.ArrayEncoder &&
             cs.contains(Charset.forName("ASCII"))) {
             if (cs.name().equals("UTF-8") ||     // utf8 handles surrogates
-                cs.name().equals("CESU-8"))       // utf8 handles surrogates
+                cs.name().equals("CESU-8"))      // utf8 handles surrogates
                 return;
             enc.replaceWith(new byte[] { (byte)'A'});
             sun.nio.cs.ArrayEncoder cae = (sun.nio.cs.ArrayEncoder)enc;
@@ -137,12 +189,16 @@ public class TestStringCoding {
                                                        cs.name())))
                 throw new RuntimeException("encode3(surrogates) failed  -> "
                                            + cs.name());
+            /* sun.nio.cs.ArrayDeEncoder works on the assumption that the
+               invoker (StringCoder) allocates enough output buf, utf8
+               and double-byte coder does not check the output buffer limit.
             ba = new byte[str.length() - 1];
             n = cae.encode(str.toCharArray(), 0, str.length(), ba);
-            if (n != 7 || !"abABABc".equals(new String(ba, 0, n,
-                                                      cs.name())))
+            if (n != 7 || !"abABABc".equals(new String(ba, 0, n, cs.name()))) {
                 throw new RuntimeException("encode4(surrogates) failed  -> "
                                            + cs.name());
+            }
+            */
         }
 
     }
