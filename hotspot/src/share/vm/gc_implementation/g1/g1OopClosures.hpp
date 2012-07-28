@@ -197,7 +197,6 @@ class FilterOutOfRegionClosure: public OopClosure {
   HeapWord* _r_bottom;
   HeapWord* _r_end;
   OopClosure* _oc;
-  int _out_of_region;
 public:
   FilterOutOfRegionClosure(HeapRegion* r, OopClosure* oc);
   template <class T> void do_oop_nv(T* p);
@@ -205,7 +204,6 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
   bool apply_to_weak_ref_discovered_field() { return true; }
   bool do_header() { return false; }
-  int out_of_region() { return _out_of_region; }
 };
 
 // Closure for iterating over object fields during concurrent marking

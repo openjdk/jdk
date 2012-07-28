@@ -82,6 +82,14 @@ class OtherRegionsTable VALUE_OBJ_CLASS_SPEC {
   PerRegionTable** _fine_grain_regions;
   size_t           _n_fine_entries;
 
+  // The fine grain remembered sets are doubly linked together using
+  // their 'next' and 'prev' fields.
+  // This allows fast bulk freeing of all the fine grain remembered
+  // set entries, and fast finding of all of them without iterating
+  // over the _fine_grain_regions table.
+  PerRegionTable * _first_all_fine_prts;
+  PerRegionTable * _last_all_fine_prts;
+
   // Used to sample a subset of the fine grain PRTs to determine which
   // PRT to evict and coarsen.
   size_t        _fine_eviction_start;
@@ -113,6 +121,11 @@ class OtherRegionsTable VALUE_OBJ_CLASS_SPEC {
   static int** _from_card_cache;
   static size_t _from_card_cache_max_regions;
   static size_t _from_card_cache_mem_size;
+
+  // link/add the given fine grain remembered set into the "all" list
+  void link_to_all(PerRegionTable * prt);
+  // unlink/remove the given fine grain remembered set into the "all" list
+  void unlink_from_all(PerRegionTable * prt);
 
 public:
   OtherRegionsTable(HeapRegion* hr);

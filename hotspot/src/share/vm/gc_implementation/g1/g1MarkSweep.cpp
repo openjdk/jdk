@@ -262,18 +262,6 @@ public:
   }
 };
 
-// Finds the first HeapRegion.
-class FindFirstRegionClosure: public HeapRegionClosure {
-  HeapRegion* _a_region;
-public:
-  FindFirstRegionClosure() : _a_region(NULL) {}
-  bool doHeapRegion(HeapRegion* r) {
-    _a_region = r;
-    return true;
-  }
-  HeapRegion* result() { return _a_region; }
-};
-
 void G1MarkSweep::mark_sweep_phase2() {
   // Now all live objects are marked, compute the new object addresses.
 
@@ -294,9 +282,8 @@ void G1MarkSweep::mark_sweep_phase2() {
   TraceTime tm("phase 2", G1Log::fine() && Verbose, true, gclog_or_tty);
   GenMarkSweep::trace("2");
 
-  FindFirstRegionClosure cl;
-  g1h->heap_region_iterate(&cl);
-  HeapRegion *r = cl.result();
+  // find the first region
+  HeapRegion* r = g1h->region_at(0);
   CompactibleSpace* sp = r;
   if (r->isHumongous() && oop(r->bottom())->is_gc_marked()) {
     sp = r->next_compaction_space();
@@ -408,7 +395,3 @@ void G1MarkSweep::mark_sweep_phase4() {
   g1h->heap_region_iterate(&blk);
 
 }
-
-// Local Variables: ***
-// c-indentation-style: gnu ***
-// End: ***
