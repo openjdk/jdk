@@ -424,8 +424,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
 
     @Override
     public final Graphics getGraphics() {
-        Graphics g = getWindowPeerOrSelf().isOpaque() ? getOnscreenGraphics()
-                                                      : getOffscreenGraphics();
+        final Graphics g = getOnscreenGraphics();
         if (g != null) {
             synchronized (getPeerTreeLock()){
                 applyConstrain(g);
@@ -443,13 +442,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         final LWWindowPeer wp = getWindowPeerOrSelf();
         return wp.getOnscreenGraphics(getForeground(), getBackground(),
                                       getFont());
-    }
 
-    public final Graphics getOffscreenGraphics() {
-        final LWWindowPeer wp = getWindowPeerOrSelf();
-
-        return wp.getOffscreenGraphics(getForeground(), getBackground(),
-                                       getFont());
     }
 
     private void applyConstrain(final Graphics g) {
@@ -463,7 +456,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     //TODO Move this method to SG2D?
-    private void SG2DConstraint(final SunGraphics2D sg2d, Region r) {
+    void SG2DConstraint(final SunGraphics2D sg2d, Region r) {
         sg2d.constrainX = sg2d.transX;
         sg2d.constrainY = sg2d.transY;
 
@@ -710,7 +703,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         // Obtain the metrics from the offscreen window where this peer is
         // mostly drawn to.
         // TODO: check for "use platform metrics" settings
-        Graphics g = getWindowPeer().getOffscreenGraphics();
+        Graphics g = getWindowPeer().getGraphics();
         try {
             if (g != null) {
                 return g.getFontMetrics(f);
@@ -1011,14 +1004,33 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     @Override
     public final void applyShape(final Region shape) {
         synchronized (getStateLock()) {
-            region = shape;
+            if (region == shape || (region != null && region.equals(shape))) {
+                return;
+            }
+        }
+        applyShapeImpl(shape);
+    }
+
+    void applyShapeImpl(final Region shape) {
+        synchronized (getStateLock()) {
+            if (shape != null) {
+                region = Region.WHOLE_REGION.getIntersection(shape);
+            } else {
+                region = null;
+            }
         }
         repaintParent(getBounds());
     }
 
     protected final Region getRegion() {
         synchronized (getStateLock()) {
-            return region == null ? Region.getInstance(getSize()) : region;
+            return isShaped() ? region : Region.getInstance(getSize());
+        }
+    }
+
+    public boolean isShaped() {
+        synchronized (getStateLock()) {
+            return region != null;
         }
     }
 
@@ -1386,11 +1398,6 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         }
     }
 
-    // Just a helper method, thus final
-    protected final void flushOffscreenGraphics() {
-        flushOffscreenGraphics(getSize());
-    }
-
     protected static final void flushOnscreenGraphics(){
         final OGLRenderQueue rq = OGLRenderQueue.getInstance();
         rq.lock();
@@ -1398,36 +1405,6 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
             rq.flushNow();
         } finally {
             rq.unlock();
-        }
-    }
-
-    /*
-     * Flushes the given rectangle from the back buffer to the screen.
-     */
-    protected void flushOffscreenGraphics(Rectangle r) {
-        flushOffscreenGraphics(r.x, r.y, r.width, r.height);
-    }
-
-    private void flushOffscreenGraphics(int x, int y, int width, int height) {
-        Image bb = getWindowPeerOrSelf().getBackBuffer();
-        if (bb != null) {
-            // g is a screen Graphics from the delegate
-            final Graphics g = getOnscreenGraphics();
-
-            if (g != null && g instanceof Graphics2D) {
-                try {
-                    Graphics2D g2d = (Graphics2D)g;
-                    Point p = localToWindow(new Point(0, 0));
-                    Composite composite = g2d.getComposite();
-                    g2d.setComposite(AlphaComposite.Src);
-                    g.drawImage(bb, x, y, x + width, y + height, p.x + x,
-                            p.y + y, p.x + x + width, p.y + y + height,
-                            null);
-                    g2d.setComposite(composite);
-                } finally {
-                    g.dispose();
-                }
-            }
         }
     }
 

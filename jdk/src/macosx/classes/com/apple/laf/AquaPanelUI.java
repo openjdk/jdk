@@ -32,10 +32,20 @@ import javax.swing.plaf.basic.BasicPanelUI;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
+import java.awt.Graphics;
+
 public class AquaPanelUI extends BasicPanelUI {
     static RecyclableSingleton<AquaPanelUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPanelUI>(AquaPanelUI.class);
 
     public static ComponentUI createUI(final JComponent c) {
         return instance.get();
+    }
+
+    @Override
+    public final void update(final Graphics g, final JComponent c) {
+        if (c.isOpaque()) {
+            AquaUtils.fillRect(g, c);
+        }
+        paint(g, c);
     }
 }

@@ -86,6 +86,7 @@ private:
   static constMethodOop  new_constMethod(int byte_code_size,
                                          int compressed_line_number_size,
                                          int localvariable_table_length,
+                                         int exception_table_length,
                                          int checked_exceptions_length,
                                          bool is_conc_safe,
                                          TRAPS);
@@ -97,6 +98,7 @@ public:
                                     AccessFlags access_flags,
                                     int compressed_line_number_size,
                                     int localvariable_table_length,
+                                    int exception_table_length,
                                     int checked_exceptions_length,
                                     bool is_conc_safe,
                                     TRAPS);

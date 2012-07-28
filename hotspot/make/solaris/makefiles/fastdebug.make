@@ -36,6 +36,11 @@ OPT_CFLAGS/BYFILE = $(OPT_CFLAGS/$@)$(OPT_CFLAGS/DEFAULT$(OPT_CFLAGS/$@))
 ifeq ("${Platform_compiler}", "sparcWorks")
 OPT_CFLAGS/SLOWER = -xO2
 
+ifeq ($(COMPILER_REV_NUMERIC), 510)
+# CC 5.10 has bug XXXXX with -xO4
+OPT_CFLAGS/jvmtiClassFileReconstituter.o = $(OPT_CFLAGS/SLOWER)
+endif # COMPILER_REV_NUMERIC == 510
+
 ifeq ($(COMPILER_REV_NUMERIC), 509)
 # To avoid jvm98 crash
 OPT_CFLAGS/instanceKlass.o = $(OPT_CFLAGS/SLOWER)
