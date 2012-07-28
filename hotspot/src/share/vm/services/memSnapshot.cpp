@@ -173,7 +173,7 @@ MemSnapshot::MemSnapshot() {
     _staging_area = new (std::nothrow)MemPointerArrayImpl<SeqMemPointerRecord>();
   }
 
-  _lock = new (std::nothrow) Mutex(Monitor::native, "memSnapshotLock");
+  _lock = new (std::nothrow) Mutex(Monitor::max_nonleaf - 1, "memSnapshotLock");
   NOT_PRODUCT(_untracked_count = 0;)
 }
 

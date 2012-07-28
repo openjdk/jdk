@@ -319,4 +319,12 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             updateComponentTreeUIActivation(element, active);
         }
     }
+
+    @Override
+    public final void update(final Graphics g, final JComponent c) {
+        if (c.isOpaque()) {
+            AquaUtils.fillRect(g, c);
+        }
+        paint(g, c);
+    }
 }
