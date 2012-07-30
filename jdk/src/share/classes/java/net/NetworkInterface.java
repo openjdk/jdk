@@ -326,8 +326,10 @@ public final class NetworkInterface {
     }
 
     /**
-     * Returns all the interfaces on this machine. Returns null if no
-     * network interfaces could be found on this machine.
+     * Returns all the interfaces on this machine. The {@code Enumeration}
+     * contains at least one element, possibly representing a loopback
+     * interface that only supports communication between entities on
+     * this machine.
      *
      * NOTE: can use getNetworkInterfaces()+getInetAddresses()
      *       to obtain all IP addresses for this node
