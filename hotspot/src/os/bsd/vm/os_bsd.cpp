@@ -1946,10 +1946,16 @@ bool os::address_is_in_vm(address addr) {
   return false;
 }
 
+
+#define MACH_MAXSYMLEN 256
+
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset) {
   Dl_info dlinfo;
+  char localbuf[MACH_MAXSYMLEN];
 
+  // dladdr will find names of dynamic functions only, but does
+  // it set dli_fbase with mach_header address when it "fails" ?
   if (dladdr((void*)addr, &dlinfo) && dlinfo.dli_sname != NULL) {
     if (buf != NULL) {
       if(!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
@@ -1965,6 +1971,14 @@ bool os::dll_address_to_function_name(address addr, char *buf,
     }
   }
 
+  // Handle non-dymanic manually:
+  if (dlinfo.dli_fbase != NULL &&
+      Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset, dlinfo.dli_fbase)) {
+    if(!Decoder::demangle(localbuf, buf, buflen)) {
+      jio_snprintf(buf, buflen, "%s", localbuf);
+    }
+    return true;
+  }
   if (buf != NULL) buf[0] = '\0';
   if (offset != NULL) *offset = -1;
   return false;
