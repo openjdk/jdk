@@ -124,7 +124,7 @@ abstract class LWTextComponentPeer<T extends TextComponent, D extends JComponent
     }
 
     @Override
-    public void setText(final String l) {
+    public final void setText(final String l) {
         synchronized (getDelegateLock()) {
             // JTextArea.setText() posts two different events (remove & insert).
             // Since we make no differences between text events,
