@@ -1055,7 +1055,7 @@ bool ConnectionGraph::complete_connection_graph(
       C->log()->text("%s", (iterations >= CG_BUILD_ITER_LIMIT) ? "iterations" : "time");
       C->log()->end_elem(" limit'");
     }
-    assert(false, err_msg("infinite EA connection graph build (%f sec, %d iterations) with %d nodes and worklist size %d",
+    assert(false, err_msg_res("infinite EA connection graph build (%f sec, %d iterations) with %d nodes and worklist size %d",
            time.seconds(), iterations, nodes_size(), ptnodes_worklist.length()));
     // Possible infinite build_connection_graph loop,
     // bailout (no changes to ideal graph were made).

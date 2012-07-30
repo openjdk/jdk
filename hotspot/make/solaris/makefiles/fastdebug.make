@@ -39,9 +39,6 @@ OPT_CFLAGS/SLOWER = -xO2
 ifeq ($(COMPILER_REV_NUMERIC), 510)
 # CC 5.10 has bug XXXXX with -xO4
 OPT_CFLAGS/jvmtiClassFileReconstituter.o = $(OPT_CFLAGS/SLOWER)
-# jvm98 crashes on solaris-i586-fastdebug and solaris-sparc-fastdebug with stack overflow
-OPT_CFLAGS/escape.o = $(OPT_CFLAGS) -xspace
-OPT_CFLAGS/matcher.o = $(OPT_CFLAGS) -xspace
 endif # COMPILER_REV_NUMERIC == 510
 
 ifeq ($(COMPILER_REV_NUMERIC), 509)

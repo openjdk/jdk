@@ -523,10 +523,10 @@ void Parse::do_call() {
             retnode = _gvn.transform( new (C, 3) LShiftINode(retnode, intcon(16)) );
             retnode = _gvn.transform( new (C, 3) RShiftINode(retnode, intcon(16)) );
           } else {
-            assert(ct == T_INT, err_msg("rt=%d, ct=%d", rt, ct));
+            assert(ct == T_INT, err_msg_res("rt=%d, ct=%d", rt, ct));
           }
         } else if (rt == T_OBJECT) {
-          assert(ct == T_OBJECT, err_msg("rt=T_OBJECT, ct=%d", ct));
+          assert(ct == T_OBJECT, err_msg_res("rt=T_OBJECT, ct=%d", ct));
           if (ctype->is_loaded()) {
             Node* if_fail = top();
             retnode = gen_checkcast(retnode, makecon(TypeKlassPtr::make(ctype->as_klass())), &if_fail);
@@ -539,7 +539,7 @@ void Parse::do_call() {
             push(retnode);
           }
         } else {
-          assert(ct == rt, err_msg("unexpected mismatch rt=%d, ct=%d", rt, ct));
+          assert(ct == rt, err_msg_res("unexpected mismatch rt=%d, ct=%d", rt, ct));
           // push a zero; it's better than getting an oop/int mismatch
           retnode = pop_node(rt);
           retnode = zerocon(ct);

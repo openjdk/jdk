@@ -1399,7 +1399,7 @@ void Parse::do_one_block() {
     int pre_bc_sp = sp();
     int inputs, depth;
     bool have_se = !stopped() && compute_stack_effects(inputs, depth, /*for_parse*/ true);
-    assert(!have_se || pre_bc_sp >= inputs, err_msg("have enough stack to execute this BC: pre_bc_sp=%d, inputs=%d", pre_bc_sp, inputs));
+    assert(!have_se || pre_bc_sp >= inputs, err_msg_res("have enough stack to execute this BC: pre_bc_sp=%d, inputs=%d", pre_bc_sp, inputs));
 #endif //ASSERT
 
     do_one_bytecode();
