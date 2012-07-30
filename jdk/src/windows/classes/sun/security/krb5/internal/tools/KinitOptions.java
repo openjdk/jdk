@@ -146,15 +146,6 @@ class KinitOptions {
                                                        "Principal name: " + p +
                                                        e.getMessage());
                 }
-                if (principal.getRealm() == null) {
-                    String realm =
-                        Config.getInstance().getDefault("default_realm",
-                                                        "libdefaults");
-                    if (realm != null) {
-                        principal.setRealm(realm);
-                    } else throw new IllegalArgumentException("invalid " +
-                                                              "Realm name");
-                }
             } else if (this.password == null) {
                 // Have already processed a Principal, this must be a password
                 password = args[i].toCharArray();
@@ -175,16 +166,6 @@ class KinitOptions {
     }
 
     PrincipalName getDefaultPrincipal() {
-        String cname;
-        String realm = null;
-        try {
-            realm = Config.getInstance().getDefaultRealm();
-        } catch (KrbException e) {
-            System.out.println ("Can not get default realm " +
-                                e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
 
         // get default principal name from the cachename if it is
         // available.
@@ -204,10 +185,6 @@ class KinitOptions {
             }
             PrincipalName p = cis.readPrincipal(version);
             cis.close();
-            String temp = p.getRealmString();
-            if (temp == null) {
-                p.setRealm(realm);
-            }
             if (DEBUG) {
                 System.out.println(">>>KinitOptions principal name from "+
                                    "the cache is :" + p);
@@ -230,19 +207,15 @@ class KinitOptions {
             System.out.println(">>>KinitOptions default username is :"
                                + username);
         }
-        if (realm != null) {
-            try {
-                PrincipalName p = new PrincipalName(username);
-                if (p.getRealm() == null)
-                    p.setRealm(realm);
-                return p;
-            } catch (RealmException e) {
-                // ignore exception , return null
-                if (DEBUG) {
-                    System.out.println ("Exception in getting principal " +
-                                        "name " + e.getMessage());
-                    e.printStackTrace();
-                }
+        try {
+            PrincipalName p = new PrincipalName(username);
+            return p;
+        } catch (RealmException e) {
+            // ignore exception , return null
+            if (DEBUG) {
+                System.out.println ("Exception in getting principal " +
+                                    "name " + e.getMessage());
+                e.printStackTrace();
             }
         }
         return null;

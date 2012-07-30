@@ -120,6 +120,6 @@ public abstract class CredentialsCache {
     public abstract void save() throws IOException, KrbException;
     public abstract Credentials[] getCredsList();
     public abstract Credentials getDefaultCreds();
-    public abstract Credentials getCreds(PrincipalName sname, Realm srealm) ;
-    public abstract Credentials getCreds(LoginOptions options, PrincipalName sname, Realm srealm) ;
+    public abstract Credentials getCreds(PrincipalName sname);
+    public abstract Credentials getCreds(LoginOptions options, PrincipalName sname);
 }

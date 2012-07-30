@@ -522,12 +522,6 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
         postEvent(targetToAppContext(event.getSource()), event);
     }
 
-    // use peer's back buffer to implement non-opaque windows.
-    @Override
-    public boolean needUpdateWindow() {
-        return true;
-    }
-
     @Override
     public void grab(Window w) {
         if (w.getPeer() != null) {

@@ -46,7 +46,6 @@ public class EncASRepPart extends EncKDCRepPart {
             KerberosTime new_starttime,
             KerberosTime new_endtime,
             KerberosTime new_renewTill,
-            Realm new_srealm,
             PrincipalName new_sname,
             HostAddresses new_caddr) {
         super(
@@ -59,7 +58,6 @@ public class EncASRepPart extends EncKDCRepPart {
                 new_starttime,
                 new_endtime,
                 new_renewTill,
-                new_srealm,
                 new_sname,
                 new_caddr,
                 Krb5.KRB_ENC_AS_REP_PART

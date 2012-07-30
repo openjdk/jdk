@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 # @test
 # @bug 7102369 7094468 7100592
+# @library ../../testlibrary
+# @build TestLibrary
 # @summary remove java.rmi.server.codebase property parsing from registyimpl
 # @run shell readTest.sh
 
@@ -44,22 +46,24 @@ case "$OS" in
     ;;
 esac
 
+TEST_CLASSPATH=.:$TESTCLASSES
 cp -r ${TESTSRC}${FS}* .
 ${TESTJAVA}${FS}bin${FS}javac testPkg${FS}*java
-${TESTJAVA}${FS}bin${FS}javac readTest.java
+${TESTJAVA}${FS}bin${FS}javac -cp $TEST_CLASSPATH readTest.java
 
 mkdir rmi_tmp
 RMIREG_OUT=rmi.out
 #start rmiregistry without any local classes on classpath
 cd rmi_tmp
-${TESTJAVA}${FS}bin${FS}rmiregistry 7491 > ..${FS}${RMIREG_OUT} 2>&1 &
+# NOTE: This RMI Registry port must match TestLibrary.READTEST_REGISTRY_PORT
+${TESTJAVA}${FS}bin${FS}rmiregistry 64005 > ..${FS}${RMIREG_OUT} 2>&1 &
 RMIREG_PID=$!
 # allow some time to start
 sleep 3
 cd ..
 
 # trailing / after code base is important for rmi codebase property.
-${TESTJAVA}${FS}bin${FS}java -Djava.rmi.server.codebase=${FILEURL}`pwd`/ readTest > OUT.TXT 2>&1 &
+${TESTJAVA}${FS}bin${FS}java -cp $TEST_CLASSPATH -Djava.rmi.server.codebase=${FILEURL}`pwd`/ readTest > OUT.TXT 2>&1 &
 TEST_PID=$!
 #bulk of testcase - let it run for a while
 sleep 5

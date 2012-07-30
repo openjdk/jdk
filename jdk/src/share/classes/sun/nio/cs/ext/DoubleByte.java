@@ -33,6 +33,8 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Arrays;
 import sun.nio.cs.Surrogate;
+import sun.nio.cs.ArrayDecoder;
+import sun.nio.cs.ArrayEncoder;
 import static sun.nio.cs.CharsetMapping.*;
 
 /*
@@ -107,7 +109,7 @@ public class DoubleByte {
     }
 
     public static class Decoder extends CharsetDecoder
-                                implements DelegatableDecoder
+                                implements DelegatableDecoder, ArrayDecoder
     {
 
         final char[][] b2c;
@@ -209,6 +211,29 @@ public class DoubleByte {
                 return decodeBufferLoop(src, dst);
         }
 
+        public int decode(byte[] src, int sp, int len, char[] dst) {
+            int dp = 0;
+            int sl = sp + len;
+            char repl = replacement().charAt(0);
+            while (sp < sl) {
+                int b1 = src[sp++] & 0xff;
+                char c = b2cSB[b1];
+                if (c == UNMAPPABLE_DECODING) {
+                    if (sp < sl) {
+                        int b2 = src[sp++] & 0xff;
+                        if (b2 >= b2Min && b2 <= b2Max) {
+                            c = b2c[b1][b2 - b2Min];
+                        }
+                    }
+                    if (c == UNMAPPABLE_DECODING) {
+                        c = repl;
+                    }
+                }
+                dst[dp++] = c;
+            }
+            return dp;
+        }
+
         public void implReset() {
             super.implReset();
         }
@@ -228,6 +253,7 @@ public class DoubleByte {
                 return UNMAPPABLE_DECODING;
             return  b2c[b1][b2 - b2Min];
         }
+
     }
 
     // IBM_EBCDIC_DBCS
@@ -367,6 +393,46 @@ public class DoubleByte {
                 src.position(mark);
             }
         }
+
+        public int decode(byte[] src, int sp, int len, char[] dst) {
+            int dp = 0;
+            int sl = sp + len;
+            currentState = SBCS;
+            char repl = replacement().charAt(0);
+            while (sp < sl) {
+                int b1 = src[sp++] & 0xff;
+                if (b1 == SO) {  // Shift out
+                    if (currentState != SBCS)
+                        dst[dp++] = repl;
+                    else
+                        currentState = DBCS;
+                } else if (b1 == SI) {
+                    if (currentState != DBCS)
+                        dst[dp++] = repl;
+                    else
+                        currentState = SBCS;
+                } else {
+                    char c =  UNMAPPABLE_DECODING;
+                    if (currentState == SBCS) {
+                        c = b2cSB[b1];
+                        if (c == UNMAPPABLE_DECODING)
+                            c = repl;
+                    } else {
+                        if (sl == sp) {
+                            c = repl;
+                        } else {
+                            int b2 = src[sp++] & 0xff;
+                            if (b2 < b2Min || b2 > b2Max ||
+                                (c = b2c[b1][b2 - b2Min]) == UNMAPPABLE_DECODING) {
+                                c = repl;
+                            }
+                        }
+                    }
+                    dst[dp++] = c;
+                }
+            }
+            return dp;
+        }
     }
 
     // EBCDIC_DBCS_ONLY
@@ -405,9 +471,37 @@ public class DoubleByte {
                 return CoderResult.malformedForLength(1);
             return CoderResult.unmappableForLength(2);
         }
+
+        public int decode(byte[] src, int sp, int len, char[] dst) {
+            int dp = 0;
+            int sl = sp + len;
+            char repl = replacement().charAt(0);
+            while (sp < sl) {
+                int b1 = src[sp++] & 0xff;
+                char c = b2cSB[b1];
+                if (c == UNMAPPABLE_DECODING) {
+                    if (sp < sl) {
+                        int b2 = src[sp++] & 0xff;
+                        if (b2 < b2Min || b2 > b2Max ||
+                            (c = b2c[b1][b2 - b2Min]) == UNMAPPABLE_DECODING) {
+                            if (b1 == SS2 || b1 == SS3) {
+                                sp--;
+                            }
+                            c = repl;
+                        }
+                    } else {
+                        c = repl;
+                    }
+                }
+                dst[dp++] = c;
+            }
+            return dp;
+        }
     }
 
-    public static class Encoder extends CharsetEncoder {
+    public static class Encoder extends CharsetEncoder
+                                implements ArrayEncoder
+    {
         final int MAX_SINGLEBYTE = 0xff;
         private final char[] c2b;
         private final char[] c2bIndex;
@@ -516,6 +610,35 @@ public class DoubleByte {
                 return encodeBufferLoop(src, dst);
         }
 
+        public int encode(char[] src, int sp, int len, byte[] dst) {
+            int dp = 0;
+            int sl = sp + len;
+            int dl = dst.length;
+            while (sp < sl) {
+                char c = src[sp++];
+                int bb = encodeChar(c);
+                if (bb == UNMAPPABLE_ENCODING) {
+                    if (Character.isHighSurrogate(c) && sp < sl &&
+                        Character.isLowSurrogate(src[sp])) {
+                        sp++;
+                    }
+                    byte[] repl = replacement();
+                    dst[dp++] = repl[0];
+                    if (repl.length > 1)
+                        dst[dp++] = repl[1];
+                    continue;
+                } //else
+                if (bb > MAX_SINGLEBYTE) { // DoubleByte
+                    dst[dp++] = (byte)(bb >> 8);
+                    dst[dp++] = (byte)bb;
+                } else {                          // SingleByte
+                    dst[dp++] = (byte)bb;
+                }
+
+            }
+            return dp;
+        }
+
         public int encodeChar(char ch) {
             return c2b[c2bIndex[ch >> 8] + (ch & 0xff)];
         }
@@ -604,7 +727,6 @@ public class DoubleByte {
         }
     }
 
-    // EBCDIC_DBCS_ONLY
     public static class Encoder_EBCDIC_DBCSONLY extends Encoder {
         Encoder_EBCDIC_DBCSONLY(Charset cs, byte[] repl,
                                 char[] c2b, char[] c2bIndex) {
@@ -619,7 +741,6 @@ public class DoubleByte {
         }
     }
 
-    // for IBM_EBCDIC_DBCS
     public static class Encoder_EBCDIC extends Encoder {
         static final int SBCS = 0;
         static final int DBCS = 1;
@@ -740,6 +861,47 @@ public class DoubleByte {
             } finally {
                 src.position(mark);
             }
+        }
+
+        public int encode(char[] src, int sp, int len, byte[] dst) {
+            int dp = 0;
+            int sl = sp + len;
+            while (sp < sl) {
+                char c = src[sp++];
+                int bb = encodeChar(c);
+
+                if (bb == UNMAPPABLE_ENCODING) {
+                    if (Character.isHighSurrogate(c) && sp < sl &&
+                        Character.isLowSurrogate(src[sp])) {
+                        sp++;
+                    }
+                    byte[] repl = replacement();
+                    dst[dp++] = repl[0];
+                    if (repl.length > 1)
+                        dst[dp++] = repl[1];
+                    continue;
+                } //else
+                if (bb > MAX_SINGLEBYTE) {           // DoubleByte
+                    if (currentState == SBCS) {
+                        currentState = DBCS;
+                        dst[dp++] = SO;
+                    }
+                    dst[dp++] = (byte)(bb >> 8);
+                    dst[dp++] = (byte)bb;
+                } else {                             // SingleByte
+                    if (currentState == DBCS) {
+                         currentState = SBCS;
+                         dst[dp++] = SI;
+                    }
+                    dst[dp++] = (byte)bb;
+                }
+            }
+
+            if (currentState == DBCS) {
+                 currentState = SBCS;
+                 dst[dp++] = SI;
+            }
+            return dp;
         }
     }
 

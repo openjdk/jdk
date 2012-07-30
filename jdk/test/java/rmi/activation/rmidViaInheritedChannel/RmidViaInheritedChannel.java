@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@
  * @library ../../testlibrary
  * @build RMID ActivationLibrary
  * @build RmidViaInheritedChannel
- * @run main/othervm/timeout=240 -Djava.rmi.activation.port=5398 RmidViaInheritedChannel
+ * @build TestLibrary
+ * @run main/othervm/timeout=240 RmidViaInheritedChannel
  */
 
 import java.io.IOException;
@@ -48,8 +49,6 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 public class RmidViaInheritedChannel implements Callback {
-
-    private static final int PORT = 5398;
     private static final Object lock = new Object();
     private static boolean notified = false;
 
@@ -64,7 +63,8 @@ public class RmidViaInheritedChannel implements Callback {
     }
 
     public static void main(String[] args) throws Exception {
-
+        System.setProperty("java.rmi.activation.port",
+                           Integer.toString(TestLibrary.RMIDVIAINHERITEDCHANNEL_ACTIVATION_PORT));
         RMID rmid = null;
         Callback obj = null;
 
@@ -77,7 +77,8 @@ public class RmidViaInheritedChannel implements Callback {
             Callback proxy = (Callback)
                 UnicastRemoteObject.exportObject(obj, 0);
             Registry registry =
-                LocateRegistry.createRegistry(TestLibrary.REGISTRY_PORT);
+                LocateRegistry.createRegistry(
+                    TestLibrary.RMIDVIAINHERITEDCHANNEL_REGISTRY_PORT);
             registry.bind("Callback", proxy);
 
             /*
@@ -85,7 +86,8 @@ public class RmidViaInheritedChannel implements Callback {
              */
             System.err.println("start rmid with inherited channel");
             RMID.removeLog();
-            rmid = RMID.createRMID(System.out, System.err, true, false, PORT);
+            rmid = RMID.createRMID(System.out, System.err, true, false,
+                                   TestLibrary.RMIDVIAINHERITEDCHANNEL_ACTIVATION_PORT);
             rmid.addOptions(new String[]{
                 "-Djava.nio.channels.spi.SelectorProvider=RmidViaInheritedChannel$RmidSelectorProvider"});
             rmid.start();
@@ -108,7 +110,7 @@ public class RmidViaInheritedChannel implements Callback {
             if (obj != null) {
                 UnicastRemoteObject.unexportObject(obj, true);
             }
-            ActivationLibrary.rmidCleanup(rmid, PORT);
+            ActivationLibrary.rmidCleanup(rmid);
         }
     }
 
@@ -166,7 +168,8 @@ public class RmidViaInheritedChannel implements Callback {
                 channel = ServerSocketChannel.open();
                 ServerSocket serverSocket = channel.socket();
                 serverSocket.bind(
-                     new InetSocketAddress(InetAddress.getLocalHost(), PORT));
+                     new InetSocketAddress(InetAddress.getLocalHost(),
+                     TestLibrary.RMIDVIAINHERITEDCHANNEL_ACTIVATION_PORT));
                 System.err.println("serverSocket = " + serverSocket);
 
                 /*
@@ -175,7 +178,7 @@ public class RmidViaInheritedChannel implements Callback {
                 try {
                     System.err.println("notify test...");
                     Registry registry =
-                        LocateRegistry.getRegistry(TestLibrary.REGISTRY_PORT);
+                        LocateRegistry.getRegistry(TestLibrary.RMIDVIAINHERITEDCHANNEL_REGISTRY_PORT);
                     Callback obj = (Callback) registry.lookup("Callback");
                     obj.notifyTest();
                 } catch (NotBoundException nbe) {
