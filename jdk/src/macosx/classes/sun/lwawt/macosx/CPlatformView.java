@@ -64,7 +64,7 @@ public class CPlatformView extends CFRetainedResource {
     }
 
     public boolean isOpaque() {
-        return peer.isOpaque();
+        return !peer.isTranslucent();
     }
 
     /*

@@ -60,7 +60,6 @@ import java.math.BigInteger;
 
 public class Ticket implements Cloneable {
     public int tkt_vno;
-    public Realm realm;
     public PrincipalName sname;
     public EncryptedData encPart;
 
@@ -69,7 +68,6 @@ public class Ticket implements Cloneable {
 
     public Object clone() {
         Ticket new_ticket = new Ticket();
-        new_ticket.realm = (Realm)realm.clone();
         new_ticket.sname = (PrincipalName)sname.clone();
         new_ticket.encPart = (EncryptedData)encPart.clone();
         new_ticket.tkt_vno = tkt_vno;
@@ -77,12 +75,10 @@ public class Ticket implements Cloneable {
     }
 
     public Ticket(
-                  Realm new_realm,
                   PrincipalName new_sname,
                   EncryptedData new_encPart
                       ) {
         tkt_vno = Krb5.TICKET_VNO;
-        realm = new_realm;
         sname = new_sname;
         encPart = new_encPart;
     }
@@ -123,8 +119,8 @@ public class Ticket implements Cloneable {
         tkt_vno = subDer.getData().getBigInteger().intValue();
         if (tkt_vno != Krb5.TICKET_VNO)
             throw new KrbApErrException(Krb5.KRB_AP_ERR_BADVERSION);
-        realm = Realm.parse(der.getData(), (byte)0x01, false);
-        sname = PrincipalName.parse(der.getData(), (byte)0x02, false);
+        Realm srealm = Realm.parse(der.getData(), (byte)0x01, false);
+        sname = PrincipalName.parse(der.getData(), (byte)0x02, false, srealm);
         encPart = EncryptedData.parse(der.getData(), (byte)0x03, false);
         if (der.getData().available() > 0)
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
@@ -142,7 +138,7 @@ public class Ticket implements Cloneable {
         DerValue der[] = new DerValue[4];
         temp.putInteger(BigInteger.valueOf(tkt_vno));
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x00), temp);
-        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x01), realm.asn1Encode());
+        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x01), sname.getRealm().asn1Encode());
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x02), sname.asn1Encode());
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x03), encPart.asn1Encode());
         temp = new DerOutputStream();

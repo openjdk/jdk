@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
  * should become unreachable too (through the RMI implementation).
  * @author Peter Jones
  *
+ * @library ../../testlibrary
+ * @build TestLibrary
  * @run main/othervm -Dsun.rmi.transport.connectionTimeout=2000
  *     PinClientSocketFactory
  */
@@ -56,7 +58,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class PinClientSocketFactory {
 
-    private static final int PORT = 2345;
+    private static final int PORT = TestLibrary.getUnusedRandomPort();
     private static final int SESSIONS = 50;
 
     public interface Factory extends Remote {

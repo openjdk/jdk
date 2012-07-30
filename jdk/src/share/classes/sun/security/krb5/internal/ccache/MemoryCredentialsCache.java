@@ -64,7 +64,7 @@ public abstract class MemoryCredentialsCache extends CredentialsCache {
 
     public abstract Credentials[] getCredsList();
 
-    public abstract Credentials getCreds(PrincipalName sname, Realm srealm) ;
+    public abstract Credentials getCreds(PrincipalName sname) ;
 
     public abstract PrincipalName getPrimaryPrincipal();
 

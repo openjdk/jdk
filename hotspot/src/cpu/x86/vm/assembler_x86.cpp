@@ -2573,6 +2573,13 @@ void Assembler::punpckldq(XMMRegister dst, XMMRegister src) {
   emit_byte(0xC0 | encode);
 }
 
+void Assembler::punpcklqdq(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66);
+  emit_byte(0x6C);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::push(int32_t imm32) {
   // in 64bits we push 64bits onto the stack but only
   // take a 32bit immediate
@@ -3178,11 +3185,29 @@ void Assembler::vxorps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool v
   emit_byte(0xC0 | encode);
 }
 
+void Assembler::vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx2() || (!vector256) && VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256);
+  emit_byte(0xEF);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx(), "");
   bool vector256 = true;
   int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_3A);
   emit_byte(0x18);
+  emit_byte(0xC0 | encode);
+  // 0x00 - insert into lower 128 bits
+  // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx2(), "");
+  bool vector256 = true;
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_3A);
+  emit_byte(0x38);
   emit_byte(0xC0 | encode);
   // 0x00 - insert into lower 128 bits
   // 0x01 - insert into upper 128 bits
@@ -7478,6 +7503,24 @@ void MacroAssembler::movbool(Address dst, Register src) {
 
 void MacroAssembler::movbyte(ArrayAddress dst, int src) {
   movb(as_Address(dst), src);
+}
+
+void MacroAssembler::movdl(XMMRegister dst, AddressLiteral src) {
+  if (reachable(src)) {
+    movdl(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    movdl(dst, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::movq(XMMRegister dst, AddressLiteral src) {
+  if (reachable(src)) {
+    movq(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    movq(dst, Address(rscratch1, 0));
+  }
 }
 
 void MacroAssembler::movdbl(XMMRegister dst, AddressLiteral src) {

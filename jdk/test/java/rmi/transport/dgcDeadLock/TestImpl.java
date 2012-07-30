@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.rmi.server.*;
 
 public class TestImpl extends UnicastRemoteObject
     implements Test {
-
     static Thread locker = null;
     static TestImpl foo = null;
     static TestImpl bar = null;
@@ -57,20 +56,21 @@ public class TestImpl extends UnicastRemoteObject
         Registry registry = null;
 
         try {
+            int registryPort = Integer.parseInt(System.getProperty("rmi.registry.port"));
             registry = java.rmi.registry.LocateRegistry.
-                createRegistry(TestLibrary.REGISTRY_PORT);
+                createRegistry(registryPort);
 
             //export "Foo"
             foo = new TestImpl();
             Naming.rebind("rmi://:" +
-                          TestLibrary.REGISTRY_PORT
+                          registryPort
                           + "/Foo", foo);
 
             try {
                 //export "Bar" after leases have been expired.
                 bar = new TestImpl();
                 Naming.rebind("rmi://localhost:" +
-                              TestLibrary.REGISTRY_PORT
+                              registryPort
                               + "/Bar", bar);
             } catch (Exception e) {
                 throw new RemoteException(e.getMessage());

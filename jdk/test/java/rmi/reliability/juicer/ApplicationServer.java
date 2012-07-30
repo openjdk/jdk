@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,18 +38,21 @@ public class ApplicationServer implements Runnable {
     private static final int LOOKUP_ATTEMPTS = 5;
     private static final int DEFAULT_NUMAPPLES = 10;
     private static final String DEFAULT_REGISTRYHOST = "localhost";
+    private static final int DEFAULT_REGISTRYPORT = -1;
     private final int numApples;
     private final String registryHost;
+    private final int registryPort;
     private final Apple[] apples;
     private AppleUser user;
 
-    ApplicationServer() {
-        this(DEFAULT_NUMAPPLES, DEFAULT_REGISTRYHOST);
+    ApplicationServer(int registryPort) {
+        this(DEFAULT_NUMAPPLES, DEFAULT_REGISTRYHOST, registryPort);
     }
 
-    ApplicationServer(int numApples, String registryHost) {
+    ApplicationServer(int numApples, String registryHost, int registryPort) {
         this.numApples = numApples;
         this.registryHost = registryHost;
+        this.registryPort = registryPort;
         apples = new Apple[numApples];
     }
 
@@ -71,7 +74,7 @@ public class ApplicationServer implements Runnable {
             for (i = 0; i < LOOKUP_ATTEMPTS; i++) {
                 try {
                     Registry registry = LocateRegistry.getRegistry(
-                        registryHost, 2006);
+                           registryHost, registryPort);
                     user = (AppleUser) registry.lookup("AppleUser");
                     user.startTest();
                     break; //successfully obtained AppleUser
@@ -120,16 +123,20 @@ public class ApplicationServer implements Runnable {
     private static void usage() {
         System.err.println("Usage: ApplicationServer [-numApples <numApples>]");
         System.err.println("                         [-registryHost <host>]");
+        System.err.println("                         -registryPort <port>");
         System.err.println("  numApples  The number of apples (threads) to use.");
         System.err.println("             The default is 10 apples.");
         System.err.println("  host       The host running rmiregistry " +
                                          "which contains AppleUser.");
         System.err.println("             The default is \"localhost\".");
+        System.err.println("  port       The port the rmiregistry is running" +
+                                         "on.");
         System.err.println();
     }
 
     public static void main(String[] args) {
         int num = DEFAULT_NUMAPPLES;
+        int port = -1;
         String host = DEFAULT_REGISTRYHOST;
 
         // parse command line args
@@ -142,9 +149,17 @@ public class ApplicationServer implements Runnable {
                 } else if (arg.equals("-registryHost")) {
                     i++;
                     host = args[i];
+                } else if (arg.equals("-registryPort")) {
+                    i++;
+                    port = Integer.parseInt(args[i]);
                 } else {
                     usage();
                 }
+            }
+
+            if (port == -1) {
+                usage();
+                throw new RuntimeException("Port must be specified.");
             }
         } catch (Throwable t) {
             usage();
@@ -152,7 +167,7 @@ public class ApplicationServer implements Runnable {
         }
 
         // start the client server
-        Thread server = new Thread(new ApplicationServer(num,host));
+        Thread server = new Thread(new ApplicationServer(num,host,port));
         server.start();
         // main should exit once all exported remote objects are gc'd
     }
