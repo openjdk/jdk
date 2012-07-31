@@ -26,6 +26,8 @@
  * @bug 6380849
  * @summary Tests PropertyEditor finder
  * @author Sergey Malenkov
+ * @compile -XDignore.symbol.file TestPropertyEditor.java
+ * @run main TestPropertyEditor
  */
 
 import editors.SecondBeanEditor;
