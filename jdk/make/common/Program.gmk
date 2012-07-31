@@ -153,7 +153,6 @@ ifeq ($(PLATFORM), windows)
   ifndef LOCAL_RESOURCE_FILE
 	@$(ECHO) $(OBJDIR)/$(PROGRAM).res >> $@
   endif
-	@$(ECHO) setargv.obj >> $@
 	@$(ECHO) Created $@ 
 
   $(ACTUAL_PROGRAM):: $(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX)

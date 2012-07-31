@@ -502,3 +502,19 @@ FindBootStrapClass(JNIEnv *env, const char* classname)
    return findBootClass(env, classname);
 }
 
+StdArg
+*JLI_GetStdArgs()
+{
+    return NULL;
+}
+
+int
+JLI_GetStdArgc() {
+    return 0;
+}
+
+jobjectArray
+CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
+{
+    return NewPlatformStringArray(env, strv, argc);
+}
