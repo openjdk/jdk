@@ -90,7 +90,8 @@ endif # SYSTEM_ZLIB
 
 # add platform specific files
 ifeq ($(PLATFORM), windows)
-  FILES_c += java_md.c
+  FILES_c += java_md.c \
+	     cmdtoargs.c
 else # NIXES
   FILES_c += java_md_common.c
   ifeq ($(PLATFORM), macosx)
@@ -149,7 +150,11 @@ ifeq ($(PLATFORM), windows)
               -export:JLI_ReportErrorMessage \
               -export:JLI_ReportErrorMessageSys \
               -export:JLI_ReportMessage \
-              -export:JLI_ReportExceptionDescription
+              -export:JLI_ReportExceptionDescription \
+	      -export:JLI_MemAlloc \
+	      -export:JLI_CmdToArgs \
+	      -export:JLI_GetStdArgc \
+	      -export:JLI_GetStdArgs
 endif # PLATFORM
 
 OTHER_INCLUDES += -I$(LAUNCHER_SHARE_SRC)

@@ -1357,3 +1357,89 @@ ProcessPlatformOption(const char *arg)
 {
     return JNI_FALSE;
 }
+
+/*
+ * At this point we have the arguments to the application, and we need to
+ * check with original stdargs in order to compare which of these truly
+ * needs expansion. cmdtoargs will specify this if it finds a bare
+ * (unquoted) argument containing a glob character(s) ie. * or ?
+ */
+jobjectArray
+CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
+{
+    int i, j, idx, tlen;
+    jobjectArray outArray, inArray;
+    char *ostart, *astart, **nargv;
+    jboolean needs_expansion = JNI_FALSE;
+    jmethodID mid;
+    int stdargc;
+    StdArg *stdargs;
+    jclass cls = GetLauncherHelperClass(env);
+    NULL_CHECK0(cls);
+
+    if (argc == 0) {
+        return NewPlatformStringArray(env, strv, argc);
+    }
+    // the holy grail we need to compare with.
+    stdargs = JLI_GetStdArgs();
+    stdargc = JLI_GetStdArgc();
+
+    // sanity check, this should never happen
+    if (argc > stdargc) {
+        JLI_TraceLauncher("Warning: app args is larger than the original, %d %d\n", argc, stdargc);
+        JLI_TraceLauncher("passing arguments as-is.\n");
+        return NewPlatformStringArray(env, strv, argc);
+    }
+
+    // sanity check, match the args we have, to the holy grail
+    idx = stdargc - argc;
+    ostart = stdargs[idx].arg;
+    astart = strv[0];
+    // sanity check, ensure that the first argument of the arrays are the same
+    if (JLI_StrCmp(ostart, astart) != 0) {
+        // some thing is amiss the args don't match
+        JLI_TraceLauncher("Warning: app args parsing error\n");
+        JLI_TraceLauncher("passing arguments as-is\n");
+        return NewPlatformStringArray(env, strv, argc);
+    }
+
+    // make a copy of the args which will be expanded in java if required.
+    nargv = (char **)JLI_MemAlloc(argc * sizeof(char*));
+    for (i = 0, j = idx; i < argc; i++, j++) {
+        jboolean arg_expand = (JLI_StrCmp(stdargs[j].arg, strv[i]) == 0)
+                                ? stdargs[j].has_wildcard
+                                : JNI_FALSE;
+        if (needs_expansion == JNI_FALSE)
+            needs_expansion = arg_expand;
+
+        // indicator char + String + NULL terminator, the java method will strip
+        // out the first character, the indicator character, so no matter what
+        // we add the indicator
+        tlen = 1 + JLI_StrLen(strv[i]) + 1;
+        nargv[i] = (char *) JLI_MemAlloc(tlen);
+        JLI_Snprintf(nargv[i], tlen, "%c%s", arg_expand ? 'T' : 'F', strv[i]);
+        JLI_TraceLauncher("%s\n", nargv[i]);
+    }
+
+    if (!needs_expansion) {
+        // clean up any allocated memory and return back the old arguments
+        for (i = 0 ; i < argc ; i++) {
+            JLI_MemFree(nargv[i]);
+        }
+        JLI_MemFree(nargv);
+        return NewPlatformStringArray(env, strv, argc);
+    }
+    NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,
+                                                "expandArgs",
+                                                "([Ljava/lang/String;)[Ljava/lang/String;"));
+
+    // expand the arguments that require expansion, the java method will strip
+    // out the indicator character.
+    inArray = NewPlatformStringArray(env, nargv, argc);
+    outArray = (*env)->CallStaticObjectMethod(env, cls, mid, inArray);
+    for (i = 0; i < argc; i++) {
+        JLI_MemFree(nargv[i]);
+    }
+    JLI_MemFree(nargv);
+    return outArray;
+}
