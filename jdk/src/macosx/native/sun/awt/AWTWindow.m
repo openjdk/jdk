@@ -934,27 +934,6 @@ JNF_COCOA_EXIT(env);
 
 /*
  * Class:     sun_lwawt_macosx_CPlatformWindow
- * Method:    nativeSetNSWindowAlpha
- * Signature: (JF)V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowAlpha
-(JNIEnv *env, jclass clazz, jlong windowPtr, jfloat alpha)
-{
-JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
-
-    NSWindow *nsWindow = OBJC(windowPtr);
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
-        AWT_ASSERT_APPKIT_THREAD;
-
-        [nsWindow setAlphaValue:alpha];
-    }];
-
-JNF_COCOA_EXIT(env);
-}
-
-/*
- * Class:     sun_lwawt_macosx_CPlatformWindow
  * Method:    nativeRevalidateNSWindowShadow
  * Signature: (J)V
  */
@@ -962,14 +941,17 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeRevalidateNSW
 (JNIEnv *env, jclass clazz, jlong windowPtr)
 {
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     NSWindow *nsWindow = OBJC(windowPtr);
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
-        AWT_ASSERT_APPKIT_THREAD;
-
+    if ([NSThread isMainThread]) {
         [nsWindow invalidateShadow];
-    }];
+    } else {
+        [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+            AWT_ASSERT_APPKIT_THREAD;
+
+            [nsWindow invalidateShadow];
+        }];
+    }
 
 JNF_COCOA_EXIT(env);
 }

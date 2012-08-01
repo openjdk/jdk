@@ -132,8 +132,8 @@ void TaskQueueStats::reset() {
 }
 #endif // TASKQUEUE_STATS
 
-template <unsigned int N>
-class TaskQueueSuper: public CHeapObj {
+template <unsigned int N, MEMFLAGS F>
+class TaskQueueSuper: public CHeapObj<F> {
 protected:
   // Internal type for indexing the queue; also used for the tag.
   typedef NOT_LP64(uint16_t) LP64_ONLY(uint32_t) idx_t;
@@ -249,22 +249,27 @@ public:
   TASKQUEUE_STATS_ONLY(TaskQueueStats stats;)
 };
 
-template<class E, unsigned int N = TASKQUEUE_SIZE>
-class GenericTaskQueue: public TaskQueueSuper<N> {
-protected:
-  typedef typename TaskQueueSuper<N>::Age Age;
-  typedef typename TaskQueueSuper<N>::idx_t idx_t;
 
-  using TaskQueueSuper<N>::_bottom;
-  using TaskQueueSuper<N>::_age;
-  using TaskQueueSuper<N>::increment_index;
-  using TaskQueueSuper<N>::decrement_index;
-  using TaskQueueSuper<N>::dirty_size;
+
+template <class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
+class GenericTaskQueue: public TaskQueueSuper<N, F> {
+protected:
+  typedef typename TaskQueueSuper<N, F>::Age Age;
+  typedef typename TaskQueueSuper<N, F>::idx_t idx_t;
+
+  using TaskQueueSuper<N, F>::_bottom;
+  using TaskQueueSuper<N, F>::_age;
+  using TaskQueueSuper<N, F>::increment_index;
+  using TaskQueueSuper<N, F>::decrement_index;
+  using TaskQueueSuper<N, F>::dirty_size;
 
 public:
-  using TaskQueueSuper<N>::max_elems;
-  using TaskQueueSuper<N>::size;
-  TASKQUEUE_STATS_ONLY(using TaskQueueSuper<N>::stats;)
+  using TaskQueueSuper<N, F>::max_elems;
+  using TaskQueueSuper<N, F>::size;
+
+#if  TASKQUEUE_STATS
+  using TaskQueueSuper<N, F>::stats;
+#endif
 
 private:
   // Slow paths for push, pop_local.  (pop_global has no fast path.)
@@ -302,18 +307,18 @@ private:
   volatile E* _elems;
 };
 
-template<class E, unsigned int N>
-GenericTaskQueue<E, N>::GenericTaskQueue() {
+template<class E, MEMFLAGS F, unsigned int N>
+GenericTaskQueue<E, F, N>::GenericTaskQueue() {
   assert(sizeof(Age) == sizeof(size_t), "Depends on this.");
 }
 
-template<class E, unsigned int N>
-void GenericTaskQueue<E, N>::initialize() {
-  _elems = NEW_C_HEAP_ARRAY(E, N);
+template<class E, MEMFLAGS F, unsigned int N>
+void GenericTaskQueue<E, F, N>::initialize() {
+  _elems = NEW_C_HEAP_ARRAY(E, N, F);
 }
 
-template<class E, unsigned int N>
-void GenericTaskQueue<E, N>::oops_do(OopClosure* f) {
+template<class E, MEMFLAGS F, unsigned int N>
+void GenericTaskQueue<E, F, N>::oops_do(OopClosure* f) {
   // tty->print_cr("START OopTaskQueue::oops_do");
   uint iters = size();
   uint index = _bottom;
@@ -329,8 +334,8 @@ void GenericTaskQueue<E, N>::oops_do(OopClosure* f) {
   // tty->print_cr("END OopTaskQueue::oops_do");
 }
 
-template<class E, unsigned int N>
-bool GenericTaskQueue<E, N>::push_slow(E t, uint dirty_n_elems) {
+template<class E, MEMFLAGS F, unsigned int N>
+bool GenericTaskQueue<E, F, N>::push_slow(E t, uint dirty_n_elems) {
   if (dirty_n_elems == N - 1) {
     // Actually means 0, so do the push.
     uint localBot = _bottom;
@@ -349,8 +354,8 @@ bool GenericTaskQueue<E, N>::push_slow(E t, uint dirty_n_elems) {
 // whenever the queue goes empty which it will do here if this thread
 // gets the last task or in pop_global() if the queue wraps (top == 0
 // and pop_global() succeeds, see pop_global()).
-template<class E, unsigned int N>
-bool GenericTaskQueue<E, N>::pop_local_slow(uint localBot, Age oldAge) {
+template<class E, MEMFLAGS F, unsigned int N>
+bool GenericTaskQueue<E, F, N>::pop_local_slow(uint localBot, Age oldAge) {
   // This queue was observed to contain exactly one element; either this
   // thread will claim it, or a competing "pop_global".  In either case,
   // the queue will be logically empty afterwards.  Create a new Age value
@@ -382,8 +387,8 @@ bool GenericTaskQueue<E, N>::pop_local_slow(uint localBot, Age oldAge) {
   return false;
 }
 
-template<class E, unsigned int N>
-bool GenericTaskQueue<E, N>::pop_global(E& t) {
+template<class E, MEMFLAGS F, unsigned int N>
+bool GenericTaskQueue<E, F, N>::pop_global(E& t) {
   Age oldAge = _age.get();
   uint localBot = _bottom;
   uint n_elems = size(localBot, oldAge.top());
@@ -402,9 +407,9 @@ bool GenericTaskQueue<E, N>::pop_global(E& t) {
   return resAge == oldAge;
 }
 
-template<class E, unsigned int N>
-GenericTaskQueue<E, N>::~GenericTaskQueue() {
-  FREE_C_HEAP_ARRAY(E, _elems);
+template<class E, MEMFLAGS F, unsigned int N>
+GenericTaskQueue<E, F, N>::~GenericTaskQueue() {
+  FREE_C_HEAP_ARRAY(E, _elems, F);
 }
 
 // OverflowTaskQueue is a TaskQueue that also includes an overflow stack for
@@ -418,12 +423,12 @@ GenericTaskQueue<E, N>::~GenericTaskQueue() {
 // Note that size() is not hidden--it returns the number of elements in the
 // TaskQueue, and does not include the size of the overflow stack.  This
 // simplifies replacement of GenericTaskQueues with OverflowTaskQueues.
-template<class E, unsigned int N = TASKQUEUE_SIZE>
-class OverflowTaskQueue: public GenericTaskQueue<E, N>
+template<class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
+class OverflowTaskQueue: public GenericTaskQueue<E, F, N>
 {
 public:
-  typedef Stack<E>               overflow_t;
-  typedef GenericTaskQueue<E, N> taskqueue_t;
+  typedef Stack<E, F>               overflow_t;
+  typedef GenericTaskQueue<E, F, N> taskqueue_t;
 
   TASKQUEUE_STATS_ONLY(using taskqueue_t::stats;)
 
@@ -445,8 +450,8 @@ private:
   overflow_t _overflow_stack;
 };
 
-template <class E, unsigned int N>
-bool OverflowTaskQueue<E, N>::push(E t)
+template <class E, MEMFLAGS F, unsigned int N>
+bool OverflowTaskQueue<E, F, N>::push(E t)
 {
   if (!taskqueue_t::push(t)) {
     overflow_stack()->push(t);
@@ -455,15 +460,15 @@ bool OverflowTaskQueue<E, N>::push(E t)
   return true;
 }
 
-template <class E, unsigned int N>
-bool OverflowTaskQueue<E, N>::pop_overflow(E& t)
+template <class E, MEMFLAGS F, unsigned int N>
+bool OverflowTaskQueue<E, F, N>::pop_overflow(E& t)
 {
   if (overflow_empty()) return false;
   t = overflow_stack()->pop();
   return true;
 }
 
-class TaskQueueSetSuper: public CHeapObj {
+class TaskQueueSetSuper {
 protected:
   static int randomParkAndMiller(int* seed0);
 public:
@@ -471,8 +476,11 @@ public:
   virtual bool peek() = 0;
 };
 
-template<class T>
-class GenericTaskQueueSet: public TaskQueueSetSuper {
+template <MEMFLAGS F> class TaskQueueSetSuperImpl: public CHeapObj<F>, public TaskQueueSetSuper {
+};
+
+template<class T, MEMFLAGS F>
+class GenericTaskQueueSet: public TaskQueueSetSuperImpl<F> {
 private:
   uint _n;
   T** _queues;
@@ -482,7 +490,7 @@ public:
 
   GenericTaskQueueSet(int n) : _n(n) {
     typedef T* GenericTaskQueuePtr;
-    _queues = NEW_C_HEAP_ARRAY(GenericTaskQueuePtr, n);
+    _queues = NEW_C_HEAP_ARRAY(GenericTaskQueuePtr, n, F);
     for (int i = 0; i < n; i++) {
       _queues[i] = NULL;
     }
@@ -506,19 +514,19 @@ public:
   bool peek();
 };
 
-template<class T> void
-GenericTaskQueueSet<T>::register_queue(uint i, T* q) {
+template<class T, MEMFLAGS F> void
+GenericTaskQueueSet<T, F>::register_queue(uint i, T* q) {
   assert(i < _n, "index out of range.");
   _queues[i] = q;
 }
 
-template<class T> T*
-GenericTaskQueueSet<T>::queue(uint i) {
+template<class T, MEMFLAGS F> T*
+GenericTaskQueueSet<T, F>::queue(uint i) {
   return _queues[i];
 }
 
-template<class T> bool
-GenericTaskQueueSet<T>::steal(uint queue_num, int* seed, E& t) {
+template<class T, MEMFLAGS F> bool
+GenericTaskQueueSet<T, F>::steal(uint queue_num, int* seed, E& t) {
   for (uint i = 0; i < 2 * _n; i++) {
     if (steal_best_of_2(queue_num, seed, t)) {
       TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal(true));
@@ -529,8 +537,8 @@ GenericTaskQueueSet<T>::steal(uint queue_num, int* seed, E& t) {
   return false;
 }
 
-template<class T> bool
-GenericTaskQueueSet<T>::steal_best_of_all(uint queue_num, int* seed, E& t) {
+template<class T, MEMFLAGS F> bool
+GenericTaskQueueSet<T, F>::steal_best_of_all(uint queue_num, int* seed, E& t) {
   if (_n > 2) {
     int best_k;
     uint best_sz = 0;
@@ -553,11 +561,11 @@ GenericTaskQueueSet<T>::steal_best_of_all(uint queue_num, int* seed, E& t) {
   }
 }
 
-template<class T> bool
-GenericTaskQueueSet<T>::steal_1_random(uint queue_num, int* seed, E& t) {
+template<class T, MEMFLAGS F> bool
+GenericTaskQueueSet<T, F>::steal_1_random(uint queue_num, int* seed, E& t) {
   if (_n > 2) {
     uint k = queue_num;
-    while (k == queue_num) k = randomParkAndMiller(seed) % _n;
+    while (k == queue_num) k = TaskQueueSetSuper::randomParkAndMiller(seed) % _n;
     return _queues[2]->pop_global(t);
   } else if (_n == 2) {
     // Just try the other one.
@@ -569,13 +577,13 @@ GenericTaskQueueSet<T>::steal_1_random(uint queue_num, int* seed, E& t) {
   }
 }
 
-template<class T> bool
-GenericTaskQueueSet<T>::steal_best_of_2(uint queue_num, int* seed, E& t) {
+template<class T, MEMFLAGS F> bool
+GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num, int* seed, E& t) {
   if (_n > 2) {
     uint k1 = queue_num;
-    while (k1 == queue_num) k1 = randomParkAndMiller(seed) % _n;
+    while (k1 == queue_num) k1 = TaskQueueSetSuper::randomParkAndMiller(seed) % _n;
     uint k2 = queue_num;
-    while (k2 == queue_num || k2 == k1) k2 = randomParkAndMiller(seed) % _n;
+    while (k2 == queue_num || k2 == k1) k2 = TaskQueueSetSuper::randomParkAndMiller(seed) % _n;
     // Sample both and try the larger.
     uint sz1 = _queues[k1]->size();
     uint sz2 = _queues[k2]->size();
@@ -591,8 +599,8 @@ GenericTaskQueueSet<T>::steal_best_of_2(uint queue_num, int* seed, E& t) {
   }
 }
 
-template<class T>
-bool GenericTaskQueueSet<T>::peek() {
+template<class T, MEMFLAGS F>
+bool GenericTaskQueueSet<T, F>::peek() {
   // Try all the queues.
   for (uint j = 0; j < _n; j++) {
     if (_queues[j]->peek())
@@ -602,7 +610,7 @@ bool GenericTaskQueueSet<T>::peek() {
 }
 
 // When to terminate from the termination protocol.
-class TerminatorTerminator: public CHeapObj {
+class TerminatorTerminator: public CHeapObj<mtInternal> {
 public:
   virtual bool should_exit_termination() = 0;
 };
@@ -665,8 +673,8 @@ public:
 #endif
 };
 
-template<class E, unsigned int N> inline bool
-GenericTaskQueue<E, N>::push(E t) {
+template<class E, MEMFLAGS F, unsigned int N> inline bool
+GenericTaskQueue<E, F, N>::push(E t) {
   uint localBot = _bottom;
   assert((localBot >= 0) && (localBot < N), "_bottom out of range.");
   idx_t top = _age.top();
@@ -683,8 +691,8 @@ GenericTaskQueue<E, N>::push(E t) {
   }
 }
 
-template<class E, unsigned int N> inline bool
-GenericTaskQueue<E, N>::pop_local(E& t) {
+template<class E, MEMFLAGS F, unsigned int N> inline bool
+GenericTaskQueue<E, F, N>::pop_local(E& t) {
   uint localBot = _bottom;
   // This value cannot be N-1.  That can only occur as a result of
   // the assignment to bottom in this method.  If it does, this method
@@ -715,8 +723,8 @@ GenericTaskQueue<E, N>::pop_local(E& t) {
   }
 }
 
-typedef GenericTaskQueue<oop>             OopTaskQueue;
-typedef GenericTaskQueueSet<OopTaskQueue> OopTaskQueueSet;
+typedef GenericTaskQueue<oop, mtGC>             OopTaskQueue;
+typedef GenericTaskQueueSet<OopTaskQueue, mtGC> OopTaskQueueSet;
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -796,11 +804,11 @@ private:
 #pragma warning(pop)
 #endif
 
-typedef OverflowTaskQueue<StarTask>           OopStarTaskQueue;
-typedef GenericTaskQueueSet<OopStarTaskQueue> OopStarTaskQueueSet;
+typedef OverflowTaskQueue<StarTask, mtClass>           OopStarTaskQueue;
+typedef GenericTaskQueueSet<OopStarTaskQueue, mtClass> OopStarTaskQueueSet;
 
-typedef OverflowTaskQueue<size_t>             RegionTaskQueue;
-typedef GenericTaskQueueSet<RegionTaskQueue>  RegionTaskQueueSet;
+typedef OverflowTaskQueue<size_t, mtInternal>             RegionTaskQueue;
+typedef GenericTaskQueueSet<RegionTaskQueue, mtClass>     RegionTaskQueueSet;
 
 
 #endif // SHARE_VM_UTILITIES_TASKQUEUE_HPP

@@ -28,7 +28,7 @@
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "utilities/growableArray.hpp"
 
-class CollectionSetChooser: public CHeapObj {
+class CollectionSetChooser: public CHeapObj<mtGC> {
 
   GrowableArray<HeapRegion*> _regions;
 

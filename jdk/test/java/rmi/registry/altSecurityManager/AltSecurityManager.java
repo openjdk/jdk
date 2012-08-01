@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @author Laird Dornin
  *
  * @library ../../testlibrary
- * @build StreamPipe TestParams TestLibrary JavaVM
+ * @build StreamPipe TestParams TestLibrary JavaVM RMID
  * @build AltSecurityManager TestSecurityManager
  * @run main/othervm AltSecurityManager
  */
@@ -41,23 +41,41 @@
  * if registry and rmid take too long to exit.
  */
 public class AltSecurityManager implements Runnable {
-
+    private final int regPort;
     // variable to hold registry and rmid children
     static JavaVM vm = null;
 
     // names of utilities
     static String utilityToStart = null;
-    static String registry = "sun.rmi.registry.RegistryImpl";
-    static String rmid = "sun.rmi.server.Activation";
+    static final String REGISTRY_IMPL = "sun.rmi.registry.RegistryImpl";
+    static final String ACTIVATION = "sun.rmi.server.Activation";
 
     // children should exit in at least this time.
     static long TIME_OUT = 15000;
 
+    public AltSecurityManager(int port) {
+        if (port <= 0) {
+            TestLibrary.bomb("Port must be greater then 0.");
+        }
+
+        this.regPort = port;
+    }
+
     public void run() {
         try {
-            vm = new JavaVM(utilityToStart,
-                            " -Djava.security.manager=TestSecurityManager",
-                            "");
+            if (utilityToStart.equals(REGISTRY_IMPL)) {
+                vm = new JavaVM(utilityToStart,
+                        " -Djava.security.manager=TestSecurityManager",
+                        Integer.toString(regPort));
+            } else if (utilityToStart.contains(ACTIVATION)) {
+                vm = new JavaVM(utilityToStart,
+                        " -Djava.security.manager=TestSecurityManager",
+                        "-port " + Integer.toString(regPort));
+            } else {
+                TestLibrary.bomb("Utility to start must be " + REGISTRY_IMPL +
+                        " or " + ACTIVATION);
+            }
+
             System.err.println("starting " + utilityToStart);
             vm.start();
             vm.getVM().waitFor();
@@ -75,7 +93,8 @@ public class AltSecurityManager implements Runnable {
         utilityToStart = utility;
 
         try {
-            Thread thread = new Thread(new AltSecurityManager());
+            int port = TestLibrary.getUnusedRandomPort();
+            Thread thread = new Thread(new AltSecurityManager(port));
             System.err.println("expecting RuntimeException for " +
                                "checkListen in child process");
             long start = System.currentTimeMillis();
@@ -90,8 +109,8 @@ public class AltSecurityManager implements Runnable {
 
                 // dont pollute other tests; increase the likelihood
                 // that rmid will go away if it did not exit already.
-                if (utility.equals(rmid)) {
-                    RMID.shutdown();
+                if (utility.equals(ACTIVATION)) {
+                    RMID.shutdown(port);
                 }
 
                 TestLibrary.bomb(utilityToStart +
@@ -111,10 +130,10 @@ public class AltSecurityManager implements Runnable {
             System.err.println("\nRegression test for bug 4183202\n");
 
             // make sure the registry exits early.
-            ensureExit(registry);
+            ensureExit(REGISTRY_IMPL);
 
             // make sure rmid exits early
-            ensureExit(rmid);
+            ensureExit(ACTIVATION);
 
             System.err.println("test passed");
 

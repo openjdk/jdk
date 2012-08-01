@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,31 +53,37 @@ public class SetChildEnv
     public static void main(String argv[])
         throws Exception
     {
+        int runningPort = TestLibrary.getUnusedRandomPort();
+
         System.out.println("java.compiler=" + System.getProperty("java.compiler"));
         // don't embed spaces in any of the test args/props, because
         // they won't be parsed properly
-        runwith (new String[0], new String[0]);
+        runwith (new String[0], new String[0], runningPort);
 
         runwith (
             new String[] { "-verbosegc" },
             new String[] { "foo.bar=SetChildEnvTest",
-                           "sun.rmi.server.doSomething=true" }
+                           "sun.rmi.server.doSomething=true" },
+            runningPort
             );
 
         runwith (
             new String[] { },
-            new String[] { "parameter.count=zero" }
+            new String[] { "parameter.count=zero" },
+            runningPort
             );
 
         runwith (
             new String[] { "-Xmx32m" },
-            new String[] { }
+            new String[] { },
+            runningPort
             );
     }
 
     private static void runwith(
         String[] params,        // extra args
-        String[] props          // extra system properties
+        String[] props,         // extra system properties
+        int port                // port on which to communicate
     )
         throws Exception
     {
@@ -89,7 +95,8 @@ public class SetChildEnv
 
         RMID.removeLog();
         RMID rmid = RMID.createRMID(watcher.otherEnd(), watcher.otherEnd(),
-                                    true); // debugExec turned on
+                                    true,  // debugExec turned on
+                                    true, port);
 
         rmid.start();
 
@@ -195,7 +202,7 @@ public class SetChildEnv
         actsys.unregisterGroup(gid);
 
         Thread.sleep(5000);
-        rmid.destroy();
+        ActivationLibrary.rmidCleanup(rmid);
     }
 
     public static class DebugExecWatcher
@@ -243,7 +250,19 @@ public class SetChildEnv
                     System.err.println(line);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                /* During termination of distant rmid, StreamPipes will be broken when
+                 * distant vm terminates. A "Pipe broken" exception is expected because
+                 * DebugExecWatcher points to the same streams as StreamPipes used by RMID.
+                 * If we get this exception. We just terminate the thread.
+                 */
+                if (e.getMessage().equals("Pipe broken")) {
+                    try {
+                        str.close();
+                    } catch (IOException ioe) {}
+                }
+                else {
+                    e.printStackTrace();
+                }
             }
         }
     }

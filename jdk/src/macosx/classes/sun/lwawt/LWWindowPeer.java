@@ -37,6 +37,7 @@ import sun.awt.*;
 import sun.java2d.*;
 import sun.java2d.loops.Blit;
 import sun.java2d.loops.CompositeType;
+import sun.java2d.pipe.Region;
 import sun.util.logging.PlatformLogger;
 
 public class LWWindowPeer
@@ -109,6 +110,10 @@ public class LWWindowPeer
 
     private volatile boolean skipNextFocusChange;
 
+    private static final Color nonOpaqueBackground = new Color(0, 0, 0, 0);
+
+    private volatile boolean textured;
+
     /**
      * Current modal blocker or null.
      *
@@ -145,8 +150,6 @@ public class LWWindowPeer
             // similar to what Apple's Java do.
             // Since JDK7 we should rely on setOpacity() only.
             // this.opacity = c.getAlpha();
-            // System.out.println("Delegate assigns alpha (we ignore setOpacity()):"
-            // +this.opacity);
         }
 
         if (!target.isForegroundSet()) {
@@ -159,23 +162,34 @@ public class LWWindowPeer
     }
 
     @Override
-    public void initialize() {
+    void initializeImpl() {
+        super.initializeImpl();
         if (getTarget() instanceof Frame) {
-            setTitle(((Frame)getTarget()).getTitle());
-            setState(((Frame)getTarget()).getExtendedState());
+            setTitle(((Frame) getTarget()).getTitle());
+            setState(((Frame) getTarget()).getExtendedState());
         } else if (getTarget() instanceof Dialog) {
-            setTitle(((Dialog)getTarget()).getTitle());
+            setTitle(((Dialog) getTarget()).getTitle());
         }
 
         setAlwaysOnTop(getTarget().isAlwaysOnTop());
         updateMinimumSize();
 
-        setOpacity(getTarget().getOpacity());
+        final Shape shape = getTarget().getShape();
+        if (shape != null) {
+            applyShape(Region.getInstance(shape, null));
+        }
+
+        final float opacity = getTarget().getOpacity();
+        if (opacity < 1.0f) {
+            setOpacity(opacity);
+        }
+
         setOpaque(getTarget().isOpaque());
 
-        super.initialize();
-
         updateInsets(platformWindow.getInsets());
+        if (getSurfaceData() == null) {
+            replaceSurfaceData(false);
+        }
     }
 
     // Just a helper method
@@ -213,50 +227,29 @@ public class LWWindowPeer
     }
 
     @Override
-    public void setVisible(final boolean visible) {
-        if (getSurfaceData() == null) {
-            replaceSurfaceData();
-        }
-
-        if (isVisible() == visible) {
-            return;
-        }
-        super.setVisible(visible);
-
+    protected void setVisibleImpl(final boolean visible) {
+        super.setVisibleImpl(visible);
         // TODO: update graphicsConfig, see 4868278
-        // TODO: don't notify the delegate if our visibility is unchanged
+        platformWindow.setVisible(visible);
+        if (isSimpleWindow()) {
+            LWKeyboardFocusManagerPeer manager = LWKeyboardFocusManagerPeer.
+                getInstance(getAppContext());
 
-        // it is important to call this method on EDT
-        // to prevent the deadlocks during the painting of the lightweight delegates
-        //TODO: WHY? This is a native-system related call. Perhaps NOT calling
-        // the painting procedure right from the setVisible(), but rather relying
-        // on the native Expose event (or, scheduling the repainting asynchronously)
-        // is better?
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                platformWindow.setVisible(visible);
-                if (isSimpleWindow()) {
-                    LWKeyboardFocusManagerPeer manager = LWKeyboardFocusManagerPeer.
-                        getInstance(getAppContext());
-
-                    if (visible) {
-                        if (!getTarget().isAutoRequestFocus()) {
-                            return;
-                        } else {
-                            requestWindowFocus(CausedFocusEvent.Cause.ACTIVATION);
-                        }
-                    // Focus the owner in case this window is focused.
-                    } else if (manager.getCurrentFocusedWindow() == getTarget()) {
-                        // Transfer focus to the owner.
-                        LWWindowPeer owner = getOwnerFrameDialog(LWWindowPeer.this);
-                        if (owner != null) {
-                            owner.requestWindowFocus(CausedFocusEvent.Cause.ACTIVATION);
-                        }
-                    }
+            if (visible) {
+                if (!getTarget().isAutoRequestFocus()) {
+                    return;
+                } else {
+                    requestWindowFocus(CausedFocusEvent.Cause.ACTIVATION);
+                }
+            // Focus the owner in case this window is focused.
+            } else if (manager.getCurrentFocusedWindow() == getTarget()) {
+                // Transfer focus to the owner.
+                LWWindowPeer owner = getOwnerFrameDialog(LWWindowPeer.this);
+                if (owner != null) {
+                    owner.requestWindowFocus(CausedFocusEvent.Cause.ACTIVATION);
                 }
             }
-        });
+        }
     }
 
     @Override
@@ -297,7 +290,7 @@ public class LWWindowPeer
             // "buffer", that's why numBuffers - 1
             assert numBuffers > 1;
 
-            replaceSurfaceData(numBuffers - 1, caps);
+            replaceSurfaceData(numBuffers - 1, caps, false);
         } catch (InvalidPipeException z) {
             throw new AWTException(z.toString());
         }
@@ -437,19 +430,44 @@ public class LWWindowPeer
     public final void setOpaque(final boolean isOpaque) {
         if (this.isOpaque != isOpaque) {
             this.isOpaque = isOpaque;
-            getPlatformWindow().setOpaque(isOpaque);
-            replaceSurfaceData();
-            repaintPeer();
+            updateOpaque();
         }
     }
 
-    public final boolean isOpaque() {
-        return isOpaque;
+    private void updateOpaque() {
+        getPlatformWindow().setOpaque(!isTranslucent());
+        replaceSurfaceData(false);
+        repaintPeer();
     }
 
     @Override
     public void updateWindow() {
-        flushOffscreenGraphics();
+    }
+
+    public final boolean isTextured() {
+        return textured;
+    }
+
+    public final void setTextured(final boolean isTextured) {
+        textured = isTextured;
+    }
+
+    public final boolean isTranslucent() {
+        synchronized (getStateLock()) {
+            /*
+             * Textured window is a special case of translucent window.
+             * The difference is only in nswindow background. So when we set
+             * texture property our peer became fully translucent. It doesn't
+             * fill background, create non opaque backbuffers and layer etc.
+             */
+            return !isOpaque || isShaped() || isTextured();
+        }
+    }
+
+    @Override
+    final void applyShapeImpl(final Region shape) {
+        super.applyShapeImpl(shape);
+        updateOpaque();
     }
 
     @Override
@@ -604,7 +622,20 @@ public class LWWindowPeer
                                                getFont());
         if (g != null) {
             try {
-                g.clearRect(0, 0, w, h);
+                if (g instanceof Graphics2D) {
+                    ((Graphics2D) g).setComposite(AlphaComposite.Src);
+                }
+                if (isTranslucent()) {
+                    g.setColor(nonOpaqueBackground);
+                    g.fillRect(0, 0, w, h);
+                }
+                if (!isTextured()) {
+                    if (g instanceof SunGraphics2D) {
+                        SG2DConstraint((SunGraphics2D) g, getRegion());
+                    }
+                    g.setColor(getBackground());
+                    g.fillRect(0, 0, w, h);
+                }
             } finally {
                 g.dispose();
             }
@@ -911,35 +942,6 @@ public class LWWindowPeer
         });
     }
 
-    /**
-     * This method returns a back buffer Graphics to render all the
-     * peers to. After the peer is painted, the back buffer contents
-     * should be flushed to the screen. All the target painting
-     * (Component.paint() method) should be done directly to the screen.
-     */
-    protected final Graphics getOffscreenGraphics(Color fg, Color bg, Font f) {
-        final Image bb = getBackBuffer();
-        if (bb == null) {
-            return null;
-        }
-        if (fg == null) {
-            fg = SystemColor.windowText;
-        }
-        if (bg == null) {
-            bg = SystemColor.window;
-        }
-        if (f == null) {
-            f = DEFAULT_FONT;
-        }
-        final Graphics2D g = (Graphics2D) bb.getGraphics();
-        if (g != null) {
-            g.setColor(fg);
-            g.setBackground(bg);
-            g.setFont(f);
-        }
-        return g;
-    }
-
     /*
      * May be called by delegate to provide SD to Java2D code.
      */
@@ -950,11 +952,16 @@ public class LWWindowPeer
     }
 
     private void replaceSurfaceData() {
-        replaceSurfaceData(backBufferCount, backBufferCaps);
+        replaceSurfaceData(true);
+    }
+
+    private void replaceSurfaceData(boolean blit) {
+        replaceSurfaceData(backBufferCount, backBufferCaps, blit);
     }
 
     private void replaceSurfaceData(int newBackBufferCount,
-                                                 BufferCapabilities newBackBufferCaps) {
+                                    BufferCapabilities newBackBufferCaps,
+                                    boolean blit) {
         synchronized (surfaceDataLock) {
             final SurfaceData oldData = getSurfaceData();
             surfaceData = platformWindow.replaceSurfaceData();
@@ -967,7 +974,10 @@ public class LWWindowPeer
             if (getSurfaceData() != null && oldData != getSurfaceData()) {
                 clearBackground(size.width, size.height);
             }
-            blitSurfaceData(oldData, getSurfaceData());
+
+            if (blit) {
+                blitSurfaceData(oldData, getSurfaceData());
+            }
 
             if (oldData != null && oldData != getSurfaceData()) {
                 // TODO: drop oldData for D3D/WGL pipelines
@@ -982,8 +992,18 @@ public class LWWindowPeer
                 Graphics g = backBuffer.getGraphics();
                 try {
                     Rectangle r = getBounds();
-                    g.setColor(getBackground());
+                    if (g instanceof Graphics2D) {
+                        ((Graphics2D) g).setComposite(AlphaComposite.Src);
+                    }
+                    g.setColor(nonOpaqueBackground);
                     g.fillRect(0, 0, r.width, r.height);
+                    if (g instanceof SunGraphics2D) {
+                        SG2DConstraint((SunGraphics2D) g, getRegion());
+                    }
+                    if (!isTextured()) {
+                        g.setColor(getBackground());
+                        g.fillRect(0, 0, r.width, r.height);
+                    }
                     if (oldBB != null) {
                         // Draw the old back buffer to the new one
                         g.drawImage(oldBB, 0, 0, null);
@@ -1007,7 +1027,7 @@ public class LWWindowPeer
                                           CompositeType.Src,
                                           dst.getSurfaceType());
             if (blit != null) {
-                blit.Blit(src, dst, ((Graphics2D) getGraphics()).getComposite(),
+                blit.Blit(src, dst, AlphaComposite.Src,
                           getRegion(), 0, 0, 0, 0, size.width, size.height);
             }
         }

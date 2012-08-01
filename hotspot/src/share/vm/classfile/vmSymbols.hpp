@@ -111,6 +111,10 @@
   template(getBootClassPathEntryForClass_name,        "getBootClassPathEntryForClass")            \
   template(sun_misc_PostVMInitHook,                   "sun/misc/PostVMInitHook")                  \
                                                                                                   \
+  /* Java runtime version access */                                                               \
+  template(sun_misc_Version,                          "sun/misc/Version")                         \
+  template(java_runtime_name_name,                    "java_runtime_name")                        \
+                                                                                                  \
   /* class file format tags */                                                                    \
   template(tag_source_file,                           "SourceFile")                               \
   template(tag_inner_classes,                         "InnerClasses")                             \
@@ -253,6 +257,7 @@
   template(java_lang_invoke_BoundMethodHandle,        "java/lang/invoke/BoundMethodHandle")       \
   template(java_lang_invoke_DirectMethodHandle,       "java/lang/invoke/DirectMethodHandle")      \
   template(java_lang_invoke_CountingMethodHandle,     "java/lang/invoke/CountingMethodHandle")    \
+  template(java_lang_invoke_ForceInline_signature,    "Ljava/lang/invoke/ForceInline;")           \
   /* internal up-calls made only by the JVM, via class sun.invoke.MethodHandleNatives: */         \
   template(findMethodHandleType_name,                 "findMethodHandleType")                     \
   template(findMethodHandleType_signature,       "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/invoke/MethodType;") \

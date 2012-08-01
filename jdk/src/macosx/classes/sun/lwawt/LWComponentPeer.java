@@ -81,19 +81,10 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     // lock is not used as there are many peers related ops
     // to be done on the toolkit thread, and we don't want to
     // depend on a public lock on this thread
-    private final static Object peerTreeLock =
+    private static final Object peerTreeLock =
             new StringBuilder("LWComponentPeer.peerTreeLock");
 
-    /**
-     * A custom tree-lock used for the hierarchy of the delegate Swing
-     * components.
-     * The lock synchronizes access to the delegate
-     * internal state. Think of it as a 'virtual EDT'.
-     */
-//    private final Object delegateTreeLock =
-//        new StringBuilder("LWComponentPeer.delegateTreeLock");
-
-    private T target;
+    private final T target;
 
     // Container peer. It may not be the peer of the target's direct
     // parent, for example, in the case of hw/lw mixing. However,
@@ -108,10 +99,10 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     // be updated when the component is reparented to another container
     private LWWindowPeer windowPeer;
 
-    private AtomicBoolean disposed = new AtomicBoolean(false);
+    private final AtomicBoolean disposed = new AtomicBoolean(false);
 
     // Bounds are relative to parent peer
-    private Rectangle bounds = new Rectangle();
+    private final Rectangle bounds = new Rectangle();
     private Region region;
 
     // Component state. Should be accessed under the state lock
@@ -122,9 +113,11 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     private Color foreground;
     private Font font;
 
-    // Paint area to coalesce all the paint events and store
-    // the target dirty area
-    private RepaintArea targetPaintArea;
+    /**
+     * Paint area to coalesce all the paint events and store the target dirty
+     * area.
+     */
+    private final RepaintArea targetPaintArea;
 
     //   private volatile boolean paintPending;
     private volatile boolean isLayouting;
@@ -137,7 +130,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     private int fNumDropTargets = 0;
     private CDropTarget fDropTarget = null;
 
-    private PlatformComponent platformComponent;
+    private final PlatformComponent platformComponent;
 
     private final class DelegateContainer extends Container {
         {
@@ -175,6 +168,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     public LWComponentPeer(T target, PlatformComponent platformComponent) {
+        targetPaintArea = new LWRepaintArea();
         this.target = target;
         this.platformComponent = platformComponent;
 
@@ -201,10 +195,13 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                 synchronized (getDelegateLock()) {
                     delegate = createDelegate();
                     if (delegate != null) {
+                        delegate.setVisible(false);
                         delegateContainer = new DelegateContainer();
                         delegateContainer.add(delegate);
                         delegateContainer.addNotify();
                         delegate.addNotify();
+                        resetColorsAndFont(delegate);
+                        delegate.setOpaque(true);
                     } else {
                         return;
                     }
@@ -278,27 +275,28 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         return getDelegate();
     }
 
-    /*
-     * Initializes this peer by fetching all the properties from the target.
-     * The call to initialize() is not placed to LWComponentPeer ctor to
-     * let the subclass ctor to finish completely first. Instead, it's the
-     * LWToolkit object who is responsible for initialization.
+    /**
+     * Initializes this peer. The call to initialize() is not placed to
+     * LWComponentPeer ctor to let the subclass ctor to finish completely first.
+     * Instead, it's the LWToolkit object who is responsible for initialization.
+     * Note that we call setVisible() at the end of initialization.
      */
-    public void initialize() {
+    public final void initialize() {
         platformComponent.initialize(target, this, getPlatformWindow());
-        targetPaintArea = new LWRepaintArea();
-        if (getDelegate() != null) {
-            synchronized (getDelegateLock()) {
-                resetColorsAndFont(delegate);
-                getDelegate().setOpaque(true);
-            }
-        }
+        initializeImpl();
+        setVisible(target.isVisible());
+    }
+
+    /**
+     * Fetching general properties from the target. Should be overridden in
+     * subclasses to initialize specific peers properties.
+     */
+    void initializeImpl() {
         setBackground(target.getBackground());
         setForeground(target.getForeground());
         setFont(target.getFont());
         setBounds(target.getBounds());
         setEnabled(target.isEnabled());
-        setVisible(target.isVisible());
     }
 
     private static void resetColorsAndFont(final Container c) {
@@ -314,15 +312,18 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         return stateLock;
     }
 
-    // Synchronize all operations with the Swing delegates under
-    // AWT tree lock, using a new separate lock to synchronize
-    // access to delegates may lead deadlocks
+    /**
+     * Synchronize all operations with the Swing delegates under AWT tree lock,
+     * using a new separate lock to synchronize access to delegates may lead
+     * deadlocks. Think of it as a 'virtual EDT'.
+     *
+     * @return DelegateLock
+     */
     final Object getDelegateLock() {
-        //return delegateTreeLock;
         return getTarget().getTreeLock();
     }
 
-    protected final static Object getPeerTreeLock() {
+    protected static final Object getPeerTreeLock() {
         return peerTreeLock;
     }
 
@@ -423,8 +424,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
 
     @Override
     public final Graphics getGraphics() {
-        Graphics g = getWindowPeerOrSelf().isOpaque() ? getOnscreenGraphics()
-                                                      : getOffscreenGraphics();
+        final Graphics g = getOnscreenGraphics();
         if (g != null) {
             synchronized (getPeerTreeLock()){
                 applyConstrain(g);
@@ -442,13 +442,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         final LWWindowPeer wp = getWindowPeerOrSelf();
         return wp.getOnscreenGraphics(getForeground(), getBackground(),
                                       getFont());
-    }
 
-    public final Graphics getOffscreenGraphics() {
-        final LWWindowPeer wp = getWindowPeerOrSelf();
-
-        return wp.getOffscreenGraphics(getForeground(), getBackground(),
-                                       getFont());
     }
 
     private void applyConstrain(final Graphics g) {
@@ -462,7 +456,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     //TODO Move this method to SG2D?
-    private void SG2DConstraint(final SunGraphics2D sg2d, Region r) {
+    void SG2DConstraint(final SunGraphics2D sg2d, Region r) {
         sg2d.constrainX = sg2d.transX;
         sg2d.constrainY = sg2d.transY;
 
@@ -709,7 +703,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         // Obtain the metrics from the offscreen window where this peer is
         // mostly drawn to.
         // TODO: check for "use platform metrics" settings
-        Graphics g = getWindowPeer().getOffscreenGraphics();
+        Graphics g = getWindowPeer().getGraphics();
         try {
             if (g != null) {
                 return g.getFontMetrics(f);
@@ -758,14 +752,17 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     @Override
-    public void setVisible(boolean v) {
+    public void setVisible(final boolean v) {
         synchronized (getStateLock()) {
             if (visible == v) {
                 return;
             }
             visible = v;
         }
+        setVisibleImpl(v);
+    }
 
+    protected void setVisibleImpl(final boolean v) {
         final D delegate = getDelegate();
 
         if (delegate != null) {
@@ -1007,14 +1004,33 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     @Override
     public final void applyShape(final Region shape) {
         synchronized (getStateLock()) {
-            region = shape;
+            if (region == shape || (region != null && region.equals(shape))) {
+                return;
+            }
+        }
+        applyShapeImpl(shape);
+    }
+
+    void applyShapeImpl(final Region shape) {
+        synchronized (getStateLock()) {
+            if (shape != null) {
+                region = Region.WHOLE_REGION.getIntersection(shape);
+            } else {
+                region = null;
+            }
         }
         repaintParent(getBounds());
     }
 
     protected final Region getRegion() {
         synchronized (getStateLock()) {
-            return region == null ? Region.getInstance(getSize()) : region;
+            return isShaped() ? region : Region.getInstance(getSize());
+        }
+    }
+
+    public boolean isShaped() {
+        synchronized (getStateLock()) {
+            return region != null;
         }
     }
 
@@ -1355,7 +1371,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
      *
      * @see #isVisible()
      */
-    protected boolean isShowing() {
+    protected final boolean isShowing() {
         synchronized (getPeerTreeLock()) {
             if (isVisible()) {
                 final LWContainerPeer container = getContainerPeer();
@@ -1382,11 +1398,6 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         }
     }
 
-    // Just a helper method, thus final
-    protected final void flushOffscreenGraphics() {
-        flushOffscreenGraphics(getSize());
-    }
-
     protected static final void flushOnscreenGraphics(){
         final OGLRenderQueue rq = OGLRenderQueue.getInstance();
         rq.lock();
@@ -1394,36 +1405,6 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
             rq.flushNow();
         } finally {
             rq.unlock();
-        }
-    }
-
-    /*
-     * Flushes the given rectangle from the back buffer to the screen.
-     */
-    protected void flushOffscreenGraphics(Rectangle r) {
-        flushOffscreenGraphics(r.x, r.y, r.width, r.height);
-    }
-
-    private void flushOffscreenGraphics(int x, int y, int width, int height) {
-        Image bb = getWindowPeerOrSelf().getBackBuffer();
-        if (bb != null) {
-            // g is a screen Graphics from the delegate
-            final Graphics g = getOnscreenGraphics();
-
-            if (g != null && g instanceof Graphics2D) {
-                try {
-                    Graphics2D g2d = (Graphics2D)g;
-                    Point p = localToWindow(new Point(0, 0));
-                    Composite composite = g2d.getComposite();
-                    g2d.setComposite(AlphaComposite.Src);
-                    g.drawImage(bb, x, y, x + width, y + height, p.x + x,
-                            p.y + y, p.x + x + width, p.y + y + height,
-                            null);
-                    g2d.setComposite(composite);
-                } finally {
-                    g.dispose();
-                }
-            }
         }
     }
 

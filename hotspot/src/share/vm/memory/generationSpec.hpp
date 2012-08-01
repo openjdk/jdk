@@ -32,7 +32,7 @@
 // some generation-specific behavior.  This is done here rather than as a
 // virtual function of Generation because these methods are needed in
 // initialization of the Generations.
-class GenerationSpec : public CHeapObj {
+class GenerationSpec : public CHeapObj<mtGC> {
   friend class VMStructs;
 private:
   Generation::Name _name;
@@ -71,7 +71,7 @@ typedef GenerationSpec* GenerationSpecPtr;
 // The specification of a permanent generation. This class is very
 // similar to GenerationSpec in use. Due to PermGen's not being a
 // true Generation, we cannot combine the spec classes either.
-class PermanentGenerationSpec : public CHeapObj {
+class PermanentGenerationSpec : public CHeapObj<mtGC> {
   friend class VMStructs;
 private:
   PermGen::Name    _name;

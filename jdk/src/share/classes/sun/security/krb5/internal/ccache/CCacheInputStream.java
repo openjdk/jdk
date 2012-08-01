@@ -114,7 +114,6 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
     // made public for KinitOptions to call directly
     public PrincipalName readPrincipal(int version) throws IOException, RealmException {
         int type, length, namelength, kret;
-        PrincipalName p;
         String[] pname = null;
         String realm;
         /* Read principal type */
@@ -144,11 +143,13 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
             realm = result[0];
             pname = new String[length];
             System.arraycopy(result, 1, pname, 0, length);
-            p = new PrincipalName(pname, type);
-            p.setRealm(realm);
+            return new PrincipalName(type, pname, new Realm(realm));
         }
-        else p = new PrincipalName(result, type);
-        return p;
+        try {
+            return new PrincipalName(result, type);
+        } catch (RealmException re) {
+            return null;
+        }
     }
 
     /*
@@ -342,10 +343,10 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
     Credentials readCred(int version) throws IOException,RealmException, KrbApErrException, Asn1Exception {
         PrincipalName cpname = readPrincipal(version);
         if (DEBUG)
-            System.out.println(">>>DEBUG <CCacheInputStream>  client principal is " + cpname.toString());
+            System.out.println(">>>DEBUG <CCacheInputStream>  client principal is " + cpname);
         PrincipalName spname = readPrincipal(version);
         if (DEBUG)
-            System.out.println(">>>DEBUG <CCacheInputStream> server principal is " + spname.toString());
+            System.out.println(">>>DEBUG <CCacheInputStream> server principal is " + spname);
         EncryptionKey key = readKey(version);
         if (DEBUG)
             System.out.println(">>>DEBUG <CCacheInputStream> key type: " + key.getEType());

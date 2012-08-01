@@ -156,7 +156,7 @@ class InterpreterOopMap: ResourceObj {
 #endif
 };
 
-class OopMapCache : public CHeapObj {
+class OopMapCache : public CHeapObj<mtClass> {
  private:
   enum { _size        = 32,     // Use fixed size for now
          _probe_depth = 3       // probe depth in case of collisions

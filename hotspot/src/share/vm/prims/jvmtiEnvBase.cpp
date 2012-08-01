@@ -381,7 +381,7 @@ JvmtiEnvBase::set_native_method_prefixes(jint prefix_count, char** prefixes) {
     _native_method_prefixes = NULL;
   } else {
     // there are prefixes, allocate an array to hold them, and fill it
-    char** new_prefixes = (char**)os::malloc((prefix_count) * sizeof(char*));
+    char** new_prefixes = (char**)os::malloc((prefix_count) * sizeof(char*), mtInternal);
     if (new_prefixes == NULL) {
       return JVMTI_ERROR_OUT_OF_MEMORY;
     }
@@ -1150,7 +1150,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
 
 ResourceTracker::ResourceTracker(JvmtiEnv* env) {
   _env = env;
-  _allocations = new (ResourceObj::C_HEAP) GrowableArray<unsigned char*>(20, true);
+  _allocations = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<unsigned char*>(20, true);
   _failed = false;
 }
 ResourceTracker::~ResourceTracker() {

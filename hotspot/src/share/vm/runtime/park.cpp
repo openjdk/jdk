@@ -141,7 +141,7 @@ void ParkEvent::Release (ParkEvent * ev) {
 // although Niagara's hash function should help.
 
 void * ParkEvent::operator new (size_t sz) {
-  return (void *) ((intptr_t (CHeapObj::operator new (sz + 256)) + 256) & -256) ;
+  return (void *) ((intptr_t (AllocateHeap(sz + 256, mtInternal, CALLER_PC)) + 256) & -256) ;
 }
 
 void ParkEvent::operator delete (void * a) {

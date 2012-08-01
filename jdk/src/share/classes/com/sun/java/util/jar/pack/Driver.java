@@ -36,6 +36,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.text.MessageFormat;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -381,12 +382,15 @@ class Driver {
         String prefix = base.getName();
         if (prefix.length() < 3)  prefix += "tmp";
 
-        File where = base.getParentFile();
+        File where = (base.getParentFile() == null && suffix.equals(".bak"))
+                ? new File(".").getAbsoluteFile()
+                : base.getParentFile();
 
-        if ( base.getParentFile() == null && suffix.equals(".bak"))
-            where = new File(".").getAbsoluteFile();
+        Path tmpfile = (where == null)
+                ? Files.createTempFile(prefix, suffix)
+                : Files.createTempFile(where.toPath(), prefix, suffix);
 
-        return Files.createTempFile(where.toPath(), prefix, suffix).toFile();
+        return tmpfile.toFile();
     }
 
     static private

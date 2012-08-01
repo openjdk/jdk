@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.debugger.cdbg.basic.amd64;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 
@@ -43,8 +44,11 @@ public class AMD64CFrame extends BasicCFrame {
     this.pc  = pc;
   }
 
-  public CFrame sender() {
-    if (rbp == null) {
+  public CFrame sender(ThreadProxy thread) {
+    AMD64ThreadContext context = (AMD64ThreadContext) thread.getContext();
+    Address rsp = context.getRegisterAsAddress(AMD64ThreadContext.RSP);
+
+    if ( (rbp == null) || rbp.lessThan(rsp) ) {
       return null;
     }
 

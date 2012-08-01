@@ -49,8 +49,8 @@ static jvmtiError JNICALL IsClassUnloadingEnabled(const jvmtiEnv* env, jboolean*
 // event. The function and the event are registered here.
 //
 void JvmtiExtensions::register_extensions() {
-  _ext_functions = new (ResourceObj::C_HEAP) GrowableArray<jvmtiExtensionFunctionInfo*>(1,true);
-  _ext_events = new (ResourceObj::C_HEAP) GrowableArray<jvmtiExtensionEventInfo*>(1,true);
+  _ext_functions = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jvmtiExtensionFunctionInfo*>(1,true);
+  _ext_events = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<jvmtiExtensionEventInfo*>(1,true);
 
   // register our extension function
   static jvmtiParamInfo func_params[] = {

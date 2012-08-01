@@ -22,10 +22,11 @@
  */
 
 /* @test
- * @bug 4527345 7026376
+ * @bug 4527345 7026376 6633549
  * @summary Unit test for DatagramChannel's multicast support
  * @build MulticastSendReceiveTests NetworkConfiguration
  * @run main MulticastSendReceiveTests
+ * @run main/othervm -Djava.net.preferIPv4Stack=true MulticastSendReceiveTests
  */
 
 import java.nio.ByteBuffer;
@@ -186,6 +187,10 @@ public class MulticastSendReceiveTests {
                 id = sendDatagram(source, nif, group, port);
                 receiveDatagram(dc, source, id);
             } catch (UnsupportedOperationException x) {
+                String os = System.getProperty("os.name");
+                // Exclude-mode filtering supported on these platforms so UOE should never be thrown
+                if (os.equals("SunOS") || os.equals("Linux"))
+                    throw x;
                 System.out.println("Exclude-mode filtering not supported!");
             }
 
@@ -212,6 +217,10 @@ public class MulticastSendReceiveTests {
                 id = sendDatagram(source, nif, group, port);
                 receiveDatagram(dc, source, id);
             } catch (UnsupportedOperationException x) {
+                String os = System.getProperty("os.name");
+                // Include-mode filtering supported on these platforms so UOE should never be thrown
+                if (os.equals("SunOS") || os.equals("Linux"))
+                    throw x;
                 System.out.println("Include-mode filtering not supported!");
             }
         }

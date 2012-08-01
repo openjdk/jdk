@@ -31,7 +31,7 @@
 // A GenerationCounter is a holder class for performance counters
 // that track a generation
 
-class GenerationCounters: public CHeapObj {
+class GenerationCounters: public CHeapObj<mtGC> {
   friend class VMStructs;
 
 private:
@@ -69,7 +69,7 @@ private:
                      VirtualSpace* v);
 
   ~GenerationCounters() {
-    if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
+    if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space, mtGC);
   }
 
   virtual void update_all();

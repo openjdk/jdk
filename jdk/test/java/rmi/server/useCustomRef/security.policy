@@ -8,8 +8,11 @@ grant codeBase "file:${java.home}/lib/ext/*" {
 
 grant {
   // the test uses a class in the package sun.rmi.server
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.registry";
   permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.server";
   permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport";
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport.proxy";
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport.tcp";
   permission java.util.PropertyPermission "package.restrict.access.sun", "read";
   permission java.util.PropertyPermission "package.restrict.access.sun.rmi", "read";
 

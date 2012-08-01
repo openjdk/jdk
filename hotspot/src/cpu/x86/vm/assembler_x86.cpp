@@ -1637,6 +1637,13 @@ void Assembler::movaps(XMMRegister dst, XMMRegister src) {
   emit_byte(0xC0 | encode);
 }
 
+void Assembler::movlhps(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse(), ""));
+  int encode = simd_prefix_and_encode(dst, src, src, VEX_SIMD_NONE);
+  emit_byte(0x16);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::movb(Register dst, Address src) {
   NOT_LP64(assert(dst->has_byte_register(), "must have byte register"));
   InstructionMark im(this);
@@ -1686,6 +1693,14 @@ void Assembler::movdl(XMMRegister dst, Address src) {
   emit_operand(dst, src);
 }
 
+void Assembler::movdl(Address dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionMark im(this);
+  simd_prefix(dst, src, VEX_SIMD_66);
+  emit_byte(0x7E);
+  emit_operand(src, dst);
+}
+
 void Assembler::movdqa(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_66);
@@ -1712,6 +1727,35 @@ void Assembler::movdqu(Address dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   InstructionMark im(this);
   simd_prefix(dst, src, VEX_SIMD_F3);
+  emit_byte(0x7F);
+  emit_operand(src, dst);
+}
+
+// Move Unaligned 256bit Vector
+void Assembler::vmovdqu(XMMRegister dst, XMMRegister src) {
+  assert(UseAVX, "");
+  bool vector256 = true;
+  int encode = vex_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_F3, vector256);
+  emit_byte(0x6F);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vmovdqu(XMMRegister dst, Address src) {
+  assert(UseAVX, "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  vex_prefix(dst, xnoreg, src, VEX_SIMD_F3, vector256);
+  emit_byte(0x6F);
+  emit_operand(dst, src);
+}
+
+void Assembler::vmovdqu(Address dst, XMMRegister src) {
+  assert(UseAVX, "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  // swap src<->dst for encoding
+  assert(src != xnoreg, "sanity");
+  vex_prefix(src, xnoreg, dst, VEX_SIMD_F3, vector256);
   emit_byte(0x7F);
   emit_operand(src, dst);
 }
@@ -2529,6 +2573,13 @@ void Assembler::punpckldq(XMMRegister dst, XMMRegister src) {
   emit_byte(0xC0 | encode);
 }
 
+void Assembler::punpcklqdq(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66);
+  emit_byte(0x6C);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::push(int32_t imm32) {
   // in 64bits we push 64bits onto the stack but only
   // take a 32bit immediate
@@ -3112,12 +3163,61 @@ void Assembler::vxorpd(XMMRegister dst, XMMRegister nds, Address src) {
   emit_operand(dst, src);
 }
 
+void Assembler::vxorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256);
+  emit_byte(0x57);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::vxorps(XMMRegister dst, XMMRegister nds, Address src) {
   assert(VM_Version::supports_avx(), "");
   InstructionMark im(this);
   vex_prefix(dst, nds, src, VEX_SIMD_NONE); // 128-bit vector
   emit_byte(0x57);
   emit_operand(dst, src);
+}
+
+void Assembler::vxorps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_NONE, vector256);
+  emit_byte(0x57);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx2() || (!vector256) && VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256);
+  emit_byte(0xEF);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  bool vector256 = true;
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_3A);
+  emit_byte(0x18);
+  emit_byte(0xC0 | encode);
+  // 0x00 - insert into lower 128 bits
+  // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx2(), "");
+  bool vector256 = true;
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_3A);
+  emit_byte(0x38);
+  emit_byte(0xC0 | encode);
+  // 0x00 - insert into lower 128 bits
+  // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vzeroupper() {
+  assert(VM_Version::supports_avx(), "");
+  (void)vex_prefix_and_encode(xmm0, xmm0, xmm0, VEX_SIMD_NONE);
+  emit_byte(0x77);
 }
 
 
@@ -7403,6 +7503,24 @@ void MacroAssembler::movbool(Address dst, Register src) {
 
 void MacroAssembler::movbyte(ArrayAddress dst, int src) {
   movb(as_Address(dst), src);
+}
+
+void MacroAssembler::movdl(XMMRegister dst, AddressLiteral src) {
+  if (reachable(src)) {
+    movdl(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    movdl(dst, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::movq(XMMRegister dst, AddressLiteral src) {
+  if (reachable(src)) {
+    movq(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    movq(dst, Address(rscratch1, 0));
+  }
 }
 
 void MacroAssembler::movdbl(XMMRegister dst, AddressLiteral src) {
