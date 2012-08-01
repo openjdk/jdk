@@ -157,8 +157,6 @@ public final class OCSPResponse {
     private final AlgorithmId sigAlgId;
     private final byte[] signature;
     private final byte[] tbsResponseData;
-    private final X500Principal responderName;
-    private final byte[] responderKey;
     private final byte[] responseNonce;
 
     /*
@@ -195,8 +193,6 @@ public final class OCSPResponse {
             sigAlgId = null;
             signature = null;
             tbsResponseData = null;
-            responderName = null;
-            responderKey = null;
             responseNonce = null;
             return;
         }
@@ -268,15 +264,17 @@ public final class OCSPResponse {
         // responderID
         short tag = (byte)(seq.tag & 0x1f);
         if (tag == NAME_TAG) {
-            responderName =
-                new X500Principal(new ByteArrayInputStream(seq.toByteArray()));
             if (debug != null) {
+                X500Principal responderName =
+                    new X500Principal(seq.getData().toByteArray());
                 debug.println("OCSP Responder name: " + responderName);
             }
-            responderKey = null;
         } else if (tag == KEY_TAG) {
-            responderKey = seq.getOctetString();
-            responderName = null;
+            if (debug != null) {
+                byte[] responderKey = seq.getData().getOctetString();
+                debug.println("OCSP Responder key: " +
+                              Debug.toString(responderKey));
+            }
         } else {
             throw new IOException("Bad encoding in responderID element of " +
                 "OCSP response: expected ASN.1 context specific tag 0 or 1");
