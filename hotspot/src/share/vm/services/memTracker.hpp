@@ -184,7 +184,6 @@ class MemTracker : AllStatic {
   // record a 'malloc' call
   static inline void record_malloc(address addr, size_t size, MEMFLAGS flags,
                             address pc = 0, Thread* thread = NULL) {
-    assert(is_on(), "check by caller");
     if (NMT_CAN_TRACK(flags)) {
       create_memory_record(addr, (flags|MemPointerRecord::malloc_tag()), size, pc, thread);
     }
@@ -285,7 +284,6 @@ class MemTracker : AllStatic {
 
   // retrieve global snapshot
   static MemSnapshot* get_snapshot() {
-    assert(is_on(), "native memory tracking is off");
     if (shutdown_in_progress()) {
       return NULL;
     }
