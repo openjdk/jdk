@@ -26,25 +26,22 @@
 /*
  */
 
-package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-import sun.nio.cs.SingleByteEncoder;
-import sun.nio.cs.SingleByteDecoder;
 
-public class JIS_X_0201
+public class JIS_X_0201_OLD
     extends Charset
 {
 
-    public JIS_X_0201() {
-        super("JIS_X0201", ExtendedCharsets.aliasesFor("JIS_X0201"));
+    public JIS_X_0201_OLD() {
+        super("JIS_X0201_OLD", null);
     }
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
-                || (cs instanceof JIS_X_0201));
+                || (cs instanceof JIS_X_0201_OLD));
     }
 
     public CharsetDecoder newDecoder() {
