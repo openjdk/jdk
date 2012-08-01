@@ -68,7 +68,7 @@ class UnixPath
 
     UnixPath(UnixFileSystem fs, String input) {
         // removes redundant slashes and checks for invalid characters
-        this(fs, encode(normalizeAndCheck(input)));
+        this(fs, encode(fs, normalizeAndCheck(input)));
     }
 
     // package-private
@@ -116,7 +116,7 @@ class UnixPath
     }
 
     // encodes the given path-string into a sequence of bytes
-    private static byte[] encode(String input) {
+    private static byte[] encode(UnixFileSystem fs, String input) {
         SoftReference<CharsetEncoder> ref = encoder.get();
         CharsetEncoder ce = (ref != null) ? ref.get() : null;
         if (ce == null) {
@@ -126,7 +126,7 @@ class UnixPath
             encoder.set(new SoftReference<CharsetEncoder>(ce));
         }
 
-        char[] ca = input.toCharArray();
+        char[] ca = fs.normalizeNativePath(input.toCharArray());
 
         // size output buffer for worse-case size
         byte[] ba = new byte[(int)(ca.length * (double)ce.maxBytesPerChar())];
@@ -728,7 +728,7 @@ class UnixPath
             if (c1 != c2) {
                 return c1 - c2;
             }
-            k++;
+           k++;
         }
         return len1 - len2;
     }
@@ -757,8 +757,9 @@ class UnixPath
     @Override
     public String toString() {
         // OK if two or more threads create a String
-        if (stringValue == null)
-            stringValue = new String(path);     // platform encoding
+        if (stringValue == null) {
+            stringValue = fs.normalizeJavaPath(new String(path));     // platform encoding
+        }
         return stringValue;
     }
 

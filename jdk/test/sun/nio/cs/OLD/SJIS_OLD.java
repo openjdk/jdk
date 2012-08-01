@@ -26,23 +26,20 @@
 /*
  */
 
-package sun.nio.cs.ext;
-
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
+import java.nio.*;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import sun.nio.cs.HistoricallyNamedCharset;
 
-public class SJIS
+public class SJIS_OLD
     extends Charset
     implements HistoricallyNamedCharset
 {
 
-    public SJIS() {
-        super("Shift_JIS", ExtendedCharsets.aliasesFor("Shift_JIS"));
+    public SJIS_OLD() {
+        super("Shift_JIS_OLD", null);
     }
 
     public String historicalName() {
@@ -51,9 +48,9 @@ public class SJIS
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
-                || (cs instanceof JIS_X_0201)
-                || (cs instanceof SJIS)
-                || (cs instanceof JIS_X_0208));
+                || (cs instanceof JIS_X_0201_OLD)
+                || (cs instanceof SJIS_OLD)
+                || (cs instanceof JIS_X_0208_OLD));
     }
 
     public CharsetDecoder newDecoder() {
@@ -71,14 +68,13 @@ public class SJIS
         return new Encoder(this).replaceWith(replacementBytes);
     }
 
-    static class Decoder extends JIS_X_0208_Decoder
-        implements DelegatableDecoder {
+    static class Decoder extends JIS_X_0208_Decoder {
 
-        JIS_X_0201.Decoder jis0201;
+        JIS_X_0201_OLD.Decoder jis0201;
 
         protected Decoder(Charset cs) {
             super(cs);
-            jis0201 = new JIS_X_0201.Decoder(cs);
+            jis0201 = new JIS_X_0201_OLD.Decoder(cs);
         }
 
         protected char decodeSingle(int b) {
@@ -112,7 +108,7 @@ public class SJIS
 
     static class Encoder extends JIS_X_0208_Encoder {
 
-        private JIS_X_0201.Encoder jis0201;
+        private JIS_X_0201_OLD.Encoder jis0201;
 
         private static final short[] j0208Index1 =
             JIS_X_0208_Encoder.getIndex1();
@@ -121,7 +117,7 @@ public class SJIS
 
         protected Encoder(Charset cs) {
             super(cs);
-            jis0201 = new JIS_X_0201.Encoder(cs);
+            jis0201 = new JIS_X_0201_OLD.Encoder(cs);
         }
 
         protected int encodeSingle(char inputChar) {

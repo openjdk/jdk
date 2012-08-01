@@ -26,7 +26,6 @@
 /*
  */
 
-package sun.nio.cs;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;

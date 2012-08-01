@@ -576,7 +576,7 @@ public class GSSCredentialImpl implements GSSCredential {
         if (element == null)
             throw new GSSExceptionImpl(GSSException.NO_CRED,
                                        "No credential found for: " +
-                                       mechOid + getElementStr(mechOid,
+                                       getElementStr(mechOid,
                                        initiate? INITIATE_ONLY : ACCEPT_ONLY));
         return element;
     }
