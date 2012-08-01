@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary retryServerSocket should not retry on BindException
  * @author Ann Wollrath
  *
+ * @library ../../testlibrary
  * @build AddrInUse
  * @run main/othervm AddrInUse
  */
@@ -36,7 +37,7 @@ import java.rmi.server.ExportException;
 
 public class AddrInUse implements Runnable {
 
-    private static final int PORT = 9999;
+    private static int port = -1;
     private static final long TIMEOUT = 10000;
 
     private boolean exportSucceeded = false;
@@ -49,7 +50,7 @@ public class AddrInUse implements Runnable {
          * has already been bound, and record the result.
          */
         try {
-            LocateRegistry.createRegistry(PORT);
+            LocateRegistry.createRegistry(port);
             synchronized (this) {
                 exportSucceeded = true;
                 notifyAll();
@@ -68,8 +69,9 @@ public class AddrInUse implements Runnable {
         /*
          * Bind a server socket to a port.
          */
-        System.err.println("create a ServerSocket on port " + PORT + "...");
-        ServerSocket server = new ServerSocket(PORT);
+        ServerSocket server = new ServerSocket(0);
+        port = server.getLocalPort();
+        System.err.println("Created a ServerSocket on port " + port + "...");
 
         /*
          * Start a thread that creates a registry on the same port,

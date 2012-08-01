@@ -1168,9 +1168,9 @@ klassOop SystemDictionary::resolve_from_stream(Symbol* class_name,
 }
 
 
-void SystemDictionary::set_shared_dictionary(HashtableBucket* t, int length,
+void SystemDictionary::set_shared_dictionary(HashtableBucket<mtClass>* t, int length,
                                              int number_of_entries) {
-  assert(length == _nof_buckets * sizeof(HashtableBucket),
+  assert(length == _nof_buckets * sizeof(HashtableBucket<mtClass>),
          "bad shared dictionary size.");
   _shared_dictionary = new Dictionary(_nof_buckets, t, number_of_entries);
 }
@@ -2771,7 +2771,6 @@ class ClassStatistics: AllStatic {
     nmethods++;
     method_size += m->size();
     // class loader uses same objArray for empty vectors, so don't count these
-    if (m->exception_table()->length() != 0)   method_size += m->exception_table()->size();
     if (m->has_stackmap_table()) {
       method_size += m->stackmap_data()->size();
     }

@@ -28,7 +28,7 @@
 /*
  * Convert the mode string to the more convinient bits per pixel value
  */
-static int getBPPFromModeString(CFStringRef mode) 
+static int getBPPFromModeString(CFStringRef mode)
 {
     if ((CFStringCompare(mode, CFSTR(kIO30BitDirectPixels), kCFCompareCaseInsensitive) == kCFCompareEqualTo)) {
         // This is a strange mode, where we using 10 bits per RGB component and pack it into 32 bits
@@ -44,7 +44,7 @@ static int getBPPFromModeString(CFStringRef mode)
     else if (CFStringCompare(mode, CFSTR(IO8BitIndexedPixels), kCFCompareCaseInsensitive) == kCFCompareEqualTo) {
         return 8;
     }
-    
+
     return 0;
 }
 
@@ -68,6 +68,11 @@ static CGDisplayModeRef getBestModeForParameters(CFArrayRef allModes, int w, int
             // One of the key parameters does not match
             continue;
         }
+
+        if (refrate == 0) { // REFRESH_RATE_UNKNOWN
+            return cRef;
+        }
+
         // Refresh rate might be 0 in display mode and we ask for specific display rate
         // but if we do not find exact match then 0 refresh rate might be just Ok
         if (CGDisplayModeGetRefreshRate(cRef) == refrate) {
@@ -165,7 +170,10 @@ Java_sun_awt_CGraphicsDevice_nativeSetDisplayMode
                 }
             }
         }];
+    } else {
+        [JNFException raise:env as:kIllegalArgumentException reason:"Invalid display mode"];
     }
+
     CFRelease(allModes);
     JNF_COCOA_EXIT(env);
 }

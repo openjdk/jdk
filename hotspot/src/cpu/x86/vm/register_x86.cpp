@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ const int ConcreteRegisterImpl::max_gpr = RegisterImpl::number_of_registers << 1
 const int ConcreteRegisterImpl::max_fpr = ConcreteRegisterImpl::max_gpr +
                                                                  2 * FloatRegisterImpl::number_of_registers;
 const int ConcreteRegisterImpl::max_xmm = ConcreteRegisterImpl::max_fpr +
-                                                                 2 * XMMRegisterImpl::number_of_registers;
+                                                                 8 * XMMRegisterImpl::number_of_registers;
 const char* RegisterImpl::name() const {
   const char* names[number_of_registers] = {
 #ifndef AMD64

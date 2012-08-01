@@ -40,7 +40,7 @@ class MemoryPool;
 class GCMemoryManager;
 class OopClosure;
 
-class MemoryManager : public CHeapObj {
+class MemoryManager : public CHeapObj<mtInternal> {
 private:
   enum {
     max_num_pools = 10

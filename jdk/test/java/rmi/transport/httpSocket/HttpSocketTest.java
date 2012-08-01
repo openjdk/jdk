@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @author Dana Burns
  *
  * @library ../../testlibrary
- * @build HttpSocketTest HttpSocketTest_Stub
+ * @build HttpSocketTest HttpSocketTest_Stub TestLibrary
  * @run main/othervm/policy=security.policy HttpSocketTest
  */
 
@@ -56,10 +56,7 @@ interface MyRemoteInterface extends Remote {
 public class HttpSocketTest extends UnicastRemoteObject
     implements MyRemoteInterface
 {
-
     private static final String NAME = "HttpSocketTest";
-    private static final String REGNAME =
-        "//:" + TestLibrary.REGISTRY_PORT + "/" + NAME;
 
     public HttpSocketTest() throws RemoteException{}
 
@@ -76,21 +73,20 @@ public class HttpSocketTest extends UnicastRemoteObject
         // Set the socket factory.
         System.err.println("installing socket factory");
         RMISocketFactory.setSocketFactory(new RMIHttpToPortSocketFactory());
+        int registryPort = -1;
 
         try {
-
             System.err.println("Starting registry");
-            registry = LocateRegistry.createRegistry(TestLibrary.REGISTRY_PORT);
-
+            registry = TestLibrary.createRegistryOnUnusedPort();
+            registryPort = TestLibrary.getRegistryPort(registry);
         } catch (Exception e) {
             TestLibrary.bomb(e);
         }
 
         try {
-
             registry.rebind( NAME, new HttpSocketTest() );
             MyRemoteInterface httpTest =
-                (MyRemoteInterface)Naming.lookup( REGNAME );
+                (MyRemoteInterface)Naming.lookup("//:" + registryPort + "/" + NAME);
             httpTest.setRemoteObject( new HttpSocketTest() );
             Remote r = httpTest.getRemoteObject();
 

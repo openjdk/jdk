@@ -178,17 +178,6 @@ jint Unsafe_invocation_key_to_method_slot(jint key) {
     v = *(oop*)index_oop_from_field_offset_long(p, offset);                 \
   }
 
-#define GET_OOP_FIELD_VOLATILE(obj, offset, v) \
-  oop p = JNIHandles::resolve(obj);   \
-  volatile oop v;                     \
-  if (UseCompressedOops) {            \
-    volatile narrowOop n = *(volatile narrowOop*)index_oop_from_field_offset_long(p, offset); \
-    v = oopDesc::decode_heap_oop(n);                               \
-  } else {                            \
-    v = *(volatile oop*)index_oop_from_field_offset_long(p, offset);       \
-  } \
-  OrderAccess::acquire();
-
 
 // Get/SetObject must be special-cased, since it works with handles.
 
@@ -296,28 +285,21 @@ UNSAFE_END
 
 UNSAFE_ENTRY(jobject, Unsafe_GetObjectVolatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset))
   UnsafeWrapper("Unsafe_GetObjectVolatile");
-  GET_OOP_FIELD_VOLATILE(obj, offset, v)
+  oop p = JNIHandles::resolve(obj);
+  void* addr = index_oop_from_field_offset_long(p, offset);
+  volatile oop v;
+  if (UseCompressedOops) {
+    volatile narrowOop n = *(volatile narrowOop*) addr;
+    v = oopDesc::decode_heap_oop(n);
+  } else {
+    v = *(volatile oop*) addr;
+  }
+  OrderAccess::acquire();
   return JNIHandles::make_local(env, v);
 UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_SetObjectVolatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject x_h))
   UnsafeWrapper("Unsafe_SetObjectVolatile");
-  {
-    // Catch VolatileCallSite.target stores (via
-    // CallSite.setTargetVolatile) and check call site dependencies.
-    oop p = JNIHandles::resolve(obj);
-    if ((offset == java_lang_invoke_CallSite::target_offset_in_bytes()) && p->is_a(SystemDictionary::CallSite_klass())) {
-      Handle call_site    (THREAD, p);
-      Handle method_handle(THREAD, JNIHandles::resolve(x_h));
-      assert(call_site    ->is_a(SystemDictionary::CallSite_klass()),     "must be");
-      assert(method_handle->is_a(SystemDictionary::MethodHandle_klass()), "must be");
-      {
-        // Walk all nmethods depending on this call site.
-        MutexLocker mu(Compile_lock, thread);
-        Universe::flush_dependents_on(call_site(), method_handle());
-      }
-    }
-  }
   oop x = JNIHandles::resolve(x_h);
   oop p = JNIHandles::resolve(obj);
   void* addr = index_oop_from_field_offset_long(p, offset);
@@ -596,7 +578,7 @@ UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory(JNIEnv *env, jobject unsafe, jlong siz
     return 0;
   }
   sz = round_to(sz, HeapWordSize);
-  void* x = os::malloc(sz);
+  void* x = os::malloc(sz, mtInternal);
   if (x == NULL) {
     THROW_0(vmSymbols::java_lang_OutOfMemoryError());
   }
@@ -616,7 +598,7 @@ UNSAFE_ENTRY(jlong, Unsafe_ReallocateMemory(JNIEnv *env, jobject unsafe, jlong a
     return 0;
   }
   sz = round_to(sz, HeapWordSize);
-  void* x = (p == NULL) ? os::malloc(sz) : os::realloc(p, sz);
+  void* x = (p == NULL) ? os::malloc(sz, mtInternal) : os::realloc(p, sz, mtInternal);
   if (x == NULL) {
     THROW_0(vmSymbols::java_lang_OutOfMemoryError());
   }
@@ -877,7 +859,7 @@ static jclass Unsafe_DefineClass(JNIEnv *env, jstring name, jbyteArray data, int
         return 0;
     }
 
-    body = NEW_C_HEAP_ARRAY(jbyte, length);
+    body = NEW_C_HEAP_ARRAY(jbyte, length, mtInternal);
 
     if (body == 0) {
         throw_new(env, "OutOfMemoryError");
@@ -893,7 +875,7 @@ static jclass Unsafe_DefineClass(JNIEnv *env, jstring name, jbyteArray data, int
         uint len = env->GetStringUTFLength(name);
         int unicode_len = env->GetStringLength(name);
         if (len >= sizeof(buf)) {
-            utfName = NEW_C_HEAP_ARRAY(char, len + 1);
+            utfName = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
             if (utfName == NULL) {
                 throw_new(env, "OutOfMemoryError");
                 goto free_body;
@@ -913,10 +895,10 @@ static jclass Unsafe_DefineClass(JNIEnv *env, jstring name, jbyteArray data, int
     result = JVM_DefineClass(env, utfName, loader, body, length, pd);
 
     if (utfName && utfName != buf)
-        FREE_C_HEAP_ARRAY(char, utfName);
+        FREE_C_HEAP_ARRAY(char, utfName, mtInternal);
 
  free_body:
-    FREE_C_HEAP_ARRAY(jbyte, body);
+    FREE_C_HEAP_ARRAY(jbyte, body, mtInternal);
     return result;
   }
 }
@@ -1011,7 +993,7 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
 
   jint length = typeArrayOop(JNIHandles::resolve_non_null(data))->length();
   jint word_length = (length + sizeof(HeapWord)-1) / sizeof(HeapWord);
-  HeapWord* body = NEW_C_HEAP_ARRAY(HeapWord, word_length);
+  HeapWord* body = NEW_C_HEAP_ARRAY(HeapWord, word_length, mtInternal);
   if (body == NULL) {
     THROW_0(vmSymbols::java_lang_OutOfMemoryError());
   }
@@ -1095,7 +1077,7 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass(JNIEnv *env, jobject unsafe, jc
 
   // try/finally clause:
   if (temp_alloc != NULL) {
-    FREE_C_HEAP_ARRAY(HeapWord, temp_alloc);
+    FREE_C_HEAP_ARRAY(HeapWord, temp_alloc, mtInternal);
   }
 
   return (jclass) res_jh;

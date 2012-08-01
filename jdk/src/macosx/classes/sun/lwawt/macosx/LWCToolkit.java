@@ -216,7 +216,6 @@ public class LWCToolkit extends LWToolkit {
     @Override
     public SystemTrayPeer createSystemTray(SystemTray target) {
         SystemTrayPeer peer = new CSystemTray();
-        targetCreatedPeer(target, peer);
         return peer;
     }
 
@@ -751,12 +750,21 @@ public class LWCToolkit extends LWToolkit {
     }
 
     @Override
+    public boolean isWindowShapingSupported() {
+        return true;
+    }
+
+    @Override
     public boolean isWindowTranslucencySupported() {
         return true;
     }
 
     @Override
     public boolean isTranslucencyCapable(GraphicsConfiguration gc) {
+        return true;
+    }
+
+    public boolean isSwingBackbufferTranslucencySupported() {
         return true;
     }
 

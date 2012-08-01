@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
 # Compiler specific DEBUG_CFLAGS are passed in from gcc.make, sparcWorks.make
 DEBUG_CFLAGS/DEFAULT= $(DEBUG_CFLAGS)
 DEBUG_CFLAGS/BYFILE = $(DEBUG_CFLAGS/$@)$(DEBUG_CFLAGS/DEFAULT$(DEBUG_CFLAGS/$@))
-CFLAGS += $(DEBUG_CFLAGS/BYFILE)
+
+# _NMT_NOINLINE_ informs NMT that no inlining by Compiler
+CFLAGS += $(DEBUG_CFLAGS/BYFILE) -D_NMT_NOINLINE_
 
 # Set the environment variable HOTSPARC_GENERIC to "true"
 # to inhibit the effect of the previous line on CFLAGS.

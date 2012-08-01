@@ -29,7 +29,7 @@
 
 MonitorChunk::MonitorChunk(int number_on_monitors) {
   _number_of_monitors = number_on_monitors;
-  _monitors           = NEW_C_HEAP_ARRAY(BasicObjectLock, number_on_monitors);
+  _monitors           = NEW_C_HEAP_ARRAY(BasicObjectLock, number_on_monitors, mtInternal);
   _next               = NULL;
 }
 

@@ -617,7 +617,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
       if (caching_needed && *_cached_data_ptr == NULL) {
         // data has been changed by the new retransformable agent
         // and it hasn't already been cached, cache it
-        *_cached_data_ptr = (unsigned char *)os::malloc(_curr_len);
+        *_cached_data_ptr = (unsigned char *)os::malloc(_curr_len, mtInternal);
         memcpy(*_cached_data_ptr, _curr_data, _curr_len);
         *_cached_length_ptr = _curr_len;
       }
@@ -720,7 +720,7 @@ class JvmtiCompiledMethodLoadEventMark : public JvmtiMethodEventMark {
     JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nm, &_map, &_map_length);
   }
   ~JvmtiCompiledMethodLoadEventMark() {
-     FREE_C_HEAP_ARRAY(jvmtiAddrLocationMap, _map);
+     FREE_C_HEAP_ARRAY(jvmtiAddrLocationMap, _map, mtInternal);
   }
 
   jint code_size() { return _code_size; }
@@ -2323,7 +2323,7 @@ JvmtiDynamicCodeEventCollector::~JvmtiDynamicCodeEventCollector() {
 // register a stub
 void JvmtiDynamicCodeEventCollector::register_stub(const char* name, address start, address end) {
  if (_code_blobs == NULL) {
-   _code_blobs = new (ResourceObj::C_HEAP) GrowableArray<JvmtiCodeBlobDesc*>(1,true);
+   _code_blobs = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<JvmtiCodeBlobDesc*>(1,true);
  }
  _code_blobs->append(new JvmtiCodeBlobDesc(name, start, end));
 }
@@ -2357,7 +2357,7 @@ JvmtiVMObjectAllocEventCollector::~JvmtiVMObjectAllocEventCollector() {
 void JvmtiVMObjectAllocEventCollector::record_allocation(oop obj) {
   assert(is_enabled(), "VM object alloc event collector is not enabled");
   if (_allocated == NULL) {
-    _allocated = new (ResourceObj::C_HEAP) GrowableArray<oop>(1, true);
+    _allocated = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<oop>(1, true);
   }
   _allocated->push(obj);
 }

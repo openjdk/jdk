@@ -75,7 +75,7 @@ public class StrCodingBenchmark {
         return nanoss;
     }
 
-    public static void time(Job ... jobs) throws Throwable {
+    public static long[] time(Job ... jobs) throws Throwable {
 
         long[] warmup = time0(jobs); // Warm up run
         long[] nanoss = time0(jobs); // Real timing run
@@ -110,6 +110,7 @@ public class StrCodingBenchmark {
         // Print out absolute and relative times, calibrated against first job
         for (int i = 0; i < jobs.length; i++)
             System.out.printf(format, jobs[i].name(), milliss[i], ratios[i]);
+        return milliss;
     }
 
     public static Job[] filter(Pattern filter, Job[] jobs) {

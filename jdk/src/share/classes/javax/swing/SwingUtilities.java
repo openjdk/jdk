@@ -319,7 +319,8 @@ public class SwingUtilities implements SwingConstants
             newEvent = new MouseWheelEvent(newSource,
                                            sourceWheelEvent.getID(),
                                            sourceWheelEvent.getWhen(),
-                                           sourceWheelEvent.getModifiers(),
+                                           sourceWheelEvent.getModifiers()
+                                                   | sourceWheelEvent.getModifiersEx(),
                                            p.x,p.y,
                                            sourceWheelEvent.getXOnScreen(),
                                            sourceWheelEvent.getYOnScreen(),
@@ -334,7 +335,8 @@ public class SwingUtilities implements SwingConstants
             newEvent = new MenuDragMouseEvent(newSource,
                                               sourceMenuDragEvent.getID(),
                                               sourceMenuDragEvent.getWhen(),
-                                              sourceMenuDragEvent.getModifiers(),
+                                              sourceMenuDragEvent.getModifiers()
+                                                      | sourceMenuDragEvent.getModifiersEx(),
                                               p.x,p.y,
                                               sourceMenuDragEvent.getXOnScreen(),
                                               sourceMenuDragEvent.getYOnScreen(),
@@ -347,7 +349,8 @@ public class SwingUtilities implements SwingConstants
             newEvent = new MouseEvent(newSource,
                                       sourceEvent.getID(),
                                       sourceEvent.getWhen(),
-                                      sourceEvent.getModifiers(),
+                                      sourceEvent.getModifiers()
+                                              | sourceEvent.getModifiersEx(),
                                       p.x,p.y,
                                       sourceEvent.getXOnScreen(),
                                       sourceEvent.getYOnScreen(),

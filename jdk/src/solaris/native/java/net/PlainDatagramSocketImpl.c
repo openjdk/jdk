@@ -485,7 +485,7 @@ Java_java_net_PlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
         fullPacket = (char *)malloc(packetBufferLen);
 
         if (!fullPacket) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            JNU_ThrowOutOfMemoryError(env, "Send buffer native heap allocation failed");
             return;
         } else {
             mallocedPacket = JNI_TRUE;
@@ -714,7 +714,7 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
         fullPacket = (char *)malloc(packetBufferLen);
 
         if (!fullPacket) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            JNU_ThrowOutOfMemoryError(env, "Peek buffer native heap allocation failed");
             return -1;
         } else {
             mallocedPacket = JNI_TRUE;
@@ -874,7 +874,7 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
         fullPacket = (char *)malloc(packetBufferLen);
 
         if (!fullPacket) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            JNU_ThrowOutOfMemoryError(env, "Receive buffer native heap allocation failed");
             return;
         } else {
             mallocedPacket = JNI_TRUE;

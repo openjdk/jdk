@@ -201,7 +201,7 @@ public class GenStubs {
          */
         public void visitTopLevel(JCCompilationUnit tree) {
             super.visitTopLevel(tree);
-            tree.docComments = Collections.emptyMap();
+            tree.docComments = null;
         }
 
         /**

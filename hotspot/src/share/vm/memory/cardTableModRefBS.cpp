@@ -33,6 +33,7 @@
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/virtualspace.hpp"
+#include "services/memTracker.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRGenerator.hpp"
@@ -90,6 +91,9 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
   const size_t rs_align = _page_size == (size_t) os::vm_page_size() ? 0 :
     MAX2(_page_size, (size_t) os::vm_allocation_granularity());
   ReservedSpace heap_rs(_byte_map_size, rs_align, false);
+
+  MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
+
   os::trace_page_sizes("card table", _guard_index + 1, _guard_index + 1,
                        _page_size, heap_rs.base(), heap_rs.size());
   if (!heap_rs.is_reserved()) {
@@ -113,16 +117,17 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
     // Do better than this for Merlin
     vm_exit_out_of_memory(_page_size, "card table last card");
   }
+
   *guard_card = last_card;
 
    _lowest_non_clean =
-    NEW_C_HEAP_ARRAY(CardArr, max_covered_regions);
+    NEW_C_HEAP_ARRAY(CardArr, max_covered_regions, mtGC);
   _lowest_non_clean_chunk_size =
-    NEW_C_HEAP_ARRAY(size_t, max_covered_regions);
+    NEW_C_HEAP_ARRAY(size_t, max_covered_regions, mtGC);
   _lowest_non_clean_base_chunk_index =
-    NEW_C_HEAP_ARRAY(uintptr_t, max_covered_regions);
+    NEW_C_HEAP_ARRAY(uintptr_t, max_covered_regions, mtGC);
   _last_LNC_resizing_collection =
-    NEW_C_HEAP_ARRAY(int, max_covered_regions);
+    NEW_C_HEAP_ARRAY(int, max_covered_regions, mtGC);
   if (_lowest_non_clean == NULL
       || _lowest_non_clean_chunk_size == NULL
       || _lowest_non_clean_base_chunk_index == NULL

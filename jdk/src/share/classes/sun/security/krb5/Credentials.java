@@ -464,8 +464,7 @@ public class Credentials {
         System.out.println(">>> DEBUG: ----Credentials----");
         System.out.println("\tclient: " + c.client.toString());
         System.out.println("\tserver: " + c.server.toString());
-        System.out.println("\tticket: realm: " + c.ticket.realm.toString());
-        System.out.println("\t        sname: " + c.ticket.sname.toString());
+        System.out.println("\tticket: sname: " + c.ticket.sname.toString());
         if (c.startTime != null) {
             System.out.println("\tstartTime: " + c.startTime.getTime());
         }

@@ -175,6 +175,40 @@ public class HKSCS {
             }
         }
 
+        public int decode(byte[] src, int sp, int len, char[] dst) {
+            int dp = 0;
+            int sl = sp + len;
+            char repl = replacement().charAt(0);
+            while (sp < sl) {
+                int b1 = src[sp++] & 0xff;
+                char c = decodeSingle(b1);
+                if (c == UNMAPPABLE_DECODING) {
+                    if (sl == sp) {
+                        c = repl;
+                    } else {
+                        int b2 = src[sp++] & 0xff;
+                        if (b2 < b2Min || b2 > b2Max) {
+                            c = repl;
+                        } else if ((c = decodeDouble(b1, b2)) == UNMAPPABLE_DECODING) {
+                            c = decodeDoubleEx(b1, b2);     //supp
+                            if (c == UNMAPPABLE_DECODING) {
+                                c = decodeBig5(b1, b2);     //big5
+                                if (c == UNMAPPABLE_DECODING)
+                                    c = repl;
+                            } else {
+                                // supplementary character in u+2xxxx area
+                                dst[dp++] = Surrogate.high(0x20000 + c);
+                                dst[dp++] = Surrogate.low(0x20000 + c);
+                                continue;
+                            }
+                        }
+                    }
+                }
+                dst[dp++] = c;
+            }
+            return dp;
+        }
+
         public CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
             if (src.hasArray() && dst.hasArray())
                 return decodeArrayLoop(src, dst);
@@ -321,6 +355,36 @@ public class HKSCS {
             else
                 return encodeBufferLoop(src, dst);
         }
+
+        public int encode(char[] src, int sp, int len, byte[] dst) {
+            int dp = 0;
+            int sl = sp + len;
+            while (sp < sl) {
+                char c = src[sp++];
+                int bb = encodeChar(c);
+                if (bb == UNMAPPABLE_ENCODING) {
+                    if (!Character.isHighSurrogate(c) || sp == sl ||
+                        !Character.isLowSurrogate(src[sp]) ||
+                        (bb = encodeSupp(Character.toCodePoint(c, src[sp++])))
+                        == UNMAPPABLE_ENCODING) {
+                        byte[] repl = replacement();
+                        dst[dp++] = repl[0];
+                        if (repl.length > 1)
+                            dst[dp++] = repl[1];
+                        continue;
+                    }
+                    sp++;
+                }
+                if (bb > MAX_SINGLEBYTE) {        // DoubleByte
+                    dst[dp++] = (byte)(bb >> 8);
+                    dst[dp++] = (byte)bb;
+                } else {                          // SingleByte
+                    dst[dp++] = (byte)bb;
+                }
+            }
+            return dp;
+        }
+
 
         static char[] C2B_UNMAPPABLE = new char[0x100];
         static {

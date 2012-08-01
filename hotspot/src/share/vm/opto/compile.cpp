@@ -2591,38 +2591,12 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     }
     break;
 
-  case Op_Load16B:
-  case Op_Load8B:
-  case Op_Load4B:
-  case Op_Load8S:
-  case Op_Load4S:
-  case Op_Load2S:
-  case Op_Load8C:
-  case Op_Load4C:
-  case Op_Load2C:
-  case Op_Load4I:
-  case Op_Load2I:
-  case Op_Load2L:
-  case Op_Load4F:
-  case Op_Load2F:
-  case Op_Load2D:
-  case Op_Store16B:
-  case Op_Store8B:
-  case Op_Store4B:
-  case Op_Store8C:
-  case Op_Store4C:
-  case Op_Store2C:
-  case Op_Store4I:
-  case Op_Store2I:
-  case Op_Store2L:
-  case Op_Store4F:
-  case Op_Store2F:
-  case Op_Store2D:
+  case Op_LoadVector:
+  case Op_StoreVector:
     break;
 
   case Op_PackB:
   case Op_PackS:
-  case Op_PackC:
   case Op_PackI:
   case Op_PackF:
   case Op_PackL:

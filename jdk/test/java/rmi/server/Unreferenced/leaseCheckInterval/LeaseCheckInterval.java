@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,9 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
             UnicastRemoteObject.exportObject(obj);
             System.err.println("exported remote object");
 
+            int registryPort = TestLibrary.getUnusedRandomPort();
             Registry localRegistry =
-                LocateRegistry.createRegistry(TestLibrary.REGISTRY_PORT);
+                LocateRegistry.createRegistry(registryPort);
             System.err.println("created local registry");
 
             localRegistry.bind(BINDING, obj);
@@ -96,7 +97,8 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
 
             synchronized (obj.lock) {
                 System.err.println("starting remote client VM...");
-                (new JavaVM("SelfTerminator")).start();
+                (new JavaVM("SelfTerminator", "-Drmi.registry.port=" +
+                            registryPort, "")).start();
 
                 System.err.println("waiting for unreferenced() callback...");
                 obj.lock.wait(TIMEOUT);

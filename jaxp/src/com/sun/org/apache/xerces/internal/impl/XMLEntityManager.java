@@ -602,7 +602,7 @@ protected static final String PARSER_SETTINGS =
         if (reader == null) {
             stream = xmlInputSource.getByteStream();
             if (stream == null) {
-                URL location = new URL(escapeNonUSAscii(expandedSystemId));
+                URL location = new URL(expandedSystemId);
                 URLConnection connect = location.openConnection();
                 if (!(connect instanceof HttpURLConnection)) {
                     stream = connect.getInputStream();
@@ -2586,64 +2586,6 @@ protected static final String PARSER_SETTINGS =
 
     } // fixURI(String):String
 
-    /**
-     * Escape invalid URI characters.
-     *
-     * Passed a URI that contains invalid characters (like spaces, non-ASCII Unicode characters, and the like),
-     * this function percent encodes the invalid characters per the URI specification (i.e., as a sequence of
-     * %-encoded UTF-8 octets).
-     *
-     * N.B. There are two problems. If the URI contains a '%' character, that might be an indication that
-     * the URI has already been escaped by the author, or it might be an invalid '%'. In the former case,
-     * it's important not to escape it, or we'll wind up with invalid, doubly-escaped '%'s. In the latter,
-     * the URI is broken if we don't encode it. Similarly, a '#' character might be the start of a fragment
-     * identifier or it might be an invalid '#'.
-     *
-     * Given that the former is vastly more likely than the latter in each case (most users are familiar with
-     * the magic status of '%' and '#' and they occur relatively infrequently in filenames, and if the user parses
-     * a proper Java File, we will already have %-escaped the URI), we simply assume that %'s and #'s are legit.
-     *
-     * Very rarely, we may be wrong. If so, tell the user to fix the clearly broken URI.
-     */
-    protected static String escapeNonUSAscii(String str) {
-        if (str == null) {
-            return str;
-        }
-
-        // get UTF-8 bytes for the string
-        StringBuffer buffer = new StringBuffer();
-        byte[] bytes = null;
-        byte b;
-        try {
-            bytes = str.getBytes("UTF-8");
-        } catch (java.io.UnsupportedEncodingException e) {
-            // should never happen
-            return str;
-        }
-        int len = bytes.length;
-        int ch;
-
-        // for each byte
-        for (int i = 0; i < len; i++) {
-            b = bytes[i];
-            // for non-ascii character: make it positive, then escape
-            if (b < 0) {
-                ch = b + 256;
-                buffer.append('%');
-                buffer.append(gHexChs[ch >> 4]);
-                buffer.append(gHexChs[ch & 0xf]);
-            }
-            else if (b != '%' && b != '#' && gNeedEscaping[b]) {
-                buffer.append('%');
-                buffer.append(gAfterEscaping1[b]);
-                buffer.append(gAfterEscaping2[b]);
-            }
-            else {
-                buffer.append((char)b);
-            }
-        }
-        return buffer.toString();
-    }
 
     //
     // Package visible methods

@@ -951,7 +951,7 @@ void CompileBroker::init_compiler_threads(int c1_compiler_count, int c2_compiler
   int compiler_count = c1_compiler_count + c2_compiler_count;
 
   _method_threads =
-    new (ResourceObj::C_HEAP) GrowableArray<CompilerThread*>(compiler_count, true);
+    new (ResourceObj::C_HEAP, mtCompiler) GrowableArray<CompilerThread*>(compiler_count, true);
 
   char name_buffer[256];
   for (int i = 0; i < c2_compiler_count; i++) {
@@ -1627,7 +1627,7 @@ void CompileBroker::init_compiler_thread_log() {
       }
       fp = fopen(fileBuf, "at");
       if (fp != NULL) {
-        file = NEW_C_HEAP_ARRAY(char, strlen(fileBuf)+1);
+        file = NEW_C_HEAP_ARRAY(char, strlen(fileBuf)+1, mtCompiler);
         strcpy(file, fileBuf);
         break;
       }
@@ -1637,7 +1637,7 @@ void CompileBroker::init_compiler_thread_log() {
     } else {
       if (LogCompilation && Verbose)
         tty->print_cr("Opening compilation log %s", file);
-      CompileLog* log = new(ResourceObj::C_HEAP) CompileLog(file, fp, thread_id);
+      CompileLog* log = new(ResourceObj::C_HEAP, mtCompiler) CompileLog(file, fp, thread_id);
       thread->init_log(log);
 
       if (xtty != NULL) {
