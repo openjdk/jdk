@@ -344,7 +344,7 @@ void MemSnapshot::promote() {
           // due to platform dependent behaviors. On some platforms, we see uncommit/release
           // native thread stack, but some, we don't.
           if (!cur_vm->is_uncommit_record() && !cur_vm->is_deallocation_record()) {
-            ShouldNotReachHere();
+            fatal(err_msg("Should not reach here, pointer flags = [%x]", cur_vm->flags()));
           }
 #endif
         }
