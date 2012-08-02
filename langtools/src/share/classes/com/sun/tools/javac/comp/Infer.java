@@ -75,12 +75,7 @@ public class Infer {
         log = Log.instance(context);
         chk = Check.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        ambiguousNoInstanceException =
-            new NoInstanceException(true, diags);
-        unambiguousNoInstanceException =
-            new NoInstanceException(false, diags);
-        invalidInstanceException =
-            new InvalidInstanceException(diags);
+        inferenceException = new InferenceException(diags);
 
     }
 
@@ -92,28 +87,7 @@ public class Infer {
         }
     }
 
-    public static class NoInstanceException extends InferenceException {
-        private static final long serialVersionUID = 1;
-
-        boolean isAmbiguous; // exist several incomparable best instances?
-
-        NoInstanceException(boolean isAmbiguous, JCDiagnostic.Factory diags) {
-            super(diags);
-            this.isAmbiguous = isAmbiguous;
-        }
-    }
-
-    public static class InvalidInstanceException extends InferenceException {
-        private static final long serialVersionUID = 2;
-
-        InvalidInstanceException(JCDiagnostic.Factory diags) {
-            super(diags);
-        }
-    }
-
-    private final NoInstanceException ambiguousNoInstanceException;
-    private final NoInstanceException unambiguousNoInstanceException;
-    private final InvalidInstanceException invalidInstanceException;
+    private final InferenceException inferenceException;
 
 /***************************************************************************
  * Auxiliary type values and classes
@@ -144,7 +118,7 @@ public class Infer {
     /** Instantiate undetermined type variable to its minimal upper bound.
      *  Throw a NoInstanceException if this not possible.
      */
-    void maximizeInst(UndetVar that, Warner warn) throws NoInstanceException {
+    void maximizeInst(UndetVar that, Warner warn) throws InferenceException {
         List<Type> hibounds = Type.filter(that.hibounds, errorFilter);
         if (that.eq.isEmpty()) {
             if (hibounds.isEmpty())
@@ -158,7 +132,7 @@ public class Infer {
         }
         if (that.inst == null ||
             that.inst.isErroneous())
-            throw ambiguousNoInstanceException
+            throw inferenceException
                 .setMessage("no.unique.maximal.instance.exists",
                             that.qtype, hibounds);
     }
@@ -173,7 +147,7 @@ public class Infer {
     /** Instantiate undetermined type variable to the lub of all its lower bounds.
      *  Throw a NoInstanceException if this not possible.
      */
-    void minimizeInst(UndetVar that, Warner warn) throws NoInstanceException {
+    void minimizeInst(UndetVar that, Warner warn) throws InferenceException {
         List<Type> lobounds = Type.filter(that.lobounds, errorFilter);
         if (that.eq.isEmpty()) {
             if (lobounds.isEmpty())
@@ -184,7 +158,7 @@ public class Infer {
                 that.inst = types.lub(lobounds);
             }
             if (that.inst == null || that.inst.tag == ERROR)
-                    throw ambiguousNoInstanceException
+                    throw inferenceException
                         .setMessage("no.unique.minimal.instance.exists",
                                     that.qtype, lobounds);
         } else {
@@ -228,7 +202,7 @@ public class Infer {
         Type qtype1 = types.subst(mtype.getReturnType(), tvars, undetvars);
         if (!types.isSubtype(qtype1,
                 qtype1.tag == UNDETVAR ? types.boxedTypeOrType(to) : to)) {
-            throw unambiguousNoInstanceException
+            throw inferenceException
                 .setMessage("infer.no.conforming.instance.exists",
                             tvars, mtype.getReturnType(), to);
         }
@@ -382,17 +356,17 @@ public class Infer {
             }
 
             public InapplicableMethodException arityMismatch() {
-                return unambiguousNoInstanceException.setMessage("infer.arg.length.mismatch", inferenceVars(undetvars));
+                return inferenceException.setMessage("infer.arg.length.mismatch", inferenceVars(undetvars));
             }
             public InapplicableMethodException argumentMismatch(boolean varargs, JCDiagnostic details) {
                 String key = varargs ?
                         "infer.varargs.argument.mismatch" :
                         "infer.no.conforming.assignment.exists";
-                return unambiguousNoInstanceException.setMessage(key,
+                return inferenceException.setMessage(key,
                         inferenceVars(undetvars), details);
             }
             public InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected) {
-                return unambiguousNoInstanceException.setMessage("inaccessible.varargs.type",
+                return inferenceException.setMessage("inaccessible.varargs.type",
                         expected, Kinds.kindName(location), location);
             }
         }
@@ -405,7 +379,7 @@ public class Infer {
             }
             catch (InapplicableMethodException ex) {
                 // inferred method is not applicable
-                throw invalidInstanceException.setMessage(ex.getDiagnostic());
+                throw inferenceException.setMessage(ex.getDiagnostic());
             }
         }
 
@@ -415,7 +389,7 @@ public class Infer {
                            List<Type> undetvars,
                            List<Type> arguments,
                            Warner warn)
-        throws InvalidInstanceException {
+        throws InferenceException {
         List<Type> args = arguments;
         for (Type t : undetvars) {
             UndetVar uv = (UndetVar)t;
@@ -496,7 +470,7 @@ public class Infer {
     }
     //where
     void reportBoundError(UndetVar uv, BoundErrorKind bk) {
-        throw bk.setMessage(uv.inst == null ? ambiguousNoInstanceException : invalidInstanceException, uv);
+        throw bk.setMessage(inferenceException, uv);
     }
 
     /**
