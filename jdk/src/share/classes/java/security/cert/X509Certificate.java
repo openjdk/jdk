@@ -26,8 +26,7 @@
 package java.security.cert;
 
 import java.math.BigInteger;
-import java.security.Principal;
-import java.security.PublicKey;
+import java.security.*;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -639,5 +638,34 @@ implements X509Extension {
     public Collection<List<?>> getIssuerAlternativeNames()
         throws CertificateParsingException {
         return X509CertImpl.getIssuerAlternativeNames(this);
+    }
+
+     /**
+     * Verifies that this certificate was signed using the
+     * private key that corresponds to the specified public key.
+     * This method uses the signature verification engine
+     * supplied by the specified provider. Note that the specified
+     * Provider object does not have to be registered in the provider list.
+     *
+     * This method was added to version 1.8 of the Java Platform Standard
+     * Edition. In order to maintain backwards compatibility with existing
+     * service providers, this method is not <code>abstract</code>
+     * and it provides a default implementation.
+     *
+     * @param key the PublicKey used to carry out the verification.
+     * @param sigProvider the signature provider.
+     *
+     * @exception NoSuchAlgorithmException on unsupported signature
+     * algorithms.
+     * @exception InvalidKeyException on incorrect key.
+     * @exception SignatureException on signature errors.
+     * @exception CertificateException on encoding errors.
+     * @exception UnsupportedOperationException if the method is not supported
+     * @since 1.8
+     */
+    public void verify(PublicKey key, Provider sigProvider)
+        throws CertificateException, NoSuchAlgorithmException,
+        InvalidKeyException, SignatureException {
+        X509CertImpl.verify(this, key, sigProvider);
     }
 }
