@@ -43,18 +43,27 @@
 //
 // This serves as our best estimate of a future unknown.
 //
-class AdaptiveWeightedAverage : public CHeapObj {
+class AdaptiveWeightedAverage : public CHeapObj<mtGC> {
  private:
   float            _average;        // The last computed average
   unsigned         _sample_count;   // How often we've sampled this average
   unsigned         _weight;         // The weight used to smooth the averages
                                     //   A higher weight favors the most
                                     //   recent data.
+  bool             _is_old;         // Has enough historical data
+
+  const static unsigned OLD_THRESHOLD = 100;
 
  protected:
   float            _last_sample;    // The last value sampled.
 
-  void  increment_count()       { _sample_count++;       }
+  void  increment_count() {
+    _sample_count++;
+    if (!_is_old && _sample_count > OLD_THRESHOLD) {
+      _is_old = true;
+    }
+  }
+
   void  set_average(float avg)  { _average = avg;        }
 
   // Helper function, computes an adaptive weighted average
@@ -64,13 +73,15 @@ class AdaptiveWeightedAverage : public CHeapObj {
  public:
   // Input weight must be between 0 and 100
   AdaptiveWeightedAverage(unsigned weight, float avg = 0.0) :
-    _average(avg), _sample_count(0), _weight(weight), _last_sample(0.0) {
+    _average(avg), _sample_count(0), _weight(weight), _last_sample(0.0),
+    _is_old(false) {
   }
 
   void clear() {
     _average = 0;
     _sample_count = 0;
     _last_sample = 0;
+    _is_old = false;
   }
 
   // Useful for modifying static structures after startup.
@@ -84,7 +95,8 @@ class AdaptiveWeightedAverage : public CHeapObj {
   float    average() const       { return _average;       }
   unsigned weight()  const       { return _weight;        }
   unsigned count()   const       { return _sample_count;  }
-  float    last_sample() const   { return _last_sample; }
+  float    last_sample() const   { return _last_sample;   }
+  bool     is_old()  const       { return _is_old;        }
 
   // Update data with a new sample.
   void sample(float new_sample);
@@ -134,7 +146,7 @@ class AdaptivePaddedAverage : public AdaptiveWeightedAverage {
   // Placement support
   void* operator new(size_t ignored, void* p) { return p; }
   // Allocator
-  void* operator new(size_t size) { return CHeapObj::operator new(size); }
+  void* operator new(size_t size) { return CHeapObj<mtGC>::operator new(size); }
 
   // Accessor
   float padded_average() const         { return _padded_avg; }
@@ -180,7 +192,7 @@ public:
 // equation.
 //              y = intercept + slope * x
 
-class LinearLeastSquareFit : public CHeapObj {
+class LinearLeastSquareFit : public CHeapObj<mtGC> {
   double _sum_x;        // sum of all independent data points x
   double _sum_x_squared; // sum of all independent data points x**2
   double _sum_y;        // sum of all dependent data points y

@@ -41,6 +41,8 @@ import sun.java2d.StateTrackableDelegate;
 
 import sun.awt.image.SunWritableRaster;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * This class exists to wrap one or more data arrays.  Each data array in
  * the DataBuffer is referred to as a bank.  Accessor methods for getting
@@ -65,6 +67,8 @@ import sun.awt.image.SunWritableRaster;
  * @see java.awt.image.Raster
  * @see java.awt.image.SampleModel
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public abstract class DataBuffer {
 
     /** Tag for unsigned byte data. */

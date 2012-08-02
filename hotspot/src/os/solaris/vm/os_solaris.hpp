@@ -180,6 +180,9 @@ class Solaris {
   // proc_t structure (note that this is a system struct).
   static address _main_stack_base;
 
+  static void print_distro_info(outputStream* st);
+  static void print_libversion_info(outputStream* st);
+
  public:
   static void libthread_init();
   static void synchronization_init();
@@ -343,7 +346,7 @@ class Solaris {
 
 };
 
-class PlatformEvent : public CHeapObj {
+class PlatformEvent : public CHeapObj<mtInternal> {
   private:
     double CachePad [4] ;   // increase odds that _mutex is sole occupant of cache line
     volatile int _Event ;
@@ -380,7 +383,7 @@ class PlatformEvent : public CHeapObj {
     void unpark () ;
 } ;
 
-class PlatformParker : public CHeapObj {
+class PlatformParker : public CHeapObj<mtInternal> {
   protected:
     mutex_t _mutex [1] ;
     cond_t  _cond  [1] ;

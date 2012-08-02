@@ -644,30 +644,6 @@ void LIRGenerator::do_CompareOp(CompareOp* x) {
 }
 
 
-void LIRGenerator::do_AttemptUpdate(Intrinsic* x) {
-  assert(x->number_of_arguments() == 3, "wrong type");
-  LIRItem obj       (x->argument_at(0), this);  // AtomicLong object
-  LIRItem cmp_value (x->argument_at(1), this);  // value to compare with field
-  LIRItem new_value (x->argument_at(2), this);  // replace field with new_value if it matches cmp_value
-
-  obj.load_item();
-  cmp_value.load_item();
-  new_value.load_item();
-
-  // generate compare-and-swap and produce zero condition if swap occurs
-  int value_offset = sun_misc_AtomicLongCSImpl::value_offset();
-  LIR_Opr addr = FrameMap::O7_opr;
-  __ add(obj.result(), LIR_OprFact::intConst(value_offset), addr);
-  LIR_Opr t1 = FrameMap::G1_opr;  // temp for 64-bit value
-  LIR_Opr t2 = FrameMap::G3_opr;  // temp for 64-bit value
-  __ cas_long(addr, cmp_value.result(), new_value.result(), t1, t2);
-
-  // generate conditional move of boolean result
-  LIR_Opr result = rlock_result(x);
-  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0), result, T_LONG);
-}
-
-
 void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   assert(x->number_of_arguments() == 4, "wrong type");
   LIRItem obj   (x->argument_at(0), this);  // object
@@ -738,7 +714,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
     case vmIntrinsics::_dlog: // fall through
     case vmIntrinsics::_dsin: // fall through
     case vmIntrinsics::_dtan: // fall through
-    case vmIntrinsics::_dcos: {
+    case vmIntrinsics::_dcos: // fall through
+    case vmIntrinsics::_dexp: {
       assert(x->number_of_arguments() == 1, "wrong type");
 
       address runtime_entry = NULL;
@@ -758,12 +735,23 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       case vmIntrinsics::_dlog10:
         runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
         break;
+      case vmIntrinsics::_dexp:
+        runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
+        break;
       default:
         ShouldNotReachHere();
       }
 
       LIR_Opr result = call_runtime(x->argument_at(0), runtime_entry, x->type(), NULL);
       set_result(x, result);
+      break;
+    }
+    case vmIntrinsics::_dpow: {
+      assert(x->number_of_arguments() == 2, "wrong type");
+      address runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
+      LIR_Opr result = call_runtime(x->argument_at(0), x->argument_at(1), runtime_entry, x->type(), NULL);
+      set_result(x, result);
+      break;
     }
   }
 }
@@ -977,10 +965,10 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   if (!x->klass()->is_loaded() || PatchALot) {
     patching_info = state_for(x, x->state_before());
 
-    // cannot re-use same xhandlers for multiple CodeEmitInfos, so
-    // clone all handlers.  This is handled transparently in other
-    // places by the CodeEmitInfo cloning logic but is handled
-    // specially here because a stub isn't being used.
+    // Cannot re-use same xhandlers for multiple CodeEmitInfos, so
+    // clone all handlers (NOTE: Usually this is handled transparently
+    // by the CodeEmitInfo cloning logic in CodeStub constructors but
+    // is done explicitly here because a stub isn't being used).
     x->set_exception_handlers(new XHandlers(x->exception_handlers()));
   }
   CodeEmitInfo* info = state_for(x, x->state());

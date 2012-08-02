@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          cpuHelper = new SPARCHelper();
       } else if (cpu.equals("x86")) {
          cpuHelper = new X86Helper();
-      } else if (cpu.equals("amd64")) {
+      } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
          cpuHelper = new AMD64Helper();
       } else if (cpu.equals("ia64")) {
          cpuHelper = new IA64Helper();
@@ -783,37 +783,39 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                        });
 
          // display exception table for this method
-         TypeArray exceptionTable = method.getExceptionTable();
-         // exception table is 4 tuple array of shorts
-         int numEntries = (int)exceptionTable.getLength() / 4;
-         if (numEntries != 0) {
-            buf.h4("Exception Table");
-            buf.beginTable(1);
-            buf.beginTag("tr");
-            buf.headerCell("start bci");
-            buf.headerCell("end bci");
-            buf.headerCell("handler bci");
-            buf.headerCell("catch type");
-            buf.endTag("tr");
-
-            for (int e = 0; e < numEntries; e += 4) {
+         boolean hasException = method.hasExceptionTable();
+         if (hasException) {
+            ExceptionTableElement[] exceptionTable = method.getExceptionTable();
+            int numEntries = exceptionTable.length;
+            if (numEntries != 0) {
+               buf.h4("Exception Table");
+               buf.beginTable(1);
                buf.beginTag("tr");
-               buf.cell(Integer.toString(exceptionTable.getIntAt(e)));
-               buf.cell(Integer.toString(exceptionTable.getIntAt(e + 1)));
-               buf.cell(Integer.toString(exceptionTable.getIntAt(e + 2)));
-               short cpIndex = (short) exceptionTable.getIntAt(e + 3);
-               ConstantPool.CPSlot obj = cpIndex == 0? null : cpool.getSlotAt(cpIndex);
-               if (obj == null) {
-                  buf.cell("Any");
-               } else if (obj.isMetaData()) {
-                 buf.cell(obj.getSymbol().asString().replace('/', '.'));
-               } else {
-                 buf.cell(genKlassLink((InstanceKlass)obj.getOop()));
-               }
+               buf.headerCell("start bci");
+               buf.headerCell("end bci");
+               buf.headerCell("handler bci");
+               buf.headerCell("catch type");
                buf.endTag("tr");
-            }
 
-            buf.endTable();
+               for (int e = 0; e < numEntries; e ++) {
+                  buf.beginTag("tr");
+                  buf.cell(Integer.toString(exceptionTable[e].getStartPC()));
+                  buf.cell(Integer.toString(exceptionTable[e].getEndPC()));
+                  buf.cell(Integer.toString(exceptionTable[e].getHandlerPC()));
+                  short cpIndex = (short) exceptionTable[e].getCatchTypeIndex();
+                  ConstantPool.CPSlot obj = cpIndex == 0? null : cpool.getSlotAt(cpIndex);
+                  if (obj == null) {
+                     buf.cell("Any");
+                  } else if (obj.isMetaData()) {
+                     buf.cell(obj.getSymbol().asString().replace('/', '.'));
+                  } else {
+                     buf.cell(genKlassLink((InstanceKlass)obj.getOop()));
+                  }
+                  buf.endTag("tr");
+               }
+
+               buf.endTable();
+            }
          }
 
          // display constant pool hyperlink

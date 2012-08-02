@@ -516,17 +516,23 @@ JVM_handle_bsd_signal(int sig,
       }
     }
 
-    if (thread->thread_state() == _thread_in_Java) {
+    // We test if stub is already set (by the stack overflow code
+    // above) so it is not overwritten by the code that follows. This
+    // check is not required on other platforms, because on other
+    // platforms we check for SIGSEGV only or SIGBUS only, where here
+    // we have to check for both SIGSEGV and SIGBUS.
+    if (thread->thread_state() == _thread_in_Java && stub == NULL) {
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
 
       if ((sig == SIGSEGV || sig == SIGBUS) && os::is_poll_address((address)info->si_addr)) {
         stub = SharedRuntime::get_poll_stub(pc);
-#if defined(__APPLE__) && !defined(AMD64)
+#if defined(__APPLE__)
       // 32-bit Darwin reports a SIGBUS for nearly all memory access exceptions.
+      // 64-bit Darwin may also use a SIGBUS (seen with compressed oops).
       // Catching SIGBUS here prevents the implicit SIGBUS NULL check below from
       // being called, so only do so if the implicit NULL check is not necessary.
-      } else if (sig == SIGBUS && MacroAssembler::needs_explicit_null_check((int)info->si_addr)) {
+      } else if (sig == SIGBUS && MacroAssembler::needs_explicit_null_check((intptr_t)info->si_addr)) {
 #else
       } else if (sig == SIGBUS /* && info->si_code == BUS_OBJERR */) {
 #endif

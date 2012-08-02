@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
 import java.util.Vector;
 
 import javax.print.CancelablePrintJob;
@@ -938,7 +939,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                      * is not removed for some reason, request that it is
                      * removed when the VM exits.
                      */
-                    spoolFile = File.createTempFile("javaprint", ".ps", null);
+                    spoolFile = Files.createTempFile("javaprint", ".ps").toFile();
                     spoolFile.deleteOnExit();
                 }
                 result = new FileOutputStream(spoolFile);

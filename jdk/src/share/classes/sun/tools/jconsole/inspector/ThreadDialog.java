@@ -28,7 +28,6 @@ package sun.tools.jconsole.inspector;
 // java import
 import java.awt.*;
 import javax.swing.*;
-import java.io.*;
 //
 
 public class ThreadDialog implements Runnable {

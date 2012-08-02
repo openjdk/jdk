@@ -429,6 +429,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         ValidatingFileChooser jfc = new ValidatingFileChooser();
         jfc.setApproveButtonText(getMsg("button.ok"));
         jfc.setDialogTitle(getMsg("dialog.printtofile"));
+        jfc.setDialogType(JFileChooser.SAVE_DIALOG);
         jfc.setSelectedFile(fileDest);
 
         int returnVal = jfc.showDialog(this, null);

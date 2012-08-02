@@ -28,9 +28,7 @@
 
 import java.io.*;
 import java.net.*;
-import java.nio.*;
 import java.nio.channels.*;
-import java.nio.charset.*;
 
 
 public class AdaptSocket {
@@ -136,9 +134,8 @@ public class AdaptSocket {
         out.println("timeout: " + so.getSoTimeout());
 
         testRead(so, shouldTimeout);
-        if (!TestUtil.onME())
-            for (int i = 0; i < 4; i++)
-                testRead(so, shouldTimeout);
+        for (int i = 0; i < 4; i++)
+            testRead(so, shouldTimeout);
 
         sc.close();
     }

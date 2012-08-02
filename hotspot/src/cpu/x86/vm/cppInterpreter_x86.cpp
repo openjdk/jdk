@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,7 +481,8 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
   __ xorptr(rdx, rdx);
   __ movptr(STATE(_oop_temp), rdx);                     // state->_oop_temp = NULL (only really needed for native)
   __ movptr(STATE(_mdx), rdx);                          // state->_mdx = NULL
-  __ movptr(rdx, Address(rbx, methodOopDesc::constants_offset()));
+  __ movptr(rdx, Address(rbx, methodOopDesc::const_offset()));
+  __ movptr(rdx, Address(rdx, constMethodOopDesc::constants_offset()));
   __ movptr(rdx, Address(rdx, constantPoolOopDesc::cache_offset_in_bytes()));
   __ movptr(STATE(_constants), rdx);                    // state->_constants = constants()
 
@@ -516,7 +517,8 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
     __ testl(rax, JVM_ACC_STATIC);
     __ movptr(rax, Address(locals, 0));                   // get receiver (assume this is frequent case)
     __ jcc(Assembler::zero, done);
-    __ movptr(rax, Address(rbx, methodOopDesc::constants_offset()));
+    __ movptr(rax, Address(rbx, methodOopDesc::const_offset()));
+    __ movptr(rax, Address(rax, constMethodOopDesc::constants_offset()));
     __ movptr(rax, Address(rax, constantPoolOopDesc::pool_holder_offset_in_bytes()));
     __ movptr(rax, Address(rax, mirror_offset));
     __ bind(done);
@@ -769,7 +771,8 @@ void InterpreterGenerator::lock_method(void) {
     __ testl(rax, JVM_ACC_STATIC);
     __ movptr(rax, Address(rdi, 0));                                    // get receiver (assume this is frequent case)
     __ jcc(Assembler::zero, done);
-    __ movptr(rax, Address(rbx, methodOopDesc::constants_offset()));
+    __ movptr(rax, Address(rbx, methodOopDesc::const_offset()));
+    __ movptr(rax, Address(rax, constMethodOopDesc::constants_offset()));
     __ movptr(rax, Address(rax, constantPoolOopDesc::pool_holder_offset_in_bytes()));
     __ movptr(rax, Address(rax, mirror_offset));
     __ bind(done);
@@ -821,9 +824,9 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     __ testptr(rax, rax);
     __ jcc(Assembler::zero, slow_path);
 
-    __ movptr(rdi, Address(rbx, methodOopDesc::constants_offset()));
     // read first instruction word and extract bytecode @ 1 and index @ 2
     __ movptr(rdx, Address(rbx, methodOopDesc::const_offset()));
+    __ movptr(rdi, Address(rdx, constMethodOopDesc::constants_offset()));
     __ movl(rdx, Address(rdx, constMethodOopDesc::codes_offset()));
     // Shift codes right to get the index on the right.
     // The bytecode fetched looks like <index><0xb4><0x2a>
@@ -1185,7 +1188,8 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ testl(t, JVM_ACC_STATIC);
     __ jcc(Assembler::zero, L);
     // get mirror
-    __ movptr(t, Address(method, methodOopDesc:: constants_offset()));
+    __ movptr(t, Address(method, methodOopDesc:: const_offset()));
+    __ movptr(t, Address(t, constMethodOopDesc::constants_offset()));
     __ movptr(t, Address(t, constantPoolOopDesc::pool_holder_offset_in_bytes()));
     __ movptr(t, Address(t, mirror_offset));
     // copy mirror into activation object

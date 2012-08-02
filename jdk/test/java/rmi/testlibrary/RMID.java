@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 import java.io.*;
 import java.rmi.*;
 import java.rmi.activation.*;
-import java.util.Properties;
 
 /**
  * Utility class that creates an instance of rmid with a policy
@@ -133,7 +132,7 @@ public class RMID extends JavaVM {
                                   boolean debugExec)
     {
         return createRMID(out, err, debugExec, true,
-                          TestLibrary.RMID_PORT);
+                          TestLibrary.getUnusedRandomPort());
     }
 
     public static RMID createRMID(OutputStream out, OutputStream err,
@@ -208,7 +207,7 @@ public class RMID extends JavaVM {
         // if rmid is already running, then the test will fail with
         // a well recognized exception (port already in use...).
 
-        mesg("starting rmid...");
+        mesg("starting rmid on port #" + port + "...");
         super.start();
 
         int slopFactor = 1;
@@ -218,20 +217,38 @@ public class RMID extends JavaVM {
         } catch (NumberFormatException ignore) {}
         waitTime = waitTime * slopFactor;
 
-        // give rmid time to come up
+        // We check several times (as many as provides passed waitTime) to
+        // see if Rmid is currently running. Waiting steps last 100 msecs.
+        final long rmidStartSleepTime = 100;
         do {
+            // Sleeping for another rmidStartSleepTime time slice.
             try {
-                Thread.sleep(Math.min(waitTime, 10000));
+                Thread.sleep(Math.min(waitTime, rmidStartSleepTime));
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
+                mesg("Thread interrupted while checking for start of Activation System. Giving up check.");
+                mesg("Activation System state unknown");
+                return;
             }
-            waitTime -= 10000;
+            waitTime -= rmidStartSleepTime;
 
-            // is rmid present?
+            // Checking if rmid is present
             if (ActivationLibrary.rmidRunning(port)) {
+                /**
+                 * We need to set the java.rmi.activation.port value as the
+                 * activation system will use the property to determine the
+                 * port #.  The activation system will use this value if set.
+                 * If it isn't set, the activation system will set it to an
+                 * incorrect value.
+                 */
+                System.setProperty("java.rmi.activation.port", Integer.toString(port));
                 mesg("finished starting rmid.");
                 return;
             }
+            else {
+                mesg("rmid still not started");
+            }
+
         } while (waitTime > 0);
         TestLibrary.bomb("start rmid failed... giving up", null);
     }
@@ -249,10 +266,6 @@ public class RMID extends JavaVM {
      * Shutdown does not nullify possible references to the rmid
      * process object (destroy does though).
      */
-    public static void shutdown() {
-        shutdown(TestLibrary.RMID_PORT);
-    }
-
     public static void shutdown(int port) {
 
         try {
@@ -264,6 +277,8 @@ public class RMID extends JavaVM {
                     port +
                     "/java.rmi.activation.ActivationSystem");
                 mesg("obtained a reference to the activation system");
+            } catch (RemoteException re) {
+                mesg("could not contact registry while trying to shutdown activation system");
             } catch (java.net.MalformedURLException mue) {
             }
 
@@ -272,17 +287,12 @@ public class RMID extends JavaVM {
             }
             system.shutdown();
 
+        } catch (RemoteException re) {
+            mesg("shutting down the activation daemon failed");
         } catch (Exception e) {
             mesg("caught exception trying to shutdown rmid");
             mesg(e.getMessage());
             e.printStackTrace();
-        }
-
-        try {
-            // wait for the shutdown to happen
-            Thread.sleep(5000);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
         }
 
         mesg("testlibrary finished shutting down rmid");
@@ -294,25 +304,52 @@ public class RMID extends JavaVM {
      * if rmid is a child process of the current VM.
      */
     public void destroy() {
-
-        // attempt graceful shutdown of the activation system on
-        // TestLibrary.RMID_PORT
+        // attempt graceful shutdown of the activation system
         shutdown(port);
 
         if (vm != null) {
             try {
-                // destroy rmid if it is still running...
-                try {
-                    vm.exitValue();
-                    mesg("rmid exited on shutdown request");
-                } catch (IllegalThreadStateException illegal) {
-                    mesg("Had to destroy RMID's process " +
-                         "using Process.destroy()");
+                /* Waiting for distant RMID process to shutdown.
+                 * Waiting is bounded at a hardcoded max of 60 secs (1 min).
+                 * Waiting by steps of 200 msecs, thus at most 300 such attempts
+                 * for termination of distant RMID process. If process is not
+                 * known to be terminated properly after that time,
+                 * we give up for a gracefull termination, and thus go for
+                 * forcibly destroying the process.
+                 */
+                boolean vmEnded = false;
+                int waitingTrials = 0;
+                final int maxTrials = 300;
+                final long vmProcessEndWaitInterval = 200;
+                int vmExitValue;
+                do {
+                    try {
+                        Thread.sleep(vmProcessEndWaitInterval);
+                        waitingTrials++;
+                        vmExitValue = vm.exitValue();
+                        mesg("rmid exited on shutdown request");
+                        vmEnded = true;
+                    } catch (IllegalThreadStateException illegal) {
+                        mesg("RMID's process still not terminated after more than " +
+                             (waitingTrials * vmProcessEndWaitInterval) + " milliseconds");
+                    }
+                }
+                while (!vmEnded &&
+                       (waitingTrials < maxTrials));
+
+                if (waitingTrials >= maxTrials) {
+                    mesg("RMID's process still not terminated after more than " +
+                         (waitingTrials * vmProcessEndWaitInterval) + " milliseconds." +
+                         "Givinp up gracefull termination...");
+                    mesg("destroying RMID's process using Process.destroy()");
                     super.destroy();
                 }
 
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                mesg("Thread interrupted while checking for termination of distant rmid vm. Giving up check.");
             } catch (Exception e) {
-                mesg("caught exception trying to destroy rmid: " +
+                mesg("caught unexpected exception trying to destroy rmid: " +
                      e.getMessage());
                 e.printStackTrace();
             }
@@ -321,4 +358,6 @@ public class RMID extends JavaVM {
             vm = null;
         }
     }
+
+    public int getPort() {return port;}
 }

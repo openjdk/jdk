@@ -23,11 +23,12 @@
 # questions.
 #
 
+# This must be the first rule
+default: all
+
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-
-default: all
 
 # The BOOT_JAVAC setup uses the bootdir compiler to compile the tools
 # and the bootstrap javac, to be run by the bootdir jvm.
@@ -184,8 +185,7 @@ ifeq ($(PROPS_ARE_CREATED),yes)
 			SETUP:=GENERATE_NEWBYTECODE,\
 			SRCS:=$(LANGTOOLS_OUTPUTDIR)/classes,\
 			SUFFIXES:=.class $(RESOURCE_SUFFIXES),\
-			JAR:=$(LANGTOOLS_OUTPUTDIR)/dist/lib/classes.jar,\
-			HEADERS:=$(LANGTOOLS_OUTPUTDIR)/gensrc_headers))
+			JAR:=$(LANGTOOLS_OUTPUTDIR)/dist/lib/classes.jar))
 
                 $(eval $(call SetupZipArchive,ZIP_FULL_JAVAC_SOURCE,\
 			SRC:=$(LANGTOOLS_TOPDIR)/src/share/classes $(LANGTOOLS_OUTPUTDIR)/gensrc,\

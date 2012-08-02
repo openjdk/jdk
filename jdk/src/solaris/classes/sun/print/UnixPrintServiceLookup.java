@@ -51,6 +51,7 @@ import javax.print.attribute.standard.PrinterName;
 import java.io.File;
 import java.io.FileReader;
 import java.net.URL;
+import java.nio.file.Files;
 
 /*
  * Remind: This class uses solaris commands. We also need a linux
@@ -112,6 +113,10 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
         osname = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("os.name"));
+    }
+
+    static boolean isMac() {
+        return osname.startsWith("Mac");
     }
 
     static boolean isSysV() {
@@ -212,7 +217,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                 }
             }
         } else {
-            if (isSysV()) {
+            if (isMac() || isSysV()) {
                 printers = getAllPrinterNamesSysV();
             } else { //BSD
                 printers = getAllPrinterNamesBSD();
@@ -361,7 +366,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         if (name == null || name.equals("") || !checkPrinterName(name)) {
             return null;
         }
-        if (isSysV()) {
+        if (isMac() || isSysV()) {
             printer = getNamedPrinterNameSysV(name);
         } else {
             printer = getNamedPrinterNameBSD(name);
@@ -523,7 +528,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         if (CUPSPrinter.isCupsRunning()) {
             defaultPrinter = CUPSPrinter.getDefaultPrinter();
         } else {
-            if (isSysV()) {
+            if (isMac() || isSysV()) {
                 defaultPrinter = getDefaultPrinterNameSysV();
             } else {
                 defaultPrinter = getDefaultPrinterNameBSD();
@@ -644,7 +649,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         return names;
     }
 
-    private String getDefaultPrinterNameSysV() {
+    static String getDefaultPrinterNameSysV() {
         String defaultPrinter = "lp";
         String command = "/usr/bin/lpstat -d";
 
@@ -714,7 +719,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
                         Process proc;
                         BufferedReader bufferedReader = null;
-                        File f = File.createTempFile("prn","xc");
+                        File f = Files.createTempFile("prn","xc").toFile();
                         cmd[2] = cmd[2]+">"+f.getAbsolutePath();
 
                         proc = Runtime.getRuntime().exec(cmd);

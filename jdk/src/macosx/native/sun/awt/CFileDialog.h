@@ -46,11 +46,14 @@
     // File dialog's mode
     jint fMode;
 
+    // Indicates whether the user can select multiple files
+    BOOL fMultipleMode;
+
     // Should we navigate into apps?
     BOOL fNavigateApps;
 
-    // panel's filename
-    NSString *fReturnedFilename;
+    // Contains the absolute paths of the selected files as URLs
+    NSArray *fURLs;
 }
 
 // Allocator
@@ -60,6 +63,7 @@
             directory:(NSString *)inPath
                  file:(NSString *)inFile
                  mode:(jint)inMode
+         multipleMode:(BOOL)inMultipleMode
        shouldNavigate:(BOOL)inNavigateApps
               withEnv:(JNIEnv*)env;
 
@@ -69,7 +73,7 @@
 // Get dialog return value
 - (BOOL) userClickedOK;
 
-// Filename user chose
-- (NSString *) filename;
+// Returns the absolute paths of the selected files as URLs
+- (NSArray *) URLs;
 
 @end

@@ -61,7 +61,6 @@ import java.math.BigInteger;
  */
 public class KDCRep {
 
-    public Realm crealm;
     public PrincipalName cname;
     public Ticket ticket;
     public EncryptedData encPart;
@@ -73,7 +72,6 @@ public class KDCRep {
 
     public KDCRep(
             PAData[] new_pAData,
-            Realm new_crealm,
             PrincipalName new_cname,
             Ticket new_ticket,
             EncryptedData new_encPart,
@@ -90,7 +88,6 @@ public class KDCRep {
                 }
             }
         }
-        crealm = new_crealm;
         cname = new_cname;
         ticket = new_ticket;
         encPart = new_encPart;
@@ -174,8 +171,8 @@ public class KDCRep {
         } else {
             pAData = null;
         }
-        crealm = Realm.parse(der.getData(), (byte) 0x03, false);
-        cname = PrincipalName.parse(der.getData(), (byte) 0x04, false);
+        Realm crealm = Realm.parse(der.getData(), (byte) 0x03, false);
+        cname = PrincipalName.parse(der.getData(), (byte) 0x04, false, crealm);
         ticket = Ticket.parse(der.getData(), (byte) 0x05, false);
         encPart = EncryptedData.parse(der.getData(), (byte) 0x06, false);
         if (der.getData().available() > 0) {
@@ -212,7 +209,7 @@ public class KDCRep {
                     true, (byte) 0x02), temp);
         }
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                true, (byte) 0x03), crealm.asn1Encode());
+                true, (byte) 0x03), cname.getRealm().asn1Encode());
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x04), cname.asn1Encode());
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,

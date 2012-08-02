@@ -163,7 +163,6 @@ AWT_ASSERT_ANY_THREAD;
     if ([reps count]) {
         NSImage *nsImage = [[NSImage alloc] initWithSize:NSMakeSize(0, 0)];
         [nsImage addRepresentations: reps];
-        [reps release];
 
         if (nsImage != nil) {
             CFRetain(nsImage); // GC

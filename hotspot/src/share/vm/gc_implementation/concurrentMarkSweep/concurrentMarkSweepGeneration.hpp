@@ -161,7 +161,7 @@ class CMSBitMap VALUE_OBJ_CLASS_SPEC {
 
 // Represents a marking stack used by the CMS collector.
 // Ideally this should be GrowableArray<> just like MSC's marking stack(s).
-class CMSMarkStack: public CHeapObj  {
+class CMSMarkStack: public CHeapObj<mtGC>  {
   //
   friend class CMSCollector;   // to get at expasion stats further below
   //
@@ -265,7 +265,7 @@ class ModUnionClosurePar: public ModUnionClosure {
 
 // Survivor Chunk Array in support of parallelization of
 // Survivor Space rescan.
-class ChunkArray: public CHeapObj {
+class ChunkArray: public CHeapObj<mtGC> {
   size_t _index;
   size_t _capacity;
   size_t _overflows;
@@ -506,7 +506,7 @@ private:
 };
 
 
-class CMSCollector: public CHeapObj {
+class CMSCollector: public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class ConcurrentMarkSweepThread;
   friend class ConcurrentMarkSweepGeneration;
@@ -553,8 +553,8 @@ class CMSCollector: public CHeapObj {
   // The following array-pair keeps track of mark words
   // displaced for accomodating overflow list above.
   // This code will likely be revisited under RFE#4922830.
-  Stack<oop>     _preserved_oop_stack;
-  Stack<markOop> _preserved_mark_stack;
+  Stack<oop, mtGC>     _preserved_oop_stack;
+  Stack<markOop, mtGC> _preserved_mark_stack;
 
   int*             _hash_seed;
 
@@ -717,7 +717,7 @@ class CMSCollector: public CHeapObj {
     CMS_op_checkpointRootsFinal
   };
 
-  void do_CMS_operation(CMS_op_type op);
+  void do_CMS_operation(CMS_op_type op, GCCause::Cause gc_cause);
   bool stop_world_and_do(CMS_op_type op);
 
   OopTaskQueueSet* task_queues() { return _task_queues; }

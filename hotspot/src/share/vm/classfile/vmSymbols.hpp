@@ -111,6 +111,10 @@
   template(getBootClassPathEntryForClass_name,        "getBootClassPathEntryForClass")            \
   template(sun_misc_PostVMInitHook,                   "sun/misc/PostVMInitHook")                  \
                                                                                                   \
+  /* Java runtime version access */                                                               \
+  template(sun_misc_Version,                          "sun/misc/Version")                         \
+  template(java_runtime_name_name,                    "java_runtime_name")                        \
+                                                                                                  \
   /* class file format tags */                                                                    \
   template(tag_source_file,                           "SourceFile")                               \
   template(tag_inner_classes,                         "InnerClasses")                             \
@@ -253,6 +257,7 @@
   template(java_lang_invoke_BoundMethodHandle,        "java/lang/invoke/BoundMethodHandle")       \
   template(java_lang_invoke_DirectMethodHandle,       "java/lang/invoke/DirectMethodHandle")      \
   template(java_lang_invoke_CountingMethodHandle,     "java/lang/invoke/CountingMethodHandle")    \
+  template(java_lang_invoke_ForceInline_signature,    "Ljava/lang/invoke/ForceInline;")           \
   /* internal up-calls made only by the JVM, via class sun.invoke.MethodHandleNatives: */         \
   template(findMethodHandleType_name,                 "findMethodHandleType")                     \
   template(findMethodHandleType_signature,       "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/invoke/MethodType;") \
@@ -340,6 +345,9 @@
   template(park_event_name,                           "nativeParkEventPointer")                   \
   template(cache_field_name,                          "cache")                                    \
   template(value_name,                                "value")                                    \
+  template(offset_name,                               "offset")                                   \
+  template(count_name,                                "count")                                    \
+  template(hash_name,                                 "hash")                                     \
   template(frontCacheEnabled_name,                    "frontCacheEnabled")                        \
   template(stringCacheEnabled_name,                   "stringCacheEnabled")                       \
   template(numberOfLeadingZeros_name,                 "numberOfLeadingZeros")                     \
@@ -718,15 +726,6 @@
                                                                                                                         \
   /* java/lang/ref/Reference */                                                                                         \
   do_intrinsic(_Reference_get,            java_lang_ref_Reference, get_name,    void_object_signature, F_R)             \
-                                                                                                                        \
-                                                                                                                        \
-  do_class(sun_misc_AtomicLongCSImpl,     "sun/misc/AtomicLongCSImpl")                                                  \
-  do_intrinsic(_get_AtomicLong,           sun_misc_AtomicLongCSImpl, get_name, void_long_signature,              F_R)   \
-  /*   (symbols get_name and void_long_signature defined above) */                                                      \
-                                                                                                                        \
-  do_intrinsic(_attemptUpdate,            sun_misc_AtomicLongCSImpl, attemptUpdate_name, attemptUpdate_signature, F_R)  \
-   do_name(     attemptUpdate_name,                                 "attemptUpdate")                                    \
-   do_signature(attemptUpdate_signature,                            "(JJ)Z")                                            \
                                                                                                                         \
   /* support for sun.misc.Unsafe */                                                                                     \
   do_class(sun_misc_Unsafe,               "sun/misc/Unsafe")                                                            \

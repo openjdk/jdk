@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,9 +175,9 @@ public class AlgorithmId implements Serializable, DerEncoder {
             // it's NULL. They are ---
             // rfc3370 2.1: Implementations SHOULD generate SHA-1
             // AlgorithmIdentifiers with absent parameters.
-            // rfc3447 C1: When id-sha1, id-sha256, id-sha384 and id-sha512
-            // are used in an AlgorithmIdentifier the parameters (which are
-            // optional) SHOULD be omitted.
+            // rfc3447 C1: When id-sha1, id-sha224, id-sha256, id-sha384 and
+            // id-sha512 are used in an AlgorithmIdentifier the parameters
+            // (which are optional) SHOULD be omitted.
             // rfc3279 2.3.2: The id-dsa algorithm syntax includes optional
             // domain parameters... When omitted, the parameters component
             // MUST be omitted entirely
@@ -185,6 +185,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
             // is used, the AlgorithmIdentifier parameters field MUST be absent.
             /*if (
                 algid.equals((Object)SHA_oid) ||
+                algid.equals((Object)SHA224_oid) ||
                 algid.equals((Object)SHA256_oid) ||
                 algid.equals((Object)SHA384_oid) ||
                 algid.equals((Object)SHA512_oid) ||
@@ -488,7 +489,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
             name.equalsIgnoreCase("SHA512")) {
             return AlgorithmId.SHA512_oid;
         }
-
+        if (name.equalsIgnoreCase("SHA-224") ||
+            name.equalsIgnoreCase("SHA224")) {
+            return AlgorithmId.SHA224_oid;
+        }
 
         // Various public key algorithms
         if (name.equalsIgnoreCase("RSA")) {
@@ -625,6 +629,9 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier SHA_oid =
     ObjectIdentifier.newInternal(new int[] {1, 3, 14, 3, 2, 26});
 
+    public static final ObjectIdentifier SHA224_oid =
+    ObjectIdentifier.newInternal(new int[] {2, 16, 840, 1, 101, 3, 4, 2, 4});
+
     public static final ObjectIdentifier SHA256_oid =
     ObjectIdentifier.newInternal(new int[] {2, 16, 840, 1, 101, 3, 4, 2, 1});
 
@@ -664,6 +671,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
                                        { 1, 2, 840, 113549, 1, 1, 5 };
     private static final int sha1WithRSAEncryption_OIW_data[] =
                                        { 1, 3, 14, 3, 2, 29 };
+    private static final int sha224WithRSAEncryption_data[] =
+                                       { 1, 2, 840, 113549, 1, 1, 14 };
     private static final int sha256WithRSAEncryption_data[] =
                                        { 1, 2, 840, 113549, 1, 1, 11 };
     private static final int sha384WithRSAEncryption_data[] =
@@ -681,6 +690,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier md5WithRSAEncryption_oid;
     public static final ObjectIdentifier sha1WithRSAEncryption_oid;
     public static final ObjectIdentifier sha1WithRSAEncryption_OIW_oid;
+    public static final ObjectIdentifier sha224WithRSAEncryption_oid;
     public static final ObjectIdentifier sha256WithRSAEncryption_oid;
     public static final ObjectIdentifier sha384WithRSAEncryption_oid;
     public static final ObjectIdentifier sha512WithRSAEncryption_oid;
@@ -810,6 +820,14 @@ public class AlgorithmId implements Serializable, DerEncoder {
             ObjectIdentifier.newInternal(sha1WithRSAEncryption_OIW_data);
 
     /**
+     * Identifies a signing algorithm where a SHA224 digest is
+     * encrypted using an RSA private key; defined by PKCS #1.
+     * OID = 1.2.840.113549.1.1.14
+     */
+        sha224WithRSAEncryption_oid =
+            ObjectIdentifier.newInternal(sha224WithRSAEncryption_data);
+
+    /**
      * Identifies a signing algorithm where a SHA256 digest is
      * encrypted using an RSA private key; defined by PKCS #1.
      * OID = 1.2.840.113549.1.1.11
@@ -859,6 +877,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
         nameTable.put(MD5_oid, "MD5");
         nameTable.put(MD2_oid, "MD2");
         nameTable.put(SHA_oid, "SHA");
+        nameTable.put(SHA224_oid, "SHA224");
         nameTable.put(SHA256_oid, "SHA256");
         nameTable.put(SHA384_oid, "SHA384");
         nameTable.put(SHA512_oid, "SHA512");
@@ -881,6 +900,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
         nameTable.put(shaWithDSA_OIW_oid, "SHA1withDSA");
         nameTable.put(sha1WithRSAEncryption_oid, "SHA1withRSA");
         nameTable.put(sha1WithRSAEncryption_OIW_oid, "SHA1withRSA");
+        nameTable.put(sha224WithRSAEncryption_oid, "SHA224withRSA");
         nameTable.put(sha256WithRSAEncryption_oid, "SHA256withRSA");
         nameTable.put(sha384WithRSAEncryption_oid, "SHA384withRSA");
         nameTable.put(sha512WithRSAEncryption_oid, "SHA512withRSA");

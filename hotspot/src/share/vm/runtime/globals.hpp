@@ -190,7 +190,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 
 #endif // no compilers
 
-
 // string type aliases used only in this file
 typedef const char* ccstr;
 typedef const char* ccstrlist;   // represents string arguments which accumulate
@@ -631,9 +630,6 @@ class CommandLineFlags {
   develop(bool, InlineClassNatives, true,                                   \
           "inline Class.isInstance, etc")                                   \
                                                                             \
-  develop(bool, InlineAtomicLong, true,                                     \
-          "inline sun.misc.AtomicLong")                                     \
-                                                                            \
   develop(bool, InlineThreadNatives, true,                                  \
           "inline Thread.currentThread, etc")                               \
                                                                             \
@@ -898,6 +894,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, UseFakeTimers, false,                                       \
           "Tells whether the VM should use system time or a fake timer")    \
+                                                                            \
+  product(ccstr, NativeMemoryTracking, "off",                               \
+          "Native memory tracking options")                                 \
                                                                             \
   diagnostic(bool, LogCompilation, false,                                   \
           "Log compilation activity in detail to hotspot.log or LogFile")   \
@@ -2662,6 +2661,9 @@ class CommandLineFlags {
   product(bool, UseHeavyMonitors, false,                                    \
           "use heavyweight instead of lightweight Java monitors")           \
                                                                             \
+  product(bool, PrintStringTableStatistics, false,                          \
+          "print statistics about the StringTable and SymbolTable")         \
+                                                                            \
   notproduct(bool, PrintSymbolTableSizeHistogram, false,                    \
           "print histogram of the symbol table")                            \
                                                                             \
@@ -3285,9 +3287,6 @@ class CommandLineFlags {
   diagnostic(intx, VerifyGCLevel,     0,                                    \
           "Generation level at which to start +VerifyBefore/AfterGC")       \
                                                                             \
-  develop(uintx, ExitAfterGCNum,   0,                                       \
-          "If non-zero, exit after this GC.")                               \
-                                                                            \
   product(intx, MaxTenuringThreshold,    15,                                \
           "Maximum value for tenuring threshold")                           \
                                                                             \
@@ -3706,7 +3705,7 @@ class CommandLineFlags {
                                                                             \
   /* Properties for Java libraries  */                                      \
                                                                             \
-  product(intx, MaxDirectMemorySize, -1,                                    \
+  product(uintx, MaxDirectMemorySize, 0,                                    \
           "Maximum total size of NIO direct-buffer allocations")            \
                                                                             \
   /* temporary developer defined flags  */                                  \
@@ -3902,7 +3901,10 @@ class CommandLineFlags {
           " of this flag is true for JDK 6 and earlier")                    \
                                                                             \
   diagnostic(bool, WhiteBoxAPI, false,                                      \
-          "Enable internal testing APIs")
+          "Enable internal testing APIs")                                   \
+                                                                            \
+  product(bool, PrintGCCause, true,                                         \
+          "Include GC cause in GC logging")
 
 /*
  *  Macros for factoring of globals

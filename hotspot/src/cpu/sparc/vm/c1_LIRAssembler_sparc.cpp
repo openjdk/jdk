@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,9 +238,12 @@ void LIR_Assembler::emit_string_compare(LIR_Opr left, LIR_Opr right, LIR_Opr dst
 
   Register result = dst->as_register();
   {
-    // Get a pointer to the first character of string0 in tmp0 and get string0.count in str0
-    // Get a pointer to the first character of string1 in tmp1 and get string1.count in str1
-    // Also, get string0.count-string1.count in o7 and get the condition code set
+    // Get a pointer to the first character of string0 in tmp0
+    //   and get string0.length() in str0
+    // Get a pointer to the first character of string1 in tmp1
+    //   and get string1.length() in str1
+    // Also, get string0.length()-string1.length() in
+    //   o7 and get the condition code set
     // Note: some instructions have been hoisted for better instruction scheduling
 
     Register tmp0 = L0;
@@ -248,27 +251,40 @@ void LIR_Assembler::emit_string_compare(LIR_Opr left, LIR_Opr right, LIR_Opr dst
     Register tmp2 = L2;
 
     int  value_offset = java_lang_String:: value_offset_in_bytes(); // char array
-    int offset_offset = java_lang_String::offset_offset_in_bytes(); // first character position
-    int  count_offset = java_lang_String:: count_offset_in_bytes();
-
-    __ load_heap_oop(str0, value_offset, tmp0);
-    __ ld(str0, offset_offset, tmp2);
-    __ add(tmp0, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp0);
-    __ ld(str0, count_offset, str0);
-    __ sll(tmp2, exact_log2(sizeof(jchar)), tmp2);
+    if (java_lang_String::has_offset_field()) {
+      int offset_offset = java_lang_String::offset_offset_in_bytes(); // first character position
+      int  count_offset = java_lang_String:: count_offset_in_bytes();
+      __ load_heap_oop(str0, value_offset, tmp0);
+      __ ld(str0, offset_offset, tmp2);
+      __ add(tmp0, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp0);
+      __ ld(str0, count_offset, str0);
+      __ sll(tmp2, exact_log2(sizeof(jchar)), tmp2);
+    } else {
+      __ load_heap_oop(str0, value_offset, tmp1);
+      __ add(tmp1, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp0);
+      __ ld(tmp1, arrayOopDesc::length_offset_in_bytes(), str0);
+    }
 
     // str1 may be null
     add_debug_info_for_null_check_here(info);
 
-    __ load_heap_oop(str1, value_offset, tmp1);
-    __ add(tmp0, tmp2, tmp0);
+    if (java_lang_String::has_offset_field()) {
+      int offset_offset = java_lang_String::offset_offset_in_bytes(); // first character position
+      int  count_offset = java_lang_String:: count_offset_in_bytes();
+      __ load_heap_oop(str1, value_offset, tmp1);
+      __ add(tmp0, tmp2, tmp0);
 
-    __ ld(str1, offset_offset, tmp2);
-    __ add(tmp1, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp1);
-    __ ld(str1, count_offset, str1);
-    __ sll(tmp2, exact_log2(sizeof(jchar)), tmp2);
+      __ ld(str1, offset_offset, tmp2);
+      __ add(tmp1, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp1);
+      __ ld(str1, count_offset, str1);
+      __ sll(tmp2, exact_log2(sizeof(jchar)), tmp2);
+      __ add(tmp1, tmp2, tmp1);
+    } else {
+      __ load_heap_oop(str1, value_offset, tmp2);
+      __ add(tmp2, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp1);
+      __ ld(tmp2, arrayOopDesc::length_offset_in_bytes(), str1);
+    }
     __ subcc(str0, str1, O7);
-    __ add(tmp1, tmp2, tmp1);
   }
 
   {
@@ -302,7 +318,7 @@ void LIR_Assembler::emit_string_compare(LIR_Opr left, LIR_Opr right, LIR_Opr dst
     // Shift base0 and base1 to the end of the arrays, negate limit
     __ add(base0, limit, base0);
     __ add(base1, limit, base1);
-    __ neg(limit);  // limit = -min{string0.count, strin1.count}
+    __ neg(limit);  // limit = -min{string0.length(), string1.length()}
 
     __ lduh(base0, limit, chr0);
     __ bind(Lloop);

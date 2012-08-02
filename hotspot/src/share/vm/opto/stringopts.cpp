@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,7 @@ class StringConcat : public ResourceObj {
     _arguments->ins_req(0, value);
     _mode.insert_before(0, mode);
   }
+
   void push_string(Node* value) {
     push(value, StringMode);
   }
@@ -125,8 +126,55 @@ class StringConcat : public ResourceObj {
     push(value, CharMode);
   }
 
+  static bool is_SB_toString(Node* call) {
+    if (call->is_CallStaticJava()) {
+      CallStaticJavaNode* csj = call->as_CallStaticJava();
+      ciMethod* m = csj->method();
+      if (m != NULL &&
+          (m->intrinsic_id() == vmIntrinsics::_StringBuilder_toString ||
+           m->intrinsic_id() == vmIntrinsics::_StringBuffer_toString)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static Node* skip_string_null_check(Node* value) {
+    // Look for a diamond shaped Null check of toString() result
+    // (could be code from String.valueOf()):
+    // (Proj == NULL) ? "null":"CastPP(Proj)#NotNULL
+    if (value->is_Phi()) {
+      int true_path = value->as_Phi()->is_diamond_phi();
+      if (true_path != 0) {
+        // phi->region->if_proj->ifnode->bool
+        BoolNode* b = value->in(0)->in(1)->in(0)->in(1)->as_Bool();
+        Node* cmp = b->in(1);
+        Node* v1 = cmp->in(1);
+        Node* v2 = cmp->in(2);
+        // Null check of the return of toString which can simply be skipped.
+        if (b->_test._test == BoolTest::ne &&
+            v2->bottom_type() == TypePtr::NULL_PTR &&
+            value->in(true_path)->Opcode() == Op_CastPP &&
+            value->in(true_path)->in(1) == v1 &&
+            v1->is_Proj() && is_SB_toString(v1->in(0))) {
+          return v1;
+        }
+      }
+    }
+    return value;
+  }
+
   Node* argument(int i) {
     return _arguments->in(i);
+  }
+  Node* argument_uncast(int i) {
+    Node* arg = argument(i);
+    int amode = mode(i);
+    if (amode == StringConcat::StringMode ||
+        amode == StringConcat::StringNullCheckMode) {
+      arg = skip_string_null_check(arg);
+    }
+    return arg;
   }
   void set_argument(int i, Node* value) {
     _arguments->set_req(i, value);
@@ -206,9 +254,11 @@ class StringConcat : public ResourceObj {
 
 
 void StringConcat::eliminate_unneeded_control() {
-  eliminate_initialize(begin()->initialization());
   for (uint i = 0; i < _control.size(); i++) {
     Node* n = _control.at(i);
+    if (n->is_Allocate()) {
+      eliminate_initialize(n->as_Allocate()->initialization());
+    }
     if (n->is_Call()) {
       if (n != _end) {
         eliminate_call(n->as_Call());
@@ -239,14 +289,15 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   assert(result->_control.contains(other->_end), "what?");
   assert(result->_control.contains(_begin), "what?");
   for (int x = 0; x < num_arguments(); x++) {
-    if (argument(x) == arg) {
+    Node* argx = argument_uncast(x);
+    if (argx == arg) {
       // replace the toString result with the all the arguments that
       // made up the other StringConcat
       for (int y = 0; y < other->num_arguments(); y++) {
         result->append(other->argument(y), other->mode(y));
       }
     } else {
-      result->append(argument(x), mode(x));
+      result->append(argx, mode(x));
     }
   }
   result->set_allocation(other->_begin);
@@ -327,14 +378,9 @@ Node_List PhaseStringOpts::collect_toString_calls() {
 
   while (worklist.size() > 0) {
     Node* ctrl = worklist.pop();
-    if (ctrl->is_CallStaticJava()) {
+    if (StringConcat::is_SB_toString(ctrl)) {
       CallStaticJavaNode* csj = ctrl->as_CallStaticJava();
-      ciMethod* m = csj->method();
-      if (m != NULL &&
-          (m->intrinsic_id() == vmIntrinsics::_StringBuffer_toString ||
-           m->intrinsic_id() == vmIntrinsics::_StringBuilder_toString)) {
-        string_calls.push(csj);
-      }
+      string_calls.push(csj);
     }
     if (ctrl->in(0) != NULL && !_visited.test_set(ctrl->in(0)->_idx)) {
       worklist.push(ctrl->in(0));
@@ -487,7 +533,17 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
         if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
           CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
           if (csj->method() != NULL &&
-              csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString) {
+              csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString &&
+              arg->outcnt() == 1) {
+            // _control is the list of StringBuilder calls nodes which
+            // will be replaced by new String code after this optimization.
+            // Integer::toString() call is not part of StringBuilder calls
+            // chain. It could be eliminated only if its result is used
+            // only by this SB calls chain.
+            // Another limitation: it should be used only once because
+            // it is unknown that it is used only by this SB calls chain
+            // until all related SB calls nodes are collected.
+            assert(arg->unique_out() == cnode, "sanity");
             sc->add_control(csj);
             sc->push_int(csj->in(TypeFunc::Parms));
             continue;
@@ -528,16 +584,6 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
   }
 
   // Collect the types needed to talk about the various slices of memory
-  const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
-                                                     false, NULL, 0);
-
-  const TypePtr* value_field_type = string_type->add_offset(java_lang_String::value_offset_in_bytes());
-  const TypePtr* offset_field_type = string_type->add_offset(java_lang_String::offset_offset_in_bytes());
-  const TypePtr* count_field_type = string_type->add_offset(java_lang_String::count_offset_in_bytes());
-
-  value_field_idx = C->get_alias_index(value_field_type);
-  count_field_idx = C->get_alias_index(count_field_type);
-  offset_field_idx = C->get_alias_index(offset_field_type);
   char_adr_idx = C->get_alias_index(TypeAryPtr::CHARS);
 
   // For each locally allocated StringBuffer see if the usages can be
@@ -560,44 +606,40 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
   for (int c = 0; c < concats.length(); c++) {
     StringConcat* sc = concats.at(c);
     for (int i = 0; i < sc->num_arguments(); i++) {
-      Node* arg = sc->argument(i);
-      if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
+      Node* arg = sc->argument_uncast(i);
+      if (arg->is_Proj() && StringConcat::is_SB_toString(arg->in(0))) {
         CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
-        if (csj->method() != NULL &&
-            (csj->method()->intrinsic_id() == vmIntrinsics::_StringBuilder_toString ||
-             csj->method()->intrinsic_id() == vmIntrinsics::_StringBuffer_toString)) {
-          for (int o = 0; o < concats.length(); o++) {
-            if (c == o) continue;
-            StringConcat* other = concats.at(o);
-            if (other->end() == csj) {
+        for (int o = 0; o < concats.length(); o++) {
+          if (c == o) continue;
+          StringConcat* other = concats.at(o);
+          if (other->end() == csj) {
 #ifndef PRODUCT
-              if (PrintOptimizeStringConcat) {
-                tty->print_cr("considering stacked concats");
-              }
+            if (PrintOptimizeStringConcat) {
+              tty->print_cr("considering stacked concats");
+            }
 #endif
 
-              StringConcat* merged = sc->merge(other, arg);
-              if (merged->validate_control_flow()) {
+            StringConcat* merged = sc->merge(other, arg);
+            if (merged->validate_control_flow()) {
 #ifndef PRODUCT
-                if (PrintOptimizeStringConcat) {
-                  tty->print_cr("stacking would succeed");
-                }
-#endif
-                if (c < o) {
-                  concats.remove_at(o);
-                  concats.at_put(c, merged);
-                } else {
-                  concats.remove_at(c);
-                  concats.at_put(o, merged);
-                }
-                goto restart;
-              } else {
-#ifndef PRODUCT
-                if (PrintOptimizeStringConcat) {
-                  tty->print_cr("stacking would fail");
-                }
-#endif
+              if (PrintOptimizeStringConcat) {
+                tty->print_cr("stacking would succeed");
               }
+#endif
+              if (c < o) {
+                concats.remove_at(o);
+                concats.at_put(c, merged);
+              } else {
+                concats.remove_at(c);
+                concats.at_put(o, merged);
+              }
+              goto restart;
+            } else {
+#ifndef PRODUCT
+              if (PrintOptimizeStringConcat) {
+                tty->print_cr("stacking would fail");
+              }
+#endif
             }
           }
         }
@@ -1174,18 +1216,9 @@ void PhaseStringOpts::int_getChars(GraphKit& kit, Node* arg, Node* char_array, N
 
 Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* char_array, Node* start) {
   Node* string = str;
-  Node* offset = kit.make_load(kit.control(),
-                               kit.basic_plus_adr(string, string, java_lang_String::offset_offset_in_bytes()),
-                               TypeInt::INT, T_INT, offset_field_idx);
-  Node* count = kit.make_load(kit.control(),
-                              kit.basic_plus_adr(string, string, java_lang_String::count_offset_in_bytes()),
-                              TypeInt::INT, T_INT, count_field_idx);
-  const TypeAryPtr*  value_type = TypeAryPtr::make(TypePtr::NotNull,
-                                                   TypeAry::make(TypeInt::CHAR,TypeInt::POS),
-                                                   ciTypeArrayKlass::make(T_CHAR), true, 0);
-  Node* value = kit.make_load(kit.control(),
-                              kit.basic_plus_adr(string, string, java_lang_String::value_offset_in_bytes()),
-                              value_type, T_OBJECT, value_field_idx);
+  Node* offset = kit.load_String_offset(kit.control(), string);
+  Node* count  = kit.load_String_length(kit.control(), string);
+  Node* value  = kit.load_String_value (kit.control(), string);
 
   // copy the contents
   if (offset->is_Con() && count->is_Con() && value->is_Con() && count->get_int() < unroll_string_copy_length) {
@@ -1342,10 +1375,9 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           arg = phi;
           sc->set_argument(argi, arg);
         }
-        //         Node* offset = kit.make_load(NULL, kit.basic_plus_adr(arg, arg, offset_offset),
-        //                                      TypeInt::INT, T_INT, offset_field_idx);
-        Node* count = kit.make_load(kit.control(), kit.basic_plus_adr(arg, arg, java_lang_String::count_offset_in_bytes()),
-                                    TypeInt::INT, T_INT, count_field_idx);
+
+        Node* count = kit.load_String_length(kit.control(), arg);
+
         length = __ AddI(length, count);
         string_sizes->init_req(argi, NULL);
         break;
@@ -1436,12 +1468,11 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   }
 
   // Intialize the string
-  kit.store_to_memory(kit.control(), kit.basic_plus_adr(result, java_lang_String::offset_offset_in_bytes()),
-                      __ intcon(0), T_INT, offset_field_idx);
-  kit.store_to_memory(kit.control(), kit.basic_plus_adr(result, java_lang_String::count_offset_in_bytes()),
-                      length, T_INT, count_field_idx);
-  kit.store_to_memory(kit.control(), kit.basic_plus_adr(result, java_lang_String::value_offset_in_bytes()),
-                      char_array, T_OBJECT, value_field_idx);
+  if (java_lang_String::has_offset_field()) {
+    kit.store_String_offset(kit.control(), result, __ intcon(0));
+    kit.store_String_length(kit.control(), result, length);
+  }
+  kit.store_String_value(kit.control(), result, char_array);
 
   // hook up the outgoing control and result
   kit.replace_call(sc->end(), result);

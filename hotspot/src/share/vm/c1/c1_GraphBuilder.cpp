@@ -2949,6 +2949,8 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   case vmIntrinsics::_dtan          : // fall through
   case vmIntrinsics::_dlog          : // fall through
   case vmIntrinsics::_dlog10        : // fall through
+  case vmIntrinsics::_dexp          : // fall through
+  case vmIntrinsics::_dpow          : // fall through
     {
       // Compiles where the root method is an intrinsic need a special
       // compilation environment because the bytecodes for the method
@@ -2969,6 +2971,9 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       _state = start_block->state()->copy_for_parsing();
       _last  = start_block;
       load_local(doubleType, 0);
+      if (scope->method()->intrinsic_id() == vmIntrinsics::_dpow) {
+        load_local(doubleType, 2);
+      }
 
       // Emit the intrinsic node.
       bool result = try_inline_intrinsics(scope->method());
@@ -3165,6 +3170,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
       break;
 
     case vmIntrinsics::_getClass      :
+    case vmIntrinsics::_isInstance    :
       if (!InlineClassNatives) return false;
       preserves_state = true;
       break;
@@ -3182,15 +3188,10 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
     case vmIntrinsics::_dtan          : // fall through
     case vmIntrinsics::_dlog          : // fall through
     case vmIntrinsics::_dlog10        : // fall through
+    case vmIntrinsics::_dexp          : // fall through
+    case vmIntrinsics::_dpow          : // fall through
       if (!InlineMathNatives) return false;
       cantrap = false;
-      preserves_state = true;
-      break;
-
-    // sun/misc/AtomicLong.attemptUpdate
-    case vmIntrinsics::_attemptUpdate :
-      if (!VM_Version::supports_cx8()) return false;
-      if (!InlineAtomicLong) return false;
       preserves_state = true;
       break;
 
@@ -3504,8 +3505,10 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
   }
 
   // now perform tests that are based on flag settings
-  if (callee->should_inline()) {
+  if (callee->force_inline() || callee->should_inline()) {
     // ignore heuristic controls on inlining
+    if (callee->force_inline())
+      CompileTask::print_inlining(callee, scope()->level(), bci(), "force inline by annotation");
   } else {
     if (inline_level() > MaxInlineLevel                         ) INLINE_BAILOUT("too-deep inlining");
     if (recursive_inline_level(callee) > MaxRecursiveInlineLevel) INLINE_BAILOUT("too-deep recursive inlining");
@@ -3530,7 +3533,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
   }
 
 #ifndef PRODUCT
-      // printing
+  // printing
   if (PrintInlining) {
     print_inline_result(callee, true);
   }

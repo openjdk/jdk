@@ -1,5 +1,5 @@
 # 
-#  Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 #  This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,6 @@ then
   exit 1
 fi
 
-BIT_FLAG=""
-
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
@@ -58,12 +56,6 @@ case "$OS" in
     RM=/bin/rm
     CP=/bin/cp
     MV=/bin/mv
-    ## for solaris, linux it's HOME
-    FILE_LOCATION=$HOME
-    if [ -f ${FILE_LOCATION}${FS}JDK64BIT -a ${OS} = "SunOS" ]
-    then
-        BIT_FLAG=`cat ${FILE_LOCATION}${FS}JDK64BIT`
-    fi
     ;;
   Windows_* )
     NULL=NUL
@@ -87,7 +79,7 @@ THIS_DIR=`pwd`
 JAVA=${TESTJAVA}${FS}bin${FS}java
 JAVAC=${TESTJAVA}${FS}bin${FS}javac
 
-${JAVA} ${BIT_FLAG} -version
+${JAVA} ${TESTVMOPTS} -version
 
 # Current directory is scratch directory, copy all the test source there
 # (for the subsequent moves to work).
@@ -113,7 +105,7 @@ ${MV} many_loader.class many_loader.impl2
 ${MV} many_loader.impl1 many_loader.class
 ${RM} many_loader.java
 
-${JAVA} ${BIT_FLAG} -Xverify -Xint -cp . bug_21227 >test.out 2>&1
+${JAVA} ${TESTVMOPTS} -Xverify -Xint -cp . bug_21227 >test.out 2>&1
 grep "loader constraint" test.out
 exit $?
 

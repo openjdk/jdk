@@ -115,10 +115,8 @@ public class KrbAsReq {
         }
 
         if (sname == null) {
-            sname = new PrincipalName("krbtgt" +
-                                      PrincipalName.NAME_COMPONENT_SEPARATOR +
-                                      cname.getRealmAsString(),
-                            PrincipalName.KRB_NT_SRV_INST);
+            String realm = cname.getRealmAsString();
+            sname = PrincipalName.tgsService(realm, realm);
         }
 
         if (till == null) {
@@ -128,7 +126,6 @@ public class KrbAsReq {
         // enc-authorization-data and additional-tickets never in AS-REQ
         KDCReqBody kdc_req_body = new KDCReqBody(options,
                                                  cname,
-                                                 cname.getRealm(),
                                                  sname,
                                                  from,
                                                  till,

@@ -126,6 +126,7 @@ DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
 }
 
 void initLocalAddrTable () {}
+void parseExclusiveBindProperty (JNIEnv *env) {}
 
 /*
  * Since winsock doesn't have the equivalent of strerror(errno)

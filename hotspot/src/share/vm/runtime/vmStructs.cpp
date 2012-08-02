@@ -235,7 +235,6 @@
 #ifndef REG_COUNT
   #define REG_COUNT 0
 #endif
-
 // whole purpose of this function is to work around bug c++/27724 in gcc 4.1.1
 // with optimization turned on it doesn't affect produced code
 static inline uint64_t cast_uint64_t(size_t x)
@@ -243,6 +242,16 @@ static inline uint64_t cast_uint64_t(size_t x)
   return x;
 }
 
+
+typedef HashtableEntry<intptr_t, mtInternal>  IntptrHashtableEntry;
+typedef Hashtable<intptr_t, mtInternal>       IntptrHashtable;
+typedef Hashtable<Symbol*, mtSymbol>          SymbolHashtable;
+typedef HashtableEntry<Symbol*, mtClass>      SymbolHashtableEntry;
+typedef Hashtable<oop, mtSymbol>              StringHashtable;
+typedef TwoOopHashtable<klassOop, mtClass>    klassOopTwoOopHashtable;
+typedef Hashtable<klassOop, mtClass>          klassOopHashtable;
+typedef HashtableEntry<klassOop, mtClass>     klassHashtableEntry;
+typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
 
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
@@ -299,7 +308,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _protection_domain,                            oop)                                   \
   nonstatic_field(instanceKlass,               _signers,                                      objArrayOop)                           \
   nonstatic_field(instanceKlass,               _source_file_name,                             Symbol*)                               \
-  nonstatic_field(instanceKlass,               _source_debug_extension,                       Symbol*)                               \
+  nonstatic_field(instanceKlass,               _source_debug_extension,                       char*)                                 \
   nonstatic_field(instanceKlass,               _inner_classes,                                typeArrayOop)                          \
   nonstatic_field(instanceKlass,               _nonstatic_field_size,                         int)                                   \
   nonstatic_field(instanceKlass,               _static_field_size,                            int)                                   \
@@ -358,7 +367,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(methodDataOopDesc,           _arg_stack,                                    intx)                                  \
   nonstatic_field(methodDataOopDesc,           _arg_returned,                                 intx)                                  \
   nonstatic_field(methodOopDesc,               _constMethod,                                  constMethodOop)                        \
-  nonstatic_field(methodOopDesc,               _constants,                                    constantPoolOop)                       \
   nonstatic_field(methodOopDesc,               _method_data,                                  methodDataOop)                         \
   nonstatic_field(methodOopDesc,               _interpreter_invocation_count,                 int)                                   \
   nonstatic_field(methodOopDesc,               _access_flags,                                 AccessFlags)                           \
@@ -378,9 +386,8 @@ static inline uint64_t cast_uint64_t(size_t x)
   volatile_nonstatic_field(methodOopDesc,      _from_compiled_entry,                          address)                               \
   volatile_nonstatic_field(methodOopDesc,      _from_interpreted_entry,                       address)                               \
   volatile_nonstatic_field(constMethodOopDesc, _fingerprint,                                  uint64_t)                              \
-  nonstatic_field(constMethodOopDesc,          _method,                                       methodOop)                             \
+  nonstatic_field(constMethodOopDesc,          _constants,                                    constantPoolOop)                       \
   nonstatic_field(constMethodOopDesc,          _stackmap_data,                                typeArrayOop)                          \
-  nonstatic_field(constMethodOopDesc,          _exception_table,                              typeArrayOop)                          \
   nonstatic_field(constMethodOopDesc,          _constMethod_size,                             int)                                   \
   nonstatic_field(constMethodOopDesc,          _interpreter_kind,                             jbyte)                                 \
   nonstatic_field(constMethodOopDesc,          _flags,                                        jbyte)                                 \
@@ -417,6 +424,10 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(LocalVariableTableElement,   descriptor_cp_index,                           u2)                                    \
   nonstatic_field(LocalVariableTableElement,   signature_cp_index,                            u2)                                    \
   nonstatic_field(LocalVariableTableElement,   slot,                                          u2)                                    \
+  nonstatic_field(ExceptionTableElement,       start_pc,                                      u2)                                    \
+  nonstatic_field(ExceptionTableElement,       end_pc,                                        u2)                                    \
+  nonstatic_field(ExceptionTableElement,       handler_pc,                                    u2)                                    \
+  nonstatic_field(ExceptionTableElement,       catch_type_index,                              u2)                                    \
   nonstatic_field(BreakpointInfo,              _orig_bytecode,                                Bytecodes::Code)                       \
   nonstatic_field(BreakpointInfo,              _bci,                                          int)                                   \
   nonstatic_field(BreakpointInfo,              _name_index,                                   u2)                                    \
@@ -712,26 +723,26 @@ static inline uint64_t cast_uint64_t(size_t x)
   /* HashtableBucket */                                                                                                              \
   /*******************/                                                                                                              \
                                                                                                                                      \
-  nonstatic_field(HashtableBucket,             _entry,                                        BasicHashtableEntry*)                  \
+  nonstatic_field(HashtableBucket<mtInternal>,  _entry,                                        BasicHashtableEntry<mtInternal>*)     \
                                                                                                                                      \
   /******************/                                                                                                               \
   /* HashtableEntry */                                                                                                               \
   /******************/                                                                                                               \
                                                                                                                                      \
-  nonstatic_field(BasicHashtableEntry,         _next,                                         BasicHashtableEntry*)                  \
-  nonstatic_field(BasicHashtableEntry,         _hash,                                         unsigned int)                          \
-  nonstatic_field(HashtableEntry<intptr_t>,    _literal,                                      intptr_t) \
+  nonstatic_field(BasicHashtableEntry<mtInternal>, _next,                                     BasicHashtableEntry<mtInternal>*)      \
+  nonstatic_field(BasicHashtableEntry<mtInternal>, _hash,                                     unsigned int)                          \
+  nonstatic_field(IntptrHashtableEntry,            _literal,                                  intptr_t)                              \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* Hashtable */                                                                                                                    \
   /*************/                                                                                                                    \
                                                                                                                                      \
-  nonstatic_field(BasicHashtable,              _table_size,                                   int)                                   \
-  nonstatic_field(BasicHashtable,              _buckets,                                      HashtableBucket*)                      \
-  nonstatic_field(BasicHashtable,              _free_list,                                    BasicHashtableEntry*)                  \
-  nonstatic_field(BasicHashtable,              _first_free_entry,                             char*)                                 \
-  nonstatic_field(BasicHashtable,              _end_block,                                    char*)                                 \
-  nonstatic_field(BasicHashtable,              _entry_size,                                   int)                                   \
+  nonstatic_field(BasicHashtable<mtInternal>, _table_size,                                   int)                                   \
+  nonstatic_field(BasicHashtable<mtInternal>, _buckets,                                      HashtableBucket<mtInternal>*)          \
+  nonstatic_field(BasicHashtable<mtInternal>, _free_list,                                    BasicHashtableEntry<mtInternal>*)      \
+  nonstatic_field(BasicHashtable<mtInternal>, _first_free_entry,                             char*)                                 \
+  nonstatic_field(BasicHashtable<mtInternal>, _end_block,                                    char*)                                 \
+  nonstatic_field(BasicHashtable<mtInternal>, _entry_size,                                   int)                                   \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* DictionaryEntry */                                                                                                              \
@@ -1452,6 +1463,7 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                           \
   declare_toplevel_type(CheckedExceptionElement)                          \
   declare_toplevel_type(LocalVariableTableElement)                        \
+  declare_toplevel_type(ExceptionTableElement)                            \
                                                                           \
   /******************************************/                            \
   /* Generation and space hierarchies       */                            \
@@ -1539,20 +1551,20 @@ static inline uint64_t cast_uint64_t(size_t x)
   /* SymbolTable, SystemDictionary */                                     \
   /*********************************/                                     \
                                                                           \
-  declare_toplevel_type(BasicHashtable)                                   \
-    declare_type(Hashtable<intptr_t>, BasicHashtable)                     \
-  declare_type(SymbolTable, Hashtable<Symbol*>)                           \
-  declare_type(StringTable, Hashtable<oop>)                               \
-    declare_type(LoaderConstraintTable, Hashtable<klassOop>)              \
-    declare_type(TwoOopHashtable<klassOop>, Hashtable<klassOop>)          \
-    declare_type(Dictionary, TwoOopHashtable<klassOop>)                   \
-    declare_type(PlaceholderTable, TwoOopHashtable<Symbol*>)              \
-  declare_toplevel_type(BasicHashtableEntry)                              \
-  declare_type(HashtableEntry<intptr_t>, BasicHashtableEntry)             \
-    declare_type(DictionaryEntry, HashtableEntry<klassOop>)               \
-    declare_type(PlaceholderEntry, HashtableEntry<Symbol*>)               \
-    declare_type(LoaderConstraintEntry, HashtableEntry<klassOop>)         \
-  declare_toplevel_type(HashtableBucket)                                  \
+  declare_toplevel_type(BasicHashtable<mtInternal>)                       \
+    declare_type(IntptrHashtable, BasicHashtable<mtInternal>)             \
+  declare_type(SymbolTable, SymbolHashtable)                              \
+  declare_type(StringTable, StringHashtable)                              \
+    declare_type(LoaderConstraintTable, klassOopHashtable)                \
+    declare_type(klassOopTwoOopHashtable, klassOopHashtable)              \
+    declare_type(Dictionary, klassOopTwoOopHashtable)                     \
+    declare_type(PlaceholderTable, SymbolTwoOopHashtable)                 \
+  declare_toplevel_type(BasicHashtableEntry<mtInternal>)                  \
+  declare_type(IntptrHashtableEntry, BasicHashtableEntry<mtInternal>)     \
+    declare_type(DictionaryEntry, klassHashtableEntry)                    \
+    declare_type(PlaceholderEntry, SymbolHashtableEntry)                  \
+    declare_type(LoaderConstraintEntry, klassHashtableEntry)              \
+  declare_toplevel_type(HashtableBucket<mtInternal>)                      \
   declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmSymbols)                                        \
   declare_toplevel_type(ProtectionDomainEntry)                            \
@@ -1876,7 +1888,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_c2_type(StoreNNode, StoreNode)                                  \
   declare_c2_type(StoreCMNode, StoreNode)                                 \
   declare_c2_type(LoadPLockedNode, LoadPNode)                             \
-  declare_c2_type(LoadLLockedNode, LoadLNode)                             \
   declare_c2_type(SCMemProjNode, ProjNode)                                \
   declare_c2_type(LoadStoreNode, Node)                                    \
   declare_c2_type(StorePConditionalNode, LoadStoreNode)                   \
@@ -1946,14 +1957,12 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_c2_type(ReverseBytesLNode, Node)                                \
   declare_c2_type(VectorNode, Node)                                       \
   declare_c2_type(AddVBNode, VectorNode)                                  \
-  declare_c2_type(AddVCNode, VectorNode)                                  \
   declare_c2_type(AddVSNode, VectorNode)                                  \
   declare_c2_type(AddVINode, VectorNode)                                  \
   declare_c2_type(AddVLNode, VectorNode)                                  \
   declare_c2_type(AddVFNode, VectorNode)                                  \
   declare_c2_type(AddVDNode, VectorNode)                                  \
   declare_c2_type(SubVBNode, VectorNode)                                  \
-  declare_c2_type(SubVCNode, VectorNode)                                  \
   declare_c2_type(SubVSNode, VectorNode)                                  \
   declare_c2_type(SubVINode, VectorNode)                                  \
   declare_c2_type(SubVLNode, VectorNode)                                  \
@@ -1964,73 +1973,33 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_c2_type(DivVFNode, VectorNode)                                  \
   declare_c2_type(DivVDNode, VectorNode)                                  \
   declare_c2_type(LShiftVBNode, VectorNode)                               \
-  declare_c2_type(LShiftVCNode, VectorNode)                               \
   declare_c2_type(LShiftVSNode, VectorNode)                               \
   declare_c2_type(LShiftVINode, VectorNode)                               \
-  declare_c2_type(URShiftVBNode, VectorNode)                              \
-  declare_c2_type(URShiftVCNode, VectorNode)                              \
-  declare_c2_type(URShiftVSNode, VectorNode)                              \
-  declare_c2_type(URShiftVINode, VectorNode)                              \
+  declare_c2_type(RShiftVBNode, VectorNode)                               \
+  declare_c2_type(RShiftVSNode, VectorNode)                               \
+  declare_c2_type(RShiftVINode, VectorNode)                               \
   declare_c2_type(AndVNode, VectorNode)                                   \
   declare_c2_type(OrVNode, VectorNode)                                    \
   declare_c2_type(XorVNode, VectorNode)                                   \
-  declare_c2_type(VectorLoadNode, LoadNode)                               \
-  declare_c2_type(Load16BNode, VectorLoadNode)                            \
-  declare_c2_type(Load8BNode, VectorLoadNode)                             \
-  declare_c2_type(Load4BNode, VectorLoadNode)                             \
-  declare_c2_type(Load8CNode, VectorLoadNode)                             \
-  declare_c2_type(Load4CNode, VectorLoadNode)                             \
-  declare_c2_type(Load2CNode, VectorLoadNode)                             \
-  declare_c2_type(Load8SNode, VectorLoadNode)                             \
-  declare_c2_type(Load4SNode, VectorLoadNode)                             \
-  declare_c2_type(Load2SNode, VectorLoadNode)                             \
-  declare_c2_type(Load4INode, VectorLoadNode)                             \
-  declare_c2_type(Load2INode, VectorLoadNode)                             \
-  declare_c2_type(Load2LNode, VectorLoadNode)                             \
-  declare_c2_type(Load4FNode, VectorLoadNode)                             \
-  declare_c2_type(Load2FNode, VectorLoadNode)                             \
-  declare_c2_type(Load2DNode, VectorLoadNode)                             \
-  declare_c2_type(VectorStoreNode, StoreNode)                             \
-  declare_c2_type(Store16BNode, VectorStoreNode)                          \
-  declare_c2_type(Store8BNode, VectorStoreNode)                           \
-  declare_c2_type(Store4BNode, VectorStoreNode)                           \
-  declare_c2_type(Store8CNode, VectorStoreNode)                           \
-  declare_c2_type(Store4CNode, VectorStoreNode)                           \
-  declare_c2_type(Store2CNode, VectorStoreNode)                           \
-  declare_c2_type(Store4INode, VectorStoreNode)                           \
-  declare_c2_type(Store2INode, VectorStoreNode)                           \
-  declare_c2_type(Store2LNode, VectorStoreNode)                           \
-  declare_c2_type(Store4FNode, VectorStoreNode)                           \
-  declare_c2_type(Store2FNode, VectorStoreNode)                           \
-  declare_c2_type(Store2DNode, VectorStoreNode)                           \
-  declare_c2_type(Replicate16BNode, VectorNode)                           \
-  declare_c2_type(Replicate8BNode, VectorNode)                            \
-  declare_c2_type(Replicate4BNode, VectorNode)                            \
-  declare_c2_type(Replicate8CNode, VectorNode)                            \
-  declare_c2_type(Replicate4CNode, VectorNode)                            \
-  declare_c2_type(Replicate2CNode, VectorNode)                            \
-  declare_c2_type(Replicate8SNode, VectorNode)                            \
-  declare_c2_type(Replicate4SNode, VectorNode)                            \
-  declare_c2_type(Replicate2SNode, VectorNode)                            \
-  declare_c2_type(Replicate4INode, VectorNode)                            \
-  declare_c2_type(Replicate2INode, VectorNode)                            \
-  declare_c2_type(Replicate2LNode, VectorNode)                            \
-  declare_c2_type(Replicate4FNode, VectorNode)                            \
-  declare_c2_type(Replicate2FNode, VectorNode)                            \
-  declare_c2_type(Replicate2DNode, VectorNode)                            \
+  declare_c2_type(LoadVectorNode, LoadNode)                               \
+  declare_c2_type(StoreVectorNode, StoreNode)                             \
+  declare_c2_type(ReplicateBNode, VectorNode)                             \
+  declare_c2_type(ReplicateSNode, VectorNode)                             \
+  declare_c2_type(ReplicateINode, VectorNode)                             \
+  declare_c2_type(ReplicateLNode, VectorNode)                             \
+  declare_c2_type(ReplicateFNode, VectorNode)                             \
+  declare_c2_type(ReplicateDNode, VectorNode)                             \
   declare_c2_type(PackNode, VectorNode)                                   \
   declare_c2_type(PackBNode, PackNode)                                    \
-  declare_c2_type(PackCNode, PackNode)                                    \
   declare_c2_type(PackSNode, PackNode)                                    \
   declare_c2_type(PackINode, PackNode)                                    \
   declare_c2_type(PackLNode, PackNode)                                    \
   declare_c2_type(PackFNode, PackNode)                                    \
   declare_c2_type(PackDNode, PackNode)                                    \
-  declare_c2_type(Pack2x1BNode, PackNode)                                 \
-  declare_c2_type(Pack2x2BNode, PackNode)                                 \
+  declare_c2_type(Pack2LNode, PackNode)                                   \
+  declare_c2_type(Pack2DNode, PackNode)                                   \
   declare_c2_type(ExtractNode, Node)                                      \
   declare_c2_type(ExtractBNode, ExtractNode)                              \
-  declare_c2_type(ExtractCNode, ExtractNode)                              \
   declare_c2_type(ExtractSNode, ExtractNode)                              \
   declare_c2_type(ExtractINode, ExtractNode)                              \
   declare_c2_type(ExtractLNode, ExtractNode)                              \
@@ -2336,6 +2305,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_constant(constMethodOopDesc::_has_linenumber_table)             \
   declare_constant(constMethodOopDesc::_has_checked_exceptions)           \
   declare_constant(constMethodOopDesc::_has_localvariable_table)          \
+  declare_constant(constMethodOopDesc::_has_exception_table)              \
                                                                           \
   /*************************************/                                 \
   /* instanceKlass enum                */                                 \
@@ -2352,7 +2322,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_constant(FieldInfo::initval_index_offset)                       \
   declare_constant(FieldInfo::low_offset)                                 \
   declare_constant(FieldInfo::high_offset)                                \
-  declare_constant(FieldInfo::generic_signature_offset)                   \
   declare_constant(FieldInfo::field_slots)                                \
                                                                           \
   /************************************************/                      \

@@ -659,7 +659,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                  * us work with drivers that do not support
                  * getObject with a map in fairly sensible way
                  */
-                if (map == null) {
+                if (map == null || map.isEmpty()) {
                     obj = data.getObject(i);
                 } else {
                     obj = data.getObject(i, map);

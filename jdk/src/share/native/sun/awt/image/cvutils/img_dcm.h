@@ -52,8 +52,6 @@
 #define DecodeDeclared
 #endif
 
-#include "java_awt_image_DirectColorModel.h"
-
 #define DeclareDCMVars                                          \
     IfAlpha(int alpha_mask;                                     \
             int alpha_scale;                                    \

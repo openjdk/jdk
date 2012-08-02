@@ -36,8 +36,5 @@ public class HashCode {
         if (m.hashCode() != 0)
             throw new Exception("Empty Hashtable has nonzero hashCode.");
 
-        m.put("Joe", "Blow");
-        if (m.hashCode() != ("Joe".hashCode() ^ "Blow".hashCode()))
-            throw new Exception("Non-empty Hashtable has wrong hashCode.");
     }
 }

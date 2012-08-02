@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/altHashing.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
@@ -32,6 +33,7 @@
 #ifndef SERIALGC
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #endif // SERIALGC
+#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "memory/oopFactory.hpp"
@@ -378,6 +380,7 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
   jclass cls = NULL;
   DT_RETURN_MARK(DefineClass, jclass, (const jclass&)cls);
 
+  TempNewSymbol class_name = NULL;
   // Since exceptions can be thrown, class initialization can take place
   // if name is NULL no check for class name in .class stream has to be made.
   if (name != NULL) {
@@ -387,9 +390,8 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
       // into the constant pool.
       THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
     }
+    class_name = SymbolTable::new_symbol(name, CHECK_NULL);
   }
-  TempNewSymbol class_name = SymbolTable::new_symbol(name, THREAD);
-
   ResourceMark rm(THREAD);
   ClassFileStream st((u1*) buf, bufLen, NULL);
   Handle class_loader (THREAD, JNIHandles::resolve(loaderRef));
@@ -3269,7 +3271,7 @@ JNI_QUICK_ENTRY(const jchar*, jni_GetStringChars(
   int s_len = java_lang_String::length(s);
   typeArrayOop s_value = java_lang_String::value(s);
   int s_offset = java_lang_String::offset(s);
-  jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len + 1);  // add one for zero termination
+  jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len + 1, mtInternal);  // add one for zero termination
   if (s_len > 0) {
     memcpy(buf, s_value->char_at_addr(s_offset), sizeof(jchar)*s_len);
   }
@@ -3362,7 +3364,7 @@ JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboole
 #endif /* USDT2 */
   oop java_string = JNIHandles::resolve_non_null(string);
   size_t length = java_lang_String::utf8_length(java_string);
-  char* result = AllocateHeap(length + 1, "GetStringUTFChars");
+  char* result = AllocateHeap(length + 1, mtInternal);
   java_lang_String::as_utf8_string(java_string, result, (int) length + 1);
   if (isCopy != NULL) *isCopy = JNI_TRUE;
 #ifndef USDT2
@@ -3618,7 +3620,7 @@ JNI_QUICK_ENTRY(ElementType*, \
      * Avoid asserts in typeArrayOop. */ \
     result = (ElementType*)get_bad_address(); \
   } else { \
-    result = NEW_C_HEAP_ARRAY(ElementType, len); \
+    result = NEW_C_HEAP_ARRAY(ElementType, len, mtInternal); \
     /* copy the array to the c chunk */ \
     memcpy(result, a->Tag##_at_addr(0), sizeof(ElementType)*len); \
   } \
@@ -3655,7 +3657,7 @@ JNI_QUICK_ENTRY(ElementType*, \
      * Avoid asserts in typeArrayOop. */ \
     result = (ElementType*)get_bad_address(); \
   } else { \
-    result = NEW_C_HEAP_ARRAY(ElementType, len); \
+    result = NEW_C_HEAP_ARRAY(ElementType, len, mtInternal); \
     /* copy the array to the c chunk */ \
     memcpy(result, a->Tag##_at_addr(0), sizeof(ElementType)*len); \
   } \
@@ -5053,6 +5055,7 @@ void execute_internal_vm_tests() {
     run_unit_test(arrayOopDesc::test_max_array_length());
     run_unit_test(CollectedHeap::test_is_in());
     run_unit_test(QuickSort::test_quick_sort());
+    run_unit_test(AltHashing::test_alt_hash());
     tty->print_cr("All internal VM tests passed");
   }
 }

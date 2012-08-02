@@ -53,6 +53,9 @@ public class SSL {
     private static volatile String server;
     private static volatile int port;
 
+    // 0-Not started, 1-Start OK, 2-Failure
+    private static volatile int serverState = 0;
+
     public static void main(String[] args) throws Exception {
 
         krb5Cipher = args[0];
@@ -109,14 +112,20 @@ public class SSL {
                     s.doAs(new JsseServerAction(), null);
                 } catch (Exception e) {
                     e.printStackTrace();
+                    serverState = 2;
                 }
             }
         });
         server.setDaemon(true);
         server.start();
 
-        // Warm the server
-        Thread.sleep(2000);
+        while (serverState == 0) {
+            Thread.sleep(50);
+        }
+
+        if (serverState == 2) {
+            throw new Exception("Server already failed");
+        }
 
         // Now create the keytab
 
@@ -214,6 +223,7 @@ public class SSL {
                 (SSLServerSocket) sslssf.createServerSocket(0); // any port
             port = sslServerSocket.getLocalPort();
             System.out.println("Listening on " + port);
+            serverState = 1;
 
             // Enable only a KRB5 cipher suite.
             String enabledSuites[] = {krb5Cipher};

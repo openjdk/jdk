@@ -554,9 +554,7 @@ const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
       return TypeInt::CC_GE;
     } else if (hi0 <= lo1) {
       // Check for special case in Hashtable::get.  (See below.)
-      if ((jint)lo0 >= 0 && (jint)lo1 >= 0 &&
-          in(1)->Opcode() == Op_ModI &&
-          in(1)->in(2) == in(2) )
+      if ((jint)lo0 >= 0 && (jint)lo1 >= 0 && is_index_range_check())
         return TypeInt::CC_LT;
       return TypeInt::CC_LE;
     }
@@ -567,11 +565,15 @@ const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
   // to be positive.
   // (This is a gross hack, since the sub method never
   // looks at the structure of the node in any other case.)
-  if ((jint)lo0 >= 0 && (jint)lo1 >= 0 &&
-      in(1)->Opcode() == Op_ModI &&
-      in(1)->in(2)->uncast() == in(2)->uncast())
+  if ((jint)lo0 >= 0 && (jint)lo1 >= 0 && is_index_range_check())
     return TypeInt::CC_LT;
   return TypeInt::CC;                   // else use worst case results
+}
+
+bool CmpUNode::is_index_range_check() const {
+  // Check for the "(X ModI Y) CmpU Y" shape
+  return (in(1)->Opcode() == Op_ModI &&
+          in(1)->in(2)->eqv_uncast(in(2)));
 }
 
 //------------------------------Idealize---------------------------------------
@@ -702,12 +704,84 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
     return TypeInt::CC;
 }
 
+static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n) {
+  // Return the klass node for
+  //   LoadP(AddP(foo:Klass, #java_mirror))
+  //   or NULL if not matching.
+  if (n->Opcode() != Op_LoadP) return NULL;
+
+  const TypeInstPtr* tp = phase->type(n)->isa_instptr();
+  if (!tp || tp->klass() != phase->C->env()->Class_klass()) return NULL;
+
+  Node* adr = n->in(MemNode::Address);
+  intptr_t off = 0;
+  Node* k = AddPNode::Ideal_base_and_offset(adr, phase, off);
+  if (k == NULL)  return NULL;
+  const TypeKlassPtr* tkp = phase->type(k)->isa_klassptr();
+  if (!tkp || off != in_bytes(Klass::java_mirror_offset())) return NULL;
+
+  // We've found the klass node of a Java mirror load.
+  return k;
+}
+
+static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
+  // for ConP(Foo.class) return ConP(Foo.klass)
+  // otherwise return NULL
+  if (!n->is_Con()) return NULL;
+
+  const TypeInstPtr* tp = phase->type(n)->isa_instptr();
+  if (!tp) return NULL;
+
+  ciType* mirror_type = tp->java_mirror_type();
+  // TypeInstPtr::java_mirror_type() returns non-NULL for compile-
+  // time Class constants only.
+  if (!mirror_type) return NULL;
+
+  // x.getClass() == int.class can never be true (for all primitive types)
+  // Return a ConP(NULL) node for this case.
+  if (mirror_type->is_classless()) {
+    return phase->makecon(TypePtr::NULL_PTR);
+  }
+
+  // return the ConP(Foo.klass)
+  assert(mirror_type->is_klass(), "mirror_type should represent a klassOop");
+  return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass()));
+}
+
 //------------------------------Ideal------------------------------------------
-// Check for the case of comparing an unknown klass loaded from the primary
+// Normalize comparisons between Java mirror loads to compare the klass instead.
+//
+// Also check for the case of comparing an unknown klass loaded from the primary
 // super-type array vs a known klass with no subtypes.  This amounts to
 // checking to see an unknown klass subtypes a known klass with no subtypes;
 // this only happens on an exact match.  We can shorten this test by 1 load.
 Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
+  // Normalize comparisons between Java mirrors into comparisons of the low-
+  // level klass, where a dependent load could be shortened.
+  //
+  // The new pattern has a nice effect of matching the same pattern used in the
+  // fast path of instanceof/checkcast/Class.isInstance(), which allows
+  // redundant exact type check be optimized away by GVN.
+  // For example, in
+  //   if (x.getClass() == Foo.class) {
+  //     Foo foo = (Foo) x;
+  //     // ... use a ...
+  //   }
+  // a CmpPNode could be shared between if_acmpne and checkcast
+  {
+    Node* k1 = isa_java_mirror_load(phase, in(1));
+    Node* k2 = isa_java_mirror_load(phase, in(2));
+    Node* conk2 = isa_const_java_mirror(phase, in(2));
+
+    if (k1 && (k2 || conk2)) {
+      Node* lhs = k1;
+      Node* rhs = (k2 != NULL) ? k2 : conk2;
+      this->set_req(1, lhs);
+      this->set_req(2, rhs);
+      return this;
+    }
+  }
+
   // Constant pointer on right?
   const TypeKlassPtr* t2 = phase->type(in(2))->isa_klassptr();
   if (t2 == NULL || !t2->klass_is_exact())
@@ -1314,7 +1388,5 @@ const Type *PowDNode::Value( PhaseTransform *phase ) const {
   if( t2->base() != Type::DoubleCon ) return Type::DOUBLE;
   double d1 = t1->getd();
   double d2 = t2->getd();
-  if( d1 < 0.0 ) return Type::DOUBLE;
-  if( d2 < 0.0 ) return Type::DOUBLE;
   return TypeD::make( StubRoutines::intrinsic_pow( d1, d2 ) );
 }

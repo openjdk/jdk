@@ -26,14 +26,12 @@
 package sun.tools.jconsole;
 
 import java.awt.*;
-import java.awt.event.*;
 
 import javax.swing.*;
-import javax.swing.border.*;
+
 
 import static javax.swing.SwingConstants.*;
 import static sun.tools.jconsole.JConsole.*;
-import static sun.tools.jconsole.Resources.*;
 import static sun.tools.jconsole.Utilities.*;
 
 
@@ -68,7 +66,7 @@ abstract class OverviewPanel extends PlotterPanel {
             }
             plotter.createSequence(plotterKey, plotterName, PLOTTER_COLOR, true);
             setAccessibleName(plotter,
-                              getText("OverviewPanel.plotter.accessibleName",
+                              Resources.format(Messages.OVERVIEW_PANEL_PLOTTER_ACCESSIBLE_NAME,
                                       title));
             setPlotter(plotter);
         }

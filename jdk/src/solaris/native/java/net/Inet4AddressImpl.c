@@ -196,7 +196,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 struct addrinfo *next
                     = (struct addrinfo*) malloc(sizeof(struct addrinfo));
                 if (!next) {
-                    JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+                    JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
                     ret = NULL;
                     goto cleanupAndReturn;
                 }
@@ -465,7 +465,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 struct addrinfo *next
                     = (struct addrinfo*) malloc(sizeof(struct addrinfo));
                 if (!next) {
-                    JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+                    JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
                     ret = NULL;
                     goto cleanupAndReturn;
                 }
@@ -671,12 +671,19 @@ ping4(JNIEnv *env, jint fd, struct sockaddr_in* him, jint timeout,
            * We did receive something, but is it what we were expecting?
            * I.E.: A ICMP_ECHOREPLY packet with the proper PID.
            */
-          if (icmplen >= 8 && icmp->icmp_type == ICMP_ECHOREPLY &&
-               (ntohs(icmp->icmp_id) == pid) &&
-               (him->sin_addr.s_addr == sa_recv.sin_addr.s_addr)) {
-            close(fd);
-            return JNI_TRUE;
-          }
+          if (icmplen >= 8 && icmp->icmp_type == ICMP_ECHOREPLY
+               && (ntohs(icmp->icmp_id) == pid)) {
+            if ((him->sin_addr.s_addr == sa_recv.sin_addr.s_addr)) {
+              close(fd);
+              return JNI_TRUE;
+            }
+
+            if (him->sin_addr.s_addr == 0) {
+              close(fd);
+              return JNI_TRUE;
+            }
+         }
+
         }
       } while (tmout2 > 0);
       timeout -= 1000;

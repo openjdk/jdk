@@ -28,7 +28,6 @@ package sun.tools.jconsole;
 import java.text.*;
 import java.util.*;
 
-import static sun.tools.jconsole.Resources.*;
 
 class Formatter {
     final static long SECOND = 1000;
@@ -48,7 +47,7 @@ class Formatter {
         String str;
         if (t < 1 * MINUTE) {
             String seconds = String.format("%.3f", t / (double)SECOND);
-            str = Resources.getText("DurationSeconds", seconds);
+            str = Resources.format(Messages.DURATION_SECONDS, seconds);
         } else {
             long remaining = t;
             long days = remaining / DAY;
@@ -58,13 +57,13 @@ class Formatter {
             long minutes = remaining / MINUTE;
 
             if (t >= 1 * DAY) {
-                str = Resources.getText("DurationDaysHoursMinutes",
-                                        days, hours, minutes);
+                str = Resources.format(Messages.DURATION_DAYS_HOURS_MINUTES,
+                                       days, hours, minutes);
             } else if (t >= 1 * HOUR) {
-                str = Resources.getText("DurationHoursMinutes",
-                                        hours, minutes);
+                str = Resources.format(Messages.DURATION_HOURS_MINUTES,
+                                       hours, minutes);
             } else {
-                str = Resources.getText("DurationMinutes", minutes);
+                str = Resources.format(Messages.DURATION_MINUTES, minutes);
             }
         }
         return str;
@@ -88,8 +87,7 @@ class Formatter {
         return dateDF.format(time) + " " + timeWithSecondsDF.format(time);
     }
 
-    static DateFormat getDateTimeFormat(String key) {
-        String dtfStr = getText(key);
+    static DateFormat getDateTimeFormat(String dtfStr) {
         int dateStyle = -1;
         int timeStyle = -1;
 
@@ -153,18 +151,18 @@ class Formatter {
         }
         String[] strings = formatLongs(bytes);
         for (int i = 0; i < n; i++) {
-            strings[i] = getText("kbytes", strings[i]);
+            strings[i] = Resources.format(Messages.KBYTES, strings[i]);
         }
         return strings;
     }
 
     static String formatKBytes(long bytes) {
         if (bytes == -1) {
-            return getText("kbytes", "-1");
+            return Resources.format(Messages.KBYTES, "-1");
         }
 
         long kb = bytes / 1024;
-        return getText("kbytes", justify(kb, 10));
+        return Resources.format(Messages.KBYTES, justify(kb, 10));
     }
 
 
@@ -182,13 +180,13 @@ class Formatter {
         int exp = (int)Math.log10((double)vMax);
 
         if (exp < 3) {
-            s = Resources.getText("Size Bytes", v);
+            s = Resources.format(Messages.SIZE_BYTES, v);
         } else if (exp < 6) {
-            s = Resources.getText("Size Kb", trimDouble(v / Math.pow(10.0, 3)));
+            s = Resources.format(Messages.SIZE_KB, trimDouble(v / Math.pow(10.0, 3)));
         } else if (exp < 9) {
-            s = Resources.getText("Size Mb", trimDouble(v / Math.pow(10.0, 6)));
+            s = Resources.format(Messages.SIZE_MB, trimDouble(v / Math.pow(10.0, 6)));
         } else {
-            s = Resources.getText("Size Gb", trimDouble(v / Math.pow(10.0, 9)));
+            s = Resources.format(Messages.SIZE_GB, trimDouble(v / Math.pow(10.0, 9)));
         }
         if (html) {
             s = s.replace(" ", "&nbsp;");

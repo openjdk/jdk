@@ -55,8 +55,8 @@ final class LWChoicePeer extends LWComponentPeer<Choice, JComboBox<String>>
     }
 
     @Override
-    public void initialize() {
-        super.initialize();
+    void initializeImpl() {
+        super.initializeImpl();
         final Choice choice = getTarget();
         final JComboBox<String> combo = getDelegate();
         synchronized (getDelegateLock()) {

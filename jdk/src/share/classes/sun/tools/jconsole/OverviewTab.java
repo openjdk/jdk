@@ -26,14 +26,10 @@
 package sun.tools.jconsole;
 
 import java.awt.*;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 import javax.swing.*;
 import javax.swing.border.*;
-
-import static sun.tools.jconsole.JConsole.*;
-import static sun.tools.jconsole.Resources.*;
 
 
 @SuppressWarnings("serial")
@@ -42,7 +38,7 @@ class OverviewTab extends Tab {
     TimeComboBox timeComboBox;
 
     public static String getTabName() {
-        return getText("Overview");
+        return Messages.OVERVIEW;
     }
 
     public OverviewTab(VMPanel vmPanel) {
@@ -58,8 +54,8 @@ class OverviewTab extends Tab {
         topPanel.add(controlPanel, BorderLayout.CENTER);
 
         timeComboBox = new TimeComboBox();
-        LabeledComponent lc = new LabeledComponent(Resources.getText("Time Range:"),
-                                                   getMnemonicInt("Time Range:"),
+        LabeledComponent lc = new LabeledComponent(Messages.TIME_RANGE_COLON,
+                                                   Resources.getMnemonicInt(Messages.TIME_RANGE_COLON),
                                                    timeComboBox);
         controlPanel.add(lc);
 

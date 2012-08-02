@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @author Peter Jones
  *
  * @library ../../testlibrary
- * @build ClassPathCodebase Dummy
+ * @build ClassPathCodebase Dummy TestLibrary
  * @run main/othervm/policy=security.policy ClassPathCodebase
  */
 
@@ -83,11 +83,12 @@ public class ClassPathCodebase {
                 System.getProperty("java.home") + File.separator +
                 "bin" + File.separator + "rmiregistry";
 
+            int port = TestLibrary.getUnusedRandomPort();
             String cmdarray[] = new String[] {
                 rmiregistryCommand,
                 "-J-Denv.class.path=.",
                 "-J-Djava.rmi.server.codebase=" + exportCodebaseURL,
-                Integer.toString(TestLibrary.REGISTRY_PORT) };
+                Integer.toString(port) };
 
             System.err.println("\nCommand used to spawn rmiregistry process:");
             System.err.println("\t" + Arrays.asList(cmdarray).toString());
@@ -118,7 +119,7 @@ public class ClassPathCodebase {
              * dummy object to it.
              */
             Registry registry = LocateRegistry.getRegistry(
-                "localhost", TestLibrary.REGISTRY_PORT);
+                "localhost", port);
 
             try {
                 registry.bind(dummyBinding, dummyObject);
@@ -133,7 +134,7 @@ public class ClassPathCodebase {
                 {
                     System.err.println(
                         "Error: another registry running on port " +
-                        TestLibrary.REGISTRY_PORT + "?");
+                        port + "?");
                 }
                 throw e;
             }

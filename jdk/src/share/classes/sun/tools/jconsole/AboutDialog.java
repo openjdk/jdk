@@ -30,13 +30,12 @@ import java.awt.event.*;
 import java.beans.PropertyVetoException;
 import java.net.URI;
 
-import javax.accessibility.*;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
 
+
 import static java.awt.BorderLayout.*;
-import static sun.tools.jconsole.Resources.*;
 import static sun.tools.jconsole.Utilities.*;
 
 @SuppressWarnings("serial")
@@ -47,7 +46,7 @@ public class AboutDialog extends InternalDialog {
     private static final Color borderColor   = Color.black;
 
     private Icon mastheadIcon =
-        new MastheadIcon(getText("Help.AboutDialog.masthead.title"));
+        new MastheadIcon(Messages.HELP_ABOUT_DIALOG_MASTHEAD_TITLE);
 
     private static AboutDialog aboutDialog;
 
@@ -55,10 +54,9 @@ public class AboutDialog extends InternalDialog {
     private Action closeAction;
 
     public AboutDialog(JConsole jConsole) {
-        super(jConsole, Resources.getText("Help.AboutDialog.title"), false);
+        super(jConsole, Messages.HELP_ABOUT_DIALOG_TITLE, false);
 
-        setAccessibleDescription(this,
-                                 getText("Help.AboutDialog.accessibleDescription"));
+        setAccessibleDescription(this, Messages.HELP_ABOUT_DIALOG_ACCESSIBLE_DESCRIPTION);
         setDefaultCloseOperation(HIDE_ON_CLOSE);
         setResizable(false);
         JComponent cp = (JComponent)getContentPane();
@@ -67,7 +65,7 @@ public class AboutDialog extends InternalDialog {
 
         JLabel mastheadLabel = new JLabel(mastheadIcon);
         setAccessibleName(mastheadLabel,
-                          getText("Help.AboutDialog.masthead.accessibleName"));
+                Messages.HELP_ABOUT_DIALOG_MASTHEAD_ACCESSIBLE_NAME);
 
         JPanel mainPanel = new TPanel(0, 0);
         mainPanel.add(mastheadLabel, NORTH);
@@ -75,7 +73,7 @@ public class AboutDialog extends InternalDialog {
         String jConsoleVersion = Version.getVersion();
         String vmName = System.getProperty("java.vm.name");
         String vmVersion = System.getProperty("java.vm.version");
-        String urlStr = getText("Help.AboutDialog.userGuideLink.url");
+        String urlStr = Messages.HELP_ABOUT_DIALOG_USER_GUIDE_LINK_URL;
         if (isBrowseSupported()) {
             urlStr = "<a style='color:#35556b' href=\"" + urlStr + "\">" + urlStr + "</a>";
         }
@@ -86,9 +84,9 @@ public class AboutDialog extends InternalDialog {
         String colorStr = String.format("%06x", textColor.getRGB() & 0xFFFFFF);
         JEditorPane helpLink = new JEditorPane("text/html",
                                 "<html><font color=#"+ colorStr + ">" +
-                        getText("Help.AboutDialog.jConsoleVersion", jConsoleVersion) +
-                "<p>" + getText("Help.AboutDialog.javaVersion", (vmName +", "+ vmVersion)) +
-                "<p>" + getText("Help.AboutDialog.userGuideLink", urlStr) +
+                        Resources.format(Messages.HELP_ABOUT_DIALOG_JCONSOLE_VERSION, jConsoleVersion) +
+                "<p>" + Resources.format(Messages.HELP_ABOUT_DIALOG_JAVA_VERSION, (vmName +", "+ vmVersion)) +
+                "<p>" + Resources.format(Messages.HELP_ABOUT_DIALOG_USER_GUIDE_LINK, urlStr) +
                                                  "</html>");
         helpLink.setOpaque(false);
         helpLink.setEditable(false);
@@ -155,7 +153,7 @@ public class AboutDialog extends InternalDialog {
     }
 
     static void browseUserGuide(JConsole jConsole) {
-        getAboutDialog(jConsole).browse(getText("Help.AboutDialog.userGuideLink.url"));
+        getAboutDialog(jConsole).browse(Messages.HELP_ABOUT_DIALOG_USER_GUIDE_LINK_URL);
     }
 
     static boolean isBrowseSupported() {
@@ -176,7 +174,7 @@ public class AboutDialog extends InternalDialog {
     }
 
     private void createActions() {
-        closeAction = new AbstractAction(getText("Close")) {
+        closeAction = new AbstractAction(Messages.CLOSE) {
             public void actionPerformed(ActionEvent ev) {
                 setVisible(false);
                 statusBar.setText("");

@@ -29,18 +29,12 @@
 // constants required by the Serviceability Agent. This file is
 // referenced by vmStructs.cpp.
 
-#ifdef __APPLE__
-#define OS_THREAD_ID_TYPE thread_t
-#else
-#define OS_THREAD_ID_TYPE pthread_t
-#endif
-
 #define VM_STRUCTS_OS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field, last_entry) \
                                                                                                                                      \
   /******************************/                                                                                                   \
   /* Threads (NOTE: incomplete) */                                                                                                   \
   /******************************/                                                                                                   \
-  nonstatic_field(OSThread,                      _thread_id,                                      OS_THREAD_ID_TYPE)                 \
+  nonstatic_field(OSThread,                      _thread_id,                                      OSThread::thread_id_t)             \
   nonstatic_field(OSThread,                      _pthread_id,                                     pthread_t)                         \
   /* This must be the last entry, and must be present */                                                                             \
   last_entry()
@@ -52,7 +46,7 @@
   /* Posix Thread IDs   */                                                \
   /**********************/                                                \
                                                                           \
-  declare_unsigned_integer_type(thread_t)                                 \
+  declare_unsigned_integer_type(OSThread::thread_id_t)                    \
   declare_unsigned_integer_type(pthread_t)                                \
                                                                           \
   /* This must be the last entry, and must be present */                  \

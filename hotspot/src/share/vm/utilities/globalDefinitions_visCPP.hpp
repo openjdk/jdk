@@ -220,9 +220,15 @@ inline int vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
 #define PRIu64       "I64u"
 #define PRIx64       "I64x"
 
+#ifdef _LP64
+#define PRIdPTR       "I64d"
+#define PRIuPTR       "I64u"
+#define PRIxPTR       "I64x"
+#else
 #define PRIdPTR       "d"
 #define PRIuPTR       "u"
 #define PRIxPTR       "x"
+#endif
 
 #define offset_of(klass,field) offsetof(klass,field)
 

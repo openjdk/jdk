@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -630,6 +630,7 @@ public class Functions {
         addMech(CKM_X9_42_DH_DERIVE,            "CKM_X9_42_DH_DERIVE");
         addMech(CKM_X9_42_DH_HYBRID_DERIVE,     "CKM_X9_42_DH_HYBRID_DERIVE");
         addMech(CKM_X9_42_MQV_DERIVE,           "CKM_X9_42_MQV_DERIVE");
+        addMech(CKM_SHA224_RSA_PKCS,            "CKM_SHA224_RSA_PKCS");
         addMech(CKM_SHA256_RSA_PKCS,            "CKM_SHA256_RSA_PKCS");
         addMech(CKM_SHA384_RSA_PKCS,            "CKM_SHA384_RSA_PKCS");
         addMech(CKM_SHA512_RSA_PKCS,            "CKM_SHA512_RSA_PKCS");
@@ -675,6 +676,9 @@ public class Functions {
         addMech(CKM_RIPEMD160,                  "CKM_RIPEMD160");
         addMech(CKM_RIPEMD160_HMAC,             "CKM_RIPEMD160_HMAC");
         addMech(CKM_RIPEMD160_HMAC_GENERAL,     "CKM_RIPEMD160_HMAC_GENERAL");
+        addMech(CKM_SHA224,                     "CKM_SHA224");
+        addMech(CKM_SHA224_HMAC,                "CKM_SHA224_HMAC");
+        addMech(CKM_SHA224_HMAC_GENERAL,        "CKM_SHA224_HMAC_GENERAL");
         addMech(CKM_SHA256,                     "CKM_SHA256");
         addMech(CKM_SHA256_HMAC,                "CKM_SHA256_HMAC");
         addMech(CKM_SHA256_HMAC_GENERAL,        "CKM_SHA256_HMAC_GENERAL");
@@ -734,6 +738,7 @@ public class Functions {
         addMech(CKM_MD5_KEY_DERIVATION,         "CKM_MD5_KEY_DERIVATION");
         addMech(CKM_MD2_KEY_DERIVATION,         "CKM_MD2_KEY_DERIVATION");
         addMech(CKM_SHA1_KEY_DERIVATION,        "CKM_SHA1_KEY_DERIVATION");
+        addMech(CKM_SHA224_KEY_DERIVATION,      "CKM_SHA224_KEY_DERIVATION");
         addMech(CKM_SHA256_KEY_DERIVATION,      "CKM_SHA256_KEY_DERIVATION");
         addMech(CKM_SHA384_KEY_DERIVATION,      "CKM_SHA384_KEY_DERIVATION");
         addMech(CKM_SHA512_KEY_DERIVATION,      "CKM_SHA512_KEY_DERIVATION");

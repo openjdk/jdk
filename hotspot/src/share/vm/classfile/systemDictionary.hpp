@@ -32,6 +32,7 @@
 #include "runtime/java.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/hashtable.inline.hpp"
 
 // The system dictionary stores all loaded classes and maps:
 //
@@ -72,7 +73,7 @@
 class Dictionary;
 class PlaceholderTable;
 class LoaderConstraintTable;
-class HashtableBucket;
+template <MEMFLAGS F> class HashtableBucket;
 class ResolutionErrorTable;
 class SymbolPropertyTable;
 
@@ -169,9 +170,6 @@ class SymbolPropertyTable;
   /* Universe::is_gte_jdk14x_version() is not set up by this point. */        \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */               \
   template(nio_Buffer_klass,             java_nio_Buffer,                Opt) \
-                                                                              \
-  /* If this class isn't present, it won't be referenced. */                  \
-  template(AtomicLongCSImpl_klass,       sun_misc_AtomicLongCSImpl,   Opt)    \
                                                                               \
   template(DownloadManager_klass,        sun_jkernel_DownloadManager, Opt_Kernel) \
                                                                               \
@@ -366,7 +364,7 @@ public:
   static void copy_buckets(char** top, char* end);
   static void copy_table(char** top, char* end);
   static void reverse();
-  static void set_shared_dictionary(HashtableBucket* t, int length,
+  static void set_shared_dictionary(HashtableBucket<mtClass>* t, int length,
                                     int number_of_entries);
   // Printing
   static void print()                   PRODUCT_RETURN;

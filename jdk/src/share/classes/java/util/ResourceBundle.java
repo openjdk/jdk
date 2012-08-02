@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.jar.JarEntry;
+import java.util.spi.ResourceBundleControlProvider;
 
 import sun.util.locale.BaseLocale;
 import sun.util.locale.LocaleObjectCache;
@@ -192,6 +193,17 @@ import sun.util.locale.LocaleObjectCache;
  * {@link #getBundle(String, Locale, ClassLoader, Control) getBundle}
  * factory method for details.
  *
+ * <p><a name="modify_default_behavior">For the {@code getBundle} factory
+ * methods that take no {@link Control} instance, their <a
+ * href="#default_behavior"> default behavior</a> of resource bundle loading
+ * can be modified with <em>installed</em> {@link
+ * ResourceBundleControlProvider} implementations. Any installed providers are
+ * detected at the {@code ResourceBundle} class loading time. If any of the
+ * providers provides a {@link Control} for the given base name, that {@link
+ * Control} will be used instead of the default {@link Control}. If there is
+ * more than one service provider installed for supporting the same base name,
+ * the first one returned from {@link ServiceLoader} will be used.
+ *
  * <h4>Cache Management</h4>
  *
  * Resource bundle instances created by the <code>getBundle</code> factory
@@ -294,8 +306,7 @@ public abstract class ResourceBundle {
     /**
      * Queue for reference objects referring to class loaders or bundles.
      */
-    private static final ReferenceQueue<Object> referenceQueue =
-        new ReferenceQueue<>();
+    private static final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<>();
 
     /**
      * The parent bundle of this bundle.
@@ -329,6 +340,21 @@ public abstract class ResourceBundle {
      * A Set of the keys contained only in this ResourceBundle.
      */
     private volatile Set<String> keySet;
+
+    private static final List<ResourceBundleControlProvider> providers;
+
+    static {
+        List<ResourceBundleControlProvider> list = null;
+        ServiceLoader<ResourceBundleControlProvider> serviceLoaders
+                = ServiceLoader.loadInstalled(ResourceBundleControlProvider.class);
+        for (ResourceBundleControlProvider provider : serviceLoaders) {
+            if (list == null) {
+                list = new ArrayList<>();
+            }
+            list.add(provider);
+        }
+        providers = list;
+    }
 
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically
@@ -725,7 +751,7 @@ public abstract class ResourceBundle {
         return getBundleImpl(baseName, Locale.getDefault(),
                              /* must determine loader here, else we break stack invariant */
                              getLoader(),
-                             Control.INSTANCE);
+                             getDefaultControl(baseName));
     }
 
     /**
@@ -797,7 +823,7 @@ public abstract class ResourceBundle {
         return getBundleImpl(baseName, locale,
                              /* must determine loader here, else we break stack invariant */
                              getLoader(),
-                             Control.INSTANCE);
+                             getDefaultControl(baseName));
     }
 
     /**
@@ -849,9 +875,15 @@ public abstract class ResourceBundle {
      * Gets a resource bundle using the specified base name, locale, and class
      * loader.
      *
-     * <p><a name="default_behavior"/>This method behaves the same as calling
+     * <p>This method behaves the same as calling
      * {@link #getBundle(String, Locale, ClassLoader, Control)} passing a
-     * default instance of {@link Control}. The following describes this behavior.
+     * default instance of {@link Control} unless another {@link Control} is
+     * provided with the {@link ResourceBundleControlProvider} SPI. Refer to the
+     * description of <a href="#modify_default_behavior">modifying the default
+     * behavior</a>.
+     *
+     * <p><a name="default_behavior"/>The following describes the default
+     * behavior.
      *
      * <p><code>getBundle</code> uses the base name, the specified locale, and
      * the default locale (obtained from {@link java.util.Locale#getDefault()
@@ -1026,7 +1058,7 @@ public abstract class ResourceBundle {
         if (loader == null) {
             throw new NullPointerException();
         }
-        return getBundleImpl(baseName, locale, loader, Control.INSTANCE);
+        return getBundleImpl(baseName, locale, loader, getDefaultControl(baseName));
     }
 
     /**
@@ -1245,6 +1277,18 @@ public abstract class ResourceBundle {
             throw new NullPointerException();
         }
         return getBundleImpl(baseName, targetLocale, loader, control);
+    }
+
+    private static Control getDefaultControl(String baseName) {
+        if (providers != null) {
+            for (ResourceBundleControlProvider provider : providers) {
+                Control control = provider.getControl(baseName);
+                if (control != null) {
+                    return control;
+                }
+            }
+        }
+        return Control.INSTANCE;
     }
 
     private static ResourceBundle getBundleImpl(String baseName, Locale locale,

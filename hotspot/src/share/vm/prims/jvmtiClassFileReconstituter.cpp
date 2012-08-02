@@ -191,15 +191,14 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
     }
   }
 
-  typeArrayHandle exception_table(thread(), const_method->exception_table());
-  int exception_table_length = exception_table->length();
-  int exception_table_entries = exception_table_length / 4;
+  ExceptionTable exception_table(method());
+  int exception_table_length = exception_table.length();
   int code_size = const_method->code_size();
   int size =
     2+2+4 +                                // max_stack, max_locals, code_length
     code_size +                            // code
     2 +                                    // exception_table_length
-    (2+2+2+2) * exception_table_entries +  // exception_table
+    (2+2+2+2) * exception_table_length +   // exception_table
     2 +                                    // attributes_count
     attr_size;                             // attributes
 
@@ -209,12 +208,12 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
   write_u2(method->max_locals());
   write_u4(code_size);
   copy_bytecodes(method, (unsigned char*)writeable_address(code_size));
-  write_u2(exception_table_entries);
-  for (int index = 0; index < exception_table_length; ) {
-    write_u2(exception_table->int_at(index++));
-    write_u2(exception_table->int_at(index++));
-    write_u2(exception_table->int_at(index++));
-    write_u2(exception_table->int_at(index++));
+  write_u2(exception_table_length);
+  for (int index = 0; index < exception_table_length; index++) {
+    write_u2(exception_table.start_pc(index));
+    write_u2(exception_table.end_pc(index));
+    write_u2(exception_table.handler_pc(index));
+    write_u2(exception_table.catch_type_index(index));
   }
   write_u2(attr_count);
   if (line_num_cnt != 0) {
@@ -268,14 +267,18 @@ void JvmtiClassFileReconstituter::write_source_file_attribute() {
 // JSR45|   SourceDebugExtension_attribute {
 // JSR45|       u2 attribute_name_index;
 // JSR45|       u4 attribute_length;
-// JSR45|       u2 sourcefile_index;
+// JSR45|       u1 debug_extension[attribute_length];
 // JSR45|   }
 void JvmtiClassFileReconstituter::write_source_debug_extension_attribute() {
   assert(ikh()->source_debug_extension() != NULL, "caller must check");
 
   write_attribute_name_index("SourceDebugExtension");
-  write_u4(2);  // always length 2
-  write_u2(symbol_to_cpool_index(ikh()->source_debug_extension()));
+  int len = (int)strlen(ikh()->source_debug_extension());
+  write_u4(len);
+  u1* ext = (u1*)ikh()->source_debug_extension();
+  for (int i=0; i<len; i++) {
+    write_u1(ext[i]);
+  }
 }
 
 // Write (generic) Signature attribute

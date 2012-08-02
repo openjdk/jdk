@@ -372,6 +372,7 @@ JAVA_JAVA_java = \
     java/util/spi/CurrencyNameProvider.java \
     java/util/spi/LocaleNameProvider.java \
     java/util/spi/LocaleServiceProvider.java \
+    java/util/spi/ResourceBundleControlProvider.java \
     java/util/spi/TimeZoneNameProvider.java \
     java/io/Closeable.java \
     java/io/Flushable.java \
@@ -482,6 +483,7 @@ JAVA_JAVA_java = \
     sun/misc/JavaNioAccess.java \
     sun/misc/Perf.java \
     sun/misc/PerfCounter.java \
+    sun/misc/Hashing.java \
     sun/net/www/protocol/jar/Handler.java \
     sun/net/www/protocol/jar/JarURLConnection.java \
     sun/net/www/protocol/file/Handler.java \

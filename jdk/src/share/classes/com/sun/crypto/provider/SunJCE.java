@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ import java.security.SecureRandom;
  *
  * - Diffie-Hellman Key Agreement
  *
- * - HMAC-MD5, HMAC-SHA1, HMAC-SHA-256, HMAC-SHA-384, HMAC-SHA-512
+ * - HMAC-MD5, HMAC-SHA1, HMAC-SHA-224, HMAC-SHA-256, HMAC-SHA-384, HMAC-SHA-512
  *
  */
 
@@ -113,6 +113,7 @@ public final class SunJCE extends Provider {
                             "NOPADDING|PKCS1PADDING|OAEPWITHMD5ANDMGF1PADDING"
                             + "|OAEPWITHSHA1ANDMGF1PADDING"
                             + "|OAEPWITHSHA-1ANDMGF1PADDING"
+                            + "|OAEPWITHSHA-224ANDMGF1PADDING"
                             + "|OAEPWITHSHA-256ANDMGF1PADDING"
                             + "|OAEPWITHSHA-384ANDMGF1PADDING"
                             + "|OAEPWITHSHA-512ANDMGF1PADDING");
@@ -221,12 +222,25 @@ public final class SunJCE extends Provider {
                     put("KeyGenerator.HmacSHA1",
                         "com.sun.crypto.provider.HmacSHA1KeyGenerator");
 
+                    put("KeyGenerator.HmacSHA224",
+                        "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA2KG$SHA224");
+                    put("Alg.Alias.KeyGenerator.OID.1.2.840.113549.2.8", "HmacSHA224");
+                    put("Alg.Alias.KeyGenerator.1.2.840.113549.2.8", "HmacSHA224");
+
                     put("KeyGenerator.HmacSHA256",
-                        "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA256KG");
+                        "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA2KG$SHA256");
+                    put("Alg.Alias.KeyGenerator.OID.1.2.840.113549.2.9", "HmacSHA256");
+                    put("Alg.Alias.KeyGenerator.1.2.840.113549.2.9", "HmacSHA256");
+
                     put("KeyGenerator.HmacSHA384",
-                        "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA384KG");
+                        "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA2KG$SHA384");
+                    put("Alg.Alias.KeyGenerator.OID.1.2.840.113549.2.10", "HmacSHA384");
+                    put("Alg.Alias.KeyGenerator.1.2.840.113549.2.10", "HmacSHA384");
+
                     put("KeyGenerator.HmacSHA512",
-                        "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA512KG");
+                        "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA2KG$SHA512");
+                    put("Alg.Alias.KeyGenerator.OID.1.2.840.113549.2.11", "HmacSHA512");
+                    put("Alg.Alias.KeyGenerator.1.2.840.113549.2.11", "HmacSHA512");
 
                     put("KeyPairGenerator.DiffieHellman",
                         "com.sun.crypto.provider.DHKeyPairGenerator");
@@ -389,12 +403,23 @@ public final class SunJCE extends Provider {
                      */
                     put("Mac.HmacMD5", "com.sun.crypto.provider.HmacMD5");
                     put("Mac.HmacSHA1", "com.sun.crypto.provider.HmacSHA1");
+                    put("Mac.HmacSHA224",
+                        "com.sun.crypto.provider.HmacCore$HmacSHA224");
+                    put("Alg.Alias.Mac.OID.1.2.840.113549.2.8", "HmacSHA224");
+                    put("Alg.Alias.Mac.1.2.840.113549.2.8", "HmacSHA224");
                     put("Mac.HmacSHA256",
                         "com.sun.crypto.provider.HmacCore$HmacSHA256");
+                    put("Alg.Alias.Mac.OID.1.2.840.113549.2.9", "HmacSHA256");
+                    put("Alg.Alias.Mac.1.2.840.113549.2.9", "HmacSHA256");
                     put("Mac.HmacSHA384",
                         "com.sun.crypto.provider.HmacCore$HmacSHA384");
+                    put("Alg.Alias.Mac.OID.1.2.840.113549.2.10", "HmacSHA384");
+                    put("Alg.Alias.Mac.1.2.840.113549.2.10", "HmacSHA384");
                     put("Mac.HmacSHA512",
                         "com.sun.crypto.provider.HmacCore$HmacSHA512");
+                    put("Alg.Alias.Mac.OID.1.2.840.113549.2.11", "HmacSHA512");
+                    put("Alg.Alias.Mac.1.2.840.113549.2.11", "HmacSHA512");
+
                     put("Mac.HmacPBESHA1",
                         "com.sun.crypto.provider.HmacPKCS12PBESHA1");
 
@@ -405,6 +430,7 @@ public final class SunJCE extends Provider {
 
                     put("Mac.HmacMD5 SupportedKeyFormats", "RAW");
                     put("Mac.HmacSHA1 SupportedKeyFormats", "RAW");
+                    put("Mac.HmacSHA224 SupportedKeyFormats", "RAW");
                     put("Mac.HmacSHA256 SupportedKeyFormats", "RAW");
                     put("Mac.HmacSHA384 SupportedKeyFormats", "RAW");
                     put("Mac.HmacSHA512 SupportedKeyFormats", "RAW");

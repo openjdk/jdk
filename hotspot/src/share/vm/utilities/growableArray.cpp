@@ -61,7 +61,7 @@ void* GenericGrowableArray::raw_allocate(int elementSize) {
   if (on_stack()) {
     return (void*)resource_allocate_bytes(byte_size);
   } else if (on_C_heap()) {
-    return (void*)AllocateHeap(byte_size, "GrET in " __FILE__);
+    return (void*)AllocateHeap(byte_size, _memflags);
   } else {
     return _arena->Amalloc(byte_size);
   }

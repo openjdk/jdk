@@ -74,6 +74,7 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
  private:
 
   static JDK_Version _current;
+  static const char* _runtime_name;
 
   // In this class, we promote the minor version of release to be the
   // major version for releases >= 5 in anticipation of the JDK doing the
@@ -181,6 +182,13 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
 
   void to_string(char* buffer, size_t buflen) const;
 
+  static const char* runtime_name() {
+    return _runtime_name;
+  }
+  static void set_runtime_name(const char* name) {
+    _runtime_name = name;
+  }
+
   // Convenience methods for queries on the current major/minor version
   static bool is_jdk12x_version() {
     return current().compare_major(2) == 0;
@@ -206,6 +214,10 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
     return current().compare_major(7) == 0;
   }
 
+  static bool is_jdk18x_version() {
+    return current().compare_major(8) == 0;
+  }
+
   static bool is_gte_jdk13x_version() {
     return current().compare_major(3) >= 0;
   }
@@ -224,6 +236,10 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
 
   static bool is_gte_jdk17x_version() {
     return current().compare_major(7) >= 0;
+  }
+
+  static bool is_gte_jdk18x_version() {
+    return current().compare_major(8) >= 0;
   }
 };
 

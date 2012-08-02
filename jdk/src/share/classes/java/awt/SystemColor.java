@@ -26,6 +26,8 @@ package java.awt;
 
 import java.io.ObjectStreamException;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * A class to encapsulate symbolic colors representing the color of
  * native GUI objects on a system.  For systems which support the dynamic
@@ -47,6 +49,8 @@ import java.io.ObjectStreamException;
  * @author      Carl Quinn
  * @author      Amy Fowler
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public final class SystemColor extends Color implements java.io.Serializable {
 
    /**

@@ -28,9 +28,13 @@ package apple.laf;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 public final class JRSUIConstants {
     private static native long getPtrForConstant(final int constant);
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     static class Key {
         protected static final int _value = 20;
         public static final Key VALUE = new Key(_value);
@@ -66,6 +70,8 @@ public final class JRSUIConstants {
         }
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     static class DoubleValue {
         protected static final byte TYPE_CODE = 1;
 
@@ -133,6 +139,8 @@ public final class JRSUIConstants {
         }
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class Size extends Property {
         private static final byte SHIFT = 0;
         private static final byte SIZE = 3;
@@ -153,6 +161,8 @@ public final class JRSUIConstants {
         public static final Size LARGE = new Size(_large);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class State extends Property {
         private static final byte SHIFT = Size.SHIFT + Size.SIZE;
         private static final byte SIZE = 4;
@@ -179,6 +189,8 @@ public final class JRSUIConstants {
         public static final State DRAG = new State(_drag);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class Direction extends Property {
         private static final byte SHIFT = State.SHIFT + State.SIZE;
         private static final byte SIZE = 4;
@@ -209,6 +221,8 @@ public final class JRSUIConstants {
         public static final Direction WEST = new Direction(_west);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class Orientation extends Property {
         private static final byte SHIFT = Direction.SHIFT + Direction.SIZE;
         private static final byte SIZE = 2;
@@ -225,6 +239,8 @@ public final class JRSUIConstants {
         public static final Orientation VERTICAL = new Orientation(_vertical);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class AlignmentVertical extends Property {
         private static final byte SHIFT = Orientation.SHIFT + Orientation.SIZE;
         private static final byte SIZE = 2;
@@ -243,6 +259,8 @@ public final class JRSUIConstants {
         public static final AlignmentVertical BOTTOM = new AlignmentVertical(_bottom);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class AlignmentHorizontal extends Property {
         private static final byte SHIFT = AlignmentVertical.SHIFT + AlignmentVertical.SIZE;
         private static final byte SIZE = 2;
@@ -261,6 +279,8 @@ public final class JRSUIConstants {
         public static final AlignmentHorizontal RIGHT = new AlignmentHorizontal(_right);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class SegmentPosition extends Property {
         private static final byte SHIFT = AlignmentHorizontal.SHIFT + AlignmentHorizontal.SIZE;
         private static final byte SIZE = 3;
@@ -281,6 +301,8 @@ public final class JRSUIConstants {
         public static final SegmentPosition ONLY = new SegmentPosition(_only);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class ScrollBarPart extends Property {
         private static final byte SHIFT = SegmentPosition.SHIFT + SegmentPosition.SIZE;
         private static final byte SIZE = 4;
@@ -309,6 +331,8 @@ public final class JRSUIConstants {
         public static final ScrollBarPart TRACK_MAX = new ScrollBarPart(_trackMax);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class Variant extends Property {
         private static final byte SHIFT = ScrollBarPart.SHIFT + ScrollBarPart.SIZE;
         private static final byte SIZE = 4;
@@ -340,6 +364,8 @@ public final class JRSUIConstants {
         public static final Variant GRADIENT_SIDE_BAR_FOCUSED_SELECTION = new Variant(_gradientSideBarFocusedSelection);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class WindowType extends Property {
         private static final byte SHIFT = Variant.SHIFT + Variant.SIZE;
         private static final byte SIZE = 2;
@@ -358,6 +384,8 @@ public final class JRSUIConstants {
         public static final WindowType TITLELESS_UTILITY = new WindowType(_titlelessUtility);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class Focused extends Property {
         private static final byte SHIFT = WindowType.SHIFT + WindowType.SIZE;
         private static final byte SIZE = 1;
@@ -374,6 +402,8 @@ public final class JRSUIConstants {
         public static final Focused YES = new Focused(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class IndicatorOnly extends Property {
         private static final byte SHIFT = Focused.SHIFT + Focused.SIZE;
         private static final byte SIZE = 1;
@@ -390,6 +420,8 @@ public final class JRSUIConstants {
         public static final IndicatorOnly YES = new IndicatorOnly(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class NoIndicator extends Property {
         private static final byte SHIFT = IndicatorOnly.SHIFT + IndicatorOnly.SIZE;
         private static final byte SIZE = 1;
@@ -406,6 +438,8 @@ public final class JRSUIConstants {
         public static final NoIndicator YES = new NoIndicator(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class ArrowsOnly extends Property {
         private static final byte SHIFT = NoIndicator.SHIFT + NoIndicator.SIZE;
         private static final byte SIZE = 1;
@@ -422,6 +456,8 @@ public final class JRSUIConstants {
         public static final ArrowsOnly YES = new ArrowsOnly(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class FrameOnly extends Property {
         private static final byte SHIFT = ArrowsOnly.SHIFT + ArrowsOnly.SIZE;
         private static final byte SIZE = 1;
@@ -438,6 +474,8 @@ public final class JRSUIConstants {
         public static final FrameOnly YES = new FrameOnly(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class SegmentTrailingSeparator extends Property {
         private static final byte SHIFT = FrameOnly.SHIFT + FrameOnly.SIZE;
         private static final byte SIZE = 1;
@@ -454,6 +492,8 @@ public final class JRSUIConstants {
         public static final SegmentTrailingSeparator YES = new SegmentTrailingSeparator(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class SegmentLeadingSeparator extends Property {
         private static final byte SHIFT = SegmentTrailingSeparator.SHIFT + SegmentTrailingSeparator.SIZE;
         private static final byte SIZE = 1;
@@ -470,6 +510,8 @@ public final class JRSUIConstants {
         public static final SegmentLeadingSeparator YES = new SegmentLeadingSeparator(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class NothingToScroll extends Property {
         private static final byte SHIFT = SegmentLeadingSeparator.SHIFT + SegmentLeadingSeparator.SIZE;
         private static final byte SIZE = 1;
@@ -486,6 +528,8 @@ public final class JRSUIConstants {
         public static final NothingToScroll YES = new NothingToScroll(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class WindowTitleBarSeparator extends Property {
         private static final byte SHIFT = NothingToScroll.SHIFT + NothingToScroll.SIZE;
         private static final byte SIZE = 1;
@@ -502,6 +546,8 @@ public final class JRSUIConstants {
         public static final WindowTitleBarSeparator YES = new WindowTitleBarSeparator(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class WindowClipCorners extends Property {
         private static final byte SHIFT = WindowTitleBarSeparator.SHIFT + WindowTitleBarSeparator.SIZE;
         private static final byte SIZE = 1;
@@ -518,6 +564,8 @@ public final class JRSUIConstants {
         public static final WindowClipCorners YES = new WindowClipCorners(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class ShowArrows extends Property {
         private static final byte SHIFT = WindowClipCorners.SHIFT + WindowClipCorners.SIZE;
         private static final byte SIZE = 1;
@@ -534,6 +582,8 @@ public final class JRSUIConstants {
         public static final ShowArrows YES = new ShowArrows(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class BooleanValue extends Property {
         private static final byte SHIFT = ShowArrows.SHIFT + ShowArrows.SIZE;
         private static final byte SIZE = 1;
@@ -550,6 +600,8 @@ public final class JRSUIConstants {
         public static final BooleanValue YES = new BooleanValue(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class Animating extends Property {
         private static final byte SHIFT = BooleanValue.SHIFT + BooleanValue.SIZE;
         private static final byte SIZE = 1;
@@ -566,6 +618,8 @@ public final class JRSUIConstants {
         public static final Animating YES = new Animating(_yes);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class Widget extends Property {
         private static final byte SHIFT = Animating.SHIFT + Animating.SIZE;
         private static final byte SIZE = 7;
@@ -755,6 +809,8 @@ public final class JRSUIConstants {
         public static final Widget WINDOW_FRAME = new Widget(_windowFrame);
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class Hit {
         private static final int _unknown = -1;
         public static final Hit UNKNOWN = new Hit(_unknown);
@@ -775,6 +831,8 @@ public final class JRSUIConstants {
         }
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     public static class ScrollBarHit extends Hit {
         private static final int _thumb = 2;
         public static final ScrollBarHit THUMB = new ScrollBarHit(_thumb);

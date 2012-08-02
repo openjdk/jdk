@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,7 +312,7 @@ public class Enter extends JCTree.Visitor {
                                 tree.packge);
                     if (addEnv || (tree0.packageAnnotations.isEmpty() &&
                                    tree.docComments != null &&
-                                   tree.docComments.get(tree) != null)) {
+                                   tree.docComments.hasComment(tree))) {
                         typeEnvs.put(tree.packge, topEnv);
                     }
                 }

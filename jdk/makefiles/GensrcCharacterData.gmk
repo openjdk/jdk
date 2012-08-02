@@ -34,8 +34,8 @@ UNICODEDATA   = $(JDK_TOPDIR)/make/tools/UnicodeData
 
 define SetupCharacterData
     $(JDK_OUTPUTDIR)/gensrc_characterdata/java/lang/$1.java : $(CHARACTERDATA)/$1.java.template $(BUILD_TOOLS)
-	mkdir -p $$(@D)
-	echo Generating $1.java
+	$(MKDIR) -p $$(@D)
+	$(ECHO) Generating $1.java
 	$(TOOL_GENERATECHARACTER) $2 \
 		-template $(CHARACTERDATA)/$1.java.template \
 		-spec $(UNICODEDATA)/UnicodeData.txt \
@@ -56,7 +56,7 @@ $(eval $(call SetupCharacterData,CharacterData0E,-plane 14,11 4 1))
 # Copy two Java files that need no preprocessing.
 $(JDK_OUTPUTDIR)/gensrc_characterdata/java/lang/%.java : $(CHARACTERDATA)/%.java.template
 	$(MKDIR) -p $(@D)
-	echo Generating $(@F)
+	$(ECHO) Generating $(@F)
 	$(CP) -f $< $@
 
 GENSRC_CHARACTERDATA += $(JDK_OUTPUTDIR)/gensrc_characterdata/java/lang/CharacterDataUndefined.java \

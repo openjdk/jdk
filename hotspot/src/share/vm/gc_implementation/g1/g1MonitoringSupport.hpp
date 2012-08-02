@@ -112,7 +112,7 @@ class G1CollectedHeap;
 // do which is important as we want to keep the eden region allocation
 // path as low-overhead as possible.
 
-class G1MonitoringSupport : public CHeapObj {
+class G1MonitoringSupport : public CHeapObj<mtGC> {
   friend class VMStructs;
 
   G1CollectedHeap* _g1h;

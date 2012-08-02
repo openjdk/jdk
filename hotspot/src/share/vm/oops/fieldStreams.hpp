@@ -42,21 +42,57 @@ class FieldStreamBase : public StackObj {
   constantPoolHandle  _constants;
   int                 _index;
   int                 _limit;
+  int                 _generic_signature_slot;
 
   FieldInfo* field() const { return FieldInfo::from_field_array(_fields(), _index); }
+
+  int init_generic_signature_start_slot() {
+    int length = _fields->length();
+    int num_fields = 0;
+    int skipped_generic_signature_slots = 0;
+    FieldInfo* fi;
+    AccessFlags flags;
+    /* Scan from 0 to the current _index. Count the number of generic
+       signature slots for field[0] to field[_index - 1]. */
+    for (int i = 0; i < _index; i++) {
+      fi = FieldInfo::from_field_array(_fields(), i);
+      flags.set_flags(fi->access_flags());
+      if (flags.field_has_generic_signature()) {
+        length --;
+        skipped_generic_signature_slots ++;
+      }
+    }
+    /* Scan from the current _index. */
+    for (int i = _index; i*FieldInfo::field_slots < length; i++) {
+      fi = FieldInfo::from_field_array(_fields(), i);
+      flags.set_flags(fi->access_flags());
+      if (flags.field_has_generic_signature()) {
+        length --;
+      }
+      num_fields ++;
+    }
+    _generic_signature_slot = length + skipped_generic_signature_slots;
+    assert(_generic_signature_slot <= _fields->length(), "");
+    return num_fields;
+  }
 
   FieldStreamBase(typeArrayHandle fields, constantPoolHandle constants, int start, int limit) {
     _fields = fields;
     _constants = constants;
     _index = start;
-    _limit = limit;
+    int num_fields = init_generic_signature_start_slot();
+    if (limit < start) {
+      _limit = num_fields;
+    } else {
+      _limit = limit;
+    }
   }
 
   FieldStreamBase(typeArrayHandle fields, constantPoolHandle constants) {
     _fields = fields;
     _constants = constants;
     _index = 0;
-    _limit = fields->length() / FieldInfo::field_slots;
+    _limit = init_generic_signature_start_slot();
   }
 
  public:
@@ -65,18 +101,26 @@ class FieldStreamBase : public StackObj {
     _constants = klass->constants();
     _index = 0;
     _limit = klass->java_fields_count();
+    init_generic_signature_start_slot();
   }
   FieldStreamBase(instanceKlassHandle klass) {
     _fields = klass->fields();
     _constants = klass->constants();
     _index = 0;
     _limit = klass->java_fields_count();
+    init_generic_signature_start_slot();
   }
 
   // accessors
   int index() const                 { return _index; }
 
-  void next() { _index += 1; }
+  void next() {
+    if (access_flags().field_has_generic_signature()) {
+      _generic_signature_slot ++;
+      assert(_generic_signature_slot <= _fields->length(), "");
+    }
+    _index += 1;
+  }
   bool done() const { return _index >= _limit; }
 
   // Accessors for current field
@@ -103,7 +147,13 @@ class FieldStreamBase : public StackObj {
   }
 
   Symbol* generic_signature() const {
-    return field()->generic_signature(_constants);
+    if (access_flags().field_has_generic_signature()) {
+      assert(_generic_signature_slot < _fields->length(), "out of bounds");
+      int index = _fields->short_at(_generic_signature_slot);
+      return _constants->symbol_at(index);
+    } else {
+      return NULL;
+    }
   }
 
   int offset() const {
@@ -139,11 +189,19 @@ class JavaFieldStream : public FieldStreamBase {
   }
   int generic_signature_index() const {
     assert(!field()->is_internal(), "regular only");
-    return field()->generic_signature_index();
+    if (access_flags().field_has_generic_signature()) {
+      assert(_generic_signature_slot < _fields->length(), "out of bounds");
+      return _fields->short_at(_generic_signature_slot);
+    } else {
+      return 0;
+    }
   }
   void set_generic_signature_index(int index) {
     assert(!field()->is_internal(), "regular only");
-    field()->set_generic_signature_index(index);
+    if (access_flags().field_has_generic_signature()) {
+      assert(_generic_signature_slot < _fields->length(), "out of bounds");
+      _fields->short_at_put(_generic_signature_slot, index);
+    }
   }
   int initval_index() const {
     assert(!field()->is_internal(), "regular only");
@@ -159,8 +217,8 @@ class JavaFieldStream : public FieldStreamBase {
 // Iterate over only the internal fields
 class InternalFieldStream : public FieldStreamBase {
  public:
-  InternalFieldStream(instanceKlass* k):      FieldStreamBase(k->fields(), k->constants(), k->java_fields_count(), k->all_fields_count()) {}
-  InternalFieldStream(instanceKlassHandle k): FieldStreamBase(k->fields(), k->constants(), k->java_fields_count(), k->all_fields_count()) {}
+  InternalFieldStream(instanceKlass* k):      FieldStreamBase(k->fields(), k->constants(), k->java_fields_count(), 0) {}
+  InternalFieldStream(instanceKlassHandle k): FieldStreamBase(k->fields(), k->constants(), k->java_fields_count(), 0) {}
 };
 
 

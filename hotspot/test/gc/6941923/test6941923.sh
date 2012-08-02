@@ -30,7 +30,7 @@ then
   exit 0
 fi
 
-$JAVA_HOME/bin/java -version > $NULL 2>&1
+$JAVA_HOME/bin/java ${TESTVMOPTS} -version > $NULL 2>&1
 
 if [ $? != 0 ]; then
   echo "Wrong JAVA_HOME? JAVA_HOME: $JAVA_HOME"
@@ -119,7 +119,7 @@ fi
 
 options="-Xloggc:$logfile -XX:+UseConcMarkSweepGC -XX:+PrintGC -XX:+PrintGCDetails -XX:+UseGCLogFileRotation  -XX:NumberOfGCLogFiles=1 -XX:GCLogFileSize=$gclogsize"
 echo "Test gc log rotation in same file, wait for $tts minutes ...."
-$JAVA_HOME/bin/java $options $testname $tts
+$JAVA_HOME/bin/java ${TESTVMOPTS} $options $testname $tts
 if [ $? != 0 ]; then
   echo "$msgfail"
   exit -1
@@ -148,7 +148,7 @@ fi
 numoffiles=3
 options="-Xloggc:$logfile -XX:+UseConcMarkSweepGC -XX:+PrintGC -XX:+PrintGCDetails -XX:+UseGCLogFileRotation  -XX:NumberOfGCLogFiles=$numoffiles -XX:GCLogFileSize=$gclogsize"
 echo "Test gc log rotation in $numoffiles files, wait for $tts minutes ...."
-$JAVA_HOME/bin/java $options $testname $tts
+$JAVA_HOME/bin/java ${TESTVMOPTS} $options $testname $tts
 if [ $? != 0 ]; then
   echo "$msgfail"
   exit -1

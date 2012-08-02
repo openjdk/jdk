@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -780,6 +780,14 @@ class GraphKit : public Phase {
                      Node* *return_size_val = NULL);
   Node* new_array(Node* klass_node, Node* count_val, int nargs,
                   Node* *return_size_val = NULL);
+
+  // java.lang.String helpers
+  Node* load_String_offset(Node* ctrl, Node* str);
+  Node* load_String_length(Node* ctrl, Node* str);
+  Node* load_String_value(Node* ctrl, Node* str);
+  void store_String_offset(Node* ctrl, Node* str, Node* value);
+  void store_String_length(Node* ctrl, Node* str, Node* value);
+  void store_String_value(Node* ctrl, Node* str, Node* value);
 
   // Handy for making control flow
   IfNode* create_and_map_if(Node* ctrl, Node* tst, float prob, float cnt) {

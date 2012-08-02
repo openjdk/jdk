@@ -28,6 +28,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/fieldStreams.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
@@ -35,6 +36,24 @@
 
 oop fieldDescriptor::loader() const {
   return instanceKlass::cast(_cp->pool_holder())->class_loader();
+}
+
+Symbol* fieldDescriptor::generic_signature() const {
+  if (!has_generic_signature()) {
+    return NULL;
+  }
+
+  int idx = 0;
+  instanceKlass* ik = instanceKlass::cast(field_holder());
+  for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
+    if (idx == _index) {
+      return fs.generic_signature();
+    } else {
+      idx ++;
+    }
+  }
+  assert(false, "should never happen");
+  return NULL;
 }
 
 typeArrayOop fieldDescriptor::annotations() const {

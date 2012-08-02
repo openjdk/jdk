@@ -201,23 +201,20 @@ public class JarIndex {
             packageName = fileName;
         }
 
-        // add the mapping to indexMap
-        addToList(packageName, jarName, indexMap);
-
-        // add the mapping to jarMap
-        addToList(jarName, packageName, jarMap);
+        addMapping(packageName, jarName);
     }
 
     /**
      * Same as add(String,String) except that it doesn't strip off from the
-     * last index of '/'. It just adds the filename.
+     * last index of '/'. It just adds the jarItem (filename or package)
+     * as it is received.
      */
-    private void addExplicit(String fileName, String jarName) {
+    private void addMapping(String jarItem, String jarName) {
         // add the mapping to indexMap
-        addToList(fileName, jarName, indexMap);
+        addToList(jarItem, jarName, indexMap);
 
         // add the mapping to jarMap
-        addToList(jarName, fileName, jarMap);
+        addToList(jarName, jarItem, jarMap);
      }
 
     /**
@@ -248,18 +245,14 @@ public class JarIndex {
                     fileName.equals(JarFile.MANIFEST_NAME))
                     continue;
 
-                if (!metaInfFilenames) {
+                if (!metaInfFilenames || !fileName.startsWith("META-INF/")) {
                     add(fileName, currentJar);
-                } else {
-                    if (!fileName.startsWith("META-INF/")) {
-                        add(fileName, currentJar);
-                    } else if (!entry.isDirectory()) {
+                } else if (!entry.isDirectory()) {
                         // Add files under META-INF explicitly so that certain
                         // services, like ServiceLoader, etc, can be located
                         // with greater accuracy. Directories can be skipped
                         // since each file will be added explicitly.
-                        addExplicit(fileName, currentJar);
-                    }
+                        addMapping(fileName, currentJar);
                 }
             }
 
@@ -324,8 +317,7 @@ public class JarIndex {
                 jars.add(currentJar);
             } else {
                 String name = line;
-                addToList(name, currentJar, indexMap);
-                addToList(currentJar, name, jarMap);
+                addMapping(name, currentJar);
             }
         }
 
@@ -354,7 +346,7 @@ public class JarIndex {
                 if (path != null) {
                     jarName = path.concat(jarName);
                 }
-                toIndex.add(packageName, jarName);
+                toIndex.addMapping(packageName, jarName);
             }
         }
     }

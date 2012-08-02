@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import static sun.security.provider.ByteArrayAccess.*;
  * @author      Valerie Peng
  * @author      Andreas Sterbenz
  */
-public final class SHA2 extends DigestBase {
+abstract class SHA2 extends DigestBase {
 
     private static final int ITERATION = 64;
     // Constants for each round
@@ -64,46 +64,30 @@ public final class SHA2 extends DigestBase {
     };
 
     // buffer used by implCompress()
-    private final int[] W;
+    private int[] W;
 
     // state of this object
-    private final int[] state;
+    private int[] state;
+
+    // initial state value. different between SHA-224 and SHA-256
+    private final int[] initialHashes;
 
     /**
      * Creates a new SHA object.
      */
-    public SHA2() {
-        super("SHA-256", 32, 64);
+    SHA2(String name, int digestLength, int[] initialHashes) {
+        super(name, digestLength, 64);
+        this.initialHashes = initialHashes;
         state = new int[8];
         W = new int[64];
         implReset();
     }
 
     /**
-     * Creates a SHA2 object.with state (for cloning)
-     */
-    private SHA2(SHA2 base) {
-        super(base);
-        this.state = base.state.clone();
-        this.W = new int[64];
-    }
-
-    public Object clone() {
-        return new SHA2(this);
-    }
-
-    /**
      * Resets the buffers and hash value to start a new hash.
      */
     void implReset() {
-        state[0] = 0x6a09e667;
-        state[1] = 0xbb67ae85;
-        state[2] = 0x3c6ef372;
-        state[3] = 0xa54ff53a;
-        state[4] = 0x510e527f;
-        state[5] = 0x9b05688c;
-        state[6] = 0x1f83d9ab;
-        state[7] = 0x5be0cd19;
+        System.arraycopy(initialHashes, 0, state, 0, state.length);
     }
 
     void implDigest(byte[] out, int ofs) {
@@ -242,4 +226,38 @@ public final class SHA2 extends DigestBase {
         state[7] += h;
     }
 
+    public Object clone() throws CloneNotSupportedException {
+        SHA2 copy = (SHA2) super.clone();
+        copy.state = copy.state.clone();
+        copy.W = new int[64];
+        return copy;
+    }
+
+    /**
+     * SHA-224 implementation class.
+     */
+    public static final class SHA224 extends SHA2 {
+        private static final int[] INITIAL_HASHES = {
+            0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
+            0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4
+        };
+
+        public SHA224() {
+            super("SHA-224", 28, INITIAL_HASHES);
+        }
+    }
+
+    /**
+     * SHA-256 implementation class.
+     */
+    public static final class SHA256 extends SHA2 {
+        private static final int[] INITIAL_HASHES = {
+            0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+            0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+        };
+
+        public SHA256() {
+            super("SHA-256", 32, INITIAL_HASHES);
+        }
+    }
 }

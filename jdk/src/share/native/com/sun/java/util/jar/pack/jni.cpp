@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,11 @@ static unpacker* get_unpacker(JNIEnv *env, jobject pObj, bool noCreate=false) {
 static unpacker* get_unpacker() {
   //fprintf(stderr, "get_unpacker()\n");
   JavaVM* vm = null;
-  JNI_GetCreatedJavaVMs(&vm, 1, null);
+  jsize nVM = 0;
+  jint retval = JNI_GetCreatedJavaVMs(&vm, 1, &nVM);
+  // other VM implements may differ, thus for correctness, we need these checks
+  if (retval != JNI_OK || nVM != 1)
+    return null;
   void* envRaw = null;
   vm->GetEnv(&envRaw, JNI_VERSION_1_1);
   JNIEnv* env = (JNIEnv*) envRaw;

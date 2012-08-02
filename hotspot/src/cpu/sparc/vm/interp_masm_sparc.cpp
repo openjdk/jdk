@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -934,8 +934,14 @@ void InterpreterMacroAssembler::index_check(Register array, Register index, int 
 }
 
 
+void InterpreterMacroAssembler::get_const(Register Rdst) {
+  ld_ptr(Lmethod, in_bytes(methodOopDesc::const_offset()), Rdst);
+}
+
+
 void InterpreterMacroAssembler::get_constant_pool(Register Rdst) {
-  ld_ptr(Lmethod, in_bytes(methodOopDesc::constants_offset()), Rdst);
+  get_const(Rdst);
+  ld_ptr(Rdst, in_bytes(constMethodOopDesc::constants_offset()), Rdst);
 }
 
 

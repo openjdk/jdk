@@ -409,7 +409,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
 
   uint length = mem->req();
-  GrowableArray <Node *> values(length, length, NULL);
+  GrowableArray <Node *> values(length, length, NULL, false);
 
   // create a new Phi for the value
   PhiNode *phi = new (C, length) PhiNode(mem->in(0), phi_type, NULL, instance_id, alias_idx, offset);
@@ -1447,9 +1447,8 @@ void PhaseMacroExpand::expand_allocate_common(
   if (!always_slow && _memproj_fallthrough != NULL) {
     for (DUIterator_Fast imax, i = _memproj_fallthrough->fast_outs(imax); i < imax; i++) {
       Node *use = _memproj_fallthrough->fast_out(i);
-      _igvn.hash_delete(use);
+      _igvn.rehash_node_delayed(use);
       imax -= replace_input(use, _memproj_fallthrough, result_phi_rawmem);
-      _igvn._worklist.push(use);
       // back up iterator
       --i;
     }
@@ -1463,9 +1462,8 @@ void PhaseMacroExpand::expand_allocate_common(
     }
     for (DUIterator_Fast imax, i = _memproj_catchall->fast_outs(imax); i < imax; i++) {
       Node *use = _memproj_catchall->fast_out(i);
-      _igvn.hash_delete(use);
+      _igvn.rehash_node_delayed(use);
       imax -= replace_input(use, _memproj_catchall, _memproj_fallthrough);
-      _igvn._worklist.push(use);
       // back up iterator
       --i;
     }
@@ -1481,9 +1479,8 @@ void PhaseMacroExpand::expand_allocate_common(
   if (_ioproj_fallthrough != NULL) {
     for (DUIterator_Fast imax, i = _ioproj_fallthrough->fast_outs(imax); i < imax; i++) {
       Node *use = _ioproj_fallthrough->fast_out(i);
-      _igvn.hash_delete(use);
+      _igvn.rehash_node_delayed(use);
       imax -= replace_input(use, _ioproj_fallthrough, result_phi_i_o);
-      _igvn._worklist.push(use);
       // back up iterator
       --i;
     }
@@ -1497,9 +1494,8 @@ void PhaseMacroExpand::expand_allocate_common(
     }
     for (DUIterator_Fast imax, i = _ioproj_catchall->fast_outs(imax); i < imax; i++) {
       Node *use = _ioproj_catchall->fast_out(i);
-      _igvn.hash_delete(use);
+      _igvn.rehash_node_delayed(use);
       imax -= replace_input(use, _ioproj_catchall, _ioproj_fallthrough);
-      _igvn._worklist.push(use);
       // back up iterator
       --i;
     }
@@ -1857,18 +1853,16 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
       if (alock->box_node() == oldbox && alock->obj_node()->eqv_uncast(obj)) {
         // Replace Box and mark eliminated all related locks and unlocks.
         alock->set_non_esc_obj();
-        _igvn.hash_delete(alock);
+        _igvn.rehash_node_delayed(alock);
         alock->set_box_node(newbox);
-        _igvn._worklist.push(alock);
         next_edge = false;
       }
     }
     if (u->is_FastLock() && u->as_FastLock()->obj_node()->eqv_uncast(obj)) {
       FastLockNode* flock = u->as_FastLock();
       assert(flock->box_node() == oldbox, "sanity");
-      _igvn.hash_delete(flock);
+      _igvn.rehash_node_delayed(flock);
       flock->set_box_node(newbox);
-      _igvn._worklist.push(flock);
       next_edge = false;
     }
 
@@ -1886,9 +1880,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
           Node* box_node = sfn->monitor_box(jvms, idx);
           if (box_node == oldbox && obj_node->eqv_uncast(obj)) {
             int j = jvms->monitor_box_offset(idx);
-            _igvn.hash_delete(u);
-            u->set_req(j, newbox);
-            _igvn._worklist.push(u);
+            _igvn.replace_input_of(u, j, newbox);
             next_edge = false;
           }
         }

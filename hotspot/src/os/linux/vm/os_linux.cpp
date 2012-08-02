@@ -371,7 +371,7 @@ void os::init_system_properties_values() {
   // code needs to be changed accordingly.
 
   // The next few definitions allow the code to be verbatim:
-#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n))
+#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n), mtInternal)
 #define getenv(n) ::getenv(n)
 
 /*
@@ -639,7 +639,7 @@ void os::Linux::libpthread_init() {
 
   size_t n = confstr(_CS_GNU_LIBC_VERSION, NULL, 0);
   if (n > 0) {
-     char *str = (char *)malloc(n);
+     char *str = (char *)malloc(n, mtInternal);
      confstr(_CS_GNU_LIBC_VERSION, str, n);
      os::Linux::set_glibc_version(str);
   } else {
@@ -652,7 +652,7 @@ void os::Linux::libpthread_init() {
 
   n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
   if (n > 0) {
-     char *str = (char *)malloc(n);
+     char *str = (char *)malloc(n, mtInternal);
      confstr(_CS_GNU_LIBPTHREAD_VERSION, str, n);
      // Vanilla RH-9 (glibc 2.3.2) has a bug that confstr() always tells
      // us "NPTL-0.29" even we are running with LinuxThreads. Check if this
@@ -1685,11 +1685,11 @@ void os::dll_build_name(char* buffer, size_t buflen,
     // release the storage
     for (int i = 0 ; i < n ; i++) {
       if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i]);
+        FREE_C_HEAP_ARRAY(char, pelements[i], mtInternal);
       }
     }
     if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements);
+      FREE_C_HEAP_ARRAY(char*, pelements, mtInternal);
     }
   } else {
     snprintf(buffer, buflen, "%s/lib%s.so", pname, fname);
@@ -2020,15 +2020,43 @@ void os::print_dll_info(outputStream *st) {
    }
 }
 
+void os::print_os_info_brief(outputStream* st) {
+  os::Linux::print_distro_info(st);
+
+  os::Posix::print_uname_info(st);
+
+  os::Linux::print_libversion_info(st);
+
+}
 
 void os::print_os_info(outputStream* st) {
   st->print("OS:");
 
-  // Try to identify popular distros.
-  // Most Linux distributions have /etc/XXX-release file, which contains
-  // the OS version string. Some have more than one /etc/XXX-release file
-  // (e.g. Mandrake has both /etc/mandrake-release and /etc/redhat-release.),
-  // so the order is important.
+  os::Linux::print_distro_info(st);
+
+  os::Posix::print_uname_info(st);
+
+  // Print warning if unsafe chroot environment detected
+  if (unsafe_chroot_detected) {
+    st->print("WARNING!! ");
+    st->print_cr(unstable_chroot_error);
+  }
+
+  os::Linux::print_libversion_info(st);
+
+  os::Posix::print_rlimit_info(st);
+
+  os::Posix::print_load_average(st);
+
+  os::Linux::print_full_memory_info(st);
+}
+
+// Try to identify popular distros.
+// Most Linux distributions have /etc/XXX-release file, which contains
+// the OS version string. Some have more than one /etc/XXX-release file
+// (e.g. Mandrake has both /etc/mandrake-release and /etc/redhat-release.),
+// so the order is important.
+void os::Linux::print_distro_info(outputStream* st) {
   if (!_print_ascii_file("/etc/mandrake-release", st) &&
       !_print_ascii_file("/etc/sun-release", st) &&
       !_print_ascii_file("/etc/redhat-release", st) &&
@@ -2041,23 +2069,9 @@ void os::print_os_info(outputStream* st) {
       st->print("Linux");
   }
   st->cr();
+}
 
-  // kernel
-  st->print("uname:");
-  struct utsname name;
-  uname(&name);
-  st->print(name.sysname); st->print(" ");
-  st->print(name.release); st->print(" ");
-  st->print(name.version); st->print(" ");
-  st->print(name.machine);
-  st->cr();
-
-  // Print warning if unsafe chroot environment detected
-  if (unsafe_chroot_detected) {
-    st->print("WARNING!! ");
-    st->print_cr(unstable_chroot_error);
-  }
-
+void os::Linux::print_libversion_info(outputStream* st) {
   // libc, pthread
   st->print("libc:");
   st->print(os::Linux::glibc_version()); st->print(" ");
@@ -2066,56 +2080,12 @@ void os::print_os_info(outputStream* st) {
      st->print("(%s stack)", os::Linux::is_floating_stack() ? "floating" : "fixed");
   }
   st->cr();
-
-  // rlimit
-  st->print("rlimit:");
-  struct rlimit rlim;
-
-  st->print(" STACK ");
-  getrlimit(RLIMIT_STACK, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  st->print(", CORE ");
-  getrlimit(RLIMIT_CORE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  st->print(", NPROC ");
-  getrlimit(RLIMIT_NPROC, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%d", rlim.rlim_cur);
-
-  st->print(", NOFILE ");
-  getrlimit(RLIMIT_NOFILE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%d", rlim.rlim_cur);
-
-  st->print(", AS ");
-  getrlimit(RLIMIT_AS, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-  st->cr();
-
-  // load average
-  st->print("load average:");
-  double loadavg[3];
-  os::loadavg(loadavg, 3);
-  st->print("%0.02f %0.02f %0.02f", loadavg[0], loadavg[1], loadavg[2]);
-  st->cr();
-
-  // meminfo
-  st->print("\n/proc/meminfo:\n");
-  _print_ascii_file("/proc/meminfo", st);
-  st->cr();
 }
 
-void os::pd_print_cpu_info(outputStream* st) {
-  st->print("\n/proc/cpuinfo:\n");
-  if (!_print_ascii_file("/proc/cpuinfo", st)) {
-    st->print("  <Not Available>");
-  }
-  st->cr();
+void os::Linux::print_full_memory_info(outputStream* st) {
+   st->print("\n/proc/meminfo:\n");
+   _print_ascii_file("/proc/meminfo", st);
+   st->cr();
 }
 
 void os::print_memory_info(outputStream* st) {
@@ -2135,6 +2105,14 @@ void os::print_memory_info(outputStream* st) {
             ((jlong)si.totalswap * si.mem_unit) >> 10);
   st->print("(" UINT64_FORMAT "k free)",
             ((jlong)si.freeswap * si.mem_unit) >> 10);
+  st->cr();
+}
+
+void os::pd_print_cpu_info(outputStream* st) {
+  st->print("\n/proc/cpuinfo:\n");
+  if (!_print_ascii_file("/proc/cpuinfo", st)) {
+    st->print("  <Not Available>");
+  }
   st->cr();
 }
 
@@ -2491,7 +2469,7 @@ void linux_wrap_code(char* base, size_t size) {
 //       All it does is to check if there are enough free pages
 //       left at the time of mmap(). This could be a potential
 //       problem.
-bool os::commit_memory(char* addr, size_t size, bool exec) {
+bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
                                    MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
@@ -2514,7 +2492,7 @@ bool os::commit_memory(char* addr, size_t size, bool exec) {
 #define MADV_HUGEPAGE 14
 #endif
 
-bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
+bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
                        bool exec) {
   if (UseHugeTLBFS && alignment_hint > (size_t)vm_page_size()) {
     int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
@@ -2538,7 +2516,7 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
   return false;
 }
 
-void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   if (UseHugeTLBFS && alignment_hint > (size_t)vm_page_size()) {
     // We don't check the return value: madvise(MADV_HUGEPAGE) may not
     // be supported or the memory may already be backed by huge pages.
@@ -2546,7 +2524,7 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
-void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   // This method works by doing an mmap over an existing mmaping and effectively discarding
   // the existing pages. However it won't work for SHM-based large pages that cannot be
   // uncommitted at all. We don't do anything in this case to avoid creating a segment with
@@ -2668,7 +2646,7 @@ bool os::Linux::libnuma_init() {
       if (numa_available() != -1) {
         set_numa_all_nodes((unsigned long*)libnuma_dlsym(handle, "numa_all_nodes"));
         // Create a cpu -> node mapping
-        _cpu_to_node = new (ResourceObj::C_HEAP) GrowableArray<int>(0, true);
+        _cpu_to_node = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(0, true);
         rebuild_cpu_to_node_map();
         return true;
       }
@@ -2698,7 +2676,7 @@ void os::Linux::rebuild_cpu_to_node_map() {
   cpu_to_node()->at_grow(cpu_num - 1);
   size_t node_num = numa_get_groups_num();
 
-  unsigned long *cpu_map = NEW_C_HEAP_ARRAY(unsigned long, cpu_map_size);
+  unsigned long *cpu_map = NEW_C_HEAP_ARRAY(unsigned long, cpu_map_size, mtInternal);
   for (size_t i = 0; i < node_num; i++) {
     if (numa_node_to_cpus(i, cpu_map, cpu_map_size * sizeof(unsigned long)) != -1) {
       for (size_t j = 0; j < cpu_map_valid_size; j++) {
@@ -2712,7 +2690,7 @@ void os::Linux::rebuild_cpu_to_node_map() {
       }
     }
   }
-  FREE_C_HEAP_ARRAY(unsigned long, cpu_map);
+  FREE_C_HEAP_ARRAY(unsigned long, cpu_map, mtInternal);
 }
 
 int os::Linux::get_node_by_cpu(int cpu_id) {
@@ -2731,7 +2709,7 @@ os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
 os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
 unsigned long* os::Linux::_numa_all_nodes;
 
-bool os::uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size) {
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
                 MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
   return res  != (uintptr_t) MAP_FAILED;
@@ -2796,7 +2774,7 @@ bool get_stack_bounds(uintptr_t *bottom, uintptr_t *top) {
 // munmap() the guard pages we don't leave a hole in the stack
 // mapping. This only affects the main/initial thread, but guard
 // against future OS changes
-bool os::create_stack_guard_pages(char* addr, size_t size) {
+bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   uintptr_t stack_extent, stack_base;
   bool chk_bounds = NOT_DEBUG(os::Linux::is_initial_thread()) DEBUG_ONLY(true);
   if (chk_bounds && get_stack_bounds(&stack_extent, &stack_base)) {
@@ -2869,12 +2847,12 @@ static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
 
-char* os::reserve_memory(size_t bytes, char* requested_addr,
+char* os::pd_reserve_memory(size_t bytes, char* requested_addr,
                          size_t alignment_hint) {
   return anon_mmap(requested_addr, bytes, (requested_addr != NULL));
 }
 
-bool os::release_memory(char* addr, size_t size) {
+bool os::pd_release_memory(char* addr, size_t size) {
   return anon_munmap(addr, size);
 }
 
@@ -3171,7 +3149,7 @@ bool os::can_execute_large_page_memory() {
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 
-char* os::attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
+char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   const int max_tries = 10;
   char* base[max_tries];
   size_t size[max_tries];
@@ -4693,7 +4671,7 @@ int os::socket_available(int fd, jint *pbytes) {
 }
 
 // Map a block of memory.
-char* os::map_memory(int fd, const char* file_name, size_t file_offset,
+char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                      char *addr, size_t bytes, bool read_only,
                      bool allow_exec) {
   int prot;
@@ -4723,7 +4701,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 
 
 // Remap a block of memory.
-char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
+char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
                        char *addr, size_t bytes, bool read_only,
                        bool allow_exec) {
   // same as map_memory() on this OS
@@ -4733,7 +4711,7 @@ char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
 
 
 // Unmap a block of memory.
-bool os::unmap_memory(char* addr, size_t bytes) {
+bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return munmap(addr, bytes) == 0;
 }
 
@@ -5469,6 +5447,18 @@ bool os::is_headless_jre() {
     return true;
 }
 
+// Get the default path to the core file
+// Returns the length of the string
+int os::get_core_path(char* buffer, size_t bufferSize) {
+  const char* p = get_current_directory(buffer, bufferSize);
+
+  if (p == NULL) {
+    assert(p != NULL, "failed to get current directory");
+    return 0;
+  }
+
+  return strlen(buffer);
+}
 
 #ifdef JAVASE_EMBEDDED
 //

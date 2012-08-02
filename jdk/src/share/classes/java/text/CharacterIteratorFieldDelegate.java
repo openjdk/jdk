@@ -41,7 +41,7 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
      * for existing regions result in invoking addAttribute on the existing
      * AttributedStrings.
      */
-    private ArrayList attributedStrings;
+    private ArrayList<AttributedString> attributedStrings;
     /**
      * Running count of the number of characters that have
      * been encountered.
@@ -50,7 +50,7 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
 
 
     CharacterIteratorFieldDelegate() {
-        attributedStrings = new ArrayList();
+        attributedStrings = new ArrayList<>();
     }
 
     public void formatted(Format.Field attr, Object value, int start, int end,
@@ -62,7 +62,7 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
                 int asIndex = attributedStrings.size() - 1;
 
                 while (start < index) {
-                    AttributedString as = (AttributedString)attributedStrings.
+                    AttributedString as = attributedStrings.
                                            get(asIndex--);
                     int newIndex = index - as.length();
                     int aStart = Math.max(0, start - newIndex);
@@ -116,8 +116,8 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
                                     AttributedCharacterIterator[iCount];
 
         for (int counter = 0; counter < iCount; counter++) {
-            iterators[counter] = ((AttributedString)attributedStrings.
-                                  get(counter)).getIterator();
+            iterators[counter] = attributedStrings.
+                                  get(counter).getIterator();
         }
         return new AttributedString(iterators).getIterator();
     }

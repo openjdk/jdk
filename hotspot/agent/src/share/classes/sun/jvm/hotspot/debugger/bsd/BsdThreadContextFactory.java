@@ -33,7 +33,7 @@ class BsdThreadContextFactory {
       String cpu = dbg.getCPU();
       if (cpu.equals("x86")) {
          return new BsdX86ThreadContext(dbg);
-      } else if (cpu.equals("amd64")) {
+      } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
          return new BsdAMD64ThreadContext(dbg);
       } else {
          throw new RuntimeException("cpu " + cpu + " is not yet supported");

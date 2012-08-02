@@ -147,7 +147,8 @@ class LibraryCallKit : public GraphKit {
     return generate_method_call(method_id, true, false);
   }
 
-  Node* make_string_method_node(int opcode, Node* str1, Node* cnt1, Node* str2, Node* cnt2);
+  Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2);
+  Node* make_string_method_node(int opcode, Node* str1, Node* str2);
   bool inline_string_compareTo();
   bool inline_string_indexOf();
   Node* string_indexOf(Node* string_object, ciTypeArray* target_array, jint offset, jint cache_i, jint md2_i);
@@ -159,6 +160,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_trans(vmIntrinsics::ID id);
   bool inline_abs(vmIntrinsics::ID id);
   bool inline_sqrt(vmIntrinsics::ID id);
+  void finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_pow(vmIntrinsics::ID id);
   bool inline_exp(vmIntrinsics::ID id);
   bool inline_min_max(vmIntrinsics::ID id);
@@ -191,8 +193,6 @@ class LibraryCallKit : public GraphKit {
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array, bool card_mark);
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
-  bool inline_native_AtomicLong_get();
-  bool inline_native_AtomicLong_attemptUpdate();
   bool is_method_invoke_or_aux_frame(JVMState* jvms);
   // Helper function for inlining native object hash method
   bool inline_native_hashcode(bool is_virtual, bool is_static);
@@ -329,11 +329,6 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   case vmIntrinsics::_checkIndex:
     // We do not intrinsify this.  The optimizer does fine with it.
     return NULL;
-
-  case vmIntrinsics::_get_AtomicLong:
-  case vmIntrinsics::_attemptUpdate:
-    if (!InlineAtomicLong)  return NULL;
-    break;
 
   case vmIntrinsics::_getCallerClass:
     if (!UseNewReflection)  return NULL;
@@ -710,11 +705,6 @@ bool LibraryCallKit::try_to_inline() {
   case vmIntrinsics::_reverseBytes_c:
     return inline_reverseBytes((vmIntrinsics::ID) intrinsic_id());
 
-  case vmIntrinsics::_get_AtomicLong:
-    return inline_native_AtomicLong_get();
-  case vmIntrinsics::_attemptUpdate:
-    return inline_native_AtomicLong_attemptUpdate();
-
   case vmIntrinsics::_getCallerClass:
     return inline_native_Reflection_getCallerClass();
 
@@ -873,48 +863,76 @@ Node* LibraryCallKit::generate_current_thread(Node* &tls_output) {
 
 
 //------------------------------make_string_method_node------------------------
-// Helper method for String intrinsic finctions.
-Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1, Node* cnt1, Node* str2, Node* cnt2) {
-  const int value_offset  = java_lang_String::value_offset_in_bytes();
-  const int count_offset  = java_lang_String::count_offset_in_bytes();
-  const int offset_offset = java_lang_String::offset_offset_in_bytes();
-
+// Helper method for String intrinsic functions. This version is called
+// with str1 and str2 pointing to String object nodes.
+//
+Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1, Node* str2) {
   Node* no_ctrl = NULL;
 
-  ciInstanceKlass* klass = env()->String_klass();
-  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
-
-  const TypeAryPtr* value_type =
-        TypeAryPtr::make(TypePtr::NotNull,
-                         TypeAry::make(TypeInt::CHAR,TypeInt::POS),
-                         ciTypeArrayKlass::make(T_CHAR), true, 0);
-
-  // Get start addr of string and substring
-  Node* str1_valuea  = basic_plus_adr(str1, str1, value_offset);
-  Node* str1_value   = make_load(no_ctrl, str1_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
-  Node* str1_offseta = basic_plus_adr(str1, str1, offset_offset);
-  Node* str1_offset  = make_load(no_ctrl, str1_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
+  // Get start addr of string
+  Node* str1_value   = load_String_value(no_ctrl, str1);
+  Node* str1_offset  = load_String_offset(no_ctrl, str1);
   Node* str1_start   = array_element_address(str1_value, str1_offset, T_CHAR);
 
-  Node* str2_valuea  = basic_plus_adr(str2, str2, value_offset);
-  Node* str2_value   = make_load(no_ctrl, str2_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
-  Node* str2_offseta = basic_plus_adr(str2, str2, offset_offset);
-  Node* str2_offset  = make_load(no_ctrl, str2_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
+  // Get length of string 1
+  Node* str1_len  = load_String_length(no_ctrl, str1);
+
+  Node* str2_value   = load_String_value(no_ctrl, str2);
+  Node* str2_offset  = load_String_offset(no_ctrl, str2);
   Node* str2_start   = array_element_address(str2_value, str2_offset, T_CHAR);
+
+  Node* str2_len = NULL;
+  Node* result = NULL;
+
+  switch (opcode) {
+  case Op_StrIndexOf:
+    // Get length of string 2
+    str2_len = load_String_length(no_ctrl, str2);
+
+    result = new (C, 6) StrIndexOfNode(control(), memory(TypeAryPtr::CHARS),
+                                 str1_start, str1_len, str2_start, str2_len);
+    break;
+  case Op_StrComp:
+    // Get length of string 2
+    str2_len = load_String_length(no_ctrl, str2);
+
+    result = new (C, 6) StrCompNode(control(), memory(TypeAryPtr::CHARS),
+                                 str1_start, str1_len, str2_start, str2_len);
+    break;
+  case Op_StrEquals:
+    result = new (C, 5) StrEqualsNode(control(), memory(TypeAryPtr::CHARS),
+                               str1_start, str2_start, str1_len);
+    break;
+  default:
+    ShouldNotReachHere();
+    return NULL;
+  }
+
+  // All these intrinsics have checks.
+  C->set_has_split_ifs(true); // Has chance for split-if optimization
+
+  return _gvn.transform(result);
+}
+
+// Helper method for String intrinsic functions. This version is called
+// with str1 and str2 pointing to char[] nodes, with cnt1 and cnt2 pointing
+// to Int nodes containing the lenghts of str1 and str2.
+//
+Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2) {
 
   Node* result = NULL;
   switch (opcode) {
   case Op_StrIndexOf:
     result = new (C, 6) StrIndexOfNode(control(), memory(TypeAryPtr::CHARS),
-                                       str1_start, cnt1, str2_start, cnt2);
+                                 str1_start, cnt1, str2_start, cnt2);
     break;
   case Op_StrComp:
     result = new (C, 6) StrCompNode(control(), memory(TypeAryPtr::CHARS),
-                                    str1_start, cnt1, str2_start, cnt2);
+                                 str1_start, cnt1, str2_start, cnt2);
     break;
   case Op_StrEquals:
     result = new (C, 5) StrEqualsNode(control(), memory(TypeAryPtr::CHARS),
-                                      str1_start, str2_start, cnt1);
+                                 str1_start, str2_start, cnt1);
     break;
   default:
     ShouldNotReachHere();
@@ -932,10 +950,6 @@ bool LibraryCallKit::inline_string_compareTo() {
 
   if (!Matcher::has_match_rule(Op_StrComp)) return false;
 
-  const int value_offset = java_lang_String::value_offset_in_bytes();
-  const int count_offset = java_lang_String::count_offset_in_bytes();
-  const int offset_offset = java_lang_String::offset_offset_in_bytes();
-
   _sp += 2;
   Node *argument = pop();  // pop non-receiver first:  it was pushed second
   Node *receiver = pop();
@@ -952,18 +966,7 @@ bool LibraryCallKit::inline_string_compareTo() {
     return true;
   }
 
-  ciInstanceKlass* klass = env()->String_klass();
-  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
-  Node* no_ctrl = NULL;
-
-  // Get counts for string and argument
-  Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
-  Node* receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
-
-  Node* argument_cnta = basic_plus_adr(argument, argument, count_offset);
-  Node* argument_cnt  = make_load(no_ctrl, argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
-
-  Node* compare = make_string_method_node(Op_StrComp, receiver, receiver_cnt, argument, argument_cnt);
+  Node* compare = make_string_method_node(Op_StrComp, receiver, argument);
   push(compare);
   return true;
 }
@@ -972,10 +975,6 @@ bool LibraryCallKit::inline_string_compareTo() {
 bool LibraryCallKit::inline_string_equals() {
 
   if (!Matcher::has_match_rule(Op_StrEquals)) return false;
-
-  const int value_offset = java_lang_String::value_offset_in_bytes();
-  const int count_offset = java_lang_String::count_offset_in_bytes();
-  const int offset_offset = java_lang_String::offset_offset_in_bytes();
 
   int nargs = 2;
   _sp += nargs;
@@ -1030,24 +1029,31 @@ bool LibraryCallKit::inline_string_equals() {
     }
   }
 
-  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
-
-  Node* no_ctrl = NULL;
-  Node* receiver_cnt;
-  Node* argument_cnt;
-
   if (!stopped()) {
+    const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
+
     // Properly cast the argument to String
     argument = _gvn.transform(new (C, 2) CheckCastPPNode(control(), argument, string_type));
     // This path is taken only when argument's type is String:NotNull.
     argument = cast_not_null(argument, false);
 
-    // Get counts for string and argument
-    Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
-    receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+    Node* no_ctrl = NULL;
 
-    Node* argument_cnta = basic_plus_adr(argument, argument, count_offset);
-    argument_cnt  = make_load(no_ctrl, argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+    // Get start addr of receiver
+    Node* receiver_val    = load_String_value(no_ctrl, receiver);
+    Node* receiver_offset = load_String_offset(no_ctrl, receiver);
+    Node* receiver_start = array_element_address(receiver_val, receiver_offset, T_CHAR);
+
+    // Get length of receiver
+    Node* receiver_cnt  = load_String_length(no_ctrl, receiver);
+
+    // Get start addr of argument
+    Node* argument_val   = load_String_value(no_ctrl, argument);
+    Node* argument_offset = load_String_offset(no_ctrl, argument);
+    Node* argument_start = array_element_address(argument_val, argument_offset, T_CHAR);
+
+    // Get length of argument
+    Node* argument_cnt  = load_String_length(no_ctrl, argument);
 
     // Check for receiver count != argument count
     Node* cmp = _gvn.transform( new(C, 3) CmpINode(receiver_cnt, argument_cnt) );
@@ -1057,14 +1063,14 @@ bool LibraryCallKit::inline_string_equals() {
       phi->init_req(4, intcon(0));
       region->init_req(4, if_ne);
     }
-  }
 
-  // Check for count == 0 is done by mach node StrEquals.
+    // Check for count == 0 is done by assembler code for StrEquals.
 
-  if (!stopped()) {
-    Node* equals = make_string_method_node(Op_StrEquals, receiver, receiver_cnt, argument, argument_cnt);
-    phi->init_req(1, equals);
-    region->init_req(1, control());
+    if (!stopped()) {
+      Node* equals = make_string_method_node(Op_StrEquals, receiver_start, receiver_cnt, argument_start, argument_cnt);
+      phi->init_req(1, equals);
+      region->init_req(1, control());
+    }
   }
 
   // post merge
@@ -1162,20 +1168,9 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
 
   const int nargs = 2; // number of arguments to push back for uncommon trap in predicate
 
-  const int value_offset  = java_lang_String::value_offset_in_bytes();
-  const int count_offset  = java_lang_String::count_offset_in_bytes();
-  const int offset_offset = java_lang_String::offset_offset_in_bytes();
-
-  ciInstanceKlass* klass = env()->String_klass();
-  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
-  const TypeAryPtr*  source_type = TypeAryPtr::make(TypePtr::NotNull, TypeAry::make(TypeInt::CHAR,TypeInt::POS), ciTypeArrayKlass::make(T_CHAR), true, 0);
-
-  Node* sourceOffseta = basic_plus_adr(string_object, string_object, offset_offset);
-  Node* sourceOffset  = make_load(no_ctrl, sourceOffseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
-  Node* sourceCounta  = basic_plus_adr(string_object, string_object, count_offset);
-  Node* sourceCount   = make_load(no_ctrl, sourceCounta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
-  Node* sourcea       = basic_plus_adr(string_object, string_object, value_offset);
-  Node* source        = make_load(no_ctrl, sourcea, source_type, T_OBJECT, string_type->add_offset(value_offset));
+  Node* source        = load_String_value(no_ctrl, string_object);
+  Node* sourceOffset  = load_String_offset(no_ctrl, string_object);
+  Node* sourceCount   = load_String_length(no_ctrl, string_object);
 
   Node* target = _gvn.transform( makecon(TypeOopPtr::make_from_constant(target_array, true)) );
   jint target_length = target_array->length();
@@ -1243,10 +1238,6 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
 //------------------------------inline_string_indexOf------------------------
 bool LibraryCallKit::inline_string_indexOf() {
 
-  const int value_offset  = java_lang_String::value_offset_in_bytes();
-  const int count_offset  = java_lang_String::count_offset_in_bytes();
-  const int offset_offset = java_lang_String::offset_offset_in_bytes();
-
   _sp += 2;
   Node *argument = pop();  // pop non-receiver first:  it was pushed second
   Node *receiver = pop();
@@ -1280,12 +1271,21 @@ bool LibraryCallKit::inline_string_indexOf() {
     Node*       result_phi = new (C, 4) PhiNode(result_rgn, TypeInt::INT);
     Node* no_ctrl  = NULL;
 
-    // Get counts for string and substr
-    Node* source_cnta = basic_plus_adr(receiver, receiver, count_offset);
-    Node* source_cnt  = make_load(no_ctrl, source_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+    // Get start addr of source string
+    Node* source = load_String_value(no_ctrl, receiver);
+    Node* source_offset = load_String_offset(no_ctrl, receiver);
+    Node* source_start = array_element_address(source, source_offset, T_CHAR);
 
-    Node* substr_cnta = basic_plus_adr(argument, argument, count_offset);
-    Node* substr_cnt  = make_load(no_ctrl, substr_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+    // Get length of source string
+    Node* source_cnt  = load_String_length(no_ctrl, receiver);
+
+    // Get start addr of substring
+    Node* substr = load_String_value(no_ctrl, argument);
+    Node* substr_offset = load_String_offset(no_ctrl, argument);
+    Node* substr_start = array_element_address(substr, substr_offset, T_CHAR);
+
+    // Get length of source string
+    Node* substr_cnt  = load_String_length(no_ctrl, argument);
 
     // Check for substr count > string count
     Node* cmp = _gvn.transform( new(C, 3) CmpINode(substr_cnt, source_cnt) );
@@ -1308,7 +1308,7 @@ bool LibraryCallKit::inline_string_indexOf() {
     }
 
     if (!stopped()) {
-      result = make_string_method_node(Op_StrIndexOf, receiver, source_cnt, argument, substr_cnt);
+      result = make_string_method_node(Op_StrIndexOf, source_start, source_cnt, substr_start, substr_cnt);
       result_phi->init_req(1, result);
       result_rgn->init_req(1, control());
     }
@@ -1333,10 +1333,18 @@ bool LibraryCallKit::inline_string_indexOf() {
     ciInstance* str = str_const->as_instance();
     assert(str != NULL, "must be instance");
 
-    ciObject* v = str->field_value_by_offset(value_offset).as_object();
-    int       o = str->field_value_by_offset(offset_offset).as_int();
-    int       c = str->field_value_by_offset(count_offset).as_int();
+    ciObject* v = str->field_value_by_offset(java_lang_String::value_offset_in_bytes()).as_object();
     ciTypeArray* pat = v->as_type_array(); // pattern (argument) character array
+
+    int o;
+    int c;
+    if (java_lang_String::has_offset_field()) {
+      o = str->field_value_by_offset(java_lang_String::offset_offset_in_bytes()).as_int();
+      c = str->field_value_by_offset(java_lang_String::count_offset_in_bytes()).as_int();
+    } else {
+      o = 0;
+      c = pat->length();
+    }
 
     // constant strings have no offset and count == length which
     // simplifies the resulting code somewhat so lets optimize for that.
@@ -1528,42 +1536,78 @@ bool LibraryCallKit::inline_abs(vmIntrinsics::ID id) {
   return true;
 }
 
+void LibraryCallKit::finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName) {
+  //-------------------
+  //result=(result.isNaN())? funcAddr():result;
+  // Check: If isNaN() by checking result!=result? then either trap
+  // or go to runtime
+  Node* cmpisnan = _gvn.transform(new (C, 3) CmpDNode(result,result));
+  // Build the boolean node
+  Node* bolisnum = _gvn.transform( new (C, 2) BoolNode(cmpisnan, BoolTest::eq) );
+
+  if (!too_many_traps(Deoptimization::Reason_intrinsic)) {
+    {
+      BuildCutout unless(this, bolisnum, PROB_STATIC_FREQUENT);
+      // End the current control-flow path
+      push_pair(x);
+      if (y != NULL) {
+        push_pair(y);
+      }
+      // The pow or exp intrinsic returned a NaN, which requires a call
+      // to the runtime.  Recompile with the runtime call.
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_make_not_entrant);
+    }
+    push_pair(result);
+  } else {
+    // If this inlining ever returned NaN in the past, we compile a call
+    // to the runtime to properly handle corner cases
+
+    IfNode* iff = create_and_xform_if(control(), bolisnum, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
+    Node* if_slow = _gvn.transform( new (C, 1) IfFalseNode(iff) );
+    Node* if_fast = _gvn.transform( new (C, 1) IfTrueNode(iff) );
+
+    if (!if_slow->is_top()) {
+      RegionNode* result_region = new(C, 3) RegionNode(3);
+      PhiNode*    result_val = new (C, 3) PhiNode(result_region, Type::DOUBLE);
+
+      result_region->init_req(1, if_fast);
+      result_val->init_req(1, result);
+
+      set_control(if_slow);
+
+      const TypePtr* no_memory_effects = NULL;
+      Node* rt = make_runtime_call(RC_LEAF, call_type, funcAddr, funcName,
+                                   no_memory_effects,
+                                   x, top(), y, y ? top() : NULL);
+      Node* value = _gvn.transform(new (C, 1) ProjNode(rt, TypeFunc::Parms+0));
+#ifdef ASSERT
+      Node* value_top = _gvn.transform(new (C, 1) ProjNode(rt, TypeFunc::Parms+1));
+      assert(value_top == top(), "second value must be top");
+#endif
+
+      result_region->init_req(2, control());
+      result_val->init_req(2, value);
+      push_result(result_region, result_val);
+    } else {
+      push_pair(result);
+    }
+  }
+}
+
 //------------------------------inline_exp-------------------------------------
 // Inline exp instructions, if possible.  The Intel hardware only misses
 // really odd corner cases (+/- Infinity).  Just uncommon-trap them.
 bool LibraryCallKit::inline_exp(vmIntrinsics::ID id) {
   assert(id == vmIntrinsics::_dexp, "Not exp");
 
-  // If this inlining ever returned NaN in the past, we do not intrinsify it
-  // every again.  NaN results requires StrictMath.exp handling.
-  if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
-
-  // Do not intrinsify on older platforms which lack cmove.
-  if (ConditionalMoveLimit == 0)  return false;
-
   _sp += arg_size();        // restore stack pointer
   Node *x = pop_math_arg();
   Node *result = _gvn.transform(new (C, 2) ExpDNode(0,x));
 
-  //-------------------
-  //result=(result.isNaN())? StrictMath::exp():result;
-  // Check: If isNaN() by checking result!=result? then go to Strict Math
-  Node* cmpisnan = _gvn.transform(new (C, 3) CmpDNode(result,result));
-  // Build the boolean node
-  Node* bolisnum = _gvn.transform( new (C, 2) BoolNode(cmpisnan, BoolTest::eq) );
-
-  { BuildCutout unless(this, bolisnum, PROB_STATIC_FREQUENT);
-    // End the current control-flow path
-    push_pair(x);
-    // Math.exp intrinsic returned a NaN, which requires StrictMath.exp
-    // to handle.  Recompile without intrinsifying Math.exp
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_make_not_entrant);
-  }
+  finish_pow_exp(result, x, NULL, OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp), "EXP");
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
-
-  push_pair(result);
 
   return true;
 }
@@ -1573,17 +1617,12 @@ bool LibraryCallKit::inline_exp(vmIntrinsics::ID id) {
 bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
   assert(id == vmIntrinsics::_dpow, "Not pow");
 
-  // If this inlining ever returned NaN in the past, we do not intrinsify it
-  // every again.  NaN results requires StrictMath.pow handling.
-  if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
-
-  // Do not intrinsify on older platforms which lack cmove.
-  if (ConditionalMoveLimit == 0)  return false;
-
   // Pseudocode for pow
   // if (x <= 0.0) {
-  //   if ((double)((int)y)==y) { // if y is int
-  //     result = ((1&(int)y)==0)?-DPow(abs(x), y):DPow(abs(x), y)
+  //   long longy = (long)y;
+  //   if ((double)longy == y) { // if y is long
+  //     if (y + 1 == y) longy = 0; // huge number: even
+  //     result = ((1&longy) == 0)?-DPow(abs(x), y):DPow(abs(x), y);
   //   } else {
   //     result = NaN;
   //   }
@@ -1591,7 +1630,7 @@ bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
   //   result = DPow(x,y);
   // }
   // if (result != result)?  {
-  //   uncommon_trap();
+  //   result = uncommon_trap() or runtime_call();
   // }
   // return result;
 
@@ -1599,15 +1638,14 @@ bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
   Node* y = pop_math_arg();
   Node* x = pop_math_arg();
 
-  Node *fast_result = _gvn.transform( new (C, 3) PowDNode(0, x, y) );
+  Node* result = NULL;
 
-  // Short form: if not top-level (i.e., Math.pow but inlining Math.pow
-  // inside of something) then skip the fancy tests and just check for
-  // NaN result.
-  Node *result = NULL;
-  if( jvms()->depth() >= 1 ) {
-    result = fast_result;
+  if (!too_many_traps(Deoptimization::Reason_intrinsic)) {
+    // Short form: skip the fancy tests and just check for NaN result.
+    result = _gvn.transform( new (C, 3) PowDNode(0, x, y) );
   } else {
+    // If this inlining ever returned NaN in the past, include all
+    // checks + call to the runtime.
 
     // Set the merge point for If node with condition of (x <= 0.0)
     // There are four possible paths to region node and phi node
@@ -1623,55 +1661,95 @@ bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
     Node *bol1 = _gvn.transform( new (C, 2) BoolNode( cmp, BoolTest::le ) );
     // Branch either way
     IfNode *if1 = create_and_xform_if(control(),bol1, PROB_STATIC_INFREQUENT, COUNT_UNKNOWN);
-    Node *opt_test = _gvn.transform(if1);
-    //assert( opt_test->is_If(), "Expect an IfNode");
-    IfNode *opt_if1 = (IfNode*)opt_test;
     // Fast path taken; set region slot 3
-    Node *fast_taken = _gvn.transform( new (C, 1) IfFalseNode(opt_if1) );
+    Node *fast_taken = _gvn.transform( new (C, 1) IfFalseNode(if1) );
     r->init_req(3,fast_taken); // Capture fast-control
 
     // Fast path not-taken, i.e. slow path
-    Node *complex_path = _gvn.transform( new (C, 1) IfTrueNode(opt_if1) );
+    Node *complex_path = _gvn.transform( new (C, 1) IfTrueNode(if1) );
 
     // Set fast path result
-    Node *fast_result = _gvn.transform( new (C, 3) PowDNode(0, y, x) );
+    Node *fast_result = _gvn.transform( new (C, 3) PowDNode(0, x, y) );
     phi->init_req(3, fast_result);
 
     // Complex path
-    // Build the second if node (if y is int)
-    // Node for (int)y
-    Node *inty = _gvn.transform( new (C, 2) ConvD2INode(y));
-    // Node for (double)((int) y)
-    Node *doubleinty= _gvn.transform( new (C, 2) ConvI2DNode(inty));
-    // Check (double)((int) y) : y
-    Node *cmpinty= _gvn.transform(new (C, 3) CmpDNode(doubleinty, y));
-    // Check if (y isn't int) then go to slow path
+    // Build the second if node (if y is long)
+    // Node for (long)y
+    Node *longy = _gvn.transform( new (C, 2) ConvD2LNode(y));
+    // Node for (double)((long) y)
+    Node *doublelongy= _gvn.transform( new (C, 2) ConvL2DNode(longy));
+    // Check (double)((long) y) : y
+    Node *cmplongy= _gvn.transform(new (C, 3) CmpDNode(doublelongy, y));
+    // Check if (y isn't long) then go to slow path
 
-    Node *bol2 = _gvn.transform( new (C, 2) BoolNode( cmpinty, BoolTest::ne ) );
+    Node *bol2 = _gvn.transform( new (C, 2) BoolNode( cmplongy, BoolTest::ne ) );
     // Branch either way
     IfNode *if2 = create_and_xform_if(complex_path,bol2, PROB_STATIC_INFREQUENT, COUNT_UNKNOWN);
-    Node *slow_path = opt_iff(r,if2); // Set region path 2
+    Node* ylong_path = _gvn.transform( new (C, 1) IfFalseNode(if2));
 
-    // Calculate DPow(abs(x), y)*(1 & (int)y)
+    Node *slow_path = _gvn.transform( new (C, 1) IfTrueNode(if2) );
+
+    // Calculate DPow(abs(x), y)*(1 & (long)y)
     // Node for constant 1
-    Node *conone = intcon(1);
-    // 1& (int)y
-    Node *signnode= _gvn.transform( new (C, 3) AndINode(conone, inty) );
+    Node *conone = longcon(1);
+    // 1& (long)y
+    Node *signnode= _gvn.transform( new (C, 3) AndLNode(conone, longy) );
+
+    // A huge number is always even. Detect a huge number by checking
+    // if y + 1 == y and set integer to be tested for parity to 0.
+    // Required for corner case:
+    // (long)9.223372036854776E18 = max_jlong
+    // (double)(long)9.223372036854776E18 = 9.223372036854776E18
+    // max_jlong is odd but 9.223372036854776E18 is even
+    Node* yplus1 = _gvn.transform( new (C, 3) AddDNode(y, makecon(TypeD::make(1))));
+    Node *cmpyplus1= _gvn.transform(new (C, 3) CmpDNode(yplus1, y));
+    Node *bolyplus1 = _gvn.transform( new (C, 2) BoolNode( cmpyplus1, BoolTest::eq ) );
+    Node* correctedsign = NULL;
+    if (ConditionalMoveLimit != 0) {
+      correctedsign = _gvn.transform( CMoveNode::make(C, NULL, bolyplus1, signnode, longcon(0), TypeLong::LONG));
+    } else {
+      IfNode *ifyplus1 = create_and_xform_if(ylong_path,bolyplus1, PROB_FAIR, COUNT_UNKNOWN);
+      RegionNode *r = new (C, 3) RegionNode(3);
+      Node *phi = new (C, 3) PhiNode(r, TypeLong::LONG);
+      r->init_req(1, _gvn.transform( new (C, 1) IfFalseNode(ifyplus1)));
+      r->init_req(2, _gvn.transform( new (C, 1) IfTrueNode(ifyplus1)));
+      phi->init_req(1, signnode);
+      phi->init_req(2, longcon(0));
+      correctedsign = _gvn.transform(phi);
+      ylong_path = _gvn.transform(r);
+      record_for_igvn(r);
+    }
+
     // zero node
-    Node *conzero = intcon(0);
-    // Check (1&(int)y)==0?
-    Node *cmpeq1 = _gvn.transform(new (C, 3) CmpINode(signnode, conzero));
-    // Check if (1&(int)y)!=0?, if so the result is negative
+    Node *conzero = longcon(0);
+    // Check (1&(long)y)==0?
+    Node *cmpeq1 = _gvn.transform(new (C, 3) CmpLNode(correctedsign, conzero));
+    // Check if (1&(long)y)!=0?, if so the result is negative
     Node *bol3 = _gvn.transform( new (C, 2) BoolNode( cmpeq1, BoolTest::ne ) );
     // abs(x)
     Node *absx=_gvn.transform( new (C, 2) AbsDNode(x));
     // abs(x)^y
-    Node *absxpowy = _gvn.transform( new (C, 3) PowDNode(0, y, absx) );
+    Node *absxpowy = _gvn.transform( new (C, 3) PowDNode(0, absx, y) );
     // -abs(x)^y
     Node *negabsxpowy = _gvn.transform(new (C, 2) NegDNode (absxpowy));
-    // (1&(int)y)==1?-DPow(abs(x), y):DPow(abs(x), y)
-    Node *signresult = _gvn.transform( CMoveNode::make(C, NULL, bol3, absxpowy, negabsxpowy, Type::DOUBLE));
+    // (1&(long)y)==1?-DPow(abs(x), y):DPow(abs(x), y)
+    Node *signresult = NULL;
+    if (ConditionalMoveLimit != 0) {
+      signresult = _gvn.transform( CMoveNode::make(C, NULL, bol3, absxpowy, negabsxpowy, Type::DOUBLE));
+    } else {
+      IfNode *ifyeven = create_and_xform_if(ylong_path,bol3, PROB_FAIR, COUNT_UNKNOWN);
+      RegionNode *r = new (C, 3) RegionNode(3);
+      Node *phi = new (C, 3) PhiNode(r, Type::DOUBLE);
+      r->init_req(1, _gvn.transform( new (C, 1) IfFalseNode(ifyeven)));
+      r->init_req(2, _gvn.transform( new (C, 1) IfTrueNode(ifyeven)));
+      phi->init_req(1, absxpowy);
+      phi->init_req(2, negabsxpowy);
+      signresult = _gvn.transform(phi);
+      ylong_path = _gvn.transform(r);
+      record_for_igvn(r);
+    }
     // Set complex path fast result
+    r->init_req(2, ylong_path);
     phi->init_req(2, signresult);
 
     static const jlong nan_bits = CONST64(0x7ff8000000000000);
@@ -1685,26 +1763,9 @@ bool LibraryCallKit::inline_pow(vmIntrinsics::ID id) {
     result=_gvn.transform(phi);
   }
 
-  //-------------------
-  //result=(result.isNaN())? uncommon_trap():result;
-  // Check: If isNaN() by checking result!=result? then go to Strict Math
-  Node* cmpisnan = _gvn.transform(new (C, 3) CmpDNode(result,result));
-  // Build the boolean node
-  Node* bolisnum = _gvn.transform( new (C, 2) BoolNode(cmpisnan, BoolTest::eq) );
-
-  { BuildCutout unless(this, bolisnum, PROB_STATIC_FREQUENT);
-    // End the current control-flow path
-    push_pair(x);
-    push_pair(y);
-    // Math.pow intrinsic returned a NaN, which requires StrictMath.pow
-    // to handle.  Recompile without intrinsifying Math.pow.
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_make_not_entrant);
-  }
+  finish_pow_exp(result, x, y, OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow), "POW");
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
-
-  push_pair(result);
 
   return true;
 }
@@ -1783,15 +1844,11 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsqrt: return Matcher::has_match_rule(Op_SqrtD) ? inline_sqrt(id) : false;
   case vmIntrinsics::_dabs:  return Matcher::has_match_rule(Op_AbsD)  ? inline_abs(id)  : false;
 
-    // These intrinsics don't work on X86.  The ad implementation doesn't
-    // handle NaN's properly.  Instead of returning infinity, the ad
-    // implementation returns a NaN on overflow. See bug: 6304089
-    // Once the ad implementations are fixed, change the code below
-    // to match the intrinsics above
-
   case vmIntrinsics::_dexp:  return
+    Matcher::has_match_rule(Op_ExpD) ? inline_exp(id) :
     runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp), "EXP");
   case vmIntrinsics::_dpow:  return
+    Matcher::has_match_rule(Op_PowD) ? inline_pow(id) :
     runtime_math(OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow), "POW");
 
    // These intrinsics are not yet correctly implemented
@@ -3592,8 +3649,10 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     }
 
     // Bail out if length is negative.
-    // ...Not needed, since the new_array will throw the right exception.
-    //generate_negative_guard(length, bailout, &length);
+    // Without this the new_array would throw
+    // NegativeArraySizeException but IllegalArgumentException is what
+    // should be thrown
+    generate_negative_guard(length, bailout, &length);
 
     if (bailout->req() > 1) {
       PreserveJVMState pjvms(this);
@@ -3617,7 +3676,9 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       // Extreme case:  Arrays.copyOf((Integer[])x, 10, String[].class).
       // This will fail a store-check if x contains any non-nulls.
       bool disjoint_bases = true;
-      bool length_never_negative = true;
+      // if start > orig_length then the length of the copy may be
+      // negative.
+      bool length_never_negative = !is_copyOfRange;
       generate_arraycopy(TypeAryPtr::OOPS, T_OBJECT,
                          original, start, newcopy, intcon(0), moved,
                          disjoint_bases, length_never_negative);
@@ -3992,113 +4053,6 @@ bool LibraryCallKit::is_method_invoke_or_aux_frame(JVMState* jvms) {
   }
 
   return false;
-}
-
-static int value_field_offset = -1;  // offset of the "value" field of AtomicLongCSImpl.  This is needed by
-                                     // inline_native_AtomicLong_attemptUpdate() but it has no way of
-                                     // computing it since there is no lookup field by name function in the
-                                     // CI interface.  This is computed and set by inline_native_AtomicLong_get().
-                                     // Using a static variable here is safe even if we have multiple compilation
-                                     // threads because the offset is constant.  At worst the same offset will be
-                                     // computed and  stored multiple
-
-bool LibraryCallKit::inline_native_AtomicLong_get() {
-  // Restore the stack and pop off the argument
-  _sp+=1;
-  Node *obj = pop();
-
-  // get the offset of the "value" field. Since the CI interfaces
-  // does not provide a way to look up a field by name, we scan the bytecodes
-  // to get the field index.  We expect the first 2 instructions of the method
-  // to be:
-  //    0 aload_0
-  //    1 getfield "value"
-  ciMethod* method = callee();
-  if (value_field_offset == -1)
-  {
-    ciField* value_field;
-    ciBytecodeStream iter(method);
-    Bytecodes::Code bc = iter.next();
-
-    if ((bc != Bytecodes::_aload_0) &&
-              ((bc != Bytecodes::_aload) || (iter.get_index() != 0)))
-      return false;
-    bc = iter.next();
-    if (bc != Bytecodes::_getfield)
-      return false;
-    bool ignore;
-    value_field = iter.get_field(ignore);
-    value_field_offset = value_field->offset_in_bytes();
-  }
-
-  // Null check without removing any arguments.
-  _sp++;
-  obj = do_null_check(obj, T_OBJECT);
-  _sp--;
-  // Check for locking null object
-  if (stopped()) return true;
-
-  Node *adr = basic_plus_adr(obj, obj, value_field_offset);
-  const TypePtr *adr_type = _gvn.type(adr)->is_ptr();
-  int alias_idx = C->get_alias_index(adr_type);
-
-  Node *result = _gvn.transform(new (C, 3) LoadLLockedNode(control(), memory(alias_idx), adr));
-
-  push_pair(result);
-
-  return true;
-}
-
-bool LibraryCallKit::inline_native_AtomicLong_attemptUpdate() {
-  // Restore the stack and pop off the arguments
-  _sp+=5;
-  Node *newVal = pop_pair();
-  Node *oldVal = pop_pair();
-  Node *obj = pop();
-
-  // we need the offset of the "value" field which was computed when
-  // inlining the get() method.  Give up if we don't have it.
-  if (value_field_offset == -1)
-    return false;
-
-  // Null check without removing any arguments.
-  _sp+=5;
-  obj = do_null_check(obj, T_OBJECT);
-  _sp-=5;
-  // Check for locking null object
-  if (stopped()) return true;
-
-  Node *adr = basic_plus_adr(obj, obj, value_field_offset);
-  const TypePtr *adr_type = _gvn.type(adr)->is_ptr();
-  int alias_idx = C->get_alias_index(adr_type);
-
-  Node *cas = _gvn.transform(new (C, 5) StoreLConditionalNode(control(), memory(alias_idx), adr, newVal, oldVal));
-  Node *store_proj = _gvn.transform( new (C, 1) SCMemProjNode(cas));
-  set_memory(store_proj, alias_idx);
-  Node *bol = _gvn.transform( new (C, 2) BoolNode( cas, BoolTest::eq ) );
-
-  Node *result;
-  // CMove node is not used to be able fold a possible check code
-  // after attemptUpdate() call. This code could be transformed
-  // into CMove node by loop optimizations.
-  {
-    RegionNode *r = new (C, 3) RegionNode(3);
-    result = new (C, 3) PhiNode(r, TypeInt::BOOL);
-
-    Node *iff = create_and_xform_if(control(), bol, PROB_FAIR, COUNT_UNKNOWN);
-    Node *iftrue = opt_iff(r, iff);
-    r->init_req(1, iftrue);
-    result->init_req(1, intcon(1));
-    result->init_req(2, intcon(0));
-
-    set_control(_gvn.transform(r));
-    record_for_igvn(r);
-
-    C->set_has_split_ifs(true); // Has chance for split-if optimization
-  }
-
-  push(_gvn.transform(result));
-  return true;
 }
 
 bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {

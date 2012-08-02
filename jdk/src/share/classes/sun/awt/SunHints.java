@@ -26,6 +26,7 @@
 package sun.awt;
 
 import java.awt.RenderingHints;
+import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * This class contains rendering hints that can be used by the
@@ -33,6 +34,8 @@ import java.awt.RenderingHints;
  * {@link java.awt.image.BufferedImageOp} and
  * {@link java.awt.image.Raster}.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class SunHints {
     /**
      * Defines the type of all keys used to control various

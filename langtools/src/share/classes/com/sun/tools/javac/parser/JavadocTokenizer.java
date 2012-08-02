@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,19 +62,54 @@ public class JavadocTokenizer extends JavaTokenizer {
     @Override
     protected Comment processComment(int pos, int endPos, CommentStyle style) {
         char[] buf = reader.getRawCharacters(pos, endPos);
-        return new JavadocComment(new ColReader(fac, buf, buf.length), style);
+        return new JavadocComment(new DocReader(fac, buf, buf.length, pos), style);
     }
 
     /**
      * This is a specialized version of UnicodeReader that keeps track of the
-     * column position within a given character stream (used for Javadoc processing).
+     * column position within a given character stream (used for Javadoc processing),
+     * and which builds a table for mapping positions in the comment string to
+     * positions in the source file.
      */
-    static class ColReader extends UnicodeReader {
+    static class DocReader extends UnicodeReader {
 
          int col;
+         int startPos;
 
-         ColReader(ScannerFactory fac, char[] input, int inputLength) {
+         /**
+          * A buffer for building a table for mapping positions in {@link #sbuf}
+          * to positions in the source buffer.
+          *
+          * The array is organized as a series of pairs of integers: the first
+          * number in each pair specifies a position in the comment text,
+          * the second number in each pair specifies the corresponding position
+          * in the source buffer. The pairs are sorted in ascending order.
+          *
+          * Since the mapping function is generally continuous, with successive
+          * positions in the string corresponding to successive positions in the
+          * source buffer, the table only needs to record discontinuities in
+          * the mapping. The values of intermediate positions can be inferred.
+          *
+          * Discontinuities may occur in a number of places: when a newline
+          * is followed by whitespace and asterisks (which are ignored),
+          * when a tab is expanded into spaces, and when unicode escapes
+          * are used in the source buffer.
+          *
+          * Thus, to find the source position of any position, p, in the comment
+          * string, find the index, i, of the pair whose string offset
+          * ({@code pbuf[i] }) is closest to but not greater than p. Then,
+          * {@code sourcePos(p) = pbuf[i+1] + (p - pbuf[i]) }.
+          */
+         int[] pbuf = new int[128];
+
+         /**
+          * The index of the next empty slot in the pbuf buffer.
+          */
+         int pp = 0;
+
+         DocReader(ScannerFactory fac, char[] input, int inputLength, int startPos) {
              super(fac, input, inputLength);
+             this.startPos = startPos;
          }
 
          @Override
@@ -147,24 +182,75 @@ public class JavadocTokenizer extends JavaTokenizer {
                  break;
              }
          }
+
+         @Override
+         public void putChar(char ch, boolean scan) {
+             // At this point, bp is the position of the current character in buf,
+             // and sp is the position in sbuf where this character will be put.
+             // Record a new entry in pbuf if pbuf is empty or if sp and its
+             // corresponding source position are not equidistant from the
+             // corresponding values in the latest entry in the pbuf array.
+             // (i.e. there is a discontinuity in the map function.)
+             if ((pp == 0)
+                     || (sp - pbuf[pp - 2] != (startPos + bp) - pbuf[pp - 1])) {
+                 if (pp + 1 >= pbuf.length) {
+                     int[] new_pbuf = new int[pbuf.length * 2];
+                     System.arraycopy(pbuf, 0, new_pbuf, 0, pbuf.length);
+                     pbuf = new_pbuf;
+                 }
+                 pbuf[pp] = sp;
+                 pbuf[pp + 1] = startPos + bp;
+                 pp += 2;
+             }
+             super.putChar(ch, scan);
+         }
      }
 
-     protected class JavadocComment extends JavaTokenizer.BasicComment<ColReader> {
+     protected class JavadocComment extends JavaTokenizer.BasicComment<DocReader> {
 
         /**
         * Translated and stripped contents of doc comment
         */
         private String docComment = null;
+        private int[] docPosns = null;
 
-        JavadocComment(ColReader comment_reader, CommentStyle cs) {
-            super(comment_reader, cs);
+        JavadocComment(DocReader reader, CommentStyle cs) {
+            super(reader, cs);
         }
 
+        @Override
         public String getText() {
             if (!scanned && cs == CommentStyle.JAVADOC) {
                 scanDocComment();
             }
             return docComment;
+        }
+
+        @Override
+        public int getSourcePos(int pos) {
+            // Binary search to find the entry for which the string index is
+            // less than pos. Since docPosns is a list of pairs of integers
+            // we must make sure the index is always even.
+            // If we find an exact match for pos, the other item in the pair
+            // gives the source pos; otherwise, compute the source position
+            // relative to the best match found in the array.
+            if (pos < 0 || pos >= docComment.length())
+                throw new StringIndexOutOfBoundsException();
+            if (docPosns == null)
+                return -1;
+            int start = 0;
+            int end = docPosns.length;
+            while (start < end - 2) {
+                // find an even index midway between start and end
+                int index = ((start  + end) / 4) * 2;
+                if (docPosns[index] < pos)
+                    start = index;
+                else if (docPosns[index] == pos)
+                    return docPosns[index + 1];
+                else
+                    end = index;
+            }
+            return docPosns[start + 1] + (pos - docPosns[start]);
         }
 
         @Override
@@ -209,7 +295,8 @@ public class JavadocTokenizer extends JavaTokenizer {
                  // whitespace, then it consumes any stars, then it
                  // puts the rest of the line into our buffer.
                  while (comment_reader.bp < comment_reader.buflen) {
-
+                     int begin_bp = comment_reader.bp;
+                     char begin_ch = comment_reader.ch;
                      // The wsLoop consumes whitespace from the beginning
                      // of each line.
                  wsLoop:
@@ -263,10 +350,10 @@ public class JavadocTokenizer extends JavaTokenizer {
                              break outerLoop;
                          }
                      } else if (! firstLine) {
-                         //The current line does not begin with a '*' so we will indent it.
-                         for (int i = 1; i < comment_reader.col; i++) {
-                             comment_reader.putChar(' ', false);
-                         }
+                         // The current line does not begin with a '*' so we will
+                         // treat it as comment
+                         comment_reader.bp = begin_bp;
+                         comment_reader.ch = begin_ch;
                      }
                      // The textLoop processes the rest of the characters
                      // on the line, adding them to our buffer.
@@ -334,11 +421,14 @@ public class JavadocTokenizer extends JavaTokenizer {
 
                      // Store the text of the doc comment
                     docComment = comment_reader.chars();
+                    docPosns = new int[comment_reader.pp];
+                    System.arraycopy(comment_reader.pbuf, 0, docPosns, 0, docPosns.length);
                 } else {
                     docComment = "";
                 }
             } finally {
                 scanned = true;
+                comment_reader = null;
                 if (docComment != null &&
                         docComment.matches("(?sm).*^\\s*@deprecated( |$).*")) {
                     deprecatedFlag = true;

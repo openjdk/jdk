@@ -174,27 +174,21 @@ void PhaseIdealLoop::do_unswitching (IdealLoopTree *loop, Node_List &old_new) {
       Node* use = worklist.pop();
       Node* nuse = use->clone();
       nuse->set_req(0, invar_proj);
-      _igvn.hash_delete(use);
-      use->set_req(1, nuse);
-      _igvn._worklist.push(use);
+      _igvn.replace_input_of(use, 1, nuse);
       register_new_node(nuse, invar_proj);
       // Same for the clone
       Node* use_clone = old_new[use->_idx];
-      _igvn.hash_delete(use_clone);
-      use_clone->set_req(1, nuse);
-      _igvn._worklist.push(use_clone);
+      _igvn.replace_input_of(use_clone, 1, nuse);
     }
   }
 
   // Hardwire the control paths in the loops into if(true) and if(false)
-  _igvn.hash_delete(unswitch_iff);
+  _igvn.rehash_node_delayed(unswitch_iff);
   short_circuit_if(unswitch_iff, proj_true);
-  _igvn._worklist.push(unswitch_iff);
 
   IfNode* unswitch_iff_clone = old_new[unswitch_iff->_idx]->as_If();
-  _igvn.hash_delete(unswitch_iff_clone);
+  _igvn.rehash_node_delayed(unswitch_iff_clone);
   short_circuit_if(unswitch_iff_clone, proj_false);
-  _igvn._worklist.push(unswitch_iff_clone);
 
   // Reoptimize loops
   loop->record_for_igvn();
@@ -224,8 +218,7 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   LoopNode* head  = loop->_head->as_Loop();
   bool counted_loop = head->is_CountedLoop();
   Node*     entry = head->in(LoopNode::EntryControl);
-  _igvn.hash_delete(entry);
-  _igvn._worklist.push(entry);
+  _igvn.rehash_node_delayed(entry);
   IdealLoopTree* outer_loop = loop->_parent;
 
   Node *cont      = _igvn.intcon(1);
@@ -249,18 +242,14 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
 
   // Fast (true) control
   Node* iffast_pred = clone_loop_predicates(entry, iffast, !counted_loop);
-  _igvn.hash_delete(head);
-  head->set_req(LoopNode::EntryControl, iffast_pred);
+  _igvn.replace_input_of(head, LoopNode::EntryControl, iffast_pred);
   set_idom(head, iffast_pred, dom_depth(head));
-  _igvn._worklist.push(head);
 
   // Slow (false) control
   Node* ifslow_pred = clone_loop_predicates(entry, ifslow, !counted_loop);
   LoopNode* slow_head = old_new[head->_idx]->as_Loop();
-  _igvn.hash_delete(slow_head);
-  slow_head->set_req(LoopNode::EntryControl, ifslow_pred);
+  _igvn.replace_input_of(slow_head, LoopNode::EntryControl, ifslow_pred);
   set_idom(slow_head, ifslow_pred, dom_depth(slow_head));
-  _igvn._worklist.push(slow_head);
 
   recompute_dom_depth();
 

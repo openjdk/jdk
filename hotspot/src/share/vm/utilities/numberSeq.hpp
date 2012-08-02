@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_UTILITIES_NUMBERSEQ_HPP
 #define SHARE_VM_UTILITIES_NUMBERSEQ_HPP
 
+#include "memory/allocation.hpp"
+
 /**
  **  This file contains a few classes that represent number sequence,
  **  x1, x2, x3, ..., xN, and can calculate their avg, max, and sd.
@@ -40,7 +42,7 @@
 
 #define DEFAULT_ALPHA_VALUE 0.7
 
-class AbsSeq {
+class AbsSeq: public CHeapObj<mtInternal> {
 private:
   void init(double alpha);
 
@@ -93,7 +95,6 @@ protected:
 
 public:
   NumberSeq(double alpha = DEFAULT_ALPHA_VALUE);
-  NumberSeq(NumberSeq* total, int n_parts, NumberSeq** parts);
 
   virtual void add(double val);
   virtual double maximum() const { return _maximum; }

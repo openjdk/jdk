@@ -86,11 +86,10 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
     }
 
     @Override
-    public int getScreenImOn() {
+    public GraphicsDevice getGraphicsDevice() {
         // REMIND: return the main screen for the initial implementation
-        CGraphicsConfig gc = (CGraphicsConfig)peer.getGraphicsConfiguration();
-        CGraphicsDevice device = gc.getDevice();
-        return device.getCoreGraphicsScreen();
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        return ge.getDefaultScreenDevice();
     }
 
     @Override
@@ -118,7 +117,7 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
         Rectangle r = peer.getBounds();
         Image im = null;
         if (!r.isEmpty()) {
-            int transparency = (peer.isOpaque() ? Transparency.OPAQUE : Transparency.TRANSLUCENT);
+            int transparency = peer.isTranslucent() ? Transparency.TRANSLUCENT : Transparency.OPAQUE;
             im = peer.getGraphicsConfiguration().createCompatibleImage(r.width, r.height, transparency);
         }
         return im;
@@ -205,4 +204,7 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
 
     @Override
     public void setWindowState(int windowState) {}
+
+    @Override
+    public void setModalBlocked(boolean blocked) {}
 }

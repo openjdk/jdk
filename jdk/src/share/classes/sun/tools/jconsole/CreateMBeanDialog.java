@@ -32,23 +32,21 @@ import java.util.TreeSet;
 import java.util.Comparator;
 
 import javax.swing.*;
-import javax.swing.Timer;
 import javax.swing.border.*;
-import javax.swing.event.*;
 
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 
-import static sun.tools.jconsole.Resources.*;
+
 import static sun.tools.jconsole.Utilities.*;
 
 @SuppressWarnings("serial")
 public class CreateMBeanDialog extends InternalDialog
                 implements ActionListener {
     JConsole jConsole;
-    JComboBox connections;
+    JComboBox<ProxyClient> connections;
     JButton createMBeanButton, unregisterMBeanButton, cancelButton;
 
     private static final String HOTSPOT_MBEAN =
@@ -60,7 +58,7 @@ public class CreateMBeanDialog extends InternalDialog
 
         this.jConsole = jConsole;
         setAccessibleDescription(this,
-                                 getText("Hotspot MBeans.dialog.accessibleDescription"));
+                                 Messages.HOTSPOT_MBEANS_DIALOG_ACCESSIBLE_DESCRIPTION);
         Container cp = getContentPane();
         ((JComponent)cp).setBorder(new EmptyBorder(10, 10, 4, 10));
 
@@ -71,12 +69,10 @@ public class CreateMBeanDialog extends InternalDialog
                                                         false,
                                                         true));
         cp.add(centerPanel, BorderLayout.CENTER);
-        connections = new JComboBox();
+        connections = new JComboBox<ProxyClient>();
         updateConnections();
 
-        centerPanel.add(new LabeledComponent(Resources.
-                                             getText("Manage Hotspot MBeans "+
-                                                     "in: "),
+        centerPanel.add(new LabeledComponent(Resources.format(Messages.MANAGE_HOTSPOT_MBEANS_IN_COLON_),
                                              connections));
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
@@ -85,11 +81,11 @@ public class CreateMBeanDialog extends InternalDialog
         JPanel buttonPanel = new JPanel();
         bottomPanel.add(buttonPanel, BorderLayout.NORTH);
         buttonPanel.add(createMBeanButton =
-                        new JButton(Resources.getText("Create")));
+                        new JButton(Messages.CREATE));
         buttonPanel.add(unregisterMBeanButton =
-                        new JButton(Resources.getText("Unregister")));
+                        new JButton(Messages.UNREGISTER));
         buttonPanel.add(cancelButton =
-                        new JButton(Resources.getText("Cancel")));
+                        new JButton(Messages.CANCEL));
 
         statusBar = new JLabel(" ", JLabel.CENTER);
         bottomPanel.add(statusBar, BorderLayout.SOUTH);
@@ -133,7 +129,8 @@ public class CreateMBeanDialog extends InternalDialog
             }
         }
         connections.invalidate();
-        connections.setModel(new DefaultComboBoxModel(data.toArray()));
+        connections.setModel(new DefaultComboBoxModel<ProxyClient>
+            (data.toArray(new ProxyClient[data.size()])));
         connections.validate();
     }
 
@@ -144,7 +141,6 @@ public class CreateMBeanDialog extends InternalDialog
             new Thread("CreateMBeanDialog.actionPerformed") {
                     public void run() {
                         try {
-                            StringBuffer buff = null;
                             Object c = connections.getSelectedItem();
                             if(c == null) return;
                             if(ev.getSource() == createMBeanButton) {
@@ -163,13 +159,9 @@ public class CreateMBeanDialog extends InternalDialog
                             }
                             return;
                         } catch(InstanceAlreadyExistsException e) {
-                            statusBar.setText(Resources.
-                                              getText("Error: MBeans already "
-                                                      + "exist"));
+                            statusBar.setText(Messages.ERROR_COLON_MBEANS_ALREADY_EXIST);
                         } catch(InstanceNotFoundException e) {
-                            statusBar.setText(Resources.
-                                              getText("Error: MBeans do not "
-                                                      + "exist"));
+                            statusBar.setText(Messages.ERROR_COLON_MBEANS_DO_NOT_EXIST);
                         } catch(Exception e) {
                             statusBar.setText(e.toString());
                         }

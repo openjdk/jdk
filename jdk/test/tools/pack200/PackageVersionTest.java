@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 6712743 6991164
+ * @bug 6712743 6991164 7168401
  * @summary verify package versions
  * @compile -XDignore.symbol.file Utils.java PackageVersionTest.java
  * @run main PackageVersionTest
@@ -71,8 +71,9 @@ public class PackageVersionTest {
         verifyPack("Test6.class", JAVA6_PACKAGE_MAJOR_VERSION,
                 JAVA6_PACKAGE_MINOR_VERSION);
 
-        verifyPack("Test7.class", JAVA7_PACKAGE_MAJOR_VERSION,
-                JAVA7_PACKAGE_MINOR_VERSION);
+        // a jar file devoid of indy classes must generate 160.1 package file
+        verifyPack("Test7.class", JAVA6_PACKAGE_MAJOR_VERSION,
+                JAVA6_PACKAGE_MINOR_VERSION);
 
         // test for resource file, ie. no class files
         verifyPack("Test6.java", JAVA5_PACKAGE_MAJOR_VERSION,
@@ -84,7 +85,7 @@ public class PackageVersionTest {
         String versionStr = unpacker.toString();
         String expected = "Pack200, Vendor: " +
                 System.getProperty("java.vendor") + ", Version: " +
-                JAVA6_PACKAGE_MAJOR_VERSION + "." + JAVA6_PACKAGE_MINOR_VERSION;
+                JAVA7_PACKAGE_MAJOR_VERSION + "." + JAVA7_PACKAGE_MINOR_VERSION;
         if (!versionStr.equals(expected)) {
             System.out.println("Expected: " + expected);
             System.out.println("Obtained: " + versionStr);

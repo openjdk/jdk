@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,19 +505,28 @@ void LIR_Assembler::emit_string_compare(LIR_Opr arg0, LIR_Opr arg1, LIR_Opr dst,
 
   // Get addresses of first characters from both Strings
   __ load_heap_oop(rsi, Address(rax, java_lang_String::value_offset_in_bytes()));
-  __ movptr       (rcx, Address(rax, java_lang_String::offset_offset_in_bytes()));
-  __ lea          (rsi, Address(rsi, rcx, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
-
+  if (java_lang_String::has_offset_field()) {
+    __ movptr     (rcx, Address(rax, java_lang_String::offset_offset_in_bytes()));
+    __ movl       (rax, Address(rax, java_lang_String::count_offset_in_bytes()));
+    __ lea        (rsi, Address(rsi, rcx, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
+  } else {
+    __ movl       (rax, Address(rsi, arrayOopDesc::length_offset_in_bytes()));
+    __ lea        (rsi, Address(rsi, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
+  }
 
   // rbx, may be NULL
   add_debug_info_for_null_check_here(info);
   __ load_heap_oop(rdi, Address(rbx, java_lang_String::value_offset_in_bytes()));
-  __ movptr       (rcx, Address(rbx, java_lang_String::offset_offset_in_bytes()));
-  __ lea          (rdi, Address(rdi, rcx, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
+  if (java_lang_String::has_offset_field()) {
+    __ movptr     (rcx, Address(rbx, java_lang_String::offset_offset_in_bytes()));
+    __ movl       (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
+    __ lea        (rdi, Address(rdi, rcx, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
+  } else {
+    __ movl       (rbx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));
+    __ lea        (rdi, Address(rdi, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
+  }
 
   // compute minimum length (in rax) and difference of lengths (on top of stack)
-  __ movl  (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
-  __ movl  (rax, Address(rax, java_lang_String::count_offset_in_bytes()));
   __ mov   (rcx, rbx);
   __ subptr(rbx, rax); // subtract lengths
   __ push  (rbx);      // result
@@ -2437,6 +2446,12 @@ void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr unused, L
         // Should consider not saving rbx, if not necessary
         __ trigfunc('t', op->as_Op2()->fpu_stack_size());
         break;
+      case lir_exp :
+        __ exp_with_fallback(op->as_Op2()->fpu_stack_size());
+        break;
+      case lir_pow :
+        __ pow_with_fallback(op->as_Op2()->fpu_stack_size());
+        break;
       default      : ShouldNotReachHere();
     }
   } else {
@@ -2658,7 +2673,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
 #endif // _LP64
         }
       } else {
-        ShouldNotReachHere();
+        fatal(err_msg("unexpected type: %s", basictype_to_str(c->type())));
       }
       // cpu register - address
     } else if (opr2->is_address()) {

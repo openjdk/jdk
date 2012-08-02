@@ -162,16 +162,21 @@ public final class Util {
         clickOnComp(comp, robot, 50);
     }
 
+    public static Point getTitlePoint(Window decoratedWindow) {
+        Point p = decoratedWindow.getLocationOnScreen();
+        Dimension d = decoratedWindow.getSize();
+        return new Point(p.x + (int)(d.getWidth()/2),
+                         p.y + (int)(decoratedWindow.getInsets().top/2));
+    }
+
     /*
      * Clicks on a title of Frame/Dialog.
      * WARNING: it may fail on some platforms when the window is not wide enough.
      */
     public static void clickOnTitle(final Window decoratedWindow, final Robot robot) {
-        Point p = decoratedWindow.getLocationOnScreen();
-        Dimension d = decoratedWindow.getSize();
-
         if (decoratedWindow instanceof Frame || decoratedWindow instanceof Dialog) {
-            robot.mouseMove(p.x + (int)(d.getWidth()/2), p.y + (int)decoratedWindow.getInsets().top/2);
+            Point p = getTitlePoint(decoratedWindow);
+            robot.mouseMove(p.x, p.y);
             robot.delay(50);
             robot.mousePress(InputEvent.BUTTON1_MASK);
             robot.delay(50);
@@ -409,7 +414,9 @@ public final class Util {
         ICE_WM = 10,
         METACITY_WM = 11,
         COMPIZ_WM = 12,
-        LG3D_WM = 13;
+        LG3D_WM = 13,
+        CWM_WM = 14,
+        MUTTER_WM = 15;
 
     /*
      * Returns -1 in case of not X Window or any problems.

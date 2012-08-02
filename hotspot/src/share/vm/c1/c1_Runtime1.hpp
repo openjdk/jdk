@@ -186,6 +186,7 @@ class Runtime1: public AllStatic {
   static int  arraycopy(oopDesc* src, int src_pos, oopDesc* dst, int dst_pos, int length);
   static void primitive_arraycopy(HeapWord* src, HeapWord* dst, int length);
   static void oop_arraycopy(HeapWord* src, HeapWord* dst, int length);
+  static int  is_instance_of(oopDesc* mirror, oopDesc* obj);
 
   static void print_statistics()                 PRODUCT_RETURN;
 };

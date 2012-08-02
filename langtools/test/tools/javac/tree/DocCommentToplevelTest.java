@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
+import com.sun.tools.javac.tree.DocCommentTable;
 import com.sun.tools.javac.tree.JCTree;
 
 import java.net.URI;
@@ -137,16 +138,16 @@ public class DocCommentToplevelTest {
 
         new TreeScanner<ClassTree,Void>() {
 
-            Map<JCTree, String> docComments;
+            DocCommentTable docComments;
 
             @Override
             public ClassTree visitCompilationUnit(CompilationUnitTree node, Void unused) {
                 docComments = ((JCTree.JCCompilationUnit)node).docComments;
                 boolean expectedComment = tdk == ToplevelDocKind.HAS_DOC &&
                         (pk != PackageKind.NO_PKG || ik != ImportKind.ZERO);
-                boolean foundComment = docComments.get(node) != null;
+                boolean foundComment = docComments.hasComment((JCTree) node);
                 if (expectedComment != foundComment) {
-                    error("Unexpected comment " + docComments.get(node) + " on toplevel");
+                    error("Unexpected comment " + docComments.getComment((JCTree) node) + " on toplevel");
                 }
                 return super.visitCompilationUnit(node, null);
             }
@@ -156,9 +157,9 @@ public class DocCommentToplevelTest {
                 boolean expectedComment = tdk == ToplevelDocKind.HAS_DOC &&
                         pk == PackageKind.NO_PKG && ik == ImportKind.ZERO &&
                         node.getSimpleName().toString().equals("First");
-                boolean foundComment = docComments.get(node) != null;
+                boolean foundComment = docComments.hasComment((JCTree) node);
                 if (expectedComment != foundComment) {
-                    error("Unexpected comment " + docComments.get(node) + " on class " + node.getSimpleName());
+                    error("Unexpected comment " + docComments.getComment((JCTree) node) + " on class " + node.getSimpleName());
                 }
                 return super.visitClass(node, unused);
             }

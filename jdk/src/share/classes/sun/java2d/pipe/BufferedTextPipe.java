@@ -32,6 +32,10 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public abstract class BufferedTextPipe extends GlyphListPipe {
 
     private static final int BYTES_PER_GLYPH_IMAGE = 8;

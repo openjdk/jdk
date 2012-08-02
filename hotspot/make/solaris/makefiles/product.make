@@ -40,6 +40,11 @@ endif
 # (OPT_CFLAGS/SLOWER is also available, to alter compilation of buggy files)
 ifeq ("${Platform_compiler}", "sparcWorks")
 
+ifeq ($(COMPILER_REV_NUMERIC), 510)
+# CC 5.10 has bug XXXXX with -xO4
+OPT_CFLAGS/jvmtiClassFileReconstituter.o = $(OPT_CFLAGS/O2)
+endif # COMPILER_REV_NUMERIC == 510
+
 ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
 # dtrace cannot handle tail call optimization (6672627, 6693876)
 OPT_CFLAGS/jni.o = $(OPT_CFLAGS/DEFAULT) $(OPT_CCFLAGS/NO_TAIL_CALL_OPT)

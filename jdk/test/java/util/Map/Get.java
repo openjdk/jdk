@@ -50,16 +50,16 @@ public class Get {
                             Character key, Boolean value,
                             Boolean oldValue) {
         if (oldValue != null) {
-            check(m.containsValue(oldValue));
-            check(m.values().contains(oldValue));
+            check("containsValue(oldValue)", m.containsValue(oldValue));
+            check("values.contains(oldValue)", m.values().contains(oldValue));
         }
         equal(m.put(key, value), oldValue);
         equal(m.get(key), value);
-        check(m.containsKey(key));
-        check(m.keySet().contains(key));
-        check(m.containsValue(value));
-        check(m.values().contains(value));
-        check(! m.isEmpty());
+        check("containsKey", m.containsKey(key));
+        check("keySet.contains", m.keySet().contains(key));
+        check("containsValue", m.containsValue(value));
+        check("values.contains",  m.values().contains(value));
+        check("!isEmpty", ! m.isEmpty());
     }
 
     private static void testMap(Map<Character,Boolean> m) {
@@ -71,7 +71,7 @@ public class Get {
                                         m instanceof Hashtable));
         boolean usesIdentity = m instanceof IdentityHashMap;
 
-        System.out.println(m.getClass());
+        System.err.println(m.getClass());
         put(m, 'A', true,  null);
         put(m, 'A', false, true);       // Guaranteed identical by JLS
         put(m, 'B', true,  null);
@@ -81,15 +81,15 @@ public class Get {
                 put(m, null, true,  null);
                 put(m, null, false, true);
             }
-            catch (Throwable t) { unexpected(t); }
+            catch (Throwable t) { unexpected(m.getClass().getName(), t); }
         } else {
-            try { m.get(null); fail(); }
+            try { m.get(null); fail(m.getClass().getName() + " did not reject null key"); }
             catch (NullPointerException e) {}
-            catch (Throwable t) { unexpected(t); }
+            catch (Throwable t) { unexpected(m.getClass().getName(), t); }
 
-            try { m.put(null, true); fail(); }
+            try { m.put(null, true); fail(m.getClass().getName() + " did not reject null key"); }
             catch (NullPointerException e) {}
-            catch (Throwable t) { unexpected(t); }
+            catch (Throwable t) { unexpected(m.getClass().getName(), t); }
         }
         if (permitsNullValues) {
             try {
@@ -97,33 +97,35 @@ public class Get {
                 put(m, 'C', true, null);
                 put(m, 'C', null, true);
             }
-            catch (Throwable t) { unexpected(t); }
+            catch (Throwable t) { unexpected(m.getClass().getName(), t); }
         } else {
-            try { m.put('A', null); fail(); }
+            try { m.put('A', null); fail(m.getClass().getName() + " did not reject null key"); }
             catch (NullPointerException e) {}
-            catch (Throwable t) { unexpected(t); }
+            catch (Throwable t) { unexpected(m.getClass().getName(), t); }
 
-            try { m.put('C', null); fail(); }
+            try { m.put('C', null); fail(m.getClass().getName() + " did not reject null key"); }
             catch (NullPointerException e) {}
-            catch (Throwable t) { unexpected(t); }
+            catch (Throwable t) { unexpected(m.getClass().getName(), t); }
         }
     }
 
     //--------------------- Infrastructure ---------------------------
     static volatile int passed = 0, failed = 0;
     static void pass() { passed++; }
-    static void fail() { failed++; Thread.dumpStack(); }
-    static void fail(String msg) { System.out.println(msg); fail(); }
-    static void unexpected(Throwable t) { failed++; t.printStackTrace(); }
+    static void fail() { failed++; (new Error("Failure")).printStackTrace(System.err); }
+    static void fail(String msg) { failed++; (new Error("Failure: " + msg)).printStackTrace(System.err); }
+    static void unexpected(String msg, Throwable t) { System.err.println("Unexpected: " + msg); unexpected(t); }
+    static void unexpected(Throwable t) { failed++; t.printStackTrace(System.err); }
     static void check(boolean cond) { if (cond) pass(); else fail(); }
+    static void check(String desc, boolean cond) { if (cond) pass(); else fail(desc); }
     static void equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) pass();
-        else {System.out.println(x + " not equal to " + y); fail(); }}
+        if(Objects.equals(x,y)) pass(); else fail(x + " not equal to " + y);
+    }
 
     public static void main(String[] args) throws Throwable {
         try { realMain(args); } catch (Throwable t) { unexpected(t); }
 
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
-        if (failed > 0) throw new Exception("Some tests failed");
+        if (failed > 0) throw new Error("Some tests failed");
     }
 }

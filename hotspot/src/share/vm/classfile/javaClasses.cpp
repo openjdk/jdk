@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -143,7 +144,27 @@ compute_optional_offset(int& dest_offset,
 }
 
 
+int java_lang_String::value_offset  = 0;
+int java_lang_String::offset_offset = 0;
+int java_lang_String::count_offset  = 0;
+int java_lang_String::hash_offset   = 0;
+
+bool java_lang_String::initialized  = false;
+
+void java_lang_String::compute_offsets() {
+  assert(!initialized, "offsets should be initialized only once");
+
+  klassOop k = SystemDictionary::String_klass();
+  compute_offset(value_offset,           k, vmSymbols::value_name(),  vmSymbols::char_array_signature());
+  compute_optional_offset(offset_offset, k, vmSymbols::offset_name(), vmSymbols::int_signature());
+  compute_optional_offset(count_offset,  k, vmSymbols::count_name(),  vmSymbols::int_signature());
+  compute_optional_offset(hash_offset,   k, vmSymbols::hash_name(),   vmSymbols::int_signature());
+
+  initialized = true;
+}
+
 Handle java_lang_String::basic_create(int length, bool tenured, TRAPS) {
+  assert(initialized, "Must be initialized");
   // Create the String object first, so there's a chance that the String
   // and the char array it points to end up in the same cache line.
   oop obj;
@@ -327,13 +348,26 @@ jchar* java_lang_String::as_unicode_string(oop java_string, int& length) {
   return result;
 }
 
-unsigned int java_lang_String::hash_string(oop java_string) {
+unsigned int java_lang_String::to_hash(oop java_string) {
+  int          length = java_lang_String::length(java_string);
+  // Zero length string will hash to zero with String.toHash() function.
+  if (length == 0) return 0;
+
   typeArrayOop value  = java_lang_String::value(java_string);
   int          offset = java_lang_String::offset(java_string);
-  int          length = java_lang_String::length(java_string);
+  return java_lang_String::to_hash(value->char_at_addr(offset), length);
+}
 
-  if (length == 0) return 0;
-  return hash_string(value->char_at_addr(offset), length);
+unsigned int java_lang_String::hash_string(oop java_string) {
+  int          length = java_lang_String::length(java_string);
+  // Zero length string doesn't hash necessarily hash to zero.
+  if (length == 0) {
+    return StringTable::hash_string(NULL, 0);
+  }
+
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          offset = java_lang_String::offset(java_string);
+  return StringTable::hash_string(value->char_at_addr(offset), length);
 }
 
 Symbol* java_lang_String::as_symbol(Handle java_string, TRAPS) {
@@ -2704,17 +2738,6 @@ void java_lang_invoke_CallSite::compute_offsets() {
   if (k != NULL) {
     compute_offset(_target_offset, k, vmSymbols::target_name(), vmSymbols::java_lang_invoke_MethodHandle_signature());
   }
-
-  // Disallow compilation of CallSite.setTargetNormal and CallSite.setTargetVolatile
-  // (For C2:  keep this until we have throttling logic for uncommon traps.)
-  if (k != NULL) {
-    instanceKlass* ik = instanceKlass::cast(k);
-    methodOop m_normal   = ik->lookup_method(vmSymbols::setTargetNormal_name(),   vmSymbols::setTarget_signature());
-    methodOop m_volatile = ik->lookup_method(vmSymbols::setTargetVolatile_name(), vmSymbols::setTarget_signature());
-    guarantee(m_normal != NULL && m_volatile != NULL, "must exist");
-    m_normal->set_not_compilable_quietly();
-    m_volatile->set_not_compilable_quietly();
-  }
 }
 
 
@@ -2837,10 +2860,6 @@ int java_lang_System::err_offset_in_bytes() {
 
 
 
-int java_lang_String::value_offset;
-int java_lang_String::offset_offset;
-int java_lang_String::count_offset;
-int java_lang_String::hash_offset;
 int java_lang_Class::_klass_offset;
 int java_lang_Class::_array_klass_offset;
 int java_lang_Class::_resolved_constructor_offset;
@@ -2903,7 +2922,6 @@ int java_lang_AssertionStatusDirectives::packages_offset;
 int java_lang_AssertionStatusDirectives::packageEnabled_offset;
 int java_lang_AssertionStatusDirectives::deflt_offset;
 int java_nio_Buffer::_limit_offset;
-int sun_misc_AtomicLongCSImpl::_value_offset;
 int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset = 0;
 int sun_reflect_ConstantPool::_cp_oop_offset;
 int sun_reflect_UnsafeStaticFieldAccessorImpl::_base_offset;
@@ -2963,21 +2981,6 @@ void java_nio_Buffer::compute_offsets() {
   compute_offset(_limit_offset, k, vmSymbols::limit_name(), vmSymbols::int_signature());
 }
 
-// Support for intrinsification of sun.misc.AtomicLongCSImpl.attemptUpdate
-int sun_misc_AtomicLongCSImpl::value_offset() {
-  assert(SystemDictionary::AtomicLongCSImpl_klass() != NULL, "can't call this");
-  return _value_offset;
-}
-
-
-void sun_misc_AtomicLongCSImpl::compute_offsets() {
-  klassOop k = SystemDictionary::AtomicLongCSImpl_klass();
-  // If this class is not present, its value field offset won't be referenced.
-  if (k != NULL) {
-    compute_offset(_value_offset, k, vmSymbols::value_name(), vmSymbols::long_signature());
-  }
-}
-
 void java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(TRAPS) {
   if (_owner_offset != 0) return;
 
@@ -2999,12 +3002,6 @@ oop java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(
 void JavaClasses::compute_hard_coded_offsets() {
   const int x = heapOopSize;
   const int header = instanceOopDesc::base_offset_in_bytes();
-
-  // Do the String Class
-  java_lang_String::value_offset  = java_lang_String::hc_value_offset  * x + header;
-  java_lang_String::offset_offset = java_lang_String::hc_offset_offset * x + header;
-  java_lang_String::count_offset  = java_lang_String::offset_offset + sizeof (jint);
-  java_lang_String::hash_offset   = java_lang_String::count_offset + sizeof (jint);
 
   // Throwable Class
   java_lang_Throwable::backtrace_offset  = java_lang_Throwable::hc_backtrace_offset  * x + header;
@@ -3088,7 +3085,6 @@ void JavaClasses::compute_offsets() {
     sun_reflect_ConstantPool::compute_offsets();
     sun_reflect_UnsafeStaticFieldAccessorImpl::compute_offsets();
   }
-  sun_misc_AtomicLongCSImpl::compute_offsets();
 
   // generated interpreter code wants to know about the offsets we just computed:
   AbstractAssembler::update_delayed_values();
@@ -3200,9 +3196,13 @@ void JavaClasses::check_offsets() {
   // java.lang.String
 
   CHECK_OFFSET("java/lang/String", java_lang_String, value, "[C");
-  CHECK_OFFSET("java/lang/String", java_lang_String, offset, "I");
-  CHECK_OFFSET("java/lang/String", java_lang_String, count, "I");
-  CHECK_OFFSET("java/lang/String", java_lang_String, hash, "I");
+  if (java_lang_String::has_offset_field()) {
+    CHECK_OFFSET("java/lang/String", java_lang_String, offset, "I");
+    CHECK_OFFSET("java/lang/String", java_lang_String, count, "I");
+  }
+  if (java_lang_String::has_hash_field()) {
+    CHECK_OFFSET("java/lang/String", java_lang_String, hash, "I");
+  }
 
   // java.lang.Class
 

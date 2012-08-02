@@ -134,6 +134,9 @@ public class Ruler extends JFrame {
 
     {
         jPopupMenu.add(new JMenuItem(exitAction));
+
+        // To avoid popup cutting by main window shape forbid light-weight popups
+        jPopupMenu.setLightWeightPopupEnabled(false);
     }
 
     /**

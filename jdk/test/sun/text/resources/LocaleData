@@ -7029,3 +7029,8 @@ LocaleNames/en/SS=South Sudan
 
 # bug 7028073
 CurrencyNames/es_PE/PEN=S/.
+
+# bug 7171028
+FormatData/sl/DateTimePatterns/4=EEEE, dd. MMMM y
+FormatData/sl/DateTimePatterns/5=dd. MMMM y
+

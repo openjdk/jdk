@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,12 +68,15 @@ public class HttpTimestamper implements Timestamper {
     /**
      * Creates a timestamper that connects to the specified TSA.
      *
-     * @param tsa The location of the TSA. It must be an HTTP URI.
-     * @throws IllegalArgumentException if tsaURI is not an HTTP URI
+     * @param tsa The location of the TSA. It must be an HTTP or HTTPS URI.
+     * @throws IllegalArgumentException if tsaURI is not an HTTP or HTTPS URI
      */
     public HttpTimestamper(URI tsaURI) {
-        if (!tsaURI.getScheme().equalsIgnoreCase("http"))
-            throw new IllegalArgumentException("TSA must be an HTTP URI");
+        if (!tsaURI.getScheme().equalsIgnoreCase("http") &&
+                !tsaURI.getScheme().equalsIgnoreCase("https")) {
+            throw new IllegalArgumentException(
+                    "TSA must be an HTTP or HTTPS URI");
+        }
         this.tsaURI = tsaURI;
     }
 
@@ -144,13 +147,12 @@ public class HttpTimestamper implements Timestamper {
             }
             verifyMimeType(connection.getContentType());
 
-            int total = 0;
             int contentLength = connection.getContentLength();
             replyBuffer = IOUtils.readFully(input, contentLength, false);
 
             if (debug != null) {
                 debug.println("received timestamp response (length=" +
-                        total + ")");
+                        replyBuffer.length + ")");
             }
         } finally {
             if (input != null) {

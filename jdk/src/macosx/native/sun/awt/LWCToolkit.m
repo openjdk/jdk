@@ -456,3 +456,21 @@ Java_sun_font_FontManager_populateFontFileNameMap
 {
 
 }
+
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    executeNextAppKitEvent
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_executeNextAppKitEvent
+(JNIEnv *env, jclass cls)
+{
+    // Simply get the next event in native loop and pass it to execution
+    // We'll be called repeatedly so there's no need to block here
+    NSRunLoop *theRL = [NSRunLoop currentRunLoop];
+    NSApplication * app = [NSApplication sharedApplication];
+    NSEvent * event = [app nextEventMatchingMask: 0xFFFFFFFF untilDate:nil inMode:NSDefaultRunLoopMode dequeue:YES];
+    if (event != nil) {
+        [app sendEvent: event];
+    }
+}

@@ -21,8 +21,7 @@
  * questions.
  */
 
-// key: compiler.misc.invalid.inferred.types
-// key: compiler.err.prob.found.req.1
+// key: compiler.err.cant.apply.symbol.1
 // key: compiler.misc.inferred.do.not.conform.to.lower.bounds
 
 import java.util.*;
