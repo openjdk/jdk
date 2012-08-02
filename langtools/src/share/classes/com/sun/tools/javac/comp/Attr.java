@@ -228,7 +228,7 @@ public class Attr extends JCTree.Visitor {
      *  @param env    The current environment.
      */
     boolean isAssignableAsBlankFinal(VarSymbol v, Env<AttrContext> env) {
-        Symbol owner = env.info.scope.owner;
+        Symbol owner = owner(env);
            // owner refers to the innermost variable, method or
            // initializer block declaration at this point.
         return
@@ -241,6 +241,41 @@ public class Attr extends JCTree.Visitor {
              v.owner == owner.owner
              &&
              ((v.flags() & STATIC) != 0) == Resolve.isStatic(env));
+    }
+
+    /**
+     * Return the innermost enclosing owner symbol in a given attribution context
+     */
+    Symbol owner(Env<AttrContext> env) {
+        while (true) {
+            switch (env.tree.getTag()) {
+                case VARDEF:
+                    //a field can be owner
+                    VarSymbol vsym = ((JCVariableDecl)env.tree).sym;
+                    if (vsym.owner.kind == TYP) {
+                        return vsym;
+                    }
+                    break;
+                case METHODDEF:
+                    //method def is always an owner
+                    return ((JCMethodDecl)env.tree).sym;
+                case CLASSDEF:
+                    //class def is always an owner
+                    return ((JCClassDecl)env.tree).sym;
+                case BLOCK:
+                    //static/instance init blocks are owner
+                    Symbol blockSym = env.info.scope.owner;
+                    if ((blockSym.flags() & BLOCK) != 0) {
+                        return blockSym;
+                    }
+                    break;
+                case TOPLEVEL:
+                    //toplevel is always an owner (for pkge decls)
+                    return env.info.scope.owner;
+            }
+            Assert.checkNonNull(env.next);
+            env = env.next;
+        }
     }
 
     /** Check that variable can be assigned to.
@@ -883,7 +918,6 @@ public class Attr extends JCTree.Visitor {
                 memberEnter.memberEnter(tree, env);
                 annotate.flush();
             }
-            tree.sym.flags_field |= EFFECTIVELY_FINAL;
         }
 
         VarSymbol v = tree.sym;
@@ -2187,16 +2221,6 @@ public class Attr extends JCTree.Visitor {
             // illegal forward reference.
             checkInit(tree, env, v, false);
 
-            // If symbol is a local variable accessed from an embedded
-            // inner class check that it is final.
-            if (v.owner.kind == MTH &&
-                v.owner != env.info.scope.owner &&
-                (v.flags_field & FINAL) == 0) {
-                log.error(tree.pos(),
-                          "local.var.accessed.from.icls.needs.final",
-                          v);
-            }
-
             // If we are expecting a variable (as opposed to a value), check
             // that the variable is assignable in the current environment.
             if (pkind() == VAR)
@@ -2590,7 +2614,7 @@ public class Attr extends JCTree.Visitor {
             // and are subject to definite assignment checking.
             if ((env.info.enclVar == v || v.pos > tree.pos) &&
                 v.owner.kind == TYP &&
-                canOwnInitializer(env.info.scope.owner) &&
+                canOwnInitializer(owner(env)) &&
                 v.owner == env.info.scope.owner.enclClass() &&
                 ((v.flags() & STATIC) != 0) == Resolve.isStatic(env) &&
                 (!env.tree.hasTag(ASSIGN) ||
