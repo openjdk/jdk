@@ -76,7 +76,7 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
   _ref_processor = rp;
   rp->setup_policy(clear_all_softrefs);
 
-  TraceTime t1("Full GC", PrintGC && !PrintGCDetails, true, gclog_or_tty);
+  TraceTime t1(GCCauseString("Full GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, gclog_or_tty);
 
   // When collecting the permanent generation methodOops may be moving,
   // so we either have to flush all bcp data or convert it into bci.
@@ -203,21 +203,21 @@ void GenMarkSweep::allocate_stacks() {
 
 #ifdef VALIDATE_MARK_SWEEP
   if (ValidateMarkSweep) {
-    _root_refs_stack    = new (ResourceObj::C_HEAP) GrowableArray<void*>(100, true);
-    _other_refs_stack   = new (ResourceObj::C_HEAP) GrowableArray<void*>(100, true);
-    _adjusted_pointers  = new (ResourceObj::C_HEAP) GrowableArray<void*>(100, true);
-    _live_oops          = new (ResourceObj::C_HEAP) GrowableArray<oop>(100, true);
-    _live_oops_moved_to = new (ResourceObj::C_HEAP) GrowableArray<oop>(100, true);
-    _live_oops_size     = new (ResourceObj::C_HEAP) GrowableArray<size_t>(100, true);
+    _root_refs_stack    = new (ResourceObj::C_HEAP, mtGC) GrowableArray<void*>(100, true);
+    _other_refs_stack   = new (ResourceObj::C_HEAP, mtGC) GrowableArray<void*>(100, true);
+    _adjusted_pointers  = new (ResourceObj::C_HEAP, mtGC) GrowableArray<void*>(100, true);
+    _live_oops          = new (ResourceObj::C_HEAP, mtGC) GrowableArray<oop>(100, true);
+    _live_oops_moved_to = new (ResourceObj::C_HEAP, mtGC) GrowableArray<oop>(100, true);
+    _live_oops_size     = new (ResourceObj::C_HEAP, mtGC) GrowableArray<size_t>(100, true);
   }
   if (RecordMarkSweepCompaction) {
     if (_cur_gc_live_oops == NULL) {
-      _cur_gc_live_oops           = new(ResourceObj::C_HEAP) GrowableArray<HeapWord*>(100, true);
-      _cur_gc_live_oops_moved_to  = new(ResourceObj::C_HEAP) GrowableArray<HeapWord*>(100, true);
-      _cur_gc_live_oops_size      = new(ResourceObj::C_HEAP) GrowableArray<size_t>(100, true);
-      _last_gc_live_oops          = new(ResourceObj::C_HEAP) GrowableArray<HeapWord*>(100, true);
-      _last_gc_live_oops_moved_to = new(ResourceObj::C_HEAP) GrowableArray<HeapWord*>(100, true);
-      _last_gc_live_oops_size     = new(ResourceObj::C_HEAP) GrowableArray<size_t>(100, true);
+      _cur_gc_live_oops           = new(ResourceObj::C_HEAP, mtGC) GrowableArray<HeapWord*>(100, true);
+      _cur_gc_live_oops_moved_to  = new(ResourceObj::C_HEAP, mtGC) GrowableArray<HeapWord*>(100, true);
+      _cur_gc_live_oops_size      = new(ResourceObj::C_HEAP, mtGC) GrowableArray<size_t>(100, true);
+      _last_gc_live_oops          = new(ResourceObj::C_HEAP, mtGC) GrowableArray<HeapWord*>(100, true);
+      _last_gc_live_oops_moved_to = new(ResourceObj::C_HEAP, mtGC) GrowableArray<HeapWord*>(100, true);
+      _last_gc_live_oops_size     = new(ResourceObj::C_HEAP, mtGC) GrowableArray<size_t>(100, true);
     } else {
       _cur_gc_live_oops->clear();
       _cur_gc_live_oops_moved_to->clear();

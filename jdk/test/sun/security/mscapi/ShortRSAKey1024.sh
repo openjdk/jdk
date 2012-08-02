@@ -27,7 +27,9 @@
 # @test
 # @bug 7106773
 # @summary 512 bits RSA key cannot work with SHA384 and SHA512
-# @run shell ShortRSAKey1024.sh
+# @run shell ShortRSAKey1024.sh 1024
+# @run shell ShortRSAKey1024.sh 768
+# @run shell ShortRSAKey1024.sh 512
 
 # set a few environment variables so that the shell-script can run stand-alone
 # in the source directory
@@ -47,34 +49,53 @@ fi
 
 OS=`uname -s`
 case "$OS" in
+  SunOS | Linux | Darwin | CYGWIN* )
+    FS="/"
+    ;;
+  Windows_* )
+    FS="\\"
+    ;;
+esac
+
+BITS=$1
+
+case "$OS" in
     Windows* | CYGWIN* )
 
         echo "Creating a temporary RSA keypair in the Windows-My store..."
-        ${TESTJAVA}/bin/keytool \
+        ${TESTJAVA}${FS}bin${FS}keytool \
             -genkeypair \
             -storetype Windows-My \
             -keyalg RSA \
-            -alias 7106773.1024 \
-            -keysize 1024 \
+            -alias 7106773.$BITS \
+            -keysize $BITS \
             -dname "cn=localhost,c=US" \
+            -debug \
             -noprompt
+
+        if [ "$?" -ne "0" ]; then
+            echo "Unable to generate key pair in Windows-My keystore"
+            exit 1
+        fi
 
         echo
         echo "Running the test..."
-        ${TESTJAVA}/bin/javac -d . ${TESTSRC}\\ShortRSAKeyWithinTLS.java
-        ${TESTJAVA}/bin/java ShortRSAKeyWithinTLS 7106773.1024 1024 \
+        ${TESTJAVA}${FS}bin${FS}javac -d . \
+            ${TESTSRC}${FS}ShortRSAKeyWithinTLS.java
+        ${TESTJAVA}${FS}bin${FS}java ShortRSAKeyWithinTLS 7106773.$BITS $BITS \
             TLSv1.2 TLS_DHE_RSA_WITH_AES_128_CBC_SHA
 
         rc=$?
 
         echo
         echo "Removing the temporary RSA keypair from the Windows-My store..."
-        ${TESTJAVA}/bin/keytool \
+        ${TESTJAVA}${FS}bin${FS}keytool \
             -delete \
             -storetype Windows-My \
-            -alias 7106773.1024
+            -debug \
+            -alias 7106773.$BITS
 
-        echo done.
+        echo "Done".
         exit $rc
         ;;
 

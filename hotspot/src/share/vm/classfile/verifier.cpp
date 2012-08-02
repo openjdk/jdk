@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1368,47 +1368,48 @@ char* ClassVerifier::generate_code_data(methodHandle m, u4 code_length, TRAPS) {
 }
 
 void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_data, int& min, int& max, TRAPS) {
-  typeArrayHandle exhandlers (THREAD, _method->exception_table());
+  ExceptionTable exhandlers(_method());
+  int exlength = exhandlers.length();
   constantPoolHandle cp (THREAD, _method->constants());
 
-  if (exhandlers() != NULL) {
-    for(int i = 0; i < exhandlers->length();) {
-      u2 start_pc = exhandlers->int_at(i++);
-      u2 end_pc = exhandlers->int_at(i++);
-      u2 handler_pc = exhandlers->int_at(i++);
-      if (start_pc >= code_length || code_data[start_pc] == 0) {
-        class_format_error("Illegal exception table start_pc %d", start_pc);
-        return;
-      }
-      if (end_pc != code_length) {   // special case: end_pc == code_length
-        if (end_pc > code_length || code_data[end_pc] == 0) {
-          class_format_error("Illegal exception table end_pc %d", end_pc);
-          return;
-        }
-      }
-      if (handler_pc >= code_length || code_data[handler_pc] == 0) {
-        class_format_error("Illegal exception table handler_pc %d", handler_pc);
-        return;
-      }
-      int catch_type_index = exhandlers->int_at(i++);
-      if (catch_type_index != 0) {
-        VerificationType catch_type = cp_index_to_type(
-          catch_type_index, cp, CHECK_VERIFY(this));
-        VerificationType throwable =
-          VerificationType::reference_type(vmSymbols::java_lang_Throwable());
-        bool is_subclass = throwable.is_assignable_from(
-          catch_type, this, CHECK_VERIFY(this));
-        if (!is_subclass) {
-          // 4286534: should throw VerifyError according to recent spec change
-          verify_error(
-            "Catch type is not a subclass of Throwable in handler %d",
-            handler_pc);
-          return;
-        }
-      }
-      if (start_pc < min) min = start_pc;
-      if (end_pc > max) max = end_pc;
+  for(int i = 0; i < exlength; i++) {
+    //reacquire the table in case a GC happened
+    ExceptionTable exhandlers(_method());
+    u2 start_pc = exhandlers.start_pc(i);
+    u2 end_pc = exhandlers.end_pc(i);
+    u2 handler_pc = exhandlers.handler_pc(i);
+    if (start_pc >= code_length || code_data[start_pc] == 0) {
+      class_format_error("Illegal exception table start_pc %d", start_pc);
+      return;
     }
+    if (end_pc != code_length) {   // special case: end_pc == code_length
+      if (end_pc > code_length || code_data[end_pc] == 0) {
+        class_format_error("Illegal exception table end_pc %d", end_pc);
+        return;
+      }
+    }
+    if (handler_pc >= code_length || code_data[handler_pc] == 0) {
+      class_format_error("Illegal exception table handler_pc %d", handler_pc);
+      return;
+    }
+    int catch_type_index = exhandlers.catch_type_index(i);
+    if (catch_type_index != 0) {
+      VerificationType catch_type = cp_index_to_type(
+        catch_type_index, cp, CHECK_VERIFY(this));
+      VerificationType throwable =
+        VerificationType::reference_type(vmSymbols::java_lang_Throwable());
+      bool is_subclass = throwable.is_assignable_from(
+        catch_type, this, CHECK_VERIFY(this));
+      if (!is_subclass) {
+        // 4286534: should throw VerifyError according to recent spec change
+        verify_error(
+          "Catch type is not a subclass of Throwable in handler %d",
+          handler_pc);
+        return;
+      }
+    }
+    if (start_pc < min) min = start_pc;
+    if (end_pc > max) max = end_pc;
   }
 }
 
@@ -1474,35 +1475,36 @@ u2 ClassVerifier::verify_stackmap_table(u2 stackmap_index, u2 bci,
 void ClassVerifier::verify_exception_handler_targets(u2 bci, bool this_uninit, StackMapFrame* current_frame,
                                                      StackMapTable* stackmap_table, TRAPS) {
   constantPoolHandle cp (THREAD, _method->constants());
-  typeArrayHandle exhandlers (THREAD, _method->exception_table());
-  if (exhandlers() != NULL) {
-    for(int i = 0; i < exhandlers->length();) {
-      u2 start_pc = exhandlers->int_at(i++);
-      u2 end_pc = exhandlers->int_at(i++);
-      u2 handler_pc = exhandlers->int_at(i++);
-      int catch_type_index = exhandlers->int_at(i++);
-      if(bci >= start_pc && bci < end_pc) {
-        u1 flags = current_frame->flags();
-        if (this_uninit) {  flags |= FLAG_THIS_UNINIT; }
-        StackMapFrame* new_frame = current_frame->frame_in_exception_handler(flags);
-        if (catch_type_index != 0) {
-          // We know that this index refers to a subclass of Throwable
-          VerificationType catch_type = cp_index_to_type(
-            catch_type_index, cp, CHECK_VERIFY(this));
-          new_frame->push_stack(catch_type, CHECK_VERIFY(this));
-        } else {
-          VerificationType throwable =
-            VerificationType::reference_type(vmSymbols::java_lang_Throwable());
-          new_frame->push_stack(throwable, CHECK_VERIFY(this));
-        }
-        bool match = stackmap_table->match_stackmap(
-          new_frame, handler_pc, true, false, CHECK_VERIFY(this));
-        if (!match) {
-          verify_error(bci,
-            "Stack map does not match the one at exception handler %d",
-            handler_pc);
-          return;
-        }
+  ExceptionTable exhandlers(_method());
+  int exlength = exhandlers.length();
+  for(int i = 0; i < exlength; i++) {
+    //reacquire the table in case a GC happened
+    ExceptionTable exhandlers(_method());
+    u2 start_pc = exhandlers.start_pc(i);
+    u2 end_pc = exhandlers.end_pc(i);
+    u2 handler_pc = exhandlers.handler_pc(i);
+    int catch_type_index = exhandlers.catch_type_index(i);
+    if(bci >= start_pc && bci < end_pc) {
+      u1 flags = current_frame->flags();
+      if (this_uninit) {  flags |= FLAG_THIS_UNINIT; }
+      StackMapFrame* new_frame = current_frame->frame_in_exception_handler(flags);
+      if (catch_type_index != 0) {
+        // We know that this index refers to a subclass of Throwable
+        VerificationType catch_type = cp_index_to_type(
+          catch_type_index, cp, CHECK_VERIFY(this));
+        new_frame->push_stack(catch_type, CHECK_VERIFY(this));
+      } else {
+        VerificationType throwable =
+          VerificationType::reference_type(vmSymbols::java_lang_Throwable());
+        new_frame->push_stack(throwable, CHECK_VERIFY(this));
+      }
+      bool match = stackmap_table->match_stackmap(
+        new_frame, handler_pc, true, false, CHECK_VERIFY(this));
+      if (!match) {
+        verify_error(bci,
+          "Stack map does not match the one at exception handler %d",
+          handler_pc);
+        return;
       }
     }
   }
@@ -1738,10 +1740,14 @@ void ClassVerifier::verify_switch(
   int target = bci + default_offset;
   stackmap_table->check_jump_target(current_frame, target, CHECK_VERIFY(this));
   for (int i = 0; i < keys; i++) {
+    // Because check_jump_target() may safepoint, the bytecode could have
+    // moved, which means 'aligned_bcp' is no good and needs to be recalculated.
+    aligned_bcp = (address)round_to((intptr_t)(bcs->bcp() + 1), jintSize);
     target = bci + (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
     stackmap_table->check_jump_target(
       current_frame, target, CHECK_VERIFY(this));
   }
+  NOT_PRODUCT(aligned_bcp = NULL);  // no longer valid at this point
 }
 
 bool ClassVerifier::name_in_supers(

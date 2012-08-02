@@ -39,7 +39,6 @@ import java.security.ProviderException;
  *  . abstract void implCompress(byte[] b, int ofs);
  *  . abstract void implDigest(byte[] out, int ofs);
  *  . abstract void implReset();
- *  . public abstract Object clone();
  *
  * See the inline documentation for details.
  *
@@ -61,7 +60,7 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
     // buffer to store partial blocks, blockSize bytes large
     // Subclasses should not access this array directly except possibly in their
     // implDigest() method. See MD5.java as an example.
-    final byte[] buffer;
+    byte[] buffer;
     // offset into buffer
     private int bufOfs;
 
@@ -81,18 +80,6 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
         this.digestLength = digestLength;
         this.blockSize = blockSize;
         buffer = new byte[blockSize];
-    }
-
-    /**
-     * Constructor for cloning. Replicates common data.
-     */
-    DigestBase(DigestBase base) {
-        this.algorithm = base.algorithm;
-        this.digestLength = base.digestLength;
-        this.blockSize = base.blockSize;
-        this.buffer = base.buffer.clone();
-        this.bufOfs = base.bufOfs;
-        this.bytesProcessed = base.bytesProcessed;
     }
 
     // return digest length. See JCA doc.
@@ -206,12 +193,11 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
      */
     abstract void implReset();
 
-    /**
-     * Clone this digest. Should be implemented as "return new MyDigest(this)".
-     * That constructor should first call "super(baseDigest)" and then copy
-     * subclass specific data.
-     */
-    public abstract Object clone();
+    public Object clone() throws CloneNotSupportedException {
+        DigestBase copy = (DigestBase) super.clone();
+        copy.buffer = copy.buffer.clone();
+        return copy;
+    }
 
     // padding used for the MD5, and SHA-* message digests
     static final byte[] padding;
@@ -223,5 +209,4 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
         padding = new byte[136];
         padding[0] = (byte)0x80;
     }
-
 }

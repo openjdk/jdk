@@ -89,6 +89,10 @@ class Linux {
 
   static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
 
+  static void print_full_memory_info(outputStream* st);
+  static void print_distro_info(outputStream* st);
+  static void print_libversion_info(outputStream* st);
+
  public:
   static void init_thread_fpu_state();
   static int  get_fpu_control_word();
@@ -283,7 +287,7 @@ public:
 };
 
 
-class PlatformEvent : public CHeapObj {
+class PlatformEvent : public CHeapObj<mtInternal> {
   private:
     double CachePad [4] ;   // increase odds that _mutex is sole occupant of cache line
     volatile int _Event ;
@@ -318,7 +322,7 @@ class PlatformEvent : public CHeapObj {
     void SetAssociation (Thread * a) { _Assoc = a ; }
 } ;
 
-class PlatformParker : public CHeapObj {
+class PlatformParker : public CHeapObj<mtInternal> {
   protected:
     pthread_mutex_t _mutex [1] ;
     pthread_cond_t  _cond  [1] ;

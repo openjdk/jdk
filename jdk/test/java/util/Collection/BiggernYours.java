@@ -34,15 +34,25 @@ import java.util.concurrent.*;
 
 @SuppressWarnings("unchecked")
 public class BiggernYours {
-    static final Random rnd = new Random();
+    static final Random rnd = new Random(18675309);
 
     static void compareCollections(Collection c1, Collection c2) {
-        arrayEqual(c1.toArray(),
-                   c2.toArray());
-        arrayEqual(c1.toArray(new Object[0]),
-                   c2.toArray(new Object[0]));
-        arrayEqual(c1.toArray(new Object[5]),
-                   c2.toArray(new Object[5]));
+        Object[] c1Array = c1.toArray();
+        Object[] c2Array = c2.toArray();
+
+        check(c1Array.length == c2Array.length);
+        for(Object aC1 : c1Array) {
+            boolean found = false;
+            for(Object aC2 : c2Array) {
+                if(Objects.equals(aC1, aC2)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if(!found)
+                fail(aC1 + " not found in " + Arrays.toString(c2Array));
+        }
     }
 
     static void compareMaps(Map m1, Map m2) {

@@ -1,2 +1,2 @@
-T6638712e.java:17:27: compiler.err.prob.found.req.1: (compiler.misc.invalid.inferred.types: X, (compiler.misc.no.conforming.assignment.exists: T6638712e.Foo<java.lang.Boolean,java.lang.Boolean>, T6638712e.Foo<? super java.lang.Object,? extends java.lang.Boolean>))
+T6638712e.java:17:27: compiler.err.cant.apply.symbol.1: kindname.method, m, T6638712e.Foo<? super X,? extends A>, T6638712e.Foo<java.lang.Boolean,java.lang.Boolean>, kindname.class, T6638712e.Foo<A,B>, (compiler.misc.inferred.do.not.conform.to.upper.bounds: java.lang.Object, java.lang.Boolean,java.lang.Object)
 1 error

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3748,3 +3748,81 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
   final_sync(ideal);
 }
 #undef __
+
+
+
+Node* GraphKit::load_String_offset(Node* ctrl, Node* str) {
+  if (java_lang_String::has_offset_field()) {
+    int offset_offset = java_lang_String::offset_offset_in_bytes();
+    const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
+                                                       false, NULL, 0);
+    const TypePtr* offset_field_type = string_type->add_offset(offset_offset);
+    int offset_field_idx = C->get_alias_index(offset_field_type);
+    return make_load(ctrl,
+                     basic_plus_adr(str, str, offset_offset),
+                     TypeInt::INT, T_INT, offset_field_idx);
+  } else {
+    return intcon(0);
+  }
+}
+
+Node* GraphKit::load_String_length(Node* ctrl, Node* str) {
+  if (java_lang_String::has_count_field()) {
+    int count_offset = java_lang_String::count_offset_in_bytes();
+    const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
+                                                       false, NULL, 0);
+    const TypePtr* count_field_type = string_type->add_offset(count_offset);
+    int count_field_idx = C->get_alias_index(count_field_type);
+    return make_load(ctrl,
+                     basic_plus_adr(str, str, count_offset),
+                     TypeInt::INT, T_INT, count_field_idx);
+  } else {
+    return load_array_length(load_String_value(ctrl, str));
+  }
+}
+
+Node* GraphKit::load_String_value(Node* ctrl, Node* str) {
+  int value_offset = java_lang_String::value_offset_in_bytes();
+  const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
+                                                     false, NULL, 0);
+  const TypePtr* value_field_type = string_type->add_offset(value_offset);
+  const TypeAryPtr*  value_type = TypeAryPtr::make(TypePtr::NotNull,
+                                                   TypeAry::make(TypeInt::CHAR,TypeInt::POS),
+                                                   ciTypeArrayKlass::make(T_CHAR), true, 0);
+  int value_field_idx = C->get_alias_index(value_field_type);
+  return make_load(ctrl, basic_plus_adr(str, str, value_offset),
+                   value_type, T_OBJECT, value_field_idx);
+}
+
+void GraphKit::store_String_offset(Node* ctrl, Node* str, Node* value) {
+  int offset_offset = java_lang_String::offset_offset_in_bytes();
+  const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
+                                                     false, NULL, 0);
+  const TypePtr* offset_field_type = string_type->add_offset(offset_offset);
+  int offset_field_idx = C->get_alias_index(offset_field_type);
+  store_to_memory(ctrl, basic_plus_adr(str, offset_offset),
+                  value, T_INT, offset_field_idx);
+}
+
+void GraphKit::store_String_value(Node* ctrl, Node* str, Node* value) {
+  int value_offset = java_lang_String::value_offset_in_bytes();
+  const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
+                                                     false, NULL, 0);
+  const TypePtr* value_field_type = string_type->add_offset(value_offset);
+  const TypeAryPtr*  value_type = TypeAryPtr::make(TypePtr::NotNull,
+                                                   TypeAry::make(TypeInt::CHAR,TypeInt::POS),
+                                                   ciTypeArrayKlass::make(T_CHAR), true, 0);
+  int value_field_idx = C->get_alias_index(value_field_type);
+  store_to_memory(ctrl, basic_plus_adr(str, value_offset),
+                  value, T_OBJECT, value_field_idx);
+}
+
+void GraphKit::store_String_length(Node* ctrl, Node* str, Node* value) {
+  int count_offset = java_lang_String::count_offset_in_bytes();
+  const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
+                                                     false, NULL, 0);
+  const TypePtr* count_field_type = string_type->add_offset(count_offset);
+  int count_field_idx = C->get_alias_index(count_field_type);
+  store_to_memory(ctrl, basic_plus_adr(str, count_offset),
+                  value, T_INT, count_field_idx);
+}

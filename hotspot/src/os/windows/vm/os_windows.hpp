@@ -27,6 +27,7 @@
 // Win32_OS defines the interface to windows operating systems
 
 class win32 {
+  friend class os;
 
  protected:
   static int    _vm_page_size;
@@ -38,6 +39,8 @@ class win32 {
   static bool   _is_nt;
   static bool   _is_windows_2003;
   static bool   _is_windows_server;
+
+  static void print_windows_version(outputStream* st);
 
  public:
   // Windows-specific interface:
@@ -95,7 +98,7 @@ class win32 {
   static LONG WINAPI serialize_fault_filter(struct _EXCEPTION_POINTERS* e);
 };
 
-class PlatformEvent : public CHeapObj {
+class PlatformEvent : public CHeapObj<mtInternal> {
   private:
     double CachePad [4] ;   // increase odds that _Event is sole occupant of cache line
     volatile int _Event ;
@@ -121,7 +124,7 @@ class PlatformEvent : public CHeapObj {
 
 
 
-class PlatformParker : public CHeapObj {
+class PlatformParker : public CHeapObj<mtInternal> {
   protected:
     HANDLE _ParkEvent ;
 
@@ -179,6 +182,9 @@ public:
   static BOOL GetNumaHighestNodeNumber(PULONG);
   static BOOL GetNumaNodeProcessorMask(UCHAR, PULONGLONG);
 
+  // Stack walking
+  static USHORT RtlCaptureStackBackTrace(ULONG, ULONG, PVOID*, PULONG);
+
 private:
   // GetLargePageMinimum available on Windows Vista/Windows Server 2003
   // and later
@@ -188,6 +194,7 @@ private:
   static LPVOID (WINAPI *_VirtualAllocExNuma) (HANDLE, LPVOID, SIZE_T, DWORD, DWORD, DWORD);
   static BOOL (WINAPI *_GetNumaHighestNodeNumber) (PULONG);
   static BOOL (WINAPI *_GetNumaNodeProcessorMask) (UCHAR, PULONGLONG);
+  static USHORT (WINAPI *_RtlCaptureStackBackTrace)(ULONG, ULONG, PVOID*, PULONG);
   static BOOL initialized;
 
   static void initialize();

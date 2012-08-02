@@ -1986,8 +1986,6 @@ class Parser implements DTDConstants {
             if (i == SCRIPT_END_TAG.length) {
 
                 /*  '</script>' tag detected */
-                /* Here, ch == '>' */
-                ch = readCh();
                 /* Here, ch == the first character after </script> */
                 return;
             } else {
@@ -2060,6 +2058,8 @@ class Parser implements DTDConstants {
                 handleComment(str.toCharArray());
                 endTag(false);
                 lastBlockStartPos = currentPosition;
+
+                continue;
             } else {
                 switch (c) {
                   case '<':

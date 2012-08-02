@@ -37,6 +37,8 @@ public class VerifyAccess {
     private VerifyAccess() { }  // cannot instantiate
 
     private static final int PACKAGE_ONLY = 0;
+    private static final int PACKAGE_ALLOWED = java.lang.invoke.MethodHandles.Lookup.PACKAGE;
+    private static final int PROTECTED_OR_PACKAGE_ALLOWED = (PACKAGE_ALLOWED|PROTECTED);
     private static final int ALL_ACCESS_MODES = (PUBLIC|PRIVATE|PROTECTED|PACKAGE_ONLY);
     private static final boolean ALLOW_NESTMATE_ACCESS = false;
 
@@ -82,14 +84,19 @@ public class VerifyAccess {
     public static boolean isMemberAccessible(Class<?> refc,  // symbolic ref class
                                              Class<?> defc,  // actual def class
                                              int      mods,  // actual member mods
-                                             Class<?> lookupClass) {
+                                             Class<?> lookupClass,
+                                             int      allowedModes) {
+        if (allowedModes == 0)  return false;
+        assert((allowedModes & PUBLIC) != 0 &&
+               (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED)) == 0);
         // Usually refc and defc are the same, but if they differ, verify them both.
         if (refc != defc) {
-            if (!isClassAccessible(refc, lookupClass)) {
+            if (!isClassAccessible(refc, lookupClass, allowedModes)) {
                 // Note that defc is verified in the switch below.
                 return false;
             }
-            if ((mods & (ALL_ACCESS_MODES|STATIC)) == (PROTECTED|STATIC)) {
+            if ((mods & (ALL_ACCESS_MODES|STATIC)) == (PROTECTED|STATIC) &&
+                (allowedModes & PROTECTED_OR_PACKAGE_ALLOWED) != 0) {
                 // Apply the special rules for refc here.
                 if (!isRelatedClass(refc, lookupClass))
                     return isSamePackage(defc, lookupClass);
@@ -98,19 +105,28 @@ public class VerifyAccess {
                 // a superclass of the lookup class.
             }
         }
-        if (defc == lookupClass)
+        if (defc == lookupClass &&
+            (allowedModes & PRIVATE) != 0)
             return true;        // easy check; all self-access is OK
         switch (mods & ALL_ACCESS_MODES) {
         case PUBLIC:
             if (refc != defc)  return true;  // already checked above
-            return isClassAccessible(refc, lookupClass);
+            return isClassAccessible(refc, lookupClass, allowedModes);
         case PROTECTED:
-            return isSamePackage(defc, lookupClass) || isPublicSuperClass(defc, lookupClass);
-        case PACKAGE_ONLY:
-            return isSamePackage(defc, lookupClass);
+            if ((allowedModes & PROTECTED_OR_PACKAGE_ALLOWED) != 0 &&
+                isSamePackage(defc, lookupClass))
+                return true;
+            if ((allowedModes & PROTECTED) != 0 &&
+                isPublicSuperClass(defc, lookupClass))
+                return true;
+            return false;
+        case PACKAGE_ONLY:  // That is, zero.  Unmarked member is package-only access.
+            return ((allowedModes & PACKAGE_ALLOWED) != 0 &&
+                    isSamePackage(defc, lookupClass));
         case PRIVATE:
             // Loosened rules for privates follows access rules for inner classes.
             return (ALLOW_NESTMATE_ACCESS &&
+                    (allowedModes & PRIVATE) != 0 &&
                     isSamePackageMember(defc, lookupClass));
         default:
             throw new IllegalArgumentException("bad modifiers: "+Modifier.toString(mods));
@@ -138,11 +154,16 @@ public class VerifyAccess {
      * @param refc the symbolic reference class to which access is being checked (C)
      * @param lookupClass the class performing the lookup (D)
      */
-    public static boolean isClassAccessible(Class<?> refc, Class<?> lookupClass) {
+    public static boolean isClassAccessible(Class<?> refc, Class<?> lookupClass,
+                                            int allowedModes) {
+        if (allowedModes == 0)  return false;
+        assert((allowedModes & PUBLIC) != 0 &&
+               (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED)) == 0);
         int mods = refc.getModifiers();
         if (isPublic(mods))
             return true;
-        if (isSamePackage(lookupClass, refc))
+        if ((allowedModes & PACKAGE_ALLOWED) != 0 &&
+            isSamePackage(lookupClass, refc))
             return true;
         return false;
     }
@@ -157,7 +178,7 @@ public class VerifyAccess {
         assert(!class1.isArray() && !class2.isArray());
         if (class1 == class2)
             return true;
-        if (!loadersAreRelated(class1.getClassLoader(), class2.getClassLoader(), false))
+        if (class1.getClassLoader() != class2.getClassLoader())
             return false;
         String name1 = class1.getName(), name2 = class2.getName();
         int dot = name1.lastIndexOf('.');

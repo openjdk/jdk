@@ -1,0 +1,413 @@
+/*
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 7126277
+ * @summary Ensure Maps behave well with lots of hashCode() collisions.
+ * @author Mike Duigou
+ */
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+
+public class Collisions {
+
+    final static class HashableInteger implements Comparable<HashableInteger> {
+
+        final int value;
+        final int hashmask; //yes duplication
+
+        HashableInteger(int value, int hashmask) {
+            this.value = value;
+            this.hashmask = hashmask;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof HashableInteger) {
+                HashableInteger other = (HashableInteger) obj;
+
+                return other.value == value;
+            }
+
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return value % hashmask;
+        }
+
+        @Override
+        public int compareTo(HashableInteger o) {
+            return value - o.value;
+        }
+
+        public String toString() {
+            return Integer.toString(value);
+        }
+    }
+    private static final int ITEMS = 5000;
+    private static final Object KEYS[][];
+
+    static {
+        HashableInteger UNIQUE_OBJECTS[] = new HashableInteger[ITEMS];
+        HashableInteger COLLIDING_OBJECTS[] = new HashableInteger[ITEMS];
+        String UNIQUE_STRINGS[] = new String[ITEMS];
+        String COLLIDING_STRINGS[] = new String[ITEMS];
+
+        for (int i = 0; i < ITEMS; i++) {
+            UNIQUE_OBJECTS[i] = new HashableInteger(i, Integer.MAX_VALUE);
+            COLLIDING_OBJECTS[i] = new HashableInteger(i, 10);
+            UNIQUE_STRINGS[i] = unhash(i);
+            COLLIDING_STRINGS[i] = (0 == i % 2)
+                    ? UNIQUE_STRINGS[i / 2]
+                    : "\u0000\u0000\u0000\u0000\u0000" + COLLIDING_STRINGS[i - 1];
+        }
+
+     KEYS = new Object[][] {
+            new Object[]{"Unique Objects", UNIQUE_OBJECTS},
+            new Object[]{"Colliding Objects", COLLIDING_OBJECTS},
+            new Object[]{"Unique Strings", UNIQUE_STRINGS},
+            new Object[]{"Colliding Strings", COLLIDING_STRINGS}
+        };
+    }
+
+    /**
+     * Returns a string with a hash equal to the argument.
+     *
+     * @return string with a hash equal to the argument.
+     */
+    public static String unhash(int target) {
+        StringBuilder answer = new StringBuilder();
+        if (target < 0) {
+            // String with hash of Integer.MIN_VALUE, 0x80000000
+            answer.append("\\u0915\\u0009\\u001e\\u000c\\u0002");
+
+            if (target == Integer.MIN_VALUE) {
+                return answer.toString();
+            }
+            // Find target without sign bit set
+            target = target & Integer.MAX_VALUE;
+        }
+
+        unhash0(answer, target);
+        return answer.toString();
+    }
+
+    private static void unhash0(StringBuilder partial, int target) {
+        int div = target / 31;
+        int rem = target % 31;
+
+        if (div <= Character.MAX_VALUE) {
+            if (div != 0) {
+                partial.append((char) div);
+            }
+            partial.append((char) rem);
+        } else {
+            unhash0(partial, div);
+            partial.append((char) rem);
+        }
+    }
+
+    private static void realMain(String[] args) throws Throwable {
+        for (Object[] keys_desc : KEYS) {
+            Map<Object, Object>[] MAPS = (Map<Object, Object>[]) new Map[]{
+                        new Hashtable<>(),
+                        new HashMap<>(),
+                        new IdentityHashMap<>(),
+                        new LinkedHashMap<>(),
+                        new ConcurrentHashMap<>(),
+                        new WeakHashMap<>(),
+                        new TreeMap<>(),
+                        new ConcurrentSkipListMap<>()
+                    };
+
+            for (Map<Object, Object> map : MAPS) {
+                String desc = (String) keys_desc[0];
+                Object[] keys = (Object[]) keys_desc[1];
+                try {
+                testMap(map, desc, keys);
+                } catch(Exception all) {
+                    unexpected("Failed for " + map.getClass().getName() + " with " + desc, all);
+                }
+            }
+        }
+    }
+
+    private static <T> void testMap(Map<T, T> map, String keys_desc, T[] keys) {
+        System.out.println(map.getClass() + " : " + keys_desc);
+        System.out.flush();
+        testInsertion(map, keys_desc, keys);
+
+        if (keys[0] instanceof HashableInteger) {
+            testIntegerIteration((Map<HashableInteger, HashableInteger>) map, (HashableInteger[]) keys);
+        } else {
+            testStringIteration((Map<String, String>) map, (String[]) keys);
+        }
+
+        testContainsKey(map, keys_desc, keys);
+
+        testRemove(map, keys_desc, keys);
+
+        map.clear();
+        testInsertion(map, keys_desc, keys);
+        testKeysIteratorRemove(map, keys_desc, keys);
+
+        map.clear();
+        testInsertion(map, keys_desc, keys);
+        testValuesIteratorRemove(map, keys_desc, keys);
+
+        map.clear();
+        testInsertion(map, keys_desc, keys);
+        testEntriesIteratorRemove(map, keys_desc, keys);
+
+        check(map.isEmpty());
+    }
+
+    private static <T> void testInsertion(Map<T, T> map, String keys_desc, T[] keys) {
+        check("map empty", (map.size() == 0) && map.isEmpty());
+
+        for (int i = 0; i < keys.length; i++) {
+            check(String.format("insertion: map expected size m%d != i%d", map.size(), i),
+                    map.size() == i);
+            check(String.format("insertion: put(%s[%d])", keys_desc, i), null == map.put(keys[i], keys[i]));
+            check(String.format("insertion: containsKey(%s[%d])", keys_desc, i), map.containsKey(keys[i]));
+            check(String.format("insertion: containsValue(%s[%d])", keys_desc, i), map.containsValue(keys[i]));
+        }
+
+        check(String.format("map expected size m%d != k%d", map.size(), keys.length),
+                map.size() == keys.length);
+    }
+
+    private static void testIntegerIteration(Map<HashableInteger, HashableInteger> map, HashableInteger[] keys) {
+        check(String.format("map expected size m%d != k%d", map.size(), keys.length),
+                map.size() == keys.length);
+
+        BitSet all = new BitSet(keys.length);
+        for (Map.Entry<HashableInteger, HashableInteger> each : map.entrySet()) {
+            check("Iteration: key already seen", !all.get(each.getKey().value));
+            all.set(each.getKey().value);
+        }
+
+        all.flip(0, keys.length);
+        check("Iteration: some keys not visited", all.isEmpty());
+
+        for (HashableInteger each : map.keySet()) {
+            check("Iteration: key already seen", !all.get(each.value));
+            all.set(each.value);
+        }
+
+        all.flip(0, keys.length);
+        check("Iteration: some keys not visited", all.isEmpty());
+
+        int count = 0;
+        for (HashableInteger each : map.values()) {
+            count++;
+        }
+
+        check(String.format("Iteration: value count matches size m%d != c%d", map.size(), count),
+                map.size() == count);
+    }
+
+    private static void testStringIteration(Map<String, String> map, String[] keys) {
+        check(String.format("map expected size m%d != k%d", map.size(), keys.length),
+                map.size() == keys.length);
+
+        BitSet all = new BitSet(keys.length);
+        for (Map.Entry<String, String> each : map.entrySet()) {
+            String key = each.getKey();
+            boolean longKey = key.length() > 5;
+            int index = key.hashCode() + (longKey ? keys.length / 2 : 0);
+            check("key already seen", !all.get(index));
+            all.set(index);
+        }
+
+        all.flip(0, keys.length);
+        check("some keys not visited", all.isEmpty());
+
+        for (String each : map.keySet()) {
+            boolean longKey = each.length() > 5;
+            int index = each.hashCode() + (longKey ? keys.length / 2 : 0);
+            check("key already seen", !all.get(index));
+            all.set(index);
+        }
+
+        all.flip(0, keys.length);
+        check("some keys not visited", all.isEmpty());
+
+        int count = 0;
+        for (String each : map.values()) {
+            count++;
+        }
+
+        check(String.format("value count matches size m%d != k%d", map.size(), keys.length),
+                map.size() == keys.length);
+    }
+
+    private static <T> void testContainsKey(Map<T, T> map, String keys_desc, T[] keys) {
+        for (int i = 0; i < keys.length; i++) {
+            T each = keys[i];
+            check("containsKey: " + keys_desc + "[" + i + "]" + each, map.containsKey(each));
+        }
+    }
+
+    private static <T> void testRemove(Map<T, T> map, String keys_desc, T[] keys) {
+        check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
+                map.size() == keys.length);
+
+        for (int i = 0; i < keys.length; i++) {
+            T each = keys[i];
+            check("remove: " + keys_desc + "[" + i + "]" + each, null != map.remove(each));
+        }
+
+        check(String.format("remove: map empty. size=%d", map.size()),
+                (map.size() == 0) && map.isEmpty());
+    }
+
+    private static <T> void testKeysIteratorRemove(Map<T, T> map, String keys_desc, T[] keys) {
+        check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
+                map.size() == keys.length);
+
+        Iterator<T> each = map.keySet().iterator();
+        while (each.hasNext()) {
+            T t = each.next();
+            each.remove();
+            check("not removed: " + each, !map.containsKey(t) );
+        }
+
+        check(String.format("remove: map empty. size=%d", map.size()),
+                (map.size() == 0) && map.isEmpty());
+    }
+
+    private static <T> void testValuesIteratorRemove(Map<T, T> map, String keys_desc, T[] keys) {
+        check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
+                map.size() == keys.length);
+
+        Iterator<T> each = map.values().iterator();
+        while (each.hasNext()) {
+            T t = each.next();
+            each.remove();
+            check("not removed: " + each, !map.containsValue(t) );
+        }
+
+        check(String.format("remove: map empty. size=%d", map.size()),
+                (map.size() == 0) && map.isEmpty());
+    }
+
+    private static <T> void testEntriesIteratorRemove(Map<T, T> map, String keys_desc, T[] keys) {
+        check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
+                map.size() == keys.length);
+
+        Iterator<Map.Entry<T,T>> each = map.entrySet().iterator();
+        while (each.hasNext()) {
+            Map.Entry<T,T> t = each.next();
+            T key = t.getKey();
+            T value = t.getValue();
+            each.remove();
+            check("not removed: " + each, (map instanceof IdentityHashMap) || !map.entrySet().contains(t) );
+            check("not removed: " + each, !map.containsKey(key) );
+            check("not removed: " + each, !map.containsValue(value));
+        }
+
+        check(String.format("remove: map empty. size=%d", map.size()),
+                (map.size() == 0) && map.isEmpty());
+    }
+
+    //--------------------- Infrastructure ---------------------------
+    static volatile int passed = 0, failed = 0;
+
+    static void pass() {
+        passed++;
+    }
+
+    static void fail() {
+        failed++;
+        (new Error("Failure")).printStackTrace(System.err);
+    }
+
+    static void fail(String msg) {
+        failed++;
+        (new Error("Failure: " + msg)).printStackTrace(System.err);
+    }
+
+    static void abort() {
+        fail();
+        System.exit(1);
+    }
+
+    static void abort(String msg) {
+        fail(msg);
+        System.exit(1);
+    }
+
+    static void unexpected(String msg, Throwable t) {
+        System.err.println("Unexpected: " + msg);
+        unexpected(t);
+    }
+
+    static void unexpected(Throwable t) {
+        failed++;
+        t.printStackTrace(System.err);
+    }
+
+    static void check(boolean cond) {
+        if (cond) {
+            pass();
+        } else {
+            fail();
+        }
+    }
+
+    static void check(String desc, boolean cond) {
+        if (cond) {
+            pass();
+        } else {
+            fail(desc);
+        }
+    }
+
+    static void equal(Object x, Object y) {
+        if (Objects.equals(x, y)) {
+            pass();
+        } else {
+            fail(x + " not equal to " + y);
+        }
+    }
+
+    public static void main(String[] args) throws Throwable {
+        Thread.currentThread().setName("Collisions");
+//        Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+        try {
+            realMain(args);
+        } catch (Throwable t) {
+            unexpected(t);
+        }
+
+        System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
+        if (failed > 0) {
+            throw new Error("Some tests failed");
+        }
+    }
+}

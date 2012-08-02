@@ -90,7 +90,7 @@ class BsdCDebugger implements CDebugger {
        Address pc  = context.getRegisterAsAddress(X86ThreadContext.EIP);
        if (pc == null) return null;
        return new BsdX86CFrame(dbg, ebp, pc);
-    } else if (cpu.equals("amd64")) {
+    } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
        AMD64ThreadContext context = (AMD64ThreadContext) thread.getContext();
        Address rbp = context.getRegisterAsAddress(AMD64ThreadContext.RBP);
        if (rbp == null) return null;

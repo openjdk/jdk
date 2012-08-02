@@ -29,8 +29,8 @@
 $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h : $(JDK_TOPDIR)/makefiles/jpda/jdwp/jdwp.spec
 
 $(JDK_OUTPUTDIR)/gensrc_jdwp/com/sun/tools/jdi/JDWP.java : $(JDK_TOPDIR)/makefiles/jpda/jdwp/jdwp.spec
-	mkdir -p $(@D)
-	mkdir -p $(JDK_OUTPUTDIR)/gensrc_jdwp_headers
+	$(MKDIR) -p $(@D)
+	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_jdwp_headers
 	$(ECHO) Creating JDWP.java and JDWPCommands.h from jdwp.spec
 	$(TOOL_JDWPGEN) $< -jdi $@ -include $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
 

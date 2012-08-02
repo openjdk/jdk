@@ -36,7 +36,7 @@ import java.security.*;
 public class TestCloning extends PKCS11Test {
 
     private static final String[] ALGOS = {
-        "MD2", "MD5", "SHA1", "SHA-256", "SHA-384", "SHA-512"
+        "MD2", "MD5", "SHA1", "SHA-224", "SHA-256", "SHA-384", "SHA-512"
     };
 
     public static void main(String[] args) throws Exception {

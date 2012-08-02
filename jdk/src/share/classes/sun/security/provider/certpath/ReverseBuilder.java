@@ -51,9 +51,10 @@ import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
+import sun.security.provider.certpath.PKIX.BuilderParams;
 import sun.security.util.Debug;
 import sun.security.x509.Extension;
-import sun.security.x509.PKIXExtensions;
+import static sun.security.x509.PKIXExtensions.*;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 import sun.security.x509.PolicyMappingsExtension;
@@ -72,28 +73,24 @@ class ReverseBuilder extends Builder {
 
     private Debug debug = Debug.getInstance("certpath");
 
-    Set<String> initPolicies;
+    private final Set<String> initPolicies;
 
     /**
      * Initialize the builder with the input parameters.
      *
      * @param params the parameter set used to build a certification path
      */
-    ReverseBuilder(PKIXBuilderParameters buildParams,
-        X500Principal targetSubjectDN) {
+    ReverseBuilder(BuilderParams buildParams) {
+        super(buildParams);
 
-        super(buildParams, targetSubjectDN);
-
-        Set<String> initialPolicies = buildParams.getInitialPolicies();
+        Set<String> initialPolicies = buildParams.initialPolicies();
         initPolicies = new HashSet<String>();
         if (initialPolicies.isEmpty()) {
             // if no initialPolicies are specified by user, set
             // initPolicies to be anyPolicy by default
             initPolicies.add(PolicyChecker.ANY_POLICY);
         } else {
-            for (String policy : initialPolicies) {
-                initPolicies.add(policy);
-            }
+            initPolicies.addAll(initialPolicies);
         }
     }
 
@@ -106,6 +103,7 @@ class ReverseBuilder extends Builder {
      *        Must be an instance of <code>ReverseState</code>
      * @param certStores list of CertStores
      */
+    @Override
     Collection<X509Certificate> getMatchingCerts
         (State currState, List<CertStore> certStores)
         throws CertStoreException, CertificateException, IOException
@@ -138,56 +136,56 @@ class ReverseBuilder extends Builder {
         (ReverseState currentState, List<CertStore> certStores)
         throws CertStoreException, CertificateException, IOException {
 
-      /*
-       * Compose a CertSelector to filter out
-       * certs which do not satisfy requirements.
-       *
-       * First, retrieve clone of current target cert constraints,
-       * and then add more selection criteria based on current validation state.
-       */
-      X509CertSelector sel = (X509CertSelector) targetCertConstraints.clone();
+        /*
+         * Compose a CertSelector to filter out
+         * certs which do not satisfy requirements.
+         *
+         * First, retrieve clone of current target cert constraints, and
+         * then add more selection criteria based on current validation state.
+         */
+        X509CertSelector sel = (X509CertSelector) targetCertConstraints.clone();
 
-      /*
-       * Match on issuer (subject of previous cert)
-       */
-      sel.setIssuer(currentState.subjectDN);
+        /*
+         * Match on issuer (subject of previous cert)
+         */
+        sel.setIssuer(currentState.subjectDN);
 
-      /*
-       * Match on certificate validity date.
-       */
-      sel.setCertificateValid(date);
+        /*
+         * Match on certificate validity date.
+         */
+        sel.setCertificateValid(buildParams.date());
 
-      /*
-       * Policy processing optimizations
-       */
-      if (currentState.explicitPolicy == 0)
-          sel.setPolicy(getMatchingPolicies());
+        /*
+         * Policy processing optimizations
+         */
+        if (currentState.explicitPolicy == 0)
+            sel.setPolicy(getMatchingPolicies());
 
-      /*
-       * If previous cert has a subject key identifier extension,
-       * use it to match on authority key identifier extension.
-       */
-      /*if (currentState.subjKeyId != null) {
-        AuthorityKeyIdentifierExtension authKeyId = new AuthorityKeyIdentifierExtension(
+        /*
+         * If previous cert has a subject key identifier extension,
+         * use it to match on authority key identifier extension.
+         */
+        /*if (currentState.subjKeyId != null) {
+          AuthorityKeyIdentifierExtension authKeyId = new AuthorityKeyIdentifierExtension(
                 (KeyIdentifier) currentState.subjKeyId.get(SubjectKeyIdentifierExtension.KEY_ID),
                 null, null);
         sel.setAuthorityKeyIdentifier(authKeyId.getExtensionValue());
-      }*/
+        }*/
 
-      /*
-       * Require EE certs
-       */
-      sel.setBasicConstraints(-2);
+        /*
+         * Require EE certs
+         */
+        sel.setBasicConstraints(-2);
 
-      /* Retrieve matching certs from CertStores */
-      HashSet<X509Certificate> eeCerts = new HashSet<X509Certificate>();
-      addMatchingCerts(sel, certStores, eeCerts, true);
+        /* Retrieve matching certs from CertStores */
+        HashSet<X509Certificate> eeCerts = new HashSet<>();
+        addMatchingCerts(sel, certStores, eeCerts, true);
 
-      if (debug != null) {
-        debug.println("ReverseBuilder.getMatchingEECerts got " + eeCerts.size()
-                    + " certs.");
-      }
-      return eeCerts;
+        if (debug != null) {
+            debug.println("ReverseBuilder.getMatchingEECerts got "
+                          + eeCerts.size() + " certs.");
+        }
+        return eeCerts;
     }
 
     /*
@@ -198,63 +196,71 @@ class ReverseBuilder extends Builder {
         (ReverseState currentState, List<CertStore> certStores)
         throws CertificateException, CertStoreException, IOException {
 
-      /*
-       * Compose a CertSelector to filter out
-       * certs which do not satisfy requirements.
-       */
-      X509CertSelector sel = new X509CertSelector();
+        /*
+         * Compose a CertSelector to filter out
+         * certs which do not satisfy requirements.
+         */
+        X509CertSelector sel = new X509CertSelector();
 
-      /*
-       * Match on issuer (subject of previous cert)
-       */
-      sel.setIssuer(currentState.subjectDN);
+        /*
+         * Match on issuer (subject of previous cert)
+         */
+        sel.setIssuer(currentState.subjectDN);
 
-      /*
-       * Match on certificate validity date.
-       */
-      sel.setCertificateValid(date);
+        /*
+         * Match on certificate validity date.
+         */
+        sel.setCertificateValid(buildParams.date());
 
-      /*
-       * Match on target subject name (checks that current cert's
-       * name constraints permit it to certify target).
-       * (4 is the integer type for DIRECTORY name).
-       */
-      sel.addPathToName(4, targetCertConstraints.getSubjectAsBytes());
+        /*
+         * Match on target subject name (checks that current cert's
+         * name constraints permit it to certify target).
+         * (4 is the integer type for DIRECTORY name).
+         */
+        byte[] subject = targetCertConstraints.getSubjectAsBytes();
+        if (subject != null) {
+            sel.addPathToName(4, subject);
+        } else {
+            X509Certificate cert = targetCertConstraints.getCertificate();
+            if (cert != null) {
+                sel.addPathToName(4,
+                                  cert.getSubjectX500Principal().getEncoded());
+            }
+        }
 
-      /*
-       * Policy processing optimizations
-       */
-      if (currentState.explicitPolicy == 0)
-          sel.setPolicy(getMatchingPolicies());
+        /*
+         * Policy processing optimizations
+         */
+        if (currentState.explicitPolicy == 0)
+            sel.setPolicy(getMatchingPolicies());
 
-      /*
-       * If previous cert has a subject key identifier extension,
-       * use it to match on authority key identifier extension.
-       */
-      /*if (currentState.subjKeyId != null) {
-        AuthorityKeyIdentifierExtension authKeyId = new AuthorityKeyIdentifierExtension(
+        /*
+         * If previous cert has a subject key identifier extension,
+         * use it to match on authority key identifier extension.
+         */
+        /*if (currentState.subjKeyId != null) {
+          AuthorityKeyIdentifierExtension authKeyId = new AuthorityKeyIdentifierExtension(
                 (KeyIdentifier) currentState.subjKeyId.get(SubjectKeyIdentifierExtension.KEY_ID),
                                 null, null);
-        sel.setAuthorityKeyIdentifier(authKeyId.getExtensionValue());
-      }*/
+          sel.setAuthorityKeyIdentifier(authKeyId.getExtensionValue());
+        }*/
 
-      /*
-       * Require CA certs
-       */
-      sel.setBasicConstraints(0);
+        /*
+         * Require CA certs
+         */
+        sel.setBasicConstraints(0);
 
-      /* Retrieve matching certs from CertStores */
-      ArrayList<X509Certificate> reverseCerts =
-          new ArrayList<X509Certificate>();
-      addMatchingCerts(sel, certStores, reverseCerts, true);
+        /* Retrieve matching certs from CertStores */
+        ArrayList<X509Certificate> reverseCerts = new ArrayList<>();
+        addMatchingCerts(sel, certStores, reverseCerts, true);
 
-      /* Sort remaining certs using name constraints */
-      Collections.sort(reverseCerts, new PKIXCertComparator());
+        /* Sort remaining certs using name constraints */
+        Collections.sort(reverseCerts, new PKIXCertComparator());
 
-      if (debug != null)
-        debug.println("ReverseBuilder.getMatchingCACerts got " +
-                    reverseCerts.size() + " certs.");
-      return reverseCerts;
+        if (debug != null)
+            debug.println("ReverseBuilder.getMatchingCACerts got " +
+                          reverseCerts.size() + " certs.");
+        return reverseCerts;
     }
 
     /*
@@ -269,23 +275,25 @@ class ReverseBuilder extends Builder {
 
         private Debug debug = Debug.getInstance("certpath");
 
+        @Override
         public int compare(X509Certificate cert1, X509Certificate cert2) {
 
             /*
              * if either cert certifies the target, always
              * put at head of list.
              */
-            if (cert1.getSubjectX500Principal().equals(targetSubjectDN)) {
+            X500Principal targetSubject = buildParams.targetSubject();
+            if (cert1.getSubjectX500Principal().equals(targetSubject)) {
                 return -1;
             }
-            if (cert2.getSubjectX500Principal().equals(targetSubjectDN)) {
+            if (cert2.getSubjectX500Principal().equals(targetSubject)) {
                 return 1;
             }
 
             int targetDist1;
             int targetDist2;
             try {
-                X500Name targetSubjectName = X500Name.asX500Name(targetSubjectDN);
+                X500Name targetSubjectName = X500Name.asX500Name(targetSubject);
                 targetDist1 = Builder.targetDistance(
                     null, cert1, targetSubjectName);
                 targetDist2 = Builder.targetDistance(
@@ -330,6 +338,7 @@ class ReverseBuilder extends Builder {
      * @param currentState the current state against which the cert is verified
      * @param certPathList the certPathList generated thus far
      */
+    @Override
     void verifyCert(X509Certificate cert, State currState,
         List<X509Certificate> certPathList)
         throws GeneralSecurityException
@@ -362,8 +371,7 @@ class ReverseBuilder extends Builder {
          * of the same certificate, we reverse the certpathlist first
          */
         if ((certPathList != null) && (!certPathList.isEmpty())) {
-            List<X509Certificate> reverseCertList =
-                new ArrayList<X509Certificate>();
+            List<X509Certificate> reverseCertList = new ArrayList<>();
             for (X509Certificate c : certPathList) {
                 reverseCertList.add(0, c);
             }
@@ -378,8 +386,8 @@ class ReverseBuilder extends Builder {
                 }
                 if (debug != null)
                     debug.println("policyMappingFound = " + policyMappingFound);
-                if (cert.equals(cpListCert)){
-                    if ((buildParams.isPolicyMappingInhibited()) ||
+                if (cert.equals(cpListCert)) {
+                    if ((buildParams.policyMappingInhibited()) ||
                         (!policyMappingFound)){
                         if (debug != null)
                             debug.println("loop detected!!");
@@ -390,7 +398,7 @@ class ReverseBuilder extends Builder {
         }
 
         /* check if target cert */
-        boolean finalCert = cert.getSubjectX500Principal().equals(targetSubjectDN);
+        boolean finalCert = cert.getSubjectX500Principal().equals(buildParams.targetSubject());
 
         /* check if CA cert */
         boolean caCert = (cert.getBasicConstraints() != -1 ? true : false);
@@ -431,23 +439,20 @@ class ReverseBuilder extends Builder {
         /*
          * Check revocation.
          */
-        if (buildParams.isRevocationEnabled()) {
-
-            currentState.crlChecker.check(cert,
-                                          currentState.pubKey,
-                                          currentState.crlSign);
+        if (buildParams.revocationEnabled() && currentState.revChecker != null) {
+            currentState.revChecker.check(cert, Collections.<String>emptySet());
         }
 
         /* Check name constraints if this is not a self-issued cert */
         if (finalCert || !X509CertImpl.isSelfIssued(cert)){
-            if (currentState.nc != null){
+            if (currentState.nc != null) {
                 try {
                     if (!currentState.nc.verify(cert)){
                         throw new CertPathValidatorException
                             ("name constraints check failed", null, null, -1,
                              PKIXReason.INVALID_NAME);
                     }
-                } catch (IOException ioe){
+                } catch (IOException ioe) {
                     throw new CertPathValidatorException(ioe);
                 }
             }
@@ -461,7 +466,7 @@ class ReverseBuilder extends Builder {
             (currentState.certIndex, initPolicies,
             currentState.explicitPolicy, currentState.policyMapping,
             currentState.inhibitAnyPolicy,
-            buildParams.getPolicyQualifiersRejected(), currentState.rootNode,
+            buildParams.policyQualifiersRejected(), currentState.rootNode,
             certImpl, finalCert);
 
         /*
@@ -486,15 +491,15 @@ class ReverseBuilder extends Builder {
          * already checked. If there are any left, throw an exception!
          */
         if (!unresolvedCritExts.isEmpty()) {
-            unresolvedCritExts.remove(PKIXExtensions.BasicConstraints_Id.toString());
-            unresolvedCritExts.remove(PKIXExtensions.NameConstraints_Id.toString());
-            unresolvedCritExts.remove(PKIXExtensions.CertificatePolicies_Id.toString());
-            unresolvedCritExts.remove(PKIXExtensions.PolicyMappings_Id.toString());
-            unresolvedCritExts.remove(PKIXExtensions.PolicyConstraints_Id.toString());
-            unresolvedCritExts.remove(PKIXExtensions.InhibitAnyPolicy_Id.toString());
-            unresolvedCritExts.remove(PKIXExtensions.SubjectAlternativeName_Id.toString());
-            unresolvedCritExts.remove(PKIXExtensions.KeyUsage_Id.toString());
-            unresolvedCritExts.remove(PKIXExtensions.ExtendedKeyUsage_Id.toString());
+            unresolvedCritExts.remove(BasicConstraints_Id.toString());
+            unresolvedCritExts.remove(NameConstraints_Id.toString());
+            unresolvedCritExts.remove(CertificatePolicies_Id.toString());
+            unresolvedCritExts.remove(PolicyMappings_Id.toString());
+            unresolvedCritExts.remove(PolicyConstraints_Id.toString());
+            unresolvedCritExts.remove(InhibitAnyPolicy_Id.toString());
+            unresolvedCritExts.remove(SubjectAlternativeName_Id.toString());
+            unresolvedCritExts.remove(KeyUsage_Id.toString());
+            unresolvedCritExts.remove(ExtendedKeyUsage_Id.toString());
 
             if (!unresolvedCritExts.isEmpty())
                 throw new CertPathValidatorException
@@ -505,8 +510,8 @@ class ReverseBuilder extends Builder {
         /*
          * Check signature.
          */
-        if (buildParams.getSigProvider() != null) {
-            cert.verify(currentState.pubKey, buildParams.getSigProvider());
+        if (buildParams.sigProvider() != null) {
+            cert.verify(currentState.pubKey, buildParams.sigProvider());
         } else {
             cert.verify(currentState.pubKey);
         }
@@ -519,8 +524,9 @@ class ReverseBuilder extends Builder {
      * @param cert the certificate to test
      * @return a boolean value indicating whether the cert completes the path.
      */
+    @Override
     boolean isPathCompleted(X509Certificate cert) {
-        return cert.getSubjectX500Principal().equals(targetSubjectDN);
+        return cert.getSubjectX500Principal().equals(buildParams.targetSubject());
     }
 
     /** Adds the certificate to the certPathList
@@ -528,6 +534,7 @@ class ReverseBuilder extends Builder {
      * @param cert the certificate to be added
      * @param certPathList the certification path list
      */
+    @Override
     void addCertToPath(X509Certificate cert,
         LinkedList<X509Certificate> certPathList) {
         certPathList.addLast(cert);
@@ -537,6 +544,7 @@ class ReverseBuilder extends Builder {
      *
      * @param certPathList the certification path list
      */
+    @Override
     void removeFinalCertFromPath(LinkedList<X509Certificate> certPathList) {
         certPathList.removeLast();
     }

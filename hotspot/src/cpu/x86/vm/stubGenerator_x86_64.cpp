@@ -2928,11 +2928,34 @@ class StubGenerator: public StubCodeGenerator {
       __ addq(rsp, 8);
       __ ret(0);
     }
+    {
+      StubCodeMark mark(this, "StubRoutines", "exp");
+      StubRoutines::_intrinsic_exp = (double (*)(double)) __ pc();
 
-    // The intrinsic version of these seem to return the same value as
-    // the strict version.
-    StubRoutines::_intrinsic_exp = SharedRuntime::dexp;
-    StubRoutines::_intrinsic_pow = SharedRuntime::dpow;
+      __ subq(rsp, 8);
+      __ movdbl(Address(rsp, 0), xmm0);
+      __ fld_d(Address(rsp, 0));
+      __ exp_with_fallback(0);
+      __ fstp_d(Address(rsp, 0));
+      __ movdbl(xmm0, Address(rsp, 0));
+      __ addq(rsp, 8);
+      __ ret(0);
+    }
+    {
+      StubCodeMark mark(this, "StubRoutines", "pow");
+      StubRoutines::_intrinsic_pow = (double (*)(double,double)) __ pc();
+
+      __ subq(rsp, 8);
+      __ movdbl(Address(rsp, 0), xmm1);
+      __ fld_d(Address(rsp, 0));
+      __ movdbl(Address(rsp, 0), xmm0);
+      __ fld_d(Address(rsp, 0));
+      __ pow_with_fallback(0);
+      __ fstp_d(Address(rsp, 0));
+      __ movdbl(xmm0, Address(rsp, 0));
+      __ addq(rsp, 8);
+      __ ret(0);
+    }
   }
 
 #undef __

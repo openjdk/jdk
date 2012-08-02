@@ -26,9 +26,10 @@
 #define OS_SOLARIS_VM_OSTHREAD_SOLARIS_HPP
 
 // This is embedded via include into the class OSThread
+ public:
+  typedef thread_t thread_id_t;
 
  private:
-  thread_t _thread_id;         // Solaris thread id
   uint     _lwp_id;            // lwp ID, only used with bound threads
   int      _native_priority;   // Saved native priority when starting
                                // a bound thread
@@ -36,8 +37,6 @@
   bool     _vm_created_thread; // true if the VM created this thread,
                                // false if primary thread or attached thread
  public:
-  static size_t thread_id_size()   { return sizeof(thread_t); }
-  thread_t thread_id() const       { return _thread_id; }
   uint     lwp_id() const          { return _lwp_id; }
   int      native_priority() const { return _native_priority; }
 
@@ -63,7 +62,6 @@
     return true;
   }
 #endif
-  void set_thread_id(thread_t id)    { _thread_id = id; }
   void set_lwp_id(uint id)           { _lwp_id = id; }
   void set_native_priority(int prio) { _native_priority = prio; }
 

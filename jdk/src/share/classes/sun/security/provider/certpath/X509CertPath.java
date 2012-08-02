@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,10 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CertPath;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.security.cert.CertPath;
+
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.SignerInfo;
@@ -43,7 +44,6 @@ import sun.security.x509.AlgorithmId;
 import sun.security.util.DerValue;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerInputStream;
-
 
 /**
  * A {@link java.security.cert.CertPath CertPath} (certification path)
@@ -83,7 +83,7 @@ public class X509CertPath extends CertPath {
     private static final Collection<String> encodingList;
 
     static {
-        List<String> list = new ArrayList<String>(2);
+        List<String> list = new ArrayList<>(2);
         list.add(PKIPATH_ENCODING);
         list.add(PKCS7_ENCODING);
         encodingList = Collections.unmodifiableCollection(list);
@@ -272,6 +272,7 @@ public class X509CertPath extends CertPath {
      * @return the encoded bytes
      * @exception CertificateEncodingException if an encoding error occurs
      */
+    @Override
     public byte[] getEncoded() throws CertificateEncodingException {
         // @@@ Should cache the encoded form
         return encodePKIPATH();
@@ -342,6 +343,7 @@ public class X509CertPath extends CertPath {
      * @exception CertificateEncodingException if an encoding error occurs or
      *   the encoding requested is not supported
      */
+    @Override
     public byte[] getEncoded(String encoding)
             throws CertificateEncodingException {
         switch (encoding) {
@@ -376,6 +378,7 @@ public class X509CertPath extends CertPath {
      * @return an <code>Iterator</code> over the names of the supported
      *         encodings (as Strings)
      */
+    @Override
     public Iterator<String> getEncodings() {
         return getEncodingsStatic();
     }
@@ -387,6 +390,7 @@ public class X509CertPath extends CertPath {
      * @return an immutable <code>List</code> of <code>X509Certificate</code>s
      *         (may be empty, but not null)
      */
+    @Override
     public List<X509Certificate> getCertificates() {
         return certs;
     }

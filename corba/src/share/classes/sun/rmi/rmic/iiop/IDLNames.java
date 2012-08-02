@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,34 @@ public class IDLNames implements sun.rmi.rmic.iiop.Constants {
         (byte)'F',
     };
 
+    // Legal IDL Identifier characters (1 = legal). Note
+    // that '.' (2E) is marked as legal even though it is
+    // not legal in IDL. This allows us to treat a fully
+    // qualified Java name with '.' package separators
+    // uniformly, and is safe because that is the only
+    // legal use of '.' in a Java name.
+
+    private static final byte[] IDL_IDENTIFIER_CHARS = {
+
+        // 0 1 2 3  4 5 6 7  8 9 a b  c d e f
+        0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, // 00-0f
+        0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, // 10-1f
+        0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0, // 20-2f
+        1,1,1,1, 1,1,1,1, 1,1,0,0, 0,0,0,0, // 30-3f
+        0,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, // 40-4f
+        1,1,1,1, 1,1,1,1, 1,1,1,0, 0,0,0,1, // 50-5f
+        0,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, // 60-6f
+        1,1,1,1, 1,1,1,1, 1,1,1,0, 0,0,0,0, // 70-7f
+        0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, // 80-8f
+        0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, // 90-9f
+        0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, // a0-af
+        0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, // b0-bf
+        1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, // c0-cf
+        0,1,1,1, 1,1,1,0, 1,1,1,1, 1,0,0,1, // d0-df
+        1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, // e0-ef
+        0,1,1,1, 1,1,1,0, 1,1,1,1, 1,0,0,1, // f0-ff
+    };
+
     //_____________________________________________________________________
     // Public Interfaces
     //_____________________________________________________________________
@@ -139,7 +167,7 @@ public class IDLNames implements sun.rmi.rmic.iiop.Constants {
         result = replace(result,"x\\U","U");
 
         // Now see if we have any remaining illegal characters (see
-        // RepositoryId.IDL_IDENTIFIER_CHARS array)...
+        // IDL_IDENTIFIER_CHARS array)...
 
         int length = result.length();
         StringBuffer buffer = null;
@@ -148,7 +176,7 @@ public class IDLNames implements sun.rmi.rmic.iiop.Constants {
 
             char c = result.charAt(i);
 
-            if (c > 255 || RepositoryId.IDL_IDENTIFIER_CHARS[c] == 0) {
+            if (c > 255 || IDL_IDENTIFIER_CHARS[c] == 0) {
 
                 // We gotta convert. Have we already started?
 

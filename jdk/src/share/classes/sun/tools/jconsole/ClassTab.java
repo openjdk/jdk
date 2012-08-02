@@ -33,17 +33,11 @@ import java.lang.reflect.*;
 
 import javax.swing.*;
 import javax.swing.border.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
 
-import java.util.*;
-import java.util.List;
+
 import java.util.concurrent.*;
 
-import sun.awt.*;
-
 import static sun.tools.jconsole.Formatter.*;
-import static sun.tools.jconsole.Resources.*;
 import static sun.tools.jconsole.Utilities.*;
 
 
@@ -58,12 +52,8 @@ class ClassTab extends Tab implements ActionListener {
 
     private static final String loadedPlotterKey        = "loaded";
     private static final String totalLoadedPlotterKey   = "totalLoaded";
-    private static final String loadedPlotterName       = Resources.getText("Loaded");
-    private static final String totalLoadedPlotterName  = Resources.getText("Total Loaded");
     private static final Color  loadedPlotterColor      = Plotter.defaultColor;
     private static final Color  totalLoadedPlotterColor = Color.red;
-
-    private static final String infoLabelFormat = "ClassTab.infoLabelFormat";
 
     /*
       Hierarchy of panels and layouts for this tab:
@@ -88,7 +78,7 @@ class ClassTab extends Tab implements ActionListener {
     */
 
     public static String getTabName() {
-        return Resources.getText("Classes");
+        return Messages.CLASSES;
     }
 
     public ClassTab(VMPanel vmPanel) {
@@ -108,40 +98,40 @@ class ClassTab extends Tab implements ActionListener {
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
         topPanel.add(controlPanel, BorderLayout.CENTER);
 
-        verboseCheckBox = new JCheckBox(Resources.getText("Verbose Output"));
+        verboseCheckBox = new JCheckBox(Messages.VERBOSE_OUTPUT);
         verboseCheckBox.addActionListener(this);
-        verboseCheckBox.setToolTipText(getText("Verbose Output.toolTip"));
+        verboseCheckBox.setToolTipText(Messages.VERBOSE_OUTPUT_TOOLTIP);
         JPanel topRightPanel = new JPanel();
         topRightPanel.setBorder(new EmptyBorder(0, 65-8, 0, 70));
         topRightPanel.add(verboseCheckBox);
         topPanel.add(topRightPanel, BorderLayout.AFTER_LINE_ENDS);
 
-        loadedClassesMeter = new PlotterPanel(Resources.getText("Number of Loaded Classes"),
+        loadedClassesMeter = new PlotterPanel(Messages.NUMBER_OF_LOADED_CLASSES,
                                               Plotter.Unit.NONE, false);
         loadedClassesMeter.plotter.createSequence(loadedPlotterKey,
-                                                  loadedPlotterName,
+                                                  Messages.LOADED,
                                                   loadedPlotterColor,
                                                   true);
         loadedClassesMeter.plotter.createSequence(totalLoadedPlotterKey,
-                                                  totalLoadedPlotterName,
+                                                  Messages.TOTAL_LOADED,
                                                   totalLoadedPlotterColor,
                                                   true);
         setAccessibleName(loadedClassesMeter.plotter,
-                          getText("ClassTab.loadedClassesPlotter.accessibleName"));
+                          Messages.CLASS_TAB_LOADED_CLASSES_PLOTTER_ACCESSIBLE_NAME);
         plotterPanel.add(loadedClassesMeter);
 
         timeComboBox = new TimeComboBox(loadedClassesMeter.plotter);
-        controlPanel.add(new LabeledComponent(Resources.getText("Time Range:"),
-                                              getMnemonicInt("Time Range:"),
+        controlPanel.add(new LabeledComponent(Messages.TIME_RANGE_COLON,
+                                              Resources.getMnemonicInt(Messages.TIME_RANGE_COLON),
                                               timeComboBox));
 
         LabeledComponent.layout(plotterPanel);
 
-        bottomPanel.setBorder(new CompoundBorder(new TitledBorder(Resources.getText("Details")),
-                                                  new EmptyBorder(10, 10, 10, 10)));
+        bottomPanel.setBorder(new CompoundBorder(new TitledBorder(Messages.DETAILS),
+                                                 new EmptyBorder(10, 10, 10, 10)));
 
         details = new HTMLPane();
-        setAccessibleName(details, getText("Details"));
+        setAccessibleName(details, Messages.DETAILS);
         JScrollPane scrollPane = new JScrollPane(details);
         scrollPane.setPreferredSize(new Dimension(0, 150));
         bottomPanel.add(scrollPane, BorderLayout.SOUTH);
@@ -226,10 +216,10 @@ class ClassTab extends Tab implements ActionListener {
 
                 long time = System.currentTimeMillis();
                 String timeStamp = formatDateTime(time);
-                text += newRow(Resources.getText("Time"), timeStamp);
-                text += newRow(Resources.getText("Current classes loaded"), justify(clCount, 5));
-                text += newRow(Resources.getText("Total classes loaded"),   justify(ctCount, 5));
-                text += newRow(Resources.getText("Total classes unloaded"), justify(cuCount, 5));
+                text += newRow(Messages.TIME, timeStamp);
+                text += newRow(Messages.CURRENT_CLASSES_LOADED, justify(clCount, 5));
+                text += newRow(Messages.TOTAL_CLASSES_LOADED,   justify(ctCount, 5));
+                text += newRow(Messages.TOTAL_CLASSES_UNLOADED, justify(cuCount, 5));
 
                 return text;
             }
@@ -246,12 +236,13 @@ class ClassTab extends Tab implements ActionListener {
 
     private static class ClassOverviewPanel extends OverviewPanel {
         ClassOverviewPanel() {
-            super(getText("Classes"), loadedPlotterKey, loadedPlotterName, null);
+            super(Messages.CLASSES, loadedPlotterKey, Messages.LOADED, null);
         }
 
         private void updateClassInfo(long total, long loaded) {
             long unloaded = (total - loaded);
-            getInfoLabel().setText(getText(infoLabelFormat, loaded, unloaded, total));
+            getInfoLabel().setText(Resources.format(Messages.CLASS_TAB_INFO_LABEL_FORMAT,
+                                   loaded, unloaded, total));
         }
     }
 }

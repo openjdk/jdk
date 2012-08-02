@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,19 +63,30 @@ public class ActivationLibrary {
      */
     public static void deactivate(Remote remote,
                                   ActivationID id) {
-        for (int i = 0; i < 5; i ++) {
+        // We do as much as 50 deactivation trials, each separated by
+        // at least 100 milliseconds sleep time (max sleep time of 5 secs).
+        final long deactivateSleepTime = 100;
+        for (int i = 0; i < 50; i ++) {
             try {
                 if (Activatable.inactive(id) == true) {
                     mesg("inactive successful");
                     return;
                 } else {
-                    Thread.sleep(1000);
+                    mesg("inactive trial failed. Sleeping " +
+                         deactivateSleepTime +
+                         " milliseconds before next trial");
+                    Thread.sleep(deactivateSleepTime);
                 }
             } catch (InterruptedException e) {
-                continue;
+                Thread.currentThread().interrupt();
+                mesg("Thread interrupted while trying to deactivate activatable. Exiting deactivation");
+                return;
             } catch (Exception e) {
                 try {
                     // forcibly unexport the object
+                    mesg("Unexpected exception. Have to forcibly unexport the object." +
+                         " Exception was :");
+                    e.printStackTrace();
                     Activatable.unexportObject(remote, true);
                 } catch (NoSuchObjectException ex) {
                 }
@@ -99,59 +110,60 @@ public class ActivationLibrary {
      * activation system.
      */
     public static boolean rmidRunning(int port) {
-        int allowedNotReady = 10;
+        int allowedNotReady = 50;
         int connectionRefusedExceptions = 0;
 
-        for (int i = 0; i < 15 ; i++) {
+        /* We wait as much as a total of 7.5 secs trying to see Rmid running.
+         * We do this by pausing steps of 100 milliseconds (so up to 75 steps),
+         * right after trying to lookup and find RMID running in the other vm.
+         */
+        final long rmidWaitingStepTime = 100;
+        for (int i = 0; i <= 74; i++) {
 
             try {
-                Thread.sleep(500);
                 LocateRegistry.getRegistry(port).lookup(SYSTEM_NAME);
+                mesg("Activation System available after " +
+                     (i * rmidWaitingStepTime) + " milliseconds");
                 return true;
 
             } catch (java.rmi.ConnectException e) {
-                // ignore connect exceptions until we decide rmid is not up
+                mesg("Remote connection refused after " +
+                     (i * rmidWaitingStepTime) + " milliseconds");
 
+                // ignore connect exceptions until we decide rmid is not up
                 if ((connectionRefusedExceptions ++) >= allowedNotReady) {
                     return false;
                 }
 
-            } catch (NotBoundException e) {
+            } catch (java.rmi.NoSuchObjectException nsoe) {
+                /* Activation System still unavailable.
+                 * Ignore this since we are just waiting for its availibility.
+                 * Just signal unavailibility.
+                 */
+                mesg("Activation System still unavailable after more than " +
+                     (i * rmidWaitingStepTime) + " milliseconds");
 
+            } catch (NotBoundException e) {
                 return false;
 
             } catch (Exception e) {
-                // print out other types of exceptions as an FYI.
-                // test should not fail as rmid is likely to be in an
-                // undetermined state at this point.
-
+                /* print out other types of exceptions as an FYI.
+                 * test should not fail as rmid is likely to be in an
+                 * undetermined state at this point.
+                 */
                 mesg("caught an exception trying to" +
                      " start rmid, last exception was: " +
                      e.getMessage());
                 e.printStackTrace();
             }
-        }
-        return false;
-    }
 
-    /**
-     * Check to see if an arry of Strings contains a given string.
-     */
-    private static boolean
-        containsString(String[] strings, String contained)
-    {
-        if (strings == null) {
-            if (contained == null) {
-                return true;
-            }
-            return false;
-        }
-
-        for (int i = 0 ; i < strings.length ; i ++ ) {
-            if ((strings[i] != null) &&
-                (strings[i].indexOf(contained) >= 0))
-            {
-                return true;
+            // Waiting for another 100 milliseconds.
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                mesg("Thread interrupted while checking if Activation System is running. Exiting check");
+                return false;
             }
         }
         return false;
@@ -159,12 +171,8 @@ public class ActivationLibrary {
 
     /** cleanup after rmid */
     public static void rmidCleanup(RMID rmid) {
-        rmidCleanup(rmid, TestLibrary.RMID_PORT);
-    }
-
-    public static void rmidCleanup(RMID rmid, int port) {
         if (rmid != null) {
-            if (!ActivationLibrary.safeDestroy(rmid, port, SAFE_WAIT_TIME)) {
+            if (!ActivationLibrary.safeDestroy(rmid, SAFE_WAIT_TIME)) {
                 TestLibrary.bomb("rmid not destroyed in: " +
                                  SAFE_WAIT_TIME +
                                  " milliseconds");
@@ -180,8 +188,8 @@ public class ActivationLibrary {
      * @return whether or not shutdown completed succesfully in the
      *         timeAllowed
      */
-    private static boolean safeDestroy(RMID rmid, int port, long timeAllowed) {
-        DestroyThread destroyThread = new DestroyThread(rmid, port);
+    private static boolean safeDestroy(RMID rmid, long timeAllowed) {
+        DestroyThread destroyThread = new DestroyThread(rmid);
         destroyThread.start();
 
         try {
@@ -201,9 +209,9 @@ public class ActivationLibrary {
         private final int port;
         private boolean succeeded = false;
 
-        DestroyThread(RMID rmid, int port) {
+        DestroyThread(RMID rmid) {
             this.rmid = rmid;
-            this.port = port;
+            this.port = rmid.getPort();
             this.setDaemon(true);
         }
 

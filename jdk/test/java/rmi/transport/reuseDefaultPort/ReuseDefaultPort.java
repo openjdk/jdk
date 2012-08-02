@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@
  * continue to work because existing applications might depend on it.
  * @author Peter Jones
  *
- * @build ReuseDefaultPort
+ * @library ../../testlibrary
+ * @build ReuseDefaultPort TestLibrary
  * @run main/othervm ReuseDefaultPort
  */
 
@@ -48,7 +49,7 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class ReuseDefaultPort implements Remote {
 
-    private static final int PORT = 2223;
+    private static final int PORT = TestLibrary.getUnusedRandomPort();
 
     private ReuseDefaultPort() { }
 

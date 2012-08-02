@@ -248,7 +248,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                                    final Name name,
                                    final Env<AttrContext> env) {
         if (tsym.kind != TYP) {
-            log.error(pos, "static.imp.only.classes.and.interfaces");
+            log.error(DiagnosticFlag.RECOVERABLE, pos, "static.imp.only.classes.and.interfaces");
             return;
         }
 
@@ -620,7 +620,11 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         DeferredLintHandler prevLintHandler =
                 chk.setDeferredLintHandler(deferredLintHandler.setPos(tree.pos()));
         try {
-            attr.attribType(tree.vartype, localEnv);
+            if (TreeInfo.isEnumInit(tree)) {
+                attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
+            } else {
+                attr.attribType(tree.vartype, localEnv);
+            }
         } finally {
             chk.setDeferredLintHandler(prevLintHandler);
         }

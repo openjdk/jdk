@@ -30,17 +30,22 @@
 MANIFEST = sun/tools/jconsole/manifest
 
 PNG_FILES = \
-	sun/tools/jconsole/resources/brandlogo.png \
-	sun/tools/jconsole/resources/collapse-winlf.png \
-	sun/tools/jconsole/resources/connected16.png \
-	sun/tools/jconsole/resources/connected24.png \
-	sun/tools/jconsole/resources/disconnected16.png \
-	sun/tools/jconsole/resources/disconnected24.png \
-	sun/tools/jconsole/resources/expand-winlf.png \
-	sun/tools/jconsole/resources/masthead-left.png \
-	sun/tools/jconsole/resources/masthead-right.png
+  sun/tools/jconsole/resources/brandlogo.png \
+  sun/tools/jconsole/resources/collapse-winlf.png \
+  sun/tools/jconsole/resources/connected16.png \
+  sun/tools/jconsole/resources/connected24.png \
+  sun/tools/jconsole/resources/disconnected16.png \
+  sun/tools/jconsole/resources/disconnected24.png \
+  sun/tools/jconsole/resources/expand-winlf.png \
+  sun/tools/jconsole/resources/masthead-left.png \
+  sun/tools/jconsole/resources/masthead-right.png
 
 GIF_FILES = \
-	sun/tools/jconsole/resources/mbean.gif \
-	sun/tools/jconsole/resources/mbeanserverdelegate.gif \
-	sun/tools/jconsole/resources/xobject.gif
+  sun/tools/jconsole/resources/mbean.gif \
+  sun/tools/jconsole/resources/mbeanserverdelegate.gif \
+  sun/tools/jconsole/resources/xobject.gif
+
+PROP_FILES = \
+  sun/tools/jconsole/resources/messages.properties \
+  sun/tools/jconsole/resources/messages_ja.properties \
+  sun/tools/jconsole/resources/messages_zh_CN.properties

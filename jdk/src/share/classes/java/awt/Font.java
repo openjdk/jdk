@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.peer.FontPeer;
 import java.io.*;
 import java.lang.ref.SoftReference;
+import java.nio.file.Files;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.text.AttributedCharacterIterator.Attribute;
@@ -831,7 +832,7 @@ public class Font implements java.io.Serializable
         File f = null;
         boolean hasPerm = false;
         try {
-            f = File.createTempFile("+~JT", ".tmp", null);
+            f = Files.createTempFile("+~JT", ".tmp").toFile();
             f.delete();
             f = null;
             hasPerm = true;
@@ -881,7 +882,7 @@ public class Font implements java.io.Serializable
             final File tFile = AccessController.doPrivileged(
                 new PrivilegedExceptionAction<File>() {
                     public File run() throws IOException {
-                        return File.createTempFile("+~JF", ".tmp", null);
+                        return Files.createTempFile("+~JF", ".tmp").toFile();
                     }
                 }
             );

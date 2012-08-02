@@ -1637,6 +1637,13 @@ void Assembler::movaps(XMMRegister dst, XMMRegister src) {
   emit_byte(0xC0 | encode);
 }
 
+void Assembler::movlhps(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse(), ""));
+  int encode = simd_prefix_and_encode(dst, src, src, VEX_SIMD_NONE);
+  emit_byte(0x16);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::movb(Register dst, Address src) {
   NOT_LP64(assert(dst->has_byte_register(), "must have byte register"));
   InstructionMark im(this);
@@ -1686,6 +1693,14 @@ void Assembler::movdl(XMMRegister dst, Address src) {
   emit_operand(dst, src);
 }
 
+void Assembler::movdl(Address dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionMark im(this);
+  simd_prefix(dst, src, VEX_SIMD_66);
+  emit_byte(0x7E);
+  emit_operand(src, dst);
+}
+
 void Assembler::movdqa(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_66);
@@ -1712,6 +1727,35 @@ void Assembler::movdqu(Address dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   InstructionMark im(this);
   simd_prefix(dst, src, VEX_SIMD_F3);
+  emit_byte(0x7F);
+  emit_operand(src, dst);
+}
+
+// Move Unaligned 256bit Vector
+void Assembler::vmovdqu(XMMRegister dst, XMMRegister src) {
+  assert(UseAVX, "");
+  bool vector256 = true;
+  int encode = vex_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_F3, vector256);
+  emit_byte(0x6F);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vmovdqu(XMMRegister dst, Address src) {
+  assert(UseAVX, "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  vex_prefix(dst, xnoreg, src, VEX_SIMD_F3, vector256);
+  emit_byte(0x6F);
+  emit_operand(dst, src);
+}
+
+void Assembler::vmovdqu(Address dst, XMMRegister src) {
+  assert(UseAVX, "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  // swap src<->dst for encoding
+  assert(src != xnoreg, "sanity");
+  vex_prefix(src, xnoreg, dst, VEX_SIMD_F3, vector256);
   emit_byte(0x7F);
   emit_operand(src, dst);
 }
@@ -2529,6 +2573,13 @@ void Assembler::punpckldq(XMMRegister dst, XMMRegister src) {
   emit_byte(0xC0 | encode);
 }
 
+void Assembler::punpcklqdq(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66);
+  emit_byte(0x6C);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::push(int32_t imm32) {
   // in 64bits we push 64bits onto the stack but only
   // take a 32bit immediate
@@ -3112,12 +3163,61 @@ void Assembler::vxorpd(XMMRegister dst, XMMRegister nds, Address src) {
   emit_operand(dst, src);
 }
 
+void Assembler::vxorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256);
+  emit_byte(0x57);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::vxorps(XMMRegister dst, XMMRegister nds, Address src) {
   assert(VM_Version::supports_avx(), "");
   InstructionMark im(this);
   vex_prefix(dst, nds, src, VEX_SIMD_NONE); // 128-bit vector
   emit_byte(0x57);
   emit_operand(dst, src);
+}
+
+void Assembler::vxorps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_NONE, vector256);
+  emit_byte(0x57);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx2() || (!vector256) && VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256);
+  emit_byte(0xEF);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  bool vector256 = true;
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_3A);
+  emit_byte(0x18);
+  emit_byte(0xC0 | encode);
+  // 0x00 - insert into lower 128 bits
+  // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx2(), "");
+  bool vector256 = true;
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_3A);
+  emit_byte(0x38);
+  emit_byte(0xC0 | encode);
+  // 0x00 - insert into lower 128 bits
+  // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vzeroupper() {
+  assert(VM_Version::supports_avx(), "");
+  (void)vex_prefix_and_encode(xmm0, xmm0, xmm0, VEX_SIMD_NONE);
+  emit_byte(0x77);
 }
 
 
@@ -3576,6 +3676,21 @@ void Assembler::fxch(int i) {
 void Assembler::fyl2x() {
   emit_byte(0xD9);
   emit_byte(0xF1);
+}
+
+void Assembler::frndint() {
+  emit_byte(0xD9);
+  emit_byte(0xFC);
+}
+
+void Assembler::f2xm1() {
+  emit_byte(0xD9);
+  emit_byte(0xF0);
+}
+
+void Assembler::fldl2e() {
+  emit_byte(0xD9);
+  emit_byte(0xEA);
 }
 
 // SSE SIMD prefix byte values corresponding to VexSimdPrefix encoding.
@@ -6868,6 +6983,264 @@ void MacroAssembler::fldcw(AddressLiteral src) {
   Assembler::fldcw(as_Address(src));
 }
 
+void MacroAssembler::pow_exp_core_encoding() {
+  // kills rax, rcx, rdx
+  subptr(rsp,sizeof(jdouble));
+  // computes 2^X. Stack: X ...
+  // f2xm1 computes 2^X-1 but only operates on -1<=X<=1. Get int(X) and
+  // keep it on the thread's stack to compute 2^int(X) later
+  // then compute 2^(X-int(X)) as (2^(X-int(X)-1+1)
+  // final result is obtained with: 2^X = 2^int(X) * 2^(X-int(X))
+  fld_s(0);                 // Stack: X X ...
+  frndint();                // Stack: int(X) X ...
+  fsuba(1);                 // Stack: int(X) X-int(X) ...
+  fistp_s(Address(rsp,0));  // move int(X) as integer to thread's stack. Stack: X-int(X) ...
+  f2xm1();                  // Stack: 2^(X-int(X))-1 ...
+  fld1();                   // Stack: 1 2^(X-int(X))-1 ...
+  faddp(1);                 // Stack: 2^(X-int(X))
+  // computes 2^(int(X)): add exponent bias (1023) to int(X), then
+  // shift int(X)+1023 to exponent position.
+  // Exponent is limited to 11 bits if int(X)+1023 does not fit in 11
+  // bits, set result to NaN. 0x000 and 0x7FF are reserved exponent
+  // values so detect them and set result to NaN.
+  movl(rax,Address(rsp,0));
+  movl(rcx, -2048); // 11 bit mask and valid NaN binary encoding
+  addl(rax, 1023);
+  movl(rdx,rax);
+  shll(rax,20);
+  // Check that 0 < int(X)+1023 < 2047. Otherwise set rax to NaN.
+  addl(rdx,1);
+  // Check that 1 < int(X)+1023+1 < 2048
+  // in 3 steps:
+  // 1- (int(X)+1023+1)&-2048 == 0 => 0 <= int(X)+1023+1 < 2048
+  // 2- (int(X)+1023+1)&-2048 != 0
+  // 3- (int(X)+1023+1)&-2048 != 1
+  // Do 2- first because addl just updated the flags.
+  cmov32(Assembler::equal,rax,rcx);
+  cmpl(rdx,1);
+  cmov32(Assembler::equal,rax,rcx);
+  testl(rdx,rcx);
+  cmov32(Assembler::notEqual,rax,rcx);
+  movl(Address(rsp,4),rax);
+  movl(Address(rsp,0),0);
+  fmul_d(Address(rsp,0));   // Stack: 2^X ...
+  addptr(rsp,sizeof(jdouble));
+}
+
+void MacroAssembler::increase_precision() {
+  subptr(rsp, BytesPerWord);
+  fnstcw(Address(rsp, 0));
+  movl(rax, Address(rsp, 0));
+  orl(rax, 0x300);
+  push(rax);
+  fldcw(Address(rsp, 0));
+  pop(rax);
+}
+
+void MacroAssembler::restore_precision() {
+  fldcw(Address(rsp, 0));
+  addptr(rsp, BytesPerWord);
+}
+
+void MacroAssembler::fast_pow() {
+  // computes X^Y = 2^(Y * log2(X))
+  // if fast computation is not possible, result is NaN. Requires
+  // fallback from user of this macro.
+  // increase precision for intermediate steps of the computation
+  increase_precision();
+  fyl2x();                 // Stack: (Y*log2(X)) ...
+  pow_exp_core_encoding(); // Stack: exp(X) ...
+  restore_precision();
+}
+
+void MacroAssembler::fast_exp() {
+  // computes exp(X) = 2^(X * log2(e))
+  // if fast computation is not possible, result is NaN. Requires
+  // fallback from user of this macro.
+  // increase precision for intermediate steps of the computation
+  increase_precision();
+  fldl2e();                // Stack: log2(e) X ...
+  fmulp(1);                // Stack: (X*log2(e)) ...
+  pow_exp_core_encoding(); // Stack: exp(X) ...
+  restore_precision();
+}
+
+void MacroAssembler::pow_or_exp(bool is_exp, int num_fpu_regs_in_use) {
+  // kills rax, rcx, rdx
+  // pow and exp needs 2 extra registers on the fpu stack.
+  Label slow_case, done;
+  Register tmp = noreg;
+  if (!VM_Version::supports_cmov()) {
+    // fcmp needs a temporary so preserve rdx,
+    tmp = rdx;
+  }
+  Register tmp2 = rax;
+  Register tmp3 = rcx;
+
+  if (is_exp) {
+    // Stack: X
+    fld_s(0);                   // duplicate argument for runtime call. Stack: X X
+    fast_exp();                 // Stack: exp(X) X
+    fcmp(tmp, 0, false, false); // Stack: exp(X) X
+    // exp(X) not equal to itself: exp(X) is NaN go to slow case.
+    jcc(Assembler::parity, slow_case);
+    // get rid of duplicate argument. Stack: exp(X)
+    if (num_fpu_regs_in_use > 0) {
+      fxch();
+      fpop();
+    } else {
+      ffree(1);
+    }
+    jmp(done);
+  } else {
+    // Stack: X Y
+    Label x_negative, y_odd;
+
+    fldz();                     // Stack: 0 X Y
+    fcmp(tmp, 1, true, false);  // Stack: X Y
+    jcc(Assembler::above, x_negative);
+
+    // X >= 0
+
+    fld_s(1);                   // duplicate arguments for runtime call. Stack: Y X Y
+    fld_s(1);                   // Stack: X Y X Y
+    fast_pow();                 // Stack: X^Y X Y
+    fcmp(tmp, 0, false, false); // Stack: X^Y X Y
+    // X^Y not equal to itself: X^Y is NaN go to slow case.
+    jcc(Assembler::parity, slow_case);
+    // get rid of duplicate arguments. Stack: X^Y
+    if (num_fpu_regs_in_use > 0) {
+      fxch(); fpop();
+      fxch(); fpop();
+    } else {
+      ffree(2);
+      ffree(1);
+    }
+    jmp(done);
+
+    // X <= 0
+    bind(x_negative);
+
+    fld_s(1);                   // Stack: Y X Y
+    frndint();                  // Stack: int(Y) X Y
+    fcmp(tmp, 2, false, false); // Stack: int(Y) X Y
+    jcc(Assembler::notEqual, slow_case);
+
+    subptr(rsp, 8);
+
+    // For X^Y, when X < 0, Y has to be an integer and the final
+    // result depends on whether it's odd or even. We just checked
+    // that int(Y) == Y.  We move int(Y) to gp registers as a 64 bit
+    // integer to test its parity. If int(Y) is huge and doesn't fit
+    // in the 64 bit integer range, the integer indefinite value will
+    // end up in the gp registers. Huge numbers are all even, the
+    // integer indefinite number is even so it's fine.
+
+#ifdef ASSERT
+    // Let's check we don't end up with an integer indefinite number
+    // when not expected. First test for huge numbers: check whether
+    // int(Y)+1 == int(Y) which is true for very large numbers and
+    // those are all even. A 64 bit integer is guaranteed to not
+    // overflow for numbers where y+1 != y (when precision is set to
+    // double precision).
+    Label y_not_huge;
+
+    fld1();                     // Stack: 1 int(Y) X Y
+    fadd(1);                    // Stack: 1+int(Y) int(Y) X Y
+
+#ifdef _LP64
+    // trip to memory to force the precision down from double extended
+    // precision
+    fstp_d(Address(rsp, 0));
+    fld_d(Address(rsp, 0));
+#endif
+
+    fcmp(tmp, 1, true, false);  // Stack: int(Y) X Y
+#endif
+
+    // move int(Y) as 64 bit integer to thread's stack
+    fistp_d(Address(rsp,0));    // Stack: X Y
+
+#ifdef ASSERT
+    jcc(Assembler::notEqual, y_not_huge);
+
+    // Y is huge so we know it's even. It may not fit in a 64 bit
+    // integer and we don't want the debug code below to see the
+    // integer indefinite value so overwrite int(Y) on the thread's
+    // stack with 0.
+    movl(Address(rsp, 0), 0);
+    movl(Address(rsp, 4), 0);
+
+    bind(y_not_huge);
+#endif
+
+    fld_s(1);                   // duplicate arguments for runtime call. Stack: Y X Y
+    fld_s(1);                   // Stack: X Y X Y
+    fabs();                     // Stack: abs(X) Y X Y
+    fast_pow();                 // Stack: abs(X)^Y X Y
+    fcmp(tmp, 0, false, false); // Stack: abs(X)^Y X Y
+    // abs(X)^Y not equal to itself: abs(X)^Y is NaN go to slow case.
+
+    pop(tmp2);
+    NOT_LP64(pop(tmp3));
+    jcc(Assembler::parity, slow_case);
+
+#ifdef ASSERT
+    // Check that int(Y) is not integer indefinite value (int
+    // overflow). Shouldn't happen because for values that would
+    // overflow, 1+int(Y)==Y which was tested earlier.
+#ifndef _LP64
+    {
+      Label integer;
+      testl(tmp2, tmp2);
+      jcc(Assembler::notZero, integer);
+      cmpl(tmp3, 0x80000000);
+      jcc(Assembler::notZero, integer);
+      stop("integer indefinite value shouldn't be seen here");
+      bind(integer);
+    }
+#else
+    {
+      Label integer;
+      mov(tmp3, tmp2); // preserve tmp2 for parity check below
+      shlq(tmp3, 1);
+      jcc(Assembler::carryClear, integer);
+      jcc(Assembler::notZero, integer);
+      stop("integer indefinite value shouldn't be seen here");
+      bind(integer);
+    }
+#endif
+#endif
+
+    // get rid of duplicate arguments. Stack: X^Y
+    if (num_fpu_regs_in_use > 0) {
+      fxch(); fpop();
+      fxch(); fpop();
+    } else {
+      ffree(2);
+      ffree(1);
+    }
+
+    testl(tmp2, 1);
+    jcc(Assembler::zero, done); // X <= 0, Y even: X^Y = abs(X)^Y
+    // X <= 0, Y even: X^Y = -abs(X)^Y
+
+    fchs();                     // Stack: -abs(X)^Y Y
+    jmp(done);
+  }
+
+  // slow case: runtime call
+  bind(slow_case);
+
+  fpop();                       // pop incorrect result or int(Y)
+
+  fp_runtime_fallback(is_exp ? CAST_FROM_FN_PTR(address, SharedRuntime::dexp) : CAST_FROM_FN_PTR(address, SharedRuntime::dpow),
+                      is_exp ? 1 : 2, num_fpu_regs_in_use);
+
+  // Come here with result in F-TOS
+  bind(done);
+}
+
 void MacroAssembler::fpop() {
   ffree();
   fincstp();
@@ -7130,6 +7503,24 @@ void MacroAssembler::movbool(Address dst, Register src) {
 
 void MacroAssembler::movbyte(ArrayAddress dst, int src) {
   movb(as_Address(dst), src);
+}
+
+void MacroAssembler::movdl(XMMRegister dst, AddressLiteral src) {
+  if (reachable(src)) {
+    movdl(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    movdl(dst, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::movq(XMMRegister dst, AddressLiteral src) {
+  if (reachable(src)) {
+    movq(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    movq(dst, Address(rscratch1, 0));
+  }
 }
 
 void MacroAssembler::movdbl(XMMRegister dst, AddressLiteral src) {
@@ -8045,6 +8436,144 @@ void MacroAssembler::incr_allocated_bytes(Register thread,
 #endif
 }
 
+void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int num_fpu_regs_in_use) {
+  pusha();
+
+  // if we are coming from c1, xmm registers may be live
+  if (UseSSE >= 1) {
+    subptr(rsp, sizeof(jdouble)* LP64_ONLY(16) NOT_LP64(8));
+  }
+  int off = 0;
+  if (UseSSE == 1)  {
+    movflt(Address(rsp,off++*sizeof(jdouble)),xmm0);
+    movflt(Address(rsp,off++*sizeof(jdouble)),xmm1);
+    movflt(Address(rsp,off++*sizeof(jdouble)),xmm2);
+    movflt(Address(rsp,off++*sizeof(jdouble)),xmm3);
+    movflt(Address(rsp,off++*sizeof(jdouble)),xmm4);
+    movflt(Address(rsp,off++*sizeof(jdouble)),xmm5);
+    movflt(Address(rsp,off++*sizeof(jdouble)),xmm6);
+    movflt(Address(rsp,off++*sizeof(jdouble)),xmm7);
+  } else if (UseSSE >= 2)  {
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm0);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm1);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm2);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm3);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm4);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm5);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm6);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm7);
+#ifdef _LP64
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm8);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm9);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm10);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm11);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm12);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm13);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm14);
+    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm15);
+#endif
+  }
+
+  // Preserve registers across runtime call
+  int incoming_argument_and_return_value_offset = -1;
+  if (num_fpu_regs_in_use > 1) {
+    // Must preserve all other FPU regs (could alternatively convert
+    // SharedRuntime::dsin, dcos etc. into assembly routines known not to trash
+    // FPU state, but can not trust C compiler)
+    NEEDS_CLEANUP;
+    // NOTE that in this case we also push the incoming argument(s) to
+    // the stack and restore it later; we also use this stack slot to
+    // hold the return value from dsin, dcos etc.
+    for (int i = 0; i < num_fpu_regs_in_use; i++) {
+      subptr(rsp, sizeof(jdouble));
+      fstp_d(Address(rsp, 0));
+    }
+    incoming_argument_and_return_value_offset = sizeof(jdouble)*(num_fpu_regs_in_use-1);
+    for (int i = nb_args-1; i >= 0; i--) {
+      fld_d(Address(rsp, incoming_argument_and_return_value_offset-i*sizeof(jdouble)));
+    }
+  }
+
+  subptr(rsp, nb_args*sizeof(jdouble));
+  for (int i = 0; i < nb_args; i++) {
+    fstp_d(Address(rsp, i*sizeof(jdouble)));
+  }
+
+#ifdef _LP64
+  if (nb_args > 0) {
+    movdbl(xmm0, Address(rsp, 0));
+  }
+  if (nb_args > 1) {
+    movdbl(xmm1, Address(rsp, sizeof(jdouble)));
+  }
+  assert(nb_args <= 2, "unsupported number of args");
+#endif // _LP64
+
+  // NOTE: we must not use call_VM_leaf here because that requires a
+  // complete interpreter frame in debug mode -- same bug as 4387334
+  // MacroAssembler::call_VM_leaf_base is perfectly safe and will
+  // do proper 64bit abi
+
+  NEEDS_CLEANUP;
+  // Need to add stack banging before this runtime call if it needs to
+  // be taken; however, there is no generic stack banging routine at
+  // the MacroAssembler level
+
+  MacroAssembler::call_VM_leaf_base(runtime_entry, 0);
+
+#ifdef _LP64
+  movsd(Address(rsp, 0), xmm0);
+  fld_d(Address(rsp, 0));
+#endif // _LP64
+  addptr(rsp, sizeof(jdouble) * nb_args);
+  if (num_fpu_regs_in_use > 1) {
+    // Must save return value to stack and then restore entire FPU
+    // stack except incoming arguments
+    fstp_d(Address(rsp, incoming_argument_and_return_value_offset));
+    for (int i = 0; i < num_fpu_regs_in_use - nb_args; i++) {
+      fld_d(Address(rsp, 0));
+      addptr(rsp, sizeof(jdouble));
+    }
+    fld_d(Address(rsp, (nb_args-1)*sizeof(jdouble)));
+    addptr(rsp, sizeof(jdouble) * nb_args);
+  }
+
+  off = 0;
+  if (UseSSE == 1)  {
+    movflt(xmm0, Address(rsp,off++*sizeof(jdouble)));
+    movflt(xmm1, Address(rsp,off++*sizeof(jdouble)));
+    movflt(xmm2, Address(rsp,off++*sizeof(jdouble)));
+    movflt(xmm3, Address(rsp,off++*sizeof(jdouble)));
+    movflt(xmm4, Address(rsp,off++*sizeof(jdouble)));
+    movflt(xmm5, Address(rsp,off++*sizeof(jdouble)));
+    movflt(xmm6, Address(rsp,off++*sizeof(jdouble)));
+    movflt(xmm7, Address(rsp,off++*sizeof(jdouble)));
+  } else if (UseSSE >= 2)  {
+    movdbl(xmm0, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm1, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm2, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm3, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm4, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm5, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm6, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm7, Address(rsp,off++*sizeof(jdouble)));
+#ifdef _LP64
+    movdbl(xmm8, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm9, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm10, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm11, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm12, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm13, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm14, Address(rsp,off++*sizeof(jdouble)));
+    movdbl(xmm15, Address(rsp,off++*sizeof(jdouble)));
+#endif
+  }
+  if (UseSSE >= 1) {
+    addptr(rsp, sizeof(jdouble)* LP64_ONLY(16) NOT_LP64(8));
+  }
+  popa();
+}
+
 static const double     pi_4 =  0.7853981633974483;
 
 void MacroAssembler::trigfunc(char trig, int num_fpu_regs_in_use) {
@@ -8092,73 +8621,27 @@ void MacroAssembler::trigfunc(char trig, int num_fpu_regs_in_use) {
 
   // slow case: runtime call
   bind(slow_case);
-  // Preserve registers across runtime call
-  pusha();
-  int incoming_argument_and_return_value_offset = -1;
-  if (num_fpu_regs_in_use > 1) {
-    // Must preserve all other FPU regs (could alternatively convert
-    // SharedRuntime::dsin and dcos into assembly routines known not to trash
-    // FPU state, but can not trust C compiler)
-    NEEDS_CLEANUP;
-    // NOTE that in this case we also push the incoming argument to
-    // the stack and restore it later; we also use this stack slot to
-    // hold the return value from dsin or dcos.
-    for (int i = 0; i < num_fpu_regs_in_use; i++) {
-      subptr(rsp, sizeof(jdouble));
-      fstp_d(Address(rsp, 0));
-    }
-    incoming_argument_and_return_value_offset = sizeof(jdouble)*(num_fpu_regs_in_use-1);
-    fld_d(Address(rsp, incoming_argument_and_return_value_offset));
-  }
-  subptr(rsp, sizeof(jdouble));
-  fstp_d(Address(rsp, 0));
-#ifdef _LP64
-  movdbl(xmm0, Address(rsp, 0));
-#endif // _LP64
 
-  // NOTE: we must not use call_VM_leaf here because that requires a
-  // complete interpreter frame in debug mode -- same bug as 4387334
-  // MacroAssembler::call_VM_leaf_base is perfectly safe and will
-  // do proper 64bit abi
-
-  NEEDS_CLEANUP;
-  // Need to add stack banging before this runtime call if it needs to
-  // be taken; however, there is no generic stack banging routine at
-  // the MacroAssembler level
   switch(trig) {
   case 's':
     {
-      MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, SharedRuntime::dsin), 0);
+      fp_runtime_fallback(CAST_FROM_FN_PTR(address, SharedRuntime::dsin), 1, num_fpu_regs_in_use);
     }
     break;
   case 'c':
     {
-      MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, SharedRuntime::dcos), 0);
+      fp_runtime_fallback(CAST_FROM_FN_PTR(address, SharedRuntime::dcos), 1, num_fpu_regs_in_use);
     }
     break;
   case 't':
     {
-      MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, SharedRuntime::dtan), 0);
+      fp_runtime_fallback(CAST_FROM_FN_PTR(address, SharedRuntime::dtan), 1, num_fpu_regs_in_use);
     }
     break;
   default:
     assert(false, "bad intrinsic");
     break;
   }
-#ifdef _LP64
-    movsd(Address(rsp, 0), xmm0);
-    fld_d(Address(rsp, 0));
-#endif // _LP64
-  addptr(rsp, sizeof(jdouble));
-  if (num_fpu_regs_in_use > 1) {
-    // Must save return value to stack and then restore entire FPU stack
-    fstp_d(Address(rsp, incoming_argument_and_return_value_offset));
-    for (int i = 0; i < num_fpu_regs_in_use; i++) {
-      fld_d(Address(rsp, 0));
-      addptr(rsp, sizeof(jdouble));
-    }
-  }
-  popa();
 
   // Come here with result in F-TOS
   bind(done);

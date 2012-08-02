@@ -653,8 +653,8 @@ class Attribute implements Comparable<Attribute> {
             return fixups[0]; // return ref-bearing cookie, if any
         }
 
-        public String layoutForPackageMajver(int majver) {
-            if (majver <= JAVA5_PACKAGE_MAJOR_VERSION) {
+        public String layoutForClassVersion(Package.Version vers) {
+            if (vers.lessThan(JAVA6_MAX_CLASS_VERSION)) {
                 // Disallow layout syntax in the oldest protocol version.
                 return expandCaseDashNotation(layout);
             }

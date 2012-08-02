@@ -37,10 +37,9 @@
 
 # Create a temporary directory to store the result code from
 # the wrapped command.
-RCDIR=`mktemp -d tmp.XXXXXX` || exit $?
-trap "rm -rf '$RCDIR'" EXIT
+RCDIR=`mktemp -dt jdk-build-logger.tmp.XXXXXX` || exit $?
+trap "rm -rf \"$RCDIR\"" EXIT
 LOGFILE=$1
 shift
-(exec 3>&1 ; ("$@" 2>&1 1>&3; echo $? > $RCDIR/rc) | tee -a $LOGFILE 1>&2 ; exec 3>&-) | tee -a $LOGFILE
-exit `cat $RCDIR/rc`
-
+(exec 3>&1 ; ("$@" 2>&1 1>&3; echo $? > "$RCDIR/rc") | tee -a $LOGFILE 1>&2 ; exec 3>&-) | tee -a $LOGFILE
+exit `cat "$RCDIR/rc"`

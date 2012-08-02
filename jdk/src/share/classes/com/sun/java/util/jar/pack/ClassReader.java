@@ -174,27 +174,31 @@ class ClassReader {
                 ("Bad magic number in class file "
                  +Integer.toHexString(cls.magic),
                  ATTR_CONTEXT_CLASS, "magic-number", "pass");
-        cls.minver = (short) readUnsignedShort();
-        cls.majver = (short) readUnsignedShort();
+        int minver = (short) readUnsignedShort();
+        int majver = (short) readUnsignedShort();
+        cls.version = Package.Version.of(majver, minver);
+
         //System.out.println("ClassFile.version="+cls.majver+"."+cls.minver);
-        String bad = checkVersion(cls.majver, cls.minver);
+        String bad = checkVersion(cls.version);
         if (bad != null) {
             throw new Attribute.FormatException
                 ("classfile version too "+bad+": "
-                 +cls.majver+"."+cls.minver+" in "+cls.file,
+                 +cls.version+" in "+cls.file,
                  ATTR_CONTEXT_CLASS, "version", "pass");
         }
     }
 
-    private String checkVersion(int majver, int minver) {
-        if (majver < pkg.min_class_majver ||
-            (majver == pkg.min_class_majver &&
-             minver < pkg.min_class_minver)) {
+    private String checkVersion(Package.Version ver) {
+        int majver = ver.major;
+        int minver = ver.minor;
+        if (majver < pkg.minClassVersion.major ||
+            (majver == pkg.minClassVersion.major &&
+             minver < pkg.minClassVersion.minor)) {
             return "small";
         }
-        if (majver > pkg.max_class_majver ||
-            (majver == pkg.max_class_majver &&
-             minver > pkg.max_class_minver)) {
+        if (majver > pkg.maxClassVersion.major ||
+            (majver == pkg.maxClassVersion.major &&
+             minver > pkg.maxClassVersion.minor)) {
             return "large";
         }
         return null;  // OK

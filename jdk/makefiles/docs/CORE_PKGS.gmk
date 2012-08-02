@@ -64,7 +64,7 @@ ACTIVE_JSR_PKGS= \
   javax.management.*  \
   javax.script  \
   javax.sql.*  \
-  javax.tools  \
+  javax.tools.*  \
   javax.xml.*  \
   org.w3c.*  \
   org.xml.sax
@@ -218,6 +218,7 @@ CORE_PKGS =                                      \
   javax.swing.plaf.nimbus                        \
   javax.swing.plaf.synth                         \
   javax.tools                                    \
+  javax.tools.annotation                         \
   javax.transaction                              \
   javax.transaction.xa                           \
   javax.xml.parsers                              \

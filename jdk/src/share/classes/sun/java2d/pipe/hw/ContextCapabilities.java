@@ -25,12 +25,16 @@
 
 package sun.java2d.pipe.hw;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * Represents a set of capabilities of a BufferedContext and associated
  * AccelGraphicsConfig.
  *
  * @see AccelGraphicsConfig
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class ContextCapabilities {
     /** Indicates that the context has no capabilities. */
     public static final int CAPS_EMPTY             = (0 << 0);

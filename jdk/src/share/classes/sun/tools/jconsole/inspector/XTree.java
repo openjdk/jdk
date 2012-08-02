@@ -32,7 +32,7 @@ import javax.swing.*;
 import javax.swing.tree.*;
 import sun.tools.jconsole.JConsole;
 import sun.tools.jconsole.MBeansTab;
-import sun.tools.jconsole.Resources;
+import sun.tools.jconsole.Messages;
 import sun.tools.jconsole.inspector.XNodeInfo;
 import static sun.tools.jconsole.inspector.XNodeInfo.Type;
 
@@ -182,7 +182,7 @@ public class XTree extends JTree {
      * Returns true if any of the children nodes is a non MBean metadata node.
      */
     private boolean hasNonMetadataNodes(DefaultMutableTreeNode node) {
-        for (Enumeration e = node.children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = node.children(); e.hasMoreElements();) {
             DefaultMutableTreeNode n = (DefaultMutableTreeNode) e.nextElement();
             Object uo = n.getUserObject();
             if (uo instanceof XNodeInfo) {
@@ -205,7 +205,7 @@ public class XTree extends JTree {
      * Returns true if any of the children nodes is an MBean metadata node.
      */
     public boolean hasMetadataNodes(DefaultMutableTreeNode node) {
-        for (Enumeration e = node.children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = node.children(); e.hasMoreElements();) {
             DefaultMutableTreeNode n = (DefaultMutableTreeNode) e.nextElement();
             Object uo = n.getUserObject();
             if (uo instanceof XNodeInfo) {
@@ -251,7 +251,7 @@ public class XTree extends JTree {
         Set<DefaultMutableTreeNode> metadataNodes =
                 new HashSet<DefaultMutableTreeNode>();
         DefaultTreeModel model = (DefaultTreeModel) getModel();
-        for (Enumeration e = node.children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = node.children(); e.hasMoreElements();) {
             DefaultMutableTreeNode n = (DefaultMutableTreeNode) e.nextElement();
             Object uo = n.getUserObject();
             if (uo instanceof XNodeInfo) {
@@ -596,7 +596,7 @@ public class XTree extends JTree {
             if (ai != null && ai.length > 0) {
                 DefaultMutableTreeNode attributes = new DefaultMutableTreeNode();
                 XNodeInfo attributesUO = new XNodeInfo(Type.ATTRIBUTES, mbean,
-                        Resources.getText("Attributes"), null);
+                        Messages.ATTRIBUTES, null);
                 attributes.setUserObject(attributesUO);
                 node.insert(attributes, childIndex++);
                 for (MBeanAttributeInfo mbai : ai) {
@@ -613,7 +613,7 @@ public class XTree extends JTree {
             if (oi != null && oi.length > 0) {
                 DefaultMutableTreeNode operations = new DefaultMutableTreeNode();
                 XNodeInfo operationsUO = new XNodeInfo(Type.OPERATIONS, mbean,
-                        Resources.getText("Operations"), null);
+                        Messages.OPERATIONS, null);
                 operations.setUserObject(operationsUO);
                 node.insert(operations, childIndex++);
                 for (MBeanOperationInfo mboi : oi) {
@@ -646,7 +646,7 @@ public class XTree extends JTree {
             if (isBroadcaster != null && isBroadcaster.booleanValue()) {
                 DefaultMutableTreeNode notifications = new DefaultMutableTreeNode();
                 XNodeInfo notificationsUO = new XNodeInfo(Type.NOTIFICATIONS, mbean,
-                        Resources.getText("Notifications"), null);
+                        Messages.NOTIFICATIONS, null);
                 notifications.setUserObject(notificationsUO);
                 node.insert(notifications, childIndex++);
                 if (ni != null && ni.length > 0) {

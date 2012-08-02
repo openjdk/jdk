@@ -23,120 +23,152 @@
 # questions.
 #
 
-# Default to sane output from make.
-# Override with empty string to get insane amount of output.
-# Override with -d to get even more insane amount of debugging output.
-# Override with "-d -p" to get it all.
-VERBOSE=-s
+# This must be the first rule
+default: all
 
-# Find all environment or command line variables that begin with ALT.
-list_alt_overrides_with_origins = $(filter ALT_%=environment ALT_%=command,$(foreach var,$(.VARIABLES),$(var)=$(firstword $(origin $(var)))))
-list_alt_overrides=$(subst =command,,$(subst =environment,,$(list_alt_overrides_with_origins)))
-ifneq ($(list_alt_overrides),)
-    $(info You have set the following ALT_ variables:)
-    $(foreach var,$(list_alt_overrides), $(info $(var)=$($(var))))
-    $(error Using ALT_ variables is deprecated! Please clean your environment!)
+# Locate this Makefile
+ifeq ($(filter /%,$(lastword $(MAKEFILE_LIST))),)
+    makefile_path:=$(CURDIR)/$(lastword $(MAKEFILE_LIST))
+else
+    makefile_path:=$(lastword $(MAKEFILE_LIST))
 endif
+root_dir:=$(patsubst %/common/makefiles/Makefile,%,$(makefile_path))
 
-# The spec.gmk file contains the variables extracted by the configure script.
-# It is usually set with SPEC=....spec.gmk on the make command line.
-# However if you simply type make from the openjdk source root, it will go looking
-# for a spec file, if only one is found, use it. If more than one is found,
-# complain. If none is found, request the user to run configure!
-SPEC ?= $(wildcard $(CURDIR)/../../build/*/spec.gmk)
+# ... and then we can include our helper functions
+include $(dir $(makefile_path))/MakeHelpers.gmk
 
-ifeq ($(words $(SPEC)),0)
-    $(error You must run configure!)
+$(eval $(call ParseLogLevel))
+$(eval $(call SetupLogging))
+$(eval $(call ParseConfAndSpec))
+
+# Setup number of jobs to use. -jN is unfortunately not available for us to parse from the command line,
+# hence this workaround.
+ifeq ($(JOBS),)
+    JOBS=$(NUM_CORES)
 endif
 
 ifneq ($(words $(SPEC)),1)
-    ifeq ($(MAKECMDGOALS),all-conf)
-        SPECS:=$(shell echo $(SPEC) | sed -e 's|$(CURDIR)/build/||g' -e 's|/spec.gmk|\\n|g' -e 's| ||g')
-        allconf:
-		@echo Building configurations:
-		@printf "$(SPECS)"
-		@$(foreach s,$(SPEC),($(MAKE) SPEC=$s $(VERBOSE) VERBOSE=$(VERBOSE) images) &&) true
-		@echo Done building configurations:
-		@printf "$(SPECS)"
-        .PHONY: all-conf
-    else
-        $(error Since you have more than one output dir configured under build, \
-            you have to either run make from the output dir of your choice \
-            or specify run "make SPEC=build/.../spec.gmk" or run all the build configurations \
-	    using "make all-conf")
-    endif
+### We have multiple configurations to build, call make repeatedly
+all jdk hotspot jaxws jaxp corba langtools install images clean dist-clean:
+	@$(foreach spec,$(SPEC),($(MAKE) -f $(makefile_path) SPEC=$(spec) $(VERBOSE) VERBOSE=$(VERBOSE) $@ $(MAKE_ARGS)) &&) true
+
+.PHONY: all jdk hotspot jaxws jaxp corba langtools install images clean dist-clean
+
 else
+### This is the main part of the Makefile, for the normal case with SPEC specifying a single existing spec.gmk file.
 
 # Now load the spec
--include $(SPEC)
+include $(SPEC)
 
 # Load the vital tools for all the makefiles. 
--include $(SRC_ROOT)/common/makefiles/MakeBase.gmk
+include $(SRC_ROOT)/common/makefiles/MakeBase.gmk
 
-# Remove any build.log from a previous run
+### Clean up from previous run
+
+# Remove any build.log from a previous run, if they exist
 ifneq (,$(BUILD_LOG))
-    $(shell $(RM) $(BUILD_LOG))
+    ifneq (,$(BUILD_LOG_PREVIOUS))
+        # Rotate old log
+        $(shell $(RM) $(BUILD_LOG_PREVIOUS) 2> /dev/null)
+        $(shell $(MV) $(BUILD_LOG) $(BUILD_LOG_PREVIOUS) 2> /dev/null)
+    else
+        $(shell $(RM) $(BUILD_LOG) 2> /dev/null)
+    endif
 endif
-
 # Remove any javac server logs and port files. This
 # prevents a new make run to reuse the previous servers.
 ifneq (,$(JAVAC_SERVERS))
     $(shell mkdir -p $(JAVAC_SERVERS) && rm -rf $(JAVAC_SERVERS)/*)
 endif
-# Reset the build timers.
-$(eval $(call ResetTimers))
 # Clean out any notifications from the previous build.
 $(shell find $(OUTPUT_ROOT) -name "_the.*.notify" $(FIND_DELETE))
 
-all: jdk
-	@$(call StopTimer)
-	@$(if $(JAVAC_SERVERS),rm -rf $(JAVAC_SERVERS)/*.port)
+# Reset the build timers.
+$(eval $(call ResetTimers))
 
-langtools: start-timer
+### Main targets
+
+all: jdk
+	@$(if $(JAVAC_SERVERS),rm -rf $(JAVAC_SERVERS)/*.port)
+	@$(call AtRootMakeEnd)
+
+langtools: start-make langtools-only
+langtools-only:
 	@$(call MakeStart,langtools,all)
-	@($(CD) $(LANGTOOLS_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(LANGTOOLS_MAKE_ARGS))
+	@($(CD) $(LANGTOOLS_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(JOBS) $(MAKE_ARGS))
 	@$(call MakeFinish,langtools,all)
 
-corba: langtools
+corba: langtools corba-only
+corba-only:
 	@$(call MakeStart,corba,all)
-	@($(CD) $(CORBA_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(CORBA_MAKE_ARGS))
+	@($(CD) $(CORBA_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(JOBS) $(MAKE_ARGS))
 	@$(call MakeFinish,corba,all)
 
-jaxp: langtools
+jaxp: langtools jaxp-only
+jaxp-only:
 	@$(call MakeStart,jaxp,all)
-	@($(CD) $(JAXP_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(CORBA_MAKE_ARGS))
+	@($(CD) $(JAXP_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(JOBS) $(MAKE_ARGS))
 	@$(call MakeFinish,jaxp,all)
 
-jaxws: langtools jaxp
+jaxws: langtools jaxp jaxws-only
+jaxws-only:
 	@$(call MakeStart,jaxws,all)
-	@($(CD) $(JAXWS_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(CORBA_MAKE_ARGS))
+	@($(CD) $(JAXWS_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(JOBS) $(MAKE_ARGS))
 	@$(call MakeFinish,jaxws,all)
 
-hotspot: langtools
+hotspot: langtools hotspot-only
+hotspot-only:
 	@$(call MakeStart,hotspot,all)
-	@($(CD) $(HOTSPOT_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 $(HOTSPOT_MAKE_ARGS))
+	@($(CD) $(HOTSPOT_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 $(HOTSPOT_MAKE_ARGS) $(MAKE_ARGS))
 	@$(call MakeFinish,hotspot,all)
 
-jdk: langtools corba jaxp jaxws hotspot
+jdk: langtools corba jaxp jaxws hotspot jdk-only
+jdk-only:
 	@$(call MakeStart,jdk,all)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(JDK_MAKE_ARGS))
+	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(JOBS) $(MAKE_ARGS))
 	@$(call MakeFinish,jdk,all)
 
-images install packages: start-timer jdk langtools corba jaxp jaxws hotspot
+images: source-tips start-make jdk langtools corba jaxp jaxws hotspot images-only
+images-only:
 	@$(call MakeStart,jdk-images,$@)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(JDK_MAKE_ARGS) $@)
+	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(JOBS) $(JDK_MAKE_ARGS) $(MAKE_ARGS) images)
 	@$(call MakeFinish,jdk-images,$@)
-	@$(call StopTimer)
 	@$(if $(JAVAC_SERVERS),rm -rf $(JAVAC_SERVERS)/*.port)
+	@$(call AtRootMakeEnd)
 
-start-timer:
-	@$(call StartTimer)
+install: source-tips start-make jdk langtools corba jaxp jaxws hotspot install-only
+install-only:
+	@$(call MakeStart,jdk-images,$@)
+	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(JOBS) $(JDK_MAKE_ARGS) $(MAKE_ARGS) install)
+	@$(call MakeFinish,jdk-images,$@)
+	@$(if $(JAVAC_SERVERS),rm -rf $(JAVAC_SERVERS)/*.port)
+	@$(call AtRootMakeEnd)
 
-.PHONY: jdk hotspot jaxws jaxp corba langtools install images packages start-timer
+start-make:
+	@$(call AtRootMakeStart)
+
+.PHONY: jdk hotspot jaxws jaxp corba langtools install images start-make
+
+test: start-make
+	@$(call MakeStart,test,$(if $(TEST),$(TEST),all))
+	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) MAKEFLAGS= -j1 PRODUCT_HOME=$(OUTPUT_ROOT)/jdk JPRT_JAVA_HOME=$(OUTPUT_ROOT)/jdk ALT_OUTPUTDIR=$(OUTPUT_ROOT) $(TEST)) || true
+	@$(call MakeFinish,test,$(if $(TEST),$(TEST),all))
+	@$(call AtRootMakeEnd)
+.PHONY: test
+
+
+# Stores the tips for each repository. This file is be used when constructing the jdk image and can be
+# used to track the exact sources used to build that image.
+source-tips: $(OUTPUT_ROOT)/source_tips
+$(OUTPUT_ROOT)/source_tips: FRC
+	@$(MKDIR) -p $(@D)
+	@$(RM) $@
+	@$(call GetSourceTips)
+
 
 # Remove everything, except the output from configure.
 clean:
-	@(cd $(OUTPUT_ROOT) && $(RM) -r `$(LS) $(OUTPUT_ROOT) | grep -v spec.gmk | grep -v Makefile | grep -v config.status | grep -v config.log | grep -v config.h | grep -v configure-arguments | grep -v "localdevenv.*" | grep -v uncygdrive.exe`)
+	@(cd $(OUTPUT_ROOT) && $(RM) -r `$(LS) $(OUTPUT_ROOT) | grep -v spec.gmk | grep -v spec.sh | grep -v Makefile | grep -v config.status | grep -v config.log | grep -v config.h | grep -v configure-arguments | grep -v "localdevenv.*" | grep -v uncygdrive.exe`)
 	@$(ECHO) Cleaned everything except the build configuration.
 .PHONY: clean
 
@@ -147,30 +179,40 @@ dist-clean:
 .PHONY: dist-clean
 
 clean-jdk:
-	@(cd $(OUTPUT_ROOT) && $(RM) -r `$(LS) $(OUTPUT_ROOT) | grep -v spec.gmk | grep -v Makefile | grep -v config.status | grep -v config.log |  grep -v config.h | grep -v configure-arguments | \
+	@(cd $(OUTPUT_ROOT) && $(RM) -r `$(LS) $(OUTPUT_ROOT) | grep -v spec.gmk | grep -v spec.sh | grep -v Makefile | grep -v config.status | grep -v config.log |  grep -v config.h | grep -v configure-arguments | \
                                grep -v langtools | grep -v corba | grep -v jaxp | grep -v jaxws | grep -v hotspot`)
 	@$(ECHO) "Cleaned jdk build artifacts (but not langtools,corba,jaxp,jaxws,hotspot nor the build configuration)"
 .PHONY: clean
 
-help:
-	$(info     )
-	$(info Typical make commands:)
-	$(info     make)
-	$(info     make VERBOSE=        # print all commands)
-	$(info     make VERBOSE="-d -p" # debug make as well)
-	$(info     make all-conf        # build images for all configurations)
-	$(info     make clean           # remove build artifacts)
-	$(info     make dist-clean      # you have to rerun configure)
-#	$(info     make test            # run tests)
-	$(info     make images          # create the jdk and jre images)
-	$(info     make install         # install the jdk image)
-#	$(info     make modules         # EXPERIMENTAL: Migrate JDK into a modularized form!)
-	$(info     make packages        # create zips and other packages)
-
-#	$(info     make eclipse_workspace  # Create an Eclipse workspace)
-#	$(info     make netbeans_workspace # Create a NetBeans workspace)
-#	$(info     make vs_workspace       # Create a Visual Studio workspace)
-
-.PHONY: help
-
 endif
+
+# Here are "global" targets, i.e. targets that can be executed without specifying a single configuration.
+# If you addd more global targets, please update the fatal-error macro.
+
+help:
+	$(info )
+	$(info OpenJDK Makefile help)
+	$(info =====================)
+	$(info )
+	$(info Common make targets)
+	$(info .  make [all]            # Compile all code but do not create images)
+	$(info .  make images           # Create complete j2sdk and j2re images)
+	$(info .  make install          # Install the generated images locally)
+	$(info .  make clean            # Remove all files generated by make, but not those generated by configure)
+	$(info .  make dist-clean       # Remove all files generated by both make and configure)
+	$(info .  make help             # Give some help on using make)
+	$(info .  make test             # Run tests, default is all tests (see TEST below))
+	$(info )
+	$(info Useful make variables)
+	$(info .  make CONF=            # Build all configurations (note, assignment is empty))
+	$(info .  make CONF=<substring> # Build the configuration(s) with a name matching the given substring)
+	$(info )
+	$(info .  make LOG=<loglevel>   # Change loglevel from warn (default) to the given loglevel)
+	$(info .                        # Available loglevels are: warn, info, debug and trace)
+	$(info .                        # To see executed command lines, use LOG=info)
+	$(info )
+	$(info .  make test TEST=<test> # Only run the given test or tests, e.g.)
+	$(info .                        # make test TEST="jdk_lang jdk_net")
+	$(info )
+.PHONY: help
+FRC: # Force target

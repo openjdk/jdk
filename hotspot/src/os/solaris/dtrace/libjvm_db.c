@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,9 +514,9 @@ name_for_methodOop(jvm_agent_t* J, uint64_t methodOopPtr, char * result, size_t 
   char * signatureString = NULL;
   int err;
 
-  err = read_pointer(J, methodOopPtr + OFFSET_methodOopDesc_constants, &constantPool);
-  CHECK_FAIL(err);
   err = read_pointer(J, methodOopPtr + OFFSET_methodOopDesc_constMethod, &constMethod);
+  CHECK_FAIL(err);
+  err = read_pointer(J, constMethod + OFFSET_constMethodOopDesc_constants, &constantPool);
   CHECK_FAIL(err);
 
   /* To get name string */

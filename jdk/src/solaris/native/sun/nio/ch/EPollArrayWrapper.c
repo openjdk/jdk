@@ -30,40 +30,9 @@
 
 #include "sun_nio_ch_EPollArrayWrapper.h"
 
-#include <dlfcn.h>
 #include <unistd.h>
-#include <sys/resource.h>
 #include <sys/time.h>
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/* epoll_wait(2) man page */
-
-typedef union epoll_data {
-    void *ptr;
-    int fd;
-    __uint32_t u32;
-    __uint64_t u64;
-} epoll_data_t;
-
-
-/* x86-64 has same alignment as 32-bit */
-#ifdef __x86_64__
-#define EPOLL_PACKED __attribute__((packed))
-#else
-#define EPOLL_PACKED
-#endif
-
-struct epoll_event {
-    __uint32_t events;  /* Epoll events */
-    epoll_data_t data;  /* User data variable */
-} EPOLL_PACKED;
-
-#ifdef  __cplusplus
-}
-#endif
+#include <sys/epoll.h>
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -71,18 +40,6 @@ struct epoll_event {
   } while((_result == -1) && (errno == EINTR)); \
 } while(0)
 
-/*
- * epoll event notification is new in 2.6 kernel. As the offical build
- * platform for the JDK is on a 2.4-based distribution then we must
- * obtain the addresses of the epoll functions dynamically.
- */
-typedef int (*epoll_create_t)(int size);
-typedef int (*epoll_ctl_t)   (int epfd, int op, int fd, struct epoll_event *event);
-typedef int (*epoll_wait_t)  (int epfd, struct epoll_event *events, int maxevents, int timeout);
-
-static epoll_create_t epoll_create_func;
-static epoll_ctl_t    epoll_ctl_func;
-static epoll_wait_t   epoll_wait_func;
 
 static int
 iepoll(int epfd, struct epoll_event *events, int numfds, jlong timeout)
@@ -96,7 +53,7 @@ iepoll(int epfd, struct epoll_event *events, int numfds, jlong timeout)
     start = t.tv_sec * 1000 + t.tv_usec / 1000;
 
     for (;;) {
-        int res = (*epoll_wait_func)(epfd, events, numfds, timeout);
+        int res = epoll_wait(epfd, events, numfds, timeout);
         if (res < 0 && errno == EINTR) {
             if (remaining >= 0) {
                 gettimeofday(&t, NULL);
@@ -117,14 +74,6 @@ iepoll(int epfd, struct epoll_event *events, int numfds, jlong timeout)
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_EPollArrayWrapper_init(JNIEnv *env, jclass this)
 {
-    epoll_create_func = (epoll_create_t) dlsym(RTLD_DEFAULT, "epoll_create");
-    epoll_ctl_func    = (epoll_ctl_t)    dlsym(RTLD_DEFAULT, "epoll_ctl");
-    epoll_wait_func   = (epoll_wait_t)   dlsym(RTLD_DEFAULT, "epoll_wait");
-
-    if ((epoll_create_func == NULL) || (epoll_ctl_func == NULL) ||
-        (epoll_wait_func == NULL)) {
-        JNU_ThrowInternalError(env, "unable to get address of epoll functions, pre-2.6 kernel?");
-    }
 }
 
 JNIEXPORT jint JNICALL
@@ -134,21 +83,11 @@ Java_sun_nio_ch_EPollArrayWrapper_epollCreate(JNIEnv *env, jobject this)
      * epoll_create expects a size as a hint to the kernel about how to
      * dimension internal structures. We can't predict the size in advance.
      */
-    int epfd = (*epoll_create_func)(256);
+    int epfd = epoll_create(256);
     if (epfd < 0) {
        JNU_ThrowIOExceptionWithLastError(env, "epoll_create failed");
     }
     return epfd;
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_EPollArrayWrapper_fdLimit(JNIEnv *env, jclass this)
-{
-    struct rlimit rlp;
-    if (getrlimit(RLIMIT_NOFILE, &rlp) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "getrlimit failed");
-    }
-    return (jint)rlp.rlim_max;
 }
 
 JNIEXPORT jint JNICALL
@@ -173,7 +112,7 @@ Java_sun_nio_ch_EPollArrayWrapper_epollCtl(JNIEnv *env, jobject this, jint epfd,
     event.events = events;
     event.data.fd = fd;
 
-    RESTARTABLE((*epoll_ctl_func)(epfd, (int)opcode, (int)fd, &event), res);
+    RESTARTABLE(epoll_ctl(epfd, (int)opcode, (int)fd, &event), res);
 
     /*
      * A channel may be registered with several Selectors. When each Selector
@@ -199,7 +138,7 @@ Java_sun_nio_ch_EPollArrayWrapper_epollWait(JNIEnv *env, jobject this,
     int res;
 
     if (timeout <= 0) {           /* Indefinite or no wait */
-        RESTARTABLE((*epoll_wait_func)(epfd, events, numfds, timeout), res);
+        RESTARTABLE(epoll_wait(epfd, events, numfds, timeout), res);
     } else {                      /* Bounded wait; bounded restarts */
         res = iepoll(epfd, events, numfds, timeout);
     }

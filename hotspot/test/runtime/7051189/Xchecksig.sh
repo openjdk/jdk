@@ -1,5 +1,5 @@
 # 
-#  Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 #  This code is free software; you can redistribute it and/or modify it
@@ -41,18 +41,10 @@ then
 fi
 
 
-BIT_FLAG=""
-
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
     FS="/"
-    ## for solaris, linux it's HOME
-    FILE_LOCATION=$HOME
-    if [ -f ${FILE_LOCATION}${FS}JDK64BIT -a ${OS} = "SunOS" ]
-    then
-        BIT_FLAG=`cat ${FILE_LOCATION}${FS}JDK64BIT`
-    fi
     ;;
   Windows_* )
     printf "Not testing libjsig.so on Windows. PASSED.\n "
@@ -69,20 +61,16 @@ JAVA=${TESTJAVA}${FS}bin${FS}java
 
 # LD_PRELOAD arch needs to match the binary we run, so run the java
 # 64-bit binary directly if we are testing 64-bit (bin/ARCH/java).
-
-# However JPRT runs: .../solaris_x64_5.10-debug/bin/java
-# ..which is 32-bit, when it has built the 64-bit version to test.
-#
-# How does this script know we are meant to run the 64-bit version?
-# Can check for the path of the binary containing "x64" on Solaris.
+# Check if TESTVMOPS contains -d64, but cannot use 
+# java ${TESTVMOPS} to run "java -d64"  with LD_PRELOAD.
 
 if [ ${OS} -eq "SunOS" ]
 then
-  printf  "SunOS test JAVA=${JAVA}"
-  printf ${JAVA} | grep x64 > /dev/null
+  printf  "SunOS test TESTVMOPTS = ${TESTVMOPTS}"
+  printf ${TESTVMOPTS} | grep d64 > /dev/null
   if [ $? -eq 0 ]
   then
-    printf "SunOS x64 test, forcing -d64\n"
+    printf "SunOS 64-bit test\n"
     BIT_FLAG=-d64
   fi
 fi
@@ -127,20 +115,19 @@ then
   printf "Skipping test: libjsig missing for given architecture: ${LIBJSIG}\n"
   exit 0
 fi
-# Use java -version to test, java version info appeas on stderr,
+# Use java -version to test, java version info appears on stderr,
 # the libjsig message we are removing appears on stdout.
 
 # grep returns zero meaning found, non-zero means not found:
 
-LD_PRELOAD=${LIBJSIG} ${JAVA} ${BIT_FLAG} -Xcheck:jni -version 2>&1  | grep "libjsig is activated"
-
+LD_PRELOAD=${LIBJSIG} ${JAVA} ${TESTVMOPTS} -Xcheck:jni -version 2>&1  | grep "libjsig is activated"
 if [ $? -eq 0 ]; then
   printf "Failed: -Xcheck:jni prints message when libjsig.so is loaded.\n"
   exit 1
 fi
 
 
-LD_PRELOAD=${LIBJSIG} ${JAVA} ${BIT_FLAG} -Xcheck:jni -verbose:jni -version 2>&1 | grep "libjsig is activated"
+LD_PRELOAD=${LIBJSIG} ${JAVA} ${TESTVMOPTS} -Xcheck:jni -verbose:jni -version 2>&1 | grep "libjsig is activated"
 if [ $? != 0 ]; then
   printf "Failed: -Xcheck:jni does not print message when libjsig.so is loaded and -verbose:jni is set.\n"
   exit 1

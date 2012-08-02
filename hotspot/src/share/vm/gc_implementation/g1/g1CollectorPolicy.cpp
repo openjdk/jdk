@@ -29,6 +29,7 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1ErgoVerbose.hpp"
+#include "gc_implementation/g1/g1GCPhaseTimes.hpp"
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/shared/gcPolicyCounters.hpp"
@@ -77,88 +78,12 @@ static double non_young_other_cost_per_region_ms_defaults[] = {
   1.0, 0.7, 0.7, 0.5, 0.5, 0.42, 0.42, 0.30
 };
 
-// Help class for avoiding interleaved logging
-class LineBuffer: public StackObj {
-
-private:
-  static const int BUFFER_LEN = 1024;
-  static const int INDENT_CHARS = 3;
-  char _buffer[BUFFER_LEN];
-  int _indent_level;
-  int _cur;
-
-  void vappend(const char* format, va_list ap) {
-    int res = vsnprintf(&_buffer[_cur], BUFFER_LEN - _cur, format, ap);
-    if (res != -1) {
-      _cur += res;
-    } else {
-      DEBUG_ONLY(warning("buffer too small in LineBuffer");)
-      _buffer[BUFFER_LEN -1] = 0;
-      _cur = BUFFER_LEN; // vsnprintf above should not add to _buffer if we are called again
-    }
-  }
-
-public:
-  explicit LineBuffer(int indent_level): _indent_level(indent_level), _cur(0) {
-    for (; (_cur < BUFFER_LEN && _cur < (_indent_level * INDENT_CHARS)); _cur++) {
-      _buffer[_cur] = ' ';
-    }
-  }
-
-#ifndef PRODUCT
-  ~LineBuffer() {
-    assert(_cur == _indent_level * INDENT_CHARS, "pending data in buffer - append_and_print_cr() not called?");
-  }
-#endif
-
-  void append(const char* format, ...) {
-    va_list ap;
-    va_start(ap, format);
-    vappend(format, ap);
-    va_end(ap);
-  }
-
-  void append_and_print_cr(const char* format, ...) {
-    va_list ap;
-    va_start(ap, format);
-    vappend(format, ap);
-    va_end(ap);
-    gclog_or_tty->print_cr("%s", _buffer);
-    _cur = _indent_level * INDENT_CHARS;
-  }
-};
-
 G1CollectorPolicy::G1CollectorPolicy() :
   _parallel_gc_threads(G1CollectedHeap::use_parallel_gc_threads()
                         ? ParallelGCThreads : 1),
 
   _recent_gc_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
-  _all_pause_times_ms(new NumberSeq()),
   _stop_world_start(0.0),
-  _all_stop_world_times_ms(new NumberSeq()),
-  _all_yield_times_ms(new NumberSeq()),
-
-  _summary(new Summary()),
-
-  _cur_clear_ct_time_ms(0.0),
-  _root_region_scan_wait_time_ms(0.0),
-
-  _cur_ref_proc_time_ms(0.0),
-  _cur_ref_enq_time_ms(0.0),
-
-#ifndef PRODUCT
-  _min_clear_cc_time_ms(-1.0),
-  _max_clear_cc_time_ms(-1.0),
-  _cur_clear_cc_time_ms(0.0),
-  _cum_clear_cc_time_ms(0.0),
-  _num_cc_clears(0L),
-#endif
-
-  _aux_num(10),
-  _all_aux_times_ms(new NumberSeq[_aux_num]),
-  _cur_aux_start_times_ms(new double[_aux_num]),
-  _cur_aux_times_ms(new double[_aux_num]),
-  _cur_aux_times_set(new bool[_aux_num]),
 
   _concurrent_mark_remark_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
   _concurrent_mark_cleanup_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
@@ -185,8 +110,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _pause_time_target_ms((double) MaxGCPauseMillis),
 
   _gcs_are_young(true),
-  _young_pause_num(0),
-  _mixed_pause_num(0),
 
   _during_marking(false),
   _in_marking_window(false),
@@ -196,8 +119,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
                                 new TruncatedSeq(NumPrevPausesForHeuristics)),
 
   _recent_avg_pause_time_ratio(0.0),
-
-  _all_full_gc_times_ms(new NumberSeq()),
 
   _initiate_conc_mark_if_possible(false),
   _during_initial_mark_pause(false),
@@ -272,30 +193,9 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
 
-  _par_last_gc_worker_start_times_ms = new double[_parallel_gc_threads];
-  _par_last_ext_root_scan_times_ms = new double[_parallel_gc_threads];
-  _par_last_satb_filtering_times_ms = new double[_parallel_gc_threads];
+  _phase_times = new G1GCPhaseTimes(_parallel_gc_threads);
 
-  _par_last_update_rs_times_ms = new double[_parallel_gc_threads];
-  _par_last_update_rs_processed_buffers = new double[_parallel_gc_threads];
-
-  _par_last_scan_rs_times_ms = new double[_parallel_gc_threads];
-
-  _par_last_obj_copy_times_ms = new double[_parallel_gc_threads];
-
-  _par_last_termination_times_ms = new double[_parallel_gc_threads];
-  _par_last_termination_attempts = new double[_parallel_gc_threads];
-  _par_last_gc_worker_end_times_ms = new double[_parallel_gc_threads];
-  _par_last_gc_worker_times_ms = new double[_parallel_gc_threads];
-  _par_last_gc_worker_other_times_ms = new double[_parallel_gc_threads];
-
-  int index;
-  if (ParallelGCThreads == 0)
-    index = 0;
-  else if (ParallelGCThreads > 8)
-    index = 7;
-  else
-    index = ParallelGCThreads - 1;
+  int index = MIN2(_parallel_gc_threads - 1, 7);
 
   _pending_card_diff_seq->add(0.0);
   _rs_length_diff_seq->add(rs_length_diff_defaults[index]);
@@ -839,7 +739,7 @@ G1CollectorPolicy::verify_young_ages(HeapRegion* head,
 #endif // PRODUCT
 
 void G1CollectorPolicy::record_full_collection_start() {
-  _cur_collection_start_sec = os::elapsedTime();
+  _full_collection_start_sec = os::elapsedTime();
   // Release the future to-space so that it is available for compaction into.
   _g1->set_full_collection();
 }
@@ -848,10 +748,10 @@ void G1CollectorPolicy::record_full_collection_end() {
   // Consider this like a collection pause for the purposes of allocation
   // since last pause.
   double end_sec = os::elapsedTime();
-  double full_gc_time_sec = end_sec - _cur_collection_start_sec;
+  double full_gc_time_sec = end_sec - _full_collection_start_sec;
   double full_gc_time_ms = full_gc_time_sec * 1000.0;
 
-  _all_full_gc_times_ms->add(full_gc_time_ms);
+  _trace_gen1_time_data.record_full_collection(full_gc_time_ms);
 
   update_recent_gc_times(end_sec, full_gc_time_ms);
 
@@ -884,13 +784,6 @@ void G1CollectorPolicy::record_stop_world_start() {
 
 void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
                                                       size_t start_used) {
-  if (G1Log::finer()) {
-    gclog_or_tty->stamp(PrintGCTimeStamps);
-    gclog_or_tty->print("[GC pause (%s) (%s)",
-      GCCause::to_string(_g1->gc_cause()),
-      gcs_are_young() ? "young" : "mixed");
-  }
-
   // We only need to do this here as the policy will only be applied
   // to the GC we're about to start. so, no point is calculating this
   // every time we calculate / recalculate the target young length.
@@ -901,10 +794,10 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
                  _g1->used(), _g1->recalculate_used()));
 
   double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
-  _all_stop_world_times_ms->add(s_w_t_ms);
+  _trace_gen0_time_data.record_start_collection(s_w_t_ms);
   _stop_world_start = 0.0;
 
-  _cur_collection_start_sec = start_time_sec;
+  phase_times()->_cur_collection_start_sec = start_time_sec;
   _cur_collection_pause_used_at_start_bytes = start_used;
   _cur_collection_pause_used_regions_at_start = _g1->used_regions();
   _pending_cards = _g1->pending_card_num();
@@ -917,35 +810,6 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   _eden_bytes_before_gc = young_list->eden_used_bytes();
   _survivor_bytes_before_gc = young_list->survivor_used_bytes();
   _capacity_before_gc = _g1->capacity();
-
-#ifdef DEBUG
-  // initialise these to something well known so that we can spot
-  // if they are not set properly
-
-  for (int i = 0; i < _parallel_gc_threads; ++i) {
-    _par_last_gc_worker_start_times_ms[i] = -1234.0;
-    _par_last_ext_root_scan_times_ms[i] = -1234.0;
-    _par_last_satb_filtering_times_ms[i] = -1234.0;
-    _par_last_update_rs_times_ms[i] = -1234.0;
-    _par_last_update_rs_processed_buffers[i] = -1234.0;
-    _par_last_scan_rs_times_ms[i] = -1234.0;
-    _par_last_obj_copy_times_ms[i] = -1234.0;
-    _par_last_termination_times_ms[i] = -1234.0;
-    _par_last_termination_attempts[i] = -1234.0;
-    _par_last_gc_worker_end_times_ms[i] = -1234.0;
-    _par_last_gc_worker_times_ms[i] = -1234.0;
-    _par_last_gc_worker_other_times_ms[i] = -1234.0;
-  }
-#endif
-
-  for (int i = 0; i < _aux_num; ++i) {
-    _cur_aux_times_ms[i] = 0.0;
-    _cur_aux_times_set[i] = false;
-  }
-
-  // This is initialized to zero here and is set during the evacuation
-  // pause if we actually waited for the root region scanning to finish.
-  _root_region_scan_wait_time_ms = 0.0;
 
   _last_gc_was_young = false;
 
@@ -991,134 +855,8 @@ void G1CollectorPolicy::record_concurrent_mark_cleanup_completed() {
 void G1CollectorPolicy::record_concurrent_pause() {
   if (_stop_world_start > 0.0) {
     double yield_ms = (os::elapsedTime() - _stop_world_start) * 1000.0;
-    _all_yield_times_ms->add(yield_ms);
+    _trace_gen0_time_data.record_yield_time(yield_ms);
   }
-}
-
-void G1CollectorPolicy::record_concurrent_pause_end() {
-}
-
-template<class T>
-T sum_of(T* sum_arr, int start, int n, int N) {
-  T sum = (T)0;
-  for (int i = 0; i < n; i++) {
-    int j = (start + i) % N;
-    sum += sum_arr[j];
-  }
-  return sum;
-}
-
-void G1CollectorPolicy::print_par_stats(int level,
-                                        const char* str,
-                                        double* data) {
-  double min = data[0], max = data[0];
-  double total = 0.0;
-  LineBuffer buf(level);
-  buf.append("[%s (ms):", str);
-  for (uint i = 0; i < no_of_gc_threads(); ++i) {
-    double val = data[i];
-    if (val < min)
-      min = val;
-    if (val > max)
-      max = val;
-    total += val;
-    if (G1Log::finest()) {
-      buf.append("  %.1lf", val);
-    }
-  }
-
-  if (G1Log::finest()) {
-    buf.append_and_print_cr("");
-  }
-  double avg = total / (double) no_of_gc_threads();
-  buf.append_and_print_cr(" Avg: %.1lf Min: %.1lf Max: %.1lf Diff: %.1lf]",
-    avg, min, max, max - min);
-}
-
-void G1CollectorPolicy::print_par_sizes(int level,
-                                        const char* str,
-                                        double* data) {
-  double min = data[0], max = data[0];
-  double total = 0.0;
-  LineBuffer buf(level);
-  buf.append("[%s :", str);
-  for (uint i = 0; i < no_of_gc_threads(); ++i) {
-    double val = data[i];
-    if (val < min)
-      min = val;
-    if (val > max)
-      max = val;
-    total += val;
-    buf.append(" %d", (int) val);
-  }
-  buf.append_and_print_cr("");
-  double avg = total / (double) no_of_gc_threads();
-  buf.append_and_print_cr(" Sum: %d, Avg: %d, Min: %d, Max: %d, Diff: %d]",
-    (int)total, (int)avg, (int)min, (int)max, (int)max - (int)min);
-}
-
-void G1CollectorPolicy::print_stats(int level,
-                                    const char* str,
-                                    double value) {
-  LineBuffer(level).append_and_print_cr("[%s: %5.1lf ms]", str, value);
-}
-
-void G1CollectorPolicy::print_stats(int level,
-                                    const char* str,
-                                    int value) {
-  LineBuffer(level).append_and_print_cr("[%s: %d]", str, value);
-}
-
-double G1CollectorPolicy::avg_value(double* data) {
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    double ret = 0.0;
-    for (uint i = 0; i < no_of_gc_threads(); ++i) {
-      ret += data[i];
-    }
-    return ret / (double) no_of_gc_threads();
-  } else {
-    return data[0];
-  }
-}
-
-double G1CollectorPolicy::max_value(double* data) {
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    double ret = data[0];
-    for (uint i = 1; i < no_of_gc_threads(); ++i) {
-      if (data[i] > ret) {
-        ret = data[i];
-      }
-    }
-    return ret;
-  } else {
-    return data[0];
-  }
-}
-
-double G1CollectorPolicy::sum_of_values(double* data) {
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    double sum = 0.0;
-    for (uint i = 0; i < no_of_gc_threads(); i++) {
-      sum += data[i];
-    }
-    return sum;
-  } else {
-    return data[0];
-  }
-}
-
-double G1CollectorPolicy::max_sum(double* data1, double* data2) {
-  double ret = data1[0] + data2[0];
-
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    for (uint i = 1; i < no_of_gc_threads(); ++i) {
-      double data = data1[i] + data2[i];
-      if (data > ret) {
-        ret = data;
-      }
-    }
-  }
-  return ret;
 }
 
 bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc_word_size) {
@@ -1168,10 +906,8 @@ bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
+void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
   double end_time_sec = os::elapsedTime();
-  double elapsed_ms = _last_pause_time_ms;
-  bool parallel = G1CollectedHeap::use_parallel_gc_threads();
   assert(_cur_collection_pause_used_regions_at_start >= cset_region_length(),
          "otherwise, the subtraction below does not make sense");
   size_t rs_size =
@@ -1180,7 +916,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   assert(cur_used_bytes == _g1->recalculate_used(), "It should!");
   bool last_pause_included_initial_mark = false;
   bool update_stats = !_g1->evacuation_failed();
-  set_no_of_gc_threads(no_of_gc_threads);
 
 #ifndef PRODUCT
   if (G1YoungSurvRateVerbose) {
@@ -1200,23 +935,8 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     set_initiate_conc_mark_if_possible();
   }
 
-  _mmu_tracker->add_pause(end_time_sec - elapsed_ms/1000.0,
+  _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0,
                           end_time_sec, false);
-
-  // This assert is exempted when we're doing parallel collection pauses,
-  // because the fragmentation caused by the parallel GC allocation buffers
-  // can lead to more memory being used during collection than was used
-  // before. Best leave this out until the fragmentation problem is fixed.
-  // Pauses in which evacuation failed can also lead to negative
-  // collections, since no space is reclaimed from a region containing an
-  // object whose evacuation failed.
-  // Further, we're now always doing parallel collection.  But I'm still
-  // leaving this here as a placeholder for a more precise assertion later.
-  // (DLD, 10/05.)
-  assert((true || parallel) // Always using GC LABs now.
-         || _g1->evacuation_failed()
-         || _cur_collection_pause_used_at_start_bytes >= cur_used_bytes,
-         "Negative collection");
 
   size_t freed_bytes =
     _cur_collection_pause_used_at_start_bytes - cur_used_bytes;
@@ -1226,87 +946,11 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     (double)surviving_bytes/
     (double)_collection_set_bytes_used_before;
 
-  // These values are used to update the summary information that is
-  // displayed when TraceGen0Time is enabled, and are output as part
-  // of the "finer" output, in the non-parallel case.
-
-  double ext_root_scan_time = avg_value(_par_last_ext_root_scan_times_ms);
-  double satb_filtering_time = avg_value(_par_last_satb_filtering_times_ms);
-  double update_rs_time = avg_value(_par_last_update_rs_times_ms);
-  double update_rs_processed_buffers =
-    sum_of_values(_par_last_update_rs_processed_buffers);
-  double scan_rs_time = avg_value(_par_last_scan_rs_times_ms);
-  double obj_copy_time = avg_value(_par_last_obj_copy_times_ms);
-  double termination_time = avg_value(_par_last_termination_times_ms);
-
-  double known_time = ext_root_scan_time +
-                      satb_filtering_time +
-                      update_rs_time +
-                      scan_rs_time +
-                      obj_copy_time;
-
-  double other_time_ms = elapsed_ms;
-
-  // Subtract the root region scanning wait time. It's initialized to
-  // zero at the start of the pause.
-  other_time_ms -= _root_region_scan_wait_time_ms;
-
-  if (parallel) {
-    other_time_ms -= _cur_collection_par_time_ms;
-  } else {
-    other_time_ms -= known_time;
-  }
-
-  // Now subtract the time taken to fix up roots in generated code
-  other_time_ms -= _cur_collection_code_root_fixup_time_ms;
-
-  // Subtract the time taken to clean the card table from the
-  // current value of "other time"
-  other_time_ms -= _cur_clear_ct_time_ms;
-
-  // TraceGen0Time and TraceGen1Time summary info updating.
-  _all_pause_times_ms->add(elapsed_ms);
-
   if (update_stats) {
-    _summary->record_total_time_ms(elapsed_ms);
-    _summary->record_other_time_ms(other_time_ms);
-
-    MainBodySummary* body_summary = _summary->main_body_summary();
-    assert(body_summary != NULL, "should not be null!");
-
-    body_summary->record_root_region_scan_wait_time_ms(
-                                               _root_region_scan_wait_time_ms);
-    body_summary->record_ext_root_scan_time_ms(ext_root_scan_time);
-    body_summary->record_satb_filtering_time_ms(satb_filtering_time);
-    body_summary->record_update_rs_time_ms(update_rs_time);
-    body_summary->record_scan_rs_time_ms(scan_rs_time);
-    body_summary->record_obj_copy_time_ms(obj_copy_time);
-
-    if (parallel) {
-      body_summary->record_parallel_time_ms(_cur_collection_par_time_ms);
-      body_summary->record_termination_time_ms(termination_time);
-
-      double parallel_known_time = known_time + termination_time;
-      double parallel_other_time = _cur_collection_par_time_ms - parallel_known_time;
-      body_summary->record_parallel_other_time_ms(parallel_other_time);
-    }
-
-    body_summary->record_clear_ct_time_ms(_cur_clear_ct_time_ms);
-
-    // We exempt parallel collection from this check because Alloc Buffer
-    // fragmentation can produce negative collections.  Same with evac
-    // failure.
-    // Further, we're now always doing parallel collection.  But I'm still
-    // leaving this here as a placeholder for a more precise assertion later.
-    // (DLD, 10/05.
-    assert((true || parallel)
-           || _g1->evacuation_failed()
-           || surviving_bytes <= _collection_set_bytes_used_before,
-           "Or else negative collection!");
-
+    _trace_gen0_time_data.record_end_collection(pause_time_ms, phase_times());
     // this is where we update the allocation rate of the application
     double app_time_ms =
-      (_cur_collection_start_sec * 1000.0 - _prev_collection_pause_end_ms);
+      (phase_times()->_cur_collection_start_sec * 1000.0 - _prev_collection_pause_end_ms);
     if (app_time_ms < MIN_TIMER_GRANULARITY) {
       // This usually happens due to the timer not having the required
       // granularity. Some Linuxes are the usual culprits.
@@ -1327,7 +971,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
 
     double interval_ms =
       (end_time_sec - _recent_prev_end_times_for_all_gcs_sec->oldest()) * 1000.0;
-    update_recent_gc_times(end_time_sec, elapsed_ms);
+    update_recent_gc_times(end_time_sec, pause_time_ms);
     _recent_avg_pause_time_ratio = _recent_gc_times_ms->sum()/interval_ms;
     if (recent_avg_pause_time_ratio() < 0.0 ||
         (recent_avg_pause_time_ratio() - 1.0 > 0.0)) {
@@ -1354,102 +998,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
       }
     }
   }
-
-  for (int i = 0; i < _aux_num; ++i) {
-    if (_cur_aux_times_set[i]) {
-      _all_aux_times_ms[i].add(_cur_aux_times_ms[i]);
-    }
-  }
-
-  if (G1Log::finer()) {
-    bool print_marking_info =
-      _g1->mark_in_progress() && !last_pause_included_initial_mark;
-
-    gclog_or_tty->print_cr("%s, %1.8lf secs]",
-                           (last_pause_included_initial_mark) ? " (initial-mark)" : "",
-                           elapsed_ms / 1000.0);
-
-    if (_root_region_scan_wait_time_ms > 0.0) {
-      print_stats(1, "Root Region Scan Waiting", _root_region_scan_wait_time_ms);
-    }
-    if (parallel) {
-      print_stats(1, "Parallel Time", _cur_collection_par_time_ms);
-      print_par_stats(2, "GC Worker Start", _par_last_gc_worker_start_times_ms);
-      print_par_stats(2, "Ext Root Scanning", _par_last_ext_root_scan_times_ms);
-      if (print_marking_info) {
-        print_par_stats(2, "SATB Filtering", _par_last_satb_filtering_times_ms);
-      }
-      print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
-      if (G1Log::finest()) {
-        print_par_sizes(3, "Processed Buffers", _par_last_update_rs_processed_buffers);
-      }
-      print_par_stats(2, "Scan RS", _par_last_scan_rs_times_ms);
-      print_par_stats(2, "Object Copy", _par_last_obj_copy_times_ms);
-      print_par_stats(2, "Termination", _par_last_termination_times_ms);
-      if (G1Log::finest()) {
-        print_par_sizes(3, "Termination Attempts", _par_last_termination_attempts);
-      }
-
-      for (int i = 0; i < _parallel_gc_threads; i++) {
-        _par_last_gc_worker_times_ms[i] = _par_last_gc_worker_end_times_ms[i] -
-                                          _par_last_gc_worker_start_times_ms[i];
-
-        double worker_known_time = _par_last_ext_root_scan_times_ms[i] +
-                                   _par_last_satb_filtering_times_ms[i] +
-                                   _par_last_update_rs_times_ms[i] +
-                                   _par_last_scan_rs_times_ms[i] +
-                                   _par_last_obj_copy_times_ms[i] +
-                                   _par_last_termination_times_ms[i];
-
-        _par_last_gc_worker_other_times_ms[i] = _par_last_gc_worker_times_ms[i] -
-                                                worker_known_time;
-      }
-
-      print_par_stats(2, "GC Worker Other", _par_last_gc_worker_other_times_ms);
-      print_par_stats(2, "GC Worker Total", _par_last_gc_worker_times_ms);
-      print_par_stats(2, "GC Worker End", _par_last_gc_worker_end_times_ms);
-    } else {
-      print_stats(1, "Ext Root Scanning", ext_root_scan_time);
-      if (print_marking_info) {
-        print_stats(1, "SATB Filtering", satb_filtering_time);
-      }
-      print_stats(1, "Update RS", update_rs_time);
-      if (G1Log::finest()) {
-        print_stats(2, "Processed Buffers", (int)update_rs_processed_buffers);
-      }
-      print_stats(1, "Scan RS", scan_rs_time);
-      print_stats(1, "Object Copying", obj_copy_time);
-    }
-    print_stats(1, "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
-    print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
-#ifndef PRODUCT
-    print_stats(1, "Cur Clear CC", _cur_clear_cc_time_ms);
-    print_stats(1, "Cum Clear CC", _cum_clear_cc_time_ms);
-    print_stats(1, "Min Clear CC", _min_clear_cc_time_ms);
-    print_stats(1, "Max Clear CC", _max_clear_cc_time_ms);
-    if (_num_cc_clears > 0) {
-      print_stats(1, "Avg Clear CC", _cum_clear_cc_time_ms / ((double)_num_cc_clears));
-    }
-#endif
-    print_stats(1, "Other", other_time_ms);
-    print_stats(2, "Choose CSet",
-                   (_recorded_young_cset_choice_time_ms +
-                    _recorded_non_young_cset_choice_time_ms));
-    print_stats(2, "Ref Proc", _cur_ref_proc_time_ms);
-    print_stats(2, "Ref Enq", _cur_ref_enq_time_ms);
-    print_stats(2, "Free CSet",
-                   (_recorded_young_free_cset_time_ms +
-                    _recorded_non_young_free_cset_time_ms));
-
-    for (int i = 0; i < _aux_num; ++i) {
-      if (_cur_aux_times_set[i]) {
-        char buffer[96];
-        sprintf(buffer, "Aux%d", i);
-        print_stats(1, buffer, _cur_aux_times_ms[i]);
-      }
-    }
-  }
-
   bool new_in_marking_window = _in_marking_window;
   bool new_in_marking_window_im = false;
   if (during_initial_mark_pause()) {
@@ -1488,8 +1036,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   // do that for any other surv rate groupsx
 
   if (update_stats) {
-    double pause_time_ms = elapsed_ms;
-
     size_t diff = 0;
     if (_max_pending_cards >= _pending_cards) {
       diff = _max_pending_cards - _pending_cards;
@@ -1498,7 +1044,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
 
     double cost_per_card_ms = 0.0;
     if (_pending_cards > 0) {
-      cost_per_card_ms = update_rs_time / (double) _pending_cards;
+      cost_per_card_ms = phase_times()->_update_rs_time / (double) _pending_cards;
       _cost_per_card_ms_seq->add(cost_per_card_ms);
     }
 
@@ -1506,7 +1052,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
 
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
-      cost_per_entry_ms = scan_rs_time / (double) cards_scanned;
+      cost_per_entry_ms = phase_times()->_scan_rs_time / (double) cards_scanned;
       if (_last_gc_was_young) {
         _cost_per_entry_ms_seq->add(cost_per_entry_ms);
       } else {
@@ -1546,7 +1092,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     size_t copied_bytes = surviving_bytes;
     double cost_per_byte_ms = 0.0;
     if (copied_bytes > 0) {
-      cost_per_byte_ms = obj_copy_time / (double) copied_bytes;
+      cost_per_byte_ms = phase_times()->_obj_copy_time / (double) copied_bytes;
       if (_in_marking_window) {
         _cost_per_byte_ms_during_cm_seq->add(cost_per_byte_ms);
       } else {
@@ -1555,21 +1101,21 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     }
 
     double all_other_time_ms = pause_time_ms -
-      (update_rs_time + scan_rs_time + obj_copy_time + termination_time);
+      (phase_times()->_update_rs_time + phase_times()->_scan_rs_time + phase_times()->_obj_copy_time + phase_times()->_termination_time);
 
     double young_other_time_ms = 0.0;
     if (young_cset_region_length() > 0) {
       young_other_time_ms =
-        _recorded_young_cset_choice_time_ms +
-        _recorded_young_free_cset_time_ms;
+        phase_times()->_recorded_young_cset_choice_time_ms +
+        phase_times()->_recorded_young_free_cset_time_ms;
       _young_other_cost_per_region_ms_seq->add(young_other_time_ms /
                                           (double) young_cset_region_length());
     }
     double non_young_other_time_ms = 0.0;
     if (old_cset_region_length() > 0) {
       non_young_other_time_ms =
-        _recorded_non_young_cset_choice_time_ms +
-        _recorded_non_young_free_cset_time_ms;
+        phase_times()->_recorded_non_young_cset_choice_time_ms +
+        phase_times()->_recorded_non_young_free_cset_time_ms;
 
       _non_young_other_cost_per_region_ms_seq->add(non_young_other_time_ms /
                                             (double) old_cset_region_length());
@@ -1596,14 +1142,14 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
-  adjust_concurrent_refinement(update_rs_time, update_rs_processed_buffers, update_rs_time_goal_ms);
+  adjust_concurrent_refinement(phase_times()->_update_rs_time, phase_times()->_update_rs_processed_buffers, update_rs_time_goal_ms);
 
   _collectionSetChooser->verify();
 }
 
-#define EXT_SIZE_FORMAT "%d%s"
+#define EXT_SIZE_FORMAT "%.1f%s"
 #define EXT_SIZE_PARAMS(bytes)                                  \
-  byte_size_in_proper_unit((bytes)),                            \
+  byte_size_in_proper_unit((double)(bytes)),                    \
   proper_unit_for_byte_size((bytes))
 
 void G1CollectorPolicy::print_heap_transition() {
@@ -1812,179 +1358,9 @@ void G1CollectorPolicy::count_CS_bytes_used() {
   _g1->collection_set_iterate(&cs_closure);
 }
 
-void G1CollectorPolicy::print_summary(int level,
-                                      const char* str,
-                                      NumberSeq* seq) const {
-  double sum = seq->sum();
-  LineBuffer(level + 1).append_and_print_cr("%-24s = %8.2lf s (avg = %8.2lf ms)",
-                str, sum / 1000.0, seq->avg());
-}
-
-void G1CollectorPolicy::print_summary_sd(int level,
-                                         const char* str,
-                                         NumberSeq* seq) const {
-  print_summary(level, str, seq);
-  LineBuffer(level + 6).append_and_print_cr("(num = %5d, std dev = %8.2lf ms, max = %8.2lf ms)",
-                seq->num(), seq->sd(), seq->maximum());
-}
-
-void G1CollectorPolicy::check_other_times(int level,
-                                        NumberSeq* other_times_ms,
-                                        NumberSeq* calc_other_times_ms) const {
-  bool should_print = false;
-  LineBuffer buf(level + 2);
-
-  double max_sum = MAX2(fabs(other_times_ms->sum()),
-                        fabs(calc_other_times_ms->sum()));
-  double min_sum = MIN2(fabs(other_times_ms->sum()),
-                        fabs(calc_other_times_ms->sum()));
-  double sum_ratio = max_sum / min_sum;
-  if (sum_ratio > 1.1) {
-    should_print = true;
-    buf.append_and_print_cr("## CALCULATED OTHER SUM DOESN'T MATCH RECORDED ###");
-  }
-
-  double max_avg = MAX2(fabs(other_times_ms->avg()),
-                        fabs(calc_other_times_ms->avg()));
-  double min_avg = MIN2(fabs(other_times_ms->avg()),
-                        fabs(calc_other_times_ms->avg()));
-  double avg_ratio = max_avg / min_avg;
-  if (avg_ratio > 1.1) {
-    should_print = true;
-    buf.append_and_print_cr("## CALCULATED OTHER AVG DOESN'T MATCH RECORDED ###");
-  }
-
-  if (other_times_ms->sum() < -0.01) {
-    buf.append_and_print_cr("## RECORDED OTHER SUM IS NEGATIVE ###");
-  }
-
-  if (other_times_ms->avg() < -0.01) {
-    buf.append_and_print_cr("## RECORDED OTHER AVG IS NEGATIVE ###");
-  }
-
-  if (calc_other_times_ms->sum() < -0.01) {
-    should_print = true;
-    buf.append_and_print_cr("## CALCULATED OTHER SUM IS NEGATIVE ###");
-  }
-
-  if (calc_other_times_ms->avg() < -0.01) {
-    should_print = true;
-    buf.append_and_print_cr("## CALCULATED OTHER AVG IS NEGATIVE ###");
-  }
-
-  if (should_print)
-    print_summary(level, "Other(Calc)", calc_other_times_ms);
-}
-
-void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
-  bool parallel = G1CollectedHeap::use_parallel_gc_threads();
-  MainBodySummary*    body_summary = summary->main_body_summary();
-  if (summary->get_total_seq()->num() > 0) {
-    print_summary_sd(0, "Evacuation Pauses", summary->get_total_seq());
-    if (body_summary != NULL) {
-      print_summary(1, "Root Region Scan Wait", body_summary->get_root_region_scan_wait_seq());
-      if (parallel) {
-        print_summary(1, "Parallel Time", body_summary->get_parallel_seq());
-        print_summary(2, "Ext Root Scanning", body_summary->get_ext_root_scan_seq());
-        print_summary(2, "SATB Filtering", body_summary->get_satb_filtering_seq());
-        print_summary(2, "Update RS", body_summary->get_update_rs_seq());
-        print_summary(2, "Scan RS", body_summary->get_scan_rs_seq());
-        print_summary(2, "Object Copy", body_summary->get_obj_copy_seq());
-        print_summary(2, "Termination", body_summary->get_termination_seq());
-        print_summary(2, "Parallel Other", body_summary->get_parallel_other_seq());
-        {
-          NumberSeq* other_parts[] = {
-            body_summary->get_ext_root_scan_seq(),
-            body_summary->get_satb_filtering_seq(),
-            body_summary->get_update_rs_seq(),
-            body_summary->get_scan_rs_seq(),
-            body_summary->get_obj_copy_seq(),
-            body_summary->get_termination_seq()
-          };
-          NumberSeq calc_other_times_ms(body_summary->get_parallel_seq(),
-                                        6, other_parts);
-          check_other_times(2, body_summary->get_parallel_other_seq(),
-                            &calc_other_times_ms);
-        }
-      } else {
-        print_summary(1, "Ext Root Scanning", body_summary->get_ext_root_scan_seq());
-        print_summary(1, "SATB Filtering", body_summary->get_satb_filtering_seq());
-        print_summary(1, "Update RS", body_summary->get_update_rs_seq());
-        print_summary(1, "Scan RS", body_summary->get_scan_rs_seq());
-        print_summary(1, "Object Copy", body_summary->get_obj_copy_seq());
-      }
-    }
-    print_summary(1, "Clear CT", body_summary->get_clear_ct_seq());
-    print_summary(1, "Other", summary->get_other_seq());
-    {
-      if (body_summary != NULL) {
-        NumberSeq calc_other_times_ms;
-        if (parallel) {
-          // parallel
-          NumberSeq* other_parts[] = {
-            body_summary->get_root_region_scan_wait_seq(),
-            body_summary->get_parallel_seq(),
-            body_summary->get_clear_ct_seq()
-          };
-          calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                          3, other_parts);
-        } else {
-          // serial
-          NumberSeq* other_parts[] = {
-            body_summary->get_root_region_scan_wait_seq(),
-            body_summary->get_update_rs_seq(),
-            body_summary->get_ext_root_scan_seq(),
-            body_summary->get_satb_filtering_seq(),
-            body_summary->get_scan_rs_seq(),
-            body_summary->get_obj_copy_seq()
-          };
-          calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                          6, other_parts);
-        }
-        check_other_times(1,  summary->get_other_seq(), &calc_other_times_ms);
-      }
-    }
-  } else {
-    LineBuffer(1).append_and_print_cr("none");
-  }
-  LineBuffer(0).append_and_print_cr("");
-}
-
 void G1CollectorPolicy::print_tracing_info() const {
-  if (TraceGen0Time) {
-    gclog_or_tty->print_cr("ALL PAUSES");
-    print_summary_sd(0, "Total", _all_pause_times_ms);
-    gclog_or_tty->print_cr("");
-    gclog_or_tty->print_cr("");
-    gclog_or_tty->print_cr("   Young GC Pauses: %8d", _young_pause_num);
-    gclog_or_tty->print_cr("   Mixed GC Pauses: %8d", _mixed_pause_num);
-    gclog_or_tty->print_cr("");
-
-    gclog_or_tty->print_cr("EVACUATION PAUSES");
-    print_summary(_summary);
-
-    gclog_or_tty->print_cr("MISC");
-    print_summary_sd(0, "Stop World", _all_stop_world_times_ms);
-    print_summary_sd(0, "Yields", _all_yield_times_ms);
-    for (int i = 0; i < _aux_num; ++i) {
-      if (_all_aux_times_ms[i].num() > 0) {
-        char buffer[96];
-        sprintf(buffer, "Aux%d", i);
-        print_summary_sd(0, buffer, &_all_aux_times_ms[i]);
-      }
-    }
-  }
-  if (TraceGen1Time) {
-    if (_all_full_gc_times_ms->num() > 0) {
-      gclog_or_tty->print("\n%4d full_gcs: total time = %8.2f s",
-                 _all_full_gc_times_ms->num(),
-                 _all_full_gc_times_ms->sum() / 1000.0);
-      gclog_or_tty->print_cr(" (avg = %8.2fms).", _all_full_gc_times_ms->avg());
-      gclog_or_tty->print_cr("                     [std. dev = %8.2f ms, max = %8.2f ms]",
-                    _all_full_gc_times_ms->sd(),
-                    _all_full_gc_times_ms->maximum());
-    }
-  }
+  _trace_gen0_time_data.print();
+  _trace_gen1_time_data.print();
 }
 
 void G1CollectorPolicy::print_yg_surv_rate_info() const {
@@ -2535,9 +1911,9 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
   _last_gc_was_young = gcs_are_young() ? true : false;
 
   if (_last_gc_was_young) {
-    ++_young_pause_num;
+    _trace_gen0_time_data.increment_young_collection_count();
   } else {
-    ++_mixed_pause_num;
+    _trace_gen0_time_data.increment_mixed_collection_count();
   }
 
   // The young list is laid with the survivor regions from the previous
@@ -2575,7 +1951,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
   set_recorded_rs_lengths(_inc_cset_recorded_rs_lengths);
 
   double young_end_time_sec = os::elapsedTime();
-  _recorded_young_cset_choice_time_ms =
+  phase_times()->_recorded_young_cset_choice_time_ms =
     (young_end_time_sec - young_start_time_sec) * 1000.0;
 
   // We are doing young collections so reset this.
@@ -2691,6 +2067,130 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
                 predicted_pause_time_ms, target_pause_time_ms);
 
   double non_young_end_time_sec = os::elapsedTime();
-  _recorded_non_young_cset_choice_time_ms =
+  phase_times()->_recorded_non_young_cset_choice_time_ms =
     (non_young_end_time_sec - non_young_start_time_sec) * 1000.0;
+}
+
+void TraceGen0TimeData::record_start_collection(double time_to_stop_the_world_ms) {
+  if(TraceGen0Time) {
+    _all_stop_world_times_ms.add(time_to_stop_the_world_ms);
+  }
+}
+
+void TraceGen0TimeData::record_yield_time(double yield_time_ms) {
+  if(TraceGen0Time) {
+    _all_yield_times_ms.add(yield_time_ms);
+  }
+}
+
+void TraceGen0TimeData::record_end_collection(double pause_time_ms, G1GCPhaseTimes* phase_times) {
+  if(TraceGen0Time) {
+    _total.add(pause_time_ms);
+    _other.add(pause_time_ms - phase_times->accounted_time_ms());
+    _root_region_scan_wait.add(phase_times->_root_region_scan_wait_time_ms);
+    _parallel.add(phase_times->_cur_collection_par_time_ms);
+    _ext_root_scan.add(phase_times->_ext_root_scan_time);
+    _satb_filtering.add(phase_times->_satb_filtering_time);
+    _update_rs.add(phase_times->_update_rs_time);
+    _scan_rs.add(phase_times->_scan_rs_time);
+    _obj_copy.add(phase_times->_obj_copy_time);
+    _termination.add(phase_times->_termination_time);
+
+    double parallel_known_time = phase_times->_ext_root_scan_time +
+      phase_times->_satb_filtering_time +
+      phase_times->_update_rs_time +
+      phase_times->_scan_rs_time +
+      phase_times->_obj_copy_time +
+      + phase_times->_termination_time;
+
+    double parallel_other_time = phase_times->_cur_collection_par_time_ms - parallel_known_time;
+    _parallel_other.add(parallel_other_time);
+    _clear_ct.add(phase_times->_cur_clear_ct_time_ms);
+  }
+}
+
+void TraceGen0TimeData::increment_young_collection_count() {
+  if(TraceGen0Time) {
+    ++_young_pause_num;
+  }
+}
+
+void TraceGen0TimeData::increment_mixed_collection_count() {
+  if(TraceGen0Time) {
+    ++_mixed_pause_num;
+  }
+}
+
+void TraceGen0TimeData::print_summary(const char* str,
+                                      const NumberSeq* seq) const {
+  double sum = seq->sum();
+  gclog_or_tty->print_cr("%-27s = %8.2lf s (avg = %8.2lf ms)",
+                str, sum / 1000.0, seq->avg());
+}
+
+void TraceGen0TimeData::print_summary_sd(const char* str,
+                                         const NumberSeq* seq) const {
+  print_summary(str, seq);
+  gclog_or_tty->print_cr("%+45s = %5d, std dev = %8.2lf ms, max = %8.2lf ms)",
+                "(num", seq->num(), seq->sd(), seq->maximum());
+}
+
+void TraceGen0TimeData::print() const {
+  if (!TraceGen0Time) {
+    return;
+  }
+
+  gclog_or_tty->print_cr("ALL PAUSES");
+  print_summary_sd("   Total", &_total);
+  gclog_or_tty->print_cr("");
+  gclog_or_tty->print_cr("");
+  gclog_or_tty->print_cr("   Young GC Pauses: %8d", _young_pause_num);
+  gclog_or_tty->print_cr("   Mixed GC Pauses: %8d", _mixed_pause_num);
+  gclog_or_tty->print_cr("");
+
+  gclog_or_tty->print_cr("EVACUATION PAUSES");
+
+  if (_young_pause_num == 0 && _mixed_pause_num == 0) {
+    gclog_or_tty->print_cr("none");
+  } else {
+    print_summary_sd("   Evacuation Pauses", &_total);
+    print_summary("      Root Region Scan Wait", &_root_region_scan_wait);
+    print_summary("      Parallel Time", &_parallel);
+    print_summary("         Ext Root Scanning", &_ext_root_scan);
+    print_summary("         SATB Filtering", &_satb_filtering);
+    print_summary("         Update RS", &_update_rs);
+    print_summary("         Scan RS", &_scan_rs);
+    print_summary("         Object Copy", &_obj_copy);
+    print_summary("         Termination", &_termination);
+    print_summary("         Parallel Other", &_parallel_other);
+    print_summary("      Clear CT", &_clear_ct);
+    print_summary("      Other", &_other);
+  }
+  gclog_or_tty->print_cr("");
+
+  gclog_or_tty->print_cr("MISC");
+  print_summary_sd("   Stop World", &_all_stop_world_times_ms);
+  print_summary_sd("   Yields", &_all_yield_times_ms);
+}
+
+void TraceGen1TimeData::record_full_collection(double full_gc_time_ms) {
+  if (TraceGen1Time) {
+    _all_full_gc_times.add(full_gc_time_ms);
+  }
+}
+
+void TraceGen1TimeData::print() const {
+  if (!TraceGen1Time) {
+    return;
+  }
+
+  if (_all_full_gc_times.num() > 0) {
+    gclog_or_tty->print("\n%4d full_gcs: total time = %8.2f s",
+      _all_full_gc_times.num(),
+      _all_full_gc_times.sum() / 1000.0);
+    gclog_or_tty->print_cr(" (avg = %8.2fms).", _all_full_gc_times.avg());
+    gclog_or_tty->print_cr("                     [std. dev = %8.2f ms, max = %8.2f ms]",
+      _all_full_gc_times.sd(),
+      _all_full_gc_times.maximum());
+  }
 }

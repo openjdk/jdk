@@ -30,6 +30,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.geom.Point2D;
+import javax.tools.annotation.GenerateNativeHeader;
 import sun.awt.image.ImagingLib;
 
 /**
@@ -65,6 +66,8 @@ import sun.awt.image.ImagingLib;
  * @see java.awt.RenderingHints#KEY_COLOR_RENDERING
  * @see java.awt.RenderingHints#KEY_DITHERING
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class ConvolveOp implements BufferedImageOp, RasterOp {
     Kernel kernel;
     int edgeHint;

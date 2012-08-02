@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.text.MessageFormat;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -380,14 +382,15 @@ class Driver {
         String prefix = base.getName();
         if (prefix.length() < 3)  prefix += "tmp";
 
-        File where = base.getParentFile();
+        File where = (base.getParentFile() == null && suffix.equals(".bak"))
+                ? new File(".").getAbsoluteFile()
+                : base.getParentFile();
 
-        if ( base.getParentFile() == null && suffix.equals(".bak"))
-            where = new File(".").getAbsoluteFile();
+        Path tmpfile = (where == null)
+                ? Files.createTempFile(prefix, suffix)
+                : Files.createTempFile(where.toPath(), prefix, suffix);
 
-
-        File f = File.createTempFile(prefix, suffix, where);
-        return f;
+        return tmpfile.toFile();
     }
 
     static private

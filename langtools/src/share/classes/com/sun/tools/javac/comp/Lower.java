@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Type.*;
 
 import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.parser.EndPosTable;
+import com.sun.tools.javac.tree.EndPosTable;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
@@ -1606,6 +1606,11 @@ public class Lower extends TreeTranslator {
     }
 
     private JCStatement makeResourceCloseInvocation(JCExpression resource) {
+        // convert to AutoCloseable if needed
+        if (types.asSuper(resource.type, syms.autoCloseableType.tsym) == null) {
+            resource = (JCExpression) convert(resource, syms.autoCloseableType);
+        }
+
         // create resource.close() method invocation
         JCExpression resourceClose = makeCall(resource,
                                               names.close,

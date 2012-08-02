@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -591,8 +591,9 @@ private:
 
   void vex_prefix(XMMRegister dst, XMMRegister nds, Address src,
                   VexSimdPrefix pre, bool vector256 = false) {
-     vex_prefix(src, nds->encoding(), dst->encoding(),
-                pre, VEX_OPCODE_0F, false, vector256);
+    int dst_enc = dst->encoding();
+    int nds_enc = nds->is_valid() ? nds->encoding() : 0;
+    vex_prefix(src, nds_enc, dst_enc, pre, VEX_OPCODE_0F, false, vector256);
   }
 
   int  vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc,
@@ -600,9 +601,12 @@ private:
                              bool vex_w, bool vector256);
 
   int  vex_prefix_and_encode(XMMRegister dst, XMMRegister nds, XMMRegister src,
-                             VexSimdPrefix pre, bool vector256 = false) {
-     return vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(),
-                                  pre, VEX_OPCODE_0F, false, vector256);
+                             VexSimdPrefix pre, bool vector256 = false,
+                             VexOpcode opc = VEX_OPCODE_0F) {
+    int src_enc = src->encoding();
+    int dst_enc = dst->encoding();
+    int nds_enc = nds->is_valid() ? nds->encoding() : 0;
+    return vex_prefix_and_encode(dst_enc, nds_enc, src_enc, pre, opc, false, vector256);
   }
 
   void simd_prefix(XMMRegister xreg, XMMRegister nds, Address adr,
@@ -1148,6 +1152,9 @@ private:
   void fxsave(Address dst);
 
   void fyl2x();
+  void frndint();
+  void f2xm1();
+  void fldl2e();
 
   void hlt();
 
@@ -1258,6 +1265,7 @@ private:
   void movdl(XMMRegister dst, Register src);
   void movdl(Register dst, XMMRegister src);
   void movdl(XMMRegister dst, Address src);
+  void movdl(Address dst, XMMRegister src);
 
   // Move Double Quadword
   void movdq(XMMRegister dst, Register src);
@@ -1270,6 +1278,14 @@ private:
   void movdqu(Address     dst, XMMRegister src);
   void movdqu(XMMRegister dst, Address src);
   void movdqu(XMMRegister dst, XMMRegister src);
+
+  // Move Unaligned 256bit Vector
+  void vmovdqu(Address dst, XMMRegister src);
+  void vmovdqu(XMMRegister dst, Address src);
+  void vmovdqu(XMMRegister dst, XMMRegister src);
+
+  // Move lower 64bit to high 64bit in 128bit register
+  void movlhps(XMMRegister dst, XMMRegister src);
 
   void movl(Register dst, int32_t imm32);
   void movl(Address dst, int32_t imm32);
@@ -1450,6 +1466,9 @@ private:
   void punpckldq(XMMRegister dst, XMMRegister src);
   void punpckldq(XMMRegister dst, Address src);
 
+  // Interleave Low Quadwords
+  void punpcklqdq(XMMRegister dst, XMMRegister src);
+
 #ifndef _LP64 // no 32bit push/pop on amd64
   void pushl(Address src);
 #endif
@@ -1590,13 +1609,11 @@ private:
 
   void set_byte_if_not_zero(Register dst); // sets reg to 1 if not zero, otherwise 0
 
-  // AVX 3-operands instructions (encoded with VEX prefix)
+  // AVX 3-operands scalar instructions (encoded with VEX prefix)
   void vaddsd(XMMRegister dst, XMMRegister nds, Address src);
   void vaddsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vaddss(XMMRegister dst, XMMRegister nds, Address src);
   void vaddss(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vandpd(XMMRegister dst, XMMRegister nds, Address src);
-  void vandps(XMMRegister dst, XMMRegister nds, Address src);
   void vdivsd(XMMRegister dst, XMMRegister nds, Address src);
   void vdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vdivss(XMMRegister dst, XMMRegister nds, Address src);
@@ -1609,9 +1626,24 @@ private:
   void vsubsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vsubss(XMMRegister dst, XMMRegister nds, Address src);
   void vsubss(XMMRegister dst, XMMRegister nds, XMMRegister src);
+
+  // AVX Vector instrucitons.
+  void vandpd(XMMRegister dst, XMMRegister nds, Address src);
+  void vandps(XMMRegister dst, XMMRegister nds, Address src);
   void vxorpd(XMMRegister dst, XMMRegister nds, Address src);
   void vxorps(XMMRegister dst, XMMRegister nds, Address src);
+  void vxorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vxorps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
+  // AVX instruction which is used to clear upper 128 bits of YMM registers and
+  // to avoid transaction penalty between AVX and SSE states. There is no
+  // penalty if legacy SSE instructions are encoded using VEX prefix because
+  // they always clear upper 128 bits. It should be used before calling
+  // runtime code and native libraries.
+  void vzeroupper();
 
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.
@@ -2387,7 +2419,30 @@ class MacroAssembler: public Assembler {
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src);
 
+  // compute pow(x,y) and exp(x) with x86 instructions. Don't cover
+  // all corner cases and may result in NaN and require fallback to a
+  // runtime call.
+  void fast_pow();
+  void fast_exp();
+  void increase_precision();
+  void restore_precision();
+
+  // computes exp(x). Fallback to runtime call included.
+  void exp_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(true, num_fpu_regs_in_use); }
+  // computes pow(x,y). Fallback to runtime call included.
+  void pow_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(false, num_fpu_regs_in_use); }
+
 private:
+
+  // call runtime as a fallback for trig functions and pow/exp.
+  void fp_runtime_fallback(address runtime_entry, int nb_args, int num_fpu_regs_in_use);
+
+  // computes 2^(Ylog2X); Ylog2X in ST(0)
+  void pow_exp_core_encoding();
+
+  // computes pow(x,y) or exp(x). Fallback to runtime call included.
+  void pow_or_exp(bool is_exp, int num_fpu_regs_in_use);
+
   // these are private because users should be doing movflt/movdbl
 
   void movss(Address dst, XMMRegister src)     { Assembler::movss(dst, src); }
@@ -2503,12 +2558,30 @@ public:
   void vsubss(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vsubss(dst, nds, src); }
   void vsubss(XMMRegister dst, XMMRegister nds, AddressLiteral src);
 
+  // AVX Vector instructions
+
+  void vxorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) { Assembler::vxorpd(dst, nds, src, vector256); }
   void vxorpd(XMMRegister dst, XMMRegister nds, Address src) { Assembler::vxorpd(dst, nds, src); }
   void vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src);
 
+  void vxorps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) { Assembler::vxorps(dst, nds, src, vector256); }
   void vxorps(XMMRegister dst, XMMRegister nds, Address src) { Assembler::vxorps(dst, nds, src); }
   void vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src);
 
+  void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+    if (UseAVX > 1 || !vector256) // vpxor 256 bit is available only in AVX2
+      Assembler::vpxor(dst, nds, src, vector256);
+    else
+      Assembler::vxorpd(dst, nds, src, vector256);
+  }
+
+  // Move packed integer values from low 128 bit to hign 128 bit in 256 bit vector.
+  void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+    if (UseAVX > 1) // vinserti128h is available only in AVX2
+      Assembler::vinserti128h(dst, nds, src);
+    else
+      Assembler::vinsertf128h(dst, nds, src);
+  }
 
   // Data
 
@@ -2560,6 +2633,13 @@ public:
 
   // to avoid hiding movb
   void movbyte(ArrayAddress dst, int src);
+
+  // Import other mov() methods from the parent class or else
+  // they will be hidden by the following overriding declaration.
+  using Assembler::movdl;
+  using Assembler::movq;
+  void movdl(XMMRegister dst, AddressLiteral src);
+  void movq(XMMRegister dst, AddressLiteral src);
 
   // Can push value or effective address
   void pushptr(AddressLiteral src);

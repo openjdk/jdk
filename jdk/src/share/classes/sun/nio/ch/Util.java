@@ -45,7 +45,7 @@ public class Util {
     // -- Caches --
 
     // The number of temp buffers in our pool
-    private static final int TEMP_BUF_POOL_SIZE = 8;
+    private static final int TEMP_BUF_POOL_SIZE = IOUtil.IOV_MAX;
 
     // Per-thread cache of temporary direct buffers
     private static ThreadLocal<BufferCache> bufferCache =

@@ -116,7 +116,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         } else if (fe.getOppositeComponent() != null &&
                    doRestoreFocus(fe.getOppositeComponent(), vetoedComponent, false)) {
         } else {
-            clearGlobalFocusOwner();
+            clearGlobalFocusOwnerPriv();
         }
     }
     private void restoreFocus(WindowEvent we) {
@@ -130,7 +130,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         {
             // do nothing, everything is done in restoreFocus()
         } else {
-            clearGlobalFocusOwner();
+            clearGlobalFocusOwnerPriv();
         }
     }
     private boolean restoreFocus(Window aWindow, Component vetoedComponent,
@@ -141,7 +141,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         if (toFocus != null && toFocus != vetoedComponent && doRestoreFocus(toFocus, vetoedComponent, false)) {
             return true;
         } else if (clearOnFailure) {
-            clearGlobalFocusOwner();
+            clearGlobalFocusOwnerPriv();
             return true;
         } else {
             return false;
@@ -164,7 +164,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             {
                 return true;
             } else if (clearOnFailure) {
-                clearGlobalFocusOwner();
+                clearGlobalFocusOwnerPriv();
                 return true;
             } else {
                 return false;

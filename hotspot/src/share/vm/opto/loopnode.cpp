@@ -1129,8 +1129,7 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
         // I'm mid-iteration over the Region's uses.
         for (DUIterator_Last imin, i = old_phi->last_outs(imin); i >= imin; ) {
           Node* use = old_phi->last_out(i);
-          igvn.hash_delete(use);
-          igvn._worklist.push(use);
+          igvn.rehash_node_delayed(use);
           uint uses_found = 0;
           for (uint j = 0; j < use->len(); j++) {
             if (use->in(j) == old_phi) {
@@ -1186,10 +1185,8 @@ void IdealLoopTree::split_outer_loop( PhaseIdealLoop *phase ) {
       phi->init_req(LoopNode::LoopBackControl, old_phi->in(outer_idx));
       phi = igvn.register_new_node_with_optimizer(phi, old_phi);
       // Make old Phi point to new Phi on the fall-in path
-      igvn.hash_delete(old_phi);
-      old_phi->set_req(LoopNode::EntryControl, phi);
+      igvn.replace_input_of(old_phi, LoopNode::EntryControl, phi);
       old_phi->del_req(outer_idx);
-      igvn._worklist.push(old_phi);
     }
   }
 
@@ -1992,9 +1989,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
     // we do it here.
     for( uint i = 1; i < C->root()->req(); i++ ) {
       if( !_nodes[C->root()->in(i)->_idx] ) {    // Dead path into Root?
-        _igvn.hash_delete(C->root());
-        C->root()->del_req(i);
-        _igvn._worklist.push(C->root());
+        _igvn.delete_input_of(C->root(), i);
         i--;                      // Rerun same iteration on compressed edges
       }
     }
@@ -2756,7 +2751,8 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
         // Do not count uncommon calls
         if( !n->is_CallStaticJava() || !n->as_CallStaticJava()->_name ) {
           Node *iff = n->in(0)->in(0);
-          if( !iff->is_If() ||
+          // No any calls for vectorized loops.
+          if( UseSuperWord || !iff->is_If() ||
               (n->in(0)->Opcode() == Op_IfFalse &&
                (1.0 - iff->as_If()->_prob) >= 0.01) ||
               (iff->as_If()->_prob >= 0.01) )
@@ -3221,7 +3217,8 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
     case Op_ModF:
     case Op_ModD:
     case Op_LoadB:              // Same with Loads; they can sink
-    case Op_LoadUS:             // during loop optimizations.
+    case Op_LoadUB:             // during loop optimizations.
+    case Op_LoadUS:
     case Op_LoadD:
     case Op_LoadF:
     case Op_LoadI:

@@ -30,11 +30,16 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import javax.tools.annotation.GenerateNativeHeader;
+
+import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * This class is used to notify listeners about accelerated device's
  * events such as device reset or dispose that are about to occur.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class AccelDeviceEventNotifier {
 
     private static AccelDeviceEventNotifier theInstance;

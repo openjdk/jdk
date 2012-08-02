@@ -1242,6 +1242,36 @@ void LIRGenerator::do_Reference_get(Intrinsic* x) {
               NULL   /* info */);
 }
 
+// Example: clazz.isInstance(object)
+void LIRGenerator::do_isInstance(Intrinsic* x) {
+  assert(x->number_of_arguments() == 2, "wrong type");
+
+  // TODO could try to substitute this node with an equivalent InstanceOf
+  // if clazz is known to be a constant Class. This will pick up newly found
+  // constants after HIR construction. I'll leave this to a future change.
+
+  // as a first cut, make a simple leaf call to runtime to stay platform independent.
+  // could follow the aastore example in a future change.
+
+  LIRItem clazz(x->argument_at(0), this);
+  LIRItem object(x->argument_at(1), this);
+  clazz.load_item();
+  object.load_item();
+  LIR_Opr result = rlock_result(x);
+
+  // need to perform null check on clazz
+  if (x->needs_null_check()) {
+    CodeEmitInfo* info = state_for(x);
+    __ null_check(clazz.result(), info);
+  }
+
+  LIR_Opr call_result = call_runtime(clazz.value(), object.value(),
+                                     CAST_FROM_FN_PTR(address, Runtime1::is_instance_of),
+                                     x->type(),
+                                     NULL); // NULL CodeEmitInfo results in a leaf call
+  __ move(call_result, result);
+}
+
 // Example: object.getClass ()
 void LIRGenerator::do_getClass(Intrinsic* x) {
   assert(x->number_of_arguments() == 1, "wrong type");
@@ -2777,31 +2807,29 @@ void LIRGenerator::do_Invoke(Invoke* x) {
       int index = bcs.get_method_index();
       size_t call_site_offset = cpcache->get_f1_offset(index);
 
+      // Load CallSite object from constant pool cache.
+      LIR_Opr call_site = new_register(objectType);
+      __ oop2reg(cpcache->constant_encoding(), call_site);
+      __ move_wide(new LIR_Address(call_site, call_site_offset, T_OBJECT), call_site);
+
       // If this invokedynamic call site hasn't been executed yet in
       // the interpreter, the CallSite object in the constant pool
       // cache is still null and we need to deoptimize.
       if (cpcache->is_f1_null_at(index)) {
-        // Cannot re-use same xhandlers for multiple CodeEmitInfos, so
-        // clone all handlers.  This is handled transparently in other
-        // places by the CodeEmitInfo cloning logic but is handled
-        // specially here because a stub isn't being used.
-        x->set_exception_handlers(new XHandlers(x->exception_handlers()));
-
+        // Only deoptimize if the CallSite object is still null; we don't
+        // recompile methods in C1 after deoptimization so this call site
+        // might be resolved the next time we execute it after OSR.
         DeoptimizeStub* deopt_stub = new DeoptimizeStub(deopt_info);
-        __ jump(deopt_stub);
+        __ cmp(lir_cond_equal, call_site, LIR_OprFact::oopConst(NULL));
+        __ branch(lir_cond_equal, T_OBJECT, deopt_stub);
       }
 
       // Use the receiver register for the synthetic MethodHandle
       // argument.
       receiver = LIR_Assembler::receiverOpr();
-      LIR_Opr tmp = new_register(objectType);
-
-      // Load CallSite object from constant pool cache.
-      __ oop2reg(cpcache->constant_encoding(), tmp);
-      __ move_wide(new LIR_Address(tmp, call_site_offset, T_OBJECT), tmp);
 
       // Load target MethodHandle from CallSite object.
-      __ load(new LIR_Address(tmp, java_lang_invoke_CallSite::target_offset_in_bytes(), T_OBJECT), receiver);
+      __ load(new LIR_Address(call_site, java_lang_invoke_CallSite::target_offset_in_bytes(), T_OBJECT), receiver);
 
       __ call_dynamic(target, receiver, result_register,
                       SharedRuntime::get_resolve_opt_virtual_call_stub(),
@@ -2809,7 +2837,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
       break;
     }
     default:
-      ShouldNotReachHere();
+      fatal(err_msg("unexpected bytecode: %s", Bytecodes::name(x->code())));
       break;
   }
 
@@ -2951,6 +2979,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     break;
 
   case vmIntrinsics::_Object_init:    do_RegisterFinalizer(x); break;
+  case vmIntrinsics::_isInstance:     do_isInstance(x);    break;
   case vmIntrinsics::_getClass:       do_getClass(x);      break;
   case vmIntrinsics::_currentThread:  do_currentThread(x); break;
 
@@ -2960,7 +2989,9 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_dsqrt:          // fall through
   case vmIntrinsics::_dtan:           // fall through
   case vmIntrinsics::_dsin :          // fall through
-  case vmIntrinsics::_dcos :          do_MathIntrinsic(x); break;
+  case vmIntrinsics::_dcos :          // fall through
+  case vmIntrinsics::_dexp :          // fall through
+  case vmIntrinsics::_dpow :          do_MathIntrinsic(x); break;
   case vmIntrinsics::_arraycopy:      do_ArrayCopy(x);     break;
 
   // java.nio.Buffer.checkIndex
@@ -2974,11 +3005,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     break;
   case vmIntrinsics::_compareAndSwapLong:
     do_CompareAndSwap(x, longType);
-    break;
-
-    // sun.misc.AtomicLongCSImpl.attemptUpdate
-  case vmIntrinsics::_attemptUpdate:
-    do_AttemptUpdate(x);
     break;
 
   case vmIntrinsics::_Reference_get:
@@ -3221,4 +3247,3 @@ void LIRGenerator::do_MemBar(MemBar* x) {
     }
   }
 }
-

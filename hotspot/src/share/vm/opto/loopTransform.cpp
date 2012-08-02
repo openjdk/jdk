@@ -961,9 +961,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   set_loop(zer_iff, loop->_parent);
 
   // Plug in the false-path, taken if we need to skip post-loop
-  _igvn.hash_delete( main_exit );
-  main_exit->set_req(0, zer_iff);
-  _igvn._worklist.push(main_exit);
+  _igvn.replace_input_of(main_exit, 0, zer_iff);
   set_idom(main_exit, zer_iff, dd_main_exit);
   set_idom(main_exit->unique_out(), zer_iff, dd_main_exit);
   // Make the true-path, must enter the post loop
@@ -1956,9 +1954,7 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
       C->set_major_progress();
       Node *kill_con = _igvn.intcon( 1-flip );
       set_ctrl(kill_con, C->root());
-      _igvn.hash_delete(iff);
-      iff->set_req(1, kill_con);
-      _igvn._worklist.push(iff);
+      _igvn.replace_input_of(iff, 1, kill_con);
       // Find surviving projection
       assert(iff->is_If(), "");
       ProjNode* dp = ((IfNode*)iff)->proj_out(1-flip);
@@ -1966,11 +1962,9 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
       for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
         Node* cd = dp->fast_out(i); // Control-dependent node
         if( cd->is_Load() ) {   // Loads can now float around in the loop
-          _igvn.hash_delete(cd);
           // Allow the load to float around in the loop, or before it
           // but NOT before the pre-loop.
-          cd->set_req(0, ctrl);   // ctrl, not NULL
-          _igvn._worklist.push(cd);
+          _igvn.replace_input_of(cd, 0, ctrl); // ctrl, not NULL
           --i;
           --imax;
         }
@@ -2029,14 +2023,10 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
     main_bol->set_req(1,main_cmp);
   }
   // Hack the now-private loop bounds
-  _igvn.hash_delete(main_cmp);
-  main_cmp->set_req(2, main_limit);
-  _igvn._worklist.push(main_cmp);
+  _igvn.replace_input_of(main_cmp, 2, main_limit);
   // The OpaqueNode is unshared by design
-  _igvn.hash_delete(opqzm);
   assert( opqzm->outcnt() == 1, "cannot hack shared node" );
-  opqzm->set_req(1,main_limit);
-  _igvn._worklist.push(opqzm);
+  _igvn.replace_input_of(opqzm, 1, main_limit);
 }
 
 //------------------------------DCE_loop_body----------------------------------
@@ -2178,9 +2168,7 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
     Node* cmp = cl->loopexit()->cmp_node();
     assert(cl->limit() == cmp->in(2), "sanity");
     phase->_igvn._worklist.push(cmp->in(2)); // put limit on worklist
-    phase->_igvn.hash_delete(cmp);
-    cmp->set_req(2, exact_limit);
-    phase->_igvn._worklist.push(cmp);        // put cmp on worklist
+    phase->_igvn.replace_input_of(cmp, 2, exact_limit); // put cmp on worklist
   }
   // Note: the final value after increment should not overflow since
   // counted loop has limit check predicate.

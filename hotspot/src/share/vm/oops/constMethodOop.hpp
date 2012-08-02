@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,8 @@
 // |------------------------------------------------------|
 // | fingerprint 1                                        |
 // | fingerprint 2                                        |
-// | method                         (oop)                 |
+// | constants                      (oop)                 |
 // | stackmap_data                  (oop)                 |
-// | exception_table                (oop)                 |
 // | constMethod_size                                     |
 // | interp_kind  | flags    | code_size                  |
 // | name index              | signature index            |
@@ -64,7 +63,13 @@
 // |  (length is u2, elements are 6-tuples of u2)         |
 // |  (see class LocalVariableTableElement)               |
 // |  (access flags bit tells whether table is present)   |
-// |  (indexed from end of contMethodOop)                 |
+// |  (indexed from end of constMethodOop)                |
+// |------------------------------------------------------|
+// | exception table + length (length last)               |
+// |  (length is u2, elements are 4-tuples of u2)         |
+// |  (see class ExceptionTableElement)                   |
+// |  (access flags bit tells whether table is present)   |
+// |  (indexed from end of constMethodOop)                |
 // |------------------------------------------------------|
 // | checked exceptions elements + length (length last)   |
 // |  (length is u2, elements are u2)                     |
@@ -93,6 +98,15 @@ class LocalVariableTableElement VALUE_OBJ_CLASS_SPEC {
 };
 
 
+// Utitily class describing elements in exception table
+class ExceptionTableElement VALUE_OBJ_CLASS_SPEC {
+ public:
+  u2 start_pc;
+  u2 end_pc;
+  u2 handler_pc;
+  u2 catch_type_index;
+};
+
 class constMethodOopDesc : public oopDesc {
   friend class constMethodKlass;
   friend class VMStructs;
@@ -100,7 +114,8 @@ private:
   enum {
     _has_linenumber_table = 1,
     _has_checked_exceptions = 2,
-    _has_localvariable_table = 4
+    _has_localvariable_table = 4,
+    _has_exception_table = 8
   };
 
   // Bit vector of signature
@@ -113,24 +128,18 @@ private:
   volatile bool     _is_conc_safe; // if true, safe for concurrent GC processing
 
 public:
-  oop* oop_block_beg() const { return adr_method(); }
-  oop* oop_block_end() const { return adr_exception_table() + 1; }
+  oop* oop_block_beg() const { return adr_constants(); }
+  oop* oop_block_end() const { return adr_stackmap_data() + 1; }
 
 private:
   //
   // The oop block.  See comment in klass.hpp before making changes.
   //
 
-  // Backpointer to non-const methodOop (needed for some JVMTI operations)
-  methodOop         _method;
+  constantPoolOop   _constants;                  // Constant pool
 
   // Raw stackmap data for the method
   typeArrayOop      _stackmap_data;
-
-  // The exception handler table. 4-tuples of ints [start_pc, end_pc,
-  // handler_pc, catch_type index] For methods with no exceptions the
-  // table is pointing to Universe::the_empty_int_array
-  typeArrayOop      _exception_table;
 
   //
   // End of the oop block.
@@ -153,7 +162,8 @@ public:
   // Inlined tables
   void set_inlined_tables_length(int checked_exceptions_len,
                                  int compressed_line_number_size,
-                                 int localvariable_table_len);
+                                 int localvariable_table_len,
+                                 int exception_table_len);
 
   bool has_linenumber_table() const
     { return (_flags & _has_linenumber_table) != 0; }
@@ -164,13 +174,19 @@ public:
   bool has_localvariable_table() const
     { return (_flags & _has_localvariable_table) != 0; }
 
+  bool has_exception_handler() const
+    { return (_flags & _has_exception_table) != 0; }
+
   void set_interpreter_kind(int kind)      { _interpreter_kind = kind; }
   int  interpreter_kind(void) const        { return _interpreter_kind; }
 
-  // backpointer to non-const methodOop
-  methodOop method() const                 { return _method; }
-  void set_method(methodOop m)             { oop_store_without_check((oop*)&_method, (oop) m); }
+  // constant pool
+  constantPoolOop constants() const        { return _constants; }
+  void set_constants(constantPoolOop c)    {
+    oop_store_without_check((oop*)&_constants, (oop)c);
+  }
 
+  methodOop method() const;
 
   // stackmap table data
   typeArrayOop stackmap_data() const { return _stackmap_data; }
@@ -178,11 +194,6 @@ public:
     oop_store_without_check((oop*)&_stackmap_data, (oop)sd);
   }
   bool has_stackmap_table() const { return _stackmap_data != NULL; }
-
-  // exception handler table
-  typeArrayOop exception_table() const           { return _exception_table; }
-  void set_exception_table(typeArrayOop e)       { oop_store_without_check((oop*) &_exception_table, (oop) e); }
-  bool has_exception_handler() const             { return exception_table() != NULL && exception_table()->length() > 0; }
 
   void init_fingerprint() {
     const uint64_t initval = CONST64(0x8000000000000000);
@@ -233,6 +244,7 @@ public:
   // Object size needed
   static int object_size(int code_size, int compressed_line_number_size,
                          int local_variable_table_length,
+                         int exception_table_length,
                          int checked_exceptions_length);
 
   int object_size() const                 { return _constMethod_size; }
@@ -254,6 +266,7 @@ public:
   u_char* compressed_linenumber_table() const;         // not preserved by gc
   u2* checked_exceptions_length_addr() const;
   u2* localvariable_table_length_addr() const;
+  u2* exception_table_length_addr() const;
 
   // checked exceptions
   int checked_exceptions_length() const;
@@ -262,6 +275,10 @@ public:
   // localvariable table
   int localvariable_table_length() const;
   LocalVariableTableElement* localvariable_table_start() const;
+
+  // exception table
+  int exception_table_length() const;
+  ExceptionTableElement* exception_table_start() const;
 
   // byte codes
   void    set_code(address code) {
@@ -278,13 +295,12 @@ public:
                             { return in_ByteSize(sizeof(constMethodOopDesc)); }
 
   // interpreter support
-  static ByteSize exception_table_offset()
-               { return byte_offset_of(constMethodOopDesc, _exception_table); }
+  static ByteSize constants_offset()
+               { return byte_offset_of(constMethodOopDesc, _constants); }
 
   // Garbage collection support
-  oop*  adr_method() const             { return (oop*)&_method;          }
+  oop*  adr_constants() const          { return (oop*)&_constants; }
   oop*  adr_stackmap_data() const      { return (oop*)&_stackmap_data;   }
-  oop*  adr_exception_table() const    { return (oop*)&_exception_table; }
   bool is_conc_safe() { return _is_conc_safe; }
   void set_is_conc_safe(bool v) { _is_conc_safe = v; }
 

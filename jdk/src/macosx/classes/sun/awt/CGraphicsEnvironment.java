@@ -181,6 +181,10 @@ public class CGraphicsEnvironment extends SunGraphicsEnvironment {
         return devices.values().toArray(new CGraphicsDevice[devices.values().size()]);
     }
 
+    public synchronized GraphicsDevice getScreenDevice(int displayID) {
+        return devices.get(displayID);
+    }
+
     @Override
     protected synchronized int getNumScreens() {
         return devices.size();
@@ -196,29 +200,25 @@ public class CGraphicsEnvironment extends SunGraphicsEnvironment {
        return true;
     }
 
-    private Font[] allFontsWithLogical;
     static String[] sLogicalFonts = { "Serif", "SansSerif", "Monospaced", "Dialog", "DialogInput" };
 
     @Override
     public Font[] getAllFonts() {
-        if (allFontsWithLogical == null)
+
+        Font[] newFonts;
+        Font[] superFonts = super.getAllFonts();
+
+        int numLogical = sLogicalFonts.length;
+        int numOtherFonts = superFonts.length;
+
+        newFonts = new Font[numOtherFonts + numLogical];
+        System.arraycopy(superFonts,0,newFonts,numLogical,numOtherFonts);
+
+        for (int i = 0; i < numLogical; i++)
         {
-            Font[] newFonts;
-            Font[] superFonts = super.getAllFonts();
-
-            int numLogical = sLogicalFonts.length;
-            int numOtherFonts = superFonts.length;
-
-            newFonts = new Font[numOtherFonts + numLogical];
-            System.arraycopy(superFonts,0,newFonts,numLogical,numOtherFonts);
-
-            for (int i = 0; i < numLogical; i++)
-            {
-                newFonts[i] = new Font(sLogicalFonts[i], Font.PLAIN, 1);
-            }
-            allFontsWithLogical = newFonts;
+            newFonts[i] = new Font(sLogicalFonts[i], Font.PLAIN, 1);
         }
-        return java.util.Arrays.copyOf(allFontsWithLogical, allFontsWithLogical.length);
+        return newFonts;
     }
 
 }

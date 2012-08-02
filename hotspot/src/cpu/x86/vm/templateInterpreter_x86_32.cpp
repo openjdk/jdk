@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -566,7 +566,8 @@ void InterpreterGenerator::lock_method(void) {
     __ testl(rax, JVM_ACC_STATIC);
     __ movptr(rax, Address(rdi, Interpreter::local_offset_in_bytes(0)));  // get receiver (assume this is frequent case)
     __ jcc(Assembler::zero, done);
-    __ movptr(rax, Address(rbx, methodOopDesc::constants_offset()));
+    __ movptr(rax, Address(rbx, methodOopDesc::const_offset()));
+    __ movptr(rax, Address(rax, constMethodOopDesc::constants_offset()));
     __ movptr(rax, Address(rax, constantPoolOopDesc::pool_holder_offset_in_bytes()));
     __ movptr(rax, Address(rax, mirror_offset));
     __ bind(done);
@@ -606,7 +607,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ push(0);
   }
 
-  __ movptr(rdx, Address(rbx, methodOopDesc::constants_offset()));
+  __ movptr(rdx, Address(rbx, methodOopDesc::const_offset()));
+  __ movptr(rdx, Address(rdx, constMethodOopDesc::constants_offset()));
   __ movptr(rdx, Address(rdx, constantPoolOopDesc::cache_offset_in_bytes()));
   __ push(rdx);                                       // set constant pool cache
   __ push(rdi);                                       // set locals pointer
@@ -661,9 +663,9 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     __ testptr(rax, rax);
     __ jcc(Assembler::zero, slow_path);
 
-    __ movptr(rdi, Address(rbx, methodOopDesc::constants_offset()));
     // read first instruction word and extract bytecode @ 1 and index @ 2
     __ movptr(rdx, Address(rbx, methodOopDesc::const_offset()));
+    __ movptr(rdi, Address(rdx, constMethodOopDesc::constants_offset()));
     __ movl(rdx, Address(rdx, constMethodOopDesc::codes_offset()));
     // Shift codes right to get the index on the right.
     // The bytecode fetched looks like <index><0xb4><0x2a>
@@ -1026,7 +1028,8 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ testl(t, JVM_ACC_STATIC);
     __ jcc(Assembler::zero, L);
     // get mirror
-    __ movptr(t, Address(method, methodOopDesc:: constants_offset()));
+    __ movptr(t, Address(method, methodOopDesc:: const_offset()));
+    __ movptr(t, Address(t, constMethodOopDesc::constants_offset()));
     __ movptr(t, Address(t, constantPoolOopDesc::pool_holder_offset_in_bytes()));
     __ movptr(t, Address(t, mirror_offset));
     // copy mirror into activation frame
@@ -1518,7 +1521,9 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::java_lang_math_abs     : // fall thru
     case Interpreter::java_lang_math_log     : // fall thru
     case Interpreter::java_lang_math_log10   : // fall thru
-    case Interpreter::java_lang_math_sqrt    : entry_point = ((InterpreterGenerator*)this)->generate_math_entry(kind);     break;
+    case Interpreter::java_lang_math_sqrt    : // fall thru
+    case Interpreter::java_lang_math_pow     : // fall thru
+    case Interpreter::java_lang_math_exp     : entry_point = ((InterpreterGenerator*)this)->generate_math_entry(kind);     break;
     case Interpreter::java_lang_ref_reference_get
                                              : entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
     default                                  : ShouldNotReachHere();                                                       break;
@@ -1540,7 +1545,9 @@ bool AbstractInterpreter::can_be_compiled(methodHandle m) {
     case Interpreter::java_lang_math_abs     : // fall thru
     case Interpreter::java_lang_math_log     : // fall thru
     case Interpreter::java_lang_math_log10   : // fall thru
-    case Interpreter::java_lang_math_sqrt    :
+    case Interpreter::java_lang_math_sqrt    : // fall thru
+    case Interpreter::java_lang_math_pow     : // fall thru
+    case Interpreter::java_lang_math_exp     :
       return false;
     default:
       return true;

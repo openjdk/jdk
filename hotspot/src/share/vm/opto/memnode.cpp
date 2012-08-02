@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -716,6 +716,22 @@ Node *MemNode::Ideal_common_DU_postCCP( PhaseCCP *ccp, Node* n, Node* adr ) {
       case Op_DecodeN:         // No change to NULL-ness, so peek thru
         adr = adr->in(1);
         continue;
+
+      case Op_EncodeP:
+        // EncodeP node's control edge could be set by this method
+        // when EncodeP node depends on CastPP node.
+        //
+        // Use its control edge for memory op because EncodeP may go away
+        // later when it is folded with following or preceding DecodeN node.
+        if (adr->in(0) == NULL) {
+          // Keep looking for cast nodes.
+          adr = adr->in(1);
+          continue;
+        }
+        ccp->hash_delete(n);
+        n->set_req(MemNode::Control, adr->in(0));
+        ccp->hash_insert(n);
+        return n;
 
       case Op_CastPP:
         // If the CastPP is useless, just peek on through it.
@@ -1527,6 +1543,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
     // had an original form like p1:(AddP x x (LShiftL quux 3)), where the
     // expression (LShiftL quux 3) independently optimized to the constant 8.
     if ((t->isa_int() == NULL) && (t->isa_long() == NULL)
+        && (_type->isa_vect() == NULL)
         && Opcode() != Op_LoadKlass && Opcode() != Op_LoadNKlass) {
       // t might actually be lower than _type, if _type is a unique
       // concrete subclass of abstract class t.

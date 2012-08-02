@@ -32,6 +32,7 @@ import java.awt.image.ImageObserver;
 import java.awt.image.ColorModel;
 import java.awt.image.VolatileImage;
 import java.awt.GraphicsConfiguration;
+import javax.tools.annotation.GenerateNativeHeader;
 import sun.awt.CausedFocusEvent;
 import sun.java2d.pipe.Region;
 
@@ -49,6 +50,8 @@ import sun.java2d.pipe.Region;
  * nor invoke any of the peer methods directly on the peer
  * instances.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public interface ComponentPeer {
 
     /**

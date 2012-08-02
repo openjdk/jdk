@@ -26,7 +26,6 @@
 package sun.tools.jconsole;
 
 import java.awt.*;
-import java.util.*;
 
 import javax.swing.*;
 

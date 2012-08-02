@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,52 +261,26 @@ Form::DataType Form::is_load_from_memory(const char *opType) const {
   if( strcmp(opType,"LoadL")==0 )  return Form::idealL;
   if( strcmp(opType,"LoadL_unaligned")==0 )  return Form::idealL;
   if( strcmp(opType,"LoadPLocked")==0 )  return Form::idealP;
-  if( strcmp(opType,"LoadLLocked")==0 )  return Form::idealL;
   if( strcmp(opType,"LoadP")==0 )  return Form::idealP;
   if( strcmp(opType,"LoadN")==0 )  return Form::idealN;
   if( strcmp(opType,"LoadRange")==0 )  return Form::idealI;
   if( strcmp(opType,"LoadS")==0 )  return Form::idealS;
-  if( strcmp(opType,"Load16B")==0 )  return Form::idealB;
-  if( strcmp(opType,"Load8B")==0 )  return Form::idealB;
-  if( strcmp(opType,"Load4B")==0 )  return Form::idealB;
-  if( strcmp(opType,"Load8C")==0 )  return Form::idealC;
-  if( strcmp(opType,"Load4C")==0 )  return Form::idealC;
-  if( strcmp(opType,"Load2C")==0 )  return Form::idealC;
-  if( strcmp(opType,"Load8S")==0 )  return Form::idealS;
-  if( strcmp(opType,"Load4S")==0 )  return Form::idealS;
-  if( strcmp(opType,"Load2S")==0 )  return Form::idealS;
-  if( strcmp(opType,"Load2D")==0 )  return Form::idealD;
-  if( strcmp(opType,"Load4F")==0 )  return Form::idealF;
-  if( strcmp(opType,"Load2F")==0 )  return Form::idealF;
-  if( strcmp(opType,"Load4I")==0 )  return Form::idealI;
-  if( strcmp(opType,"Load2I")==0 )  return Form::idealI;
-  if( strcmp(opType,"Load2L")==0 )  return Form::idealL;
+  if( strcmp(opType,"LoadVector")==0 )  return Form::idealV;
   assert( strcmp(opType,"Load") != 0, "Must type Loads" );
   return Form::none;
 }
 
 Form::DataType Form::is_store_to_memory(const char *opType) const {
   if( strcmp(opType,"StoreB")==0)  return Form::idealB;
-  if( strcmp(opType,"StoreCM")==0)  return Form::idealB;
+  if( strcmp(opType,"StoreCM")==0) return Form::idealB;
   if( strcmp(opType,"StoreC")==0)  return Form::idealC;
   if( strcmp(opType,"StoreD")==0)  return Form::idealD;
   if( strcmp(opType,"StoreF")==0)  return Form::idealF;
   if( strcmp(opType,"StoreI")==0)  return Form::idealI;
   if( strcmp(opType,"StoreL")==0)  return Form::idealL;
   if( strcmp(opType,"StoreP")==0)  return Form::idealP;
-  if( strcmp(opType,"StoreN")==0) return Form::idealN;
-  if( strcmp(opType,"Store16B")==0)  return Form::idealB;
-  if( strcmp(opType,"Store8B")==0)  return Form::idealB;
-  if( strcmp(opType,"Store4B")==0)  return Form::idealB;
-  if( strcmp(opType,"Store8C")==0)  return Form::idealC;
-  if( strcmp(opType,"Store4C")==0)  return Form::idealC;
-  if( strcmp(opType,"Store2C")==0)  return Form::idealC;
-  if( strcmp(opType,"Store2D")==0)  return Form::idealD;
-  if( strcmp(opType,"Store4F")==0)  return Form::idealF;
-  if( strcmp(opType,"Store2F")==0)  return Form::idealF;
-  if( strcmp(opType,"Store4I")==0)  return Form::idealI;
-  if( strcmp(opType,"Store2I")==0)  return Form::idealI;
-  if( strcmp(opType,"Store2L")==0)  return Form::idealL;
+  if( strcmp(opType,"StoreN")==0)  return Form::idealN;
+  if( strcmp(opType,"StoreVector")==0 )  return Form::idealV;
   assert( strcmp(opType,"Store") != 0, "Must type Stores" );
   return Form::none;
 }

@@ -142,8 +142,11 @@ public class JCmd {
         // Cast to HotSpotVirtualMachine as this is an
         // implementation specific method.
         HotSpotVirtualMachine hvm = (HotSpotVirtualMachine) vm;
-        String lines[] = command .split("\\n");
+        String lines[] = command.split("\\n");
         for (String line : lines) {
+            if (line.trim().equals("stop")) {
+                break;
+            }
             try (InputStream in = hvm.executeJCmd(line);) {
                 // read to EOF and just print output
                 byte b[] = new byte[256];

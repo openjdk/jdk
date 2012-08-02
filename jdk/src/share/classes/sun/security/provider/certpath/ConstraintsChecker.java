@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,20 @@
 
 package sun.security.provider.certpath;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.HashSet;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
-import java.security.cert.X509Certificate;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.PKIXReason;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import sun.security.util.Debug;
-import sun.security.x509.PKIXExtensions;
+import static sun.security.x509.PKIXExtensions.*;
 import sun.security.x509.NameConstraintsExtension;
 import sun.security.x509.X509CertImpl;
 
@@ -66,13 +67,12 @@ class ConstraintsChecker extends PKIXCertPathChecker {
      * Creates a ConstraintsChecker.
      *
      * @param certPathLength the length of the certification path
-     * @throws CertPathValidatorException if the checker cannot be initialized
      */
-    ConstraintsChecker(int certPathLength) throws CertPathValidatorException {
+    ConstraintsChecker(int certPathLength) {
         this.certPathLength = certPathLength;
-        init(false);
     }
 
+    @Override
     public void init(boolean forward) throws CertPathValidatorException {
         if (!forward) {
             i = 0;
@@ -84,15 +84,17 @@ class ConstraintsChecker extends PKIXCertPathChecker {
         }
     }
 
+    @Override
     public boolean isForwardCheckingSupported() {
         return false;
     }
 
+    @Override
     public Set<String> getSupportedExtensions() {
         if (supportedExts == null) {
-            supportedExts = new HashSet<String>();
-            supportedExts.add(PKIXExtensions.BasicConstraints_Id.toString());
-            supportedExts.add(PKIXExtensions.NameConstraints_Id.toString());
+            supportedExts = new HashSet<String>(2);
+            supportedExts.add(BasicConstraints_Id.toString());
+            supportedExts.add(NameConstraints_Id.toString());
             supportedExts = Collections.unmodifiableSet(supportedExts);
         }
         return supportedExts;
@@ -104,14 +106,15 @@ class ConstraintsChecker extends PKIXCertPathChecker {
      *
      * @param cert the <code>Certificate</code> to be checked
      * @param unresCritExts a <code>Collection</code> of OID strings
-     * representing the current set of unresolved critical extensions
+     *        representing the current set of unresolved critical extensions
      * @throws CertPathValidatorException if the specified certificate
-     * does not pass the check
+     *         does not pass the check
      */
+    @Override
     public void check(Certificate cert, Collection<String> unresCritExts)
         throws CertPathValidatorException
     {
-        X509Certificate currCert = (X509Certificate) cert;
+        X509Certificate currCert = (X509Certificate)cert;
 
         i++;
         // MUST run NC check second, since it depends on BC check to
@@ -120,8 +123,8 @@ class ConstraintsChecker extends PKIXCertPathChecker {
         verifyNameConstraints(currCert);
 
         if (unresCritExts != null && !unresCritExts.isEmpty()) {
-            unresCritExts.remove(PKIXExtensions.BasicConstraints_Id.toString());
-            unresCritExts.remove(PKIXExtensions.NameConstraints_Id.toString());
+            unresCritExts.remove(BasicConstraints_Id.toString());
+            unresCritExts.remove(NameConstraints_Id.toString());
         }
     }
 
@@ -166,9 +169,9 @@ class ConstraintsChecker extends PKIXCertPathChecker {
     /**
      * Helper to fold sets of name constraints together
      */
-    static NameConstraintsExtension
-        mergeNameConstraints(X509Certificate currCert,
-            NameConstraintsExtension prevNC) throws CertPathValidatorException
+    static NameConstraintsExtension mergeNameConstraints(
+        X509Certificate currCert, NameConstraintsExtension prevNC)
+        throws CertPathValidatorException
     {
         X509CertImpl currCertImpl;
         try {
@@ -197,7 +200,7 @@ class ConstraintsChecker extends PKIXCertPathChecker {
                 // Make sure we do a clone here, because we're probably
                 // going to modify this object later and we don't want to
                 // be sharing it with a Certificate object!
-                return (NameConstraintsExtension) newConstraints.clone();
+                return (NameConstraintsExtension)newConstraints.clone();
             }
         } else {
             try {

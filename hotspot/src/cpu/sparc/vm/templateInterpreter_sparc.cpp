@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,7 +371,8 @@ void InterpreterGenerator::lock_method(void) {
     __ br( Assembler::zero, true, Assembler::pt, done);
     __ delayed()->ld_ptr(Llocals, Interpreter::local_offset_in_bytes(0), O0); // get receiver for not-static case
 
-    __ ld_ptr( Lmethod, in_bytes(methodOopDesc::constants_offset()), O0);
+    __ ld_ptr( Lmethod, in_bytes(methodOopDesc::const_offset()), O0);
+    __ ld_ptr( O0, in_bytes(constMethodOopDesc::constants_offset()), O0);
     __ ld_ptr( O0, constantPoolOopDesc::pool_holder_offset_in_bytes(), O0);
 
     // lock the mirror, not the klassOop
@@ -670,7 +671,8 @@ address InterpreterGenerator::generate_accessor_entry(void) {
                       ConstantPoolCacheEntry::size()) * BytesPerWord), G1_scratch);
 
     // get constant pool cache
-    __ ld_ptr(G5_method, methodOopDesc::constants_offset(), G3_scratch);
+    __ ld_ptr(G5_method, methodOopDesc::const_offset(), G3_scratch);
+    __ ld_ptr(G3_scratch, constMethodOopDesc::constants_offset(), G3_scratch);
     __ ld_ptr(G3_scratch, constantPoolOopDesc::cache_offset_in_bytes(), G3_scratch);
 
     // get specific constant pool cache entry
@@ -993,7 +995,8 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     // for static methods insert the mirror argument
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
 
-    __ ld_ptr(Lmethod, methodOopDesc:: constants_offset(), O1);
+    __ ld_ptr(Lmethod, methodOopDesc:: const_offset(), O1);
+    __ ld_ptr(O1, constMethodOopDesc::constants_offset(), O1);
     __ ld_ptr(O1, constantPoolOopDesc::pool_holder_offset_in_bytes(), O1);
     __ ld_ptr(O1, mirror_offset, O1);
 #ifdef ASSERT

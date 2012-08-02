@@ -33,6 +33,7 @@ import java.awt.TexturePaint;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
+import javax.tools.annotation.GenerateNativeHeader;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.loops.CompositeType;
@@ -157,6 +158,8 @@ abstract class D3DPaints {
 
 /****************** Shared MultipleGradientPaint support ********************/
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     private static abstract class MultiGradient extends D3DPaints {
 
         /**

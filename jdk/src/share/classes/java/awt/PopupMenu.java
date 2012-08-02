@@ -28,6 +28,8 @@ package java.awt;
 import java.awt.peer.PopupMenuPeer;
 import javax.accessibility.*;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 import sun.awt.AWTAccessor;
 
 /**
@@ -42,6 +44,8 @@ import sun.awt.AWTAccessor;
  *
  * @author      Amy Fowler
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class PopupMenu extends Menu {
 
     private static final String base = "popup";

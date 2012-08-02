@@ -32,8 +32,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.Map;
+import java.util.TreeMap;
 
 import sun.security.util.*;
 
@@ -61,7 +63,8 @@ import sun.security.util.*;
  */
 public class CRLExtensions {
 
-    private Hashtable<String,Extension> map = new Hashtable<String,Extension>();
+    private Map<String,Extension> map = Collections.synchronizedMap(
+            new TreeMap<String,Extension>());
     private boolean unsupportedCritExt = false;
 
     /**
@@ -214,7 +217,7 @@ public class CRLExtensions {
      * @return an enumeration of the extensions in this CRL.
      */
     public Enumeration<Extension> getElements() {
-        return map.elements();
+        return Collections.enumeration(map.values());
     }
 
     /**

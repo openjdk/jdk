@@ -266,7 +266,7 @@ public class JFrame  extends Frame implements WindowConstants,
                 getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
             }
         }
-        sun.awt.SunToolkit.checkAndSetPolicy(this, true);
+        sun.awt.SunToolkit.checkAndSetPolicy(this);
     }
 
     /**

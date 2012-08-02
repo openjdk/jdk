@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,7 +490,8 @@ address InterpreterGenerator::generate_accessor_entry(void) {
                       ConstantPoolCacheEntry::size()) * BytesPerWord), G1_scratch);
 
     // get constant pool cache
-    __ ld_ptr(G5_method, in_bytes(methodOopDesc::constants_offset()), G3_scratch);
+    __ ld_ptr(G5_method, in_bytes(methodOopDesc::const_offset()), G3_scratch);
+    __ ld_ptr(G3_scratch, in_bytes(constMethodOopDesc::constants_offset()), G3_scratch);
     __ ld_ptr(G3_scratch, constantPoolOopDesc::cache_offset_in_bytes(), G3_scratch);
 
     // get specific constant pool cache entry
@@ -768,7 +769,8 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     // for static methods insert the mirror argument
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
 
-    __ ld_ptr(Address(G5_method, 0, in_bytes(methodOopDesc:: constants_offset())), O1);
+    __ ld_ptr(Address(G5_method, 0, in_bytes(methodOopDesc:: const_offset())), O1);
+    __ ld_ptr(Address(O1, 0, in_bytes(constMethodOopDesc::constants_offset())), O1);
     __ ld_ptr(Address(O1, 0, constantPoolOopDesc::pool_holder_offset_in_bytes()), O1);
     __ ld_ptr(O1, mirror_offset, O1);
     // where the mirror handle body is allocated:
@@ -1047,7 +1049,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
   assert_different_registers(state, prev_state);
   assert_different_registers(prev_state, G3_scratch);
   const Register Gtmp = G3_scratch;
-  const Address constants         (G5_method, 0, in_bytes(methodOopDesc::constants_offset()));
+  const Address constMethod       (G5_method, 0, in_bytes(methodOopDesc::const_offset()));
   const Address access_flags      (G5_method, 0, in_bytes(methodOopDesc::access_flags_offset()));
   const Address size_of_parameters(G5_method, 0, in_bytes(methodOopDesc::size_of_parameters_offset()));
   const Address max_stack         (G5_method, 0, in_bytes(methodOopDesc::max_stack_offset()));
@@ -1155,7 +1157,8 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
   __ set((int) BytecodeInterpreter::method_entry, O1);
   __ st(O1, XXX_STATE(_msg));
 
-  __ ld_ptr(constants, O3);
+  __ ld_ptr(constMethod, O3);
+  __ ld_ptr(O3, in_bytes(constMethodOopDesc::constants_offset()), O3);
   __ ld_ptr(O3, constantPoolOopDesc::cache_offset_in_bytes(), O2);
   __ st_ptr(O2, XXX_STATE(_constants));
 
@@ -1178,7 +1181,8 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
     __ ld_ptr(XXX_STATE(_locals), O1);
     __ br( Assembler::zero, true, Assembler::pt, got_obj);
     __ delayed()->ld_ptr(O1, 0, O1);                  // get receiver for not-static case
-    __ ld_ptr(constants, O1);
+    __ ld_ptr(constMethod, O1);
+    __ ld_ptr( O1, in_bytes(constMethodOopDesc::constants_offset()), O1);
     __ ld_ptr( O1, constantPoolOopDesc::pool_holder_offset_in_bytes(), O1);
     // lock the mirror, not the klassOop
     __ ld_ptr( O1, mirror_offset, O1);
@@ -1536,7 +1540,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   const Register Gtmp1 = G3_scratch;
   // const Register Lmirror = L1;     // native mirror (native calls only)
 
-  const Address constants         (G5_method, 0, in_bytes(methodOopDesc::constants_offset()));
+  const Address constMethod       (G5_method, 0, in_bytes(methodOopDesc::const_offset()));
   const Address access_flags      (G5_method, 0, in_bytes(methodOopDesc::access_flags_offset()));
   const Address size_of_parameters(G5_method, 0, in_bytes(methodOopDesc::size_of_parameters_offset()));
   const Address max_stack         (G5_method, 0, in_bytes(methodOopDesc::max_stack_offset()));

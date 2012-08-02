@@ -84,6 +84,7 @@ typedef struct {
     GLdouble   *xformMatrix;
     GLuint     blitTextureID;
     GLint      textureFunction;
+    jboolean   vertexCacheEnabled;
 } OGLContext;
 
 /**

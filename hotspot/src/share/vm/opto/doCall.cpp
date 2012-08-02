@@ -780,7 +780,7 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
     if( at_method_entry ) {
       // bump invocation counter if top method (for statistics)
       if (CountCompiledCalls && depth() == 1) {
-        const TypeInstPtr* addr_type = TypeInstPtr::make(method());
+        const TypeOopPtr* addr_type = TypeOopPtr::make_from_constant(method());
         Node* adr1 = makecon(addr_type);
         Node* adr2 = basic_plus_adr(adr1, adr1, in_bytes(methodOopDesc::compiled_invocation_counter_offset()));
         increment_counter(adr2);

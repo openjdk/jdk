@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,7 @@ public class JavacMessager implements Messager {
         if (treeTop != null) {
             newSource = treeTop.snd.sourcefile;
             if (newSource != null) {
+                // save the old version and reinstate it later
                 oldSource = log.useSource(newSource);
                 pos = treeTop.fst.pos();
             }
@@ -131,7 +132,8 @@ public class JavacMessager implements Messager {
                 break;
             }
         } finally {
-            if (oldSource != null)
+            // reinstate the saved version, only if it was saved earlier
+            if (newSource != null)
                 log.useSource(oldSource);
         }
     }

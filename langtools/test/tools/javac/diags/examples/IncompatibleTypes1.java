@@ -22,7 +22,7 @@
  */
 
 // key: compiler.misc.infer.no.conforming.instance.exists
-// key: compiler.err.prob.found.req.1
+// key: compiler.err.cant.apply.symbol.1
 
 class IncompatibleTypes1<V> {
     <T> IncompatibleTypes1<Integer> m() {

@@ -60,6 +60,10 @@ public class AquaScrollPaneUI extends javax.swing.plaf.basic.BasicScrollPaneUI {
             if (wasVisible) {
                 vScrollBar.setVisible(true);
             }
+
+            // Consume the event even when the scrollBar is invisible
+            // see #7124320
+            e.consume();
         }
     }
 }

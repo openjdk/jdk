@@ -141,7 +141,7 @@ OPT_CFLAGS/NOOPT=-O0
 
 # Flags for generating make dependency flags.
 ifneq ("${CC_VER_MAJOR}", "2")
-DEPFLAGS = -MMD -MP -MF $(DEP_DIR)/$(@:%=%.d)
+DEPFLAGS = -fpch-deps -MMD -MP -MF $(DEP_DIR)/$(@:%=%.d)
 endif
 
 # -DDONT_USE_PRECOMPILED_HEADER will exclude all includes in precompiled.hpp.

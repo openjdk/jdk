@@ -28,10 +28,10 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g InstTarg.java
- *  @run main ConnectedVMs "Kill"
- *  @run main ConnectedVMs "Resume to exit"
- *  @run main ConnectedVMs "dispose()"
- *  @run main ConnectedVMs "exit()"
+ *  @run main ConnectedVMs Kill
+ *  @run main ConnectedVMs Resume-to-exit
+ *  @run main ConnectedVMs dispose()
+ *  @run main ConnectedVMs exit()
  *
  * @summary ConnectedVMs checks the method
  * VirtualMachineManager.connectedVirtualMachines()
@@ -85,12 +85,14 @@ public class ConnectedVMs extends TestScaffold {
         // pick a way to die based on the input arg.
         if (passName.equals("Kill")) {
             vm().process().destroy();
-        } else if (passName.equals("Resume to exit")) {
+        } else if (passName.equals("Resume-to-exit")) {
             vm().resume();
         } else if (passName.equals("dispose()")) {
             vm().dispose();
         } else if (passName.equals("exit()")) {
             vm().exit(1);
+        } else {
+            throw new Exception("Unknown pass name");
         }
 
         resumeToVMDisconnect();

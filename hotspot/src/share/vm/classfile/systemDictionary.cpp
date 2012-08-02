@@ -1168,9 +1168,9 @@ klassOop SystemDictionary::resolve_from_stream(Symbol* class_name,
 }
 
 
-void SystemDictionary::set_shared_dictionary(HashtableBucket* t, int length,
+void SystemDictionary::set_shared_dictionary(HashtableBucket<mtClass>* t, int length,
                                              int number_of_entries) {
-  assert(length == _nof_buckets * sizeof(HashtableBucket),
+  assert(length == _nof_buckets * sizeof(HashtableBucket<mtClass>),
          "bad shared dictionary size.");
   _shared_dictionary = new Dictionary(_nof_buckets, t, number_of_entries);
 }
@@ -1971,6 +1971,9 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   // first do Object, String, Class
   initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Class_klass), scan, CHECK);
 
+  // Calculate offsets for String and Class classes since they are loaded and
+  // can be used after this point.
+  java_lang_String::compute_offsets();
   java_lang_Class::compute_offsets();
 
   // Fixup mirrors for classes loaded before java.lang.Class.
@@ -2760,7 +2763,7 @@ class ClassStatistics: AllStatic {
       class_size += ik->local_interfaces()->size();
       class_size += ik->transitive_interfaces()->size();
       // We do not have to count implementors, since we only store one!
-      class_size += ik->all_fields_count() * FieldInfo::field_slots;
+      class_size += ik->fields()->length();
     }
   }
 
@@ -2768,7 +2771,6 @@ class ClassStatistics: AllStatic {
     nmethods++;
     method_size += m->size();
     // class loader uses same objArray for empty vectors, so don't count these
-    if (m->exception_table()->length() != 0)   method_size += m->exception_table()->size();
     if (m->has_stackmap_table()) {
       method_size += m->stackmap_data()->size();
     }

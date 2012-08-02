@@ -54,6 +54,8 @@ import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import java.awt.datatransfer.DataFlavor;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * <p>
  * TBC
@@ -62,7 +64,8 @@ import java.awt.datatransfer.DataFlavor;
  * @since JDK1.3.1
  *
  */
-
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public abstract class SunDragSourceContextPeer implements DragSourceContextPeer {
 
     private DragGestureEvent  trigger;

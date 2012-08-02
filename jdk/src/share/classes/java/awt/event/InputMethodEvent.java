@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.text.AttributedCharacterIterator;
 import java.text.CharacterIterator;
+import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * Input method events contain information about text that is being
@@ -55,7 +56,8 @@ import java.text.CharacterIterator;
  * @author JavaSoft Asia/Pacific
  * @since 1.2
  */
-
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class InputMethodEvent extends AWTEvent {
 
     /**

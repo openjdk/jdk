@@ -407,7 +407,7 @@ public class MethodHandles {
          * an access$N method.
          */
         Lookup() {
-            this(getCallerClassAtEntryPoint(), ALL_MODES);
+            this(getCallerClassAtEntryPoint(false), ALL_MODES);
             // make sure we haven't accidentally picked up a privileged class:
             checkUnprivilegedlookupClass(lookupClass);
         }
@@ -461,8 +461,8 @@ public class MethodHandles {
                 && !VerifyAccess.isSamePackageMember(this.lookupClass, requestedLookupClass)) {
                 newModes &= ~PRIVATE;
             }
-            if (newModes == PUBLIC
-                && !VerifyAccess.isClassAccessible(requestedLookupClass, this.lookupClass)) {
+            if ((newModes & PUBLIC) != 0
+                && !VerifyAccess.isClassAccessible(requestedLookupClass, this.lookupClass, allowedModes)) {
                 // The requested class it not accessible from the lookup class.
                 // No permissions.
                 newModes = 0;
@@ -540,13 +540,17 @@ public class MethodHandles {
             }
         }
 
-        // call this from an entry point method in Lookup with extraFrames=0.
-        private static Class<?> getCallerClassAtEntryPoint() {
+        /* Obtain the external caller class, when called from Lookup.<init> or a first-level subroutine. */
+        private static Class<?> getCallerClassAtEntryPoint(boolean inSubroutine) {
             final int CALLER_DEPTH = 4;
+            //  Stack for the constructor entry point (inSubroutine=false):
             // 0: Reflection.getCC, 1: getCallerClassAtEntryPoint,
             // 2: Lookup.<init>, 3: MethodHandles.*, 4: caller
+            //  The stack is slightly different for a subroutine of a Lookup.find* method:
+            // 2: Lookup.*, 3: Lookup.find*.*, 4: caller
             // Note:  This should be the only use of getCallerClass in this file.
-            assert(Reflection.getCallerClass(CALLER_DEPTH-1) == MethodHandles.class);
+            assert(Reflection.getCallerClass(CALLER_DEPTH-2) == Lookup.class);
+            assert(Reflection.getCallerClass(CALLER_DEPTH-1) == (inSubroutine ? Lookup.class : MethodHandles.class));
             return Reflection.getCallerClass(CALLER_DEPTH);
         }
 
@@ -1087,7 +1091,7 @@ return mh1;
 
         void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
             Class<?> caller = lookupClassOrNull();
-            if (caller != null && !VerifyAccess.isClassAccessible(refc, caller))
+            if (caller != null && !VerifyAccess.isClassAccessible(refc, caller, allowedModes))
                 throw new MemberName(refc).makeAccessException("symbolic reference class is not public", this);
         }
 
@@ -1102,7 +1106,13 @@ return mh1;
             // Step 1:
             smgr.checkMemberAccess(refc, Member.PUBLIC);
             // Step 2:
-            if (!VerifyAccess.classLoaderIsAncestor(lookupClass, refc))
+            Class<?> callerClass = ((allowedModes & PRIVATE) != 0
+                                    ? lookupClass  // for strong access modes, no extra check
+                                    // next line does stack walk magic; do not refactor:
+                                    : getCallerClassAtEntryPoint(true));
+            if (!VerifyAccess.classLoaderIsAncestor(lookupClass, refc) ||
+                (callerClass != lookupClass &&
+                 !VerifyAccess.classLoaderIsAncestor(callerClass, refc)))
                 smgr.checkPackageAccess(VerifyAccess.getPackageName(refc));
             // Step 3:
             if (m.isPublic()) return;
@@ -1153,9 +1163,10 @@ return mh1;
             int requestedModes = fixmods(mods);  // adjust 0 => PACKAGE
             if ((requestedModes & allowedModes) != 0
                 && VerifyAccess.isMemberAccessible(refc, m.getDeclaringClass(),
-                                                   mods, lookupClass()))
+                                                   mods, lookupClass(), allowedModes))
                 return;
             if (((requestedModes & ~allowedModes) & PROTECTED) != 0
+                && (allowedModes & PACKAGE) != 0
                 && VerifyAccess.isSamePackage(m.getDeclaringClass(), lookupClass()))
                 // Protected members can also be checked as if they were package-private.
                 return;
@@ -1170,9 +1181,9 @@ return mh1;
                                (defc == refc ||
                                 Modifier.isPublic(refc.getModifiers())));
             if (!classOK && (allowedModes & PACKAGE) != 0) {
-                classOK = (VerifyAccess.isClassAccessible(defc, lookupClass()) &&
+                classOK = (VerifyAccess.isClassAccessible(defc, lookupClass(), ALL_MODES) &&
                            (defc == refc ||
-                            VerifyAccess.isClassAccessible(refc, lookupClass())));
+                            VerifyAccess.isClassAccessible(refc, lookupClass(), ALL_MODES)));
             }
             if (!classOK)
                 return "class is not public";

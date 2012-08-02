@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.Window;
 import java.awt.AWTPermission;
+import java.awt.DisplayMode;
 
 import sun.java2d.opengl.CGLGraphicsConfig;
 
@@ -40,16 +41,19 @@ public class CGraphicsDevice extends GraphicsDevice {
     private final int displayID;
 
     // Array of all GraphicsConfig instances for this device
-    private final CGraphicsConfig[] configs;
+    private final GraphicsConfiguration[] configs;
 
     // Default config (temporarily hard coded)
     private final int DEFAULT_CONFIG = 0;
 
     private static AWTPermission fullScreenExclusivePermission;
 
+    // Save/restore DisplayMode for the Full Screen mode
+    private DisplayMode originalMode;
+
     public CGraphicsDevice(int displayID) {
         this.displayID = displayID;
-        configs = new CGraphicsConfig[] {
+        configs = new GraphicsConfiguration[] {
             CGLGraphicsConfig.getConfig(this, 0)
         };
     }
@@ -66,7 +70,7 @@ public class CGraphicsDevice extends GraphicsDevice {
      */
     @Override
     public GraphicsConfiguration[] getConfigurations() {
-        return configs;
+        return configs.clone();
     }
 
     /**
@@ -123,18 +127,22 @@ public class CGraphicsDevice extends GraphicsDevice {
         }
 
         boolean fsSupported = isFullScreenSupported();
+
         if (fsSupported && old != null) {
             // enter windowed mode (and restore original display mode)
             exitFullScreenExclusive(old);
-
-            // TODO: restore display mode
+            if (originalMode != null) {
+                setDisplayMode(originalMode);
+                originalMode = null;
+            }
         }
 
         super.setFullScreenWindow(w);
 
         if (fsSupported && w != null) {
-            // TODO: save current display mode
-
+            if (isDisplayChangeSupported()) {
+                originalMode = getDisplayMode();
+            }
             // enter fullscreen mode
             enterFullScreenExclusive(w);
         }
@@ -178,4 +186,33 @@ public class CGraphicsDevice extends GraphicsDevice {
             peer.exitFullScreenMode();
         }
     }
+
+    @Override
+    public boolean isDisplayChangeSupported() {
+        return true;
+    }
+
+    @Override
+    public void setDisplayMode(DisplayMode dm) {
+        nativeSetDisplayMode(displayID, dm.getWidth(), dm.getHeight(), dm.getBitDepth(), dm.getRefreshRate());
+        if (isFullScreenSupported() && getFullScreenWindow() != null) {
+            getFullScreenWindow().setSize(dm.getWidth(), dm.getHeight());
+        }
+    }
+
+    @Override
+    public DisplayMode getDisplayMode() {
+        return nativeGetDisplayMode(displayID);
+    }
+
+    @Override
+    public DisplayMode[] getDisplayModes() {
+        return nativeGetDisplayModes(displayID);
+    }
+
+    private native void nativeSetDisplayMode(int displayID, int w, int h, int bpp, int refrate);
+
+    private native DisplayMode nativeGetDisplayMode(int displayID);
+
+    private native DisplayMode[] nativeGetDisplayModes(int displayID);
 }

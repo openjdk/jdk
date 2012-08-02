@@ -131,8 +131,8 @@ public class FormatData_sl extends ListResourceBundle {
                     "H:mm:ss z", // long time pattern
                     "H:mm:ss", // medium time pattern
                     "H:mm", // short time pattern
-                    "EEEE, d MMMM yyyy", // full date pattern
-                    "EEEE, d MMMM yyyy", // long date pattern
+                    "EEEE, dd. MMMM y", // full date pattern
+                    "dd. MMMM y", // long date pattern
                     "d.M.yyyy", // medium date pattern
                     "d.M.y", // short date pattern
                     "{1} {0}" // date-time pattern

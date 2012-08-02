@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ const u2 constMethodOopDesc::UNSET_IDNUM = 0xFFFF;
 int constMethodOopDesc::object_size(int code_size,
                                     int compressed_line_number_size,
                                     int local_variable_table_length,
+                                    int exception_table_length,
                                     int checked_exceptions_length) {
   int extra_bytes = code_size;
   if (compressed_line_number_size > 0) {
@@ -49,10 +50,18 @@ int constMethodOopDesc::object_size(int code_size,
     extra_bytes +=
               local_variable_table_length * sizeof(LocalVariableTableElement);
   }
+  if (exception_table_length > 0) {
+    extra_bytes += sizeof(u2);
+    extra_bytes += exception_table_length * sizeof(ExceptionTableElement);
+  }
   int extra_words = align_size_up(extra_bytes, BytesPerWord) / BytesPerWord;
   return align_object_size(header_size() + extra_words);
 }
 
+methodOop constMethodOopDesc::method() const {
+    return instanceKlass::cast(_constants->pool_holder())->method_with_idnum(
+                               _method_idnum);
+  }
 
 // linenumber table - note that length is unknown until decompression,
 // see class CompressedLineNumberReadStream.
@@ -69,14 +78,30 @@ u2* constMethodOopDesc::checked_exceptions_length_addr() const {
   return last_u2_element();
 }
 
-u2* constMethodOopDesc::localvariable_table_length_addr() const {
-  assert(has_localvariable_table(), "called only if table is present");
+u2* constMethodOopDesc::exception_table_length_addr() const {
+  assert(has_exception_handler(), "called only if table is present");
   if (has_checked_exceptions()) {
     // If checked_exception present, locate immediately before them.
     return (u2*) checked_exceptions_start() - 1;
   } else {
-    // Else, the linenumber table is at the end of the constMethod.
+    // Else, the exception table is at the end of the constMethod.
     return last_u2_element();
+  }
+}
+
+u2* constMethodOopDesc::localvariable_table_length_addr() const {
+  assert(has_localvariable_table(), "called only if table is present");
+  if (has_exception_handler()) {
+    // If exception_table present, locate immediately before them.
+    return (u2*) exception_table_start() - 1;
+  } else {
+    if (has_checked_exceptions()) {
+      // If checked_exception present, locate immediately before them.
+      return (u2*) checked_exceptions_start() - 1;
+    } else {
+      // Else, the linenumber table is at the end of the constMethod.
+      return last_u2_element();
+    }
   }
 }
 
@@ -85,7 +110,8 @@ u2* constMethodOopDesc::localvariable_table_length_addr() const {
 void constMethodOopDesc::set_inlined_tables_length(
                                               int checked_exceptions_len,
                                               int compressed_line_number_size,
-                                              int localvariable_table_len) {
+                                              int localvariable_table_len,
+                                              int exception_table_len) {
   // Must be done in the order below, otherwise length_addr accessors
   // will not work. Only set bit in header if length is positive.
   assert(_flags == 0, "Error");
@@ -95,6 +121,10 @@ void constMethodOopDesc::set_inlined_tables_length(
   if (checked_exceptions_len > 0) {
     _flags |= _has_checked_exceptions;
     *(checked_exceptions_length_addr()) = checked_exceptions_len;
+  }
+  if (exception_table_len > 0) {
+    _flags |= _has_exception_table;
+    *(exception_table_length_addr()) = exception_table_len;
   }
   if (localvariable_table_len > 0) {
     _flags |= _has_localvariable_table;
@@ -128,4 +158,16 @@ LocalVariableTableElement* constMethodOopDesc::localvariable_table_start() const
   assert(length > 0, "should only be called if table is present");
   addr -= length * sizeof(LocalVariableTableElement) / sizeof(u2);
   return (LocalVariableTableElement*) addr;
+}
+
+int constMethodOopDesc::exception_table_length() const {
+  return has_exception_handler() ? *(exception_table_length_addr()) : 0;
+}
+
+ExceptionTableElement* constMethodOopDesc::exception_table_start() const {
+  u2* addr = exception_table_length_addr();
+  u2 length = *addr;
+  assert(length > 0, "should only be called if table is present");
+  addr -= length * sizeof(ExceptionTableElement) / sizeof(u2);
+  return (ExceptionTableElement*)addr;
 }

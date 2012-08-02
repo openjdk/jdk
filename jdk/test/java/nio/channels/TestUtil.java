@@ -81,20 +81,6 @@ public class TestUtil {
 
     private static String osName = System.getProperty("os.name");
 
-    // Examines os.name property to determine if running on 95/98/ME.
-    //
-    // Returns true if running on windows95/98/ME.
-    //
-    static boolean onME() {
-        if (osName.startsWith("Windows")) {
-            if (osName.indexOf("9") > 0)
-                return true;
-            if (osName.indexOf("M") > 0)
-                return true;
-        }
-        return false;
-    }
-
     static boolean onSolaris() {
         return osName.startsWith("SunOS");
     }

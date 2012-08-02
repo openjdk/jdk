@@ -23,7 +23,7 @@
 
 // key: compiler.err.prob.found.req.1
 // key: compiler.misc.cant.apply.diamond.1
-// key: compiler.misc.no.conforming.assignment.exists
+// key: compiler.misc.inferred.do.not.conform.to.upper.bounds
 // key: compiler.misc.diamond
 
 class CantApplyDiamond1<X> {

@@ -27,6 +27,7 @@ package java.awt.event;
 
 import java.awt.AWTEvent;
 import java.awt.Event;
+import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * A semantic event which indicates that a component-defined action occurred.
@@ -56,6 +57,8 @@ import java.awt.Event;
  * @author Carl Quinn
  * @since 1.1
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class ActionEvent extends AWTEvent {
 
     /**

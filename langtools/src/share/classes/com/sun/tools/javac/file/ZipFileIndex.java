@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -284,7 +285,7 @@ public class ZipFileIndex {
         try {
             checkIndex();
             if (allDirs == Collections.EMPTY_SET) {
-                allDirs = new HashSet<RelativeDirectory>(directories.keySet());
+                allDirs = new java.util.LinkedHashSet<RelativeDirectory>(directories.keySet());
             }
 
             return allDirs;
@@ -572,7 +573,7 @@ public class ZipFileIndex {
 
             // Add each of the files
             if (entryCount > 0) {
-                directories = new HashMap<RelativeDirectory, DirectoryEntry>();
+                directories = new LinkedHashMap<RelativeDirectory, DirectoryEntry>();
                 ArrayList<Entry> entryList = new ArrayList<Entry>();
                 int pos = 2;
                 for (int i = 0; i < entryCount; i++) {
@@ -867,7 +868,7 @@ public class ZipFileIndex {
                 if (zipFile.lastModified() != fileStamp) {
                     ret = false;
                 } else {
-                    directories = new HashMap<RelativeDirectory, DirectoryEntry>();
+                    directories = new LinkedHashMap<RelativeDirectory, DirectoryEntry>();
                     int numDirs = raf.readInt();
                     for (int nDirs = 0; nDirs < numDirs; nDirs++) {
                         int dirNameBytesLen = raf.readInt();

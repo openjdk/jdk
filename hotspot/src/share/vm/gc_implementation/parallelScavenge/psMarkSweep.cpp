@@ -160,16 +160,10 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
   {
     HandleMark hm;
-    const bool is_system_gc = gc_cause == GCCause::_java_lang_system_gc;
-    // This is useful for debugging but don't change the output the
-    // the customer sees.
-    const char* gc_cause_str = "Full GC";
-    if (is_system_gc && PrintGCDetails) {
-      gc_cause_str = "Full GC (System)";
-    }
+
     gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    TraceTime t1(gc_cause_str, PrintGC, !PrintGCDetails, gclog_or_tty);
+    TraceTime t1(GCCauseString("Full GC", gc_cause), PrintGC, !PrintGCDetails, gclog_or_tty);
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 

@@ -36,7 +36,7 @@ class nmethodLocker;
 //
 // An entry in the compile queue.  It represents a pending or current
 // compilation.
-class CompileTask : public CHeapObj {
+class CompileTask : public CHeapObj<mtCompiler> {
   friend class VMStructs;
 
  private:
@@ -131,7 +131,7 @@ public:
 //
 // Per Compiler Performance Counters.
 //
-class CompilerCounters : public CHeapObj {
+class CompilerCounters : public CHeapObj<mtCompiler> {
 
   public:
     enum {
@@ -175,7 +175,7 @@ class CompilerCounters : public CHeapObj {
 // CompileQueue
 //
 // A list of CompileTasks.
-class CompileQueue : public CHeapObj {
+class CompileQueue : public CHeapObj<mtCompiler> {
  private:
   const char* _name;
   Monitor*    _lock;

@@ -122,9 +122,6 @@
 
 # jdk_lang
 
-# 7123972
-java/lang/annotation/loaderLeak/Main.java			generic-all
-
 # 6944188
 java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
 
@@ -151,15 +148,15 @@ sun/management/jmxremote/startstop/JMXStartStopTest.sh          generic-all
 
 # jdk_math
 
+# 7174532
+java/lang/Math/WorstCaseTests.java				generic-all
+
 ############################################################################
 
 # jdk_misc
 
 # 6988950
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java generic-all
 
 # 7162111
 demo/jvmti/mtrace/TraceJFrame.java                              macosx-all
@@ -222,6 +219,9 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 sun/net/www/protocol/http/B6299712.java                         macosx-all
 java/net/CookieHandler/CookieManagerTest.java                   macosx-all
 
+# 7164518
+sun/security/krb5/auto/Unreachable.java                         macosx-all
+
 # JPRT needs to set 127.0.0.1 in proxy bypass list
 java/net/URLClassLoader/closetest/CloseTest.java                macosx-all
 ############################################################################
@@ -262,24 +262,17 @@ java/nio/channels/Selector/OutOfBand.java                       macosx-all
 
 # jdk_rmi
 
-# 7140992
-java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java generic-all
-
-# 6948101
-java/rmi/transport/pinLastArguments/PinLastArguments.java	generic-all
-
 # 7146541
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java	linux-all
 
 # 7132247
 java/rmi/registry/readTest/readTest.sh				windows-all
-
-# 7142596
-java/rmi/transport/pinClientSocketFactory/PinClientSocketFactory.java generic-all
-
 ############################################################################
 
 # jdk_security
+
+# 7177556
+com/sun/crypto/provider/KeyFactory/TestProviderLeak.java        generic-all
 
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
@@ -370,6 +363,9 @@ com/sun/jdi/ProcessAttachTest.sh                                generic-all
 
 # Filed 6979016
 sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
+
+# 7172176
+sun/tools/jconsole/ImmutableResourceTest.sh			generic-all
 
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all

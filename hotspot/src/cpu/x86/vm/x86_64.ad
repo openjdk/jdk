@@ -131,102 +131,6 @@ reg_def R15_H(SOC, SOE, Op_RegI, 15, r15->as_VMReg()->next());
 
 // Floating Point Registers
 
-// XMM registers.  128-bit registers or 4 words each, labeled (a)-d.
-// Word a in each register holds a Float, words ab hold a Double.  We
-// currently do not use the SIMD capabilities, so registers cd are
-// unused at the moment.
-// XMM8-XMM15 must be encoded with REX.
-// Linux ABI:   No register preserved across function calls
-//              XMM0-XMM7 might hold parameters
-// Windows ABI: XMM6-XMM15 preserved across function calls
-//              XMM0-XMM3 might hold parameters
-
-reg_def XMM0   (SOC, SOC, Op_RegF,  0, xmm0->as_VMReg());
-reg_def XMM0_H (SOC, SOC, Op_RegF,  0, xmm0->as_VMReg()->next());
-
-reg_def XMM1   (SOC, SOC, Op_RegF,  1, xmm1->as_VMReg());
-reg_def XMM1_H (SOC, SOC, Op_RegF,  1, xmm1->as_VMReg()->next());
-
-reg_def XMM2   (SOC, SOC, Op_RegF,  2, xmm2->as_VMReg());
-reg_def XMM2_H (SOC, SOC, Op_RegF,  2, xmm2->as_VMReg()->next());
-
-reg_def XMM3   (SOC, SOC, Op_RegF,  3, xmm3->as_VMReg());
-reg_def XMM3_H (SOC, SOC, Op_RegF,  3, xmm3->as_VMReg()->next());
-
-reg_def XMM4   (SOC, SOC, Op_RegF,  4, xmm4->as_VMReg());
-reg_def XMM4_H (SOC, SOC, Op_RegF,  4, xmm4->as_VMReg()->next());
-
-reg_def XMM5   (SOC, SOC, Op_RegF,  5, xmm5->as_VMReg());
-reg_def XMM5_H (SOC, SOC, Op_RegF,  5, xmm5->as_VMReg()->next());
-
-#ifdef _WIN64
-
-reg_def XMM6   (SOC, SOE, Op_RegF,  6, xmm6->as_VMReg());
-reg_def XMM6_H (SOC, SOE, Op_RegF,  6, xmm6->as_VMReg()->next());
-
-reg_def XMM7   (SOC, SOE, Op_RegF,  7, xmm7->as_VMReg());
-reg_def XMM7_H (SOC, SOE, Op_RegF,  7, xmm7->as_VMReg()->next());
-
-reg_def XMM8   (SOC, SOE, Op_RegF,  8, xmm8->as_VMReg());
-reg_def XMM8_H (SOC, SOE, Op_RegF,  8, xmm8->as_VMReg()->next());
-
-reg_def XMM9   (SOC, SOE, Op_RegF,  9, xmm9->as_VMReg());
-reg_def XMM9_H (SOC, SOE, Op_RegF,  9, xmm9->as_VMReg()->next());
-
-reg_def XMM10  (SOC, SOE, Op_RegF, 10, xmm10->as_VMReg());
-reg_def XMM10_H(SOC, SOE, Op_RegF, 10, xmm10->as_VMReg()->next());
-
-reg_def XMM11  (SOC, SOE, Op_RegF, 11, xmm11->as_VMReg());
-reg_def XMM11_H(SOC, SOE, Op_RegF, 11, xmm11->as_VMReg()->next());
-
-reg_def XMM12  (SOC, SOE, Op_RegF, 12, xmm12->as_VMReg());
-reg_def XMM12_H(SOC, SOE, Op_RegF, 12, xmm12->as_VMReg()->next());
-
-reg_def XMM13  (SOC, SOE, Op_RegF, 13, xmm13->as_VMReg());
-reg_def XMM13_H(SOC, SOE, Op_RegF, 13, xmm13->as_VMReg()->next());
-
-reg_def XMM14  (SOC, SOE, Op_RegF, 14, xmm14->as_VMReg());
-reg_def XMM14_H(SOC, SOE, Op_RegF, 14, xmm14->as_VMReg()->next());
-
-reg_def XMM15  (SOC, SOE, Op_RegF, 15, xmm15->as_VMReg());
-reg_def XMM15_H(SOC, SOE, Op_RegF, 15, xmm15->as_VMReg()->next());
-
-#else
-
-reg_def XMM6   (SOC, SOC, Op_RegF,  6, xmm6->as_VMReg());
-reg_def XMM6_H (SOC, SOC, Op_RegF,  6, xmm6->as_VMReg()->next());
-
-reg_def XMM7   (SOC, SOC, Op_RegF,  7, xmm7->as_VMReg());
-reg_def XMM7_H (SOC, SOC, Op_RegF,  7, xmm7->as_VMReg()->next());
-
-reg_def XMM8   (SOC, SOC, Op_RegF,  8, xmm8->as_VMReg());
-reg_def XMM8_H (SOC, SOC, Op_RegF,  8, xmm8->as_VMReg()->next());
-
-reg_def XMM9   (SOC, SOC, Op_RegF,  9, xmm9->as_VMReg());
-reg_def XMM9_H (SOC, SOC, Op_RegF,  9, xmm9->as_VMReg()->next());
-
-reg_def XMM10  (SOC, SOC, Op_RegF, 10, xmm10->as_VMReg());
-reg_def XMM10_H(SOC, SOC, Op_RegF, 10, xmm10->as_VMReg()->next());
-
-reg_def XMM11  (SOC, SOC, Op_RegF, 11, xmm11->as_VMReg());
-reg_def XMM11_H(SOC, SOC, Op_RegF, 11, xmm11->as_VMReg()->next());
-
-reg_def XMM12  (SOC, SOC, Op_RegF, 12, xmm12->as_VMReg());
-reg_def XMM12_H(SOC, SOC, Op_RegF, 12, xmm12->as_VMReg()->next());
-
-reg_def XMM13  (SOC, SOC, Op_RegF, 13, xmm13->as_VMReg());
-reg_def XMM13_H(SOC, SOC, Op_RegF, 13, xmm13->as_VMReg()->next());
-
-reg_def XMM14  (SOC, SOC, Op_RegF, 14, xmm14->as_VMReg());
-reg_def XMM14_H(SOC, SOC, Op_RegF, 14, xmm14->as_VMReg()->next());
-
-reg_def XMM15  (SOC, SOC, Op_RegF, 15, xmm15->as_VMReg());
-reg_def XMM15_H(SOC, SOC, Op_RegF, 15, xmm15->as_VMReg()->next());
-
-#endif // _WIN64
-
-reg_def RFLAGS(SOC, SOC, 0, 16, VMRegImpl::Bad());
-
 // Specify priority of register selection within phases of register
 // allocation.  Highest priority is first.  A useful heuristic is to
 // give registers a low priority when they are required by machine
@@ -251,26 +155,6 @@ alloc_class chunk0(R10,         R10_H,
                    R14,         R14_H,
                    R15,         R15_H,
                    RSP,         RSP_H);
-
-// XXX probably use 8-15 first on Linux
-alloc_class chunk1(XMM0,  XMM0_H,
-                   XMM1,  XMM1_H,
-                   XMM2,  XMM2_H,
-                   XMM3,  XMM3_H,
-                   XMM4,  XMM4_H,
-                   XMM5,  XMM5_H,
-                   XMM6,  XMM6_H,
-                   XMM7,  XMM7_H,
-                   XMM8,  XMM8_H,
-                   XMM9,  XMM9_H,
-                   XMM10, XMM10_H,
-                   XMM11, XMM11_H,
-                   XMM12, XMM12_H,
-                   XMM13, XMM13_H,
-                   XMM14, XMM14_H,
-                   XMM15, XMM15_H);
-
-alloc_class chunk2(RFLAGS);
 
 
 //----------Architecture Description Register Classes--------------------------
@@ -501,46 +385,7 @@ reg_class int_rdi_reg(RDI);
 // Singleton class for instruction pointer
 // reg_class ip_reg(RIP);
 
-// Singleton class for condition codes
-reg_class int_flags(RFLAGS);
-
-// Class for all float registers
-reg_class float_reg(XMM0,
-                    XMM1,
-                    XMM2,
-                    XMM3,
-                    XMM4,
-                    XMM5,
-                    XMM6,
-                    XMM7,
-                    XMM8,
-                    XMM9,
-                    XMM10,
-                    XMM11,
-                    XMM12,
-                    XMM13,
-                    XMM14,
-                    XMM15);
-
-// Class for all double registers
-reg_class double_reg(XMM0,  XMM0_H,
-                     XMM1,  XMM1_H,
-                     XMM2,  XMM2_H,
-                     XMM3,  XMM3_H,
-                     XMM4,  XMM4_H,
-                     XMM5,  XMM5_H,
-                     XMM6,  XMM6_H,
-                     XMM7,  XMM7_H,
-                     XMM8,  XMM8_H,
-                     XMM9,  XMM9_H,
-                     XMM10, XMM10_H,
-                     XMM11, XMM11_H,
-                     XMM12, XMM12_H,
-                     XMM13, XMM13_H,
-                     XMM14, XMM14_H,
-                     XMM15, XMM15_H);
 %}
-
 
 //----------SOURCE BLOCK-------------------------------------------------------
 // This is a block of C++ code which provides values, functions, and
@@ -1027,12 +872,84 @@ static enum RC rc_class(OptoReg::Name reg)
   return rc_float;
 }
 
+// Next two methods are shared by 32- and 64-bit VM. They are defined in x86.ad.
+static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+                          int src_hi, int dst_hi, uint ireg, outputStream* st);
+
+static int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
+                            int stack_offset, int reg, uint ireg, outputStream* st);
+
+static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
+                                      int dst_offset, uint ireg, outputStream* st) {
+  if (cbuf) {
+    MacroAssembler _masm(cbuf);
+    switch (ireg) {
+    case Op_VecS:
+      __ movq(Address(rsp, -8), rax);
+      __ movl(rax, Address(rsp, src_offset));
+      __ movl(Address(rsp, dst_offset), rax);
+      __ movq(rax, Address(rsp, -8));
+      break;
+    case Op_VecD:
+      __ pushq(Address(rsp, src_offset));
+      __ popq (Address(rsp, dst_offset));
+      break;
+    case Op_VecX:
+      __ pushq(Address(rsp, src_offset));
+      __ popq (Address(rsp, dst_offset));
+      __ pushq(Address(rsp, src_offset+8));
+      __ popq (Address(rsp, dst_offset+8));
+      break;
+    case Op_VecY:
+      __ vmovdqu(Address(rsp, -32), xmm0);
+      __ vmovdqu(xmm0, Address(rsp, src_offset));
+      __ vmovdqu(Address(rsp, dst_offset), xmm0);
+      __ vmovdqu(xmm0, Address(rsp, -32));
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+#ifndef PRODUCT
+  } else {
+    switch (ireg) {
+    case Op_VecS:
+      st->print("movq    [rsp - #8], rax\t# 32-bit mem-mem spill\n\t"
+                "movl    rax, [rsp + #%d]\n\t"
+                "movl    [rsp + #%d], rax\n\t"
+                "movq    rax, [rsp - #8]",
+                src_offset, dst_offset);
+      break;
+    case Op_VecD:
+      st->print("pushq   [rsp + #%d]\t# 64-bit mem-mem spill\n\t"
+                "popq    [rsp + #%d]",
+                src_offset, dst_offset);
+      break;
+     case Op_VecX:
+      st->print("pushq   [rsp + #%d]\t# 128-bit mem-mem spill\n\t"
+                "popq    [rsp + #%d]\n\t"
+                "pushq   [rsp + #%d]\n\t"
+                "popq    [rsp + #%d]",
+                src_offset, dst_offset, src_offset+8, dst_offset+8);
+      break;
+    case Op_VecY:
+      st->print("vmovdqu [rsp - #32], xmm0\t# 256-bit mem-mem spill\n\t"
+                "vmovdqu xmm0, [rsp + #%d]\n\t"
+                "vmovdqu [rsp + #%d], xmm0\n\t"
+                "vmovdqu xmm0, [rsp - #32]",
+                src_offset, dst_offset);
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+#endif
+  }
+}
+
 uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
                                        PhaseRegAlloc* ra_,
                                        bool do_size,
-                                       outputStream* st) const
-{
-
+                                       outputStream* st) const {
+  assert(cbuf != NULL || st  != NULL, "sanity");
   // Get registers to move
   OptoReg::Name src_second = ra_->get_reg_second(in(1));
   OptoReg::Name src_first = ra_->get_reg_first(in(1));
@@ -1050,7 +967,30 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
   if (src_first == dst_first && src_second == dst_second) {
     // Self copy, no move
     return 0;
-  } else if (src_first_rc == rc_stack) {
+  }
+  if (bottom_type()->isa_vect() != NULL) {
+    uint ireg = ideal_reg();
+    assert((src_first_rc != rc_int && dst_first_rc != rc_int), "sanity");
+    assert((ireg == Op_VecS || ireg == Op_VecD || ireg == Op_VecX || ireg == Op_VecY), "sanity");
+    if( src_first_rc == rc_stack && dst_first_rc == rc_stack ) {
+      // mem -> mem
+      int src_offset = ra_->reg2offset(src_first);
+      int dst_offset = ra_->reg2offset(dst_first);
+      vec_stack_to_stack_helper(cbuf, src_offset, dst_offset, ireg, st);
+    } else if (src_first_rc == rc_float && dst_first_rc == rc_float ) {
+      vec_mov_helper(cbuf, false, src_first, dst_first, src_second, dst_second, ireg, st);
+    } else if (src_first_rc == rc_float && dst_first_rc == rc_stack ) {
+      int stack_offset = ra_->reg2offset(dst_first);
+      vec_spill_helper(cbuf, false, false, stack_offset, src_first, ireg, st);
+    } else if (src_first_rc == rc_stack && dst_first_rc == rc_float ) {
+      int stack_offset = ra_->reg2offset(src_first);
+      vec_spill_helper(cbuf, false, true,  stack_offset, dst_first, ireg, st);
+    } else {
+      ShouldNotReachHere();
+    }
+    return 0;
+  }
+  if (src_first_rc == rc_stack) {
     // mem ->
     if (dst_first_rc == rc_stack) {
       // mem -> mem
@@ -1061,23 +1001,16 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         int src_offset = ra_->reg2offset(src_first);
         int dst_offset = ra_->reg2offset(dst_first);
         if (cbuf) {
-          emit_opcode(*cbuf, 0xFF);
-          encode_RegMem(*cbuf, RSI_enc, RSP_enc, 0x4, 0, src_offset, false);
-
-          emit_opcode(*cbuf, 0x8F);
-          encode_RegMem(*cbuf, RAX_enc, RSP_enc, 0x4, 0, dst_offset, false);
-
+          MacroAssembler _masm(cbuf);
+          __ pushq(Address(rsp, src_offset));
+          __ popq (Address(rsp, dst_offset));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("pushq   [rsp + #%d]\t# 64-bit mem-mem spill\n\t"
-                     "popq    [rsp + #%d]",
-                     src_offset,
-                     dst_offset);
+                    "popq    [rsp + #%d]",
+                     src_offset, dst_offset);
 #endif
         }
-        return
-          3 + ((src_offset == 0) ? 0 : (src_offset < 0x80 ? 1 : 4)) +
-          3 + ((dst_offset == 0) ? 0 : (dst_offset < 0x80 ? 1 : 4));
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
@@ -1086,46 +1019,22 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         int src_offset = ra_->reg2offset(src_first);
         int dst_offset = ra_->reg2offset(dst_first);
         if (cbuf) {
-          emit_opcode(*cbuf, Assembler::REX_W);
-          emit_opcode(*cbuf, 0x89);
-          emit_opcode(*cbuf, 0x44);
-          emit_opcode(*cbuf, 0x24);
-          emit_opcode(*cbuf, 0xF8);
-
-          emit_opcode(*cbuf, 0x8B);
-          encode_RegMem(*cbuf,
-                        RAX_enc,
-                        RSP_enc, 0x4, 0, src_offset,
-                        false);
-
-          emit_opcode(*cbuf, 0x89);
-          encode_RegMem(*cbuf,
-                        RAX_enc,
-                        RSP_enc, 0x4, 0, dst_offset,
-                        false);
-
-          emit_opcode(*cbuf, Assembler::REX_W);
-          emit_opcode(*cbuf, 0x8B);
-          emit_opcode(*cbuf, 0x44);
-          emit_opcode(*cbuf, 0x24);
-          emit_opcode(*cbuf, 0xF8);
-
+          MacroAssembler _masm(cbuf);
+          __ movq(Address(rsp, -8), rax);
+          __ movl(rax, Address(rsp, src_offset));
+          __ movl(Address(rsp, dst_offset), rax);
+          __ movq(rax, Address(rsp, -8));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movq    [rsp - #8], rax\t# 32-bit mem-mem spill\n\t"
-                     "movl    rax, [rsp + #%d]\n\t"
-                     "movl    [rsp + #%d], rax\n\t"
-                     "movq    rax, [rsp - #8]",
-                     src_offset,
-                     dst_offset);
+                    "movl    rax, [rsp + #%d]\n\t"
+                    "movl    [rsp + #%d], rax\n\t"
+                    "movq    rax, [rsp - #8]",
+                     src_offset, dst_offset);
 #endif
         }
-        return
-          5 + // movq
-          3 + ((src_offset == 0) ? 0 : (src_offset < 0x80 ? 1 : 4)) + // movl
-          3 + ((dst_offset == 0) ? 0 : (dst_offset < 0x80 ? 1 : 4)) + // movl
-          5; // movq
       }
+      return 0;
     } else if (dst_first_rc == rc_int) {
       // mem -> gpr
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
@@ -1133,52 +1042,32 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 64-bit
         int offset = ra_->reg2offset(src_first);
         if (cbuf) {
-          if (Matcher::_regEncode[dst_first] < 8) {
-            emit_opcode(*cbuf, Assembler::REX_W);
-          } else {
-            emit_opcode(*cbuf, Assembler::REX_WR);
-          }
-          emit_opcode(*cbuf, 0x8B);
-          encode_RegMem(*cbuf,
-                        Matcher::_regEncode[dst_first],
-                        RSP_enc, 0x4, 0, offset,
-                        false);
+          MacroAssembler _masm(cbuf);
+          __ movq(as_Register(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movq    %s, [rsp + #%d]\t# spill",
                      Matcher::regName[dst_first],
                      offset);
 #endif
         }
-        return
-          ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) + 4; // REX
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(src_first);
         if (cbuf) {
-          if (Matcher::_regEncode[dst_first] >= 8) {
-            emit_opcode(*cbuf, Assembler::REX_R);
-          }
-          emit_opcode(*cbuf, 0x8B);
-          encode_RegMem(*cbuf,
-                        Matcher::_regEncode[dst_first],
-                        RSP_enc, 0x4, 0, offset,
-                        false);
+          MacroAssembler _masm(cbuf);
+          __ movl(as_Register(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movl    %s, [rsp + #%d]\t# spill",
                      Matcher::regName[dst_first],
                      offset);
 #endif
         }
-        return
-          ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) +
-          ((Matcher::_regEncode[dst_first] < 8)
-           ? 3
-           : 4); // REX
       }
+      return 0;
     } else if (dst_first_rc == rc_float) {
       // mem-> xmm
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
@@ -1189,18 +1078,13 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           MacroAssembler _masm(cbuf);
           __ movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("%s  %s, [rsp + #%d]\t# spill",
                      UseXmmLoadAndClearUpper ? "movsd " : "movlpd",
                      Matcher::regName[dst_first],
                      offset);
 #endif
         }
-        return
-          ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) +
-          ((Matcher::_regEncode[dst_first] >= 8)
-           ? 6
-           : (5 + ((UseAVX>0)?1:0))); // REX
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
@@ -1210,18 +1094,14 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           MacroAssembler _masm(cbuf);
           __ movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movss   %s, [rsp + #%d]\t# spill",
                      Matcher::regName[dst_first],
                      offset);
 #endif
         }
-        return
-          ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) +
-          ((Matcher::_regEncode[dst_first] >= 8)
-           ? 6
-           : (5 + ((UseAVX>0)?1:0))); // REX
       }
+      return 0;
     }
   } else if (src_first_rc == rc_int) {
     // gpr ->
@@ -1232,113 +1112,65 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 64-bit
         int offset = ra_->reg2offset(dst_first);
         if (cbuf) {
-          if (Matcher::_regEncode[src_first] < 8) {
-            emit_opcode(*cbuf, Assembler::REX_W);
-          } else {
-            emit_opcode(*cbuf, Assembler::REX_WR);
-          }
-          emit_opcode(*cbuf, 0x89);
-          encode_RegMem(*cbuf,
-                        Matcher::_regEncode[src_first],
-                        RSP_enc, 0x4, 0, offset,
-                        false);
+          MacroAssembler _masm(cbuf);
+          __ movq(Address(rsp, offset), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movq    [rsp + #%d], %s\t# spill",
                      offset,
                      Matcher::regName[src_first]);
 #endif
         }
-        return ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) + 4; // REX
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(dst_first);
         if (cbuf) {
-          if (Matcher::_regEncode[src_first] >= 8) {
-            emit_opcode(*cbuf, Assembler::REX_R);
-          }
-          emit_opcode(*cbuf, 0x89);
-          encode_RegMem(*cbuf,
-                        Matcher::_regEncode[src_first],
-                        RSP_enc, 0x4, 0, offset,
-                        false);
+          MacroAssembler _masm(cbuf);
+          __ movl(Address(rsp, offset), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movl    [rsp + #%d], %s\t# spill",
                      offset,
                      Matcher::regName[src_first]);
 #endif
         }
-        return
-          ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) +
-          ((Matcher::_regEncode[src_first] < 8)
-           ? 3
-           : 4); // REX
       }
+      return 0;
     } else if (dst_first_rc == rc_int) {
       // gpr -> gpr
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         if (cbuf) {
-          if (Matcher::_regEncode[dst_first] < 8) {
-            if (Matcher::_regEncode[src_first] < 8) {
-              emit_opcode(*cbuf, Assembler::REX_W);
-            } else {
-              emit_opcode(*cbuf, Assembler::REX_WB);
-            }
-          } else {
-            if (Matcher::_regEncode[src_first] < 8) {
-              emit_opcode(*cbuf, Assembler::REX_WR);
-            } else {
-              emit_opcode(*cbuf, Assembler::REX_WRB);
-            }
-          }
-          emit_opcode(*cbuf, 0x8B);
-          emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[dst_first] & 7,
-                  Matcher::_regEncode[src_first] & 7);
+          MacroAssembler _masm(cbuf);
+          __ movq(as_Register(Matcher::_regEncode[dst_first]),
+                  as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movq    %s, %s\t# spill",
                      Matcher::regName[dst_first],
                      Matcher::regName[src_first]);
 #endif
         }
-        return 3; // REX
+        return 0;
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         if (cbuf) {
-          if (Matcher::_regEncode[dst_first] < 8) {
-            if (Matcher::_regEncode[src_first] >= 8) {
-              emit_opcode(*cbuf, Assembler::REX_B);
-            }
-          } else {
-            if (Matcher::_regEncode[src_first] < 8) {
-              emit_opcode(*cbuf, Assembler::REX_R);
-            } else {
-              emit_opcode(*cbuf, Assembler::REX_RB);
-            }
-          }
-          emit_opcode(*cbuf, 0x8B);
-          emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[dst_first] & 7,
-                  Matcher::_regEncode[src_first] & 7);
+          MacroAssembler _masm(cbuf);
+          __ movl(as_Register(Matcher::_regEncode[dst_first]),
+                  as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movl    %s, %s\t# spill",
                      Matcher::regName[dst_first],
                      Matcher::regName[src_first]);
 #endif
         }
-        return
-          (Matcher::_regEncode[src_first] < 8 && Matcher::_regEncode[dst_first] < 8)
-          ? 2
-          : 3; // REX
+        return 0;
       }
     } else if (dst_first_rc == rc_float) {
       // gpr -> xmm
@@ -1349,13 +1181,12 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           MacroAssembler _masm(cbuf);
           __ movdq( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movdq   %s, %s\t# spill",
                      Matcher::regName[dst_first],
                      Matcher::regName[src_first]);
 #endif
         }
-        return 5; // REX
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
@@ -1364,17 +1195,14 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           MacroAssembler _masm(cbuf);
           __ movdl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movdl   %s, %s\t# spill",
                      Matcher::regName[dst_first],
                      Matcher::regName[src_first]);
 #endif
         }
-        return
-          (Matcher::_regEncode[src_first] >= 8 || Matcher::_regEncode[dst_first] >= 8)
-          ? 5
-          : (4 + ((UseAVX>0)?1:0)); // REX
       }
+      return 0;
     }
   } else if (src_first_rc == rc_float) {
     // xmm ->
@@ -1388,17 +1216,12 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           MacroAssembler _masm(cbuf);
           __ movdbl( Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movsd   [rsp + #%d], %s\t# spill",
                      offset,
                      Matcher::regName[src_first]);
 #endif
         }
-        return
-          ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) +
-          ((Matcher::_regEncode[src_first] >= 8)
-           ? 6
-           : (5 + ((UseAVX>0)?1:0))); // REX
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
@@ -1408,18 +1231,14 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           MacroAssembler _masm(cbuf);
           __ movflt(Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movss   [rsp + #%d], %s\t# spill",
                      offset,
                      Matcher::regName[src_first]);
 #endif
         }
-        return
-          ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) +
-          ((Matcher::_regEncode[src_first] >=8)
-           ? 6
-           : (5 + ((UseAVX>0)?1:0))); // REX
       }
+      return 0;
     } else if (dst_first_rc == rc_int) {
       // xmm -> gpr
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
@@ -1429,13 +1248,12 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           MacroAssembler _masm(cbuf);
           __ movdq( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movdq   %s, %s\t# spill",
                      Matcher::regName[dst_first],
                      Matcher::regName[src_first]);
 #endif
         }
-        return 5; // REX
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
@@ -1444,17 +1262,14 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           MacroAssembler _masm(cbuf);
           __ movdl( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("movdl   %s, %s\t# spill",
                      Matcher::regName[dst_first],
                      Matcher::regName[src_first]);
 #endif
         }
-        return
-          (Matcher::_regEncode[src_first] >= 8 || Matcher::_regEncode[dst_first] >= 8)
-          ? 5
-          : (4 + ((UseAVX>0)?1:0)); // REX
       }
+      return 0;
     } else if (dst_first_rc == rc_float) {
       // xmm -> xmm
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
@@ -1464,17 +1279,13 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           MacroAssembler _masm(cbuf);
           __ movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("%s  %s, %s\t# spill",
                      UseXmmRegToRegMoveAll ? "movapd" : "movsd ",
                      Matcher::regName[dst_first],
                      Matcher::regName[src_first]);
 #endif
         }
-        return
-          (Matcher::_regEncode[src_first] >= 8 || Matcher::_regEncode[dst_first] >= 8)
-          ? 5
-          : (4 + ((UseAVX>0)?1:0)); // REX
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
@@ -1483,42 +1294,35 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           MacroAssembler _masm(cbuf);
           __ movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
-        } else if (!do_size) {
+        } else {
           st->print("%s  %s, %s\t# spill",
                      UseXmmRegToRegMoveAll ? "movaps" : "movss ",
                      Matcher::regName[dst_first],
                      Matcher::regName[src_first]);
 #endif
         }
-        return ((UseAVX>0) ? 5:
-          ((Matcher::_regEncode[src_first] >= 8 || Matcher::_regEncode[dst_first] >= 8)
-           ? (UseXmmRegToRegMoveAll ? 4 : 5)
-           : (UseXmmRegToRegMoveAll ? 3 : 4))); // REX
       }
+      return 0;
     }
   }
 
   assert(0," foo ");
   Unimplemented();
-
   return 0;
 }
 
 #ifndef PRODUCT
-void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream* st) const
-{
+void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream* st) const {
   implementation(NULL, ra_, false, st);
 }
 #endif
 
-void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const
-{
+void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   implementation(&cbuf, ra_, false, NULL);
 }
 
-uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const
-{
-  return implementation(NULL, ra_, true, NULL);
+uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
+  return MachNode::size(ra_);
 }
 
 //=============================================================================
@@ -1735,16 +1539,6 @@ const bool Matcher::convL2FSupported(void) {
   return true;
 }
 
-// Vector width in bytes
-const uint Matcher::vector_width_in_bytes(void) {
-  return 8;
-}
-
-// Vector ideal reg
-const uint Matcher::vector_ideal_reg(void) {
-  return Op_RegD;
-}
-
 // Is this branch offset short enough that a short branch can be used?
 //
 // NOTE: If the platform does not provide any short branch variants, then
@@ -1831,21 +1625,21 @@ const bool Matcher::int_in_long = true;
 bool Matcher::can_be_java_arg(int reg)
 {
   return
-    reg ==  RDI_num || reg ==  RDI_H_num ||
-    reg ==  RSI_num || reg ==  RSI_H_num ||
-    reg ==  RDX_num || reg ==  RDX_H_num ||
-    reg ==  RCX_num || reg ==  RCX_H_num ||
-    reg ==   R8_num || reg ==   R8_H_num ||
-    reg ==   R9_num || reg ==   R9_H_num ||
-    reg ==  R12_num || reg ==  R12_H_num ||
-    reg == XMM0_num || reg == XMM0_H_num ||
-    reg == XMM1_num || reg == XMM1_H_num ||
-    reg == XMM2_num || reg == XMM2_H_num ||
-    reg == XMM3_num || reg == XMM3_H_num ||
-    reg == XMM4_num || reg == XMM4_H_num ||
-    reg == XMM5_num || reg == XMM5_H_num ||
-    reg == XMM6_num || reg == XMM6_H_num ||
-    reg == XMM7_num || reg == XMM7_H_num;
+    reg ==  RDI_num || reg == RDI_H_num ||
+    reg ==  RSI_num || reg == RSI_H_num ||
+    reg ==  RDX_num || reg == RDX_H_num ||
+    reg ==  RCX_num || reg == RCX_H_num ||
+    reg ==   R8_num || reg ==  R8_H_num ||
+    reg ==   R9_num || reg ==  R9_H_num ||
+    reg ==  R12_num || reg == R12_H_num ||
+    reg == XMM0_num || reg == XMM0b_num ||
+    reg == XMM1_num || reg == XMM1b_num ||
+    reg == XMM2_num || reg == XMM2b_num ||
+    reg == XMM3_num || reg == XMM3b_num ||
+    reg == XMM4_num || reg == XMM4b_num ||
+    reg == XMM5_num || reg == XMM5b_num ||
+    reg == XMM6_num || reg == XMM6b_num ||
+    reg == XMM7_num || reg == XMM7b_num;
 }
 
 bool Matcher::is_spillable_arg(int reg)
@@ -3220,10 +3014,11 @@ frame
       OptoReg::Bad, // Op_RegI
       RAX_H_num,    // Op_RegP
       OptoReg::Bad, // Op_RegF
-      XMM0_H_num,   // Op_RegD
+      XMM0b_num,    // Op_RegD
       RAX_H_num     // Op_RegL
     };
-    assert(ARRAY_SIZE(hi) == _last_machine_leaf - 1, "missing type");
+    // Excluded flags and vector registers.
+    assert(ARRAY_SIZE(hi) == _last_machine_leaf - 5, "missing type");
     return OptoRegPair(hi[ideal_reg], lo[ideal_reg]);
   %}
 %}
@@ -3984,7 +3779,6 @@ operand regD()
   format %{ %}
   interface(REG_INTER);
 %}
-
 
 //----------Memory Operands----------------------------------------------------
 // Direct Memory Operand
@@ -5416,61 +5210,6 @@ instruct loadD(regD dst, memory mem)
   ins_pipe(pipe_slow); // XXX
 %}
 
-// Load Aligned Packed Byte to XMM register
-instruct loadA8B(regD dst, memory mem) %{
-  match(Set dst (Load8B mem));
-  ins_cost(125);
-  format %{ "MOVQ  $dst,$mem\t! packed8B" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $mem$$Address);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// Load Aligned Packed Short to XMM register
-instruct loadA4S(regD dst, memory mem) %{
-  match(Set dst (Load4S mem));
-  ins_cost(125);
-  format %{ "MOVQ  $dst,$mem\t! packed4S" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $mem$$Address);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// Load Aligned Packed Char to XMM register
-instruct loadA4C(regD dst, memory mem) %{
-  match(Set dst (Load4C mem));
-  ins_cost(125);
-  format %{ "MOVQ  $dst,$mem\t! packed4C" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $mem$$Address);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// Load Aligned Packed Integer to XMM register
-instruct load2IU(regD dst, memory mem) %{
-  match(Set dst (Load2I mem));
-  ins_cost(125);
-  format %{ "MOVQ  $dst,$mem\t! packed2I" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $mem$$Address);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// Load Aligned Packed Single to XMM
-instruct loadA2F(regD dst, memory mem) %{
-  match(Set dst (Load2F mem));
-  ins_cost(125);
-  format %{ "MOVQ  $dst,$mem\t! packed2F" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $mem$$Address);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 // Load Effective Address
 instruct leaP8(rRegP dst, indOffset8 mem)
 %{
@@ -6200,39 +5939,6 @@ instruct storeImmB(memory mem, immI8 src)
   ins_pipe(ialu_mem_imm);
 %}
 
-// Store Aligned Packed Byte XMM register to memory
-instruct storeA8B(memory mem, regD src) %{
-  match(Set mem (Store8B mem src));
-  ins_cost(145);
-  format %{ "MOVQ  $mem,$src\t! packed8B" %}
-  ins_encode %{
-    __ movq($mem$$Address, $src$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// Store Aligned Packed Char/Short XMM register to memory
-instruct storeA4C(memory mem, regD src) %{
-  match(Set mem (Store4C mem src));
-  ins_cost(145);
-  format %{ "MOVQ  $mem,$src\t! packed4C" %}
-  ins_encode %{
-    __ movq($mem$$Address, $src$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// Store Aligned Packed Integer XMM register to memory
-instruct storeA2I(memory mem, regD src) %{
-  match(Set mem (Store2I mem src));
-  ins_cost(145);
-  format %{ "MOVQ  $mem,$src\t! packed2I" %}
-  ins_encode %{
-    __ movq($mem$$Address, $src$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 // Store CMS card-mark Immediate
 instruct storeImmCM0_reg(memory mem, immI0 zero)
 %{
@@ -6256,17 +5962,6 @@ instruct storeImmCM0(memory mem, immI0 src)
   opcode(0xC6); /* C6 /0 */
   ins_encode(REX_mem(mem), OpcP, RM_opc_mem(0x00, mem), Con8or32(src));
   ins_pipe(ialu_mem_imm);
-%}
-
-// Store Aligned Packed Single Float XMM register to memory
-instruct storeA2F(memory mem, regD src) %{
-  match(Set mem (Store2F mem src));
-  ins_cost(145);
-  format %{ "MOVQ  $mem,$src\t! packed2F" %}
-  ins_encode %{
-    __ movq($mem$$Address, $src$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
 %}
 
 // Store Float
@@ -6417,14 +6112,14 @@ instruct bytes_reverse_long(rRegL dst) %{
   match(Set dst (ReverseBytesL dst));
 
   format %{ "bswapq  $dst" %}
-
   opcode(0x0F, 0xC8); /* Opcode 0F /C8 */
   ins_encode( REX_reg_wide(dst), OpcP, opc2_reg(dst) );
   ins_pipe( ialu_reg);
 %}
 
-instruct bytes_reverse_unsigned_short(rRegI dst) %{
+instruct bytes_reverse_unsigned_short(rRegI dst, rFlagsReg cr) %{
   match(Set dst (ReverseBytesUS dst));
+  effect(KILL cr);
 
   format %{ "bswapl  $dst\n\t"
             "shrl    $dst,16\n\t" %}
@@ -6435,8 +6130,9 @@ instruct bytes_reverse_unsigned_short(rRegI dst) %{
   ins_pipe( ialu_reg );
 %}
 
-instruct bytes_reverse_short(rRegI dst) %{
+instruct bytes_reverse_short(rRegI dst, rFlagsReg cr) %{
   match(Set dst (ReverseBytesS dst));
+  effect(KILL cr);
 
   format %{ "bswapl  $dst\n\t"
             "sar     $dst,16\n\t" %}
@@ -6564,9 +6260,10 @@ instruct countTrailingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
 
 //---------- Population Count Instructions -------------------------------------
 
-instruct popCountI(rRegI dst, rRegI src) %{
+instruct popCountI(rRegI dst, rRegI src, rFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountI src));
+  effect(KILL cr);
 
   format %{ "popcnt  $dst, $src" %}
   ins_encode %{
@@ -6575,9 +6272,10 @@ instruct popCountI(rRegI dst, rRegI src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct popCountI_mem(rRegI dst, memory mem) %{
+instruct popCountI_mem(rRegI dst, memory mem, rFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
+  effect(KILL cr);
 
   format %{ "popcnt  $dst, $mem" %}
   ins_encode %{
@@ -6587,9 +6285,10 @@ instruct popCountI_mem(rRegI dst, memory mem) %{
 %}
 
 // Note: Long.bitCount(long) returns an int.
-instruct popCountL(rRegI dst, rRegL src) %{
+instruct popCountL(rRegI dst, rRegL src, rFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
+  effect(KILL cr);
 
   format %{ "popcnt  $dst, $src" %}
   ins_encode %{
@@ -6599,9 +6298,10 @@ instruct popCountL(rRegI dst, rRegL src) %{
 %}
 
 // Note: Long.bitCount(long) returns an int.
-instruct popCountL_mem(rRegI dst, memory mem) %{
+instruct popCountL_mem(rRegI dst, memory mem, rFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountL (LoadL mem)));
+  effect(KILL cr);
 
   format %{ "popcnt  $dst, $mem" %}
   ins_encode %{
@@ -7487,18 +7187,6 @@ instruct loadPLocked(rRegP dst, memory mem)
 
   ins_cost(125); // XXX
   format %{ "movq    $dst, $mem\t# ptr locked" %}
-  opcode(0x8B);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
-  ins_pipe(ialu_reg_mem); // XXX
-%}
-
-// LoadL-locked - same as a regular LoadL when used with compare-swap
-instruct loadLLocked(rRegL dst, memory mem)
-%{
-  match(Set dst (LoadLLocked mem));
-
-  ins_cost(125); // XXX
-  format %{ "movq    $dst, $mem\t# long locked" %}
   opcode(0x8B);
   ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
   ins_pipe(ialu_reg_mem); // XXX
@@ -9823,7 +9511,39 @@ instruct logD_reg(regD dst) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct powD_reg(regD dst, regD src0, regD src1, rax_RegI rax, rdx_RegI rdx, rcx_RegI rcx, rFlagsReg cr) %{
+  match(Set dst (PowD src0 src1));  // Raise src0 to the src1'th power
+  effect(KILL rax, KILL rdx, KILL rcx, KILL cr);
+  format %{ "fast_pow $src0 $src1 -> $dst  // KILL $rax, $rcx, $rdx" %}
+  ins_encode %{
+    __ subptr(rsp, 8);
+    __ movdbl(Address(rsp, 0), $src1$$XMMRegister);
+    __ fld_d(Address(rsp, 0));
+    __ movdbl(Address(rsp, 0), $src0$$XMMRegister);
+    __ fld_d(Address(rsp, 0));
+    __ fast_pow();
+    __ fstp_d(Address(rsp, 0));
+    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
+    __ addptr(rsp, 8);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
+instruct expD_reg(regD dst, regD src, rax_RegI rax, rdx_RegI rdx, rcx_RegI rcx, rFlagsReg cr) %{
+  match(Set dst (ExpD src));
+  effect(KILL rax, KILL rcx, KILL rdx, KILL cr);
+  format %{ "fast_exp $dst -> $src  // KILL $rax, $rcx, $rdx" %}
+  ins_encode %{
+    __ subptr(rsp, 8);
+    __ movdbl(Address(rsp, 0), $src$$XMMRegister);
+    __ fld_d(Address(rsp, 0));
+    __ fast_exp();
+    __ fstp_d(Address(rsp, 0));
+    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
+    __ addptr(rsp, 8);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 //----------Arithmetic Conversion Instructions---------------------------------
 
@@ -10350,172 +10070,6 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
      __ movdq($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe( pipe_slow );
-%}
-
-// Replicate scalar to packed byte (1 byte) values in xmm
-instruct Repl8B_reg(regD dst, regD src) %{
-  match(Set dst (Replicate8B src));
-  format %{ "MOVDQA  $dst,$src\n\t"
-            "PUNPCKLBW $dst,$dst\n\t"
-            "PSHUFLW $dst,$dst,0x00\t! replicate8B" %}
-  ins_encode %{
-    if ($dst$$reg != $src$$reg) {
-      __ movdqa($dst$$XMMRegister, $src$$XMMRegister);
-    }
-    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// Replicate scalar to packed byte (1 byte) values in xmm
-instruct Repl8B_rRegI(regD dst, rRegI src) %{
-  match(Set dst (Replicate8B src));
-  format %{ "MOVD    $dst,$src\n\t"
-            "PUNPCKLBW $dst,$dst\n\t"
-            "PSHUFLW $dst,$dst,0x00\t! replicate8B" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// Replicate scalar zero to packed byte (1 byte) values in xmm
-instruct Repl8B_immI0(regD dst, immI0 zero) %{
-  match(Set dst (Replicate8B zero));
-  format %{ "PXOR  $dst,$dst\t! replicate8B" %}
-  ins_encode %{
-    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar to packed shore (2 byte) values in xmm
-instruct Repl4S_reg(regD dst, regD src) %{
-  match(Set dst (Replicate4S src));
-  format %{ "PSHUFLW $dst,$src,0x00\t! replicate4S" %}
-  ins_encode %{
-    __ pshuflw($dst$$XMMRegister, $src$$XMMRegister, 0x00);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar to packed shore (2 byte) values in xmm
-instruct Repl4S_rRegI(regD dst, rRegI src) %{
-  match(Set dst (Replicate4S src));
-  format %{ "MOVD    $dst,$src\n\t"
-            "PSHUFLW $dst,$dst,0x00\t! replicate4S" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar zero to packed short (2 byte) values in xmm
-instruct Repl4S_immI0(regD dst, immI0 zero) %{
-  match(Set dst (Replicate4S zero));
-  format %{ "PXOR  $dst,$dst\t! replicate4S" %}
-  ins_encode %{
-    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar to packed char (2 byte) values in xmm
-instruct Repl4C_reg(regD dst, regD src) %{
-  match(Set dst (Replicate4C src));
-  format %{ "PSHUFLW $dst,$src,0x00\t! replicate4C" %}
-  ins_encode %{
-    __ pshuflw($dst$$XMMRegister, $src$$XMMRegister, 0x00);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar to packed char (2 byte) values in xmm
-instruct Repl4C_rRegI(regD dst, rRegI src) %{
-  match(Set dst (Replicate4C src));
-  format %{ "MOVD    $dst,$src\n\t"
-            "PSHUFLW $dst,$dst,0x00\t! replicate4C" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar zero to packed char (2 byte) values in xmm
-instruct Repl4C_immI0(regD dst, immI0 zero) %{
-  match(Set dst (Replicate4C zero));
-  format %{ "PXOR  $dst,$dst\t! replicate4C" %}
-  ins_encode %{
-    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar to packed integer (4 byte) values in xmm
-instruct Repl2I_reg(regD dst, regD src) %{
-  match(Set dst (Replicate2I src));
-  format %{ "PSHUFD $dst,$src,0x00\t! replicate2I" %}
-  ins_encode %{
-    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar to packed integer (4 byte) values in xmm
-instruct Repl2I_rRegI(regD dst, rRegI src) %{
-  match(Set dst (Replicate2I src));
-  format %{ "MOVD   $dst,$src\n\t"
-            "PSHUFD $dst,$dst,0x00\t! replicate2I" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar zero to packed integer (2 byte) values in xmm
-instruct Repl2I_immI0(regD dst, immI0 zero) %{
-  match(Set dst (Replicate2I zero));
-  format %{ "PXOR  $dst,$dst\t! replicate2I" %}
-  ins_encode %{
-    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar to packed single precision floating point values in xmm
-instruct Repl2F_reg(regD dst, regD src) %{
-  match(Set dst (Replicate2F src));
-  format %{ "PSHUFD $dst,$src,0xe0\t! replicate2F" %}
-  ins_encode %{
-    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0xe0);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar to packed single precision floating point values in xmm
-instruct Repl2F_regF(regD dst, regF src) %{
-  match(Set dst (Replicate2F src));
-  format %{ "PSHUFD $dst,$src,0xe0\t! replicate2F" %}
-  ins_encode %{
-    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0xe0);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-// Replicate scalar to packed single precision floating point values in xmm
-instruct Repl2F_immF0(regD dst, immF0 zero) %{
-  match(Set dst (Replicate2F zero));
-  format %{ "PXOR  $dst,$dst\t! replicate2F" %}
-  ins_encode %{
-    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( fpu_reg_reg );
 %}
 
 

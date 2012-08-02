@@ -33,7 +33,7 @@
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
- * 7067045
+ * 7067045 7014640
  */
 
 import java.util.regex.*;
@@ -141,6 +141,8 @@ public class RegExTest {
         unicodePropertiesTest();
         unicodeHexNotationTest();
         unicodeClassesTest();
+        horizontalAndVerticalWSTest();
+        linebreakTest();
         if (failure) {
             throw new
                 RuntimeException("RegExTest failed, 1st failure: " +
@@ -857,13 +859,18 @@ public class RegExTest {
         // in replacement string
         try {
             "\uac00".replaceAll("\uac00", "$");
+            failCount++;
+        } catch (IllegalArgumentException iie) {
+        } catch (Exception e) {
+            failCount++;
+        }
+        try {
             "\uac00".replaceAll("\uac00", "\\");
             failCount++;
         } catch (IllegalArgumentException iie) {
         } catch (Exception e) {
             failCount++;
         }
-
         report("Literal replacement");
     }
 
@@ -3838,4 +3845,77 @@ public class RegExTest {
             failCount++;
         report("unicodePredefinedClasses");
     }
+
+    private static void horizontalAndVerticalWSTest() throws Exception {
+        String hws = new String (new char[] {
+                                     0x09, 0x20, 0xa0, 0x1680, 0x180e,
+                                     0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005,
+                                     0x2006, 0x2007, 0x2008, 0x2009, 0x200a,
+                                     0x202f, 0x205f, 0x3000 });
+        String vws = new String (new char[] {
+                                     0x0a, 0x0b, 0x0c, 0x0d, 0x85, 0x2028, 0x2029 });
+        if (!Pattern.compile("\\h+").matcher(hws).matches() ||
+            !Pattern.compile("[\\h]+").matcher(hws).matches())
+            failCount++;
+        if (Pattern.compile("\\H").matcher(hws).find() ||
+            Pattern.compile("[\\H]").matcher(hws).find())
+            failCount++;
+        if (!Pattern.compile("\\v+").matcher(vws).matches() ||
+            !Pattern.compile("[\\v]+").matcher(vws).matches())
+            failCount++;
+        if (Pattern.compile("\\V").matcher(vws).find() ||
+            Pattern.compile("[\\V]").matcher(vws).find())
+            failCount++;
+        String prefix = "abcd";
+        String suffix = "efgh";
+        String ng = "A";
+        for (int i = 0; i < hws.length(); i++) {
+            String c = String.valueOf(hws.charAt(i));
+            Matcher m = Pattern.compile("\\h").matcher(prefix + c + suffix);
+            if (!m.find() || !c.equals(m.group()))
+                failCount++;
+            m = Pattern.compile("[\\h]").matcher(prefix + c + suffix);
+            if (!m.find() || !c.equals(m.group()))
+                failCount++;
+
+            m = Pattern.compile("\\H").matcher(hws.substring(0, i) + ng + hws.substring(i));
+            if (!m.find() || !ng.equals(m.group()))
+                failCount++;
+            m = Pattern.compile("[\\H]").matcher(hws.substring(0, i) + ng + hws.substring(i));
+            if (!m.find() || !ng.equals(m.group()))
+                failCount++;
+        }
+        for (int i = 0; i < vws.length(); i++) {
+            String c = String.valueOf(vws.charAt(i));
+            Matcher m = Pattern.compile("\\v").matcher(prefix + c + suffix);
+            if (!m.find() || !c.equals(m.group()))
+                failCount++;
+            m = Pattern.compile("[\\v]").matcher(prefix + c + suffix);
+            if (!m.find() || !c.equals(m.group()))
+                failCount++;
+
+            m = Pattern.compile("\\V").matcher(vws.substring(0, i) + ng + vws.substring(i));
+            if (!m.find() || !ng.equals(m.group()))
+                failCount++;
+            m = Pattern.compile("[\\V]").matcher(vws.substring(0, i) + ng + vws.substring(i));
+            if (!m.find() || !ng.equals(m.group()))
+                failCount++;
+        }
+        // \v in range is interpreted as 0x0B. This is the undocumented behavior
+        if (!Pattern.compile("[\\v-\\v]").matcher(String.valueOf((char)0x0B)).matches())
+            failCount++;
+        report("horizontalAndVerticalWSTest");
+    }
+
+    private static void linebreakTest() throws Exception {
+        String linebreaks = new String (new char[] {
+            0x0A, 0x0B, 0x0C, 0x0D, 0x85, 0x2028, 0x2029 });
+        String crnl = "\r\n";
+        if (!Pattern.compile("\\R+").matcher(linebreaks).matches() ||
+            !Pattern.compile("\\R").matcher(crnl).matches() ||
+            Pattern.compile("\\R\\R").matcher(crnl).matches())
+            failCount++;
+        report("linebreakTest");
+    }
+
 }

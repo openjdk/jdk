@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,6 +294,7 @@ public class Tokens {
         }
 
         String getText();
+        int getSourcePos(int index);
         CommentStyle getStyle();
         boolean isDeprecated();
     }
@@ -371,11 +372,11 @@ public class Tokens {
          * Preserve classic semantics - if multiple javadocs are found on the token
          * the last one is returned
          */
-        public String comment(Comment.CommentStyle style) {
-            List<Comment> readers = getReaders(Comment.CommentStyle.JAVADOC);
-            return readers.isEmpty() ?
+        public Comment comment(Comment.CommentStyle style) {
+            List<Comment> comments = getComments(Comment.CommentStyle.JAVADOC);
+            return comments.isEmpty() ?
                     null :
-                    readers.head.getText();
+                    comments.head;
         }
 
         /**
@@ -383,22 +384,22 @@ public class Tokens {
          * javadoc comment attached to this token contains the '@deprecated' string
          */
         public boolean deprecatedFlag() {
-            for (Comment r : getReaders(Comment.CommentStyle.JAVADOC)) {
-                if (r.isDeprecated()) {
+            for (Comment c : getComments(Comment.CommentStyle.JAVADOC)) {
+                if (c.isDeprecated()) {
                     return true;
                 }
             }
             return false;
         }
 
-        private List<Comment> getReaders(Comment.CommentStyle style) {
+        private List<Comment> getComments(Comment.CommentStyle style) {
             if (comments == null) {
                 return List.nil();
             } else {
                 ListBuffer<Comment> buf = ListBuffer.lb();
-                for (Comment r : comments) {
-                    if (r.getStyle() == style) {
-                        buf.add(r);
+                for (Comment c : comments) {
+                    if (c.getStyle() == style) {
+                        buf.add(c);
                     }
                 }
                 return buf.toList();

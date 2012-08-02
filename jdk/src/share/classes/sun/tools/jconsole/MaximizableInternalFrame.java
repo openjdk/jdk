@@ -222,7 +222,7 @@ public class MaximizableInternalFrame extends JInternalFrame {
     static {
         if (JConsole.IS_WIN) {
             try {
-                Class Part =
+                Class<?> Part =
                     Class.forName("com.sun.java.swing.plaf.windows.TMSchema$Part");
                 if (Part != null) {
                     WP_MINBUTTON        = Part.getField("WP_MINBUTTON").get(null);

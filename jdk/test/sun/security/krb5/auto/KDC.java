@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,6 @@ import sun.security.util.DerValue;
  * System properties recognized:
  * <ul>
  * <li>test.kdc.save.ccache
- * </ul>
- * Support policies:
- * <ul>
- * <li>ok-as-delegate
  * </ul>
  * Issues and TODOs:
  * <ol>
@@ -178,6 +174,10 @@ public class KDC {
          * Multiple ETYPE-INFO-ENTRY with same etype but different salt
          */
         DUP_ETYPE,
+        /**
+         * What backend server can be delegated to
+         */
+        OK_AS_DELEGATE,
     };
 
     static {
@@ -232,7 +232,11 @@ public class KDC {
      * @param obj the value
      */
     public void setOption(Option key, Object value) {
-        options.put(key, value);
+        if (value == null) {
+            options.remove(key);
+        } else {
+            options.put(key, value);
+        }
     }
 
     /**
@@ -579,53 +583,6 @@ public class KDC {
         }
     }
 
-    private Map<String,String> policies = new HashMap<>();
-
-    public void setPolicy(String rule, String value) {
-        if (value == null) {
-            policies.remove(rule);
-        } else {
-            policies.put(rule, value);
-        }
-    }
-    /**
-     * If the provided client/server pair matches a rule
-     *
-     * A system property named test.kdc.policy.RULE will be consulted.
-     * If it's unset, returns false. If its value is "", any pair is
-     * matched. Otherwise, it should contains the server name matched.
-     *
-     * TODO: client name is not used currently.
-     *
-     * @param c client name
-     * @param s server name
-     * @param rule rule name
-     * @return if a match is found
-     */
-    private boolean configMatch(String c, String s, String rule) {
-        String policy = policies.get(rule);
-        boolean result = false;
-        if (policy == null) {
-            result = false;
-        } else if (policy.length() == 0) {
-            result = true;
-        } else {
-            String[] names = policy.split("\\s+");
-            for (String name: names) {
-                if (name.equals(s)) {
-                    result = true;
-                    break;
-                }
-            }
-        }
-        if (result) {
-            System.out.printf(">>>> Policy match result (%s vs %s on %s) %b\n",
-                    c, s, rule, result);
-        }
-        return result;
-    }
-
-
     /**
      * Processes an incoming request and generates a response.
      * @param in the request
@@ -649,9 +606,8 @@ public class KDC {
         TGSReq tgsReq = new TGSReq(in);
         PrincipalName service = tgsReq.reqBody.sname;
         if (options.containsKey(KDC.Option.RESP_NT)) {
-            service = new PrincipalName(service.getNameStrings(),
-                    (int)options.get(KDC.Option.RESP_NT));
-            service.setRealm(service.getRealm());
+            service = new PrincipalName((int)options.get(KDC.Option.RESP_NT),
+                    service.getNameStrings(), service.getRealm());
         }
         try {
             System.out.println(realm + "> " + tgsReq.reqBody.cname +
@@ -675,7 +631,6 @@ public class KDC {
                         EncryptedData ed = apReq.authenticator;
                         tkt = apReq.ticket;
                         int te = tkt.encPart.getEType();
-                        tkt.sname.setRealm(tkt.realm);
                         EncryptionKey kkey = keyForUser(tkt.sname, te, true);
                         byte[] bb = tkt.encPart.decrypt(kkey, KeyUsage.KU_TICKET);
                         DerInputStream derIn = new DerInputStream(bb);
@@ -724,7 +679,10 @@ public class KDC {
                 bFlags[Krb5.TKT_OPTS_MAY_POSTDATE] = true;
             }
 
-            if (configMatch("", service.getNameString(), "ok-as-delegate")) {
+            String okAsDelegate = (String)options.get(Option.OK_AS_DELEGATE);
+            if (okAsDelegate != null && (
+                    okAsDelegate.isEmpty() ||
+                    okAsDelegate.contains(service.getNameString()))) {
                 bFlags[Krb5.TKT_OPTS_DELEGATE] = true;
             }
             bFlags[Krb5.TKT_OPTS_INITIAL] = true;
@@ -733,7 +691,6 @@ public class KDC {
             EncTicketPart enc = new EncTicketPart(
                     tFlags,
                     key,
-                    etp.crealm,
                     etp.cname,
                     new TransitedEncoding(1, new byte[0]),  // TODO
                     new KerberosTime(new Date()),
@@ -749,7 +706,6 @@ public class KDC {
                 throw new KrbException(Krb5.KDC_ERR_SUMTYPE_NOSUPP); // TODO
             }
             Ticket t = new Ticket(
-                    body.crealm,
                     service,
                     new EncryptedData(skey, enc.asn1Encode(), KeyUsage.KU_TICKET)
             );
@@ -765,7 +721,6 @@ public class KDC {
                     new KerberosTime(new Date()),
                     body.from,
                     till, body.rtime,
-                    body.crealm,
                     service,
                     body.addresses != null  // always set caddr
                             ? body.addresses
@@ -774,7 +729,6 @@ public class KDC {
                     );
             EncryptedData edata = new EncryptedData(ckey, enc_part.asn1Encode(), KeyUsage.KU_ENC_TGS_REP_PART_SESSKEY);
             TGSRep tgsRep = new TGSRep(null,
-                    etp.crealm,
                     etp.cname,
                     t,
                     edata);
@@ -796,8 +750,8 @@ public class KDC {
                         new KerberosTime(new Date()),
                         0,
                         ke.returnCode(),
-                        body.crealm, body.cname,
-                        new Realm(getRealm()), service,
+                        body.cname,
+                        service,
                         KrbException.errorMessage(ke.returnCode()),
                         null);
             }
@@ -820,7 +774,6 @@ public class KDC {
         if (options.containsKey(KDC.Option.RESP_NT)) {
             service = new PrincipalName(service.getNameStrings(),
                     (int)options.get(KDC.Option.RESP_NT));
-            service.setRealm(service.getRealm());
         }
         try {
             System.out.println(realm + "> " + asReq.reqBody.cname +
@@ -828,7 +781,6 @@ public class KDC {
                     service);
 
             KDCReqBody body = asReq.reqBody;
-            body.cname.setRealm(getRealm());
 
             eTypes = KDCReqBodyDotEType(body);
             int eType = eTypes[0];
@@ -1011,7 +963,6 @@ public class KDC {
             EncTicketPart enc = new EncTicketPart(
                     tFlags,
                     key,
-                    body.crealm,
                     body.cname,
                     new TransitedEncoding(1, new byte[0]),
                     new KerberosTime(new Date()),
@@ -1020,7 +971,6 @@ public class KDC {
                     body.addresses,
                     null);
             Ticket t = new Ticket(
-                    body.crealm,
                     service,
                     new EncryptedData(skey, enc.asn1Encode(), KeyUsage.KU_TICKET)
             );
@@ -1036,14 +986,12 @@ public class KDC {
                     new KerberosTime(new Date()),
                     body.from,
                     till, body.rtime,
-                    body.crealm,
                     service,
                     body.addresses
                     );
             EncryptedData edata = new EncryptedData(ckey, enc_part.asn1Encode(), KeyUsage.KU_ENC_AS_REP_PART);
             ASRep asRep = new ASRep(
                     outPAs.toArray(new PAData[outPAs.size()]),
-                    body.crealm,
                     body.cname,
                     t,
                     edata);
@@ -1064,7 +1012,6 @@ public class KDC {
                 asRep.encKDCRepPart = enc_part;
                 sun.security.krb5.internal.ccache.Credentials credentials =
                     new sun.security.krb5.internal.ccache.Credentials(asRep);
-                asReq.reqBody.cname.setRealm(getRealm());
                 CredentialsCache cache =
                     CredentialsCache.create(asReq.reqBody.cname, ccache);
                 if (cache == null) {
@@ -1099,8 +1046,8 @@ public class KDC {
                         new KerberosTime(new Date()),
                         0,
                         ke.returnCode(),
-                        body.crealm, body.cname,
-                        new Realm(getRealm()), service,
+                        body.cname,
+                        service,
                         KrbException.errorMessage(ke.returnCode()),
                         eData);
             }

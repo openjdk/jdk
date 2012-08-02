@@ -595,7 +595,7 @@ JNIEXPORT jobject JNICALL
 JVM_AssertionStatusDirectives(JNIEnv *env, jclass unused);
 
 /*
- * java.util.concurrent.AtomicLong
+ * java.util.concurrent.atomic.AtomicLong
  */
 JNIEXPORT jboolean JNICALL
 JVM_SupportsCX8(void);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@ public class LeaseLeakClient {
 
         try {
             LeaseLeak leaseLeak = null;
+            int registryPort = Integer.parseInt(System.getProperty("rmi.registry.port"));
 
             // put a reference on a remote object.
             Registry registry =
-                java.rmi.registry.LocateRegistry.getRegistry(
-                    TestLibrary.REGISTRY_PORT);
+                java.rmi.registry.LocateRegistry.getRegistry(registryPort);
             leaseLeak = (LeaseLeak) registry.lookup("/LeaseLeak");
             leaseLeak.ping();
 

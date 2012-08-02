@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ bool constMethodKlass::oop_is_conc_safe(oop obj) const {
 constMethodOop constMethodKlass::allocate(int byte_code_size,
                                           int compressed_line_number_size,
                                           int localvariable_table_length,
+                                          int exception_table_length,
                                           int checked_exceptions_length,
                                           bool is_conc_safe,
                                           TRAPS) {
@@ -72,6 +73,7 @@ constMethodOop constMethodKlass::allocate(int byte_code_size,
   int size = constMethodOopDesc::object_size(byte_code_size,
                                              compressed_line_number_size,
                                              localvariable_table_length,
+                                             exception_table_length,
                                              checked_exceptions_length);
   KlassHandle h_k(THREAD, as_klassOop());
   constMethodOop cm = (constMethodOop)
@@ -80,14 +82,14 @@ constMethodOop constMethodKlass::allocate(int byte_code_size,
   No_Safepoint_Verifier no_safepoint;
   cm->set_interpreter_kind(Interpreter::invalid);
   cm->init_fingerprint();
-  cm->set_method(NULL);
+  cm->set_constants(NULL);
   cm->set_stackmap_data(NULL);
-  cm->set_exception_table(NULL);
   cm->set_code_size(byte_code_size);
   cm->set_constMethod_size(size);
   cm->set_inlined_tables_length(checked_exceptions_length,
                                 compressed_line_number_size,
-                                localvariable_table_length);
+                                localvariable_table_length,
+                                exception_table_length);
   assert(cm->size() == size, "wrong size for object");
   cm->set_is_conc_safe(is_conc_safe);
   cm->set_partially_loaded();
@@ -98,9 +100,8 @@ constMethodOop constMethodKlass::allocate(int byte_code_size,
 void constMethodKlass::oop_follow_contents(oop obj) {
   assert (obj->is_constMethod(), "object must be constMethod");
   constMethodOop cm = constMethodOop(obj);
-  MarkSweep::mark_and_push(cm->adr_method());
+  MarkSweep::mark_and_push(cm->adr_constants());
   MarkSweep::mark_and_push(cm->adr_stackmap_data());
-  MarkSweep::mark_and_push(cm->adr_exception_table());
   // Performance tweak: We skip iterating over the klass pointer since we
   // know that Universe::constMethodKlassObj never moves.
 }
@@ -110,9 +111,8 @@ void constMethodKlass::oop_follow_contents(ParCompactionManager* cm,
                                            oop obj) {
   assert (obj->is_constMethod(), "object must be constMethod");
   constMethodOop cm_oop = constMethodOop(obj);
-  PSParallelCompact::mark_and_push(cm, cm_oop->adr_method());
+  PSParallelCompact::mark_and_push(cm, cm_oop->adr_constants());
   PSParallelCompact::mark_and_push(cm, cm_oop->adr_stackmap_data());
-  PSParallelCompact::mark_and_push(cm, cm_oop->adr_exception_table());
   // Performance tweak: We skip iterating over the klass pointer since we
   // know that Universe::constMethodKlassObj never moves.
 }
@@ -121,9 +121,8 @@ void constMethodKlass::oop_follow_contents(ParCompactionManager* cm,
 int constMethodKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
   assert (obj->is_constMethod(), "object must be constMethod");
   constMethodOop cm = constMethodOop(obj);
-  blk->do_oop(cm->adr_method());
+  blk->do_oop(cm->adr_constants());
   blk->do_oop(cm->adr_stackmap_data());
-  blk->do_oop(cm->adr_exception_table());
   // Get size before changing pointers.
   // Don't call size() or oop_size() since that is a virtual call.
   int size = cm->object_size();
@@ -135,11 +134,9 @@ int constMethodKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) 
   assert (obj->is_constMethod(), "object must be constMethod");
   constMethodOop cm = constMethodOop(obj);
   oop* adr;
-  adr = cm->adr_method();
+  adr = cm->adr_constants();
   if (mr.contains(adr)) blk->do_oop(adr);
   adr = cm->adr_stackmap_data();
-  if (mr.contains(adr)) blk->do_oop(adr);
-  adr = cm->adr_exception_table();
   if (mr.contains(adr)) blk->do_oop(adr);
   // Get size before changing pointers.
   // Don't call size() or oop_size() since that is a virtual call.
@@ -153,9 +150,8 @@ int constMethodKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) 
 int constMethodKlass::oop_adjust_pointers(oop obj) {
   assert(obj->is_constMethod(), "should be constMethod");
   constMethodOop cm = constMethodOop(obj);
-  MarkSweep::adjust_pointer(cm->adr_method());
+  MarkSweep::adjust_pointer(cm->adr_constants());
   MarkSweep::adjust_pointer(cm->adr_stackmap_data());
-  MarkSweep::adjust_pointer(cm->adr_exception_table());
   // Get size before changing pointers.
   // Don't call size() or oop_size() since that is a virtual call.
   int size = cm->object_size();
@@ -188,9 +184,8 @@ void constMethodKlass::oop_print_on(oop obj, outputStream* st) {
   assert(obj->is_constMethod(), "must be constMethod");
   Klass::oop_print_on(obj, st);
   constMethodOop m = constMethodOop(obj);
-  st->print(" - method:       " INTPTR_FORMAT " ", (address)m->method());
-  m->method()->print_value_on(st); st->cr();
-  st->print(" - exceptions:   " INTPTR_FORMAT "\n", (address)m->exception_table());
+  st->print(" - constants:       " INTPTR_FORMAT " ", (address)m->constants());
+  m->constants()->print_value_on(st); st->cr();
   if (m->has_stackmap_table()) {
     st->print(" - stackmap data:       ");
     m->stackmap_data()->print_value_on(st);
@@ -223,13 +218,11 @@ void constMethodKlass::oop_verify_on(oop obj, outputStream* st) {
   // Verification can occur during oop construction before the method or
   // other fields have been initialized.
   if (!obj->partially_loaded()) {
-    guarantee(m->method()->is_perm(), "should be in permspace");
-    guarantee(m->method()->is_method(), "should be method");
+    guarantee(m->constants()->is_perm(), "should be in permspace");
+    guarantee(m->constants()->is_constantPool(), "should be constant pool");
     typeArrayOop stackmap_data = m->stackmap_data();
     guarantee(stackmap_data == NULL ||
               stackmap_data->is_perm(),  "should be in permspace");
-    guarantee(m->exception_table()->is_perm(), "should be in permspace");
-    guarantee(m->exception_table()->is_typeArray(), "should be type array");
 
     address m_end = (address)((oop*) m + m->size());
     address compressed_table_start = m->code_end();
@@ -244,9 +237,13 @@ void constMethodKlass::oop_verify_on(oop obj, outputStream* st) {
       compressed_table_end += stream.position();
     }
     guarantee(compressed_table_end <= m_end, "invalid method layout");
-    // Verify checked exceptions and local variable tables
+    // Verify checked exceptions, exception table and local variable tables
     if (m->has_checked_exceptions()) {
       u2* addr = m->checked_exceptions_length_addr();
+      guarantee(*addr > 0 && (address) addr >= compressed_table_end && (address) addr < m_end, "invalid method layout");
+    }
+    if (m->has_exception_handler()) {
+      u2* addr = m->exception_table_length_addr();
       guarantee(*addr > 0 && (address) addr >= compressed_table_end && (address) addr < m_end, "invalid method layout");
     }
     if (m->has_localvariable_table()) {
@@ -257,12 +254,12 @@ void constMethodKlass::oop_verify_on(oop obj, outputStream* st) {
     u2* uncompressed_table_start;
     if (m->has_localvariable_table()) {
       uncompressed_table_start = (u2*) m->localvariable_table_start();
-    } else {
-      if (m->has_checked_exceptions()) {
+    } else if (m->has_exception_handler()) {
+      uncompressed_table_start = (u2*) m->exception_table_start();
+    } else if (m->has_checked_exceptions()) {
         uncompressed_table_start = (u2*) m->checked_exceptions_start();
-      } else {
+    } else {
         uncompressed_table_start = (u2*) m_end;
-      }
     }
     int gap = (intptr_t) uncompressed_table_start - (intptr_t) compressed_table_end;
     int max_gap = align_object_size(1)*BytesPerWord;
@@ -273,8 +270,8 @@ void constMethodKlass::oop_verify_on(oop obj, outputStream* st) {
 bool constMethodKlass::oop_partially_loaded(oop obj) const {
   assert(obj->is_constMethod(), "object must be klass");
   constMethodOop m = constMethodOop(obj);
-  // check whether exception_table points to self (flag for partially loaded)
-  return m->exception_table() == (typeArrayOop)obj;
+  // check whether stackmap_data points to self (flag for partially loaded)
+  return m->stackmap_data() == (typeArrayOop)obj;
 }
 
 
@@ -282,6 +279,6 @@ bool constMethodKlass::oop_partially_loaded(oop obj) const {
 void constMethodKlass::oop_set_partially_loaded(oop obj) {
   assert(obj->is_constMethod(), "object must be klass");
   constMethodOop m = constMethodOop(obj);
-  // Temporarily set exception_table to point to self
-  m->set_exception_table((typeArrayOop)obj);
+  // Temporarily set stackmap_data to point to self
+  m->set_stackmap_data((typeArrayOop)obj);
 }

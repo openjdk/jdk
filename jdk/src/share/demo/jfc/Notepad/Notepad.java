@@ -39,71 +39,18 @@
 
 
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.FileDialog;
-import java.awt.Font;
-import java.awt.Frame;
-import java.awt.Graphics;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JToolBar;
-import javax.swing.JViewport;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+import java.awt.*;
+import java.awt.event.*;
+import java.beans.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.logging.*;
+import javax.swing.*;
+import javax.swing.undo.*;
+import javax.swing.text.*;
+import javax.swing.event.*;
 import javax.swing.UIManager.LookAndFeelInfo;
-import javax.swing.event.UndoableEditEvent;
-import javax.swing.event.UndoableEditListener;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
-import javax.swing.text.JTextComponent;
-import javax.swing.text.PlainDocument;
-import javax.swing.text.Segment;
-import javax.swing.text.TextAction;
-import javax.swing.undo.CannotRedoException;
-import javax.swing.undo.CannotUndoException;
-import javax.swing.undo.UndoManager;
 
 
 /**
@@ -115,16 +62,27 @@ import javax.swing.undo.UndoManager;
 @SuppressWarnings("serial")
 class Notepad extends JPanel {
 
+    protected static Properties properties;
     private static ResourceBundle resources;
     private final static String EXIT_AFTER_PAINT = "-exit";
     private static boolean exitAfterFirstPaint;
 
+    private static final String[] MENUBAR_KEYS = {"file", "edit", "debug"};
+    private static final String[] TOOLBAR_KEYS = {"new", "open", "save", "-", "cut", "copy", "paste"};
+    private static final String[] FILE_KEYS = {"new", "open", "save", "-", "exit"};
+    private static final String[] EDIT_KEYS = {"cut", "copy", "paste", "-", "undo", "redo"};
+    private static final String[] DEBUG_KEYS = {"dump", "showElementTree"};
+
     static {
         try {
+            properties = new Properties();
+            properties.load(Notepad.class.getResourceAsStream(
+                    "resources/NotepadSystem.properties"));
             resources = ResourceBundle.getBundle("resources.Notepad",
                     Locale.getDefault());
-        } catch (MissingResourceException mre) {
-            System.err.println("resources/Notepad.properties not found");
+        } catch (MissingResourceException | IOException  e) {
+            System.err.println("resources/Notepad.properties "
+                    + "or resources/NotepadSystem.properties not found");
             System.exit(1);
         }
     }
@@ -163,26 +121,22 @@ class Notepad extends JPanel {
         // install the command table
         commands = new HashMap<Object, Action>();
         Action[] actions = getActions();
-        for (int i = 0; i < actions.length; i++) {
-            Action a = actions[i];
-            //commands.put(a.getText(Action.NAME), a);
+        for (Action a : actions) {
             commands.put(a.getValue(Action.NAME), a);
         }
 
         JScrollPane scroller = new JScrollPane();
         JViewport port = scroller.getViewport();
         port.add(editor);
-        try {
-            String vpFlag = resources.getString("ViewportBackingStore");
+
+        String vpFlag = getProperty("ViewportBackingStore");
+        if (vpFlag != null) {
             Boolean bs = Boolean.valueOf(vpFlag);
-            port.setScrollMode(bs.booleanValue()
+            port.setScrollMode(bs
                     ? JViewport.BACKINGSTORE_SCROLL_MODE
                     : JViewport.BLIT_SCROLL_MODE);
-        } catch (MissingResourceException ignored) {
-            // just use the viewport default
         }
 
-        menuItems = new HashMap<String, JMenuItem>();
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
         panel.add("North", createToolbar());
@@ -191,31 +145,26 @@ class Notepad extends JPanel {
         add("South", createStatusbar());
     }
 
-    public static void main(String[] args) {
-        try {
-            if (args.length > 0 && args[0].equals(EXIT_AFTER_PAINT)) {
-                exitAfterFirstPaint = true;
-            }
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                public void run() {
-                    JFrame frame = new JFrame();
-                    frame.setTitle(resources.getString("Title"));
-                    frame.setBackground(Color.lightGray);
-                    frame.getContentPane().setLayout(new BorderLayout());
-                    Notepad notepad = new Notepad();
-                    frame.getContentPane().add("Center", notepad);
-                    frame.setJMenuBar(notepad.createMenubar());
-                    frame.addWindowListener(new AppCloser());
-                    frame.pack();
-                    frame.setSize(500, 600);
-                    frame.setVisible(true);
-                }
-            });
-        } catch (Throwable t) {
-            Logger.getLogger(Notepad.class.getName()).log(Level.SEVERE,
-                    "uncaught exception", t);
+    public static void main(String[] args) throws Exception {
+        if (args.length > 0 && args[0].equals(EXIT_AFTER_PAINT)) {
+            exitAfterFirstPaint = true;
         }
+        SwingUtilities.invokeAndWait(new Runnable() {
+
+            public void run() {
+                JFrame frame = new JFrame();
+                frame.setTitle(resources.getString("Title"));
+                frame.setBackground(Color.lightGray);
+                frame.getContentPane().setLayout(new BorderLayout());
+                Notepad notepad = new Notepad();
+                frame.getContentPane().add("Center", notepad);
+                frame.setJMenuBar(notepad.createMenubar());
+                frame.addWindowListener(new AppCloser());
+                frame.pack();
+                frame.setSize(500, 600);
+                frame.setVisible(true);
+            }
+        });
     }
 
     /**
@@ -274,9 +223,7 @@ class Notepad extends JPanel {
 
     /**
      * This is the hook through which all menu items are
-     * created.  It registers the result with the menuitem
-     * hashtable so that it can be fetched with getMenuItem().
-     * @see #getMenuItem
+     * created.
      */
     protected JMenuItem createMenuItem(String cmd) {
         JMenuItem mi = new JMenuItem(getResourceString(cmd + labelSuffix));
@@ -285,7 +232,7 @@ class Notepad extends JPanel {
             mi.setHorizontalTextPosition(JButton.RIGHT);
             mi.setIcon(new ImageIcon(url));
         }
-        String astr = getResourceString(cmd + actionSuffix);
+        String astr = getProperty(cmd + actionSuffix);
         if (astr == null) {
             astr = cmd;
         }
@@ -298,23 +245,15 @@ class Notepad extends JPanel {
         } else {
             mi.setEnabled(false);
         }
-        menuItems.put(cmd, mi);
         return mi;
-    }
-
-    /**
-     * Fetch the menu item that was created for the given
-     * command.
-     * @param cmd  Name of the action.
-     * @returns item created for the given command or null
-     *  if one wasn't created.
-     */
-    protected JMenuItem getMenuItem(String cmd) {
-        return menuItems.get(cmd);
     }
 
     protected Action getAction(String cmd) {
         return commands.get(cmd);
+    }
+
+    protected String getProperty(String key) {
+        return properties.getProperty(key);
     }
 
     protected String getResourceString(String nm) {
@@ -330,18 +269,9 @@ class Notepad extends JPanel {
     protected URL getResource(String key) {
         String name = getResourceString(key);
         if (name != null) {
-            URL url = this.getClass().getResource(name);
-            return url;
+            return this.getClass().getResource(name);
         }
         return null;
-    }
-
-    protected Container getToolbar() {
-        return toolbar;
-    }
-
-    protected JMenuBar getMenubar() {
-        return menubar;
     }
 
     /**
@@ -368,12 +298,11 @@ class Notepad extends JPanel {
      */
     private Component createToolbar() {
         toolbar = new JToolBar();
-        String[] toolKeys = tokenize(getResourceString("toolbar"));
-        for (int i = 0; i < toolKeys.length; i++) {
-            if (toolKeys[i].equals("-")) {
+        for (String toolKey: getToolBarKeys()) {
+            if (toolKey.equals("-")) {
                 toolbar.add(Box.createHorizontalStrut(5));
             } else {
-                toolbar.add(createTool(toolKeys[i]));
+                toolbar.add(createTool(toolKey));
             }
         }
         toolbar.add(Box.createHorizontalGlue());
@@ -408,7 +337,7 @@ class Notepad extends JPanel {
         b.setRequestFocusEnabled(false);
         b.setMargin(new Insets(1, 1, 1, 1));
 
-        String astr = getResourceString(key + actionSuffix);
+        String astr = getProperty(key + actionSuffix);
         if (astr == null) {
             astr = key;
         }
@@ -429,43 +358,17 @@ class Notepad extends JPanel {
     }
 
     /**
-     * Take the given string and chop it up into a series
-     * of strings on whitespace boundaries.  This is useful
-     * for trying to get an array of strings out of the
-     * resource file.
-     */
-    protected String[] tokenize(String input) {
-        List<String> v = new ArrayList<String>();
-        StringTokenizer t = new StringTokenizer(input);
-        String cmd[];
-
-        while (t.hasMoreTokens()) {
-            v.add(t.nextToken());
-        }
-        cmd = new String[v.size()];
-        for (int i = 0; i < cmd.length; i++) {
-            cmd[i] = v.get(i);
-        }
-
-        return cmd;
-    }
-
-    /**
      * Create the menubar for the app.  By default this pulls the
      * definition of the menu from the associated resource file.
      */
     protected JMenuBar createMenubar() {
-        JMenuItem mi;
         JMenuBar mb = new JMenuBar();
-
-        String[] menuKeys = tokenize(getResourceString("menubar"));
-        for (int i = 0; i < menuKeys.length; i++) {
-            JMenu m = createMenu(menuKeys[i]);
+        for(String menuKey: getMenuBarKeys()){
+            JMenu m = createMenu(menuKey);
             if (m != null) {
                 mb.add(m);
             }
         }
-        this.menubar = mb;
         return mb;
     }
 
@@ -474,17 +377,40 @@ class Notepad extends JPanel {
      * definition of the menu from the associated resource file.
      */
     protected JMenu createMenu(String key) {
-        String[] itemKeys = tokenize(getResourceString(key));
-        JMenu menu = new JMenu(getResourceString(key + "Label"));
-        for (int i = 0; i < itemKeys.length; i++) {
-            if (itemKeys[i].equals("-")) {
+        JMenu menu = new JMenu(getResourceString(key + labelSuffix));
+        for (String itemKey: getItemKeys(key)) {
+            if (itemKey.equals("-")) {
                 menu.addSeparator();
             } else {
-                JMenuItem mi = createMenuItem(itemKeys[i]);
+                JMenuItem mi = createMenuItem(itemKey);
                 menu.add(mi);
             }
         }
         return menu;
+    }
+
+    /**
+     *  Get keys for menus
+     */
+    protected String[] getItemKeys(String key) {
+        switch (key) {
+            case "file":
+                return FILE_KEYS;
+            case "edit":
+                return EDIT_KEYS;
+            case "debug":
+                return DEBUG_KEYS;
+            default:
+                return null;
+        }
+    }
+
+    protected String[] getMenuBarKeys() {
+        return MENUBAR_KEYS;
+    }
+
+    protected String[] getToolBarKeys() {
+        return TOOLBAR_KEYS;
     }
 
     // Yarked from JMenu, ideally this would be public.
@@ -516,13 +442,11 @@ class Notepad extends JPanel {
     }
     private JTextComponent editor;
     private Map<Object, Action> commands;
-    private Map<String, JMenuItem> menuItems;
-    private JMenuBar menubar;
     private JToolBar toolbar;
     private JComponent status;
     private JFrame elementTreeFrame;
     protected ElementTreePanel elementTreePanel;
-    protected FileDialog fileDialog;
+
     /**
      * Listener for the edits on the current document.
      */
@@ -771,10 +695,6 @@ class Notepad extends JPanel {
 
         ShowElementTreeAction() {
             super(showElementTreeAction);
-        }
-
-        ShowElementTreeAction(String nm) {
-            super(nm);
         }
 
         public void actionPerformed(ActionEvent e) {

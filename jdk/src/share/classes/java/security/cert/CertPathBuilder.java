@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,28 @@ import sun.security.jca.GetInstance.Instance;
  * one of the static <code>getInstance</code> methods, passing in the
  * algorithm name of the <code>CertPathBuilder</code> desired and optionally
  * the name of the provider desired.
- * <p>
- * Once a <code>CertPathBuilder</code> object has been created, certification
+ *
+ * <p>Once a <code>CertPathBuilder</code> object has been created, certification
  * paths can be constructed by calling the {@link #build build} method and
  * passing it an algorithm-specific set of parameters. If successful, the
  * result (including the <code>CertPath</code> that was built) is returned
  * in an object that implements the <code>CertPathBuilderResult</code>
  * interface.
  *
- * <p> Every implementation of the Java platform is required to support the
+ * <p>The {@link #getRevocationChecker} method allows an application to specify
+ * additional algorithm-specific parameters and options used by the
+ * {@code CertPathBuilder} when checking the revocation status of certificates.
+ * Here is an example demonstrating how it is used with the PKIX algorithm:
+ *
+ * <pre>
+ * CertPathBuilder cpb = CertPathBuilder.getInstance("PKIX");
+ * PKIXRevocationChecker rc = (PKIXRevocationChecker)cpb.getRevocationChecker();
+ * rc.setOptions(EnumSet.of(Option.PREFER_CRLS));
+ * params.addCertPathChecker(rc);
+ * CertPathBuilderResult cpbr = cpb.build(params);
+ * </pre>
+ *
+ * <p>Every implementation of the Java platform is required to support the
  * following standard <code>CertPathBuilder</code> algorithm:
  * <ul>
  * <li><tt>PKIX</tt></li>
@@ -96,10 +109,9 @@ public class CertPathBuilder {
      * </pre>
      */
     private static final String CPB_TYPE = "certpathbuilder.type";
-    private static final Debug debug = Debug.getInstance("certpath");
-    private CertPathBuilderSpi builderSpi;
-    private Provider provider;
-    private String algorithm;
+    private final CertPathBuilderSpi builderSpi;
+    private final Provider provider;
+    private final String algorithm;
 
     /**
      * Creates a <code>CertPathBuilder</code> object of the given algorithm,
@@ -290,15 +302,30 @@ public class CertPathBuilder {
      * if no such property exists.
      */
     public final static String getDefaultType() {
-        String cpbtype;
-        cpbtype = AccessController.doPrivileged(new PrivilegedAction<String>() {
-            public String run() {
-                return Security.getProperty(CPB_TYPE);
-            }
-        });
-        if (cpbtype == null) {
-            cpbtype = "PKIX";
-        }
-        return cpbtype;
+        String cpbtype =
+            AccessController.doPrivileged(new PrivilegedAction<String>() {
+                public String run() {
+                    return Security.getProperty(CPB_TYPE);
+                }
+            });
+        return (cpbtype == null) ? "PKIX" : cpbtype;
+    }
+
+    /**
+     * Returns a {@code CertPathChecker} that the encapsulated
+     * {@code CertPathBuilderSpi} implementation uses to check the revocation
+     * status of certificates. A PKIX implementation returns objects of
+     * type {@code PKIXRevocationChecker}.
+     *
+     * <p>The primary purpose of this method is to allow callers to specify
+     * additional input parameters and options specific to revocation checking.
+     * See the class description for an example.
+     *
+     * @throws UnsupportedOperationException if the service provider does not
+     *         support this method
+     * @since 1.8
+     */
+    public final CertPathChecker getRevocationChecker() {
+        return builderSpi.engineGetRevocationChecker();
     }
 }

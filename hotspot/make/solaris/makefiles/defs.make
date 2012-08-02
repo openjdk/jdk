@@ -109,18 +109,12 @@ ifeq ($(JDK6_OR_EARLIER),0)
   # overridden in some situations, e.g., a BUILD_FLAVOR != product
   # build.
 
-  # Disable FULL_DEBUG_SYMBOLS by default because dtrace tests are
-  # failing in nightly when the debug info files are ZIP'ed. On
-  # Solaris debug info files need to be ZIP'ed to reduce the impact
-  # on disk space footprint.
-  FULL_DEBUG_SYMBOLS ?= 0
   ifeq ($(BUILD_FLAVOR), product)
-    # FULL_DEBUG_SYMBOLS ?= 1
+    FULL_DEBUG_SYMBOLS ?= 1
     ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
   else
     # debug variants always get Full Debug Symbols (if available)
-    # ENABLE_FULL_DEBUG_SYMBOLS = 1
-    ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
+    ENABLE_FULL_DEBUG_SYMBOLS = 1
   endif
   _JUNK_ := $(shell \
     echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
@@ -129,25 +123,10 @@ ifeq ($(JDK6_OR_EARLIER),0)
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # Default OBJCOPY comes from the SUNWbinutils package:
     DEF_OBJCOPY=/usr/sfw/bin/gobjcopy
-    ifeq ($(VM_PLATFORM),solaris_amd64)
-      # On Solaris AMD64/X64, gobjcopy is not happy and fails:
-      #
-      # usr/sfw/bin/gobjcopy --add-gnu-debuglink=<lib>.debuginfo <lib>.so
-      # BFD: stKPaiop: Not enough room for program headers, try linking with -N
-      # /usr/sfw/bin/gobjcopy: stKPaiop: Bad value
-      # BFD: stKPaiop: Not enough room for program headers, try linking with -N
-      # /usr/sfw/bin/gobjcopy: libsaproc.debuginfo: Bad value
-      # BFD: stKPaiop: Not enough room for program headers, try linking with -N
-      # /usr/sfw/bin/gobjcopy: stKPaiop: Bad value
-      _JUNK_ := $(shell \
-        echo >&2 "INFO: $(DEF_OBJCOPY) is not working on Solaris AMD64/X64")
-      OBJCOPY=
-    else
-      OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
-      ifneq ($(ALT_OBJCOPY),)
-        _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
-        OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
-      endif
+    OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
+    ifneq ($(ALT_OBJCOPY),)
+      _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
+      OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
     endif
   else
     OBJCOPY=
@@ -178,9 +157,7 @@ ifeq ($(JDK6_OR_EARLIER),0)
     _JUNK_ := $(shell \
       echo >&2 "INFO: STRIP_POLICY=$(STRIP_POLICY)")
 
-    # Disable ZIP_DEBUGINFO_FILES by default because dtrace tests are
-    # failing in nightly when the debug info files are ZIP'ed.
-    ZIP_DEBUGINFO_FILES ?= 0
+    ZIP_DEBUGINFO_FILES ?= 1
 
     _JUNK_ := $(shell \
       echo >&2 "INFO: ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)")
@@ -226,10 +203,18 @@ ifeq ($(JVM_VARIANT_SERVER),true)
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.diz
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.diz
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.diz
+      ifeq ($(ARCH_DATA_MODEL),32)
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.diz
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.diz
+      endif
     else
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.debuginfo
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.debuginfo
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.debuginfo
+      ifeq ($(ARCH_DATA_MODEL),32)
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.debuginfo
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.debuginfo
+      endif
     endif
   endif
 endif

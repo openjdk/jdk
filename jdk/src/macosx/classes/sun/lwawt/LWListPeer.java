@@ -49,8 +49,8 @@ final class LWListPeer
     }
 
     @Override
-    public void initialize() {
-        super.initialize();
+    void initializeImpl() {
+        super.initializeImpl();
         setMultipleMode(getTarget().isMultipleMode());
         final int[] selectedIndices = getTarget().getSelectedIndexes();
         synchronized (getDelegateLock()) {
@@ -242,6 +242,15 @@ final class LWListPeer
             super.setOpaque(isOpaque);
             if (getView() != null) {
                 getView().setOpaque(isOpaque);
+            }
+        }
+
+        @Override
+        public void setFont(Font font) {
+            super.setFont(font);
+            if (getView() != null) {
+                getView().setFont(font);
+                LWListPeer.this.revalidate();
             }
         }
 

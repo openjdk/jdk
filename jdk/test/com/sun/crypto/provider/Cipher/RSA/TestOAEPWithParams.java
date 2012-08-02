@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,10 @@ public class TestOAEPWithParams {
     private static Random random = new Random();
 
     private static String MD[] = {
-        "MD5", "SHA1", "SHA-256"
+        "MD5", "SHA1", "SHA-224", "SHA-256"
     };
     private static int DATA_LENGTH[] = {
-        62, 54, 30
+        62, 54, 34, 30
     };
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();

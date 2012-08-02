@@ -197,6 +197,10 @@ $(GENSRCDIR)/%.java: $(SHARE_SRC)/classes/%.properties
 	$(add-property-java-file)
 $(GENSRCDIR)/%.java: $(GENSRCDIR)/%.properties
 	$(add-property-java-file)
+ifdef PLATFORM_SRC_MACOS
+$(GENSRCDIR)/%.java: $(PLATFORM_SRC_MACOS)/classes/%.properties
+	$(add-property-java-file)
+endif
 ifndef OPENJDK
 $(GENSRCDIR)/%.java: $(CLOSED_PLATFORM_SRC)/classes/%.properties
 	$(add-property-java-file)

@@ -384,7 +384,7 @@ extern "C" {
     typedef void (*__exit_proc)(void);
 }
 
-class ExitProc : public CHeapObj {
+class ExitProc : public CHeapObj<mtInternal> {
  private:
   __exit_proc _proc;
   // void (*_proc)(void);
@@ -660,6 +660,7 @@ void vm_shutdown_during_initialization(const char* error, const char* message) {
 }
 
 JDK_Version JDK_Version::_current;
+const char* JDK_Version::_runtime_name;
 
 void JDK_Version::initialize() {
   jdk_version_info info;

@@ -94,29 +94,41 @@ ISA = $(subst i386,i486,$(shell isainfo -n))
 # Making 64/libjvm_db.so: 64-bit version of libjvm_db.so which handles 32-bit libjvm.so
 ifneq ("${ISA}","${BUILDARCH}")
 
-XLIBJVM_DB = 64/$(LIBJVM_DB)
-XLIBJVM_DB_G = 64/$(LIBJVM_DB_G)
-XLIBJVM_DTRACE = 64/$(LIBJVM_DTRACE)
-XLIBJVM_DTRACE_G = 64/$(LIBJVM_DTRACE_G)
+XLIBJVM_DIR = 64
+XLIBJVM_DB = $(XLIBJVM_DIR)/$(LIBJVM_DB)
+XLIBJVM_DB_G = $(XLIBJVM_DIR)/$(LIBJVM_DB_G)
+XLIBJVM_DTRACE = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE)
+XLIBJVM_DTRACE_G = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_G)
 
-XLIBJVM_DB_DEBUGINFO       = 64/$(LIBJVM_DB_DEBUGINFO)
-XLIBJVM_DB_DIZ             = 64/$(LIBJVM_DB_DIZ)
-XLIBJVM_DB_G_DEBUGINFO     = 64/$(LIBJVM_DB_G_DEBUGINFO)
-XLIBJVM_DB_G_DIZ           = 64/$(LIBJVM_DB_G_DIZ)
-XLIBJVM_DTRACE_DEBUGINFO   = 64/$(LIBJVM_DTRACE_DEBUGINFO)
-XLIBJVM_DTRACE_DIZ         = 64/$(LIBJVM_DTRACE_DIZ)
-XLIBJVM_DTRACE_G_DEBUGINFO = 64/$(LIBJVM_DTRACE_G_DEBUGINFO)
-XLIBJVM_DTRACE_G_DIZ       = 64/$(LIBJVM_DTRACE_G_DIZ)
+XLIBJVM_DB_DEBUGINFO       = $(XLIBJVM_DIR)/$(LIBJVM_DB_DEBUGINFO)
+XLIBJVM_DB_DIZ             = $(XLIBJVM_DIR)/$(LIBJVM_DB_DIZ)
+XLIBJVM_DB_G_DEBUGINFO     = $(XLIBJVM_DIR)/$(LIBJVM_DB_G_DEBUGINFO)
+XLIBJVM_DB_G_DIZ           = $(XLIBJVM_DIR)/$(LIBJVM_DB_G_DIZ)
+XLIBJVM_DTRACE_DEBUGINFO   = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_DEBUGINFO)
+XLIBJVM_DTRACE_DIZ         = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_DIZ)
+XLIBJVM_DTRACE_G_DEBUGINFO = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_G_DEBUGINFO)
+XLIBJVM_DTRACE_G_DIZ       = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_G_DIZ)
 
-$(XLIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
+$(XLIBJVM_DB): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
 	@echo Making $@
-	$(QUIETLY) mkdir -p 64/ ; \
+	$(QUIETLY) mkdir -p $(XLIBJVM_DIR) ; \
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
 	[ -f $(XLIBJVM_DB_G) ] || { ln -s $(LIBJVM_DB) $(XLIBJVM_DB_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+# gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
+# Clear the SHF_ALLOC flag (if set) from empty section headers.
+# An empty section header has sh_addr == 0 and sh_size == 0.
+# This problem has only been seen on Solaris X64, but we call this tool
+# on all Solaris builds just in case.
+	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(XLIBJVM_DB_DEBUGINFO)
-	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(XLIBJVM_DB_DEBUGINFO) $@
+# $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+# Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
+#         $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB) ;
+# Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR) is not
+# in the link name:
+	( cd $(XLIBJVM_DIR) && $(ADD_GNU_DEBUGLINK) $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB) )
   ifeq ($(STRIP_POLICY),all_strip)
 	$(QUIETLY) $(STRIP) $@
   else
@@ -125,23 +137,31 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(XLIBJVM_DB_G_DEBUGINFO) ] || { ln -s $(XLIBJVM_DB_DEBUGINFO) $(XLIBJVM_DB_G_DEBUGINFO); }
+	[ -f $(XLIBJVM_DB_G_DEBUGINFO) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO); }
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-	$(ZIPEXE) -q -y $(XLIBJVM_DB_DIZ) $(XLIBJVM_DB_DEBUGINFO) $(XLIBJVM_DB_G_DEBUGINFO)
+# Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR) is not
+# in the archived name:
+	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -y $(LIBJVM_DB_DIZ) $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO) )
 	$(RM) $(XLIBJVM_DB_DEBUGINFO) $(XLIBJVM_DB_G_DEBUGINFO)
-	[ -f $(XLIBJVM_DB_G_DIZ) ] || { ln -s $(XLIBJVM_DB_DIZ) $(XLIBJVM_DB_G_DIZ); }
+	[ -f $(XLIBJVM_DB_G_DIZ) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DB_DIZ) $(LIBJVM_DB_G_DIZ); }
   endif
 endif
 
-$(XLIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
+$(XLIBJVM_DTRACE): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo Making $@
-	$(QUIETLY) mkdir -p 64/ ; \
+	$(QUIETLY) mkdir -p $(XLIBJVM_DIR) ; \
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
 	[ -f $(XLIBJVM_DTRACE_G) ] || { ln -s $(LIBJVM_DTRACE) $(XLIBJVM_DTRACE_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+# Clear the SHF_ALLOC flag (if set) from empty section headers.
+	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(XLIBJVM_DTRACE_DEBUGINFO)
-	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(XLIBJVM_DTRACE_DEBUGINFO) $@
+# $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+#         $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE) ;
+# Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR) is not
+# in the link name:
+	( cd $(XLIBJVM_DIR) && $(ADD_GNU_DEBUGLINK) $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE) )
   ifeq ($(STRIP_POLICY),all_strip)
 	$(QUIETLY) $(STRIP) $@
   else
@@ -150,11 +170,13 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(XLIBJVM_DTRACE_G_DEBUGINFO) ] || { ln -s $(XLIBJVM_DTRACE_DEBUGINFO) $(XLIBJVM_DTRACE_G_DEBUGINFO); }
+	[ -f $(XLIBJVM_DTRACE_G_DEBUGINFO) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO); }
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-	$(ZIPEXE) -q -y $(XLIBJVM_DTRACE_DIZ) $(XLIBJVM_DTRACE_DEBUGINFO) $(XLIBJVM_DTRACE_G_DEBUGINFO)
+# Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR) is not
+# in the archived name:
+	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -y $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO) )
 	$(RM) $(XLIBJVM_DTRACE_DEBUGINFO) $(XLIBJVM_DTRACE_G_DEBUGINFO)
-	[ -f $(XLIBJVM_DTRACE_G_DIZ) ] || { ln -s $(XLIBJVM_DTRACE_DIZ) $(XLIBJVM_DTRACE_G_DIZ); }
+	[ -f $(XLIBJVM_DTRACE_G_DIZ) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_G_DIZ); }
   endif
 endif
 
@@ -198,14 +220,18 @@ $(JVMOFFS).cpp: $(GENOFFS) $(JVMOFFS).h $(JVMOFFS)Index.h
 $(JVMOFFS.o): $(JVMOFFS).h $(JVMOFFS).cpp 
 	$(QUIETLY) $(CXX) -c -I. -o $@ $(ARCHFLAG) -D$(TYPE) $(JVMOFFS).cpp
 
-$(LIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS.o) $(XLIBJVM_DB) $(LIBJVM_DB_MAPFILE)
+$(LIBJVM_DB): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS.o) $(XLIBJVM_DB) $(LIBJVM_DB_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
 	[ -f $(LIBJVM_DB_G) ] || { ln -s $@ $(LIBJVM_DB_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+# Clear the SHF_ALLOC flag (if set) from empty section headers.
+	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DB_DEBUGINFO)
-	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DB_DEBUGINFO) $@
+# $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+#	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DB_DEBUGINFO) $@
+	$(QUIETLY) $(ADD_GNU_DEBUGLINK) $(LIBJVM_DB_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
 	$(QUIETLY) $(STRIP) $@
   else
@@ -222,14 +248,18 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   endif
 endif
 
-$(LIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(XLIBJVM_DTRACE) $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
+$(LIBJVM_DTRACE): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(XLIBJVM_DTRACE) $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I.  \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
 	[ -f $(LIBJVM_DTRACE_G) ] || { ln -s $@ $(LIBJVM_DTRACE_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+# Clear the SHF_ALLOC flag (if set) from empty section headers.
+	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DTRACE_DEBUGINFO)
-	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DTRACE_DEBUGINFO) $@
+# $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+#	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DTRACE_DEBUGINFO) $@
+	$(QUIETLY) $(ADD_GNU_DEBUGLINK) $(LIBJVM_DTRACE_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
 	$(QUIETLY) $(STRIP) $@
   else

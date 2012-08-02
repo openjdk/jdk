@@ -70,6 +70,7 @@ static BOOL sIsJavaDragging;
 
 JNF_CLASS_CACHE(DataTransfererClass, "sun/awt/datatransfer/DataTransferer");
 JNF_CLASS_CACHE(CDragSourceContextPeerClass, "sun/lwawt/macosx/CDragSourceContextPeer");
+JNF_CLASS_CACHE(CImageClass, "sun/lwawt/macosx/CImage");
 
 static NSDragOperation    sDragOperation;
 static NSPoint            sDraggingLocation;
@@ -87,7 +88,7 @@ static BOOL                sNeedsEnter;
     transferable:(jobject)jtransferable triggerEvent:(jobject)jtrigger
     dragPosX:(jint)dragPosX dragPosY:(jint)dragPosY modifiers:(jint)extModifiers clickCount:(jint)clickCount
     timeStamp:(jlong)timeStamp cursor:(jobject)jcursor
-    dragImage:(jlong)jnsdragimage dragImageOffsetX:(jint)jdragimageoffsetx dragImageOffsetY:(jint)jdragimageoffsety
+    dragImage:(jobject)jnsdragimage dragImageOffsetX:(jint)jdragimageoffsetx dragImageOffsetY:(jint)jdragimageoffsety
     sourceActions:(jint)jsourceactions formats:(jlongArray)jformats formatMap:(jobject)jformatmap
 {
     self = [super init];
@@ -107,8 +108,14 @@ static BOOL                sNeedsEnter;
         fTriggerEvent = JNFNewGlobalRef(env, jtrigger);
         fCursor = JNFNewGlobalRef(env, jcursor);
 
-        fDragImage = (NSImage*) jlong_to_ptr(jnsdragimage); // Double-casting prevents compiler 'different size' warning.
-        [fDragImage retain];
+        if (jnsdragimage) {
+            JNF_MEMBER_CACHE(nsImagePtr, CImageClass, "ptr", "J");
+            jlong imgPtr = JNFGetLongField(env, jnsdragimage, nsImagePtr);
+            fDragImage = (NSImage*) jlong_to_ptr(imgPtr); // Double-casting prevents compiler 'd$|//
+
+            [fDragImage retain];
+        }
+
         fDragImageOffset = NSMakePoint(jdragimageoffsetx, jdragimageoffsety);
 
         fSourceActions = jsourceactions;

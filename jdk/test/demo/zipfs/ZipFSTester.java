@@ -540,6 +540,20 @@ public class ZipFSTester {
                 bbSrc.flip();
                 bbDst.flip();
             }
+
+            // Check if source read position is at the end
+            if (chSrc.position() != chSrc.size()) {
+                System.out.printf("src[%s]: size=%d, position=%d%n",
+                                  chSrc.toString(), chSrc.size(), chSrc.position());
+                throw new RuntimeException("CHECK FAILED!");
+            }
+
+            // Check if destination read position is at the end
+            if (chDst.position() != chDst.size()) {
+                System.out.printf("dst[%s]: size=%d, position=%d%n",
+                                  chDst.toString(), chDst.size(), chDst.position());
+                throw new RuntimeException("CHECK FAILED!");
+            }
         } catch (IOException x) {
             x.printStackTrace();
         }
@@ -587,6 +601,20 @@ public class ZipFSTester {
                 dstCh.write(bb);
                 bb.clear();
             }
+
+            // Check if source read position is at the end
+            if (srcCh.position() != srcCh.size()) {
+                System.out.printf("src[%s]: size=%d, position=%d%n",
+                                  srcCh.toString(), srcCh.size(), srcCh.position());
+                throw new RuntimeException("CHECK FAILED!");
+            }
+
+            // Check if destination write position is at the end
+            if (dstCh.position() != dstCh.size()) {
+                System.out.printf("dst[%s]: size=%d, position=%d%n",
+                                  dstCh.toString(), dstCh.size(), dstCh.position());
+                throw new RuntimeException("CHECK FAILED!");
+            }
         }
     }
 
@@ -616,10 +644,17 @@ public class ZipFSTester {
 
         try (SeekableByteChannel sbc = Files.newByteChannel(path)) {
             System.out.printf("   sbc[0]: pos=%d, size=%d%n", sbc.position(), sbc.size());
+            if (sbc.position() != 0) {
+                throw new RuntimeException("CHECK FAILED!");
+            }
+
             bb = ByteBuffer.allocate((int)sbc.size());
             n = sbc.read(bb);
             System.out.printf("   sbc[1]: read=%d, pos=%d, size=%d%n",
                               n, sbc.position(), sbc.size());
+            if (sbc.position() != sbc.size()) {
+                throw new RuntimeException("CHECK FAILED!");
+            }
             bb2 = ByteBuffer.allocate((int)sbc.size());
         }
 
@@ -629,10 +664,16 @@ public class ZipFSTester {
             sbc.position(N);
             System.out.printf("   sbc[2]: pos=%d, size=%d%n",
                               sbc.position(), sbc.size());
+            if (sbc.position() != N) {
+                throw new RuntimeException("CHECK FAILED!");
+            }
             bb2.limit(100);
             n = sbc.read(bb2);
             System.out.printf("   sbc[3]: read=%d, pos=%d, size=%d%n",
                               n, sbc.position(), sbc.size());
+            if (n < 0 || sbc.position() != (N + n)) {
+                throw new RuntimeException("CHECK FAILED!");
+            }
             System.out.printf("   sbc[4]: bb[%d]=%d, bb1[0]=%d%n",
                               N, bb.get(N) & 0xff, bb2.get(0) & 0xff);
         }
