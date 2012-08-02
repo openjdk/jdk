@@ -30,6 +30,7 @@ import java.security.NoSuchProviderException;
 import java.security.InvalidKeyException;
 import java.security.SignatureException;
 import java.security.Principal;
+import java.security.Provider;
 import java.security.PublicKey;
 import javax.security.auth.x500.X500Principal;
 
@@ -214,6 +215,34 @@ public abstract class X509CRL extends CRL implements X509Extension {
         throws CRLException, NoSuchAlgorithmException,
         InvalidKeyException, NoSuchProviderException,
         SignatureException;
+
+    /**
+     * Verifies that this CRL was signed using the
+     * private key that corresponds to the given public key.
+     * This method uses the signature verification engine
+     * supplied by the given provider. Note that the specified Provider object
+     * does not have to be registered in the provider list.
+     *
+     * This method was added to version 1.8 of the Java Platform Standard
+     * Edition. In order to maintain backwards compatibility with existing
+     * service providers, this method is not <code>abstract</code>
+     * and it provides a default implementation.
+     *
+     * @param key the PublicKey used to carry out the verification.
+     * @param sigProvider the signature provider.
+     *
+     * @exception NoSuchAlgorithmException on unsupported signature
+     * algorithms.
+     * @exception InvalidKeyException on incorrect key.
+     * @exception SignatureException on signature errors.
+     * @exception CRLException on encoding errors.
+     * @since 1.8
+     */
+    public void verify(PublicKey key, Provider sigProvider)
+        throws CRLException, NoSuchAlgorithmException,
+        InvalidKeyException, SignatureException {
+        X509CRLImpl.verify(this, key, sigProvider);
+    }
 
     /**
      * Gets the <code>version</code> (version number) value from the CRL.
