@@ -382,14 +382,14 @@ public class Infer {
             }
 
             public InapplicableMethodException arityMismatch() {
-                return unambiguousNoInstanceException.setMessage("infer.arg.length.mismatch");
+                return unambiguousNoInstanceException.setMessage("infer.arg.length.mismatch", inferenceVars(undetvars));
             }
-            public InapplicableMethodException argumentMismatch(boolean varargs, Type found, Type expected) {
+            public InapplicableMethodException argumentMismatch(boolean varargs, JCDiagnostic details) {
                 String key = varargs ?
-                    "infer.varargs.argument.mismatch" :
-                    "infer.no.conforming.assignment.exists";
+                        "infer.varargs.argument.mismatch" :
+                        "infer.no.conforming.assignment.exists";
                 return unambiguousNoInstanceException.setMessage(key,
-                        inferenceVars(undetvars), found, expected);
+                        inferenceVars(undetvars), details);
             }
             public InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected) {
                 return unambiguousNoInstanceException.setMessage("inaccessible.varargs.type",

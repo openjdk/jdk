@@ -426,7 +426,7 @@ public class Check {
         /**
          * Report a check error
          */
-        void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details);
+        void report(DiagnosticPosition pos, JCDiagnostic details);
         /**
          * Obtain a warner for this check context
          */
@@ -450,8 +450,8 @@ public class Check {
             return enclosingContext.compatible(found, req, warn);
         }
 
-        public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
-            enclosingContext.report(pos, found, req, details);
+        public void report(DiagnosticPosition pos, JCDiagnostic details) {
+            enclosingContext.report(pos, details);
         }
 
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
@@ -463,12 +463,8 @@ public class Check {
      * Check context to be used when evaluating assignment/return statements
      */
     CheckContext basicHandler = new CheckContext() {
-        public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
-            if (details == null) {
-                log.error(pos, "prob.found.req", found, req);
-            } else {
-                log.error(pos, "prob.found.req.1", details);
-            }
+        public void report(DiagnosticPosition pos, JCDiagnostic details) {
+            log.error(pos, "prob.found.req", details);
         }
         public boolean compatible(Type found, Type req, Warner warn) {
             return types.isAssignable(found, req, warn);
@@ -498,10 +494,10 @@ public class Check {
             return found;
         } else {
             if (found.tag <= DOUBLE && req.tag <= DOUBLE) {
-                checkContext.report(pos, found, req, diags.fragment("possible.loss.of.precision"));
+                checkContext.report(pos, diags.fragment("possible.loss.of.precision", found, req));
                 return types.createErrorType(found);
             }
-            checkContext.report(pos, found, req, null);
+            checkContext.report(pos, diags.fragment("inconvertible.types", found, req));
             return types.createErrorType(found);
         }
     }
@@ -519,7 +515,7 @@ public class Check {
         if (types.isCastable(found, req, castWarner(pos, found, req))) {
             return req;
         } else {
-            checkContext.report(pos, found, req, diags.fragment("inconvertible.types", found, req));
+            checkContext.report(pos, diags.fragment("inconvertible.types", found, req));
             return types.createErrorType(found);
         }
     }

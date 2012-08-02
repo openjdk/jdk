@@ -1131,8 +1131,8 @@ public class Attr extends JCTree.Visitor {
         for (JCTree resource : tree.resources) {
             CheckContext twrContext = new Check.NestedCheckContext(resultInfo.checkContext) {
                 @Override
-                public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
-                    chk.basicHandler.report(pos, found, req, diags.fragment("try.not.applicable.to.type", found));
+                public void report(DiagnosticPosition pos, JCDiagnostic details) {
+                    chk.basicHandler.report(pos, diags.fragment("try.not.applicable.to.type", details));
                 }
             };
             ResultInfo twrResult = new ResultInfo(VAL, syms.autoCloseableType, twrContext);
@@ -1865,7 +1865,7 @@ public class Attr extends JCTree.Visitor {
 
     Type attribDiamond(Env<AttrContext> env,
                         final JCNewClass tree,
-                        Type clazztype,
+                        final Type clazztype,
                         List<Type> argtypes,
                         List<Type> typeargtypes) {
         if (clazztype.isErroneous() ||
@@ -1892,27 +1892,26 @@ public class Attr extends JCTree.Visitor {
                     argtypes,
                     typeargtypes);
 
+        Type owntype = types.createErrorType(clazztype);
         if (constructor.kind == MTH) {
-            try {
-                clazztype = rawCheckMethod(site,
-                        constructor,
-                        resultInfo,
-                        localEnv,
-                        tree.args,
-                        argtypes,
-                        typeargtypes,
-                        localEnv.info.varArgs).getReturnType();
-            } catch (Resolve.InapplicableMethodException ex) {
-                //an error occurred while inferring uninstantiated type-variables
-                resultInfo.checkContext.report(tree.clazz.pos(), clazztype, resultInfo.pt,
-                        diags.fragment("cant.apply.diamond.1", diags.fragment("diamond", clazztype.tsym), ex.diagnostic));
-                clazztype = syms.errType;
-            }
-        } else {
-            clazztype = syms.errType;
+            ResultInfo diamondResult = new ResultInfo(VAL, resultInfo.pt, new Check.NestedCheckContext(resultInfo.checkContext) {
+                @Override
+                public void report(DiagnosticPosition pos, JCDiagnostic details) {
+                    enclosingContext.report(tree.clazz.pos(),
+                            diags.fragment("cant.apply.diamond.1", diags.fragment("diamond", clazztype.tsym), details));
+                }
+            });
+            owntype = checkMethod(site,
+                    constructor,
+                    diamondResult,
+                    localEnv,
+                    tree.args,
+                    argtypes,
+                    typeargtypes,
+                    localEnv.info.varArgs).getReturnType();
         }
 
-        return chk.checkClassType(tree.clazz.pos(), clazztype, true);
+        return chk.checkClassType(tree.clazz.pos(), owntype, true);
     }
 
     /** Make an attributed null check tree.
@@ -2687,32 +2686,6 @@ public class Attr extends JCTree.Visitor {
                             List<Type> argtypes,
                             List<Type> typeargtypes,
                             boolean useVarargs) {
-        try {
-            return rawCheckMethod(site, sym, resultInfo, env, argtrees, argtypes, typeargtypes, useVarargs);
-        } catch (Resolve.InapplicableMethodException ex) {
-            String key = ex.getDiagnostic() == null ?
-                    "cant.apply.symbol" :
-                    "cant.apply.symbol.1";
-            log.error(env.tree.pos, key,
-                      Kinds.kindName(sym),
-                      sym.name == names.init ? sym.owner.name : sym.name,
-                      rs.methodArguments(sym.type.getParameterTypes()),
-                      rs.methodArguments(argtypes),
-                      Kinds.kindName(sym.owner),
-                      sym.owner.type,
-                      ex.getDiagnostic());
-            return types.createErrorType(site);
-        }
-    }
-
-    private Type rawCheckMethod(Type site,
-                            Symbol sym,
-                            ResultInfo resultInfo,
-                            Env<AttrContext> env,
-                            final List<JCExpression> argtrees,
-                            List<Type> argtypes,
-                            List<Type> typeargtypes,
-                            boolean useVarargs) {
         // Test (5): if symbol is an instance method of a raw type, issue
         // an unchecked warning if its argument types change under erasure.
         if (allowGenerics &&
@@ -2733,19 +2706,29 @@ public class Attr extends JCTree.Visitor {
         // Resolve.instantiate from the symbol's type as well as
         // any type arguments and value arguments.
         noteWarner.clear();
-        Type owntype = rs.rawInstantiate(env,
-                                          site,
-                                          sym,
-                                          resultInfo,
-                                          argtypes,
-                                          typeargtypes,
-                                          true,
-                                          useVarargs,
-                                          noteWarner);
+        try {
+            Type owntype = rs.rawInstantiate(
+                    env,
+                    site,
+                    sym,
+                    resultInfo,
+                    argtypes,
+                    typeargtypes,
+                    allowBoxing,
+                    useVarargs,
+                    noteWarner);
 
-        boolean unchecked = noteWarner.hasNonSilentLint(LintCategory.UNCHECKED);
-
-        return chk.checkMethod(owntype, sym, env, argtrees, argtypes, useVarargs, unchecked);
+            return chk.checkMethod(owntype, sym, env, argtrees, argtypes, useVarargs,
+                    noteWarner.hasNonSilentLint(LintCategory.UNCHECKED));
+        } catch (Infer.InferenceException ex) {
+            //invalid target type - propagate exception outwards or report error
+            //depending on the current check context
+            resultInfo.checkContext.report(env.tree.pos(), ex.getDiagnostic());
+            return types.createErrorType(site);
+        } catch (Resolve.InapplicableMethodException ex) {
+            Assert.error();
+            return null;
+        }
     }
 
     /**
