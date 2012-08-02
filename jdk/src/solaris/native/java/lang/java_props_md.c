@@ -135,12 +135,12 @@ setPathEnvironment(char *envstring)
 #define P_tmpdir "/var/tmp"
 #endif
 
-static int ParseLocale(int cat, char ** std_language, char ** std_script,
+static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_script,
                        char ** std_country, char ** std_variant, char ** std_encoding) {
-    char temp[64];
+    char *temp = NULL;
     char *language = NULL, *country = NULL, *variant = NULL,
          *encoding = NULL;
-    char *p, encoding_variant[64];
+    char *p, *encoding_variant;
     char *lc;
 
     /* Query the locale set for the category */
@@ -153,6 +153,12 @@ static int ParseLocale(int cat, char ** std_language, char ** std_script,
 
 #ifndef __linux__
     if (lc == NULL) {
+        return 0;
+    }
+
+    temp = malloc(strlen(lc) + 1);
+    if (temp == NULL) {
+        JNU_ThrowOutOfMemoryError(env, NULL);
         return 0;
     }
 
@@ -178,6 +184,13 @@ static int ParseLocale(int cat, char ** std_language, char ** std_script,
     if (lc == NULL || !strcmp(lc, "C") || !strcmp(lc, "POSIX")) {
         lc = "en_US";
     }
+
+    temp = malloc(strlen(lc) + 1);
+    if (temp == NULL) {
+        JNU_ThrowOutOfMemoryError(env, NULL);
+        return 0;
+    }
+
 #endif
 
     /*
@@ -203,6 +216,13 @@ static int ParseLocale(int cat, char ** std_language, char ** std_script,
      * to a default country if that's possible.  It's also used to map
      * the Solaris locale aliases to their proper Java locale IDs.
      */
+
+    encoding_variant = malloc(strlen(temp)+1);
+    if (encoding_variant == NULL) {
+        JNU_ThrowOutOfMemoryError(env, NULL);
+        return 0;
+    }
+
     if ((p = strchr(temp, '.')) != NULL) {
         strcpy(encoding_variant, p); /* Copy the leading '.' */
         *p = '\0';
@@ -214,7 +234,17 @@ static int ParseLocale(int cat, char ** std_language, char ** std_script,
     }
 
     if (mapLookup(locale_aliases, temp, &p)) {
+        temp = realloc(temp, strlen(p)+1);
+        if (temp == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
+            return 0;
+        }
         strcpy(temp, p);
+        encoding_variant = realloc(encoding_variant, strlen(temp)+1);
+        if (encoding_variant == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
+            return 0;
+        }
         // check the "encoding_variant" again, if any.
         if ((p = strchr(temp, '.')) != NULL) {
             strcpy(encoding_variant, p); /* Copy the leading '.' */
@@ -325,6 +355,9 @@ static int ParseLocale(int cat, char ** std_language, char ** std_script,
         }
 #endif
     }
+
+    free(temp);
+    free(encoding_variant);
 
     return 1;
 }
@@ -480,13 +513,13 @@ GetJavaProperties(JNIEnv *env)
      * and store these in the user.language, user.country, user.variant and
      * file.encoding system properties. */
     setlocale(LC_ALL, "");
-    if (ParseLocale(LC_CTYPE,
+    if (ParseLocale(env, LC_CTYPE,
                     &(sprops.format_language),
                     &(sprops.format_script),
                     &(sprops.format_country),
                     &(sprops.format_variant),
                     &(sprops.encoding))) {
-        ParseLocale(LC_MESSAGES,
+        ParseLocale(env, LC_MESSAGES,
                     &(sprops.language),
                     &(sprops.script),
                     &(sprops.country),
