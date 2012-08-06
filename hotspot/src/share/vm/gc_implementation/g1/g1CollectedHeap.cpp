@@ -1891,6 +1891,8 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
   _retained_old_gc_alloc_region(NULL),
+  _survivor_plab_stats(YoungPLABSize, PLABWeight),
+  _old_plab_stats(OldPLABSize, PLABWeight),
   _expand_heap_after_alloc_failure(true),
   _surviving_young_words(NULL),
   _old_marking_cycles_started(0),
@@ -4099,17 +4101,22 @@ size_t G1CollectedHeap::desired_plab_sz(GCAllocPurpose purpose)
   size_t gclab_word_size;
   switch (purpose) {
     case GCAllocForSurvived:
-      gclab_word_size = YoungPLABSize;
+      gclab_word_size = _survivor_plab_stats.desired_plab_sz();
       break;
     case GCAllocForTenured:
-      gclab_word_size = OldPLABSize;
+      gclab_word_size = _old_plab_stats.desired_plab_sz();
       break;
     default:
       assert(false, "unknown GCAllocPurpose");
-      gclab_word_size = OldPLABSize;
+      gclab_word_size = _old_plab_stats.desired_plab_sz();
       break;
   }
-  return gclab_word_size;
+
+  // Prevent humongous PLAB sizes for two reasons:
+  // * PLABs are allocated using a similar paths as oops, but should
+  //   never be in a humongous region
+  // * Allowing humongous PLABs needlessly churns the region free lists
+  return MIN2(_humongous_object_threshold_in_words, gclab_word_size);
 }
 
 void G1CollectedHeap::init_mutator_alloc_region() {
@@ -4165,6 +4172,11 @@ void G1CollectedHeap::release_gc_alloc_regions() {
   // want either way so no reason to check explicitly for either
   // condition.
   _retained_old_gc_alloc_region = _old_gc_alloc_region.release();
+
+  if (ResizePLAB) {
+    _survivor_plab_stats.adjust_desired_plab_sz();
+    _old_plab_stats.adjust_desired_plab_sz();
+  }
 }
 
 void G1CollectedHeap::abandon_gc_alloc_regions() {
