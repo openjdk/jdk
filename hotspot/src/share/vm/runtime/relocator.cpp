@@ -465,13 +465,12 @@ static typeArrayOop insert_hole_at(
 void Relocator::adjust_stack_map_table(int bci, int delta) {
   if (method()->has_stackmap_table()) {
     typeArrayOop data = method()->stackmap_data();
-    // The data in the array is a classfile representation of the stackmap
-    // table attribute, less the initial u2 tag and u4 attribute_length fields.
-    stack_map_table_attribute* attr = stack_map_table_attribute::at(
-        (address)data->byte_at_addr(0) - (sizeof(u2) + sizeof(u4)));
+    // The data in the array is a classfile representation of the stackmap table
+    stack_map_table* sm_table =
+        stack_map_table::at((address)data->byte_at_addr(0));
 
-    int count = attr->number_of_entries();
-    stack_map_frame* frame = attr->entries();
+    int count = sm_table->number_of_entries();
+    stack_map_frame* frame = sm_table->entries();
     int bci_iter = -1;
     bool offset_adjusted = false; // only need to adjust one offset
 
@@ -486,7 +485,7 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
           frame->set_offset_delta(new_offset_delta);
         } else {
           assert(frame->is_same_frame() ||
-                 frame->is_same_frame_1_stack_item_frame(),
+                 frame->is_same_locals_1_stack_item_frame(),
                  "Frame must be one of the compressed forms");
           // The new delta exceeds the capacity of the 'same_frame' or
           // 'same_frame_1_stack_item_frame' frame types.  We need to
@@ -513,7 +512,7 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
           if (frame->is_same_frame()) {
             same_frame_extended::create_at(frame_addr, new_offset_delta);
           } else {
-            same_frame_1_stack_item_extended::create_at(
+            same_locals_1_stack_item_extended::create_at(
               frame_addr, new_offset_delta, NULL);
             // the verification_info_type should already be at the right spot
           }
