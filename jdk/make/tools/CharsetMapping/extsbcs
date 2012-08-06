@@ -53,7 +53,7 @@ ISO_8859_11	x-iso-8859-11	x-iso-8859-11	true		sun.nio.cs.ext
 ISO_8859_3	ISO-8859-3	ISO8859_3	true		sun.nio.cs.ext
 ISO_8859_6	ISO-8859-6	ISO8859_6	true		sun.nio.cs.ext
 ISO_8859_8	ISO-8859-8	ISO8859_8	true		sun.nio.cs.ext
-#JIS_X_0201	JIS_X0201	JIS_X0201	true		sun.nio.cs.ext
+JIS_X_0201	JIS_X0201	JIS_X0201	true		sun.nio.cs.ext
 MS1255		windows-1255	Cp1255		true		sun.nio.cs.ext
 MS1256		windows-1256	Cp1256		true		sun.nio.cs.ext
 MS1258		windows-1258	Cp1258		true		sun.nio.cs.ext

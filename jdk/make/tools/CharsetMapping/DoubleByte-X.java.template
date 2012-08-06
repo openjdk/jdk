@@ -54,7 +54,7 @@ public class $NAME_CLZ$ extends Charset
 
     public CharsetEncoder newEncoder() {
         initc2b();
-        return new DoubleByte.Encoder$ENCTYPE$(this, c2b, c2bIndex);
+        return new DoubleByte.Encoder$ENCTYPE$(this, $ENC_REPLACEMENT$ c2b, c2bIndex); 
     }
 
     $B2C$

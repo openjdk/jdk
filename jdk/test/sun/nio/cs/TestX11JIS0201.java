@@ -50,5 +50,20 @@ public class TestX11JIS0201 {
         if (! cs.name().equals("X11JIS0201")){
             throw new Exception("X11JIS0201 does not work correctly");
         }
+        CharsetEncoder enc = cs.newEncoder();
+        char[] cc = new char[0xffff];
+        for (char c = 0; c < 0xffff; c++) {
+            cc[c] = c;
+            if (enc.canEncode(c) !=
+                ((c >= 0xff61 && c <= 0xff9f) || c == 0x203e || c == 0xa5)) {
+                throw new RuntimeException("x11jis0201 canEncod() failed!");
+            }
+        }
+        String s = new String(cc);
+        byte[] bb_x11 = s.getBytes(cs);
+        byte[] bb = s.getBytes("jis0201");
+        if (!java.util.Arrays.equals(bb, bb_x11)) {
+            throw new RuntimeException("x11jis0201 encoding failed");
+        }
     }
 }
