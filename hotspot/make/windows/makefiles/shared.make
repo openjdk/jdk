@@ -36,11 +36,12 @@ CXX=cl.exe
 
 
 !ifdef SUBDIRS
+# \ is used below because $(MAKE) is nmake here, which expects Windows paths
 $(SUBDIRS): FORCE
 	@if not exist $@ mkdir $@
-	@if not exist $@\local.make echo # Empty > $@\local.make
-	@echo nmake $(ACTION) in $(DIR)\$@
-	cd $@ && $(MAKE) /NOLOGO /f $(WorkSpace)\make\windows\makefiles\$@.make $(ACTION) DIR=$(DIR)\$@ BUILD_FLAVOR=$(BUILD_FLAVOR)
+	@if not exist $@/local.make echo # Empty > $@/local.make
+	@echo nmake $(ACTION) in $(DIR)/$@
+	cd $@ && $(MAKE) -NOLOGO -f $(WorkSpace)\make\windows\makefiles\$@.make $(ACTION) DIR=$(DIR)\$@ BUILD_FLAVOR=$(BUILD_FLAVOR)
 !endif
 
 # Creates the needed directory
