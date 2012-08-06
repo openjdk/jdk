@@ -237,7 +237,7 @@ ifeq ($(PLATFORM), macosx)
   SUBDIRS += apple
 endif
 SUBDIRS_tools = launchers
-SUBDIRS_misc  = org sunw jpda
+SUBDIRS_misc  = org jpda
 
 # demos
 ifndef NO_DEMOS
