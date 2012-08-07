@@ -381,7 +381,10 @@ address NativeLookup::lookup_base(methodHandle method, bool& in_base_library, TR
 
 address NativeLookup::lookup(methodHandle method, bool& in_base_library, TRAPS) {
   if (!method->has_native_function()) {
-    address entry = lookup_base(method, in_base_library, CHECK_NULL);
+    address entry =
+        method->intrinsic_id() == vmIntrinsics::_invokeGeneric ?
+            SharedRuntime::native_method_throw_unsupported_operation_exception_entry() :
+            lookup_base(method, in_base_library, CHECK_NULL);
     method->set_native_function(entry,
       methodOopDesc::native_bind_event_is_interesting);
     // -verbose:jni printing

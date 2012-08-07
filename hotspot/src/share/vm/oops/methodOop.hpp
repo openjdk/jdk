@@ -247,8 +247,10 @@ class methodOopDesc : public oopDesc {
   void set_constants(constantPoolOop c)          { constMethod()->set_constants(c); }
 
   // max stack
-  int  max_stack() const                         { return _max_stack + extra_stack_entries(); }
-  void set_max_stack(int size)                   { _max_stack = size; }
+  // return original max stack size for method verification
+  int  verifier_max_stack() const                { return _max_stack; }
+  int           max_stack() const                { return _max_stack + extra_stack_entries(); }
+  void      set_max_stack(int size)              {        _max_stack = size; }
 
   // max locals
   int  max_locals() const                        { return _max_locals; }

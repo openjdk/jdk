@@ -160,6 +160,7 @@
   template(java_lang_NoSuchMethodException,           "java/lang/NoSuchMethodException")          \
   template(java_lang_NullPointerException,            "java/lang/NullPointerException")           \
   template(java_lang_StringIndexOutOfBoundsException, "java/lang/StringIndexOutOfBoundsException")\
+  template(java_lang_UnsupportedOperationException,   "java/lang/UnsupportedOperationException")  \
   template(java_lang_InvalidClassException,           "java/lang/InvalidClassException")          \
   template(java_lang_reflect_InvocationTargetException, "java/lang/reflect/InvocationTargetException") \
   template(java_lang_Exception,                       "java/lang/Exception")                      \
