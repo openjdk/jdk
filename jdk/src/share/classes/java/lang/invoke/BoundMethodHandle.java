@@ -411,11 +411,11 @@ import com.sun.xml.internal.ws.org.objectweb.asm.Type;
             SpeciesData d = lookupCache(types);
             if (!d.isPlaceholder())
                 return d;
-            Class<? extends BoundMethodHandle> cbmh;
             synchronized (d) {
                 // Use synch. on the placeholder to prevent multiple instantiation of one species.
                 // Creating this class forces a recursive call to getForClass.
-                cbmh = Factory.generateConcreteBMHClass(types);
+                if (lookupCache(types).isPlaceholder())
+                    Factory.generateConcreteBMHClass(types);
             }
             // Reacquire cache lock.
             d = lookupCache(types);
