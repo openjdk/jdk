@@ -1196,21 +1196,6 @@ JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobjec
 }
 JVM_END
 
-JVM_ENTRY(jobject, MH_invoke_UOE(JNIEnv *env, jobject igmh, jobjectArray igargs)) {
-    TempNewSymbol UOE_name = SymbolTable::new_symbol("java/lang/UnsupportedOperationException", CHECK_NULL);
-    THROW_MSG_NULL(UOE_name, "MethodHandle.invoke cannot be invoked reflectively");
-    return NULL;
-}
-JVM_END
-
-JVM_ENTRY(jobject, MH_invokeExact_UOE(JNIEnv *env, jobject igmh, jobjectArray igargs)) {
-    TempNewSymbol UOE_name = SymbolTable::new_symbol("java/lang/UnsupportedOperationException", CHECK_NULL);
-    THROW_MSG_NULL(UOE_name, "MethodHandle.invokeExact cannot be invoked reflectively");
-    return NULL;
-}
-JVM_END
-
-
 /// JVM_RegisterMethodHandleMethods
 
 #undef CS  // Solaris builds complain
@@ -1248,11 +1233,6 @@ static JNINativeMethod required_methods_JDK8[] = {
   {CC"getMemberVMInfo",           CC"("MEM")"OBJ,                        FN_PTR(MHN_getMemberVMInfo)}
 };
 
-static JNINativeMethod invoke_methods[] = {
-  {CC"invoke",                    CC"(["OBJ")"OBJ,                       FN_PTR(MH_invoke_UOE)},
-  {CC"invokeExact",               CC"(["OBJ")"OBJ,                       FN_PTR(MH_invokeExact_UOE)}
-};
-
 // This one function is exported, used by NativeLookup.
 
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
@@ -1278,9 +1258,6 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     ThreadToNativeFromVM ttnfv(thread);
 
     status = env->RegisterNatives(MHN_class, required_methods_JDK8, sizeof(required_methods_JDK8)/sizeof(JNINativeMethod));
-    if (status == JNI_OK && !env->ExceptionOccurred()) {
-      status = env->RegisterNatives(MH_class, invoke_methods, sizeof(invoke_methods)/sizeof(JNINativeMethod));
-    }
     if (status != JNI_OK || env->ExceptionOccurred()) {
       warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
       enable_MH = false;

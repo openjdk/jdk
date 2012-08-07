@@ -874,9 +874,18 @@ JNI_ENTRY(void, throw_unsatisfied_link_error(JNIEnv* env, ...))
 }
 JNI_END
 
+JNI_ENTRY(void, throw_unsupported_operation_exception(JNIEnv* env, ...))
+{
+  THROW(vmSymbols::java_lang_UnsupportedOperationException());
+}
+JNI_END
 
 address SharedRuntime::native_method_throw_unsatisfied_link_error_entry() {
   return CAST_FROM_FN_PTR(address, &throw_unsatisfied_link_error);
+}
+
+address SharedRuntime::native_method_throw_unsupported_operation_exception_entry() {
+  return CAST_FROM_FN_PTR(address, &throw_unsupported_operation_exception);
 }
 
 
