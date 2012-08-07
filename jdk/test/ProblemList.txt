@@ -228,9 +228,6 @@ java/net/URLClassLoader/closetest/CloseTest.java                macosx-all
 # 6962637
 java/io/File/MaxPathLength.java                                 windows-all
 
-# 7076644
-java/io/File/Basic.java                                         windows-all
-
 # 7145435 - Test needs AWT window server, does not work headless
 java/io/Serializable/resolveClass/deserializeButton/run.sh      macosx-all
 
