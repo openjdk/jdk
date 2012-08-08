@@ -33,11 +33,7 @@ inline void HeapRegionSetBase::update_for_addition(HeapRegion* hr) {
   // Assumes the caller has already verified the region.
 
   _length           += 1;
-  if (!hr->isHumongous()) {
-    _region_num     += 1;
-  } else {
-    _region_num     += calculate_region_num(hr);
-  }
+  _region_num       += hr->region_num();
   _total_used_bytes += hr->used();
 }
 
@@ -54,12 +50,7 @@ inline void HeapRegionSetBase::update_for_removal(HeapRegion* hr) {
   assert(_length > 0, hrs_ext_msg(this, "pre-condition"));
   _length -= 1;
 
-  uint region_num_diff;
-  if (!hr->isHumongous()) {
-    region_num_diff = 1;
-  } else {
-    region_num_diff = calculate_region_num(hr);
-  }
+  uint region_num_diff = hr->region_num();
   assert(region_num_diff <= _region_num,
          hrs_err_msg("[%s] region's region num: %u "
                      "should be <= region num: %u",
