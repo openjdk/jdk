@@ -34,37 +34,32 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 
-static inline char *convertToNFD(const char *path, char *buf, size_t bufsize)
-{
-    CFMutableStringRef mutable = CFStringCreateMutable(NULL, 0);
-    CFStringAppendCString(mutable, path, kCFStringEncodingUTF8);
-    CFStringNormalize(mutable, kCFStringNormalizationFormD);
-
-    CFStringGetCString(mutable, buf, bufsize, kCFStringEncodingUTF8);
-
-    CFRelease(mutable);
-    return buf;
-}
-
-/* Converts the path to NFD form if it was in NFC form. Returns a pointer to
- * the converting string which could be buf (if the converstion took place) or
- * origPath if no conversion was needed
- */
 __private_extern__
-char* convertToNFDIfNeeded(const char *origPath, char *buf, size_t bufsize)
+jstring newStringPlatform(JNIEnv *env, const char* str)
 {
-    const char *current = origPath;
-    int c;
-    for (c = *current; c != 0; current++, c = *current) {
-        if (c < 0) {
-            // Need to convert
-            return convertToNFD(origPath, buf, bufsize);
+    jstring rv = NULL;
+    CFMutableStringRef csref = CFStringCreateMutable(NULL, 0);
+    if (csref == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "native heap");
+    } else {
+        CFStringAppendCString(csref, str, kCFStringEncodingUTF8);
+        CFStringNormalize(csref, kCFStringNormalizationFormC);
+        int clen = CFStringGetLength(csref);
+        int ulen = (clen + 1) * 2;        // utf16 + zero padding
+        char* chars = malloc(ulen);
+        if (chars == NULL) {
+            CFRelease(csref);
+            JNU_ThrowOutOfMemoryError(env, "native heap");
+        } else {
+            if (CFStringGetCString(csref, chars, ulen, kCFStringEncodingUTF16)) {
+                rv = (*env)->NewString(env, (jchar*)chars, clen);
+            }
+            free(chars);
+            CFRelease(csref);
         }
     }
-
-    return (char *)origPath;
+    return rv;
 }
-
 #endif
 
 void

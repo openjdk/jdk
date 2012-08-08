@@ -164,8 +164,10 @@ public final class MethodFinder extends AbstractFinder<Method> {
                             return findAccessibleMethod(m);
                         }
                         Type[] gpts = m.getGenericParameterTypes();
-                        if (Arrays.equals(params, TypeResolver.erase(TypeResolver.resolve(pt, gpts)))) {
-                            return findAccessibleMethod(m);
+                        if (params.length == gpts.length) {
+                            if (Arrays.equals(params, TypeResolver.erase(TypeResolver.resolve(pt, gpts)))) {
+                                return findAccessibleMethod(m);
+                            }
                         }
                     }
                 }

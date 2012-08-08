@@ -50,6 +50,7 @@ public:
     static AwtTextComponent* Create(jobject self, jobject parent, BOOL isMultiline);
 
     virtual LPCTSTR GetClassName();
+    LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 
     int RemoveCR(WCHAR *pStr);
 

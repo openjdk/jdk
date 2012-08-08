@@ -106,7 +106,7 @@ public class SBCS {
         }
     }
 
-    static Pattern sbmap = Pattern.compile("0x(\\p{XDigit}++)\\s++U\\+(\\p{XDigit}++)(\\s++#.*)?");
+    static Pattern sbmap = Pattern.compile("0x(\\p{XDigit}++)\\s++(?:U\\+|0x)?(\\p{XDigit}++)(?:\\s++#.*)?");
 
     private static void genClass0(String srcDir, String dstDir,
                                   String template,

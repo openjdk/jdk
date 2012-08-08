@@ -1528,35 +1528,13 @@ public:
 
 class ParKnownGarbageHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
-  CollectionSetChooser* _hrSorted;
-  uint _marked_regions_added;
-  size_t _reclaimable_bytes_added;
-  uint _chunk_size;
-  uint _cur_chunk_idx;
-  uint _cur_chunk_end; // Cur chunk [_cur_chunk_idx, _cur_chunk_end)
-
-  void get_new_chunk() {
-    _cur_chunk_idx = _hrSorted->claim_array_chunk(_chunk_size);
-    _cur_chunk_end = _cur_chunk_idx + _chunk_size;
-  }
-  void add_region(HeapRegion* r) {
-    if (_cur_chunk_idx == _cur_chunk_end) {
-      get_new_chunk();
-    }
-    assert(_cur_chunk_idx < _cur_chunk_end, "postcondition");
-    _hrSorted->set_region(_cur_chunk_idx, r);
-    _marked_regions_added++;
-    _reclaimable_bytes_added += r->reclaimable_bytes();
-    _cur_chunk_idx++;
-  }
+  CSetChooserParUpdater _cset_updater;
 
 public:
   ParKnownGarbageHRClosure(CollectionSetChooser* hrSorted,
                            uint chunk_size) :
-      _g1h(G1CollectedHeap::heap()),
-      _hrSorted(hrSorted), _chunk_size(chunk_size),
-      _marked_regions_added(0), _reclaimable_bytes_added(0),
-      _cur_chunk_idx(0), _cur_chunk_end(0) { }
+    _g1h(G1CollectedHeap::heap()),
+    _cset_updater(hrSorted, true /* parallel */, chunk_size) { }
 
   bool doHeapRegion(HeapRegion* r) {
     // Do we have any marking information for this region?
@@ -1564,14 +1542,12 @@ public:
       // We will skip any region that's currently used as an old GC
       // alloc region (we should not consider those for collection
       // before we fill them up).
-      if (_hrSorted->should_add(r) && !_g1h->is_old_gc_alloc_region(r)) {
-        add_region(r);
+      if (_cset_updater.should_add(r) && !_g1h->is_old_gc_alloc_region(r)) {
+        _cset_updater.add_region(r);
       }
     }
     return false;
   }
-  uint marked_regions_added() { return _marked_regions_added; }
-  size_t reclaimable_bytes_added() { return _reclaimable_bytes_added; }
 };
 
 class ParKnownGarbageTask: public AbstractGangTask {
@@ -1591,10 +1567,6 @@ public:
     _g1->heap_region_par_iterate_chunked(&parKnownGarbageCl, worker_id,
                                          _g1->workers()->active_workers(),
                                          HeapRegion::InitialClaimValue);
-    uint regions_added = parKnownGarbageCl.marked_regions_added();
-    size_t reclaimable_bytes_added =
-                                   parKnownGarbageCl.reclaimable_bytes_added();
-    _hrSorted->update_totals(regions_added, reclaimable_bytes_added);
   }
 };
 
