@@ -302,7 +302,8 @@ abstract class UnixFileSystem
         }
 
         // return matcher
-        final Pattern pattern = Pattern.compile(expr);
+        final Pattern pattern = compilePathMatchPattern(expr);
+
         return new PathMatcher() {
             @Override
             public boolean matches(Path path) {
@@ -310,10 +311,9 @@ abstract class UnixFileSystem
             }
         };
     }
+
     private static final String GLOB_SYNTAX = "glob";
     private static final String REGEX_SYNTAX = "regex";
-
-
 
     @Override
     public final UserPrincipalLookupService getUserPrincipalLookupService() {
@@ -339,4 +339,23 @@ abstract class UnixFileSystem
             };
     }
 
+    // Override if the platform has different path match requrement, such as
+    // case insensitive or Unicode canonical equal on MacOSX
+    Pattern compilePathMatchPattern(String expr) {
+        return Pattern.compile(expr);
+    }
+
+    // Override if the platform uses different Unicode normalization form
+    // for native file path. For example on MacOSX, the native path is stored
+    // in Unicode NFD form.
+    char[] normalizeNativePath(char[] path) {
+        return path;
+    }
+
+    // Override if the native file path use non-NFC form. For example on MacOSX,
+    // the native path is stored in Unicode NFD form, the path need to be
+    // normalized back to NFC before passed back to Java level.
+    String normalizeJavaPath(String path) {
+        return path;
+    }
 }

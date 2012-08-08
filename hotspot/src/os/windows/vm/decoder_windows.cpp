@@ -72,10 +72,10 @@ void WindowsDecoder::initialize() {
 
      // find out if jvm.dll contains private symbols, by decoding
      // current function and comparing the result
-     address addr = (address)Decoder::decode;
+     address addr = (address)Decoder::demangle;
      char buf[MAX_PATH];
      if (decode(addr, buf, sizeof(buf), NULL)) {
-       _can_decode_in_vm = !strcmp(buf, "Decoder::decode");
+       _can_decode_in_vm = !strcmp(buf, "Decoder::demangle");
      }
   }
 }
