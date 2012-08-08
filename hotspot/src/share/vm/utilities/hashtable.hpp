@@ -260,7 +260,7 @@ protected:
   }
 
   int index_for(Symbol* name) {
-    return hash_to_index(compute_hash(name));
+    return this->hash_to_index(compute_hash(name));
   }
 
   // Table entry management

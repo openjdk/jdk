@@ -194,6 +194,15 @@ public class DBCS {
         if (hisName == null)
             hisName = "";
 
+        // (5) c2b replacement, only used for JIs0208/0212, which
+        // are two pure db charsets so default '3f' does not work
+        String c2bRepl = "";
+        if (clzName.startsWith("JIS_X_0208")) {
+            c2bRepl = "new byte[]{ (byte)0x21, (byte)0x29 },";
+        } else if (clzName.startsWith("JIS_X_0212")) {
+            c2bRepl = "new byte[]{ (byte)0x22, (byte)0x44 },";
+        }
+
         while (s.hasNextLine()) {
             String line = s.nextLine();
             if (line.indexOf("$") == -1) {
@@ -227,7 +236,8 @@ public class DBCS {
                        .replace("$B2C$", b2c)
                        .replace("$C2BLENGTH$", "0x" + Integer.toString(c2bOff, 16))
                        .replace("$NONROUNDTRIP_B2C$", b2cNR)
-                       .replace("$NONROUNDTRIP_C2B$", c2bNR);
+                       .replace("$NONROUNDTRIP_C2B$", c2bNR)
+                       .replace("$ENC_REPLACEMENT$", c2bRepl);
 
             ops.println(line);
         }

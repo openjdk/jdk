@@ -71,7 +71,6 @@ com/sun/jndi/
 org/w3c/
 com/sun/imageio/
 javax/
-sunw/util/
 java/
 sun/
 ...
