@@ -882,7 +882,7 @@ public class PKCS7 {
         PKCS7 tsToken = tsReply.getToken();
 
         TimestampToken tst = tsReply.getTimestampToken();
-        if (!tst.getHashAlgorithm().getName().equals("SHA")) {
+        if (!tst.getHashAlgorithm().getName().equals("SHA-1")) {
             throw new IOException("Digest algorithm not SHA-1 in "
                                   + "timestamp token");
         }

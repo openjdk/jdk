@@ -233,7 +233,23 @@ class MacOSXPreferencesFile {
         return ok;
     }
 
-
+    //Flush only current user preferences
+    static synchronized boolean flushUser() {
+        boolean ok = true;
+        if (changedFiles != null  &&  !changedFiles.isEmpty()) {
+            Iterator<MacOSXPreferencesFile> iterator = changedFiles.iterator();
+            while(iterator.hasNext()) {
+                MacOSXPreferencesFile f = iterator.next();
+                if (f.user == cfCurrentUser) {
+                    if (!f.synchronize())
+                        ok = false;
+                    else
+                        iterator.remove();
+                }
+            }
+        }
+        return ok;
+    }
 
     // Write all prefs changes to disk, but do not clear all cached prefs
     // values. Also kills any scheduled flush task.
