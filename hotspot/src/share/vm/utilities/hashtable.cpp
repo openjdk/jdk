@@ -135,7 +135,7 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::move_to(Hashtable<T, F>* ne
       // walking the hashtable past these entries requires
       // BasicHashtableEntry::make_ptr() call.
       bool keep_shared = p->is_shared();
-      unlink_entry(p);
+      this->unlink_entry(p);
       new_table->add_entry(index, p);
       if (keep_shared) {
         p->set_shared();

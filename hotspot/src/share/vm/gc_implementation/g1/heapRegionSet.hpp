@@ -62,8 +62,6 @@ class HeapRegionSetBase VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
 
 protected:
-  static uint calculate_region_num(HeapRegion* hr);
-
   static uint _unrealistically_long_length;
 
   // The number of regions added to the set. If the set contains

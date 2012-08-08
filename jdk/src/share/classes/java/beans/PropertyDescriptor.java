@@ -210,12 +210,13 @@ public class PropertyDescriptor extends FeatureDescriptor {
                 // The read method was explicitly set to null.
                 return null;
             }
+            String nextMethodName = Introspector.GET_PREFIX + getBaseName();
             if (readMethodName == null) {
                 Class<?> type = getPropertyType0();
                 if (type == boolean.class || type == null) {
                     readMethodName = Introspector.IS_PREFIX + getBaseName();
                 } else {
-                    readMethodName = Introspector.GET_PREFIX + getBaseName();
+                    readMethodName = nextMethodName;
                 }
             }
 
@@ -225,8 +226,8 @@ public class PropertyDescriptor extends FeatureDescriptor {
             // methods.  If an "is" method exists, this is the official
             // reader method so look for this one first.
             readMethod = Introspector.findMethod(cls, readMethodName, 0);
-            if (readMethod == null) {
-                readMethodName = Introspector.GET_PREFIX + getBaseName();
+            if ((readMethod == null) && !readMethodName.equals(nextMethodName)) {
+                readMethodName = nextMethodName;
                 readMethod = Introspector.findMethod(cls, readMethodName, 0);
             }
             try {

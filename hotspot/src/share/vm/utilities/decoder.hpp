@@ -47,6 +47,8 @@ public:
   // the function
   virtual bool decode(address pc, char* buf, int buflen, int* offset,
     const char* modulepath = NULL) = 0;
+  virtual bool decode(address pc, char* buf, int buflen, int* offset, const void* base) = 0;
+
   // demangle a C++ symbol
   virtual bool demangle(const char* symbol, char* buf, int buflen) = 0;
   // if the decoder can decode symbols in vm
@@ -82,6 +84,10 @@ public:
     return false;
   }
 
+  virtual bool decode(address pc, char* buf, int buflen, int* offset, const void* base) {
+    return false;
+  }
+
   virtual bool demangle(const char* symbol, char* buf, int buflen) {
     return false;
   }
@@ -95,6 +101,7 @@ public:
 class Decoder : AllStatic {
 public:
   static bool decode(address pc, char* buf, int buflen, int* offset, const char* modulepath = NULL);
+  static bool decode(address pc, char* buf, int buflen, int* offset, const void* base);
   static bool demangle(const char* symbol, char* buf, int buflen);
   static bool can_decode_C_frame_in_vm();
 
