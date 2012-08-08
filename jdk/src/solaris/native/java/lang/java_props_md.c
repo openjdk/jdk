@@ -140,7 +140,7 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
     char *temp = NULL;
     char *language = NULL, *country = NULL, *variant = NULL,
          *encoding = NULL;
-    char *p, *encoding_variant;
+    char *p, *encoding_variant, *old_temp, *old_ev;
     char *lc;
 
     /* Query the locale set for the category */
@@ -219,6 +219,7 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
 
     encoding_variant = malloc(strlen(temp)+1);
     if (encoding_variant == NULL) {
+        free(temp);
         JNU_ThrowOutOfMemoryError(env, NULL);
         return 0;
     }
@@ -234,14 +235,20 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
     }
 
     if (mapLookup(locale_aliases, temp, &p)) {
+        old_temp = temp;
         temp = realloc(temp, strlen(p)+1);
         if (temp == NULL) {
+            free(old_temp);
+            free(encoding_variant);
             JNU_ThrowOutOfMemoryError(env, NULL);
             return 0;
         }
         strcpy(temp, p);
+        old_ev = encoding_variant;
         encoding_variant = realloc(encoding_variant, strlen(temp)+1);
         if (encoding_variant == NULL) {
+            free(old_ev);
+            free(temp);
             JNU_ThrowOutOfMemoryError(env, NULL);
             return 0;
         }
