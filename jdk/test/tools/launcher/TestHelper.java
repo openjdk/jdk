@@ -189,13 +189,15 @@ public class TestHelper {
                     m.invoke(this, (Object[]) null);
                     System.out.println(m.getName() + ": OK");
                     passed++;
+                    System.out.printf("Passed: %d, Failed: %d, ExitValue: %d%n",
+                                      passed, failed, testExitValue);
                 } catch (Throwable ex) {
                     System.out.printf("Test %s failed: %s %n", m, ex.getCause());
                     failed++;
                 }
             }
         }
-        System.out.printf("Passed: %d, Failed %d%n", passed, failed);
+        System.out.printf("Total: Passed: %d, Failed %d%n", passed, failed);
         if (failed > 0) {
             throw new RuntimeException("Tests failed: " + failed);
         }
@@ -456,6 +458,8 @@ public class TestHelper {
         }
 
         void appendError(String x) {
+            testStatus = false;
+            testExitValue++;
             status.println(TEST_PREFIX + x);
         }
 
@@ -466,16 +470,12 @@ public class TestHelper {
         void checkNegative() {
             if (exitValue == 0) {
                 appendError("test must not return 0 exit value");
-                testStatus = false;
-                testExitValue++;
             }
         }
 
         void checkPositive() {
             if (exitValue != 0) {
-                testStatus = false;
                 appendError("test did not return 0 exit value");
-                testExitValue++;
             }
         }
 
@@ -485,9 +485,7 @@ public class TestHelper {
 
         boolean isZeroOutput() {
             if (!testOutput.isEmpty()) {
-                testStatus = false;
                 appendError("No message from cmd please");
-                testExitValue++;
                 return false;
             }
             return true;
@@ -495,9 +493,7 @@ public class TestHelper {
 
         boolean isNotZeroOutput() {
             if (testOutput.isEmpty()) {
-                testStatus = false;
                 appendError("Missing message");
-                testExitValue++;
                 return false;
             }
             return true;
@@ -534,7 +530,6 @@ public class TestHelper {
                 }
             }
             appendError("string <" + str + "> not found");
-            testExitValue++;
             return false;
         }
 
@@ -545,7 +540,6 @@ public class TestHelper {
                 }
             }
             appendError("string <" + stringToMatch + "> not found");
-            testExitValue++;
             return false;
         }
     }
