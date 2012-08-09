@@ -28,7 +28,7 @@ package java.lang.annotation;
 /**
  * A meta-annotation to indicate which annotation type should be used
  * as a container for repeated values of the annotation type modified
- * by the {@code ContainerAnnotation} annotation.
+ * by the {@code ContainedBy} annotation.
  *
  * @since 1.8
  * @jls 9.6 Annotation Types
@@ -37,7 +37,7 @@ package java.lang.annotation;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
-public @interface ContainerAnnotation {
+public @interface ContainedBy {
     /**
      * The annotation type to use to store repeated values of another
      * annotation.
