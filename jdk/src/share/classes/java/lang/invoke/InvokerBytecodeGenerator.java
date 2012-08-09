@@ -230,7 +230,7 @@ class InvokerBytecodeGenerator {
         // u2 minor_version;
         // u2 major_version;
         // u2 constant_pool_count;
-        return ((classFile[8] << 8) & 0xFF) | ( classFile[9] & 0xFF);
+        return ((classFile[8] & 0xFF) << 8) | (classFile[9] & 0xFF);
     }
 
     /**
