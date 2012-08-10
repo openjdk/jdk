@@ -1940,6 +1940,14 @@ void LIRGenerator::do_NullCheck(NullCheck* x) {
 }
 
 
+void LIRGenerator::do_TypeCast(TypeCast* x) {
+  LIRItem value(x->obj(), this);
+  value.load_item();
+  // the result is the same as from the node we are casting
+  set_result(x, value.result());
+}
+
+
 void LIRGenerator::do_Throw(Throw* x) {
   LIRItem exception(x->exception(), this);
   exception.load_item();
@@ -2767,7 +2775,10 @@ void LIRGenerator::do_Invoke(Invoke* x) {
   // JSR 292
   // Preserve the SP over MethodHandle call sites.
   ciMethod* target = x->target();
-  if (target->is_method_handle_invoke()) {
+  bool is_method_handle_invoke = (// %%% FIXME: Are both of these relevant?
+                                  target->is_method_handle_intrinsic() ||
+                                  target->is_compiled_lambda_form());
+  if (is_method_handle_invoke) {
     info->set_is_method_handle_invoke(true);
     __ move(FrameMap::stack_pointer(), FrameMap::method_handle_invoke_SP_save_opr());
   }
@@ -2843,7 +2854,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
 
   // JSR 292
   // Restore the SP after MethodHandle call sites.
-  if (target->is_method_handle_invoke()) {
+  if (is_method_handle_invoke) {
     __ move(FrameMap::method_handle_invoke_SP_save_opr(), FrameMap::stack_pointer());
   }
 
@@ -3027,7 +3038,7 @@ void LIRGenerator::do_ProfileCall(ProfileCall* x) {
     recv = new_register(T_OBJECT);
     __ move(value.result(), recv);
   }
-  __ profile_call(x->method(), x->bci_of_invoke(), mdo, recv, tmp, x->known_holder());
+  __ profile_call(x->method(), x->bci_of_invoke(), x->callee(), mdo, recv, tmp, x->known_holder());
 }
 
 void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {

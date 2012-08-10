@@ -836,13 +836,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /* CodeBlobs (NOTE: incomplete, but only a little) */                                                                              \
   /***************************************************/                                                                              \
                                                                                                                                      \
-  X86_ONLY(nonstatic_field(MethodHandles::RicochetFrame, _sender_pc,                                     address))                   \
-  X86_ONLY(nonstatic_field(MethodHandles::RicochetFrame, _exact_sender_sp,                              intptr_t*))                  \
-  X86_ONLY(nonstatic_field(MethodHandles::RicochetFrame, _sender_link,                                  intptr_t*))                  \
-  X86_ONLY(nonstatic_field(MethodHandles::RicochetFrame, _saved_args_base,                              intptr_t*))                  \
-                                                                                                                                     \
-     static_field(SharedRuntime,               _ricochet_blob,                                RicochetBlob*)                         \
-                                                                                                                                     \
   nonstatic_field(CodeBlob,                    _name,                                         const char*)                           \
   nonstatic_field(CodeBlob,                    _size,                                         int)                                   \
   nonstatic_field(CodeBlob,                    _header_size,                                  int)                                   \
@@ -887,11 +880,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(nmethod,             _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,             _exception_cache,                              ExceptionCache*)                       \
   nonstatic_field(nmethod,             _marked_for_deoptimization,                    bool)                                  \
-                                                                                                                                     \
-  nonstatic_field(RicochetBlob,        _bounce_offset,                                int)                                           \
-  nonstatic_field(RicochetBlob,        _exception_offset,                             int)                                           \
-                                                                                                                                     \
-  unchecked_c2_static_field(Deoptimization,         _trap_reason_name,                   void*)                                         \
+                                                                                                                             \
+  unchecked_c2_static_field(Deoptimization,         _trap_reason_name,                   void*)                              \
                                                                                                                                      \
   /********************************/                                                                                                 \
   /* JavaCalls (NOTE: incomplete) */                                                                                                 \
@@ -1633,7 +1623,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /*************************************************************/         \
                                                                           \
   declare_toplevel_type(SharedRuntime)                                    \
-  X86_ONLY(declare_toplevel_type(MethodHandles::RicochetFrame))           \
                                                                           \
   declare_toplevel_type(CodeBlob)                                         \
   declare_type(BufferBlob,               CodeBlob)                        \
@@ -1644,7 +1633,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_type(SingletonBlob,            CodeBlob)                        \
   declare_type(SafepointBlob,            SingletonBlob)                   \
   declare_type(DeoptimizationBlob,       SingletonBlob)                   \
-  declare_type(RicochetBlob,             SingletonBlob)                   \
   declare_c2_type(ExceptionBlob,         SingletonBlob)                   \
   declare_c2_type(UncommonTrapBlob,      CodeBlob)                        \
                                                                           \
@@ -2347,7 +2335,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_constant(instanceKlass::initialization_error)                   \
                                                                           \
   /*********************************/                                     \
-  /* Symbol* - symbol max length */                                     \
+  /* Symbol* - symbol max length */                                       \
   /*********************************/                                     \
                                                                           \
   declare_constant(Symbol::max_symbol_length)                             \
@@ -2360,21 +2348,16 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_constant(constantPoolOopDesc::_indy_argc_offset)                \
   declare_constant(constantPoolOopDesc::_indy_argv_offset)                \
                                                                           \
-  /*********************************************/                         \
-  /* ConstantPoolCacheEntry FlagBitValues enum */                         \
-  /*********************************************/                         \
+  /********************************/                                      \
+  /* ConstantPoolCacheEntry enums */                                      \
+  /********************************/                                      \
                                                                           \
-  declare_constant(ConstantPoolCacheEntry::hotSwapBit)                    \
-  declare_constant(ConstantPoolCacheEntry::methodInterface)               \
-  declare_constant(ConstantPoolCacheEntry::volatileField)                 \
-  declare_constant(ConstantPoolCacheEntry::vfinalMethod)                  \
-  declare_constant(ConstantPoolCacheEntry::finalField)                    \
-                                                                          \
-  /******************************************/                            \
-  /* ConstantPoolCacheEntry FlagValues enum */                            \
-  /******************************************/                            \
-                                                                          \
-  declare_constant(ConstantPoolCacheEntry::tosBits)                       \
+  declare_constant(ConstantPoolCacheEntry::is_volatile_shift)             \
+  declare_constant(ConstantPoolCacheEntry::is_final_shift)                \
+  declare_constant(ConstantPoolCacheEntry::is_forced_virtual_shift)       \
+  declare_constant(ConstantPoolCacheEntry::is_vfinal_shift)               \
+  declare_constant(ConstantPoolCacheEntry::is_field_entry_shift)          \
+  declare_constant(ConstantPoolCacheEntry::tos_state_shift)               \
                                                                           \
   /***************************************/                               \
   /* java_lang_Thread::ThreadStatus enum */                               \

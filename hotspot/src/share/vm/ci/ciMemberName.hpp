@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,23 @@
  *
  */
 
-#ifndef CPU_X86_VM_TEMPLATETABLE_X86_64_HPP
-#define CPU_X86_VM_TEMPLATETABLE_X86_64_HPP
+#ifndef SHARE_VM_CI_CIMEMBERNAME_HPP
+#define SHARE_VM_CI_CIMEMBERNAME_HPP
 
-  static void prepare_invoke(int byte_no,
-                             Register method,         // linked method (or i-klass)
-                             Register index = noreg,  // itable index, MethodType, etc.
-                             Register recv  = noreg,  // if caller wants to see it
-                             Register flags = noreg   // if caller wants to test it
-                             );
-  static void invokevirtual_helper(Register index, Register recv,
-                                   Register flags);
-  static void volatile_barrier(Assembler::Membar_mask_bits order_constraint);
+#include "ci/ciCallProfile.hpp"
+#include "ci/ciInstance.hpp"
 
-  // Helpers
-  static void index_check(Register array, Register index);
-  static void index_check_without_pop(Register array, Register index);
+// ciMemberName
+//
+// The class represents a java.lang.invoke.MemberName object.
+class ciMemberName : public ciInstance {
+public:
+  ciMemberName(instanceHandle h_i) : ciInstance(h_i) {}
 
-#endif // CPU_X86_VM_TEMPLATETABLE_X86_64_HPP
+  // What kind of ciObject is this?
+  bool is_member_name() const { return true; }
+
+  ciMethod* get_vmtarget() const;
+};
+
+#endif // SHARE_VM_CI_CIMEMBERNAME_HPP

@@ -646,16 +646,15 @@ int CppInterpreter::method_handle_entry(methodOop method,
   oop method_type = (oop) p;
 
   // The MethodHandle is in the slot after the arguments
-  oop form = java_lang_invoke_MethodType::form(method_type);
-  int num_vmslots = java_lang_invoke_MethodTypeForm::vmslots(form);
-  assert(argument_slots == num_vmslots + 1, "should be");
+  int num_vmslots = argument_slots - 1;
   oop method_handle = VMSLOTS_OBJECT(num_vmslots);
 
   // InvokeGeneric requires some extra shuffling
   oop mhtype = java_lang_invoke_MethodHandle::type(method_handle);
   bool is_exact = mhtype == method_type;
   if (!is_exact) {
-    if (method->intrinsic_id() == vmIntrinsics::_invokeExact) {
+    if (true || // FIXME
+        method->intrinsic_id() == vmIntrinsics::_invokeExact) {
       CALL_VM_NOCHECK_NOFIX(
         SharedRuntime::throw_WrongMethodTypeException(
           thread, method_type, mhtype));
@@ -670,8 +669,8 @@ int CppInterpreter::method_handle_entry(methodOop method,
     // NB the x86 code for this (in methodHandles_x86.cpp, search for
     // "genericInvoker") is really really odd.  I'm hoping it's trying
     // to accomodate odd VM/class library combinations I can ignore.
-    oop adapter = java_lang_invoke_MethodTypeForm::genericInvoker(form);
-    if (adapter == NULL) {
+    oop adapter = NULL; //FIXME: load the adapter from the CP cache
+    IF (adapter == NULL) {
       CALL_VM_NOCHECK_NOFIX(
         SharedRuntime::throw_WrongMethodTypeException(
           thread, method_type, mhtype));
@@ -761,7 +760,7 @@ void CppInterpreter::process_method_handle(oop method_handle, TRAPS) {
           return;
       }
       if (entry_kind != MethodHandles::_invokespecial_mh) {
-        int index = java_lang_invoke_DirectMethodHandle::vmindex(method_handle);
+        intptr_t index = java_lang_invoke_DirectMethodHandle::vmindex(method_handle);
         instanceKlass* rcvrKlass =
           (instanceKlass *) receiver->klass()->klass_part();
         if (entry_kind == MethodHandles::_invokevirtual_mh) {
@@ -1179,8 +1178,7 @@ BasicType CppInterpreter::result_type_of_handle(oop method_handle) {
 intptr_t* CppInterpreter::calculate_unwind_sp(ZeroStack* stack,
                                               oop method_handle) {
   oop method_type = java_lang_invoke_MethodHandle::type(method_handle);
-  oop form = java_lang_invoke_MethodType::form(method_type);
-  int argument_slots = java_lang_invoke_MethodTypeForm::vmslots(form);
+  int argument_slots = java_lang_invoke_MethodType::ptype_slot_count(method_type);
 
   return stack->sp() + argument_slots;
 }

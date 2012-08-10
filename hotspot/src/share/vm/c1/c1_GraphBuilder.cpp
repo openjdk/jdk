@@ -31,7 +31,7 @@
 #include "ci/ciCallSite.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
-#include "ci/ciMethodHandle.hpp"
+#include "ci/ciMemberName.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/bytecode.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -914,11 +914,11 @@ void GraphBuilder::load_local(ValueType* type, int index) {
 
 void GraphBuilder::store_local(ValueType* type, int index) {
   Value x = pop(type);
-  store_local(state(), x, type, index);
+  store_local(state(), x, index);
 }
 
 
-void GraphBuilder::store_local(ValueStack* state, Value x, ValueType* type, int index) {
+void GraphBuilder::store_local(ValueStack* state, Value x, int index) {
   if (parsing_jsr()) {
     // We need to do additional tracking of the location of the return
     // address for jsrs since we don't handle arbitrary jsr/ret
@@ -1535,7 +1535,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
         case T_ARRAY:
         case T_OBJECT:
           if (field_val.as_object()->should_be_constant()) {
-            constant =  new Constant(as_ValueType(field_val));
+            constant = new Constant(as_ValueType(field_val));
           }
           break;
 
@@ -1562,12 +1562,53 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
         append(new StoreField(append(obj), offset, field, val, true, state_before, needs_patching));
       }
       break;
-    case Bytecodes::_getfield :
-      {
+    case Bytecodes::_getfield: {
+      // Check for compile-time constants, i.e., trusted final non-static fields.
+      Instruction* constant = NULL;
+      obj = apop();
+      ObjectType* obj_type = obj->type()->as_ObjectType();
+      if (obj_type->is_constant() && !PatchALot) {
+        ciObject* const_oop = obj_type->constant_value();
+        if (!const_oop->is_null_object()) {
+          if (field->is_constant()) {
+            ciConstant field_val = field->constant_value_of(const_oop);
+            BasicType field_type = field_val.basic_type();
+            switch (field_type) {
+            case T_ARRAY:
+            case T_OBJECT:
+              if (field_val.as_object()->should_be_constant()) {
+                constant = new Constant(as_ValueType(field_val));
+              }
+              break;
+            default:
+              constant = new Constant(as_ValueType(field_val));
+            }
+          } else {
+            // For CallSite objects treat the target field as a compile time constant.
+            if (const_oop->is_call_site()) {
+              ciCallSite* call_site = const_oop->as_call_site();
+              if (field->is_call_site_target()) {
+                ciMethodHandle* target = call_site->get_target();
+                if (target != NULL) {  // just in case
+                  ciConstant field_val(T_OBJECT, target);
+                  constant = new Constant(as_ValueType(field_val));
+                  // Add a dependence for invalidation of the optimization.
+                  if (!call_site->is_constant_call_site()) {
+                    dependency_recorder()->assert_call_site_target_value(call_site, target);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      if (constant != NULL) {
+        push(type, append(constant));
+      } else {
         if (state_before == NULL) {
           state_before = copy_state_for_exception();
         }
-        LoadField* load = new LoadField(apop(), offset, field, false, state_before, needs_patching);
+        LoadField* load = new LoadField(obj, offset, field, false, state_before, needs_patching);
         Value replacement = !needs_patching ? _memory->load(load) : load;
         if (replacement != load) {
           assert(replacement->is_linked() || !replacement->can_be_linked(), "should already by linked");
@@ -1575,22 +1616,23 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
         } else {
           push(type, append(load));
         }
-        break;
-      }
-
-    case Bytecodes::_putfield :
-      { Value val = pop(type);
-        if (state_before == NULL) {
-          state_before = copy_state_for_exception();
-        }
-        StoreField* store = new StoreField(apop(), offset, field, val, false, state_before, needs_patching);
-        if (!needs_patching) store = _memory->store(store);
-        if (store != NULL) {
-          append(store);
-        }
       }
       break;
-    default                   :
+    }
+    case Bytecodes::_putfield: {
+      Value val = pop(type);
+      obj = apop();
+      if (state_before == NULL) {
+        state_before = copy_state_for_exception();
+      }
+      StoreField* store = new StoreField(obj, offset, field, val, false, state_before, needs_patching);
+      if (!needs_patching) store = _memory->store(store);
+      if (store != NULL) {
+        append(store);
+      }
+      break;
+    }
+    default:
       ShouldNotReachHere();
       break;
   }
@@ -1604,38 +1646,73 @@ Dependencies* GraphBuilder::dependency_recorder() const {
 
 
 void GraphBuilder::invoke(Bytecodes::Code code) {
+  const bool has_receiver =
+    code == Bytecodes::_invokespecial   ||
+    code == Bytecodes::_invokevirtual   ||
+    code == Bytecodes::_invokeinterface;
+  const bool is_invokedynamic = (code == Bytecodes::_invokedynamic);
+
   bool will_link;
-  ciMethod* target = stream()->get_method(will_link);
+  ciMethod*             target = stream()->get_method(will_link);
+  ciKlass*              holder = stream()->get_declared_method_holder();
+  const Bytecodes::Code bc_raw = stream()->cur_bc_raw();
+
+  // FIXME bail out for now
+  if ((bc_raw == Bytecodes::_invokehandle || is_invokedynamic) && !will_link) {
+    BAILOUT("unlinked call site (FIXME needs patching or recompile support)");
+  }
+
   // we have to make sure the argument size (incl. the receiver)
   // is correct for compilation (the call would fail later during
   // linkage anyway) - was bug (gri 7/28/99)
-  if (target->is_loaded() && target->is_static() != (code == Bytecodes::_invokestatic)) BAILOUT("will cause link error");
+  {
+    // Use raw to get rewritten bytecode.
+    const bool is_invokestatic = bc_raw == Bytecodes::_invokestatic;
+    const bool allow_static =
+          is_invokestatic ||
+          bc_raw == Bytecodes::_invokehandle ||
+          bc_raw == Bytecodes::_invokedynamic;
+    if (target->is_loaded()) {
+      if (( target->is_static() && !allow_static) ||
+          (!target->is_static() &&  is_invokestatic)) {
+        BAILOUT("will cause link error");
+      }
+    }
+  }
   ciInstanceKlass* klass = target->holder();
 
   // check if CHA possible: if so, change the code to invoke_special
   ciInstanceKlass* calling_klass = method()->holder();
-  ciKlass* holder = stream()->get_declared_method_holder();
   ciInstanceKlass* callee_holder = ciEnv::get_instance_klass_for_declared_method_holder(holder);
   ciInstanceKlass* actual_recv = callee_holder;
 
-  // some methods are obviously bindable without any type checks so
-  // convert them directly to an invokespecial.
-  if (target->is_loaded() && !target->is_abstract() &&
-      target->can_be_statically_bound() && code == Bytecodes::_invokevirtual) {
-    code = Bytecodes::_invokespecial;
+  // Some methods are obviously bindable without any type checks so
+  // convert them directly to an invokespecial or invokestatic.
+  if (target->is_loaded() && !target->is_abstract() && target->can_be_statically_bound()) {
+    switch (bc_raw) {
+    case Bytecodes::_invokevirtual:  code = Bytecodes::_invokespecial;  break;
+    case Bytecodes::_invokehandle:   code = Bytecodes::_invokestatic;   break;
+    }
   }
 
-  bool is_invokedynamic = code == Bytecodes::_invokedynamic;
+  // Push appendix argument (MethodType, CallSite, etc.), if one.
+  if (stream()->has_appendix()) {
+    ciObject* appendix = stream()->get_appendix();
+    Value arg = append(new Constant(new ObjectConstant(appendix)));
+    apush(arg);
+  }
 
   // NEEDS_CLEANUP
-  // I've added the target-is_loaded() test below but I don't really understand
+  // I've added the target->is_loaded() test below but I don't really understand
   // how klass->is_loaded() can be true and yet target->is_loaded() is false.
   // this happened while running the JCK invokevirtual tests under doit.  TKR
   ciMethod* cha_monomorphic_target = NULL;
   ciMethod* exact_target = NULL;
   Value better_receiver = NULL;
   if (UseCHA && DeoptC1 && klass->is_loaded() && target->is_loaded() &&
-      !target->is_method_handle_invoke()) {
+      !(// %%% FIXME: Are both of these relevant?
+        target->is_method_handle_intrinsic() ||
+        target->is_compiled_lambda_form())) {
     Value receiver = NULL;
     ciInstanceKlass* receiver_klass = NULL;
     bool type_is_exact = false;
@@ -1761,23 +1838,15 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         code == Bytecodes::_invokedynamic) {
       ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
       bool success = false;
-      if (target->is_method_handle_invoke()) {
+      if (target->is_method_handle_intrinsic()) {
         // method handle invokes
-        success = !is_invokedynamic ? for_method_handle_inline(target) : for_invokedynamic_inline(target);
-      }
-      if (!success) {
+        success = for_method_handle_inline(target);
+      } else {
         // static binding => check if callee is ok
-        success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), better_receiver);
+        success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), code, better_receiver);
       }
       CHECK_BAILOUT();
 
-#ifndef PRODUCT
-      // printing
-      if (PrintInlining && !success) {
-        // if it was successfully inlined, then it was already printed.
-        print_inline_result(inline_target, success);
-      }
-#endif
       clear_inline_bailout();
       if (success) {
         // Register dependence if JVMTI has either breakpoint
@@ -1788,8 +1857,13 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         }
         return;
       }
+    } else {
+      print_inlining(target, "no static binding", /*success*/ false);
     }
+  } else {
+    print_inlining(target, "not inlineable", /*success*/ false);
   }
+
   // If we attempted an inline which did not succeed because of a
   // bailout during construction of the callee graph, the entire
   // compilation has to be aborted. This is fairly rare and currently
@@ -1803,10 +1877,6 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
 
   // inlining not successful => standard invoke
   bool is_loaded = target->is_loaded();
-  bool has_receiver =
-    code == Bytecodes::_invokespecial   ||
-    code == Bytecodes::_invokevirtual   ||
-    code == Bytecodes::_invokeinterface;
   ValueType* result_type = as_ValueType(target->return_type());
 
   // We require the debug info to be the "state before" because
@@ -1855,7 +1925,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       } else if (exact_target != NULL) {
         target_klass = exact_target->holder();
       }
-      profile_call(recv, target_klass);
+      profile_call(target, recv, target_klass);
     }
   }
 
@@ -3097,30 +3167,61 @@ int GraphBuilder::recursive_inline_level(ciMethod* cur_callee) const {
 }
 
 
-bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Value receiver) {
-  // Clear out any existing inline bailout condition
+bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Bytecodes::Code bc, Value receiver) {
+  const char* msg = NULL;
+
+  // clear out any existing inline bailout condition
   clear_inline_bailout();
 
-  if (callee->should_exclude()) {
-    // callee is excluded
-    INLINE_BAILOUT("excluded by CompilerOracle")
-  } else if (callee->should_not_inline()) {
-    // callee is excluded
-    INLINE_BAILOUT("disallowed by CompilerOracle")
-  } else if (!callee->can_be_compiled()) {
-    // callee is not compilable (prob. has breakpoints)
-    INLINE_BAILOUT("not compilable (disabled)")
-  } else if (callee->intrinsic_id() != vmIntrinsics::_none && try_inline_intrinsics(callee)) {
-    // intrinsics can be native or not
-    return true;
-  } else if (callee->is_native()) {
-    // non-intrinsic natives cannot be inlined
-    INLINE_BAILOUT("non-intrinsic native")
-  } else if (callee->is_abstract()) {
-    INLINE_BAILOUT("abstract")
-  } else {
-    return try_inline_full(callee, holder_known, NULL, receiver);
+  // exclude methods we don't want to inline
+  msg = should_not_inline(callee);
+  if (msg != NULL) {
+    print_inlining(callee, msg, /*success*/ false);
+    return false;
   }
+
+  // handle intrinsics
+  if (callee->intrinsic_id() != vmIntrinsics::_none) {
+    if (try_inline_intrinsics(callee)) {
+      print_inlining(callee, "intrinsic");
+      return true;
+    }
+    // try normal inlining
+  }
+
+  // certain methods cannot be parsed at all
+  msg = check_can_parse(callee);
+  if (msg != NULL) {
+    print_inlining(callee, msg, /*success*/ false);
+    return false;
+  }
+
+  // If bytecode not set use the current one.
+  if (bc == Bytecodes::_illegal) {
+    bc = code();
+  }
+  if (try_inline_full(callee, holder_known, bc, receiver))
+    return true;
+  print_inlining(callee, _inline_bailout_msg, /*success*/ false);
+  return false;
+}
+
+
+const char* GraphBuilder::check_can_parse(ciMethod* callee) const {
+  // Certain methods cannot be parsed at all:
+  if ( callee->is_native())            return "native method";
+  if ( callee->is_abstract())          return "abstract method";
+  if (!callee->can_be_compiled())      return "not compilable (disabled)";
+  return NULL;
+}
+
+
+// negative filter: should callee NOT be inlined?  returns NULL, ok to inline, or rejection msg
+const char* GraphBuilder::should_not_inline(ciMethod* callee) const {
+  if ( callee->should_exclude())       return "excluded by CompilerOracle";
+  if ( callee->should_not_inline())    return "disallowed by CompilerOracle";
+  if ( callee->dont_inline())          return "don't inline by annotation";
+  return NULL;
 }
 
 
@@ -3304,7 +3405,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
           recv = args->at(0);
           null_check(recv);
         }
-        profile_call(recv, NULL);
+        profile_call(callee, recv, NULL);
       }
     }
   }
@@ -3314,13 +3415,6 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
   // append instruction & push result
   Value value = append_split(result);
   if (result_type != voidType) push(result_type, value);
-
-#ifndef PRODUCT
-  // printing
-  if (PrintInlining) {
-    print_inline_result(callee, true);
-  }
-#endif
 
   // done
   return true;
@@ -3477,7 +3571,7 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
 }
 
 
-bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBegin* cont_block, Value receiver) {
+bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecodes::Code bc, Value receiver) {
   assert(!callee->is_native(), "callee must not be native");
   if (CompilationPolicy::policy()->should_not_inline(compilation()->env(), callee)) {
     INLINE_BAILOUT("inlining prohibited by policy");
@@ -3508,10 +3602,10 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
   if (callee->force_inline() || callee->should_inline()) {
     // ignore heuristic controls on inlining
     if (callee->force_inline())
-      CompileTask::print_inlining(callee, scope()->level(), bci(), "force inline by annotation");
+      print_inlining(callee, "force inline by annotation");
   } else {
-    if (inline_level() > MaxInlineLevel                         ) INLINE_BAILOUT("too-deep inlining");
-    if (recursive_inline_level(callee) > MaxRecursiveInlineLevel) INLINE_BAILOUT("too-deep recursive inlining");
+    if (inline_level() > MaxInlineLevel                         ) INLINE_BAILOUT("inlining too deep");
+    if (recursive_inline_level(callee) > MaxRecursiveInlineLevel) INLINE_BAILOUT("recursive inlining too deep");
     if (callee->code_size_for_inlining() > max_inline_size()    ) INLINE_BAILOUT("callee is too large");
 
     // don't inline throwable methods unless the inlining tree is rooted in a throwable class
@@ -3530,14 +3624,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
     if (compilation()->env()->num_inlined_bytecodes() > DesiredMethodLimit) {
       INLINE_BAILOUT("total inlining greater than DesiredMethodLimit");
     }
+    // printing
+    print_inlining(callee, "");
   }
-
-#ifndef PRODUCT
-  // printing
-  if (PrintInlining) {
-    print_inline_result(callee, true);
-  }
-#endif
 
   // NOTE: Bailouts from this point on, which occur at the
   // GraphBuilder level, do not cause bailout just of the inlining but
@@ -3545,13 +3634,15 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
 
   BlockBegin* orig_block = block();
 
+  const bool is_invokedynamic = bc == Bytecodes::_invokedynamic;
+  const bool has_receiver = (bc != Bytecodes::_invokestatic && !is_invokedynamic);
+
   const int args_base = state()->stack_size() - callee->arg_size();
   assert(args_base >= 0, "stack underflow during inlining");
 
   // Insert null check if necessary
   Value recv = NULL;
-  if (code() != Bytecodes::_invokestatic &&
-      code() != Bytecodes::_invokedynamic) {
+  if (has_receiver) {
     // note: null check must happen even if first instruction of callee does
     //       an implicit null check since the callee is in a different scope
     //       and we must make sure exception handling does the right thing
@@ -3567,7 +3658,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
     compilation()->set_would_profile(true);
 
     if (profile_calls()) {
-      profile_call(recv, holder_known ? callee->holder() : NULL);
+      profile_call(callee, recv, holder_known ? callee->holder() : NULL);
     }
   }
 
@@ -3576,7 +3667,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
   // fall-through of control flow, all return instructions of the
   // callee will need to be replaced by Goto's pointing to this
   // continuation point.
-  BlockBegin* cont = cont_block != NULL ? cont_block : block_at(next_bci());
+  BlockBegin* cont = block_at(next_bci());
   bool continuation_existed = true;
   if (cont == NULL) {
     cont = new BlockBegin(next_bci());
@@ -3609,17 +3700,10 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
   // note: this will also ensure that all arguments are computed before being passed
   ValueStack* callee_state = state();
   ValueStack* caller_state = state()->caller_state();
-  { int i = args_base;
-    while (i < caller_state->stack_size()) {
-      const int par_no = i - args_base;
-      Value  arg = caller_state->stack_at_inc(i);
-      // NOTE: take base() of arg->type() to avoid problems storing
-      // constants
-      if (receiver != NULL && par_no == 0) {
-        arg = receiver;
-      }
-      store_local(callee_state, arg, arg->type()->base(), par_no);
-    }
+  for (int i = args_base; i < caller_state->stack_size(); ) {
+    const int arg_no = i - args_base;
+    Value arg = caller_state->stack_at_inc(i);
+    store_local(callee_state, arg, arg_no);
   }
 
   // Remove args from stack.
@@ -3695,29 +3779,27 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
   // block merging. This allows load elimination and CSE to take place
   // across multiple callee scopes if they are relatively simple, and
   // is currently essential to making inlining profitable.
-  if (cont_block == NULL) {
-    if (num_returns() == 1
-        && block() == orig_block
-        && block() == inline_cleanup_block()) {
-      _last  = inline_cleanup_return_prev();
-      _state = inline_cleanup_state();
-    } else if (continuation_preds == cont->number_of_preds()) {
-      // Inlining caused that the instructions after the invoke in the
-      // caller are not reachable any more. So skip filling this block
-      // with instructions!
-      assert(cont == continuation(), "");
+  if (num_returns() == 1
+      && block() == orig_block
+      && block() == inline_cleanup_block()) {
+    _last  = inline_cleanup_return_prev();
+    _state = inline_cleanup_state();
+  } else if (continuation_preds == cont->number_of_preds()) {
+    // Inlining caused that the instructions after the invoke in the
+    // caller are not reachable any more. So skip filling this block
+    // with instructions!
+    assert(cont == continuation(), "");
+    assert(_last && _last->as_BlockEnd(), "");
+    _skip_block = true;
+  } else {
+    // Resume parsing in continuation block unless it was already parsed.
+    // Note that if we don't change _last here, iteration in
+    // iterate_bytecodes_for_block will stop when we return.
+    if (!continuation()->is_set(BlockBegin::was_visited_flag)) {
+      // add continuation to work list instead of parsing it immediately
       assert(_last && _last->as_BlockEnd(), "");
+      scope_data()->parent()->add_to_work_list(continuation());
       _skip_block = true;
-    } else {
-      // Resume parsing in continuation block unless it was already parsed.
-      // Note that if we don't change _last here, iteration in
-      // iterate_bytecodes_for_block will stop when we return.
-      if (!continuation()->is_set(BlockBegin::was_visited_flag)) {
-        // add continuation to work list instead of parsing it immediately
-        assert(_last && _last->as_BlockEnd(), "");
-        scope_data()->parent()->add_to_work_list(continuation());
-        _skip_block = true;
-      }
     }
   }
 
@@ -3735,114 +3817,88 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
 
 
 bool GraphBuilder::for_method_handle_inline(ciMethod* callee) {
-  assert(!callee->is_static(), "change next line");
-  int index = state()->stack_size() - (callee->arg_size_no_receiver() + 1);
-  Value receiver = state()->stack_at(index);
-
-  if (receiver->type()->is_constant()) {
-    ciMethodHandle* method_handle = receiver->type()->as_ObjectType()->constant_value()->as_method_handle();
-
-    // Set the callee to have access to the class and signature in
-    // the MethodHandleCompiler.
-    method_handle->set_callee(callee);
-    method_handle->set_caller(method());
-
-    // Get an adapter for the MethodHandle.
-    ciMethod* method_handle_adapter = method_handle->get_method_handle_adapter();
-    if (method_handle_adapter != NULL) {
-      return try_inline(method_handle_adapter, /*holder_known=*/ true);
-    }
-  } else if (receiver->as_CheckCast()) {
-    // Match MethodHandle.selectAlternative idiom
-    Phi* phi = receiver->as_CheckCast()->obj()->as_Phi();
-
-    if (phi != NULL && phi->operand_count() == 2) {
-      // Get the two MethodHandle inputs from the Phi.
-      Value op1 = phi->operand_at(0);
-      Value op2 = phi->operand_at(1);
-      ObjectType* op1type = op1->type()->as_ObjectType();
-      ObjectType* op2type = op2->type()->as_ObjectType();
-
-      if (op1type->is_constant() && op2type->is_constant()) {
-        ciMethodHandle* mh1 = op1type->constant_value()->as_method_handle();
-        ciMethodHandle* mh2 = op2type->constant_value()->as_method_handle();
-
-        // Set the callee to have access to the class and signature in
-        // the MethodHandleCompiler.
-        mh1->set_callee(callee);
-        mh1->set_caller(method());
-        mh2->set_callee(callee);
-        mh2->set_caller(method());
-
-        // Get adapters for the MethodHandles.
-        ciMethod* mh1_adapter = mh1->get_method_handle_adapter();
-        ciMethod* mh2_adapter = mh2->get_method_handle_adapter();
-
-        if (mh1_adapter != NULL && mh2_adapter != NULL) {
-          set_inline_cleanup_info();
-
-          // Build the If guard
-          BlockBegin* one = new BlockBegin(next_bci());
-          BlockBegin* two = new BlockBegin(next_bci());
-          BlockBegin* end = new BlockBegin(next_bci());
-          Instruction* iff = append(new If(phi, If::eql, false, op1, one, two, NULL, false));
-          block()->set_end(iff->as_BlockEnd());
-
-          // Connect up the states
-          one->merge(block()->end()->state());
-          two->merge(block()->end()->state());
-
-          // Save the state for the second inlinee
-          ValueStack* state_before = copy_state_before();
-
-          // Parse first adapter
-          _last = _block = one;
-          if (!try_inline_full(mh1_adapter, /*holder_known=*/ true, end, NULL)) {
-            restore_inline_cleanup_info();
-            block()->clear_end();  // remove appended iff
-            return false;
-          }
-
-          // Parse second adapter
-          _last = _block = two;
-          _state = state_before;
-          if (!try_inline_full(mh2_adapter, /*holder_known=*/ true, end, NULL)) {
-            restore_inline_cleanup_info();
-            block()->clear_end();  // remove appended iff
-            return false;
-          }
-
-          connect_to_end(end);
+  ValueStack* state_before = state()->copy_for_parsing();
+  vmIntrinsics::ID iid = callee->intrinsic_id();
+  switch (iid) {
+  case vmIntrinsics::_invokeBasic:
+    {
+      // get MethodHandle receiver
+      const int args_base = state()->stack_size() - callee->arg_size();
+      ValueType* type = state()->stack_at(args_base)->type();
+      if (type->is_constant()) {
+        ciMethod* target = type->as_ObjectType()->constant_value()->as_method_handle()->get_vmtarget();
+        guarantee(!target->is_method_handle_intrinsic(), "should not happen");  // XXX remove
+        Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
+        if (try_inline(target, /*holder_known*/ true, bc)) {
           return true;
         }
+      } else {
+        print_inlining(callee, "receiver not constant", /*success*/ false);
       }
     }
-  }
-  return false;
-}
+    break;
 
-
-bool GraphBuilder::for_invokedynamic_inline(ciMethod* callee) {
-  // Get the MethodHandle from the CallSite.
-  ciCallSite*     call_site     = stream()->get_call_site();
-  ciMethodHandle* method_handle = call_site->get_target();
-
-  // Set the callee to have access to the class and signature in the
-  // MethodHandleCompiler.
-  method_handle->set_callee(callee);
-  method_handle->set_caller(method());
-
-  // Get an adapter for the MethodHandle.
-  ciMethod* method_handle_adapter = method_handle->get_invokedynamic_adapter();
-  if (method_handle_adapter != NULL) {
-    if (try_inline(method_handle_adapter, /*holder_known=*/ true)) {
-      // Add a dependence for invalidation of the optimization.
-      if (!call_site->is_constant_call_site()) {
-        dependency_recorder()->assert_call_site_target_value(call_site, method_handle);
+  case vmIntrinsics::_linkToVirtual:
+  case vmIntrinsics::_linkToStatic:
+  case vmIntrinsics::_linkToSpecial:
+  case vmIntrinsics::_linkToInterface:
+    {
+      // pop MemberName argument
+      const int args_base = state()->stack_size() - callee->arg_size();
+      ValueType* type = apop()->type();
+      if (type->is_constant()) {
+        ciMethod* target = type->as_ObjectType()->constant_value()->as_member_name()->get_vmtarget();
+        // If the target is another method handle invoke try recursivly to get
+        // a better target.
+        if (target->is_method_handle_intrinsic()) {
+          if (for_method_handle_inline(target)) {
+            return true;
+          }
+        } else {
+          ciSignature* signature = target->signature();
+          const int receiver_skip = target->is_static() ? 0 : 1;
+          // Cast receiver to its type.
+          if (!target->is_static()) {
+            ciKlass* tk = signature->accessing_klass();
+            Value obj = state()->stack_at(args_base);
+            if (obj->exact_type() == NULL &&
+                obj->declared_type() != tk && tk != compilation()->env()->Object_klass()) {
+              TypeCast* c = new TypeCast(tk, obj, state_before);
+              append(c);
+              state()->stack_at_put(args_base, c);
+            }
+          }
+          // Cast reference arguments to its type.
+          for (int i = 0, j = 0; i < signature->count(); i++) {
+            ciType* t = signature->type_at(i);
+            if (t->is_klass()) {
+              ciKlass* tk = t->as_klass();
+              Value obj = state()->stack_at(args_base + receiver_skip + j);
+              if (obj->exact_type() == NULL &&
+                  obj->declared_type() != tk && tk != compilation()->env()->Object_klass()) {
+                TypeCast* c = new TypeCast(t, obj, state_before);
+                append(c);
+                state()->stack_at_put(args_base + receiver_skip + j, c);
+              }
+            }
+            j += t->size();  // long and double take two slots
+          }
+          Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
+          if (try_inline(target, /*holder_known*/ true, bc)) {
+            return true;
+          }
+        }
+      } else {
+        print_inlining(callee, "MemberName not constant", /*success*/ false);
       }
-      return true;
     }
+    break;
+
+  default:
+    fatal(err_msg("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
+    break;
   }
+  set_state(state_before);
   return false;
 }
 
@@ -4034,22 +4090,24 @@ void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
 }
 
 
-#ifndef PRODUCT
-void GraphBuilder::print_inline_result(ciMethod* callee, bool res) {
-  CompileTask::print_inlining(callee, scope()->level(), bci(), _inline_bailout_msg);
-  if (res && CIPrintMethodCodes) {
+void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool success) {
+  if (!PrintInlining)  return;
+  assert(msg != NULL, "must be");
+  CompileTask::print_inlining(callee, scope()->level(), bci(), msg);
+  if (success && CIPrintMethodCodes) {
     callee->print_codes();
   }
 }
 
 
+#ifndef PRODUCT
 void GraphBuilder::print_stats() {
   vmap()->print();
 }
 #endif // PRODUCT
 
-void GraphBuilder::profile_call(Value recv, ciKlass* known_holder) {
-  append(new ProfileCall(method(), bci(), recv, known_holder));
+void GraphBuilder::profile_call(ciMethod* callee, Value recv, ciKlass* known_holder) {
+  append(new ProfileCall(method(), bci(), callee, recv, known_holder));
 }
 
 void GraphBuilder::profile_invocation(ciMethod* callee, ValueStack* state) {

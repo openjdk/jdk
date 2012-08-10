@@ -2171,7 +2171,7 @@ bool LibraryCallKit::inline_reverseBytes(vmIntrinsics::ID id) {
   if (id == vmIntrinsics::_reverseBytes_l && !Matcher::has_match_rule(Op_ReverseBytesL))  return false;
   if (id == vmIntrinsics::_reverseBytes_c && !Matcher::has_match_rule(Op_ReverseBytesUS)) return false;
   if (id == vmIntrinsics::_reverseBytes_s && !Matcher::has_match_rule(Op_ReverseBytesS))  return false;
-  _sp += arg_size();        // restore stack pointer
+  _sp += arg_size();  // restore stack pointer
   switch (id) {
   case vmIntrinsics::_reverseBytes_i:
     push(_gvn.transform(new (C, 2) ReverseBytesINode(0, pop())));
@@ -2344,6 +2344,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
 
   // Argument words:  "this" plus (oop/offset) or (lo/hi) args plus maybe 1 or 2 value words
   int nargs = 1 + (is_native_ptr ? 2 : 3) + (is_store ? type_words : 0);
+  assert(callee()->arg_size() == nargs, "must be");
 
   debug_only(int saved_sp = _sp);
   _sp += nargs;
@@ -4047,7 +4048,8 @@ bool LibraryCallKit::is_method_invoke_or_aux_frame(JVMState* jvms) {
       }
     }
   }
-  else if (method->is_method_handle_adapter()) {
+  else if (method->is_method_handle_intrinsic() ||
+           method->is_compiled_lambda_form()) {
     // This is an internal adapter frame from the MethodHandleCompiler -- skip it
     return true;
   }
