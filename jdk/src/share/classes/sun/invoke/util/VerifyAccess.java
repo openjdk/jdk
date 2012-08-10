@@ -169,6 +169,46 @@ public class VerifyAccess {
     }
 
     /**
+     * Decide if the given method type, attributed to a member or symbolic
+     * reference of a given reference class, is really visible to that class.
+     * @param type the supposed type of a member or symbolic reference of refc
+     * @param refc
+     */
+    public static boolean isTypeVisible(Class<?> type, Class<?> refc) {
+        if (type == refc)  return true;  // easy check
+        while (type.isArray())  type = type.getComponentType();
+        if (type.isPrimitive() || type == Object.class)  return true;
+        ClassLoader parent = type.getClassLoader();
+        if (parent == null)  return true;
+        ClassLoader child  = refc.getClassLoader();
+        if (child == null)  return false;
+        if (parent == child || loadersAreRelated(parent, child, true))
+            return true;
+        // Do it the hard way:  Look up the type name from the refc loader.
+        try {
+            Class<?> res = child.loadClass(type.getName());
+            return (type == res);
+        } catch (ClassNotFoundException ex) {
+            return false;
+        }
+    }
+
+    /**
+     * Decide if the given method type, attributed to a member or symbolic
+     * reference of a given reference class, is really visible to that class.
+     * @param type the supposed type of a member or symbolic reference of refc
+     * @param refc
+     */
+    public static boolean isTypeVisible(java.lang.invoke.MethodType type, Class<?> refc) {
+        for (int n = -1, max = type.parameterCount(); n < max; n++) {
+            Class<?> ptype = (n < 0 ? type.returnType() : type.parameterType(n));
+            if (!isTypeVisible(ptype, refc))
+                return false;
+        }
+        return true;
+    }
+
+    /**
      * Test if two classes have the same class loader and package qualifier.
      * @param class1
      * @param class2
