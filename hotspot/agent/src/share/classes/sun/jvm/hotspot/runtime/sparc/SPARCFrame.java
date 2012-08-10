@@ -571,8 +571,6 @@ public class SPARCFrame extends Frame {
     //        registers callee-saved, then we will have to copy over
     //        the RegisterMap update logic from the Intel code.
 
-    if (isRicochetFrame()) return senderForRicochetFrame(map);
-
     // The constructor of the sender must know whether this frame is interpreted so it can set the
     // sender's _interpreter_sp_adjustment field.
     if (VM.getVM().getInterpreter().contains(pc)) {
@@ -944,20 +942,6 @@ public class SPARCFrame extends Frame {
     return (a1.equals(a2));
   }
 
-
-  private Frame senderForRicochetFrame(SPARCRegisterMap map) {
-    if (DEBUG) {
-      System.out.println("senderForRicochetFrame");
-    }
-    //RicochetFrame* f = RicochetFrame::from_frame(fr);
-    // Cf. is_interpreted_frame path of frame::sender
-    Address youngerSP = getSP();
-    Address sp        = getSenderSP();
-    map.makeIntegerRegsUnsaved();
-    map.shiftWindow(sp, youngerSP);
-    boolean thisFrameAdjustedStack = true;  // I5_savedSP is live in this RF
-    return new SPARCFrame(biasSP(sp), biasSP(youngerSP), thisFrameAdjustedStack);
-  }
 
   private Frame senderForEntryFrame(RegisterMap regMap) {
     SPARCRegisterMap map = (SPARCRegisterMap) regMap;

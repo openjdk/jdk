@@ -761,16 +761,33 @@ UNSAFE_ENTRY(jobject, Unsafe_StaticFieldBaseFromClass(JNIEnv *env, jobject unsaf
   return JNIHandles::make_local(env, JNIHandles::resolve_non_null(clazz));
 UNSAFE_END
 
-UNSAFE_ENTRY(void, Unsafe_EnsureClassInitialized(JNIEnv *env, jobject unsafe, jobject clazz))
+UNSAFE_ENTRY(void, Unsafe_EnsureClassInitialized(JNIEnv *env, jobject unsafe, jobject clazz)) {
   UnsafeWrapper("Unsafe_EnsureClassInitialized");
   if (clazz == NULL) {
     THROW(vmSymbols::java_lang_NullPointerException());
   }
   oop mirror = JNIHandles::resolve_non_null(clazz);
-  instanceKlass* k = instanceKlass::cast(java_lang_Class::as_klassOop(mirror));
-  if (k != NULL) {
+
+  klassOop klass = java_lang_Class::as_klassOop(mirror);
+  if (klass != NULL && Klass::cast(klass)->should_be_initialized()) {
+    instanceKlass* k = instanceKlass::cast(klass);
     k->initialize(CHECK);
   }
+}
+UNSAFE_END
+
+UNSAFE_ENTRY(jboolean, Unsafe_ShouldBeInitialized(JNIEnv *env, jobject unsafe, jobject clazz)) {
+  UnsafeWrapper("Unsafe_ShouldBeInitialized");
+  if (clazz == NULL) {
+    THROW_(vmSymbols::java_lang_NullPointerException(), false);
+  }
+  oop mirror = JNIHandles::resolve_non_null(clazz);
+  klassOop klass = java_lang_Class::as_klassOop(mirror);
+  if (klass != NULL && Klass::cast(klass)->should_be_initialized()) {
+    return true;
+  }
+  return false;
+}
 UNSAFE_END
 
 static void getBaseAndScale(int& base, int& scale, jclass acls, TRAPS) {
@@ -1566,6 +1583,10 @@ JNINativeMethod anonk_methods[] = {
     {CC"defineAnonymousClass", CC"("DAC_Args")"CLS,      FN_PTR(Unsafe_DefineAnonymousClass)},
 };
 
+JNINativeMethod lform_methods[] = {
+    {CC"shouldBeInitialized",CC"("CLS")Z",               FN_PTR(Unsafe_ShouldBeInitialized)},
+};
+
 #undef CC
 #undef FN_PTR
 
@@ -1632,6 +1653,15 @@ JVM_ENTRY(void, JVM_RegisterUnsafeMethods(JNIEnv *env, jclass unsafecls))
       if (env->ExceptionOccurred()) {
         if (PrintMiscellaneous && (Verbose || WizardMode)) {
           tty->print_cr("Warning:  SDK 1.7 Unsafe.defineClass (anonymous version) not found.");
+        }
+        env->ExceptionClear();
+      }
+    }
+    if (EnableInvokeDynamic) {
+      env->RegisterNatives(unsafecls, lform_methods, sizeof(lform_methods)/sizeof(JNINativeMethod));
+      if (env->ExceptionOccurred()) {
+        if (PrintMiscellaneous && (Verbose || WizardMode)) {
+          tty->print_cr("Warning:  SDK 1.7 LambdaForm support in Unsafe not found.");
         }
         env->ExceptionClear();
       }

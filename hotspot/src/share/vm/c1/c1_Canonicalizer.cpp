@@ -567,6 +567,7 @@ void Canonicalizer::do_NullCheck      (NullCheck*       x) {
   }
 }
 
+void Canonicalizer::do_TypeCast       (TypeCast*        x) {}
 void Canonicalizer::do_Invoke         (Invoke*          x) {}
 void Canonicalizer::do_NewInstance    (NewInstance*     x) {}
 void Canonicalizer::do_NewTypeArray   (NewTypeArray*    x) {}

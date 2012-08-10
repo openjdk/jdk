@@ -478,6 +478,7 @@ public:
   void do_IfOp           (IfOp*            x);
   void do_Convert        (Convert*         x);
   void do_NullCheck      (NullCheck*       x);
+  void do_TypeCast       (TypeCast*        x);
   void do_Invoke         (Invoke*          x);
   void do_NewInstance    (NewInstance*     x);
   void do_NewTypeArray   (NewTypeArray*    x);
@@ -648,6 +649,7 @@ void NullCheckVisitor::do_CompareOp      (CompareOp*       x) {}
 void NullCheckVisitor::do_IfOp           (IfOp*            x) {}
 void NullCheckVisitor::do_Convert        (Convert*         x) {}
 void NullCheckVisitor::do_NullCheck      (NullCheck*       x) { nce()->handle_NullCheck(x); }
+void NullCheckVisitor::do_TypeCast       (TypeCast*        x) {}
 void NullCheckVisitor::do_Invoke         (Invoke*          x) { nce()->handle_Invoke(x); }
 void NullCheckVisitor::do_NewInstance    (NewInstance*     x) { nce()->handle_NewInstance(x); }
 void NullCheckVisitor::do_NewTypeArray   (NewTypeArray*    x) { nce()->handle_NewArray(x); }
