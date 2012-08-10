@@ -1298,11 +1298,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
            try {
                 String algName =
                         macData.getDigestAlgName().toUpperCase(Locale.ENGLISH);
-                if (algName.equals("SHA")  ||
-                    algName.equals("SHA1") ||
-                    algName.equals("SHA-1")) {
-                    algName = "SHA1";
-                }
+
+                // Change SHA-1 to SHA1
+                algName = algName.replace("-", "");
 
                 // generate MAC (MAC key is created within JCE)
                 Mac m = Mac.getInstance("HmacPBE" + algName);
