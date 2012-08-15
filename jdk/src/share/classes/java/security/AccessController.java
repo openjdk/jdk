@@ -290,11 +290,11 @@ public final class AccessController {
      */
     public static <T> T doPrivilegedWithCombiner(PrivilegedAction<T> action) {
 
-        DomainCombiner dc = null;
         AccessControlContext acc = getStackAccessControlContext();
-        if (acc == null || (dc = acc.getAssignedCombiner()) == null) {
-            return AccessController.doPrivileged(action, acc);
+        if (acc == null) {
+            return AccessController.doPrivileged(action);
         }
+        DomainCombiner dc = acc.getAssignedCombiner();
         return AccessController.doPrivileged(action, preserveCombiner(dc));
     }
 
@@ -386,11 +386,11 @@ public final class AccessController {
     public static <T> T doPrivilegedWithCombiner
         (PrivilegedExceptionAction<T> action) throws PrivilegedActionException {
 
-        DomainCombiner dc = null;
         AccessControlContext acc = getStackAccessControlContext();
-        if (acc == null || (dc = acc.getAssignedCombiner()) == null) {
-            return AccessController.doPrivileged(action, acc);
+        if (acc == null) {
+            return AccessController.doPrivileged(action);
         }
+        DomainCombiner dc = acc.getAssignedCombiner();
         return AccessController.doPrivileged(action, preserveCombiner(dc));
     }
 
@@ -417,7 +417,12 @@ public final class AccessController {
         // perform 'combine' on the caller of doPrivileged,
         // even if the caller is from the bootclasspath
         ProtectionDomain[] pds = new ProtectionDomain[] {callerPd};
-        return new AccessControlContext(combiner.combine(pds, null), combiner);
+        if (combiner == null) {
+            return new AccessControlContext(pds);
+        } else {
+            return new AccessControlContext(combiner.combine(pds, null),
+                                            combiner);
+        }
     }
 
 
