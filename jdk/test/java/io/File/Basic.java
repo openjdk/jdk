@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
    @bug 4165666 4203706 4288670 4290024
    @summary Basic heartbeat test for File methods that access the filesystem
 
-   @build Basic
+   @build Basic Util
    @run shell basic.sh
  */
 
@@ -73,7 +73,7 @@ public class Basic {
         if (!f.isFile()) fail(f, "is not a file");
         if (f.isDirectory()) fail(f, "is a directory");
         if (!f.canRead()) fail(f, "is not readable");
-        if (f.canWrite() != writeable)
+        if (!Util.isPrivileged() && f.canWrite() != writeable)
             fail(f, writeable ? "is not writeable" : "is writeable");
         int rwLen = 6;
         if (f.length() != length) fail(f, "has wrong length");
