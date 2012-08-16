@@ -29,6 +29,7 @@
 #include "jlong.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <dlfcn.h>
 #include <errno.h>
 #include <mntent.h>
@@ -45,6 +46,11 @@ fsetxattr_func* my_fsetxattr_func = NULL;
 fremovexattr_func* my_fremovexattr_func = NULL;
 flistxattr_func* my_flistxattr_func = NULL;
 
+static jfieldID entry_name;
+static jfieldID entry_dir;
+static jfieldID entry_fstype;
+static jfieldID entry_options;
+
 static void throwUnixException(JNIEnv* env, int errnum) {
     jobject x = JNU_NewObjectByName(env, "sun/nio/fs/UnixException",
         "(I)V", errnum);
@@ -60,6 +66,15 @@ Java_sun_nio_fs_LinuxNativeDispatcher_init(JNIEnv *env, jclass clazz)
     my_fsetxattr_func = (fsetxattr_func*)dlsym(RTLD_DEFAULT, "fsetxattr");
     my_fremovexattr_func = (fremovexattr_func*)dlsym(RTLD_DEFAULT, "fremovexattr");
     my_flistxattr_func = (flistxattr_func*)dlsym(RTLD_DEFAULT, "flistxattr");
+
+    clazz = (*env)->FindClass(env, "sun/nio/fs/UnixMountEntry");
+    if (clazz == NULL)
+        return;
+
+    entry_name = (*env)->GetFieldID(env, clazz, "name", "[B");
+    entry_dir = (*env)->GetFieldID(env, clazz, "dir", "[B");
+    entry_fstype = (*env)->GetFieldID(env, clazz, "fstype", "[B");
+    entry_options = (*env)->GetFieldID(env, clazz, "opts", "[B");
 }
 
 JNIEXPORT jint JNICALL
@@ -149,6 +164,61 @@ Java_sun_nio_fs_LinuxNativeDispatcher_setmntent0(JNIEnv* env, jclass this, jlong
         throwUnixException(env, errno);
     }
     return ptr_to_jlong(fp);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_LinuxNativeDispatcher_getmntent(JNIEnv* env, jclass this,
+    jlong value, jobject entry)
+{
+    struct mntent ent;
+    char buf[1024];
+    int buflen = sizeof(buf);
+    struct mntent* m;
+    FILE* fp = jlong_to_ptr(value);
+    jsize len;
+    jbyteArray bytes;
+    char* name;
+    char* dir;
+    char* fstype;
+    char* options;
+
+    m = getmntent_r(fp, &ent, (char*)&buf, buflen);
+    if (m == NULL)
+        return -1;
+    name = m->mnt_fsname;
+    dir = m->mnt_dir;
+    fstype = m->mnt_type;
+    options = m->mnt_opts;
+
+    len = strlen(name);
+    bytes = (*env)->NewByteArray(env, len);
+    if (bytes == NULL)
+        return -1;
+    (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)name);
+    (*env)->SetObjectField(env, entry, entry_name, bytes);
+
+    len = strlen(dir);
+    bytes = (*env)->NewByteArray(env, len);
+    if (bytes == NULL)
+        return -1;
+    (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)dir);
+    (*env)->SetObjectField(env, entry, entry_dir, bytes);
+
+    len = strlen(fstype);
+    bytes = (*env)->NewByteArray(env, len);
+    if (bytes == NULL)
+        return -1;
+    (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)fstype);
+    (*env)->SetObjectField(env, entry, entry_fstype, bytes);
+
+    len = strlen(options);
+    bytes = (*env)->NewByteArray(env, len);
+    if (bytes == NULL)
+        return -1;
+    (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)options);
+    (*env)->SetObjectField(env, entry, entry_options, bytes);
+
+    return 0;
 }
 
 JNIEXPORT void JNICALL
