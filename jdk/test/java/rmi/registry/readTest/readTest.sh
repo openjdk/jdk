@@ -35,9 +35,14 @@ case "$OS" in
     FS="/"
     FILEURL="file:"
     ;;
-  Windows* | CYGWIN* )
+  Windows* )
     PS=";"
     FS="\\"
+    FILEURL="file:/"
+    ;;
+  CYGWIN* )
+    PS=";"
+    FS="/"
     FILEURL="file:/"
     ;;
   * )
@@ -46,7 +51,7 @@ case "$OS" in
     ;;
 esac
 
-TEST_CLASSPATH=.:$TESTCLASSES
+TEST_CLASSPATH=.$PS$TESTCLASSES
 cp -r ${TESTSRC}${FS}* .
 ${TESTJAVA}${FS}bin${FS}javac testPkg${FS}*java
 ${TESTJAVA}${FS}bin${FS}javac -cp $TEST_CLASSPATH readTest.java
@@ -62,8 +67,16 @@ RMIREG_PID=$!
 sleep 3
 cd ..
 
+case "$OS" in
+  CYGWIN* )
+    CODEBASE=`cygpath -w $PWD`
+    ;;
+  * )
+    CODEBASE=`pwd`
+    ;;  
+esac
 # trailing / after code base is important for rmi codebase property.
-${TESTJAVA}${FS}bin${FS}java -cp $TEST_CLASSPATH -Djava.rmi.server.codebase=${FILEURL}`pwd`/ readTest > OUT.TXT 2>&1 &
+${TESTJAVA}${FS}bin${FS}java -cp $TEST_CLASSPATH -Djava.rmi.server.codebase=${FILEURL}$CODEBASE/ readTest > OUT.TXT 2>&1 &
 TEST_PID=$!
 #bulk of testcase - let it run for a while
 sleep 5
