@@ -141,15 +141,9 @@ javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
 # 7144846
 javax/management/remote/mandatory/connection/ReconnectTest.java	generic-all
 
-# 7149181 
-sun/management/jmxremote/startstop/JMXStartStopTest.sh          generic-all
-
 ############################################################################
 
 # jdk_math
-
-# 7174532
-java/lang/Math/WorstCaseTests.java				generic-all
 
 ############################################################################
 
@@ -352,10 +346,8 @@ com/sun/jdi/FieldWatchpoints.java                               generic-all
 # Filed 6402201
 com/sun/jdi/ProcessAttachTest.sh                                generic-all
 
-# Filed 6979016
+# Filed 7172176
 sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
-
-# 7172176
 sun/tools/jconsole/ImmutableResourceTest.sh			generic-all
 
 # 7132203
