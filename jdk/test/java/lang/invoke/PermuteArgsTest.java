@@ -191,7 +191,11 @@ public class PermuteArgsTest {
                 pt = mt1.parameterType(mt1.parameterCount() - posArgs);
             mt1 = mt1.appendParameterTypes(pt);
         }
-        return mh.asType(mt1);
+        try {
+            return mh.asType(mt1);
+        } catch (WrongMethodTypeException | IllegalArgumentException ex) {
+            throw new IllegalArgumentException("cannot convert to type "+mt1+" from "+mh, ex);
+        }
     }
     static MethodHandle findTestMH(String name, int[] perm) throws ReflectiveOperationException {
         int arity = perm.length;
