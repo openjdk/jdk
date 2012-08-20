@@ -1357,6 +1357,12 @@ void SuperWord::output() {
         // Promote operands to vector
         Node* in1 = vector_opd(p, 1);
         Node* in2 = vector_opd(p, 2);
+        if (VectorNode::is_invariant_vector(in1) && (n->is_Add() || n->is_Mul())) {
+          // Move invariant vector input into second position to avoid register spilling.
+          Node* tmp = in1;
+          in1 = in2;
+          in2 = tmp;
+        }
         vn = VectorNode::make(_phase->C, opc, in1, in2, vlen, velt_basic_type(n));
       } else {
         ShouldNotReachHere();
@@ -1399,6 +1405,36 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   if (same_opd) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
       return opd; // input is matching vector
+    }
+    if ((opd_idx == 2) && VectorNode::is_shift(p0)) {
+      // No vector is needed for shift count.
+      // Vector instructions do not mask shift count, do it here.
+      Compile* C = _phase->C;
+      Node* cnt = opd;
+      juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
+      const TypeInt* t = opd->find_int_type();
+      if (t != NULL && t->is_con()) {
+        juint shift = t->get_con();
+        if (shift > mask) { // Unsigned cmp
+          cnt = ConNode::make(C, TypeInt::make(shift & mask));
+        }
+      } else {
+        if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
+          cnt = ConNode::make(C, TypeInt::make(mask));
+          _phase->_igvn.register_new_node_with_optimizer(cnt);
+          cnt = new (C, 3) AndINode(opd, cnt);
+          _phase->_igvn.register_new_node_with_optimizer(cnt);
+          _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
+        }
+        assert(opd->bottom_type()->isa_int(), "int type only");
+        // Move non constant shift count into XMM register.
+        cnt = new (_phase->C, 2) MoveI2FNode(cnt);
+      }
+      if (cnt != opd) {
+        _phase->_igvn.register_new_node_with_optimizer(cnt);
+        _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
+      }
+      return cnt;
     }
     assert(!opd->is_StoreVector(), "such vector is not expected here");
     // Convert scalar input to vector with the same number of elements as
@@ -1718,37 +1754,27 @@ void SuperWord::compute_vector_element_type() {
   for (int i = _block.length() - 1; i >= 0; i--) {
     Node* n = _block.at(i);
     // Only integer types need be examined
-    if (n->bottom_type()->isa_int()) {
+    const Type* vt = velt_type(n);
+    if (vt->basic_type() == T_INT) {
       uint start, end;
       vector_opd_range(n, &start, &end);
       const Type* vt = velt_type(n);
 
       for (uint j = start; j < end; j++) {
         Node* in  = n->in(j);
-        // Don't propagate through a type conversion
-        if (n->bottom_type() != in->bottom_type())
-          continue;
-        switch(in->Opcode()) {
-        case Op_AddI:    case Op_AddL:
-        case Op_SubI:    case Op_SubL:
-        case Op_MulI:    case Op_MulL:
-        case Op_AndI:    case Op_AndL:
-        case Op_OrI:     case Op_OrL:
-        case Op_XorI:    case Op_XorL:
-        case Op_LShiftI: case Op_LShiftL:
-        case Op_CMoveI:  case Op_CMoveL:
-          if (in_bb(in)) {
-            bool same_type = true;
-            for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
-              Node *use = in->fast_out(k);
-              if (!in_bb(use) || !same_velt_type(use, n)) {
-                same_type = false;
-                break;
-              }
+        // Don't propagate through a memory
+        if (!in->is_Mem() && in_bb(in) && velt_type(in)->basic_type() == T_INT &&
+            data_size(n) < data_size(in)) {
+          bool same_type = true;
+          for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
+            Node *use = in->fast_out(k);
+            if (!in_bb(use) || !same_velt_type(use, n)) {
+              same_type = false;
+              break;
             }
-            if (same_type) {
-              set_velt_type(in, vt);
-            }
+          }
+          if (same_type) {
+            set_velt_type(in, vt);
           }
         }
       }
@@ -1792,10 +1818,8 @@ const Type* SuperWord::container_type(Node* n) {
   }
   const Type* t = _igvn.type(n);
   if (t->basic_type() == T_INT) {
-    if (t->higher_equal(TypeInt::BOOL))  return TypeInt::BOOL;
-    if (t->higher_equal(TypeInt::BYTE))  return TypeInt::BYTE;
-    if (t->higher_equal(TypeInt::CHAR))  return TypeInt::CHAR;
-    if (t->higher_equal(TypeInt::SHORT)) return TypeInt::SHORT;
+    // A narrow type of arithmetic operations will be determined by
+    // propagating the type of memory operations.
     return TypeInt::INT;
   }
   return t;
@@ -1940,7 +1964,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   //     lim0 == original pre loop limit
   //     V == v_align (power of 2)
   //     invar == extra invariant piece of the address expression
-  //     e == k [ +/- invar ]
+  //     e == offset [ +/- invar ]
   //
   // When reassociating expressions involving '%' the basic rules are:
   //     (a - b) % k == 0   =>  a % k == b % k
@@ -1993,13 +2017,12 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   int elt_size = align_to_ref_p.memory_size();
   int v_align  = vw / elt_size;
   assert(v_align > 1, "sanity");
-  int k        = align_to_ref_p.offset_in_bytes() / elt_size;
+  int offset   = align_to_ref_p.offset_in_bytes() / elt_size;
+  Node *offsn  = _igvn.intcon(offset);
 
-  Node *kn   = _igvn.intcon(k);
-
-  Node *e = kn;
+  Node *e = offsn;
   if (align_to_ref_p.invar() != NULL) {
-    // incorporate any extra invariant piece producing k +/- invar >>> log2(elt)
+    // incorporate any extra invariant piece producing (offset +/- invar) >>> log2(elt)
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
     Node* aref     = new (_phase->C, 3) URShiftINode(align_to_ref_p.invar(), log2_elt);
     _phase->_igvn.register_new_node_with_optimizer(aref);
@@ -2014,15 +2037,15 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   }
   if (vw > ObjectAlignmentInBytes) {
     // incorporate base e +/- base && Mask >>> log2(elt)
-    Node* mask = _igvn.MakeConX(~(-1 << exact_log2(vw)));
     Node* xbase = new(_phase->C, 2) CastP2XNode(NULL, align_to_ref_p.base());
     _phase->_igvn.register_new_node_with_optimizer(xbase);
-    Node* masked_xbase  = new (_phase->C, 3) AndXNode(xbase, mask);
-    _phase->_igvn.register_new_node_with_optimizer(masked_xbase);
 #ifdef _LP64
-    masked_xbase  = new (_phase->C, 2) ConvL2INode(masked_xbase);
-    _phase->_igvn.register_new_node_with_optimizer(masked_xbase);
+    xbase  = new (_phase->C, 2) ConvL2INode(xbase);
+    _phase->_igvn.register_new_node_with_optimizer(xbase);
 #endif
+    Node* mask = _igvn.intcon(vw-1);
+    Node* masked_xbase  = new (_phase->C, 3) AndINode(xbase, mask);
+    _phase->_igvn.register_new_node_with_optimizer(masked_xbase);
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
     Node* bref     = new (_phase->C, 3) URShiftINode(masked_xbase, log2_elt);
     _phase->_igvn.register_new_node_with_optimizer(bref);
