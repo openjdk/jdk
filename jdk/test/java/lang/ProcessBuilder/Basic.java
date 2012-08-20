@@ -2228,12 +2228,7 @@ public class Basic {
 
             p.destroy();
 
-            start = System.nanoTime();
             p.waitFor(1000, TimeUnit.MILLISECONDS);
-            end = System.nanoTime();
-            // allow for the less accurate default implementation
-            if ((end - start) > 200000000)
-                fail("Test failed: waitFor took too long on a dead process.");
         } catch (Throwable t) { unexpected(t); }
     }
 
