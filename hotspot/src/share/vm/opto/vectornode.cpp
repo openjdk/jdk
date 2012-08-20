@@ -69,6 +69,15 @@ int VectorNode::opcode(int sopc, uint vlen, BasicType bt) {
   case Op_SubD:
     assert(bt == T_DOUBLE, "must be");
     return Op_SubVD;
+  case Op_MulI:
+    switch (bt) {
+    case T_BOOLEAN:
+    case T_BYTE:   return 0;   // Unimplemented
+    case T_CHAR:
+    case T_SHORT:  return Op_MulVS;
+    case T_INT:    return Matcher::match_rule_supported(Op_MulVI) ? Op_MulVI : 0; // SSE4_1
+    }
+    ShouldNotReachHere();
   case Op_MulF:
     assert(bt == T_FLOAT, "must be");
     return Op_MulVF;
@@ -90,6 +99,9 @@ int VectorNode::opcode(int sopc, uint vlen, BasicType bt) {
     case T_INT:    return Op_LShiftVI;
     }
     ShouldNotReachHere();
+  case Op_LShiftL:
+    assert(bt == T_LONG, "must be");
+    return Op_LShiftVL;
   case Op_RShiftI:
     switch (bt) {
     case T_BOOLEAN:
@@ -99,6 +111,21 @@ int VectorNode::opcode(int sopc, uint vlen, BasicType bt) {
     case T_INT:    return Op_RShiftVI;
     }
     ShouldNotReachHere();
+  case Op_RShiftL:
+    assert(bt == T_LONG, "must be");
+    return Op_RShiftVL;
+  case Op_URShiftI:
+    switch (bt) {
+    case T_BOOLEAN:
+    case T_BYTE:   return Op_URShiftVB;
+    case T_CHAR:
+    case T_SHORT:  return Op_URShiftVS;
+    case T_INT:    return Op_URShiftVI;
+    }
+    ShouldNotReachHere();
+  case Op_URShiftL:
+    assert(bt == T_LONG, "must be");
+    return Op_URShiftVL;
   case Op_AndI:
   case Op_AndL:
     return Op_AndV;
@@ -140,6 +167,34 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
   return false;
 }
 
+bool VectorNode::is_shift(Node* n) {
+  switch (n->Opcode()) {
+  case Op_LShiftI:
+  case Op_LShiftL:
+  case Op_RShiftI:
+  case Op_RShiftL:
+  case Op_URShiftI:
+  case Op_URShiftL:
+    return true;
+  }
+  return false;
+}
+
+// Check if input is loop invarient vector.
+bool VectorNode::is_invariant_vector(Node* n) {
+  // Only Replicate vector nodes are loop invarient for now.
+  switch (n->Opcode()) {
+  case Op_ReplicateB:
+  case Op_ReplicateS:
+  case Op_ReplicateI:
+  case Op_ReplicateL:
+  case Op_ReplicateF:
+  case Op_ReplicateD:
+    return true;
+  }
+  return false;
+}
+
 // Return the vector version of a scalar operation node.
 VectorNode* VectorNode::make(Compile* C, int opc, Node* n1, Node* n2, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
@@ -160,6 +215,8 @@ VectorNode* VectorNode::make(Compile* C, int opc, Node* n1, Node* n2, uint vlen,
   case Op_SubVF: return new (C, 3) SubVFNode(n1, n2, vt);
   case Op_SubVD: return new (C, 3) SubVDNode(n1, n2, vt);
 
+  case Op_MulVS: return new (C, 3) MulVSNode(n1, n2, vt);
+  case Op_MulVI: return new (C, 3) MulVINode(n1, n2, vt);
   case Op_MulVF: return new (C, 3) MulVFNode(n1, n2, vt);
   case Op_MulVD: return new (C, 3) MulVDNode(n1, n2, vt);
 
@@ -169,10 +226,17 @@ VectorNode* VectorNode::make(Compile* C, int opc, Node* n1, Node* n2, uint vlen,
   case Op_LShiftVB: return new (C, 3) LShiftVBNode(n1, n2, vt);
   case Op_LShiftVS: return new (C, 3) LShiftVSNode(n1, n2, vt);
   case Op_LShiftVI: return new (C, 3) LShiftVINode(n1, n2, vt);
+  case Op_LShiftVL: return new (C, 3) LShiftVLNode(n1, n2, vt);
 
   case Op_RShiftVB: return new (C, 3) RShiftVBNode(n1, n2, vt);
   case Op_RShiftVS: return new (C, 3) RShiftVSNode(n1, n2, vt);
   case Op_RShiftVI: return new (C, 3) RShiftVINode(n1, n2, vt);
+  case Op_RShiftVL: return new (C, 3) RShiftVLNode(n1, n2, vt);
+
+  case Op_URShiftVB: return new (C, 3) URShiftVBNode(n1, n2, vt);
+  case Op_URShiftVS: return new (C, 3) URShiftVSNode(n1, n2, vt);
+  case Op_URShiftVI: return new (C, 3) URShiftVINode(n1, n2, vt);
+  case Op_URShiftVL: return new (C, 3) URShiftVLNode(n1, n2, vt);
 
   case Op_AndV: return new (C, 3) AndVNode(n1, n2, vt);
   case Op_OrV:  return new (C, 3) OrVNode (n1, n2, vt);

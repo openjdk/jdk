@@ -46,6 +46,7 @@ class VectorNode : public TypeNode {
 
   const TypeVect* vect_type() const { return type()->is_vect(); }
   uint length() const { return vect_type()->length(); } // Vector length
+  uint length_in_bytes() const { return vect_type()->length_in_bytes(); }
 
   virtual int Opcode() const;
 
@@ -57,7 +58,8 @@ class VectorNode : public TypeNode {
 
   static int  opcode(int opc, uint vlen, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
-
+  static bool is_shift(Node* n);
+  static bool is_invariant_vector(Node* n);
 };
 
 //===========================Vector=ALU=Operations====================================
@@ -158,6 +160,22 @@ class SubVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------MulVSNode---------------------------------------
+// Vector multiply short
+class MulVSNode : public VectorNode {
+ public:
+  MulVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------MulVINode---------------------------------------
+// Vector multiply int
+class MulVINode : public VectorNode {
+ public:
+  MulVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------MulVFNode---------------------------------------
 // Vector multiply float
 class MulVFNode : public VectorNode {
@@ -191,7 +209,7 @@ class DivVDNode : public VectorNode {
 };
 
 //------------------------------LShiftVBNode---------------------------------------
-// Vector lshift byte
+// Vector left shift bytes
 class LShiftVBNode : public VectorNode {
  public:
   LShiftVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
@@ -199,7 +217,7 @@ class LShiftVBNode : public VectorNode {
 };
 
 //------------------------------LShiftVSNode---------------------------------------
-// Vector lshift shorts
+// Vector left shift shorts
 class LShiftVSNode : public VectorNode {
  public:
   LShiftVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
@@ -207,39 +225,88 @@ class LShiftVSNode : public VectorNode {
 };
 
 //------------------------------LShiftVINode---------------------------------------
-// Vector lshift ints
+// Vector left shift ints
 class LShiftVINode : public VectorNode {
  public:
   LShiftVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
-//------------------------------URShiftVBNode---------------------------------------
-// Vector urshift bytes
+//------------------------------LShiftVLNode---------------------------------------
+// Vector left shift longs
+class LShiftVLNode : public VectorNode {
+ public:
+  LShiftVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------RShiftVBNode---------------------------------------
+// Vector right arithmetic (signed) shift bytes
 class RShiftVBNode : public VectorNode {
  public:
   RShiftVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
-//------------------------------URShiftVSNode---------------------------------------
-// Vector urshift shorts
+//------------------------------RShiftVSNode---------------------------------------
+// Vector right arithmetic (signed) shift shorts
 class RShiftVSNode : public VectorNode {
  public:
   RShiftVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
-//------------------------------URShiftVINode---------------------------------------
-// Vector urshift ints
+//------------------------------RShiftVINode---------------------------------------
+// Vector right arithmetic (signed) shift ints
 class RShiftVINode : public VectorNode {
  public:
   RShiftVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
 
+//------------------------------RShiftVLNode---------------------------------------
+// Vector right arithmetic (signed) shift longs
+class RShiftVLNode : public VectorNode {
+ public:
+  RShiftVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------URShiftVBNode---------------------------------------
+// Vector right logical (unsigned) shift bytes
+class URShiftVBNode : public VectorNode {
+ public:
+  URShiftVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------URShiftVSNode---------------------------------------
+// Vector right logical (unsigned) shift shorts
+class URShiftVSNode : public VectorNode {
+ public:
+  URShiftVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------URShiftVINode---------------------------------------
+// Vector right logical (unsigned) shift ints
+class URShiftVINode : public VectorNode {
+ public:
+  URShiftVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------URShiftVLNode---------------------------------------
+// Vector right logical (unsigned) shift longs
+class URShiftVLNode : public VectorNode {
+ public:
+  URShiftVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual int Opcode() const;
+};
+
+
 //------------------------------AndVNode---------------------------------------
-// Vector and
+// Vector and integer
 class AndVNode : public VectorNode {
  public:
   AndVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
@@ -247,7 +314,7 @@ class AndVNode : public VectorNode {
 };
 
 //------------------------------OrVNode---------------------------------------
-// Vector or
+// Vector or integer
 class OrVNode : public VectorNode {
  public:
   OrVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
@@ -255,7 +322,7 @@ class OrVNode : public VectorNode {
 };
 
 //------------------------------XorVNode---------------------------------------
-// Vector xor
+// Vector xor integer
 class XorVNode : public VectorNode {
  public:
   XorVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
