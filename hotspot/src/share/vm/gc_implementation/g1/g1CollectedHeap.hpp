@@ -1706,7 +1706,6 @@ public:
   void stop_conc_gc_threads();
 
   size_t pending_card_num();
-  size_t max_pending_card_num();
   size_t cards_scanned();
 
 protected:

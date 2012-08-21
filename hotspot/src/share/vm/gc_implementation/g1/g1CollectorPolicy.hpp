@@ -228,7 +228,6 @@ private:
   TruncatedSeq* _alloc_rate_ms_seq;
   double        _prev_collection_pause_end_ms;
 
-  TruncatedSeq* _pending_card_diff_seq;
   TruncatedSeq* _rs_length_diff_seq;
   TruncatedSeq* _cost_per_card_ms_seq;
   TruncatedSeq* _young_cards_per_entry_ratio_seq;
@@ -295,7 +294,6 @@ private:
   double _pause_time_target_ms;
 
   size_t _pending_cards;
-  size_t _max_pending_cards;
 
 public:
   // Accessors
@@ -323,28 +321,6 @@ public:
 
   void record_max_rs_lengths(size_t rs_lengths) {
     _max_rs_lengths = rs_lengths;
-  }
-
-  size_t predict_pending_card_diff() {
-    double prediction = get_new_neg_prediction(_pending_card_diff_seq);
-    if (prediction < 0.00001) {
-      return 0;
-    } else {
-      return (size_t) prediction;
-    }
-  }
-
-  size_t predict_pending_cards() {
-    size_t max_pending_card_num = _g1->max_pending_card_num();
-    size_t diff = predict_pending_card_diff();
-    size_t prediction;
-    if (diff > max_pending_card_num) {
-      prediction = max_pending_card_num;
-    } else {
-      prediction = max_pending_card_num - diff;
-    }
-
-    return prediction;
   }
 
   size_t predict_rs_length_diff() {
@@ -439,7 +415,7 @@ public:
   double predict_base_elapsed_time_ms(size_t pending_cards,
                                       size_t scanned_cards);
   size_t predict_bytes_to_copy(HeapRegion* hr);
-  double predict_region_elapsed_time_ms(HeapRegion* hr, bool young);
+  double predict_region_elapsed_time_ms(HeapRegion* hr, bool for_young_gc);
 
   void set_recorded_rs_lengths(size_t rs_lengths);
 
@@ -495,12 +471,6 @@ public:
   }
 
 private:
-  size_t _bytes_in_collection_set_before_gc;
-  size_t _bytes_copied_during_gc;
-
-  // Used to count used bytes in CS.
-  friend class CountCSClosure;
-
   // Statistics kept per GC stoppage, pause or full.
   TruncatedSeq* _recent_prev_end_times_for_all_gcs_sec;
 
@@ -514,8 +484,12 @@ private:
 
   // The number of bytes in the collection set before the pause. Set from
   // the incrementally built collection set at the start of an evacuation
-  // pause.
+  // pause, and incremented in finalize_cset() when adding old regions
+  // (if any) to the collection set.
   size_t _collection_set_bytes_used_before;
+
+  // The number of bytes copied during the GC.
+  size_t _bytes_copied_during_gc;
 
   // The associated information that is maintained while the incremental
   // collection set is being built with young regions. Used to populate
@@ -646,9 +620,6 @@ private:
   bool predict_will_fit(uint young_length, double base_time_ms,
                         uint base_free_regions, double target_pause_time_ms);
 
-  // Count the number of bytes used in the CS.
-  void count_CS_bytes_used();
-
 public:
 
   G1CollectorPolicy();
@@ -665,10 +636,6 @@ public:
   // compare it against the last prediction. If the current value is
   // higher, recalculate the young list target length prediction.
   void revise_young_list_target_length_if_necessary();
-
-  size_t bytes_in_collection_set() {
-    return _bytes_in_collection_set_before_gc;
-  }
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
