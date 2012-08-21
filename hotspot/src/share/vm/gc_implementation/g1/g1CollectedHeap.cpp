@@ -3590,15 +3590,11 @@ size_t G1CollectedHeap::pending_card_num() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   size_t buffer_size = dcqs.buffer_size();
   size_t buffer_num = dcqs.completed_buffers_num();
-  return buffer_size * buffer_num + extra_cards;
-}
 
-size_t G1CollectedHeap::max_pending_card_num() {
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-  size_t buffer_size = dcqs.buffer_size();
-  size_t buffer_num  = dcqs.completed_buffers_num();
-  int thread_num  = Threads::number_of_threads();
-  return (buffer_num + thread_num) * buffer_size;
+  // PtrQueueSet::buffer_size() and PtrQueue:size() return sizes
+  // in bytes - not the number of 'entries'. We need to convert
+  // into a number of cards.
+  return (buffer_size * buffer_num + extra_cards) / oopSize;
 }
 
 size_t G1CollectedHeap::cards_scanned() {
