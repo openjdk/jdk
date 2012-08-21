@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 import java.text.*;
 import java.util.*;
-import sun.util.*;
+import sun.util.locale.provider.*;
 import sun.util.resources.*;
 
 public class DateFormatProviderTest extends ProviderTest {
@@ -34,28 +34,16 @@ public class DateFormatProviderTest extends ProviderTest {
     com.foo.DateFormatProviderImpl dfp = new com.foo.DateFormatProviderImpl();
     List<Locale> availloc = Arrays.asList(DateFormat.getAvailableLocales());
     List<Locale> providerloc = Arrays.asList(dfp.getAvailableLocales());
-    List<Locale> jreloc = Arrays.asList(LocaleData.getAvailableLocales());
+    List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getDateFormatProvider().getAvailableLocales());
 
     public static void main(String[] s) {
         new DateFormatProviderTest();
     }
 
     DateFormatProviderTest() {
-        availableLocalesTest();
         objectValidityTest();
         extendedVariantTest();
         messageFormatTest();
-    }
-
-    void availableLocalesTest() {
-        Set<Locale> localesFromAPI = new HashSet<Locale>(availloc);
-        Set<Locale> localesExpected = new HashSet<Locale>(jreloc);
-        localesExpected.addAll(providerloc);
-        if (localesFromAPI.equals(localesExpected)) {
-            System.out.println("availableLocalesTest passed.");
-        } else {
-            throw new RuntimeException("availableLocalesTest failed");
-        }
     }
 
     void objectValidityTest() {
@@ -64,20 +52,37 @@ public class DateFormatProviderTest extends ProviderTest {
             // Get the key for the date/time patterns which is
             // specific to each calendar system.
             Calendar cal = Calendar.getInstance(target);
-            String key = "DateTimePatterns";
-            if (!cal.getClass().getName().equals("java.util.GregorianCalendar")) {
-                // e.g., "java.util.JapaneseImperialCalendar.DateTimePatterns"
-                key = cal.getClass().getName() + "." + key;
+            String dkey = "DatePatterns";
+            String tkey = "TimePatterns";
+            String dtkey = "DateTimePatterns";
+            switch (cal.getCalendarType()) {
+                case "java.util.JapaneseImperialCalendar":
+                    dkey = "japanese"+ "." + dkey;
+                    tkey = "japanese"+ "." + tkey;
+                    dtkey = "japanese"+ "." + dtkey;
+                    break;
+                case "sun.util.BuddhistCalendar":
+                    dkey = "buddhist"+ "." + dkey;
+                    tkey = "buddhist"+ "." + tkey;
+                    dtkey = "buddhist"+ "." + dtkey;
+                    break;
+                case "java.util.GregorianCalendar":
+                default:
+                    break;
             }
             // pure JRE implementation
-            ResourceBundle rb = LocaleData.getDateFormatData(target);
-            boolean jreSupportsLocale = jreloc.contains(target);
+            ResourceBundle rb = LocaleProviderAdapter.forJRE().getLocaleData().getDateFormatData(target);
+            boolean jreSupportsLocale = jreimplloc.contains(target);
 
             // JRE string arrays
+            String[] jreDatePatterns = null;
+            String[] jreTimePatterns = null;
             String[] jreDateTimePatterns = null;
             if (jreSupportsLocale) {
                 try {
-                    jreDateTimePatterns = (String[])rb.getObject(key);
+                    jreDatePatterns = (String[])rb.getObject(dkey);
+                    jreTimePatterns = (String[])rb.getObject(tkey);
+                    jreDateTimePatterns = (String[])rb.getObject(dtkey);
                 } catch (MissingResourceException mre) {}
             }
 
@@ -94,9 +99,9 @@ public class DateFormatProviderTest extends ProviderTest {
                 // JRE's object (if any)
                 DateFormat jresResult = null;
                 if (jreSupportsLocale) {
-                    Object[] dateTimeArgs = {jreDateTimePatterns[style],
-                                             jreDateTimePatterns[style + 4]};
-                    String pattern = MessageFormat.format(jreDateTimePatterns[8], dateTimeArgs);
+                    Object[] dateTimeArgs = {jreTimePatterns[style],
+                                             jreDatePatterns[style]};
+                    String pattern = MessageFormat.format(jreDateTimePatterns[0], dateTimeArgs);
                     jresResult = new SimpleDateFormat(pattern, target);
                 }
 
