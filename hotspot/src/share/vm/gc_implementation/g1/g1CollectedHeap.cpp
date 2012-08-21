@@ -1934,6 +1934,14 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   clear_cset_start_regions();
 
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
+#ifdef SPARC
+  // Issue a stern warning, but allow use for experimentation and debugging.
+  if (VM_Version::is_sun4v() && UseMemSetInBOT) {
+    assert(!FLAG_IS_DEFAULT(UseMemSetInBOT), "Error");
+    warning("Experimental flag -XX:+UseMemSetInBOT is known to cause instability"
+            " on sun4v; please understand that you are using at your own risk!");
+  }
+#endif
 }
 
 jint G1CollectedHeap::initialize() {
