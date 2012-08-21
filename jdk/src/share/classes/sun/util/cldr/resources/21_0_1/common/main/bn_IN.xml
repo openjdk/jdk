@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 5953 $"/>
+		<generation date="$Date: 2011-07-05 08:22:55 +0900 (Tue, 05 Jul 2011) $"/>
+		<language type="bn"/>
+		<territory type="IN"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ab">আবখাজিয়ান</language>
+			<language type="ace">অ্যাচাইনিজ</language>
+			<language type="ach">আকোলি</language>
+			<language type="afa">আফ্রো-এশিয়াটিক ভাষা</language>
+			<language type="alg">আলগোনকিউয়ান ভাষা</language>
+			<language type="anp" draft="contributed">আঙ্গিকা</language>
+			<language type="ch" draft="contributed">চামোরো</language>
+			<language type="chn" draft="contributed">চিনুক জার্গন</language>
+			<language type="cho" draft="contributed">চকটোও</language>
+			<language type="chp" draft="contributed">চিপেওয়াইয়ান</language>
+			<language type="chy" draft="contributed">চেয়েনি</language>
+			<language type="cu" draft="contributed">চার্চ স্লাভিক</language>
+			<language type="de_AT" draft="contributed">অস্ট্রিয়ান জারমান</language>
+			<language type="doi">ডোগরি</language>
+			<language type="en_AU" draft="contributed">অস্ট্রেলিয়ান ইংরাজী</language>
+			<language type="en_CA" draft="contributed">ক্যানাডিয়ান ইংরেজি</language>
+			<language type="en_GB" draft="contributed">ব্রিটিশ ইংরেজী</language>
+			<language type="fr_CA" draft="contributed">ক্যানাডিয়ান ফরাসী</language>
+			<language type="map" draft="contributed">অস্ট্রোনেসিয়ান</language>
+			<language type="rup" draft="contributed">আরমেনিয়ান</language>
+			<language type="tut" draft="contributed">আলটাইক</language>
+			<language type="zbl" draft="contributed">ব্লিসসিম্বলস</language>
+		</languages>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">ত্রৈমাসিক</quarter>
+							<quarter type="2">ষাণ্মাসিক</quarter>
+							<quarter type="4">বার্ষিক</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">ত্রৈমাসিক</quarter>
+							<quarter type="2">ষাণ্মাসিক</quarter>
+							<quarter type="4">বার্ষিক</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<fields>
+					<field type="day">
+						<relative type="-2">গতপরশু</relative>
+					</field>
+					<field type="hour">
+						<displayName>ঘণ্টা</displayName>
+					</field>
+					<field type="second">
+						<displayName>সেকেণ্ড</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+	</dates>
+</ldml>
+

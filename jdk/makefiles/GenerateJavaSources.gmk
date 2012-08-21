@@ -73,6 +73,9 @@ include GensrcX11Wrappers.gmk
 GENSRC += $(GENSRC_X11WRAPPERS)
 endif
 
+include GensrcCLDR.gmk
+GENSRC += $(GENSRC_CLDR)
+
 include GensrcSwing.gmk
 ifndef DISABLE_NIMBUS
   GENSRC += $(GENSRC_SWING_NIMBUS)
@@ -99,7 +102,8 @@ all: $(GENSRC) $(GENSRC_SWING_BEANINFO)
 		$(CP) -rp gensrc_charsetmapping/* gensrc && \
 		$(CP) -rp gensrc_charsetcoder/* gensrc && \
 		$(CP) -rp gensrc_exceptions/* gensrc && \
-		$(CP) -rp gensrc_buffer/* gensrc)
+		$(CP) -rp gensrc_buffer/* gensrc && \
+		$(CP) -rp gensrc_cldr/* gensrc)
 	if [ -d  $(JDK_OUTPUTDIR)/gensrc_swing/javax/swing/plaf ] ; then \
 		(cd $(JDK_OUTPUTDIR) && \
 		$(MKDIR) -p gensrc/javax/swing/plaf && \
