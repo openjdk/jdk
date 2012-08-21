@@ -1055,6 +1055,9 @@ void SuperWord::filter_packs() {
 // Can code be generated for pack p?
 bool SuperWord::implemented(Node_List* p) {
   Node* p0 = p->at(0);
+  if (VectorNode::is_shift(p0) && in_bb(p0->in(2))) {
+    return false; // vector shift count should be loop's invariant.
+  }
   return VectorNode::implemented(p0->Opcode(), p->size(), velt_basic_type(p0));
 }
 
@@ -1404,6 +1407,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
 
   if (same_opd) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
+      assert(((opd_idx != 2) || !VectorNode::is_shift(p0)), "shift's count can't be vector");
       return opd; // input is matching vector
     }
     if ((opd_idx == 2) && VectorNode::is_shift(p0)) {

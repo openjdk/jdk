@@ -180,9 +180,9 @@ bool VectorNode::is_shift(Node* n) {
   return false;
 }
 
-// Check if input is loop invarient vector.
+// Check if input is loop invariant vector.
 bool VectorNode::is_invariant_vector(Node* n) {
-  // Only Replicate vector nodes are loop invarient for now.
+  // Only Replicate vector nodes are loop invariant for now.
   switch (n->Opcode()) {
   case Op_ReplicateB:
   case Op_ReplicateS:
