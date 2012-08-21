@@ -1646,10 +1646,6 @@ Dependencies* GraphBuilder::dependency_recorder() const {
 
 
 void GraphBuilder::invoke(Bytecodes::Code code) {
-  const bool has_receiver =
-    code == Bytecodes::_invokespecial   ||
-    code == Bytecodes::_invokevirtual   ||
-    code == Bytecodes::_invokeinterface;
   const bool is_invokedynamic = (code == Bytecodes::_invokedynamic);
 
   bool will_link;
@@ -1690,8 +1686,12 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   // convert them directly to an invokespecial or invokestatic.
   if (target->is_loaded() && !target->is_abstract() && target->can_be_statically_bound()) {
     switch (bc_raw) {
-    case Bytecodes::_invokevirtual:  code = Bytecodes::_invokespecial;  break;
-    case Bytecodes::_invokehandle:   code = Bytecodes::_invokestatic;   break;
+    case Bytecodes::_invokevirtual:
+      code = Bytecodes::_invokespecial;
+      break;
+    case Bytecodes::_invokehandle:
+      code = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokespecial;
+      break;
     }
   }
 
@@ -1878,11 +1878,13 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   // inlining not successful => standard invoke
   bool is_loaded = target->is_loaded();
   ValueType* result_type = as_ValueType(target->return_type());
+  ValueStack* state_before = copy_state_exhandling();
 
-  // We require the debug info to be the "state before" because
-  // invokedynamics may deoptimize.
-  ValueStack* state_before = is_invokedynamic ? copy_state_before() : copy_state_exhandling();
-
+  // The bytecode (code) might change in this method so we are checking this very late.
+  const bool has_receiver =
+    code == Bytecodes::_invokespecial   ||
+    code == Bytecodes::_invokevirtual   ||
+    code == Bytecodes::_invokeinterface;
   Values* args = state()->pop_arguments(target->arg_size_no_receiver());
   Value recv = has_receiver ? apop() : NULL;
   int vtable_index = methodOopDesc::invalid_vtable_index;
