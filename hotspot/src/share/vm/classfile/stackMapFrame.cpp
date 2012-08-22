@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@
 #include "utilities/globalDefinitions.hpp"
 
 StackMapFrame::StackMapFrame(u2 max_locals, u2 max_stack, ClassVerifier* v) :
-                      _offset(0), _locals_size(0), _stack_size(0), _flags(0),
-                      _max_locals(max_locals), _max_stack(max_stack),
-                      _verifier(v) {
+                      _offset(0), _locals_size(0), _stack_size(0),
+                      _stack_mark(0), _flags(0), _max_locals(max_locals),
+                      _max_stack(max_stack), _verifier(v) {
   Thread* thr = v->thread();
   _locals = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, max_locals);
   _stack = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, max_stack);
@@ -157,17 +157,17 @@ void StackMapFrame::copy_stack(const StackMapFrame* src) {
   }
 }
 
-
-bool StackMapFrame::is_assignable_to(
+// Returns the location of the first mismatch, or 'len' if there are no
+// mismatches
+int StackMapFrame::is_assignable_to(
     VerificationType* from, VerificationType* to, int32_t len, TRAPS) const {
-  for (int32_t i = 0; i < len; i++) {
-    bool subtype = to[i].is_assignable_from(
-      from[i], verifier(), THREAD);
-    if (!subtype) {
-      return false;
+  int32_t i = 0;
+  for (i = 0; i < len; i++) {
+    if (!to[i].is_assignable_from(from[i], verifier(), THREAD)) {
+      break;
     }
   }
-  return true;
+  return i;
 }
 
 bool StackMapFrame::has_flag_match_exception(
@@ -209,50 +209,84 @@ bool StackMapFrame::has_flag_match_exception(
 }
 
 bool StackMapFrame::is_assignable_to(
-    const StackMapFrame* target, bool is_exception_handler, TRAPS) const {
-  if (_max_locals != target->max_locals() ||
-      _stack_size != target->stack_size()) {
+    const StackMapFrame* target, bool is_exception_handler,
+    ErrorContext* ctx, TRAPS) const {
+  if (_max_locals != target->max_locals()) {
+    *ctx = ErrorContext::locals_size_mismatch(
+        _offset, (StackMapFrame*)this, (StackMapFrame*)target);
+    return false;
+  }
+  if (_stack_size != target->stack_size()) {
+    *ctx = ErrorContext::stack_size_mismatch(
+        _offset, (StackMapFrame*)this, (StackMapFrame*)target);
     return false;
   }
   // Only need to compare type elements up to target->locals() or target->stack().
   // The remaining type elements in this state can be ignored because they are
   // assignable to bogus type.
-  bool match_locals = is_assignable_to(
-    _locals, target->locals(), target->locals_size(), CHECK_false);
-  bool match_stack = is_assignable_to(
-    _stack, target->stack(), _stack_size, CHECK_false);
-  bool match_flags = (_flags | target->flags()) == target->flags();
+  int mismatch_loc;
+  mismatch_loc = is_assignable_to(
+    _locals, target->locals(), target->locals_size(), THREAD);
+  if (mismatch_loc != target->locals_size()) {
+    *ctx = ErrorContext::bad_type(target->offset(),
+        TypeOrigin::local(mismatch_loc, (StackMapFrame*)this),
+        TypeOrigin::sm_local(mismatch_loc, (StackMapFrame*)target));
+    return false;
+  }
+  mismatch_loc = is_assignable_to(_stack, target->stack(), _stack_size, THREAD);
+  if (mismatch_loc != _stack_size) {
+    *ctx = ErrorContext::bad_type(target->offset(),
+        TypeOrigin::stack(mismatch_loc, (StackMapFrame*)this),
+        TypeOrigin::sm_stack(mismatch_loc, (StackMapFrame*)target));
+    return false;
+  }
 
-  return match_locals && match_stack &&
-    (match_flags || (is_exception_handler && has_flag_match_exception(target)));
+  bool match_flags = (_flags | target->flags()) == target->flags();
+  if (match_flags || is_exception_handler && has_flag_match_exception(target)) {
+    return true;
+  } else {
+    *ctx = ErrorContext::bad_flags(target->offset(),
+        (StackMapFrame*)this, (StackMapFrame*)target);
+    return false;
+  }
 }
 
 VerificationType StackMapFrame::pop_stack_ex(VerificationType type, TRAPS) {
   if (_stack_size <= 0) {
-    verifier()->verify_error(_offset, "Operand stack underflow");
+    verifier()->verify_error(
+        ErrorContext::stack_underflow(_offset, this),
+        "Operand stack underflow");
     return VerificationType::bogus_type();
   }
   VerificationType top = _stack[--_stack_size];
   bool subtype = type.is_assignable_from(
     top, verifier(), CHECK_(VerificationType::bogus_type()));
   if (!subtype) {
-    verifier()->verify_error(_offset, "Bad type on operand stack");
+    verifier()->verify_error(
+        ErrorContext::bad_type(_offset, stack_top_ctx(),
+            TypeOrigin::implicit(type)),
+        "Bad type on operand stack");
     return VerificationType::bogus_type();
   }
-  NOT_PRODUCT( _stack[_stack_size] = VerificationType::bogus_type(); )
   return top;
 }
 
 VerificationType StackMapFrame::get_local(
     int32_t index, VerificationType type, TRAPS) {
   if (index >= _max_locals) {
-    verifier()->verify_error(_offset, "Local variable table overflow");
+    verifier()->verify_error(
+        ErrorContext::bad_local_index(_offset, index),
+        "Local variable table overflow");
     return VerificationType::bogus_type();
   }
   bool subtype = type.is_assignable_from(_locals[index],
     verifier(), CHECK_(VerificationType::bogus_type()));
   if (!subtype) {
-    verifier()->verify_error(_offset, "Bad local variable type");
+    verifier()->verify_error(
+        ErrorContext::bad_type(_offset,
+          TypeOrigin::local(index, this),
+          TypeOrigin::implicit(type)),
+        "Bad local variable type");
     return VerificationType::bogus_type();
   }
   if(index >= _locals_size) { _locals_size = index + 1; }
@@ -264,23 +298,37 @@ void StackMapFrame::get_local_2(
   assert(type1.is_long() || type1.is_double(), "must be long/double");
   assert(type2.is_long2() || type2.is_double2(), "must be long/double_2");
   if (index >= _locals_size - 1) {
-    verifier()->verify_error(_offset, "get long/double overflows locals");
+    verifier()->verify_error(
+        ErrorContext::bad_local_index(_offset, index),
+        "get long/double overflows locals");
     return;
   }
-  bool subtype1 = type1.is_assignable_from(
-    _locals[index], verifier(), CHECK);
-  bool subtype2 = type2.is_assignable_from(
-    _locals[index+1], verifier(), CHECK);
-  if (!subtype1 || !subtype2) {
-    verifier()->verify_error(_offset, "Bad local variable type");
-    return;
+  bool subtype = type1.is_assignable_from(_locals[index], verifier(), CHECK);
+  if (!subtype) {
+    verifier()->verify_error(
+        ErrorContext::bad_type(_offset,
+            TypeOrigin::local(index, this), TypeOrigin::implicit(type1)),
+        "Bad local variable type");
+  } else {
+    subtype = type2.is_assignable_from(_locals[index + 1], verifier(), CHECK);
+    if (!subtype) {
+      /* Unreachable? All local store routines convert a split long or double
+       * into a TOP during the store.  So we should never end up seeing an
+       * orphaned half.  */
+      verifier()->verify_error(
+          ErrorContext::bad_type(_offset,
+              TypeOrigin::local(index + 1, this), TypeOrigin::implicit(type2)),
+          "Bad local variable type");
+    }
   }
 }
 
 void StackMapFrame::set_local(int32_t index, VerificationType type, TRAPS) {
   assert(!type.is_check(), "Must be a real type");
   if (index >= _max_locals) {
-    verifier()->verify_error("Local variable table overflow", _offset);
+    verifier()->verify_error(
+        ErrorContext::bad_local_index(_offset, index),
+        "Local variable table overflow");
     return;
   }
   // If type at index is double or long, set the next location to be unusable
@@ -310,7 +358,9 @@ void StackMapFrame::set_local_2(
   assert(type1.is_long() || type1.is_double(), "must be long/double");
   assert(type2.is_long2() || type2.is_double2(), "must be long/double_2");
   if (index >= _max_locals - 1) {
-    verifier()->verify_error("Local variable table overflow", _offset);
+    verifier()->verify_error(
+        ErrorContext::bad_local_index(_offset, index),
+        "Local variable table overflow");
     return;
   }
   // If type at index+1 is double or long, set the next location to be unusable
@@ -336,21 +386,30 @@ void StackMapFrame::set_local_2(
   }
 }
 
-#ifndef PRODUCT
-
-void StackMapFrame::print() const {
-  tty->print_cr("stackmap_frame[%d]:", _offset);
-  tty->print_cr("flags = 0x%x", _flags);
-  tty->print("locals[%d] = { ", _locals_size);
-  for (int32_t i = 0; i < _locals_size; i++) {
-    _locals[i].print_on(tty);
-  }
-  tty->print_cr(" }");
-  tty->print("stack[%d] = { ", _stack_size);
-  for (int32_t j = 0; j < _stack_size; j++) {
-    _stack[j].print_on(tty);
-  }
-  tty->print_cr(" }");
+TypeOrigin StackMapFrame::stack_top_ctx() {
+  return TypeOrigin::stack(_stack_size, this);
 }
 
-#endif
+void StackMapFrame::print_on(outputStream* str) const {
+  str->indent().print_cr("bci: @%d", _offset);
+  str->indent().print_cr("flags: {%s }",
+      flag_this_uninit() ? " flagThisUninit" : "");
+  str->indent().print("locals: {");
+  for (int32_t i = 0; i < _locals_size; ++i) {
+    str->print(" ");
+    _locals[i].print_on(str);
+    if (i != _locals_size - 1) {
+      str->print(",");
+    }
+  }
+  str->print_cr(" }");
+  str->indent().print("stack: {");
+  for (int32_t j = 0; j < _stack_size; ++j) {
+    str->print(" ");
+    _stack[j].print_on(str);
+    if (j != _stack_size - 1) {
+      str->print(",");
+    }
+  }
+  str->print_cr(" }");
+}
