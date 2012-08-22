@@ -1055,10 +1055,22 @@ void SuperWord::filter_packs() {
 // Can code be generated for pack p?
 bool SuperWord::implemented(Node_List* p) {
   Node* p0 = p->at(0);
-  if (VectorNode::is_shift(p0) && in_bb(p0->in(2))) {
-    return false; // vector shift count should be loop's invariant.
-  }
   return VectorNode::implemented(p0->Opcode(), p->size(), velt_basic_type(p0));
+}
+
+//------------------------------same_inputs--------------------------
+// For pack p, are all idx operands the same?
+static bool same_inputs(Node_List* p, int idx) {
+  Node* p0 = p->at(0);
+  uint vlen = p->size();
+  Node* p0_def = p0->in(idx);
+  for (uint i = 1; i < vlen; i++) {
+    Node* pi = p->at(i);
+    Node* pi_def = pi->in(idx);
+    if (p0_def != pi_def)
+      return false;
+  }
+  return true;
 }
 
 //------------------------------profitable---------------------------
@@ -1066,7 +1078,7 @@ bool SuperWord::implemented(Node_List* p) {
 bool SuperWord::profitable(Node_List* p) {
   Node* p0 = p->at(0);
   uint start, end;
-  vector_opd_range(p0, &start, &end);
+  VectorNode::vector_operands(p0, &start, &end);
 
   // Return false if some input is not vector and inside block
   for (uint i = start; i < end; i++) {
@@ -1074,14 +1086,19 @@ bool SuperWord::profitable(Node_List* p) {
       // For now, return false if not scalar promotion case (inputs are the same.)
       // Later, implement PackNode and allow differing, non-vector inputs
       // (maybe just the ones from outside the block.)
-      Node* p0_def = p0->in(i);
-      for (uint j = 1; j < p->size(); j++) {
-        Node* use = p->at(j);
-        Node* def = use->in(i);
-        if (p0_def != def)
-          return false;
+      if (!same_inputs(p, i)) {
+        return false;
       }
     }
+  }
+  if (VectorNode::is_shift(p0)) {
+    // For now, return false if shift count is vector because
+    // hw does not support it.
+    if (is_vector_use(p0, 2))
+      return false;
+    // For the same reason return false if different shift counts.
+    if (!same_inputs(p, 2))
+      return false;
   }
   if (!p0->is_Store()) {
     // For now, return false if not all uses are vector.
@@ -1395,17 +1412,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   uint vlen = p->size();
   Node* opd = p0->in(opd_idx);
 
-  bool same_opd = true;
-  for (uint i = 1; i < vlen; i++) {
-    Node* pi = p->at(i);
-    Node* in = pi->in(opd_idx);
-    if (opd != in) {
-      same_opd = false;
-      break;
-    }
-  }
-
-  if (same_opd) {
+  if (same_inputs(p, opd_idx)) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
       assert(((opd_idx != 2) || !VectorNode::is_shift(p0)), "shift's count can't be vector");
       return opd; // input is matching vector
@@ -1468,7 +1475,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     Node* in = pi->in(opd_idx);
     assert(my_pack(in) == NULL, "Should already have been unpacked");
     assert(opd_bt == in->bottom_type()->basic_type(), "all same type");
-    pk->add_opd(i, in);
+    pk->add_opd(in);
   }
   _phase->_igvn.register_new_node_with_optimizer(pk);
   _phase->set_ctrl(pk, _phase->get_ctrl(opd));
@@ -1761,7 +1768,7 @@ void SuperWord::compute_vector_element_type() {
     const Type* vt = velt_type(n);
     if (vt->basic_type() == T_INT) {
       uint start, end;
-      vector_opd_range(n, &start, &end);
+      VectorNode::vector_operands(n, &start, &end);
       const Type* vt = velt_type(n);
 
       for (uint j = start; j < end; j++) {
@@ -1837,38 +1844,6 @@ bool SuperWord::same_velt_type(Node* n1, Node* n2) {
     return data_size(n1) == data_size(n2);
   }
   return vt1 == vt2;
-}
-
-//-------------------------vector_opd_range-----------------------
-// (Start, end] half-open range defining which operands are vector
-void SuperWord::vector_opd_range(Node* n, uint* start, uint* end) {
-  switch (n->Opcode()) {
-  case Op_LoadB:   case Op_LoadUB:
-  case Op_LoadS:   case Op_LoadUS:
-  case Op_LoadI:   case Op_LoadL:
-  case Op_LoadF:   case Op_LoadD:
-  case Op_LoadP:
-    *start = 0;
-    *end   = 0;
-    return;
-  case Op_StoreB:  case Op_StoreC:
-  case Op_StoreI:  case Op_StoreL:
-  case Op_StoreF:  case Op_StoreD:
-  case Op_StoreP:
-    *start = MemNode::ValueIn;
-    *end   = *start + 1;
-    return;
-  case Op_LShiftI: case Op_LShiftL:
-    *start = 1;
-    *end   = 2;
-    return;
-  case Op_CMoveI:  case Op_CMoveL:  case Op_CMoveF:  case Op_CMoveD:
-    *start = 2;
-    *end   = n->req();
-    return;
-  }
-  *start = 1;
-  *end   = n->req(); // default is all operands
 }
 
 //------------------------------in_packset---------------------------
