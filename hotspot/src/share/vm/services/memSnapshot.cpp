@@ -338,15 +338,13 @@ void MemSnapshot::promote() {
             vm_itr.insert_after(cur_vm);
           }
         } else {
-#ifdef ASSERT
           // In theory, we should assert without conditions. However, in case of native
           // thread stack, NMT explicitly releases the thread stack in Thread's destructor,
           // due to platform dependent behaviors. On some platforms, we see uncommit/release
           // native thread stack, but some, we don't.
-          if (!cur_vm->is_uncommit_record() && !cur_vm->is_deallocation_record()) {
-            ShouldNotReachHere();
-          }
-#endif
+          assert(cur_vm->is_uncommit_record() || cur_vm->is_deallocation_record(),
+            err_msg("Should not reach here, pointer addr = [" INTPTR_FORMAT "], flags = [%x]",
+               cur_vm->addr(), cur_vm->flags()));
         }
       }
     } else {
@@ -406,7 +404,7 @@ void MemSnapshot::promote() {
 }
 
 
-#ifdef ASSERT
+#ifndef PRODUCT
 void MemSnapshot::print_snapshot_stats(outputStream* st) {
   st->print_cr("Snapshot:");
   st->print_cr("\tMalloced: %d/%d [%5.2f%%]  %dKB", _alloc_ptrs->length(), _alloc_ptrs->capacity(),
@@ -434,6 +432,20 @@ void MemSnapshot::check_malloc_pointers() {
   }
 }
 
+bool MemSnapshot::has_allocation_record(address addr) {
+  MemPointerArrayIteratorImpl itr(_staging_area);
+  MemPointerRecord* cur = (MemPointerRecord*)itr.current();
+  while (cur != NULL) {
+    if (cur->addr() == addr && cur->is_allocation_record()) {
+      return true;
+    }
+    cur = (MemPointerRecord*)itr.next();
+  }
+  return false;
+}
+#endif // PRODUCT
+
+#ifdef ASSERT
 void MemSnapshot::check_staging_data() {
   MemPointerArrayIteratorImpl itr(_staging_area);
   MemPointerRecord* cur = (MemPointerRecord*)itr.current();
@@ -447,17 +459,5 @@ void MemSnapshot::check_staging_data() {
     next = (MemPointerRecord*)itr.next();
   }
 }
+#endif // ASSERT
 
-bool MemSnapshot::has_allocation_record(address addr) {
-  MemPointerArrayIteratorImpl itr(_staging_area);
-  MemPointerRecord* cur = (MemPointerRecord*)itr.current();
-  while (cur != NULL) {
-    if (cur->addr() == addr && cur->is_allocation_record()) {
-      return true;
-    }
-    cur = (MemPointerRecord*)itr.next();
-  }
-  return false;
-}
-
-#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@
 
 // A StackMapFrame represents one frame in the stack map attribute.
 
+class TypeContext;
+
 enum {
   FLAG_THIS_UNINIT = 0x01
 };
@@ -47,6 +49,10 @@ class StackMapFrame : public ResourceObj {
   int32_t _locals_size;  // number of valid type elements in _locals
   int32_t _stack_size;   // number of valid type elements in _stack
 
+  int32_t _stack_mark;   // Records the size of the stack prior to an
+                         // instruction modification, to allow rewinding
+                         // when/if an error occurs.
+
   int32_t _max_locals;
   int32_t _max_stack;
 
@@ -55,6 +61,31 @@ class StackMapFrame : public ResourceObj {
   VerificationType* _stack;  // operand stack type array
 
   ClassVerifier* _verifier;  // the verifier verifying this method
+
+  StackMapFrame(const StackMapFrame& cp) :
+      _offset(cp._offset), _locals_size(cp._locals_size),
+      _stack_size(cp._stack_size), _stack_mark(cp._stack_mark),
+      _max_locals(cp._max_locals), _max_stack(cp._max_stack),
+      _flags(cp._flags) {
+    _locals = NEW_RESOURCE_ARRAY(VerificationType, _max_locals);
+    for (int i = 0; i < _max_locals; ++i) {
+      if (i < _locals_size) {
+        _locals[i] = cp._locals[i];
+      } else {
+        _locals[i] = VerificationType::bogus_type();
+      }
+    }
+    int ss = MAX2(_stack_size, _stack_mark);
+    _stack = NEW_RESOURCE_ARRAY(VerificationType, _max_stack);
+    for (int i = 0; i < _max_stack; ++i) {
+      if (i < ss) {
+        _stack[i] = cp._stack[i];
+      } else {
+        _stack[i] = VerificationType::bogus_type();
+      }
+    }
+    _verifier = NULL;
+  }
 
  public:
   // constructors
@@ -77,16 +108,21 @@ class StackMapFrame : public ResourceObj {
                 ClassVerifier* v) : _offset(offset), _flags(flags),
                                     _locals_size(locals_size),
                                     _stack_size(stack_size),
+                                    _stack_mark(-1),
                                     _max_locals(max_locals),
                                     _max_stack(max_stack),
                                     _locals(locals), _stack(stack),
                                     _verifier(v) { }
 
+  static StackMapFrame* copy(StackMapFrame* smf) {
+    return new StackMapFrame(*smf);
+  }
+
   inline void set_offset(int32_t offset)      { _offset = offset; }
   inline void set_verifier(ClassVerifier* v)  { _verifier = v; }
   inline void set_flags(u1 flags)             { _flags = flags; }
   inline void set_locals_size(u2 locals_size) { _locals_size = locals_size; }
-  inline void set_stack_size(u2 stack_size)   { _stack_size = stack_size; }
+  inline void set_stack_size(u2 stack_size)   { _stack_size = _stack_mark = stack_size; }
   inline void clear_stack()                   { _stack_size = 0; }
   inline int32_t offset()   const             { return _offset; }
   inline ClassVerifier* verifier() const      { return _verifier; }
@@ -134,14 +170,37 @@ class StackMapFrame : public ResourceObj {
   void copy_stack(const StackMapFrame* src);
 
   // Return true if this stack map frame is assignable to target.
-  bool is_assignable_to(const StackMapFrame* target,
-                        bool is_exception_handler, TRAPS) const;
+  bool is_assignable_to(
+      const StackMapFrame* target, bool is_exception_handler,
+      ErrorContext* ctx, TRAPS) const;
+
+  inline void set_mark() {
+#ifdef DEBUG
+    // Put bogus type to indicate it's no longer valid.
+    if (_stack_mark != -1) {
+      for (int i = _stack_mark; i >= _stack_size; --i) {
+        _stack[i] = VerificationType::bogus_type();
+      }
+    }
+#endif // def DEBUG
+    _stack_mark = _stack_size;
+  }
+
+  // Used when an error occurs and we want to reset the stack to the state
+  // it was before operands were popped off.
+  void restore() {
+    if (_stack_mark != -1) {
+      _stack_size = _stack_mark;
+    }
+  }
 
   // Push type into stack type array.
   inline void push_stack(VerificationType type, TRAPS) {
     assert(!type.is_check(), "Must be a real type");
     if (_stack_size >= _max_stack) {
-      verifier()->verify_error(_offset, "Operand stack overflow");
+      verifier()->verify_error(
+          ErrorContext::stack_overflow(_offset, this),
+          "Operand stack overflow");
       return;
     }
     _stack[_stack_size++] = type;
@@ -152,7 +211,9 @@ class StackMapFrame : public ResourceObj {
     assert(type1.is_long() || type1.is_double(), "must be long/double");
     assert(type2.is_long2() || type2.is_double2(), "must be long/double_2");
     if (_stack_size >= _max_stack - 1) {
-      verifier()->verify_error(_offset, "Operand stack overflow");
+      verifier()->verify_error(
+          ErrorContext::stack_overflow(_offset, this),
+          "Operand stack overflow");
       return;
     }
     _stack[_stack_size++] = type1;
@@ -162,13 +223,12 @@ class StackMapFrame : public ResourceObj {
   // Pop and return the top type on stack without verifying.
   inline VerificationType pop_stack(TRAPS) {
     if (_stack_size <= 0) {
-      verifier()->verify_error(_offset, "Operand stack underflow");
+      verifier()->verify_error(
+          ErrorContext::stack_underflow(_offset, this),
+          "Operand stack underflow");
       return VerificationType::bogus_type();
     }
-    // Put bogus type to indicate it's no longer valid.
-    // Added to make it consistent with the other pop_stack method.
     VerificationType top = _stack[--_stack_size];
-    NOT_PRODUCT( _stack[_stack_size] = VerificationType::bogus_type(); )
     return top;
   }
 
@@ -180,8 +240,7 @@ class StackMapFrame : public ResourceObj {
       bool subtype = type.is_assignable_from(
         top, verifier(), CHECK_(VerificationType::bogus_type()));
       if (subtype) {
-        _stack_size --;
-        NOT_PRODUCT( _stack[_stack_size] = VerificationType::bogus_type(); )
+        --_stack_size;
         return top;
       }
     }
@@ -199,13 +258,19 @@ class StackMapFrame : public ResourceObj {
       bool subtype2 = type2.is_assignable_from(top2, verifier(), CHECK);
       if (subtype1 && subtype2) {
         _stack_size -= 2;
-        NOT_PRODUCT( _stack[_stack_size] = VerificationType::bogus_type(); )
-        NOT_PRODUCT( _stack[_stack_size+1] = VerificationType::bogus_type(); )
         return;
       }
     }
     pop_stack_ex(type1, THREAD);
     pop_stack_ex(type2, THREAD);
+  }
+
+  VerificationType local_at(int index) {
+    return _locals[index];
+  }
+
+  VerificationType stack_at(int index) {
+    return _stack[index];
   }
 
   // Uncommon case that throws exceptions.
@@ -226,13 +291,14 @@ class StackMapFrame : public ResourceObj {
 
   // Private auxiliary method used only in is_assignable_to(StackMapFrame).
   // Returns true if src is assignable to target.
-  bool is_assignable_to(
+  int is_assignable_to(
     VerificationType* src, VerificationType* target, int32_t len, TRAPS) const;
 
   bool has_flag_match_exception(const StackMapFrame* target) const;
 
-  // Debugging
-  void print() const PRODUCT_RETURN;
+  TypeOrigin stack_top_ctx();
+
+  void print_on(outputStream* str) const;
 };
 
 #endif // SHARE_VM_CLASSFILE_STACKMAPFRAME_HPP
