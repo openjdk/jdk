@@ -56,10 +56,12 @@ class VectorNode : public TypeNode {
 
   static VectorNode* make(Compile* C, int opc, Node* n1, Node* n2, uint vlen, BasicType bt);
 
-  static int  opcode(int opc, uint vlen, BasicType bt);
+  static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_invariant_vector(Node* n);
+  // [Start, end) half-open range defining which operands are vectors
+  static void vector_operands(Node* n, uint* start, uint* end);
 };
 
 //===========================Vector=ALU=Operations====================================
@@ -440,12 +442,12 @@ class PackNode : public VectorNode {
   PackNode(Node* in1, Node* n2, const TypeVect* vt) : VectorNode(in1, n2, vt) {}
   virtual int Opcode() const;
 
-  void add_opd(uint i, Node* n) {
-    init_req(i+1, n);
+  void add_opd(Node* n) {
+    add_req(n);
   }
 
   // Create a binary tree form for Packs. [lo, hi) (half-open) range
-  Node* binaryTreePack(Compile* C, int lo, int hi);
+  PackNode* binary_tree_pack(Compile* C, int lo, int hi);
 
   static PackNode* make(Compile* C, Node* s, uint vlen, BasicType bt);
 };
