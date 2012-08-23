@@ -683,6 +683,7 @@ public:
 
   void record_collection_pause_end(double pause_time);
   void print_heap_transition();
+  void print_detailed_heap_transition();
 
   // Record the fact that a full collection occurred.
   void record_full_collection_start();
