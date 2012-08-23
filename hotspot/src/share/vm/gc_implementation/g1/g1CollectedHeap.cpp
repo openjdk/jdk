@@ -1246,6 +1246,31 @@ void G1CollectedHeap::print_hrs_post_compaction() {
   heap_region_iterate(&cl);
 }
 
+double G1CollectedHeap::verify(bool guard, const char* msg) {
+  double verify_time_ms = 0.0;
+
+  if (guard && total_collections() >= VerifyGCStartAt) {
+    double verify_start = os::elapsedTime();
+    HandleMark hm;  // Discard invalid handles created during verification
+    gclog_or_tty->print(msg);
+    prepare_for_verify();
+    Universe::verify(false /* silent */, VerifyOption_G1UsePrevMarking);
+    verify_time_ms = (os::elapsedTime() - verify_start) * 1000;
+  }
+
+  return verify_time_ms;
+}
+
+void G1CollectedHeap::verify_before_gc() {
+  double verify_time_ms = verify(VerifyBeforeGC, " VerifyBeforeGC:");
+  g1_policy()->phase_times()->record_verify_before_time_ms(verify_time_ms);
+}
+
+void G1CollectedHeap::verify_after_gc() {
+  double verify_time_ms = verify(VerifyAfterGC, " VerifyAfterGC:");
+  g1_policy()->phase_times()->record_verify_after_time_ms(verify_time_ms);
+}
+
 bool G1CollectedHeap::do_collection(bool explicit_gc,
                                     bool clear_all_soft_refs,
                                     size_t word_size) {
@@ -1304,14 +1329,8 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     size_t g1h_prev_used = used();
     assert(used() == recalculate_used(), "Should be equal");
 
-    if (VerifyBeforeGC && total_collections() >= VerifyGCStartAt) {
-      HandleMark hm;  // Discard invalid handles created during verification
-      gclog_or_tty->print(" VerifyBeforeGC:");
-      prepare_for_verify();
-      Universe::verify(/* silent      */ false,
-                       /* option      */ VerifyOption_G1UsePrevMarking);
+    verify_before_gc();
 
-    }
     pre_full_gc_dump();
 
     COMPILER2_PRESENT(DerivedPointerTable::clear());
@@ -1378,14 +1397,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
     MemoryService::track_memory_usage();
 
-    if (VerifyAfterGC && total_collections() >= VerifyGCStartAt) {
-      HandleMark hm;  // Discard invalid handles created during verification
-      gclog_or_tty->print(" VerifyAfterGC:");
-      prepare_for_verify();
-      Universe::verify(/* silent      */ false,
-                       /* option      */ VerifyOption_G1UsePrevMarking);
-
-    }
+    verify_after_gc();
 
     assert(!ref_processor_stw()->discovery_enabled(), "Postcondition");
     ref_processor_stw()->verify_no_references_recorded();
@@ -2327,8 +2339,7 @@ void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
   while (dcqs.apply_closure_to_completed_buffer(cl, worker_i, 0, true)) {
     n_completed_buffers++;
   }
-  g1_policy()->phase_times()->record_update_rs_processed_buffers(worker_i,
-                                                  (double) n_completed_buffers);
+  g1_policy()->phase_times()->record_update_rs_processed_buffers(worker_i, n_completed_buffers);
   dcqs.clear_n_completed_buffers();
   assert(!dcqs.completed_buffers_exist_dirty(), "Completed buffers exist!");
 }
@@ -3735,8 +3746,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     int active_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
                                 workers()->active_workers() : 1);
-    g1_policy()->phase_times()->note_gc_start(os::elapsedTime(), active_workers,
-      g1_policy()->gcs_are_young(), g1_policy()->during_initial_mark_pause(), gc_cause());
+    double pause_start_sec = os::elapsedTime();
+    g1_policy()->phase_times()->note_gc_start(active_workers);
+    bool initial_mark_gc = g1_policy()->during_initial_mark_pause();
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
@@ -3765,13 +3777,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       increment_total_collections(false /* full gc */);
       increment_gc_time_stamp();
 
-      if (VerifyBeforeGC && total_collections() >= VerifyGCStartAt) {
-        HandleMark hm;  // Discard invalid handles created during verification
-        gclog_or_tty->print(" VerifyBeforeGC:");
-        prepare_for_verify();
-        Universe::verify(/* silent      */ false,
-                         /* option      */ VerifyOption_G1UsePrevMarking);
-      }
+      verify_before_gc();
 
       COMPILER2_PRESENT(DerivedPointerTable::clear());
 
@@ -3984,10 +3990,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
                                  true  /* verify_fingers */);
         _cm->note_end_of_gc();
 
-        // Collect thread local data to allow the ergonomics to use
-        // the collected information
-        g1_policy()->phase_times()->collapse_par_times();
-
         // This timing is only used by the ergonomics to handle our pause target.
         // It is unclear why this should not include the full pause. We will
         // investigate this in CR 7178365.
@@ -4020,13 +4022,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // scanning cards (see CR 7039627).
         increment_gc_time_stamp();
 
-        if (VerifyAfterGC && total_collections() >= VerifyGCStartAt) {
-          HandleMark hm;  // Discard invalid handles created during verification
-          gclog_or_tty->print(" VerifyAfterGC:");
-          prepare_for_verify();
-          Universe::verify(/* silent      */ false,
-                           /* option      */ VerifyOption_G1UsePrevMarking);
-        }
+        verify_after_gc();
 
         assert(!ref_processor_stw()->discovery_enabled(), "Postcondition");
         ref_processor_stw()->verify_no_references_recorded();
@@ -4050,10 +4046,35 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
       gc_epilogue(false);
 
-      g1_policy()->phase_times()->note_gc_end(os::elapsedTime());
+      if (G1Log::fine()) {
+        if (PrintGCTimeStamps) {
+          gclog_or_tty->stamp();
+          gclog_or_tty->print(": ");
+        }
 
-      // We have to do this after we decide whether to expand the heap or not.
+        GCCauseString gc_cause_str = GCCauseString("GC pause", gc_cause())
+          .append(g1_policy()->gcs_are_young() ? " (young)" : " (mixed)")
+          .append(initial_mark_gc ? " (initial-mark)" : "");
+
+        double pause_time_sec = os::elapsedTime() - pause_start_sec;
+
+        if (G1Log::finer()) {
+          if (evacuation_failed()) {
+            gc_cause_str.append(" (to-space exhausted)");
+          }
+          gclog_or_tty->print_cr("[%s, %3.7f secs]", (const char*)gc_cause_str, pause_time_sec);
+          g1_policy()->phase_times()->note_gc_end();
+          g1_policy()->phase_times()->print(pause_time_sec);
+          g1_policy()->print_detailed_heap_transition();
+        } else {
+          if (evacuation_failed()) {
+            gc_cause_str.append("--");
+          }
+          gclog_or_tty->print("[%s", (const char*)gc_cause_str);
       g1_policy()->print_heap_transition();
+          gclog_or_tty->print_cr(", %3.7f secs]", pause_time_sec);
+        }
+      }
     }
 
     // It is not yet to safe to tell the concurrent mark to
@@ -4863,7 +4884,7 @@ public:
         evac.do_void();
         double elapsed_ms = (os::elapsedTime()-start)*1000.0;
         double term_ms = pss.term_time()*1000.0;
-        _g1h->g1_policy()->phase_times()->record_obj_copy_time(worker_id, elapsed_ms-term_ms);
+        _g1h->g1_policy()->phase_times()->add_obj_copy_time(worker_id, elapsed_ms-term_ms);
         _g1h->g1_policy()->phase_times()->record_termination(worker_id, term_ms, pss.term_attempts());
       }
       _g1h->g1_policy()->record_thread_age_table(pss.age_table());
@@ -4991,27 +5012,28 @@ g1_process_strong_roots(bool collecting_perm_gen,
   buf_scan_non_heap_roots.done();
   buf_scan_perm.done();
 
-  double ext_roots_end = os::elapsedTime();
-
-  g1_policy()->phase_times()->reset_obj_copy_time(worker_i);
   double obj_copy_time_sec = buf_scan_perm.closure_app_seconds() +
                                 buf_scan_non_heap_roots.closure_app_seconds();
   g1_policy()->phase_times()->record_obj_copy_time(worker_i, obj_copy_time_sec * 1000.0);
 
   double ext_root_time_ms =
-    ((ext_roots_end - ext_roots_start) - obj_copy_time_sec) * 1000.0;
+    ((os::elapsedTime() - ext_roots_start) - obj_copy_time_sec) * 1000.0;
 
   g1_policy()->phase_times()->record_ext_root_scan_time(worker_i, ext_root_time_ms);
 
   // During conc marking we have to filter the per-thread SATB buffers
   // to make sure we remove any oops into the CSet (which will show up
   // as implicitly live).
+  double satb_filtering_ms = 0.0;
   if (!_process_strong_tasks->is_task_claimed(G1H_PS_filter_satb_buffers)) {
     if (mark_in_progress()) {
+      double satb_filter_start = os::elapsedTime();
+
       JavaThread::satb_mark_queue_set().filter_thread_buffers();
+
+      satb_filtering_ms = (os::elapsedTime() - satb_filter_start) * 1000.0;
     }
   }
-  double satb_filtering_ms = (os::elapsedTime() - ext_roots_end) * 1000.0;
   g1_policy()->phase_times()->record_satb_filtering_time(worker_i, satb_filtering_ms);
 
   // Now scan the complement of the collection set.
@@ -5647,11 +5669,6 @@ void G1CollectedHeap::evacuate_collection_set() {
 
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
-    if (G1Log::finer()) {
-      gclog_or_tty->print(" (to-space exhausted)");
-    } else if (G1Log::fine()) {
-      gclog_or_tty->print("--");
-    }
   }
 
   // Enqueue any remaining references remaining on the STW

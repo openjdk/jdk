@@ -405,6 +405,10 @@ private:
   // heap after a compaction.
   void print_hrs_post_compaction();
 
+  double verify(bool guard, const char* msg);
+  void verify_before_gc();
+  void verify_after_gc();
+
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
 
