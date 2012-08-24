@@ -1513,22 +1513,6 @@ int emit_deopt_handler(CodeBuffer& cbuf)
   return offset;
 }
 
-
-const bool Matcher::match_rule_supported(int opcode) {
-  if (!has_match_rule(opcode))
-    return false;
-
-  switch (opcode) {
-    case Op_PopCountI:
-    case Op_PopCountL:
-      if (!UsePopCountInstruction)
-        return false;
-    break;
-  }
-
-  return true;  // Per default match rules are supported.
-}
-
 int Matcher::regnum_to_fpu_offset(int regnum)
 {
   return regnum - 32; // The FP registers are in the second chunk
@@ -6427,6 +6411,31 @@ instruct castP2X(rRegL dst, rRegP src)
   ins_pipe(ialu_reg_reg); // XXX
 %}
 
+// Convert oop into int for vectors alignment masking
+instruct convP2I(rRegI dst, rRegP src)
+%{
+  match(Set dst (ConvL2I (CastP2X src)));
+
+  format %{ "movl    $dst, $src\t# ptr -> int" %}
+  ins_encode %{
+    __ movl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg); // XXX
+%}
+
+// Convert compressed oop into int for vectors alignment masking
+// in case of 32bit oops (heap < 4Gb).
+instruct convN2I(rRegI dst, rRegN src)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  match(Set dst (ConvL2I (CastP2X (DecodeN src))));
+
+  format %{ "movl    $dst, $src\t# compressed ptr -> int" %}
+  ins_encode %{
+    __ movl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg); // XXX
+%}
 
 // Convert oop pointer into compressed form
 instruct encodeHeapOop(rRegN dst, rRegP src, rFlagsReg cr) %{
@@ -10049,11 +10058,10 @@ instruct MoveD2L_reg_reg(rRegL dst, regD src) %{
   ins_pipe( pipe_slow );
 %}
 
-// The next instructions have long latency and use Int unit. Set high cost.
 instruct MoveI2F_reg_reg(regF dst, rRegI src) %{
   match(Set dst (MoveI2F src));
   effect(DEF dst, USE src);
-  ins_cost(300);
+  ins_cost(100);
   format %{ "movd    $dst,$src\t# MoveI2F" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
@@ -10064,7 +10072,7 @@ instruct MoveI2F_reg_reg(regF dst, rRegI src) %{
 instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
   match(Set dst (MoveL2D src));
   effect(DEF dst, USE src);
-  ins_cost(300);
+  ins_cost(100);
   format %{ "movd    $dst,$src\t# MoveL2D" %}
   ins_encode %{
      __ movdq($dst$$XMMRegister, $src$$Register);
