@@ -287,17 +287,17 @@
           "The number of times we'll force an overflow during "             \
           "concurrent marking")                                             \
                                                                             \
-  develop(uintx, G1DefaultMinNewGenPercent, 20,                             \
+  experimental(uintx, G1DefaultMinNewGenPercent, 20,                        \
           "Percentage (0-100) of the heap size to use as minimum "          \
           "young gen size.")                                                \
                                                                             \
-  develop(uintx, G1DefaultMaxNewGenPercent, 80,                             \
+  experimental(uintx, G1DefaultMaxNewGenPercent, 80,                        \
           "Percentage (0-100) of the heap size to use as maximum "          \
           "young gen size.")                                                \
                                                                             \
-  develop(uintx, G1OldCSetRegionLiveThresholdPercent, 90,                   \
+  experimental(uintx, G1OldCSetRegionLiveThresholdPercent, 90,              \
           "Threshold for regions to be added to the collection set. "       \
-          "Regions with more live bytes that this will not be collected.")  \
+          "Regions with more live bytes than this will not be collected.")  \
                                                                             \
   product(uintx, G1HeapWastePercent, 5,                                     \
           "Amount of space, expressed as a percentage of the heap size, "   \
@@ -306,7 +306,7 @@
   product(uintx, G1MixedGCCountTarget, 4,                                   \
           "The target number of mixed GCs after a marking cycle.")          \
                                                                             \
-  develop(uintx, G1OldCSetRegionThresholdPercent, 10,                       \
+  experimental(uintx, G1OldCSetRegionThresholdPercent, 10,                  \
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
                                                                             \
