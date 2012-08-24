@@ -1058,12 +1058,27 @@ bool SuperWord::implemented(Node_List* p) {
   return VectorNode::implemented(p0->Opcode(), p->size(), velt_basic_type(p0));
 }
 
+//------------------------------same_inputs--------------------------
+// For pack p, are all idx operands the same?
+static bool same_inputs(Node_List* p, int idx) {
+  Node* p0 = p->at(0);
+  uint vlen = p->size();
+  Node* p0_def = p0->in(idx);
+  for (uint i = 1; i < vlen; i++) {
+    Node* pi = p->at(i);
+    Node* pi_def = pi->in(idx);
+    if (p0_def != pi_def)
+      return false;
+  }
+  return true;
+}
+
 //------------------------------profitable---------------------------
 // For pack p, are all operands and all uses (with in the block) vector?
 bool SuperWord::profitable(Node_List* p) {
   Node* p0 = p->at(0);
   uint start, end;
-  vector_opd_range(p0, &start, &end);
+  VectorNode::vector_operands(p0, &start, &end);
 
   // Return false if some input is not vector and inside block
   for (uint i = start; i < end; i++) {
@@ -1071,14 +1086,19 @@ bool SuperWord::profitable(Node_List* p) {
       // For now, return false if not scalar promotion case (inputs are the same.)
       // Later, implement PackNode and allow differing, non-vector inputs
       // (maybe just the ones from outside the block.)
-      Node* p0_def = p0->in(i);
-      for (uint j = 1; j < p->size(); j++) {
-        Node* use = p->at(j);
-        Node* def = use->in(i);
-        if (p0_def != def)
-          return false;
+      if (!same_inputs(p, i)) {
+        return false;
       }
     }
+  }
+  if (VectorNode::is_shift(p0)) {
+    // For now, return false if shift count is vector because
+    // hw does not support it.
+    if (is_vector_use(p0, 2))
+      return false;
+    // For the same reason return false if different shift counts.
+    if (!same_inputs(p, 2))
+      return false;
   }
   if (!p0->is_Store()) {
     // For now, return false if not all uses are vector.
@@ -1357,6 +1377,12 @@ void SuperWord::output() {
         // Promote operands to vector
         Node* in1 = vector_opd(p, 1);
         Node* in2 = vector_opd(p, 2);
+        if (VectorNode::is_invariant_vector(in1) && (n->is_Add() || n->is_Mul())) {
+          // Move invariant vector input into second position to avoid register spilling.
+          Node* tmp = in1;
+          in1 = in2;
+          in2 = tmp;
+        }
         vn = VectorNode::make(_phase->C, opc, in1, in2, vlen, velt_basic_type(n));
       } else {
         ShouldNotReachHere();
@@ -1386,19 +1412,40 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   uint vlen = p->size();
   Node* opd = p0->in(opd_idx);
 
-  bool same_opd = true;
-  for (uint i = 1; i < vlen; i++) {
-    Node* pi = p->at(i);
-    Node* in = pi->in(opd_idx);
-    if (opd != in) {
-      same_opd = false;
-      break;
-    }
-  }
-
-  if (same_opd) {
+  if (same_inputs(p, opd_idx)) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
+      assert(((opd_idx != 2) || !VectorNode::is_shift(p0)), "shift's count can't be vector");
       return opd; // input is matching vector
+    }
+    if ((opd_idx == 2) && VectorNode::is_shift(p0)) {
+      // No vector is needed for shift count.
+      // Vector instructions do not mask shift count, do it here.
+      Compile* C = _phase->C;
+      Node* cnt = opd;
+      juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
+      const TypeInt* t = opd->find_int_type();
+      if (t != NULL && t->is_con()) {
+        juint shift = t->get_con();
+        if (shift > mask) { // Unsigned cmp
+          cnt = ConNode::make(C, TypeInt::make(shift & mask));
+        }
+      } else {
+        if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
+          cnt = ConNode::make(C, TypeInt::make(mask));
+          _phase->_igvn.register_new_node_with_optimizer(cnt);
+          cnt = new (C, 3) AndINode(opd, cnt);
+          _phase->_igvn.register_new_node_with_optimizer(cnt);
+          _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
+        }
+        assert(opd->bottom_type()->isa_int(), "int type only");
+        // Move non constant shift count into XMM register.
+        cnt = new (_phase->C, 2) MoveI2FNode(cnt);
+      }
+      if (cnt != opd) {
+        _phase->_igvn.register_new_node_with_optimizer(cnt);
+        _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
+      }
+      return cnt;
     }
     assert(!opd->is_StoreVector(), "such vector is not expected here");
     // Convert scalar input to vector with the same number of elements as
@@ -1428,7 +1475,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     Node* in = pi->in(opd_idx);
     assert(my_pack(in) == NULL, "Should already have been unpacked");
     assert(opd_bt == in->bottom_type()->basic_type(), "all same type");
-    pk->add_opd(i, in);
+    pk->add_opd(in);
   }
   _phase->_igvn.register_new_node_with_optimizer(pk);
   _phase->set_ctrl(pk, _phase->get_ctrl(opd));
@@ -1718,37 +1765,27 @@ void SuperWord::compute_vector_element_type() {
   for (int i = _block.length() - 1; i >= 0; i--) {
     Node* n = _block.at(i);
     // Only integer types need be examined
-    if (n->bottom_type()->isa_int()) {
+    const Type* vt = velt_type(n);
+    if (vt->basic_type() == T_INT) {
       uint start, end;
-      vector_opd_range(n, &start, &end);
+      VectorNode::vector_operands(n, &start, &end);
       const Type* vt = velt_type(n);
 
       for (uint j = start; j < end; j++) {
         Node* in  = n->in(j);
-        // Don't propagate through a type conversion
-        if (n->bottom_type() != in->bottom_type())
-          continue;
-        switch(in->Opcode()) {
-        case Op_AddI:    case Op_AddL:
-        case Op_SubI:    case Op_SubL:
-        case Op_MulI:    case Op_MulL:
-        case Op_AndI:    case Op_AndL:
-        case Op_OrI:     case Op_OrL:
-        case Op_XorI:    case Op_XorL:
-        case Op_LShiftI: case Op_LShiftL:
-        case Op_CMoveI:  case Op_CMoveL:
-          if (in_bb(in)) {
-            bool same_type = true;
-            for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
-              Node *use = in->fast_out(k);
-              if (!in_bb(use) || !same_velt_type(use, n)) {
-                same_type = false;
-                break;
-              }
+        // Don't propagate through a memory
+        if (!in->is_Mem() && in_bb(in) && velt_type(in)->basic_type() == T_INT &&
+            data_size(n) < data_size(in)) {
+          bool same_type = true;
+          for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
+            Node *use = in->fast_out(k);
+            if (!in_bb(use) || !same_velt_type(use, n)) {
+              same_type = false;
+              break;
             }
-            if (same_type) {
-              set_velt_type(in, vt);
-            }
+          }
+          if (same_type) {
+            set_velt_type(in, vt);
           }
         }
       }
@@ -1792,10 +1829,8 @@ const Type* SuperWord::container_type(Node* n) {
   }
   const Type* t = _igvn.type(n);
   if (t->basic_type() == T_INT) {
-    if (t->higher_equal(TypeInt::BOOL))  return TypeInt::BOOL;
-    if (t->higher_equal(TypeInt::BYTE))  return TypeInt::BYTE;
-    if (t->higher_equal(TypeInt::CHAR))  return TypeInt::CHAR;
-    if (t->higher_equal(TypeInt::SHORT)) return TypeInt::SHORT;
+    // A narrow type of arithmetic operations will be determined by
+    // propagating the type of memory operations.
     return TypeInt::INT;
   }
   return t;
@@ -1809,38 +1844,6 @@ bool SuperWord::same_velt_type(Node* n1, Node* n2) {
     return data_size(n1) == data_size(n2);
   }
   return vt1 == vt2;
-}
-
-//-------------------------vector_opd_range-----------------------
-// (Start, end] half-open range defining which operands are vector
-void SuperWord::vector_opd_range(Node* n, uint* start, uint* end) {
-  switch (n->Opcode()) {
-  case Op_LoadB:   case Op_LoadUB:
-  case Op_LoadS:   case Op_LoadUS:
-  case Op_LoadI:   case Op_LoadL:
-  case Op_LoadF:   case Op_LoadD:
-  case Op_LoadP:
-    *start = 0;
-    *end   = 0;
-    return;
-  case Op_StoreB:  case Op_StoreC:
-  case Op_StoreI:  case Op_StoreL:
-  case Op_StoreF:  case Op_StoreD:
-  case Op_StoreP:
-    *start = MemNode::ValueIn;
-    *end   = *start + 1;
-    return;
-  case Op_LShiftI: case Op_LShiftL:
-    *start = 1;
-    *end   = 2;
-    return;
-  case Op_CMoveI:  case Op_CMoveL:  case Op_CMoveF:  case Op_CMoveD:
-    *start = 2;
-    *end   = n->req();
-    return;
-  }
-  *start = 1;
-  *end   = n->req(); // default is all operands
 }
 
 //------------------------------in_packset---------------------------
@@ -1940,7 +1943,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   //     lim0 == original pre loop limit
   //     V == v_align (power of 2)
   //     invar == extra invariant piece of the address expression
-  //     e == k [ +/- invar ]
+  //     e == offset [ +/- invar ]
   //
   // When reassociating expressions involving '%' the basic rules are:
   //     (a - b) % k == 0   =>  a % k == b % k
@@ -1993,13 +1996,12 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   int elt_size = align_to_ref_p.memory_size();
   int v_align  = vw / elt_size;
   assert(v_align > 1, "sanity");
-  int k        = align_to_ref_p.offset_in_bytes() / elt_size;
+  int offset   = align_to_ref_p.offset_in_bytes() / elt_size;
+  Node *offsn  = _igvn.intcon(offset);
 
-  Node *kn   = _igvn.intcon(k);
-
-  Node *e = kn;
+  Node *e = offsn;
   if (align_to_ref_p.invar() != NULL) {
-    // incorporate any extra invariant piece producing k +/- invar >>> log2(elt)
+    // incorporate any extra invariant piece producing (offset +/- invar) >>> log2(elt)
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
     Node* aref     = new (_phase->C, 3) URShiftINode(align_to_ref_p.invar(), log2_elt);
     _phase->_igvn.register_new_node_with_optimizer(aref);
@@ -2014,15 +2016,15 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   }
   if (vw > ObjectAlignmentInBytes) {
     // incorporate base e +/- base && Mask >>> log2(elt)
-    Node* mask = _igvn.MakeConX(~(-1 << exact_log2(vw)));
     Node* xbase = new(_phase->C, 2) CastP2XNode(NULL, align_to_ref_p.base());
     _phase->_igvn.register_new_node_with_optimizer(xbase);
-    Node* masked_xbase  = new (_phase->C, 3) AndXNode(xbase, mask);
-    _phase->_igvn.register_new_node_with_optimizer(masked_xbase);
 #ifdef _LP64
-    masked_xbase  = new (_phase->C, 2) ConvL2INode(masked_xbase);
-    _phase->_igvn.register_new_node_with_optimizer(masked_xbase);
+    xbase  = new (_phase->C, 2) ConvL2INode(xbase);
+    _phase->_igvn.register_new_node_with_optimizer(xbase);
 #endif
+    Node* mask = _igvn.intcon(vw-1);
+    Node* masked_xbase  = new (_phase->C, 3) AndINode(xbase, mask);
+    _phase->_igvn.register_new_node_with_optimizer(masked_xbase);
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
     Node* bref     = new (_phase->C, 3) URShiftINode(masked_xbase, log2_elt);
     _phase->_igvn.register_new_node_with_optimizer(bref);

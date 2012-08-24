@@ -295,7 +295,11 @@ Node* IdealKit::transform(Node* n) {
   if (_delay_all_transforms) {
     return delay_transform(n);
   } else {
-    return gvn().transform(n);
+    n = gvn().transform(n);
+    if (!gvn().is_IterGVN()) {
+      C->record_for_igvn(n);
+    }
+    return n;
   }
 }
 
