@@ -73,7 +73,7 @@ template <class E, int SIZE> class FixedSizeMemPointerArray :
     return sizeof(FixedSizeMemPointerArray<E, SIZE>);
   }
 
-  debug_only(int capacity() const { return SIZE; })
+  NOT_PRODUCT(int capacity() const { return SIZE; })
 
  public:
   // implementation of public interface

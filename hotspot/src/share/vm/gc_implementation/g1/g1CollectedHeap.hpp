@@ -33,7 +33,7 @@
 #include "gc_implementation/g1/heapRegionSeq.hpp"
 #include "gc_implementation/g1/heapRegionSets.hpp"
 #include "gc_implementation/shared/hSpaceCounters.hpp"
-#include "gc_implementation/parNew/parGCAllocBuffer.hpp"
+#include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "memory/barrierSet.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/sharedHeap.hpp"
@@ -278,9 +278,32 @@ private:
   // survivor objects.
   SurvivorGCAllocRegion _survivor_gc_alloc_region;
 
+  // PLAB sizing policy for survivors.
+  PLABStats _survivor_plab_stats;
+
   // Alloc region used to satisfy allocation requests by the GC for
   // old objects.
   OldGCAllocRegion _old_gc_alloc_region;
+
+  // PLAB sizing policy for tenured objects.
+  PLABStats _old_plab_stats;
+
+  PLABStats* stats_for_purpose(GCAllocPurpose purpose) {
+    PLABStats* stats = NULL;
+
+    switch (purpose) {
+    case GCAllocForSurvived:
+      stats = &_survivor_plab_stats;
+      break;
+    case GCAllocForTenured:
+      stats = &_old_plab_stats;
+      break;
+    default:
+      assert(false, "unrecognized GCAllocPurpose");
+    }
+
+    return stats;
+  }
 
   // The last old region we allocated to during the last GC.
   // Typically, it is not full so we should re-use it during the next GC.
@@ -314,7 +337,7 @@ private:
   G1MonitoringSupport* _g1mm;
 
   // Determines PLAB size for a particular allocation purpose.
-  static size_t desired_plab_sz(GCAllocPurpose purpose);
+  size_t desired_plab_sz(GCAllocPurpose purpose);
 
   // Outside of GC pauses, the number of bytes used in all regions other
   // than the current allocation region.
@@ -1683,7 +1706,6 @@ public:
   void stop_conc_gc_threads();
 
   size_t pending_card_num();
-  size_t max_pending_card_num();
   size_t cards_scanned();
 
 protected:
@@ -1811,19 +1833,19 @@ public:
   }
 
   HeapWord* allocate_slow(GCAllocPurpose purpose, size_t word_sz) {
-
     HeapWord* obj = NULL;
     size_t gclab_word_size = _g1h->desired_plab_sz(purpose);
     if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
       G1ParGCAllocBuffer* alloc_buf = alloc_buffer(purpose);
-      assert(gclab_word_size == alloc_buf->word_sz(),
-             "dynamic resizing is not supported");
       add_to_alloc_buffer_waste(alloc_buf->words_remaining());
-      alloc_buf->retire(false, false);
+      alloc_buf->flush_stats_and_retire(_g1h->stats_for_purpose(purpose),
+                                        false /* end_of_gc */,
+                                        false /* retain */);
 
       HeapWord* buf = _g1h->par_allocate_during_gc(purpose, gclab_word_size);
       if (buf == NULL) return NULL; // Let caller handle allocation failure.
       // Otherwise.
+      alloc_buf->set_word_size(gclab_word_size);
       alloc_buf->set_buf(buf);
 
       obj = alloc_buf->allocate(word_sz);
@@ -1908,7 +1930,9 @@ public:
     for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
       size_t waste = _alloc_buffers[ap]->words_remaining();
       add_to_alloc_buffer_waste(waste);
-      _alloc_buffers[ap]->retire(true, false);
+      _alloc_buffers[ap]->flush_stats_and_retire(_g1h->stats_for_purpose((GCAllocPurpose)ap),
+                                                 true /* end_of_gc */,
+                                                 false /* retain */);
     }
   }
 

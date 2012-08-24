@@ -106,10 +106,10 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(OptoLoopAlignment)) {
       FLAG_SET_DEFAULT(OptoLoopAlignment, 4);
     }
-    // When using CMS, we cannot use memset() in BOT updates because
-    // the sun4v/CMT version in libc_psr uses BIS which exposes
-    // "phantom zeros" to concurrent readers. See 6948537.
-    if (FLAG_IS_DEFAULT(UseMemSetInBOT) && UseConcMarkSweepGC) {
+    // When using CMS or G1, we cannot use memset() in BOT updates
+    // because the sun4v/CMT version in libc_psr uses BIS which
+    // exposes "phantom zeros" to concurrent readers. See 6948537.
+    if (FLAG_IS_DEFAULT(UseMemSetInBOT) && (UseConcMarkSweepGC || UseG1GC)) {
       FLAG_SET_DEFAULT(UseMemSetInBOT, false);
     }
 #ifdef _LP64
