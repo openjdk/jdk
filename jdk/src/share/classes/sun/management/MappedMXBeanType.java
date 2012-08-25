@@ -803,7 +803,7 @@ public abstract class MappedMXBeanType {
                 Class<?> c;
                 try {
                     c = Class.forName(t.getClassName(), false,
-                                      String.class.getClassLoader());
+                                      MappedMXBeanType.class.getClassLoader());
                     MappedMXBeanType.newBasicType(c, t);
                 } catch (ClassNotFoundException e) {
                     // the classes that these predefined types declare
