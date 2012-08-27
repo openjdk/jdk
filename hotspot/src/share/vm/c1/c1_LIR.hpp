@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_C1_C1_LIR_HPP
 
 #include "c1/c1_ValueType.hpp"
+#include "oops/methodOop.hpp"
 
 class BlockBegin;
 class BlockList;
@@ -1162,8 +1163,9 @@ class LIR_OpJavaCall: public LIR_OpCall {
     return
       is_invokedynamic()  // An invokedynamic is always a MethodHandle call site.
       ||
-      (method()->holder()->name() == ciSymbol::java_lang_invoke_MethodHandle() &&
-       methodOopDesc::is_method_handle_invoke_name(method()->name()->sid()));
+      method()->is_compiled_lambda_form()  // Java-generated adapter
+      ||
+      method()->is_method_handle_intrinsic();  // JVM-generated MH intrinsic
   }
 
   intptr_t vtable_offset() const {
@@ -1823,18 +1825,20 @@ class LIR_OpProfileCall : public LIR_Op {
 
  private:
   ciMethod* _profiled_method;
-  int _profiled_bci;
-  LIR_Opr _mdo;
-  LIR_Opr _recv;
-  LIR_Opr _tmp1;
-  ciKlass* _known_holder;
+  int       _profiled_bci;
+  ciMethod* _profiled_callee;
+  LIR_Opr   _mdo;
+  LIR_Opr   _recv;
+  LIR_Opr   _tmp1;
+  ciKlass*  _known_holder;
 
  public:
   // Destroys recv
-  LIR_OpProfileCall(LIR_Code code, ciMethod* profiled_method, int profiled_bci, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* known_holder)
+  LIR_OpProfileCall(LIR_Code code, ciMethod* profiled_method, int profiled_bci, ciMethod* profiled_callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* known_holder)
     : LIR_Op(code, LIR_OprFact::illegalOpr, NULL)  // no result, no info
     , _profiled_method(profiled_method)
     , _profiled_bci(profiled_bci)
+    , _profiled_callee(profiled_callee)
     , _mdo(mdo)
     , _recv(recv)
     , _tmp1(t1)
@@ -1842,6 +1846,7 @@ class LIR_OpProfileCall : public LIR_Op {
 
   ciMethod* profiled_method() const              { return _profiled_method;  }
   int       profiled_bci()    const              { return _profiled_bci;     }
+  ciMethod* profiled_callee() const              { return _profiled_callee;  }
   LIR_Opr   mdo()             const              { return _mdo;              }
   LIR_Opr   recv()            const              { return _recv;             }
   LIR_Opr   tmp1()            const              { return _tmp1;             }
@@ -2145,8 +2150,8 @@ class LIR_List: public CompilationResourceObj {
                   CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch, CodeStub* stub,
                   ciMethod* profiled_method, int profiled_bci);
   // methodDataOop profiling
-  void profile_call(ciMethod* method, int bci, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* cha_klass) {
-    append(new LIR_OpProfileCall(lir_profile_call, method, bci, mdo, recv, t1, cha_klass));
+  void profile_call(ciMethod* method, int bci, ciMethod* callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* cha_klass) {
+    append(new LIR_OpProfileCall(lir_profile_call, method, bci, callee, mdo, recv, t1, cha_klass));
   }
 };
 

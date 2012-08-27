@@ -550,7 +550,7 @@ public class Resolve {
         /* The number of actuals and formals differ */
         InapplicableMethodException arityMismatch();
         /* An actual argument type does not conform to the corresponding formal type */
-        InapplicableMethodException argumentMismatch(boolean varargs, Type found, Type expected);
+        InapplicableMethodException argumentMismatch(boolean varargs, JCDiagnostic details);
         /* The element type of a varargs is not accessible in the current context */
         InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected);
     }
@@ -565,12 +565,12 @@ public class Resolve {
             public InapplicableMethodException arityMismatch() {
                 return inapplicableMethodException.setMessage("arg.length.mismatch");
             }
-            public InapplicableMethodException argumentMismatch(boolean varargs, Type found, Type expected) {
+            public InapplicableMethodException argumentMismatch(boolean varargs, JCDiagnostic details) {
                 String key = varargs ?
                         "varargs.argument.mismatch" :
                         "no.conforming.assignment.exists";
                 return inapplicableMethodException.setMessage(key,
-                        found, expected);
+                        details);
             }
             public InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected) {
                 return inapplicableMethodException.setMessage("inaccessible.varargs.type",
@@ -667,12 +667,8 @@ public class Resolve {
             this.rsWarner = rsWarner;
         }
 
-        public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
-            throw handler.argumentMismatch(useVarargs, found, req);
-        }
-
-        public Type rawInstantiatePoly(ForAll found, Type req, Warner warn) {
-            throw new AssertionError("ForAll in argument position");
+        public void report(DiagnosticPosition pos, JCDiagnostic details) {
+            throw handler.argumentMismatch(useVarargs, details);
         }
 
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {

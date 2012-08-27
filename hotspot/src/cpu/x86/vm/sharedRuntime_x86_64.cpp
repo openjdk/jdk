@@ -590,6 +590,19 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   __ jmp(rcx);
 }
 
+static void range_check(MacroAssembler* masm, Register pc_reg, Register temp_reg,
+                        address code_start, address code_end,
+                        Label& L_ok) {
+  Label L_fail;
+  __ lea(temp_reg, ExternalAddress(code_start));
+  __ cmpptr(pc_reg, temp_reg);
+  __ jcc(Assembler::belowEqual, L_fail);
+  __ lea(temp_reg, ExternalAddress(code_end));
+  __ cmpptr(pc_reg, temp_reg);
+  __ jcc(Assembler::below, L_ok);
+  __ bind(L_fail);
+}
+
 static void gen_i2c_adapter(MacroAssembler *masm,
                             int total_args_passed,
                             int comp_args_on_stack,
@@ -605,8 +618,52 @@ static void gen_i2c_adapter(MacroAssembler *masm,
   // save code can segv when fxsave instructions find improperly
   // aligned stack pointer.
 
+  // Adapters can be frameless because they do not require the caller
+  // to perform additional cleanup work, such as correcting the stack pointer.
+  // An i2c adapter is frameless because the *caller* frame, which is interpreted,
+  // routinely repairs its own stack pointer (from interpreter_frame_last_sp),
+  // even if a callee has modified the stack pointer.
+  // A c2i adapter is frameless because the *callee* frame, which is interpreted,
+  // routinely repairs its caller's stack pointer (from sender_sp, which is set
+  // up via the senderSP register).
+  // In other words, if *either* the caller or callee is interpreted, we can
+  // get the stack pointer repaired after a call.
+  // This is why c2i and i2c adapters cannot be indefinitely composed.
+  // In particular, if a c2i adapter were to somehow call an i2c adapter,
+  // both caller and callee would be compiled methods, and neither would
+  // clean up the stack pointer changes performed by the two adapters.
+  // If this happens, control eventually transfers back to the compiled
+  // caller, but with an uncorrected stack, causing delayed havoc.
+
   // Pick up the return address
   __ movptr(rax, Address(rsp, 0));
+
+  if (VerifyAdapterCalls &&
+      (Interpreter::code() != NULL || StubRoutines::code1() != NULL)) {
+    // So, let's test for cascading c2i/i2c adapters right now.
+    //  assert(Interpreter::contains($return_addr) ||
+    //         StubRoutines::contains($return_addr),
+    //         "i2c adapter must return to an interpreter frame");
+    __ block_comment("verify_i2c { ");
+    Label L_ok;
+    if (Interpreter::code() != NULL)
+      range_check(masm, rax, r11,
+                  Interpreter::code()->code_start(), Interpreter::code()->code_end(),
+                  L_ok);
+    if (StubRoutines::code1() != NULL)
+      range_check(masm, rax, r11,
+                  StubRoutines::code1()->code_begin(), StubRoutines::code1()->code_end(),
+                  L_ok);
+    if (StubRoutines::code2() != NULL)
+      range_check(masm, rax, r11,
+                  StubRoutines::code2()->code_begin(), StubRoutines::code2()->code_end(),
+                  L_ok);
+    const char* msg = "i2c adapter must return to an interpreter frame";
+    __ block_comment(msg);
+    __ stop(msg);
+    __ bind(L_ok);
+    __ block_comment("} verify_i2ce ");
+  }
 
   // Must preserve original SP for loading incoming arguments because
   // we need to align the outgoing SP for compiled code.
@@ -1366,6 +1423,14 @@ static void unpack_array_argument(MacroAssembler* masm, VMRegPair reg, BasicType
 }
 
 
+// Different signatures may require very different orders for the move
+// to avoid clobbering other arguments.  There's no simple way to
+// order them safely.  Compute a safe order for issuing stores and
+// break any cycles in those stores.  This code is fairly general but
+// it's not necessary on the other platforms so we keep it in the
+// platform dependent code instead of moving it into a shared file.
+// (See bugs 7013347 & 7145024.)
+// Note that this code is specific to LP64.
 class ComputeMoveOrder: public StackObj {
   class MoveOperation: public ResourceObj {
     friend class ComputeMoveOrder;
@@ -1532,6 +1597,89 @@ class ComputeMoveOrder: public StackObj {
   }
 };
 
+static void verify_oop_args(MacroAssembler* masm,
+                            int total_args_passed,
+                            const BasicType* sig_bt,
+                            const VMRegPair* regs) {
+  Register temp_reg = rbx;  // not part of any compiled calling seq
+  if (VerifyOops) {
+    for (int i = 0; i < total_args_passed; i++) {
+      if (sig_bt[i] == T_OBJECT ||
+          sig_bt[i] == T_ARRAY) {
+        VMReg r = regs[i].first();
+        assert(r->is_valid(), "bad oop arg");
+        if (r->is_stack()) {
+          __ movptr(temp_reg, Address(rsp, r->reg2stack() * VMRegImpl::stack_slot_size + wordSize));
+          __ verify_oop(temp_reg);
+        } else {
+          __ verify_oop(r->as_Register());
+        }
+      }
+    }
+  }
+}
+
+static void gen_special_dispatch(MacroAssembler* masm,
+                                 int total_args_passed,
+                                 int comp_args_on_stack,
+                                 vmIntrinsics::ID special_dispatch,
+                                 const BasicType* sig_bt,
+                                 const VMRegPair* regs) {
+  verify_oop_args(masm, total_args_passed, sig_bt, regs);
+
+  // Now write the args into the outgoing interpreter space
+  bool     has_receiver   = false;
+  Register receiver_reg   = noreg;
+  int      member_arg_pos = -1;
+  Register member_reg     = noreg;
+  int      ref_kind       = MethodHandles::signature_polymorphic_intrinsic_ref_kind(special_dispatch);
+  if (ref_kind != 0) {
+    member_arg_pos = total_args_passed - 1;  // trailing MemberName argument
+    member_reg = rbx;  // known to be free at this point
+    has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
+  } else if (special_dispatch == vmIntrinsics::_invokeBasic) {
+    has_receiver = true;
+  } else {
+    guarantee(false, err_msg("special_dispatch=%d", special_dispatch));
+  }
+
+  if (member_reg != noreg) {
+    // Load the member_arg into register, if necessary.
+    assert(member_arg_pos >= 0 && member_arg_pos < total_args_passed, "oob");
+    assert(sig_bt[member_arg_pos] == T_OBJECT, "dispatch argument must be an object");
+    VMReg r = regs[member_arg_pos].first();
+    assert(r->is_valid(), "bad member arg");
+    if (r->is_stack()) {
+      __ movptr(member_reg, Address(rsp, r->reg2stack() * VMRegImpl::stack_slot_size + wordSize));
+    } else {
+      // no data motion is needed
+      member_reg = r->as_Register();
+    }
+  }
+
+  if (has_receiver) {
+    // Make sure the receiver is loaded into a register.
+    assert(total_args_passed > 0, "oob");
+    assert(sig_bt[0] == T_OBJECT, "receiver argument must be an object");
+    VMReg r = regs[0].first();
+    assert(r->is_valid(), "bad receiver arg");
+    if (r->is_stack()) {
+      // Porting note:  This assumes that compiled calling conventions always
+      // pass the receiver oop in a register.  If this is not true on some
+      // platform, pick a temp and load the receiver from stack.
+      assert(false, "receiver always in a register");
+      receiver_reg = j_rarg0;  // known to be free at this point
+      __ movptr(receiver_reg, Address(rsp, r->reg2stack() * VMRegImpl::stack_slot_size + wordSize));
+    } else {
+      // no data motion is needed
+      receiver_reg = r->as_Register();
+    }
+  }
+
+  // Figure out which address we are really jumping to:
+  MethodHandles::generate_method_handle_dispatch(masm, special_dispatch,
+                                                 receiver_reg, member_reg, /*for_compiler_entry:*/ true);
+}
 
 // ---------------------------------------------------------------------------
 // Generate a native wrapper for a given method.  The method takes arguments
@@ -1539,14 +1687,60 @@ class ComputeMoveOrder: public StackObj {
 // convention (handlizes oops, etc), transitions to native, makes the call,
 // returns to java state (possibly blocking), unhandlizes any result and
 // returns.
-nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
+//
+// Critical native functions are a shorthand for the use of
+// GetPrimtiveArrayCritical and disallow the use of any other JNI
+// functions.  The wrapper is expected to unpack the arguments before
+// passing them to the callee and perform checks before and after the
+// native call to ensure that they GC_locker
+// lock_critical/unlock_critical semantics are followed.  Some other
+// parts of JNI setup are skipped like the tear down of the JNI handle
+// block and the check for pending exceptions it's impossible for them
+// to be thrown.
+//
+// They are roughly structured like this:
+//    if (GC_locker::needs_gc())
+//      SharedRuntime::block_for_jni_critical();
+//    tranistion to thread_in_native
+//    unpack arrray arguments and call native entry point
+//    check for safepoint in progress
+//    check if any thread suspend flags are set
+//      call into JVM and possible unlock the JNI critical
+//      if a GC was suppressed while in the critical native.
+//    transition back to thread_in_Java
+//    return to caller
+//
+nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 methodHandle method,
                                                 int compile_id,
                                                 int total_in_args,
                                                 int comp_args_on_stack,
-                                                BasicType *in_sig_bt,
-                                                VMRegPair *in_regs,
+                                                BasicType* in_sig_bt,
+                                                VMRegPair* in_regs,
                                                 BasicType ret_type) {
+  if (method->is_method_handle_intrinsic()) {
+    vmIntrinsics::ID iid = method->intrinsic_id();
+    intptr_t start = (intptr_t)__ pc();
+    int vep_offset = ((intptr_t)__ pc()) - start;
+    gen_special_dispatch(masm,
+                         total_in_args,
+                         comp_args_on_stack,
+                         method->intrinsic_id(),
+                         in_sig_bt,
+                         in_regs);
+    int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
+    __ flush();
+    int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
+    return nmethod::new_native_nmethod(method,
+                                       compile_id,
+                                       masm->code(),
+                                       vep_offset,
+                                       frame_complete,
+                                       stack_slots / VMRegImpl::slots_per_word,
+                                       in_ByteSize(-1),
+                                       in_ByteSize(-1),
+                                       (OopMapSet*)NULL);
+  }
   bool is_critical_native = true;
   address native_func = method->critical_native_function();
   if (native_func == NULL) {
@@ -1658,7 +1852,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
           case T_SHORT:
           case T_CHAR:
           case T_INT:  single_slots++; break;
-          case T_ARRAY:
+          case T_ARRAY:  // specific to LP64 (7145024)
           case T_LONG: double_slots++; break;
           default:  ShouldNotReachHere();
         }

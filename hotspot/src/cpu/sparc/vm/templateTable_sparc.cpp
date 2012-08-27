@@ -378,7 +378,7 @@ void TemplateTable::fast_aldc(bool wide) {
   Register Rcache = G3_scratch;
   Register Rscratch = G4_scratch;
 
-  resolve_cache_and_index(f1_oop, Otos_i, Rcache, Rscratch, wide ? sizeof(u2) : sizeof(u1));
+  resolve_cache_and_index(f12_oop, Otos_i, Rcache, Rscratch, wide ? sizeof(u2) : sizeof(u1));
 
   __ verify_oop(Otos_i);
 
@@ -2093,10 +2093,12 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   // Depends on cpCacheOop layout!
   Label resolved;
 
-  if (byte_no == f1_oop) {
-    // We are resolved if the f1 field contains a non-null object (CallSite, etc.)
-    // This kind of CP cache entry does not need to match the flags byte, because
+  if (byte_no == f12_oop) {
+    // We are resolved if the f1 field contains a non-null object (CallSite, MethodType, etc.)
+    // This kind of CP cache entry does not need to match bytecode_1 or bytecode_2, because
     // there is a 1-1 relation between bytecode type and CP entry type.
+    // The caller will also load a methodOop from f2.
+    assert(result != noreg, "");
     assert_different_registers(result, Rcache);
     __ get_cache_and_index_at_bcp(Rcache, index, 1, index_size);
     __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() +
@@ -2123,10 +2125,13 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
     case Bytecodes::_invokespecial  : // fall through
     case Bytecodes::_invokestatic   : // fall through
     case Bytecodes::_invokeinterface: entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invoke);  break;
+    case Bytecodes::_invokehandle   : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokehandle);  break;
     case Bytecodes::_invokedynamic  : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokedynamic);  break;
     case Bytecodes::_fast_aldc      : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);     break;
     case Bytecodes::_fast_aldc_w    : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);     break;
-    default                         : ShouldNotReachHere();                                 break;
+    default:
+      fatal(err_msg("unexpected bytecode: %s", Bytecodes::name(bytecode())));
+      break;
   }
   // first time invocation - must resolve first
   __ call_VM(noreg, entry, O1);
@@ -2139,48 +2144,54 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
 }
 
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
-                                               Register Rmethod,
-                                               Register Ritable_index,
-                                               Register Rflags,
+                                               Register method,
+                                               Register itable_index,
+                                               Register flags,
                                                bool is_invokevirtual,
                                                bool is_invokevfinal,
                                                bool is_invokedynamic) {
   // Uses both G3_scratch and G4_scratch
-  Register Rcache = G3_scratch;
-  Register Rscratch = G4_scratch;
-  assert_different_registers(Rcache, Rmethod, Ritable_index);
-
-  ByteSize cp_base_offset = constantPoolCacheOopDesc::base_offset();
+  Register cache = G3_scratch;
+  Register index = G4_scratch;
+  assert_different_registers(cache, method, itable_index);
 
   // determine constant pool cache field offsets
+  assert(is_invokevirtual == (byte_no == f2_byte), "is_invokevirtual flag redundant");
   const int method_offset = in_bytes(
-    cp_base_offset +
-      (is_invokevirtual
+      constantPoolCacheOopDesc::base_offset() +
+      ((byte_no == f2_byte)
        ? ConstantPoolCacheEntry::f2_offset()
        : ConstantPoolCacheEntry::f1_offset()
       )
     );
-  const int flags_offset = in_bytes(cp_base_offset +
+  const int flags_offset = in_bytes(constantPoolCacheOopDesc::base_offset() +
                                     ConstantPoolCacheEntry::flags_offset());
   // access constant pool cache fields
-  const int index_offset = in_bytes(cp_base_offset +
+  const int index_offset = in_bytes(constantPoolCacheOopDesc::base_offset() +
                                     ConstantPoolCacheEntry::f2_offset());
 
   if (is_invokevfinal) {
-    __ get_cache_and_index_at_bcp(Rcache, Rscratch, 1);
-    __ ld_ptr(Rcache, method_offset, Rmethod);
-  } else if (byte_no == f1_oop) {
-    // Resolved f1_oop goes directly into 'method' register.
-    resolve_cache_and_index(byte_no, Rmethod, Rcache, Rscratch, sizeof(u4));
+    __ get_cache_and_index_at_bcp(cache, index, 1);
+    __ ld_ptr(Address(cache, method_offset), method);
+  } else if (byte_no == f12_oop) {
+    // Resolved f1_oop (CallSite, MethodType, etc.) goes into 'itable_index'.
+    // Resolved f2_oop (methodOop invoker) will go into 'method' (at index_offset).
+    // See ConstantPoolCacheEntry::set_dynamic_call and set_method_handle.
+    size_t index_size = (is_invokedynamic ? sizeof(u4) : sizeof(u2));
+    resolve_cache_and_index(byte_no, itable_index, cache, index, index_size);
+    __ ld_ptr(Address(cache, index_offset), method);
+    itable_index = noreg;  // hack to disable load below
   } else {
-    resolve_cache_and_index(byte_no, noreg, Rcache, Rscratch, sizeof(u2));
-    __ ld_ptr(Rcache, method_offset, Rmethod);
+    resolve_cache_and_index(byte_no, noreg, cache, index, sizeof(u2));
+    __ ld_ptr(Address(cache, method_offset), method);
   }
 
-  if (Ritable_index != noreg) {
-    __ ld_ptr(Rcache, index_offset, Ritable_index);
+  if (itable_index != noreg) {
+    // pick up itable index from f2 also:
+    assert(byte_no == f1_byte, "already picked up f1");
+    __ ld_ptr(Address(cache, index_offset), itable_index);
   }
-  __ ld_ptr(Rcache, flags_offset, Rflags);
+  __ ld_ptr(Address(cache, flags_offset), flags);
 }
 
 // The Rcache register must be set before call
@@ -2272,7 +2283,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
 
   if (__ membar_has_effect(membar_bits)) {
     // Get volatile flag
-    __ set((1 << ConstantPoolCacheEntry::volatileField), Lscratch);
+    __ set((1 << ConstantPoolCacheEntry::is_volatile_shift), Lscratch);
     __ and3(Rflags, Lscratch, Lscratch);
   }
 
@@ -2280,9 +2291,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
 
   // compute field type
   Label notByte, notInt, notShort, notChar, notLong, notFloat, notObj;
-  __ srl(Rflags, ConstantPoolCacheEntry::tosBits, Rflags);
-  // Make sure we don't need to mask Rflags for tosBits after the above shift
-  ConstantPoolCacheEntry::verify_tosBits();
+  __ srl(Rflags, ConstantPoolCacheEntry::tos_state_shift, Rflags);
+  // Make sure we don't need to mask Rflags after the above shift
+  ConstantPoolCacheEntry::verify_tos_state_shift();
 
   // Check atos before itos for getstatic, more likely (in Queens at least)
   __ cmp(Rflags, atos);
@@ -2445,7 +2456,7 @@ void TemplateTable::fast_accessfield(TosState state) {
   if (__ membar_has_effect(membar_bits)) {
     // Get volatile flag
     __ ld_ptr(Rcache, cp_base_offset + ConstantPoolCacheEntry::f2_offset(), Rflags);
-    __ set((1 << ConstantPoolCacheEntry::volatileField), Lscratch);
+    __ set((1 << ConstantPoolCacheEntry::is_volatile_shift), Lscratch);
   }
 
   switch (bytecode()) {
@@ -2569,9 +2580,9 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register index, bool i
       Label two_word, valsizeknown;
       __ ld_ptr(G1_scratch, cp_base_offset + ConstantPoolCacheEntry::flags_offset(), Rflags);
       __ mov(Lesp, G4_scratch);
-      __ srl(Rflags, ConstantPoolCacheEntry::tosBits, Rflags);
-      // Make sure we don't need to mask Rflags for tosBits after the above shift
-      ConstantPoolCacheEntry::verify_tosBits();
+      __ srl(Rflags, ConstantPoolCacheEntry::tos_state_shift, Rflags);
+      // Make sure we don't need to mask Rflags after the above shift
+      ConstantPoolCacheEntry::verify_tos_state_shift();
       __ cmp(Rflags, ltos);
       __ br(Assembler::equal, false, Assembler::pt, two_word);
       __ delayed()->cmp(Rflags, dtos);
@@ -2625,7 +2636,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
 
   Label notVolatile, checkVolatile, exit;
   if (__ membar_has_effect(read_bits) || __ membar_has_effect(write_bits)) {
-    __ set((1 << ConstantPoolCacheEntry::volatileField), Lscratch);
+    __ set((1 << ConstantPoolCacheEntry::is_volatile_shift), Lscratch);
     __ and3(Rflags, Lscratch, Lscratch);
 
     if (__ membar_has_effect(read_bits)) {
@@ -2635,9 +2646,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
     }
   }
 
-  __ srl(Rflags, ConstantPoolCacheEntry::tosBits, Rflags);
-  // Make sure we don't need to mask Rflags for tosBits after the above shift
-  ConstantPoolCacheEntry::verify_tosBits();
+  __ srl(Rflags, ConstantPoolCacheEntry::tos_state_shift, Rflags);
+  // Make sure we don't need to mask Rflags after the above shift
+  ConstantPoolCacheEntry::verify_tos_state_shift();
 
   // compute field type
   Label notInt, notShort, notChar, notObj, notByte, notLong, notFloat;
@@ -2833,7 +2844,7 @@ void TemplateTable::fast_storefield(TosState state) {
   Label notVolatile, checkVolatile, exit;
   if (__ membar_has_effect(read_bits) || __ membar_has_effect(write_bits)) {
     __ ld_ptr(Rcache, cp_base_offset + ConstantPoolCacheEntry::flags_offset(), Rflags);
-    __ set((1 << ConstantPoolCacheEntry::volatileField), Lscratch);
+    __ set((1 << ConstantPoolCacheEntry::is_volatile_shift), Lscratch);
     __ and3(Rflags, Lscratch, Lscratch);
     if (__ membar_has_effect(read_bits)) {
       __ cmp_and_br_short(Lscratch, 0, Assembler::equal, Assembler::pt, notVolatile);
@@ -2916,7 +2927,7 @@ void TemplateTable::fast_xaccess(TosState state) {
 
     // Test volatile
     Label notVolatile;
-    __ set((1 << ConstantPoolCacheEntry::volatileField), Lscratch);
+    __ set((1 << ConstantPoolCacheEntry::is_volatile_shift), Lscratch);
     __ btst(Rflags, Lscratch);
     __ br(Assembler::zero, false, Assembler::pt, notVolatile);
     __ delayed()->nop();
@@ -2936,27 +2947,82 @@ void TemplateTable::count_calls(Register method, Register temp) {
   ShouldNotReachHere();
 }
 
+
+void TemplateTable::prepare_invoke(int byte_no,
+                                   Register method,  // linked method (or i-klass)
+                                   Register ra,      // return address
+                                   Register index,   // itable index, MethodType, etc.
+                                   Register recv,    // if caller wants to see it
+                                   Register flags    // if caller wants to test it
+                                   ) {
+  // determine flags
+  const Bytecodes::Code code = bytecode();
+  const bool is_invokeinterface  = code == Bytecodes::_invokeinterface;
+  const bool is_invokedynamic    = code == Bytecodes::_invokedynamic;
+  const bool is_invokehandle     = code == Bytecodes::_invokehandle;
+  const bool is_invokevirtual    = code == Bytecodes::_invokevirtual;
+  const bool is_invokespecial    = code == Bytecodes::_invokespecial;
+  const bool load_receiver       = (recv != noreg);
+  assert(load_receiver == (code != Bytecodes::_invokestatic && code != Bytecodes::_invokedynamic), "");
+  assert(recv  == noreg || recv  == O0, "");
+  assert(flags == noreg || flags == O1, "");
+
+  // setup registers & access constant pool cache
+  if (recv  == noreg)  recv  = O0;
+  if (flags == noreg)  flags = O1;
+  const Register temp = O2;
+  assert_different_registers(method, ra, index, recv, flags, temp);
+
+  load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
+
+  __ mov(SP, O5_savedSP);  // record SP that we wanted the callee to restore
+
+  // maybe push appendix to arguments
+  if (is_invokedynamic || is_invokehandle) {
+    Label L_no_push;
+    __ verify_oop(index);
+    __ set((1 << ConstantPoolCacheEntry::has_appendix_shift), temp);
+    __ btst(flags, temp);
+    __ br(Assembler::zero, false, Assembler::pt, L_no_push);
+    __ delayed()->nop();
+    // Push the appendix as a trailing parameter.
+    // This must be done before we get the receiver,
+    // since the parameter_size includes it.
+    __ push_ptr(index);  // push appendix (MethodType, CallSite, etc.)
+    __ bind(L_no_push);
+  }
+
+  // load receiver if needed (after appendix is pushed so parameter size is correct)
+  if (load_receiver) {
+    __ and3(flags, ConstantPoolCacheEntry::parameter_size_mask, temp);  // get parameter size
+    __ load_receiver(temp, recv);  //  __ argument_address uses Gargs but we need Lesp
+    __ verify_oop(recv);
+  }
+
+  // compute return type
+  __ srl(flags, ConstantPoolCacheEntry::tos_state_shift, ra);
+  // Make sure we don't need to mask flags after the above shift
+  ConstantPoolCacheEntry::verify_tos_state_shift();
+  // load return address
+  {
+    const address table_addr = (is_invokeinterface || is_invokedynamic) ?
+        (address)Interpreter::return_5_addrs_by_index_table() :
+        (address)Interpreter::return_3_addrs_by_index_table();
+    AddressLiteral table(table_addr);
+    __ set(table, temp);
+    __ sll(ra, LogBytesPerWord, ra);
+    __ ld_ptr(Address(temp, ra), ra);
+  }
+}
+
+
 void TemplateTable::generate_vtable_call(Register Rrecv, Register Rindex, Register Rret) {
   Register Rtemp = G4_scratch;
   Register Rcall = Rindex;
   assert_different_registers(Rcall, G5_method, Gargs, Rret);
 
   // get target methodOop & entry point
-  const int base = instanceKlass::vtable_start_offset() * wordSize;
-  if (vtableEntry::size() % 3 == 0) {
-    // scale the vtable index by 12:
-    int one_third = vtableEntry::size() / 3;
-    __ sll(Rindex, exact_log2(one_third * 1 * wordSize), Rtemp);
-    __ sll(Rindex, exact_log2(one_third * 2 * wordSize), Rindex);
-    __ add(Rindex, Rtemp, Rindex);
-  } else {
-    // scale the vtable index by 8:
-    __ sll(Rindex, exact_log2(vtableEntry::size() * wordSize), Rindex);
-  }
-
-  __ add(Rrecv, Rindex, Rrecv);
-  __ ld_ptr(Rrecv, base + vtableEntry::method_offset_in_bytes(), G5_method);
-
+  __ lookup_virtual_method(Rrecv, Rindex, G5_method);
   __ call_from_interpreter(Rcall, Gargs, Rret);
 }
 
@@ -2965,16 +3031,16 @@ void TemplateTable::invokevirtual(int byte_no) {
   assert(byte_no == f2_byte, "use this argument");
 
   Register Rscratch = G3_scratch;
-  Register Rtemp = G4_scratch;
-  Register Rret = Lscratch;
-  Register Rrecv = G5_method;
+  Register Rtemp    = G4_scratch;
+  Register Rret     = Lscratch;
+  Register O0_recv  = O0;
   Label notFinal;
 
   load_invoke_cp_cache_entry(byte_no, G5_method, noreg, Rret, true, false, false);
   __ mov(SP, O5_savedSP); // record SP that we wanted the callee to restore
 
   // Check for vfinal
-  __ set((1 << ConstantPoolCacheEntry::vfinalMethod), G4_scratch);
+  __ set((1 << ConstantPoolCacheEntry::is_vfinal_shift), G4_scratch);
   __ btst(Rret, G4_scratch);
   __ br(Assembler::zero, false, Assembler::pt, notFinal);
   __ delayed()->and3(Rret, 0xFF, G4_scratch);      // gets number of parameters
@@ -2986,27 +3052,27 @@ void TemplateTable::invokevirtual(int byte_no) {
   __ bind(notFinal);
 
   __ mov(G5_method, Rscratch);  // better scratch register
-  __ load_receiver(G4_scratch, O0);  // gets receiverOop
-  // receiver is in O0
-  __ verify_oop(O0);
+  __ load_receiver(G4_scratch, O0_recv);  // gets receiverOop
+  // receiver is in O0_recv
+  __ verify_oop(O0_recv);
 
   // get return address
   AddressLiteral table(Interpreter::return_3_addrs_by_index_table());
   __ set(table, Rtemp);
-  __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);          // get return type
-  // Make sure we don't need to mask Rret for tosBits after the above shift
-  ConstantPoolCacheEntry::verify_tosBits();
+  __ srl(Rret, ConstantPoolCacheEntry::tos_state_shift, Rret);          // get return type
+  // Make sure we don't need to mask Rret after the above shift
+  ConstantPoolCacheEntry::verify_tos_state_shift();
   __ sll(Rret,  LogBytesPerWord, Rret);
   __ ld_ptr(Rtemp, Rret, Rret);         // get return address
 
   // get receiver klass
-  __ null_check(O0, oopDesc::klass_offset_in_bytes());
-  __ load_klass(O0, Rrecv);
-  __ verify_oop(Rrecv);
+  __ null_check(O0_recv, oopDesc::klass_offset_in_bytes());
+  __ load_klass(O0_recv, O0_recv);
+  __ verify_oop(O0_recv);
 
-  __ profile_virtual_call(Rrecv, O4);
+  __ profile_virtual_call(O0_recv, O4);
 
-  generate_vtable_call(Rrecv, Rscratch, Rret);
+  generate_vtable_call(O0_recv, Rscratch, Rret);
 }
 
 void TemplateTable::fast_invokevfinal(int byte_no) {
@@ -3036,9 +3102,9 @@ void TemplateTable::invokevfinal_helper(Register Rscratch, Register Rret) {
   // get return address
   AddressLiteral table(Interpreter::return_3_addrs_by_index_table());
   __ set(table, Rtemp);
-  __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);          // get return type
-  // Make sure we don't need to mask Rret for tosBits after the above shift
-  ConstantPoolCacheEntry::verify_tosBits();
+  __ srl(Rret, ConstantPoolCacheEntry::tos_state_shift, Rret);          // get return type
+  // Make sure we don't need to mask Rret after the above shift
+  ConstantPoolCacheEntry::verify_tos_state_shift();
   __ sll(Rret,  LogBytesPerWord, Rret);
   __ ld_ptr(Rtemp, Rret, Rret);         // get return address
 
@@ -3046,66 +3112,38 @@ void TemplateTable::invokevfinal_helper(Register Rscratch, Register Rret) {
   // do the call
   __ call_from_interpreter(Rscratch, Gargs, Rret);
 }
+
 
 void TemplateTable::invokespecial(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  Register Rscratch = G3_scratch;
-  Register Rtemp = G4_scratch;
-  Register Rret = Lscratch;
+  const Register Rret     = Lscratch;
+  const Register O0_recv  = O0;
+  const Register Rscratch = G3_scratch;
 
-  load_invoke_cp_cache_entry(byte_no, G5_method, noreg, Rret, /*virtual*/ false, false, false);
-  __ mov(SP, O5_savedSP); // record SP that we wanted the callee to restore
-
-  __ verify_oop(G5_method);
-
-  __ lduh(G5_method, in_bytes(methodOopDesc::size_of_parameters_offset()), G4_scratch);
-  __ load_receiver(G4_scratch, O0);
-
-  // receiver NULL check
-  __ null_check(O0);
-
-  __ profile_call(O4);
-
-  // get return address
-  AddressLiteral table(Interpreter::return_3_addrs_by_index_table());
-  __ set(table, Rtemp);
-  __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);          // get return type
-  // Make sure we don't need to mask Rret for tosBits after the above shift
-  ConstantPoolCacheEntry::verify_tosBits();
-  __ sll(Rret,  LogBytesPerWord, Rret);
-  __ ld_ptr(Rtemp, Rret, Rret);         // get return address
+  prepare_invoke(byte_no, G5_method, Rret, noreg, O0_recv);  // get receiver also for null check
+  __ null_check(O0_recv);
 
   // do the call
+  __ verify_oop(G5_method);
+  __ profile_call(O4);
   __ call_from_interpreter(Rscratch, Gargs, Rret);
 }
+
 
 void TemplateTable::invokestatic(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  Register Rscratch = G3_scratch;
-  Register Rtemp = G4_scratch;
-  Register Rret = Lscratch;
+  const Register Rret     = Lscratch;
+  const Register Rscratch = G3_scratch;
 
-  load_invoke_cp_cache_entry(byte_no, G5_method, noreg, Rret, /*virtual*/ false, false, false);
-  __ mov(SP, O5_savedSP); // record SP that we wanted the callee to restore
-
-  __ verify_oop(G5_method);
-
-  __ profile_call(O4);
-
-  // get return address
-  AddressLiteral table(Interpreter::return_3_addrs_by_index_table());
-  __ set(table, Rtemp);
-  __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);          // get return type
-  // Make sure we don't need to mask Rret for tosBits after the above shift
-  ConstantPoolCacheEntry::verify_tosBits();
-  __ sll(Rret,  LogBytesPerWord, Rret);
-  __ ld_ptr(Rtemp, Rret, Rret);         // get return address
+  prepare_invoke(byte_no, G5_method, Rret);  // get f1 methodOop
 
   // do the call
+  __ verify_oop(G5_method);
+  __ profile_call(O4);
   __ call_from_interpreter(Rscratch, Gargs, Rret);
 }
 
@@ -3122,7 +3160,7 @@ void TemplateTable::invokeinterface_object_method(Register RklassOop,
   Label notFinal;
 
   // Check for vfinal
-  __ set((1 << ConstantPoolCacheEntry::vfinalMethod), Rscratch);
+  __ set((1 << ConstantPoolCacheEntry::is_vfinal_shift), Rscratch);
   __ btst(Rflags, Rscratch);
   __ br(Assembler::zero, false, Assembler::pt, notFinal);
   __ delayed()->nop();
@@ -3144,53 +3182,37 @@ void TemplateTable::invokeinterface(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  Register Rscratch = G4_scratch;
-  Register Rret = G3_scratch;
-  Register Rindex = Lscratch;
-  Register Rinterface = G1_scratch;
-  Register RklassOop = G5_method;
-  Register Rflags = O1;
+  const Register Rinterface  = G1_scratch;
+  const Register Rret        = G3_scratch;
+  const Register Rindex      = Lscratch;
+  const Register O0_recv     = O0;
+  const Register O1_flags    = O1;
+  const Register O2_klassOop = O2;
+  const Register Rscratch    = G4_scratch;
   assert_different_registers(Rscratch, G5_method);
 
-  load_invoke_cp_cache_entry(byte_no, Rinterface, Rindex, Rflags, /*virtual*/ false, false, false);
-  __ mov(SP, O5_savedSP); // record SP that we wanted the callee to restore
-
-  // get receiver
-  __ and3(Rflags, 0xFF, Rscratch);       // gets number of parameters
-  __ load_receiver(Rscratch, O0);
-  __ verify_oop(O0);
-
-  __ mov(Rflags, Rret);
-
-  // get return address
-  AddressLiteral table(Interpreter::return_5_addrs_by_index_table());
-  __ set(table, Rscratch);
-  __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);          // get return type
-  // Make sure we don't need to mask Rret for tosBits after the above shift
-  ConstantPoolCacheEntry::verify_tosBits();
-  __ sll(Rret,  LogBytesPerWord, Rret);
-  __ ld_ptr(Rscratch, Rret, Rret);      // get return address
+  prepare_invoke(byte_no, Rinterface, Rret, Rindex, O0_recv, O1_flags);
 
   // get receiver klass
-  __ null_check(O0, oopDesc::klass_offset_in_bytes());
-  __ load_klass(O0, RklassOop);
-  __ verify_oop(RklassOop);
+  __ null_check(O0_recv, oopDesc::klass_offset_in_bytes());
+  __ load_klass(O0_recv, O2_klassOop);
+  __ verify_oop(O2_klassOop);
 
   // Special case of invokeinterface called for virtual method of
   // java.lang.Object.  See cpCacheOop.cpp for details.
   // This code isn't produced by javac, but could be produced by
   // another compliant java compiler.
   Label notMethod;
-  __ set((1 << ConstantPoolCacheEntry::methodInterface), Rscratch);
-  __ btst(Rflags, Rscratch);
+  __ set((1 << ConstantPoolCacheEntry::is_forced_virtual_shift), Rscratch);
+  __ btst(O1_flags, Rscratch);
   __ br(Assembler::zero, false, Assembler::pt, notMethod);
   __ delayed()->nop();
 
-  invokeinterface_object_method(RklassOop, Rinterface, Rret, Rflags);
+  invokeinterface_object_method(O2_klassOop, Rinterface, Rret, O1_flags);
 
   __ bind(notMethod);
 
-  __ profile_virtual_call(RklassOop, O4);
+  __ profile_virtual_call(O2_klassOop, O4);
 
   //
   // find entry point to call
@@ -3199,9 +3221,9 @@ void TemplateTable::invokeinterface(int byte_no) {
   // compute start of first itableOffsetEntry (which is at end of vtable)
   const int base = instanceKlass::vtable_start_offset() * wordSize;
   Label search;
-  Register Rtemp = Rflags;
+  Register Rtemp = O1_flags;
 
-  __ ld(RklassOop, instanceKlass::vtable_length_offset() * wordSize, Rtemp);
+  __ ld(O2_klassOop, instanceKlass::vtable_length_offset() * wordSize, Rtemp);
   if (align_object_offset(1) > 1) {
     __ round_to(Rtemp, align_object_offset(1));
   }
@@ -3212,7 +3234,7 @@ void TemplateTable::invokeinterface(int byte_no) {
     __ set(base, Rscratch);
     __ add(Rscratch, Rtemp, Rtemp);
   }
-  __ add(RklassOop, Rtemp, Rscratch);
+  __ add(O2_klassOop, Rtemp, Rscratch);
 
   __ bind(search);
 
@@ -3244,7 +3266,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   assert(itableMethodEntry::method_offset_in_bytes() == 0, "adjust instruction below");
   __ sll(Rindex, exact_log2(itableMethodEntry::size() * wordSize), Rindex);       // Rindex *= 8;
   __ add(Rscratch, Rindex, Rscratch);
-  __ ld_ptr(RklassOop, Rscratch, G5_method);
+  __ ld_ptr(O2_klassOop, Rscratch, G5_method);
 
   // Check for abstract method error.
   {
@@ -3260,13 +3282,42 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   __ verify_oop(G5_method);
   __ call_from_interpreter(Rcall, Gargs, Rret);
+}
 
+
+void TemplateTable::invokehandle(int byte_no) {
+  transition(vtos, vtos);
+  assert(byte_no == f12_oop, "use this argument");
+
+  if (!EnableInvokeDynamic) {
+    // rewriter does not generate this bytecode
+    __ should_not_reach_here();
+    return;
+  }
+
+  const Register Rret       = Lscratch;
+  const Register G4_mtype   = G4_scratch;  // f1
+  const Register O0_recv    = O0;
+  const Register Rscratch   = G3_scratch;
+
+  prepare_invoke(byte_no, G5_method, Rret, G4_mtype, O0_recv);
+  __ null_check(O0_recv);
+
+  // G4: MethodType object (from f1)
+  // G5: MH.linkToCallSite method (from f2)
+
+  // Note:  G4_mtype is already pushed (if necessary) by prepare_invoke
+
+  // do the call
+  __ verify_oop(G5_method);
+  __ profile_final_call(O4);  // FIXME: profile the LambdaForm also
+  __ call_from_interpreter(Rscratch, Gargs, Rret);
 }
 
 
 void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
-  assert(byte_no == f1_oop, "use this argument");
+  assert(byte_no == f12_oop, "use this argument");
 
   if (!EnableInvokeDynamic) {
     // We should not encounter this bytecode if !EnableInvokeDynamic.
@@ -3279,42 +3330,24 @@ void TemplateTable::invokedynamic(int byte_no) {
     return;
   }
 
-  // G5: CallSite object (f1)
-  // XX: unused (f2)
-  // XX: flags (unused)
+  const Register Rret        = Lscratch;
+  const Register G4_callsite = G4_scratch;
+  const Register Rscratch    = G3_scratch;
 
-  Register G5_callsite = G5_method;
-  Register Rscratch    = G3_scratch;
-  Register Rtemp       = G1_scratch;
-  Register Rret        = Lscratch;
+  prepare_invoke(byte_no, G5_method, Rret, G4_callsite);
 
-  load_invoke_cp_cache_entry(byte_no, G5_callsite, noreg, Rret,
-                             /*virtual*/ false, /*vfinal*/ false, /*indy*/ true);
-  __ mov(SP, O5_savedSP);  // record SP that we wanted the callee to restore
+  // G4: CallSite object (from f1)
+  // G5: MH.linkToCallSite method (from f2)
 
+  // Note:  G4_callsite is already pushed by prepare_invoke
+
+  // %%% should make a type profile for any invokedynamic that takes a ref argument
   // profile this call
   __ profile_call(O4);
 
-  // get return address
-  AddressLiteral table(Interpreter::return_5_addrs_by_index_table());
-  __ set(table, Rtemp);
-  __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);  // get return type
-  // Make sure we don't need to mask Rret for tosBits after the above shift
-  ConstantPoolCacheEntry::verify_tosBits();
-  __ sll(Rret, LogBytesPerWord, Rret);
-  __ ld_ptr(Rtemp, Rret, Rret);  // get return address
-
-  __ verify_oop(G5_callsite);
-  __ load_heap_oop(G5_callsite, __ delayed_value(java_lang_invoke_CallSite::target_offset_in_bytes, Rscratch), G3_method_handle);
-  __ null_check(G3_method_handle);
-  __ verify_oop(G3_method_handle);
-
-  // Adjust Rret first so Llast_SP can be same as Rret
-  __ add(Rret, -frame::pc_return_offset, O7);
-  __ add(Lesp, BytesPerWord, Gargs);  // setup parameter pointer
-  __ jump_to_method_handle_entry(G3_method_handle, Rtemp, /* emit_delayed_nop */ false);
-  // Record SP so we can remove any stack space allocated by adapter transition
-  __ delayed()->mov(SP, Llast_SP);
+  // do the call
+  __ verify_oop(G5_method);
+  __ call_from_interpreter(Rscratch, Gargs, Rret);
 }
 
 

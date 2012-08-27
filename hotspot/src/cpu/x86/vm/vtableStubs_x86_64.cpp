@@ -69,10 +69,6 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address npe_addr = __ pc();
   __ load_klass(rax, j_rarg0);
 
-  // compute entry offset (in words)
-  int entry_offset =
-    instanceKlass::vtable_start_offset() + vtable_index * vtableEntry::size();
-
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
@@ -90,9 +86,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // load methodOop and target address
   const Register method = rbx;
 
-  __ movptr(method, Address(rax,
-                            entry_offset * wordSize +
-                            vtableEntry::method_offset_in_bytes()));
+  __ lookup_virtual_method(rax, vtable_index, method);
+
   if (DebugVtables) {
     Label L;
     __ cmpptr(method, (int32_t)NULL_WORD);

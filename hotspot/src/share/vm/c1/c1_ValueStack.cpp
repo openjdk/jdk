@@ -195,6 +195,7 @@ void ValueStack::setup_phi_for_local(BlockBegin* b, int index) {
 
 void ValueStack::print() {
   scope()->method()->print_name();
+  tty->cr();
   if (stack_is_empty()) {
     tty->print_cr("empty stack");
   } else {

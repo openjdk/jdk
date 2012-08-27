@@ -178,6 +178,7 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_IfOp           (IfOp*            x) { /* nothing to do */ }
   void do_Convert        (Convert*         x) { /* nothing to do */ }
   void do_NullCheck      (NullCheck*       x) { /* nothing to do */ }
+  void do_TypeCast       (TypeCast*        x) { /* nothing to do */ }
   void do_NewInstance    (NewInstance*     x) { /* nothing to do */ }
   void do_NewTypeArray   (NewTypeArray*    x) { /* nothing to do */ }
   void do_NewObjectArray (NewObjectArray*  x) { /* nothing to do */ }
