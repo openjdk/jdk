@@ -164,7 +164,7 @@ public class ClassWriter extends ClassFile {
 
     /** Construct a class writer, given an options table.
      */
-    private ClassWriter(Context context) {
+    protected ClassWriter(Context context) {
         context.put(classWriterKey, this);
 
         log = Log.instance(context);
@@ -601,12 +601,20 @@ public class ClassWriter extends ClassFile {
      *  Returns the number of attributes written (0 or 1).
      */
     int writeEnclosingMethodAttribute(ClassSymbol c) {
-        if (!target.hasEnclosingMethodAttribute() ||
-            c.owner.kind != MTH && // neither a local class
+        if (!target.hasEnclosingMethodAttribute())
+            return 0;
+        return writeEnclosingMethodAttribute(names.EnclosingMethod, c);
+    }
+
+    /** Write the EnclosingMethod attribute with a specified name.
+     *  Returns the number of attributes written (0 or 1).
+     */
+    protected int writeEnclosingMethodAttribute(Name attributeName, ClassSymbol c) {
+        if (c.owner.kind != MTH && // neither a local class
             c.name != names.empty) // nor anonymous
             return 0;
 
-        int alenIdx = writeAttr(names.EnclosingMethod);
+        int alenIdx = writeAttr(attributeName);
         ClassSymbol enclClass = c.owner.enclClass();
         MethodSymbol enclMethod =
             (c.owner.type == null // local to init block
@@ -1569,6 +1577,7 @@ public class ClassWriter extends ClassFile {
         acount += writeFlagAttrs(c.flags());
         acount += writeJavaAnnotations(c.getAnnotationMirrors());
         acount += writeEnclosingMethodAttribute(c);
+        acount += writeExtraClassAttributes(c);
 
         poolbuf.appendInt(JAVA_MAGIC);
         poolbuf.appendChar(target.minorVersion);
@@ -1587,6 +1596,14 @@ public class ClassWriter extends ClassFile {
 
         pool = c.pool = null; // to conserve space
      }
+
+    /**Allows subclasses to write additional class attributes
+     *
+     * @return the number of attributes written
+     */
+    protected int writeExtraClassAttributes(ClassSymbol c) {
+        return 0;
+    }
 
     int adjustFlags(final long flags) {
         int result = (int)flags;
