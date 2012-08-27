@@ -362,7 +362,6 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(empty)
   method_entry(accessor)
   method_entry(abstract)
-  method_entry(method_handle)
   method_entry(java_lang_math_sin  )
   method_entry(java_lang_math_cos  )
   method_entry(java_lang_math_tan  )
@@ -373,6 +372,12 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_exp  )
   method_entry(java_lang_math_pow  )
   method_entry(java_lang_ref_reference_get)
+
+  // method handle entry kinds are generated later in MethodHandlesAdapterGenerator::generate:
+  for (int i = Interpreter::method_handle_invoke_FIRST; i <= Interpreter::method_handle_invoke_LAST; i++) {
+    Interpreter::MethodKind kind = (Interpreter::MethodKind) i;
+    Interpreter::_entry_table[kind] = Interpreter::_entry_table[Interpreter::abstract];
+  }
 
   // all native method kinds (must be one contiguous block)
   Interpreter::_native_entry_begin = Interpreter::code()->code_end();

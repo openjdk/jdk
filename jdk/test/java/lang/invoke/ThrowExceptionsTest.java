@@ -222,7 +222,7 @@ public class ThrowExceptionsTest {
         return savedEx;
     }
 
-   private static void assertEquals(Object x, Object y) {
+    private static void assertEquals(Object x, Object y) {
         if (x == y || x != null && x.equals(y))  return;
         throw new RuntimeException(x+" != "+y);
     }

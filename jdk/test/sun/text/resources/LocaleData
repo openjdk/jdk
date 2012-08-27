@@ -694,7 +694,6 @@ FormatData/es_UY/NumberElements/1=.
 FormatData/es_UY/NumberElements/2=;
 CurrencyNames/es_VE/VEB=Bs
 # bug 6570259
-CurrencyNames/es_VE/VEF=BsF.
 FormatData/es_VE/NumberPatterns/0=#,##0.###;-#,##0.###
 # FormatData/es_VE/NumberPatterns/1=Bs#,##0.00;Bs -#,##0.00 # Changed; see bug 4122840
 FormatData/es_VE/NumberPatterns/2=#,##0%
@@ -7073,3 +7072,5 @@ CurrencyNames/es_PE/PEN=S/.
 FormatData/sl/DatePatterns/0=EEEE, dd. MMMM y
 FormatData/sl/DatePatterns/1=dd. MMMM y
 
+# bug 7189611
+CurrencyNames/es_VE/VEF=Bs.F.

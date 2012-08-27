@@ -39,7 +39,7 @@ class Rewriter: public StackObj {
   objArrayHandle      _methods;
   intArray            _cp_map;
   intStack            _cp_cache_map;
-  bool                _have_invoke_dynamic;
+  intArray            _method_handle_invokers;
 
   void init_cp_map(int length) {
     _cp_map.initialize(length, -1);
@@ -88,6 +88,7 @@ class Rewriter: public StackObj {
   void scan_method(methodOop m, bool reverse = false);
   void rewrite_Object_init(methodHandle m, TRAPS);
   void rewrite_member_reference(address bcp, int offset, bool reverse = false);
+  void maybe_rewrite_invokehandle(address opc, int cp_index, bool reverse = false);
   void rewrite_invokedynamic(address bcp, int offset, bool reverse = false);
   void maybe_rewrite_ldc(address bcp, int offset, bool is_wide, bool reverse = false);
   // Revert bytecodes in case of an exception.

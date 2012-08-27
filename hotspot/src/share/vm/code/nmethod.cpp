@@ -945,8 +945,12 @@ void nmethod::log_new_nmethod() const {
 void nmethod::print_on(outputStream* st, const char* msg) const {
   if (st != NULL) {
     ttyLocker ttyl;
-    CompileTask::print_compilation(st, this, msg);
-    if (WizardMode) st->print(" (" INTPTR_FORMAT ")", this);
+    if (WizardMode) {
+      CompileTask::print_compilation(st, this, msg, /*short_form:*/ true);
+      st->print_cr(" (" INTPTR_FORMAT ")", this);
+    } else {
+      CompileTask::print_compilation(st, this, msg, /*short_form:*/ false);
+    }
   }
 }
 
@@ -964,7 +968,9 @@ void nmethod::print_nmethod(bool printmethod) {
   if (printmethod) {
     print_code();
     print_pcs();
-    oop_maps()->print();
+    if (oop_maps()) {
+      oop_maps()->print();
+    }
   }
   if (PrintDebugInfo) {
     print_scopes();

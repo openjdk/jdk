@@ -31,6 +31,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/handles.inline.hpp"
 
 
@@ -44,68 +45,61 @@ void ConstantPoolCacheEntry::initialize_entry(int index) {
 
 void ConstantPoolCacheEntry::initialize_secondary_entry(int main_index) {
   assert(0 <= main_index && main_index < 0x10000, "sanity check");
-  _indices = (main_index << 16);
+  _indices = (main_index << main_cp_index_bits);
   assert(main_entry_index() == main_index, "");
 }
 
-int ConstantPoolCacheEntry::as_flags(TosState state, bool is_final,
-                    bool is_vfinal, bool is_volatile,
-                    bool is_method_interface, bool is_method) {
-  int f = state;
-
-  assert( state < number_of_states, "Invalid state in as_flags");
-
-  f <<= 1;
-  if (is_final) f |= 1;
-  f <<= 1;
-  if (is_vfinal) f |= 1;
-  f <<= 1;
-  if (is_volatile) f |= 1;
-  f <<= 1;
-  if (is_method_interface) f |= 1;
-  f <<= 1;
-  if (is_method) f |= 1;
-  f <<= ConstantPoolCacheEntry::hotSwapBit;
+int ConstantPoolCacheEntry::make_flags(TosState state,
+                                       int option_bits,
+                                       int field_index_or_method_params) {
+  assert(state < number_of_states, "Invalid state in make_flags");
+  int f = ((int)state << tos_state_shift) | option_bits | field_index_or_method_params;
   // Preserve existing flag bit values
+  // The low bits are a field offset, or else the method parameter size.
 #ifdef ASSERT
-  int old_state = ((_flags >> tosBits) & 0x0F);
-  assert(old_state == 0 || old_state == state,
+  TosState old_state = flag_state();
+  assert(old_state == (TosState)0 || old_state == state,
          "inconsistent cpCache flags state");
 #endif
   return (_flags | f) ;
 }
 
 void ConstantPoolCacheEntry::set_bytecode_1(Bytecodes::Code code) {
+  assert(!is_secondary_entry(), "must not overwrite main_entry_index");
 #ifdef ASSERT
   // Read once.
   volatile Bytecodes::Code c = bytecode_1();
   assert(c == 0 || c == code || code == 0, "update must be consistent");
 #endif
   // Need to flush pending stores here before bytecode is written.
-  OrderAccess::release_store_ptr(&_indices, _indices | ((u_char)code << 16));
+  OrderAccess::release_store_ptr(&_indices, _indices | ((u_char)code << bytecode_1_shift));
 }
 
 void ConstantPoolCacheEntry::set_bytecode_2(Bytecodes::Code code) {
+  assert(!is_secondary_entry(), "must not overwrite main_entry_index");
 #ifdef ASSERT
   // Read once.
   volatile Bytecodes::Code c = bytecode_2();
   assert(c == 0 || c == code || code == 0, "update must be consistent");
 #endif
   // Need to flush pending stores here before bytecode is written.
-  OrderAccess::release_store_ptr(&_indices, _indices | ((u_char)code << 24));
+  OrderAccess::release_store_ptr(&_indices, _indices | ((u_char)code << bytecode_2_shift));
 }
 
-// Atomically sets f1 if it is still NULL, otherwise it keeps the
-// current value.
-void ConstantPoolCacheEntry::set_f1_if_null_atomic(oop f1) {
+// Sets f1, ordering with previous writes.
+void ConstantPoolCacheEntry::release_set_f1(oop f1) {
   // Use barriers as in oop_store
+  assert(f1 != NULL, "");
   oop* f1_addr = (oop*) &_f1;
   update_barrier_set_pre(f1_addr, f1);
-  void* result = Atomic::cmpxchg_ptr(f1, f1_addr, NULL);
-  bool success = (result == NULL);
-  if (success) {
-    update_barrier_set((void*) f1_addr, f1);
-  }
+  OrderAccess::release_store_ptr((intptr_t*)f1_addr, f1);
+  update_barrier_set((void*) f1_addr, f1);
+}
+
+// Sets flags, but only if the value was previously zero.
+bool ConstantPoolCacheEntry::init_flags_atomic(intptr_t flags) {
+  intptr_t result = Atomic::cmpxchg_ptr(flags, &_flags, 0);
+  return (result == 0);
 }
 
 #ifdef ASSERT
@@ -135,17 +129,32 @@ void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
                                        bool is_volatile) {
   set_f1(field_holder()->java_mirror());
   set_f2(field_offset);
-  assert(field_index <= field_index_mask,
+  assert((field_index & field_index_mask) == field_index,
          "field index does not fit in low flag bits");
-  set_flags(as_flags(field_type, is_final, false, is_volatile, false, false) |
-            (field_index & field_index_mask));
+  set_field_flags(field_type,
+                  ((is_volatile ? 1 : 0) << is_volatile_shift) |
+                  ((is_final    ? 1 : 0) << is_final_shift),
+                  field_index);
   set_bytecode_1(get_code);
   set_bytecode_2(put_code);
   NOT_PRODUCT(verify(tty));
 }
 
-int  ConstantPoolCacheEntry::field_index() const {
-  return (_flags & field_index_mask);
+void ConstantPoolCacheEntry::set_parameter_size(int value) {
+  // This routine is called only in corner cases where the CPCE is not yet initialized.
+  // See AbstractInterpreter::deopt_continue_after_entry.
+  assert(_flags == 0 || parameter_size() == 0 || parameter_size() == value,
+         err_msg("size must not change: parameter_size=%d, value=%d", parameter_size(), value));
+  // Setting the parameter size by itself is only safe if the
+  // current value of _flags is 0, otherwise another thread may have
+  // updated it and we don't want to overwrite that value.  Don't
+  // bother trying to update it once it's nonzero but always make
+  // sure that the final parameter size agrees with what was passed.
+  if (_flags == 0) {
+    Atomic::cmpxchg_ptr((value & parameter_size_mask), &_flags, 0);
+  }
+  guarantee(parameter_size() == value,
+            err_msg("size must not change: parameter_size=%d, value=%d", parameter_size(), value));
 }
 
 void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
@@ -154,51 +163,51 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
   assert(!is_secondary_entry(), "");
   assert(method->interpreter_entry() != NULL, "should have been set at this point");
   assert(!method->is_obsolete(),  "attempt to write obsolete method to cpCache");
-  bool change_to_virtual = (invoke_code == Bytecodes::_invokeinterface);
 
   int byte_no = -1;
-  bool needs_vfinal_flag = false;
+  bool change_to_virtual = false;
+
   switch (invoke_code) {
+    case Bytecodes::_invokeinterface:
+      // We get here from InterpreterRuntime::resolve_invoke when an invokeinterface
+      // instruction somehow links to a non-interface method (in Object).
+      // In that case, the method has no itable index and must be invoked as a virtual.
+      // Set a flag to keep track of this corner case.
+      change_to_virtual = true;
+
+      // ...and fall through as if we were handling invokevirtual:
     case Bytecodes::_invokevirtual:
-    case Bytecodes::_invokeinterface: {
+      {
         if (method->can_be_statically_bound()) {
-          set_f2((intptr_t)method());
-          needs_vfinal_flag = true;
+          // set_f2_as_vfinal_method checks if is_vfinal flag is true.
+          set_method_flags(as_TosState(method->result_type()),
+                           (                             1      << is_vfinal_shift) |
+                           ((method->is_final_method() ? 1 : 0) << is_final_shift)  |
+                           ((change_to_virtual         ? 1 : 0) << is_forced_virtual_shift),
+                           method()->size_of_parameters());
+          set_f2_as_vfinal_method(method());
         } else {
           assert(vtable_index >= 0, "valid index");
+          assert(!method->is_final_method(), "sanity");
+          set_method_flags(as_TosState(method->result_type()),
+                           ((change_to_virtual ? 1 : 0) << is_forced_virtual_shift),
+                           method()->size_of_parameters());
           set_f2(vtable_index);
         }
         byte_no = 2;
         break;
-    }
-
-    case Bytecodes::_invokedynamic:  // similar to _invokevirtual
-      if (TraceInvokeDynamic) {
-        tty->print_cr("InvokeDynamic set_method%s method="PTR_FORMAT" index=%d",
-                      (is_secondary_entry() ? " secondary" : ""),
-                      (intptr_t)method(), vtable_index);
-        method->print();
-        this->print(tty, 0);
       }
-      assert(method->can_be_statically_bound(), "must be a MH invoker method");
-      assert(_f2 >= constantPoolOopDesc::CPCACHE_INDEX_TAG, "BSM index initialized");
-      // SystemDictionary::find_method_handle_invoke only caches
-      // methods which signature classes are on the boot classpath,
-      // otherwise the newly created method is returned.  To avoid
-      // races in that case we store the first one coming in into the
-      // cp-cache atomically if it's still unset.
-      set_f1_if_null_atomic(method());
-      needs_vfinal_flag = false;  // _f2 is not an oop
-      assert(!is_vfinal(), "f2 not an oop");
-      byte_no = 1;  // coordinate this with bytecode_number & is_resolved
-      break;
 
     case Bytecodes::_invokespecial:
-      // Preserve the value of the vfinal flag on invokevirtual bytecode
-      // which may be shared with this constant pool cache entry.
-      needs_vfinal_flag = is_resolved(Bytecodes::_invokevirtual) && is_vfinal();
-      // fall through
     case Bytecodes::_invokestatic:
+      // Note:  Read and preserve the value of the is_vfinal flag on any
+      // invokevirtual bytecode shared with this constant pool cache entry.
+      // It is cheap and safe to consult is_vfinal() at all times.
+      // Once is_vfinal is set, it must stay that way, lest we get a dangling oop.
+      set_method_flags(as_TosState(method->result_type()),
+                       ((is_vfinal()               ? 1 : 0) << is_vfinal_shift) |
+                       ((method->is_final_method() ? 1 : 0) << is_final_shift),
+                       method()->size_of_parameters());
       set_f1(method());
       byte_no = 1;
       break;
@@ -207,19 +216,14 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
       break;
   }
 
-  set_flags(as_flags(as_TosState(method->result_type()),
-                     method->is_final_method(),
-                     needs_vfinal_flag,
-                     false,
-                     change_to_virtual,
-                     true)|
-            method()->size_of_parameters());
-
   // Note:  byte_no also appears in TemplateTable::resolve.
   if (byte_no == 1) {
+    assert(invoke_code != Bytecodes::_invokevirtual &&
+           invoke_code != Bytecodes::_invokeinterface, "");
     set_bytecode_1(invoke_code);
   } else if (byte_no == 2)  {
     if (change_to_virtual) {
+      assert(invoke_code == Bytecodes::_invokeinterface, "");
       // NOTE: THIS IS A HACK - BE VERY CAREFUL!!!
       //
       // Workaround for the case where we encounter an invokeinterface, but we
@@ -235,10 +239,11 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
       // Otherwise, the method needs to be reresolved with caller for each
       // interface call.
       if (method->is_public()) set_bytecode_1(invoke_code);
-      set_bytecode_2(Bytecodes::_invokevirtual);
     } else {
-      set_bytecode_2(invoke_code);
+      assert(invoke_code == Bytecodes::_invokevirtual, "");
     }
+    // set up for invokevirtual, even if linking for invokeinterface also:
+    set_bytecode_2(Bytecodes::_invokevirtual);
   } else {
     ShouldNotReachHere();
   }
@@ -250,73 +255,129 @@ void ConstantPoolCacheEntry::set_interface_call(methodHandle method, int index) 
   assert(!is_secondary_entry(), "");
   klassOop interf = method->method_holder();
   assert(instanceKlass::cast(interf)->is_interface(), "must be an interface");
+  assert(!method->is_final_method(), "interfaces do not have final methods; cannot link to one here");
   set_f1(interf);
   set_f2(index);
-  set_flags(as_flags(as_TosState(method->result_type()), method->is_final_method(), false, false, false, true) | method()->size_of_parameters());
+  set_method_flags(as_TosState(method->result_type()),
+                   0,  // no option bits
+                   method()->size_of_parameters());
   set_bytecode_1(Bytecodes::_invokeinterface);
 }
 
 
-void ConstantPoolCacheEntry::initialize_bootstrap_method_index_in_cache(int bsm_cache_index) {
-  assert(!is_secondary_entry(), "only for JVM_CONSTANT_InvokeDynamic main entry");
-  assert(_f2 == 0, "initialize once");
-  assert(bsm_cache_index == (int)(u2)bsm_cache_index, "oob");
-  set_f2(bsm_cache_index + constantPoolOopDesc::CPCACHE_INDEX_TAG);
+void ConstantPoolCacheEntry::set_method_handle(methodHandle adapter, Handle appendix) {
+  assert(!is_secondary_entry(), "");
+  set_method_handle_common(Bytecodes::_invokehandle, adapter, appendix);
 }
 
-int ConstantPoolCacheEntry::bootstrap_method_index_in_cache() {
-  assert(!is_secondary_entry(), "only for JVM_CONSTANT_InvokeDynamic main entry");
-  intptr_t bsm_cache_index = (intptr_t) _f2 - constantPoolOopDesc::CPCACHE_INDEX_TAG;
-  assert(bsm_cache_index == (intptr_t)(u2)bsm_cache_index, "oob");
-  return (int) bsm_cache_index;
-}
-
-void ConstantPoolCacheEntry::set_dynamic_call(Handle call_site, methodHandle signature_invoker) {
+void ConstantPoolCacheEntry::set_dynamic_call(methodHandle adapter, Handle appendix) {
   assert(is_secondary_entry(), "");
-  // NOTE: it's important that all other values are set before f1 is
-  // set since some users short circuit on f1 being set
-  // (i.e. non-null) and that may result in uninitialized values for
-  // other racing threads (e.g. flags).
-  int param_size = signature_invoker->size_of_parameters();
-  assert(param_size >= 1, "method argument size must include MH.this");
-  param_size -= 1;  // do not count MH.this; it is not stacked for invokedynamic
-  bool is_final = true;
-  assert(signature_invoker->is_final_method(), "is_final");
-  int flags = as_flags(as_TosState(signature_invoker->result_type()), is_final, false, false, false, true) | param_size;
-  assert(_flags == 0 || _flags == flags, "flags should be the same");
-  set_flags(flags);
-  // do not do set_bytecode on a secondary CP cache entry
-  //set_bytecode_1(Bytecodes::_invokedynamic);
-  set_f1_if_null_atomic(call_site());  // This must be the last one to set (see NOTE above)!
+  set_method_handle_common(Bytecodes::_invokedynamic, adapter, appendix);
 }
 
+void ConstantPoolCacheEntry::set_method_handle_common(Bytecodes::Code invoke_code, methodHandle adapter, Handle appendix) {
+  // NOTE: This CPCE can be the subject of data races.
+  // There are three words to update: flags, f2, f1 (in that order).
+  // Writers must store all other values before f1.
+  // Readers must test f1 first for non-null before reading other fields.
+  // Competing writers must acquire exclusive access on the first
+  // write, to flags, using a compare/exchange.
+  // A losing writer must spin until the winner writes f1,
+  // so that when he returns, he can use the linked cache entry.
 
-methodOop ConstantPoolCacheEntry::get_method_if_resolved(Bytecodes::Code invoke_code, constantPoolHandle cpool) {
-  assert(invoke_code > (Bytecodes::Code)0, "bad query");
+  bool has_appendix = appendix.not_null();
+  if (!has_appendix) {
+    // The extra argument is not used, but we need a non-null value to signify linkage state.
+    // Set it to something benign that will never leak memory.
+    appendix = Universe::void_mirror();
+  }
+
+  bool owner =
+    init_method_flags_atomic(as_TosState(adapter->result_type()),
+                   ((has_appendix ?  1 : 0) << has_appendix_shift) |
+                   (                 1      << is_vfinal_shift)    |
+                   (                 1      << is_final_shift),
+                   adapter->size_of_parameters());
+  if (!owner) {
+    while (is_f1_null()) {
+      // Pause momentarily on a low-level lock, to allow racing thread to win.
+      MutexLockerEx mu(Patching_lock, Mutex::_no_safepoint_check_flag);
+      os::yield();
+    }
+    return;
+  }
+
+  if (TraceInvokeDynamic) {
+    tty->print_cr("set_method_handle bc=%d appendix="PTR_FORMAT"%s method="PTR_FORMAT" ",
+                  invoke_code,
+                  (intptr_t)appendix(), (has_appendix ? "" : " (unused)"),
+                  (intptr_t)adapter());
+    adapter->print();
+    if (has_appendix)  appendix()->print();
+  }
+
+  // Method handle invokes and invokedynamic sites use both cp cache words.
+  // f1, if not null, contains a value passed as a trailing argument to the adapter.
+  // In the general case, this could be the call site's MethodType,
+  // for use with java.lang.Invokers.checkExactType, or else a CallSite object.
+  // f2 contains the adapter method which manages the actual call.
+  // In the general case, this is a compiled LambdaForm.
+  // (The Java code is free to optimize these calls by binding other
+  // sorts of methods and appendices to call sites.)
+  // JVM-level linking is via f2, as if for invokevfinal, and signatures are erased.
+  // The appendix argument (if any) is added to the signature, and is counted in the parameter_size bits.
+  // In principle this means that the method (with appendix) could take up to 256 parameter slots.
+  //
+  // This means that given a call site like (List)mh.invoke("foo"),
+  // the f2 method has signature '(Ljl/Object;Ljl/invoke/MethodType;)Ljl/Object;',
+  // not '(Ljava/lang/String;)Ljava/util/List;'.
+  // The fact that String and List are involved is encoded in the MethodType in f1.
+  // This allows us to create fewer method oops, while keeping type safety.
+  //
+  set_f2_as_vfinal_method(adapter());
+  assert(appendix.not_null(), "needed for linkage state");
+  release_set_f1(appendix());  // This must be the last one to set (see NOTE above)!
+  if (!is_secondary_entry()) {
+    // The interpreter assembly code does not check byte_2,
+    // but it is used by is_resolved, method_if_resolved, etc.
+    set_bytecode_2(invoke_code);
+  }
+  NOT_PRODUCT(verify(tty));
+  if (TraceInvokeDynamic) {
+    this->print(tty, 0);
+  }
+}
+
+methodOop ConstantPoolCacheEntry::method_if_resolved(constantPoolHandle cpool) {
   if (is_secondary_entry()) {
-    return cpool->cache()->entry_at(main_entry_index())->get_method_if_resolved(invoke_code, cpool);
+    if (!is_f1_null())
+      return f2_as_vfinal_method();
+    return NULL;
   }
   // Decode the action of set_method and set_interface_call
-  if (bytecode_1() == invoke_code) {
+  Bytecodes::Code invoke_code = bytecode_1();
+  if (invoke_code != (Bytecodes::Code)0) {
     oop f1 = _f1;
     if (f1 != NULL) {
       switch (invoke_code) {
       case Bytecodes::_invokeinterface:
         assert(f1->is_klass(), "");
-        return klassItable::method_for_itable_index(klassOop(f1), (int) f2());
+        return klassItable::method_for_itable_index(klassOop(f1), f2_as_index());
       case Bytecodes::_invokestatic:
       case Bytecodes::_invokespecial:
+        assert(!has_appendix(), "");
         assert(f1->is_method(), "");
         return methodOop(f1);
       }
     }
   }
-  if (bytecode_2() == invoke_code) {
+  invoke_code = bytecode_2();
+  if (invoke_code != (Bytecodes::Code)0) {
     switch (invoke_code) {
     case Bytecodes::_invokevirtual:
       if (is_vfinal()) {
         // invokevirtual
-        methodOop m = methodOop((intptr_t) f2());
+        methodOop m = f2_as_vfinal_method();
         assert(m->is_method(), "");
         return m;
       } else {
@@ -325,14 +386,17 @@ methodOop ConstantPoolCacheEntry::get_method_if_resolved(Bytecodes::Code invoke_
           klassOop klass = cpool->resolved_klass_at(holder_index);
           if (!Klass::cast(klass)->oop_is_instance())
             klass = SystemDictionary::Object_klass();
-          return instanceKlass::cast(klass)->method_at_vtable((int) f2());
+          return instanceKlass::cast(klass)->method_at_vtable(f2_as_index());
         }
       }
+      break;
+    case Bytecodes::_invokehandle:
+    case Bytecodes::_invokedynamic:
+      return f2_as_vfinal_method();
     }
   }
   return NULL;
 }
-
 
 
 class LocalOopClosure: public OopClosure {
@@ -419,9 +483,10 @@ bool ConstantPoolCacheEntry::adjust_method_entry(methodOop old_method,
        methodOop new_method, bool * trace_name_printed) {
 
   if (is_vfinal()) {
-    // virtual and final so f2() contains method ptr instead of vtable index
-    if (f2() == (intptr_t)old_method) {
+    // virtual and final so _f2 contains method ptr instead of vtable index
+    if (f2_as_vfinal_method() == old_method) {
       // match old_method so need an update
+      // NOTE: can't use set_f2_as_vfinal_method as it asserts on different values
       _f2 = (intptr_t)new_method;
       if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
         if (!(*trace_name_printed)) {
@@ -479,16 +544,17 @@ bool ConstantPoolCacheEntry::is_interesting_method_entry(klassOop k) {
   methodOop m = NULL;
   if (is_vfinal()) {
     // virtual and final so _f2 contains method ptr instead of vtable index
-    m = (methodOop)_f2;
-  } else if ((oop)_f1 == NULL) {
+    m = f2_as_vfinal_method();
+  } else if (is_f1_null()) {
     // NULL _f1 means this is a virtual entry so also not interesting
     return false;
   } else {
-    if (!((oop)_f1)->is_method()) {
+    oop f1 = _f1;  // _f1 is volatile
+    if (!f1->is_method()) {
       // _f1 can also contain a klassOop for an interface
       return false;
     }
-    m = (methodOop)_f1;
+    m = f1_as_method();
   }
 
   assert(m != NULL && m->is_method(), "sanity check");

@@ -238,7 +238,11 @@ void methodKlass::oop_print_on(oop obj, outputStream* st) {
     st->print_cr(" - highest level:     %d", m->highest_comp_level());
   st->print_cr(" - vtable index:      %d",   m->_vtable_index);
   st->print_cr(" - i2i entry:         " INTPTR_FORMAT, m->interpreter_entry());
-  st->print_cr(" - adapter:           " INTPTR_FORMAT, m->adapter());
+  st->print(   " - adapters:          ");
+  if (m->adapter() == NULL)
+    st->print_cr(INTPTR_FORMAT, m->adapter());
+  else
+    m->adapter()->print_adapter_on(st);
   st->print_cr(" - compiled entry     " INTPTR_FORMAT, m->from_compiled_entry());
   st->print_cr(" - code size:         %d",   m->code_size());
   if (m->code_size() != 0) {
@@ -286,13 +290,8 @@ void methodKlass::oop_print_on(oop obj, outputStream* st) {
   if (m->code() != NULL) {
     st->print   (" - compiled code: ");
     m->code()->print_value_on(st);
-    st->cr();
   }
-  if (m->is_method_handle_invoke()) {
-    st->print_cr(" - invoke method type: " INTPTR_FORMAT, (address) m->method_handle_type());
-    // m is classified as native, but it does not have an interesting
-    // native_function or signature handler
-  } else if (m->is_native()) {
+  if (m->is_native()) {
     st->print_cr(" - native function:   " INTPTR_FORMAT, m->native_function());
     st->print_cr(" - signature handler: " INTPTR_FORMAT, m->signature_handler());
   }

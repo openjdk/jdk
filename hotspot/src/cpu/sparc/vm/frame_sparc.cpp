@@ -514,7 +514,6 @@ frame frame::sender(RegisterMap* map) const {
   // interpreted but its pc is in the code cache (for c1 -> osr_frame_return_id stub), so it must be
   // explicitly recognized.
 
-  if (is_ricochet_frame())    return sender_for_ricochet_frame(map);
 
   bool frame_is_interpreted = is_interpreted_frame();
   if (frame_is_interpreted) {
@@ -821,9 +820,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     values.describe(frame_no, sp() + w, err_msg("register save area word %d", w), 1);
   }
 
-  if (is_ricochet_frame()) {
-    MethodHandles::RicochetFrame::describe(this, values, frame_no);
-  } else if (is_interpreted_frame()) {
+  if (is_interpreted_frame()) {
     DESCRIBE_FP_OFFSET(interpreter_frame_d_scratch_fp);
     DESCRIBE_FP_OFFSET(interpreter_frame_l_scratch_fp);
     DESCRIBE_FP_OFFSET(interpreter_frame_padding);

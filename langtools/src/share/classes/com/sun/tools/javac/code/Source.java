@@ -200,6 +200,9 @@ public enum Source {
     public boolean allowMethodReferences() {
         return compareTo(JDK1_8) >= 0;
     }
+    public boolean allowEffectivelyFinalInInnerClasses() {
+        return compareTo(JDK1_8) >= 0;
+    }
     public static SourceVersion toSourceVersion(Source source) {
         switch(source) {
         case JDK1_2:
