@@ -188,13 +188,21 @@ ifdef COOKED_BUILD_NUMBER
   MAKE_ARGS += JDK_BUILD_NUMBER=$(COOKED_BUILD_NUMBER)
 endif
 
-NMAKE= MAKEFLAGS= MFLAGS= nmake /NOLOGO
+NMAKE= MAKEFLAGS= MFLAGS= nmake -NOLOGO
+ifndef SYSTEM_UNAME
+  SYSTEM_UNAME := $(shell uname)
+  export SYSTEM_UNAME
+endif
 
 # Check for CYGWIN
-ifneq (,$(findstring CYGWIN,$(shell uname)))
+ifneq (,$(findstring CYGWIN,$(SYSTEM_UNAME)))
   USING_CYGWIN=true
 else
   USING_CYGWIN=false
+endif
+# Check for MinGW
+ifneq (,$(findstring MINGW,$(SYSTEM_UNAME)))
+  USING_MINGW=true
 endif
 # FIXUP: The subdirectory for a debug build is NOT the same on all platforms
 VM_DEBUG=debug
@@ -208,11 +216,16 @@ ifeq ($(USING_CYGWIN), true)
   ABS_BOOTDIR     := $(subst /,\\,$(shell /bin/cygpath -m -a "$(BOOTDIR)"))
   ABS_GAMMADIR    := $(subst /,\\,$(shell /bin/cygpath -m -a "$(GAMMADIR)"))
   ABS_OS_MAKEFILE := $(shell /bin/cygpath -m -a "$(HS_MAKE_DIR)/$(OSNAME)")/build.make
-else
-  ABS_OUTPUTDIR   := $(subst /,\\,$(shell $(CD) $(OUTPUTDIR);$(PWD)))
-  ABS_BOOTDIR     := $(subst /,\\,$(shell $(CD) $(BOOTDIR);$(PWD)))
-  ABS_GAMMADIR    := $(subst /,\\,$(shell $(CD) $(GAMMADIR);$(PWD)))
-  ABS_OS_MAKEFILE := $(subst /,\\,$(shell $(CD) $(HS_MAKE_DIR)/$(OSNAME);$(PWD))/build.make)
+else ifeq ($(USING_MINGW), true)
+    ABS_OUTPUTDIR   := $(shell $(CD) $(OUTPUTDIR);$(PWD))
+    ABS_BOOTDIR     := $(shell $(CD) $(BOOTDIR);$(PWD))
+    ABS_GAMMADIR    := $(shell $(CD) $(GAMMADIR);$(PWD))
+    ABS_OS_MAKEFILE := $(shell $(CD) $(HS_MAKE_DIR)/$(OSNAME);$(PWD))/build.make
+  else
+    ABS_OUTPUTDIR   := $(subst /,\\,$(shell $(CD) $(OUTPUTDIR);$(PWD)))
+    ABS_BOOTDIR     := $(subst /,\\,$(shell $(CD) $(BOOTDIR);$(PWD)))
+    ABS_GAMMADIR    := $(subst /,\\,$(shell $(CD) $(GAMMADIR);$(PWD)))
+    ABS_OS_MAKEFILE := $(subst /,\\,$(shell $(CD) $(HS_MAKE_DIR)/$(OSNAME);$(PWD))/build.make)
 endif
 
 # Disable building SA on windows until we are sure
