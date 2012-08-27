@@ -488,68 +488,6 @@ void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
 
 }
 
-void G1UnsafeGetObjSATBBarrierStub::emit_code(LIR_Assembler* ce) {
-  // At this point we know that offset == referent_offset.
-  //
-  // So we might have to emit:
-  //   if (src == null) goto continuation.
-  //
-  // and we definitely have to emit:
-  //   if (klass(src).reference_type == REF_NONE) goto continuation
-  //   if (!marking_active) goto continuation
-  //   if (pre_val == null) goto continuation
-  //   call pre_barrier(pre_val)
-  //   goto continuation
-  //
-  __ bind(_entry);
-
-  assert(src()->is_register(), "sanity");
-  Register src_reg = src()->as_register();
-
-  if (gen_src_check()) {
-    // The original src operand was not a constant.
-    // Generate src == null?
-    __ cmpptr(src_reg, (int32_t) NULL_WORD);
-    __ jcc(Assembler::equal, _continuation);
-  }
-
-  // Generate src->_klass->_reference_type == REF_NONE)?
-  assert(tmp()->is_register(), "sanity");
-  Register tmp_reg = tmp()->as_register();
-
-  __ load_klass(tmp_reg, src_reg);
-
-  Address ref_type_adr(tmp_reg, instanceKlass::reference_type_offset());
-  __ cmpb(ref_type_adr, REF_NONE);
-  __ jcc(Assembler::equal, _continuation);
-
-  // Is marking active?
-  assert(thread()->is_register(), "precondition");
-  Register thread_reg = thread()->as_pointer_register();
-
-  Address in_progress(thread_reg, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       PtrQueue::byte_offset_of_active()));
-
-  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
-    __ cmpl(in_progress, 0);
-  } else {
-    assert(in_bytes(PtrQueue::byte_width_of_active()) == 1, "Assumption");
-    __ cmpb(in_progress, 0);
-  }
-  __ jcc(Assembler::equal, _continuation);
-
-  // val == null?
-  assert(val()->is_register(), "Precondition.");
-  Register val_reg = val()->as_register();
-
-  __ cmpptr(val_reg, (int32_t) NULL_WORD);
-  __ jcc(Assembler::equal, _continuation);
-
-  ce->store_parameter(val()->as_register(), 0);
-  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::g1_pre_barrier_slow_id)));
-  __ jmp(_continuation);
-}
-
 jbyte* G1PostBarrierStub::_byte_map_base = NULL;
 
 jbyte* G1PostBarrierStub::byte_map_base_slow() {
