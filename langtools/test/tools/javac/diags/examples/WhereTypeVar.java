@@ -26,6 +26,7 @@
 // key: compiler.misc.type.var
 // key: compiler.err.cant.apply.symbol.1
 // key: compiler.misc.no.conforming.assignment.exists
+// key: compiler.misc.inconvertible.types
 // options: -XDdiags=where,disambiguateTvars
 // run: simple
 

@@ -22,6 +22,7 @@
  */
 
 // key: compiler.err.cant.apply.symbol.1
+// key: compiler.misc.inconvertible.types
 // key: compiler.misc.infer.no.conforming.assignment.exists
 
 import java.util.*;

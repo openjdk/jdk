@@ -138,13 +138,14 @@ public:
   jobject constant_encoding();
 
   // What kind of ciObject is this?
-  virtual bool is_null_object() const       { return false; }
-  virtual bool is_call_site() const         { return false; }
-  virtual bool is_cpcache() const           { return false; }
+  virtual bool is_null_object()       const { return false; }
+  virtual bool is_call_site()         const { return false; }
+  virtual bool is_cpcache()           const { return false; }
   virtual bool is_instance()                { return false; }
+  virtual bool is_member_name()       const { return false; }
   virtual bool is_method()                  { return false; }
   virtual bool is_method_data()             { return false; }
-  virtual bool is_method_handle() const     { return false; }
+  virtual bool is_method_handle()     const { return false; }
   virtual bool is_array()                   { return false; }
   virtual bool is_obj_array()               { return false; }
   virtual bool is_type_array()              { return false; }
@@ -207,6 +208,10 @@ public:
   ciInstance*              as_instance() {
     assert(is_instance(), "bad cast");
     return (ciInstance*)this;
+  }
+  ciMemberName*            as_member_name() {
+    assert(is_member_name(), "bad cast");
+    return (ciMemberName*)this;
   }
   ciMethod*                as_method() {
     assert(is_method(), "bad cast");
@@ -290,7 +295,8 @@ public:
   }
 
   // Print debugging output about this ciObject.
-  void print(outputStream* st = tty);
+  void print(outputStream* st);
+  void print() { print(tty); }  // GDB cannot handle default arguments
 
   // Print debugging output about the oop this ciObject represents.
   void print_oop(outputStream* st = tty);

@@ -822,7 +822,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       // the interpreter is generated into a buffer blob
       InterpreterCodelet* i = Interpreter::codelet_containing(addr);
       if (i != NULL) {
-        st->print_cr(INTPTR_FORMAT " is an Interpreter codelet", addr);
+        st->print_cr(INTPTR_FORMAT " is at code_begin+%d in an Interpreter codelet", addr, (int)(addr - i->code_begin()));
         i->print_on(st);
         return;
       }
@@ -833,14 +833,15 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       }
       //
       if (AdapterHandlerLibrary::contains(b)) {
-        st->print_cr(INTPTR_FORMAT " is an AdapterHandler", addr);
+        st->print_cr(INTPTR_FORMAT " is at code_begin+%d in an AdapterHandler", addr, (int)(addr - b->code_begin()));
         AdapterHandlerLibrary::print_handler_on(st, b);
       }
       // the stubroutines are generated into a buffer blob
       StubCodeDesc* d = StubCodeDesc::desc_for(addr);
       if (d != NULL) {
+        st->print_cr(INTPTR_FORMAT " is at begin+%d in a stub", addr, (int)(addr - d->begin()));
         d->print_on(st);
-        if (verbose) st->cr();
+        st->cr();
         return;
       }
       if (StubRoutines::contains(addr)) {
@@ -855,26 +856,25 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       }
       VtableStub* v = VtableStubs::stub_containing(addr);
       if (v != NULL) {
+        st->print_cr(INTPTR_FORMAT " is at entry_point+%d in a vtable stub", addr, (int)(addr - v->entry_point()));
         v->print_on(st);
+        st->cr();
         return;
       }
     }
-    if (verbose && b->is_nmethod()) {
+    nmethod* nm = b->as_nmethod_or_null();
+    if (nm != NULL) {
       ResourceMark rm;
-      st->print("%#p: Compiled ", addr);
-      ((nmethod*)b)->method()->print_value_on(st);
-      st->print("  = (CodeBlob*)" INTPTR_FORMAT, b);
-      st->cr();
+      st->print(INTPTR_FORMAT " is at entry_point+%d in (nmethod*)" INTPTR_FORMAT,
+                addr, (int)(addr - nm->entry_point()), nm);
+      if (verbose) {
+        st->print(" for ");
+        nm->method()->print_value_on(st);
+      }
+      nm->print_nmethod(verbose);
       return;
     }
-    st->print(INTPTR_FORMAT " ", b);
-    if ( b->is_nmethod()) {
-      if (b->is_zombie()) {
-        st->print_cr("is zombie nmethod");
-      } else if (b->is_not_entrant()) {
-        st->print_cr("is non-entrant nmethod");
-      }
-    }
+    st->print_cr(INTPTR_FORMAT " is at code_begin+%d in ", addr, (int)(addr - b->code_begin()));
     b->print_on(st);
     return;
   }

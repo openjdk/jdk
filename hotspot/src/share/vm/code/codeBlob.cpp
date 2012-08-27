@@ -359,43 +359,6 @@ void* SingletonBlob::operator new(size_t s, unsigned size) {
 
 
 //----------------------------------------------------------------------------------------------------
-// Implementation of RicochetBlob
-
-RicochetBlob::RicochetBlob(
-  CodeBuffer* cb,
-  int         size,
-  int         bounce_offset,
-  int         exception_offset,
-  int         frame_size
-)
-: SingletonBlob("RicochetBlob", cb, sizeof(RicochetBlob), size, frame_size, (OopMapSet*) NULL)
-{
-  _bounce_offset = bounce_offset;
-  _exception_offset = exception_offset;
-}
-
-
-RicochetBlob* RicochetBlob::create(
-  CodeBuffer* cb,
-  int         bounce_offset,
-  int         exception_offset,
-  int         frame_size)
-{
-  RicochetBlob* blob = NULL;
-  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
-  {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = allocation_size(cb, sizeof(RicochetBlob));
-    blob = new (size) RicochetBlob(cb, size, bounce_offset, exception_offset, frame_size);
-  }
-
-  trace_new_stub(blob, "RicochetBlob");
-
-  return blob;
-}
-
-
-//----------------------------------------------------------------------------------------------------
 // Implementation of DeoptimizationBlob
 
 DeoptimizationBlob::DeoptimizationBlob(

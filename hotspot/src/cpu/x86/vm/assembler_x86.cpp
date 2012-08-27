@@ -41,6 +41,15 @@
 #include "gc_implementation/g1/heapRegion.hpp"
 #endif
 
+#ifdef PRODUCT
+#define BLOCK_COMMENT(str) /* nothing */
+#define STOP(error) stop(error)
+#else
+#define BLOCK_COMMENT(str) block_comment(str)
+#define STOP(error) block_comment(error); stop(error)
+#endif
+
+#define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 // Implementation of AddressLiteral
 
 AddressLiteral::AddressLiteral(address target, relocInfo::relocType rtype) {
@@ -5508,23 +5517,7 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
     // To see where a verify_oop failed, get $ebx+40/X for this frame.
     // This is the value of eip which points to where verify_oop will return.
     if (os::message_box(msg, "Execution stopped, print registers?")) {
-      ttyLocker ttyl;
-      tty->print_cr("eip = 0x%08x", eip);
-#ifndef PRODUCT
-      if ((WizardMode || Verbose) && PrintMiscellaneous) {
-        tty->cr();
-        findpc(eip);
-        tty->cr();
-      }
-#endif
-      tty->print_cr("rax = 0x%08x", rax);
-      tty->print_cr("rbx = 0x%08x", rbx);
-      tty->print_cr("rcx = 0x%08x", rcx);
-      tty->print_cr("rdx = 0x%08x", rdx);
-      tty->print_cr("rdi = 0x%08x", rdi);
-      tty->print_cr("rsi = 0x%08x", rsi);
-      tty->print_cr("rbp = 0x%08x", rbp);
-      tty->print_cr("rsp = 0x%08x", rsp);
+      print_state32(rdi, rsi, rbp, rsp, rbx, rdx, rcx, rax, eip);
       BREAKPOINT;
       assert(false, "start up GDB");
     }
@@ -5536,12 +5529,53 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
   ThreadStateTransition::transition(thread, _thread_in_vm, saved_state);
 }
 
+void MacroAssembler::print_state32(int rdi, int rsi, int rbp, int rsp, int rbx, int rdx, int rcx, int rax, int eip) {
+  ttyLocker ttyl;
+  FlagSetting fs(Debugging, true);
+  tty->print_cr("eip = 0x%08x", eip);
+#ifndef PRODUCT
+  if ((WizardMode || Verbose) && PrintMiscellaneous) {
+    tty->cr();
+    findpc(eip);
+    tty->cr();
+  }
+#endif
+#define PRINT_REG(rax) \
+  { tty->print("%s = ", #rax); os::print_location(tty, rax); }
+  PRINT_REG(rax);
+  PRINT_REG(rbx);
+  PRINT_REG(rcx);
+  PRINT_REG(rdx);
+  PRINT_REG(rdi);
+  PRINT_REG(rsi);
+  PRINT_REG(rbp);
+  PRINT_REG(rsp);
+#undef PRINT_REG
+  // Print some words near top of staack.
+  int* dump_sp = (int*) rsp;
+  for (int col1 = 0; col1 < 8; col1++) {
+    tty->print("(rsp+0x%03x) 0x%08x: ", (int)((intptr_t)dump_sp - (intptr_t)rsp), (intptr_t)dump_sp);
+    os::print_location(tty, *dump_sp++);
+  }
+  for (int row = 0; row < 16; row++) {
+    tty->print("(rsp+0x%03x) 0x%08x: ", (int)((intptr_t)dump_sp - (intptr_t)rsp), (intptr_t)dump_sp);
+    for (int col = 0; col < 8; col++) {
+      tty->print(" 0x%08x", *dump_sp++);
+    }
+    tty->cr();
+  }
+  // Print some instructions around pc:
+  Disassembler::decode((address)eip-64, (address)eip);
+  tty->print_cr("--------");
+  Disassembler::decode((address)eip, (address)eip+32);
+}
+
 void MacroAssembler::stop(const char* msg) {
   ExternalAddress message((address)msg);
   // push address of message
   pushptr(message.addr());
   { Label L; call(L, relocInfo::none); bind(L); }     // push eip
-  pusha();                                           // push registers
+  pusha();                                            // push registers
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug32)));
   hlt();
 }
@@ -5556,6 +5590,18 @@ void MacroAssembler::warn(const char* msg) {
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, warning)));
   addl(rsp, wordSize);       // discard argument
   pop_CPU_state();
+}
+
+void MacroAssembler::print_state() {
+  { Label L; call(L, relocInfo::none); bind(L); }     // push eip
+  pusha();                                            // push registers
+
+  push_CPU_state();
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::print_state32)));
+  pop_CPU_state();
+
+  popa();
+  addl(rsp, wordSize);
 }
 
 #else // _LP64
@@ -6023,14 +6069,33 @@ void MacroAssembler::stop(const char* msg) {
 }
 
 void MacroAssembler::warn(const char* msg) {
-  push(rsp);
+  push(rbp);
+  movq(rbp, rsp);
   andq(rsp, -16);     // align stack as required by push_CPU_state and call
-
   push_CPU_state();   // keeps alignment at 16 bytes
   lea(c_rarg0, ExternalAddress((address) msg));
   call_VM_leaf(CAST_FROM_FN_PTR(address, warning), c_rarg0);
   pop_CPU_state();
-  pop(rsp);
+  mov(rsp, rbp);
+  pop(rbp);
+}
+
+void MacroAssembler::print_state() {
+  address rip = pc();
+  pusha();            // get regs on stack
+  push(rbp);
+  movq(rbp, rsp);
+  andq(rsp, -16);     // align stack as required by push_CPU_state and call
+  push_CPU_state();   // keeps alignment at 16 bytes
+
+  lea(c_rarg0, InternalAddress(rip));
+  lea(c_rarg1, Address(rbp, wordSize)); // pass pointer to regs array
+  call_VM_leaf(CAST_FROM_FN_PTR(address, MacroAssembler::print_state64), c_rarg0, c_rarg1);
+
+  pop_CPU_state();
+  mov(rsp, rbp);
+  pop(rbp);
+  popa();
 }
 
 #ifndef PRODUCT
@@ -6039,7 +6104,7 @@ extern "C" void findpc(intptr_t x);
 
 void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[]) {
   // In order to get locks to work, we need to fake a in_VM state
-  if (ShowMessageBoxOnError ) {
+  if (ShowMessageBoxOnError) {
     JavaThread* thread = JavaThread::current();
     JavaThreadState saved_state = thread->thread_state();
     thread->set_thread_state(_thread_in_vm);
@@ -6053,30 +6118,9 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[]) {
     // XXX correct this offset for amd64
     // This is the value of eip which points to where verify_oop will return.
     if (os::message_box(msg, "Execution stopped, print registers?")) {
-      ttyLocker ttyl;
-      tty->print_cr("rip = 0x%016lx", pc);
-#ifndef PRODUCT
-      tty->cr();
-      findpc(pc);
-      tty->cr();
-#endif
-      tty->print_cr("rax = 0x%016lx", regs[15]);
-      tty->print_cr("rbx = 0x%016lx", regs[12]);
-      tty->print_cr("rcx = 0x%016lx", regs[14]);
-      tty->print_cr("rdx = 0x%016lx", regs[13]);
-      tty->print_cr("rdi = 0x%016lx", regs[8]);
-      tty->print_cr("rsi = 0x%016lx", regs[9]);
-      tty->print_cr("rbp = 0x%016lx", regs[10]);
-      tty->print_cr("rsp = 0x%016lx", regs[11]);
-      tty->print_cr("r8  = 0x%016lx", regs[7]);
-      tty->print_cr("r9  = 0x%016lx", regs[6]);
-      tty->print_cr("r10 = 0x%016lx", regs[5]);
-      tty->print_cr("r11 = 0x%016lx", regs[4]);
-      tty->print_cr("r12 = 0x%016lx", regs[3]);
-      tty->print_cr("r13 = 0x%016lx", regs[2]);
-      tty->print_cr("r14 = 0x%016lx", regs[1]);
-      tty->print_cr("r15 = 0x%016lx", regs[0]);
+      print_state64(pc, regs);
       BREAKPOINT;
+      assert(false, "start up GDB");
     }
     ThreadStateTransition::transition(thread, _thread_in_vm, saved_state);
   } else {
@@ -6085,6 +6129,54 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[]) {
                     msg);
     assert(false, err_msg("DEBUG MESSAGE: %s", msg));
   }
+}
+
+void MacroAssembler::print_state64(int64_t pc, int64_t regs[]) {
+  ttyLocker ttyl;
+  FlagSetting fs(Debugging, true);
+  tty->print_cr("rip = 0x%016lx", pc);
+#ifndef PRODUCT
+  tty->cr();
+  findpc(pc);
+  tty->cr();
+#endif
+#define PRINT_REG(rax, value) \
+  { tty->print("%s = ", #rax); os::print_location(tty, value); }
+  PRINT_REG(rax, regs[15]);
+  PRINT_REG(rbx, regs[12]);
+  PRINT_REG(rcx, regs[14]);
+  PRINT_REG(rdx, regs[13]);
+  PRINT_REG(rdi, regs[8]);
+  PRINT_REG(rsi, regs[9]);
+  PRINT_REG(rbp, regs[10]);
+  PRINT_REG(rsp, regs[11]);
+  PRINT_REG(r8 , regs[7]);
+  PRINT_REG(r9 , regs[6]);
+  PRINT_REG(r10, regs[5]);
+  PRINT_REG(r11, regs[4]);
+  PRINT_REG(r12, regs[3]);
+  PRINT_REG(r13, regs[2]);
+  PRINT_REG(r14, regs[1]);
+  PRINT_REG(r15, regs[0]);
+#undef PRINT_REG
+  // Print some words near top of staack.
+  int64_t* rsp = (int64_t*) regs[11];
+  int64_t* dump_sp = rsp;
+  for (int col1 = 0; col1 < 8; col1++) {
+    tty->print("(rsp+0x%03x) 0x%016lx: ", (int)((intptr_t)dump_sp - (intptr_t)rsp), (int64_t)dump_sp);
+    os::print_location(tty, *dump_sp++);
+  }
+  for (int row = 0; row < 25; row++) {
+    tty->print("(rsp+0x%03x) 0x%016lx: ", (int)((intptr_t)dump_sp - (intptr_t)rsp), (int64_t)dump_sp);
+    for (int col = 0; col < 4; col++) {
+      tty->print(" 0x%016lx", *dump_sp++);
+    }
+    tty->cr();
+  }
+  // Print some instructions around pc:
+  Disassembler::decode((address)pc-64, (address)pc);
+  tty->print_cr("--------");
+  Disassembler::decode((address)pc, (address)pc+32);
 }
 
 #endif // _LP64
@@ -6456,7 +6548,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
       get_thread(rax);
       cmpptr(java_thread, rax);
       jcc(Assembler::equal, L);
-      stop("MacroAssembler::call_VM_base: rdi not callee saved?");
+      STOP("MacroAssembler::call_VM_base: rdi not callee saved?");
       bind(L);
     }
     pop(rax);
@@ -7196,7 +7288,7 @@ void MacroAssembler::pow_or_exp(bool is_exp, int num_fpu_regs_in_use) {
       jcc(Assembler::notZero, integer);
       cmpl(tmp3, 0x80000000);
       jcc(Assembler::notZero, integer);
-      stop("integer indefinite value shouldn't be seen here");
+      STOP("integer indefinite value shouldn't be seen here");
       bind(integer);
     }
 #else
@@ -7206,7 +7298,7 @@ void MacroAssembler::pow_or_exp(bool is_exp, int num_fpu_regs_in_use) {
       shlq(tmp3, 1);
       jcc(Assembler::carryClear, integer);
       jcc(Assembler::notZero, integer);
-      stop("integer indefinite value shouldn't be seen here");
+      STOP("integer indefinite value shouldn't be seen here");
       bind(integer);
     }
 #endif
@@ -8388,7 +8480,7 @@ Register MacroAssembler::tlab_refill(Label& retry,
     shlptr(tsize, LogHeapWordSize);
     cmpptr(t1, tsize);
     jcc(Assembler::equal, ok);
-    stop("assert(t1 != tlab size)");
+    STOP("assert(t1 != tlab size)");
     should_not_reach_here();
 
     bind(ok);
@@ -8727,6 +8819,19 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 }
 
 
+// virtual method calling
+void MacroAssembler::lookup_virtual_method(Register recv_klass,
+                                           RegisterOrConstant vtable_index,
+                                           Register method_result) {
+  const int base = instanceKlass::vtable_start_offset() * wordSize;
+  assert(vtableEntry::size() * wordSize == wordSize, "else adjust the scaling in the code below");
+  Address vtable_entry_addr(recv_klass,
+                            vtable_index, Address::times_ptr,
+                            base + vtableEntry::method_offset_in_bytes());
+  movptr(method_result, vtable_entry_addr);
+}
+
+
 void MacroAssembler::check_klass_subtype(Register sub_klass,
                            Register super_klass,
                            Register temp_reg,
@@ -8976,6 +9081,7 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   // Pass register number to verify_oop_subroutine
   char* b = new char[strlen(s) + 50];
   sprintf(b, "verify_oop: %s: %s", reg->name(), s);
+  BLOCK_COMMENT("verify_oop {");
 #ifdef _LP64
   push(rscratch1);                    // save r10, trashed by movptr()
 #endif
@@ -8990,6 +9096,7 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   movptr(rax, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()));
   call(rax);
   // Caller pops the arguments (oop, message) and restores rax, r10
+  BLOCK_COMMENT("} verify_oop");
 }
 
 
@@ -9010,7 +9117,7 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
       jcc(Assembler::notZero, L);
       char* buf = new char[40];
       sprintf(buf, "DelayedValue="INTPTR_FORMAT, delayed_value_addr[1]);
-      stop(buf);
+      STOP(buf);
     } else {
       jccb(Assembler::notZero, L);
       hlt();
@@ -9023,60 +9130,6 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
     addptr(tmp, offset);
 
   return RegisterOrConstant(tmp);
-}
-
-
-// registers on entry:
-//  - rax ('check' register): required MethodType
-//  - rcx: method handle
-//  - rdx, rsi, or ?: killable temp
-void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_reg,
-                                              Register temp_reg,
-                                              Label& wrong_method_type) {
-  Address type_addr(mh_reg, delayed_value(java_lang_invoke_MethodHandle::type_offset_in_bytes, temp_reg));
-  // compare method type against that of the receiver
-  if (UseCompressedOops) {
-    load_heap_oop(temp_reg, type_addr);
-    cmpptr(mtype_reg, temp_reg);
-  } else {
-    cmpptr(mtype_reg, type_addr);
-  }
-  jcc(Assembler::notEqual, wrong_method_type);
-}
-
-
-// A method handle has a "vmslots" field which gives the size of its
-// argument list in JVM stack slots.  This field is either located directly
-// in every method handle, or else is indirectly accessed through the
-// method handle's MethodType.  This macro hides the distinction.
-void MacroAssembler::load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
-                                                Register temp_reg) {
-  assert_different_registers(vmslots_reg, mh_reg, temp_reg);
-  // load mh.type.form.vmslots
-  Register temp2_reg = vmslots_reg;
-  load_heap_oop(temp2_reg, Address(mh_reg,    delayed_value(java_lang_invoke_MethodHandle::type_offset_in_bytes, temp_reg)));
-  load_heap_oop(temp2_reg, Address(temp2_reg, delayed_value(java_lang_invoke_MethodType::form_offset_in_bytes, temp_reg)));
-  movl(vmslots_reg, Address(temp2_reg, delayed_value(java_lang_invoke_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)));
-}
-
-
-// registers on entry:
-//  - rcx: method handle
-//  - rdx: killable temp (interpreted only)
-//  - rax: killable temp (compiled only)
-void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_reg) {
-  assert(mh_reg == rcx, "caller must put MH object in rcx");
-  assert_different_registers(mh_reg, temp_reg);
-
-  // pick out the interpreted side of the handler
-  // NOTE: vmentry is not an oop!
-  movptr(temp_reg, Address(mh_reg, delayed_value(java_lang_invoke_MethodHandle::vmentry_offset_in_bytes, temp_reg)));
-
-  // off we go...
-  jmp(Address(temp_reg, MethodHandleEntry::from_interpreted_entry_offset_in_bytes()));
-
-  // for the various stubs which take control at this point,
-  // see MethodHandles::generate_method_handle_stub
 }
 
 
@@ -9152,14 +9205,14 @@ void MacroAssembler::verify_tlab() {
     movptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_top_offset())));
     cmpptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_start_offset())));
     jcc(Assembler::aboveEqual, next);
-    stop("assert(top >= start)");
+    STOP("assert(top >= start)");
     should_not_reach_here();
 
     bind(next);
     movptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_end_offset())));
     cmpptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_top_offset())));
     jcc(Assembler::aboveEqual, ok);
-    stop("assert(top <= end)");
+    STOP("assert(top <= end)");
     should_not_reach_here();
 
     bind(ok);
@@ -9592,6 +9645,25 @@ void MacroAssembler::store_heap_oop(Address dst, Register src) {
     movptr(dst, src);
 }
 
+void MacroAssembler::cmp_heap_oop(Register src1, Address src2, Register tmp) {
+  assert_different_registers(src1, tmp);
+#ifdef _LP64
+  if (UseCompressedOops) {
+    bool did_push = false;
+    if (tmp == noreg) {
+      tmp = rax;
+      push(tmp);
+      did_push = true;
+      assert(!src2.uses(rsp), "can't push");
+    }
+    load_heap_oop(tmp, src2);
+    cmpptr(src1, tmp);
+    if (did_push)  pop(tmp);
+  } else
+#endif
+    cmpptr(src1, src2);
+}
+
 // Used for storing NULLs.
 void MacroAssembler::store_heap_oop_null(Address dst) {
 #ifdef _LP64
@@ -9622,7 +9694,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
     push(rscratch1); // cmpptr trashes rscratch1
     cmpptr(r12_heapbase, ExternalAddress((address)Universe::narrow_oop_base_addr()));
     jcc(Assembler::equal, ok);
-    stop(msg);
+    STOP(msg);
     bind(ok);
     pop(rscratch1);
   }
@@ -9655,7 +9727,7 @@ void MacroAssembler::encode_heap_oop_not_null(Register r) {
     Label ok;
     testq(r, r);
     jcc(Assembler::notEqual, ok);
-    stop("null oop passed to encode_heap_oop_not_null");
+    STOP("null oop passed to encode_heap_oop_not_null");
     bind(ok);
   }
 #endif
@@ -9676,7 +9748,7 @@ void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
     Label ok;
     testq(src, src);
     jcc(Assembler::notEqual, ok);
-    stop("null oop passed to encode_heap_oop_not_null2");
+    STOP("null oop passed to encode_heap_oop_not_null2");
     bind(ok);
   }
 #endif
@@ -9867,7 +9939,7 @@ void MacroAssembler::verified_entry(int framesize, bool stack_bang, bool fp_mode
     cmpptr(rax, StackAlignmentInBytes-wordSize);
     pop(rax);
     jcc(Assembler::equal, L);
-    stop("Stack is not properly aligned!");
+    STOP("Stack is not properly aligned!");
     bind(L);
   }
 #endif
@@ -10541,13 +10613,6 @@ void MacroAssembler::char_arrays_equals(bool is_array_equ, Register ary1, Regist
   bind(DONE);
 }
 
-#ifdef PRODUCT
-#define BLOCK_COMMENT(str) /* nothing */
-#else
-#define BLOCK_COMMENT(str) block_comment(str)
-#endif
-
-#define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 void MacroAssembler::generate_fill(BasicType t, bool aligned,
                                    Register to, Register value, Register count,
                                    Register rtmp, XMMRegister xtmp) {
