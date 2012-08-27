@@ -26,17 +26,14 @@
 package java.lang.invoke;
 
 import sun.invoke.util.VerifyType;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.Wrapper;
-import sun.misc.Unsafe;
+import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
@@ -47,670 +44,471 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 /*non-public*/ abstract class MethodHandleImpl {
     /// Factory methods to create method handles:
 
-    private static final MemberName.Factory LOOKUP = MemberName.Factory.INSTANCE;
-
     static void initStatics() {
-        // Trigger preceding sequence.
+        // Trigger selected static initializations.
+        MemberName.Factory.INSTANCE.getClass();
     }
 
-    /** Look up a given method.
-     * Callable only from sun.invoke and related packages.
-     * <p>
-     * The resulting method handle type will be of the given type,
-     * with a receiver type {@code rcvc} prepended if the member is not static.
-     * <p>
-     * Access checks are made as of the given lookup class.
-     * In particular, if the method is protected and {@code defc} is in a
-     * different package from the lookup class, then {@code rcvc} must be
-     * the lookup class or a subclass.
-     * @param token Proof that the lookup class has access to this package.
-     * @param member Resolved method or constructor to call.
-     * @param name Name of the desired method.
-     * @param rcvc Receiver type of desired non-static method (else null)
-     * @param doDispatch whether the method handle will test the receiver type
-     * @param lookupClass access-check relative to this class
-     * @return a direct handle to the matching method
-     * @throws IllegalAccessException if the given method cannot be accessed by the lookup class
-     */
-    static
-    MethodHandle findMethod(MemberName method,
-                            boolean doDispatch, Class<?> lookupClass) throws IllegalAccessException {
-        MethodType mtype = method.getMethodType();
-        if (!method.isStatic()) {
-            // adjust the advertised receiver type to be exactly the one requested
-            // (in the case of invokespecial, this will be the calling class)
-            Class<?> recvType = method.getDeclaringClass();
-            mtype = mtype.insertParameterTypes(0, recvType);
-        }
-        DirectMethodHandle mh = new DirectMethodHandle(mtype, method, doDispatch, lookupClass);
-        if (!mh.isValid())
-            throw method.makeAccessException("no direct method handle", lookupClass);
-        assert(mh.type() == mtype);
-        if (!method.isVarargs())
-            return mh;
-        int argc = mtype.parameterCount();
-        if (argc != 0) {
-            Class<?> arrayType = mtype.parameterType(argc-1);
-            if (arrayType.isArray())
-                return AdapterMethodHandle.makeVarargsCollector(mh, arrayType);
-        }
-        throw method.makeAccessException("cannot make variable arity", null);
-    }
-
-    static
-    MethodHandle makeAllocator(MethodHandle rawConstructor) {
-        MethodType rawConType = rawConstructor.type();
-        Class<?> allocateClass = rawConType.parameterType(0);
-        // Wrap the raw (unsafe) constructor with the allocation of a suitable object.
-        assert(AdapterMethodHandle.canCollectArguments(rawConType, MethodType.methodType(allocateClass), 0, true));
-        // allocator(arg...)
-        // [fold]=> cookedConstructor(obj=allocate(C), arg...)
-        // [dup,collect]=> identity(obj, void=rawConstructor(obj, arg...))
-        MethodHandle returner = MethodHandles.identity(allocateClass);
-        MethodType ctype = rawConType.insertParameterTypes(0, allocateClass).changeReturnType(allocateClass);
-        MethodHandle  cookedConstructor = AdapterMethodHandle.makeCollectArguments(returner, rawConstructor, 1, false);
-        assert(cookedConstructor.type().equals(ctype));
-        ctype = ctype.dropParameterTypes(0, 1);
-        cookedConstructor = AdapterMethodHandle.makeCollectArguments(cookedConstructor, returner, 0, true);
-        AllocateObject allocator = new AllocateObject(allocateClass);
-        // allocate() => new C(void)
-        assert(allocator.type().equals(MethodType.methodType(allocateClass)));
-        ctype = ctype.dropParameterTypes(0, 1);
-        MethodHandle fold = foldArguments(cookedConstructor, ctype, 0, allocator);
-        return fold;
-    }
-
-    static final class AllocateObject /*<C>*/ extends BoundMethodHandle {
-        private static final Unsafe unsafe = Unsafe.getUnsafe();
-
-        private final Class<?> /*<C>*/ allocateClass;
-
-        // for allocation only:
-        private AllocateObject(Class<?> /*<C>*/ allocateClass) {
-            super(ALLOCATE.asType(MethodType.methodType(allocateClass, AllocateObject.class)));
-            this.allocateClass = allocateClass;
-        }
-        @SuppressWarnings("unchecked")
-        private Object /*C*/ allocate() throws InstantiationException {
-            return unsafe.allocateInstance(allocateClass);
-        }
-        static final MethodHandle ALLOCATE;
-        static {
-            try {
-                ALLOCATE = IMPL_LOOKUP.findVirtual(AllocateObject.class, "allocate", MethodType.genericMethodType(0));
-            } catch (ReflectiveOperationException ex) {
-                throw uncaughtException(ex);
-            }
-        }
-    }
-
-    static
-    MethodHandle accessField(MemberName member, boolean isSetter,
-                             Class<?> lookupClass) {
-        // Use sun. misc.Unsafe to dig up the dirt on the field.
-        FieldAccessor accessor = new FieldAccessor(member, isSetter);
-        return accessor;
-    }
-
-    static
-    MethodHandle accessArrayElement(Class<?> arrayClass, boolean isSetter) {
+    static MethodHandle makeArrayElementAccessor(Class<?> arrayClass, boolean isSetter) {
         if (!arrayClass.isArray())
             throw newIllegalArgumentException("not an array: "+arrayClass);
-        Class<?> elemClass = arrayClass.getComponentType();
-        MethodHandle[] mhs = FieldAccessor.ARRAY_CACHE.get(elemClass);
-        if (mhs == null) {
-            if (!FieldAccessor.doCache(elemClass))
-                return FieldAccessor.ahandle(arrayClass, isSetter);
-            mhs = new MethodHandle[] {
-                FieldAccessor.ahandle(arrayClass, false),
-                FieldAccessor.ahandle(arrayClass, true)
-            };
-            if (mhs[0].type().parameterType(0) == Class.class) {
-                mhs[0] = mhs[0].bindTo(elemClass);
-                mhs[1] = mhs[1].bindTo(elemClass);
-            }
-            synchronized (FieldAccessor.ARRAY_CACHE) {}  // memory barrier
-            FieldAccessor.ARRAY_CACHE.put(elemClass, mhs);
+        MethodHandle accessor = ArrayAccessor.getAccessor(arrayClass, isSetter);
+        MethodType srcType = accessor.type().erase();
+        MethodType lambdaType = srcType.invokerType();
+        Name[] names = arguments(1, lambdaType);
+        Name[] args  = Arrays.copyOfRange(names, 1, 1 + srcType.parameterCount());
+        names[names.length - 1] = new Name(accessor.asType(srcType), (Object[]) args);
+        LambdaForm form = new LambdaForm("getElement", lambdaType.parameterCount(), names);
+        MethodHandle mh = new SimpleMethodHandle(srcType, form);
+        if (ArrayAccessor.needCast(arrayClass)) {
+            mh = mh.bindTo(arrayClass);
         }
-        return mhs[isSetter ? 1 : 0];
+        mh = mh.asType(ArrayAccessor.correctType(arrayClass, isSetter));
+        return mh;
     }
 
-    static final class FieldAccessor /*<C,V>*/ extends BoundMethodHandle {
-        private static final Unsafe unsafe = Unsafe.getUnsafe();
-        final Object base;  // for static refs only
-        final long offset;
-        final String name;
-
-        FieldAccessor(MemberName field, boolean isSetter) {
-            super(fhandle(field.getDeclaringClass(), field.getFieldType(), isSetter, field.isStatic()));
-            this.offset = (long) field.getVMIndex();
-            this.name = field.getName();
-            this.base = staticBase(field);
-        }
-        @Override
-        String debugString() { return addTypeString(name, this); }
-
-        int getFieldI(Object /*C*/ obj) { return unsafe.getInt(obj, offset); }
-        void setFieldI(Object /*C*/ obj, int x) { unsafe.putInt(obj, offset, x); }
-        long getFieldJ(Object /*C*/ obj) { return unsafe.getLong(obj, offset); }
-        void setFieldJ(Object /*C*/ obj, long x) { unsafe.putLong(obj, offset, x); }
-        float getFieldF(Object /*C*/ obj) { return unsafe.getFloat(obj, offset); }
-        void setFieldF(Object /*C*/ obj, float x) { unsafe.putFloat(obj, offset, x); }
-        double getFieldD(Object /*C*/ obj) { return unsafe.getDouble(obj, offset); }
-        void setFieldD(Object /*C*/ obj, double x) { unsafe.putDouble(obj, offset, x); }
-        boolean getFieldZ(Object /*C*/ obj) { return unsafe.getBoolean(obj, offset); }
-        void setFieldZ(Object /*C*/ obj, boolean x) { unsafe.putBoolean(obj, offset, x); }
-        byte getFieldB(Object /*C*/ obj) { return unsafe.getByte(obj, offset); }
-        void setFieldB(Object /*C*/ obj, byte x) { unsafe.putByte(obj, offset, x); }
-        short getFieldS(Object /*C*/ obj) { return unsafe.getShort(obj, offset); }
-        void setFieldS(Object /*C*/ obj, short x) { unsafe.putShort(obj, offset, x); }
-        char getFieldC(Object /*C*/ obj) { return unsafe.getChar(obj, offset); }
-        void setFieldC(Object /*C*/ obj, char x) { unsafe.putChar(obj, offset, x); }
-        Object /*V*/ getFieldL(Object /*C*/ obj) { return unsafe.getObject(obj, offset); }
-        void setFieldL(Object /*C*/ obj, Object /*V*/ x) { unsafe.putObject(obj, offset, x); }
-        // cast (V) is OK here, since we wrap convertArguments around the MH.
-
-        static Object staticBase(final MemberName field) {
-            if (!field.isStatic())  return null;
-            return AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                    public Object run() {
-                        try {
-                            Class c = field.getDeclaringClass();
-                            // FIXME:  Should not have to create 'f' to get this value.
-                            java.lang.reflect.Field f = c.getDeclaredField(field.getName());
-                            return unsafe.staticFieldBase(f);
-                        } catch (NoSuchFieldException ee) {
-                            throw uncaughtException(ee);
-                        }
-                    }
-                });
-        }
-
-        int getStaticI() { return unsafe.getInt(base, offset); }
-        void setStaticI(int x) { unsafe.putInt(base, offset, x); }
-        long getStaticJ() { return unsafe.getLong(base, offset); }
-        void setStaticJ(long x) { unsafe.putLong(base, offset, x); }
-        float getStaticF() { return unsafe.getFloat(base, offset); }
-        void setStaticF(float x) { unsafe.putFloat(base, offset, x); }
-        double getStaticD() { return unsafe.getDouble(base, offset); }
-        void setStaticD(double x) { unsafe.putDouble(base, offset, x); }
-        boolean getStaticZ() { return unsafe.getBoolean(base, offset); }
-        void setStaticZ(boolean x) { unsafe.putBoolean(base, offset, x); }
-        byte getStaticB() { return unsafe.getByte(base, offset); }
-        void setStaticB(byte x) { unsafe.putByte(base, offset, x); }
-        short getStaticS() { return unsafe.getShort(base, offset); }
-        void setStaticS(short x) { unsafe.putShort(base, offset, x); }
-        char getStaticC() { return unsafe.getChar(base, offset); }
-        void setStaticC(char x) { unsafe.putChar(base, offset, x); }
-        @SuppressWarnings("unchecked")  // (V) is for internal clarity but triggers warning
-        Object /*V*/ getStaticL() { return unsafe.getObject(base, offset); }
-        void setStaticL(Object /*V*/ x) { unsafe.putObject(base, offset, x); }
-
-        static String fname(Class<?> vclass, boolean isSetter, boolean isStatic) {
-            String stem;
-            if (!isStatic)
-                stem = (!isSetter ? "getField" : "setField");
-            else
-                stem = (!isSetter ? "getStatic" : "setStatic");
-            return stem + Wrapper.basicTypeChar(vclass);
-        }
-        static MethodType ftype(Class<?> cclass, Class<?> vclass, boolean isSetter, boolean isStatic) {
-            MethodType type;
-            if (!isStatic) {
-                if (!isSetter)
-                    return MethodType.methodType(vclass, cclass);
-                else
-                    return MethodType.methodType(void.class, cclass, vclass);
-            } else {
-                if (!isSetter)
-                    return MethodType.methodType(vclass);
-                else
-                    return MethodType.methodType(void.class, vclass);
-            }
-        }
-        static MethodHandle fhandle(Class<?> cclass, Class<?> vclass, boolean isSetter, boolean isStatic) {
-            String name = FieldAccessor.fname(vclass, isSetter, isStatic);
-            if (cclass.isPrimitive())  throw newIllegalArgumentException("primitive "+cclass);
-            Class<?> ecclass = Object.class;  //erase this type
-            Class<?> evclass = vclass;
-            if (!evclass.isPrimitive())  evclass = Object.class;
-            MethodType type = FieldAccessor.ftype(ecclass, evclass, isSetter, isStatic);
-            MethodHandle mh;
-            try {
-                mh = IMPL_LOOKUP.findVirtual(FieldAccessor.class, name, type);
-            } catch (ReflectiveOperationException ex) {
-                throw uncaughtException(ex);
-            }
-            if (evclass != vclass || (!isStatic && ecclass != cclass)) {
-                MethodType strongType = FieldAccessor.ftype(cclass, vclass, isSetter, isStatic);
-                strongType = strongType.insertParameterTypes(0, FieldAccessor.class);
-                mh = convertArguments(mh, strongType, 0);
-            }
-            return mh;
-        }
-
+    static final class ArrayAccessor {
         /// Support for array element access
-        static final HashMap<Class<?>, MethodHandle[]> ARRAY_CACHE =
-                new HashMap<Class<?>, MethodHandle[]>();
-        // FIXME: Cache on the classes themselves, not here.
-        static boolean doCache(Class<?> elemClass) {
-            if (elemClass.isPrimitive())  return true;
-            ClassLoader cl = elemClass.getClassLoader();
-            return cl == null || cl == ClassLoader.getSystemClassLoader();
-        }
-        static int getElementI(int[] a, int i) { return a[i]; }
-        static void setElementI(int[] a, int i, int x) { a[i] = x; }
-        static long getElementJ(long[] a, int i) { return a[i]; }
-        static void setElementJ(long[] a, int i, long x) { a[i] = x; }
-        static float getElementF(float[] a, int i) { return a[i]; }
-        static void setElementF(float[] a, int i, float x) { a[i] = x; }
-        static double getElementD(double[] a, int i) { return a[i]; }
-        static void setElementD(double[] a, int i, double x) { a[i] = x; }
-        static boolean getElementZ(boolean[] a, int i) { return a[i]; }
-        static void setElementZ(boolean[] a, int i, boolean x) { a[i] = x; }
-        static byte getElementB(byte[] a, int i) { return a[i]; }
-        static void setElementB(byte[] a, int i, byte x) { a[i] = x; }
-        static short getElementS(short[] a, int i) { return a[i]; }
-        static void setElementS(short[] a, int i, short x) { a[i] = x; }
-        static char getElementC(char[] a, int i) { return a[i]; }
-        static void setElementC(char[] a, int i, char x) { a[i] = x; }
-        static Object getElementL(Object[] a, int i) { return a[i]; }
-        static void setElementL(Object[] a, int i, Object x) { a[i] = x; }
-        static <V> V getElementL(Class<V[]> aclass, V[] a, int i) { return aclass.cast(a)[i]; }
-        static <V> void setElementL(Class<V[]> aclass, V[] a, int i, V x) { aclass.cast(a)[i] = x; }
+        static final HashMap<Class<?>, MethodHandle> GETTER_CACHE = new HashMap<>();  // TODO use it
+        static final HashMap<Class<?>, MethodHandle> SETTER_CACHE = new HashMap<>();  // TODO use it
 
-        static String aname(Class<?> aclass, boolean isSetter) {
-            Class<?> vclass = aclass.getComponentType();
-            if (vclass == null)  throw new IllegalArgumentException();
-            return (!isSetter ? "getElement" : "setElement") + Wrapper.basicTypeChar(vclass);
+        static int     getElementI(int[]     a, int i)            { return              a[i]; }
+        static long    getElementJ(long[]    a, int i)            { return              a[i]; }
+        static float   getElementF(float[]   a, int i)            { return              a[i]; }
+        static double  getElementD(double[]  a, int i)            { return              a[i]; }
+        static boolean getElementZ(boolean[] a, int i)            { return              a[i]; }
+        static byte    getElementB(byte[]    a, int i)            { return              a[i]; }
+        static short   getElementS(short[]   a, int i)            { return              a[i]; }
+        static char    getElementC(char[]    a, int i)            { return              a[i]; }
+        static Object  getElementL(Object[]  a, int i)            { return              a[i]; }
+
+        static void    setElementI(int[]     a, int i, int     x) {              a[i] = x; }
+        static void    setElementJ(long[]    a, int i, long    x) {              a[i] = x; }
+        static void    setElementF(float[]   a, int i, float   x) {              a[i] = x; }
+        static void    setElementD(double[]  a, int i, double  x) {              a[i] = x; }
+        static void    setElementZ(boolean[] a, int i, boolean x) {              a[i] = x; }
+        static void    setElementB(byte[]    a, int i, byte    x) {              a[i] = x; }
+        static void    setElementS(short[]   a, int i, short   x) {              a[i] = x; }
+        static void    setElementC(char[]    a, int i, char    x) {              a[i] = x; }
+        static void    setElementL(Object[]  a, int i, Object  x) {              a[i] = x; }
+
+        static Object  getElementL(Class<?> arrayClass, Object[] a, int i)           { arrayClass.cast(a); return a[i]; }
+        static void    setElementL(Class<?> arrayClass, Object[] a, int i, Object x) { arrayClass.cast(a); a[i] = x; }
+
+        // Weakly typed wrappers of Object[] accessors:
+        static Object  getElementL(Object    a, int i)            { return getElementL((Object[])a, i); }
+        static void    setElementL(Object    a, int i, Object  x) {        setElementL((Object[]) a, i, x); }
+        static Object  getElementL(Object   arrayClass, Object a, int i)             { return getElementL((Class<?>) arrayClass, (Object[])a, i); }
+        static void    setElementL(Object   arrayClass, Object a, int i, Object x)   {        setElementL((Class<?>) arrayClass, (Object[])a, i, x); }
+
+        static boolean needCast(Class<?> arrayClass) {
+            Class<?> elemClass = arrayClass.getComponentType();
+            return !elemClass.isPrimitive() && elemClass != Object.class;
         }
-        static MethodType atype(Class<?> aclass, boolean isSetter) {
-            Class<?> vclass = aclass.getComponentType();
-            if (!isSetter)
-                return MethodType.methodType(vclass, aclass, int.class);
-            else
-                return MethodType.methodType(void.class, aclass, int.class, vclass);
+        static String name(Class<?> arrayClass, boolean isSetter) {
+            Class<?> elemClass = arrayClass.getComponentType();
+            if (elemClass == null)  throw new IllegalArgumentException();
+            return (!isSetter ? "getElement" : "setElement") + Wrapper.basicTypeChar(elemClass);
         }
-        static MethodHandle ahandle(Class<?> aclass, boolean isSetter) {
-            Class<?> vclass = aclass.getComponentType();
-            String name = FieldAccessor.aname(aclass, isSetter);
-            Class<?> caclass = null;
-            if (!vclass.isPrimitive() && vclass != Object.class) {
-                caclass = aclass;
-                aclass = Object[].class;
-                vclass = Object.class;
+        static final boolean USE_WEAKLY_TYPED_ARRAY_ACCESSORS = false;  // FIXME: decide
+        static MethodType type(Class<?> arrayClass, boolean isSetter) {
+            Class<?> elemClass = arrayClass.getComponentType();
+            Class<?> arrayArgClass = arrayClass;
+            if (!elemClass.isPrimitive()) {
+                arrayArgClass = Object[].class;
+                if (USE_WEAKLY_TYPED_ARRAY_ACCESSORS)
+                    arrayArgClass = Object.class;
             }
-            MethodType type = FieldAccessor.atype(aclass, isSetter);
-            if (caclass != null)
-                type = type.insertParameterTypes(0, Class.class);
-            MethodHandle mh;
+            if (!needCast(arrayClass)) {
+                return !isSetter ?
+                    MethodType.methodType(elemClass,  arrayArgClass, int.class) :
+                    MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
+            } else {
+                Class<?> classArgClass = Class.class;
+                if (USE_WEAKLY_TYPED_ARRAY_ACCESSORS)
+                    classArgClass = Object.class;
+                return !isSetter ?
+                    MethodType.methodType(Object.class, classArgClass, arrayArgClass, int.class) :
+                    MethodType.methodType(void.class,   classArgClass, arrayArgClass, int.class, Object.class);
+            }
+        }
+        static MethodType correctType(Class<?> arrayClass, boolean isSetter) {
+            Class<?> elemClass = arrayClass.getComponentType();
+            return !isSetter ?
+                    MethodType.methodType(elemClass,  arrayClass, int.class) :
+                    MethodType.methodType(void.class, arrayClass, int.class, elemClass);
+        }
+        static MethodHandle getAccessor(Class<?> arrayClass, boolean isSetter) {
+            String     name = name(arrayClass, isSetter);
+            MethodType type = type(arrayClass, isSetter);
             try {
-                mh = IMPL_LOOKUP.findStatic(FieldAccessor.class, name, type);
+                return IMPL_LOOKUP.findStatic(ArrayAccessor.class, name, type);
             } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
-            if (caclass != null) {
-                MethodType strongType = FieldAccessor.atype(caclass, isSetter);
-                mh = mh.bindTo(caclass);
-                mh = convertArguments(mh, strongType, 0);
-            }
-            return mh;
         }
     }
 
-    /** Bind a predetermined first argument to the given direct method handle.
-     * Callable only from MethodHandles.
-     * @param token Proof that the caller has access to this package.
-     * @param target Any direct method handle.
-     * @param receiver Receiver (or first static method argument) to pre-bind.
-     * @return a BoundMethodHandle for the given DirectMethodHandle, or null if it does not exist
+    /**
+     * Create a JVM-level adapter method handle to conform the given method
+     * handle to the similar newType, using only pairwise argument conversions.
+     * For each argument, convert incoming argument to the exact type needed.
+     * The argument conversions allowed are casting, boxing and unboxing,
+     * integral widening or narrowing, and floating point widening or narrowing.
+     * @param srcType required call type
+     * @param target original method handle
+     * @param level which strength of conversion is allowed
+     * @return an adapter to the original handle with the desired new type,
+     *          or the original target if the types are already identical
+     *          or null if the adaptation cannot be made
      */
-    static
-    MethodHandle bindReceiver(MethodHandle target, Object receiver) {
-        if (receiver == null)  return null;
-        if (target instanceof AdapterMethodHandle &&
-            ((AdapterMethodHandle)target).conversionOp() == MethodHandleNatives.Constants.OP_RETYPE_ONLY
-            ) {
-            Object info = MethodHandleNatives.getTargetInfo(target);
-            if (info instanceof DirectMethodHandle) {
-                DirectMethodHandle dmh = (DirectMethodHandle) info;
-                if (dmh.type().parameterType(0).isAssignableFrom(receiver.getClass())) {
-                    MethodHandle bmh = new BoundMethodHandle(dmh, receiver, 0);
-                    MethodType newType = target.type().dropParameterTypes(0, 1);
-                    return convertArguments(bmh, newType, bmh.type(), 0);
+    static MethodHandle makePairwiseConvert(MethodHandle target, MethodType srcType, int level) {
+        assert(level >= 0 && level <= 2);
+        MethodType dstType = target.type();
+        assert(dstType.parameterCount() == target.type().parameterCount());
+        if (srcType == dstType)
+            return target;
+
+        // Calculate extra arguments (temporaries) required in the names array.
+        // FIXME: Use an ArrayList<Name>.  Some arguments require more than one conversion step.
+        int extra = 0;
+        for (int i = 0; i < srcType.parameterCount(); i++) {
+            Class<?> src = srcType.parameterType(i);
+            Class<?> dst = dstType.parameterType(i);
+            if (!VerifyType.isNullConversion(src, dst)) {
+                extra++;
+            }
+        }
+
+        Class<?> needReturn = srcType.returnType();
+        Class<?> haveReturn = dstType.returnType();
+        boolean retConv = !VerifyType.isNullConversion(haveReturn, needReturn);
+
+        // Now build a LambdaForm.
+        MethodType lambdaType = srcType.invokerType();
+        Name[] names = arguments(extra + 1, lambdaType);
+        int[] indexes = new int[lambdaType.parameterCount()];
+
+        MethodType midType = dstType;
+        for (int i = 0, argIndex = 1, tmpIndex = lambdaType.parameterCount(); i < srcType.parameterCount(); i++, argIndex++) {
+            Class<?> src = srcType.parameterType(i);
+            Class<?> dst = midType.parameterType(i);
+
+            if (VerifyType.isNullConversion(src, dst)) {
+                // do nothing: difference is trivial
+                indexes[i] = argIndex;
+                continue;
+            }
+
+            // Work the current type backward toward the desired caller type:
+            midType = midType.changeParameterType(i, src);
+
+            // Tricky case analysis follows.
+            MethodHandle fn = null;
+            if (src.isPrimitive()) {
+                if (dst.isPrimitive()) {
+                    fn = ValueConversions.convertPrimitive(src, dst);
+                } else {
+                    Wrapper w = Wrapper.forPrimitiveType(src);
+                    MethodHandle boxMethod = ValueConversions.box(w);
+                    if (dst == w.wrapperType())
+                        fn = boxMethod;
+                    else
+                        fn = boxMethod.asType(MethodType.methodType(dst, src));
                 }
-            }
-        }
-        if (target instanceof DirectMethodHandle)
-            return new BoundMethodHandle((DirectMethodHandle)target, receiver, 0);
-        return null;   // let caller try something else
-    }
-
-    /** Bind a predetermined argument to the given arbitrary method handle.
-     * Callable only from MethodHandles.
-     * @param token Proof that the caller has access to this package.
-     * @param target Any method handle.
-     * @param receiver Argument (which can be a boxed primitive) to pre-bind.
-     * @return a suitable BoundMethodHandle
-     */
-    static
-    MethodHandle bindArgument(MethodHandle target, int argnum, Object receiver) {
-        return new BoundMethodHandle(target, receiver, argnum);
-    }
-
-    static MethodHandle permuteArguments(MethodHandle target,
-                                                MethodType newType,
-                                                MethodType oldType,
-                                                int[] permutationOrNull) {
-        assert(oldType.parameterCount() == target.type().parameterCount());
-        int outargs = oldType.parameterCount(), inargs = newType.parameterCount();
-        if (permutationOrNull.length != outargs)
-            throw newIllegalArgumentException("wrong number of arguments in permutation");
-        // Make the individual outgoing argument types match up first.
-        Class<?>[] callTypeArgs = new Class<?>[outargs];
-        for (int i = 0; i < outargs; i++)
-            callTypeArgs[i] = newType.parameterType(permutationOrNull[i]);
-        MethodType callType = MethodType.methodType(oldType.returnType(), callTypeArgs);
-        target = convertArguments(target, callType, oldType, 0);
-        assert(target != null);
-        oldType = target.type();
-        List<Integer> goal = new ArrayList<Integer>();  // i*TOKEN
-        List<Integer> state = new ArrayList<Integer>(); // i*TOKEN
-        List<Integer> drops = new ArrayList<Integer>(); // not tokens
-        List<Integer> dups = new ArrayList<Integer>();  // not tokens
-        final int TOKEN = 10; // to mark items which are symbolic only
-        // state represents the argument values coming into target
-        for (int i = 0; i < outargs; i++) {
-            state.add(permutationOrNull[i] * TOKEN);
-        }
-        // goal represents the desired state
-        for (int i = 0; i < inargs; i++) {
-            if (state.contains(i * TOKEN)) {
-                goal.add(i * TOKEN);
             } else {
-                // adapter must initially drop all unused arguments
-                drops.add(i);
-            }
-        }
-        // detect duplications
-        while (state.size() > goal.size()) {
-            for (int i2 = 0; i2 < state.size(); i2++) {
-                int arg1 = state.get(i2);
-                int i1 = state.indexOf(arg1);
-                if (i1 != i2) {
-                    // found duplicate occurrence at i2
-                    int arg2 = (inargs++) * TOKEN;
-                    state.set(i2, arg2);
-                    dups.add(goal.indexOf(arg1));
-                    goal.add(arg2);
-                }
-            }
-        }
-        assert(state.size() == goal.size());
-        int size = goal.size();
-        while (!state.equals(goal)) {
-            // Look for a maximal sequence of adjacent misplaced arguments,
-            // and try to rotate them into place.
-            int bestRotArg = -10 * TOKEN, bestRotLen = 0;
-            int thisRotArg = -10 * TOKEN, thisRotLen = 0;
-            for (int i = 0; i < size; i++) {
-                int arg = state.get(i);
-                // Does this argument match the current run?
-                if (arg == thisRotArg + TOKEN) {
-                    thisRotArg = arg;
-                    thisRotLen += 1;
-                    if (bestRotLen < thisRotLen) {
-                        bestRotLen = thisRotLen;
-                        bestRotArg = thisRotArg;
+                if (dst.isPrimitive()) {
+                    // Caller has boxed a primitive.  Unbox it for the target.
+                    Wrapper w = Wrapper.forPrimitiveType(dst);
+                    if (level == 0 || VerifyType.isNullConversion(src, w.wrapperType())) {
+                        fn = ValueConversions.unbox(dst);
+                    } else if (src == Object.class || !Wrapper.isWrapperType(src)) {
+                        // Examples:  Object->int, Number->int, Comparable->int; Byte->int, Character->int
+                        // must include additional conversions
+                        // src must be examined at runtime, to detect Byte, Character, etc.
+                        MethodHandle unboxMethod = (level == 1
+                                                    ? ValueConversions.unbox(dst)
+                                                    : ValueConversions.unboxCast(dst));
+                        fn = unboxMethod;
+                    } else {
+                        // Example: Byte->int
+                        // Do this by reformulating the problem to Byte->byte.
+                        Class<?> srcPrim = Wrapper.forWrapperType(src).primitiveType();
+                        MethodHandle unbox = ValueConversions.unbox(srcPrim);
+                        // Compose the two conversions.  FIXME:  should make two Names for this job
+                        fn = unbox.asType(MethodType.methodType(dst, src));
                     }
                 } else {
-                    // The old sequence (if any) stops here.
-                    thisRotLen = 0;
-                    thisRotArg = -10 * TOKEN;
-                    // But maybe a new one starts here also.
-                    int wantArg = goal.get(i);
-                    final int MAX_ARG_ROTATION = AdapterMethodHandle.MAX_ARG_ROTATION;
-                    if (arg != wantArg &&
-                        arg >= wantArg - TOKEN * MAX_ARG_ROTATION &&
-                        arg <= wantArg + TOKEN * MAX_ARG_ROTATION) {
-                        thisRotArg = arg;
-                        thisRotLen = 1;
-                    }
+                    // Simple reference conversion.
+                    // Note:  Do not check for a class hierarchy relation
+                    // between src and dst.  In all cases a 'null' argument
+                    // will pass the cast conversion.
+                    fn = ValueConversions.cast(dst);
                 }
             }
-            if (bestRotLen >= 2) {
-                // Do a rotation if it can improve argument positioning
-                // by at least 2 arguments.  This is not always optimal,
-                // but it seems to catch common cases.
-                int dstEnd = state.indexOf(bestRotArg);
-                int srcEnd = goal.indexOf(bestRotArg);
-                int rotBy = dstEnd - srcEnd;
-                int dstBeg = dstEnd - (bestRotLen - 1);
-                int srcBeg = srcEnd - (bestRotLen - 1);
-                assert((dstEnd | dstBeg | srcEnd | srcBeg) >= 0); // no negs
-                // Make a span which covers both source and destination.
-                int rotBeg = Math.min(dstBeg, srcBeg);
-                int rotEnd = Math.max(dstEnd, srcEnd);
-                int score = 0;
-                for (int i = rotBeg; i <= rotEnd; i++) {
-                    if ((int)state.get(i) != (int)goal.get(i))
-                        score += 1;
-                }
-                List<Integer> rotSpan = state.subList(rotBeg, rotEnd+1);
-                Collections.rotate(rotSpan, -rotBy);  // reverse direction
-                for (int i = rotBeg; i <= rotEnd; i++) {
-                    if ((int)state.get(i) != (int)goal.get(i))
-                        score -= 1;
-                }
-                if (score >= 2) {
-                    // Improved at least two argument positions.  Do it.
-                    List<Class<?>> ptypes = Arrays.asList(oldType.parameterArray());
-                    Collections.rotate(ptypes.subList(rotBeg, rotEnd+1), -rotBy);
-                    MethodType rotType = MethodType.methodType(oldType.returnType(), ptypes);
-                    MethodHandle nextTarget
-                            = AdapterMethodHandle.makeRotateArguments(rotType, target,
-                                    rotBeg, rotSpan.size(), rotBy);
-                    if (nextTarget != null) {
-                        //System.out.println("Rot: "+rotSpan+" by "+rotBy);
-                        target = nextTarget;
-                        oldType = rotType;
-                        continue;
-                    }
-                }
-                // Else de-rotate, and drop through to the swap-fest.
-                Collections.rotate(rotSpan, rotBy);
-            }
-
-            // Now swap like the wind!
-            List<Class<?>> ptypes = Arrays.asList(oldType.parameterArray());
-            for (int i = 0; i < size; i++) {
-                // What argument do I want here?
-                int arg = goal.get(i);
-                if (arg != state.get(i)) {
-                    // Where is it now?
-                    int j = state.indexOf(arg);
-                    Collections.swap(ptypes, i, j);
-                    MethodType swapType = MethodType.methodType(oldType.returnType(), ptypes);
-                    target = AdapterMethodHandle.makeSwapArguments(swapType, target, i, j);
-                    if (target == null)  throw newIllegalArgumentException("cannot swap");
-                    assert(target.type() == swapType);
-                    oldType = swapType;
-                    Collections.swap(state, i, j);
-                }
-            }
-            // One pass of swapping must finish the job.
-            assert(state.equals(goal));
+            names[tmpIndex] = new Name(fn, names[argIndex]);
+            indexes[i] = tmpIndex;
+            tmpIndex++;
         }
-        while (!dups.isEmpty()) {
-            // Grab a contiguous trailing sequence of dups.
-            int grab = dups.size() - 1;
-            int dupArgPos = dups.get(grab), dupArgCount = 1;
-            while (grab - 1 >= 0) {
-                int dup0 = dups.get(grab - 1);
-                if (dup0 != dupArgPos - 1)  break;
-                dupArgPos -= 1;
-                dupArgCount += 1;
-                grab -= 1;
-            }
-            //if (dupArgCount > 1)  System.out.println("Dup: "+dups.subList(grab, dups.size()));
-            dups.subList(grab, dups.size()).clear();
-            // In the new target type drop that many args from the tail:
-            List<Class<?>> ptypes = oldType.parameterList();
-            ptypes = ptypes.subList(0, ptypes.size() - dupArgCount);
-            MethodType dupType = MethodType.methodType(oldType.returnType(), ptypes);
-            target = AdapterMethodHandle.makeDupArguments(dupType, target, dupArgPos, dupArgCount);
-            if (target == null)
-                throw newIllegalArgumentException("cannot dup");
-            oldType = target.type();
-        }
-        while (!drops.isEmpty()) {
-            // Grab a contiguous initial sequence of drops.
-            int dropArgPos = drops.get(0), dropArgCount = 1;
-            while (dropArgCount < drops.size()) {
-                int drop1 = drops.get(dropArgCount);
-                if (drop1 != dropArgPos + dropArgCount)  break;
-                dropArgCount += 1;
-            }
-            //if (dropArgCount > 1)  System.out.println("Drop: "+drops.subList(0, dropArgCount));
-            drops.subList(0, dropArgCount).clear();
-            List<Class<?>> dropTypes = newType.parameterList()
-                    .subList(dropArgPos, dropArgPos + dropArgCount);
-            MethodType dropType = oldType.insertParameterTypes(dropArgPos, dropTypes);
-            target = AdapterMethodHandle.makeDropArguments(dropType, target, dropArgPos, dropArgCount);
-            if (target == null)  throw newIllegalArgumentException("cannot drop");
-            oldType = target.type();
-        }
-        target = convertArguments(target, newType, oldType, 0);
-        assert(target != null);
-        return target;
-    }
-
-    /*non-public*/ static
-    MethodHandle convertArguments(MethodHandle target, MethodType newType, int level) {
-        MethodType oldType = target.type();
-        if (oldType.equals(newType))
-            return target;
-        assert(level > 1 || oldType.isConvertibleTo(newType));
-        MethodHandle retFilter = null;
-        Class<?> oldRT = oldType.returnType();
-        Class<?> newRT = newType.returnType();
-        if (!VerifyType.isNullConversion(oldRT, newRT)) {
-            if (oldRT == void.class) {
-                Wrapper wrap = newRT.isPrimitive() ? Wrapper.forPrimitiveType(newRT) : Wrapper.OBJECT;
-                retFilter = ValueConversions.zeroConstantFunction(wrap);
+        if (retConv) {
+            MethodHandle adjustReturn;
+            if (haveReturn == void.class) {
+                // synthesize a zero value for the given void
+                Object zero = Wrapper.forBasicType(needReturn).zero();
+                adjustReturn = MethodHandles.constant(needReturn, zero);
             } else {
-                retFilter = MethodHandles.identity(newRT);
-                retFilter = convertArguments(retFilter, retFilter.type().changeParameterType(0, oldRT), level);
+                MethodHandle identity = MethodHandles.identity(needReturn);
+                MethodType needConversion = identity.type().changeParameterType(0, haveReturn);
+                adjustReturn = makePairwiseConvert(identity, needConversion, level);
             }
-            newType = newType.changeReturnType(oldRT);
+            target = makeCollectArguments(adjustReturn, target, 0, false);
         }
-        MethodHandle res = null;
-        Exception ex = null;
-        try {
-            res = convertArguments(target, newType, oldType, level);
-        } catch (IllegalArgumentException ex1) {
-            ex = ex1;
+
+        // Build argument array for the call.
+        Name[] targetArgs = new Name[dstType.parameterCount()];
+        for (int i = 0; i < dstType.parameterCount(); i++) {
+            int idx = indexes[i];
+            targetArgs[i] = names[idx];
         }
-        if (res == null) {
-            WrongMethodTypeException wmt = new WrongMethodTypeException("cannot convert to "+newType+": "+target);
-            wmt.initCause(ex);
-            throw wmt;
-        }
-        if (retFilter != null)
-            res = MethodHandles.filterReturnValue(res, retFilter);
-        return res;
+        names[names.length - 1] = new Name(target, (Object[]) targetArgs);
+        LambdaForm form = new LambdaForm("convert", lambdaType.parameterCount(), names);
+        return new SimpleMethodHandle(srcType, form);
     }
 
-    static MethodHandle convertArguments(MethodHandle target,
-                                                MethodType newType,
-                                                MethodType oldType,
-                                                int level) {
-        assert(oldType.parameterCount() == target.type().parameterCount());
-        if (newType == oldType)
-            return target;
-        if (oldType.parameterCount() != newType.parameterCount())
-            throw newIllegalArgumentException("mismatched parameter count", oldType, newType);
-        return AdapterMethodHandle.makePairwiseConvert(newType, target, level);
+    static MethodHandle makeReferenceIdentity(Class<?> refType) {
+        MethodType lambdaType = MethodType.genericMethodType(1).invokerType();
+        Name[] names = arguments(1, lambdaType);
+        names[names.length - 1] = new Name(ValueConversions.identity(), names[1]);
+        LambdaForm form = new LambdaForm("identity", lambdaType.parameterCount(), names);
+        return new SimpleMethodHandle(MethodType.methodType(refType, refType), form);
     }
 
-    static MethodHandle spreadArguments(MethodHandle target, Class<?> arrayType, int arrayLength) {
-        MethodType oldType = target.type();
-        int nargs = oldType.parameterCount();
-        int keepPosArgs = nargs - arrayLength;
-        MethodType newType = oldType
-                .dropParameterTypes(keepPosArgs, nargs)
-                .insertParameterTypes(keepPosArgs, arrayType);
-        return spreadArguments(target, newType, keepPosArgs, arrayType, arrayLength);
-    }
-    // called internally only
-    static MethodHandle spreadArgumentsFromPos(MethodHandle target, MethodType newType, int spreadArgPos) {
-        int arrayLength = target.type().parameterCount() - spreadArgPos;
-        return spreadArguments(target, newType, spreadArgPos, Object[].class, arrayLength);
-    }
-    static MethodHandle spreadArguments(MethodHandle target,
-                                               MethodType newType,
-                                               int spreadArgPos,
-                                               Class<?> arrayType,
-                                               int arrayLength) {
-        // TO DO: maybe allow the restarg to be Object and implicitly cast to Object[]
-        MethodType oldType = target.type();
-        // spread the last argument of newType to oldType
-        assert(arrayLength == oldType.parameterCount() - spreadArgPos);
-        assert(newType.parameterType(spreadArgPos) == arrayType);
-        return AdapterMethodHandle.makeSpreadArguments(newType, target, arrayType, spreadArgPos, arrayLength);
-    }
-
-    static MethodHandle collectArguments(MethodHandle target,
-                                                int collectArg,
-                                                MethodHandle collector) {
+    static MethodHandle makeVarargsCollector(MethodHandle target, Class<?> arrayType) {
         MethodType type = target.type();
-        Class<?> collectType = collector.type().returnType();
-        assert(collectType != void.class);  // else use foldArguments
-        if (collectType != type.parameterType(collectArg))
-            target = target.asType(type.changeParameterType(collectArg, collectType));
-        MethodType newType = type
-                .dropParameterTypes(collectArg, collectArg+1)
-                .insertParameterTypes(collectArg, collector.type().parameterArray());
-        return collectArguments(target, newType, collectArg, collector);
-    }
-    static MethodHandle collectArguments(MethodHandle target,
-                                                MethodType newType,
-                                                int collectArg,
-                                                MethodHandle collector) {
-        MethodType oldType = target.type();     // (a...,c)=>r
-        //         newType                      // (a..., b...)=>r
-        MethodType colType = collector.type();  // (b...)=>c
-        //         oldType                      // (a..., b...)=>r
-        assert(newType.parameterCount() == collectArg + colType.parameterCount());
-        assert(oldType.parameterCount() == collectArg + 1);
-        assert(AdapterMethodHandle.canCollectArguments(oldType, colType, collectArg, false));
-        return AdapterMethodHandle.makeCollectArguments(target, collector, collectArg, false);
+        int last = type.parameterCount() - 1;
+        if (type.parameterType(last) != arrayType)
+            target = target.asType(type.changeParameterType(last, arrayType));
+        target = target.asFixedArity();  // make sure this attribute is turned off
+        return new AsVarargsCollector(target, target.type(), arrayType);
     }
 
-    static MethodHandle filterArgument(MethodHandle target,
-                                       int pos,
-                                       MethodHandle filter) {
-        MethodType ttype = target.type();
-        MethodType ftype = filter.type();
-        assert(ftype.parameterCount() == 1);
-        return AdapterMethodHandle.makeCollectArguments(target, filter, pos, false);
+    static class AsVarargsCollector extends MethodHandle {
+        MethodHandle target;
+        final Class<?> arrayType;
+        MethodHandle cache;
+
+        AsVarargsCollector(MethodHandle target, MethodType type, Class<?> arrayType) {
+            super(type, reinvokerForm(type));
+            this.target = target;
+            this.arrayType = arrayType;
+            this.cache = target.asCollector(arrayType, 0);
+        }
+
+        @Override MethodHandle reinvokerTarget() { return target; }
+
+        @Override
+        public boolean isVarargsCollector() {
+            return true;
+        }
+
+        @Override
+        public MethodHandle asFixedArity() {
+            return target;
+        }
+
+        @Override
+        public MethodHandle asType(MethodType newType) {
+            MethodType type = this.type();
+            int collectArg = type.parameterCount() - 1;
+            int newArity = newType.parameterCount();
+            if (newArity == collectArg+1 &&
+                type.parameterType(collectArg).isAssignableFrom(newType.parameterType(collectArg))) {
+                // if arity and trailing parameter are compatible, do normal thing
+                return asFixedArity().asType(newType);
+            }
+            // check cache
+            if (cache.type().parameterCount() == newArity)
+                return cache.asType(newType);
+            // build and cache a collector
+            int arrayLength = newArity - collectArg;
+            MethodHandle collector;
+            try {
+                collector = asFixedArity().asCollector(arrayType, arrayLength);
+            } catch (IllegalArgumentException ex) {
+                throw new WrongMethodTypeException("cannot build collector");
+            }
+            cache = collector;
+            return collector.asType(newType);
+        }
+
+        @Override
+        MethodHandle setVarargs(MemberName member) {
+            if (member.isVarargs())  return this;
+            return asFixedArity();
+        }
+
+        @Override
+        MethodHandle viewAsType(MethodType newType) {
+            MethodHandle mh = super.viewAsType(newType);
+            // put back the varargs bit:
+            MethodType type = mh.type();
+            int arity = type.parameterCount();
+            return mh.asVarargsCollector(type.parameterType(arity-1));
+        }
+
+        @Override
+        MemberName internalMemberName() {
+            return asFixedArity().internalMemberName();
+        }
+
+
+        @Override
+        MethodHandle bindArgument(int pos, char basicType, Object value) {
+            return asFixedArity().bindArgument(pos, basicType, value);
+        }
+
+        @Override
+        MethodHandle bindReceiver(Object receiver) {
+            return asFixedArity().bindReceiver(receiver);
+        }
+
+        @Override
+        MethodHandle dropArguments(MethodType srcType, int pos, int drops) {
+            return asFixedArity().dropArguments(srcType, pos, drops);
+        }
+
+        @Override
+        MethodHandle permuteArguments(MethodType newType, int[] reorder) {
+            return asFixedArity().permuteArguments(newType, reorder);
+        }
     }
 
-    static MethodHandle foldArguments(MethodHandle target,
-                                      MethodType newType,
-                                      int foldPos,
-                                      MethodHandle combiner) {
-        MethodType oldType = target.type();
-        MethodType ctype = combiner.type();
-        assert(AdapterMethodHandle.canCollectArguments(oldType, ctype, foldPos, true));
-        return AdapterMethodHandle.makeCollectArguments(target, combiner, foldPos, true);
+    /** Factory method:  Spread selected argument. */
+    static MethodHandle makeSpreadArguments(MethodHandle target,
+                                            Class<?> spreadArgType, int spreadArgPos, int spreadArgCount) {
+        MethodType targetType = target.type();
+
+        for (int i = 0; i < spreadArgCount; i++) {
+            Class<?> arg = VerifyType.spreadArgElementType(spreadArgType, i);
+            if (arg == null)  arg = Object.class;
+            targetType = targetType.changeParameterType(spreadArgPos + i, arg);
+        }
+        target = target.asType(targetType);
+
+        MethodType srcType = targetType
+                .replaceParameterTypes(spreadArgPos, spreadArgPos + spreadArgCount, spreadArgType);
+        // Now build a LambdaForm.
+        MethodType lambdaType = srcType.invokerType();
+        Name[] names = arguments(spreadArgCount + 2, lambdaType);
+        int nameCursor = lambdaType.parameterCount();
+        int[] indexes = new int[targetType.parameterCount()];
+
+        for (int i = 0, argIndex = 1; i < targetType.parameterCount() + 1; i++, argIndex++) {
+            Class<?> src = lambdaType.parameterType(i);
+            if (i == spreadArgPos) {
+                // Spread the array.
+                MethodHandle aload = MethodHandles.arrayElementGetter(spreadArgType);
+                Name array = names[argIndex];
+                names[nameCursor++] = new Name(NF_checkSpreadArgument, array, spreadArgCount);
+                for (int j = 0; j < spreadArgCount; i++, j++) {
+                    indexes[i] = nameCursor;
+                    names[nameCursor++] = new Name(aload, array, j);
+                }
+            } else if (i < indexes.length) {
+                indexes[i] = argIndex;
+            }
+        }
+        assert(nameCursor == names.length-1);  // leave room for the final call
+
+        // Build argument array for the call.
+        Name[] targetArgs = new Name[targetType.parameterCount()];
+        for (int i = 0; i < targetType.parameterCount(); i++) {
+            int idx = indexes[i];
+            targetArgs[i] = names[idx];
+        }
+        names[names.length - 1] = new Name(target, (Object[]) targetArgs);
+
+        LambdaForm form = new LambdaForm("spread", lambdaType.parameterCount(), names);
+        return new SimpleMethodHandle(srcType, form);
     }
 
-    static
-    MethodHandle dropArguments(MethodHandle target,
-                               MethodType newType, int argnum) {
-        int drops = newType.parameterCount() - target.type().parameterCount();
-        return AdapterMethodHandle.makeDropArguments(newType, target, argnum, drops);
+    static void checkSpreadArgument(Object av, int n) {
+        if (av == null) {
+            if (n == 0)  return;
+        } else if (av instanceof Object[]) {
+            int len = ((Object[])av).length;
+            if (len == n)  return;
+        } else {
+            int len = java.lang.reflect.Array.getLength(av);
+            if (len == n)  return;
+        }
+        // fall through to error:
+        throw newIllegalArgumentException("Array is not of length "+n);
+    }
+
+    private static final NamedFunction NF_checkSpreadArgument;
+    static {
+        try {
+            NF_checkSpreadArgument = new NamedFunction(MethodHandleImpl.class
+                    .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
+            NF_checkSpreadArgument.resolve();
+        } catch (ReflectiveOperationException ex) {
+            throw new InternalError(ex);
+        }
+    }
+
+    /** Factory method:  Collect or filter selected argument(s). */
+    static MethodHandle makeCollectArguments(MethodHandle target,
+                MethodHandle collector, int collectArgPos, boolean retainOriginalArgs) {
+        MethodType targetType = target.type();          // (a..., c, [b...])=>r
+        MethodType collectorType = collector.type();    // (b...)=>c
+        int collectArgCount = collectorType.parameterCount();
+        Class<?> collectValType = collectorType.returnType();
+        int collectValCount = (collectValType == void.class ? 0 : 1);
+        MethodType srcType = targetType                 // (a..., [b...])=>r
+                .dropParameterTypes(collectArgPos, collectArgPos+collectValCount);
+        if (!retainOriginalArgs) {                      // (a..., b...)=>r
+            srcType = srcType.insertParameterTypes(collectArgPos, collectorType.parameterList());
+        }
+        // in  arglist: [0: ...keep1 | cpos: collect...  | cpos+cacount: keep2... ]
+        // out arglist: [0: ...keep1 | cpos: collectVal? | cpos+cvcount: keep2... ]
+        // out(retain): [0: ...keep1 | cpos: cV? coll... | cpos+cvc+cac: keep2... ]
+
+        // Now build a LambdaForm.
+        MethodType lambdaType = srcType.invokerType();
+        Name[] names = arguments(2, lambdaType);
+        final int collectNamePos = names.length - 2;
+        final int targetNamePos  = names.length - 1;
+
+        Name[] collectorArgs = Arrays.copyOfRange(names, 1 + collectArgPos, 1 + collectArgPos + collectArgCount);
+        names[collectNamePos] = new Name(collector, (Object[]) collectorArgs);
+
+        // Build argument array for the target.
+        // Incoming LF args to copy are: [ (mh) headArgs collectArgs tailArgs ].
+        // Output argument array is [ headArgs (collectVal)? (collectArgs)? tailArgs ].
+        Name[] targetArgs = new Name[targetType.parameterCount()];
+        int inputArgPos  = 1;  // incoming LF args to copy to target
+        int targetArgPos = 0;  // fill pointer for targetArgs
+        int chunk = collectArgPos;  // |headArgs|
+        System.arraycopy(names, inputArgPos, targetArgs, targetArgPos, chunk);
+        inputArgPos  += chunk;
+        targetArgPos += chunk;
+        if (collectValType != void.class) {
+            targetArgs[targetArgPos++] = names[collectNamePos];
+        }
+        chunk = collectArgCount;
+        if (retainOriginalArgs) {
+            System.arraycopy(names, inputArgPos, targetArgs, targetArgPos, chunk);
+            targetArgPos += chunk;   // optionally pass on the collected chunk
+        }
+        inputArgPos += chunk;
+        chunk = targetArgs.length - targetArgPos;  // all the rest
+        System.arraycopy(names, inputArgPos, targetArgs, targetArgPos, chunk);
+        assert(inputArgPos + chunk == collectNamePos);  // use of rest of input args also
+        names[targetNamePos] = new Name(target, (Object[]) targetArgs);
+
+        LambdaForm form = new LambdaForm("collect", lambdaType.parameterCount(), names);
+        return new SimpleMethodHandle(srcType, form);
     }
 
     static
@@ -735,47 +533,42 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     MethodHandle makeGuardWithTest(MethodHandle test,
                                    MethodHandle target,
                                    MethodHandle fallback) {
-        // gwt(arg...)
-        // [fold]=> continueAfterTest(z=test(arg...), arg...)
-        // [filter]=> (tf=select(z))(arg...)
-        //    where select(z) = select(z, t, f).bindTo(t, f) => z ? t f
-        // [tailcall]=> tf(arg...)
-        assert(test.type().returnType() == boolean.class);
-        MethodType targetType = target.type();
-        MethodType foldTargetType = targetType.insertParameterTypes(0, boolean.class);
-        assert(AdapterMethodHandle.canCollectArguments(foldTargetType, test.type(), 0, true));
-        // working backwards, as usual:
-        assert(target.type().equals(fallback.type()));
-        MethodHandle tailcall = MethodHandles.exactInvoker(target.type());
-        MethodHandle select = selectAlternative();
-        select = bindArgument(select, 2, CountingMethodHandle.wrap(fallback));
-        select = bindArgument(select, 1, CountingMethodHandle.wrap(target));
-        // select(z: boolean) => (z ? target : fallback)
-        MethodHandle filter = filterArgument(tailcall, 0, select);
-        assert(filter.type().parameterType(0) == boolean.class);
-        MethodHandle fold = foldArguments(filter, filter.type().dropParameterTypes(0, 1), 0, test);
-        return fold;
+        MethodType basicType = target.type().basicType();
+        MethodHandle invokeBasic = MethodHandles.basicInvoker(basicType);
+        int arity = basicType.parameterCount();
+        int extraNames = 3;
+        MethodType lambdaType = basicType.invokerType();
+        Name[] names = arguments(extraNames, lambdaType);
+
+        Object[] testArgs   = Arrays.copyOfRange(names, 1, 1 + arity, Object[].class);
+        Object[] targetArgs = Arrays.copyOfRange(names, 0, 1 + arity, Object[].class);
+
+        // call test
+        names[arity + 1] = new Name(test, testArgs);
+
+        // call selectAlternative
+        Object[] selectArgs = { names[arity + 1], target, fallback };
+        names[arity + 2] = new Name(MethodHandleImpl.selectAlternative(), selectArgs);
+        targetArgs[0] = names[arity + 2];
+
+        // call target or fallback
+        names[arity + 3] = new Name(new NamedFunction(invokeBasic), targetArgs);
+
+        LambdaForm form = new LambdaForm("guard", lambdaType.parameterCount(), names);
+        return new SimpleMethodHandle(target.type(), form);
     }
 
-    private static class GuardWithCatch extends BoundMethodHandle {
+    private static class GuardWithCatch {
         private final MethodHandle target;
         private final Class<? extends Throwable> exType;
         private final MethodHandle catcher;
-        GuardWithCatch(MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
-            this(INVOKES[target.type().parameterCount()], target, exType, catcher);
-        }
         // FIXME: Build the control flow out of foldArguments.
-        GuardWithCatch(MethodHandle invoker,
-                       MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
-            super(invoker);
+        GuardWithCatch(MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher) {
             this.target = target;
             this.exType = exType;
             this.catcher = catcher;
         }
-        @Override
-        String debugString() {
-            return addTypeString(target, this);
-        }
+        @LambdaForm.Hidden
         private Object invoke_V(Object... av) throws Throwable {
             try {
                 return target.invokeExact(av);
@@ -784,6 +577,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 return catcher.invokeExact(t, av);
             }
         }
+        @LambdaForm.Hidden
         private Object invoke_L0() throws Throwable {
             try {
                 return target.invokeExact();
@@ -792,6 +586,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 return catcher.invokeExact(t);
             }
         }
+        @LambdaForm.Hidden
         private Object invoke_L1(Object a0) throws Throwable {
             try {
                 return target.invokeExact(a0);
@@ -800,6 +595,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 return catcher.invokeExact(t, a0);
             }
         }
+        @LambdaForm.Hidden
         private Object invoke_L2(Object a0, Object a1) throws Throwable {
             try {
                 return target.invokeExact(a0, a1);
@@ -808,6 +604,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 return catcher.invokeExact(t, a0, a1);
             }
         }
+        @LambdaForm.Hidden
         private Object invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
             try {
                 return target.invokeExact(a0, a1, a2);
@@ -816,6 +613,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 return catcher.invokeExact(t, a0, a1, a2);
             }
         }
+        @LambdaForm.Hidden
         private Object invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
             try {
                 return target.invokeExact(a0, a1, a2, a3);
@@ -824,6 +622,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 return catcher.invokeExact(t, a0, a1, a2, a3);
             }
         }
+        @LambdaForm.Hidden
         private Object invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
             try {
                 return target.invokeExact(a0, a1, a2, a3, a4);
@@ -832,6 +631,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 return catcher.invokeExact(t, a0, a1, a2, a3, a4);
             }
         }
+        @LambdaForm.Hidden
         private Object invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
             try {
                 return target.invokeExact(a0, a1, a2, a3, a4, a5);
@@ -840,6 +640,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 return catcher.invokeExact(t, a0, a1, a2, a3, a4, a5);
             }
         }
+        @LambdaForm.Hidden
         private Object invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
             try {
                 return target.invokeExact(a0, a1, a2, a3, a4, a5, a6);
@@ -848,6 +649,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 return catcher.invokeExact(t, a0, a1, a2, a3, a4, a5, a6);
             }
         }
+        @LambdaForm.Hidden
         private Object invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
             try {
                 return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
@@ -857,7 +659,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             }
         }
         static MethodHandle[] makeInvokes() {
-            ArrayList<MethodHandle> invokes = new ArrayList<MethodHandle>();
+            ArrayList<MethodHandle> invokes = new ArrayList<>();
             MethodHandles.Lookup lookup = IMPL_LOOKUP;
             for (;;) {
                 int nargs = invokes.size();
@@ -898,39 +700,60 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MethodType gtype = type.generic();
             MethodType gcatchType = gtype.insertParameterTypes(0, Throwable.class);
             // Note: convertArguments(...2) avoids interface casts present in convertArguments(...0)
-            MethodHandle gtarget = convertArguments(target, gtype, type, 2);
-            MethodHandle gcatcher = convertArguments(catcher, gcatchType, ctype, 2);
-            MethodHandle gguard = new GuardWithCatch(gtarget, exType, gcatcher);
-            if (gtarget == null || gcatcher == null || gguard == null)  return null;
-            return convertArguments(gguard, type, gtype, 2);
+            MethodHandle gtarget = makePairwiseConvert(target, gtype, 2);
+            MethodHandle gcatcher = makePairwiseConvert(catcher, gcatchType, 2);
+            GuardWithCatch gguard = new GuardWithCatch(gtarget, exType, gcatcher);
+            if (gtarget == null || gcatcher == null)  throw new InternalError();
+            MethodHandle ginvoker = GuardWithCatch.INVOKES[nargs].bindReceiver(gguard);
+            return makePairwiseConvert(ginvoker, type, 2);
         } else {
-            MethodType gtype = MethodType.genericMethodType(0, true);
-            MethodType gcatchType = gtype.insertParameterTypes(0, Throwable.class);
-            MethodHandle gtarget = spreadArgumentsFromPos(target, gtype, 0);
+            MethodHandle gtarget = makeSpreadArguments(target, Object[].class, 0, nargs);
             catcher = catcher.asType(ctype.changeParameterType(0, Throwable.class));
-            MethodHandle gcatcher = spreadArgumentsFromPos(catcher, gcatchType, 1);
-            MethodHandle gguard = new GuardWithCatch(GuardWithCatch.VARARGS_INVOKE, gtarget, exType, gcatcher);
-            if (gtarget == null || gcatcher == null || gguard == null)  return null;
-            return collectArguments(gguard, type, 0, ValueConversions.varargsArray(nargs)).asType(type);
+            MethodHandle gcatcher = makeSpreadArguments(catcher, Object[].class, 1, nargs);
+            GuardWithCatch gguard = new GuardWithCatch(gtarget, exType, gcatcher);
+            if (gtarget == null || gcatcher == null)  throw new InternalError();
+            MethodHandle ginvoker = GuardWithCatch.VARARGS_INVOKE.bindReceiver(gguard);
+            return makeCollectArguments(ginvoker, ValueConversions.varargsArray(nargs), 0, false);
         }
     }
 
     static
     MethodHandle throwException(MethodType type) {
-        return AdapterMethodHandle.makeRetypeRaw(type, throwException());
+        assert(Throwable.class.isAssignableFrom(type.parameterType(0)));
+        int arity = type.parameterCount();
+        if (arity > 1) {
+            return throwException(type.dropParameterTypes(1, arity)).dropArguments(type, 1, arity-1);
+        }
+        return makePairwiseConvert(throwException(), type, 2);
     }
 
     static MethodHandle THROW_EXCEPTION;
     static MethodHandle throwException() {
-        if (THROW_EXCEPTION != null)  return THROW_EXCEPTION;
+        MethodHandle mh = THROW_EXCEPTION;
+        if (mh != null)  return mh;
         try {
-            THROW_EXCEPTION
+            mh
             = IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "throwException",
                     MethodType.methodType(Empty.class, Throwable.class));
         } catch (ReflectiveOperationException ex) {
             throw new RuntimeException(ex);
         }
-        return THROW_EXCEPTION;
+        THROW_EXCEPTION = mh;
+        return mh;
     }
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
+
+    static MethodHandle FAKE_METHOD_HANDLE_INVOKE;
+    static
+    MethodHandle fakeMethodHandleInvoke(MemberName method) {
+        MethodType type = method.getInvocationType();
+        assert(type.equals(MethodType.methodType(Object.class, Object[].class)));
+        MethodHandle mh = FAKE_METHOD_HANDLE_INVOKE;
+        if (mh != null)  return mh;
+        mh = throwException(type.insertParameterTypes(0, UnsupportedOperationException.class));
+        mh = mh.bindTo(new UnsupportedOperationException("cannot reflectively invoke MethodHandle"));
+        FAKE_METHOD_HANDLE_INVOKE = mh;
+        return mh;
+    }
+
 }

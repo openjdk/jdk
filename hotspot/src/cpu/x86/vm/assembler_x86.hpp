@@ -1940,6 +1940,7 @@ class MacroAssembler: public Assembler {
   void load_heap_oop(Register dst, Address src);
   void load_heap_oop_not_null(Register dst, Address src);
   void store_heap_oop(Address dst, Register src);
+  void cmp_heap_oop(Register src1, Address src2, Register tmp = noreg);
 
   // Used for storing NULL. All other oop constants should be
   // stored using routines that take a jobject.
@@ -2117,6 +2118,11 @@ class MacroAssembler: public Assembler {
                                Register scan_temp,
                                Label& no_such_interface);
 
+  // virtual method calling
+  void lookup_virtual_method(Register recv_klass,
+                             RegisterOrConstant vtable_index,
+                             Register method_result);
+
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
@@ -2152,14 +2158,7 @@ class MacroAssembler: public Assembler {
                            Label& L_success);
 
   // method handles (JSR 292)
-  void check_method_handle_type(Register mtype_reg, Register mh_reg,
-                                Register temp_reg,
-                                Label& wrong_method_type);
-  void load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
-                                  Register temp_reg);
-  void jump_to_method_handle_entry(Register mh_reg, Register temp_reg);
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
-
 
   //----
   void set_word_if_not_zero(Register reg); // sets reg to 1 if not zero, otherwise 0
@@ -2179,8 +2178,13 @@ class MacroAssembler: public Assembler {
   // prints msg and continues
   void warn(const char* msg);
 
+  // dumps registers and other state
+  void print_state();
+
   static void debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rdx, int rcx, int rax, int eip, char* msg);
   static void debug64(char* msg, int64_t pc, int64_t regs[]);
+  static void print_state32(int rdi, int rsi, int rbp, int rsp, int rbx, int rdx, int rcx, int rax, int eip);
+  static void print_state64(int64_t pc, int64_t regs[]);
 
   void os_breakpoint();
 

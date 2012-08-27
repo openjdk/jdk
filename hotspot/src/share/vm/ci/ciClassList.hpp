@@ -47,6 +47,7 @@ class ciObject;
 class   ciNullObject;
 class   ciInstance;
 class     ciCallSite;
+class     ciMemberName;
 class     ciMethodHandle;
 class   ciMethod;
 class   ciMethodData;
@@ -100,6 +101,7 @@ friend class ciExceptionHandlerStream; \
 friend class ciObject;                 \
 friend class ciNullObject;             \
 friend class ciInstance;               \
+friend class ciMemberName;             \
 friend class ciMethod;                 \
 friend class ciMethodData;             \
 friend class ciMethodHandle;           \

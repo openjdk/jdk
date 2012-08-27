@@ -122,36 +122,6 @@ public class ValueConversionsTest {
     }
 
     @Test
-    public void testUnboxRaw() throws Throwable {
-        //System.out.println("unboxRaw");
-        for (Wrapper w : Wrapper.values()) {
-            if (w == Wrapper.OBJECT)  continue;  // skip this; no raw form
-            //System.out.println(w);
-            for (int n = -5; n < 10; n++) {
-                Object box = w.wrap(n);
-                long expResult = w.unwrapRaw(box);
-                Object box2 = w.wrapRaw(expResult);
-                assertEquals(box, box2);
-                MethodHandle unboxer = ValueConversions.unboxRaw(w.primitiveType());
-                long result = -1;
-                switch (w) {
-                    case INT:     result = (int)  unboxer.invokeExact(box); break;
-                    case LONG:    result = (long) unboxer.invokeExact(box); break;
-                    case FLOAT:   result = (int)  unboxer.invokeExact(box); break;
-                    case DOUBLE:  result = (long) unboxer.invokeExact(box); break;
-                    case CHAR:    result = (int)  unboxer.invokeExact(box); break;
-                    case BYTE:    result = (int)  unboxer.invokeExact(box); break;
-                    case SHORT:   result = (int)  unboxer.invokeExact(box); break;
-                    case BOOLEAN: result = (int)  unboxer.invokeExact(box); break;
-                    case VOID:    result = (int)  unboxer.invokeExact(box); break;
-                }
-                assertEquals("(w,n,box)="+Arrays.asList(w,n,box),
-                             expResult, result);
-            }
-        }
-    }
-
-    @Test
     public void testBox() throws Throwable {
         //System.out.println("box");
         for (Wrapper w : Wrapper.values()) {
@@ -172,65 +142,6 @@ public class ValueConversionsTest {
                     case SHORT:   result = boxer.invokeExact((short)n); break;
                     case OBJECT:  result = boxer.invokeExact((Object)n); break;
                     case BOOLEAN: result = boxer.invokeExact((n & 1) != 0); break;
-                }
-                assertEquals("(dst,src,n,box)="+Arrays.asList(w,w,n,box),
-                             expResult, result);
-            }
-        }
-    }
-
-    @Test
-    public void testBoxRaw() throws Throwable {
-        //System.out.println("boxRaw");
-        for (Wrapper w : Wrapper.values()) {
-            if (w == Wrapper.VOID)  continue;  // skip this; no unboxed form
-            if (w == Wrapper.OBJECT)  continue;  // skip this; no raw form
-            //System.out.println(w);
-            for (int n = -5; n < 10; n++) {
-                Object box = w.wrap(n);
-                long   raw = w.unwrapRaw(box);
-                Object expResult = box;
-                MethodHandle boxer = ValueConversions.boxRaw(w.primitiveType());
-                Object result = null;
-                switch (w) {
-                case INT:     result = boxer.invokeExact((int)raw); break;
-                case LONG:    result = boxer.invokeExact(raw); break;
-                case FLOAT:   result = boxer.invokeExact((int)raw); break;
-                case DOUBLE:  result = boxer.invokeExact(raw); break;
-                case CHAR:    result = boxer.invokeExact((int)raw); break;
-                case BYTE:    result = boxer.invokeExact((int)raw); break;
-                case SHORT:   result = boxer.invokeExact((int)raw); break;
-                case BOOLEAN: result = boxer.invokeExact((int)raw); break;
-                }
-                assertEquals("(dst,src,n,box)="+Arrays.asList(w,w,n,box),
-                             expResult, result);
-            }
-        }
-    }
-
-    @Test
-    public void testReboxRaw() throws Throwable {
-        //System.out.println("reboxRaw");
-        for (Wrapper w : Wrapper.values()) {
-            Wrapper pw = Wrapper.forPrimitiveType(w.rawPrimitiveType());
-            if (w == Wrapper.VOID)  continue;  // skip this; no unboxed form
-            if (w == Wrapper.OBJECT)  continue;  // skip this; no raw form
-            //System.out.println(w);
-            for (int n = -5; n < 10; n++) {
-                Object box = w.wrap(n);
-                Object raw = pw.wrap(w.unwrapRaw(box));
-                Object expResult = box;
-                MethodHandle boxer = ValueConversions.rebox(w.primitiveType());
-                Object result = null;
-                switch (w) {
-                case INT:     result = boxer.invokeExact(raw); break;
-                case LONG:    result = boxer.invokeExact(raw); break;
-                case FLOAT:   result = boxer.invokeExact(raw); break;
-                case DOUBLE:  result = boxer.invokeExact(raw); break;
-                case CHAR:    result = boxer.invokeExact(raw); break;
-                case BYTE:    result = boxer.invokeExact(raw); break;
-                case SHORT:   result = boxer.invokeExact(raw); break;
-                case BOOLEAN: result = boxer.invokeExact(raw); break;
                 }
                 assertEquals("(dst,src,n,box)="+Arrays.asList(w,w,n,box),
                              expResult, result);
@@ -278,6 +189,91 @@ public class ValueConversionsTest {
         Object result = id.invokeExact(expResult);
         // compiler bug:  ValueConversions.identity().invokeExact("bar");
         assertEquals(expResult, result);
+    }
+
+    @Test
+    public void testConvert() throws Throwable {
+        //System.out.println("convert");
+        for (long tval = 0, ctr = 0;;) {
+            if (++ctr > 99999)  throw new AssertionError("too many test values");
+            // next test value:
+            //System.out.println(Long.toHexString(tval)); // prints 3776 test patterns
+            tval = nextTestValue(tval);
+            if (tval == 0) {
+                //System.out.println("test value count = "+ctr);  // 3776 = 8*59*8
+                break;  // repeat
+            }
+        }
+        for (Wrapper src : Wrapper.values()) {
+            for (Wrapper dst : Wrapper.values()) {
+                testConvert(src, dst, 0);
+            }
+        }
+    }
+    static void testConvert(Wrapper src, Wrapper dst, long tval) throws Throwable {
+        //System.out.println(src+" => "+dst);
+        boolean testSingleCase = (tval != 0);
+        final long tvalInit = tval;
+        MethodHandle conv = ValueConversions.convertPrimitive(src, dst);
+        MethodType convType;
+        if (src == Wrapper.VOID)
+            convType = MethodType.methodType(dst.primitiveType() /* , void */);
+        else
+            convType = MethodType.methodType(dst.primitiveType(), src.primitiveType());
+        assertEquals(convType, conv.type());
+        MethodHandle converter = conv.asType(conv.type().changeReturnType(Object.class));
+        for (;;) {
+            long n = tval;
+            Object testValue = src.wrap(n);
+            Object expResult = dst.cast(testValue, dst.primitiveType());
+            Object result;
+            switch (src) {
+                case INT:     result = converter.invokeExact((int)n); break;
+                case LONG:    result = converter.invokeExact(/*long*/n); break;
+                case FLOAT:   result = converter.invokeExact((float)n); break;
+                case DOUBLE:  result = converter.invokeExact((double)n); break;
+                case CHAR:    result = converter.invokeExact((char)n); break;
+                case BYTE:    result = converter.invokeExact((byte)n); break;
+                case SHORT:   result = converter.invokeExact((short)n); break;
+                case OBJECT:  result = converter.invokeExact((Object)n); break;
+                case BOOLEAN: result = converter.invokeExact((n & 1) != 0); break;
+                case VOID:    result = converter.invokeExact(); break;
+                default:  throw new AssertionError();
+            }
+            assertEquals("(src,dst,n,testValue)="+Arrays.asList(src,dst,"0x"+Long.toHexString(n),testValue),
+                         expResult, result);
+            if (testSingleCase)  break;
+            // next test value:
+            tval = nextTestValue(tval);
+            if (tval == tvalInit)  break;  // repeat
+        }
+    }
+    static long tweakSign(long x) {
+        // Assuming that x is mostly zeroes, make those zeroes follow bit #62 (just below the sign).
+        // This function is self-inverse.
+        final long MID_SIGN_BIT = 62;
+        long sign = -((x >>> MID_SIGN_BIT) & 1);  // all ones or all zeroes
+        long flip = (sign >>> -MID_SIGN_BIT);  // apply the sign below the mid-bit
+        return x ^ flip;
+    }
+    static long nextTestValue(long x) {
+        // Produce 64 bits with three component bitfields:  [ high:3 | mid:58 | low:3 ].
+        // The high and low fields vary through all possible bit patterns.
+        // The middle field is either all zero or has a single bit set.
+        // For better coverage of the neighborhood of zero, an internal sign bit is xored downward also.
+        long ux = tweakSign(x);  // unsign the middle field
+        final long LOW_BITS  = 3, LOW_BITS_MASK  = (1L << LOW_BITS)-1;
+        final long HIGH_BITS = 3, HIGH_BITS_MASK = ~(-1L >>> HIGH_BITS);
+        if ((ux & LOW_BITS_MASK) != LOW_BITS_MASK) {
+            ++ux;
+        } else {
+            ux &= ~LOW_BITS_MASK;
+            long midBit = (ux & ~HIGH_BITS_MASK);
+            if (midBit == 0)
+                midBit = (1L<<LOW_BITS);  // introduce a low bit
+            ux += midBit;
+        }
+        return tweakSign(ux);
     }
 
     @Test
@@ -332,7 +328,7 @@ public class ValueConversionsTest {
     }
 
     private void testTypedVarargsArray(Class<?> arrayType) throws Throwable {
-        System.out.println(arrayType.getSimpleName());
+        //System.out.println(arrayType.getSimpleName());
         Class<?> elemType = arrayType.getComponentType();
         int MIN = START_ARITY;
         int MAX = MAX_ARITY-2;  // 253+1 would cause parameter overflow with 'this' added
