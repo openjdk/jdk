@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,13 @@
 
 package java.lang.invoke;
 
-import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import java.lang.annotation.*;
 
 /**
- * This method handle is used to optionally provide a count of how
- * many times it was invoked.
- *
- * @author never
+ * Internal marker for some methods in the JSR 292 implementation.
  */
-class CountingMethodHandle extends AdapterMethodHandle {
-    private int vmcount;
-
-    private CountingMethodHandle(MethodHandle target) {
-        super(target, target.type(), AdapterMethodHandle.makeConv(OP_RETYPE_ONLY));
-    }
-
-    /** Wrap the incoming MethodHandle in a CountingMethodHandle if they are enabled */
-    static MethodHandle wrap(MethodHandle mh) {
-        if (MethodHandleNatives.COUNT_GWT) {
-            return new CountingMethodHandle(mh);
-        }
-        return mh;
-    }
+/*non-public*/
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
+@Retention(RetentionPolicy.RUNTIME)
+@interface DontInline {
 }

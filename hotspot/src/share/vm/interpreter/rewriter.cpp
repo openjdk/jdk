@@ -33,6 +33,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodComparator.hpp"
+#include "prims/methodHandles.hpp"
 
 // Computes a CPC map (new_index -> original_index) for constant pool entries
 // that are referred to by the interpreter at runtime via the constant pool cache.
@@ -41,10 +42,9 @@
 void Rewriter::compute_index_maps() {
   const int length  = _pool->length();
   init_cp_map(length);
-  jint tag_mask = 0;
+  bool saw_mh_symbol = false;
   for (int i = 0; i < length; i++) {
     int tag = _pool->tag_at(i).value();
-    tag_mask |= (1 << tag);
     switch (tag) {
       case JVM_CONSTANT_InterfaceMethodref:
       case JVM_CONSTANT_Fieldref          : // fall through
@@ -54,13 +54,18 @@ void Rewriter::compute_index_maps() {
       case JVM_CONSTANT_InvokeDynamic     : // fall through
         add_cp_cache_entry(i);
         break;
+      case JVM_CONSTANT_Utf8:
+        if (_pool->symbol_at(i) == vmSymbols::java_lang_invoke_MethodHandle())
+          saw_mh_symbol = true;
+        break;
     }
   }
 
   guarantee((int)_cp_cache_map.length()-1 <= (int)((u2)-1),
             "all cp cache indexes fit in a u2");
 
-  _have_invoke_dynamic = ((tag_mask & (1 << JVM_CONSTANT_InvokeDynamic)) != 0);
+  if (saw_mh_symbol)
+    _method_handle_invokers.initialize(length, (int)0);
 }
 
 // Unrewrite the bytecodes if an error occurs.
@@ -80,22 +85,6 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
       oopFactory::new_constantPoolCache(length, CHECK);
   No_Safepoint_Verifier nsv;
   cache->initialize(_cp_cache_map);
-
-  // Don't bother with the next pass if there is no JVM_CONSTANT_InvokeDynamic.
-  if (_have_invoke_dynamic) {
-    for (int i = 0; i < length; i++) {
-      int pool_index = cp_cache_entry_pool_index(i);
-      if (pool_index >= 0 &&
-          _pool->tag_at(pool_index).is_invoke_dynamic()) {
-        int bsm_index = _pool->invoke_dynamic_bootstrap_method_ref_index_at(pool_index);
-        assert(_pool->tag_at(bsm_index).is_method_handle(), "must be a MH constant");
-        // There is a CP cache entry holding the BSM for these calls.
-        int bsm_cache_index = cp_entry_to_cp_cache(bsm_index);
-        cache->entry_at(i)->initialize_bootstrap_method_index_in_cache(bsm_cache_index);
-      }
-    }
-  }
-
   _pool->set_cache(cache);
   cache->set_constant_pool(_pool());
 }
@@ -148,10 +137,53 @@ void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
     int  cp_index    = Bytes::get_Java_u2(p);
     int  cache_index = cp_entry_to_cp_cache(cp_index);
     Bytes::put_native_u2(p, cache_index);
+    if (!_method_handle_invokers.is_empty())
+      maybe_rewrite_invokehandle(p - 1, cp_index, reverse);
   } else {
     int cache_index = Bytes::get_native_u2(p);
     int pool_index = cp_cache_entry_pool_index(cache_index);
     Bytes::put_Java_u2(p, pool_index);
+    if (!_method_handle_invokers.is_empty())
+      maybe_rewrite_invokehandle(p - 1, pool_index, reverse);
+  }
+}
+
+
+// Adjust the invocation bytecode for a signature-polymorphic method (MethodHandle.invoke, etc.)
+void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, bool reverse) {
+  if (!reverse) {
+    if ((*opc) == (u1)Bytecodes::_invokevirtual ||
+        // allow invokespecial as an alias, although it would be very odd:
+        (*opc) == (u1)Bytecodes::_invokespecial) {
+      assert(_pool->tag_at(cp_index).is_method(), "wrong index");
+      // Determine whether this is a signature-polymorphic method.
+      if (cp_index >= _method_handle_invokers.length())  return;
+      int status = _method_handle_invokers[cp_index];
+      assert(status >= -1 && status <= 1, "oob tri-state");
+      if (status == 0) {
+        if (_pool->klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_MethodHandle() &&
+            MethodHandles::is_signature_polymorphic_name(SystemDictionary::MethodHandle_klass(),
+                                                         _pool->name_ref_at(cp_index)))
+          status = +1;
+        else
+          status = -1;
+        _method_handle_invokers[cp_index] = status;
+      }
+      // We use a special internal bytecode for such methods (if non-static).
+      // The basic reason for this is that such methods need an extra "appendix" argument
+      // to transmit the call site's intended call type.
+      if (status > 0) {
+        (*opc) = (u1)Bytecodes::_invokehandle;
+      }
+    }
+  } else {
+    // Do not need to look at cp_index.
+    if ((*opc) == (u1)Bytecodes::_invokehandle) {
+      (*opc) = (u1)Bytecodes::_invokevirtual;
+      // Ignore corner case of original _invokespecial instruction.
+      // This is safe because (a) the signature polymorphic method was final, and
+      // (b) the implementation of MethodHandle will not call invokespecial on it.
+    }
   }
 }
 
@@ -297,17 +329,18 @@ void Rewriter::scan_method(methodOop method, bool reverse) {
         case Bytecodes::_invokespecial  : // fall through
         case Bytecodes::_invokestatic   :
         case Bytecodes::_invokeinterface:
+        case Bytecodes::_invokehandle   : // if reverse=true
           rewrite_member_reference(bcp, prefix_length+1, reverse);
           break;
         case Bytecodes::_invokedynamic:
           rewrite_invokedynamic(bcp, prefix_length+1, reverse);
           break;
         case Bytecodes::_ldc:
-        case Bytecodes::_fast_aldc:
+        case Bytecodes::_fast_aldc:  // if reverse=true
           maybe_rewrite_ldc(bcp, prefix_length+1, false, reverse);
           break;
         case Bytecodes::_ldc_w:
-        case Bytecodes::_fast_aldc_w:
+        case Bytecodes::_fast_aldc_w:  // if reverse=true
           maybe_rewrite_ldc(bcp, prefix_length+1, true, reverse);
           break;
         case Bytecodes::_jsr            : // fall through

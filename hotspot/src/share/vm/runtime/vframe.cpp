@@ -410,8 +410,9 @@ void vframeStreamCommon::security_get_caller_frame(int depth) {
               Klass::cast(method()->method_holder())
                  ->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
       // This is an auxilary frame -- skip it
-    } else if (method()->is_method_handle_adapter()) {
-      // This is an internal adapter frame from the MethodHandleCompiler -- skip it
+    } else if (method()->is_method_handle_intrinsic() ||
+               method()->is_compiled_lambda_form()) {
+      // This is an internal adapter frame for method handles -- skip it
     } else {
       // This is non-excluded frame, we need to count it against the depth
       if (depth-- <= 0) {

@@ -25,6 +25,7 @@
 // key: compiler.note.verbose.resolve.multi.1
 // key: compiler.err.cant.apply.symbol.1
 // key: compiler.misc.no.conforming.assignment.exists
+// key: compiler.misc.inconvertible.types
 // options: -XDverboseResolution=inapplicable,failure
 
 class VerboseResolveMulti1 {

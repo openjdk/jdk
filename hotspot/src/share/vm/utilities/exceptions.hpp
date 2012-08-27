@@ -112,19 +112,22 @@ class Exceptions {
   // Throw exceptions: w/o message, w/ message & with formatted message.
   static void _throw_oop(Thread* thread, const char* file, int line, oop exception);
   static void _throw(Thread* thread, const char* file, int line, Handle exception, const char* msg = NULL);
-  static void _throw_msg(Thread* thread, const char* file, int line,
-                         Symbol* name, const char* message, Handle loader,
-                         Handle protection_domain);
-  static void _throw_msg(Thread* thread, const char* file, int line,
-                         Symbol* name, const char* message);
+
+  static void _throw_msg(Thread* thread, const char* file, int line, Symbol* name, const char* message);
+  static void _throw_msg(Thread* thread, const char* file, int line, Symbol* name, const char* message,
+                         Handle loader, Handle protection_domain);
+
+  static void _throw_msg_cause(Thread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause);
+  static void _throw_msg_cause(Thread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause,
+                               Handle h_loader, Handle h_protection_domain);
+
+  static void _throw_cause(Thread* thread, const char* file, int line, Symbol* name, Handle h_cause);
+  static void _throw_cause(Thread* thread, const char* file, int line, Symbol* name, Handle h_cause,
+                           Handle h_loader, Handle h_protection_domain);
+
   static void _throw_args(Thread* thread, const char* file, int line,
                           Symbol* name, Symbol* signature,
                           JavaCallArguments* args);
-  static void _throw_msg_cause(Thread* thread, const char* file,
-                         int line, Symbol* h_name, const char* message,
-                         Handle h_cause, Handle h_loader, Handle h_protection_domain);
-  static void _throw_msg_cause(Thread* thread, const char* file, int line,
-                            Symbol* name, const char* message, Handle cause);
 
   // There is no THROW... macro for this method. Caller should remember
   // to do a return after calling it.
@@ -134,17 +137,26 @@ class Exceptions {
   // Create and initialize a new exception
   static Handle new_exception(Thread* thread, Symbol* name,
                               Symbol* signature, JavaCallArguments* args,
-                              Handle cause, Handle loader,
-                              Handle protection_domain);
+                              Handle loader, Handle protection_domain);
 
   static Handle new_exception(Thread* thread, Symbol* name,
-                              const char* message, Handle cause, Handle loader,
-                              Handle protection_domain,
+                              Symbol* signature, JavaCallArguments* args,
+                              Handle cause,
+                              Handle loader, Handle protection_domain);
+
+  static Handle new_exception(Thread* thread, Symbol* name,
+                              Handle cause,
+                              Handle loader, Handle protection_domain,
                               ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
- static Handle new_exception(Thread* thread, Symbol* name,
-                             const char* message,
-                             ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
+  static Handle new_exception(Thread* thread, Symbol* name,
+                              const char* message, Handle cause,
+                              Handle loader, Handle protection_domain,
+                              ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
+
+  static Handle new_exception(Thread* thread, Symbol* name,
+                              const char* message,
+                              ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
   static void throw_stack_overflow_exception(Thread* thread, const char* file, int line, methodHandle method);
 
@@ -214,6 +226,9 @@ class Exceptions {
 #define THROW_MSG(name, message)                    \
   { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message); return;  }
 
+#define THROW_CAUSE(name, cause)   \
+  { Exceptions::_throw_cause(THREAD_AND_LOCATION, name, cause); return; }
+
 #define THROW_MSG_LOADER(name, message, loader, protection_domain) \
   { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message, loader, protection_domain); return;  }
 
@@ -237,6 +252,9 @@ class Exceptions {
 
 #define THROW_ARG_(name, signature, args, result) \
   { Exceptions::_throw_args(THREAD_AND_LOCATION, name, signature, args); return result; }
+
+#define THROW_MSG_CAUSE(name, message, cause)   \
+  { Exceptions::_throw_msg_cause(THREAD_AND_LOCATION, name, message, cause); return; }
 
 #define THROW_MSG_CAUSE_(name, message, cause, result)   \
   { Exceptions::_throw_msg_cause(THREAD_AND_LOCATION, name, message, cause); return result; }

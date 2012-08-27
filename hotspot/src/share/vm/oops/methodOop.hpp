@@ -124,7 +124,9 @@ class methodOopDesc : public oopDesc {
   u1                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
   u1                _jfr_towrite  : 1,           // Flags
                     _force_inline : 1,
-                                  : 6;
+                    _hidden       : 1,
+                    _dont_inline  : 1,
+                                  : 4;
   u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
   u2                _number_of_breakpoints;      // fullspeed debugging support
   InvocationCounter _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
@@ -245,8 +247,10 @@ class methodOopDesc : public oopDesc {
   void set_constants(constantPoolOop c)          { constMethod()->set_constants(c); }
 
   // max stack
-  int  max_stack() const                         { return _max_stack; }
-  void set_max_stack(int size)                   { _max_stack = size; }
+  // return original max stack size for method verification
+  int  verifier_max_stack() const                { return _max_stack; }
+  int           max_stack() const                { return _max_stack + extra_stack_entries(); }
+  void      set_max_stack(int size)              {        _max_stack = size; }
 
   // max locals
   int  max_locals() const                        { return _max_locals; }
@@ -590,28 +594,19 @@ class methodOopDesc : public oopDesc {
   bool is_overridden_in(klassOop k) const;
 
   // JSR 292 support
-  bool is_method_handle_invoke() const              { return access_flags().is_method_handle_invoke(); }
-  static bool is_method_handle_invoke_name(vmSymbols::SID name_sid);
-  static bool is_method_handle_invoke_name(Symbol* name) {
-    return is_method_handle_invoke_name(vmSymbols::find_sid(name));
-  }
-  // Tests if this method is an internal adapter frame from the
-  // MethodHandleCompiler.
-  bool is_method_handle_adapter() const;
-  static methodHandle make_invoke_method(KlassHandle holder,
-                                         Symbol* name, //invokeExact or invokeGeneric
-                                         Symbol* signature, //anything at all
-                                         Handle method_type,
-                                         TRAPS);
+  bool is_method_handle_intrinsic() const;          // MethodHandles::is_signature_polymorphic_intrinsic(intrinsic_id)
+  bool is_compiled_lambda_form() const;             // intrinsic_id() == vmIntrinsics::_compiledLambdaForm
+  bool has_member_arg() const;                      // intrinsic_id() == vmIntrinsics::_linkToSpecial, etc.
+  static methodHandle make_method_handle_intrinsic(vmIntrinsics::ID iid, // _invokeBasic, _linkToVirtual
+                                                   Symbol* signature, //anything at all
+                                                   TRAPS);
   static klassOop check_non_bcp_klass(klassOop klass);
   // these operate only on invoke methods:
-  oop method_handle_type() const;
-  static jint* method_type_offsets_chain();  // series of pointer-offsets, terminated by -1
   // presize interpreter frames for extra interpreter stack entries, if needed
   // method handles want to be able to push a few extra values (e.g., a bound receiver), and
   // invokedynamic sometimes needs to push a bootstrap method, call site, and arglist,
   // all without checking for a stack overflow
-  static int extra_stack_entries() { return EnableInvokeDynamic ? (int) MethodHandlePushLimit + 3 : 0; }
+  static int extra_stack_entries() { return EnableInvokeDynamic ? 2 : 0; }
   static int extra_stack_words();  // = extra_stack_entries() * Interpreter::stackElementSize()
 
   // RedefineClasses() support:
@@ -656,8 +651,12 @@ class methodOopDesc : public oopDesc {
   bool jfr_towrite()                 { return _jfr_towrite; }
   void set_jfr_towrite(bool towrite) { _jfr_towrite = towrite; }
 
-  bool force_inline()            { return _force_inline; }
-  void set_force_inline(bool fi) { _force_inline = fi; }
+  bool     force_inline()       { return _force_inline;     }
+  void set_force_inline(bool x) {        _force_inline = x; }
+  bool     dont_inline()        { return _dont_inline;      }
+  void set_dont_inline(bool x)  {        _dont_inline = x;  }
+  bool  is_hidden()             { return _hidden;           }
+  void set_hidden(bool x)       {        _hidden = x;       }
 
   // On-stack replacement support
   bool has_osr_nmethod(int level, bool match_level) {
@@ -704,8 +703,8 @@ class methodOopDesc : public oopDesc {
   static bool has_unloaded_classes_in_signature(methodHandle m, TRAPS);
 
   // Printing
-  void print_short_name(outputStream* st)        /*PRODUCT_RETURN*/; // prints as klassname::methodname; Exposed so field engineers can debug VM
-  void print_name(outputStream* st)              PRODUCT_RETURN; // prints as "virtual void foo(int)"
+  void print_short_name(outputStream* st = tty)  /*PRODUCT_RETURN*/; // prints as klassname::methodname; Exposed so field engineers can debug VM
+  void print_name(outputStream* st = tty)        PRODUCT_RETURN; // prints as "virtual void foo(int)"
 
   // Helper routine used for method sorting
   static void sort_methods(objArrayOop methods,

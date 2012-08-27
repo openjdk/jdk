@@ -27,6 +27,7 @@
 // key: compiler.err.cant.apply.symbol.1
 // key: compiler.misc.arg.length.mismatch
 // key: compiler.misc.no.conforming.assignment.exists
+// key: compiler.misc.inconvertible.types
 // key: compiler.misc.count.error.plural
 // key: compiler.err.error
 // run: backdoor

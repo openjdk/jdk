@@ -308,9 +308,8 @@ public class TreeInfo {
             return endPos(((JCSynchronized) tree).body);
         else if (tree.hasTag(TRY)) {
             JCTry t = (JCTry) tree;
-            return endPos((t.finalizer != null)
-                          ? t.finalizer
-                          : t.catchers.last().body);
+            return endPos((t.finalizer != null) ? t.finalizer
+                          : (t.catchers.nonEmpty() ? t.catchers.last().body : t.body));
         } else
             return tree.pos;
     }

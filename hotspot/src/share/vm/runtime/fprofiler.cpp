@@ -337,11 +337,13 @@ class ProfilerNode {
       char c = (char) n->byte_at(i);
       st->print("%c", c);
     }
-    if( Verbose ) {
+    if (Verbose || WizardMode) {
       // Disambiguate overloaded methods
       Symbol* sig = m->signature();
       sig->print_symbol_on(st);
-    }
+    } else if (MethodHandles::is_signature_polymorphic(m->intrinsic_id()))
+      // compare with methodOopDesc::print_short_name
+      MethodHandles::print_as_basic_type_signature_on(st, m->signature(), true);
   }
 
   virtual void print(outputStream* st, int total_ticks) {
