@@ -57,7 +57,6 @@ public class CodeCache {
     virtualConstructor.addMapping("BufferBlob", BufferBlob.class);
     virtualConstructor.addMapping("nmethod", NMethod.class);
     virtualConstructor.addMapping("RuntimeStub", RuntimeStub.class);
-    virtualConstructor.addMapping("RicochetBlob", RicochetBlob.class);
     virtualConstructor.addMapping("AdapterBlob", AdapterBlob.class);
     virtualConstructor.addMapping("MethodHandlesAdapterBlob", MethodHandlesAdapterBlob.class);
     virtualConstructor.addMapping("SafepointBlob", SafepointBlob.class);
@@ -126,10 +125,6 @@ public class CodeCache {
       // pointer to the HeapBlock.
       Assert.that(result.blobContains(start) || result.blobContains(start.addOffsetTo(8)),
                                                                     "found wrong CodeBlob");
-    }
-    if (result.isRicochetBlob()) {
-      // This should probably be done for other SingletonBlobs
-      return VM.getVM().ricochetBlob();
     }
     return result;
   }

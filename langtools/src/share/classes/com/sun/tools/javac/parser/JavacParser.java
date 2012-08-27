@@ -113,9 +113,9 @@ public class JavacParser implements Parser {
         this.allowMulticatch = source.allowMulticatch();
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
         this.allowLambda = source.allowLambda() &&
-                fac.options.isSet("allowLambda");
+                fac.options.isSet("allowLambda"); //pre-lambda guard
         this.allowMethodReferences = source.allowMethodReferences() &&
-                fac.options.isSet("allowMethodReferences");
+                fac.options.isSet("allowMethodReferences"); //pre-lambda guard
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments);
         this.keepLineMap = keepLineMap;

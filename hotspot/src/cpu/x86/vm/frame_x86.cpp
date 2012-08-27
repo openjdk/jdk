@@ -439,7 +439,6 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 // frame::sender_for_compiled_frame
 frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
-  assert(!is_ricochet_frame(), "caller must handle this");
 
   // frame owned by optimizing compiler
   assert(_cb->frame_size() >= 0, "must have non-zero frame size");
@@ -483,7 +482,6 @@ frame frame::sender(RegisterMap* map) const {
   if (is_entry_frame())       return sender_for_entry_frame(map);
   if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
   assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
-  if (is_ricochet_frame())    return sender_for_ricochet_frame(map);
 
   if (_cb != NULL) {
     return sender_for_compiled_frame(map);
@@ -658,9 +656,7 @@ intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
   values.describe(frame_no, fp() + frame::name##_offset, #name)
 
 void frame::describe_pd(FrameValues& values, int frame_no) {
-  if (is_ricochet_frame()) {
-    MethodHandles::RicochetFrame::describe(this, values, frame_no);
-  } else if (is_interpreted_frame()) {
+  if (is_interpreted_frame()) {
     DESCRIBE_FP_OFFSET(interpreter_frame_sender_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
@@ -682,12 +678,7 @@ intptr_t* frame::real_fp() const {
   if (_cb != NULL) {
     // use the frame size if valid
     int size = _cb->frame_size();
-    if ((size > 0) &&
-        (! is_ricochet_frame())) {
-      // Work-around: ricochet explicitly excluded because frame size is not
-      // constant for the ricochet blob but its frame_size could not, for
-      // some reasons, be declared as <= 0. This potentially confusing
-      // size declaration should be fixed as another CR.
+    if (size > 0) {
       return unextended_sp() + size;
     }
   }

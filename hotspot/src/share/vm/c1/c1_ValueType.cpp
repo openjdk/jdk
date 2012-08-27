@@ -101,6 +101,23 @@ ciObject* ArrayConstant::constant_value() const                    { return _val
 ciObject* InstanceConstant::constant_value() const                 { return _value; }
 ciObject* ClassConstant::constant_value() const                    { return _value; }
 
+ciType* ObjectConstant::exact_type() const {
+  ciObject* c = constant_value();
+  return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
+}
+ciType* ArrayConstant::exact_type() const {
+  ciObject* c = constant_value();
+  return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
+}
+ciType* InstanceConstant::exact_type() const {
+  ciObject* c = constant_value();
+  return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
+}
+ciType* ClassConstant::exact_type() const {
+  ciObject* c = constant_value();
+  return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
+}
+
 
 ValueType* as_ValueType(BasicType type) {
   switch (type) {

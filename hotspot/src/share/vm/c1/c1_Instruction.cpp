@@ -161,6 +161,12 @@ ciType* Local::exact_type() const {
   return NULL;
 }
 
+ciType* Constant::exact_type() const {
+  if (type()->is_object()) {
+    return type()->as_ObjectType()->exact_type();
+  }
+  return NULL;
+}
 
 ciType* LoadIndexed::exact_type() const {
   ciType* array_type = array()->exact_type();
