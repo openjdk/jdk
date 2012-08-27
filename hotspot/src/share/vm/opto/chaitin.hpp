@@ -470,7 +470,7 @@ private:
 
   // Split uncolorable live ranges
   // Return new number of live ranges
-  uint Split( uint maxlrg );
+  uint Split(uint maxlrg, ResourceArea* split_arena);
 
   // Copy 'was_spilled'-edness from one Node to another.
   void copy_was_spilled( Node *src, Node *dst );
