@@ -829,6 +829,9 @@ class CommandLineFlags {
   product(bool, PrintGCApplicationStoppedTime, false,                       \
           "Print the time the application has been stopped")                \
                                                                             \
+  diagnostic(bool, VerboseVerification, false,                              \
+             "Display detailed verification details")                       \
+                                                                            \
   notproduct(uintx, ErrorHandlerTest, 0,                                    \
           "If > 0, provokes an error after VM initialization; the value"    \
           "determines which error to provoke.  See test_error_handler()"    \

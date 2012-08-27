@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -626,45 +626,6 @@ static void printDOF(void* dof) {
   }
 }
 
-/**
- * This prints out hex data in a 'windbg' or 'xxd' form, where each line is:
- *   <hex-address>: 8 * <hex-halfword> <ascii translation>
- * example:
- * 0000000: 7f44 4f46 0102 0102 0000 0000 0000 0000  .DOF............
- * 0000010: 0000 0000 0000 0040 0000 0020 0000 0005  .......@... ....
- * 0000020: 0000 0000 0000 0040 0000 0000 0000 015d  .......@.......]
- * ...
- */
-static void printDOFRawData(void* dof) {
-  size_t size = ((dof_hdr_t*)dof)->dofh_loadsz;
-  size_t limit = (size + 16) / 16 * 16;
-  for (size_t i = 0; i < limit; ++i) {
-    if (i % 16 == 0) {
-      tty->print("%07x:", i);
-    }
-    if (i % 2 == 0) {
-      tty->print(" ");
-    }
-    if (i < size) {
-      tty->print("%02x", ((unsigned char*)dof)[i]);
-    } else {
-      tty->print("  ");
-    }
-    if ((i + 1) % 16 == 0) {
-      tty->print("  ");
-      for (size_t j = 0; j < 16; ++j) {
-        size_t idx = i + j - 15;
-        char c = ((char*)dof)[idx];
-        if (idx < size) {
-          tty->print("%c", c >= 32 && c <= 126 ? c : '.');
-        }
-      }
-      tty->print_cr("");
-    }
-  }
-  tty->print_cr("");
-}
-
 static void printDOFHelper(dof_helper_t* helper) {
   tty->print_cr("// dof_helper_t {");
   tty->print_cr("//   dofhp_mod = \"%s\"", helper->dofhp_mod);
@@ -672,7 +633,8 @@ static void printDOFHelper(dof_helper_t* helper) {
   tty->print_cr("//   dofhp_dof = 0x%016llx", helper->dofhp_dof);
   printDOF((void*)helper->dofhp_dof);
   tty->print_cr("// }");
-  printDOFRawData((void*)helper->dofhp_dof);
+  size_t len = ((dof_hdr_t*)helper)->dofh_loadsz;
+  tty->print_data((void*)helper->dofhp_dof, len, true);
 }
 
 #else // ndef HAVE_DTRACE_H
