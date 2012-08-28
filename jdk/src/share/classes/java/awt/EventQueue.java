@@ -36,6 +36,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import java.util.EmptyStackException;
+
+import sun.awt.dnd.SunDropTargetEvent;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.AppContext;
@@ -464,7 +466,9 @@ public class EventQueue {
         case MouseEvent.MOUSE_MOVED:
             return MOVE;
         case MouseEvent.MOUSE_DRAGGED:
-            return DRAG;
+            // Return -1 for SunDropTargetEvent since they are usually synchronous
+            // and we don't want to skip them by coalescing with MouseEvent or other drag events
+            return e instanceof SunDropTargetEvent ? -1 : DRAG;
         default:
             return e instanceof PeerEvent ? PEER : -1;
         }

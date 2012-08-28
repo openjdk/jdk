@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,20 +23,23 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4380468
- * @summary JColorChooser's HSB panel should display all RGB digits
- * @author Andrey Pikalev
- * @run applet/manual=yesno Test4380468.html
+package sun.awt;
+
+/**
+ * A GraphicsConfiguration implements the TextureSizeConstraining
+ * interface to indicate that it imposes certain limitations on the
+ * maximum size of supported textures.
  */
+public interface TextureSizeConstraining {
 
-import java.awt.Color;
-import javax.swing.JApplet;
-import javax.swing.JColorChooser;
+    /**
+     * Returns the maximum width of any texture image.
+     */
+    public int getMaxTextureWidth();
 
-public class Test4380468 extends JApplet {
-    public void init() {
-        add(new JColorChooser(Color.GREEN));
-    }
+    /**
+     * Returns the maximum height of any texture image.
+     */
+    public int getMaxTextureHeight();
+
 }
