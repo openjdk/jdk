@@ -93,7 +93,8 @@ FILES_export = \
     sun/reflect/ConstantPool.java \
     sun/reflect/NativeConstructorAccessorImpl.java \
     sun/reflect/NativeMethodAccessorImpl.java \
-    sun/reflect/Reflection.java
+    sun/reflect/Reflection.java \
+    sun/util/locale/provider/HostLocaleProviderAdapterImpl.java
 
 EXPORTED_inner = \
     java.lang.ClassLoader$$NativeLibrary
@@ -170,7 +171,8 @@ FILES_export = \
     sun/reflect/NativeMethodAccessorImpl.java \
     sun/reflect/Reflection.java \
     sun/security/provider/NativeSeedGenerator.java \
-    sun/io/Win32ErrorMode.java
+    sun/io/Win32ErrorMode.java \
+    sun/util/locale/provider/HostLocaleProviderAdapterImpl.java
 
 EXPORTED_inner = \
     java.lang.ClassLoader$$NativeLibrary

@@ -282,7 +282,7 @@ $(eval $(call add_properties_to_compile,SUN_UTIL_LOGGING_HK,\
 # sun/util/resources
 $(eval $(call add_properties_to_compile,SUN_UTIL,\
 	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/util/resources -name "*.properties"),\
-		LocaleNamesBundle))
+		sun.util.resources.LocaleNamesBundle))
 
 # Now setup the rule for the generation of the resource bundles.
 $(JDK_OUTPUTDIR)/gensrc_properties/_the.compiled_properties : $(ALL_COMPILED_PROPSOURCES) $(BUILD_TOOLS)

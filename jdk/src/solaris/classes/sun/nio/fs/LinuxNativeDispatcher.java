@@ -51,9 +51,15 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
     private static native long setmntent0(long pathAddress, long typeAddress)
         throws UnixException;
 
-   /**
-    * int endmntent(FILE* filep);
-    */
+    /**
+     * int getmntent(FILE *fp, struct mnttab *mp, int len);
+     */
+    static native int getmntent(long fp, UnixMountEntry entry)
+        throws UnixException;
+
+    /**
+     * int endmntent(FILE* filep);
+     */
     static native void endmntent(long stream) throws UnixException;
 
     /**
@@ -89,7 +95,6 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
 
     private static native void fsetxattr0(int filedes, long nameAddress,
         long valueAdddress, int valueLen) throws UnixException;
-
 
     /**
      * fremovexattr(int filedes, const char *name);

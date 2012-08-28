@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 /* @test
    @bug 4167472 5097703 6216563 6284003 6728842 6464744
    @summary Basic test for setWritable/Readable/Executable methods
+   @build SetAccess Util
+   @run main SetAccess
  */
 
 import java.io.*;
@@ -32,6 +34,11 @@ import java.nio.file.attribute.*;
 
 public class SetAccess {
     public static void main(String[] args) throws Exception {
+        if (Util.isPrivileged()) {
+            System.out.println("Unable to test file permissions when running with privileges");
+            return;
+        }
+
         File d = new File(System.getProperty("test.dir", "."));
 
         File f = new File(d, "x.SetAccessPermission");
