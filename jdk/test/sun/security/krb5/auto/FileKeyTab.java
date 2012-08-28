@@ -37,9 +37,8 @@ import sun.security.jgss.GSSUtil;
 public class FileKeyTab {
 
     public static void main(String[] args) throws Exception {
-
         new OneKDC(null).writeJAASConf();
-        String ktab = new File(OneKDC.KTAB).getAbsolutePath();
+        String ktab = new File(OneKDC.KTAB).getAbsolutePath().replace('\\', '/');
         File f = new File(OneKDC.JAAS_CONF);
         try (FileOutputStream fos = new FileOutputStream(f)) {
             fos.write((
