@@ -51,7 +51,7 @@ case "$OS" in
     ;;
 esac
 
-TEST_CLASSPATH=.$PS$TESTCLASSES
+TEST_CLASSPATH=.$PS${TESTCLASSPATH:-$TESTCLASSES}
 cp -r ${TESTSRC}${FS}* .
 ${TESTJAVA}${FS}bin${FS}javac testPkg${FS}*java
 ${TESTJAVA}${FS}bin${FS}javac -cp $TEST_CLASSPATH readTest.java
