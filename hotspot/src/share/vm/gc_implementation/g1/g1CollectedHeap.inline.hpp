@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,12 +138,85 @@ inline RefToScanQueue* G1CollectedHeap::task_queue(int i) const {
   return _task_queues->queue(i);
 }
 
-inline  bool G1CollectedHeap::isMarkedPrev(oop obj) const {
+inline bool G1CollectedHeap::isMarkedPrev(oop obj) const {
   return _cm->prevMarkBitMap()->isMarked((HeapWord *)obj);
 }
 
 inline bool G1CollectedHeap::isMarkedNext(oop obj) const {
   return _cm->nextMarkBitMap()->isMarked((HeapWord *)obj);
 }
+
+#ifndef PRODUCT
+// Support for G1EvacuationFailureALot
+
+inline bool
+G1CollectedHeap::evacuation_failure_alot_for_gc_type(bool gcs_are_young,
+                                                     bool during_initial_mark,
+                                                     bool during_marking) {
+  bool res = false;
+  if (during_marking) {
+    res |= G1EvacuationFailureALotDuringConcMark;
+  }
+  if (during_initial_mark) {
+    res |= G1EvacuationFailureALotDuringInitialMark;
+  }
+  if (gcs_are_young) {
+    res |= G1EvacuationFailureALotDuringYoungGC;
+  } else {
+    // GCs are mixed
+    res |= G1EvacuationFailureALotDuringMixedGC;
+  }
+  return res;
+}
+
+inline void
+G1CollectedHeap::set_evacuation_failure_alot_for_current_gc() {
+  if (G1EvacuationFailureALot) {
+    // Note we can't assert that _evacuation_failure_alot_for_current_gc
+    // is clear here. It may have been set during a previous GC but that GC
+    // did not copy enough objects (i.e. G1EvacuationFailureALotCount) to
+    // trigger an evacuation failure and clear the flags and and counts.
+
+    // Check if we have gone over the interval.
+    const size_t gc_num = total_collections();
+    const size_t elapsed_gcs = gc_num - _evacuation_failure_alot_gc_number;
+
+    _evacuation_failure_alot_for_current_gc = (elapsed_gcs >= G1EvacuationFailureALotInterval);
+
+    // Now check if G1EvacuationFailureALot is enabled for the current GC type.
+    const bool gcs_are_young = g1_policy()->gcs_are_young();
+    const bool during_im = g1_policy()->during_initial_mark_pause();
+    const bool during_marking = mark_in_progress();
+
+    _evacuation_failure_alot_for_current_gc &=
+      evacuation_failure_alot_for_gc_type(gcs_are_young,
+                                          during_im,
+                                          during_marking);
+  }
+}
+
+inline bool
+G1CollectedHeap::evacuation_should_fail() {
+  if (!G1EvacuationFailureALot || !_evacuation_failure_alot_for_current_gc) {
+    return false;
+  }
+  // G1EvacuationFailureALot is in effect for current GC
+  // Access to _evacuation_failure_alot_count is not atomic;
+  // the value does not have to be exact.
+  if (++_evacuation_failure_alot_count < G1EvacuationFailureALotCount) {
+    return false;
+  }
+  _evacuation_failure_alot_count = 0;
+  return true;
+}
+
+inline void G1CollectedHeap::reset_evacuation_should_fail() {
+  if (G1EvacuationFailureALot) {
+    _evacuation_failure_alot_gc_number = total_collections();
+    _evacuation_failure_alot_count = 0;
+    _evacuation_failure_alot_for_current_gc = false;
+  }
+}
+#endif  // #ifndef PRODUCT
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTEDHEAP_INLINE_HPP
