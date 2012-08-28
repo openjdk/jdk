@@ -1945,6 +1945,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
 
   clear_cset_start_regions();
 
+  // Initialize the G1EvacuationFailureALot counters and flags.
+  NOT_PRODUCT(reset_evacuation_should_fail();)
+
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
 #ifdef SPARC
   // Issue a stern warning, but allow use for experimentation and debugging.
@@ -4564,7 +4567,15 @@ oop G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
   GCAllocPurpose alloc_purpose = g1p->evacuation_destination(from_region, age,
                                                              word_sz);
   HeapWord* obj_ptr = _par_scan_state->allocate(alloc_purpose, word_sz);
-  oop       obj     = oop(obj_ptr);
+#ifndef PRODUCT
+  // Should this evacuation fail?
+  if (_g1->evacuation_should_fail()) {
+    if (obj_ptr != NULL) {
+      _par_scan_state->undo_allocation(alloc_purpose, obj_ptr, word_sz);
+      obj_ptr = NULL;
+    }
+  }
+#endif // !PRODUCT
 
   if (obj_ptr == NULL) {
     // This will either forward-to-self, or detect that someone else has
@@ -4572,6 +4583,8 @@ oop G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
     OopsInHeapRegionClosure* cl = _par_scan_state->evac_failure_closure();
     return _g1->handle_evacuation_failure_par(cl, old);
   }
+
+  oop obj = oop(obj_ptr);
 
   // We're going to allocate linearly, so might as well prefetch ahead.
   Prefetch::write(obj_ptr, PrefetchCopyIntervalInBytes);
@@ -5578,6 +5591,9 @@ void G1CollectedHeap::evacuate_collection_set() {
   _expand_heap_after_alloc_failure = true;
   set_evacuation_failed(false);
 
+  // Should G1EvacuationFailureALot be in effect for this GC?
+  NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
+
   g1_rem_set()->prepare_for_oops_into_collection_set_do();
   concurrent_g1_refine()->set_use_cache(false);
   concurrent_g1_refine()->clear_hot_cache_claimed_index();
@@ -5669,6 +5685,11 @@ void G1CollectedHeap::evacuate_collection_set() {
 
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
+
+    // Reset the G1EvacuationFailureALot counters and flags
+    // Note: the values are reset only when an actual
+    // evacuation failure occurs.
+    NOT_PRODUCT(reset_evacuation_should_fail();)
   }
 
   // Enqueue any remaining references remaining on the STW

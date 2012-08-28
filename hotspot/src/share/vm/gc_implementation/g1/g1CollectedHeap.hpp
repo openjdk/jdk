@@ -915,6 +915,39 @@ protected:
   oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj);
   void handle_evacuation_failure_common(oop obj, markOop m);
 
+#ifndef PRODUCT
+  // Support for forcing evacuation failures. Analogous to
+  // PromotionFailureALot for the other collectors.
+
+  // Records whether G1EvacuationFailureALot should be in effect
+  // for the current GC
+  bool _evacuation_failure_alot_for_current_gc;
+
+  // Used to record the GC number for interval checking when
+  // determining whether G1EvaucationFailureALot is in effect
+  // for the current GC.
+  size_t _evacuation_failure_alot_gc_number;
+
+  // Count of the number of evacuations between failures.
+  volatile size_t _evacuation_failure_alot_count;
+
+  // Set whether G1EvacuationFailureALot should be in effect
+  // for the current GC (based upon the type of GC and which
+  // command line flags are set);
+  inline bool evacuation_failure_alot_for_gc_type(bool gcs_are_young,
+                                                  bool during_initial_mark,
+                                                  bool during_marking);
+
+  inline void set_evacuation_failure_alot_for_current_gc();
+
+  // Return true if it's time to cause an evacuation failure.
+  inline bool evacuation_should_fail();
+
+  // Reset the G1EvacuationFailureALot counters.  Should be called at
+  // the end of an evacuation pause in which an evacuation failure ocurred.
+  inline void reset_evacuation_should_fail();
+#endif // !PRODUCT
+
   // ("Weak") Reference processing support.
   //
   // G1 has 2 instances of the referece processor class. One
