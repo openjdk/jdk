@@ -91,7 +91,7 @@ ifeq ($(PLATFORM), macosx)
   LDFLAGS += $(OUTPUTDIR)/tmp/java/jli/$(OBJDIRNAME)/static/libjli.a
 
   ifeq ($(SYSTEM_ZLIB),true)
-    OTHER_LDLIBS += -lz
+    OTHER_LDLIBS += $(ZLIB_LIBS)
   endif
 endif
 

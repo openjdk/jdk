@@ -29,7 +29,7 @@
 
 #include "jni.h"
 #include "jni_util.h"
-#include "zlib.h"
+#include <zlib.h>
 
 #include "java_util_zip_CRC32.h"
 

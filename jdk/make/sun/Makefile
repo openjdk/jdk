@@ -76,7 +76,7 @@ else
 endif
 
 # nio need to be compiled before awt to have all charsets ready
-SUBDIRS            = jar security javazic misc net nio text util launcher
+SUBDIRS            = jar security javazic misc net nio text util launcher cldr
 
 ifdef BUILD_HEADLESS_ONLY
   DISPLAY_LIBS = awt $(HEADLESS_SUBDIR)
