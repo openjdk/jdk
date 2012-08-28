@@ -36,7 +36,7 @@ import com.apple.laf.AquaMenuItemUI.IndeterminateListener;
 
 import sun.lwawt.macosx.*;
 
-class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionListener, ComponentListener, ScreenMenuPropertyHandler, ItemListener {
+final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionListener, ComponentListener, ScreenMenuPropertyHandler, ItemListener {
     JMenuItem fMenuItem;
     MenuContainer fParent;
 
@@ -110,19 +110,14 @@ class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionListener,
         super.removeNotify();
     }
 
-    public void setAccelerator(final KeyStroke ks) {
-        if (ks == null) {
-            setShortcut(null);
-            return;
-        }
+    @Override
+    public synchronized void setLabel(final String label) {
+        ScreenMenuItem.syncLabelAndKS(this, label, fMenuItem.getAccelerator());
+    }
 
-        final MenuComponentPeer peer = getPeer();
-        if (peer instanceof CMenuItem) {
-            final CMenuItem ourPeer = (CMenuItem)peer;
-            ourPeer.setLabel(fMenuItem.getText(), ks.getKeyChar(), ks.getKeyCode(), ks.getModifiers());
-        } else {
-            setShortcut(new MenuShortcut(ks.getKeyCode(), (ks.getModifiers() & InputEvent.SHIFT_MASK) != 0));
-        }
+    @Override
+    public void setAccelerator(final KeyStroke ks) {
+        ScreenMenuItem.syncLabelAndKS(this, fMenuItem.getText(), ks);
     }
 
     public void actionPerformed(final ActionEvent e) {

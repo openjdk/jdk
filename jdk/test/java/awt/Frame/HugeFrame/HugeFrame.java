@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,28 +21,29 @@
  * questions.
  */
 
-#import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+/*
+  @test
+  @bug 7160609
+  @summary A window with huge dimensions shouldn't crash JVM
+  @author anthony.petrov@oracle.com: area=awt.toplevel
+  @run main HugeFrame
+*/
 
-@interface NSApplicationAWT : NSApplication {
-    NSString *fApplicationName;
-    NSWindow *eventTransparentWindow;
+import java.awt.*;
+
+public class HugeFrame {
+    public static void main(String[] args) throws Exception {
+        Frame f = new Frame("Huge");
+
+        // 8193+ should already produce a crash, but let's go extreme...
+        f.setBounds(10, 10, 30000, 500000);
+        f.setVisible(true);
+
+        // We would crash by now if the bug wasn't fixed
+        Thread.sleep(1000);
+        System.err.println(f.getBounds());
+
+        // Cleanup
+        f.dispose();
+    }
 }
-
-- (void) finishLaunching;
-- (void) registerWithProcessManager;
-- (void) setDockIconWithEnv:(JNIEnv *)env;
-
-+ (void) runAWTLoopWithApp:(NSApplication*)app;
-
-@end
-
-@interface NSApplication (CustomNIBAdditions)
-
-// Returns whether or not application is using its default NIB
-- (BOOL)usingDefaultNib;
-
-@end
-
-void OSXAPP_SetApplicationDelegate(id <NSApplicationDelegate> delegate);
-
