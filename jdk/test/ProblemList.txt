@@ -122,6 +122,9 @@
 
 # jdk_lang
 
+# 7194607
+java/lang/instrument/VerifyLocalVariableTableOnRetransformTest.sh generic-all
+
 # 6944188
 java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
 
