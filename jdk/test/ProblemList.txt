@@ -222,9 +222,6 @@ java/net/URLClassLoader/closetest/CloseTest.java                macosx-all
 
 # jdk_io
 
-# 6962637
-java/io/File/MaxPathLength.java                                 windows-all
-
 # 7162111 - these tests need to be updated to run headless
 java/io/Serializable/resolveClass/deserializeButton/run.sh      macosx-all
 java/io/Serializable/serialver/classpath/run.sh                 macosx-all
