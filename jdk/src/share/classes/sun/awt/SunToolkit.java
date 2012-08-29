@@ -53,7 +53,6 @@ import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -204,7 +203,7 @@ public abstract class SunToolkit extends Toolkit
     public abstract RobotPeer createRobot(Robot target, GraphicsDevice screen)
         throws AWTException;
 
-    public abstract KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager)
+    public abstract KeyboardFocusManagerPeer getKeyboardFocusManagerPeer()
         throws HeadlessException;
 
     /**

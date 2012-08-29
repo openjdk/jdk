@@ -40,6 +40,7 @@ import java.awt.image.VolatileImage;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.ContainerPeer;
 
+import java.awt.peer.KeyboardFocusManagerPeer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.reflect.Field;
 import java.security.AccessController;
@@ -894,15 +895,15 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                             ", focusedWindowChangeAllowed=" + focusedWindowChangeAllowed +
                             ", time= " + time + ", cause=" + cause);
         }
-        if (LWKeyboardFocusManagerPeer.getInstance(getAppContext()).
-                processSynchronousLightweightTransfer(getTarget(), lightweightChild, temporary,
-                        focusedWindowChangeAllowed, time)) {
+        if (LWKeyboardFocusManagerPeer.processSynchronousLightweightTransfer(
+                getTarget(), lightweightChild, temporary,
+                focusedWindowChangeAllowed, time)) {
             return true;
         }
 
-        int result = LWKeyboardFocusManagerPeer.getInstance(getAppContext()).
-                shouldNativelyFocusHeavyweight(getTarget(), lightweightChild, temporary,
-                        focusedWindowChangeAllowed, time, cause);
+        int result = LWKeyboardFocusManagerPeer.shouldNativelyFocusHeavyweight(
+                getTarget(), lightweightChild, temporary,
+                focusedWindowChangeAllowed, time, cause);
         switch (result) {
             case LWKeyboardFocusManagerPeer.SNFH_FAILURE:
                 return false;
@@ -951,14 +952,13 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                     return false;
                 }
 
-                LWComponentPeer focusOwnerPeer =
-                    LWKeyboardFocusManagerPeer.getInstance(getAppContext()).
-                        getFocusOwner();
-                Component focusOwner = (focusOwnerPeer != null) ? focusOwnerPeer.getTarget() : null;
+                KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
+                Component focusOwner = kfmPeer.getCurrentFocusOwner();
                 return LWKeyboardFocusManagerPeer.deliverFocus(lightweightChild,
                         getTarget(), temporary,
                         focusedWindowChangeAllowed,
                         time, cause, focusOwner);
+
             case LWKeyboardFocusManagerPeer.SNFH_SUCCESS_HANDLED:
                 return true;
         }
@@ -1263,8 +1263,8 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     protected void handleJavaFocusEvent(FocusEvent e) {
         // Note that the peer receives all the FocusEvents from
         // its lightweight children as well
-        LWKeyboardFocusManagerPeer.getInstance(getAppContext()).
-                setFocusOwner(e.getID() == FocusEvent.FOCUS_GAINED ? this : null);
+        KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
+        kfmPeer.setCurrentFocusOwner(e.getID() == FocusEvent.FOCUS_GAINED ? getTarget() : null);
     }
 
     /**

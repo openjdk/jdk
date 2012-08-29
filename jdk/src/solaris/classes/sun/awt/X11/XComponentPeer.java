@@ -601,7 +601,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
             final XWindowPeer parentXWindow = getParentTopLevel();
             Window parentWindow = (Window)parentXWindow.getTarget();
             if (parentXWindow.isFocusableWindow() && parentXWindow.isSimpleWindow() &&
-                XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow() != parentWindow)
+                XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow() != parentWindow)
             {
                 postEvent(new InvocationEvent(parentWindow, new  Runnable() {
                         public void run() {
