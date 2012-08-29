@@ -25,66 +25,48 @@
 package sun.awt.X11;
 
 import java.awt.Component;
-import java.awt.KeyboardFocusManager;
 import java.awt.Window;
-
-import java.awt.event.FocusEvent;
-
-import java.awt.peer.KeyboardFocusManagerPeer;
-import java.awt.peer.ComponentPeer;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 import sun.util.logging.PlatformLogger;
-
 import sun.awt.CausedFocusEvent;
-import sun.awt.SunToolkit;
 import sun.awt.KeyboardFocusManagerPeerImpl;
 
 public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
     private static final PlatformLogger focusLog = PlatformLogger.getLogger("sun.awt.X11.focus.XKeyboardFocusManagerPeer");
+    private static final XKeyboardFocusManagerPeer inst = new XKeyboardFocusManagerPeer();
 
-    private static Object lock = new Object() {};
-    private static Component currentFocusOwner;
-    private static Window currentFocusedWindow;
+    private Component currentFocusOwner;
+    private Window currentFocusedWindow;
 
-    XKeyboardFocusManagerPeer(KeyboardFocusManager manager) {
-        super(manager);
+    public static XKeyboardFocusManagerPeer getInstance() {
+        return inst;
+    }
+
+    private XKeyboardFocusManagerPeer() {
     }
 
     @Override
     public void setCurrentFocusOwner(Component comp) {
-        setCurrentNativeFocusOwner(comp);
-    }
-
-    @Override
-    public Component getCurrentFocusOwner() {
-        return getCurrentNativeFocusOwner();
-    }
-
-    @Override
-    public Window getCurrentFocusedWindow() {
-        return getCurrentNativeFocusedWindow();
-    }
-
-    public static void setCurrentNativeFocusOwner(Component comp) {
-        synchronized (lock) {
+        synchronized (this) {
             currentFocusOwner = comp;
         }
     }
 
-    public static Component getCurrentNativeFocusOwner() {
-        synchronized(lock) {
+    @Override
+    public Component getCurrentFocusOwner() {
+        synchronized(this) {
             return currentFocusOwner;
         }
     }
 
-    public static void setCurrentNativeFocusedWindow(Window win) {
-        if (focusLog.isLoggable(PlatformLogger.FINER)) focusLog.finer("Setting current native focused window " + win);
+    @Override
+    public void setCurrentFocusedWindow(Window win) {
+        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+            focusLog.finer("Setting current focused window " + win);
+        }
+
         XWindowPeer from = null, to = null;
 
-        synchronized(lock) {
+        synchronized(this) {
             if (currentFocusedWindow != null) {
                 from = (XWindowPeer)currentFocusedWindow.getPeer();
             }
@@ -104,8 +86,9 @@ public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
         }
     }
 
-    public static Window getCurrentNativeFocusedWindow() {
-        synchronized(lock) {
+    @Override
+    public Window getCurrentFocusedWindow() {
+        synchronized(this) {
             return currentFocusedWindow;
         }
     }
@@ -124,6 +107,6 @@ public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
                                                          focusedWindowChangeAllowed,
                                                          time,
                                                          cause,
-                                                         getCurrentNativeFocusOwner());
+                                                         getInstance().getCurrentFocusOwner());
     }
 }

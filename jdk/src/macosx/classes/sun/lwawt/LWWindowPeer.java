@@ -238,8 +238,7 @@ public class LWWindowPeer
         // TODO: update graphicsConfig, see 4868278
         platformWindow.setVisible(visible);
         if (isSimpleWindow()) {
-            LWKeyboardFocusManagerPeer manager = LWKeyboardFocusManagerPeer.
-                getInstance(getAppContext());
+            KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
 
             if (visible) {
                 if (!getTarget().isAutoRequestFocus()) {
@@ -248,7 +247,7 @@ public class LWWindowPeer
                     requestWindowFocus(CausedFocusEvent.Cause.ACTIVATION);
                 }
             // Focus the owner in case this window is focused.
-            } else if (manager.getCurrentFocusedWindow() == getTarget()) {
+            } else if (kfmPeer.getCurrentFocusedWindow() == getTarget()) {
                 // Transfer focus to the owner.
                 LWWindowPeer owner = getOwnerFrameDialog(LWWindowPeer.this);
                 if (owner != null) {
@@ -915,9 +914,8 @@ public class LWWindowPeer
     public void dispatchKeyEvent(int id, long when, int modifiers,
                                  int keyCode, char keyChar, int keyLocation)
     {
-        LWComponentPeer focusOwner =
-            LWKeyboardFocusManagerPeer.getInstance(getAppContext()).
-                getFocusOwner();
+        KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
+        Component focusOwner = kfmPeer.getCurrentFocusOwner();
 
         // Null focus owner may receive key event when
         // application hides the focused window upon ESC press
@@ -925,9 +923,10 @@ public class LWWindowPeer
         // may come to already hidden window. This check eliminates NPE.
         if (focusOwner != null) {
             KeyEvent event =
-                new KeyEvent(focusOwner.getTarget(), id, when, modifiers,
+                new KeyEvent(focusOwner, id, when, modifiers,
                              keyCode, keyChar, keyLocation);
-            focusOwner.postEvent(event);
+            LWComponentPeer peer = (LWComponentPeer)focusOwner.getPeer();
+            peer.postEvent(event);
         }
     }
 
@@ -1244,10 +1243,8 @@ public class LWWindowPeer
             }
         }
 
-        LWKeyboardFocusManagerPeer manager = LWKeyboardFocusManagerPeer.
-            getInstance(getAppContext());
-
-        Window oppositeWindow = becomesFocused ? manager.getCurrentFocusedWindow() : null;
+        KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
+        Window oppositeWindow = becomesFocused ? kfmPeer.getCurrentFocusedWindow() : null;
 
         // Note, the method is not called:
         // - when the opposite (gaining focus) window is an owned/owner window.
@@ -1260,7 +1257,7 @@ public class LWWindowPeer
             grabbingWindow.ungrab();
         }
 
-        manager.setFocusedWindow(becomesFocused ? LWWindowPeer.this : null);
+        kfmPeer.setCurrentFocusedWindow(becomesFocused ? getTarget() : null);
 
         int eventID = becomesFocused ? WindowEvent.WINDOW_GAINED_FOCUS : WindowEvent.WINDOW_LOST_FOCUS;
         WindowEvent windowEvent = new WindowEvent(getTarget(), eventID, oppositeWindow);

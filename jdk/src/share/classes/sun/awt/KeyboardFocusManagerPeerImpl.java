@@ -53,12 +53,6 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
     public static final int SNFH_SUCCESS_HANDLED = 1;
     public static final int SNFH_SUCCESS_PROCEED = 2;
 
-    protected KeyboardFocusManager manager;
-
-    public KeyboardFocusManagerPeerImpl(KeyboardFocusManager manager) {
-        this.manager = manager;
-    }
-
     @Override
     public void clearGlobalFocusOwner(Window activeWindow) {
         if (activeWindow != null) {
