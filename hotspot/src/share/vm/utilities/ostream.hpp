@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,11 @@ class outputStream : public ResourceObj {
    outputStream(int width, bool has_time_stamps);
 
    // indentation
-   void indent();
+   outputStream& indent();
    void inc() { _indentation++; };
    void dec() { _indentation--; };
+   void inc(int n) { _indentation += n; };
+   void dec(int n) { _indentation -= n; };
    int  indentation() const    { return _indentation; }
    void set_indentation(int i) { _indentation = i;    }
    void fill_to(int col);
@@ -84,6 +86,7 @@ class outputStream : public ResourceObj {
    void print_raw(const char* str, int len)   { write(str,         len); }
    void print_raw_cr(const char* str)         { write(str, strlen(str)); cr(); }
    void print_raw_cr(const char* str, int len){ write(str,         len); cr(); }
+   void print_data(void* data, size_t len, bool with_ascii);
    void put(char ch);
    void sp(int count = 1);
    void cr();
@@ -121,6 +124,19 @@ class outputStream : public ResourceObj {
 // ANSI C++ name collision
 extern outputStream* tty;           // tty output
 extern outputStream* gclog_or_tty;  // stream for gc log if -Xloggc:<f>, or tty
+
+class streamIndentor : public StackObj {
+ private:
+  outputStream* _str;
+  int _amount;
+
+ public:
+  streamIndentor(outputStream* str, int amt = 2) : _str(str), _amount(amt) {
+    _str->inc(_amount);
+  }
+  ~streamIndentor() { _str->dec(_amount); }
+};
+
 
 // advisory locking for the shared tty stream:
 class ttyLocker: StackObj {

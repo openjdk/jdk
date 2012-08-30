@@ -46,7 +46,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"
@@ -67,13 +67,13 @@ CLASSPATH=.${PS}${TESTCLASSES}${PS}${JEMMYPATH} ; export CLASSPATH
 
 THIS_DIR=`pwd`
 
-${TESTJAVA}${FS}bin${FS}java -fullversion
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -fullversion
 
 ${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}InternTest.java
 
 cp ${TESTSRC}${FS}badstrings.txt .
 
-${TESTJAVA}${FS}bin${FS}java -XX:+PrintStringTableStatistics -XX:+TraceSafepointCleanupTime InternTest bad > test.out 2>&1 &
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -XX:+PrintStringTableStatistics -XX:+TraceSafepointCleanupTime InternTest bad > test.out 2>&1 &
 C_PID=$!
 
 sleep 60

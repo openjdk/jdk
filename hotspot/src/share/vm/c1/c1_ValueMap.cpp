@@ -190,7 +190,7 @@ Value ValueMap::find_insert(Value x) {
   LoadField* lf = value->as_LoadField();                                                 \
   bool must_kill = lf != NULL                                                            \
                    && lf->field()->holder() == field->holder()                           \
-                   && lf->field()->offset() == field->offset();
+                   && (all_offsets || lf->field()->offset() == field->offset());
 
 #define MUST_KILL_EXCEPTION(must_kill, entry, value)                                     \
   assert(entry->nesting() < nesting(), "must not find bigger nesting than current");     \
@@ -205,7 +205,7 @@ void ValueMap::kill_array(ValueType* type) {
   GENERIC_KILL_VALUE(MUST_KILL_ARRAY);
 }
 
-void ValueMap::kill_field(ciField* field) {
+void ValueMap::kill_field(ciField* field, bool all_offsets) {
   GENERIC_KILL_VALUE(MUST_KILL_FIELD);
 }
 
@@ -280,9 +280,9 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   ValueMap* value_map_of(BlockBegin* block)      { return _gvn->value_map_of(block); }
 
   // implementation for abstract methods of ValueNumberingVisitor
-  void      kill_memory()                        { _too_complicated_loop = true; }
-  void      kill_field(ciField* field)           { current_map()->kill_field(field); };
-  void      kill_array(ValueType* type)          { current_map()->kill_array(type); };
+  void      kill_memory()                                 { _too_complicated_loop = true; }
+  void      kill_field(ciField* field, bool all_offsets)  { current_map()->kill_field(field, all_offsets); };
+  void      kill_array(ValueType* type)                   { current_map()->kill_array(type); };
 
  public:
   ShortLoopOptimizer(GlobalValueNumbering* gvn)

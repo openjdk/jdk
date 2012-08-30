@@ -617,6 +617,7 @@ private:
                    VexSimdPrefix pre, VexOpcode opc = VEX_OPCODE_0F) {
     simd_prefix(dst, xnoreg, src, pre, opc);
   }
+
   void simd_prefix(Address dst, XMMRegister src, VexSimdPrefix pre) {
     simd_prefix(src, dst, pre);
   }
@@ -626,15 +627,9 @@ private:
     simd_prefix(dst, nds, src, pre, VEX_OPCODE_0F, rex_w);
   }
 
-
   int simd_prefix_and_encode(XMMRegister dst, XMMRegister nds, XMMRegister src,
                              VexSimdPrefix pre, VexOpcode opc = VEX_OPCODE_0F,
                              bool rex_w = false, bool vector256 = false);
-
-  int simd_prefix_and_encode(XMMRegister dst, XMMRegister src,
-                             VexSimdPrefix pre, VexOpcode opc = VEX_OPCODE_0F) {
-    return simd_prefix_and_encode(dst, xnoreg, src, pre, opc);
-  }
 
   // Move/convert 32-bit integer value.
   int simd_prefix_and_encode(XMMRegister dst, XMMRegister nds, Register src,
@@ -676,6 +671,15 @@ private:
   // only 32bit??
   void emit_arith(int op1, int op2, Register dst, jobject obj);
   void emit_arith(int op1, int op2, Register dst, Register src);
+
+  void emit_simd_arith(int opcode, XMMRegister dst, Address src, VexSimdPrefix pre);
+  void emit_simd_arith(int opcode, XMMRegister dst, XMMRegister src, VexSimdPrefix pre);
+  void emit_simd_arith_nonds(int opcode, XMMRegister dst, Address src, VexSimdPrefix pre);
+  void emit_simd_arith_nonds(int opcode, XMMRegister dst, XMMRegister src, VexSimdPrefix pre);
+  void emit_vex_arith(int opcode, XMMRegister dst, XMMRegister nds,
+                      Address src, VexSimdPrefix pre, bool vector256);
+  void emit_vex_arith(int opcode, XMMRegister dst, XMMRegister nds,
+                      XMMRegister src, VexSimdPrefix pre, bool vector256);
 
   void emit_operand(Register reg,
                     Register base, Register index, Address::ScaleFactor scale,
@@ -890,12 +894,6 @@ private:
   void andq(Register dst, int32_t imm32);
   void andq(Register dst, Address src);
   void andq(Register dst, Register src);
-
-  // Bitwise Logical AND of Packed Double-Precision Floating-Point Values
-  void andpd(XMMRegister dst, XMMRegister src);
-
-  // Bitwise Logical AND of Packed Single-Precision Floating-Point Values
-  void andps(XMMRegister dst, XMMRegister src);
 
   void bsfl(Register dst, Register src);
   void bsrl(Register dst, Register src);
@@ -1436,10 +1434,6 @@ private:
   void prefetcht2(Address src);
   void prefetchw(Address src);
 
-  // POR - Bitwise logical OR
-  void por(XMMRegister dst, XMMRegister src);
-  void por(XMMRegister dst, Address src);
-
   // Shuffle Packed Doublewords
   void pshufd(XMMRegister dst, XMMRegister src, int mode);
   void pshufd(XMMRegister dst, Address src,     int mode);
@@ -1447,9 +1441,6 @@ private:
   // Shuffle Packed Low Words
   void pshuflw(XMMRegister dst, XMMRegister src, int mode);
   void pshuflw(XMMRegister dst, Address src,     int mode);
-
-  // Shift Right by bits Logical Quadword Immediate
-  void psrlq(XMMRegister dst, int shift);
 
   // Shift Right by bytes Logical DoubleQuadword Immediate
   void psrldq(XMMRegister dst, int shift);
@@ -1474,10 +1465,6 @@ private:
 #endif
 
   void pushq(Address src);
-
-  // Xor Packed Byte Integer Values
-  void pxor(XMMRegister dst, Address src);
-  void pxor(XMMRegister dst, XMMRegister src);
 
   void rcll(Register dst, int imm8);
 
@@ -1601,15 +1588,10 @@ private:
   void xorq(Register dst, Address src);
   void xorq(Register dst, Register src);
 
-  // Bitwise Logical XOR of Packed Double-Precision Floating-Point Values
-  void xorpd(XMMRegister dst, XMMRegister src);
-
-  // Bitwise Logical XOR of Packed Single-Precision Floating-Point Values
-  void xorps(XMMRegister dst, XMMRegister src);
-
   void set_byte_if_not_zero(Register dst); // sets reg to 1 if not zero, otherwise 0
 
   // AVX 3-operands scalar instructions (encoded with VEX prefix)
+
   void vaddsd(XMMRegister dst, XMMRegister nds, Address src);
   void vaddsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vaddss(XMMRegister dst, XMMRegister nds, Address src);
@@ -1627,14 +1609,147 @@ private:
   void vsubss(XMMRegister dst, XMMRegister nds, Address src);
   void vsubss(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
-  // AVX Vector instrucitons.
-  void vandpd(XMMRegister dst, XMMRegister nds, Address src);
-  void vandps(XMMRegister dst, XMMRegister nds, Address src);
-  void vxorpd(XMMRegister dst, XMMRegister nds, Address src);
-  void vxorps(XMMRegister dst, XMMRegister nds, Address src);
+
+  //====================VECTOR ARITHMETIC=====================================
+
+  // Add Packed Floating-Point Values
+  void addpd(XMMRegister dst, XMMRegister src);
+  void addps(XMMRegister dst, XMMRegister src);
+  void vaddpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vaddps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vaddpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vaddps(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Subtract Packed Floating-Point Values
+  void subpd(XMMRegister dst, XMMRegister src);
+  void subps(XMMRegister dst, XMMRegister src);
+  void vsubpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vsubps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vsubpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vsubps(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Multiply Packed Floating-Point Values
+  void mulpd(XMMRegister dst, XMMRegister src);
+  void mulps(XMMRegister dst, XMMRegister src);
+  void vmulpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vmulps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vmulpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vmulps(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Divide Packed Floating-Point Values
+  void divpd(XMMRegister dst, XMMRegister src);
+  void divps(XMMRegister dst, XMMRegister src);
+  void vdivpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vdivps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vdivpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vdivps(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Bitwise Logical AND of Packed Floating-Point Values
+  void andpd(XMMRegister dst, XMMRegister src);
+  void andps(XMMRegister dst, XMMRegister src);
+  void vandpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vandps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vandpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vandps(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Bitwise Logical XOR of Packed Floating-Point Values
+  void xorpd(XMMRegister dst, XMMRegister src);
+  void xorps(XMMRegister dst, XMMRegister src);
   void vxorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
   void vxorps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vxorpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vxorps(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Add packed integers
+  void paddb(XMMRegister dst, XMMRegister src);
+  void paddw(XMMRegister dst, XMMRegister src);
+  void paddd(XMMRegister dst, XMMRegister src);
+  void paddq(XMMRegister dst, XMMRegister src);
+  void vpaddb(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpaddd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpaddq(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpaddb(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vpaddw(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vpaddd(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vpaddq(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Sub packed integers
+  void psubb(XMMRegister dst, XMMRegister src);
+  void psubw(XMMRegister dst, XMMRegister src);
+  void psubd(XMMRegister dst, XMMRegister src);
+  void psubq(XMMRegister dst, XMMRegister src);
+  void vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpsubw(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpsubd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpsubq(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpsubb(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vpsubw(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vpsubd(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vpsubq(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Multiply packed integers (only shorts and ints)
+  void pmullw(XMMRegister dst, XMMRegister src);
+  void pmulld(XMMRegister dst, XMMRegister src);
+  void vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpmulld(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpmullw(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vpmulld(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Shift left packed integers
+  void psllw(XMMRegister dst, int shift);
+  void pslld(XMMRegister dst, int shift);
+  void psllq(XMMRegister dst, int shift);
+  void psllw(XMMRegister dst, XMMRegister shift);
+  void pslld(XMMRegister dst, XMMRegister shift);
+  void psllq(XMMRegister dst, XMMRegister shift);
+  void vpsllw(XMMRegister dst, XMMRegister src, int shift, bool vector256);
+  void vpslld(XMMRegister dst, XMMRegister src, int shift, bool vector256);
+  void vpsllq(XMMRegister dst, XMMRegister src, int shift, bool vector256);
+  void vpsllw(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256);
+  void vpslld(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256);
+  void vpsllq(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256);
+
+  // Logical shift right packed integers
+  void psrlw(XMMRegister dst, int shift);
+  void psrld(XMMRegister dst, int shift);
+  void psrlq(XMMRegister dst, int shift);
+  void psrlw(XMMRegister dst, XMMRegister shift);
+  void psrld(XMMRegister dst, XMMRegister shift);
+  void psrlq(XMMRegister dst, XMMRegister shift);
+  void vpsrlw(XMMRegister dst, XMMRegister src, int shift, bool vector256);
+  void vpsrld(XMMRegister dst, XMMRegister src, int shift, bool vector256);
+  void vpsrlq(XMMRegister dst, XMMRegister src, int shift, bool vector256);
+  void vpsrlw(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256);
+  void vpsrld(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256);
+  void vpsrlq(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256);
+
+  // Arithmetic shift right packed integers (only shorts and ints, no instructions for longs)
+  void psraw(XMMRegister dst, int shift);
+  void psrad(XMMRegister dst, int shift);
+  void psraw(XMMRegister dst, XMMRegister shift);
+  void psrad(XMMRegister dst, XMMRegister shift);
+  void vpsraw(XMMRegister dst, XMMRegister src, int shift, bool vector256);
+  void vpsrad(XMMRegister dst, XMMRegister src, int shift, bool vector256);
+  void vpsraw(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256);
+  void vpsrad(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256);
+
+  // And packed integers
+  void pand(XMMRegister dst, XMMRegister src);
+  void vpand(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpand(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Or packed integers
+  void por(XMMRegister dst, XMMRegister src);
+  void vpor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpor(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Xor packed integers
+  void pxor(XMMRegister dst, XMMRegister src);
   void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+  void vpxor(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+
+  // Copy low 128bit into high 128bit of YMM registers.
   void vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
@@ -2532,11 +2647,13 @@ public:
   void vaddss(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vaddss(dst, nds, src); }
   void vaddss(XMMRegister dst, XMMRegister nds, AddressLiteral src);
 
-  void vandpd(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vandpd(dst, nds, src); }
-  void vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+  void vandpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) { Assembler::vandpd(dst, nds, src, vector256); }
+  void vandpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256)     { Assembler::vandpd(dst, nds, src, vector256); }
+  void vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256);
 
-  void vandps(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vandps(dst, nds, src); }
-  void vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+  void vandps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) { Assembler::vandps(dst, nds, src, vector256); }
+  void vandps(XMMRegister dst, XMMRegister nds, Address src, bool vector256)     { Assembler::vandps(dst, nds, src, vector256); }
+  void vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256);
 
   void vdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src) { Assembler::vdivsd(dst, nds, src); }
   void vdivsd(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vdivsd(dst, nds, src); }
@@ -2565,14 +2682,20 @@ public:
   // AVX Vector instructions
 
   void vxorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) { Assembler::vxorpd(dst, nds, src, vector256); }
-  void vxorpd(XMMRegister dst, XMMRegister nds, Address src) { Assembler::vxorpd(dst, nds, src); }
-  void vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+  void vxorpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256) { Assembler::vxorpd(dst, nds, src, vector256); }
+  void vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256);
 
   void vxorps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) { Assembler::vxorps(dst, nds, src, vector256); }
-  void vxorps(XMMRegister dst, XMMRegister nds, Address src) { Assembler::vxorps(dst, nds, src); }
-  void vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+  void vxorps(XMMRegister dst, XMMRegister nds, Address src, bool vector256) { Assembler::vxorps(dst, nds, src, vector256); }
+  void vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256);
 
   void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+    if (UseAVX > 1 || !vector256) // vpxor 256 bit is available only in AVX2
+      Assembler::vpxor(dst, nds, src, vector256);
+    else
+      Assembler::vxorpd(dst, nds, src, vector256);
+  }
+  void vpxor(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
     if (UseAVX > 1 || !vector256) // vpxor 256 bit is available only in AVX2
       Assembler::vpxor(dst, nds, src, vector256);
     else

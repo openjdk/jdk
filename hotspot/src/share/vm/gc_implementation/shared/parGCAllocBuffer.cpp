@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/parNew/parGCAllocBuffer.hpp"
+#include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "memory/sharedHeap.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -110,9 +110,7 @@ void PLABStats::adjust_desired_plab_sz() {
   plab_sz = align_object_size(plab_sz);
   // Latch the result
   if (PrintPLAB) gclog_or_tty->print(" desired_plab_sz = %d) ", plab_sz);
-  if (ResizePLAB) {
-    _desired_plab_sz = plab_sz;
-  }
+  _desired_plab_sz = plab_sz;
   // Now clear the accumulators for next round:
   // note this needs to be fixed in the case where we
   // are retaining across scavenges. FIX ME !!! XXX

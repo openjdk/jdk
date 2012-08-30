@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/parNew/parGCAllocBuffer.hpp"
 #include "gc_implementation/shared/collectorCounters.hpp"
+#include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/blockOffsetTable.inline.hpp"
 #include "memory/generation.inline.hpp"

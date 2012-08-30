@@ -500,6 +500,24 @@ const int Matcher::base2reg[Type::lastype] = {
   0  /*bottom*/
 };
 
+const bool Matcher::match_rule_supported(int opcode) {
+  if (!has_match_rule(opcode))
+    return false;
+
+  switch (opcode) {
+    case Op_PopCountI:
+    case Op_PopCountL:
+      if (!UsePopCountInstruction)
+        return false;
+    case Op_MulVI:
+      if ((UseSSE < 4) && (UseAVX < 1)) // only with SSE4_1 or AVX
+        return false;
+    break;
+  }
+
+  return true;  // Per default match rules are supported.
+}
+
 // Max vector size in bytes. 0 if not supported.
 const int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
@@ -1439,8 +1457,9 @@ instruct absF_reg_reg(regF dst, regF src) %{
   ins_cost(150);
   format %{ "vandps  $dst, $src, [0x7fffffff]\t# abs float by sign masking" %}
   ins_encode %{
+    bool vector256 = false;
     __ vandps($dst$$XMMRegister, $src$$XMMRegister,
-              ExternalAddress(float_signmask()));
+              ExternalAddress(float_signmask()), vector256);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1464,8 +1483,9 @@ instruct absD_reg_reg(regD dst, regD src) %{
   format %{ "vandpd  $dst, $src, [0x7fffffffffffffff]\t"
             "# abs double by sign masking" %}
   ins_encode %{
+    bool vector256 = false;
     __ vandpd($dst$$XMMRegister, $src$$XMMRegister,
-              ExternalAddress(double_signmask()));
+              ExternalAddress(double_signmask()), vector256);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1487,8 +1507,9 @@ instruct negF_reg_reg(regF dst, regF src) %{
   ins_cost(150);
   format %{ "vxorps  $dst, $src, [0x80000000]\t# neg float by sign flipping" %}
   ins_encode %{
+    bool vector256 = false;
     __ vxorps($dst$$XMMRegister, $src$$XMMRegister,
-              ExternalAddress(float_signflip()));
+              ExternalAddress(float_signflip()), vector256);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1512,8 +1533,9 @@ instruct negD_reg_reg(regD dst, regD src) %{
   format %{ "vxorpd  $dst, $src, [0x8000000000000000]\t"
             "# neg double by sign flipping" %}
   ins_encode %{
+    bool vector256 = false;
     __ vxorpd($dst$$XMMRegister, $src$$XMMRegister,
-              ExternalAddress(double_signflip()));
+              ExternalAddress(double_signflip()), vector256);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2380,5 +2402,2418 @@ instruct Repl4D_zero(vecY dst, immD0 zero) %{
     __ vxorpd($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector256);
   %}
   ins_pipe( fpu_reg_reg );
+%}
+
+// ====================VECTOR ARITHMETIC=======================================
+
+// --------------------------------- ADD --------------------------------------
+
+// Bytes vector add
+instruct vadd4B(vecS dst, vecS src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AddVB dst src));
+  format %{ "paddb   $dst,$src\t! add packed4B" %}
+  ins_encode %{
+    __ paddb($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4B_reg(vecS dst, vecS src1, vecS src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVB src1 src2));
+  format %{ "vpaddb  $dst,$src1,$src2\t! add packed4B" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddb($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd8B(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (AddVB dst src));
+  format %{ "paddb   $dst,$src\t! add packed8B" %}
+  ins_encode %{
+    __ paddb($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd8B_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (AddVB src1 src2));
+  format %{ "vpaddb  $dst,$src1,$src2\t! add packed8B" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddb($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd16B(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (AddVB dst src));
+  format %{ "paddb   $dst,$src\t! add packed16B" %}
+  ins_encode %{
+    __ paddb($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd16B_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 16);
+  match(Set dst (AddVB src1 src2));
+  format %{ "vpaddb  $dst,$src1,$src2\t! add packed16B" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddb($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd16B_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 16);
+  match(Set dst (AddVB src (LoadVector mem)));
+  format %{ "vpaddb  $dst,$src,$mem\t! add packed16B" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddb($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd32B_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 32);
+  match(Set dst (AddVB src1 src2));
+  format %{ "vpaddb  $dst,$src1,$src2\t! add packed32B" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpaddb($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd32B_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 32);
+  match(Set dst (AddVB src (LoadVector mem)));
+  format %{ "vpaddb  $dst,$src,$mem\t! add packed32B" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpaddb($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Shorts/Chars vector add
+instruct vadd2S(vecS dst, vecS src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVS dst src));
+  format %{ "paddw   $dst,$src\t! add packed2S" %}
+  ins_encode %{
+    __ paddw($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd2S_reg(vecS dst, vecS src1, vecS src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (AddVS src1 src2));
+  format %{ "vpaddw  $dst,$src1,$src2\t! add packed2S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4S(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AddVS dst src));
+  format %{ "paddw   $dst,$src\t! add packed4S" %}
+  ins_encode %{
+    __ paddw($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4S_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVS src1 src2));
+  format %{ "vpaddw  $dst,$src1,$src2\t! add packed4S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd8S(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (AddVS dst src));
+  format %{ "paddw   $dst,$src\t! add packed8S" %}
+  ins_encode %{
+    __ paddw($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd8S_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (AddVS src1 src2));
+  format %{ "vpaddw  $dst,$src1,$src2\t! add packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd8S_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (AddVS src (LoadVector mem)));
+  format %{ "vpaddw  $dst,$src,$mem\t! add packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd16S_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (AddVS src1 src2));
+  format %{ "vpaddw  $dst,$src1,$src2\t! add packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpaddw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd16S_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (AddVS src (LoadVector mem)));
+  format %{ "vpaddw  $dst,$src,$mem\t! add packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpaddw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Integers vector add
+instruct vadd2I(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVI dst src));
+  format %{ "paddd   $dst,$src\t! add packed2I" %}
+  ins_encode %{
+    __ paddd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd2I_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (AddVI src1 src2));
+  format %{ "vpaddd  $dst,$src1,$src2\t! add packed2I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4I(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AddVI dst src));
+  format %{ "paddd   $dst,$src\t! add packed4I" %}
+  ins_encode %{
+    __ paddd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4I_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVI src1 src2));
+  format %{ "vpaddd  $dst,$src1,$src2\t! add packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4I_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVI src (LoadVector mem)));
+  format %{ "vpaddd  $dst,$src,$mem\t! add packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd8I_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (AddVI src1 src2));
+  format %{ "vpaddd  $dst,$src1,$src2\t! add packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpaddd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd8I_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (AddVI src (LoadVector mem)));
+  format %{ "vpaddd  $dst,$src,$mem\t! add packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpaddd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Longs vector add
+instruct vadd2L(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVL dst src));
+  format %{ "paddq   $dst,$src\t! add packed2L" %}
+  ins_encode %{
+    __ paddq($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd2L_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (AddVL src1 src2));
+  format %{ "vpaddq  $dst,$src1,$src2\t! add packed2L" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd2L_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (AddVL src (LoadVector mem)));
+  format %{ "vpaddq  $dst,$src,$mem\t! add packed2L" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpaddq($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4L_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVL src1 src2));
+  format %{ "vpaddq  $dst,$src1,$src2\t! add packed4L" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpaddq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4L_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVL src (LoadVector mem)));
+  format %{ "vpaddq  $dst,$src,$mem\t! add packed4L" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpaddq($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Floats vector add
+instruct vadd2F(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVF dst src));
+  format %{ "addps   $dst,$src\t! add packed2F" %}
+  ins_encode %{
+    __ addps($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd2F_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (AddVF src1 src2));
+  format %{ "vaddps  $dst,$src1,$src2\t! add packed2F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vaddps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4F(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AddVF dst src));
+  format %{ "addps   $dst,$src\t! add packed4F" %}
+  ins_encode %{
+    __ addps($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4F_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVF src1 src2));
+  format %{ "vaddps  $dst,$src1,$src2\t! add packed4F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vaddps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4F_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVF src (LoadVector mem)));
+  format %{ "vaddps  $dst,$src,$mem\t! add packed4F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vaddps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd8F_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (AddVF src1 src2));
+  format %{ "vaddps  $dst,$src1,$src2\t! add packed8F" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vaddps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd8F_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (AddVF src (LoadVector mem)));
+  format %{ "vaddps  $dst,$src,$mem\t! add packed8F" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vaddps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Doubles vector add
+instruct vadd2D(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVD dst src));
+  format %{ "addpd   $dst,$src\t! add packed2D" %}
+  ins_encode %{
+    __ addpd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd2D_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (AddVD src1 src2));
+  format %{ "vaddpd  $dst,$src1,$src2\t! add packed2D" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vaddpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd2D_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (AddVD src (LoadVector mem)));
+  format %{ "vaddpd  $dst,$src,$mem\t! add packed2D" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vaddpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4D_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVD src1 src2));
+  format %{ "vaddpd  $dst,$src1,$src2\t! add packed4D" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vaddpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4D_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVD src (LoadVector mem)));
+  format %{ "vaddpd  $dst,$src,$mem\t! add packed4D" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vaddpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- SUB --------------------------------------
+
+// Bytes vector sub
+instruct vsub4B(vecS dst, vecS src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (SubVB dst src));
+  format %{ "psubb   $dst,$src\t! sub packed4B" %}
+  ins_encode %{
+    __ psubb($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4B_reg(vecS dst, vecS src1, vecS src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVB src1 src2));
+  format %{ "vpsubb  $dst,$src1,$src2\t! sub packed4B" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubb($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub8B(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (SubVB dst src));
+  format %{ "psubb   $dst,$src\t! sub packed8B" %}
+  ins_encode %{
+    __ psubb($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub8B_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (SubVB src1 src2));
+  format %{ "vpsubb  $dst,$src1,$src2\t! sub packed8B" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubb($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub16B(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (SubVB dst src));
+  format %{ "psubb   $dst,$src\t! sub packed16B" %}
+  ins_encode %{
+    __ psubb($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub16B_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 16);
+  match(Set dst (SubVB src1 src2));
+  format %{ "vpsubb  $dst,$src1,$src2\t! sub packed16B" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubb($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub16B_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 16);
+  match(Set dst (SubVB src (LoadVector mem)));
+  format %{ "vpsubb  $dst,$src,$mem\t! sub packed16B" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubb($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub32B_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 32);
+  match(Set dst (SubVB src1 src2));
+  format %{ "vpsubb  $dst,$src1,$src2\t! sub packed32B" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsubb($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub32B_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 32);
+  match(Set dst (SubVB src (LoadVector mem)));
+  format %{ "vpsubb  $dst,$src,$mem\t! sub packed32B" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsubb($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Shorts/Chars vector sub
+instruct vsub2S(vecS dst, vecS src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (SubVS dst src));
+  format %{ "psubw   $dst,$src\t! sub packed2S" %}
+  ins_encode %{
+    __ psubw($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub2S_reg(vecS dst, vecS src1, vecS src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SubVS src1 src2));
+  format %{ "vpsubw  $dst,$src1,$src2\t! sub packed2S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4S(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (SubVS dst src));
+  format %{ "psubw   $dst,$src\t! sub packed4S" %}
+  ins_encode %{
+    __ psubw($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4S_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVS src1 src2));
+  format %{ "vpsubw  $dst,$src1,$src2\t! sub packed4S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub8S(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (SubVS dst src));
+  format %{ "psubw   $dst,$src\t! sub packed8S" %}
+  ins_encode %{
+    __ psubw($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub8S_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (SubVS src1 src2));
+  format %{ "vpsubw  $dst,$src1,$src2\t! sub packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub8S_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (SubVS src (LoadVector mem)));
+  format %{ "vpsubw  $dst,$src,$mem\t! sub packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub16S_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (SubVS src1 src2));
+  format %{ "vpsubw  $dst,$src1,$src2\t! sub packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsubw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub16S_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (SubVS src (LoadVector mem)));
+  format %{ "vpsubw  $dst,$src,$mem\t! sub packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsubw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Integers vector sub
+instruct vsub2I(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (SubVI dst src));
+  format %{ "psubd   $dst,$src\t! sub packed2I" %}
+  ins_encode %{
+    __ psubd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub2I_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SubVI src1 src2));
+  format %{ "vpsubd  $dst,$src1,$src2\t! sub packed2I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4I(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (SubVI dst src));
+  format %{ "psubd   $dst,$src\t! sub packed4I" %}
+  ins_encode %{
+    __ psubd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4I_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVI src1 src2));
+  format %{ "vpsubd  $dst,$src1,$src2\t! sub packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4I_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVI src (LoadVector mem)));
+  format %{ "vpsubd  $dst,$src,$mem\t! sub packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub8I_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (SubVI src1 src2));
+  format %{ "vpsubd  $dst,$src1,$src2\t! sub packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsubd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub8I_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (SubVI src (LoadVector mem)));
+  format %{ "vpsubd  $dst,$src,$mem\t! sub packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsubd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Longs vector sub
+instruct vsub2L(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (SubVL dst src));
+  format %{ "psubq   $dst,$src\t! sub packed2L" %}
+  ins_encode %{
+    __ psubq($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub2L_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SubVL src1 src2));
+  format %{ "vpsubq  $dst,$src1,$src2\t! sub packed2L" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub2L_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SubVL src (LoadVector mem)));
+  format %{ "vpsubq  $dst,$src,$mem\t! sub packed2L" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsubq($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4L_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVL src1 src2));
+  format %{ "vpsubq  $dst,$src1,$src2\t! sub packed4L" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsubq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4L_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVL src (LoadVector mem)));
+  format %{ "vpsubq  $dst,$src,$mem\t! sub packed4L" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsubq($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Floats vector sub
+instruct vsub2F(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (SubVF dst src));
+  format %{ "subps   $dst,$src\t! sub packed2F" %}
+  ins_encode %{
+    __ subps($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub2F_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SubVF src1 src2));
+  format %{ "vsubps  $dst,$src1,$src2\t! sub packed2F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vsubps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4F(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (SubVF dst src));
+  format %{ "subps   $dst,$src\t! sub packed4F" %}
+  ins_encode %{
+    __ subps($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4F_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVF src1 src2));
+  format %{ "vsubps  $dst,$src1,$src2\t! sub packed4F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vsubps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4F_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVF src (LoadVector mem)));
+  format %{ "vsubps  $dst,$src,$mem\t! sub packed4F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vsubps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub8F_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (SubVF src1 src2));
+  format %{ "vsubps  $dst,$src1,$src2\t! sub packed8F" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vsubps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub8F_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (SubVF src (LoadVector mem)));
+  format %{ "vsubps  $dst,$src,$mem\t! sub packed8F" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vsubps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Doubles vector sub
+instruct vsub2D(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (SubVD dst src));
+  format %{ "subpd   $dst,$src\t! sub packed2D" %}
+  ins_encode %{
+    __ subpd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub2D_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SubVD src1 src2));
+  format %{ "vsubpd  $dst,$src1,$src2\t! sub packed2D" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vsubpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub2D_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SubVD src (LoadVector mem)));
+  format %{ "vsubpd  $dst,$src,$mem\t! sub packed2D" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vsubpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4D_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVD src1 src2));
+  format %{ "vsubpd  $dst,$src1,$src2\t! sub packed4D" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vsubpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4D_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVD src (LoadVector mem)));
+  format %{ "vsubpd  $dst,$src,$mem\t! sub packed4D" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vsubpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- MUL --------------------------------------
+
+// Shorts/Chars vector mul
+instruct vmul2S(vecS dst, vecS src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (MulVS dst src));
+  format %{ "pmullw $dst,$src\t! mul packed2S" %}
+  ins_encode %{
+    __ pmullw($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul2S_reg(vecS dst, vecS src1, vecS src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (MulVS src1 src2));
+  format %{ "vpmullw $dst,$src1,$src2\t! mul packed2S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpmullw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul4S(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (MulVS dst src));
+  format %{ "pmullw  $dst,$src\t! mul packed4S" %}
+  ins_encode %{
+    __ pmullw($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul4S_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (MulVS src1 src2));
+  format %{ "vpmullw $dst,$src1,$src2\t! mul packed4S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpmullw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul8S(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (MulVS dst src));
+  format %{ "pmullw  $dst,$src\t! mul packed8S" %}
+  ins_encode %{
+    __ pmullw($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul8S_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (MulVS src1 src2));
+  format %{ "vpmullw $dst,$src1,$src2\t! mul packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpmullw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul8S_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (MulVS src (LoadVector mem)));
+  format %{ "vpmullw $dst,$src,$mem\t! mul packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpmullw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul16S_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (MulVS src1 src2));
+  format %{ "vpmullw $dst,$src1,$src2\t! mul packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpmullw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul16S_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (MulVS src (LoadVector mem)));
+  format %{ "vpmullw $dst,$src,$mem\t! mul packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpmullw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Integers vector mul (sse4_1)
+instruct vmul2I(vecD dst, vecD src) %{
+  predicate(UseSSE > 3 && n->as_Vector()->length() == 2);
+  match(Set dst (MulVI dst src));
+  format %{ "pmulld  $dst,$src\t! mul packed2I" %}
+  ins_encode %{
+    __ pmulld($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul2I_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (MulVI src1 src2));
+  format %{ "vpmulld $dst,$src1,$src2\t! mul packed2I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpmulld($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul4I(vecX dst, vecX src) %{
+  predicate(UseSSE > 3 && n->as_Vector()->length() == 4);
+  match(Set dst (MulVI dst src));
+  format %{ "pmulld  $dst,$src\t! mul packed4I" %}
+  ins_encode %{
+    __ pmulld($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul4I_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (MulVI src1 src2));
+  format %{ "vpmulld $dst,$src1,$src2\t! mul packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpmulld($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul4I_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (MulVI src (LoadVector mem)));
+  format %{ "vpmulld $dst,$src,$mem\t! mul packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpmulld($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul8I_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (MulVI src1 src2));
+  format %{ "vpmulld $dst,$src1,$src2\t! mul packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpmulld($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul8I_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (MulVI src (LoadVector mem)));
+  format %{ "vpmulld $dst,$src,$mem\t! mul packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpmulld($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Floats vector mul
+instruct vmul2F(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (MulVF dst src));
+  format %{ "mulps   $dst,$src\t! mul packed2F" %}
+  ins_encode %{
+    __ mulps($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul2F_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (MulVF src1 src2));
+  format %{ "vmulps  $dst,$src1,$src2\t! mul packed2F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vmulps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul4F(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (MulVF dst src));
+  format %{ "mulps   $dst,$src\t! mul packed4F" %}
+  ins_encode %{
+    __ mulps($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul4F_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (MulVF src1 src2));
+  format %{ "vmulps  $dst,$src1,$src2\t! mul packed4F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vmulps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul4F_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (MulVF src (LoadVector mem)));
+  format %{ "vmulps  $dst,$src,$mem\t! mul packed4F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vmulps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul8F_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (MulVF src1 src2));
+  format %{ "vmulps  $dst,$src1,$src2\t! mul packed8F" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vmulps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul8F_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (MulVF src (LoadVector mem)));
+  format %{ "vmulps  $dst,$src,$mem\t! mul packed8F" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vmulps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Doubles vector mul
+instruct vmul2D(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (MulVD dst src));
+  format %{ "mulpd   $dst,$src\t! mul packed2D" %}
+  ins_encode %{
+    __ mulpd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul2D_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (MulVD src1 src2));
+  format %{ "vmulpd  $dst,$src1,$src2\t! mul packed2D" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vmulpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul2D_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (MulVD src (LoadVector mem)));
+  format %{ "vmulpd  $dst,$src,$mem\t! mul packed2D" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vmulpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul4D_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (MulVD src1 src2));
+  format %{ "vmulpd  $dst,$src1,$src2\t! mul packed4D" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vmulpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul4D_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (MulVD src (LoadVector mem)));
+  format %{ "vmulpd  $dst,$src,$mem\t! mul packed4D" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vmulpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- DIV --------------------------------------
+
+// Floats vector div
+instruct vdiv2F(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (DivVF dst src));
+  format %{ "divps   $dst,$src\t! div packed2F" %}
+  ins_encode %{
+    __ divps($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vdiv2F_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (DivVF src1 src2));
+  format %{ "vdivps  $dst,$src1,$src2\t! div packed2F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vdivps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vdiv4F(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (DivVF dst src));
+  format %{ "divps   $dst,$src\t! div packed4F" %}
+  ins_encode %{
+    __ divps($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vdiv4F_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (DivVF src1 src2));
+  format %{ "vdivps  $dst,$src1,$src2\t! div packed4F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vdivps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vdiv4F_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (DivVF src (LoadVector mem)));
+  format %{ "vdivps  $dst,$src,$mem\t! div packed4F" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vdivps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vdiv8F_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (DivVF src1 src2));
+  format %{ "vdivps  $dst,$src1,$src2\t! div packed8F" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vdivps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vdiv8F_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (DivVF src (LoadVector mem)));
+  format %{ "vdivps  $dst,$src,$mem\t! div packed8F" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vdivps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Doubles vector div
+instruct vdiv2D(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (DivVD dst src));
+  format %{ "divpd   $dst,$src\t! div packed2D" %}
+  ins_encode %{
+    __ divpd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vdiv2D_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (DivVD src1 src2));
+  format %{ "vdivpd  $dst,$src1,$src2\t! div packed2D" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vdivpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vdiv2D_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (DivVD src (LoadVector mem)));
+  format %{ "vdivpd  $dst,$src,$mem\t! div packed2D" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vdivpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vdiv4D_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (DivVD src1 src2));
+  format %{ "vdivpd  $dst,$src1,$src2\t! div packed4D" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vdivpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vdiv4D_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (DivVD src (LoadVector mem)));
+  format %{ "vdivpd  $dst,$src,$mem\t! div packed4D" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vdivpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// ------------------------------ LeftShift -----------------------------------
+
+// Shorts/Chars vector left shift
+instruct vsll2S(vecS dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2S_imm(vecS dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2S_reg(vecS dst, vecS src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2S_reg_imm(vecS dst, vecS src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S(vecD dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S_imm(vecD dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S_reg(vecD dst, vecD src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S_reg_imm(vecD dst, vecD src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S(vecX dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S_imm(vecX dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S_reg(vecX dst, vecX src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S_reg_imm(vecX dst, vecX src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll16S_reg(vecY dst, vecY src, regF shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll16S_reg_imm(vecY dst, vecY src, immI8 shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Integers vector left shift
+instruct vsll2I(vecD dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVI dst shift));
+  format %{ "pslld   $dst,$shift\t! left shift packed2I" %}
+  ins_encode %{
+    __ pslld($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2I_imm(vecD dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVI dst shift));
+  format %{ "pslld   $dst,$shift\t! left shift packed2I" %}
+  ins_encode %{
+    __ pslld($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2I_reg(vecD dst, vecD src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVI src shift));
+  format %{ "vpslld  $dst,$src,$shift\t! left shift packed2I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpslld($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2I_reg_imm(vecD dst, vecD src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVI src shift));
+  format %{ "vpslld  $dst,$src,$shift\t! left shift packed2I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpslld($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4I(vecX dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVI dst shift));
+  format %{ "pslld   $dst,$shift\t! left shift packed4I" %}
+  ins_encode %{
+    __ pslld($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4I_imm(vecX dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVI dst shift));
+  format %{ "pslld   $dst,$shift\t! left shift packed4I" %}
+  ins_encode %{
+    __ pslld($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4I_reg(vecX dst, vecX src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVI src shift));
+  format %{ "vpslld  $dst,$src,$shift\t! left shift packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpslld($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4I_reg_imm(vecX dst, vecX src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVI src shift));
+  format %{ "vpslld  $dst,$src,$shift\t! left shift packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpslld($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8I_reg(vecY dst, vecY src, regF shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVI src shift));
+  format %{ "vpslld  $dst,$src,$shift\t! left shift packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpslld($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8I_reg_imm(vecY dst, vecY src, immI8 shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVI src shift));
+  format %{ "vpslld  $dst,$src,$shift\t! left shift packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpslld($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Longs vector left shift
+instruct vsll2L(vecX dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVL dst shift));
+  format %{ "psllq   $dst,$shift\t! left shift packed2L" %}
+  ins_encode %{
+    __ psllq($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2L_imm(vecX dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVL dst shift));
+  format %{ "psllq   $dst,$shift\t! left shift packed2L" %}
+  ins_encode %{
+    __ psllq($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2L_reg(vecX dst, vecX src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVL src shift));
+  format %{ "vpsllq  $dst,$src,$shift\t! left shift packed2L" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsllq($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2L_reg_imm(vecX dst, vecX src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVL src shift));
+  format %{ "vpsllq  $dst,$src,$shift\t! left shift packed2L" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsllq($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4L_reg(vecY dst, vecY src, regF shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVL src shift));
+  format %{ "vpsllq  $dst,$src,$shift\t! left shift packed4L" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsllq($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4L_reg_imm(vecY dst, vecY src, immI8 shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVL src shift));
+  format %{ "vpsllq  $dst,$src,$shift\t! left shift packed4L" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsllq($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// ----------------------- LogicalRightShift -----------------------------------
+
+// Shorts/Chars vector logical right shift produces incorrect Java result
+// for negative data because java code convert short value into int with
+// sign extension before a shift.
+
+// Integers vector logical right shift
+instruct vsrl2I(vecD dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVI dst shift));
+  format %{ "psrld   $dst,$shift\t! logical right shift packed2I" %}
+  ins_encode %{
+    __ psrld($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl2I_imm(vecD dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVI dst shift));
+  format %{ "psrld   $dst,$shift\t! logical right shift packed2I" %}
+  ins_encode %{
+    __ psrld($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl2I_reg(vecD dst, vecD src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVI src shift));
+  format %{ "vpsrld  $dst,$src,$shift\t! logical right shift packed2I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrld($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl2I_reg_imm(vecD dst, vecD src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVI src shift));
+  format %{ "vpsrld  $dst,$src,$shift\t! logical right shift packed2I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrld($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl4I(vecX dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVI dst shift));
+  format %{ "psrld   $dst,$shift\t! logical right shift packed4I" %}
+  ins_encode %{
+    __ psrld($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl4I_imm(vecX dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVI dst shift));
+  format %{ "psrld   $dst,$shift\t! logical right shift packed4I" %}
+  ins_encode %{
+    __ psrld($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl4I_reg(vecX dst, vecX src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVI src shift));
+  format %{ "vpsrld  $dst,$src,$shift\t! logical right shift packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrld($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl4I_reg_imm(vecX dst, vecX src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVI src shift));
+  format %{ "vpsrld  $dst,$src,$shift\t! logical right shift packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrld($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl8I_reg(vecY dst, vecY src, regF shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (URShiftVI src shift));
+  format %{ "vpsrld  $dst,$src,$shift\t! logical right shift packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsrld($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl8I_reg_imm(vecY dst, vecY src, immI8 shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (URShiftVI src shift));
+  format %{ "vpsrld  $dst,$src,$shift\t! logical right shift packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsrld($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Longs vector logical right shift
+instruct vsrl2L(vecX dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVL dst shift));
+  format %{ "psrlq   $dst,$shift\t! logical right shift packed2L" %}
+  ins_encode %{
+    __ psrlq($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl2L_imm(vecX dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVL dst shift));
+  format %{ "psrlq   $dst,$shift\t! logical right shift packed2L" %}
+  ins_encode %{
+    __ psrlq($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl2L_reg(vecX dst, vecX src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVL src shift));
+  format %{ "vpsrlq  $dst,$src,$shift\t! logical right shift packed2L" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrlq($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl2L_reg_imm(vecX dst, vecX src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVL src shift));
+  format %{ "vpsrlq  $dst,$src,$shift\t! logical right shift packed2L" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrlq($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl4L_reg(vecY dst, vecY src, regF shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVL src shift));
+  format %{ "vpsrlq  $dst,$src,$shift\t! logical right shift packed4L" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsrlq($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl4L_reg_imm(vecY dst, vecY src, immI8 shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVL src shift));
+  format %{ "vpsrlq  $dst,$src,$shift\t! logical right shift packed4L" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsrlq($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// ------------------- ArithmeticRightShift -----------------------------------
+
+// Shorts/Chars vector arithmetic right shift
+instruct vsra2S(vecS dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (RShiftVS dst shift));
+  format %{ "psraw   $dst,$shift\t! arithmetic right shift packed2S" %}
+  ins_encode %{
+    __ psraw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra2S_imm(vecS dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (RShiftVS dst shift));
+  format %{ "psraw   $dst,$shift\t! arithmetic right shift packed2S" %}
+  ins_encode %{
+    __ psraw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra2S_reg(vecS dst, vecS src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (RShiftVS src shift));
+  format %{ "vpsraw  $dst,$src,$shift\t! arithmetic right shift packed2S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsraw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra2S_reg_imm(vecS dst, vecS src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (RShiftVS src shift));
+  format %{ "vpsraw  $dst,$src,$shift\t! arithmetic right shift packed2S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsraw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra4S(vecD dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (RShiftVS dst shift));
+  format %{ "psraw   $dst,$shift\t! arithmetic right shift packed4S" %}
+  ins_encode %{
+    __ psraw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra4S_imm(vecD dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (RShiftVS dst shift));
+  format %{ "psraw   $dst,$shift\t! arithmetic right shift packed4S" %}
+  ins_encode %{
+    __ psraw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra4S_reg(vecD dst, vecD src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (RShiftVS src shift));
+  format %{ "vpsraw  $dst,$src,$shift\t! arithmetic right shift packed4S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsraw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra4S_reg_imm(vecD dst, vecD src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (RShiftVS src shift));
+  format %{ "vpsraw  $dst,$src,$shift\t! arithmetic right shift packed4S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsraw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra8S(vecX dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (RShiftVS dst shift));
+  format %{ "psraw   $dst,$shift\t! arithmetic right shift packed8S" %}
+  ins_encode %{
+    __ psraw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra8S_imm(vecX dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (RShiftVS dst shift));
+  format %{ "psraw   $dst,$shift\t! arithmetic right shift packed8S" %}
+  ins_encode %{
+    __ psraw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra8S_reg(vecX dst, vecX src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (RShiftVS src shift));
+  format %{ "vpsraw  $dst,$src,$shift\t! arithmetic right shift packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsraw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra8S_reg_imm(vecX dst, vecX src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (RShiftVS src shift));
+  format %{ "vpsraw  $dst,$src,$shift\t! arithmetic right shift packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsraw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra16S_reg(vecY dst, vecY src, regF shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (RShiftVS src shift));
+  format %{ "vpsraw  $dst,$src,$shift\t! arithmetic right shift packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsraw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra16S_reg_imm(vecY dst, vecY src, immI8 shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (RShiftVS src shift));
+  format %{ "vpsraw  $dst,$src,$shift\t! arithmetic right shift packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsraw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Integers vector arithmetic right shift
+instruct vsra2I(vecD dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (RShiftVI dst shift));
+  format %{ "psrad   $dst,$shift\t! arithmetic right shift packed2I" %}
+  ins_encode %{
+    __ psrad($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra2I_imm(vecD dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (RShiftVI dst shift));
+  format %{ "psrad   $dst,$shift\t! arithmetic right shift packed2I" %}
+  ins_encode %{
+    __ psrad($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra2I_reg(vecD dst, vecD src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (RShiftVI src shift));
+  format %{ "vpsrad  $dst,$src,$shift\t! arithmetic right shift packed2I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrad($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra2I_reg_imm(vecD dst, vecD src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (RShiftVI src shift));
+  format %{ "vpsrad  $dst,$src,$shift\t! arithmetic right shift packed2I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrad($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra4I(vecX dst, regF shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (RShiftVI dst shift));
+  format %{ "psrad   $dst,$shift\t! arithmetic right shift packed4I" %}
+  ins_encode %{
+    __ psrad($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra4I_imm(vecX dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (RShiftVI dst shift));
+  format %{ "psrad   $dst,$shift\t! arithmetic right shift packed4I" %}
+  ins_encode %{
+    __ psrad($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra4I_reg(vecX dst, vecX src, regF shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (RShiftVI src shift));
+  format %{ "vpsrad  $dst,$src,$shift\t! arithmetic right shift packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrad($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra4I_reg_imm(vecX dst, vecX src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (RShiftVI src shift));
+  format %{ "vpsrad  $dst,$src,$shift\t! arithmetic right shift packed4I" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrad($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra8I_reg(vecY dst, vecY src, regF shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (RShiftVI src shift));
+  format %{ "vpsrad  $dst,$src,$shift\t! arithmetic right shift packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsrad($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsra8I_reg_imm(vecY dst, vecY src, immI8 shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (RShiftVI src shift));
+  format %{ "vpsrad  $dst,$src,$shift\t! arithmetic right shift packed8I" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsrad($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// There are no longs vector arithmetic right shift instructions.
+
+
+// --------------------------------- AND --------------------------------------
+
+instruct vand4B(vecS dst, vecS src) %{
+  predicate(n->as_Vector()->length_in_bytes() == 4);
+  match(Set dst (AndV dst src));
+  format %{ "pand    $dst,$src\t! and vectors (4 bytes)" %}
+  ins_encode %{
+    __ pand($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vand4B_reg(vecS dst, vecS src1, vecS src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 4);
+  match(Set dst (AndV src1 src2));
+  format %{ "vpand   $dst,$src1,$src2\t! and vectors (4 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpand($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vand8B(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (AndV dst src));
+  format %{ "pand    $dst,$src\t! and vectors (8 bytes)" %}
+  ins_encode %{
+    __ pand($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vand8B_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (AndV src1 src2));
+  format %{ "vpand   $dst,$src1,$src2\t! and vectors (8 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpand($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vand16B(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (AndV dst src));
+  format %{ "pand    $dst,$src\t! and vectors (16 bytes)" %}
+  ins_encode %{
+    __ pand($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vand16B_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (AndV src1 src2));
+  format %{ "vpand   $dst,$src1,$src2\t! and vectors (16 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpand($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vand16B_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (AndV src (LoadVector mem)));
+  format %{ "vpand   $dst,$src,$mem\t! and vectors (16 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpand($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vand32B_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length_in_bytes() == 32);
+  match(Set dst (AndV src1 src2));
+  format %{ "vpand   $dst,$src1,$src2\t! and vectors (32 bytes)" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpand($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vand32B_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length_in_bytes() == 32);
+  match(Set dst (AndV src (LoadVector mem)));
+  format %{ "vpand   $dst,$src,$mem\t! and vectors (32 bytes)" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpand($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- OR ---------------------------------------
+
+instruct vor4B(vecS dst, vecS src) %{
+  predicate(n->as_Vector()->length_in_bytes() == 4);
+  match(Set dst (OrV dst src));
+  format %{ "por     $dst,$src\t! or vectors (4 bytes)" %}
+  ins_encode %{
+    __ por($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vor4B_reg(vecS dst, vecS src1, vecS src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 4);
+  match(Set dst (OrV src1 src2));
+  format %{ "vpor    $dst,$src1,$src2\t! or vectors (4 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpor($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vor8B(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (OrV dst src));
+  format %{ "por     $dst,$src\t! or vectors (8 bytes)" %}
+  ins_encode %{
+    __ por($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vor8B_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (OrV src1 src2));
+  format %{ "vpor    $dst,$src1,$src2\t! or vectors (8 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpor($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vor16B(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (OrV dst src));
+  format %{ "por     $dst,$src\t! or vectors (16 bytes)" %}
+  ins_encode %{
+    __ por($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vor16B_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (OrV src1 src2));
+  format %{ "vpor    $dst,$src1,$src2\t! or vectors (16 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpor($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vor16B_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (OrV src (LoadVector mem)));
+  format %{ "vpor    $dst,$src,$mem\t! or vectors (16 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpor($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vor32B_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length_in_bytes() == 32);
+  match(Set dst (OrV src1 src2));
+  format %{ "vpor    $dst,$src1,$src2\t! or vectors (32 bytes)" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpor($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vor32B_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length_in_bytes() == 32);
+  match(Set dst (OrV src (LoadVector mem)));
+  format %{ "vpor    $dst,$src,$mem\t! or vectors (32 bytes)" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpor($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- XOR --------------------------------------
+
+instruct vxor4B(vecS dst, vecS src) %{
+  predicate(n->as_Vector()->length_in_bytes() == 4);
+  match(Set dst (XorV dst src));
+  format %{ "pxor    $dst,$src\t! xor vectors (4 bytes)" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vxor4B_reg(vecS dst, vecS src1, vecS src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 4);
+  match(Set dst (XorV src1 src2));
+  format %{ "vpxor   $dst,$src1,$src2\t! xor vectors (4 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpxor($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vxor8B(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (XorV dst src));
+  format %{ "pxor    $dst,$src\t! xor vectors (8 bytes)" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vxor8B_reg(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (XorV src1 src2));
+  format %{ "vpxor   $dst,$src1,$src2\t! xor vectors (8 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpxor($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vxor16B(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (XorV dst src));
+  format %{ "pxor    $dst,$src\t! xor vectors (16 bytes)" %}
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vxor16B_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (XorV src1 src2));
+  format %{ "vpxor   $dst,$src1,$src2\t! xor vectors (16 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpxor($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vxor16B_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (XorV src (LoadVector mem)));
+  format %{ "vpxor   $dst,$src,$mem\t! xor vectors (16 bytes)" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpxor($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vxor32B_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length_in_bytes() == 32);
+  match(Set dst (XorV src1 src2));
+  format %{ "vpxor   $dst,$src1,$src2\t! xor vectors (32 bytes)" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpxor($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vxor32B_mem(vecY dst, vecY src, memory mem) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length_in_bytes() == 32);
+  match(Set dst (XorV src (LoadVector mem)));
+  format %{ "vpxor   $dst,$src,$mem\t! xor vectors (32 bytes)" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpxor($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector256);
+  %}
+  ins_pipe( pipe_slow );
 %}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,14 +121,14 @@ public:
 
   // Flush the stats supporting ergonomic sizing of PLAB's
   void flush_stats(PLABStats* stats);
-  void flush_stats_and_retire(PLABStats* stats, bool retain) {
+  void flush_stats_and_retire(PLABStats* stats, bool end_of_gc, bool retain) {
     // We flush the stats first in order to get a reading of
     // unused space in the last buffer.
     if (ResizePLAB) {
       flush_stats(stats);
     }
     // Retire the last allocation buffer.
-    retire(true, retain);
+    retire(end_of_gc, retain);
   }
 
   // Force future allocations to fail and queries for contains()
