@@ -510,7 +510,7 @@ public class DriverManager {
             public Void run() {
 
                 ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
-                Iterator driversIterator = loadedDrivers.iterator();
+                Iterator<Driver> driversIterator = loadedDrivers.iterator();
 
                 /* Load these drivers, so that they can be instantiated.
                  * It may be the case that the driver class may not be there
