@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
  * @run main TestEC
  */
 
+import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.Security;
 
@@ -62,7 +63,12 @@ public class TestEC {
     }
 
     public static void main0(String[] args) throws Exception {
-        Provider p = new sun.security.ec.SunEC();
+        Provider p = Security.getProvider("SunEC");
+
+        if (p == null) {
+            throw new NoSuchProviderException("Can't get SunEC provider");
+        }
+
         System.out.println("Running tests with " + p.getName() +
             " provider...\n");
         long start = System.currentTimeMillis();

@@ -54,6 +54,7 @@ final class SunECEntries {
          */
         map.put("AlgorithmParameters.EC", "sun.security.ec.ECParameters");
         map.put("Alg.Alias.AlgorithmParameters.EllipticCurve", "EC");
+        map.put("Alg.Alias.AlgorithmParameters.1.2.840.10045.2.1", "EC");
 
         map.put("AlgorithmParameters.EC KeySize", "256");
 

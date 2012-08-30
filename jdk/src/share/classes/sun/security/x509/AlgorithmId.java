@@ -120,21 +120,14 @@ public class AlgorithmId implements Serializable, DerEncoder {
         try {
             algParams = AlgorithmParameters.getInstance(algidString);
         } catch (NoSuchAlgorithmException e) {
-            try {
-                // Try the internal EC code so that we can fully parse EC
-                // keys even if the provider is not registered.
-                // This code can go away once we have EC in the SUN provider.
-                algParams = AlgorithmParameters.getInstance(algidString,
-                                sun.security.ec.ECKeyFactory.ecInternalProvider);
-            } catch (NoSuchAlgorithmException ee) {
-                /*
-                 * This algorithm parameter type is not supported, so we cannot
-                 * parse the parameters.
-                 */
-                algParams = null;
-                return;
-            }
+            /*
+             * This algorithm parameter type is not supported, so we cannot
+             * parse the parameters.
+             */
+            algParams = null;
+            return;
         }
+
         // Decode (parse) the parameters
         algParams.init(params.toByteArray());
     }
