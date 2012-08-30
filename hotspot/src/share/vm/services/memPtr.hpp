@@ -51,11 +51,11 @@ class SequenceGenerator : AllStatic {
   };
 
   DEBUG_ONLY(static unsigned long current_generation() { return (unsigned long)_generation; })
-  DEBUG_ONLY(static jint max_seq_num() { return _max_seq_number; })
+  NOT_PRODUCT(static jint max_seq_num() { return _max_seq_number; })
 
  private:
   static volatile jint _seq_number;
-  DEBUG_ONLY(static jint _max_seq_number; )
+  NOT_PRODUCT(static jint _max_seq_number; )
   DEBUG_ONLY(static volatile unsigned long _generation; )
 };
 

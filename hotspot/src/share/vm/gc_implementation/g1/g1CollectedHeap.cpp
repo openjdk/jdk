@@ -1891,6 +1891,8 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
   _retained_old_gc_alloc_region(NULL),
+  _survivor_plab_stats(YoungPLABSize, PLABWeight),
+  _old_plab_stats(OldPLABSize, PLABWeight),
   _expand_heap_after_alloc_failure(true),
   _surviving_young_words(NULL),
   _old_marking_cycles_started(0),
@@ -1932,6 +1934,14 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   clear_cset_start_regions();
 
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
+#ifdef SPARC
+  // Issue a stern warning, but allow use for experimentation and debugging.
+  if (VM_Version::is_sun4v() && UseMemSetInBOT) {
+    assert(!FLAG_IS_DEFAULT(UseMemSetInBOT), "Error");
+    warning("Experimental flag -XX:+UseMemSetInBOT is known to cause instability"
+            " on sun4v; please understand that you are using at your own risk!");
+  }
+#endif
 }
 
 jint G1CollectedHeap::initialize() {
@@ -3580,15 +3590,11 @@ size_t G1CollectedHeap::pending_card_num() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   size_t buffer_size = dcqs.buffer_size();
   size_t buffer_num = dcqs.completed_buffers_num();
-  return buffer_size * buffer_num + extra_cards;
-}
 
-size_t G1CollectedHeap::max_pending_card_num() {
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-  size_t buffer_size = dcqs.buffer_size();
-  size_t buffer_num  = dcqs.completed_buffers_num();
-  int thread_num  = Threads::number_of_threads();
-  return (buffer_num + thread_num) * buffer_size;
+  // PtrQueueSet::buffer_size() and PtrQueue:size() return sizes
+  // in bytes - not the number of 'entries'. We need to convert
+  // into a number of cards.
+  return (buffer_size * buffer_num + extra_cards) / oopSize;
 }
 
 size_t G1CollectedHeap::cards_scanned() {
@@ -4099,17 +4105,22 @@ size_t G1CollectedHeap::desired_plab_sz(GCAllocPurpose purpose)
   size_t gclab_word_size;
   switch (purpose) {
     case GCAllocForSurvived:
-      gclab_word_size = YoungPLABSize;
+      gclab_word_size = _survivor_plab_stats.desired_plab_sz();
       break;
     case GCAllocForTenured:
-      gclab_word_size = OldPLABSize;
+      gclab_word_size = _old_plab_stats.desired_plab_sz();
       break;
     default:
       assert(false, "unknown GCAllocPurpose");
-      gclab_word_size = OldPLABSize;
+      gclab_word_size = _old_plab_stats.desired_plab_sz();
       break;
   }
-  return gclab_word_size;
+
+  // Prevent humongous PLAB sizes for two reasons:
+  // * PLABs are allocated using a similar paths as oops, but should
+  //   never be in a humongous region
+  // * Allowing humongous PLABs needlessly churns the region free lists
+  return MIN2(_humongous_object_threshold_in_words, gclab_word_size);
 }
 
 void G1CollectedHeap::init_mutator_alloc_region() {
@@ -4165,6 +4176,11 @@ void G1CollectedHeap::release_gc_alloc_regions() {
   // want either way so no reason to check explicitly for either
   // condition.
   _retained_old_gc_alloc_region = _old_gc_alloc_region.release();
+
+  if (ResizePLAB) {
+    _survivor_plab_stats.adjust_desired_plab_sz();
+    _old_plab_stats.adjust_desired_plab_sz();
+  }
 }
 
 void G1CollectedHeap::abandon_gc_alloc_regions() {

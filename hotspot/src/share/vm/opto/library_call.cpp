@@ -171,7 +171,7 @@ class LibraryCallKit : public GraphKit {
   // Helper for inline_unsafe_access.
   // Generates the guards that check whether the result of
   // Unsafe.getObject should be recorded in an SATB log buffer.
-  void insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* pre_val);
+  void insert_pre_barrier(Node* base_oop, Node* offset, Node* pre_val, int nargs, bool need_mem_bar);
   bool inline_unsafe_access(bool is_native_ptr, bool is_store, BasicType type, bool is_volatile);
   bool inline_unsafe_prefetch(bool is_native_ptr, bool is_store, bool is_static);
   bool inline_unsafe_allocate();
@@ -291,6 +291,8 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     case vmIntrinsics::_equals:
     case vmIntrinsics::_equalsC:
       break;  // InlineNatives does not control String.compareTo
+    case vmIntrinsics::_Reference_get:
+      break;  // InlineNatives does not control Reference.get
     default:
       return NULL;
     }
@@ -361,11 +363,10 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
 
   case vmIntrinsics::_Reference_get:
-    // It is only when G1 is enabled that we absolutely
-    // need to use the intrinsic version of Reference.get()
-    // so that the value in the referent field, if necessary,
-    // can be registered by the pre-barrier code.
-    if (!UseG1GC) return NULL;
+    // Use the intrinsic version of Reference.get() so that the value in
+    // the referent field can be registered by the G1 pre-barrier code.
+    // Also add memory barrier to prevent commoning reads from this field
+    // across safepoint since GC can change it value.
     break;
 
  default:
@@ -2195,14 +2196,17 @@ bool LibraryCallKit::inline_reverseBytes(vmIntrinsics::ID id) {
 
 const static BasicType T_ADDRESS_HOLDER = T_LONG;
 
-// Helper that guards and inserts a G1 pre-barrier.
-void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* pre_val) {
-  assert(UseG1GC, "should not call this otherwise");
-
+// Helper that guards and inserts a pre-barrier.
+void LibraryCallKit::insert_pre_barrier(Node* base_oop, Node* offset,
+                                        Node* pre_val, int nargs, bool need_mem_bar) {
   // We could be accessing the referent field of a reference object. If so, when G1
   // is enabled, we need to log the value in the referent field in an SATB buffer.
   // This routine performs some compile time filters and generates suitable
   // runtime filters that guard the pre-barrier code.
+  // Also add memory barrier for non volatile load from the referent field
+  // to prevent commoning of loads across safepoint.
+  if (!UseG1GC && !need_mem_bar)
+    return;
 
   // Some compile time checks.
 
@@ -2224,11 +2228,12 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
 
     const TypeInstPtr* itype = btype->isa_instptr();
     if (itype != NULL) {
-      // Can the klass of base_oop be statically determined
-      // to be _not_ a sub-class of Reference?
+      // Can the klass of base_oop be statically determined to be
+      // _not_ a sub-class of Reference and _not_ Object?
       ciKlass* klass = itype->klass();
-      if (klass->is_subtype_of(env()->Reference_klass()) &&
-          !env()->Reference_klass()->is_subtype_of(klass)) {
+      if ( klass->is_loaded() &&
+          !klass->is_subtype_of(env()->Reference_klass()) &&
+          !env()->Object_klass()->is_subtype_of(klass)) {
         return;
       }
     }
@@ -2238,10 +2243,8 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
   // we need to generate the following runtime filters
   //
   // if (offset == java_lang_ref_Reference::_reference_offset) {
-  //   if (base != null) {
-  //     if (instance_of(base, java.lang.ref.Reference)) {
-  //       pre_barrier(_, pre_val, ...);
-  //     }
+  //   if (instance_of(base, java.lang.ref.Reference)) {
+  //     pre_barrier(_, pre_val, ...);
   //   }
   // }
 
@@ -2254,19 +2257,19 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
   Node* referent_off = __ ConX(java_lang_ref_Reference::referent_offset);
 
   __ if_then(offset, BoolTest::eq, referent_off, unlikely); {
-    __ if_then(base_oop, BoolTest::ne, null(), likely); {
-
       // Update graphKit memory and control from IdealKit.
       sync_kit(ideal);
 
       Node* ref_klass_con = makecon(TypeKlassPtr::make(env()->Reference_klass()));
+      _sp += nargs;  // gen_instanceof might do an uncommon trap
       Node* is_instof = gen_instanceof(base_oop, ref_klass_con);
+      _sp -= nargs;
 
       // Update IdealKit memory and control from graphKit.
       __ sync_kit(this);
 
       Node* one = __ ConI(1);
-
+      // is_instof == 0 if base_oop == NULL
       __ if_then(is_instof, BoolTest::eq, one, unlikely); {
 
         // Update graphKit from IdeakKit.
@@ -2278,12 +2281,15 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
                     NULL /* obj */, NULL /* adr */, max_juint /* alias_idx */, NULL /* val */, NULL /* val_type */,
                     pre_val /* pre_val */,
                     T_OBJECT);
-
+        if (need_mem_bar) {
+          // Add memory barrier to prevent commoning reads from this field
+          // across safepoint since GC can change its value.
+          insert_mem_bar(Op_MemBarCPUOrder);
+        }
         // Update IdealKit from graphKit.
         __ sync_kit(this);
 
       } __ end_if(); // _ref_type != ref_none
-    } __ end_if(); // base  != NULL
   } __ end_if(); // offset == referent_offset
 
   // Final sync IdealKit and GraphKit.
@@ -2418,7 +2424,9 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   // object (either by using Unsafe directly or through reflection)
   // then, if G1 is enabled, we need to record the referent in an
   // SATB log buffer using the pre-barrier mechanism.
-  bool need_read_barrier = UseG1GC && !is_native_ptr && !is_store &&
+  // Also we need to add memory barrier to prevent commoning reads
+  // from this field across safepoint since GC can change its value.
+  bool need_read_barrier = !is_native_ptr && !is_store &&
                            offset != top() && heap_base_oop != top();
 
   if (!is_store && type == T_OBJECT) {
@@ -2508,7 +2516,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
       break;
     case T_OBJECT:
       if (need_read_barrier) {
-        insert_g1_pre_barrier(heap_base_oop, offset, p);
+        insert_pre_barrier(heap_base_oop, offset, p, nargs, !(is_volatile || need_mem_bar));
       }
       push(p);
       break;
@@ -5483,6 +5491,10 @@ bool LibraryCallKit::inline_reference_get() {
               NULL /* obj */, NULL /* adr */, max_juint /* alias_idx */, NULL /* val */, NULL /* val_type */,
               result /* pre_val */,
               T_OBJECT);
+
+  // Add memory barrier to prevent commoning reads from this field
+  // across safepoint since GC can change its value.
+  insert_mem_bar(Op_MemBarCPUOrder);
 
   push(result);
   return true;

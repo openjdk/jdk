@@ -215,45 +215,44 @@ AOUT_FLAGS += -Xlinker -export-dynamic
 #------------------------------------------------------------------------
 # Debug flags
 
-# Use the stabs format for debugging information (this is the default
-# on gcc-2.91). It's good enough, has all the information about line
-# numbers and local variables, and libjvm_g.so is only about 16M.
-# Change this back to "-g" if you want the most expressive format.
-# (warning: that could easily inflate libjvm_g.so to 150M!)
-# Note: The Itanium gcc compiler crashes when using -gstabs.
-DEBUG_CFLAGS/ia64  = -g
-DEBUG_CFLAGS/amd64 = -g
-DEBUG_CFLAGS/arm   = -g
-DEBUG_CFLAGS/ppc   = -g
-DEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
-ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
-DEBUG_CFLAGS += -gstabs
-endif
-
-ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-  FASTDEBUG_CFLAGS/ia64  = -g
-  FASTDEBUG_CFLAGS/amd64 = -g
-  FASTDEBUG_CFLAGS/arm   = -g
-  FASTDEBUG_CFLAGS/ppc   = -g
-  FASTDEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
-  ifeq ($(FASTDEBUG_CFLAGS/$(BUILDARCH)),)
-    FASTDEBUG_CFLAGS += -gstabs
-  endif
-
-  OPT_CFLAGS/ia64  = -g
-  OPT_CFLAGS/amd64 = -g
-  OPT_CFLAGS/arm   = -g
-  OPT_CFLAGS/ppc   = -g
-  OPT_CFLAGS += $(OPT_CFLAGS/$(BUILDARCH))
-  ifeq ($(OPT_CFLAGS/$(BUILDARCH)),)
-    OPT_CFLAGS += -gstabs
-  endif
-endif
-
-# DEBUG_BINARIES overrides everything, use full -g debug information
+# DEBUG_BINARIES uses full -g debug information for all configs
 ifeq ($(DEBUG_BINARIES), true)
-  DEBUG_CFLAGS = -g
-  CFLAGS += $(DEBUG_CFLAGS)
+  CFLAGS += -g
+else
+  # Use the stabs format for debugging information (this is the default
+  # on gcc-2.91). It's good enough, has all the information about line
+  # numbers and local variables, and libjvm_g.so is only about 16M.
+  # Change this back to "-g" if you want the most expressive format.
+  # (warning: that could easily inflate libjvm_g.so to 150M!)
+  # Note: The Itanium gcc compiler crashes when using -gstabs.
+  DEBUG_CFLAGS/ia64  = -g
+  DEBUG_CFLAGS/amd64 = -g
+  DEBUG_CFLAGS/arm   = -g
+  DEBUG_CFLAGS/ppc   = -g
+  DEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
+  ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
+    DEBUG_CFLAGS += -gstabs
+  endif
+  
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    FASTDEBUG_CFLAGS/ia64  = -g
+    FASTDEBUG_CFLAGS/amd64 = -g
+    FASTDEBUG_CFLAGS/arm   = -g
+    FASTDEBUG_CFLAGS/ppc   = -g
+    FASTDEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
+    ifeq ($(FASTDEBUG_CFLAGS/$(BUILDARCH)),)
+      FASTDEBUG_CFLAGS += -gstabs
+    endif
+  
+    OPT_CFLAGS/ia64  = -g
+    OPT_CFLAGS/amd64 = -g
+    OPT_CFLAGS/arm   = -g
+    OPT_CFLAGS/ppc   = -g
+    OPT_CFLAGS += $(OPT_CFLAGS/$(BUILDARCH))
+    ifeq ($(OPT_CFLAGS/$(BUILDARCH)),)
+      OPT_CFLAGS += -gstabs
+    endif
+  endif
 endif
 
 # If we are building HEADLESS, pass on to VM

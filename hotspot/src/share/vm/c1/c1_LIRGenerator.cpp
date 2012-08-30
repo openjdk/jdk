@@ -920,7 +920,8 @@ LIR_Opr LIRGenerator::round_item(LIR_Opr opr) {
 
 
 LIR_Opr LIRGenerator::force_to_spill(LIR_Opr value, BasicType t) {
-  assert(type2size[t] == type2size[value->type()], "size mismatch");
+  assert(type2size[t] == type2size[value->type()],
+         err_msg_res("size mismatch: t=%s, value->type()=%s", type2name(t), type2name(value->type())));
   if (!value->is_register()) {
     // force into a register
     LIR_Opr r = new_register(value->type());
@@ -2176,9 +2177,9 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
   off.load_item();
   src.load_item();
 
-  LIR_Opr reg = rlock_result(x, x->basic_type());
+  LIR_Opr value = rlock_result(x, x->basic_type());
 
-  get_Object_unsafe(reg, src.result(), off.result(), type, x->is_volatile());
+  get_Object_unsafe(value, src.result(), off.result(), type, x->is_volatile());
 
 #ifndef SERIALGC
   // We might be reading the value of the referent field of a
@@ -2191,19 +2192,16 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
   // if (offset == java_lang_ref_Reference::referent_offset) {
   //   if (src != NULL) {
   //     if (klass(src)->reference_type() != REF_NONE) {
-  //       pre_barrier(..., reg, ...);
+  //       pre_barrier(..., value, ...);
   //     }
   //   }
   // }
-  //
-  // The first non-constant check of either the offset or
-  // the src operand will be done here; the remainder
-  // will take place in the generated code stub.
 
   if (UseG1GC && type == T_OBJECT) {
-    bool gen_code_stub = true;       // Assume we need to generate the slow code stub.
-    bool gen_offset_check = true;       // Assume the code stub has to generate the offset guard.
-    bool gen_source_check = true;       // Assume the code stub has to check the src object for null.
+    bool gen_pre_barrier = true;     // Assume we need to generate pre_barrier.
+    bool gen_offset_check = true;    // Assume we need to generate the offset guard.
+    bool gen_source_check = true;    // Assume we need to check the src object for null.
+    bool gen_type_check = true;      // Assume we need to check the reference_type.
 
     if (off.is_constant()) {
       jlong off_con = (off.type()->is_int() ?
@@ -2215,7 +2213,7 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
         // The constant offset is something other than referent_offset.
         // We can skip generating/checking the remaining guards and
         // skip generation of the code stub.
-        gen_code_stub = false;
+        gen_pre_barrier = false;
       } else {
         // The constant offset is the same as referent_offset -
         // we do not need to generate a runtime offset check.
@@ -2224,11 +2222,11 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
     }
 
     // We don't need to generate stub if the source object is an array
-    if (gen_code_stub && src.type()->is_array()) {
-      gen_code_stub = false;
+    if (gen_pre_barrier && src.type()->is_array()) {
+      gen_pre_barrier = false;
     }
 
-    if (gen_code_stub) {
+    if (gen_pre_barrier) {
       // We still need to continue with the checks.
       if (src.is_constant()) {
         ciObject* src_con = src.get_jobject_constant();
@@ -2236,7 +2234,7 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
         if (src_con->is_null_object()) {
           // The constant src object is null - We can skip
           // generating the code stub.
-          gen_code_stub = false;
+          gen_pre_barrier = false;
         } else {
           // Non-null constant source object. We still have to generate
           // the slow stub - but we don't need to generate the runtime
@@ -2245,20 +2243,28 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
         }
       }
     }
+    if (gen_pre_barrier && !PatchALot) {
+      // Can the klass of object be statically determined to be
+      // a sub-class of Reference?
+      ciType* type = src.value()->declared_type();
+      if ((type != NULL) && type->is_loaded()) {
+        if (type->is_subtype_of(compilation()->env()->Reference_klass())) {
+          gen_type_check = false;
+        } else if (type->is_klass() &&
+                   !compilation()->env()->Object_klass()->is_subtype_of(type->as_klass())) {
+          // Not Reference and not Object klass.
+          gen_pre_barrier = false;
+        }
+      }
+    }
 
-    if (gen_code_stub) {
-      // Temoraries.
-      LIR_Opr src_klass = new_register(T_OBJECT);
-
-      // Get the thread pointer for the pre-barrier
-      LIR_Opr thread = getThreadPointer();
-
-      CodeStub* stub;
+    if (gen_pre_barrier) {
+      LabelObj* Lcont = new LabelObj();
 
       // We can have generate one runtime check here. Let's start with
       // the offset check.
       if (gen_offset_check) {
-        // if (offset == referent_offset) -> slow code stub
+        // if (offset != referent_offset) -> continue
         // If offset is an int then we can do the comparison with the
         // referent_offset constant; otherwise we need to move
         // referent_offset into a temporary register and generate
@@ -2273,43 +2279,36 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
           referent_off = new_register(T_LONG);
           __ move(LIR_OprFact::longConst(java_lang_ref_Reference::referent_offset), referent_off);
         }
-
-        __ cmp(lir_cond_equal, off.result(), referent_off);
-
-        // Optionally generate "src == null" check.
-        stub = new G1UnsafeGetObjSATBBarrierStub(reg, src.result(),
-                                                    src_klass, thread,
-                                                    gen_source_check);
-
-        __ branch(lir_cond_equal, as_BasicType(off.type()), stub);
-      } else {
-        if (gen_source_check) {
-          // offset is a const and equals referent offset
-          // if (source != null) -> slow code stub
-          __ cmp(lir_cond_notEqual, src.result(), LIR_OprFact::oopConst(NULL));
-
-          // Since we are generating the "if src == null" guard here,
-          // there is no need to generate the "src == null" check again.
-          stub = new G1UnsafeGetObjSATBBarrierStub(reg, src.result(),
-                                                    src_klass, thread,
-                                                    false);
-
-          __ branch(lir_cond_notEqual, T_OBJECT, stub);
-        } else {
-          // We have statically determined that offset == referent_offset
-          // && src != null so we unconditionally branch to code stub
-          // to perform the guards and record reg in the SATB log buffer.
-
-          stub = new G1UnsafeGetObjSATBBarrierStub(reg, src.result(),
-                                                    src_klass, thread,
-                                                    false);
-
-          __ branch(lir_cond_always, T_ILLEGAL, stub);
-        }
+        __ cmp(lir_cond_notEqual, off.result(), referent_off);
+        __ branch(lir_cond_notEqual, as_BasicType(off.type()), Lcont->label());
       }
-
-      // Continuation point
-      __ branch_destination(stub->continuation());
+      if (gen_source_check) {
+        // offset is a const and equals referent offset
+        // if (source == null) -> continue
+        __ cmp(lir_cond_equal, src.result(), LIR_OprFact::oopConst(NULL));
+        __ branch(lir_cond_equal, T_OBJECT, Lcont->label());
+      }
+      LIR_Opr src_klass = new_register(T_OBJECT);
+      if (gen_type_check) {
+        // We have determined that offset == referent_offset && src != null.
+        // if (src->_klass->_reference_type == REF_NONE) -> continue
+        __ move(new LIR_Address(src.result(), oopDesc::klass_offset_in_bytes(), T_OBJECT), src_klass);
+        LIR_Address* reference_type_addr = new LIR_Address(src_klass, in_bytes(instanceKlass::reference_type_offset()), T_BYTE);
+        LIR_Opr reference_type = new_register(T_INT);
+        __ move(reference_type_addr, reference_type);
+        __ cmp(lir_cond_equal, reference_type, LIR_OprFact::intConst(REF_NONE));
+        __ branch(lir_cond_equal, T_INT, Lcont->label());
+      }
+      {
+        // We have determined that src->_klass->_reference_type != REF_NONE
+        // so register the value in the referent field with the pre-barrier.
+        pre_barrier(LIR_OprFact::illegalOpr /* addr_opr */,
+                    value  /* pre_val */,
+                    false  /* do_load */,
+                    false  /* patch */,
+                    NULL   /* info */);
+      }
+      __ branch_destination(Lcont->label());
     }
   }
 #endif // SERIALGC
@@ -2664,8 +2663,9 @@ void LIRGenerator::do_OsrEntry(OsrEntry* x) {
 
 
 void LIRGenerator::invoke_load_arguments(Invoke* x, LIRItemList* args, const LIR_OprList* arg_list) {
-  int i = (x->has_receiver() || x->is_invokedynamic()) ? 1 : 0;
-  for (; i < args->length(); i++) {
+  assert(args->length() == arg_list->length(),
+         err_msg_res("args=%d, arg_list=%d", args->length(), arg_list->length()));
+  for (int i = x->has_receiver() ? 1 : 0; i < args->length(); i++) {
     LIRItem* param = args->at(i);
     LIR_Opr loc = arg_list->at(i);
     if (loc->is_register()) {
@@ -2705,15 +2705,9 @@ LIRItemList* LIRGenerator::invoke_visit_arguments(Invoke* x) {
     LIRItem* receiver = new LIRItem(x->receiver(), this);
     argument_items->append(receiver);
   }
-  if (x->is_invokedynamic()) {
-    // Insert a dummy for the synthetic MethodHandle argument.
-    argument_items->append(NULL);
-  }
-  int idx = x->has_receiver() ? 1 : 0;
   for (int i = 0; i < x->number_of_arguments(); i++) {
     LIRItem* param = new LIRItem(x->argument_at(i), this);
     argument_items->append(param);
-    idx += (param->type()->is_double_word() ? 2 : 1);
   }
   return argument_items;
 }
@@ -2757,9 +2751,6 @@ void LIRGenerator::do_Invoke(Invoke* x) {
   }
 
   CodeEmitInfo* info = state_for(x, x->state());
-
-  // invokedynamics can deoptimize.
-  CodeEmitInfo* deopt_info = x->is_invokedynamic() ? state_for(x, x->state_before()) : NULL;
 
   invoke_load_arguments(x, args, arg_list);
 
@@ -2809,41 +2800,8 @@ void LIRGenerator::do_Invoke(Invoke* x) {
       }
       break;
     case Bytecodes::_invokedynamic: {
-      ciBytecodeStream bcs(x->scope()->method());
-      bcs.force_bci(x->state()->bci());
-      assert(bcs.cur_bc() == Bytecodes::_invokedynamic, "wrong stream");
-      ciCPCache* cpcache = bcs.get_cpcache();
-
-      // Get CallSite offset from constant pool cache pointer.
-      int index = bcs.get_method_index();
-      size_t call_site_offset = cpcache->get_f1_offset(index);
-
-      // Load CallSite object from constant pool cache.
-      LIR_Opr call_site = new_register(objectType);
-      __ oop2reg(cpcache->constant_encoding(), call_site);
-      __ move_wide(new LIR_Address(call_site, call_site_offset, T_OBJECT), call_site);
-
-      // If this invokedynamic call site hasn't been executed yet in
-      // the interpreter, the CallSite object in the constant pool
-      // cache is still null and we need to deoptimize.
-      if (cpcache->is_f1_null_at(index)) {
-        // Only deoptimize if the CallSite object is still null; we don't
-        // recompile methods in C1 after deoptimization so this call site
-        // might be resolved the next time we execute it after OSR.
-        DeoptimizeStub* deopt_stub = new DeoptimizeStub(deopt_info);
-        __ cmp(lir_cond_equal, call_site, LIR_OprFact::oopConst(NULL));
-        __ branch(lir_cond_equal, T_OBJECT, deopt_stub);
-      }
-
-      // Use the receiver register for the synthetic MethodHandle
-      // argument.
-      receiver = LIR_Assembler::receiverOpr();
-
-      // Load target MethodHandle from CallSite object.
-      __ load(new LIR_Address(call_site, java_lang_invoke_CallSite::target_offset_in_bytes(), T_OBJECT), receiver);
-
       __ call_dynamic(target, receiver, result_register,
-                      SharedRuntime::get_resolve_opt_virtual_call_stub(),
+                      SharedRuntime::get_resolve_static_call_stub(),
                       arg_list, info);
       break;
     }

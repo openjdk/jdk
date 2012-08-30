@@ -999,32 +999,22 @@ void Assembler::addr_nop_8() {
 
 void Assembler::addsd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x58);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x58, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::addsd(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x58);
-  emit_operand(dst, src);
+  emit_simd_arith(0x58, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::addss(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x58);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x58, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::addss(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x58);
-  emit_operand(dst, src);
+  emit_simd_arith(0x58, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::andl(Address dst, int32_t imm32) {
@@ -1050,36 +1040,6 @@ void Assembler::andl(Register dst, Address src) {
 void Assembler::andl(Register dst, Register src) {
   (void) prefix_and_encode(dst->encoding(), src->encoding());
   emit_arith(0x23, 0xC0, dst, src);
-}
-
-void Assembler::andpd(XMMRegister dst, Address src) {
-  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x54);
-  emit_operand(dst, src);
-}
-
-void Assembler::andpd(XMMRegister dst, XMMRegister src) {
-  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x54);
-  emit_byte(0xC0 | encode);
-}
-
-void Assembler::andps(XMMRegister dst, Address src) {
-  NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_NONE);
-  emit_byte(0x54);
-  emit_operand(dst, src);
-}
-
-void Assembler::andps(XMMRegister dst, XMMRegister src) {
-  NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_NONE);
-  emit_byte(0x54);
-  emit_byte(0xC0 | encode);
 }
 
 void Assembler::bsfl(Register dst, Register src) {
@@ -1246,61 +1206,42 @@ void Assembler::comisd(XMMRegister dst, Address src) {
   // NOTE: dbx seems to decode this as comiss even though the
   // 0x66 is there. Strangly ucomisd comes out correct
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, src, VEX_SIMD_66);
-  emit_byte(0x2F);
-  emit_operand(dst, src);
+  emit_simd_arith_nonds(0x2F, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::comisd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_66);
-  emit_byte(0x2F);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0x2F, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::comiss(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, src, VEX_SIMD_NONE);
-  emit_byte(0x2F);
-  emit_operand(dst, src);
+  emit_simd_arith_nonds(0x2F, dst, src, VEX_SIMD_NONE);
 }
 
 void Assembler::comiss(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_NONE);
-  emit_byte(0x2F);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0x2F, dst, src, VEX_SIMD_NONE);
 }
 
 void Assembler::cvtdq2pd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_F3);
-  emit_byte(0xE6);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0xE6, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::cvtdq2ps(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_NONE);
-  emit_byte(0x5B);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0x5B, dst, src, VEX_SIMD_NONE);
 }
 
 void Assembler::cvtsd2ss(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x5A);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x5A, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::cvtsd2ss(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x5A);
-  emit_operand(dst, src);
+  emit_simd_arith(0x5A, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::cvtsi2sdl(XMMRegister dst, Register src) {
@@ -1312,10 +1253,7 @@ void Assembler::cvtsi2sdl(XMMRegister dst, Register src) {
 
 void Assembler::cvtsi2sdl(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x2A);
-  emit_operand(dst, src);
+  emit_simd_arith(0x2A, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::cvtsi2ssl(XMMRegister dst, Register src) {
@@ -1327,25 +1265,17 @@ void Assembler::cvtsi2ssl(XMMRegister dst, Register src) {
 
 void Assembler::cvtsi2ssl(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x2A);
-  emit_operand(dst, src);
+  emit_simd_arith(0x2A, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::cvtss2sd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x5A);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x5A, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::cvtss2sd(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x5A);
-  emit_operand(dst, src);
+  emit_simd_arith(0x5A, dst, src, VEX_SIMD_F3);
 }
 
 
@@ -1373,32 +1303,22 @@ void Assembler::decl(Address dst) {
 
 void Assembler::divsd(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x5E);
-  emit_operand(dst, src);
+  emit_simd_arith(0x5E, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::divsd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x5E);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x5E, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::divss(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x5E);
-  emit_operand(dst, src);
+  emit_simd_arith(0x5E, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::divss(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x5E);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x5E, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::emms() {
@@ -1634,16 +1554,12 @@ void Assembler::mov(Register dst, Register src) {
 
 void Assembler::movapd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_66);
-  emit_byte(0x28);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0x28, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::movaps(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_NONE);
-  emit_byte(0x28);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0x28, dst, src, VEX_SIMD_NONE);
 }
 
 void Assembler::movlhps(XMMRegister dst, XMMRegister src) {
@@ -1712,24 +1628,17 @@ void Assembler::movdl(Address dst, XMMRegister src) {
 
 void Assembler::movdqa(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_66);
-  emit_byte(0x6F);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0x6F, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::movdqu(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, src, VEX_SIMD_F3);
-  emit_byte(0x6F);
-  emit_operand(dst, src);
+  emit_simd_arith_nonds(0x6F, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::movdqu(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_F3);
-  emit_byte(0x6F);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0x6F, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::movdqu(Address dst, XMMRegister src) {
@@ -1810,10 +1719,7 @@ void Assembler::movl(Address dst, Register src) {
 // The selection is done in MacroAssembler::movdbl() and movflt().
 void Assembler::movlpd(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x12);
-  emit_operand(dst, src);
+  emit_simd_arith(0x12, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::movq( MMXRegister dst, Address src ) {
@@ -1870,17 +1776,12 @@ void Assembler::movsbl(Register dst, Register src) { // movsxb
 
 void Assembler::movsd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x10);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x10, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::movsd(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, src, VEX_SIMD_F2);
-  emit_byte(0x10);
-  emit_operand(dst, src);
+  emit_simd_arith_nonds(0x10, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::movsd(Address dst, XMMRegister src) {
@@ -1893,17 +1794,12 @@ void Assembler::movsd(Address dst, XMMRegister src) {
 
 void Assembler::movss(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x10);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x10, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::movss(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, src, VEX_SIMD_F3);
-  emit_byte(0x10);
-  emit_operand(dst, src);
+  emit_simd_arith_nonds(0x10, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::movss(Address dst, XMMRegister src) {
@@ -2001,32 +1897,22 @@ void Assembler::mull(Register src) {
 
 void Assembler::mulsd(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x59);
-  emit_operand(dst, src);
+  emit_simd_arith(0x59, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::mulsd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x59);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x59, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::mulss(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x59);
-  emit_operand(dst, src);
+  emit_simd_arith(0x59, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::mulss(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x59);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x59, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::negl(Register dst) {
@@ -2315,17 +2201,12 @@ void Assembler::orl(Register dst, Register src) {
 void Assembler::packuswb(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   assert((UseAVX > 0), "SSE mode requires address alignment 16 bytes");
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x67);
-  emit_operand(dst, src);
+  emit_simd_arith(0x67, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::packuswb(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x67);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x67, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::pcmpestri(XMMRegister dst, Address src, int imm8) {
@@ -2339,7 +2220,7 @@ void Assembler::pcmpestri(XMMRegister dst, Address src, int imm8) {
 
 void Assembler::pcmpestri(XMMRegister dst, XMMRegister src, int imm8) {
   assert(VM_Version::supports_sse4_2(), "");
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_66, VEX_OPCODE_0F_3A);
+  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_3A);
   emit_byte(0x61);
   emit_byte(0xC0 | encode);
   emit_byte(imm8);
@@ -2355,7 +2236,7 @@ void Assembler::pmovzxbw(XMMRegister dst, Address src) {
 
 void Assembler::pmovzxbw(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sse4_1(), "");
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_66, VEX_OPCODE_0F_38);
+  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_38);
   emit_byte(0x30);
   emit_byte(0xC0 | encode);
 }
@@ -2456,28 +2337,10 @@ void Assembler::prefix(Prefix p) {
   a_byte(p);
 }
 
-void Assembler::por(XMMRegister dst, XMMRegister src) {
-  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0xEB);
-  emit_byte(0xC0 | encode);
-}
-
-void Assembler::por(XMMRegister dst, Address src) {
-  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  assert((UseAVX > 0), "SSE mode requires address alignment 16 bytes");
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0xEB);
-  emit_operand(dst, src);
-}
-
 void Assembler::pshufd(XMMRegister dst, XMMRegister src, int mode) {
   assert(isByte(mode), "invalid value");
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_66);
-  emit_byte(0x70);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0x70, dst, src, VEX_SIMD_66);
   emit_byte(mode & 0xFF);
 
 }
@@ -2496,9 +2359,7 @@ void Assembler::pshufd(XMMRegister dst, Address src, int mode) {
 void Assembler::pshuflw(XMMRegister dst, XMMRegister src, int mode) {
   assert(isByte(mode), "invalid value");
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_F2);
-  emit_byte(0x70);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0x70, dst, src, VEX_SIMD_F2);
   emit_byte(mode & 0xFF);
 }
 
@@ -2511,18 +2372,6 @@ void Assembler::pshuflw(XMMRegister dst, Address src, int mode) {
   emit_byte(0x70);
   emit_operand(dst, src);
   emit_byte(mode & 0xFF);
-}
-
-void Assembler::psrlq(XMMRegister dst, int shift) {
-  // Shift 64 bit value logically right by specified number of bits.
-  // HMM Table D-1 says sse2 or mmx.
-  // Do not confuse it with psrldq SSE2 instruction which
-  // shifts 128 bit value in xmm register by number of bytes.
-  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(xmm2, dst, dst, VEX_SIMD_66);
-  emit_byte(0x73);
-  emit_byte(0xC0 | encode);
-  emit_byte(shift);
 }
 
 void Assembler::psrldq(XMMRegister dst, int shift) {
@@ -2545,7 +2394,7 @@ void Assembler::ptest(XMMRegister dst, Address src) {
 
 void Assembler::ptest(XMMRegister dst, XMMRegister src) {
   assert(VM_Version::supports_sse4_1(), "");
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_66, VEX_OPCODE_0F_38);
+  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_38);
   emit_byte(0x17);
   emit_byte(0xC0 | encode);
 }
@@ -2553,40 +2402,28 @@ void Assembler::ptest(XMMRegister dst, XMMRegister src) {
 void Assembler::punpcklbw(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   assert((UseAVX > 0), "SSE mode requires address alignment 16 bytes");
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x60);
-  emit_operand(dst, src);
+  emit_simd_arith(0x60, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::punpcklbw(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x60);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x60, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::punpckldq(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   assert((UseAVX > 0), "SSE mode requires address alignment 16 bytes");
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x62);
-  emit_operand(dst, src);
+  emit_simd_arith(0x62, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::punpckldq(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x62);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x62, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::punpcklqdq(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x6C);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x6C, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::push(int32_t imm32) {
@@ -2615,22 +2452,6 @@ void Assembler::pushl(Address src) {
   emit_operand(rsi, src);
 }
 #endif
-
-void Assembler::pxor(XMMRegister dst, Address src) {
-  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  assert((UseAVX > 0), "SSE mode requires address alignment 16 bytes");
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0xEF);
-  emit_operand(dst, src);
-}
-
-void Assembler::pxor(XMMRegister dst, XMMRegister src) {
-  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0xEF);
-  emit_byte(0xC0 | encode);
-}
 
 void Assembler::rcll(Register dst, int imm8) {
   assert(isShiftCount(imm8), "illegal shift count");
@@ -2790,32 +2611,22 @@ void Assembler::smovl() {
 
 void Assembler::sqrtsd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x51);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x51, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::sqrtsd(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x51);
-  emit_operand(dst, src);
+  emit_simd_arith(0x51, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::sqrtss(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x51);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x51, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::sqrtss(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x51);
-  emit_operand(dst, src);
+  emit_simd_arith(0x51, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::stmxcsr( Address dst) {
@@ -2865,32 +2676,22 @@ void Assembler::subl(Register dst, Register src) {
 
 void Assembler::subsd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x5C);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x5C, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::subsd(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F2);
-  emit_byte(0x5C);
-  emit_operand(dst, src);
+  emit_simd_arith(0x5C, dst, src, VEX_SIMD_F2);
 }
 
 void Assembler::subss(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x5C);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith(0x5C, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::subss(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_F3);
-  emit_byte(0x5C);
-  emit_operand(dst, src);
+  emit_simd_arith(0x5C, dst, src, VEX_SIMD_F3);
 }
 
 void Assembler::testb(Register dst, int imm8) {
@@ -2928,32 +2729,22 @@ void Assembler::testl(Register dst, Address  src) {
 
 void Assembler::ucomisd(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, src, VEX_SIMD_66);
-  emit_byte(0x2E);
-  emit_operand(dst, src);
+  emit_simd_arith_nonds(0x2E, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::ucomisd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_66);
-  emit_byte(0x2E);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0x2E, dst, src, VEX_SIMD_66);
 }
 
 void Assembler::ucomiss(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, src, VEX_SIMD_NONE);
-  emit_byte(0x2E);
-  emit_operand(dst, src);
+  emit_simd_arith_nonds(0x2E, dst, src, VEX_SIMD_NONE);
 }
 
 void Assembler::ucomiss(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode(dst, src, VEX_SIMD_NONE);
-  emit_byte(0x2E);
-  emit_byte(0xC0 | encode);
+  emit_simd_arith_nonds(0x2E, dst, src, VEX_SIMD_NONE);
 }
 
 
@@ -2995,211 +2786,714 @@ void Assembler::xorl(Register dst, Register src) {
   emit_arith(0x33, 0xC0, dst, src);
 }
 
-void Assembler::xorpd(XMMRegister dst, XMMRegister src) {
-  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x57);
-  emit_byte(0xC0 | encode);
-}
 
-void Assembler::xorpd(XMMRegister dst, Address src) {
-  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_66);
-  emit_byte(0x57);
-  emit_operand(dst, src);
-}
-
-
-void Assembler::xorps(XMMRegister dst, XMMRegister src) {
-  NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_NONE);
-  emit_byte(0x57);
-  emit_byte(0xC0 | encode);
-}
-
-void Assembler::xorps(XMMRegister dst, Address src) {
-  NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  simd_prefix(dst, dst, src, VEX_SIMD_NONE);
-  emit_byte(0x57);
-  emit_operand(dst, src);
-}
-
-// AVX 3-operands non destructive source instructions (encoded with VEX prefix)
+// AVX 3-operands scalar float-point arithmetic instructions
 
 void Assembler::vaddsd(XMMRegister dst, XMMRegister nds, Address src) {
   assert(VM_Version::supports_avx(), "");
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_F2);
-  emit_byte(0x58);
-  emit_operand(dst, src);
+  emit_vex_arith(0x58, dst, nds, src, VEX_SIMD_F2, /* vector256 */ false);
 }
 
 void Assembler::vaddsd(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx(), "");
-  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F2);
-  emit_byte(0x58);
-  emit_byte(0xC0 | encode);
+  emit_vex_arith(0x58, dst, nds, src, VEX_SIMD_F2, /* vector256 */ false);
 }
 
 void Assembler::vaddss(XMMRegister dst, XMMRegister nds, Address src) {
   assert(VM_Version::supports_avx(), "");
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_F3);
-  emit_byte(0x58);
-  emit_operand(dst, src);
+  emit_vex_arith(0x58, dst, nds, src, VEX_SIMD_F3, /* vector256 */ false);
 }
 
 void Assembler::vaddss(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx(), "");
-  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F3);
-  emit_byte(0x58);
-  emit_byte(0xC0 | encode);
-}
-
-void Assembler::vandpd(XMMRegister dst, XMMRegister nds, Address src) {
-  assert(VM_Version::supports_avx(), "");
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_66); // 128-bit vector
-  emit_byte(0x54);
-  emit_operand(dst, src);
-}
-
-void Assembler::vandps(XMMRegister dst, XMMRegister nds, Address src) {
-  assert(VM_Version::supports_avx(), "");
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_NONE); // 128-bit vector
-  emit_byte(0x54);
-  emit_operand(dst, src);
+  emit_vex_arith(0x58, dst, nds, src, VEX_SIMD_F3, /* vector256 */ false);
 }
 
 void Assembler::vdivsd(XMMRegister dst, XMMRegister nds, Address src) {
   assert(VM_Version::supports_avx(), "");
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_F2);
-  emit_byte(0x5E);
-  emit_operand(dst, src);
+  emit_vex_arith(0x5E, dst, nds, src, VEX_SIMD_F2, /* vector256 */ false);
 }
 
 void Assembler::vdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx(), "");
-  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F2);
-  emit_byte(0x5E);
-  emit_byte(0xC0 | encode);
+  emit_vex_arith(0x5E, dst, nds, src, VEX_SIMD_F2, /* vector256 */ false);
 }
 
 void Assembler::vdivss(XMMRegister dst, XMMRegister nds, Address src) {
   assert(VM_Version::supports_avx(), "");
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_F3);
-  emit_byte(0x5E);
-  emit_operand(dst, src);
+  emit_vex_arith(0x5E, dst, nds, src, VEX_SIMD_F3, /* vector256 */ false);
 }
 
 void Assembler::vdivss(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx(), "");
-  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F3);
-  emit_byte(0x5E);
-  emit_byte(0xC0 | encode);
+  emit_vex_arith(0x5E, dst, nds, src, VEX_SIMD_F3, /* vector256 */ false);
 }
 
 void Assembler::vmulsd(XMMRegister dst, XMMRegister nds, Address src) {
   assert(VM_Version::supports_avx(), "");
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_F2);
-  emit_byte(0x59);
-  emit_operand(dst, src);
+  emit_vex_arith(0x59, dst, nds, src, VEX_SIMD_F2, /* vector256 */ false);
 }
 
 void Assembler::vmulsd(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx(), "");
-  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F2);
-  emit_byte(0x59);
-  emit_byte(0xC0 | encode);
+  emit_vex_arith(0x59, dst, nds, src, VEX_SIMD_F2, /* vector256 */ false);
 }
 
 void Assembler::vmulss(XMMRegister dst, XMMRegister nds, Address src) {
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_F3);
-  emit_byte(0x59);
-  emit_operand(dst, src);
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x59, dst, nds, src, VEX_SIMD_F3, /* vector256 */ false);
 }
 
 void Assembler::vmulss(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx(), "");
-  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F3);
-  emit_byte(0x59);
-  emit_byte(0xC0 | encode);
+  emit_vex_arith(0x59, dst, nds, src, VEX_SIMD_F3, /* vector256 */ false);
 }
-
 
 void Assembler::vsubsd(XMMRegister dst, XMMRegister nds, Address src) {
   assert(VM_Version::supports_avx(), "");
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_F2);
-  emit_byte(0x5C);
-  emit_operand(dst, src);
+  emit_vex_arith(0x5C, dst, nds, src, VEX_SIMD_F2, /* vector256 */ false);
 }
 
 void Assembler::vsubsd(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx(), "");
-  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F2);
-  emit_byte(0x5C);
-  emit_byte(0xC0 | encode);
+  emit_vex_arith(0x5C, dst, nds, src, VEX_SIMD_F2, /* vector256 */ false);
 }
 
 void Assembler::vsubss(XMMRegister dst, XMMRegister nds, Address src) {
   assert(VM_Version::supports_avx(), "");
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_F3);
-  emit_byte(0x5C);
-  emit_operand(dst, src);
+  emit_vex_arith(0x5C, dst, nds, src, VEX_SIMD_F3, /* vector256 */ false);
 }
 
 void Assembler::vsubss(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx(), "");
-  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F3);
-  emit_byte(0x5C);
-  emit_byte(0xC0 | encode);
+  emit_vex_arith(0x5C, dst, nds, src, VEX_SIMD_F3, /* vector256 */ false);
 }
 
-void Assembler::vxorpd(XMMRegister dst, XMMRegister nds, Address src) {
+//====================VECTOR ARITHMETIC=====================================
+
+// Float-point vector arithmetic
+
+void Assembler::addpd(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x58, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::addps(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x58, dst, src, VEX_SIMD_NONE);
+}
+
+void Assembler::vaddpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
   assert(VM_Version::supports_avx(), "");
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_66); // 128-bit vector
-  emit_byte(0x57);
-  emit_operand(dst, src);
+  emit_vex_arith(0x58, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vaddps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x58, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+void Assembler::vaddpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x58, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vaddps(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x58, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+void Assembler::subpd(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x5C, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::subps(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x5C, dst, src, VEX_SIMD_NONE);
+}
+
+void Assembler::vsubpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x5C, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vsubps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x5C, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+void Assembler::vsubpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x5C, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vsubps(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x5C, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+void Assembler::mulpd(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x59, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::mulps(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x59, dst, src, VEX_SIMD_NONE);
+}
+
+void Assembler::vmulpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x59, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vmulps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x59, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+void Assembler::vmulpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x59, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vmulps(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x59, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+void Assembler::divpd(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x5E, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::divps(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x5E, dst, src, VEX_SIMD_NONE);
+}
+
+void Assembler::vdivpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x5E, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vdivps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x5E, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+void Assembler::vdivpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x5E, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vdivps(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x5E, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+void Assembler::andpd(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x54, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::andps(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse(), ""));
+  emit_simd_arith(0x54, dst, src, VEX_SIMD_NONE);
+}
+
+void Assembler::andps(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse(), ""));
+  emit_simd_arith(0x54, dst, src, VEX_SIMD_NONE);
+}
+
+void Assembler::andpd(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x54, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::vandpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x54, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vandps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x54, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+void Assembler::vandpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x54, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vandps(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x54, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+void Assembler::xorpd(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x57, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::xorps(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse(), ""));
+  emit_simd_arith(0x57, dst, src, VEX_SIMD_NONE);
+}
+
+void Assembler::xorpd(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x57, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::xorps(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse(), ""));
+  emit_simd_arith(0x57, dst, src, VEX_SIMD_NONE);
 }
 
 void Assembler::vxorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
   assert(VM_Version::supports_avx(), "");
-  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256);
-  emit_byte(0x57);
-  emit_byte(0xC0 | encode);
-}
-
-void Assembler::vxorps(XMMRegister dst, XMMRegister nds, Address src) {
-  assert(VM_Version::supports_avx(), "");
-  InstructionMark im(this);
-  vex_prefix(dst, nds, src, VEX_SIMD_NONE); // 128-bit vector
-  emit_byte(0x57);
-  emit_operand(dst, src);
+  emit_vex_arith(0x57, dst, nds, src, VEX_SIMD_66, vector256);
 }
 
 void Assembler::vxorps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
   assert(VM_Version::supports_avx(), "");
-  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_NONE, vector256);
-  emit_byte(0x57);
+  emit_vex_arith(0x57, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+void Assembler::vxorpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x57, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vxorps(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx(), "");
+  emit_vex_arith(0x57, dst, nds, src, VEX_SIMD_NONE, vector256);
+}
+
+
+// Integer vector arithmetic
+void Assembler::paddb(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xFC, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::paddw(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xFD, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::paddd(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xFE, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::paddq(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xD4, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::vpaddb(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xFC, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xFD, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpaddd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xFE, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpaddq(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xD4, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpaddb(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xFC, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpaddw(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xFD, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpaddd(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xFE, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpaddq(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xD4, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::psubb(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xF8, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::psubw(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xF9, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::psubd(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xFA, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::psubq(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xFB, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xF8, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpsubw(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xF9, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpsubd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xFA, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpsubq(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xFB, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpsubb(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xF8, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpsubw(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xF9, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpsubd(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xFA, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpsubq(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xFB, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::pmullw(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xD5, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::pmulld(XMMRegister dst, XMMRegister src) {
+  assert(VM_Version::supports_sse4_1(), "");
+  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F_38);
+  emit_byte(0x40);
   emit_byte(0xC0 | encode);
 }
 
-void Assembler::vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
-  assert(VM_Version::supports_avx2() || (!vector256) && VM_Version::supports_avx(), "");
-  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256);
-  emit_byte(0xEF);
+void Assembler::vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xD5, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpmulld(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_38);
+  emit_byte(0x40);
   emit_byte(0xC0 | encode);
 }
+
+void Assembler::vpmullw(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xD5, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpmulld(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  InstructionMark im(this);
+  int dst_enc = dst->encoding();
+  int nds_enc = nds->is_valid() ? nds->encoding() : 0;
+  vex_prefix(src, nds_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_38, false, vector256);
+  emit_byte(0x40);
+  emit_operand(dst, src);
+}
+
+// Shift packed integers left by specified number of bits.
+void Assembler::psllw(XMMRegister dst, int shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  // XMM6 is for /6 encoding: 66 0F 71 /6 ib
+  int encode = simd_prefix_and_encode(xmm6, dst, dst, VEX_SIMD_66);
+  emit_byte(0x71);
+  emit_byte(0xC0 | encode);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::pslld(XMMRegister dst, int shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  // XMM6 is for /6 encoding: 66 0F 72 /6 ib
+  int encode = simd_prefix_and_encode(xmm6, dst, dst, VEX_SIMD_66);
+  emit_byte(0x72);
+  emit_byte(0xC0 | encode);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::psllq(XMMRegister dst, int shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  // XMM6 is for /6 encoding: 66 0F 73 /6 ib
+  int encode = simd_prefix_and_encode(xmm6, dst, dst, VEX_SIMD_66);
+  emit_byte(0x73);
+  emit_byte(0xC0 | encode);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::psllw(XMMRegister dst, XMMRegister shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xF1, dst, shift, VEX_SIMD_66);
+}
+
+void Assembler::pslld(XMMRegister dst, XMMRegister shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xF2, dst, shift, VEX_SIMD_66);
+}
+
+void Assembler::psllq(XMMRegister dst, XMMRegister shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xF3, dst, shift, VEX_SIMD_66);
+}
+
+void Assembler::vpsllw(XMMRegister dst, XMMRegister src, int shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  // XMM6 is for /6 encoding: 66 0F 71 /6 ib
+  emit_vex_arith(0x71, xmm6, dst, src, VEX_SIMD_66, vector256);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::vpslld(XMMRegister dst, XMMRegister src, int shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  // XMM6 is for /6 encoding: 66 0F 72 /6 ib
+  emit_vex_arith(0x72, xmm6, dst, src, VEX_SIMD_66, vector256);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::vpsllq(XMMRegister dst, XMMRegister src, int shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  // XMM6 is for /6 encoding: 66 0F 73 /6 ib
+  emit_vex_arith(0x73, xmm6, dst, src, VEX_SIMD_66, vector256);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::vpsllw(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xF1, dst, src, shift, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpslld(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xF2, dst, src, shift, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpsllq(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xF3, dst, src, shift, VEX_SIMD_66, vector256);
+}
+
+// Shift packed integers logically right by specified number of bits.
+void Assembler::psrlw(XMMRegister dst, int shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  // XMM2 is for /2 encoding: 66 0F 71 /2 ib
+  int encode = simd_prefix_and_encode(xmm2, dst, dst, VEX_SIMD_66);
+  emit_byte(0x71);
+  emit_byte(0xC0 | encode);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::psrld(XMMRegister dst, int shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  // XMM2 is for /2 encoding: 66 0F 72 /2 ib
+  int encode = simd_prefix_and_encode(xmm2, dst, dst, VEX_SIMD_66);
+  emit_byte(0x72);
+  emit_byte(0xC0 | encode);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::psrlq(XMMRegister dst, int shift) {
+  // Do not confuse it with psrldq SSE2 instruction which
+  // shifts 128 bit value in xmm register by number of bytes.
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  // XMM2 is for /2 encoding: 66 0F 73 /2 ib
+  int encode = simd_prefix_and_encode(xmm2, dst, dst, VEX_SIMD_66);
+  emit_byte(0x73);
+  emit_byte(0xC0 | encode);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::psrlw(XMMRegister dst, XMMRegister shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xD1, dst, shift, VEX_SIMD_66);
+}
+
+void Assembler::psrld(XMMRegister dst, XMMRegister shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xD2, dst, shift, VEX_SIMD_66);
+}
+
+void Assembler::psrlq(XMMRegister dst, XMMRegister shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xD3, dst, shift, VEX_SIMD_66);
+}
+
+void Assembler::vpsrlw(XMMRegister dst, XMMRegister src, int shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  // XMM2 is for /2 encoding: 66 0F 73 /2 ib
+  emit_vex_arith(0x71, xmm2, dst, src, VEX_SIMD_66, vector256);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::vpsrld(XMMRegister dst, XMMRegister src, int shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  // XMM2 is for /2 encoding: 66 0F 73 /2 ib
+  emit_vex_arith(0x72, xmm2, dst, src, VEX_SIMD_66, vector256);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::vpsrlq(XMMRegister dst, XMMRegister src, int shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  // XMM2 is for /2 encoding: 66 0F 73 /2 ib
+  emit_vex_arith(0x73, xmm2, dst, src, VEX_SIMD_66, vector256);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::vpsrlw(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xD1, dst, src, shift, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpsrld(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xD2, dst, src, shift, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpsrlq(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xD3, dst, src, shift, VEX_SIMD_66, vector256);
+}
+
+// Shift packed integers arithmetically right by specified number of bits.
+void Assembler::psraw(XMMRegister dst, int shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  // XMM4 is for /4 encoding: 66 0F 71 /4 ib
+  int encode = simd_prefix_and_encode(xmm4, dst, dst, VEX_SIMD_66);
+  emit_byte(0x71);
+  emit_byte(0xC0 | encode);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::psrad(XMMRegister dst, int shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  // XMM4 is for /4 encoding: 66 0F 72 /4 ib
+  int encode = simd_prefix_and_encode(xmm4, dst, dst, VEX_SIMD_66);
+  emit_byte(0x72);
+  emit_byte(0xC0 | encode);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::psraw(XMMRegister dst, XMMRegister shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xE1, dst, shift, VEX_SIMD_66);
+}
+
+void Assembler::psrad(XMMRegister dst, XMMRegister shift) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xE2, dst, shift, VEX_SIMD_66);
+}
+
+void Assembler::vpsraw(XMMRegister dst, XMMRegister src, int shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  // XMM4 is for /4 encoding: 66 0F 71 /4 ib
+  emit_vex_arith(0x71, xmm4, dst, src, VEX_SIMD_66, vector256);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::vpsrad(XMMRegister dst, XMMRegister src, int shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  // XMM4 is for /4 encoding: 66 0F 71 /4 ib
+  emit_vex_arith(0x72, xmm4, dst, src, VEX_SIMD_66, vector256);
+  emit_byte(shift & 0xFF);
+}
+
+void Assembler::vpsraw(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xE1, dst, src, shift, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpsrad(XMMRegister dst, XMMRegister src, XMMRegister shift, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xE2, dst, src, shift, VEX_SIMD_66, vector256);
+}
+
+
+// AND packed integers
+void Assembler::pand(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xDB, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::vpand(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xDB, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpand(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xDB, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::por(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xEB, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::vpor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xEB, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpor(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xEB, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::pxor(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0xEF, dst, src, VEX_SIMD_66);
+}
+
+void Assembler::vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xEF, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpxor(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0xEF, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
 
 void Assembler::vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx(), "");
@@ -3803,6 +4097,49 @@ int Assembler::simd_prefix_and_encode(XMMRegister dst, XMMRegister nds, XMMRegis
     assert((nds == dst) || (nds == src) || (nds == xnoreg), "wrong sse encoding");
     return rex_prefix_and_encode(dst_enc, src_enc, pre, opc, rex_w);
   }
+}
+
+void Assembler::emit_simd_arith(int opcode, XMMRegister dst, Address src, VexSimdPrefix pre) {
+  InstructionMark im(this);
+  simd_prefix(dst, dst, src, pre);
+  emit_byte(opcode);
+  emit_operand(dst, src);
+}
+
+void Assembler::emit_simd_arith(int opcode, XMMRegister dst, XMMRegister src, VexSimdPrefix pre) {
+  int encode = simd_prefix_and_encode(dst, dst, src, pre);
+  emit_byte(opcode);
+  emit_byte(0xC0 | encode);
+}
+
+// Versions with no second source register (non-destructive source).
+void Assembler::emit_simd_arith_nonds(int opcode, XMMRegister dst, Address src, VexSimdPrefix pre) {
+  InstructionMark im(this);
+  simd_prefix(dst, xnoreg, src, pre);
+  emit_byte(opcode);
+  emit_operand(dst, src);
+}
+
+void Assembler::emit_simd_arith_nonds(int opcode, XMMRegister dst, XMMRegister src, VexSimdPrefix pre) {
+  int encode = simd_prefix_and_encode(dst, xnoreg, src, pre);
+  emit_byte(opcode);
+  emit_byte(0xC0 | encode);
+}
+
+// 3-operands AVX instructions
+void Assembler::emit_vex_arith(int opcode, XMMRegister dst, XMMRegister nds,
+                               Address src, VexSimdPrefix pre, bool vector256) {
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, pre, vector256);
+  emit_byte(opcode);
+  emit_operand(dst, src);
+}
+
+void Assembler::emit_vex_arith(int opcode, XMMRegister dst, XMMRegister nds,
+                               XMMRegister src, VexSimdPrefix pre, bool vector256) {
+  int encode = vex_prefix_and_encode(dst, nds, src, pre, vector256);
+  emit_byte(opcode);
+  emit_byte(0xC0 | encode);
 }
 
 #ifndef _LP64
@@ -7968,21 +8305,21 @@ void MacroAssembler::vaddss(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
-void MacroAssembler::vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+void MacroAssembler::vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256) {
   if (reachable(src)) {
-    vandpd(dst, nds, as_Address(src));
+    vandpd(dst, nds, as_Address(src), vector256);
   } else {
     lea(rscratch1, src);
-    vandpd(dst, nds, Address(rscratch1, 0));
+    vandpd(dst, nds, Address(rscratch1, 0), vector256);
   }
 }
 
-void MacroAssembler::vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+void MacroAssembler::vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256) {
   if (reachable(src)) {
-    vandps(dst, nds, as_Address(src));
+    vandps(dst, nds, as_Address(src), vector256);
   } else {
     lea(rscratch1, src);
-    vandps(dst, nds, Address(rscratch1, 0));
+    vandps(dst, nds, Address(rscratch1, 0), vector256);
   }
 }
 
@@ -8040,21 +8377,21 @@ void MacroAssembler::vsubss(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
-void MacroAssembler::vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+void MacroAssembler::vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256) {
   if (reachable(src)) {
-    vxorpd(dst, nds, as_Address(src));
+    vxorpd(dst, nds, as_Address(src), vector256);
   } else {
     lea(rscratch1, src);
-    vxorpd(dst, nds, Address(rscratch1, 0));
+    vxorpd(dst, nds, Address(rscratch1, 0), vector256);
   }
 }
 
-void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256) {
   if (reachable(src)) {
-    vxorps(dst, nds, as_Address(src));
+    vxorps(dst, nds, as_Address(src), vector256);
   } else {
     lea(rscratch1, src);
-    vxorps(dst, nds, Address(rscratch1, 0));
+    vxorps(dst, nds, Address(rscratch1, 0), vector256);
   }
 }
 

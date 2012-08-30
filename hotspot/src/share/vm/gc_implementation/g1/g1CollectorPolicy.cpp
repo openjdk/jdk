@@ -90,7 +90,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _alloc_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
   _prev_collection_pause_end_ms(0.0),
-  _pending_card_diff_seq(new TruncatedSeq(TruncatedSeqLength)),
   _rs_length_diff_seq(new TruncatedSeq(TruncatedSeqLength)),
   _cost_per_card_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
   _young_cards_per_entry_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
@@ -197,7 +196,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   int index = MIN2(_parallel_gc_threads - 1, 7);
 
-  _pending_card_diff_seq->add(0.0);
   _rs_length_diff_seq->add(rs_length_diff_defaults[index]);
   _cost_per_card_ms_seq->add(cost_per_card_ms_defaults[index]);
   _young_cards_per_entry_ratio_seq->add(
@@ -657,7 +655,7 @@ double G1CollectorPolicy::predict_survivor_regions_evac_time() {
   for (HeapRegion * r = _recorded_survivor_head;
        r != NULL && r != _recorded_survivor_tail->get_next_young_region();
        r = r->get_next_young_region()) {
-    survivor_regions_evac_time += predict_region_elapsed_time_ms(r, true);
+    survivor_regions_evac_time += predict_region_elapsed_time_ms(r, gcs_are_young());
   }
   return survivor_regions_evac_time;
 }
@@ -801,9 +799,8 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   _cur_collection_pause_used_at_start_bytes = start_used;
   _cur_collection_pause_used_regions_at_start = _g1->used_regions();
   _pending_cards = _g1->pending_card_num();
-  _max_pending_cards = _g1->max_pending_card_num();
 
-  _bytes_in_collection_set_before_gc = 0;
+  _collection_set_bytes_used_before = 0;
   _bytes_copied_during_gc = 0;
 
   YoungList* young_list = _g1->young_list();
@@ -1036,12 +1033,6 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
   // do that for any other surv rate groupsx
 
   if (update_stats) {
-    size_t diff = 0;
-    if (_max_pending_cards >= _pending_cards) {
-      diff = _max_pending_cards - _pending_cards;
-    }
-    _pending_card_diff_seq->add((double) diff);
-
     double cost_per_card_ms = 0.0;
     if (_pending_cards > 0) {
       cost_per_card_ms = phase_times()->_update_rs_time / (double) _pending_cards;
@@ -1126,9 +1117,9 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
     _constant_other_time_ms_seq->add(constant_other_time_ms);
 
     double survival_ratio = 0.0;
-    if (_bytes_in_collection_set_before_gc > 0) {
+    if (_collection_set_bytes_used_before > 0) {
       survival_ratio = (double) _bytes_copied_during_gc /
-                                   (double) _bytes_in_collection_set_before_gc;
+                                   (double) _collection_set_bytes_used_before;
     }
 
     _pending_cards_seq->add((double) _pending_cards);
@@ -1229,18 +1220,6 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
 }
 
 double
-G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) {
-  size_t rs_length = predict_rs_length_diff();
-  size_t card_num;
-  if (gcs_are_young()) {
-    card_num = predict_young_card_num(rs_length);
-  } else {
-    card_num = predict_non_young_card_num(rs_length);
-  }
-  return predict_base_elapsed_time_ms(pending_cards, card_num);
-}
-
-double
 G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards,
                                                 size_t scanned_cards) {
   return
@@ -1250,27 +1229,15 @@ G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards,
 }
 
 double
-G1CollectorPolicy::predict_region_elapsed_time_ms(HeapRegion* hr,
-                                                  bool young) {
-  size_t rs_length = hr->rem_set()->occupied();
+G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) {
+  size_t rs_length = predict_rs_length_diff();
   size_t card_num;
   if (gcs_are_young()) {
     card_num = predict_young_card_num(rs_length);
   } else {
     card_num = predict_non_young_card_num(rs_length);
   }
-  size_t bytes_to_copy = predict_bytes_to_copy(hr);
-
-  double region_elapsed_time_ms =
-    predict_rs_scan_time_ms(card_num) +
-    predict_object_copy_time_ms(bytes_to_copy);
-
-  if (young)
-    region_elapsed_time_ms += predict_young_other_time_ms(1);
-  else
-    region_elapsed_time_ms += predict_non_young_other_time_ms(1);
-
-  return region_elapsed_time_ms;
+  return predict_base_elapsed_time_ms(pending_cards, card_num);
 }
 
 size_t G1CollectorPolicy::predict_bytes_to_copy(HeapRegion* hr) {
@@ -1284,6 +1251,35 @@ size_t G1CollectorPolicy::predict_bytes_to_copy(HeapRegion* hr) {
     bytes_to_copy = (size_t) ((double) hr->used() * yg_surv_rate);
   }
   return bytes_to_copy;
+}
+
+double
+G1CollectorPolicy::predict_region_elapsed_time_ms(HeapRegion* hr,
+                                                  bool for_young_gc) {
+  size_t rs_length = hr->rem_set()->occupied();
+  size_t card_num;
+
+  // Predicting the number of cards is based on which type of GC
+  // we're predicting for.
+  if (for_young_gc) {
+    card_num = predict_young_card_num(rs_length);
+  } else {
+    card_num = predict_non_young_card_num(rs_length);
+  }
+  size_t bytes_to_copy = predict_bytes_to_copy(hr);
+
+  double region_elapsed_time_ms =
+    predict_rs_scan_time_ms(card_num) +
+    predict_object_copy_time_ms(bytes_to_copy);
+
+  // The prediction of the "other" time for this region is based
+  // upon the region type and NOT the GC type.
+  if (hr->is_young()) {
+    region_elapsed_time_ms += predict_young_other_time_ms(1);
+  } else {
+    region_elapsed_time_ms += predict_non_young_other_time_ms(1);
+  }
+  return region_elapsed_time_ms;
 }
 
 void
@@ -1340,22 +1336,6 @@ size_t G1CollectorPolicy::expansion_amount() {
   } else {
     return 0;
   }
-}
-
-class CountCSClosure: public HeapRegionClosure {
-  G1CollectorPolicy* _g1_policy;
-public:
-  CountCSClosure(G1CollectorPolicy* g1_policy) :
-    _g1_policy(g1_policy) {}
-  bool doHeapRegion(HeapRegion* r) {
-    _g1_policy->_bytes_in_collection_set_before_gc += r->used();
-    return false;
-  }
-};
-
-void G1CollectorPolicy::count_CS_bytes_used() {
-  CountCSClosure cs_closure(this);
-  _g1->collection_set_iterate(&cs_closure);
 }
 
 void G1CollectorPolicy::print_tracing_info() const {
@@ -1696,7 +1676,7 @@ void G1CollectorPolicy::add_to_incremental_cset_info(HeapRegion* hr, size_t rs_l
   // retiring the current allocation region) or a concurrent
   // refine thread (RSet sampling).
 
-  double region_elapsed_time_ms = predict_region_elapsed_time_ms(hr, true);
+  double region_elapsed_time_ms = predict_region_elapsed_time_ms(hr, gcs_are_young());
   size_t used_bytes = hr->used();
   _inc_cset_recorded_rs_lengths += rs_length;
   _inc_cset_predicted_elapsed_time_ms += region_elapsed_time_ms;
@@ -1731,7 +1711,7 @@ void G1CollectorPolicy::update_incremental_cset_info(HeapRegion* hr,
   _inc_cset_recorded_rs_lengths_diffs += rs_lengths_diff;
 
   double old_elapsed_time_ms = hr->predicted_elapsed_time_ms();
-  double new_region_elapsed_time_ms = predict_region_elapsed_time_ms(hr, true);
+  double new_region_elapsed_time_ms = predict_region_elapsed_time_ms(hr, gcs_are_young());
   double elapsed_ms_diff = new_region_elapsed_time_ms - old_elapsed_time_ms;
   _inc_cset_predicted_elapsed_time_ms_diffs += elapsed_ms_diff;
 
@@ -1854,8 +1834,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
 }
 
 void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
-  // Set this here - in case we're not doing young collections.
-  double non_young_start_time_sec = os::elapsedTime();
+  double young_start_time_sec = os::elapsedTime();
 
   YoungList* young_list = _g1->young_list();
   finalize_incremental_cset_building();
@@ -1869,17 +1848,14 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
   double predicted_pause_time_ms = base_time_ms;
   double time_remaining_ms = target_pause_time_ms - base_time_ms;
 
-  ergo_verbose3(ErgoCSetConstruction | ErgoHigh,
+  ergo_verbose4(ErgoCSetConstruction | ErgoHigh,
                 "start choosing CSet",
+                ergo_format_size("_pending_cards")
                 ergo_format_ms("predicted base time")
                 ergo_format_ms("remaining time")
                 ergo_format_ms("target pause time"),
-                base_time_ms, time_remaining_ms, target_pause_time_ms);
+                _pending_cards, base_time_ms, time_remaining_ms, target_pause_time_ms);
 
-  HeapRegion* hr;
-  double young_start_time_sec = os::elapsedTime();
-
-  _collection_set_bytes_used_before = 0;
   _last_gc_was_young = gcs_are_young() ? true : false;
 
   if (_last_gc_was_young) {
@@ -1895,7 +1871,8 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
   uint survivor_region_length = young_list->survivor_length();
   uint eden_region_length = young_list->length() - survivor_region_length;
   init_cset_region_lengths(eden_region_length, survivor_region_length);
-  hr = young_list->first_survivor_region();
+
+  HeapRegion* hr = young_list->first_survivor_region();
   while (hr != NULL) {
     assert(hr->is_survivor(), "badly formed young list");
     hr->set_young();
@@ -1926,8 +1903,8 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
   phase_times()->_recorded_young_cset_choice_time_ms =
     (young_end_time_sec - young_start_time_sec) * 1000.0;
 
-  // We are doing young collections so reset this.
-  non_young_start_time_sec = young_end_time_sec;
+  // Set the start of the non-young choice time.
+  double non_young_start_time_sec = young_end_time_sec;
 
   if (!gcs_are_young()) {
     CollectionSetChooser* cset_chooser = _collectionSetChooser;
@@ -1937,6 +1914,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
 
     uint expensive_region_num = 0;
     bool check_time_remaining = adaptive_young_list_length();
+
     HeapRegion* hr = cset_chooser->peek();
     while (hr != NULL) {
       if (old_cset_region_length() >= max_old_cset_length) {
@@ -1950,7 +1928,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
         break;
       }
 
-      double predicted_time_ms = predict_region_elapsed_time_ms(hr, false);
+      double predicted_time_ms = predict_region_elapsed_time_ms(hr, gcs_are_young());
       if (check_time_remaining) {
         if (predicted_time_ms > time_remaining_ms) {
           // Too expensive for the current CSet.
@@ -2024,8 +2002,6 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
   }
 
   stop_incremental_cset_building();
-
-  count_CS_bytes_used();
 
   ergo_verbose5(ErgoCSetConstruction,
                 "finish choosing CSet",

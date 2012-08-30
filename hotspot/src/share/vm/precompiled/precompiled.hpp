@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,7 +306,6 @@
 # include "gc_implementation/g1/g1_specialized_oop_closures.hpp"
 # include "gc_implementation/g1/ptrQueue.hpp"
 # include "gc_implementation/g1/satbQueue.hpp"
-# include "gc_implementation/parNew/parGCAllocBuffer.hpp"
 # include "gc_implementation/parNew/parOopClosures.hpp"
 # include "gc_implementation/parallelScavenge/objectStartArray.hpp"
 # include "gc_implementation/parallelScavenge/parMarkBitMap.hpp"
@@ -322,6 +321,7 @@
 # include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 # include "gc_implementation/shared/gcAdaptivePolicyCounters.hpp"
 # include "gc_implementation/shared/gcPolicyCounters.hpp"
+# include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #endif // SERIALGC
 
 #endif // !DONT_USE_PRECOMPILED_HEADER

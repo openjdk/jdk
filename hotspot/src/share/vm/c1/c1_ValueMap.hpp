@@ -114,7 +114,7 @@ class ValueMap: public CompilationResourceObj {
   Value find_insert(Value x);
 
   void kill_memory();
-  void kill_field(ciField* field);
+  void kill_field(ciField* field, bool all_offsets);
   void kill_array(ValueType* type);
   void kill_exception();
   void kill_map(ValueMap* map);
@@ -136,7 +136,7 @@ class ValueNumberingVisitor: public InstructionVisitor {
  protected:
   // called by visitor functions for instructions that kill values
   virtual void kill_memory() = 0;
-  virtual void kill_field(ciField* field) = 0;
+  virtual void kill_field(ciField* field, bool all_offsets) = 0;
   virtual void kill_array(ValueType* type) = 0;
 
   // visitor functions
@@ -148,7 +148,7 @@ class ValueNumberingVisitor: public InstructionVisitor {
         x->field()->is_volatile()) {
       kill_memory();
     } else {
-      kill_field(x->field());
+      kill_field(x->field(), x->needs_patching());
     }
   }
   void do_StoreIndexed   (StoreIndexed*    x) { kill_array(x->type()); }
@@ -214,9 +214,9 @@ class ValueNumberingEffects: public ValueNumberingVisitor {
 
  public:
   // implementation for abstract methods of ValueNumberingVisitor
-  void          kill_memory()                    { _map->kill_memory(); }
-  void          kill_field(ciField* field)       { _map->kill_field(field); }
-  void          kill_array(ValueType* type)      { _map->kill_array(type); }
+  void          kill_memory()                                 { _map->kill_memory(); }
+  void          kill_field(ciField* field, bool all_offsets)  { _map->kill_field(field, all_offsets); }
+  void          kill_array(ValueType* type)                   { _map->kill_array(type); }
 
   ValueNumberingEffects(ValueMap* map): _map(map) {}
 };
@@ -234,9 +234,9 @@ class GlobalValueNumbering: public ValueNumberingVisitor {
   void          set_value_map_of(BlockBegin* block, ValueMap* map)   { assert(value_map_of(block) == NULL, ""); _value_maps.at_put(block->linear_scan_number(), map); }
 
   // implementation for abstract methods of ValueNumberingVisitor
-  void          kill_memory()                    { current_map()->kill_memory(); }
-  void          kill_field(ciField* field)       { current_map()->kill_field(field); }
-  void          kill_array(ValueType* type)      { current_map()->kill_array(type); }
+  void          kill_memory()                                 { current_map()->kill_memory(); }
+  void          kill_field(ciField* field, bool all_offsets)  { current_map()->kill_field(field, all_offsets); }
+  void          kill_array(ValueType* type)                   { current_map()->kill_array(type); }
 
   // main entry point that performs global value numbering
   GlobalValueNumbering(IR* ir);

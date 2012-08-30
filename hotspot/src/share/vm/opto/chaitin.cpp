@@ -484,24 +484,33 @@ void PhaseChaitin::Register_Allocate() {
     if (_names[i]) {           // Live range associated with Node?
       LRG &lrg = lrgs(_names[i]);
       if (!lrg.alive()) {
-        _node_regs[i].set_bad();
+        set_bad(i);
       } else if (lrg.num_regs() == 1) {
-        _node_regs[i].set1(lrg.reg());
-      } else {                  // Must be a register-pair
-        if (!lrg._fat_proj) {   // Must be aligned adjacent register pair
+        set1(i, lrg.reg());
+      } else {                  // Must be a register-set
+        if (!lrg._fat_proj) {   // Must be aligned adjacent register set
           // Live ranges record the highest register in their mask.
           // We want the low register for the AD file writer's convenience.
-          _node_regs[i].set2( OptoReg::add(lrg.reg(),(1-lrg.num_regs())) );
+          OptoReg::Name hi = lrg.reg(); // Get hi register
+          OptoReg::Name lo = OptoReg::add(hi, (1-lrg.num_regs())); // Find lo
+          // We have to use pair [lo,lo+1] even for wide vectors because
+          // the rest of code generation works only with pairs. It is safe
+          // since for registers encoding only 'lo' is used.
+          // Second reg from pair is used in ScheduleAndBundle on SPARC where
+          // vector max size is 8 which corresponds to registers pair.
+          // It is also used in BuildOopMaps but oop operations are not
+          // vectorized.
+          set2(i, lo);
         } else {                // Misaligned; extract 2 bits
           OptoReg::Name hi = lrg.reg(); // Get hi register
           lrg.Remove(hi);       // Yank from mask
           int lo = lrg.mask().find_first_elem(); // Find lo
-          _node_regs[i].set_pair( hi, lo );
+          set_pair(i, hi, lo);
         }
       }
       if( lrg._is_oop ) _node_oops.set(i);
     } else {
-      _node_regs[i].set_bad();
+      set_bad(i);
     }
   }
 
@@ -1121,6 +1130,33 @@ void PhaseChaitin::Simplify( ) {
 
 }
 
+//------------------------------is_legal_reg-----------------------------------
+// Is 'reg' register legal for 'lrg'?
+static bool is_legal_reg(LRG &lrg, OptoReg::Name reg, int chunk) {
+  if (reg >= chunk && reg < (chunk + RegMask::CHUNK_SIZE) &&
+      lrg.mask().Member(OptoReg::add(reg,-chunk))) {
+    // RA uses OptoReg which represent the highest element of a registers set.
+    // For example, vectorX (128bit) on x86 uses [XMM,XMMb,XMMc,XMMd] set
+    // in which XMMd is used by RA to represent such vectors. A double value
+    // uses [XMM,XMMb] pairs and XMMb is used by RA for it.
+    // The register mask uses largest bits set of overlapping register sets.
+    // On x86 with AVX it uses 8 bits for each XMM registers set.
+    //
+    // The 'lrg' already has cleared-to-set register mask (done in Select()
+    // before calling choose_color()). Passing mask.Member(reg) check above
+    // indicates that the size (num_regs) of 'reg' set is less or equal to
+    // 'lrg' set size.
+    // For set size 1 any register which is member of 'lrg' mask is legal.
+    if (lrg.num_regs()==1)
+      return true;
+    // For larger sets only an aligned register with the same set size is legal.
+    int mask = lrg.num_regs()-1;
+    if ((reg&mask) == mask)
+      return true;
+  }
+  return false;
+}
+
 //------------------------------bias_color-------------------------------------
 // Choose a color using the biasing heuristic
 OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
@@ -1137,10 +1173,7 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
     while ((datum = elements.next()) != 0) {
       OptoReg::Name reg = lrgs(datum).reg();
       // If this LRG's register is legal for us, choose it
-      if( reg >= chunk && reg < chunk + RegMask::CHUNK_SIZE &&
-          lrg.mask().Member(OptoReg::add(reg,-chunk)) &&
-          (lrg.num_regs()==1 || // either size 1
-           (reg&1) == 1) )      // or aligned (adjacent reg is available since we already cleared-to-pairs)
+      if (is_legal_reg(lrg, reg, chunk))
         return reg;
     }
   }
@@ -1151,10 +1184,7 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
     if( !(*(_ifg->_yanked))[copy_lrg] ) {
       OptoReg::Name reg = lrgs(copy_lrg).reg();
       //  And it is legal for you,
-      if( reg >= chunk && reg < chunk + RegMask::CHUNK_SIZE &&
-          lrg.mask().Member(OptoReg::add(reg,-chunk)) &&
-          (lrg.num_regs()==1 || // either size 1
-           (reg&1) == 1) )      // or aligned (adjacent reg is available since we already cleared-to-pairs)
+      if (is_legal_reg(lrg, reg, chunk))
         return reg;
     } else if( chunk == 0 ) {
       // Choose a color which is legal for him
