@@ -50,7 +50,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import java.security.AccessControlContext;
-import java.security.ProtectionDomain;
 
 import sun.misc.SharedSecrets;
 import sun.misc.JavaSecurityAccess;
@@ -185,6 +184,17 @@ public class EventQueue {
                 }
                 public boolean isDispatchThreadImpl(EventQueue eventQueue) {
                     return eventQueue.isDispatchThreadImpl();
+                }
+                public void removeSourceEvents(EventQueue eventQueue,
+                                               Object source,
+                                               boolean removeAllEvents) {
+                    eventQueue.removeSourceEvents(source, removeAllEvents);
+                }
+                public boolean noEvents(EventQueue eventQueue) {
+                    return eventQueue.noEvents();
+                }
+                public void wakeup(EventQueue eventQueue, boolean isShutdown) {
+                    eventQueue.wakeup(isShutdown);
                 }
             });
     }

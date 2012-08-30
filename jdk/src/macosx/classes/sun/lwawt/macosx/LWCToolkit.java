@@ -81,14 +81,6 @@ public class LWCToolkit extends LWToolkit {
         }
     }
 
-    static String getSystemProperty(final String name, final String deflt) {
-        return AccessController.doPrivileged (new PrivilegedAction<String>() {
-            public String run() {
-                return System.getProperty(name, deflt);
-            }
-        });
-    }
-
     public LWCToolkit() {
         SunToolkit.setDataTransfererClassName("sun.lwawt.macosx.CDataTransferer");
 
@@ -700,8 +692,8 @@ public class LWCToolkit extends LWToolkit {
      */
     public synchronized static boolean getSunAwtDisableCALayers() {
         if (sunAwtDisableCALayers == null) {
-            sunAwtDisableCALayers =
-            getBooleanSystemProperty("sun.awt.disableCALayers");
+            sunAwtDisableCALayers = AccessController.doPrivileged(
+                new GetBooleanAction("sun.awt.disableCALayers")));
         }
         return sunAwtDisableCALayers.booleanValue();
     }
