@@ -116,6 +116,10 @@ public class TestECDSA extends PKCS11Test {
             System.out.println("ECDSA not supported, skipping");
             return;
         }
+
+        /*
+         * PKCS11Test.main will remove this provider if needed
+         */
         Providers.setAt(provider, 1);
 
         if (false) {
@@ -137,7 +141,6 @@ public class TestECDSA extends PKCS11Test {
         test(provider, pub521, priv521, sig521);
         test(provider, pub571, priv571, sig571);
 
-        Security.removeProvider(provider.getName());
         long stop = System.currentTimeMillis();
         System.out.println("All tests passed (" + (stop - start) + " ms).");
     }
