@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -549,7 +549,13 @@ public class HotSpotAgent {
                     machDesc = new MachineDescriptionSPARC32Bit();
             }
         } else {
-            throw new DebuggerException("Linux only supported on x86/ia64/amd64/sparc/sparc64");
+          try {
+            machDesc = (MachineDescription)
+              Class.forName("sun.jvm.hotspot.debugger.MachineDescription" +
+                            cpu.toUpperCase()).newInstance();
+          } catch (Exception e) {
+            throw new DebuggerException("Linux not supported on machine type " + cpu);
+          }
         }
 
         LinuxDebuggerLocal dbg =
