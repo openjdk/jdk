@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package sun.jvm.hotspot.debugger.remote;
 
 import java.rmi.*;
 import java.util.*;
+import java.lang.reflect.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
@@ -70,7 +71,18 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
         cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
         unalignedAccessesOkay = true;
       } else {
-        throw new DebuggerException("Thread access for CPU architecture " + cpu + " not yet supported");
+        try {
+          Class tf = Class.forName("sun.jvm.hotspot.debugger.remote." +
+            cpu.toLowerCase() + ".Remote" + cpu.toUpperCase() +
+            "ThreadFactory");
+          Constructor[] ctf = tf.getConstructors();
+          threadFactory = (RemoteThreadFactory)ctf[0].newInstance(this);
+        } catch (Exception e) {
+          throw new DebuggerException("Thread access for CPU architecture " + cpu + " not yet supported");
+        }
+        cachePageSize = 4096;
+        cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
+        unalignedAccessesOkay = false;
       }
 
       // Cache portion of the remote process's address space.
