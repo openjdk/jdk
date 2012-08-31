@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,27 @@
  * questions.
  */
 
-package sun.awt.X11;
 
-import java.lang.reflect.Field;
-import sun.awt.SunToolkit;
+package com.sun.beans.editors;
 
-class XTextTransferHelper {
-    private static Object transferHandlerKey = null;
-    static Object getTransferHandlerKey() {
-        if (transferHandlerKey == null) {
-            try {
-                Class clazz = Class.forName("javax.swing.ClientPropertyKey");
-                Field field = SunToolkit.getField(clazz, "JComponent_TRANSFER_HANDLER");
-                transferHandlerKey = field.get(null);
-            } catch (IllegalAccessException ex) {
-                return null;
-            } catch (ClassNotFoundException cnfe) {
-                cnfe.printStackTrace();
-            }
-        }
-        return transferHandlerKey;
+/**
+ * Property editor for a java builtin "short" type.
+ *
+ */
+
+import java.beans.*;
+
+public class ShortEditor extends NumberEditor {
+
+    public String getJavaInitializationString() {
+        Object value = getValue();
+        return (value != null)
+                ? "((short)" + value + ")"
+                : "null";
     }
+
+    public void setAsText(String text) throws IllegalArgumentException {
+        setValue((text == null) ? null : Short.decode(text));
+    }
+
 }
