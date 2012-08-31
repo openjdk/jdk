@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,9 @@ public class T6920317 {
         String expect = null;
 
         opts.add("-processorpath");
-        opts.add(System.getProperty("test.classes"));
+        String testClasses = System.getProperty("test.classes");
+        String testClassPath = System.getProperty("test.class.path", testClasses);
+        opts.add(testClassPath);
         opts.add("-processor");
         opts.add(Processor.class.getName());
         opts.add("-proc:only");
