@@ -128,7 +128,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
 
             if (focusLog.isLoggable(PlatformLogger.FINER))
                 focusLog.finer("Posting focus event: " + fl);
-            SunToolkit.postPriorityEvent(fl);
+            SunToolkit.postEvent(SunToolkit.targetToAppContext(currentOwner), fl);
         }
 
         FocusEvent fg = new CausedFocusEvent(lightweightChild, FocusEvent.FOCUS_GAINED,
@@ -136,7 +136,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
 
         if (focusLog.isLoggable(PlatformLogger.FINER))
             focusLog.finer("Posting focus event: " + fg);
-        SunToolkit.postPriorityEvent(fg);
+        SunToolkit.postEvent(SunToolkit.targetToAppContext(lightweightChild), fg);
         return true;
     }
 

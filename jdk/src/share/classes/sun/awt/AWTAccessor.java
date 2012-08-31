@@ -487,6 +487,21 @@ public final class AWTAccessor {
     }
 
     /*
+     * An accessor for the SequencedEventAccessor class
+     */
+    public interface SequencedEventAccessor {
+        /*
+         * Returns the nested event.
+         */
+        AWTEvent getNested(AWTEvent sequencedEvent);
+
+        /*
+         * Returns true if the event is an instances of SequencedEvent.
+         */
+        boolean isSequencedEvent(AWTEvent event);
+    }
+
+    /*
      * Accessor instances are initialized in the static initializers of
      * corresponding AWT classes by using setters defined below.
      */
@@ -502,6 +517,7 @@ public final class AWTAccessor {
     private static PopupMenuAccessor popupMenuAccessor;
     private static FileDialogAccessor fileDialogAccessor;
     private static ScrollPaneAdjustableAccessor scrollPaneAdjustableAccessor;
+    private static SequencedEventAccessor sequencedEventAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -708,5 +724,22 @@ public final class AWTAccessor {
             unsafe.ensureClassInitialized(ScrollPaneAdjustable.class);
         }
         return scrollPaneAdjustableAccessor;
+    }
+
+    /*
+     * Set an accessor object for the java.awt.SequencedEvent class.
+     */
+    public static void setSequencedEventAccessor(SequencedEventAccessor sea) {
+        sequencedEventAccessor = sea;
+    }
+
+    /*
+     * Get the accessor object for the java.awt.SequencedEvent class.
+     */
+    public static SequencedEventAccessor getSequencedEventAccessor() {
+        // The class is not public. So we can't ensure it's initialized.
+        // Null returned value means it's not initialized
+        // (so not a single instance of the event has been created).
+        return sequencedEventAccessor;
     }
 }

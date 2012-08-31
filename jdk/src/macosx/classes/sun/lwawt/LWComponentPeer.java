@@ -1251,9 +1251,6 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
 
         if (!target.isFocusOwner() && LWKeyboardFocusManagerPeer.shouldFocusOnClick(target)) {
             LWKeyboardFocusManagerPeer.requestFocusFor(target, CausedFocusEvent.Cause.MOUSE_EVENT);
-        } else {
-            // Anyway request focus to the toplevel.
-            getWindowPeerOrSelf().requestWindowFocus(CausedFocusEvent.Cause.MOUSE_EVENT);
         }
     }
 

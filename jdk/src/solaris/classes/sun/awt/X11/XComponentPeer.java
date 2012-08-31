@@ -588,33 +588,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     }
 
-    public void handleButtonPressRelease(XEvent xev) {
-        /*
-         * Fix for 6385277.
-         * We request focus on simple Window by click in order
-         * to make it behave like Frame/Dialog in this case and also to unify
-         * the behaviour with what we have on MS Windows.
-         * handleJavaMouseEvent() would be more suitable place to do this
-         * but we want Swing to have this functionality also.
-         */
-        if (xev.get_type() == XConstants.ButtonPress) {
-            final XWindowPeer parentXWindow = getParentTopLevel();
-            Window parentWindow = (Window)parentXWindow.getTarget();
-            if (parentXWindow.isFocusableWindow() && parentXWindow.isSimpleWindow() &&
-                XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow() != parentWindow)
-            {
-                postEvent(new InvocationEvent(parentWindow, new  Runnable() {
-                        public void run() {
-                            // Request focus on the EDT of 'parentWindow' because
-                            // XDecoratedPeer.requestWindowFocus() calls client code.
-                            parentXWindow.requestXFocus();
-                        }
-                    }));
-            }
-        }
-        super.handleButtonPressRelease(xev);
-    }
-
     public Dimension getMinimumSize() {
         return target.getSize();
     }

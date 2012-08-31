@@ -798,6 +798,14 @@ public class LWWindowPeer
                     mouseClickButtons |= eventButtonMask;
                 }
 
+                // The window should be focused on mouse click. If it gets activated by the native platform,
+                // this request will be no op. It will take effect when:
+                // 1. A simple not focused window is clicked.
+                // 2. An active but not focused owner frame/dialog is clicked.
+                // The mouse event then will trigger a focus request "in window" to the component, so the window
+                // should gain focus before.
+                requestWindowFocus(CausedFocusEvent.Cause.MOUSE_EVENT);
+
                 mouseDownTarget[targetIdx] = targetPeer;
             } else if (id == MouseEvent.MOUSE_DRAGGED) {
                 // Cocoa dragged event has the information about which mouse
@@ -914,20 +922,16 @@ public class LWWindowPeer
     public void dispatchKeyEvent(int id, long when, int modifiers,
                                  int keyCode, char keyChar, int keyLocation)
     {
-        KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
+        LWKeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
         Component focusOwner = kfmPeer.getCurrentFocusOwner();
 
-        // Null focus owner may receive key event when
-        // application hides the focused window upon ESC press
-        // (AWT transfers/clears the focus owner) and pending ESC release
-        // may come to already hidden window. This check eliminates NPE.
-        if (focusOwner != null) {
-            KeyEvent event =
-                new KeyEvent(focusOwner, id, when, modifiers,
-                             keyCode, keyChar, keyLocation);
-            LWComponentPeer peer = (LWComponentPeer)focusOwner.getPeer();
-            peer.postEvent(event);
+        if (focusOwner == null) {
+            focusOwner = kfmPeer.getCurrentFocusedWindow();
+            if (focusOwner == null) {
+                focusOwner = this.getTarget();
+            }
         }
+        postEvent(new KeyEvent(focusOwner, id, when, modifiers, keyCode, keyChar, keyLocation));
     }
 
 
@@ -1260,7 +1264,7 @@ public class LWWindowPeer
         kfmPeer.setCurrentFocusedWindow(becomesFocused ? getTarget() : null);
 
         int eventID = becomesFocused ? WindowEvent.WINDOW_GAINED_FOCUS : WindowEvent.WINDOW_LOST_FOCUS;
-        WindowEvent windowEvent = new WindowEvent(getTarget(), eventID, oppositeWindow);
+        WindowEvent windowEvent = new TimedWindowEvent(getTarget(), eventID, oppositeWindow, System.currentTimeMillis());
 
         // TODO: wrap in SequencedEvent
         postEvent(windowEvent);
