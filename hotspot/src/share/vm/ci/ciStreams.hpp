@@ -151,6 +151,8 @@ public:
   // Does this instruction contain an index which refes into the CP cache?
   bool has_cache_index() const { return Bytecodes::uses_cp_cache(cur_bc_raw()); }
 
+  bool has_optional_appendix() { return Bytecodes::has_optional_appendix(cur_bc_raw()); }
+
   int get_index_u1() const {
     return bytecode().get_index_u1(cur_bc_raw());
   }
@@ -257,13 +259,11 @@ public:
   int      get_field_holder_index();
   int      get_field_signature_index();
 
-  // If this is a method invocation bytecode, get the invoked method.
-  ciMethod* get_method(bool& will_link);
+  ciMethod* get_method(bool& will_link, ciSignature* *declared_signature_result);
   bool      has_appendix();
   ciObject* get_appendix();
   ciKlass*  get_declared_method_holder();
   int       get_method_holder_index();
-  ciSignature* get_declared_method_signature();
   int       get_method_signature_index();
 
   ciCPCache*  get_cpcache() const;
