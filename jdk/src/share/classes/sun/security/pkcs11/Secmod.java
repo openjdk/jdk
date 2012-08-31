@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,7 +405,16 @@ public final class Secmod {
                         + "module: " + libraryName + ", " + commonName);
                 }
             }
-            this.libraryName = (new File(libraryDir, libraryName)).getPath();
+            // On Ubuntu the libsoftokn3 library is located in a subdirectory
+            // of the system libraries directory. (Since Ubuntu 11.04.)
+            File libraryFile = new File(libraryDir, libraryName);
+            if (!libraryFile.isFile()) {
+               File failover = new File(libraryDir, "nss/" + libraryName);
+               if (failover.isFile()) {
+                   libraryFile = failover;
+               }
+            }
+            this.libraryName = libraryFile.getPath();
             this.commonName = commonName;
             this.slot = slot;
             this.type = type;

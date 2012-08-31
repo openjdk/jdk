@@ -1,0 +1,1323 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6472 $"/>
+		<generation date="$Date: 2012-01-28 08:53:35 +0900 (Sat, 28 Jan 2012) $"/>
+		<language type="ne"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="af" draft="unconfirmed">अफ्रिकाली</language>
+			<language type="am" draft="unconfirmed">अम्हारिक</language>
+			<language type="ar" draft="unconfirmed">अरबी</language>
+			<language type="as" draft="unconfirmed">आसामी</language>
+			<language type="az" draft="unconfirmed">अजरबैजानी</language>
+			<language type="be" draft="unconfirmed">बेलारुसियाली</language>
+			<language type="bg" draft="unconfirmed">बुल्गेरियाली</language>
+			<language type="bh" draft="unconfirmed">बिहारी</language>
+			<language type="bn" draft="unconfirmed">बंगाली</language>
+			<language type="bs" draft="unconfirmed">बोस्नियाली</language>
+			<language type="ca" draft="unconfirmed">क्याटालन</language>
+			<language type="cs" draft="unconfirmed">चेकोस्लोभाकियाली</language>
+			<language type="cy" draft="unconfirmed">वेल्श</language>
+			<language type="da" draft="unconfirmed">ड्यानिश</language>
+			<language type="de" draft="unconfirmed">जर्मन</language>
+			<language type="el" draft="unconfirmed">ग्रीक</language>
+			<language type="en" draft="unconfirmed">अँग्रेजी</language>
+			<language type="eo" draft="unconfirmed">एस्पेरान्तो</language>
+			<language type="es" draft="unconfirmed">स्प्यानिश</language>
+			<language type="et" draft="contributed">इस्टोनियाली</language>
+			<language type="eu" draft="unconfirmed">बास्क</language>
+			<language type="fa" draft="unconfirmed">फारसी</language>
+			<language type="fi" draft="unconfirmed">फिनिश</language>
+			<language type="fil" draft="contributed">फिलिपिनी</language>
+			<language type="fo" draft="unconfirmed">फारोइज</language>
+			<language type="fr" draft="unconfirmed">फ्रांसेली</language>
+			<language type="fy" draft="unconfirmed">फ्रिजीयन</language>
+			<language type="ga" draft="unconfirmed">आइरिश</language>
+			<language type="gd" draft="unconfirmed">स्कट्स गाएलिक</language>
+			<language type="gl" draft="unconfirmed">गलिसियाली</language>
+			<language type="gu" draft="unconfirmed">गुजराती</language>
+			<language type="he" draft="unconfirmed">हिब्रु</language>
+			<language type="hi" draft="unconfirmed">हिन्दी</language>
+			<language type="hr" draft="unconfirmed">क्रोएसियाली</language>
+			<language type="hu" draft="unconfirmed">हंग्रीयाली</language>
+			<language type="ia" draft="unconfirmed">इन्टर्लिङ्गुआ</language>
+			<language type="id" draft="unconfirmed">इन्डोनेसियाली</language>
+			<language type="ie" draft="unconfirmed">अन्तरभाषी</language>
+			<language type="is" draft="unconfirmed">आइसल्यान्डिक</language>
+			<language type="it" draft="unconfirmed">इटालियन</language>
+			<language type="ja" draft="unconfirmed">जापानी</language>
+			<language type="jv" draft="unconfirmed">जाभानिज</language>
+			<language type="ka" draft="unconfirmed">जोरजियन</language>
+			<language type="km" draft="unconfirmed">कम्बोडीयाली</language>
+			<language type="kn" draft="contributed">कन्नाडा</language>
+			<language type="ko" draft="unconfirmed">कोरियाली</language>
+			<language type="ku" draft="unconfirmed">कुर्दिश</language>
+			<language type="la" draft="unconfirmed">ल्याटिन</language>
+			<language type="ln" draft="unconfirmed">लिंगाला</language>
+			<language type="lo" draft="contributed">लाओ</language>
+			<language type="lt" draft="unconfirmed">लिथुआनियाली</language>
+			<language type="lv" draft="unconfirmed">लात्भियाली</language>
+			<language type="mk" draft="contributed">म्याकेडोनियन</language>
+			<language type="ml" draft="unconfirmed">मलयालम</language>
+			<language type="mn" draft="unconfirmed">मंगोल</language>
+			<language type="mr" draft="unconfirmed">मराठी</language>
+			<language type="ms" draft="unconfirmed">मलाया</language>
+			<language type="mt" draft="unconfirmed">माल्टिज</language>
+			<language type="ne">नेपाली</language>
+			<language type="nl" draft="unconfirmed">डच</language>
+			<language type="no" draft="unconfirmed">नर्वेजियाली</language>
+			<language type="oc" draft="unconfirmed">अक्सिटन</language>
+			<language type="or" draft="unconfirmed">ओरिया</language>
+			<language type="pa" draft="unconfirmed">पंजाबी</language>
+			<language type="pl" draft="unconfirmed">पोलिश</language>
+			<language type="ps" draft="unconfirmed">पाश्तो</language>
+			<language type="pt" draft="unconfirmed">पोर्तुगाली</language>
+			<language type="pt_BR" draft="contributed">पर्तुगाली (ब्राजिल्याली)</language>
+			<language type="pt_PT" draft="contributed">आइबेरी, पर्तुगाली</language>
+			<language type="ro" draft="unconfirmed">रोमानियाली</language>
+			<language type="ru" draft="unconfirmed">रसियाली</language>
+			<language type="sa" draft="unconfirmed">संस्कृत</language>
+			<language type="si" draft="unconfirmed">सिन्हाली</language>
+			<language type="sk" draft="unconfirmed">स्लोभाकियाली</language>
+			<language type="sl" draft="unconfirmed">स्लोभेनियाली</language>
+			<language type="so" draft="unconfirmed">सोमाली</language>
+			<language type="sq" draft="unconfirmed">अल्बेनियन</language>
+			<language type="sr" draft="unconfirmed">सर्बियाली</language>
+			<language type="su" draft="unconfirmed">सुडानी</language>
+			<language type="sv" draft="unconfirmed">स्विडिश</language>
+			<language type="sw" draft="unconfirmed">स्वाहिली</language>
+			<language type="ta" draft="unconfirmed">तामिल</language>
+			<language type="te" draft="unconfirmed">तेलुगु</language>
+			<language type="th" draft="unconfirmed">थाई</language>
+			<language type="ti" draft="unconfirmed">तिग्रीन्या</language>
+			<language type="tlh" draft="unconfirmed">क्लिङ्गन</language>
+			<language type="tr" draft="contributed">टर्की</language>
+			<language type="uk" draft="unconfirmed">युक्रेनी</language>
+			<language type="ur" draft="unconfirmed">उर्दु</language>
+			<language type="uz" draft="unconfirmed">उज़्बेक</language>
+			<language type="vi" draft="unconfirmed">भियतनामी</language>
+			<language type="xh" draft="unconfirmed">झोसा</language>
+			<language type="yi" draft="unconfirmed">यिद्दिस</language>
+			<language type="zh" draft="contributed">चिनियाँ</language>
+			<language type="zh_Hans" draft="contributed">सरलिकृत चिनियाँ</language>
+			<language type="zh_Hant" draft="contributed">परम्परागत चिनियाँ</language>
+			<language type="zu" draft="unconfirmed">जुलू</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="contributed">अरब</script>
+			<script type="Armi" draft="contributed">आर्मी</script>
+			<script type="Armn" draft="contributed">आर्मेनियन</script>
+			<script type="Avst" draft="contributed">आभेस्टान</script>
+			<script type="Bali" draft="contributed">बाली</script>
+			<script type="Batk" draft="contributed">बाटक</script>
+			<script type="Beng" draft="contributed">बङ्गाली</script>
+			<script type="Blis" draft="contributed">ब्लिजसिम्बोल्स</script>
+			<script type="Bopo" draft="contributed">बोपोमोफो</script>
+			<script type="Brah" draft="contributed">ब्राह्मी</script>
+			<script type="Brai" draft="contributed">ब्रेल</script>
+			<script type="Bugi" draft="contributed">बुगिनिज</script>
+			<script type="Buhd" draft="contributed">बुहिद</script>
+			<script type="Cakm" draft="contributed">काक्म्</script>
+			<script type="Cari" draft="contributed">कारियन</script>
+			<script type="Cham" draft="contributed">चाम</script>
+			<script type="Cher" draft="contributed">चेरोकी</script>
+			<script type="Cirt" draft="contributed">किर्थ</script>
+			<script type="Copt" draft="contributed">कप्टिक</script>
+			<script type="Cprt" draft="contributed">कप्रियट</script>
+			<script type="Cyrl" draft="contributed">सिरिलिक</script>
+			<script type="Deva" draft="contributed">देवानगरी</script>
+			<script type="Dsrt" draft="contributed">डेसेरेट</script>
+			<script type="Egyd" draft="contributed">इजिप्टियन डेमोटिक</script>
+			<script type="Egyh" draft="contributed">इजिप्टियन हाइरटिक</script>
+			<script type="Egyp" draft="contributed">इजिप्टियन हाइरोग्लिफ्स</script>
+			<script type="Ethi" draft="contributed">इथियोपिक</script>
+			<script type="Geok" draft="contributed">ग्रुजियाली खुट्सुरी</script>
+			<script type="Geor" draft="contributed">ग्रुजियाली</script>
+			<script type="Glag" draft="contributed">ग्लागोलिटिक</script>
+			<script type="Goth" draft="contributed">गोथिक</script>
+			<script type="Grek" draft="contributed">ग्रीक</script>
+			<script type="Gujr" draft="contributed">गुजराती</script>
+			<script type="Guru" draft="contributed">गुरूमुखी</script>
+			<script type="Hang" draft="contributed">हान्गुल</script>
+			<script type="Hani" draft="contributed">हान</script>
+			<script type="Hano" draft="contributed">हानुनु</script>
+			<script type="Hans" draft="contributed">सरलिकृत हान</script>
+			<script type="Hant" draft="contributed">परम्परागत हान</script>
+			<script type="Hebr" draft="contributed">हिब्रु</script>
+			<script type="Hira" draft="contributed">हिरागाना</script>
+			<script type="Hmng" draft="contributed">पहावह हमोङ्ग</script>
+			<script type="Hrkt" draft="contributed">काताकाना वा हिरागाना</script>
+			<script type="Hung" draft="contributed">पुरानो हङ्गेरियाली</script>
+			<script type="Inds" draft="contributed">इन्दुस</script>
+			<script type="Ital" draft="contributed">पुरानो इटालिक</script>
+			<script type="Java" draft="contributed">जाभानी</script>
+			<script type="Jpan" draft="contributed">जापानी</script>
+			<script type="Kali" draft="contributed">कायाहली</script>
+			<script type="Kana" draft="contributed">काताकाना</script>
+			<script type="Khar" draft="contributed">खारोस्थिति</script>
+			<script type="Khmr" draft="contributed">खमेर</script>
+			<script type="Knda" draft="contributed">कान्नाडा</script>
+			<script type="Kore" draft="contributed">कोरियन</script>
+			<script type="Kthi" draft="contributed">क्थी</script>
+			<script type="Lana" draft="contributed">लान्ना</script>
+			<script type="Laoo" draft="contributed">लाओ</script>
+			<script type="Latf" draft="contributed">फ्राक्टुर ल्याटिन</script>
+			<script type="Latg" draft="contributed">ग्यालिक ल्याटिन</script>
+			<script type="Latn" draft="contributed">ल्याटिन</script>
+			<script type="Lepc" draft="contributed">लेप्चा</script>
+			<script type="Limb" draft="contributed">लिम्बु</script>
+			<script type="Lyci" draft="contributed">लाइसियन</script>
+			<script type="Lydi" draft="contributed">लाइडियन</script>
+			<script type="Mand" draft="contributed">मान्डाएन</script>
+			<script type="Mani" draft="contributed">मानिकाएन</script>
+			<script type="Maya" draft="contributed">माया हाइरोग्लिफ्स</script>
+			<script type="Mero" draft="contributed">मेरियोटिक</script>
+			<script type="Mlym" draft="contributed">मलायालम</script>
+			<script type="Mong" draft="contributed">मङ्गोल</script>
+			<script type="Moon" draft="contributed">जून</script>
+			<script type="Mtei" draft="contributed">माइटेइ मायेक</script>
+			<script type="Mymr" draft="contributed">म्यान्मार</script>
+			<script type="Nkoo" draft="contributed">एन्को</script>
+			<script type="Ogam" draft="contributed">ओघाम</script>
+			<script type="Olck" draft="contributed">ओलचिकी</script>
+			<script type="Orkh" draft="contributed">ओर्खोन</script>
+			<script type="Orya" draft="contributed">ओरिया</script>
+			<script type="Osma" draft="contributed">ओस्मान्या</script>
+			<script type="Perm" draft="contributed">पुरानो पर्मिक</script>
+			<script type="Phag" draft="contributed">फाग्स-पा</script>
+			<script type="Phli" draft="contributed">फ्लि</script>
+			<script type="Phlp" draft="contributed">फ्ल्प</script>
+			<script type="Phlv" draft="contributed">बुक पहल्भी</script>
+			<script type="Phnx" draft="contributed">फोनिसियन</script>
+			<script type="Plrd" draft="contributed">पोल्लार्ड फोनेटिक</script>
+			<script type="Prti" draft="contributed">पिआरटी</script>
+			<script type="Rjng" draft="contributed">रेजाङ</script>
+			<script type="Roro" draft="contributed">रोङ्गोरोङ्गो</script>
+			<script type="Runr" draft="contributed">रूनिक</script>
+			<script type="Samr" draft="contributed">समारिटन</script>
+			<script type="Sara" draft="contributed">सारती</script>
+			<script type="Saur" draft="contributed">सौराष्ट्र</script>
+			<script type="Sgnw" draft="contributed">साइनराइटिङ</script>
+			<script type="Shaw" draft="contributed">शाभियन</script>
+			<script type="Sinh" draft="contributed">सिन्हाला</script>
+			<script type="Sund" draft="contributed">सुडानी</script>
+			<script type="Sylo" draft="contributed">स्ल्योटी नाग्री</script>
+			<script type="Syrc" draft="contributed">सिरियाक</script>
+			<script type="Syre" draft="contributed">इस्ट्रेनजेलो सिरियाक</script>
+			<script type="Syrj" draft="contributed">पश्चिमी सिरियाक</script>
+			<script type="Syrn" draft="contributed">पूर्वी सिरियाक</script>
+			<script type="Tagb" draft="contributed">टाग्वान्वा</script>
+			<script type="Tale" draft="contributed">टाइले</script>
+			<script type="Talu" draft="contributed">न्यू टाइ लुइ</script>
+			<script type="Taml" draft="contributed">तामिल</script>
+			<script type="Tavt" draft="contributed">टाभ्ट</script>
+			<script type="Telu" draft="contributed">टेलेगु</script>
+			<script type="Teng" draft="contributed">टेङ्वार</script>
+			<script type="Tfng" draft="contributed">टिफिनाघ</script>
+			<script type="Tglg" draft="contributed">टागालोग</script>
+			<script type="Thaa" draft="contributed">थाना</script>
+			<script type="Thai" draft="contributed">थाई</script>
+			<script type="Tibt" draft="contributed">टिबेटन</script>
+			<script type="Ugar" draft="contributed">युगारिटिक</script>
+			<script type="Vaii" draft="contributed">भाइ</script>
+			<script type="Visp" draft="contributed">दृश्यमय वाणी</script>
+			<script type="Xpeo" draft="contributed">पुरानो पर्सियन</script>
+			<script type="Yiii" draft="contributed">यी</script>
+			<script type="Zinh" draft="contributed">इन्हेरिटेड</script>
+			<script type="Zmth" draft="contributed">जमथ</script>
+			<script type="Zsym" draft="contributed">जसम</script>
+			<script type="Zxxx" draft="contributed">अलिखित</script>
+			<script type="Zyyy" draft="contributed">साझा</script>
+			<script type="Zzzz" draft="contributed">अपरिचित वा अवैध लिपी</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="contributed">विश्व</territory>
+			<territory type="002" draft="contributed">अफ्रिका</territory>
+			<territory type="003" draft="contributed">उत्तर अमेरिका</territory>
+			<territory type="005" draft="contributed">दक्षिण अमेरिका</territory>
+			<territory type="009" draft="contributed">ओसनिया</territory>
+			<territory type="011" draft="contributed">पश्चिमी अफ्रिका</territory>
+			<territory type="013" draft="contributed">केन्द्रीय अमेरिका</territory>
+			<territory type="014" draft="contributed">पूर्वी अफ्रिका</territory>
+			<territory type="015" draft="contributed">उत्तरी अफ्रिका</territory>
+			<territory type="017" draft="contributed">मध्य अफ्रिका</territory>
+			<territory type="018" draft="contributed">दक्षिणी अफ्रिका</territory>
+			<territory type="019" draft="contributed">अमेरिकास</territory>
+			<territory type="021" draft="contributed">उत्तरी अमेरिका</territory>
+			<territory type="029" draft="contributed">क्यारिबिएन</territory>
+			<territory type="030" draft="contributed">पूर्वी एशिया</territory>
+			<territory type="034" draft="contributed">दक्षिणी एशिया</territory>
+			<territory type="035" draft="contributed">दक्षिण पूर्वी एशिया</territory>
+			<territory type="039" draft="contributed">दक्षिणी युरोप</territory>
+			<territory type="053" draft="contributed">अष्ट्रेलिया र न्युजिल्याण्ड</territory>
+			<territory type="054" draft="contributed">मेलानेसिया</territory>
+			<territory type="057" draft="contributed">माइक्रोनेसियाली क्षेत्र</territory>
+			<territory type="061" draft="contributed">पोलिनेशिया</territory>
+			<territory type="142" draft="contributed">एशिया</territory>
+			<territory type="143" draft="contributed">केन्द्रीय एशिया</territory>
+			<territory type="145" draft="contributed">पश्चिमी एशिया</territory>
+			<territory type="150" draft="contributed">युरोप</territory>
+			<territory type="151" draft="contributed">पूर्वी युरोप</territory>
+			<territory type="154" draft="contributed">उत्तरी युरोप</territory>
+			<territory type="155" draft="contributed">पश्चिमी युरोप</territory>
+			<territory type="419" draft="contributed">ल्याटिन अमेरिका तथा क्यारिबियन</territory>
+			<territory type="AD" draft="contributed">अन्डोर्रा</territory>
+			<territory type="AE" draft="contributed">संयुक्त अरब इमिराट्स</territory>
+			<territory type="AF" draft="contributed">अफ्गानिष्तान</territory>
+			<territory type="AG" draft="contributed">एन्टिगुआ र बारबुडा</territory>
+			<territory type="AI" draft="contributed">आङ्गुइला</territory>
+			<territory type="AL" draft="contributed">अल्बानिया</territory>
+			<territory type="AM" draft="contributed">आर्मेनिया</territory>
+			<territory type="AN" draft="contributed">नेदरल्याण्ड्स एण्टिलिस</territory>
+			<territory type="AO" draft="contributed">अङ्गोला</territory>
+			<territory type="AQ" draft="contributed">अन्टारतिका</territory>
+			<territory type="AR" draft="contributed">अर्जेण्टिना</territory>
+			<territory type="AS" draft="contributed">अमेरिकी समोआ</territory>
+			<territory type="AT" draft="contributed">अष्ट्रिया</territory>
+			<territory type="AU" draft="contributed">अष्ट्रेलिया</territory>
+			<territory type="AW" draft="contributed">आरूबा</territory>
+			<territory type="AX" draft="contributed">अलान्ड टापु</territory>
+			<territory type="AZ" draft="contributed">अजरबैजान</territory>
+			<territory type="BA" draft="contributed">बोस्निया र हर्जगोभिनिया</territory>
+			<territory type="BB" draft="contributed">बार्बाडोस</territory>
+			<territory type="BD" draft="contributed">बङ्गलादेश</territory>
+			<territory type="BE" draft="contributed">बेल्जियम</territory>
+			<territory type="BF" draft="contributed">बर्किना फासो</territory>
+			<territory type="BG" draft="contributed">बल्गेरिया</territory>
+			<territory type="BH" draft="contributed">बाह्रेन</territory>
+			<territory type="BI" draft="contributed">बुरूण्डी</territory>
+			<territory type="BJ" draft="contributed">बेनिन</territory>
+			<territory type="BL" draft="contributed">सेन्ट बार्थालेमी</territory>
+			<territory type="BM" draft="contributed">बर्मुडा</territory>
+			<territory type="BN" draft="contributed">ब्रुनाइ</territory>
+			<territory type="BO" draft="contributed">बोलिभिया</territory>
+			<territory type="BR" draft="contributed">ब्राजिल</territory>
+			<territory type="BS" draft="contributed">बहामास</territory>
+			<territory type="BT" draft="contributed">भुटान</territory>
+			<territory type="BV" draft="contributed">बुभेट टापु</territory>
+			<territory type="BW" draft="contributed">बोट्स्वाना</territory>
+			<territory type="BY" draft="contributed">बेलारूस</territory>
+			<territory type="BZ" draft="contributed">बेलिज</territory>
+			<territory type="CA" draft="contributed">क्यानाडा</territory>
+			<territory type="CC" draft="contributed">कोकोस टापु</territory>
+			<territory type="CD" draft="contributed">कोङ्गो-किन्शासा</territory>
+			<territory type="CF" draft="contributed">केन्द्रीय अफ्रिकी गणतन्त्र</territory>
+			<territory type="CG" draft="contributed">कोङ्गो - ब्राज्जाभिल्ले</territory>
+			<territory type="CH" draft="contributed">स्विजरल्याण्ड</territory>
+			<territory type="CI" draft="contributed">आइभोरी कोष्ट</territory>
+			<territory type="CK" draft="contributed">कुक टापु</territory>
+			<territory type="CL" draft="contributed">चिली</territory>
+			<territory type="CM" draft="contributed">क्यामेरून</territory>
+			<territory type="CN" draft="contributed">चीन</territory>
+			<territory type="CO" draft="contributed">कोलोम्बिया</territory>
+			<territory type="CR" draft="contributed">कोष्टारिका</territory>
+			<territory type="CU" draft="contributed">क्युबा</territory>
+			<territory type="CV" draft="contributed">केप भर्डे</territory>
+			<territory type="CX" draft="contributed">क्रिष्टमस टापु</territory>
+			<territory type="CY" draft="contributed">साइप्रस</territory>
+			<territory type="CZ" draft="contributed">चेख गणतन्त्र</territory>
+			<territory type="DE" draft="contributed">जर्मनी</territory>
+			<territory type="DJ" draft="contributed">डिजिबुटी</territory>
+			<territory type="DK" draft="contributed">डेन्मार्क</territory>
+			<territory type="DM" draft="contributed">डोमिनिका</territory>
+			<territory type="DO" draft="contributed">डोमिनिकन गणतन्त्र</territory>
+			<territory type="DZ" draft="contributed">अल्जेरिया</territory>
+			<territory type="EC" draft="contributed">इक्वडेर</territory>
+			<territory type="EE" draft="contributed">इस्टोनिया</territory>
+			<territory type="EG" draft="contributed">इजिप्ट</territory>
+			<territory type="EH" draft="contributed">पश्चिमी साहारा</territory>
+			<territory type="ER" draft="contributed">एरित्रिया</territory>
+			<territory type="ES" draft="contributed">स्पेन</territory>
+			<territory type="ET" draft="contributed">इथोपिया</territory>
+			<territory type="EU" draft="contributed">युरोपियन युनियन</territory>
+			<territory type="FI" draft="contributed">फिन्ल्याण्ड</territory>
+			<territory type="FJ" draft="contributed">फिजी</territory>
+			<territory type="FK" draft="contributed">फकल्याण्ड टापु</territory>
+			<territory type="FM" draft="contributed">माइक्रोनेसिया</territory>
+			<territory type="FO" draft="contributed">फारोर टापु</territory>
+			<territory type="FR" draft="contributed">फ्रान्स</territory>
+			<territory type="GA" draft="contributed">गावोन</territory>
+			<territory type="GB" draft="contributed">संयुक्त अधिराज्य</territory>
+			<territory type="GD" draft="contributed">ग्रेनाडा</territory>
+			<territory type="GE" draft="contributed">जोर्जिया</territory>
+			<territory type="GF" draft="contributed">फ्रान्सेली गायना</territory>
+			<territory type="GG" draft="contributed">गुएर्नसे</territory>
+			<territory type="GH" draft="contributed">घाना</territory>
+			<territory type="GI" draft="contributed">जिब्राल्टार</territory>
+			<territory type="GL" draft="contributed">ग्रिनल्याण्ड</territory>
+			<territory type="GM" draft="contributed">गाम्विया</territory>
+			<territory type="GN" draft="contributed">गिनी</territory>
+			<territory type="GP" draft="contributed">ग्वाडेलुप</territory>
+			<territory type="GQ" draft="contributed">भू-मध्यीय गिनी</territory>
+			<territory type="GR" draft="contributed">ग्रिश</territory>
+			<territory type="GT" draft="contributed">ग्वाटेमाला</territory>
+			<territory type="GU" draft="contributed">गुवाम</territory>
+			<territory type="GW" draft="contributed">गिनी-बिसाउ</territory>
+			<territory type="GY" draft="contributed">गुयाना</territory>
+			<territory type="HK" draft="contributed">हङकङ चिनिँया समाजवादी स्वायत्त क्षेत्र</territory>
+			<territory type="HK" alt="short" draft="contributed">हङकङ</territory>
+			<territory type="HM" draft="contributed">हर्ड टापु र म्याकडोनाल्ड टापु</territory>
+			<territory type="HN" draft="contributed">हन्डुरास</territory>
+			<territory type="HR" draft="contributed">क्रोएशिया</territory>
+			<territory type="HT" draft="contributed">हैटी</territory>
+			<territory type="HU" draft="contributed">हङ्गेरी</territory>
+			<territory type="ID" draft="contributed">इन्डोनेशिया</territory>
+			<territory type="IE" draft="contributed">आइरल्याण्ड</territory>
+			<territory type="IL" draft="contributed">इज्रायल</territory>
+			<territory type="IM" draft="contributed">आइज्ले अफ् म्यान</territory>
+			<territory type="IN" draft="contributed">भारत</territory>
+			<territory type="IO" draft="contributed">बेलायती हिन्द महासागर क्षेत्र</territory>
+			<territory type="IQ" draft="contributed">इराक</territory>
+			<territory type="IR" draft="contributed">इरान</territory>
+			<territory type="IS" draft="contributed">आइस्ल्याण्ड</territory>
+			<territory type="IT" draft="contributed">इटाली</territory>
+			<territory type="JE" draft="contributed">जर्सी</territory>
+			<territory type="JM" draft="contributed">जमाइका</territory>
+			<territory type="JO" draft="contributed">जोर्डन</territory>
+			<territory type="JP" draft="contributed">जापान</territory>
+			<territory type="KE" draft="contributed">केन्या</territory>
+			<territory type="KG" draft="contributed">किर्गिस्थान</territory>
+			<territory type="KH" draft="contributed">कम्बोडिया</territory>
+			<territory type="KI" draft="contributed">किरिबाटी</territory>
+			<territory type="KM" draft="contributed">कोमोरोस</territory>
+			<territory type="KN" draft="contributed">सेन्ट किट्स र नेभिस</territory>
+			<territory type="KP" draft="contributed">उत्तर कोरिया</territory>
+			<territory type="KR" draft="contributed">दक्षिण कोरिया</territory>
+			<territory type="KW" draft="contributed">कुवेत</territory>
+			<territory type="KY" draft="contributed">केयमान टापु</territory>
+			<territory type="KZ" draft="contributed">काजाकस्थान</territory>
+			<territory type="LA" draft="contributed">लाओस</territory>
+			<territory type="LB" draft="contributed">लेबनोन</territory>
+			<territory type="LC" draft="contributed">सेन्ट लुसिया</territory>
+			<territory type="LI" draft="contributed">लिएखटेन्स्टाइन</territory>
+			<territory type="LK" draft="contributed">श्रीलङ्का</territory>
+			<territory type="LR" draft="contributed">लाइबेरिया</territory>
+			<territory type="LS" draft="contributed">लेसोथो</territory>
+			<territory type="LT" draft="contributed">लिथुअनिया</territory>
+			<territory type="LU" draft="contributed">लक्जेमबर्ग</territory>
+			<territory type="LV" draft="contributed">लाट्भिया</territory>
+			<territory type="LY" draft="contributed">लिबिया</territory>
+			<territory type="MA" draft="contributed">मोरोक्को</territory>
+			<territory type="MC" draft="contributed">मोनाको</territory>
+			<territory type="MD" draft="contributed">माल्डोभा</territory>
+			<territory type="ME" draft="contributed">मोन्टेनेग्रो</territory>
+			<territory type="MF" draft="contributed">सेन्ट मार्टिन</territory>
+			<territory type="MG" draft="contributed">मडागास्कर</territory>
+			<territory type="MH" draft="contributed">मार्शल टापु</territory>
+			<territory type="MK" draft="contributed">म्याकेडोनिया</territory>
+			<territory type="ML" draft="contributed">माली</territory>
+			<territory type="MM" draft="contributed">म्यान्मार</territory>
+			<territory type="MN" draft="contributed">मङ्गोलिया</territory>
+			<territory type="MO" draft="contributed">मकावो चिनिँया स्वशासित क्षेत्र</territory>
+			<territory type="MO" alt="short" draft="contributed">मकावो</territory>
+			<territory type="MP" draft="contributed">उत्तरी मारिआना टापु</territory>
+			<territory type="MQ" draft="contributed">मार्टिनिक</territory>
+			<territory type="MR" draft="contributed">माउरिटानिया</territory>
+			<territory type="MS" draft="contributed">मोन्टसेर्राट</territory>
+			<territory type="MT" draft="contributed">माल्टा</territory>
+			<territory type="MU" draft="contributed">माउरिटस</territory>
+			<territory type="MV" draft="contributed">माल्दिभ्स</territory>
+			<territory type="MW" draft="contributed">मालावी</territory>
+			<territory type="MX" draft="contributed">मेक्सिको</territory>
+			<territory type="MY" draft="contributed">मलेसिया</territory>
+			<territory type="MZ" draft="contributed">मोजाम्बिक</territory>
+			<territory type="NA" draft="contributed">नामिबिया</territory>
+			<territory type="NC" draft="contributed">नयाँ कालेडोनिया</territory>
+			<territory type="NE" draft="contributed">नाइजर</territory>
+			<territory type="NF" draft="contributed">नोरफोल्क टापु</territory>
+			<territory type="NG" draft="contributed">नाइजेरिया</territory>
+			<territory type="NI" draft="contributed">निकारागुवा</territory>
+			<territory type="NL" draft="contributed">नेदरल्याण्ड्स</territory>
+			<territory type="NO" draft="contributed">नर्वे</territory>
+			<territory type="NP" draft="contributed">नेपाल</territory>
+			<territory type="NR" draft="contributed">नाउरू</territory>
+			<territory type="NU" draft="contributed">नियुइ</territory>
+			<territory type="NZ" draft="contributed">न्युजिल्याण्ड</territory>
+			<territory type="OM" draft="contributed">ओमन</territory>
+			<territory type="PA" draft="contributed">पनामा</territory>
+			<territory type="PE" draft="contributed">पेरू</territory>
+			<territory type="PF" draft="contributed">फ्रान्सेली पोलिनेसिया</territory>
+			<territory type="PG" draft="contributed">पपुआ न्यू गाइनिया</territory>
+			<territory type="PH" draft="contributed">फिलिपिन्स</territory>
+			<territory type="PK" draft="contributed">पाकिस्तान</territory>
+			<territory type="PL" draft="contributed">पोल्याण्ड</territory>
+			<territory type="PM" draft="contributed">सेन्ट पिर्रे र मिक्केलोन</territory>
+			<territory type="PN" draft="contributed">पिटकाइर्न</territory>
+			<territory type="PR" draft="contributed">प्युर्टोरिको</territory>
+			<territory type="PS" draft="contributed">प्यालेस्टनी भू-भाग</territory>
+			<territory type="PT" draft="contributed">पोर्तुगल</territory>
+			<territory type="PW" draft="contributed">पलाउ</territory>
+			<territory type="PY" draft="contributed">प्यारागुये</territory>
+			<territory type="QA" draft="contributed">कटार</territory>
+			<territory type="QO" draft="contributed">बाह्य ओसनिया</territory>
+			<territory type="RE" draft="contributed">रियुनियन</territory>
+			<territory type="RO" draft="contributed">रोमानिया</territory>
+			<territory type="RS" draft="contributed">सर्बिया</territory>
+			<territory type="RU" draft="contributed">रूस</territory>
+			<territory type="RW" draft="contributed">रवाण्डा</territory>
+			<territory type="SA" draft="contributed">साउदी अरब</territory>
+			<territory type="SB" draft="contributed">सोलोमोन टापु</territory>
+			<territory type="SC" draft="contributed">सेचेलेस</territory>
+			<territory type="SD" draft="contributed">सुडान</territory>
+			<territory type="SE" draft="contributed">स्विडेन</territory>
+			<territory type="SG" draft="contributed">सिङ्गापुर</territory>
+			<territory type="SH" draft="contributed">सेन्ट हेलेना</territory>
+			<territory type="SI" draft="contributed">स्लोभेनिया</territory>
+			<territory type="SJ" draft="contributed">सभाल्बार्ड र जान मायेन</territory>
+			<territory type="SK" draft="contributed">स्लोभाकिया</territory>
+			<territory type="SL" draft="contributed">सिएर्रा लिओन</territory>
+			<territory type="SM" draft="contributed">सान् मारिनो</territory>
+			<territory type="SN" draft="contributed">सेनेगाल</territory>
+			<territory type="SO" draft="contributed">सोमालिया</territory>
+			<territory type="SR" draft="contributed">सुरिनेम</territory>
+			<territory type="ST" draft="contributed">साओ टोमे र प्रिन्सिप</territory>
+			<territory type="SV" draft="contributed">एल् साल्भाडोर</territory>
+			<territory type="SY" draft="contributed">सिरिया</territory>
+			<territory type="SZ" draft="contributed">स्वाजिल्याण्ड</territory>
+			<territory type="TC" draft="contributed">तुर्क र काइकोस टापु</territory>
+			<territory type="TD" draft="contributed">चाड</territory>
+			<territory type="TF" draft="contributed">फ्रान्सेली दक्षिणी क्षेत्र</territory>
+			<territory type="TG" draft="contributed">टोगो</territory>
+			<territory type="TH" draft="contributed">थाइल्याण्ड</territory>
+			<territory type="TJ" draft="contributed">ताजिकिस्तान</territory>
+			<territory type="TK" draft="contributed">तोगो</territory>
+			<territory type="TL" draft="contributed">पूर्वी टिमोर</territory>
+			<territory type="TM" draft="contributed">तुर्कमेनिस्तान</territory>
+			<territory type="TN" draft="contributed">टुनिसिया</territory>
+			<territory type="TO" draft="contributed">टोंगा</territory>
+			<territory type="TR" draft="contributed">टर्की</territory>
+			<territory type="TT" draft="contributed">त्रिनिडाड र तोबागो</territory>
+			<territory type="TV" draft="contributed">तुभालु</territory>
+			<territory type="TW" draft="contributed">ताइवान</territory>
+			<territory type="TZ" draft="contributed">तान्जानिया</territory>
+			<territory type="UA" draft="contributed">युक्रेन</territory>
+			<territory type="UG" draft="contributed">युगाण्डा</territory>
+			<territory type="UM" draft="contributed">संयुक्त राज्य अल्प बाह्य टापु</territory>
+			<territory type="US" draft="contributed">संयुक्त राज्य</territory>
+			<territory type="UY" draft="contributed">युरूगुए</territory>
+			<territory type="UZ" draft="contributed">उज्बेकिस्तान</territory>
+			<territory type="VA" draft="contributed">भेटिकन</territory>
+			<territory type="VC" draft="contributed">सेन्ट भिन्सेन्ट र ग्रेनाडिन्स</territory>
+			<territory type="VE" draft="contributed">भेनेजुएला</territory>
+			<territory type="VG" draft="contributed">बेलायती भर्जिन टापु</territory>
+			<territory type="VI" draft="contributed">संयुक्त राज्य भर्जिन टापु</territory>
+			<territory type="VN" draft="contributed">भिएतनाम</territory>
+			<territory type="VU" draft="contributed">भानुआतु</territory>
+			<territory type="WF" draft="contributed">वालिस र फुटुना</territory>
+			<territory type="WS" draft="contributed">सामोआ</territory>
+			<territory type="YE" draft="contributed">येमेन</territory>
+			<territory type="YT" draft="contributed">मायोट्ट</territory>
+			<territory type="ZA" draft="contributed">दक्षिण अफ्रिका</territory>
+			<territory type="ZM" draft="contributed">जाम्बिया</territory>
+			<territory type="ZW" draft="contributed">जिम्बाबे</territory>
+			<territory type="ZZ" draft="contributed">अपरिचित वा अवैध क्षेत्र</territory>
+		</territories>
+		<variants>
+			<variant type="AREVELA" draft="contributed">पूर्वी आर्मेनियाली</variant>
+			<variant type="POSIX" draft="contributed">कम्प्युटर</variant>
+		</variants>
+		<keys>
+			<key type="calendar" draft="contributed">पात्रो</key>
+			<key type="collation" draft="contributed">कोलेशन</key>
+			<key type="currency" draft="contributed">मुद्रा</key>
+		</keys>
+		<types>
+			<type type="big5han" key="collation" draft="contributed">परम्परागत चिनिँया क्रमबद्धता पद्दति - बिग फाइभ</type>
+			<type type="buddhist" key="calendar" draft="contributed">बुद्धिष्ट पात्रो</type>
+			<type type="chinese" key="calendar" draft="contributed">चिनिँया पात्रो</type>
+			<type type="gb2312han" key="collation" draft="contributed">सरलिकृत चिनियाँ क्रमबद्धता पद्दति-गीबीटुथ्रीवानटु</type>
+			<type type="gregorian" key="calendar" draft="contributed">ग्रेगोरियन पात्रो</type>
+			<type type="hebrew" key="calendar" draft="contributed">हिब्रु पात्रो</type>
+			<type type="indian" key="calendar" draft="contributed">भारतीय राष्ट्रिय पात्रो</type>
+			<type type="islamic" key="calendar" draft="contributed">इस्लामी पात्रो</type>
+			<type type="islamic-civil" key="calendar" draft="contributed">इस्लामी नागरिक पात्रो</type>
+			<type type="japanese" key="calendar" draft="contributed">जापानी पात्रो</type>
+			<type type="phonebook" key="collation" draft="contributed">टेलिफोन पुस्तिका क्रमबद्धतापद्दति</type>
+			<type type="pinyin" key="collation" draft="contributed">पिनयिन क्रमबद्धता पद्दति</type>
+			<type type="roc" key="calendar" draft="contributed">चिनिँया गणतन्त्र पात्रो</type>
+			<type type="stroke" key="collation" draft="contributed">स्ट्रोक क्रमबद्धता पद्दति</type>
+			<type type="traditional" key="collation" draft="contributed">परम्परागत क्रमबद्धता पद्दति</type>
+		</types>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[\u093C \u0901 \u0902 ः ॐ अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह ऽ ा ि ी \u0941 \u0942 \u0943 \u0944 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[अ आ इ ई उ ऊ ऋ ए ऐ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="contributed">“</quotationStart>
+		<quotationEnd draft="contributed">”</quotationEnd>
+		<alternateQuotationStart draft="contributed">‘</alternateQuotationStart>
+		<alternateQuotationEnd draft="contributed">’</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">जन</month>
+							<month type="2" draft="unconfirmed">फेब</month>
+							<month type="3" draft="unconfirmed">मार्च</month>
+							<month type="4" draft="unconfirmed">अप्रि</month>
+							<month type="5" draft="unconfirmed">मे</month>
+							<month type="6" draft="unconfirmed">जुन</month>
+							<month type="7" draft="unconfirmed">जुला</month>
+							<month type="8" draft="unconfirmed">अग</month>
+							<month type="9" draft="unconfirmed">सेप्ट</month>
+							<month type="10" draft="unconfirmed">अक्टो</month>
+							<month type="11" draft="unconfirmed">नोभे</month>
+							<month type="12" draft="unconfirmed">डिसे</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">जनवरी</month>
+							<month type="2" draft="unconfirmed">फेब्रुअरी</month>
+							<month type="3" draft="unconfirmed">मार्च</month>
+							<month type="4" draft="unconfirmed">अप्रिल</month>
+							<month type="5" draft="unconfirmed">मे</month>
+							<month type="6" draft="unconfirmed">जुन</month>
+							<month type="7" draft="unconfirmed">जुलाई</month>
+							<month type="8" draft="unconfirmed">अगस्त</month>
+							<month type="9" draft="unconfirmed">सेप्टेम्बर</month>
+							<month type="10" draft="unconfirmed">अक्टोबर</month>
+							<month type="11" draft="unconfirmed">नोभेम्बर</month>
+							<month type="12" draft="unconfirmed">डिसेम्बर</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">१</month>
+							<month type="2" draft="contributed">२</month>
+							<month type="3" draft="contributed">३</month>
+							<month type="4" draft="contributed">४</month>
+							<month type="5" draft="contributed">५</month>
+							<month type="6" draft="contributed">६</month>
+							<month type="7" draft="contributed">७</month>
+							<month type="8" draft="contributed">८</month>
+							<month type="9" draft="contributed">९</month>
+							<month type="10" draft="contributed">१०</month>
+							<month type="11" draft="contributed">११</month>
+							<month type="12" draft="contributed">१२</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">आइत</day>
+							<day type="mon" draft="unconfirmed">सोम</day>
+							<day type="tue" draft="unconfirmed">मङ्गल</day>
+							<day type="wed" draft="unconfirmed">बुध</day>
+							<day type="thu" draft="unconfirmed">बिही</day>
+							<day type="fri" draft="unconfirmed">शुक्र</day>
+							<day type="sat" draft="unconfirmed">शनि</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">आइतबार</day>
+							<day type="mon" draft="unconfirmed">सोमबार</day>
+							<day type="tue" draft="unconfirmed">मङ्गलबार</day>
+							<day type="wed" draft="unconfirmed">बुधबार</day>
+							<day type="thu" draft="unconfirmed">बिहीबार</day>
+							<day type="fri" draft="unconfirmed">शुक्रबार</day>
+							<day type="sat" draft="unconfirmed">शनिबार</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun" draft="contributed">१</day>
+							<day type="mon" draft="contributed">२</day>
+							<day type="tue" draft="contributed">३</day>
+							<day type="wed" draft="contributed">४</day>
+							<day type="thu" draft="contributed">५</day>
+							<day type="fri" draft="contributed">६</day>
+							<day type="sat" draft="contributed">७</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">पहिलो सत्र</quarter>
+							<quarter type="2" draft="unconfirmed">दोस्रो सत्र</quarter>
+							<quarter type="3" draft="unconfirmed">तेस्रो सत्र</quarter>
+							<quarter type="4" draft="unconfirmed">चौथो सत्र</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="contributed">१</quarter>
+							<quarter type="2" draft="contributed">२</quarter>
+							<quarter type="3" draft="contributed">३</quarter>
+							<quarter type="4" draft="contributed">४</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">पूर्व मध्यान्ह</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">उत्तर मध्यान्ह</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraAbbr>
+						<era type="0" draft="contributed">ईसा पूर्व</era>
+						<era type="1" draft="contributed">सन्</era>
+					</eraAbbr>
+				</eras>
+				<fields>
+					<field type="era">
+						<displayName draft="contributed">काल</displayName>
+					</field>
+					<field type="year">
+						<displayName draft="contributed">बर्ष</displayName>
+					</field>
+					<field type="month">
+						<displayName draft="contributed">महिना</displayName>
+					</field>
+					<field type="week">
+						<displayName draft="contributed">हप्ता</displayName>
+					</field>
+					<field type="day">
+						<displayName draft="contributed">बार</displayName>
+						<relative type="-2" draft="unconfirmed">अस्ति</relative>
+						<relative type="-1" draft="contributed">हिजो</relative>
+						<relative type="0" draft="contributed">आज</relative>
+						<relative type="1" draft="contributed">भोलि</relative>
+					</field>
+					<field type="weekday">
+						<displayName draft="contributed">हप्ताको बार</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName draft="contributed">पूर्व मध्यान्ह/उत्तर मध्यान्ह</displayName>
+					</field>
+					<field type="hour">
+						<displayName draft="contributed">घण्टा</displayName>
+					</field>
+					<field type="minute">
+						<displayName draft="contributed">मिनेट</displayName>
+					</field>
+					<field type="second">
+						<displayName draft="contributed">दोस्रो</displayName>
+					</field>
+					<field type="zone">
+						<displayName draft="contributed">क्षेत्र</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="contributed">अज्ञात</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity draft="contributed">रोथेरा</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity draft="contributed">पाल्मेर</exemplarCity>
+			</zone>
+			<zone type="Antarctica/South_Pole">
+				<exemplarCity draft="contributed">दक्षिण पोल</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity draft="contributed">सिओआ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity draft="contributed">माजन</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity draft="contributed">डेभिस</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity draft="contributed">भास्टोक</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity draft="contributed">केजे</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity draft="contributed">दुमोन्ट डि उर्भेल्ले</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity draft="contributed">माकमुर्डो</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity draft="contributed">रियो ग्यालेगोस</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity draft="contributed">मेन्डोजा</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity draft="contributed">सान जुवान</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity draft="contributed">उशुआइआ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity draft="contributed">ला रियोजा</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity draft="contributed">सान लुइस</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity draft="contributed">कातामार्का</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity draft="contributed">जुजु</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity draft="contributed">टुकुमान</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity draft="contributed">कोरडोवा</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity draft="contributed">ब्यनेश आयर्स</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity draft="contributed">पर्थ</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity draft="contributed">इयुक्ला</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity draft="contributed">डार्विन</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity draft="contributed">एडेलेड</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity draft="contributed">ब्रोकन हिल</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity draft="contributed">क्युरी</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity draft="contributed">मेल्बर्न</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity draft="contributed">होभार्ट</exemplarCity>
+			</zone>
+			<zone type="Australia/Lindeman">
+				<exemplarCity draft="contributed">लिन्डेम्यान</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity draft="contributed">सिड्नी</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity draft="contributed">ब्रिस्बेन</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity draft="contributed">लर्ड होवे</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity draft="contributed">आइरनेपे</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity draft="contributed">रियो ब्रान्को</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity draft="contributed">पोर्टो भेल्हो</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity draft="contributed">बोआ भिष्टा</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity draft="contributed">मानाउस</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity draft="contributed">क्युइआबा</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity draft="contributed">क्याम्पो ग्रान्डे</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity draft="contributed">बेलेम</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity draft="contributed">आरागुवाना</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity draft="contributed">साओ पाउलो</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity draft="contributed">बाहिया</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity draft="contributed">फोर्टालेजा</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity draft="contributed">मासेइओ</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity draft="contributed">रिसाइफ</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity draft="contributed">नोरोन्हा</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity draft="contributed">डेजन</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity draft="contributed">ह्वाइटहर्स</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity draft="contributed">इनुभिक</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity draft="contributed">भ्यानकोभर</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity draft="contributed">डेजन क्रिक</exemplarCity>
+			</zone>
+			<zone type="America/Yellowknife">
+				<exemplarCity draft="contributed">येल्लोनाइफ</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity draft="contributed">एड्मोन्टन</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity draft="contributed">स्विफ्ट करेण्ट</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity draft="contributed">क्याम्ब्रिज बे</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity draft="contributed">रेजिना</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity draft="contributed">विन्निपेग</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity draft="contributed">रिजोलुट</exemplarCity>
+			</zone>
+			<zone type="America/Rainy_River">
+				<exemplarCity draft="contributed">रेनिरिभर</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity draft="contributed">रान्किन इन्लेट</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity draft="contributed">कोराल बन्दरगाहा</exemplarCity>
+			</zone>
+			<zone type="America/Thunder_Bay">
+				<exemplarCity draft="contributed">थण्डर बे</exemplarCity>
+			</zone>
+			<zone type="America/Nipigon">
+				<exemplarCity draft="contributed">निपिगन</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity draft="contributed">टोरोण्टो</exemplarCity>
+			</zone>
+			<zone type="America/Montreal">
+				<exemplarCity draft="contributed">मोन्ट्रिल</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity draft="contributed">इक्वालुइट</exemplarCity>
+			</zone>
+			<zone type="America/Pangnirtung">
+				<exemplarCity draft="contributed">पाङ्निरतुङ</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity draft="contributed">मोन्कटन</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity draft="contributed">हालेफाक्स</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity draft="contributed">गुज बे</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity draft="contributed">ग्लेस बे</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity draft="contributed">ब्लान्क-साब्लोन</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity draft="contributed">सेन्ट जोन्स</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity draft="contributed">किन्शासा</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity draft="contributed">लुबुम्बासी</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity draft="contributed">इस्टर</exemplarCity>
+			</zone>
+			<zone type="Asia/Kashgar">
+				<exemplarCity draft="contributed">काश्गर</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity draft="contributed">उरूम्की</exemplarCity>
+			</zone>
+			<zone type="Asia/Chongqing">
+				<exemplarCity draft="contributed">चोङकिङ</exemplarCity>
+			</zone>
+			<zone type="Asia/Harbin">
+				<exemplarCity draft="contributed">हार्विन</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity draft="contributed">गलापागोस</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity draft="contributed">क्यानारी</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity draft="contributed">सेउटा</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity draft="contributed">ट्रुक</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity draft="contributed">पोनापे</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity draft="contributed">कोस्राए</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity draft="contributed">थुले</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity draft="contributed">स्कोर्सबाइसन्ड</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity draft="contributed">डान्मार्कशाभन</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity draft="contributed">जाकार्ता</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity draft="contributed">पोन्टिआनाक</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity draft="contributed">माकास्सार</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity draft="contributed">जयापुरा</exemplarCity>
+			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity draft="contributed">एन्डरबरी</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity draft="contributed">किरितिमाटी</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity draft="contributed">तरवा</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity draft="contributed">आक्टाउ</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity draft="contributed">ओरल</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity draft="contributed">आक्टोब</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity draft="contributed">किजिलोर्डा</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity draft="contributed">आल्माटी</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity draft="contributed">क्वाजालेइन</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity draft="contributed">माजुरो</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity draft="contributed">होभ्ड</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity draft="contributed">उलानबटार</exemplarCity>
+			</zone>
+			<zone type="Asia/Choibalsan">
+				<exemplarCity draft="contributed">चोइबाल्सान</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity draft="contributed">तिजुआना</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity draft="contributed">हेर्मोसिल्लो</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity draft="contributed">माजाट्लान</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity draft="contributed">चिहुआहुआ</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity draft="contributed">मोन्टेर्रे</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity draft="contributed">मेक्सिको सिटी</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity draft="contributed">मेरिडा</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity draft="contributed">कानकुन</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity draft="contributed">कुचिङ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity draft="contributed">चाथाम</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity draft="contributed">मार्केसास</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity draft="contributed">ग्याम्बियर</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity draft="contributed">आजोर्स</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity draft="contributed">माडेइरा</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity draft="contributed">कालिनिनग्राद</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity draft="contributed">मस्को</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity draft="contributed">भोल्गोग्राद</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity draft="contributed">सामारा</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="contributed">एकटरिनबुर्ग</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity draft="contributed">ओम्स्क</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity draft="contributed">नोबोसिबिर्स्क</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity draft="contributed">क्रास्नोयार्स्क</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity draft="contributed">इर्कुत्स्क</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity draft="contributed">याकुत्स्क</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity draft="contributed">भ्लाडिभास्टोक</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity draft="contributed">साखालिन</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity draft="contributed">मागाडान</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity draft="contributed">कामचट्का</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity draft="contributed">आनाडियर</exemplarCity>
+			</zone>
+			<zone type="Europe/Uzhgorod">
+				<exemplarCity draft="contributed">उझगोरद</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity draft="contributed">किभ</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity draft="contributed">सिम्फेरोपोल</exemplarCity>
+			</zone>
+			<zone type="Europe/Zaporozhye">
+				<exemplarCity draft="contributed">जापोरोझ्ये</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity draft="contributed">मिडवे</exemplarCity>
+			</zone>
+			<zone type="Pacific/Johnston">
+				<exemplarCity draft="contributed">जोन्सटन</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity draft="contributed">वेक</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity draft="contributed">आडाक</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity draft="contributed">नोमे</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity draft="contributed">होनोलुलु</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity draft="contributed">याकुतात</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity draft="contributed">जुनिउ</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity draft="contributed">लस् एन्जेलस</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity draft="contributed">बोइज</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity draft="contributed">फोनिक्स</exemplarCity>
+			</zone>
+			<zone type="America/Shiprock">
+				<exemplarCity draft="contributed">शिपरक</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity draft="contributed">डेन्भर</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity draft="contributed">नयाँ सालेम, उत्तर डाकोटा</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity draft="contributed">उत्तर डाकोटा, केन्द्र</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity draft="contributed">चिकागो</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity draft="contributed">मेनोमिनी</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity draft="contributed">भिन्सेन्स</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity draft="contributed">पिटर्सबर्ग, इन्डियाना</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity draft="contributed">टेल सिटी, इन्डियाना</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity draft="contributed">नोक्स, इण्डियाना</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity draft="contributed">विनामाक, इन्डियाना</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity draft="contributed">मारेन्गो, इन्डियाना</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity draft="contributed">इण्डियानापोलिस</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity draft="contributed">लुइसभिल्ले</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity draft="contributed">भेभे, इन्डियाना</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity draft="contributed">मोन्टिसेल्लो,केन्टकी</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity draft="contributed">डिट्रोइट</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity draft="contributed">न्युयोर्क</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity draft="contributed">समारकण्ड</exemplarCity>
+			</zone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>केन्द्रीय अफ्रिकी समय</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native>deva</native>
+		</otherNumberingSystems>
+		<symbols numberSystem="latn">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<minusSign draft="contributed">-</minusSign>
+		</symbols>
+		<currencies>
+			<currency type="AFA">
+				<displayName draft="contributed">अफ्गानी(१९२७-२००२)</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName draft="contributed">अफ्गानी</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName draft="contributed">अल्बानियन लेक</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName draft="contributed">अष्ट्रेलियन डलर</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName draft="contributed">ब्राजिलियन रियल</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="contributed">चिनिँया युआन रेनिबी</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="contributed">युरो</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="contributed">बेलायती पाउण्ड स्टर्लिङ</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="contributed">भारती रूपिँया</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="contributed">जापानी येन</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="contributed">नर्वेजियाली क्रोन</displayName>
+			</currency>
+			<currency type="NPR">
+				<symbol draft="contributed">नेरू</symbol>
+			</currency>
+			<currency type="PHP">
+				<displayName draft="contributed">फिलिपिनी पेसो</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="contributed">रूसी रूबल</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName draft="contributed">संयुक्त राज्य डलर</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="contributed">अपरिचित वा अवैध मुद्रा</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unit type="day">
+			<unitPattern count="one">{0} दिन</unitPattern>
+		</unit>
+		<unit type="hour">
+			<unitPattern count="one">{0} घण्टा</unitPattern>
+		</unit>
+		<unit type="minute">
+			<unitPattern count="one">{0} मिनेट</unitPattern>
+		</unit>
+		<unit type="month">
+			<unitPattern count="one">{0} महिना</unitPattern>
+		</unit>
+		<unit type="second">
+			<unitPattern count="one">{0} सेकेण्ड</unitPattern>
+		</unit>
+		<unit type="week">
+			<unitPattern count="one">{0} हप्ता</unitPattern>
+		</unit>
+		<unit type="year">
+			<unitPattern count="one">{0} बर्ष</unitPattern>
+			<unitPattern count="other">{0} बर्ष</unitPattern>
+		</unit>
+	</units>
+</ldml>

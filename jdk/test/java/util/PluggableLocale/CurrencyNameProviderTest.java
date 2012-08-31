@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 import java.text.*;
 import java.util.*;
-import sun.util.*;
+import sun.util.locale.provider.*;
 import sun.util.resources.*;
 
 public class CurrencyNameProviderTest extends ProviderTest {
@@ -54,7 +54,7 @@ public class CurrencyNameProviderTest extends ProviderTest {
 
         for (Locale target: availloc) {
             // pure JRE implementation
-            OpenListResourceBundle rb = (OpenListResourceBundle)LocaleData.getCurrencyNames(target);
+            OpenListResourceBundle rb = (OpenListResourceBundle)LocaleProviderAdapter.forJRE().getLocaleData().getCurrencyNames(target);
             boolean jreHasBundle = rb.getLocale().equals(target);
 
             for (Locale test: testloc) {

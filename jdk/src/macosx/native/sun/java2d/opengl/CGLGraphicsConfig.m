@@ -447,3 +447,20 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getOGLCapabilities
         return cglinfo->context->caps;
     }
 }
+
+JNIEXPORT jint JNICALL
+Java_sun_java2d_opengl_CGLGraphicsConfig_getMaxTextureSize
+    (JNIEnv *env, jclass cglgc)
+{
+    J2dTraceLn(J2D_TRACE_INFO, "CGLGraphicsConfig_getMaxTextureSize");
+
+    __block int max = 0;
+
+    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+        [sharedContext makeCurrentContext];
+        j2d_glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max);
+    }];
+
+    return (jint)max;
+}
+
