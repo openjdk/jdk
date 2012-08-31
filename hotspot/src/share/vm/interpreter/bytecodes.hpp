@@ -424,6 +424,8 @@ class Bytecodes: AllStatic {
                                                            || code == _fconst_0 || code == _dconst_0); }
   static bool        is_invoke      (Code code)    { return (_invokevirtual <= code && code <= _invokedynamic); }
 
+  static bool        has_optional_appendix(Code code) { return code == _invokedynamic || code == _invokehandle; }
+
   static int         compute_flags  (const char* format, int more_flags = 0);  // compute the flags
   static int         flags          (int code, bool is_wide) {
     assert(code == (u_char)code, "must be a byte");
