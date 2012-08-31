@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class T6348499 {
     public static void main(String... args) {
         String testSrc = System.getProperty("test.src", ".");
         String testClasses = System.getProperty("test.classes");
+        String testClassPath = System.getProperty("test.class.path", testClasses);
         String A_java = new File(testSrc, "A.java").getPath();
         JavacTool tool = JavacTool.create();
         MyDiagListener dl = new MyDiagListener();
@@ -55,7 +56,7 @@ public class T6348499 {
             fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, "A.java")));
         Iterable<String> opts = Arrays.asList("-proc:only",
                                               "-processor", "A",
-                                              "-processorpath", testClasses);
+                                              "-processorpath", testClassPath);
         StringWriter out = new StringWriter();
         JavacTask task = tool.getTask(out, fm, dl, opts, null, files);
         task.call();
