@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,35 @@
  * questions.
  */
 
-// key: compiler.err.duplicate.annotation
-// key: compiler.warn.source.no.bootclasspath
-// options: -source 7
+/**
+ * @test
+ * @summary Smoke test for repeating annotations
+ * @bug 7151010
+ *
+ * @run clean SelfRepeatingAnnotations Foos SelfRepeatingAnno
+ * @run compile SelfRepeatingAnnotations.java
+ * @run main SelfRepeatingAnnotations
+ */
 
-@interface Anno { }
+import java.lang.annotation.*;
 
-@Anno
-@Anno
-class DuplicateAnnotation { }
+@ContainerFor(SelfRepeatingAnno.class)
+@Retention(RetentionPolicy.RUNTIME)
+@interface Foos {
+    SelfRepeatingAnno[] value();
+}
+
+@SelfRepeatingAnno
+@Retention(RetentionPolicy.RUNTIME)
+@SelfRepeatingAnno
+@ContainedBy(Foos.class)
+@interface SelfRepeatingAnno {}
+
+public class SelfRepeatingAnnotations {
+    public static void  main(String[] args) throws Exception {
+        Annotation a = SelfRepeatingAnno.class.getAnnotation(Foos.class);
+        if (a == null) {
+            throw new RuntimeException("Container annotation missing");
+        }
+    }
+}

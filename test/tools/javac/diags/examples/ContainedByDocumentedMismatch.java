@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,17 @@
  * questions.
  */
 
-// key: compiler.err.duplicate.annotation
-// key: compiler.warn.source.no.bootclasspath
-// options: -source 7
+// key: compiler.err.invalid.containedby.annotation.not.documented
 
+import java.lang.annotation.*;
+
+@Documented
+@ContainedBy(Annos.class)
 @interface Anno { }
 
+@ContainerFor(Anno.class)
+@interface Annos { Anno[] value(); }
+
 @Anno
 @Anno
-class DuplicateAnnotation { }
+class ContainedByDocumentedMismatch { }

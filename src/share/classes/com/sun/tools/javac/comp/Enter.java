@@ -157,7 +157,7 @@ public class Enter extends JCTree.Visitor {
         Env<AttrContext> lintEnv = localEnv;
         while (lintEnv.info.lint == null)
             lintEnv = lintEnv.next;
-        localEnv.info.lint = lintEnv.info.lint.augment(sym.attributes_field, sym.flags());
+        localEnv.info.lint = lintEnv.info.lint.augment(sym.annotations, sym.flags());
         return localEnv;
     }
 
