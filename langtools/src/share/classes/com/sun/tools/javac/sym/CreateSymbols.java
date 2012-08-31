@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,9 +206,7 @@ public class CreateSymbols extends AbstractProcessor {
             }
             ClassSymbol cs = (ClassSymbol) sym;
             if (addLegacyAnnotation) {
-                cs.attributes_field = (cs.attributes_field == null)
-                    ? List.of(proprietary)
-                    : cs.attributes_field.prepend(proprietary);
+                cs.annotations.prepend(List.of(proprietary));
             }
             writeClass(pool, cs, writer);
         }
