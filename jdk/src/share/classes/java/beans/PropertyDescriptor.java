@@ -593,7 +593,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
         Method yw = y.getWriteMethod();
 
         try {
-            if (yw != null && yw.getDeclaringClass() == getClass0()) {
+            if (yw != null) {
                 setWriteMethod(yw);
             } else {
                 setWriteMethod(xw);

@@ -23,12 +23,14 @@
 
 /*
  * @test
- * @bug 7189112
- * @summary Tests overridden getter
+ * @bug 7186794
+ * @summary Tests setter in the super class
  * @author Sergey Malenkov
  */
 
-public class Test7189112 {
+import java.util.List;
+
+public class Test7186794 {
 
     public static void main(String[] args) {
         if (null == BeanUtils.findPropertyDescriptor(MyBean.class, "value").getWriteMethod()) {
@@ -38,21 +40,16 @@ public class Test7189112 {
 
     public static class BaseBean {
 
-        private Object value;
+        protected List<String> value;
 
-        public Object getValue() {
-            return this.value;
-        }
-
-        public void setValue(Object value) {
+        public void setValue(List<String> value) {
             this.value = value;
         }
     }
 
     public static class MyBean extends BaseBean {
-        @Override
-        public String getValue() {
-            return (String) super.getValue();
+        public List<String> getValue() {
+            return super.value;
         }
     }
 }
