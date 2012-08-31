@@ -208,7 +208,7 @@ class ComparableTimSort {
      * @param start the index of the first element in the range that is
      *        not already known to be sorted ({@code lo <= start <= hi})
      */
-    @SuppressWarnings({ "fallthrough", "rawtypes", "unchecked" })
+    @SuppressWarnings({"fallthrough", "rawtypes", "unchecked"})
     private static void binarySort(Object[] a, int lo, int hi, int start) {
         assert lo <= start && start <= hi;
         if (start == lo)
@@ -277,7 +277,7 @@ class ComparableTimSort {
      * @return  the length of the run beginning at the specified position in
      *          the specified array
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static int countRunAndMakeAscending(Object[] a, int lo, int hi) {
         assert lo < hi;
         int runHi = lo + 1;
@@ -612,7 +612,7 @@ class ComparableTimSort {
      *        (must be aBase + aLen)
      * @param len2  length of second run to be merged (must be > 0)
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void mergeLo(int base1, int len1, int base2, int len2) {
         assert len1 > 0 && len2 > 0 && base1 + len1 == base2;
 
@@ -729,7 +729,7 @@ class ComparableTimSort {
      *        (must be aBase + aLen)
      * @param len2  length of second run to be merged (must be > 0)
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void mergeHi(int base1, int len1, int base2, int len2) {
         assert len1 > 0 && len2 > 0 && base1 + len1 == base2;
 
