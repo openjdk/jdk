@@ -26,7 +26,7 @@
 # This file sets common environment variables for all SA scripts
 
 OS=`uname`
-STARTDIR=`dirname $0`
+STARTDIR=`(cd \`dirname $0 \`; pwd)`
 ARCH=`uname -m`
 
 if [ "x$SA_JAVA" = "x" ]; then
