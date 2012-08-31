@@ -143,6 +143,11 @@ import com.sun.xml.internal.ws.org.objectweb.asm.Type;
     protected abstract SpeciesData speciesData();
 
     @Override
+    final Object internalProperties() {
+        return "/BMH="+internalValues();
+    }
+
+    @Override
     final Object internalValues() {
         Object[] boundValues = new Object[speciesData().fieldCount()];
         for (int i = 0; i < boundValues.length; ++i) {
