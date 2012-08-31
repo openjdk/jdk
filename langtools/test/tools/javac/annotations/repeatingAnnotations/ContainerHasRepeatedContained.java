@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,26 @@
  * questions.
  */
 
-// key: compiler.err.duplicate.annotation
-// key: compiler.warn.source.no.bootclasspath
-// options: -source 7
+/**
+ * @test
+ * @summary Smoke test for repeating annotations
+ * @bug 7151010
+ *
+ * @run clean Bar BarContainer ContainerHasRepeatedContained
+ * @run compile ContainerHasRepeatedContained.java
+ */
 
-@interface Anno { }
+import java.lang.annotation.ContainedBy;
+import java.lang.annotation.ContainerFor;
 
-@Anno
-@Anno
-class DuplicateAnnotation { }
+@ContainedBy(BarContainer.class)
+@interface Bar {}
+
+@Bar
+@Bar
+@ContainerFor(Bar.class)
+@interface BarContainer {
+    Bar[] value();
+}
+
+public class ContainerHasRepeatedContained {}
