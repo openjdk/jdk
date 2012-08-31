@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,63 +33,47 @@
 #
 
 FILES_java = \
-		sun/text/resources/BreakIteratorInfo_th.java \
+		sun/text/resources/th/BreakIteratorInfo_th.java \
 		\
-		sun/text/resources/CollationData_ar.java \
-		sun/text/resources/CollationData_hi.java \
-		sun/text/resources/CollationData_iw.java \
-		sun/text/resources/CollationData_ja.java \
-		sun/text/resources/CollationData_ko.java \
-		sun/text/resources/CollationData_th.java \
-		sun/text/resources/CollationData_vi.java \
-		sun/text/resources/CollationData_zh.java \
-		sun/text/resources/CollationData_zh_HK.java \
- 		sun/text/resources/CollationData_zh_TW.java \
+		sun/text/resources/ar/CollationData_ar.java \
+		sun/text/resources/hi/CollationData_hi.java \
+		sun/text/resources/iw/CollationData_iw.java \
+		sun/text/resources/ja/CollationData_ja.java \
+		sun/text/resources/ko/CollationData_ko.java \
+		sun/text/resources/th/CollationData_th.java \
+		sun/text/resources/vi/CollationData_vi.java \
+		sun/text/resources/zh/CollationData_zh.java \
+		sun/text/resources/zh/CollationData_zh_HK.java \
+ 		sun/text/resources/zh/CollationData_zh_TW.java \
 		\
-		sun/text/resources/FormatData_ar.java \
-		sun/text/resources/FormatData_ar_AE.java \
-		sun/text/resources/FormatData_ar_BH.java \
-		sun/text/resources/FormatData_ar_DZ.java \
-		sun/text/resources/FormatData_ar_EG.java \
-		sun/text/resources/FormatData_ar_IQ.java \
-		sun/text/resources/FormatData_ar_JO.java \
-		sun/text/resources/FormatData_ar_KW.java \
-		sun/text/resources/FormatData_ar_LB.java \
-		sun/text/resources/FormatData_ar_LY.java \
-		sun/text/resources/FormatData_ar_MA.java \
-		sun/text/resources/FormatData_ar_OM.java \
-		sun/text/resources/FormatData_ar_QA.java \
-		sun/text/resources/FormatData_ar_SA.java \
-		sun/text/resources/FormatData_ar_SD.java \
-		sun/text/resources/FormatData_ar_SY.java \
-		sun/text/resources/FormatData_ar_TN.java \
-		sun/text/resources/FormatData_ar_YE.java \
-                sun/text/resources/FormatData_hi_IN.java \
-		sun/text/resources/FormatData_iw.java \
-		sun/text/resources/FormatData_iw_IL.java \
-		sun/text/resources/FormatData_ja.java \
-		sun/text/resources/FormatData_ja_JP.java \
-		sun/text/resources/FormatData_ja_JP_JP.java \
-		sun/text/resources/FormatData_ko.java \
-		sun/text/resources/FormatData_ko_KR.java \
-		sun/text/resources/FormatData_th.java \
-		sun/text/resources/FormatData_th_TH.java \
-		sun/text/resources/FormatData_th_TH_TH.java \
-		sun/text/resources/FormatData_vi.java \
-		sun/text/resources/FormatData_vi_VN.java \
-		sun/text/resources/FormatData_zh.java \
-		sun/text/resources/FormatData_zh_CN.java \
-		sun/text/resources/FormatData_zh_HK.java \
-		sun/text/resources/FormatData_zh_SG.java \
-		sun/text/resources/FormatData_zh_TW.java \
+		sun/text/resources/ar/FormatData_ar.java \
+		sun/text/resources/ar/FormatData_ar_JO.java \
+		sun/text/resources/ar/FormatData_ar_LB.java \
+		sun/text/resources/ar/FormatData_ar_SY.java \
+                sun/text/resources/hi/FormatData_hi_IN.java \
+		sun/text/resources/iw/FormatData_iw.java \
+		sun/text/resources/iw/FormatData_iw_IL.java \
+		sun/text/resources/ja/FormatData_ja.java \
+		sun/text/resources/ja/FormatData_ja_JP.java \
+		sun/text/resources/ko/FormatData_ko.java \
+		sun/text/resources/ko/FormatData_ko_KR.java \
+		sun/text/resources/th/FormatData_th.java \
+		sun/text/resources/th/FormatData_th_TH.java \
+		sun/text/resources/vi/FormatData_vi.java \
+		sun/text/resources/vi/FormatData_vi_VN.java \
+		sun/text/resources/zh/FormatData_zh.java \
+		sun/text/resources/zh/FormatData_zh_CN.java \
+		sun/text/resources/zh/FormatData_zh_HK.java \
+		sun/text/resources/zh/FormatData_zh_SG.java \
+		sun/text/resources/zh/FormatData_zh_TW.java \
 		\
-                sun/util/resources/CurrencyNames_zh_HK.java \
-                sun/util/resources/CurrencyNames_zh_SG.java \
-                sun/util/resources/LocaleNames_zh_HK.java \
-                sun/util/resources/TimeZoneNames_hi.java \
-		sun/util/resources/TimeZoneNames_ja.java \
-		sun/util/resources/TimeZoneNames_ko.java \
-		sun/util/resources/TimeZoneNames_zh_CN.java \
-		sun/util/resources/TimeZoneNames_zh_TW.java \
-		sun/util/resources/TimeZoneNames_zh_HK.java
+                sun/util/resources/zh/CurrencyNames_zh_HK.java \
+                sun/util/resources/zh/CurrencyNames_zh_SG.java \
+                sun/util/resources/zh/LocaleNames_zh_HK.java \
+                sun/util/resources/hi/TimeZoneNames_hi.java \
+		sun/util/resources/ja/TimeZoneNames_ja.java \
+		sun/util/resources/ko/TimeZoneNames_ko.java \
+		sun/util/resources/zh/TimeZoneNames_zh_CN.java \
+		sun/util/resources/zh/TimeZoneNames_zh_TW.java \
+		sun/util/resources/zh/TimeZoneNames_zh_HK.java
 

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="ss"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ss" draft="provisional">Siswati</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="unconfirmed">‘</quotationStart>
+		<quotationEnd draft="unconfirmed">’</quotationEnd>
+		<alternateQuotationStart draft="unconfirmed">“</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">”</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Bhi</month>
+							<month type="2" draft="unconfirmed">Van</month>
+							<month type="3" draft="unconfirmed">Vol</month>
+							<month type="4" draft="unconfirmed">Mab</month>
+							<month type="5" draft="unconfirmed">Nkh</month>
+							<month type="6" draft="unconfirmed">Nhl</month>
+							<month type="7" draft="unconfirmed">Kho</month>
+							<month type="8" draft="unconfirmed">Ngc</month>
+							<month type="9" draft="unconfirmed">Nyo</month>
+							<month type="10" draft="unconfirmed">Mph</month>
+							<month type="11" draft="unconfirmed">Lwe</month>
+							<month type="12" draft="unconfirmed">Ngo</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Bhimbidvwane</month>
+							<month type="2" draft="unconfirmed">iNdlovana</month>
+							<month type="3" draft="unconfirmed">iNdlovu-lenkhulu</month>
+							<month type="4" draft="unconfirmed">Mabasa</month>
+							<month type="5" draft="unconfirmed">iNkhwekhweti</month>
+							<month type="6" draft="unconfirmed">iNhlaba</month>
+							<month type="7" draft="unconfirmed">Kholwane</month>
+							<month type="8" draft="unconfirmed">iNgci</month>
+							<month type="9" draft="unconfirmed">iNyoni</month>
+							<month type="10" draft="unconfirmed">iMphala</month>
+							<month type="11" draft="unconfirmed">Lweti</month>
+							<month type="12" draft="unconfirmed">iNgongoni</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Son</day>
+							<day type="mon" draft="unconfirmed">Mso</day>
+							<day type="tue" draft="unconfirmed">Bil</day>
+							<day type="wed" draft="unconfirmed">Tsa</day>
+							<day type="thu" draft="unconfirmed">Ne</day>
+							<day type="fri" draft="unconfirmed">Hla</day>
+							<day type="sat" draft="unconfirmed">Mgc</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Lisontfo</day>
+							<day type="mon" draft="unconfirmed">uMsombuluko</day>
+							<day type="tue" draft="unconfirmed">Lesibili</day>
+							<day type="wed" draft="unconfirmed">Lesitsatfu</day>
+							<day type="thu" draft="unconfirmed">Lesine</day>
+							<day type="fri" draft="unconfirmed">Lesihlanu</day>
+							<day type="sat" draft="unconfirmed">uMgcibelo</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group> </group>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="SZL">
+				<symbol>E</symbol>
+			</currency>
+			<currency type="ZAR">
+				<symbol>R</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

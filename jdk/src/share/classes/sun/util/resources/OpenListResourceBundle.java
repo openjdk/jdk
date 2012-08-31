@@ -42,6 +42,7 @@ package sun.util.resources;
 
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -93,6 +94,24 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
         return lookup.keySet();
     }
 
+    @Override
+    public Set<String> keySet() {
+        if (keyset != null) {
+            return keyset;
+        }
+        Set<String> ks = new HashSet<>();
+        ks.addAll(handleGetKeys());
+        if (parent != null) {
+            ks.addAll(parent.keySet());
+        }
+        synchronized (this) {
+            if (keyset == null) {
+                keyset = ks;
+            }
+        }
+        return keyset;
+    }
+
     /**
      * Returns the parent bundle
      */
@@ -118,11 +137,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
      * We lazily load the lookup hashtable.  This function does the
      * loading.
      */
-    private synchronized void loadLookup() {
-        if (lookup != null) {
-            return;
-        }
-
+    private void loadLookup() {
         Object[][] contents = getContents();
         Map<String, Object> temp = createMap(contents.length);
         for (int i = 0; i < contents.length; ++i) {
@@ -134,7 +149,11 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
             }
             temp.put(key, value);
         }
-        lookup = temp;
+        synchronized (this) {
+            if (lookup == null) {
+                lookup = temp;
+            }
+        }
     }
 
     /**
@@ -145,5 +164,6 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
         return new HashMap<>(size);
     }
 
-    private Map<String, Object> lookup = null;
+    private volatile Map<String, Object> lookup = null;
+    private volatile Set<String> keyset;
 }

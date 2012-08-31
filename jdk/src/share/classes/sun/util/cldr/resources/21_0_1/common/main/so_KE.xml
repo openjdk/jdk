@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 5717 $"/>
+		<generation date="$Date: 2011-04-28 12:37:06 +0900 (Thu, 28 Apr 2011) $"/>
+		<language type="so"/>
+		<territory type="KE"/>
+	</identity>
+	<numbers>
+		<currencies>
+			<currency type="KES">
+				<symbol>Ksh</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

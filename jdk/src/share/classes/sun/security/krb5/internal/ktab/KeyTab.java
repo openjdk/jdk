@@ -141,7 +141,7 @@ public class KeyTab implements KeyTabConstants {
         if (s == null) {
             return getInstance();
         } else {
-            return getInstance0(parse(s));
+            return getInstance0(normalize(s));
         }
     }
 
@@ -191,7 +191,7 @@ public class KeyTab implements KeyTabConstants {
                 if (keytab_names != null) {
                     StringTokenizer st = new StringTokenizer(keytab_names, " ");
                     while (st.hasMoreTokens()) {
-                        kname = parse(st.nextToken());
+                        kname = normalize(st.nextToken());
                         if (new File(kname).exists()) {
                             break;
                         }
@@ -220,11 +220,13 @@ public class KeyTab implements KeyTabConstants {
     }
 
     /**
-     * Parses some common keytab name formats
+     * Normalizes some common keytab name formats into the bare file name.
+     * For example, FILE:/etc/krb5.keytab to /etc/krb5.keytab
      * @param name never null
      * @return never null
      */
-    private static String parse(String name) {
+    // This method is used in this class and Krb5LoginModule
+    public static String normalize(String name) {
         String kname;
         if ((name.length() >= 5) &&
             (name.substring(0, 5).equalsIgnoreCase("FILE:"))) {

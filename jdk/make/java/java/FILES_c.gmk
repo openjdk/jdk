@@ -78,4 +78,5 @@ FILES_c = \
 	AtomicLong.c \
 	Version.c \
 	VM.c \
-	VMSupport.c 
+	VMSupport.c \
+	HostLocaleProviderAdapter_md.c

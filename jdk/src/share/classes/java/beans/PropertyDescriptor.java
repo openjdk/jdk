@@ -657,7 +657,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
                     throw new IntrospectionException("bad write method arg count: "
                                                      + writeMethod);
                 }
-                if (propertyType != null && propertyType != params[0]) {
+                if (propertyType != null && !params[0].isAssignableFrom(propertyType)) {
                     throw new IntrospectionException("type mismatch between read and write methods");
                 }
                 propertyType = params[0];

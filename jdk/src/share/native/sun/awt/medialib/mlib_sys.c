@@ -29,6 +29,8 @@
 #ifdef MACOSX
 #include <unistd.h>
 #include <sys/param.h>
+#else
+#include <malloc.h>
 #endif
 #include <mlib_types.h>
 #include <mlib_sys_proto.h>

@@ -32,7 +32,7 @@ import java.security.*;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
+import java.beans.PropertyChangeEvent;
 import java.net.URL;
 import sun.security.action.GetPropertyAction;
 
@@ -151,9 +151,11 @@ public class LogManager {
 
     private final static Handler[] emptyHandlers = { };
     private Properties props = new Properties();
-    private PropertyChangeSupport changes
-                         = new PropertyChangeSupport(LogManager.class);
     private final static Level defaultLevel = Level.INFO;
+
+    // The map of the registered listeners. The map value is the registration
+    // count to allow for cases where the same listener is registered many times.
+    private final Map<PropertyChangeListener,Integer> listenerMap = new HashMap<>();
 
     // Table of named Loggers that maps names to Loggers.
     private Hashtable<String,LoggerWeakRef> namedLoggers = new Hashtable<>();
@@ -311,11 +313,14 @@ public class LogManager {
      * @exception NullPointerException if the PropertyChangeListener is null.
      */
     public void addPropertyChangeListener(PropertyChangeListener l) throws SecurityException {
-        if (l == null) {
-            throw new NullPointerException();
-        }
+        PropertyChangeListener listener = Objects.requireNonNull(l);
         checkAccess();
-        changes.addPropertyChangeListener(l);
+        synchronized (listenerMap) {
+            // increment the registration count if already registered
+            Integer value = listenerMap.get(listener);
+            value = (value == null) ? 1 : (value + 1);
+            listenerMap.put(listener, value);
+        }
     }
 
     /**
@@ -334,7 +339,23 @@ public class LogManager {
      */
     public void removePropertyChangeListener(PropertyChangeListener l) throws SecurityException {
         checkAccess();
-        changes.removePropertyChangeListener(l);
+        if (l != null) {
+            PropertyChangeListener listener = l;
+            synchronized (listenerMap) {
+                Integer value = listenerMap.get(listener);
+                if (value != null) {
+                    // remove from map if registration count is 1, otherwise
+                    // just decrement its count
+                    int i = value.intValue();
+                    if (i == 1) {
+                        listenerMap.remove(listener);
+                    } else {
+                        assert i > 1;
+                        listenerMap.put(listener, i - 1);
+                    }
+                }
+            }
+        }
     }
 
     // Package-level method.
@@ -939,7 +960,23 @@ public class LogManager {
         setLevelsOnExistingLoggers();
 
         // Notify any interested parties that our properties have changed.
-        changes.firePropertyChange(null, null, null);
+        // We first take a copy of the listener map so that we aren't holding any
+        // locks when calling the listeners.
+        Map<PropertyChangeListener,Integer> listeners = null;
+        synchronized (listenerMap) {
+            if (!listenerMap.isEmpty())
+                listeners = new HashMap<>(listenerMap);
+        }
+        if (listeners != null) {
+            PropertyChangeEvent ev = new PropertyChangeEvent(LogManager.class, null, null, null);
+            for (Map.Entry<PropertyChangeListener,Integer> entry : listeners.entrySet()) {
+                PropertyChangeListener listener = entry.getKey();
+                int count = entry.getValue().intValue();
+                for (int i = 0; i < count; i++) {
+                    listener.propertyChange(ev);
+                }
+            }
+        }
 
         // Note that we need to reinitialize global handles when
         // they are first referenced.
