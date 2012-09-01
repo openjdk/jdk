@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@
 extern pointer __JvmOffsets;
 
 extern pointer __1cJCodeCacheF_heap_;
-extern pointer __1cIUniverseP_methodKlassObj_;
 extern pointer __1cIUniverseO_collectedHeap_;
 extern pointer __1cIUniverseL_narrow_oop_;
 #ifdef _LP64
@@ -52,6 +51,7 @@ extern pointer UseCompressedOops;
 #endif
 
 extern pointer __1cHnmethodG__vtbl_;
+extern pointer __1cNMethodG__vtbl_;
 extern pointer __1cKBufferBlobG__vtbl_;
 
 #define copyin_ptr(ADDR)    *(pointer*)  copyin((pointer) (ADDR), sizeof(pointer))
@@ -81,7 +81,7 @@ dtrace:helper:ustack:
   init_done  = 0;
   this->error = (char *) NULL;
   this->result = (char *) NULL;
-  this->methodOop = 0;
+  this->isMethod = 0;
   this->codecache = 0;
   this->klass = (pointer) NULL;
   this->vtbl  = (pointer) NULL;
@@ -109,7 +109,7 @@ dtrace:helper:ustack:
 
   copyin_offset(OFFSET_interpreter_frame_method);
   copyin_offset(OFFSET_Klass_name);
-  copyin_offset(OFFSET_constantPoolOopDesc_pool_holder);
+  copyin_offset(OFFSET_ConstantPool_pool_holder);
 
   copyin_offset(OFFSET_HeapBlockHeader_used);
   copyin_offset(OFFSET_oopDesc_metadata);
@@ -117,10 +117,10 @@ dtrace:helper:ustack:
   copyin_offset(OFFSET_Symbol_length);
   copyin_offset(OFFSET_Symbol_body);
 
-  copyin_offset(OFFSET_methodOopDesc_constMethod);
-  copyin_offset(OFFSET_methodOopDesc_constants);
-  copyin_offset(OFFSET_constMethodOopDesc_name_index);
-  copyin_offset(OFFSET_constMethodOopDesc_signature_index);
+  copyin_offset(OFFSET_Method_constMethod);
+  copyin_offset(OFFSET_ConstMethod_constants);
+  copyin_offset(OFFSET_ConstMethod_name_index);
+  copyin_offset(OFFSET_ConstMethod_signature_index);
 
   copyin_offset(OFFSET_CodeHeap_memory);
   copyin_offset(OFFSET_CodeHeap_segmap);
@@ -134,7 +134,7 @@ dtrace:helper:ustack:
   copyin_offset(OFFSET_nmethod_method);
   copyin_offset(SIZE_HeapBlockHeader);
   copyin_offset(SIZE_oopDesc);
-  copyin_offset(SIZE_constantPoolOopDesc);
+  copyin_offset(SIZE_ConstantPool);
 
   copyin_offset(OFFSET_NarrowOopStruct_base);
   copyin_offset(OFFSET_NarrowOopStruct_shift);
@@ -145,18 +145,17 @@ dtrace:helper:ustack:
   this->pc = arg0;
 
   /*
-   * The methodOopPtr is in %l2 on SPARC.  This can be found at
+   * The methodPtr is in %l2 on SPARC.  This can be found at
    * offset 8 from the frame pointer on 32-bit processes.
    */
 #if   defined(__sparc)
-  this->methodOopPtr = copyin_ptr(arg1 + 2 * sizeof(pointer) + STACK_BIAS);
+  this->methodPtr = copyin_ptr(arg1 + 2 * sizeof(pointer) + STACK_BIAS);
 #elif defined(__i386) || defined(__amd64)
-  this->methodOopPtr = copyin_ptr(arg1 + OFFSET_interpreter_frame_method);
+  this->methodPtr = copyin_ptr(arg1 + OFFSET_interpreter_frame_method);
 #else
 #error "Don't know architecture"
 #endif
 
-  this->Universe_methodKlassOop = copyin_ptr(&``__1cIUniverseP_methodKlassObj_);
   this->CodeCache_heap_address = copyin_ptr(&``__1cJCodeCacheF_heap_);
 
   /* Reading volatile values */
@@ -185,6 +184,8 @@ dtrace:helper:ustack:
 
   this->CodeHeap_log2_segment_size = copyin_uint32(
       this->CodeCache_heap_address + OFFSET_CodeHeap_log2_segment_size);
+
+  this->Method_vtbl             = (pointer) &``__1cNMethodG__vtbl_;
 
   /*
    * Get Java heap bounds
@@ -298,9 +299,9 @@ dtrace:helper:ustack:
 /!this->done && this->vtbl == this->nmethod_vtbl/
 {
   MARK_LINE;
-  this->methodOopPtr = copyin_ptr(this->start + OFFSET_nmethod_method);
+  this->methodPtr = copyin_ptr(this->start + OFFSET_nmethod_method);
   this->suffix = '*';
-  this->methodOop = 1;
+  this->isMethod = 1;
 }
 
 dtrace:helper:ustack:
@@ -310,35 +311,18 @@ dtrace:helper:ustack:
   this->name = copyin_ptr(this->start + OFFSET_CodeBlob_name);
 }
 
+
 dtrace:helper:ustack:
-/!this->done && this->vtbl == this->BufferBlob_vtbl &&
-this->Use_Compressed_Oops == 0 &&
-this->methodOopPtr > this->heap_start && this->methodOopPtr < this->heap_end/
+/!this->done && this->vtbl == this->BufferBlob_vtbl && this->methodPtr != 0/
 {
   MARK_LINE;
-  this->klass = copyin_ptr(this->methodOopPtr + OFFSET_oopDesc_metadata);
-  this->methodOop = this->klass == this->Universe_methodKlassOop;
-  this->done = !this->methodOop;
+  this->klass = copyin_ptr(this->methodPtr);
+  this->isMethod = this->klass == this->Method_vtbl;
+  this->done = !this->isMethod;
 }
 
 dtrace:helper:ustack:
-/!this->done && this->vtbl == this->BufferBlob_vtbl &&
-this->Use_Compressed_Oops != 0 &&
-this->methodOopPtr > this->heap_start && this->methodOopPtr < this->heap_end/
-{
-  MARK_LINE;
-  /*
-   * Read compressed pointer and  decode heap oop, same as oop.inline.hpp
-   */
-  this->cklass = copyin_uint32(this->methodOopPtr + OFFSET_oopDesc_metadata);
-  this->klass = (uint64_t)((uintptr_t)this->Universe_narrow_oop_base +
-                ((uintptr_t)this->cklass << this->Universe_narrow_oop_shift));
-  this->methodOop = this->klass == this->Universe_methodKlassOop;
-  this->done = !this->methodOop;
-}
-
-dtrace:helper:ustack:
-/!this->done && !this->methodOop/
+/!this->done && !this->isMethod/
 {
   MARK_LINE;
   this->name = copyin_ptr(this->start + OFFSET_CodeBlob_name);
@@ -347,38 +331,38 @@ dtrace:helper:ustack:
 }
 
 dtrace:helper:ustack:
-/!this->done && this->methodOop/
+/!this->done && this->isMethod/
 {
   MARK_LINE;
-  this->constMethod = copyin_ptr(this->methodOopPtr +
-      OFFSET_methodOopDesc_constMethod);
+  this->constMethod = copyin_ptr(this->methodPtr +
+      OFFSET_Method_constMethod);
 
   this->nameIndex = copyin_uint16(this->constMethod +
-      OFFSET_constMethodOopDesc_name_index);
+      OFFSET_ConstMethod_name_index);
 
   this->signatureIndex = copyin_uint16(this->constMethod +
-      OFFSET_constMethodOopDesc_signature_index);
+      OFFSET_ConstMethod_signature_index);
 
-  this->constantPool = copyin_ptr(this->methodOopPtr +
-      OFFSET_methodOopDesc_constants);
+  this->constantPool = copyin_ptr(this->constMethod +
+      OFFSET_ConstMethod_constants);
 
   this->nameSymbol = copyin_ptr(this->constantPool +
-      this->nameIndex * sizeof (pointer) + SIZE_constantPoolOopDesc);
+      this->nameIndex * sizeof (pointer) + SIZE_ConstantPool);
 
   this->nameSymbolLength = copyin_uint16(this->nameSymbol +
       OFFSET_Symbol_length);
 
   this->signatureSymbol = copyin_ptr(this->constantPool +
-      this->signatureIndex * sizeof (pointer) + SIZE_constantPoolOopDesc);
+      this->signatureIndex * sizeof (pointer) + SIZE_ConstantPool);
 
   this->signatureSymbolLength = copyin_uint16(this->signatureSymbol +
       OFFSET_Symbol_length);
 
   this->klassPtr = copyin_ptr(this->constantPool +
-      OFFSET_constantPoolOopDesc_pool_holder);
+      OFFSET_ConstantPool_pool_holder);
 
   this->klassSymbol = copyin_ptr(this->klassPtr +
-      OFFSET_Klass_name + SIZE_oopDesc);
+      OFFSET_Klass_name);
 
   this->klassSymbolLength = copyin_uint16(this->klassSymbol +
       OFFSET_Symbol_length);

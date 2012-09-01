@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,12 @@
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/barrierSet.inline.hpp"
 #include "memory/cardTableModRefBS.hpp"
-#include "memory/compactingPermGenGen.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/generation.hpp"
-#include "memory/permGen.hpp"
 #include "memory/specialized_oop_closures.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/klass.hpp"
-#include "oops/klassOop.hpp"
 #include "oops/markOop.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
@@ -70,48 +67,48 @@ inline markOop oopDesc::cas_set_mark(markOop new_mark, markOop old_mark) {
   return (markOop) Atomic::cmpxchg_ptr(new_mark, &_mark, old_mark);
 }
 
-inline klassOop oopDesc::klass() const {
-  if (UseCompressedOops) {
-    return (klassOop)decode_heap_oop_not_null(_metadata._compressed_klass);
+inline Klass* oopDesc::klass() const {
+  if (UseCompressedKlassPointers) {
+    return decode_klass_not_null(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
   }
 }
 
-inline klassOop oopDesc::klass_or_null() const volatile {
+inline Klass* oopDesc::klass_or_null() const volatile {
   // can be NULL in CMS
-  if (UseCompressedOops) {
-    return (klassOop)decode_heap_oop(_metadata._compressed_klass);
+  if (UseCompressedKlassPointers) {
+    return decode_klass(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
   }
 }
 
 inline int oopDesc::klass_gap_offset_in_bytes() {
-  assert(UseCompressedOops, "only applicable to compressed headers");
+  assert(UseCompressedKlassPointers, "only applicable to compressed klass pointers");
   return oopDesc::klass_offset_in_bytes() + sizeof(narrowOop);
 }
 
-inline oop* oopDesc::klass_addr() {
+inline Klass** oopDesc::klass_addr() {
   // Only used internally and with CMS and will not work with
   // UseCompressedOops
-  assert(!UseCompressedOops, "only supported with uncompressed oops");
-  return (oop*) &_metadata._klass;
+  assert(!UseCompressedKlassPointers, "only supported with uncompressed klass pointers");
+  return (Klass**) &_metadata._klass;
 }
 
 inline narrowOop* oopDesc::compressed_klass_addr() {
-  assert(UseCompressedOops, "only called by compressed oops");
+  assert(UseCompressedKlassPointers, "only called by compressed klass pointers");
   return (narrowOop*) &_metadata._compressed_klass;
 }
 
-inline void oopDesc::set_klass(klassOop k) {
+inline void oopDesc::set_klass(Klass* k) {
   // since klasses are promoted no store check is needed
-  assert(Universe::is_bootstrapping() || k != NULL, "must be a real klassOop");
-  assert(Universe::is_bootstrapping() || k->is_klass(), "not a klassOop");
-  if (UseCompressedOops) {
-    oop_store_without_check(compressed_klass_addr(), (oop)k);
+  assert(Universe::is_bootstrapping() || k != NULL, "must be a real Klass*");
+  assert(Universe::is_bootstrapping() || k->is_klass(), "not a Klass*");
+  if (UseCompressedKlassPointers) {
+    *compressed_klass_addr() = encode_klass_not_null(k);
   } else {
-    oop_store_without_check(klass_addr(), (oop) k);
+    *klass_addr() = k;
   }
 }
 
@@ -120,7 +117,7 @@ inline int oopDesc::klass_gap() const {
 }
 
 inline void oopDesc::set_klass_gap(int v) {
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes()) = v;
   }
 }
@@ -128,37 +125,38 @@ inline void oopDesc::set_klass_gap(int v) {
 inline void oopDesc::set_klass_to_list_ptr(oop k) {
   // This is only to be used during GC, for from-space objects, so no
   // barrier is needed.
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     _metadata._compressed_klass = encode_heap_oop(k);  // may be null (parnew overflow handling)
   } else {
-    _metadata._klass = (klassOop)k;
+    _metadata._klass = (Klass*)(address)k;
+  }
+}
+
+inline oop oopDesc::list_ptr_from_klass() {
+  // This is only to be used during GC, for from-space objects.
+  if (UseCompressedKlassPointers) {
+    return (oop)decode_heap_oop((oop)(address)_metadata._compressed_klass);
+  } else {
+    // Special case for GC
+    return (oop)(address)_metadata._klass;
   }
 }
 
 inline void   oopDesc::init_mark()                 { set_mark(markOopDesc::prototype_for_object(this)); }
-inline Klass* oopDesc::blueprint()           const { return klass()->klass_part(); }
 
-inline bool oopDesc::is_a(klassOop k)        const { return blueprint()->is_subtype_of(k); }
+inline bool oopDesc::is_a(Klass* k)        const { return klass()->is_subtype_of(k); }
 
-inline bool oopDesc::is_instance()           const { return blueprint()->oop_is_instance(); }
-inline bool oopDesc::is_instanceMirror()     const { return blueprint()->oop_is_instanceMirror(); }
-inline bool oopDesc::is_instanceRef()        const { return blueprint()->oop_is_instanceRef(); }
-inline bool oopDesc::is_array()              const { return blueprint()->oop_is_array(); }
-inline bool oopDesc::is_objArray()           const { return blueprint()->oop_is_objArray(); }
-inline bool oopDesc::is_typeArray()          const { return blueprint()->oop_is_typeArray(); }
-inline bool oopDesc::is_javaArray()          const { return blueprint()->oop_is_javaArray(); }
-inline bool oopDesc::is_klass()              const { return blueprint()->oop_is_klass(); }
-inline bool oopDesc::is_thread()             const { return blueprint()->oop_is_thread(); }
-inline bool oopDesc::is_method()             const { return blueprint()->oop_is_method(); }
-inline bool oopDesc::is_constMethod()        const { return blueprint()->oop_is_constMethod(); }
-inline bool oopDesc::is_methodData()         const { return blueprint()->oop_is_methodData(); }
-inline bool oopDesc::is_constantPool()       const { return blueprint()->oop_is_constantPool(); }
-inline bool oopDesc::is_constantPoolCache()  const { return blueprint()->oop_is_constantPoolCache(); }
-inline bool oopDesc::is_compiledICHolder()   const { return blueprint()->oop_is_compiledICHolder(); }
+inline bool oopDesc::is_instance()           const { return klass()->oop_is_instance(); }
+inline bool oopDesc::is_instanceMirror()     const { return klass()->oop_is_instanceMirror(); }
+inline bool oopDesc::is_instanceRef()        const { return klass()->oop_is_instanceRef(); }
+inline bool oopDesc::is_array()              const { return klass()->oop_is_array(); }
+inline bool oopDesc::is_objArray()           const { return klass()->oop_is_objArray(); }
+inline bool oopDesc::is_typeArray()          const { return klass()->oop_is_typeArray(); }
 
 inline void*     oopDesc::field_base(int offset)        const { return (void*)&((char*)this)[offset]; }
 
 template <class T> inline T* oopDesc::obj_field_addr(int offset) const { return (T*)field_base(offset); }
+inline Metadata** oopDesc::metadata_field_addr(int offset) const { return (Metadata**)field_base(offset); }
 inline jbyte*    oopDesc::byte_field_addr(int offset)   const { return (jbyte*)   field_base(offset); }
 inline jchar*    oopDesc::char_field_addr(int offset)   const { return (jchar*)   field_base(offset); }
 inline jboolean* oopDesc::bool_field_addr(int offset)   const { return (jboolean*)field_base(offset); }
@@ -177,6 +175,7 @@ inline address*  oopDesc::address_field_addr(int offset) const { return (address
 // the right type and inlines the appopriate code).
 
 inline bool oopDesc::is_null(oop obj)       { return obj == NULL; }
+inline bool oopDesc::is_null(Klass* obj)  { return obj == NULL; }
 inline bool oopDesc::is_null(narrowOop obj) { return obj == 0; }
 
 // Algorithm for encoding and decoding oops from 64 bit pointers to 32 bit
@@ -184,6 +183,9 @@ inline bool oopDesc::is_null(narrowOop obj) { return obj == 0; }
 // in inner GC loops so these are separated.
 
 inline bool check_obj_alignment(oop obj) {
+  return (intptr_t)obj % MinObjAlignmentInBytes == 0;
+}
+inline bool check_obj_alignment(Klass* obj) {
   return (intptr_t)obj % MinObjAlignmentInBytes == 0;
 }
 
@@ -220,6 +222,39 @@ inline oop oopDesc::decode_heap_oop(narrowOop v) {
 
 inline oop oopDesc::decode_heap_oop_not_null(oop v) { return v; }
 inline oop oopDesc::decode_heap_oop(oop v)  { return v; }
+
+// Encoding and decoding for klass field.  It is copied code, but someday
+// might not be the same as oop.
+
+inline narrowOop oopDesc::encode_klass_not_null(Klass* v) {
+  assert(!is_null(v), "oop value can never be zero");
+  assert(check_obj_alignment(v), "Address not aligned");
+  address base = Universe::narrow_oop_base();
+  int    shift = Universe::narrow_oop_shift();
+  uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base, 1));
+  assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
+  uint64_t result = pd >> shift;
+  assert((result & CONST64(0xffffffff00000000)) == 0, "narrow klass pointer overflow");
+  assert(decode_klass(result) == v, "reversibility");
+  return (narrowOop)result;
+}
+
+inline narrowOop oopDesc::encode_klass(Klass* v) {
+  return (is_null(v)) ? (narrowOop)0 : encode_klass_not_null(v);
+}
+
+inline Klass* oopDesc::decode_klass_not_null(narrowOop v) {
+  assert(!is_null(v), "narrow oop value can never be zero");
+  address base = Universe::narrow_oop_base();
+  int    shift = Universe::narrow_oop_shift();
+  Klass* result = (Klass*)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
+  assert(check_obj_alignment(result), err_msg("address not aligned: " PTR_FORMAT, (void*) result));
+  return result;
+}
+
+inline Klass* oopDesc::decode_klass(narrowOop v) {
+  return is_null(v) ? (Klass*)NULL : decode_klass_not_null(v);
+}
 
 // Load an oop out of the Java heap as is without decoding.
 // Called by GC to check for null before decoding.
@@ -298,22 +333,6 @@ inline oop oopDesc::atomic_exchange_oop(oop exchange_value, volatile HeapWord *d
   }
 }
 
-inline oop oopDesc::atomic_compare_exchange_oop(oop exchange_value,
-                                                volatile HeapWord *dest,
-                                                oop compare_value) {
-  if (UseCompressedOops) {
-    // encode exchange and compare value from oop to T
-    narrowOop val = encode_heap_oop(exchange_value);
-    narrowOop cmp = encode_heap_oop(compare_value);
-
-    narrowOop old = (narrowOop) Atomic::cmpxchg(val, (narrowOop*)dest, cmp);
-    // decode old from T to oop
-    return decode_heap_oop(old);
-  } else {
-    return (oop)Atomic::cmpxchg_ptr(exchange_value, (oop*)dest, compare_value);
-  }
-}
-
 // In order to put or get a field out of an instance, must first check
 // if the field has been compressed and uncompress it.
 inline oop oopDesc::obj_field(int offset) const {
@@ -330,6 +349,15 @@ inline void oopDesc::obj_field_put(int offset, oop value) {
   UseCompressedOops ? oop_store(obj_field_addr<narrowOop>(offset), value) :
                       oop_store(obj_field_addr<oop>(offset),       value);
 }
+
+inline Metadata* oopDesc::metadata_field(int offset) const {
+  return *metadata_field_addr(offset);
+}
+
+inline void oopDesc::metadata_field_put(int offset, Metadata* value) {
+  *metadata_field_addr(offset) = value;
+}
+
 inline void oopDesc::obj_field_put_raw(int offset, oop value) {
   UseCompressedOops ?
     encode_store_heap_oop(obj_field_addr<narrowOop>(offset), value) :
@@ -495,15 +523,7 @@ inline int oopDesc::size_given_klass(Klass* klass)  {
 
 
 inline int oopDesc::size()  {
-  return size_given_klass(blueprint());
-}
-
-inline bool oopDesc::is_parsable() {
-  return blueprint()->oop_is_parsable(this);
-}
-
-inline bool oopDesc::is_conc_safe() {
-  return blueprint()->oop_is_conc_safe(this);
+  return size_given_klass(klass());
 }
 
 inline void update_barrier_set(void* p, oop v) {
@@ -532,29 +552,6 @@ template <class T> inline void oop_store(volatile T* p, oop v) {
   update_barrier_set((void*)p, v);    // cast away type
 }
 
-template <class T> inline void oop_store_without_check(T* p, oop v) {
-  // XXX YSR FIX ME!!!
-  if (always_do_update_barrier) {
-    oop_store(p, v);
-  } else {
-    assert(!Universe::heap()->barrier_set()->write_ref_needs_barrier(p, v),
-           "oop store without store check failed");
-    oopDesc::encode_store_heap_oop(p, v);
-  }
-}
-
-// When it absolutely has to get there.
-template <class T> inline void oop_store_without_check(volatile T* p, oop v) {
-  // XXX YSR FIX ME!!!
-  if (always_do_update_barrier) {
-    oop_store(p, v);
-  } else {
-    assert(!Universe::heap()->barrier_set()->write_ref_needs_barrier((T*)p, v),
-           "oop store without store check failed");
-    oopDesc::release_encode_store_heap_oop(p, v);
-  }
-}
-
 // Should replace *addr = oop assignments where addr type depends on UseCompressedOops
 // (without having to remember the function name this calls).
 inline void oop_store_raw(HeapWord* addr, oop value) {
@@ -562,6 +559,29 @@ inline void oop_store_raw(HeapWord* addr, oop value) {
     oopDesc::encode_store_heap_oop((narrowOop*)addr, value);
   } else {
     oopDesc::encode_store_heap_oop((oop*)addr, value);
+  }
+}
+
+inline oop oopDesc::atomic_compare_exchange_oop(oop exchange_value,
+                                                volatile HeapWord *dest,
+                                                oop compare_value,
+                                                bool prebarrier) {
+  if (UseCompressedOops) {
+    if (prebarrier) {
+      update_barrier_set_pre((narrowOop*)dest, exchange_value);
+    }
+    // encode exchange and compare value from oop to T
+    narrowOop val = encode_heap_oop(exchange_value);
+    narrowOop cmp = encode_heap_oop(compare_value);
+
+    narrowOop old = (narrowOop) Atomic::cmpxchg(val, (narrowOop*)dest, cmp);
+    // decode old from T to oop
+    return decode_heap_oop(old);
+  } else {
+    if (prebarrier) {
+      update_barrier_set_pre((oop*)dest, exchange_value);
+    }
+    return (oop)Atomic::cmpxchg_ptr(exchange_value, (oop*)dest, compare_value);
   }
 }
 
@@ -589,21 +609,7 @@ inline bool oopDesc::is_oop(bool ignore_mark_word) const {
   if (!check_obj_alignment(obj)) return false;
   if (!Universe::heap()->is_in_reserved(obj)) return false;
   // obj is aligned and accessible in heap
-  // try to find metaclass cycle safely without seg faulting on bad input
-  // we should reach klassKlassObj by following klass link at most 3 times
-  for (int i = 0; i < 3; i++) {
-    obj = obj->klass_or_null();
-    // klass should be aligned and in permspace
-    if (!check_obj_alignment(obj)) return false;
-    if (!Universe::heap()->is_in_permanent(obj)) return false;
-  }
-  if (obj != Universe::klassKlassObj()) {
-    // During a dump, the _klassKlassObj moved to a shared space.
-    if (DumpSharedSpaces && Universe::klassKlassObj()->is_shared()) {
-      return true;
-    }
-    return false;
-  }
+  if (Universe::heap()->is_in_reserved(obj->klass_or_null())) return false;
 
   // Header verification: the mark is typically non-NULL. If we're
   // at a safepoint, it must not be null.
@@ -632,19 +638,10 @@ inline bool oopDesc::is_unlocked_oop() const {
 }
 #endif // PRODUCT
 
-inline void oopDesc::follow_header() {
-  if (UseCompressedOops) {
-    MarkSweep::mark_and_push(compressed_klass_addr());
-  } else {
-    MarkSweep::mark_and_push(klass_addr());
-  }
-}
-
 inline void oopDesc::follow_contents(void) {
   assert (is_gc_marked(), "should be marked");
-  blueprint()->oop_follow_contents(this);
+  klass()->oop_follow_contents(this);
 }
-
 
 // Used by scavengers
 
@@ -728,49 +725,36 @@ inline intptr_t oopDesc::identity_hash() {
   }
 }
 
-inline void oopDesc::oop_iterate_header(OopClosure* blk) {
-  if (UseCompressedOops) {
-    blk->do_oop(compressed_klass_addr());
-  } else {
-    blk->do_oop(klass_addr());
-  }
-}
-
-inline void oopDesc::oop_iterate_header(OopClosure* blk, MemRegion mr) {
-  if (UseCompressedOops) {
-    if (mr.contains(compressed_klass_addr())) {
-      blk->do_oop(compressed_klass_addr());
-    }
-  } else {
-    if (mr.contains(klass_addr())) blk->do_oop(klass_addr());
-  }
-}
-
 inline int oopDesc::adjust_pointers() {
   debug_only(int check_size = size());
-  int s = blueprint()->oop_adjust_pointers(this);
+  int s = klass()->oop_adjust_pointers(this);
   assert(s == check_size, "should be the same");
   return s;
-}
-
-inline void oopDesc::adjust_header() {
-  if (UseCompressedOops) {
-    MarkSweep::adjust_pointer(compressed_klass_addr());
-  } else {
-    MarkSweep::adjust_pointer(klass_addr());
-  }
 }
 
 #define OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                        \
                                                                            \
 inline int oopDesc::oop_iterate(OopClosureType* blk) {                     \
   SpecializationStats::record_call();                                      \
-  return blueprint()->oop_oop_iterate##nv_suffix(this, blk);               \
+  return klass()->oop_oop_iterate##nv_suffix(this, blk);               \
 }                                                                          \
                                                                            \
 inline int oopDesc::oop_iterate(OopClosureType* blk, MemRegion mr) {       \
   SpecializationStats::record_call();                                      \
-  return blueprint()->oop_oop_iterate##nv_suffix##_m(this, blk, mr);       \
+  return klass()->oop_oop_iterate##nv_suffix##_m(this, blk, mr);       \
+}
+
+
+inline int oopDesc::oop_iterate_no_header(OopClosure* blk) {
+  // The NoHeaderExtendedOopClosure wraps the OopClosure and proxies all
+  // the do_oop calls, but turns off all other features in ExtendedOopClosure.
+  NoHeaderExtendedOopClosure cl(blk);
+  return oop_iterate(&cl);
+}
+
+inline int oopDesc::oop_iterate_no_header(OopClosure* blk, MemRegion mr) {
+  NoHeaderExtendedOopClosure cl(blk);
+  return oop_iterate(&cl, mr);
 }
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_DEFN)
@@ -781,23 +765,11 @@ ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_DEFN)
                                                                            \
 inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {           \
   SpecializationStats::record_call();                                      \
-  return blueprint()->oop_oop_iterate_backwards##nv_suffix(this, blk);     \
+  return klass()->oop_oop_iterate_backwards##nv_suffix(this, blk);     \
 }
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_BACKWARDS_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_BACKWARDS_DEFN)
 #endif // !SERIALGC
-
-inline bool oopDesc::is_shared() const {
-  return CompactingPermGenGen::is_shared(this);
-}
-
-inline bool oopDesc::is_shared_readonly() const {
-  return CompactingPermGenGen::is_shared_readonly(this);
-}
-
-inline bool oopDesc::is_shared_readwrite() const {
-  return CompactingPermGenGen::is_shared_readwrite(this);
-}
 
 #endif // SHARE_VM_OOPS_OOP_INLINE_HPP

@@ -30,8 +30,8 @@
 #include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArrayKlass.hpp"
-#include "ci/ciCPCache.hpp"
 #include "ci/ciInstance.hpp"
+#include "ci/ciObjArray.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -461,10 +461,10 @@ CodeEmitInfo* LIRGenerator::state_for(Instruction* x) {
 }
 
 
-void LIRGenerator::jobject2reg_with_patching(LIR_Opr r, ciObject* obj, CodeEmitInfo* info) {
+void LIRGenerator::klass2reg_with_patching(LIR_Opr r, ciMetadata* obj, CodeEmitInfo* info) {
   if (!obj->is_loaded() || PatchALot) {
     assert(info != NULL, "info must be set if class is not loaded");
-    __ oop2reg_patch(NULL, r, info);
+    __ klass2reg_patch(NULL, r, info);
   } else {
     // no patching needed
     __ oop2reg(obj->constant_encoding(), r);
@@ -657,7 +657,7 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
 
 
 void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info) {
-  jobject2reg_with_patching(klass_reg, klass, info);
+  klass2reg_with_patching(klass_reg, klass, info);
   // If klass is not loaded we do not know if the klass has finalizers:
   if (UseFastNewInstance && klass->is_loaded()
       && !Klass::layout_helper_needs_slow_path(klass->layout_helper())) {
@@ -1189,7 +1189,7 @@ void LIRGenerator::do_Return(Return* x) {
   if (compilation()->env()->dtrace_method_probes()) {
     BasicTypeList signature;
     signature.append(LP64_ONLY(T_LONG) NOT_LP64(T_INT));    // thread
-    signature.append(T_OBJECT); // methodOop
+    signature.append(T_OBJECT); // Method*
     LIR_OprList* args = new LIR_OprList();
     args->append(getThreadPointer());
     LIR_Opr meth = new_register(T_OBJECT);
@@ -1286,7 +1286,7 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
   if (x->needs_null_check()) {
     info = state_for(x);
   }
-  __ move(new LIR_Address(rcvr.result(), oopDesc::klass_offset_in_bytes(), T_OBJECT), result, info);
+  __ move(new LIR_Address(rcvr.result(), oopDesc::klass_offset_in_bytes(), UseCompressedKlassPointers ? T_OBJECT : T_ADDRESS), result, info);
   __ move_wide(new LIR_Address(result, in_bytes(Klass::java_mirror_offset()), T_OBJECT), result);
 }
 
@@ -2293,7 +2293,7 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
         // We have determined that offset == referent_offset && src != null.
         // if (src->_klass->_reference_type == REF_NONE) -> continue
         __ move(new LIR_Address(src.result(), oopDesc::klass_offset_in_bytes(), T_OBJECT), src_klass);
-        LIR_Address* reference_type_addr = new LIR_Address(src_klass, in_bytes(instanceKlass::reference_type_offset()), T_BYTE);
+        LIR_Address* reference_type_addr = new LIR_Address(src_klass, in_bytes(InstanceKlass::reference_type_offset()), T_BYTE);
         LIR_Opr reference_type = new_register(T_INT);
         __ move(reference_type_addr, reference_type);
         __ cmp(lir_cond_equal, reference_type, LIR_OprFact::intConst(REF_NONE));
@@ -2608,7 +2608,7 @@ void LIRGenerator::do_Base(Base* x) {
   if (compilation()->env()->dtrace_method_probes()) {
     BasicTypeList signature;
     signature.append(LP64_ONLY(T_LONG) NOT_LP64(T_INT));    // thread
-    signature.append(T_OBJECT); // methodOop
+    signature.append(T_OBJECT); // Method*
     LIR_OprList* args = new LIR_OprList();
     args->append(getThreadPointer());
     LIR_Opr meth = new_register(T_OBJECT);
@@ -2794,7 +2794,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
                           SharedRuntime::get_resolve_virtual_call_stub(),
                           arg_list, info);
       } else {
-        int entry_offset = instanceKlass::vtable_start_offset() + x->vtable_index() * vtableEntry::size();
+        int entry_offset = InstanceKlass::vtable_start_offset() + x->vtable_index() * vtableEntry::size();
         int vtable_offset = entry_offset * wordSize + vtableEntry::method_offset_in_bytes();
         __ call_virtual(target, receiver, result_register, vtable_offset, arg_list, info);
       }
@@ -2905,11 +2905,12 @@ void LIRGenerator::do_ThreadIDIntrinsic(Intrinsic* x) {
 void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
     CodeEmitInfo* info = state_for(x);
     CodeEmitInfo* info2 = new CodeEmitInfo(info); // Clone for the second null check
+    BasicType klass_pointer_type = NOT_LP64(T_INT) LP64_ONLY(T_LONG);
     assert(info != NULL, "must have info");
     LIRItem arg(x->argument_at(1), this);
     arg.load_item();
-    LIR_Opr klass = new_register(T_OBJECT);
-    __ move(new LIR_Address(arg.result(), java_lang_Class::klass_offset_in_bytes(), T_OBJECT), klass, info);
+    LIR_Opr klass = new_pointer_register();
+    __ move(new LIR_Address(arg.result(), java_lang_Class::klass_offset_in_bytes(), klass_pointer_type), klass, info);
     LIR_Opr id = new_register(T_LONG);
     ByteSize offset = TRACE_ID_OFFSET;
     LIR_Address* trace_id_addr = new LIR_Address(klass, in_bytes(offset), T_LONG);
@@ -3034,13 +3035,13 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   LIR_Opr counter_holder = new_register(T_OBJECT);
   LIR_Opr meth;
   if (level == CompLevel_limited_profile) {
-    offset = in_bytes(backedge ? methodOopDesc::backedge_counter_offset() :
-                                 methodOopDesc::invocation_counter_offset());
+    offset = in_bytes(backedge ? Method::backedge_counter_offset() :
+                                 Method::invocation_counter_offset());
     __ oop2reg(method->constant_encoding(), counter_holder);
     meth = counter_holder;
   } else if (level == CompLevel_full_profile) {
-    offset = in_bytes(backedge ? methodDataOopDesc::backedge_counter_offset() :
-                                 methodDataOopDesc::invocation_counter_offset());
+    offset = in_bytes(backedge ? MethodData::backedge_counter_offset() :
+                                 MethodData::invocation_counter_offset());
     ciMethodData* md = method->method_data_or_null();
     assert(md != NULL, "Sanity");
     __ oop2reg(md->constant_encoding(), counter_holder);

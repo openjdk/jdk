@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,32 +58,25 @@
 // CollectorPolicy methods.
 
 void CollectorPolicy::initialize_flags() {
-  if (PermSize > MaxPermSize) {
-    MaxPermSize = PermSize;
+  if (MetaspaceSize > MaxMetaspaceSize) {
+    MaxMetaspaceSize = MetaspaceSize;
   }
-  PermSize = MAX2(min_alignment(), align_size_down_(PermSize, min_alignment()));
-  // Don't increase Perm size limit above specified.
-  MaxPermSize = align_size_down(MaxPermSize, max_alignment());
-  if (PermSize > MaxPermSize) {
-    PermSize = MaxPermSize;
+  MetaspaceSize = MAX2(min_alignment(), align_size_down_(MetaspaceSize, min_alignment()));
+  // Don't increase Metaspace size limit above specified.
+  MaxMetaspaceSize = align_size_down(MaxMetaspaceSize, max_alignment());
+  if (MetaspaceSize > MaxMetaspaceSize) {
+    MetaspaceSize = MaxMetaspaceSize;
   }
 
-  MinPermHeapExpansion = MAX2(min_alignment(), align_size_down_(MinPermHeapExpansion, min_alignment()));
-  MaxPermHeapExpansion = MAX2(min_alignment(), align_size_down_(MaxPermHeapExpansion, min_alignment()));
+  MinMetaspaceExpansion = MAX2(min_alignment(), align_size_down_(MinMetaspaceExpansion, min_alignment()));
+  MaxMetaspaceExpansion = MAX2(min_alignment(), align_size_down_(MaxMetaspaceExpansion, min_alignment()));
 
   MinHeapDeltaBytes = align_size_up(MinHeapDeltaBytes, min_alignment());
 
-  SharedReadOnlySize = align_size_up(SharedReadOnlySize, max_alignment());
-  SharedReadWriteSize = align_size_up(SharedReadWriteSize, max_alignment());
-  SharedMiscDataSize = align_size_up(SharedMiscDataSize, max_alignment());
-
-  assert(PermSize    % min_alignment() == 0, "permanent space alignment");
-  assert(MaxPermSize % max_alignment() == 0, "maximum permanent space alignment");
-  assert(SharedReadOnlySize % max_alignment() == 0, "read-only space alignment");
-  assert(SharedReadWriteSize % max_alignment() == 0, "read-write space alignment");
-  assert(SharedMiscDataSize % max_alignment() == 0, "misc-data space alignment");
-  if (PermSize < M) {
-    vm_exit_during_initialization("Too small initial permanent heap");
+  assert(MetaspaceSize    % min_alignment() == 0, "metapace alignment");
+  assert(MaxMetaspaceSize % max_alignment() == 0, "maximum metaspace alignment");
+  if (MetaspaceSize < 256*K) {
+    vm_exit_during_initialization("Too small initial Metaspace size");
   }
 }
 
@@ -131,18 +124,6 @@ void CollectorPolicy::initialize_size_info() {
     gclog_or_tty->print_cr("Minimum heap " SIZE_FORMAT "  Initial heap "
       SIZE_FORMAT "  Maximum heap " SIZE_FORMAT,
       min_heap_byte_size(), initial_heap_byte_size(), max_heap_byte_size());
-  }
-}
-
-void CollectorPolicy::initialize_perm_generation(PermGen::Name pgnm) {
-  _permanent_generation =
-    new PermanentGenerationSpec(pgnm, PermSize, MaxPermSize,
-                                SharedReadOnlySize,
-                                SharedReadWriteSize,
-                                SharedMiscDataSize,
-                                SharedMiscCodeSize);
-  if (_permanent_generation == NULL) {
-    vm_exit_during_initialization("Unable to allocate gen spec");
   }
 }
 
@@ -753,6 +734,41 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
   return NULL;
 }
 
+MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
+                                                 ClassLoaderData* loader_data,
+                                                 size_t word_size,
+                                                 Metaspace::MetadataType mdtype) {
+  uint loop_count = 0;
+  uint gc_count = 0;
+  uint full_gc_count = 0;
+
+  do {
+    {  // Need lock to get self consistent gc_count's
+      MutexLocker ml(Heap_lock);
+      gc_count      = Universe::heap()->total_collections();
+      full_gc_count = Universe::heap()->total_full_collections();
+    }
+
+    // Generate a VM operation
+    VM_CollectForMetadataAllocation op(loader_data,
+                                       word_size,
+                                       mdtype,
+                                       gc_count,
+                                       full_gc_count,
+                                       GCCause::_metadata_GC_threshold);
+    VMThread::execute(&op);
+    if (op.prologue_succeeded()) {
+      return op.result();
+    }
+    loop_count++;
+    if ((QueuedAllocationWarningCount > 0) &&
+        (loop_count % QueuedAllocationWarningCount == 0)) {
+      warning("satisfy_failed_metadata_allocation() retries %d times \n\t"
+              " size=%d", loop_count, word_size);
+    }
+  } while (true);  // Until a GC is done
+}
+
 // Return true if any of the following is true:
 // . the allocation won't fit into the current young gen heap
 // . gc locker is occupied (jni critical section)
@@ -778,7 +794,6 @@ MarkSweepPolicy::MarkSweepPolicy() {
 }
 
 void MarkSweepPolicy::initialize_generations() {
-  initialize_perm_generation(PermGen::MarkSweepCompact);
   _generations = new GenerationSpecPtr[number_of_generations()];
   if (_generations == NULL)
     vm_exit_during_initialization("Unable to allocate gen spec");

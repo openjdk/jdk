@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "opto/addnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/locknode.hpp"
@@ -492,7 +492,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
       if (PrintOpto && (Verbose || WizardMode)) {
         tty->print_cr("OSR @%d type flow bailout: %s", _entry_bci, _flow->failure_reason());
         if (Verbose) {
-          method()->print_oop();
+          method()->print();
           method()->print_codes();
           _flow->print();
         }

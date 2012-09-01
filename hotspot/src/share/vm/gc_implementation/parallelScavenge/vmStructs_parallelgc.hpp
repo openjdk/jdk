@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,11 +58,9 @@
   nonstatic_field(PSOldGen,                    _min_gen_size,                                 const size_t)                          \
   nonstatic_field(PSOldGen,                    _max_gen_size,                                 const size_t)                          \
                                                                                                                                      \
-  nonstatic_field(PSPermGen,                   _last_used,                                    size_t)                                \
                                                                                                                                      \
      static_field(ParallelScavengeHeap,        _young_gen,                                    PSYoungGen*)                           \
      static_field(ParallelScavengeHeap,        _old_gen,                                      PSOldGen*)                             \
-     static_field(ParallelScavengeHeap,        _perm_gen,                                     PSPermGen*)                            \
      static_field(ParallelScavengeHeap,        _psh,                                          ParallelScavengeHeap*)                 \
                                                                                                                                      \
 
@@ -81,7 +79,6 @@
            declare_type(ASPSYoungGen, PSYoungGen)                         \
   declare_toplevel_type(PSOldGen)                                         \
            declare_type(ASPSOldGen, PSOldGen)                             \
-           declare_type(PSPermGen, PSOldGen)                              \
                                                                           \
   /*****************************/                                         \
   /* Parallel GC pointer types */                                         \
@@ -94,7 +91,6 @@
   declare_toplevel_type(ASPSYoungGen*)                                    \
   declare_toplevel_type(PSOldGen*)                                        \
   declare_toplevel_type(ASPSOldGen*)                                      \
-  declare_toplevel_type(PSPermGen*)                                       \
   declare_toplevel_type(ParallelScavengeHeap*)
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_VMSTRUCTS_PARALLELGC_HPP

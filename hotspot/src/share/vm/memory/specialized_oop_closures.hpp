@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ class PushOrMarkClosure;
 class Par_PushOrMarkClosure;
 class CMSKeepAliveClosure;
 class CMSInnerParMarkAndPushClosure;
+// Misc
+class NoHeaderExtendedOopClosure;
 
 // This macro applies an argument macro to all OopClosures for which we
 // want specialized bodies of "oop_oop_iterate".  The arguments to "f" are:
@@ -87,6 +89,7 @@ class CMSInnerParMarkAndPushClosure;
 #endif // SERIALGC
 
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(f)       \
+  f(NoHeaderExtendedOopClosure,_nv)                     \
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_S(f)             \
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_P(f)
 
@@ -111,7 +114,7 @@ class CMSInnerParMarkAndPushClosure;
 // doesn't.
 
 #define ALL_OOP_OOP_ITERATE_CLOSURES_1(f)               \
-  f(OopClosure,_v)                                      \
+  f(ExtendedOopClosure,_v)                              \
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(f)
 
 #define ALL_OOP_OOP_ITERATE_CLOSURES_2(f)               \
@@ -131,7 +134,7 @@ class CMSInnerParMarkAndPushClosure;
   f(Par_PushAndMarkClosure,_nv)
 
 #define ALL_PAR_OOP_ITERATE_CLOSURES(f)                \
-  f(OopClosure,_v)                                     \
+  f(ExtendedOopClosure,_v)                             \
   SPECIALIZED_PAR_OOP_ITERATE_CLOSURES(f)
 #endif // SERIALGC
 
@@ -195,7 +198,7 @@ class CMSInnerParMarkAndPushClosure;
 class SpecializationStats {
 public:
   enum Kind {
-    ik,             // instanceKlass
+    ik,             // InstanceKlass
     irk,            // instanceRefKlass
     oa,             // objArrayKlass
     NUM_Kinds

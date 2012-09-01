@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 #ifndef SHARE_VM_OOPS_INSTANCEMIRRORKLASS_HPP
 #define SHARE_VM_OOPS_INSTANCEMIRRORKLASS_HPP
 
+#include "classfile/systemDictionary.hpp"
 #include "oops/instanceKlass.hpp"
+#include "runtime/handles.hpp"
 
-// An instanceMirrorKlass is a specialized instanceKlass for
+// An instanceMirrorKlass is a specialized InstanceKlass for
 // java.lang.Class instances.  These instances are special because
 // they contain the static fields of the class in addition to the
 // normal fields of Class.  This means they are variable sized
@@ -35,20 +37,26 @@
 // iteration of their oops.
 
 
-class instanceMirrorKlass: public instanceKlass {
+class instanceMirrorKlass: public InstanceKlass {
   friend class VMStructs;
+  friend class InstanceKlass;
 
  private:
   static int _offset_of_static_fields;
 
+  // Constructor
+  instanceMirrorKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags,  bool is_anonymous)
+    : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt, access_flags, is_anonymous) {}
+
  public:
+  instanceMirrorKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
   // Type testing
   bool oop_is_instanceMirror() const             { return true; }
 
-  // Casting from klassOop
-  static instanceMirrorKlass* cast(klassOop k) {
-    assert(k->klass_part()->oop_is_instanceMirror(), "cast to instanceMirrorKlass");
-    return (instanceMirrorKlass*) k->klass_part();
+  // Casting from Klass*
+  static instanceMirrorKlass* cast(Klass* k) {
+    assert(k->oop_is_instanceMirror(), "cast to instanceMirrorKlass");
+    return (instanceMirrorKlass*) k;
   }
 
   // Returns the size of the instance including the extra static fields.
@@ -76,7 +84,6 @@ class instanceMirrorKlass: public instanceKlass {
   int instance_size(KlassHandle k);
 
   // allocation
-  DEFINE_ALLOCATE_PERMANENT(instanceMirrorKlass);
   instanceOop allocate_instance(KlassHandle k, TRAPS);
 
   // Garbage collection
@@ -86,10 +93,10 @@ class instanceMirrorKlass: public instanceKlass {
   // Parallel Scavenge and Parallel Old
   PARALLEL_GC_DECLS
 
-  int oop_oop_iterate(oop obj, OopClosure* blk) {
+  int oop_oop_iterate(oop obj, ExtendedOopClosure* blk) {
     return oop_oop_iterate_v(obj, blk);
   }
-  int oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) {
+  int oop_oop_iterate_m(oop obj, ExtendedOopClosure* blk, MemRegion mr) {
     return oop_oop_iterate_v_m(obj, blk, mr);
   }
 

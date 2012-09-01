@@ -170,7 +170,6 @@ private:
   void initialize_all() {
     initialize_flags();
     initialize_size_info();
-    initialize_perm_generation(PermGen::MarkSweepCompact);
   }
 
   CollectionSetChooser* _collectionSetChooser;

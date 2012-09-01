@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1884,7 +1884,6 @@ private:
   bool          _doing_emit_hi;
   bool          _doing_emit_lo;
   bool          _may_reloc;
-  bool          _must_reloc;
   reloc_format  _reloc_form;
   const char *  _reloc_type;
   bool          _processing_noninput;
@@ -1923,7 +1922,6 @@ public:
     _doing_emit_hi = false;
     _doing_emit_lo = false;
     _may_reloc     = false;
-    _must_reloc    = false;
     _reloc_form    = RELOC_NONE;
     _reloc_type    = AdlcVMDeps::none_reloc_type();
     _strings_to_emit.clear();
@@ -2195,7 +2193,7 @@ public:
 
           _reg_status = LITERAL_ACCESSED;
           emit_rep_var( rep_var );
-          fprintf(_fp,"->disp_is_oop())");
+          fprintf(_fp,"->disp_reloc())");
 
           // skip trailing $Address
           _strings_to_emit.iter();
@@ -2232,14 +2230,6 @@ public:
   }
 
 
-  void gen_emit_x_reloc(const char *d32_lo_hi ) {
-    fprintf(_fp,"emit_%s_reloc(cbuf, ", d32_lo_hi );
-    emit_replacement();             fprintf(_fp,", ");
-    emit_reloc_type( _reloc_type ); fprintf(_fp,", ");
-    fprintf(_fp, "%d", _reloc_form);fprintf(_fp, ");");
-  }
-
-
   void emit() {
     //
     //   "emit_d32_reloc(" or "emit_hi_reloc" or "emit_lo_reloc"
@@ -2254,10 +2244,6 @@ public:
         fprintf( _fp, "emit_%s(cbuf, ", d32_hi_lo );
         emit_replacement(); fprintf(_fp, ")");
       }
-      else if ( _must_reloc ) {
-        // Must emit relocation information
-        gen_emit_x_reloc( d32_hi_lo );
-      }
       else {
         // Emit RUNTIME CHECK to see if value needs relocation info
         // If emitting a relocatable address, use 'emit_d32_reloc'
@@ -2266,10 +2252,15 @@ public:
                 && !(_doing_disp && _doing_constant),
                 "Must be emitting either a displacement or a constant");
         fprintf(_fp,"\n");
-        fprintf(_fp,"if ( opnd_array(%d)->%s_is_oop() ) {\n",
+        fprintf(_fp,"if ( opnd_array(%d)->%s_reloc() != relocInfo::none ) {\n",
                 _operand_idx, disp_constant);
         fprintf(_fp,"  ");
-        gen_emit_x_reloc( d32_hi_lo ); fprintf(_fp,"\n");
+        fprintf(_fp,"emit_%s_reloc(cbuf, ", d32_hi_lo );
+        emit_replacement();             fprintf(_fp,", ");
+        fprintf(_fp,"opnd_array(%d)->%s_reloc(), ",
+                _operand_idx, disp_constant);
+        fprintf(_fp, "%d", _reloc_form);fprintf(_fp, ");");
+        fprintf(_fp,"\n");
         fprintf(_fp,"} else {\n");
         fprintf(_fp,"  emit_%s(cbuf, ", d32_hi_lo);
         emit_replacement(); fprintf(_fp, ");\n"); fprintf(_fp,"}");

@@ -38,7 +38,6 @@ class ParallelScavengeHeap;
 class PSAdaptiveSizePolicy;
 class PSYoungGen;
 class PSOldGen;
-class PSPermGen;
 class ParCompactionManager;
 class ParallelTaskTerminator;
 class PSParallelCompact;
@@ -404,9 +403,6 @@ public:
   HeapWord* calc_new_pointer(oop p) {
     return calc_new_pointer((HeapWord*) p);
   }
-
-  // Return the updated address for the given klass
-  klassOop calc_new_klass(klassOop);
 
 #ifdef  ASSERT
   void verify_clear(const PSVirtualSpace* vspace);
@@ -779,7 +775,7 @@ class PSParallelCompact : AllStatic {
   typedef ParallelCompactData::RegionData RegionData;
 
   typedef enum {
-    perm_space_id, old_space_id, eden_space_id,
+    old_space_id, eden_space_id,
     from_space_id, to_space_id, last_space_id
   } SpaceId;
 
@@ -821,7 +817,7 @@ class PSParallelCompact : AllStatic {
     virtual void do_void();
   };
 
-  class AdjustPointerClosure: public OopsInGenClosure {
+  class AdjustPointerClosure: public OopClosure {
    private:
     bool _is_root;
    public:
@@ -832,11 +828,18 @@ class PSParallelCompact : AllStatic {
     virtual void do_code_blob(CodeBlob* cb) const { }
   };
 
+  class AdjustKlassClosure : public KlassClosure {
+   public:
+    void do_klass(Klass* klass);
+  };
+
   friend class KeepAliveClosure;
   friend class FollowStackClosure;
   friend class AdjustPointerClosure;
+  friend class AdjustKlassClosure;
+  friend class FollowKlassClosure;
   friend class FollowRootClosure;
-  friend class instanceKlassKlass;
+  friend class instanceClassLoaderKlass;
   friend class RefProcTaskProxy;
 
  private:
@@ -852,12 +855,13 @@ class PSParallelCompact : AllStatic {
   static bool                 _print_phases;
   static AdjustPointerClosure _adjust_root_pointer_closure;
   static AdjustPointerClosure _adjust_pointer_closure;
+  static AdjustKlassClosure   _adjust_klass_closure;
 
   // Reference processing (used in ...follow_contents)
   static ReferenceProcessor*  _ref_processor;
 
   // Updated location of intArrayKlassObj.
-  static klassOop _updated_int_array_klass_obj;
+  static Klass* _updated_int_array_klass_obj;
 
   // Values computed at initialization and used by dead_wood_limiter().
   static double _dwl_mean;
@@ -869,10 +873,6 @@ class PSParallelCompact : AllStatic {
 #endif  // #ifdef ASSERT
 
  private:
-  // Closure accessors
-  static OopClosure* adjust_pointer_closure()      { return (OopClosure*)&_adjust_pointer_closure; }
-  static OopClosure* adjust_root_pointer_closure() { return (OopClosure*)&_adjust_root_pointer_closure; }
-  static BoolObjectClosure* is_alive_closure()     { return (BoolObjectClosure*)&_is_alive_closure; }
 
   static void initialize_space_info();
 
@@ -888,8 +888,6 @@ class PSParallelCompact : AllStatic {
   // Mark live objects
   static void marking_phase(ParCompactionManager* cm,
                             bool maximum_heap_compaction);
-  static void follow_weak_klass_links();
-  static void follow_mdo_weak_refs();
 
   template <class T> static inline void adjust_pointer(T* p, bool is_root);
   static void adjust_root_pointer(oop* p) { adjust_pointer(p, true); }
@@ -981,9 +979,6 @@ class PSParallelCompact : AllStatic {
   // Adjust addresses in roots.  Does not adjust addresses in heap.
   static void adjust_roots();
 
-  // Serial code executed in preparation for the compaction phase.
-  static void compact_prologue();
-
   // Move objects to new locations.
   static void compact_perm(ParCompactionManager* cm);
   static void compact();
@@ -1049,6 +1044,17 @@ class PSParallelCompact : AllStatic {
     virtual void do_oop(narrowOop* p);
   };
 
+  // The one and only place to start following the classes.
+  // Should only be applied to the ClassLoaderData klasses list.
+  class FollowKlassClosure : public KlassClosure {
+   private:
+    MarkAndPushClosure* _mark_and_push_closure;
+   public:
+    FollowKlassClosure(MarkAndPushClosure* mark_and_push_closure) :
+        _mark_and_push_closure(mark_and_push_closure) { }
+    void do_klass(Klass* klass);
+  };
+
   PSParallelCompact();
 
   // Convenient accessor for Universe::heap().
@@ -1066,6 +1072,12 @@ class PSParallelCompact : AllStatic {
   // in the event of a failure.
   static bool initialize();
 
+  // Closure accessors
+  static OopClosure* adjust_pointer_closure()      { return (OopClosure*)&_adjust_pointer_closure; }
+  static OopClosure* adjust_root_pointer_closure() { return (OopClosure*)&_adjust_root_pointer_closure; }
+  static KlassClosure* adjust_klass_closure()      { return (KlassClosure*)&_adjust_klass_closure; }
+  static BoolObjectClosure* is_alive_closure()     { return (BoolObjectClosure*)&_is_alive_closure; }
+
   // Public accessors
   static elapsedTimer* accumulated_time() { return &_accumulated_time; }
   static unsigned int total_invocations() { return _total_invocations; }
@@ -1073,15 +1085,24 @@ class PSParallelCompact : AllStatic {
 
   // Used to add tasks
   static GCTaskManager* const gc_task_manager();
-  static klassOop updated_int_array_klass_obj() {
+  static Klass* updated_int_array_klass_obj() {
     return _updated_int_array_klass_obj;
   }
 
   // Marking support
   static inline bool mark_obj(oop obj);
+  static inline bool is_marked(oop obj);
   // Check mark and maybe push on marking stack
   template <class T> static inline void mark_and_push(ParCompactionManager* cm,
                                                       T* p);
+
+  static void follow_klass(ParCompactionManager* cm, Klass* klass);
+  static void adjust_klass(ParCompactionManager* cm, Klass* klass);
+
+  static void follow_class_loader(ParCompactionManager* cm,
+                                  ClassLoaderData* klass);
+  static void adjust_class_loader(ParCompactionManager* cm,
+                                  ClassLoaderData* klass);
 
   // Compaction support.
   // Return true if p is in the range [beg_addr, end_addr).
@@ -1093,9 +1114,6 @@ class PSParallelCompact : AllStatic {
   static inline HeapWord*         new_top(SpaceId space_id);
   static inline HeapWord*         dense_prefix(SpaceId space_id);
   static inline ObjectStartArray* start_array(SpaceId space_id);
-
-  // Return true if the klass should be updated.
-  static inline bool should_update_klass(klassOop k);
 
   // Move and update the live objects in the specified space.
   static void move_and_update(ParCompactionManager* cm, SpaceId space_id);
@@ -1179,7 +1197,7 @@ class PSParallelCompact : AllStatic {
   static void track_interior_pointers(oop obj);
   static void check_interior_pointers();
 
-  static void reset_live_oop_tracking(bool at_perm);
+  static void reset_live_oop_tracking();
   static void register_live_oop(oop p, size_t size);
   static void validate_live_oop(oop p, size_t size);
   static void live_oop_moved_to(HeapWord* q, size_t size, HeapWord* compaction_top);
@@ -1191,13 +1209,6 @@ class PSParallelCompact : AllStatic {
   // tracking down heap stomps.
   static void print_new_location_of_heap_address(HeapWord* q);
 #endif  // #ifdef VALIDATE_MARK_SWEEP
-
-  // Call backs for class unloading
-  // Update subklass/sibling/implementor links at end of marking.
-  static void revisit_weak_klass_link(ParCompactionManager* cm, Klass* k);
-
-  // Clear unmarked oops in MDOs at the end of marking.
-  static void revisit_mdo(ParCompactionManager* cm, DataLayout* p);
 
 #ifndef PRODUCT
   // Debugging support.
@@ -1229,6 +1240,10 @@ inline bool PSParallelCompact::mark_obj(oop obj) {
   } else {
     return false;
   }
+}
+
+inline bool PSParallelCompact::is_marked(oop obj) {
+  return mark_bitmap()->is_marked(obj);
 }
 
 template <class T>
@@ -1270,8 +1285,7 @@ inline void PSParallelCompact::adjust_pointer(T* p, bool isroot) {
   if (!oopDesc::is_null(heap_oop)) {
     oop obj     = oopDesc::decode_heap_oop_not_null(heap_oop);
     oop new_obj = (oop)summary_data().calc_new_pointer(obj);
-    assert(new_obj != NULL ||                     // is forwarding ptr?
-           obj->is_shared(),                      // never forwarded?
+    assert(new_obj != NULL,                    // is forwarding ptr?
            "should be forwarded");
     // Just always do the update unconditionally?
     if (new_obj != NULL) {
@@ -1351,10 +1365,6 @@ inline HeapWord* PSParallelCompact::dense_prefix(SpaceId id) {
 inline ObjectStartArray* PSParallelCompact::start_array(SpaceId id) {
   assert(id < last_space_id, "id out of range");
   return _space_info[id].start_array();
-}
-
-inline bool PSParallelCompact::should_update_klass(klassOop k) {
-  return ((HeapWord*) k) >= dense_prefix(perm_space_id);
 }
 
 #ifdef ASSERT
@@ -1448,8 +1458,7 @@ public:
     ParMarkBitMapClosure(PSParallelCompact::mark_bitmap(), cm),
     _start_array(PSParallelCompact::start_array(space_id))
   {
-    assert(space_id == PSParallelCompact::perm_space_id ||
-           space_id == PSParallelCompact::old_space_id,
+    assert(space_id == PSParallelCompact::old_space_id,
            "cannot use FillClosure in the young gen");
   }
 

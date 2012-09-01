@@ -306,7 +306,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void store_stack_parameter (LIR_Opr opr, ByteSize offset_from_sp_in_bytes);
 
-  void jobject2reg_with_patching(LIR_Opr r, ciObject* obj, CodeEmitInfo* info);
+  void klass2reg_with_patching(LIR_Opr r, ciMetadata* obj, CodeEmitInfo* info);
 
   // this loads the length and compares against the index
   void array_range_check          (LIR_Opr array, LIR_Opr index, CodeEmitInfo* null_check_info, CodeEmitInfo* range_check_info);

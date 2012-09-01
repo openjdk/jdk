@@ -85,7 +85,7 @@ protected:
 
   void walk_mem_region_with_cl(MemRegion mr,
                                HeapWord* bottom, HeapWord* top,
-                               OopClosure* cl);
+                               ExtendedOopClosure* cl);
 
   // We don't specialize this for FilteringClosure; filtering is handled by
   // the "FilterKind" mechanism.  But we provide this to avoid a compiler
@@ -94,7 +94,7 @@ protected:
                                HeapWord* bottom, HeapWord* top,
                                FilteringClosure* cl) {
     HeapRegionDCTOC::walk_mem_region_with_cl(mr, bottom, top,
-                                                       (OopClosure*)cl);
+                                             (ExtendedOopClosure*)cl);
   }
 
   // Get the actual top of the area on which the closure will
@@ -119,7 +119,7 @@ protected:
 
 public:
   HeapRegionDCTOC(G1CollectedHeap* g1,
-                  HeapRegion* hr, OopClosure* cl,
+                  HeapRegion* hr, ExtendedOopClosure* cl,
                   CardTableModRefBS::PrecisionStyle precision,
                   FilterKind fk);
 };
@@ -231,7 +231,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // Requires that the region "mr" be dense with objects, and begin and end
   // with an object.
-  void oops_in_mr_iterate(MemRegion mr, OopClosure* cl);
+  void oops_in_mr_iterate(MemRegion mr, ExtendedOopClosure* cl);
 
   // The remembered set for this region.
   // (Might want to make this "inline" later, to avoid some alloc failure
@@ -606,7 +606,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // Apply "cl->do_oop" to (the addresses of) all reference fields in objects
   // allocated in the current region before the last call to "save_mark".
-  void oop_before_save_marks_iterate(OopClosure* cl);
+  void oop_before_save_marks_iterate(ExtendedOopClosure* cl);
 
   // Note the start or end of marking. This tells the heap region
   // that the collector is about to start or has finished (concurrently)

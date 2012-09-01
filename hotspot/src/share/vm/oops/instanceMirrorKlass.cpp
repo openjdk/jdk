@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/oopFactory.hpp"
-#include "memory/permGen.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
@@ -37,6 +36,7 @@
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/cmsOopClosures.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
@@ -149,7 +149,19 @@ template <class T> void assert_nothing(T *p) {}
 
 
 void instanceMirrorKlass::oop_follow_contents(oop obj) {
-  instanceKlass::oop_follow_contents(obj);
+  InstanceKlass::oop_follow_contents(obj);
+
+  // Follow the klass field in the mirror.
+  Klass* klass = java_lang_Class::as_Klass(obj);
+  if (klass != NULL) {
+    MarkSweep::follow_klass(klass);
+  } else {
+    // If klass is NULL then this a mirror for a primitive type.
+    // We don't have to follow them, since they are handled as strong
+    // roots in Universe::oops_do.
+    assert(java_lang_Class::is_primitive(obj), "Sanity check");
+  }
+
   InstanceMirrorKlass_OOP_ITERATE(                                                    \
     start_of_static_fields(obj), java_lang_Class::static_oop_field_count(obj),        \
     MarkSweep::mark_and_push(p),                                                      \
@@ -159,7 +171,19 @@ void instanceMirrorKlass::oop_follow_contents(oop obj) {
 #ifndef SERIALGC
 void instanceMirrorKlass::oop_follow_contents(ParCompactionManager* cm,
                                               oop obj) {
-  instanceKlass::oop_follow_contents(cm, obj);
+  InstanceKlass::oop_follow_contents(cm, obj);
+
+  // Follow the klass field in the mirror.
+  Klass* klass = java_lang_Class::as_Klass(obj);
+  if (klass != NULL) {
+    PSParallelCompact::follow_klass(cm, klass);
+  } else {
+    // If klass is NULL then this a mirror for a primitive type.
+    // We don't have to follow them, since they are handled as strong
+    // roots in Universe::oops_do.
+    assert(java_lang_Class::is_primitive(obj), "Sanity check");
+  }
+
   InstanceMirrorKlass_OOP_ITERATE(                                                    \
     start_of_static_fields(obj), java_lang_Class::static_oop_field_count(obj),        \
     PSParallelCompact::mark_and_push(cm, p),                                          \
@@ -169,7 +193,19 @@ void instanceMirrorKlass::oop_follow_contents(ParCompactionManager* cm,
 
 int instanceMirrorKlass::oop_adjust_pointers(oop obj) {
   int size = oop_size(obj);
-  instanceKlass::oop_adjust_pointers(obj);
+  InstanceKlass::oop_adjust_pointers(obj);
+
+  // Follow the klass field in the mirror.
+  Klass* klass = java_lang_Class::as_Klass(obj);
+  if (klass != NULL) {
+    MarkSweep::adjust_klass(klass);
+  } else {
+    // If klass is NULL then this a mirror for a primitive type.
+    // We don't have to follow them, since they are handled as strong
+    // roots in Universe::oops_do.
+    assert(java_lang_Class::is_primitive(obj), "Sanity check");
+  }
+
   InstanceMirrorKlass_OOP_ITERATE(                                                    \
     start_of_static_fields(obj), java_lang_Class::static_oop_field_count(obj),        \
     MarkSweep::adjust_pointer(p),                                                     \
@@ -193,6 +229,12 @@ int instanceMirrorKlass::oop_adjust_pointers(oop obj) {
   return oop_size(obj);                                                               \
 
 
+#define if_do_metadata_checked(closure, nv_suffix)                    \
+  /* Make sure the non-virtual and the virtual versions match. */     \
+  assert(closure->do_metadata##nv_suffix() == closure->do_metadata(), \
+      "Inconsistency in do_metadata");                                \
+  if (closure->do_metadata##nv_suffix())
+
 // Macro to define instanceMirrorKlass::oop_oop_iterate for virtual/nonvirtual for
 // all closures.  Macros calling macros above for each oop size.
 
@@ -203,7 +245,15 @@ oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  
   /* Get size before changing pointers */                                             \
   SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);      \
                                                                                       \
-  instanceKlass::oop_oop_iterate##nv_suffix(obj, closure);                            \
+  InstanceKlass::oop_oop_iterate##nv_suffix(obj, closure);                            \
+                                                                                      \
+  if_do_metadata_checked(closure, nv_suffix) {                                        \
+    Klass* klass = java_lang_Class::as_Klass(obj);                                    \
+    /* We'll get NULL for primitive mirrors. */                                       \
+    if (klass != NULL) {                                                              \
+      closure->do_klass##nv_suffix(klass);                                            \
+    }                                                                                 \
+  }                                                                                   \
                                                                                       \
   if (UseCompressedOops) {                                                            \
     InstanceMirrorKlass_SPECIALIZED_OOP_ITERATE_DEFN(narrowOop, nv_suffix);           \
@@ -220,7 +270,7 @@ oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {        
   /* Get size before changing pointers */                                             \
   SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);      \
                                                                                       \
-  instanceKlass::oop_oop_iterate_backwards##nv_suffix(obj, closure);                  \
+  InstanceKlass::oop_oop_iterate_backwards##nv_suffix(obj, closure);                  \
                                                                                       \
   if (UseCompressedOops) {                                                            \
     InstanceMirrorKlass_SPECIALIZED_OOP_ITERATE_DEFN(narrowOop, nv_suffix);           \
@@ -239,7 +289,18 @@ oop_oop_iterate##nv_suffix##_m(oop obj,                                         
                                MemRegion mr) {                                        \
   SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);      \
                                                                                       \
-  instanceKlass::oop_oop_iterate##nv_suffix##_m(obj, closure, mr);                    \
+  InstanceKlass::oop_oop_iterate##nv_suffix##_m(obj, closure, mr);                    \
+                                                                                      \
+  if_do_metadata_checked(closure, nv_suffix) {                                        \
+    if (mr.contains(obj)) {                                                           \
+      Klass* klass = java_lang_Class::as_Klass(obj);                                  \
+      /* We'll get NULL for primitive mirrors. */                                     \
+      if (klass != NULL) {                                                            \
+        closure->do_klass##nv_suffix(klass);                                          \
+      }                                                                               \
+    }                                                                                 \
+  }                                                                                   \
+                                                                                      \
   if (UseCompressedOops) {                                                            \
     InstanceMirrorKlass_BOUNDED_SPECIALIZED_OOP_ITERATE(narrowOop, nv_suffix, mr);    \
   } else {                                                                            \
@@ -258,7 +319,11 @@ ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN_m)
 
 #ifndef SERIALGC
 void instanceMirrorKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
-  instanceKlass::oop_push_contents(pm, obj);
+  // Note that we don't have to follow the mirror -> klass pointer, since all
+  // klasses that are dirty will be scavenged when we iterate over the
+  // ClassLoaderData objects.
+
+  InstanceKlass::oop_push_contents(pm, obj);
   InstanceMirrorKlass_OOP_ITERATE(                                            \
     start_of_static_fields(obj), java_lang_Class::static_oop_field_count(obj),\
     if (PSScavenge::should_scavenge(p)) {                                     \
@@ -268,18 +333,31 @@ void instanceMirrorKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
 }
 
 int instanceMirrorKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
-  instanceKlass::oop_update_pointers(cm, obj);
+  int size = oop_size(obj);
+  InstanceKlass::oop_update_pointers(cm, obj);
+
+  // Follow the klass field in the mirror.
+  Klass* klass = java_lang_Class::as_Klass(obj);
+  if (klass != NULL) {
+    PSParallelCompact::adjust_klass(cm, klass);
+  } else {
+    // If klass is NULL then this a mirror for a primitive type.
+    // We don't have to follow them, since they are handled as strong
+    // roots in Universe::oops_do.
+    assert(java_lang_Class::is_primitive(obj), "Sanity check");
+  }
+
   InstanceMirrorKlass_OOP_ITERATE(                                            \
     start_of_static_fields(obj), java_lang_Class::static_oop_field_count(obj),\
     PSParallelCompact::adjust_pointer(p),                                     \
     assert_nothing)
-  return oop_size(obj);
+  return size;
 }
 #endif // SERIALGC
 
 int instanceMirrorKlass::instance_size(KlassHandle k) {
   if (k() != NULL && k->oop_is_instance()) {
-    return align_object_size(size_helper() + instanceKlass::cast(k())->static_field_size());
+    return align_object_size(size_helper() + InstanceKlass::cast(k())->static_field_size());
   }
   return size_helper();
 }
@@ -287,7 +365,7 @@ int instanceMirrorKlass::instance_size(KlassHandle k) {
 instanceOop instanceMirrorKlass::allocate_instance(KlassHandle k, TRAPS) {
   // Query before forming handle.
   int size = instance_size(k);
-  KlassHandle h_k(THREAD, as_klassOop());
+  KlassHandle h_k(THREAD, this);
   instanceOop i = (instanceOop) CollectedHeap::Class_obj_allocate(h_k, size, k, CHECK_NULL);
   return i;
 }
@@ -297,9 +375,9 @@ int instanceMirrorKlass::oop_size(oop obj) const {
 }
 
 int instanceMirrorKlass::compute_static_oop_field_count(oop obj) {
-  klassOop k = java_lang_Class::as_klassOop(obj);
-  if (k != NULL && k->klass_part()->oop_is_instance()) {
-    return instanceKlass::cast(k)->static_oop_field_count();
+  Klass* k = java_lang_Class::as_Klass(obj);
+  if (k != NULL && k->oop_is_instance()) {
+    return InstanceKlass::cast(k)->static_oop_field_count();
   }
   return 0;
 }

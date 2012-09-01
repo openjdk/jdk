@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_RUNTIME_SIGNATURE_HPP
 
 #include "memory/allocation.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "utilities/top.hpp"
 
 // SignatureIterators iterate over a Java signature (or parts of it).
@@ -394,7 +394,7 @@ class SignatureStream : public StackObj {
   BasicType type() const                         { return _type; }
   Symbol* as_symbol(TRAPS);
   enum FailureMode { ReturnNull, CNFException, NCDFError };
-  klassOop as_klass(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
+  Klass* as_klass(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
   oop as_java_mirror(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
   const jbyte* raw_bytes()  { return _signature->bytes() + _begin; }
   int          raw_length() { return _end - _begin; }

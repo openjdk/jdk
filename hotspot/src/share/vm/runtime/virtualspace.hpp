@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,7 @@ class ReservedSpace VALUE_OBJ_CLASS_SPEC {
   ReservedSpace(size_t size, size_t alignment, bool large,
                 char* requested_address = NULL,
                 const size_t noaccess_prefix = 0);
-  ReservedSpace(const size_t prefix_size, const size_t prefix_align,
-                const size_t suffix_size, const size_t suffix_align,
+  ReservedSpace(const size_t suffix_size, const size_t suffix_align,
                 char* requested_address,
                 const size_t noaccess_prefix = 0);
   ReservedSpace(size_t size, size_t alignment, bool large, bool executable);
@@ -130,7 +129,6 @@ public:
   ReservedHeapSpace(size_t size, size_t forced_base_alignment,
                     bool large, char* requested_address);
   ReservedHeapSpace(const size_t prefix_size, const size_t prefix_align,
-                    const size_t suffix_size, const size_t suffix_align,
                     char* requested_address);
 };
 
