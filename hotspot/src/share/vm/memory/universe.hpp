@@ -26,6 +26,7 @@
 #define SHARE_VM_MEMORY_UNIVERSE_HPP
 
 #include "runtime/handles.hpp"
+#include "utilities/array.hpp"
 #include "utilities/growableArray.hpp"
 
 // Universe is a name space holding known system classes and objects in the VM.
@@ -40,60 +41,68 @@ class CollectedHeap;
 class DeferredObjAllocEvent;
 
 
-// Common parts of a methodOop cache. This cache safely interacts with
+// Common parts of a Method* cache. This cache safely interacts with
 // the RedefineClasses API.
 //
 class CommonMethodOopCache : public CHeapObj<mtClass> {
-  // We save the klassOop and the idnum of methodOop in order to get
-  // the current cached methodOop.
+  // We save the Klass* and the idnum of Method* in order to get
+  // the current cached Method*.
  private:
-  klassOop              _klass;
+  Klass*                _klass;
   int                   _method_idnum;
 
  public:
   CommonMethodOopCache()   { _klass = NULL; _method_idnum = -1; }
   ~CommonMethodOopCache()  { _klass = NULL; _method_idnum = -1; }
 
-  void     init(klassOop k, methodOop m, TRAPS);
-  klassOop klass() const         { return _klass; }
+  void     init(Klass* k, Method* m, TRAPS);
+  Klass* klass() const         { return _klass; }
   int      method_idnum() const  { return _method_idnum; }
 
-  // GC support
-  void     oops_do(OopClosure* f)  { f->do_oop((oop*)&_klass); }
+  // Enhanced Class Redefinition support
+  void classes_do(void f(Klass*)) {
+    f(_klass);
+  }
+
+  // CDS support.  Replace the klass in this with the archive version
+  // could use this for Enhanced Class Redefinition also.
+  void serialize(SerializeClosure* f) {
+    f->do_ptr((void**)&_klass);
+  }
 };
 
 
-// A helper class for caching a methodOop when the user of the cache
-// cares about all versions of the methodOop.
+// A helper class for caching a Method* when the user of the cache
+// cares about all versions of the Method*.
 //
 class ActiveMethodOopsCache : public CommonMethodOopCache {
   // This subclass adds weak references to older versions of the
-  // methodOop and a query method for a methodOop.
+  // Method* and a query method for a Method*.
 
  private:
-  // If the cached methodOop has not been redefined, then
+  // If the cached Method* has not been redefined, then
   // _prev_methods will be NULL. If all of the previous
   // versions of the method have been collected, then
   // _prev_methods can have a length of zero.
-  GrowableArray<jweak>* _prev_methods;
+  GrowableArray<Method*>* _prev_methods;
 
  public:
   ActiveMethodOopsCache()   { _prev_methods = NULL; }
   ~ActiveMethodOopsCache();
 
-  void add_previous_version(const methodOop method);
-  bool is_same_method(const methodOop method) const;
+  void add_previous_version(Method* const method);
+  bool is_same_method(Method* const method) const;
 };
 
 
-// A helper class for caching a methodOop when the user of the cache
-// only cares about the latest version of the methodOop.
+// A helper class for caching a Method* when the user of the cache
+// only cares about the latest version of the Method*.
 //
 class LatestMethodOopCache : public CommonMethodOopCache {
-  // This subclass adds a getter method for the latest methodOop.
+  // This subclass adds a getter method for the latest Method*.
 
  public:
-  methodOop get_methodOop();
+  Method* get_Method();
 };
 
 // For UseCompressedOops.
@@ -126,7 +135,6 @@ class Universe: AllStatic {
   friend class Arguments;
   friend class SystemDictionary;
   friend class VMStructs;
-  friend class CompactingPermGenGen;
   friend class VM_PopulateDumpSharedSpace;
 
   friend jint  universe_init();
@@ -135,30 +143,17 @@ class Universe: AllStatic {
 
  private:
   // Known classes in the VM
-  static klassOop _boolArrayKlassObj;
-  static klassOop _byteArrayKlassObj;
-  static klassOop _charArrayKlassObj;
-  static klassOop _intArrayKlassObj;
-  static klassOop _shortArrayKlassObj;
-  static klassOop _longArrayKlassObj;
-  static klassOop _singleArrayKlassObj;
-  static klassOop _doubleArrayKlassObj;
-  static klassOop _typeArrayKlassObjs[T_VOID+1];
+  static Klass* _boolArrayKlassObj;
+  static Klass* _byteArrayKlassObj;
+  static Klass* _charArrayKlassObj;
+  static Klass* _intArrayKlassObj;
+  static Klass* _shortArrayKlassObj;
+  static Klass* _longArrayKlassObj;
+  static Klass* _singleArrayKlassObj;
+  static Klass* _doubleArrayKlassObj;
+  static Klass* _typeArrayKlassObjs[T_VOID+1];
 
-  static klassOop _objectArrayKlassObj;
-
-  static klassOop _methodKlassObj;
-  static klassOop _constMethodKlassObj;
-  static klassOop _methodDataKlassObj;
-  static klassOop _klassKlassObj;
-  static klassOop _arrayKlassKlassObj;
-  static klassOop _objArrayKlassKlassObj;
-  static klassOop _typeArrayKlassKlassObj;
-  static klassOop _instanceKlassKlassObj;
-  static klassOop _constantPoolKlassObj;
-  static klassOop _constantPoolCacheKlassObj;
-  static klassOop _compiledICHolderKlassObj;
-  static klassOop _systemObjArrayKlassObj;
+  static Klass* _objectArrayKlassObj;
 
   // Known objects in the VM
 
@@ -176,21 +171,22 @@ class Universe: AllStatic {
   static oop          _main_thread_group;             // Reference to the main thread group object
   static oop          _system_thread_group;           // Reference to the system thread group object
 
-  static typeArrayOop _the_empty_byte_array;          // Canonicalized byte array
-  static typeArrayOop _the_empty_short_array;         // Canonicalized short array
-  static typeArrayOop _the_empty_int_array;           // Canonicalized int array
-  static objArrayOop  _the_empty_system_obj_array;    // Canonicalized system obj array
   static objArrayOop  _the_empty_class_klass_array;   // Canonicalized obj array of type java.lang.Class
-  static objArrayOop  _the_array_interfaces_array;    // Canonicalized 2-array of cloneable & serializable klasses
   static oop          _the_null_string;               // A cache of "null" as a Java string
   static oop          _the_min_jint_string;          // A cache of "-2147483648" as a Java string
   static LatestMethodOopCache* _finalizer_register_cache; // static method for registering finalizable objects
-  static LatestMethodOopCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
   static ActiveMethodOopsCache* _reflect_invoke_cache;    // method for security checks
   static oop          _out_of_memory_error_java_heap; // preallocated error object (no backtrace)
   static oop          _out_of_memory_error_perm_gen;  // preallocated error object (no backtrace)
   static oop          _out_of_memory_error_array_size;// preallocated error object (no backtrace)
   static oop          _out_of_memory_error_gc_overhead_limit; // preallocated error object (no backtrace)
+
+  static Array<int>*       _the_empty_int_array;    // Canonicalized int array
+  static Array<u2>*        _the_empty_short_array;  // Canonicalized short array
+  static Array<Klass*>*  _the_empty_klass_array;  // Canonicalized klass obj array
+  static Array<Method*>* _the_empty_method_array; // Canonicalized method obj array
+
+  static Array<Klass*>*  _the_array_interfaces_array;
 
   // array of preallocated error objects with backtrace
   static objArrayOop   _preallocated_out_of_memory_error_array;
@@ -250,6 +246,21 @@ class Universe: AllStatic {
     return m;
   }
 
+  // Narrow Oop encoding mode:
+  // 0 - Use 32-bits oops without encoding when
+  //     NarrowOopHeapBaseMin + heap_size < 4Gb
+  // 1 - Use zero based compressed oops with encoding when
+  //     NarrowOopHeapBaseMin + heap_size < 32Gb
+  // 2 - Use compressed oops with heap base + encoding.
+  enum NARROW_OOP_MODE {
+    UnscaledNarrowOop  = 0,
+    ZeroBasedNarrowOop = 1,
+    HeapBasedNarrowOop = 2
+  };
+  static char*    preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode);
+  static void     set_narrow_oop_base(address base)   { _narrow_oop._base  = base; }
+  static void     set_narrow_oop_use_implicit_null_checks(bool use) { _narrow_oop._use_implicit_null_checks = use; }
+
   // Debugging
   static int _verify_count;                           // number of verifies done
   // True during call to verify().  Should only be set/cleared in verify().
@@ -259,37 +270,24 @@ class Universe: AllStatic {
 
  public:
   // Known classes in the VM
-  static klassOop boolArrayKlassObj()                 { return _boolArrayKlassObj;   }
-  static klassOop byteArrayKlassObj()                 { return _byteArrayKlassObj;   }
-  static klassOop charArrayKlassObj()                 { return _charArrayKlassObj;   }
-  static klassOop intArrayKlassObj()                  { return _intArrayKlassObj;    }
-  static klassOop shortArrayKlassObj()                { return _shortArrayKlassObj;  }
-  static klassOop longArrayKlassObj()                 { return _longArrayKlassObj;   }
-  static klassOop singleArrayKlassObj()               { return _singleArrayKlassObj; }
-  static klassOop doubleArrayKlassObj()               { return _doubleArrayKlassObj; }
+  static Klass* boolArrayKlassObj()                 { return _boolArrayKlassObj;   }
+  static Klass* byteArrayKlassObj()                 { return _byteArrayKlassObj;   }
+  static Klass* charArrayKlassObj()                 { return _charArrayKlassObj;   }
+  static Klass* intArrayKlassObj()                  { return _intArrayKlassObj;    }
+  static Klass* shortArrayKlassObj()                { return _shortArrayKlassObj;  }
+  static Klass* longArrayKlassObj()                 { return _longArrayKlassObj;   }
+  static Klass* singleArrayKlassObj()               { return _singleArrayKlassObj; }
+  static Klass* doubleArrayKlassObj()               { return _doubleArrayKlassObj; }
 
-  static klassOop objectArrayKlassObj() {
+  static Klass* objectArrayKlassObj() {
     return _objectArrayKlassObj;
   }
 
-  static klassOop typeArrayKlassObj(BasicType t) {
+  static Klass* typeArrayKlassObj(BasicType t) {
     assert((uint)t < T_VOID+1, err_msg("range check for type: %s", type2name(t)));
     assert(_typeArrayKlassObjs[t] != NULL, "domain check");
     return _typeArrayKlassObjs[t];
   }
-
-  static klassOop methodKlassObj()                    { return _methodKlassObj;            }
-  static klassOop constMethodKlassObj()               { return _constMethodKlassObj;         }
-  static klassOop methodDataKlassObj()                { return _methodDataKlassObj;        }
-  static klassOop klassKlassObj()                     { return _klassKlassObj;             }
-  static klassOop arrayKlassKlassObj()                { return _arrayKlassKlassObj;        }
-  static klassOop objArrayKlassKlassObj()             { return _objArrayKlassKlassObj;     }
-  static klassOop typeArrayKlassKlassObj()            { return _typeArrayKlassKlassObj;    }
-  static klassOop instanceKlassKlassObj()             { return _instanceKlassKlassObj;     }
-  static klassOop constantPoolKlassObj()              { return _constantPoolKlassObj;      }
-  static klassOop constantPoolCacheKlassObj()         { return _constantPoolCacheKlassObj; }
-  static klassOop compiledICHolderKlassObj()          { return _compiledICHolderKlassObj;  }
-  static klassOop systemObjArrayKlassObj()            { return _systemObjArrayKlassObj;    }
 
   // Known objects in the VM
   static oop int_mirror()                   { return check_mirror(_int_mirror); }
@@ -315,21 +313,21 @@ class Universe: AllStatic {
   static oop      system_thread_group()               { return _system_thread_group; }
   static void set_system_thread_group(oop group)      { _system_thread_group = group;}
 
-  static typeArrayOop the_empty_byte_array()          { return _the_empty_byte_array;          }
-  static typeArrayOop the_empty_short_array()         { return _the_empty_short_array;         }
-  static typeArrayOop the_empty_int_array()           { return _the_empty_int_array;           }
-  static objArrayOop  the_empty_system_obj_array ()   { return _the_empty_system_obj_array;    }
   static objArrayOop  the_empty_class_klass_array ()  { return _the_empty_class_klass_array;   }
-  static objArrayOop  the_array_interfaces_array()    { return _the_array_interfaces_array;    }
+  static Array<Klass*>* the_array_interfaces_array() { return _the_array_interfaces_array;   }
   static oop          the_null_string()               { return _the_null_string;               }
   static oop          the_min_jint_string()          { return _the_min_jint_string;          }
-  static methodOop    finalizer_register_method()     { return _finalizer_register_cache->get_methodOop(); }
-  static methodOop    loader_addClass_method()        { return _loader_addClass_cache->get_methodOop(); }
+  static Method*      finalizer_register_method()     { return _finalizer_register_cache->get_Method(); }
   static ActiveMethodOopsCache* reflect_invoke_cache() { return _reflect_invoke_cache; }
   static oop          null_ptr_exception_instance()   { return _null_ptr_exception_instance;   }
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
   static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
   static oop          vm_exception()                  { return _vm_exception; }
+
+  static Array<int>*       the_empty_int_array()    { return _the_empty_int_array; }
+  static Array<u2>*        the_empty_short_array()  { return _the_empty_short_array; }
+  static Array<Method*>* the_empty_method_array() { return _the_empty_method_array; }
+  static Array<Klass*>*  the_empty_klass_array()  { return _the_empty_klass_array; }
 
   // OutOfMemoryError support. Returns an error with the required message. The returned error
   // may or may not have a backtrace. If error has a backtrace then the stack trace is already
@@ -340,15 +338,15 @@ class Universe: AllStatic {
   static oop out_of_memory_error_gc_overhead_limit()  { return gen_out_of_memory_error(_out_of_memory_error_gc_overhead_limit);  }
 
   // Accessors needed for fast allocation
-  static klassOop* boolArrayKlassObj_addr()           { return &_boolArrayKlassObj;   }
-  static klassOop* byteArrayKlassObj_addr()           { return &_byteArrayKlassObj;   }
-  static klassOop* charArrayKlassObj_addr()           { return &_charArrayKlassObj;   }
-  static klassOop* intArrayKlassObj_addr()            { return &_intArrayKlassObj;    }
-  static klassOop* shortArrayKlassObj_addr()          { return &_shortArrayKlassObj;  }
-  static klassOop* longArrayKlassObj_addr()           { return &_longArrayKlassObj;   }
-  static klassOop* singleArrayKlassObj_addr()         { return &_singleArrayKlassObj; }
-  static klassOop* doubleArrayKlassObj_addr()         { return &_doubleArrayKlassObj; }
-  static klassOop* systemObjArrayKlassObj_addr()      { return &_systemObjArrayKlassObj; }
+  static Klass** boolArrayKlassObj_addr()           { return &_boolArrayKlassObj;   }
+  static Klass** byteArrayKlassObj_addr()           { return &_byteArrayKlassObj;   }
+  static Klass** charArrayKlassObj_addr()           { return &_charArrayKlassObj;   }
+  static Klass** intArrayKlassObj_addr()            { return &_intArrayKlassObj;    }
+  static Klass** shortArrayKlassObj_addr()          { return &_shortArrayKlassObj;  }
+  static Klass** longArrayKlassObj_addr()           { return &_longArrayKlassObj;   }
+  static Klass** singleArrayKlassObj_addr()         { return &_singleArrayKlassObj; }
+  static Klass** doubleArrayKlassObj_addr()         { return &_doubleArrayKlassObj; }
+  static Klass** objectArrayKlassObj_addr()         { return &_objectArrayKlassObj; }
 
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
@@ -358,22 +356,13 @@ class Universe: AllStatic {
   static address  narrow_oop_base()                   { return  _narrow_oop._base; }
   static bool  is_narrow_oop_base(void* addr)         { return (narrow_oop_base() == (address)addr); }
   static int      narrow_oop_shift()                  { return  _narrow_oop._shift; }
-  static void     set_narrow_oop_base(address base)   { _narrow_oop._base  = base; }
-  static void     set_narrow_oop_shift(int shift)     { _narrow_oop._shift = shift; }
   static bool     narrow_oop_use_implicit_null_checks()             { return  _narrow_oop._use_implicit_null_checks; }
-  static void     set_narrow_oop_use_implicit_null_checks(bool use) { _narrow_oop._use_implicit_null_checks = use; }
-  // Narrow Oop encoding mode:
-  // 0 - Use 32-bits oops without encoding when
-  //     NarrowOopHeapBaseMin + heap_size < 4Gb
-  // 1 - Use zero based compressed oops with encoding when
-  //     NarrowOopHeapBaseMin + heap_size < 32Gb
-  // 2 - Use compressed oops with heap base + encoding.
-  enum NARROW_OOP_MODE {
-    UnscaledNarrowOop  = 0,
-    ZeroBasedNarrowOop = 1,
-    HeapBasedNarrowOop = 2
-  };
-  static char* preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode);
+
+  // this is set in vm_version on sparc (and then reset in universe afaict)
+  static void     set_narrow_oop_shift(int shift)     { _narrow_oop._shift = shift; }
+
+  // Reserve Java heap and determine CompressedOops mode
+  static ReservedSpace reserve_heap(size_t heap_size, size_t alignment);
 
   // Historic gc information
   static size_t get_heap_capacity_at_last_gc()         { return _heap_capacity_at_last_gc; }
@@ -400,12 +389,12 @@ class Universe: AllStatic {
   // as static fields of "Universe".
   static void oops_do(OopClosure* f, bool do_all = false);
 
+  // CDS support
+  static void serialize(SerializeClosure* f, bool do_all = false);
+
   // Apply "f" to all klasses for basic types (classes not present in
   // SystemDictionary).
-  static void basic_type_classes_do(void f(klassOop));
-
-  // Apply "f" to all system klasses (classes not present in SystemDictionary).
-  static void system_classes_do(void f(klassOop));
+  static void basic_type_classes_do(void f(Klass*));
 
   // For sharing -- fill in a list of known vtable pointers.
   static void init_self_patching_vtbl_list(void** list, int count);
@@ -438,8 +427,6 @@ class Universe: AllStatic {
   static uintptr_t verify_oop_bits()          PRODUCT_RETURN0;
   static uintptr_t verify_mark_bits()         PRODUCT_RETURN0;
   static uintptr_t verify_mark_mask()         PRODUCT_RETURN0;
-  static uintptr_t verify_klass_mask()        PRODUCT_RETURN0;
-  static uintptr_t verify_klass_bits()        PRODUCT_RETURN0;
 
   // Flushing and deoptimization
   static void flush_dependents_on(instanceKlassHandle dependee);

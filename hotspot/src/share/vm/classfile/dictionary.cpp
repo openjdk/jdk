@@ -36,7 +36,7 @@ int               Dictionary::_current_class_index =    0;
 
 
 Dictionary::Dictionary(int table_size)
-  : TwoOopHashtable<klassOop, mtClass>(table_size, sizeof(DictionaryEntry)) {
+  : TwoOopHashtable<Klass*, mtClass>(table_size, sizeof(DictionaryEntry)) {
   _current_class_index = 0;
   _current_class_entry = NULL;
 };
@@ -45,26 +45,18 @@ Dictionary::Dictionary(int table_size)
 
 Dictionary::Dictionary(int table_size, HashtableBucket<mtClass>* t,
                        int number_of_entries)
-  : TwoOopHashtable<klassOop, mtClass>(table_size, sizeof(DictionaryEntry), t, number_of_entries) {
+  : TwoOopHashtable<Klass*, mtClass>(table_size, sizeof(DictionaryEntry), t, number_of_entries) {
   _current_class_index = 0;
   _current_class_entry = NULL;
 };
 
 
-DictionaryEntry* Dictionary::new_entry(unsigned int hash, klassOop klass,
-                                       oop loader) {
-  DictionaryEntry* entry;
-  entry = (DictionaryEntry*)Hashtable<klassOop, mtClass>::new_entry(hash, klass);
-  entry->set_loader(loader);
+DictionaryEntry* Dictionary::new_entry(unsigned int hash, Klass* klass,
+                                       ClassLoaderData* loader_data) {
+  DictionaryEntry* entry = (DictionaryEntry*)Hashtable<Klass*, mtClass>::new_entry(hash, klass);
+  entry->set_loader_data(loader_data);
   entry->set_pd_set(NULL);
-  return entry;
-}
-
-
-DictionaryEntry* Dictionary::new_entry() {
-  DictionaryEntry* entry = (DictionaryEntry*)Hashtable<klassOop, mtClass>::new_entry(0L, NULL);
-  entry->set_loader(NULL);
-  entry->set_pd_set(NULL);
+  assert(klass->oop_is_instance(), "Must be");
   return entry;
 }
 
@@ -76,13 +68,13 @@ void Dictionary::free_entry(DictionaryEntry* entry) {
     entry->set_pd_set(to_delete->next());
     delete to_delete;
   }
-  Hashtable<klassOop, mtClass>::free_entry(entry);
+  Hashtable<Klass*, mtClass>::free_entry(entry);
 }
 
 
 bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
 #ifdef ASSERT
-  if (protection_domain == instanceKlass::cast(klass())->protection_domain()) {
+  if (protection_domain == InstanceKlass::cast(klass())->protection_domain()) {
     // Ensure this doesn't show up in the pd_set (invariant)
     bool in_pd_set = false;
     for (ProtectionDomainEntry* current = _pd_set;
@@ -100,7 +92,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   }
 #endif /* ASSERT */
 
-  if (protection_domain == instanceKlass::cast(klass())->protection_domain()) {
+  if (protection_domain == InstanceKlass::cast(klass())->protection_domain()) {
     // Succeeds trivially
     return true;
   }
@@ -131,7 +123,7 @@ void DictionaryEntry::add_protection_domain(oop protection_domain) {
 }
 
 
-bool Dictionary::do_unloading(BoolObjectClosure* is_alive) {
+bool Dictionary::do_unloading() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   bool class_was_unloaded = false;
   int  index = 0; // Defined here for portability! Do not move
@@ -142,111 +134,33 @@ bool Dictionary::do_unloading(BoolObjectClosure* is_alive) {
   for (index = 0; index < table_size(); index++) {
     for (DictionaryEntry** p = bucket_addr(index); *p != NULL; ) {
       probe = *p;
-      klassOop e = probe->klass();
-      oop class_loader = probe->loader();
+      Klass* e = probe->klass();
+      ClassLoaderData* loader_data = probe->loader_data();
 
-      instanceKlass* ik = instanceKlass::cast(e);
-      if (ik->previous_versions() != NULL) {
-        // This klass has previous versions so see what we can cleanup
-        // while it is safe to do so.
-
-        int gc_count = 0;    // leave debugging breadcrumbs
-        int live_count = 0;
-
-        // RC_TRACE macro has an embedded ResourceMark
-        RC_TRACE(0x00000200, ("unload: %s: previous version length=%d",
-          ik->external_name(), ik->previous_versions()->length()));
-
-        for (int i = ik->previous_versions()->length() - 1; i >= 0; i--) {
-          // check the previous versions array for GC'ed weak refs
-          PreviousVersionNode * pv_node = ik->previous_versions()->at(i);
-          jobject cp_ref = pv_node->prev_constant_pool();
-          assert(cp_ref != NULL, "cp ref was unexpectedly cleared");
-          if (cp_ref == NULL) {
-            delete pv_node;
-            ik->previous_versions()->remove_at(i);
-            // Since we are traversing the array backwards, we don't have to
-            // do anything special with the index.
-            continue;  // robustness
-          }
-
-          constantPoolOop pvcp = (constantPoolOop)JNIHandles::resolve(cp_ref);
-          if (pvcp == NULL) {
-            // this entry has been GC'ed so remove it
-            delete pv_node;
-            ik->previous_versions()->remove_at(i);
-            // Since we are traversing the array backwards, we don't have to
-            // do anything special with the index.
-            gc_count++;
-            continue;
-          } else {
-            RC_TRACE(0x00000200, ("unload: previous version @%d is alive", i));
-            if (is_alive->do_object_b(pvcp)) {
-              live_count++;
-            } else {
-              guarantee(false, "sanity check");
-            }
-          }
-
-          GrowableArray<jweak>* method_refs = pv_node->prev_EMCP_methods();
-          if (method_refs != NULL) {
-            RC_TRACE(0x00000200, ("unload: previous methods length=%d",
-              method_refs->length()));
-            for (int j = method_refs->length() - 1; j >= 0; j--) {
-              jweak method_ref = method_refs->at(j);
-              assert(method_ref != NULL, "weak method ref was unexpectedly cleared");
-              if (method_ref == NULL) {
-                method_refs->remove_at(j);
-                // Since we are traversing the array backwards, we don't have to
-                // do anything special with the index.
-                continue;  // robustness
-              }
-
-              methodOop method = (methodOop)JNIHandles::resolve(method_ref);
-              if (method == NULL) {
-                // this method entry has been GC'ed so remove it
-                JNIHandles::destroy_weak_global(method_ref);
-                method_refs->remove_at(j);
-              } else {
-                // RC_TRACE macro has an embedded ResourceMark
-                RC_TRACE(0x00000200,
-                  ("unload: %s(%s): prev method @%d in version @%d is alive",
-                  method->name()->as_C_string(),
-                  method->signature()->as_C_string(), j, i));
-              }
-            }
-          }
-        }
-        assert(ik->previous_versions()->length() == live_count, "sanity check");
-        RC_TRACE(0x00000200,
-          ("unload: previous version stats: live=%d, GC'ed=%d", live_count,
-          gc_count));
-      }
+      InstanceKlass* ik = InstanceKlass::cast(e);
 
       // Non-unloadable classes were handled in always_strong_oops_do
-      if (!is_strongly_reachable(class_loader, e)) {
+      if (!is_strongly_reachable(loader_data, e)) {
         // Entry was not visited in phase1 (negated test from phase1)
-        assert(class_loader != NULL, "unloading entry with null class loader");
-        oop k_def_class_loader = ik->class_loader();
+        assert(!loader_data->is_the_null_class_loader_data(), "unloading entry with null class loader");
+        ClassLoaderData* k_def_class_loader_data = ik->class_loader_data();
 
         // Do we need to delete this system dictionary entry?
         bool purge_entry = false;
 
         // Do we need to delete this system dictionary entry?
-        if (!is_alive->do_object_b(class_loader)) {
+        if (loader_data->is_unloading()) {
           // If the loader is not live this entry should always be
           // removed (will never be looked up again). Note that this is
           // not the same as unloading the referred class.
-          if (k_def_class_loader == class_loader) {
+          if (k_def_class_loader_data == loader_data) {
             // This is the defining entry, so the referred class is about
             // to be unloaded.
             // Notify the debugger and clean up the class.
-            guarantee(!is_alive->do_object_b(e),
-                      "klass should not be live if defining loader is not");
             class_was_unloaded = true;
             // notify the debugger
             if (JvmtiExport::should_post_class_unload()) {
-              JvmtiExport::post_class_unload(ik->as_klassOop());
+              JvmtiExport::post_class_unload(ik);
             }
 
             // notify ClassLoadingService of class unload
@@ -254,22 +168,21 @@ bool Dictionary::do_unloading(BoolObjectClosure* is_alive) {
 
             // Clean up C heap
             ik->release_C_heap_structures();
+            ik->constants()->release_C_heap_structures();
           }
           // Also remove this system dictionary entry.
           purge_entry = true;
 
         } else {
           // The loader in this entry is alive. If the klass is dead,
+          // (determined by checking the defining class loader)
           // the loader must be an initiating loader (rather than the
           // defining loader). Remove this entry.
-          if (!is_alive->do_object_b(e)) {
-            guarantee(!is_alive->do_object_b(k_def_class_loader),
-                      "defining loader should not be live if klass is not");
-            // If we get here, the class_loader must not be the defining
+          if (k_def_class_loader_data->is_unloading()) {
+            // If we get here, the class_loader_data must not be the defining
             // loader, it must be an initiating one.
-            assert(k_def_class_loader != class_loader,
+            assert(k_def_class_loader_data != loader_data,
                    "cannot have live defining loader and unreachable klass");
-
             // Loader is live, but class and its defining loader are dead.
             // Remove the entry. The class is going away.
             purge_entry = true;
@@ -292,19 +205,15 @@ bool Dictionary::do_unloading(BoolObjectClosure* is_alive) {
 }
 
 
-void Dictionary::always_strong_classes_do(OopClosure* blk) {
+void Dictionary::always_strong_oops_do(OopClosure* blk) {
   // Follow all system classes and temporary placeholders in dictionary
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry *probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
-      klassOop e = probe->klass();
-      oop class_loader = probe->loader();
-      if (is_strongly_reachable(class_loader, e)) {
-        blk->do_oop((oop*)probe->klass_addr());
-        if (class_loader != NULL) {
-          blk->do_oop(probe->loader_addr());
-        }
+      Klass* e = probe->klass();
+      ClassLoaderData* loader_data = probe->loader_data();
+      if (is_strongly_reachable(loader_data, e)) {
         probe->protection_domain_set_oops_do(blk);
       }
     }
@@ -312,14 +221,30 @@ void Dictionary::always_strong_classes_do(OopClosure* blk) {
 }
 
 
-//   Just the classes from defining class loaders
-void Dictionary::classes_do(void f(klassOop)) {
+void Dictionary::always_strong_classes_do(KlassClosure* closure) {
+  // Follow all system classes and temporary placeholders in dictionary
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry* probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
-      klassOop k = probe->klass();
-      if (probe->loader() == instanceKlass::cast(k)->class_loader()) {
+      Klass* e = probe->klass();
+      ClassLoaderData* loader_data = probe->loader_data();
+      if (is_strongly_reachable(loader_data, e)) {
+        closure->do_klass(e);
+      }
+    }
+  }
+}
+
+
+//   Just the classes from defining class loaders
+void Dictionary::classes_do(void f(Klass*)) {
+  for (int index = 0; index < table_size(); index++) {
+    for (DictionaryEntry* probe = bucket(index);
+                          probe != NULL;
+                          probe = probe->next()) {
+      Klass* k = probe->klass();
+      if (probe->loader_data() == InstanceKlass::cast(k)->class_loader_data()) {
         f(k);
       }
     }
@@ -328,13 +253,13 @@ void Dictionary::classes_do(void f(klassOop)) {
 
 // Added for initialize_itable_for_klass to handle exceptions
 //   Just the classes from defining class loaders
-void Dictionary::classes_do(void f(klassOop, TRAPS), TRAPS) {
+void Dictionary::classes_do(void f(Klass*, TRAPS), TRAPS) {
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry* probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
-      klassOop k = probe->klass();
-      if (probe->loader() == instanceKlass::cast(k)->class_loader()) {
+      Klass* k = probe->klass();
+      if (probe->loader_data() == InstanceKlass::cast(k)->class_loader_data()) {
         f(k, CHECK);
       }
     }
@@ -345,13 +270,13 @@ void Dictionary::classes_do(void f(klassOop, TRAPS), TRAPS) {
 //   All classes, and their class loaders
 //   (added for helpers that use HandleMarks and ResourceMarks)
 // Don't iterate over placeholders
-void Dictionary::classes_do(void f(klassOop, oop, TRAPS), TRAPS) {
+void Dictionary::classes_do(void f(Klass*, ClassLoaderData*, TRAPS), TRAPS) {
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry* probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
-      klassOop k = probe->klass();
-      f(k, probe->loader(), CHECK);
+      Klass* k = probe->klass();
+      f(k, probe->loader_data(), CHECK);
     }
   }
 }
@@ -359,13 +284,13 @@ void Dictionary::classes_do(void f(klassOop, oop, TRAPS), TRAPS) {
 
 //   All classes, and their class loaders
 // Don't iterate over placeholders
-void Dictionary::classes_do(void f(klassOop, oop)) {
+void Dictionary::classes_do(void f(Klass*, ClassLoaderData*)) {
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry* probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
-      klassOop k = probe->klass();
-      f(k, probe->loader());
+      Klass* k = probe->klass();
+      f(k, probe->loader_data());
     }
   }
 }
@@ -376,35 +301,31 @@ void Dictionary::oops_do(OopClosure* f) {
     for (DictionaryEntry* probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
-      f->do_oop((oop*)probe->klass_addr());
-      if (probe->loader() != NULL) {
-        f->do_oop(probe->loader_addr());
-      }
       probe->protection_domain_set_oops_do(f);
     }
   }
 }
 
 
-void Dictionary::methods_do(void f(methodOop)) {
+void Dictionary::methods_do(void f(Method*)) {
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry* probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
-      klassOop k = probe->klass();
-      if (probe->loader() == instanceKlass::cast(k)->class_loader()) {
+      Klass* k = probe->klass();
+      if (probe->loader_data() == InstanceKlass::cast(k)->class_loader_data()) {
         // only take klass is we have the entry with the defining class loader
-        instanceKlass::cast(k)->methods_do(f);
+        InstanceKlass::cast(k)->methods_do(f);
       }
     }
   }
 }
 
 
-klassOop Dictionary::try_get_next_class() {
+Klass* Dictionary::try_get_next_class() {
   while (true) {
     if (_current_class_entry != NULL) {
-      klassOop k = _current_class_entry->klass();
+      Klass* k = _current_class_entry->klass();
       _current_class_entry = _current_class_entry->next();
       return k;
     }
@@ -421,15 +342,15 @@ klassOop Dictionary::try_get_next_class() {
 // also cast to volatile;  we do this to ensure store order is maintained
 // by the compilers.
 
-void Dictionary::add_klass(Symbol* class_name, Handle class_loader,
+void Dictionary::add_klass(Symbol* class_name, ClassLoaderData* loader_data,
                            KlassHandle obj) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(obj() != NULL, "adding NULL obj");
   assert(Klass::cast(obj())->name() == class_name, "sanity check on name");
 
-  unsigned int hash = compute_hash(class_name, class_loader);
+  unsigned int hash = compute_hash(class_name, loader_data);
   int index = hash_to_index(hash);
-  DictionaryEntry* entry = new_entry(hash, obj(), class_loader());
+  DictionaryEntry* entry = new_entry(hash, obj(), loader_data);
   add_entry(index, entry);
 }
 
@@ -445,13 +366,12 @@ void Dictionary::add_klass(Symbol* class_name, Handle class_loader,
 // _buckets[index] is read here, so the caller will not see the new entry.
 DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
                                        Symbol* class_name,
-                                       Handle class_loader) {
-  oop loader = class_loader();
+                                       ClassLoaderData* loader_data) {
   debug_only(_lookup_count++);
   for (DictionaryEntry* entry = bucket(index);
                         entry != NULL;
                         entry = entry->next()) {
-    if (entry->hash() == hash && entry->equals(class_name, loader)) {
+    if (entry->hash() == hash && entry->equals(class_name, loader_data)) {
       return entry;
     }
     debug_only(_lookup_length++);
@@ -460,9 +380,9 @@ DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
 }
 
 
-klassOop Dictionary::find(int index, unsigned int hash, Symbol* name,
-                          Handle loader, Handle protection_domain, TRAPS) {
-  DictionaryEntry* entry = get_entry(index, hash, name, loader);
+Klass* Dictionary::find(int index, unsigned int hash, Symbol* name,
+                          ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
+  DictionaryEntry* entry = get_entry(index, hash, name, loader_data);
   if (entry != NULL && entry->is_valid_protection_domain(protection_domain)) {
     return entry->klass();
   } else {
@@ -471,34 +391,34 @@ klassOop Dictionary::find(int index, unsigned int hash, Symbol* name,
 }
 
 
-klassOop Dictionary::find_class(int index, unsigned int hash,
-                                Symbol* name, Handle loader) {
+Klass* Dictionary::find_class(int index, unsigned int hash,
+                                Symbol* name, ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert (index == index_for(name, loader), "incorrect index?");
+  assert (index == index_for(name, loader_data), "incorrect index?");
 
-  DictionaryEntry* entry = get_entry(index, hash, name, loader);
-  return (entry != NULL) ? entry->klass() : (klassOop)NULL;
+  DictionaryEntry* entry = get_entry(index, hash, name, loader_data);
+  return (entry != NULL) ? entry->klass() : (Klass*)NULL;
 }
 
 
 // Variant of find_class for shared classes.  No locking required, as
 // that table is static.
 
-klassOop Dictionary::find_shared_class(int index, unsigned int hash,
+Klass* Dictionary::find_shared_class(int index, unsigned int hash,
                                        Symbol* name) {
-  assert (index == index_for(name, Handle()), "incorrect index?");
+  assert (index == index_for(name, NULL), "incorrect index?");
 
-  DictionaryEntry* entry = get_entry(index, hash, name, Handle());
-  return (entry != NULL) ? entry->klass() : (klassOop)NULL;
+  DictionaryEntry* entry = get_entry(index, hash, name, NULL);
+  return (entry != NULL) ? entry->klass() : (Klass*)NULL;
 }
 
 
 void Dictionary::add_protection_domain(int index, unsigned int hash,
                                        instanceKlassHandle klass,
-                                       Handle loader, Handle protection_domain,
+                                       ClassLoaderData* loader_data, Handle protection_domain,
                                        TRAPS) {
   Symbol*  klass_name = klass->name();
-  DictionaryEntry* entry = get_entry(index, hash, klass_name, loader);
+  DictionaryEntry* entry = get_entry(index, hash, klass_name, loader_data);
 
   assert(entry != NULL,"entry must be present, we just created it");
   assert(protection_domain() != NULL,
@@ -513,9 +433,9 @@ void Dictionary::add_protection_domain(int index, unsigned int hash,
 
 bool Dictionary::is_valid_protection_domain(int index, unsigned int hash,
                                             Symbol* name,
-                                            Handle loader,
+                                            ClassLoaderData* loader_data,
                                             Handle protection_domain) {
-  DictionaryEntry* entry = get_entry(index, hash, name, loader);
+  DictionaryEntry* entry = get_entry(index, hash, name, loader_data);
   return entry->is_valid_protection_domain(protection_domain);
 }
 
@@ -538,16 +458,17 @@ void Dictionary::reorder_dictionary() {
   }
 
   // Add the dictionary entries back to the list in the correct buckets.
-  Thread *thread = Thread::current();
-
   while (master_list != NULL) {
     DictionaryEntry* p = master_list;
     master_list = master_list->next();
     p->set_next(NULL);
-    Symbol* class_name = instanceKlass::cast((klassOop)(p->klass()))->name();
-    unsigned int hash = compute_hash(class_name, Handle(thread, p->loader()));
+    Symbol* class_name = InstanceKlass::cast((Klass*)(p->klass()))->name();
+    // Since the null class loader data isn't copied to the CDS archive,
+    // compute the hash with NULL for loader data.
+    unsigned int hash = compute_hash(class_name, NULL);
     int index = hash_to_index(hash);
     p->set_hash(hash);
+    p->set_loader_data(NULL);   // loader_data isn't copied to CDS
     p->set_next(bucket(index));
     set_entry(index, p);
   }
@@ -588,23 +509,22 @@ SymbolPropertyEntry* SymbolPropertyTable::add_entry(int index, unsigned int hash
   return p;
 }
 
-
 void SymbolPropertyTable::oops_do(OopClosure* f) {
   for (int index = 0; index < table_size(); index++) {
     for (SymbolPropertyEntry* p = bucket(index); p != NULL; p = p->next()) {
-      if (p->property_oop() != NULL) {
-        f->do_oop(p->property_oop_addr());
+      if (p->method_type() != NULL) {
+        f->do_oop(p->method_type_addr());
       }
     }
   }
 }
 
-void SymbolPropertyTable::methods_do(void f(methodOop)) {
+void SymbolPropertyTable::methods_do(void f(Method*)) {
   for (int index = 0; index < table_size(); index++) {
     for (SymbolPropertyEntry* p = bucket(index); p != NULL; p = p->next()) {
-      oop prop = p->property_oop();
-      if (prop != NULL && prop->is_method()) {
-        f((methodOop)prop);
+      Method* prop = p->method();
+      if (prop != NULL) {
+        f((Method*)prop);
       }
     }
   }
@@ -628,16 +548,15 @@ void Dictionary::print() {
                           probe != NULL;
                           probe = probe->next()) {
       if (Verbose) tty->print("%4d: ", index);
-      klassOop e = probe->klass();
-      oop class_loader =  probe->loader();
+      Klass* e = probe->klass();
+      ClassLoaderData* loader_data =  probe->loader_data();
       bool is_defining_class =
-         (class_loader == instanceKlass::cast(e)->class_loader());
+         (loader_data == InstanceKlass::cast(e)->class_loader_data());
       tty->print("%s%s", is_defining_class ? " " : "^",
                    Klass::cast(e)->external_name());
-      if (class_loader != NULL) {
+
         tty->print(", loader ");
-        class_loader->print_value();
-      }
+      loader_data->print_value();
       tty->cr();
     }
   }
@@ -645,20 +564,24 @@ void Dictionary::print() {
 
 #endif
 
+
 void Dictionary::verify() {
   guarantee(number_of_entries() >= 0, "Verify of system dictionary failed");
+
   int element_count = 0;
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry* probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
-      klassOop e = probe->klass();
-      oop class_loader = probe->loader();
+      Klass* e = probe->klass();
+      ClassLoaderData* loader_data = probe->loader_data();
       guarantee(Klass::cast(e)->oop_is_instance(),
                               "Verify of system dictionary failed");
       // class loader must be present;  a null class loader is the
       // boostrap loader
-      guarantee(class_loader == NULL || class_loader->is_instance(),
+      guarantee(loader_data != NULL || DumpSharedSpaces ||
+                loader_data->is_the_null_class_loader_data() ||
+                loader_data->class_loader()->is_instance(),
                 "checking type of class_loader");
       e->verify();
       probe->verify_protection_domain_set();
@@ -669,3 +592,4 @@ void Dictionary::verify() {
             "Verify of system dictionary failed");
   debug_only(verify_lookup_length((double)number_of_entries() / table_size()));
 }
+

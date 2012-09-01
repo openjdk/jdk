@@ -2904,11 +2904,11 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   // Note:  The argument might still be an illegal value like
   // Serializable.class or Object[].class.   The runtime will handle it.
   // But we must make an explicit check for initialization.
-  Node* insp = basic_plus_adr(kls, in_bytes(instanceKlass::init_state_offset()));
-  // Use T_BOOLEAN for instanceKlass::_init_state so the compiler
+  Node* insp = basic_plus_adr(kls, in_bytes(InstanceKlass::init_state_offset()));
+  // Use T_BOOLEAN for InstanceKlass::_init_state so the compiler
   // can generate code to load it as unsigned byte.
   Node* inst = make_load(NULL, insp, TypeInt::UBYTE, T_BOOLEAN);
-  Node* bits = intcon(instanceKlass::fully_initialized);
+  Node* bits = intcon(InstanceKlass::fully_initialized);
   Node* test = _gvn.transform( new (C, 3) SubINode(inst, bits) );
   // The 'test' is non-zero if we need to take a slow path.
 
@@ -3475,7 +3475,7 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
   if (layout_val == NULL) {
     bool query = (obj_array
                   ? Klass::layout_helper_is_objArray(layout_con)
-                  : Klass::layout_helper_is_javaArray(layout_con));
+                  : Klass::layout_helper_is_array(layout_con));
     if (query == not_array) {
       return NULL;                       // never a branch
     } else {                             // always a branch
@@ -3710,15 +3710,15 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
                                              RegionNode* slow_region) {
   ciMethod* method = callee();
   int vtable_index = method->vtable_index();
-  // Get the methodOop out of the appropriate vtable entry.
-  int entry_offset  = (instanceKlass::vtable_start_offset() +
+  // Get the Method* out of the appropriate vtable entry.
+  int entry_offset  = (InstanceKlass::vtable_start_offset() +
                      vtable_index*vtableEntry::size()) * wordSize +
                      vtableEntry::method_offset_in_bytes();
   Node* entry_addr  = basic_plus_adr(obj_klass, entry_offset);
   Node* target_call = make_load(NULL, entry_addr, TypeInstPtr::NOTNULL, T_OBJECT);
 
   // Compare the target method with the expected method (e.g., Object.hashCode).
-  const TypeInstPtr* native_call_addr = TypeInstPtr::make(method);
+  const TypePtr* native_call_addr = TypeMetadataPtr::make(method);
 
   Node* native_call = makecon(native_call_addr);
   Node* chk_native  = _gvn.transform( new(C, 3) CmpPNode(target_call, native_call) );
@@ -3753,7 +3753,7 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
                                 method, bci());
   } else if (is_virtual) {
     null_check_receiver(method);
-    int vtable_index = methodOopDesc::invalid_vtable_index;
+    int vtable_index = Method::invalid_vtable_index;
     if (UseInlineCaches) {
       // Suppress the vtable call
     } else {
@@ -4266,8 +4266,8 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
                             instanceOopDesc::base_offset_in_bytes();
   // base_off:
   // 8  - 32-bit VM
-  // 12 - 64-bit VM, compressed oops
-  // 16 - 64-bit VM, normal oops
+  // 12 - 64-bit VM, compressed klass
+  // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
     assert(UseCompressedOops, "");
     if (is_array) {
@@ -4899,7 +4899,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     // further to JVM_ArrayCopy on the first per-oop check that fails.
     // (Actually, we don't move raw bits only; the GC requires card marks.)
 
-    // Get the klassOop for both src and dest
+    // Get the Klass* for both src and dest
     Node* src_klass  = load_object_klass(src);
     Node* dest_klass = load_object_klass(dest);
 

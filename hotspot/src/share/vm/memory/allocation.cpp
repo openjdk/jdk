@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
@@ -50,6 +53,27 @@ void* StackObj::operator new(size_t size)  { ShouldNotCallThis(); return 0; };
 void  StackObj::operator delete(void* p)   { ShouldNotCallThis(); };
 void* _ValueObj::operator new(size_t size)  { ShouldNotCallThis(); return 0; };
 void  _ValueObj::operator delete(void* p)   { ShouldNotCallThis(); };
+
+void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
+                                size_t word_size, bool read_only, TRAPS) {
+  // Klass has it's own operator new
+  return Metaspace::allocate(loader_data, word_size, read_only,
+                             Metaspace::NonClassType, CHECK_NULL);
+}
+
+bool MetaspaceObj::is_shared() const {
+  return MetaspaceShared::is_in_shared_space(this);
+}
+
+bool MetaspaceObj::is_metadata() const {
+  // ClassLoaderDataGraph::contains((address)this); has lock inversion problems
+  return !Universe::heap()->is_in_reserved(this);
+}
+
+void MetaspaceObj::print_address_on(outputStream* st) const {
+  st->print(" {"INTPTR_FORMAT"}", this);
+}
+
 
 void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flags) {
   address res;

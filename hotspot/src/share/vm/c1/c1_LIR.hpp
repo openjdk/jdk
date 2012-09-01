@@ -26,7 +26,7 @@
 #define SHARE_VM_C1_C1_LIR_HPP
 
 #include "c1/c1_ValueType.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 
 class BlockBegin;
 class BlockList;
@@ -108,6 +108,14 @@ class LIR_Const: public LIR_OprPtr {
     _value.set_type(T_INT);     _value.set_jint((jint)p);
 #endif
   }
+  LIR_Const(Metadata* m) {
+    _value.set_type(T_METADATA);
+#ifdef _LP64
+    _value.set_jlong((jlong)m);
+#else
+    _value.set_jint((jint)m);
+#endif // _LP64
+  }
 
   virtual BasicType type()       const { return _value.get_type(); }
   virtual LIR_Const* as_constant()     { return this; }
@@ -122,8 +130,10 @@ class LIR_Const: public LIR_OprPtr {
 
 #ifdef _LP64
   address   as_pointer() const         { type_check(T_LONG  ); return (address)_value.get_jlong(); }
+  Metadata* as_metadata() const        { type_check(T_METADATA); return (Metadata*)_value.get_jlong(); }
 #else
   address   as_pointer() const         { type_check(T_INT   ); return (address)_value.get_jint(); }
+  Metadata* as_metadata() const        { type_check(T_METADATA); return (Metadata*)_value.get_jint(); }
 #endif
 
 
@@ -808,6 +818,7 @@ class LIR_OprFact: public AllStatic {
   static LIR_Opr intptrConst(intptr_t v)         { return (LIR_Opr)(new LIR_Const((void*)v)); }
   static LIR_Opr illegal()                       { return (LIR_Opr)-1; }
   static LIR_Opr addressConst(jint i)            { return (LIR_Opr)(new LIR_Const(i, true)); }
+  static LIR_Opr metadataConst(Metadata* m)      { return (LIR_Opr)(new LIR_Const(m)); }
 
   static LIR_Opr value_type(ValueType* type);
   static LIR_Opr dummy_value_type(ValueType* type);
@@ -1541,7 +1552,7 @@ public:
   CodeEmitInfo* info_for_exception() const       { return _info_for_exception; }
   CodeStub* stub() const                         { return _stub;           }
 
-  // methodDataOop profiling
+  // MethodData* profiling
   void set_profiled_method(ciMethod *method)     { _profiled_method = method; }
   void set_profiled_bci(int bci)                 { _profiled_bci = bci;       }
   void set_should_profile(bool b)                { _should_profile = b;       }
@@ -1998,6 +2009,9 @@ class LIR_List: public CompilationResourceObj {
   void oop2reg  (jobject o, LIR_Opr reg)         { append(new LIR_Op1(lir_move, LIR_OprFact::oopConst(o),    reg));   }
   void oop2reg_patch(jobject o, LIR_Opr reg, CodeEmitInfo* info);
 
+  void oop2reg  (Metadata* o, LIR_Opr reg)       { append(new LIR_Op1(lir_move, LIR_OprFact::metadataConst(o), reg));   }
+  void klass2reg_patch(Metadata* o, LIR_Opr reg, CodeEmitInfo* info);
+
   void return_op(LIR_Opr result)                 { append(new LIR_Op1(lir_return, result)); }
 
   void safepoint(LIR_Opr tmp, CodeEmitInfo* info)  { append(new LIR_Op1(lir_safepoint, tmp, info)); }
@@ -2149,7 +2163,7 @@ class LIR_List: public CompilationResourceObj {
                   LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check,
                   CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch, CodeStub* stub,
                   ciMethod* profiled_method, int profiled_bci);
-  // methodDataOop profiling
+  // MethodData* profiling
   void profile_call(ciMethod* method, int bci, ciMethod* callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* cha_klass) {
     append(new LIR_OpProfileCall(lir_profile_call, method, bci, callee, mdo, recv, t1, cha_klass));
   }

@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciCallSite.hpp"
-#include "ci/ciCPCache.hpp"
+#include "ci/ciObjArray.hpp"
 #include "ci/ciMemberName.hpp"
 #include "ci/ciMethodHandle.hpp"
 #include "classfile/javaClasses.hpp"
@@ -167,7 +167,7 @@ public:
   VirtualCallGenerator(ciMethod* method, int vtable_index)
     : CallGenerator(method), _vtable_index(vtable_index)
   {
-    assert(vtable_index == methodOopDesc::invalid_vtable_index ||
+    assert(vtable_index == Method::invalid_vtable_index ||
            vtable_index >= 0, "either invalid or usable");
   }
   virtual bool      is_virtual() const          { return true; }
@@ -217,7 +217,7 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   assert(!method()->is_static(), "virtual call must not be to static");
   assert(!method()->is_final(), "virtual call should not be to final");
   assert(!method()->is_private(), "virtual call should not be to private");
-  assert(_vtable_index == methodOopDesc::invalid_vtable_index || !UseInlineCaches,
+  assert(_vtable_index == Method::invalid_vtable_index || !UseInlineCaches,
          "no vtable calls if +UseInlineCaches ");
   address target = SharedRuntime::get_resolve_virtual_call_stub();
   // Normal inline cache used for call
@@ -603,7 +603,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         const TypeOopPtr* oop_ptr = receiver->bottom_type()->is_oopptr();
         ciMethod* target = oop_ptr->const_oop()->as_method_handle()->get_vmtarget();
         guarantee(!target->is_method_handle_intrinsic(), "should not happen");  // XXX remove
-        const int vtable_index = methodOopDesc::invalid_vtable_index;
+        const int vtable_index = Method::invalid_vtable_index;
         CallGenerator* cg = C->call_generator(target, vtable_index, false, jvms, true, PROB_ALWAYS);
         if (cg != NULL && cg->is_inline())
           return cg;
@@ -653,7 +653,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
             }
           }
         }
-        const int vtable_index = methodOopDesc::invalid_vtable_index;
+        const int vtable_index = Method::invalid_vtable_index;
         const bool call_is_virtual = target->is_abstract();  // FIXME workaround
         CallGenerator* cg = C->call_generator(target, vtable_index, call_is_virtual, jvms, true, PROB_ALWAYS);
         if (cg != NULL && cg->is_inline())

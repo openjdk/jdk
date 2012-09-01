@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ int sprintf(char *s, const char *format, ...);
 #define MAX_VFRAMES_CNT 256
 
 typedef struct vframe {
-  uint64_t methodOop;
+  uint64_t method;
   int32_t  sender_decode_offset;
   int32_t  methodIdx;
   int32_t  bci;
@@ -129,8 +129,8 @@ typedef struct Nmethod_t {
   int32_t  deopt_beg;           /* _deoptimize_offset */
   int32_t  scopes_data_beg;     /* _scopes_data_offset */
   int32_t  scopes_data_end;
-  int32_t  oops_beg;            /* _oops_offset */
-  int32_t  oops_end;
+  int32_t  metadata_beg;        /* _metadata_offset */
+  int32_t  metadata_end;
   int32_t  scopes_pcs_beg;      /* _scopes_pcs_offset */
   int32_t  scopes_pcs_end;
 
@@ -145,16 +145,15 @@ struct jvm_agent {
   uint64_t CodeBlob_vtbl;
   uint64_t BufferBlob_vtbl;
   uint64_t RuntimeStub_vtbl;
+  uint64_t Method_vtbl;
 
   uint64_t Use_Compressed_Oops_address;
-  uint64_t Universe_methodKlassObj_address;
   uint64_t Universe_narrow_oop_base_address;
   uint64_t Universe_narrow_oop_shift_address;
   uint64_t CodeCache_heap_address;
 
   /* Volatiles */
   uint8_t  Use_Compressed_Oops;
-  uint64_t Universe_methodKlassObj;
   uint64_t Universe_narrow_oop_base;
   uint32_t Universe_narrow_oop_shift;
   uint64_t CodeCache_low;
@@ -164,7 +163,7 @@ struct jvm_agent {
 
   int32_t  SIZE_CodeCache_log2_segment;
 
-  uint64_t methodOopPtr;
+  uint64_t methodPtr;
   uint64_t bcx;
 
   Nmethod_t *N;                 /*Inlined methods support */
@@ -280,9 +279,6 @@ static int parse_vmstructs(jvm_agent_t* J) {
         err = read_pointer(J, vmp->address, &J->CodeCache_heap_address);
       }
     } else if (vmp->typeName[0] == 'U' && strcmp("Universe", vmp->typeName) == 0) {
-      if (strcmp("_methodKlassObj", vmp->fieldName) == 0) {
-        J->Universe_methodKlassObj_address = vmp->address;
-      }
       if (strcmp("_narrow_oop._base", vmp->fieldName) == 0) {
         J->Universe_narrow_oop_base_address = vmp->address;
       }
@@ -329,9 +325,6 @@ static int read_volatiles(jvm_agent_t* J) {
   } else {
     J->Use_Compressed_Oops = 0;
   }
-
-  err = read_pointer(J, J->Universe_methodKlassObj_address, &J->Universe_methodKlassObj);
-  CHECK_FAIL(err);
 
   err = read_pointer(J, J->Universe_narrow_oop_base_address, &J->Universe_narrow_oop_base);
   CHECK_FAIL(err);
@@ -455,6 +448,8 @@ jvm_agent_t *Jagent_create(struct ps_prochandle *P, int vers) {
   CHECK_FAIL(err);
   err = find_symbol(J, "__1cLRuntimeStubG__vtbl_", &J->RuntimeStub_vtbl);
   CHECK_FAIL(err);
+  err = find_symbol(J, "__1cNMethodG__vtbl_", &J->Method_vtbl);
+  CHECK_FAIL(err);
 
   err = parse_vmstructs(J);
   CHECK_FAIL(err);
@@ -474,29 +469,18 @@ void Jagent_destroy(jvm_agent_t *J) {
   }
 }
 
-static int is_methodOop(jvm_agent_t* J, uint64_t methodOopPtr) {
+static int is_method(jvm_agent_t* J, uint64_t methodPtr) {
   uint64_t klass;
-  int err;
-  // If UseCompressedOops, this was a compressed oop.
-  if (J->Use_Compressed_Oops != 0) {
-    uint32_t cklass;
-    err = read_compressed_pointer(J, methodOopPtr + OFFSET_oopDesc_metadata,
-          &cklass);
-    // decode heap oop, same as oop.inline.hpp
-    klass = (uint64_t)((uintptr_t)J->Universe_narrow_oop_base +
-            ((uintptr_t)cklass << J->Universe_narrow_oop_shift));
-  } else {
-    err = read_pointer(J, methodOopPtr + OFFSET_oopDesc_metadata, &klass);
-  }
+  int err = read_pointer(J, methodPtr, &klass);
   if (err != PS_OK) goto fail;
-  return klass == J->Universe_methodKlassObj;
+  return klass == J->Method_vtbl;
 
  fail:
   return 0;
 }
 
 static int
-name_for_methodOop(jvm_agent_t* J, uint64_t methodOopPtr, char * result, size_t size)
+name_for_methodPtr(jvm_agent_t* J, uint64_t methodPtr, char * result, size_t size)
 {
   short nameIndex;
   short signatureIndex;
@@ -514,15 +498,15 @@ name_for_methodOop(jvm_agent_t* J, uint64_t methodOopPtr, char * result, size_t 
   char * signatureString = NULL;
   int err;
 
-  err = read_pointer(J, methodOopPtr + OFFSET_methodOopDesc_constants, &constantPool);
+  err = read_pointer(J, methodPtr + OFFSET_Method_constMethod, &constMethod);
   CHECK_FAIL(err);
-  err = read_pointer(J, methodOopPtr + OFFSET_methodOopDesc_constMethod, &constMethod);
+  err = read_pointer(J, constMethod + OFFSET_ConstMethod_constants, &constantPool);
   CHECK_FAIL(err);
 
   /* To get name string */
-  err = ps_pread(J->P, constMethod + OFFSET_constMethodOopDesc_name_index, &nameIndex, 2);
+  err = ps_pread(J->P, constMethod + OFFSET_ConstMethod_name_index, &nameIndex, 2);
   CHECK_FAIL(err);
-  err = read_pointer(J, constantPool + nameIndex * POINTER_SIZE + SIZE_constantPoolOopDesc, &nameSymbol);
+  err = read_pointer(J, constantPool + nameIndex * POINTER_SIZE + SIZE_ConstantPool, &nameSymbol);
   CHECK_FAIL(err);
   // The symbol is a CPSlot and has lower bit set to indicate metadata
   nameSymbol &= (~1); // remove metadata lsb
@@ -533,9 +517,9 @@ name_for_methodOop(jvm_agent_t* J, uint64_t methodOopPtr, char * result, size_t 
   CHECK_FAIL(err);
 
   /* To get signature string */
-  err = ps_pread(J->P, constMethod + OFFSET_constMethodOopDesc_signature_index, &signatureIndex, 2);
+  err = ps_pread(J->P, constMethod + OFFSET_ConstMethod_signature_index, &signatureIndex, 2);
   CHECK_FAIL(err);
-  err = read_pointer(J, constantPool + signatureIndex * POINTER_SIZE + SIZE_constantPoolOopDesc, &signatureSymbol);
+  err = read_pointer(J, constantPool + signatureIndex * POINTER_SIZE + SIZE_ConstantPool, &signatureSymbol);
   CHECK_FAIL(err);
   signatureSymbol &= (~1);  // remove metadata lsb
   err = ps_pread(J->P, signatureSymbol + OFFSET_Symbol_length, &signatureSymbolLength, 2);
@@ -545,9 +529,9 @@ name_for_methodOop(jvm_agent_t* J, uint64_t methodOopPtr, char * result, size_t 
   CHECK_FAIL(err);
 
   /* To get klass string */
-  err = read_pointer(J, constantPool + OFFSET_constantPoolOopDesc_pool_holder, &klassPtr);
+  err = read_pointer(J, constantPool + OFFSET_ConstantPool_pool_holder, &klassPtr);
   CHECK_FAIL(err);
-  err = read_pointer(J, klassPtr + OFFSET_Klass_name + SIZE_oopDesc, &klassSymbol);
+  err = read_pointer(J, klassPtr + OFFSET_Klass_name, &klassSymbol);
   CHECK_FAIL(err);
   err = ps_pread(J->P, klassSymbol + OFFSET_Symbol_length, &klassSymbolLength, 2);
   CHECK_FAIL(err);
@@ -572,7 +556,7 @@ name_for_methodOop(jvm_agent_t* J, uint64_t methodOopPtr, char * result, size_t 
 
  fail:
   if (debug) {
-      fprintf(stderr, "name_for_methodOop: FAIL \n\n");
+      fprintf(stderr, "name_for_methodPtr: FAIL \n\n");
   }
   if (nameString != NULL) free(nameString);
   if (klassString != NULL) free(klassString);
@@ -599,10 +583,10 @@ static int nmethod_info(Nmethod_t *N)
   err = ps_pread(J->P, nm + OFFSET_nmethod_orig_pc_offset, &N->orig_pc_offset, SZ32);
   CHECK_FAIL(err);
 
-  /* Oops */
-  err = ps_pread(J->P, nm + OFFSET_nmethod_oops_offset, &N->oops_beg, SZ32);
+  /* Metadata */
+  err = ps_pread(J->P, nm + OFFSET_nmethod_metadata_offset, &N->metadata_beg, SZ32);
   CHECK_FAIL(err);
-  err = ps_pread(J->P, nm + OFFSET_nmethod_scopes_data_offset, &N->oops_end, SZ32);
+  err = ps_pread(J->P, nm + OFFSET_nmethod_scopes_data_offset, &N->metadata_end, SZ32);
   CHECK_FAIL(err);
 
   /* scopes_pcs */
@@ -627,8 +611,8 @@ static int nmethod_info(Nmethod_t *N)
       fprintf(stderr, "\t nmethod_info: orig_pc_offset: %#x \n",
                        N->orig_pc_offset);
 
-      fprintf(stderr, "\t nmethod_info: oops_beg: %#x, oops_end: %#x\n",
-                       N->oops_beg, N->oops_end);
+      fprintf(stderr, "\t nmethod_info: metadata_beg: %#x, metadata_end: %#x\n",
+                       N->metadata_beg, N->metadata_end);
 
       fprintf(stderr, "\t nmethod_info: scopes_data_beg: %#x, scopes_data_end: %#x\n",
                        N->scopes_data_beg, N->scopes_data_end);
@@ -766,20 +750,20 @@ line_number_from_bci(jvm_agent_t* J, Vframe_t *vf)
 
   if (debug > 2) {
       char name[256];
-      err = name_for_methodOop(J, vf->methodOop, name, 256);
+      err = name_for_methodPtr(J, vf->method, name, 256);
       CHECK_FAIL(err);
       fprintf(stderr, "\t line_number_from_bci: BEGIN, method name: %s, targ bci: %d\n",
                        name, vf->bci);
   }
 
-  err = read_pointer(J, vf->methodOop + OFFSET_methodOopDesc_constMethod, &constMethod);
+  err = read_pointer(J, vf->method + OFFSET_Method_constMethod, &constMethod);
   CHECK_FAIL(err);
 
   vf->line = 0;
-  err = ps_pread(J->P, constMethod + OFFSET_constMethodOopDesc_flags, &access_flags, sizeof(int8_t));
+  err = ps_pread(J->P, constMethod + OFFSET_ConstMethod_flags, &access_flags, sizeof(int8_t));
   CHECK_FAIL(err);
 
-  if (!(access_flags & constMethodOopDesc_has_linenumber_table)) {
+  if (!(access_flags & ConstMethod_has_linenumber_table)) {
       if (debug > 2)
           fprintf(stderr, "\t line_number_from_bci: END: !HAS_LINE_NUMBER_TABLE \n\n");
       return PS_OK;
@@ -789,16 +773,16 @@ line_number_from_bci(jvm_agent_t* J, Vframe_t *vf)
    *  Not necessarily sorted and not necessarily one-to-one.
    */
 
-  err = ps_pread(J->P, constMethod + OFFSET_constMethodOopDesc_code_size, &code_size, SZ16);
+  err = ps_pread(J->P, constMethod + OFFSET_ConstMethod_code_size, &code_size, SZ16);
   CHECK_FAIL(err);
 
   /* inlined_table_start() */
   code_end_delta = (uint64_t) (access_flags & AccessFlags_NATIVE) ? 2*POINTER_SIZE : 0;
-  buffer = constMethod + (uint64_t) SIZE_constMethodOopDesc + (uint64_t) code_size + code_end_delta;
+  buffer = constMethod + (uint64_t) SIZE_ConstMethod + (uint64_t) code_size + code_end_delta;
 
   if (debug > 2) {
-      fprintf(stderr, "\t\t line_number_from_bci: methodOop: %#llx, native: %d\n",
-                      vf->methodOop, (access_flags & AccessFlags_NATIVE));
+      fprintf(stderr, "\t\t line_number_from_bci: method: %#llx, native: %d\n",
+                      vf->method, (access_flags & AccessFlags_NATIVE));
       fprintf(stderr, "\t\t line_number_from_bci: buffer: %#llx, code_size: %d\n",
                       buffer, (int) code_size);
   }
@@ -962,21 +946,21 @@ static int scopeDesc_chain(Nmethod_t *N) {
     err = scope_desc_at(N, decode_offset, vf);
     CHECK_FAIL(err);
 
-    if (vf->methodIdx > ((N->oops_end - N->oops_beg) / POINTER_SIZE)) {
-      fprintf(stderr, "\t scopeDesc_chain: (methodIdx > oops length) !\n");
+    if (vf->methodIdx > ((N->metadata_end - N->metadata_beg) / POINTER_SIZE)) {
+      fprintf(stderr, "\t scopeDesc_chain: (methodIdx > metadata length) !\n");
       return -1;
     }
-    err = read_pointer(N->J, N->nm + N->oops_beg + (vf->methodIdx-1)*POINTER_SIZE,
-                       &vf->methodOop);
+    err = read_pointer(N->J, N->nm + N->metadata_beg + (vf->methodIdx-1)*POINTER_SIZE,
+                       &vf->method);
     CHECK_FAIL(err);
 
-    if (vf->methodOop) {
+    if (vf->method) {
       N->vf_cnt++;
       err = line_number_from_bci(N->J, vf);
       CHECK_FAIL(err);
       if (debug > 2) {
-        fprintf(stderr, "\t scopeDesc_chain: methodOop: %#8llx, line: %ld\n",
-                vf->methodOop, vf->line);
+        fprintf(stderr, "\t scopeDesc_chain: method: %#8llx, line: %ld\n",
+                vf->method, vf->line);
       }
     }
     decode_offset = vf->sender_decode_offset;
@@ -998,7 +982,7 @@ static int
 name_for_nmethod(jvm_agent_t* J,
                  uint64_t nm,
                  uint64_t pc,
-                 uint64_t methodOop,
+                 uint64_t method,
                  char *result,
                  size_t size,
                  Jframe_t *jframe
@@ -1062,10 +1046,10 @@ name_for_nmethod(jvm_agent_t* J,
       jframe->vf_cnt = N->vf_cnt;
       jframe->bci  = vf->bci;
       jframe->line = vf->line;
-      err = name_for_methodOop(J, N->vframes[0].methodOop, result+1, size-1);
+      err = name_for_methodPtr(J, N->vframes[0].method, result+1, size-1);
       CHECK_FAIL(err);
   } else {
-      err = name_for_methodOop(J, methodOop, result+1, size-1);
+      err = name_for_methodPtr(J, method, result+1, size-1);
       CHECK_FAIL(err);
   }
   if (deoptimized) {
@@ -1097,7 +1081,7 @@ int is_bci(intptr_t bcx) {
 static int
 name_for_imethod(jvm_agent_t* J,
                  uint64_t bcx,
-                 uint64_t methodOop,
+                 uint64_t method,
                  char *result,
                  size_t size,
                  Jframe_t *jframe
@@ -1108,21 +1092,21 @@ name_for_imethod(jvm_agent_t* J,
   Vframe_t *vf = &vframe;
   int32_t   err;
 
-  err = read_pointer(J, methodOop + OFFSET_methodOopDesc_constMethod, &constMethod);
+  err = read_pointer(J, method + OFFSET_Method_constMethod, &constMethod);
   CHECK_FAIL(err);
 
-  bci = is_bci(bcx) ? bcx : bcx - (constMethod + (uint64_t) SIZE_constMethodOopDesc);
+  bci = is_bci(bcx) ? bcx : bcx - (constMethod + (uint64_t) SIZE_ConstMethod);
 
   if (debug)
-      fprintf(stderr, "\t name_for_imethod: BEGIN: methodOop: %#llx\n", methodOop);
+      fprintf(stderr, "\t name_for_imethod: BEGIN: method: %#llx\n", method);
 
-  err = name_for_methodOop(J, methodOop, result, size);
+  err = name_for_methodPtr(J, method, result, size);
   CHECK_FAIL(err);
   if (debug)
       fprintf(stderr, "\t name_for_imethod: method name: %s\n", result);
 
   if (bci > 0) {
-      vf->methodOop = methodOop;
+      vf->method = method;
       vf->bci       = bci;
       err = line_number_from_bci(J, vf);
       CHECK_FAIL(err);
@@ -1161,16 +1145,16 @@ name_for_codecache(jvm_agent_t* J, uint64_t fp, uint64_t pc, char * result,
   CHECK_FAIL(err);
 
   if (vtbl == J->nmethod_vtbl) {
-    uint64_t methodOop;
+    uint64_t method;
 
-    err = read_pointer(J, start + OFFSET_nmethod_method, &methodOop);
+    err = read_pointer(J, start + OFFSET_nmethod_method, &method);
     CHECK_FAIL(err);
 
     if (debug) {
-        fprintf(stderr, "name_for_codecache: start: %#8llx, pc: %#8llx, methodOop: %#8llx \n",
-                        start, pc, methodOop);
+        fprintf(stderr, "name_for_codecache: start: %#8llx, pc: %#8llx, method: %#8llx \n",
+                        start, pc, method);
     }
-    err = name_for_nmethod(J, start, pc, methodOop, result, size, jframe);
+    err = name_for_nmethod(J, start, pc, method, result, size, jframe);
     CHECK_FAIL(err);
   } else if (vtbl == J->BufferBlob_vtbl) {
     const char * name;
@@ -1184,8 +1168,8 @@ name_for_codecache(jvm_agent_t* J, uint64_t fp, uint64_t pc, char * result,
      */
     if (err == PS_OK && strncmp(name, "Interpreter", 11) == 0) {
       *is_interpreted = 1;
-      if (is_methodOop(J, J->methodOopPtr)) {
-        return name_for_imethod(J, J->bcx, J->methodOopPtr, result, size, jframe);
+      if (is_method(J, J->methodPtr)) {
+        return name_for_imethod(J, J->bcx, J->methodPtr, result, size, jframe);
       }
     }
 
@@ -1315,7 +1299,7 @@ int Jget_vframe(jvm_agent_t* J, int vframe_no,
   }
   vf = N->vframes + vframe_no;
   name[0] = COMP_METHOD_SIGN;
-  err = name_for_methodOop(J, vf->methodOop, name + 1, size);
+  err = name_for_methodPtr(J, vf->method, name + 1, size);
   CHECK_FAIL(err);
 
   jframe->bci = vf->bci;
@@ -1340,7 +1324,7 @@ int Jlookup_by_regs(jvm_agent_t* J, const prgregset_t regs, char *name,
   uintptr_t fp;
   uintptr_t pc;
   /* arguments given to read_pointer need to be worst case sized */
-  uint64_t methodOopPtr = 0;
+  uint64_t methodPtr = 0;
   uint64_t sender_sp;
   uint64_t bcx = 0;
   int is_interpreted = 0;
@@ -1374,7 +1358,7 @@ int Jlookup_by_regs(jvm_agent_t* J, const prgregset_t regs, char *name,
      */
     pc += 8;
     bcx          = (uintptr_t) regs[R_L1];
-    methodOopPtr = (uintptr_t) regs[R_L2];
+    methodPtr = (uintptr_t) regs[R_L2];
     sender_sp = regs[R_I5];
     if (debug > 2) {
         fprintf(stderr, "\nregs[R_I1]=%lx, regs[R_I2]=%lx, regs[R_I5]=%lx, regs[R_L1]=%lx, regs[R_L2]=%lx\n",
@@ -1395,8 +1379,8 @@ int Jlookup_by_regs(jvm_agent_t* J, const prgregset_t regs, char *name,
         printf("Jlookup_by_regs: J->prev_fr.fp = %#lx\n", J->prev_fr.fp);
     }
 
-    if (read_pointer(J,  fp + OFFSET_interpreter_frame_method, &methodOopPtr) != PS_OK) {
-      methodOopPtr = 0;
+    if (read_pointer(J,  fp + OFFSET_interpreter_frame_method, &methodPtr) != PS_OK) {
+      methodPtr = 0;
     }
     if (read_pointer(J,  fp + OFFSET_interpreter_frame_sender_sp, &sender_sp) != PS_OK) {
       sender_sp = 0;
@@ -1406,20 +1390,20 @@ int Jlookup_by_regs(jvm_agent_t* J, const prgregset_t regs, char *name,
     }
 #endif /* i386 */
 
-  J->methodOopPtr = methodOopPtr;
+  J->methodPtr = methodPtr;
   J->bcx = bcx;
 
   /* On x86 with C2 JVM: native frame may have wrong regs[R_FP]
    * For example: JVM_SuspendThread frame poins to the top interpreted frame.
-   * If we call is_methodOop(J, methodOopPtr) before codecache_contains(J, pc)
+   * If we call is_method(J, methodPtr) before codecache_contains(J, pc)
    * then we go over and omit both: nmethod and I2CAdapter frames.
    * Note, that regs[R_PC] is always correct if frame defined correctly.
    * So it is better to call codecache_contains(J, pc) from the beginning.
    */
 #ifndef X86_COMPILER2
-  if (is_methodOop(J, J->methodOopPtr)) {
-    result = name_for_imethod(J, bcx, J->methodOopPtr, name, size, jframe);
-    /* If the methodOopPtr is a method then this is highly likely to be
+  if (is_method(J, J->methodPtr)) {
+    result = name_for_imethod(J, bcx, J->methodPtr, name, size, jframe);
+    /* If the methodPtr is a method then this is highly likely to be
        an interpreter frame */
     if (result >= 0) {
       is_interpreted = 1;
@@ -1431,9 +1415,9 @@ int Jlookup_by_regs(jvm_agent_t* J, const prgregset_t regs, char *name,
     result = name_for_codecache(J, fp, pc, name, size, jframe, &is_interpreted);
   }
 #ifdef X86_COMPILER2
-  else if (is_methodOop(J, J->methodOopPtr)) {
-    result = name_for_imethod(J, bcx, J->methodOopPtr, name, size, jframe);
-    /* If the methodOopPtr is a method then this is highly likely to be
+  else if (is_method(J, J->methodPtr)) {
+    result = name_for_imethod(J, bcx, J->methodPtr, name, size, jframe);
+    /* If the methodPtr is a method then this is highly likely to be
        an interpreter frame */
     if (result >= 0) {
       is_interpreted = 1;

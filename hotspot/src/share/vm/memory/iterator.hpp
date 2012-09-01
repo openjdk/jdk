@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ class CodeBlob;
 class nmethod;
 class ReferenceProcessor;
 class DataLayout;
+class KlassClosure;
+class ClassLoaderData;
 
 // Closure provides abortability.
 
@@ -51,39 +53,50 @@ class Closure : public StackObj {
   void clear_abort() { _abort = false; }
 };
 
-// OopClosure is used for iterating through roots (oop*)
+// OopClosure is used for iterating through references to Java objects.
 
 class OopClosure : public Closure {
  public:
-  ReferenceProcessor* _ref_processor;
-  OopClosure(ReferenceProcessor* rp) : _ref_processor(rp) { }
-  OopClosure() : _ref_processor(NULL) { }
   virtual void do_oop(oop* o) = 0;
   virtual void do_oop_v(oop* o) { do_oop(o); }
   virtual void do_oop(narrowOop* o) = 0;
   virtual void do_oop_v(narrowOop* o) { do_oop(o); }
+};
 
-  // In support of post-processing of weak links of KlassKlass objects;
-  // see KlassKlass::oop_oop_iterate().
+// ExtendedOopClosure adds extra code to be run during oop iterations.
+// This is needed by the GC and is extracted to a separate type to not
+// pollute the OopClosure interface.
+class ExtendedOopClosure : public OopClosure {
+ public:
+  ReferenceProcessor* _ref_processor;
+  ExtendedOopClosure(ReferenceProcessor* rp) : _ref_processor(rp) { }
+  ExtendedOopClosure() : OopClosure(), _ref_processor(NULL) { }
 
-  virtual const bool should_remember_klasses() const {
-    assert(!must_remember_klasses(), "Should have overriden this method.");
-    return false;
-  }
+  // If the do_metadata functions return "true",
+  // we invoke the following when running oop_iterate():
+  //
+  // 1) do_klass on the header klass pointer.
+  // 2) do_klass on the klass pointer in the mirrors.
+  // 3) do_class_loader_data on the class loader data in class loaders.
+  //
+  // The virtual (without suffix) and the non-virtual (with _nv suffix) need
+  // to be updated together, or else the devirtualization will break.
+  //
+  // Providing default implementations of the _nv functions unfortunately
+  // removes the compile-time safeness, but reduces the clutter for the
+  // ExtendedOopClosures that don't need to walk the metadata. Currently,
+  // only CMS needs these.
 
-  virtual void remember_klass(Klass* k) { /* do nothing */ }
+  virtual bool do_metadata() { return do_metadata_nv(); }
+  bool do_metadata_v()       { return do_metadata(); }
+  bool do_metadata_nv()      { return false; }
 
-  // In support of post-processing of weak references in
-  // ProfileData (MethodDataOop) objects; see, for example,
-  // VirtualCallData::oop_iterate().
-  virtual const bool should_remember_mdo() const { return false; }
-  virtual void remember_mdo(DataLayout* v) { /* do nothing */ }
+  virtual void do_klass(Klass* k)   { do_klass_nv(k); }
+  void do_klass_v(Klass* k)         { do_klass(k); }
+  void do_klass_nv(Klass* k)        { ShouldNotReachHere(); }
 
-  // The methods below control how object iterations invoking this closure
-  // should be performed:
+  virtual void do_class_loader_data(ClassLoaderData* cld) { ShouldNotReachHere(); }
 
-  // If "true", invoke on header klass field.
-  bool do_header() { return true; } // Note that this is non-virtual.
   // Controls how prefetching is done for invocations of this closure.
   Prefetch::style prefetch_style() { // Note that this is non-virtual.
     return Prefetch::do_none;
@@ -93,12 +106,26 @@ class OopClosure : public Closure {
   // location without an intervening "major reset" (like the end of a GC).
   virtual bool idempotent() { return false; }
   virtual bool apply_to_weak_ref_discovered_field() { return false; }
+};
 
-#ifdef ASSERT
-  static bool _must_remember_klasses;
-  static bool must_remember_klasses();
-  static void set_must_remember_klasses(bool v);
-#endif
+// Wrapper closure only used to implement oop_iterate_no_header().
+class NoHeaderExtendedOopClosure : public ExtendedOopClosure {
+  OopClosure* _wrapped_closure;
+ public:
+  NoHeaderExtendedOopClosure(OopClosure* cl) : _wrapped_closure(cl) {}
+  // Warning: this calls the virtual version do_oop in the the wrapped closure.
+  void do_oop_nv(oop* p)       { _wrapped_closure->do_oop(p); }
+  void do_oop_nv(narrowOop* p) { _wrapped_closure->do_oop(p); }
+
+  void do_oop(oop* p)          { assert(false, "Only the _nv versions should be used");
+                                 _wrapped_closure->do_oop(p); }
+  void do_oop(narrowOop* p)    { assert(false, "Only the _nv versions should be used");
+                                 _wrapped_closure->do_oop(p);}
+};
+
+class KlassClosure : public Closure {
+ public:
+  virtual void do_klass(Klass* k) = 0;
 };
 
 // ObjectClosure is used for iterating through an object space
@@ -118,10 +145,10 @@ class BoolObjectClosure : public ObjectClosure {
 // Applies an oop closure to all ref fields in objects iterated over in an
 // object iteration.
 class ObjectToOopClosure: public ObjectClosure {
-  OopClosure* _cl;
+  ExtendedOopClosure* _cl;
 public:
   void do_object(oop obj);
-  ObjectToOopClosure(OopClosure* cl) : _cl(cl) {}
+  ObjectToOopClosure(ExtendedOopClosure* cl) : _cl(cl) {}
 };
 
 // A version of ObjectClosure with "memory" (see _previous_address below)
@@ -263,22 +290,13 @@ class YieldClosure : public StackObj {
 
 // Abstract closure for serializing data (read or write).
 
-class SerializeOopClosure : public OopClosure {
+class SerializeClosure : public Closure {
 public:
   // Return bool indicating whether closure implements read or write.
   virtual bool reading() const = 0;
 
-  // Read/write the int pointed to by i.
-  virtual void do_int(int* i) = 0;
-
-  // Read/write the size_t pointed to by i.
-  virtual void do_size_t(size_t* i) = 0;
-
   // Read/write the void pointer pointed to by p.
   virtual void do_ptr(void** p) = 0;
-
-  // Read/write the HeapWord pointer pointed to be p.
-  virtual void do_ptr(HeapWord** p) = 0;
 
   // Read/write the region specified.
   virtual void do_region(u_char* start, size_t size) = 0;
@@ -305,49 +323,5 @@ class SymbolClosure : public StackObj {
     *p = (Symbol*)(intptr_t(sym) | (intptr_t(*p) & 1));
   }
 };
-
-#ifdef ASSERT
-// This class is used to flag phases of a collection that
-// can unload classes and which should override the
-// should_remember_klasses() and remember_klass() of OopClosure.
-// The _must_remember_klasses is set in the contructor and restored
-// in the destructor.  _must_remember_klasses is checked in assertions
-// in the OopClosure implementations of should_remember_klasses() and
-// remember_klass() and the expectation is that the OopClosure
-// implementation should not be in use if _must_remember_klasses is set.
-// Instances of RememberKlassesChecker can be place in
-// marking phases of collections which can do class unloading.
-// RememberKlassesChecker can be passed "false" to turn off checking.
-// It is used by CMS when CMS yields to a different collector.
-class RememberKlassesChecker: StackObj {
- bool _saved_state;
- bool _do_check;
- public:
-  RememberKlassesChecker(bool checking_on) : _saved_state(false),
-    _do_check(true) {
-    // The ClassUnloading unloading flag affects the collectors except
-    // for CMS.
-    // CMS unloads classes if CMSClassUnloadingEnabled is true or
-    // if ExplicitGCInvokesConcurrentAndUnloadsClasses is true and
-    // the current collection is an explicit collection.  Turning
-    // on the checking in general for
-    // ExplicitGCInvokesConcurrentAndUnloadsClasses and
-    // UseConcMarkSweepGC should not lead to false positives.
-    _do_check =
-      ClassUnloading && !UseConcMarkSweepGC ||
-      CMSClassUnloadingEnabled && UseConcMarkSweepGC ||
-      ExplicitGCInvokesConcurrentAndUnloadsClasses && UseConcMarkSweepGC;
-    if (_do_check) {
-      _saved_state = OopClosure::must_remember_klasses();
-      OopClosure::set_must_remember_klasses(checking_on);
-    }
-  }
-  ~RememberKlassesChecker() {
-    if (_do_check) {
-      OopClosure::set_must_remember_klasses(_saved_state);
-    }
-  }
-};
-#endif  // ASSERT
 
 #endif // SHARE_VM_MEMORY_ITERATOR_HPP

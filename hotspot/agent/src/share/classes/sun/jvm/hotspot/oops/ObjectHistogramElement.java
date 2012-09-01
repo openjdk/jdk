@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,6 @@ public class ObjectHistogramElement {
           return tak.getElementTypeName() + "[]";
        } else if (k instanceof ObjArrayKlass) {
           ObjArrayKlass oak = (ObjArrayKlass) ak;
-          // See whether it's a "system objArray"
-          if (oak.equals(VM.getVM().getUniverse().systemObjArrayKlassObj())) {
-            return "* System ObjArray";
-          }
           Klass bottom = oak.getBottomKlass();
           int dim = (int) oak.getDimension();
           StringBuffer buf = new StringBuffer();

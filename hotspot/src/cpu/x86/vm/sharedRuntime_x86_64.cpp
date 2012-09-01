@@ -29,7 +29,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
-#include "oops/compiledICHolderOop.hpp"
+#include "oops/compiledICHolder.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
@@ -413,8 +413,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 // Patch the callers callsite with entry to compiled code if it exists.
 static void patch_callers_callsite(MacroAssembler *masm) {
   Label L;
-  __ verify_oop(rbx);
-  __ cmpptr(Address(rbx, in_bytes(methodOopDesc::code_offset())), (int32_t)NULL_WORD);
+  __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), (int32_t)NULL_WORD);
   __ jcc(Assembler::equal, L);
 
   // Save the current stack pointer
@@ -428,8 +427,6 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   __ andptr(rsp, -(StackAlignmentInBytes));
   __ push_CPU_state();
 
-
-  __ verify_oop(rbx);
   // VM needs caller's callsite
   // VM needs target method
   // This needs to be a long call since we will relocate this adapter to
@@ -586,7 +583,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   }
 
   // Schedule the branch target address early.
-  __ movptr(rcx, Address(rbx, in_bytes(methodOopDesc::interpreter_entry_offset())));
+  __ movptr(rcx, Address(rbx, in_bytes(Method::interpreter_entry_offset())));
   __ jmp(rcx);
 }
 
@@ -698,7 +695,7 @@ static void gen_i2c_adapter(MacroAssembler *masm,
 
   // Will jump to the compiled code just as if compiled code was doing it.
   // Pre-load the register-jump target early, to schedule it better.
-  __ movptr(r11, Address(rbx, in_bytes(methodOopDesc::from_compiled_offset())));
+  __ movptr(r11, Address(rbx, in_bytes(Method::from_compiled_offset())));
 
   // Now generate the shuffle code.  Pick up all register args and move the
   // rest through the floating point stack top.
@@ -793,8 +790,8 @@ static void gen_i2c_adapter(MacroAssembler *masm,
 
   __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx);
 
-  // put methodOop where a c2i would expect should we end up there
-  // only needed becaus eof c2 resolve stubs return methodOop as a result in
+  // put Method* where a c2i would expect should we end up there
+  // only needed becaus eof c2 resolve stubs return Method* as a result in
   // rax
   __ mov(rax, rbx);
   __ jmp(r11);
@@ -812,7 +809,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
 
   // -------------------------------------------------------------------------
-  // Generate a C2I adapter.  On entry we know rbx holds the methodOop during calls
+  // Generate a C2I adapter.  On entry we know rbx holds the Method* during calls
   // to the interpreter.  The args start out packed in the compiled layout.  They
   // need to be unpacked into the interpreter layout.  This will almost always
   // require some stack space.  We grow the current (compiled) stack, then repack
@@ -829,12 +826,9 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   Register temp = rbx;
 
   {
-    __ verify_oop(holder);
     __ load_klass(temp, receiver);
-    __ verify_oop(temp);
-
-    __ cmpptr(temp, Address(holder, compiledICHolderOopDesc::holder_klass_offset()));
-    __ movptr(rbx, Address(holder, compiledICHolderOopDesc::holder_method_offset()));
+    __ cmpptr(temp, Address(holder, CompiledICHolder::holder_klass_offset()));
+    __ movptr(rbx, Address(holder, CompiledICHolder::holder_method_offset()));
     __ jcc(Assembler::equal, ok);
     __ jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
 
@@ -842,7 +836,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     // Method might have been compiled since the call site was patched to
     // interpreted if that is the case treat it as a miss so we can get
     // the call site corrected.
-    __ cmpptr(Address(rbx, in_bytes(methodOopDesc::code_offset())), (int32_t)NULL_WORD);
+    __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), (int32_t)NULL_WORD);
     __ jcc(Assembler::equal, skip_fixup);
     __ jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   }
@@ -2184,7 +2178,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     SkipIfEqual skip(masm, &DTraceMethodProbes, false);
     // protect the args we've loaded
     save_args(masm, total_c_args, c_arg, out_regs);
-    __ movoop(c_rarg1, JNIHandles::make_local(method()));
+    __ mov_metadata(c_rarg1, method());
     __ call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
       r15_thread, c_rarg1);
@@ -2195,7 +2189,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
     // protect the args we've loaded
     save_args(masm, total_c_args, c_arg, out_regs);
-    __ movoop(c_rarg1, JNIHandles::make_local(method()));
+    __ mov_metadata(c_rarg1, method());
     __ call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::rc_trace_method_entry),
       r15_thread, c_rarg1);
@@ -2448,7 +2442,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   {
     SkipIfEqual skip(masm, &DTraceMethodProbes, false);
     save_native_result(masm, ret_type, stack_slots);
-    __ movoop(c_rarg1, JNIHandles::make_local(method()));
+    __ mov_metadata(c_rarg1, method());
     __ call_VM_leaf(
          CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
          r15_thread, c_rarg1);
@@ -3879,8 +3873,8 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
   __ jcc(Assembler::notEqual, pending);
 
-  // get the returned methodOop
-  __ movptr(rbx, Address(r15_thread, JavaThread::vm_result_offset()));
+  // get the returned Method*
+  __ get_vm_result_2(rbx, r15_thread);
   __ movptr(Address(rsp, RegisterSaver::rbx_offset_in_bytes()), rbx);
 
   __ movptr(Address(rsp, RegisterSaver::rax_offset_in_bytes()), rax);

@@ -234,7 +234,7 @@
   template(parameter_annotations_name,                "parameterAnnotations")                     \
   template(annotation_default_name,                   "annotationDefault")                        \
   template(sun_reflect_ConstantPool,                  "sun/reflect/ConstantPool")                 \
-  template(constantPoolOop_name,                      "constantPoolOop")                          \
+  template(ConstantPool_name,                         "constantPoolOop")                          \
   template(sun_reflect_UnsafeStaticFieldAccessorImpl, "sun/reflect/UnsafeStaticFieldAccessorImpl")\
   template(base_name,                                 "base")                                     \
                                                                                                   \
@@ -314,7 +314,6 @@
   template(type_name,                                 "type")                                     \
   template(findNative_name,                           "findNative")                               \
   template(deadChild_name,                            "deadChild")                                \
-  template(addClass_name,                             "addClass")                                 \
   template(getFromClass_name,                         "getFromClass")                             \
   template(dispatch_name,                             "dispatch")                                 \
   template(getSystemClassLoader_name,                 "getSystemClassLoader")                     \
@@ -359,6 +358,8 @@
   template(values_name,                               "values")                                   \
   template(receiver_name,                             "receiver")                                 \
   template(vmtarget_name,                             "vmtarget")                                 \
+  template(next_target_name,                          "next_target")                              \
+  template(vmloader_name,                             "vmloader")                                 \
   template(vmindex_name,                              "vmindex")                                  \
   template(vmcount_name,                              "vmcount")                                  \
   template(vmentry_name,                              "vmentry")                                  \
@@ -373,6 +374,8 @@
   template(array_klass_name,                          "array_klass")                              \
   template(oop_size_name,                             "oop_size")                                 \
   template(static_oop_field_count_name,               "static_oop_field_count")                   \
+  template(loader_data_name,                          "loader_data")                              \
+  template(dependencies_name,                         "dependencies")                             \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \
   template(register_method_name,                      "register")                                 \
@@ -1012,7 +1015,7 @@ class vmSymbols: AllStatic {
 
   // Sharing support
   static void symbols_do(SymbolClosure* f);
-  static void serialize(SerializeOopClosure* soc);
+  static void serialize(SerializeClosure* soc);
 
   static Symbol* type_signature(BasicType t) {
     assert((uint)t < T_VOID+1, "range check");
@@ -1110,7 +1113,7 @@ public:
     return id;
   }
 
-  static void verify_method(ID actual_id, methodOop m) PRODUCT_RETURN;
+  static void verify_method(ID actual_id, Method* m) PRODUCT_RETURN;
 
   // Find out the symbols behind an intrinsic:
   static vmSymbols::SID     class_for(ID id);
@@ -1121,7 +1124,7 @@ public:
   static const char* short_name_as_C_string(ID id, char* buf, int size);
 
   // Access to intrinsic methods:
-  static methodOop method_for(ID id);
+  static Method* method_for(ID id);
 
   // Wrapper object methods:
   static ID for_boxing(BasicType type);

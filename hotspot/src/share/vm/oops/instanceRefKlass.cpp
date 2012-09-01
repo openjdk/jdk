@@ -58,7 +58,7 @@ void specialized_oop_follow_contents(instanceRefKlass* ref, oop obj) {
     if (!referent->is_gc_marked() &&
         MarkSweep::ref_processor()->discover_reference(obj, ref->reference_type())) {
       // reference was discovered, referent will be traversed later
-      ref->instanceKlass::oop_follow_contents(obj);
+      ref->InstanceKlass::oop_follow_contents(obj);
       debug_only(
         if(TraceReferenceGC && PrintGCDetails) {
           gclog_or_tty->print_cr("       Non NULL enqueued " INTPTR_FORMAT, obj);
@@ -109,7 +109,7 @@ void specialized_oop_follow_contents(instanceRefKlass* ref, oop obj) {
     }
   )
   MarkSweep::mark_and_push(next_addr);
-  ref->instanceKlass::oop_follow_contents(obj);
+  ref->InstanceKlass::oop_follow_contents(obj);
 }
 
 void instanceRefKlass::oop_follow_contents(oop obj) {
@@ -138,7 +138,7 @@ void specialized_oop_follow_contents(instanceRefKlass* ref,
         PSParallelCompact::ref_processor()->
           discover_reference(obj, ref->reference_type())) {
       // reference already enqueued, referent will be traversed later
-      ref->instanceKlass::oop_follow_contents(cm, obj);
+      ref->InstanceKlass::oop_follow_contents(cm, obj);
       debug_only(
         if(TraceReferenceGC && PrintGCDetails) {
           gclog_or_tty->print_cr("       Non NULL enqueued " INTPTR_FORMAT, obj);
@@ -183,7 +183,7 @@ void specialized_oop_follow_contents(instanceRefKlass* ref,
 #endif
   }
   PSParallelCompact::mark_and_push(cm, next_addr);
-  ref->instanceKlass::oop_follow_contents(cm, obj);
+  ref->InstanceKlass::oop_follow_contents(cm, obj);
 }
 
 void instanceRefKlass::oop_follow_contents(ParCompactionManager* cm,
@@ -231,7 +231,7 @@ template <class T> void specialized_oop_adjust_pointers(instanceRefKlass *ref, o
 
 int instanceRefKlass::oop_adjust_pointers(oop obj) {
   int size = size_helper();
-  instanceKlass::oop_adjust_pointers(obj);
+  InstanceKlass::oop_adjust_pointers(obj);
 
   if (UseCompressedOops) {
     specialized_oop_adjust_pointers<narrowOop>(this, obj);
@@ -308,7 +308,7 @@ oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  
   /* Get size before changing pointers */                                       \
   SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);\
                                                                                 \
-  int size = instanceKlass::oop_oop_iterate##nv_suffix(obj, closure);           \
+  int size = InstanceKlass::oop_oop_iterate##nv_suffix(obj, closure);           \
                                                                                 \
   if (UseCompressedOops) {                                                      \
     InstanceRefKlass_SPECIALIZED_OOP_ITERATE(narrowOop, nv_suffix, contains);   \
@@ -325,7 +325,7 @@ oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {        
   /* Get size before changing pointers */                                       \
   SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);\
                                                                                 \
-  int size = instanceKlass::oop_oop_iterate_backwards##nv_suffix(obj, closure); \
+  int size = InstanceKlass::oop_oop_iterate_backwards##nv_suffix(obj, closure); \
                                                                                 \
   if (UseCompressedOops) {                                                      \
     InstanceRefKlass_SPECIALIZED_OOP_ITERATE(narrowOop, nv_suffix, contains);   \
@@ -344,7 +344,7 @@ oop_oop_iterate##nv_suffix##_m(oop obj,                                         
                                MemRegion mr) {                                  \
   SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);\
                                                                                 \
-  int size = instanceKlass::oop_oop_iterate##nv_suffix##_m(obj, closure, mr);   \
+  int size = InstanceKlass::oop_oop_iterate##nv_suffix##_m(obj, closure, mr);   \
   if (UseCompressedOops) {                                                      \
     InstanceRefKlass_SPECIALIZED_OOP_ITERATE(narrowOop, nv_suffix, mr.contains); \
   } else {                                                                      \
@@ -370,7 +370,7 @@ void specialized_oop_push_contents(instanceRefKlass *ref,
     ReferenceProcessor* rp = PSScavenge::reference_processor();
     if (rp->discover_reference(obj, ref->reference_type())) {
       // reference already enqueued, referent and next will be traversed later
-      ref->instanceKlass::oop_push_contents(pm, obj);
+      ref->InstanceKlass::oop_push_contents(pm, obj);
       return;
     } else {
       // treat referent as normal oop
@@ -411,7 +411,7 @@ void specialized_oop_push_contents(instanceRefKlass *ref,
   if (PSScavenge::should_scavenge(next_addr)) {
     pm->claim_or_forward_depth(next_addr);
   }
-  ref->instanceKlass::oop_push_contents(pm, obj);
+  ref->InstanceKlass::oop_push_contents(pm, obj);
 }
 
 void instanceRefKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
@@ -436,7 +436,7 @@ void specialized_oop_update_pointers(instanceRefKlass *ref,
 }
 
 int instanceRefKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
-  instanceKlass::oop_update_pointers(cm, obj);
+  InstanceKlass::oop_update_pointers(cm, obj);
   if (UseCompressedOops) {
     specialized_oop_update_pointers<narrowOop>(this, cm, obj);
   } else {
@@ -446,13 +446,13 @@ int instanceRefKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
 }
 #endif // SERIALGC
 
-void instanceRefKlass::update_nonstatic_oop_maps(klassOop k) {
+void instanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
   // Clear the nonstatic oop-map entries corresponding to referent
   // and nextPending field.  They are treated specially by the
   // garbage collector.
   // The discovered field is used only by the garbage collector
   // and is also treated specially.
-  instanceKlass* ik = instanceKlass::cast(k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
 
   // Check that we have the right class
   debug_only(static bool first_time = true);
@@ -486,7 +486,7 @@ void instanceRefKlass::update_nonstatic_oop_maps(klassOop k) {
 // Verification
 
 void instanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
-  instanceKlass::oop_verify_on(obj, st);
+  InstanceKlass::oop_verify_on(obj, st);
   // Verify referent field
   oop referent = java_lang_ref_Reference::referent(obj);
 

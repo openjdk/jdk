@@ -234,7 +234,7 @@ class SharedRuntime: AllStatic {
   static void throw_and_post_jvmti_exception(JavaThread *thread, Symbol* name, const char *message = NULL);
 
   // RedefineClasses() tracing support for obsolete method entry
-  static int rc_trace_method_entry(JavaThread* thread, methodOopDesc* m);
+  static int rc_trace_method_entry(JavaThread* thread, Method* m);
 
   // To be used as the entry point for unresolved native methods.
   static address native_method_throw_unsatisfied_link_error_entry();
@@ -253,8 +253,8 @@ class SharedRuntime: AllStatic {
   // dtrace notifications
   static int dtrace_object_alloc(oopDesc* o);
   static int dtrace_object_alloc_base(Thread* thread, oopDesc* o);
-  static int dtrace_method_entry(JavaThread* thread, methodOopDesc* m);
-  static int dtrace_method_exit(JavaThread* thread, methodOopDesc* m);
+  static int dtrace_method_entry(JavaThread* thread, Method* m);
+  static int dtrace_method_exit(JavaThread* thread, Method* m);
 
   // Utility method for retrieving the Java thread id, returns 0 if the
   // thread is not a well formed Java thread.
@@ -452,7 +452,7 @@ class SharedRuntime: AllStatic {
 
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.
-  static void fixup_callers_callsite(methodOopDesc* moop, address ret_pc);
+  static void fixup_callers_callsite(Method* moop, address ret_pc);
 
   // Slow-path Locking and Unlocking
   static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);

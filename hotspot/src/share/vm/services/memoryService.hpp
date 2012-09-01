@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,11 @@ class Generation;
 class DefNewGeneration;
 class PSYoungGen;
 class PSOldGen;
-class PSPermGen;
 class CodeHeap;
 class ContiguousSpace;
 class CompactibleFreeListSpace;
-class PermanentGenerationSpec;
 class GenCollectedHeap;
 class ParallelScavengeHeap;
-class CompactingPermGenGen;
-class CMSPermGenGen;
 class G1CollectedHeap;
 
 // VM Monitoring and Management Support
@@ -85,26 +81,18 @@ private:
     add_generation_memory_pool(gen, major_mgr, NULL);
   }
 
-  static void add_compact_perm_gen_memory_pool(CompactingPermGenGen* perm_gen,
-                                               MemoryManager* mgr);
-  static void add_cms_perm_gen_memory_pool(CMSPermGenGen* perm_gen,
-                                           MemoryManager* mgr);
 
   static void add_psYoung_memory_pool(PSYoungGen* gen,
                                       MemoryManager* major_mgr,
                                       MemoryManager* minor_mgr);
   static void add_psOld_memory_pool(PSOldGen* gen,
                                     MemoryManager* mgr);
-  static void add_psPerm_memory_pool(PSPermGen* perm,
-                                     MemoryManager* mgr);
 
   static void add_g1YoungGen_memory_pool(G1CollectedHeap* g1h,
                                          MemoryManager* major_mgr,
                                          MemoryManager* minor_mgr);
   static void add_g1OldGen_memory_pool(G1CollectedHeap* g1h,
                                        MemoryManager* mgr);
-  static void add_g1PermGen_memory_pool(G1CollectedHeap* g1h,
-                                        MemoryManager* mgr);
 
   static MemoryPool* add_space(ContiguousSpace* space,
                                const char* name,

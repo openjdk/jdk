@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,28 +33,18 @@
 // of B, A's representation is a prefix of B's representation.
 
 typedef juint narrowOop; // Offset instead of address for an oop within a java object
-typedef class klassOopDesc* wideKlassOop; // to keep SA happy and unhandled oop
-                                          // detector happy.
 typedef void* OopOrNarrowOopStar;
+typedef class   markOopDesc*                markOop;
 
 #ifndef CHECK_UNHANDLED_OOPS
 
 typedef class oopDesc*                            oop;
 typedef class   instanceOopDesc*            instanceOop;
-typedef class   methodOopDesc*                    methodOop;
-typedef class   constMethodOopDesc*            constMethodOop;
-typedef class   methodDataOopDesc*            methodDataOop;
 typedef class   arrayOopDesc*                    arrayOop;
 typedef class     objArrayOopDesc*            objArrayOop;
 typedef class     typeArrayOopDesc*            typeArrayOop;
-typedef class   constantPoolOopDesc*            constantPoolOop;
-typedef class   constantPoolCacheOopDesc*   constantPoolCacheOop;
-typedef class   klassOopDesc*                    klassOop;
-typedef class   markOopDesc*                    markOop;
-typedef class   compiledICHolderOopDesc*    compiledICHolderOop;
 
 #else
-
 
 // When CHECK_UNHANDLED_OOPS is defined, an "oop" is a class with a
 // carefully chosen set of constructors and conversion operators to go
@@ -71,7 +61,6 @@ typedef class   compiledICHolderOopDesc*    compiledICHolderOop;
 // instead, which generates less code anyway.
 
 class Thread;
-typedef class   markOopDesc*                markOop;
 class PromotedObject;
 
 
@@ -106,7 +95,7 @@ public:
   oopDesc*  operator->() const        { return obj(); }
   bool operator==(const oop o) const  { return obj() == o.obj(); }
   bool operator==(void *p) const      { return obj() == p; }
-  bool operator!=(const oop o) const  { return obj() != o.obj(); }
+  bool operator!=(const volatile oop o) const  { return obj() != o.obj(); }
   bool operator!=(void *p) const      { return obj() != p; }
   bool operator==(intptr_t p) const   { return obj() == (oopDesc*)p; }
   bool operator!=(intptr_t p) const   { return obj() != (oopDesc*)p; }
@@ -126,7 +115,7 @@ public:
   operator markOop () const           { return markOop(obj()); }
 
   operator address   () const         { return (address)obj(); }
-  operator intptr_t () const          { return (intptr_t)obj(); }
+  operator intptr_t () const volatile { return (intptr_t)obj(); }
 
   // from javaCalls.cpp
   operator jobject () const           { return (jobject)obj(); }
@@ -139,7 +128,7 @@ public:
 #endif
 
   // from parNewGeneration and other things that want to get to the end of
-  // an oop for stuff (like constMethodKlass.cpp, objArrayKlass.cpp)
+  // an oop for stuff (like objArrayKlass.cpp)
   operator oop* () const              { return (oop *)obj(); }
 };
 
@@ -154,41 +143,37 @@ public:
        type##OopDesc* operator->() const {                                 \
             return (type##OopDesc*)obj();                                  \
        }                                                                   \
-   };                                                                      \
+   };
 
 DEF_OOP(instance);
-DEF_OOP(method);
-DEF_OOP(methodData);
 DEF_OOP(array);
-DEF_OOP(constMethod);
-DEF_OOP(constantPool);
-DEF_OOP(constantPoolCache);
 DEF_OOP(objArray);
 DEF_OOP(typeArray);
-DEF_OOP(klass);
-DEF_OOP(compiledICHolder);
 
 #endif // CHECK_UNHANDLED_OOPS
+
+// The metadata hierarchy is separate from the oop hierarchy
+
+//      class MetaspaceObj
+class   ConstMethod;
+class   ConstantPoolCache;
+class   MethodData;
+//      class Metadata
+class   Method;
+class   ConstantPool;
+//      class CHeapObj
+class   CompiledICHolder;
+
 
 // The klass hierarchy is separate from the oop hierarchy.
 
 class Klass;
-class   instanceKlass;
+class   InstanceKlass;
 class     instanceMirrorKlass;
+class     instanceClassLoaderKlass;
 class     instanceRefKlass;
-class   methodKlass;
-class   constMethodKlass;
-class   methodDataKlass;
-class   klassKlass;
-class     instanceKlassKlass;
-class     arrayKlassKlass;
-class       objArrayKlassKlass;
-class       typeArrayKlassKlass;
 class   arrayKlass;
 class     objArrayKlass;
 class     typeArrayKlass;
-class   constantPoolKlass;
-class   constantPoolCacheKlass;
-class   compiledICHolderKlass;
 
 #endif // SHARE_VM_OOPS_OOPSHIERARCHY_HPP

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 
- Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -809,7 +809,7 @@ typedef </xsl:text>
 </xsl:template>
 
 <xsl:template match="jmethodID" mode="HotSpotType">
-  <xsl:text>methodOop</xsl:text>
+  <xsl:text>Method*</xsl:text>
 </xsl:template>
 
 <xsl:template match="jfieldID" mode="HotSpotType">

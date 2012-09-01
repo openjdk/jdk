@@ -93,11 +93,11 @@ inline intptr_t* frame::interpreter_frame_bcx_addr() const {
   return (intptr_t*) &(get_interpreterState()->_bcp);
 }
 
-inline constantPoolCacheOop* frame::interpreter_frame_cache_addr() const {
+inline ConstantPoolCache** frame::interpreter_frame_cache_addr() const {
   return &(get_interpreterState()->_constants);
 }
 
-inline methodOop* frame::interpreter_frame_method_addr() const {
+inline Method** frame::interpreter_frame_method_addr() const {
   return &(get_interpreterState()->_method);
 }
 

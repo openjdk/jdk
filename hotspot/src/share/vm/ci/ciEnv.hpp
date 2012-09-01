@@ -78,11 +78,6 @@ private:
 
   // Distinguished instances of certain ciObjects..
   static ciObject*              _null_object_instance;
-  static ciMethodKlass*         _method_klass_instance;
-  static ciKlassKlass*          _klass_klass_instance;
-  static ciInstanceKlassKlass*  _instance_klass_klass_instance;
-  static ciTypeArrayKlassKlass* _type_array_klass_klass_instance;
-  static ciObjArrayKlassKlass*  _obj_array_klass_klass_instance;
 
 #define WK_KLASS_DECL(name, ignore_s, ignore_o) static ciInstanceKlass* _##name;
   WK_KLASSES_DO(WK_KLASS_DECL)
@@ -155,9 +150,9 @@ private:
 
   // Helper methods
   bool       check_klass_accessibility(ciKlass* accessing_klass,
-                                      klassOop resolved_klassOop);
-  methodOop  lookup_method(instanceKlass*  accessor,
-                           instanceKlass*  holder,
+                                      Klass* resolved_klass);
+  Method*    lookup_method(InstanceKlass*  accessor,
+                           InstanceKlass*  holder,
                            Symbol*         name,
                            Symbol*         sig,
                            Bytecodes::Code bc);
@@ -181,7 +176,44 @@ private:
     }
   }
 
-  ciMethod* get_method_from_handle(jobject method);
+  ciMetadata* get_metadata(Metadata* o) {
+    if (o == NULL) {
+      return NULL;
+    } else {
+      return _factory->get_metadata(o);
+    }
+  }
+
+  ciInstance* get_instance(oop o) {
+    if (o == NULL) return NULL;
+    return get_object(o)->as_instance();
+  }
+  ciObjArrayKlass* get_obj_array_klass(Klass* o) {
+    if (o == NULL) return NULL;
+    return get_metadata(o)->as_obj_array_klass();
+  }
+  ciTypeArrayKlass* get_type_array_klass(Klass* o) {
+    if (o == NULL) return NULL;
+    return get_metadata(o)->as_type_array_klass();
+  }
+  ciKlass* get_klass(Klass* o) {
+    if (o == NULL) return NULL;
+    return get_metadata(o)->as_klass();
+  }
+  ciInstanceKlass* get_instance_klass(Klass* o) {
+    if (o == NULL) return NULL;
+    return get_metadata(o)->as_instance_klass();
+  }
+  ciMethod* get_method(Method* o) {
+    if (o == NULL) return NULL;
+    return get_metadata(o)->as_method();
+  }
+  ciMethodData* get_method_data(MethodData* o) {
+    if (o == NULL) return NULL;
+    return get_metadata(o)->as_method_data();
+  }
+
+  ciMethod* get_method_from_handle(Method* method);
 
   ciInstance* get_or_create_exception(jobject& handle, Symbol* name);
 
@@ -372,10 +404,6 @@ public:
   // Note:  To find a class from its name string, use ciSymbol::make,
   // but consider adding to vmSymbols.hpp instead.
 
-  // Use this to make a holder for non-perm compile time constants.
-  // The resulting array is guaranteed to satisfy "can_be_constant".
-  ciArray*  make_system_array(GrowableArray<ciObject*>* objects);
-
   // converts the ciKlass* representing the holder of a method into a
   // ciInstanceKlass*.  This is needed since the holder of a method in
   // the bytecodes could be an array type.  Basically this converts
@@ -416,6 +444,9 @@ public:
   void record_failure(const char* reason);
   void record_method_not_compilable(const char* reason, bool all_tiers = true);
   void record_out_of_memory_failure();
+
+  // RedefineClasses support
+  void metadata_do(void f(Metadata*)) { _factory->metadata_do(f); }
 };
 
 #endif // SHARE_VM_CI_CIENV_HPP

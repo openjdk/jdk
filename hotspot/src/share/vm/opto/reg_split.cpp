@@ -1196,7 +1196,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           if( OptoReg::is_stack(uselrg.reg()) &&
               uselrg.reg() < LRG::SPILL_REG && // USE is from stack
               deflrg.reg() != uselrg.reg() ) { // Not trivially removed
-            uint def_ideal_reg = Matcher::base2reg[n->bottom_type()->base()];
+            uint def_ideal_reg = n->bottom_type()->ideal_reg();
             const RegMask &def_rm = *Matcher::idealreg2regmask[def_ideal_reg];
             const RegMask &use_rm = n->in_RegMask(copyidx);
             if( def_rm.overlap(use_rm) && n->is_SpillCopy() ) {  // Bug 4707800, 'n' may be a storeSSL

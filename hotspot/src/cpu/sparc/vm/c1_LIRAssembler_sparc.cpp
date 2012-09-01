@@ -447,7 +447,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   if (compilation()->env()->dtrace_method_probes()) {
     __ mov(G2_thread, O0);
-    jobject2reg(method()->constant_encoding(), O1);
+    metadata2reg(method()->constant_encoding(), O1);
     __ call(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), relocInfo::runtime_call_type);
     __ delayed()->nop();
   }
@@ -502,6 +502,7 @@ void LIR_Assembler::jobject2reg(jobject o, Register reg) {
     __ set(NULL_WORD, reg);
   } else {
     int oop_index = __ oop_recorder()->find_index(o);
+    assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(o)), "should be real oop");
     RelocationHolder rspec = oop_Relocation::spec(oop_index);
     __ set(NULL_WORD, reg, rspec); // Will be set when the nmethod is created
   }
@@ -509,9 +510,9 @@ void LIR_Assembler::jobject2reg(jobject o, Register reg) {
 
 
 void LIR_Assembler::jobject2reg_with_patching(Register reg, CodeEmitInfo *info) {
-  // Allocate a new index in oop table to hold the oop once it's been patched
-  int oop_index = __ oop_recorder()->allocate_index((jobject)NULL);
-  PatchingStub* patch = new PatchingStub(_masm, PatchingStub::load_klass_id, oop_index);
+  // Allocate a new index in table to hold the object once it's been patched
+  int oop_index = __ oop_recorder()->allocate_oop_index(NULL);
+  PatchingStub* patch = new PatchingStub(_masm, PatchingStub::load_mirror_id, oop_index);
 
   AddressLiteral addrlit(NULL, oop_Relocation::spec(oop_index));
   assert(addrlit.rspec().type() == relocInfo::oop_type, "must be an oop reloc");
@@ -523,6 +524,24 @@ void LIR_Assembler::jobject2reg_with_patching(Register reg, CodeEmitInfo *info) 
   patching_epilog(patch, lir_patch_normal, reg, info);
 }
 
+
+void LIR_Assembler::metadata2reg(Metadata* o, Register reg) {
+  __ set_metadata_constant(o, reg);
+}
+
+void LIR_Assembler::klass2reg_with_patching(Register reg, CodeEmitInfo *info) {
+  // Allocate a new index in table to hold the klass once it's been patched
+  int index = __ oop_recorder()->allocate_metadata_index(NULL);
+  PatchingStub* patch = new PatchingStub(_masm, PatchingStub::load_klass_id, index);
+  AddressLiteral addrlit(NULL, metadata_Relocation::spec(index));
+  assert(addrlit.rspec().type() == relocInfo::metadata_type, "must be an metadata reloc");
+  // It may not seem necessary to use a sethi/add pair to load a NULL into dest, but the
+  // NULL will be dynamically patched later and the patched value may be large.  We must
+  // therefore generate the sethi/add as a placeholders
+  __ patchable_set(addrlit, reg);
+
+  patching_epilog(patch, lir_patch_normal, reg, info);
+}
 
 void LIR_Assembler::emit_op3(LIR_Op3* op) {
   Register Rdividend = op->in_opr1()->as_register();
@@ -768,10 +787,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 
 
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
-  RelocationHolder rspec = virtual_call_Relocation::spec(pc());
-  __ set_oop((jobject)Universe::non_oop_word(), G5_inline_cache_reg);
-  __ relocate(rspec);
-  __ call(op->addr(), relocInfo::none);
+  __ ic_call(op->addr(), false);
   // The peephole pass fills the delay slot, add_call_info is done in
   // LIR_Assembler::emit_delay.
 }
@@ -788,7 +804,7 @@ void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
     // ld_ptr, set_hi, set
     __ ld_ptr(G3_scratch, G5_method, G5_method);
   }
-  __ ld_ptr(G5_method, methodOopDesc::from_compiled_offset(), G3_scratch);
+  __ ld_ptr(G5_method, Method::from_compiled_offset(), G3_scratch);
   __ callr(G3_scratch, G0);
   // the peephole pass fills the delay slot
 }
@@ -1227,6 +1243,16 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
       }
       break;
 
+    case T_METADATA:
+      {
+        if (patch_code == lir_patch_none) {
+          metadata2reg(c->as_metadata(), to_reg->as_register());
+        } else {
+          klass2reg_with_patching(to_reg->as_register(), info);
+        }
+      }
+      break;
+
     case T_FLOAT:
       {
         address const_addr = __ float_constant(c->as_jfloat());
@@ -1594,7 +1620,7 @@ void LIR_Assembler::emit_static_call_stub() {
   int start = __ offset();
   __ relocate(static_stub_Relocation::spec(call_pc));
 
-  __ set_oop(NULL, G5);
+  __ set_metadata(NULL, G5);
   // must be set to -1 at code generation time
   AddressLiteral addrlit(-1);
   __ jump_to(addrlit, G3);
@@ -2051,7 +2077,6 @@ void LIR_Assembler::unwind_op(LIR_Opr exceptionOop) {
   __ delayed()->nop();
 }
 
-
 void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   Register src = op->src()->as_register();
   Register dst = op->dst()->as_register();
@@ -2169,7 +2194,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays
-      if (UseCompressedOops) {
+      if (UseCompressedKlassPointers) {
         // We don't need decode because we just need to compare
         __ lduw(src, oopDesc::klass_offset_in_bytes(), tmp);
         __ lduw(dst, oopDesc::klass_offset_in_bytes(), tmp2);
@@ -2302,8 +2327,8 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // subtype which we can't check or src is the same array as dst
     // but not necessarily exactly of type default_type.
     Label known_ok, halt;
-    jobject2reg(op->expected_type()->constant_encoding(), tmp);
-    if (UseCompressedOops) {
+    metadata2reg(op->expected_type()->constant_encoding(), tmp);
+    if (UseCompressedKlassPointers) {
       // tmp holds the default type. It currently comes uncompressed after the
       // load of a constant, so encode it.
       __ encode_heap_oop(tmp);
@@ -2468,10 +2493,10 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
          op->klass()->as_register() == G5, "must be");
   if (op->init_check()) {
     __ ldub(op->klass()->as_register(),
-          in_bytes(instanceKlass::init_state_offset()),
+          in_bytes(InstanceKlass::init_state_offset()),
           op->tmp1()->as_register());
     add_debug_info_for_null_check_here(op->stub()->info());
-    __ cmp(op->tmp1()->as_register(), instanceKlass::fully_initialized);
+    __ cmp(op->tmp1()->as_register(), InstanceKlass::fully_initialized);
     __ br(Assembler::notEqual, false, Assembler::pn, *op->stub()->entry());
     __ delayed()->nop();
   }
@@ -2598,7 +2623,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ br_notnull_short(obj, Assembler::pn, not_null);
     Register mdo      = k_RInfo;
     Register data_val = Rtmp1;
-    jobject2reg(md->constant_encoding(), mdo);
+    metadata2reg(md->constant_encoding(), mdo);
     if (mdo_offset_bias > 0) {
       __ set(mdo_offset_bias, data_val);
       __ add(mdo, data_val, mdo);
@@ -2622,9 +2647,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   // patching may screw with our temporaries on sparc,
   // so let's do it before loading the class
   if (k->is_loaded()) {
-    jobject2reg(k->constant_encoding(), k_RInfo);
+    metadata2reg(k->constant_encoding(), k_RInfo);
   } else {
-    jobject2reg_with_patching(k_RInfo, op->info_for_patch());
+    klass2reg_with_patching(k_RInfo, op->info_for_patch());
   }
   assert(obj != k_RInfo, "must be different");
 
@@ -2667,7 +2692,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     Register mdo  = klass_RInfo, recv = k_RInfo, tmp1 = Rtmp1;
     assert_different_registers(obj, mdo, recv, tmp1);
     __ bind(profile_cast_success);
-    jobject2reg(md->constant_encoding(), mdo);
+    metadata2reg(md->constant_encoding(), mdo);
     if (mdo_offset_bias > 0) {
       __ set(mdo_offset_bias, tmp1);
       __ add(mdo, tmp1, mdo);
@@ -2679,7 +2704,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ delayed()->nop();
     // Cast failure case
     __ bind(profile_cast_failure);
-    jobject2reg(md->constant_encoding(), mdo);
+    metadata2reg(md->constant_encoding(), mdo);
     if (mdo_offset_bias > 0) {
       __ set(mdo_offset_bias, tmp1);
       __ add(mdo, tmp1, mdo);
@@ -2724,7 +2749,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ br_notnull_short(value, Assembler::pn, not_null);
       Register mdo      = k_RInfo;
       Register data_val = Rtmp1;
-      jobject2reg(md->constant_encoding(), mdo);
+      metadata2reg(md->constant_encoding(), mdo);
       if (mdo_offset_bias > 0) {
         __ set(mdo_offset_bias, data_val);
         __ add(mdo, data_val, mdo);
@@ -2760,7 +2785,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       Register mdo  = klass_RInfo, recv = k_RInfo, tmp1 = Rtmp1;
       assert_different_registers(value, mdo, recv, tmp1);
       __ bind(profile_cast_success);
-      jobject2reg(md->constant_encoding(), mdo);
+      metadata2reg(md->constant_encoding(), mdo);
       if (mdo_offset_bias > 0) {
         __ set(mdo_offset_bias, tmp1);
         __ add(mdo, tmp1, mdo);
@@ -2770,7 +2795,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ ba_short(done);
       // Cast failure case
       __ bind(profile_cast_failure);
-      jobject2reg(md->constant_encoding(), mdo);
+      metadata2reg(md->constant_encoding(), mdo);
       if (mdo_offset_bias > 0) {
         __ set(mdo_offset_bias, tmp1);
         __ add(mdo, tmp1, mdo);
@@ -2972,7 +2997,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   assert(op->tmp1()->is_single_cpu(), "tmp1 must be allocated");
   Register tmp1 = op->tmp1()->as_register();
 #endif
-  jobject2reg(md->constant_encoding(), mdo);
+  metadata2reg(md->constant_encoding(), mdo);
   int mdo_offset_bias = 0;
   if (!Assembler::is_simm13(md->byte_offset_of_slot(data, CounterData::count_offset()) +
                             data->size_in_bytes())) {
@@ -2998,7 +3023,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     ciKlass* known_klass = op->known_holder();
     if (C1OptimizeVirtualCallProfiling && known_klass != NULL) {
       // We know the type that will be seen at this call site; we can
-      // statically update the methodDataOop rather than needing to do
+      // statically update the MethodData* rather than needing to do
       // dynamic tests on the receiver type
 
       // NOTE: we should probably put a lock around this search to
@@ -3028,7 +3053,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         if (receiver == NULL) {
           Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)) -
                             mdo_offset_bias);
-          jobject2reg(known_klass->constant_encoding(), tmp1);
+          metadata2reg(known_klass->constant_encoding(), tmp1);
           __ st_ptr(tmp1, recv_addr);
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) -
                             mdo_offset_bias);

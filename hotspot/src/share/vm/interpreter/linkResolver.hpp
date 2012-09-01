@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_INTERPRETER_LINKRESOLVER_HPP
 #define SHARE_VM_INTERPRETER_LINKRESOLVER_HPP
 
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "utilities/top.hpp"
 
 // All the necessary definitions for run-time link resolution.
@@ -94,7 +94,7 @@ class CallInfo: public LinkInfo {
 
   BasicType    result_type() const               { return selected_method()->result_type(); }
   bool         has_vtable_index() const          { return _vtable_index >= 0; }
-  bool         is_statically_bound() const       { return _vtable_index == methodOopDesc::nonvirtual_vtable_index; }
+  bool         is_statically_bound() const       { return _vtable_index == Method::nonvirtual_vtable_index; }
   int          vtable_index() const {
     // Even for interface calls the vtable index could be non-negative.
     // See CallInfo::set_interface.

@@ -34,7 +34,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecode.hpp"
-#include "oops/methodDataOop.hpp"
+#include "oops/methodData.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -59,7 +59,7 @@ HS_DTRACE_PROBE_DECL6(hotspot, compiled__method__unload,
 
 #define DTRACE_METHOD_UNLOAD_PROBE(method)                                \
   {                                                                       \
-    methodOop m = (method);                                               \
+    Method* m = (method);                                                 \
     if (m != NULL) {                                                      \
       Symbol* klass_name = m->klass_name();                               \
       Symbol* name = m->name();                                           \
@@ -73,7 +73,7 @@ HS_DTRACE_PROBE_DECL6(hotspot, compiled__method__unload,
 #else /* USDT2 */
 #define DTRACE_METHOD_UNLOAD_PROBE(method)                                \
   {                                                                       \
-    methodOop m = (method);                                               \
+    Method* m = (method);                                                 \
     if (m != NULL) {                                                      \
       Symbol* klass_name = m->klass_name();                               \
       Symbol* name = m->name();                                           \
@@ -495,6 +495,7 @@ nmethod* nmethod::new_native_nmethod(methodHandle method,
   ByteSize basic_lock_owner_sp_offset,
   ByteSize basic_lock_sp_offset,
   OopMapSet* oop_maps) {
+  code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = NULL;
   {
@@ -529,6 +530,7 @@ nmethod* nmethod::new_dtrace_nmethod(methodHandle method,
                                      int trap_offset,
                                      int frame_complete,
                                      int frame_size) {
+  code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = NULL;
   {
@@ -573,6 +575,7 @@ nmethod* nmethod::new_nmethod(methodHandle method,
 )
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
+  code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = NULL;
   { MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -601,11 +604,11 @@ nmethod* nmethod::new_nmethod(methodHandle method,
       // the number of methods compiled.  For applications with a lot
       // classes the slow way is too slow.
       for (Dependencies::DepStream deps(nm); deps.next(); ) {
-        klassOop klass = deps.context_type();
+        Klass* klass = deps.context_type();
         if (klass == NULL)  continue;  // ignore things like evol_method
 
         // record this nmethod as dependent on this klass
-        instanceKlass::cast(klass)->add_dependent_nmethod(nm);
+        InstanceKlass::cast(klass)->add_dependent_nmethod(nm);
       }
     }
     NOT_PRODUCT(if (nm != NULL)  nmethod_stats.note_nmethod(nm));
@@ -627,7 +630,7 @@ nmethod* nmethod::new_nmethod(methodHandle method,
 
 // For native wrappers
 nmethod::nmethod(
-  methodOop method,
+  Method* method,
   int nmethod_size,
   int compile_id,
   CodeOffsets* offsets,
@@ -658,7 +661,8 @@ nmethod::nmethod(
     _consts_offset           = data_offset();
     _stub_offset             = data_offset();
     _oops_offset             = data_offset();
-    _scopes_data_offset      = _oops_offset          + round_to(code_buffer->total_oop_size(), oopSize);
+    _metadata_offset         = _oops_offset         + round_to(code_buffer->total_oop_size(), oopSize);
+    _scopes_data_offset      = _metadata_offset     + round_to(code_buffer->total_metadata_size(), wordSize);
     _scopes_pcs_offset       = _scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
     _handler_table_offset    = _dependencies_offset;
@@ -672,7 +676,7 @@ nmethod::nmethod(
     _exception_cache         = NULL;
     _pc_desc_cache.reset_to(NULL);
 
-    code_buffer->copy_oops_to(this);
+    code_buffer->copy_values_to(this);
     if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
       CodeCache::add_scavenge_root_nmethod(this);
     }
@@ -710,7 +714,7 @@ nmethod::nmethod(
 // For dtrace wrappers
 #ifdef HAVE_DTRACE_H
 nmethod::nmethod(
-  methodOop method,
+  Method* method,
   int nmethod_size,
   CodeOffsets* offsets,
   CodeBuffer* code_buffer,
@@ -738,7 +742,8 @@ nmethod::nmethod(
     _consts_offset           = data_offset();
     _stub_offset             = data_offset();
     _oops_offset             = data_offset();
-    _scopes_data_offset      = _oops_offset          + round_to(code_buffer->total_oop_size(), oopSize);
+    _metadata_offset         = _oops_offset         + round_to(code_buffer->total_oop_size(), oopSize);
+    _scopes_data_offset      = _metadata_offset     + round_to(code_buffer->total_metadata_size(), wordSize);
     _scopes_pcs_offset       = _scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
     _handler_table_offset    = _dependencies_offset;
@@ -752,7 +757,7 @@ nmethod::nmethod(
     _exception_cache         = NULL;
     _pc_desc_cache.reset_to(NULL);
 
-    code_buffer->copy_oops_to(this);
+    code_buffer->copy_values_to(this);
     debug_only(verify_scavenge_root_oops());
     CodeCache::commit(this);
   }
@@ -792,7 +797,7 @@ void* nmethod::operator new(size_t size, int nmethod_size) {
 
 
 nmethod::nmethod(
-  methodOop method,
+  Method* method,
   int nmethod_size,
   int compile_id,
   int entry_bci,
@@ -847,7 +852,9 @@ nmethod::nmethod(
     }
 
     _oops_offset             = data_offset();
-    _scopes_data_offset      = _oops_offset          + round_to(code_buffer->total_oop_size (), oopSize);
+    _metadata_offset         = _oops_offset          + round_to(code_buffer->total_oop_size(), oopSize);
+    _scopes_data_offset      = _metadata_offset      + round_to(code_buffer->total_metadata_size(), wordSize);
+
     _scopes_pcs_offset       = _scopes_data_offset   + round_to(debug_info->data_size       (), oopSize);
     _dependencies_offset     = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
     _handler_table_offset    = _dependencies_offset  + round_to(dependencies->size_in_bytes (), oopSize);
@@ -861,7 +868,7 @@ nmethod::nmethod(
     _pc_desc_cache.reset_to(scopes_pcs_begin());
 
     // Copy contents of ScopeDescRecorder to nmethod
-    code_buffer->copy_oops_to(this);
+    code_buffer->copy_values_to(this);
     debug_info->copy_to(this);
     dependencies->copy_to(this);
     if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
@@ -1003,10 +1010,10 @@ inline void nmethod::initialize_immediate_oop(oop* dest, jobject handle) {
 }
 
 
-void nmethod::copy_oops(GrowableArray<jobject>* array) {
-  //assert(oops_size() == 0, "do this handshake just once, please");
+// Have to have the same name because it's called by a template
+void nmethod::copy_values(GrowableArray<jobject>* array) {
   int length = array->length();
-  assert((address)(oops_begin() + length) <= data_end(), "oops big enough");
+  assert((address)(oops_begin() + length) <= (address)oops_end(), "oops big enough");
   oop* dest = oops_begin();
   for (int index = 0 ; index < length; index++) {
     initialize_immediate_oop(&dest[index], array->at(index));
@@ -1020,6 +1027,14 @@ void nmethod::copy_oops(GrowableArray<jobject>* array) {
   fix_oop_relocations(NULL, NULL, /*initialize_immediates=*/ true);
 }
 
+void nmethod::copy_values(GrowableArray<Metadata*>* array) {
+  int length = array->length();
+  assert((address)(metadata_begin() + length) <= (address)metadata_end(), "big enough");
+  Metadata** dest = metadata_begin();
+  for (int index = 0 ; index < length; index++) {
+    dest[index] = array->at(index);
+  }
+}
 
 bool nmethod::is_at_poll_return(address pc) {
   RelocIterator iter(this, pc, pc+1);
@@ -1054,6 +1069,9 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
       }
       // Refresh the oop-related bits of this instruction.
       reloc->fix_oop_relocation();
+    } else if (iter.type() == relocInfo::metadata_type) {
+      metadata_Relocation* reloc = iter.metadata_reloc();
+      reloc->fix_metadata_relocation();
     }
 
     // There must not be any interfering patches or breakpoints.
@@ -1172,11 +1190,11 @@ bool nmethod::can_not_entrant_be_converted() {
 void nmethod::inc_decompile_count() {
   if (!is_compiled_by_c2()) return;
   // Could be gated by ProfileTraps, but do not bother...
-  methodOop m = method();
+  Method* m = method();
   if (m == NULL)  return;
-  methodDataOop mdo = m->method_data();
+  MethodData* mdo = m->method_data();
   if (mdo == NULL)  return;
-  // There is a benign race here.  See comments in methodDataOop.hpp.
+  // There is a benign race here.  See comments in methodData.hpp.
   mdo->inc_decompile_count();
 }
 
@@ -1195,7 +1213,7 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   // Break cycle between nmethod & method
   if (TraceClassUnloading && WizardMode) {
     tty->print_cr("[Class unloading: Making nmethod " INTPTR_FORMAT
-                  " unloadable], methodOop(" INTPTR_FORMAT
+                  " unloadable], Method*(" INTPTR_FORMAT
                   "), cause(" INTPTR_FORMAT ")",
                   this, (address)_method, (address)cause);
     if (!Universe::heap()->is_gc_active())
@@ -1205,12 +1223,12 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   if (is_osr_method()) {
     invalidate_osr_method();
   }
-  // If _method is already NULL the methodOop is about to be unloaded,
+  // If _method is already NULL the Method* is about to be unloaded,
   // so we don't have to break the cycle. Note that it is possible to
-  // have the methodOop live here, in case we unload the nmethod because
-  // it is pointing to some oop (other than the methodOop) being unloaded.
+  // have the Method* live here, in case we unload the nmethod because
+  // it is pointing to some oop (other than the Method*) being unloaded.
   if (_method != NULL) {
-    // OSR methods point to the methodOop, but the methodOop does not
+    // OSR methods point to the Method*, but the Method* does not
     // point back!
     if (_method->code() == this) {
       _method->clear_code(); // Break a cycle
@@ -1230,7 +1248,7 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   // Log the unloading.
   log_state_change();
 
-  // The methodOop is gone at this point
+  // The Method* is gone at this point
   assert(_method == NULL, "Tautology");
 
   set_osr_link(NULL);
@@ -1242,7 +1260,7 @@ void nmethod::invalidate_osr_method() {
   assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod");
   // Remove from list of active nmethods
   if (method() != NULL)
-    instanceKlass::cast(method()->method_holder())->remove_osr_nmethod(this);
+    InstanceKlass::cast(method()->method_holder())->remove_osr_nmethod(this);
   // Set entry as invalid
   _entry_bci = InvalidOSREntryBci;
 }
@@ -1320,7 +1338,7 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     // Remove nmethod from method.
     // We need to check if both the _code and _from_compiled_code_entry_point
     // refer to this nmethod because there is a race in setting these two fields
-    // in methodOop as seen in bugid 4947125.
+    // in Method* as seen in bugid 4947125.
     // If the vep() points to the zombie nmethod, the memory for the nmethod
     // could be flushed and the compiler and vtable stubs could still call
     // through it.
@@ -1440,13 +1458,13 @@ void nmethod::flush_dependencies(BoolObjectClosure* is_alive) {
   if (!has_flushed_dependencies()) {
     set_has_flushed_dependencies();
     for (Dependencies::DepStream deps(this); deps.next(); ) {
-      klassOop klass = deps.context_type();
+      Klass* klass = deps.context_type();
       if (klass == NULL)  continue;  // ignore things like evol_method
 
       // During GC the is_alive closure is non-NULL, and is used to
       // determine liveness of dependees that need to be updated.
-      if (is_alive == NULL || is_alive->do_object_b(klass)) {
-        instanceKlass::cast(klass)->remove_dependent_nmethod(this);
+      if (is_alive == NULL || klass->is_loader_alive(is_alive)) {
+        InstanceKlass::cast(klass)->remove_dependent_nmethod(this);
       }
     }
   }
@@ -1462,16 +1480,7 @@ bool nmethod::can_unload(BoolObjectClosure* is_alive,
   if (obj == NULL || is_alive->do_object_b(obj)) {
       return false;
   }
-  if (obj->is_compiledICHolder()) {
-    compiledICHolderOop cichk_oop = compiledICHolderOop(obj);
-    if (is_alive->do_object_b(
-          cichk_oop->holder_method()->method_holder()) &&
-        is_alive->do_object_b(cichk_oop->holder_klass())) {
-      // The oop should be kept alive
-      keep_alive->do_oop(root);
-      return false;
-    }
-  }
+
   // If ScavengeRootsInCode is true, an nmethod might be unloaded
   // simply because one of its constant oops has gone dead.
   // No actual classes need to be unloaded in order for this to occur.
@@ -1486,7 +1495,7 @@ bool nmethod::can_unload(BoolObjectClosure* is_alive,
 // Transfer information from compilation to jvmti
 void nmethod::post_compiled_method_load_event() {
 
-  methodOop moop = method();
+  Method* moop = method();
 #ifndef USDT2
   HS_DTRACE_PROBE8(hotspot, compiled__method__load,
       moop->klass_name()->bytes(),
@@ -1541,10 +1550,10 @@ void nmethod::post_compiled_method_unload() {
 
   // If a JVMTI agent has enabled the CompiledMethodUnload event then
   // post the event. Sometime later this nmethod will be made a zombie
-  // by the sweeper but the methodOop will not be valid at that point.
+  // by the sweeper but the Method* will not be valid at that point.
   // If the _jmethod_id is null then no load event was ever requested
   // so don't bother posting the unload.  The main reason for this is
-  // that the jmethodID is a weak reference to the methodOop so if
+  // that the jmethodID is a weak reference to the Method* so if
   // it's being unloaded there's no way to look it up since the weak
   // ref will have been cleared.
   if (_jmethod_id != NULL && JvmtiExport::should_post_compiled_method_unload()) {
@@ -1602,19 +1611,12 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive,
     unloading_occurred = true;
   }
 
-  // Follow methodOop
-  if (can_unload(is_alive, keep_alive, (oop*)&_method, unloading_occurred)) {
-    return;
-  }
-
   // Exception cache
   ExceptionCache* ec = exception_cache();
   while (ec != NULL) {
-    oop* ex_addr = (oop*)ec->exception_type_addr();
-    oop ex = *ex_addr;
+    Klass* ex_klass = ec->exception_type();
     ExceptionCache* next_ec = ec->next();
-    if (ex != NULL && !is_alive->do_object_b(ex)) {
-      assert(!ex->is_compiledICHolder(), "Possible error here");
+    if (ex_klass != NULL && !ex_klass->is_loader_alive(is_alive)) {
       remove_from_exception_cache(ec);
     }
     ec = next_ec;
@@ -1629,27 +1631,37 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive,
     while(iter.next()) {
       if (iter.type() == relocInfo::virtual_call_type) {
         CompiledIC *ic = CompiledIC_at(iter.reloc());
-        oop ic_oop = ic->cached_oop();
-        if (ic_oop != NULL && !is_alive->do_object_b(ic_oop)) {
+        if (ic->is_icholder_call()) {
           // The only exception is compiledICHolder oops which may
           // yet be marked below. (We check this further below).
-          if (ic_oop->is_compiledICHolder()) {
-            compiledICHolderOop cichk_oop = compiledICHolderOop(ic_oop);
-            if (is_alive->do_object_b(
-                  cichk_oop->holder_method()->method_holder()) &&
-                is_alive->do_object_b(cichk_oop->holder_klass())) {
+          CompiledICHolder* cichk_oop = ic->cached_icholder();
+          if (cichk_oop->holder_method()->method_holder()->is_loader_alive(is_alive) &&
+              cichk_oop->holder_klass()->is_loader_alive(is_alive)) {
               continue;
             }
+        } else {
+          Metadata* ic_oop = ic->cached_metadata();
+          if (ic_oop != NULL) {
+            if (ic_oop->is_klass()) {
+              if (((Klass*)ic_oop)->is_loader_alive(is_alive)) {
+                continue;
+              }
+            } else if (ic_oop->is_method()) {
+              if (((Method*)ic_oop)->method_holder()->is_loader_alive(is_alive)) {
+                continue;
+              }
+            } else {
+              ShouldNotReachHere();
+            }
+          }
           }
           ic->set_to_clean();
-          assert(ic->cached_oop() == NULL,
-                 "cached oop in IC should be cleared");
-        }
       }
     }
   }
 
   // Compiled code
+  {
   RelocIterator iter(this, low_boundary);
   while (iter.next()) {
     if (iter.type() == relocInfo::oop_type) {
@@ -1666,6 +1678,7 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive,
       }
     }
   }
+  }
 
 
   // Scopes
@@ -1676,22 +1689,120 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive,
     }
   }
 
-#ifndef PRODUCT
-  // This nmethod was not unloaded; check below that all CompiledICs
-  // refer to marked oops.
-  {
+  // Ensure that all metadata is still alive
+  verify_metadata_loaders(low_boundary, is_alive);
+}
+
+#ifdef ASSERT
+
+class CheckClass : AllStatic {
+  static BoolObjectClosure* _is_alive;
+
+  // Check class_loader is alive for this bit of metadata.
+  static void check_class(Metadata* md) {
+    Klass* klass = NULL;
+    if (md->is_klass()) {
+      klass = ((Klass*)md);
+    } else if (md->is_method()) {
+      klass = ((Method*)md)->method_holder();
+    } else if (md->is_methodData()) {
+      klass = ((MethodData*)md)->method()->method_holder();
+    } else {
+      md->print();
+      ShouldNotReachHere();
+    }
+    assert(klass->is_loader_alive(_is_alive), "must be alive");
+  }
+ public:
+  static void do_check_class(BoolObjectClosure* is_alive, nmethod* nm) {
+    assert(SafepointSynchronize::is_at_safepoint(), "this is only ok at safepoint");
+    _is_alive = is_alive;
+    nm->metadata_do(check_class);
+  }
+};
+
+// This is called during a safepoint so can use static data
+BoolObjectClosure* CheckClass::_is_alive = NULL;
+#endif // ASSERT
+
+
+// Processing of oop references should have been sufficient to keep
+// all strong references alive.  Any weak references should have been
+// cleared as well.  Visit all the metadata and ensure that it's
+// really alive.
+void nmethod::verify_metadata_loaders(address low_boundary, BoolObjectClosure* is_alive) {
+#ifdef ASSERT
     RelocIterator iter(this, low_boundary);
     while (iter.next()) {
-      if (iter.type() == relocInfo::virtual_call_type) {
-         CompiledIC *ic = CompiledIC_at(iter.reloc());
-         oop ic_oop = ic->cached_oop();
-         assert(ic_oop == NULL || is_alive->do_object_b(ic_oop),
-                "Found unmarked ic_oop in reachable nmethod");
-       }
+    // static_stub_Relocations may have dangling references to
+    // Method*s so trim them out here.  Otherwise it looks like
+    // compiled code is maintaining a link to dead metadata.
+    address static_call_addr = NULL;
+    if (iter.type() == relocInfo::opt_virtual_call_type) {
+      CompiledIC* cic = CompiledIC_at(iter.reloc());
+      if (!cic->is_call_to_interpreted()) {
+        static_call_addr = iter.addr();
+      }
+    } else if (iter.type() == relocInfo::static_call_type) {
+      CompiledStaticCall* csc = compiledStaticCall_at(iter.reloc());
+      if (!csc->is_call_to_interpreted()) {
+        static_call_addr = iter.addr();
+      }
+    }
+    if (static_call_addr != NULL) {
+      RelocIterator sciter(this, low_boundary);
+      while (sciter.next()) {
+        if (sciter.type() == relocInfo::static_stub_type &&
+            sciter.static_stub_reloc()->static_call() == static_call_addr) {
+          sciter.static_stub_reloc()->clear_inline_cache();
+        }
+      }
     }
   }
-#endif // !PRODUCT
+  // Check that the metadata embedded in the nmethod is alive
+  CheckClass::do_check_class(is_alive, this);
+#endif
 }
+
+
+// Iterate over metadata calling this function.   Used by RedefineClasses
+void nmethod::metadata_do(void f(Metadata*)) {
+  address low_boundary = verified_entry_point();
+  if (is_not_entrant()) {
+    low_boundary += NativeJump::instruction_size;
+    // %%% Note:  On SPARC we patch only a 4-byte trap, not a full NativeJump.
+    // (See comment above.)
+  }
+  {
+    // Visit all immediate references that are embedded in the instruction stream.
+    RelocIterator iter(this, low_boundary);
+    while (iter.next()) {
+      if (iter.type() == relocInfo::metadata_type ) {
+        metadata_Relocation* r = iter.metadata_reloc();
+        // In this lmetadata, we must only follow those metadatas directly embedded in
+        // the code.  Other metadatas (oop_index>0) are seen as part of
+        // the metadata section below.
+        assert(1 == (r->metadata_is_immediate()) +
+               (r->metadata_addr() >= metadata_begin() && r->metadata_addr() < metadata_end()),
+               "metadata must be found in exactly one place");
+        if (r->metadata_is_immediate() && r->metadata_value() != NULL) {
+          Metadata* md = r->metadata_value();
+          f(md);
+        }
+      }
+    }
+  }
+
+  // Visit the metadata section
+  for (Metadata** p = metadata_begin(); p < metadata_end(); p++) {
+    if (*p == Universe::non_oop_word() || *p == NULL)  continue;  // skip non-oops
+    Metadata* md = *p;
+    f(md);
+  }
+  // Call function Method*, not embedded in these other places.
+  if (_method != NULL) f(_method);
+}
+
 
 // This method is called twice during GC -- once while
 // tracing the "active" nmethods on thread stacks during
@@ -1718,17 +1829,6 @@ void nmethod::oops_do(OopClosure* f, bool do_strong_roots_only) {
     // %%% Note:  On SPARC we patch only a 4-byte trap, not a full NativeJump.
     // (See comment above.)
   }
-
-  // Compiled code
-  f->do_oop((oop*) &_method);
-  if (!do_strong_roots_only) {
-    // weak roots processing phase -- update ExceptionCache oops
-    ExceptionCache* ec = exception_cache();
-    while(ec != NULL) {
-      f->do_oop((oop*)ec->exception_type_addr());
-      ec = ec->next();
-    }
-  } // Else strong roots phase -- skip oops in ExceptionCache
 
   RelocIterator iter(this, low_boundary);
 
@@ -2063,21 +2163,21 @@ bool nmethod::check_dependency_on(DepChange& changes) {
   return found_check;
 }
 
-bool nmethod::is_evol_dependent_on(klassOop dependee) {
-  instanceKlass *dependee_ik = instanceKlass::cast(dependee);
-  objArrayOop dependee_methods = dependee_ik->methods();
+bool nmethod::is_evol_dependent_on(Klass* dependee) {
+  InstanceKlass *dependee_ik = InstanceKlass::cast(dependee);
+  Array<Method*>* dependee_methods = dependee_ik->methods();
   for (Dependencies::DepStream deps(this); deps.next(); ) {
     if (deps.type() == Dependencies::evol_method) {
-      methodOop method = deps.method_argument(0);
+      Method* method = deps.method_argument(0);
       for (int j = 0; j < dependee_methods->length(); j++) {
-        if ((methodOop) dependee_methods->obj_at(j) == method) {
+        if (dependee_methods->at(j) == method) {
           // RC_TRACE macro has an embedded ResourceMark
           RC_TRACE(0x01000000,
             ("Found evol dependency of nmethod %s.%s(%s) compile_id=%d on method %s.%s(%s)",
-            _method->method_holder()->klass_part()->external_name(),
+            _method->method_holder()->external_name(),
             _method->name()->as_C_string(),
             _method->signature()->as_C_string(), compile_id(),
-            method->method_holder()->klass_part()->external_name(),
+            method->method_holder()->external_name(),
             method->name()->as_C_string(),
             method->signature()->as_C_string()));
           if (TraceDependencies || LogCompilation)
@@ -2091,11 +2191,11 @@ bool nmethod::is_evol_dependent_on(klassOop dependee) {
 }
 
 // Called from mark_for_deoptimization, when dependee is invalidated.
-bool nmethod::is_dependent_on_method(methodOop dependee) {
+bool nmethod::is_dependent_on_method(Method* dependee) {
   for (Dependencies::DepStream deps(this); deps.next(); ) {
     if (deps.type() != Dependencies::evol_method)
       continue;
-    methodOop method = deps.method_argument(0);
+    Method* method = deps.method_argument(0);
     if (method == dependee) return true;
   }
   return false;
@@ -2234,7 +2334,7 @@ void nmethod::verify() {
   // Make sure all the entry points are correctly aligned for patching.
   NativeJump::check_verified_entry_alignment(entry_point(), verified_entry_point());
 
-  assert(method()->is_oop(), "must be valid");
+  // assert(method()->is_oop(), "must be valid");
 
   ResourceMark rm;
 
@@ -2274,11 +2374,11 @@ void nmethod::verify_interrupt_point(address call_site) {
   if (CompiledIC_lock->owner() == cur ||
       ((cur->is_VM_thread() || cur->is_ConcurrentGC_thread()) &&
        SafepointSynchronize::is_at_safepoint())) {
-    ic = CompiledIC_at(call_site);
+    ic = CompiledIC_at(this, call_site);
     CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
   } else {
     MutexLocker ml_verify (CompiledIC_lock);
-    ic = CompiledIC_at(call_site);
+    ic = CompiledIC_at(this, call_site);
   }
   PcDesc* pd = pc_desc_at(ic->end_of_call());
   assert(pd != NULL, "PcDesc must exist");
@@ -2413,6 +2513,10 @@ void nmethod::print() const {
                                               oops_begin(),
                                               oops_end(),
                                               oops_size());
+  if (metadata_size      () > 0) tty->print_cr(" metadata       [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                              metadata_begin(),
+                                              metadata_end(),
+                                              metadata_size());
   if (scopes_data_size  () > 0) tty->print_cr(" scopes data    [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                               scopes_data_begin(),
                                               scopes_data_end(),
@@ -2462,10 +2566,10 @@ void nmethod::print_dependencies() {
   tty->print_cr("Dependencies:");
   for (Dependencies::DepStream deps(this); deps.next(); ) {
     deps.print_dependency();
-    klassOop ctxk = deps.context_type();
+    Klass* ctxk = deps.context_type();
     if (ctxk != NULL) {
       Klass* k = Klass::cast(ctxk);
-      if (k->oop_is_instance() && ((instanceKlass*)k)->is_dependent_nmethod(this)) {
+      if (k->oop_is_instance() && ((InstanceKlass*)k)->is_dependent_nmethod(this)) {
         tty->print_cr("   [nmethod<=klass]%s", k->external_name());
       }
     }
@@ -2523,6 +2627,16 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
           oop_Relocation* r = iter.oop_reloc();
           oop obj = r->oop_value();
           st.print("oop(");
+          if (obj == NULL) st.print("NULL");
+          else obj->print_value_on(&st);
+          st.print(")");
+          return st.as_string();
+        }
+        case relocInfo::metadata_type: {
+          stringStream st;
+          metadata_Relocation* r = iter.metadata_reloc();
+          Metadata* obj = r->metadata_value();
+          st.print("metadata(");
           if (obj == NULL) st.print("NULL");
           else obj->print_value_on(&st);
           st.print(")");
@@ -2690,7 +2804,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
     if (sd->bci() == SynchronizationEntryBCI) {
       st->print(";*synchronization entry");
     } else {
-      if (sd->method().is_null()) {
+      if (sd->method() == NULL) {
         st->print("method is NULL");
       } else if (sd->method()->is_native()) {
         st->print("method is native");
@@ -2731,7 +2845,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
     for (;sd != NULL; sd = sd->sender()) {
       st->move_to(column);
       st->print("; -");
-      if (sd->method().is_null()) {
+      if (sd->method() == NULL) {
         st->print("method is NULL");
       } else {
         sd->method()->print_short_name(st);

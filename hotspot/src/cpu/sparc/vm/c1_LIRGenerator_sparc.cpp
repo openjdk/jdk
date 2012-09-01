@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -939,11 +939,11 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr len = length.result();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info);
-  ciObject* obj = (ciObject*) ciObjArrayKlass::make(x->klass());
+  ciMetadata* obj = ciObjArrayKlass::make(x->klass());
   if (obj == ciEnv::unloaded_ciobjarrayklass()) {
     BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
   }
-  jobject2reg_with_patching(klass_reg, obj, patching_info);
+  klass2reg_with_patching(klass_reg, obj, patching_info);
   __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path);
 
   LIR_Opr result = rlock_result(x);
@@ -986,7 +986,7 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   // This instruction can be deoptimized in the slow path : use
   // O0 as result register.
   const LIR_Opr reg = result_register_for(x->type());
-  jobject2reg_with_patching(reg, x->klass(), patching_info);
+  klass2reg_with_patching(reg, x->klass(), patching_info);
   LIR_Opr rank = FrameMap::O1_opr;
   __ move(LIR_OprFact::intConst(x->rank()), rank);
   LIR_Opr varargs = FrameMap::as_pointer_opr(O2);

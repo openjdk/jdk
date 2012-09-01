@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,10 @@ DebugInfoWriteStream::DebugInfoWriteStream(DebugInformationRecorder* recorder, i
 // Serializing oops
 
 void DebugInfoWriteStream::write_handle(jobject h) {
+  write_int(recorder()->oop_recorder()->find_index(h));
+}
+
+void DebugInfoWriteStream::write_metadata(Metadata* h) {
   write_int(recorder()->oop_recorder()->find_index(h));
 }
 
@@ -109,7 +113,7 @@ void LocationValue::print_on(outputStream* st) const {
 
 void ObjectValue::read_object(DebugInfoReadStream* stream) {
   _klass = read_from(stream);
-  assert(_klass->is_constant_oop(), "should be constant klass oop");
+  assert(_klass->is_constant_oop(), "should be constant java mirror oop");
   int length = stream->read_int();
   for (int i = 0; i < length; i++) {
     ScopeValue* val = read_from(stream);
@@ -198,6 +202,9 @@ void ConstantDoubleValue::print_on(outputStream* st) const {
 // ConstantOopWriteValue
 
 void ConstantOopWriteValue::write_on(DebugInfoWriteStream* stream) {
+  assert(JNIHandles::resolve(value()) == NULL ||
+         Universe::heap()->is_in_reserved(JNIHandles::resolve(value())),
+         "Should be in heap");
   stream->write_int(CONSTANT_OOP_CODE);
   stream->write_handle(value());
 }
@@ -211,6 +218,8 @@ void ConstantOopWriteValue::print_on(outputStream* st) const {
 
 ConstantOopReadValue::ConstantOopReadValue(DebugInfoReadStream* stream) {
   _value = Handle(stream->read_oop());
+  assert(_value() == NULL ||
+         Universe::heap()->is_in_reserved(_value()), "Should be in heap");
 }
 
 void ConstantOopReadValue::write_on(DebugInfoWriteStream* stream) {

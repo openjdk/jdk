@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -880,12 +880,12 @@ static jvmtiError JNICALL
     </xsl:apply-templates>
     <xsl:text>
   }
-  klassOop k_oop = java_lang_Class::as_klassOop(k_mirror);
+  Klass* k_oop = java_lang_Class::as_Klass(k_mirror);
   if (k_oop == NULL) {
 </xsl:text>
     <xsl:apply-templates select=".." mode="traceError">     
       <xsl:with-param name="err">JVMTI_ERROR_INVALID_CLASS</xsl:with-param>
-      <xsl:with-param name="comment"> - no klassOop - jclass = 0x%x</xsl:with-param>
+      <xsl:with-param name="comment"> - no Klass* - jclass = 0x%x</xsl:with-param>
       <xsl:with-param name="extraValue">, <xsl:value-of select="$name"/></xsl:with-param>
     </xsl:apply-templates>
     <xsl:text>
@@ -898,7 +898,7 @@ static jvmtiError JNICALL
 
 <xsl:template match="jmethodID" mode="dochecks">
   <xsl:param name="name"/>
-  <xsl:text>  methodOop method_oop = JNIHandles::checked_resolve_jmethod_id(</xsl:text>
+  <xsl:text>  Method* method_oop = Method::checked_resolve_jmethod_id(</xsl:text>
   <xsl:value-of select="$name"/>
   <xsl:text>);&#xA;</xsl:text>
   <xsl:text>  if (method_oop == NULL) {&#xA;</xsl:text>

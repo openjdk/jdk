@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class ByteCodeRewriter
           return (short) cpCacheIndex;
        } else if (fmt.indexOf("JJJJ") >= 0) {
           // change byte-ordering and go via secondary cache entry
-          return (short) cpCache.getMainEntryAt(bytes.swapInt(cpCacheIndex)).getConstantPoolIndex();
+           throw new InternalError("unimplemented");
        } else if (fmt.indexOf("JJ") >= 0) {
           // change byte-ordering and go via cache
           return (short) cpCache.getEntryAt((int) (0xFFFF & bytes.swapShort((short)cpCacheIndex))).getConstantPoolIndex();
