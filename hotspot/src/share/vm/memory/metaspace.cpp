@@ -1077,15 +1077,15 @@ bool VirtualSpaceNode::initialize() {
     set_top((MetaWord*)virtual_space()->low());
     set_reserved(MemRegion((HeapWord*)_rs.base(),
                  (HeapWord*)(_rs.base() + _rs.size())));
-  }
 
-  assert(reserved()->start() == (HeapWord*) _rs.base(),
-    err_msg("Reserved start was not set properly " PTR_FORMAT
-      " != " PTR_FORMAT, reserved()->start(), _rs.base()));
-  assert(reserved()->word_size() == _rs.size() / BytesPerWord,
-    err_msg("Reserved size was not set properly " SIZE_FORMAT
-      " != " SIZE_FORMAT, reserved()->word_size(),
-      _rs.size() / BytesPerWord));
+    assert(reserved()->start() == (HeapWord*) _rs.base(),
+      err_msg("Reserved start was not set properly " PTR_FORMAT
+        " != " PTR_FORMAT, reserved()->start(), _rs.base()));
+    assert(reserved()->word_size() == _rs.size() / BytesPerWord,
+      err_msg("Reserved size was not set properly " SIZE_FORMAT
+        " != " SIZE_FORMAT, reserved()->word_size(),
+        _rs.size() / BytesPerWord));
+  }
 
   return result;
 }
