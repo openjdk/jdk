@@ -35,7 +35,7 @@ MetaspaceCounters::MetaspaceCounters() {
     size_t min_capacity = MetaspaceAux::min_chunk_size();
     size_t max_capacity = MetaspaceAux::reserved_in_bytes();
     size_t curr_capacity = MetaspaceAux::capacity_in_bytes();
-    size_t used = MetaspaceAux::used_in_bytes();
+    size_t used = MetaspaceAux::used_in_bytes_unsafe();
 
     initialize(min_capacity, max_capacity, curr_capacity, used);
   }
@@ -131,7 +131,7 @@ void MetaspaceCounters::update_capacity() {
 
 void MetaspaceCounters::update_used() {
   assert(UsePerfData, "Should not be called unless being used");
-  size_t used_in_bytes = MetaspaceAux::used_in_bytes();
+  size_t used_in_bytes = MetaspaceAux::used_in_bytes_unsafe();
   _used->set_value(used_in_bytes);
 }
 
