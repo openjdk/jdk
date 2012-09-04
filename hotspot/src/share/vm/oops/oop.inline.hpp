@@ -135,7 +135,7 @@ inline void oopDesc::set_klass_to_list_ptr(oop k) {
 inline oop oopDesc::list_ptr_from_klass() {
   // This is only to be used during GC, for from-space objects.
   if (UseCompressedKlassPointers) {
-    return (oop)decode_heap_oop((oop)(address)_metadata._compressed_klass);
+    return decode_heap_oop(_metadata._compressed_klass);
   } else {
     // Special case for GC
     return (oop)(address)_metadata._klass;
