@@ -2541,7 +2541,22 @@ void SpaceManager::mangle_freed_chunks() {
 
 // MetaspaceAux
 
+size_t MetaspaceAux::used_in_bytes_unsafe(Metaspace::MetadataType mdtype) {
+  size_t used = 0;
+  ClassLoaderDataGraphMetaspaceIterator iter;
+  while (iter.repeat()) {
+    Metaspace* msp = iter.get_next();
+    // Sum allocation_total for each metaspace
+    if (msp != NULL) {
+      used += msp->used_words(mdtype);
+    }
+  }
+  return used * BytesPerWord;
+}
+
 size_t MetaspaceAux::used_in_bytes(Metaspace::MetadataType mdtype) {
+  assert(SafepointSynchronize::is_at_safepoint(),
+    "Consistency checks require being at a safepoint");
   size_t used = 0;
 #ifdef ASSERT
   size_t free = 0;
@@ -2646,15 +2661,15 @@ void MetaspaceAux::print_on(outputStream* out) {
   out->print_cr(" Metaspace total "
                 SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
                 " reserved " SIZE_FORMAT "K",
-                capacity_in_bytes()/K, used_in_bytes()/K, reserved_in_bytes()/K);
+                capacity_in_bytes()/K, used_in_bytes_unsafe()/K, reserved_in_bytes()/K);
   out->print_cr("  data space     "
                 SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
                 " reserved " SIZE_FORMAT "K",
-                capacity_in_bytes(nct)/K, used_in_bytes(nct)/K, reserved_in_bytes(nct)/K);
+                capacity_in_bytes(nct)/K, used_in_bytes_unsafe(nct)/K, reserved_in_bytes(nct)/K);
   out->print_cr("  class space    "
                 SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
                 " reserved " SIZE_FORMAT "K",
-                capacity_in_bytes(ct)/K, used_in_bytes(ct)/K, reserved_in_bytes(ct)/K);
+                capacity_in_bytes(ct)/K, used_in_bytes_unsafe(ct)/K, reserved_in_bytes(ct)/K);
 }
 
 // Print information for class space and data space separately.
