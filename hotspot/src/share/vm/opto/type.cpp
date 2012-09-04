@@ -3913,10 +3913,25 @@ const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
   case AryPtr:
     return TypePtr::BOTTOM;     // Oop meet raw is not well defined
 
-  case MetadataPtr:
-    ShouldNotReachHere();
+  case MetadataPtr: {
+    const TypeMetadataPtr *tp = t->is_metadataptr();
+    int offset = meet_offset(tp->offset());
+    PTR tptr = tp->ptr();
+    PTR ptr = meet_ptr(tptr);
+    ciMetadata* md = (tptr == TopPTR) ? metadata() : tp->metadata();
+    if (tptr == TopPTR || _ptr == TopPTR ||
+        metadata()->equals(tp->metadata())) {
+      return make(ptr, md, offset);
+    }
+    // metadata is different
+    if( ptr == Constant ) {  // Cannot be equal constants, so...
+      if( tptr == Constant && _ptr != Constant)  return t;
+      if( _ptr == Constant && tptr != Constant)  return this;
+      ptr = NotNull;            // Fall down in lattice
+    }
+    return make(ptr, NULL, offset);
     break;
-
+  }
   } // End of switch
   return this;                  // Return the double constant
 }
