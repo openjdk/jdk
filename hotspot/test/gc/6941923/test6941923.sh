@@ -9,12 +9,12 @@
 ## skip on windows
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"
     ;;
-  Windows_* )
+  Windows_* | CYGWIN_* )
     echo "Test skipped for Windows"
     exit 0 
     ;;

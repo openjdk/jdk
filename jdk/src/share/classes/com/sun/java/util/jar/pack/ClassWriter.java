@@ -207,6 +207,22 @@ class ClassWriter {
                         m);
     }
 
+    private void reorderBSMandICS(Attribute.Holder h) {
+        Attribute bsmAttr = h.getAttribute(Package.attrBootstrapMethodsEmpty);
+        if (bsmAttr == null) return;
+
+        Attribute icsAttr = h.getAttribute(Package.attrInnerClassesEmpty);
+        if (icsAttr == null) return;
+
+        int bsmidx = h.attributes.indexOf(bsmAttr);
+        int icsidx = h.attributes.indexOf(icsAttr);
+        if (bsmidx > icsidx) {
+            h.attributes.remove(bsmAttr);
+            h.attributes.add(icsidx, bsmAttr);
+        }
+        return;
+    }
+
     // handy buffer for collecting attrs
     ByteArrayOutputStream buf    = new ByteArrayOutputStream();
     DataOutputStream      bufOut = new DataOutputStream(buf);
@@ -216,6 +232,11 @@ class ClassWriter {
             writeShort(0);  // attribute size
             return;
         }
+        // there may be cases if an InnerClass attribute is explicit, then the
+        // ordering could be wrong, fix the ordering before we write it out.
+        if (h instanceof Package.Class)
+            reorderBSMandICS(h);
+
         writeShort(h.attributes.size());
         for (Attribute a : h.attributes) {
             a.finishRefs(cpIndex);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ package java.util;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.calendar.BaseCalendar;
 import sun.util.calendar.CalendarDate;
 import sun.util.calendar.CalendarSystem;
@@ -492,6 +493,7 @@ public class GregorianCalendar extends Calendar {
     };
 
     // Proclaim serialization compatibility with JDK 1.1
+    @SuppressWarnings("FieldNameHidesFieldInSuperclass")
     static final long serialVersionUID = -8125100834729963327L;
 
     // Reference to the sun.util.calendar.Gregorian instance (singleton).
@@ -765,9 +767,9 @@ public class GregorianCalendar extends Calendar {
         // Set the cutover year (in the Gregorian year numbering)
         gregorianCutoverYear = d.getYear();
 
-        BaseCalendar jcal = getJulianCalendarSystem();
-        d = (BaseCalendar.Date) jcal.newCalendarDate(TimeZone.NO_TIMEZONE);
-        jcal.getCalendarDateFromFixedDate(d, gregorianCutoverDate - 1);
+        BaseCalendar julianCal = getJulianCalendarSystem();
+        d = (BaseCalendar.Date) julianCal.newCalendarDate(TimeZone.NO_TIMEZONE);
+        julianCal.getCalendarDateFromFixedDate(d, gregorianCutoverDate - 1);
         gregorianCutoverYearJulian = d.getNormalizedYear();
 
         if (time < gregorianCutover) {
@@ -819,6 +821,17 @@ public class GregorianCalendar extends Calendar {
             gregorian = year == gregorianCutoverYear;
         }
         return gregorian ? (year%100 != 0) || (year%400 == 0) : true;
+    }
+
+    /**
+     * Returns {@code "gregory"} as the calendar type.
+     *
+     * @return {@code "gregory"}
+     * @since 1.8
+     */
+    @Override
+    public String getCalendarType() {
+        return "gregory";
     }
 
     /**
@@ -947,7 +960,7 @@ public class GregorianCalendar extends Calendar {
             }
 
             if (month >= 0) {
-                set(MONTH, month % 12);
+                set(MONTH,  month % 12);
             } else {
                 // month < 0
                 month %= 12;
@@ -2920,7 +2933,7 @@ public class GregorianCalendar extends Calendar {
      * Returns the Julian calendar system instance (singleton). 'jcal'
      * and 'jeras' are set upon the return.
      */
-    synchronized private static BaseCalendar getJulianCalendarSystem() {
+    private static synchronized BaseCalendar getJulianCalendarSystem() {
         if (jcal == null) {
             jcal = (JulianCalendar) CalendarSystem.forName("julian");
             jeras = jcal.getEras();
@@ -2944,7 +2957,7 @@ public class GregorianCalendar extends Calendar {
      * Determines if the specified year (normalized) is the Gregorian
      * cutover year. This object must have been normalized.
      */
-    private final boolean isCutoverYear(int normalizedYear) {
+    private boolean isCutoverYear(int normalizedYear) {
         int cutoverYear = (calsys == gcal) ? gregorianCutoverYear : gregorianCutoverYearJulian;
         return normalizedYear == cutoverYear;
     }
@@ -2971,8 +2984,8 @@ public class GregorianCalendar extends Calendar {
             }
         }
         // January 1 of the normalized year should exist.
-        BaseCalendar jcal = getJulianCalendarSystem();
-        return jcal.getFixedDate(date.getNormalizedYear(), BaseCalendar.JANUARY, 1, null);
+        BaseCalendar juliancal = getJulianCalendarSystem();
+        return juliancal.getFixedDate(date.getNormalizedYear(), BaseCalendar.JANUARY, 1, null);
     }
 
     /**

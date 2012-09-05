@@ -1,0 +1,913 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="fo"/>
+	</identity>
+	<fallback draft="unconfirmed">is da sv en</fallback>
+	<localeDisplayNames>
+		<languages>
+			<language type="ab" draft="unconfirmed">abkhaziskt</language>
+			<language type="af" draft="unconfirmed">afríska</language>
+			<language type="am" draft="unconfirmed">amhariskt</language>
+			<language type="ar" draft="unconfirmed">arabiskt</language>
+			<language type="as" draft="unconfirmed">assamesiskt</language>
+			<language type="asa" draft="unconfirmed">asu (Tanzania)</language>
+			<language type="ay" draft="unconfirmed">aymara</language>
+			<language type="az" draft="unconfirmed">azerbaijaniskt</language>
+			<language type="be" draft="unconfirmed">belarussiskt</language>
+			<language type="bem" draft="unconfirmed">bemba</language>
+			<language type="bez" draft="unconfirmed">bena (Tanzania)</language>
+			<language type="bg" draft="unconfirmed">bulgarskum</language>
+			<language type="bh" draft="unconfirmed">bihariskt</language>
+			<language type="bm" draft="unconfirmed">bambara</language>
+			<language type="bn" draft="unconfirmed">bengaliskt</language>
+			<language type="bo" draft="unconfirmed">tibetanskt</language>
+			<language type="br" draft="unconfirmed">bretonskt</language>
+			<language type="bs" draft="unconfirmed">bosniskt</language>
+			<language type="ca" draft="unconfirmed">katalanskt</language>
+			<language type="cs" draft="unconfirmed">kekkiskt</language>
+			<language type="cy" draft="unconfirmed">valisiskt</language>
+			<language type="da" draft="unconfirmed">danskt</language>
+			<language type="de" draft="unconfirmed">týskt</language>
+			<language type="dv" draft="unconfirmed">divehi</language>
+			<language type="dz" draft="unconfirmed">dzongkha</language>
+			<language type="ebu" draft="unconfirmed">kiembu</language>
+			<language type="efi" draft="unconfirmed">efik</language>
+			<language type="el" draft="unconfirmed">grikskt</language>
+			<language type="en" draft="unconfirmed">enskt</language>
+			<language type="eo" draft="unconfirmed">esperanto</language>
+			<language type="es" draft="unconfirmed">spanskt</language>
+			<language type="et" draft="unconfirmed">estlendskt</language>
+			<language type="eu" draft="unconfirmed">baskiskt</language>
+			<language type="fa" draft="unconfirmed">persiskt</language>
+			<language type="fi" draft="unconfirmed">finskt</language>
+			<language type="fil" draft="unconfirmed">filipiniskt</language>
+			<language type="fj" draft="unconfirmed">fidjianskt</language>
+			<language type="fo">føroyskt</language>
+			<language type="fr" draft="unconfirmed">franskt</language>
+			<language type="fy" draft="unconfirmed">vestfrisikt</language>
+			<language type="ga" draft="unconfirmed">írskt</language>
+			<language type="gd" draft="unconfirmed">skotskt gæliskt</language>
+			<language type="gl" draft="unconfirmed">galliskt</language>
+			<language type="gn" draft="unconfirmed">guarani</language>
+			<language type="gu" draft="unconfirmed">gujariti</language>
+			<language type="ha" draft="unconfirmed">haussa</language>
+			<language type="haw" draft="unconfirmed">hawaiianskt</language>
+			<language type="he" draft="unconfirmed">hebraiskt</language>
+			<language type="hi" draft="unconfirmed">hindi</language>
+			<language type="hr" draft="unconfirmed">kroatiskum</language>
+			<language type="ht" draft="unconfirmed">haitiskt</language>
+			<language type="hu" draft="unconfirmed">ungarskt</language>
+			<language type="hy" draft="unconfirmed">armenskum</language>
+			<language type="ia" draft="unconfirmed">interlingua</language>
+			<language type="id" draft="unconfirmed">indonesiskum</language>
+			<language type="ie" draft="unconfirmed">interlingue</language>
+			<language type="ig" draft="unconfirmed">igbo</language>
+			<language type="is" draft="unconfirmed">íslendskt</language>
+			<language type="it" draft="unconfirmed">italskt</language>
+			<language type="ja" draft="unconfirmed">japanskt</language>
+			<language type="jv" draft="unconfirmed">javanesiskt</language>
+			<language type="ka" draft="unconfirmed">georgiskt</language>
+			<language type="kea" draft="unconfirmed">kapverdiskt</language>
+			<language type="kk" draft="unconfirmed">kazakiskt</language>
+			<language type="km" draft="unconfirmed">kambodjanskt</language>
+			<language type="kn" draft="unconfirmed">kannada</language>
+			<language type="ko" draft="unconfirmed">koreanskt</language>
+			<language type="ks" draft="unconfirmed">kashmiriskt</language>
+			<language type="ku" draft="unconfirmed">kurdiskt</language>
+			<language type="ky" draft="unconfirmed">kyrgyz</language>
+			<language type="la" draft="unconfirmed">latín</language>
+			<language type="lah" draft="unconfirmed">lahnda</language>
+			<language type="lb" draft="unconfirmed">luxemburgiskt</language>
+			<language type="ln" draft="unconfirmed">lingala</language>
+			<language type="lo" draft="unconfirmed">laotiskt</language>
+			<language type="lt" draft="unconfirmed">litavskt</language>
+			<language type="luy" draft="unconfirmed">olulujia</language>
+			<language type="lv" draft="unconfirmed">latviskt</language>
+			<language type="mg" draft="unconfirmed">malagasiskt</language>
+			<language type="mi" draft="unconfirmed">maoriskt</language>
+			<language type="mk" draft="unconfirmed">makedonskt</language>
+			<language type="ml" draft="unconfirmed">malayalam</language>
+			<language type="mn" draft="unconfirmed">mongoliskt</language>
+			<language type="mr" draft="unconfirmed">marathiskt</language>
+			<language type="ms" draft="unconfirmed">malajiskt</language>
+			<language type="mt" draft="unconfirmed">maltesiskt</language>
+			<language type="my" draft="unconfirmed">burmesiskt</language>
+			<language type="nb" draft="unconfirmed">norskt bokmál</language>
+			<language type="ne" draft="unconfirmed">nepalskt</language>
+			<language type="nl" draft="unconfirmed">hollendskt</language>
+			<language type="nn" draft="unconfirmed">nýnorskt</language>
+			<language type="no" draft="unconfirmed">norskt</language>
+			<language type="ny" draft="unconfirmed">nyanja</language>
+			<language type="oc" draft="unconfirmed">occitan</language>
+			<language type="or" draft="unconfirmed">oriya</language>
+			<language type="os" draft="unconfirmed">ossetiskt</language>
+			<language type="pa" draft="unconfirmed">punjabi</language>
+			<language type="pl" draft="unconfirmed">polskt</language>
+			<language type="ps" draft="unconfirmed">pashto</language>
+			<language type="pt" draft="unconfirmed">portugisiskt</language>
+			<language type="qu" draft="unconfirmed">quechua</language>
+			<language type="rm" draft="unconfirmed">rumansh</language>
+			<language type="rn" draft="unconfirmed">rundi</language>
+			<language type="ro" draft="unconfirmed">romanskt</language>
+			<language type="ru" draft="unconfirmed">russiskt</language>
+			<language type="rw" draft="unconfirmed">ruanda</language>
+			<language type="sa" draft="unconfirmed">sanskrit</language>
+			<language type="sd" draft="unconfirmed">sindhi</language>
+			<language type="sg" draft="unconfirmed">sango</language>
+			<language type="sh" draft="unconfirmed">serbokroatiskt</language>
+			<language type="si" draft="unconfirmed">sinhalesiskt</language>
+			<language type="sk" draft="unconfirmed">slovakiskum</language>
+			<language type="sl" draft="unconfirmed">slovenskum</language>
+			<language type="sm" draft="unconfirmed">samoiskt</language>
+			<language type="sn" draft="unconfirmed">shona</language>
+			<language type="so" draft="unconfirmed">somaliskt</language>
+			<language type="sq" draft="unconfirmed">albanskt</language>
+			<language type="sr" draft="unconfirmed">serbiskum</language>
+			<language type="ss" draft="unconfirmed">swatiskt</language>
+			<language type="st" draft="unconfirmed">sesotho</language>
+			<language type="su" draft="unconfirmed">sundanesiskt</language>
+			<language type="sv" draft="unconfirmed">svenskt</language>
+			<language type="sw" draft="unconfirmed">swahili</language>
+			<language type="swb" draft="unconfirmed">shimaorískt</language>
+			<language type="ta" draft="unconfirmed">tamilskt</language>
+			<language type="te" draft="unconfirmed">telugu</language>
+			<language type="tet" draft="unconfirmed">tetum</language>
+			<language type="tg" draft="unconfirmed">tajikiskt</language>
+			<language type="th" draft="unconfirmed">thailendskt</language>
+			<language type="ti" draft="unconfirmed">tigrinya</language>
+			<language type="tk" draft="unconfirmed">turkmenskt</language>
+			<language type="tl" draft="unconfirmed">tagalog</language>
+			<language type="tlh" draft="unconfirmed">klingonskt</language>
+			<language type="tn" draft="unconfirmed">tswana</language>
+			<language type="to" draft="unconfirmed">tonga</language>
+			<language type="tpi" draft="unconfirmed">tok pisin</language>
+			<language type="tr" draft="unconfirmed">turkiskt</language>
+			<language type="ts" draft="unconfirmed">tsonga</language>
+			<language type="tw" draft="unconfirmed">twi</language>
+			<language type="ty" draft="unconfirmed">tahitiskt</language>
+			<language type="ug" draft="unconfirmed">uighur</language>
+			<language type="uk" draft="unconfirmed">ukrainskt</language>
+			<language type="ur" draft="unconfirmed">urdu</language>
+			<language type="uz" draft="unconfirmed">uzbekiskt</language>
+			<language type="ve" draft="unconfirmed">venda</language>
+			<language type="vi" draft="unconfirmed">vietnamesiskt</language>
+			<language type="wo" draft="unconfirmed">wolof</language>
+			<language type="xh" draft="unconfirmed">xhosa</language>
+			<language type="yi" draft="unconfirmed">jiddiskt</language>
+			<language type="yo" draft="unconfirmed">yoruba</language>
+			<language type="yue" draft="unconfirmed">kantonesískt</language>
+			<language type="zh" draft="unconfirmed">kinesískt</language>
+			<language type="zu" draft="unconfirmed">sulu</language>
+		</languages>
+		<territories>
+			<territory type="001" draft="unconfirmed">heimur</territory>
+			<territory type="002" draft="unconfirmed">Africa</territory>
+			<territory type="003" draft="unconfirmed">Norðuramerika</territory>
+			<territory type="005" draft="unconfirmed">Suðuramerika</territory>
+			<territory type="009" draft="unconfirmed">Kyrrahavsoyggjarnar</territory>
+			<territory type="011" draft="unconfirmed">Vesturafrika</territory>
+			<territory type="013" draft="unconfirmed">Sentralamerika</territory>
+			<territory type="014" draft="unconfirmed">Eysturafrika</territory>
+			<territory type="015" draft="unconfirmed">Norðurafrika</territory>
+			<territory type="017" draft="unconfirmed">Miðafrika</territory>
+			<territory type="018" draft="unconfirmed">Suður Afrika</territory>
+			<territory type="019" draft="unconfirmed">Amerika</territory>
+			<territory type="021" draft="unconfirmed">Amerika norður Meksiko</territory>
+			<territory type="029" draft="unconfirmed">Karibia</territory>
+			<territory type="030" draft="unconfirmed">Eysturasia</territory>
+			<territory type="034" draft="unconfirmed">Suðurasia</territory>
+			<territory type="035" draft="unconfirmed">Suðureysturasia</territory>
+			<territory type="039" draft="unconfirmed">Suðurevropa</territory>
+			<territory type="053" draft="unconfirmed">Avstralia og Nýsæland</territory>
+			<territory type="054" draft="unconfirmed">Melanesia</territory>
+			<territory type="057" draft="unconfirmed">Mikronesiske regionen</territory>
+			<territory type="061" draft="unconfirmed">Polynesia</territory>
+			<territory type="142" draft="unconfirmed">Asia</territory>
+			<territory type="143" draft="unconfirmed">Sentralasia</territory>
+			<territory type="145" draft="unconfirmed">Vesturasia</territory>
+			<territory type="150" draft="unconfirmed">Evropa</territory>
+			<territory type="151" draft="unconfirmed">Eysturevropa</territory>
+			<territory type="154" draft="unconfirmed">Norðurevropa</territory>
+			<territory type="155" draft="unconfirmed">Vesturevropa</territory>
+			<territory type="419" draft="unconfirmed">Latínamerika</territory>
+			<territory type="AC" draft="unconfirmed">Ascensionoyggjin</territory>
+			<territory type="AD" draft="unconfirmed">Andorra</territory>
+			<territory type="AE">Sameindu Emirríkini</territory>
+			<territory type="AF">Afganistan</territory>
+			<territory type="AG">Antigua og Barbuda</territory>
+			<territory type="AI" draft="unconfirmed">Anguilla</territory>
+			<territory type="AL" draft="unconfirmed">Albania</territory>
+			<territory type="AM" draft="unconfirmed">Armenia</territory>
+			<territory type="AN" draft="unconfirmed">Niðurlendsku Antilloyggjarnar</territory>
+			<territory type="AO" draft="unconfirmed">Angola</territory>
+			<territory type="AQ">Antarktis</territory>
+			<territory type="AR" draft="unconfirmed">Argentina</territory>
+			<territory type="AS" draft="unconfirmed">Amerikanska Sámoa</territory>
+			<territory type="AT">Eysturríki</territory>
+			<territory type="AU">Avstralia</territory>
+			<territory type="AW" draft="unconfirmed">Aruba</territory>
+			<territory type="AX" draft="unconfirmed">Áland</territory>
+			<territory type="AZ">Aserbajdsjan</territory>
+			<territory type="BA">Bosnia-Hersegovina</territory>
+			<territory type="BB" draft="unconfirmed">Barbados</territory>
+			<territory type="BD">Bangladesj</territory>
+			<territory type="BE">Belgia</territory>
+			<territory type="BF" draft="unconfirmed">Burkina Faso</territory>
+			<territory type="BG" draft="unconfirmed">Bulgaria</territory>
+			<territory type="BH" draft="unconfirmed">Bahrain</territory>
+			<territory type="BI" draft="unconfirmed">Burundi</territory>
+			<territory type="BJ" draft="unconfirmed">Benin</territory>
+			<territory type="BL" draft="unconfirmed">Saint Barthélemy</territory>
+			<territory type="BM" draft="unconfirmed">Bermuda</territory>
+			<territory type="BN" draft="unconfirmed">Brunei</territory>
+			<territory type="BO" draft="unconfirmed">Bolivia</territory>
+			<territory type="BR">Brasilia</territory>
+			<territory type="BS" draft="unconfirmed">Bahamas</territory>
+			<territory type="BT">Butan</territory>
+			<territory type="BV" draft="unconfirmed">Bouvetoy</territory>
+			<territory type="BW">Botsvana</territory>
+			<territory type="BY">Hvítarussland</territory>
+			<territory type="BZ">Belis</territory>
+			<territory type="CA">Kanada</territory>
+			<territory type="CC" draft="unconfirmed">Kokosoyggjarnar</territory>
+			<territory type="CD" draft="unconfirmed">Kongo-Kinshasa</territory>
+			<territory type="CD" alt="variant" draft="unconfirmed">Kongo-Kinshasa</territory>
+			<territory type="CF">Miðafrikalýðveldið</territory>
+			<territory type="CG">Kongo</territory>
+			<territory type="CG" alt="variant" draft="unconfirmed">Kongo-Brazzaville</territory>
+			<territory type="CH">Sveis</territory>
+			<territory type="CI">Fílabeinsstrondin</territory>
+			<territory type="CI" alt="variant" draft="unconfirmed">Fílabeinsstrondin</territory>
+			<territory type="CK" draft="unconfirmed">Cooksoyggjarnar</territory>
+			<territory type="CL">Kili</territory>
+			<territory type="CM">Kamerun</territory>
+			<territory type="CN">Kina</territory>
+			<territory type="CO">Kolombia</territory>
+			<territory type="CP" draft="unconfirmed">Clippertonoyggjin</territory>
+			<territory type="CR">Kosta Rika</territory>
+			<territory type="CU">Kuba</territory>
+			<territory type="CV">Grønhøvdaoyggjarnar</territory>
+			<territory type="CX" draft="unconfirmed">Jólaoyggjin</territory>
+			<territory type="CY">Kýpros</territory>
+			<territory type="CZ">Kekkia</territory>
+			<territory type="DE">Týskland</territory>
+			<territory type="DG" draft="unconfirmed">Diego Garcia</territory>
+			<territory type="DJ" draft="unconfirmed">Djibouti</territory>
+			<territory type="DK">Danmørk</territory>
+			<territory type="DM">Dominika</territory>
+			<territory type="DO">Domingo lýðveldið</territory>
+			<territory type="DZ" draft="unconfirmed">Algeria</territory>
+			<territory type="EA" draft="unconfirmed">Ceuta og Melilla</territory>
+			<territory type="EC">Ekvador</territory>
+			<territory type="EE">Estland</territory>
+			<territory type="EG">Egyptaland</territory>
+			<territory type="EH" draft="unconfirmed">Vestursahara</territory>
+			<territory type="ER" draft="unconfirmed">Eritrea</territory>
+			<territory type="ES">Spania</territory>
+			<territory type="ET">Etiopia</territory>
+			<territory type="EU" draft="unconfirmed">Evropasamveldið</territory>
+			<territory type="FI">Finnland</territory>
+			<territory type="FJ" draft="unconfirmed">Fiji</territory>
+			<territory type="FK" draft="unconfirmed">Falklandsoyggjarnar</territory>
+			<territory type="FK" alt="variant" draft="unconfirmed">Falklandsoyggjarnar</territory>
+			<territory type="FM">Mikronesia</territory>
+			<territory type="FO">Føroyar</territory>
+			<territory type="FR">Frakland</territory>
+			<territory type="GA" draft="unconfirmed">Gabon</territory>
+			<territory type="GB" draft="unconfirmed">Stóra Bretland</territory>
+			<territory type="GD" draft="unconfirmed">Grenada</territory>
+			<territory type="GE" draft="unconfirmed">Georgia</territory>
+			<territory type="GF" draft="unconfirmed">Fransk Gujana</territory>
+			<territory type="GG" draft="unconfirmed">Guernsey</territory>
+			<territory type="GH" draft="unconfirmed">Ghana</territory>
+			<territory type="GI" draft="unconfirmed">Gibraltar</territory>
+			<territory type="GL" draft="unconfirmed">Grønland</territory>
+			<territory type="GM" draft="unconfirmed">Gambia</territory>
+			<territory type="GN" draft="unconfirmed">Guinea</territory>
+			<territory type="GP" draft="unconfirmed">Guadeloupe</territory>
+			<territory type="GQ">Ekvator Guinea</territory>
+			<territory type="GR">Grikkaland</territory>
+			<territory type="GS" draft="unconfirmed">Suðurgeorgia</territory>
+			<territory type="GT" draft="unconfirmed">Guatemala</territory>
+			<territory type="GU" draft="unconfirmed">Guam</territory>
+			<territory type="GW">Guinea Bissau</territory>
+			<territory type="GY">Gujana</territory>
+			<territory type="HK" draft="unconfirmed">Hongkong</territory>
+			<territory type="HK" alt="short" draft="unconfirmed">Hongkong</territory>
+			<territory type="HM" draft="unconfirmed">Heard- og McDonald-oyggjarnar</territory>
+			<territory type="HN" draft="unconfirmed">Honduras</territory>
+			<territory type="HR">Kroatia</territory>
+			<territory type="HT" draft="unconfirmed">Haiti</territory>
+			<territory type="HU">Ungarn</territory>
+			<territory type="IC" draft="unconfirmed">Kanaríoyggjarnar</territory>
+			<territory type="ID" draft="unconfirmed">Indonesia</territory>
+			<territory type="IE">Írland</territory>
+			<territory type="IL">Ísrael</territory>
+			<territory type="IM" draft="unconfirmed">Mann</territory>
+			<territory type="IN">India</territory>
+			<territory type="IO" draft="unconfirmed">Bretsku Indiahavsoyggjarnar</territory>
+			<territory type="IQ">Irak</territory>
+			<territory type="IR" draft="unconfirmed">Iran</territory>
+			<territory type="IS">Ísland</territory>
+			<territory type="IT">Italia</territory>
+			<territory type="JE" draft="unconfirmed">Jersey</territory>
+			<territory type="JM">Jameika</territory>
+			<territory type="JO" draft="unconfirmed">Jordan</territory>
+			<territory type="JP">Japan</territory>
+			<territory type="KE">Kenja</territory>
+			<territory type="KG">Kirgisia</territory>
+			<territory type="KH">Kambodja</territory>
+			<territory type="KI" draft="unconfirmed">Kiribati</territory>
+			<territory type="KM">Komorooyggjarnar</territory>
+			<territory type="KN">Saint Kitts og Nevis</territory>
+			<territory type="KP">Norður-Korea</territory>
+			<territory type="KR">Suður-Korea</territory>
+			<territory type="KW">Kuvait</territory>
+			<territory type="KY" draft="unconfirmed">Caymanoyggjarnar</territory>
+			<territory type="KZ">Kasakstan</territory>
+			<territory type="LA" draft="unconfirmed">Laos</territory>
+			<territory type="LB">Libanon</territory>
+			<territory type="LC">Saint Lusia</territory>
+			<territory type="LI">Liktenstein</territory>
+			<territory type="LK" draft="unconfirmed">Sri Lanka</territory>
+			<territory type="LR" draft="unconfirmed">Liberia</territory>
+			<territory type="LS">Lesoto</territory>
+			<territory type="LT">Litava</territory>
+			<territory type="LU">Luksemborg</territory>
+			<territory type="LV">Lettland</territory>
+			<territory type="LY" draft="unconfirmed">Libya</territory>
+			<territory type="MA">Marokko</territory>
+			<territory type="MC">Monako</territory>
+			<territory type="MD" draft="unconfirmed">Moldova</territory>
+			<territory type="ME" draft="unconfirmed">Montenegro</territory>
+			<territory type="MF" draft="unconfirmed">Saint Martin</territory>
+			<territory type="MG">Madagaskar</territory>
+			<territory type="MH">Marshalloyggjarnar</territory>
+			<territory type="MK">Makedónia</territory>
+			<territory type="MK" alt="variant" draft="unconfirmed">Makedónia</territory>
+			<territory type="ML" draft="unconfirmed">Mali</territory>
+			<territory type="MM" draft="unconfirmed">Burma</territory>
+			<territory type="MN" draft="unconfirmed">Mongolia</territory>
+			<territory type="MO" draft="unconfirmed">Makao</territory>
+			<territory type="MO" alt="short" draft="unconfirmed">Makao</territory>
+			<territory type="MP" draft="unconfirmed">Norðurmarianoyggjarnar</territory>
+			<territory type="MQ" draft="unconfirmed">Martinique</territory>
+			<territory type="MR">Móritania</territory>
+			<territory type="MS" draft="unconfirmed">Montserrat</territory>
+			<territory type="MT" draft="unconfirmed">Malta</territory>
+			<territory type="MU">Móritius</territory>
+			<territory type="MV">Maldivuoyggjarnar</territory>
+			<territory type="MW">Malavi</territory>
+			<territory type="MX">Meksiko</territory>
+			<territory type="MY">Maleisia</territory>
+			<territory type="MZ">Mosambik</territory>
+			<territory type="NA" draft="unconfirmed">Namibia</territory>
+			<territory type="NC" draft="unconfirmed">Ný-Kaledonia</territory>
+			<territory type="NE" draft="unconfirmed">Niger</territory>
+			<territory type="NF" draft="unconfirmed">Norfolkoyggjin</territory>
+			<territory type="NG" draft="unconfirmed">Nigeria</territory>
+			<territory type="NI">Nikaragua</territory>
+			<territory type="NL">Niðurlond</territory>
+			<territory type="NO">Noreg</territory>
+			<territory type="NP" draft="unconfirmed">Nepal</territory>
+			<territory type="NR" draft="unconfirmed">Nauru</territory>
+			<territory type="NU" draft="unconfirmed">Niue</territory>
+			<territory type="NZ">Ný Sæland</territory>
+			<territory type="OM" draft="unconfirmed">Oman</territory>
+			<territory type="PA" draft="unconfirmed">Panama</territory>
+			<territory type="PE">Perú</territory>
+			<territory type="PF" draft="unconfirmed">Franska Polynesia</territory>
+			<territory type="PG">Papua Nýguinea</territory>
+			<territory type="PH">Filipsoyggjar</territory>
+			<territory type="PK" draft="unconfirmed">Pakistan</territory>
+			<territory type="PL">Pólland</territory>
+			<territory type="PM" draft="unconfirmed">Saint Pierre og Miquelon</territory>
+			<territory type="PN" draft="unconfirmed">Pitcairn</territory>
+			<territory type="PR" draft="unconfirmed">Puerto Rico</territory>
+			<territory type="PS" draft="unconfirmed">Palestinskt territorium</territory>
+			<territory type="PT" draft="unconfirmed">Portugal</territory>
+			<territory type="PW" draft="unconfirmed">Palau</territory>
+			<territory type="PY">Paraguei</territory>
+			<territory type="QA">Katar</territory>
+			<territory type="RE" draft="unconfirmed">Réunion</territory>
+			<territory type="RO">Rumenia</territory>
+			<territory type="RS" draft="unconfirmed">Serbia</territory>
+			<territory type="RU">Russland</territory>
+			<territory type="RW">Ruanda</territory>
+			<territory type="SA">Saudi-Arábia</territory>
+			<territory type="SB">Sálomonoyggjarnar</territory>
+			<territory type="SC">Seyskelloyggjarnar</territory>
+			<territory type="SD" draft="unconfirmed">Sudan</territory>
+			<territory type="SE">Svøríki</territory>
+			<territory type="SG">Singapor</territory>
+			<territory type="SH" draft="unconfirmed">Saint Helena</territory>
+			<territory type="SI" draft="unconfirmed">Slovenia</territory>
+			<territory type="SJ" draft="unconfirmed">Svalbard og Jan Mayen</territory>
+			<territory type="SK" draft="unconfirmed">Slovakia</territory>
+			<territory type="SL" draft="unconfirmed">Sierra Leone</territory>
+			<territory type="SM" draft="unconfirmed">San Marino</territory>
+			<territory type="SN" draft="unconfirmed">Senegal</territory>
+			<territory type="SO" draft="unconfirmed">Somalia</territory>
+			<territory type="SR">Surinam</territory>
+			<territory type="ST">Sao Tome og Prinsipi</territory>
+			<territory type="SV" draft="unconfirmed">El Salvador</territory>
+			<territory type="SY" draft="unconfirmed">Syria</territory>
+			<territory type="SZ">Svasiland</territory>
+			<territory type="TA" draft="unconfirmed">Tristan da Cunha</territory>
+			<territory type="TC" draft="unconfirmed">Turks- og Caicosoyggjarnar</territory>
+			<territory type="TD">Kjad</territory>
+			<territory type="TG" draft="unconfirmed">Togo</territory>
+			<territory type="TH" draft="unconfirmed">Teiland</territory>
+			<territory type="TJ">Tadsjikistan</territory>
+			<territory type="TK" draft="unconfirmed">Tokelau</territory>
+			<territory type="TL" draft="unconfirmed">Eystur-Timor</territory>
+			<territory type="TL" alt="variant" draft="unconfirmed">Eystur-Timor</territory>
+			<territory type="TM" draft="unconfirmed">Turkmenistan</territory>
+			<territory type="TN">Tunesia</territory>
+			<territory type="TO" draft="unconfirmed">Tonga</territory>
+			<territory type="TR">Turkaland</territory>
+			<territory type="TT">Trinidad og Tobago</territory>
+			<territory type="TV" draft="unconfirmed">Tuvalu</territory>
+			<territory type="TW">Teivan</territory>
+			<territory type="TZ">Tansania</territory>
+			<territory type="UA">Ukreina</territory>
+			<territory type="UG" draft="unconfirmed">Uganda</territory>
+			<territory type="US">Sambandsríki Amerika</territory>
+			<territory type="UY">Uruguei</territory>
+			<territory type="UZ">Usbekistan</territory>
+			<territory type="VA">Vatikan</territory>
+			<territory type="VC">Saint Vinsent og Grenadinoyggjar</territory>
+			<territory type="VE">Venesuela</territory>
+			<territory type="VG" draft="unconfirmed">Stóra Bretlands Jómfrúoyggjarnar</territory>
+			<territory type="VI" draft="unconfirmed">Sambandsríki Amerikas Jómfrúoyggjarnar</territory>
+			<territory type="VN" draft="unconfirmed">Vietnam</territory>
+			<territory type="VU" draft="unconfirmed">Vanuatu</territory>
+			<territory type="WF" draft="unconfirmed">Wallis og Futuna</territory>
+			<territory type="WS">Sámoa</territory>
+			<territory type="YE">Jemen</territory>
+			<territory type="YT" draft="unconfirmed">Mayotte</territory>
+			<territory type="ZA">Suðurafrika</territory>
+			<territory type="ZM">Sambia</territory>
+			<territory type="ZW">Simbabvi</territory>
+		</territories>
+		<variants>
+			<variant type="MONOTON" draft="unconfirmed">monotonísk</variant>
+			<variant type="PINYIN" draft="unconfirmed">pinyin</variant>
+			<variant type="POLYTON" draft="unconfirmed">polytonísk</variant>
+			<variant type="WADEGILE" draft="unconfirmed">Wade-Giles</variant>
+		</variants>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="unconfirmed">SI-einingar</measurementSystemName>
+			<measurementSystemName type="US" draft="unconfirmed">US-einingar</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a á b d ð e f g h i í j k l m n o ó p r s t u ú v x y ý æ ø]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[c q w z]</exemplarCharacters>
+		<exemplarCharacters type="currencySymbol" draft="unconfirmed">[a b c č d e f g h i j k l ł m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[A Á B C D Ð E F G H I Í J K L M N O Ó P Q R S T U Ú V W X Y Ý Z Æ Ø]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="unconfirmed">”</quotationStart>
+		<quotationEnd draft="unconfirmed">”</quotationEnd>
+		<alternateQuotationStart draft="unconfirmed">’</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">’</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">jan</month>
+							<month type="2">feb</month>
+							<month type="3">mar</month>
+							<month type="4">apr</month>
+							<month type="5">mai</month>
+							<month type="6">jun</month>
+							<month type="7">jul</month>
+							<month type="8">aug</month>
+							<month type="9">sep</month>
+							<month type="10">okt</month>
+							<month type="11">nov</month>
+							<month type="12">des</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">januar</month>
+							<month type="2">februar</month>
+							<month type="3">mars</month>
+							<month type="4">apríl</month>
+							<month type="5">mai</month>
+							<month type="6">juni</month>
+							<month type="7">juli</month>
+							<month type="8">august</month>
+							<month type="9">september</month>
+							<month type="10">oktober</month>
+							<month type="11">november</month>
+							<month type="12">desember</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">J</month>
+							<month type="2" draft="unconfirmed">F</month>
+							<month type="3" draft="unconfirmed">M</month>
+							<month type="4" draft="unconfirmed">A</month>
+							<month type="5" draft="unconfirmed">M</month>
+							<month type="6" draft="unconfirmed">J</month>
+							<month type="7" draft="unconfirmed">J</month>
+							<month type="8" draft="unconfirmed">A</month>
+							<month type="9" draft="unconfirmed">S</month>
+							<month type="10" draft="unconfirmed">O</month>
+							<month type="11" draft="unconfirmed">N</month>
+							<month type="12" draft="unconfirmed">D</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">sun</day>
+							<day type="mon">mán</day>
+							<day type="tue">týs</day>
+							<day type="wed">mik</day>
+							<day type="thu">hós</day>
+							<day type="fri">frí</day>
+							<day type="sat">ley</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">sunnudagur</day>
+							<day type="mon">mánadagur</day>
+							<day type="tue">týsdagur</day>
+							<day type="wed">mikudagur</day>
+							<day type="thu">hósdagur</day>
+							<day type="fri">fríggjadagur</day>
+							<day type="sat">leygardagur</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">S</day>
+							<day type="mon" draft="unconfirmed">M</day>
+							<day type="tue" draft="unconfirmed">T</day>
+							<day type="wed" draft="unconfirmed">M</day>
+							<day type="thu" draft="unconfirmed">H</day>
+							<day type="fri" draft="unconfirmed">F</day>
+							<day type="sat" draft="unconfirmed">L</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">K1</quarter>
+							<quarter type="2">K2</quarter>
+							<quarter type="3">K3</quarter>
+							<quarter type="4">K4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1. kvartal</quarter>
+							<quarter type="2">2. kvartal</quarter>
+							<quarter type="3">3. kvartal</quarter>
+							<quarter type="4">4. kvartal</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">f.p.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">s.p.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">um fyrrapartur</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">um seinnapartur</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">fyrrapartur</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">seinnapartur</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0" draft="unconfirmed">fyrir Krist</era>
+						<era type="1" draft="unconfirmed">eftir Krist</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">f.Kr.</era>
+						<era type="1" draft="unconfirmed">e.Kr.</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE dd MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d. MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd-MM-yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd-MM-yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="unconfirmed">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="unconfirmed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">MM-dd – dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">LLL–LLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">MM-d – d</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM-d – MM-d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, MM-d – E, MM-d</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MM-d – E, MM-d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="unconfirmed">y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">yyyy-MM – MM</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">yyyy-MM – yyyy-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">yyyy-MM-dd – dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">yyyy-MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">yyyy-MM-dd – yyyy-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, yyyy-MM-dd – E, yyyy-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, yyyy-MM-dd – E, yyyy-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, yyyy-MM-dd – E, yyyy-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">yyyy-MM – MM</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">yyyy-MM – yyyy-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">yyyy-MM-d – d</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">yyyy-MM-dd – MM-d</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">yyyy-MM-dd – yyyy-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, yyyy-MM-dd – E, yyyy-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, yyyy-MM-dd – E, yyyy-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, yyyy-MM-dd – E, yyyy-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">yyyy-MM – MM</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">yyyy-MM – yyyy-MM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="era">
+						<displayName draft="unconfirmed">tímabil</displayName>
+					</field>
+					<field type="year">
+						<displayName draft="unconfirmed">ár</displayName>
+					</field>
+					<field type="month">
+						<displayName draft="unconfirmed">mánuður</displayName>
+					</field>
+					<field type="week">
+						<displayName draft="unconfirmed">vika</displayName>
+					</field>
+					<field type="day">
+						<displayName draft="unconfirmed">dagur</displayName>
+						<relative type="-2" draft="unconfirmed">í fyrradag</relative>
+						<relative type="-1" draft="unconfirmed">í gær</relative>
+						<relative type="0" draft="unconfirmed">í dag</relative>
+						<relative type="1" draft="unconfirmed">á morgum</relative>
+						<relative type="2" draft="unconfirmed">í overmorgum</relative>
+					</field>
+					<field type="weekday">
+						<displayName draft="unconfirmed">vikudagur</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName draft="unconfirmed">samdøgurperiode</displayName>
+					</field>
+					<field type="hour">
+						<displayName draft="unconfirmed">klukkustund</displayName>
+					</field>
+					<field type="minute">
+						<displayName draft="unconfirmed">mínúta</displayName>
+					</field>
+					<field type="second">
+						<displayName draft="unconfirmed">sekund</displayName>
+					</field>
+					<field type="zone">
+						<displayName draft="unconfirmed">tímabelti</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group>.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">−</minusSign>
+			<exponential draft="unconfirmed">×10^</exponential>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">¤¤¤</nan>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤#,##0.00;¤-#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="one" draft="unconfirmed">{0} {1}</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="DKK">
+				<displayName draft="unconfirmed">donsk króna</displayName>
+				<displayName count="one" draft="unconfirmed">donsk króna</displayName>
+				<displayName count="other" draft="unconfirmed">donska krónur</displayName>
+				<symbol>kr</symbol>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="unconfirmed">euro</displayName>
+				<displayName count="one" draft="unconfirmed">euro</displayName>
+				<displayName count="other" draft="unconfirmed">euro</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName draft="unconfirmed">íslendsk króna</displayName>
+				<displayName count="one" draft="unconfirmed">íslendsk króna</displayName>
+				<displayName count="other" draft="unconfirmed">íslendska krónur</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="unconfirmed">norsk króna</displayName>
+				<displayName count="one" draft="unconfirmed">norsk króna</displayName>
+				<displayName count="other" draft="unconfirmed">norska krónur</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName draft="unconfirmed">svensk króna</displayName>
+				<displayName count="one" draft="unconfirmed">svensk króna</displayName>
+				<displayName count="other" draft="unconfirmed">svenska krónur</displayName>
+			</currency>
+			<currency type="XAG">
+				<displayName draft="unconfirmed">unse sølv</displayName>
+				<displayName count="one" draft="unconfirmed">unse sølv</displayName>
+				<displayName count="other" draft="unconfirmed">unse sølv</displayName>
+			</currency>
+			<currency type="XAU">
+				<displayName draft="unconfirmed">unse guld</displayName>
+				<displayName count="one" draft="unconfirmed">unse guld</displayName>
+				<displayName count="other" draft="unconfirmed">unse guld</displayName>
+			</currency>
+			<currency type="XPD">
+				<displayName draft="unconfirmed">unse palladium</displayName>
+				<displayName count="one" draft="unconfirmed">unse palladium</displayName>
+				<displayName count="other" draft="unconfirmed">unse palladium</displayName>
+			</currency>
+			<currency type="XPT">
+				<displayName draft="unconfirmed">unse platin</displayName>
+				<displayName count="one" draft="unconfirmed">unse platin</displayName>
+				<displayName count="other" draft="unconfirmed">unse platin</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unit type="day">
+			<unitPattern count="one" draft="unconfirmed">{0} samdøgur</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} samdøgur</unitPattern>
+		</unit>
+		<unit type="hour">
+			<unitPattern count="one" draft="unconfirmed">{0} tími</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} tímar</unitPattern>
+		</unit>
+		<unit type="minute">
+			<unitPattern count="one" draft="unconfirmed">{0} minuttur</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} minuttir</unitPattern>
+		</unit>
+		<unit type="month">
+			<unitPattern count="one" draft="unconfirmed">{0} mánadur</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} mánaðir</unitPattern>
+		</unit>
+		<unit type="second">
+			<unitPattern count="one" draft="unconfirmed">{0} sekund</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} sekundir</unitPattern>
+		</unit>
+		<unit type="week">
+			<unitPattern count="one" draft="unconfirmed">{0} vika</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} vikur</unitPattern>
+		</unit>
+		<unit type="year">
+			<unitPattern count="one" draft="unconfirmed">{0} ár</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} ár</unitPattern>
+		</unit>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="2" draft="contributed">{0} og {1}</listPatternPart>
+			<listPatternPart type="end" draft="contributed">{0} og {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr draft="unconfirmed">já:j</yesstr>
+			<nostr draft="unconfirmed">nei:n</nostr>
+		</messages>
+	</posix>
+</ldml>
+

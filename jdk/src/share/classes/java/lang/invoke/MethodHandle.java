@@ -924,7 +924,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
         if (arrayType != type().parameterType(collectArgPos))
             target = convertArguments(type().changeParameterType(collectArgPos, arrayType));
         MethodHandle collector = ValueConversions.varargsArray(arrayType, arrayLength);
-        return MethodHandleImpl.makeCollectArguments(target, collector, collectArgPos, false);
+        return MethodHandles.collectArguments(target, collectArgPos, collector);
     }
 
     // private API: return true if last param exactly matches arrayType
@@ -1226,7 +1226,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
         return "MethodHandle"+type;
     }
     String debugString() {
-        return standardString()+"="+internalForm()+internalValues();
+        return standardString()+"/LF="+internalForm()+internalProperties();
     }
 
     //// Implementation methods.
@@ -1269,6 +1269,12 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
 
     /*non-public*/
     Object internalValues() {
+        return null;
+    }
+
+    /*non-public*/
+    Object internalProperties() {
+        // Override to something like "/FOO=bar"
         return "";
     }
 

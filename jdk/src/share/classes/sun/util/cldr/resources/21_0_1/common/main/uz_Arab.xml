@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="uz"/>
+		<script type="Arab"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="fa">دری</language>
+			<language type="ps">پشتو</language>
+			<language type="uz">اۉزبېک</language>
+		</languages>
+		<territories>
+			<territory type="AF">افغانستان</territory>
+		</territories>
+	</localeDisplayNames>
+	<layout>
+		<orientation characters="right-to-left"/>
+	</layout>
+	<characters>
+		<exemplarCharacters>[\u064B \u064C \u064D \u064E \u064F \u0650 \u0651 \u0652 \u0654 \u0670 ء آ أ ؤ ئ ا ب پ ة ت ث ټ ج چ ح خ ځ څ د ذ ډ ر ز ړ ږ ژ س ش ښ ص ض ط ظ ع غ ف ق ک ګ گ ل م ن ڼ ه و ۇ ۉ ي ی ۍ ې]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[ء آ أ ؤ ئ ا ب پ ة ت ث ټ ج چ ح خ ځ څ د ذ ډ ر ز ړ ږ ژ س ش ښ ص ض ط ظ ع غ ف ق ک ګ گ ل م ن ڼ ه و ۇ ۉ ي ی ۍ ې]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">جنو</month>
+							<month type="2" draft="unconfirmed">فبر</month>
+							<month type="3" draft="unconfirmed">مار</month>
+							<month type="4" draft="unconfirmed">اپر</month>
+							<month type="5" draft="unconfirmed">مـی</month>
+							<month type="6" draft="unconfirmed">جون</month>
+							<month type="7" draft="unconfirmed">جول</month>
+							<month type="8" draft="unconfirmed">اگس</month>
+							<month type="9" draft="unconfirmed">سپت</month>
+							<month type="10" draft="unconfirmed">اکت</month>
+							<month type="11" draft="unconfirmed">نوم</month>
+							<month type="12" draft="unconfirmed">دسم</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">جنوری</month>
+							<month type="2" draft="unconfirmed">فبروری</month>
+							<month type="3" draft="unconfirmed">مارچ</month>
+							<month type="4" draft="unconfirmed">اپریل</month>
+							<month type="5" draft="unconfirmed">می</month>
+							<month type="6" draft="unconfirmed">جون</month>
+							<month type="7" draft="unconfirmed">جولای</month>
+							<month type="8" draft="unconfirmed">اگست</month>
+							<month type="9" draft="unconfirmed">سپتمبر</month>
+							<month type="10" draft="unconfirmed">اکتوبر</month>
+							<month type="11" draft="unconfirmed">نومبر</month>
+							<month type="12" draft="unconfirmed">دسمبر</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">ی.</day>
+							<day type="mon" draft="unconfirmed">د.</day>
+							<day type="tue" draft="unconfirmed">س.</day>
+							<day type="wed" draft="unconfirmed">چ.</day>
+							<day type="thu" draft="unconfirmed">پ.</day>
+							<day type="fri" draft="unconfirmed">ج.</day>
+							<day type="sat" draft="unconfirmed">ش.</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">یکشنبه</day>
+							<day type="mon" draft="unconfirmed">دوشنبه</day>
+							<day type="tue" draft="unconfirmed">سه‌شنبه</day>
+							<day type="wed" draft="unconfirmed">چهارشنبه</day>
+							<day type="thu" draft="unconfirmed">پنجشنبه</day>
+							<day type="fri" draft="unconfirmed">جمعه</day>
+							<day type="sat" draft="unconfirmed">شنبه</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<eras>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">ق.م.</era>
+						<era type="1" draft="unconfirmed">م.</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">y نچی ییل d نچی MMMM EEEE کونی</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d نچی MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">yyyy/M/d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">H:mm:ss (zzzz)</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">H:mm:ss (z)</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">H:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">H:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Md" draft="unconfirmed">M/d</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">d نچی MMMM</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<zone type="Asia/Kabul">
+				<exemplarCity>کابل</exemplarCity>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard draft="unconfirmed">افغانستان وقتی</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>arabext</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native>arabext</native>
+		</otherNumberingSystems>
+		<symbols numberSystem="arabext">
+			<decimal>٫</decimal>
+			<group>٬</group>
+			<percentSign>٪</percentSign>
+			<exponential>×۱۰^</exponential>
+		</symbols>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group>.</group>
+			<minusSign>−</minusSign>
+		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="AFN">
+				<displayName>افغانی</displayName>
+				<symbol>؋</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>
+

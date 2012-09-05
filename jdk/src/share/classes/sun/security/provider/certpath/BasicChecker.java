@@ -101,6 +101,14 @@ class BasicChecker extends PKIXCertPathChecker {
     public void init(boolean forward) throws CertPathValidatorException {
         if (!forward) {
             prevPubKey = trustedPubKey;
+            if (prevPubKey instanceof DSAPublicKey &&
+                ((DSAPublicKey)prevPubKey).getParams() == null)
+            {
+                // If TrustAnchor is a DSA public key and it has no params, it
+                // cannot be used to verify the signature of the first cert,
+                // so throw exception
+                throw new CertPathValidatorException("Key parameters missing");
+            }
             prevSubject = caName;
         } else {
             throw new
@@ -242,7 +250,7 @@ class BasicChecker extends PKIXCertPathChecker {
         }
         if (cKey instanceof DSAPublicKey &&
             ((DSAPublicKey)cKey).getParams() == null) {
-            //cKey needs to inherit DSA parameters from prev key
+            // cKey needs to inherit DSA parameters from prev key
             cKey = makeInheritedParamsKey(cKey, prevPubKey);
             if (debug != null) debug.println("BasicChecker.updateState Made " +
                                              "key with inherited params");
@@ -252,7 +260,7 @@ class BasicChecker extends PKIXCertPathChecker {
     }
 
     /**
-     * Internal method to create a new key with inherited key parameters
+     * Internal method to create a new key with inherited key parameters.
      *
      * @param keyValueKey key from which to obtain key value
      * @param keyParamsKey key from which to obtain key parameters
@@ -263,7 +271,6 @@ class BasicChecker extends PKIXCertPathChecker {
     static PublicKey makeInheritedParamsKey(PublicKey keyValueKey,
         PublicKey keyParamsKey) throws CertPathValidatorException
     {
-        PublicKey usableKey;
         if (!(keyValueKey instanceof DSAPublicKey) ||
             !(keyParamsKey instanceof DSAPublicKey))
             throw new CertPathValidatorException("Input key is not " +
@@ -279,13 +286,12 @@ class BasicChecker extends PKIXCertPathChecker {
                                                        params.getP(),
                                                        params.getQ(),
                                                        params.getG());
-            usableKey = kf.generatePublic(ks);
+            return kf.generatePublic(ks);
         } catch (GeneralSecurityException e) {
             throw new CertPathValidatorException("Unable to generate key with" +
                                                  " inherited parameters: " +
                                                  e.getMessage(), e);
         }
-        return usableKey;
     }
 
     /**

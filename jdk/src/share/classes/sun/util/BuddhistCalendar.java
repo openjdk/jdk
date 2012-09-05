@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,11 @@ package sun.util;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.TimeZone;
-import sun.util.resources.LocaleData;
+import sun.util.locale.provider.CalendarDataUtility;
 
 public class BuddhistCalendar extends GregorianCalendar {
 
@@ -91,10 +88,19 @@ public class BuddhistCalendar extends GregorianCalendar {
 /////////////////
 
     /**
+     * Returns {@code "buddhist"} as the calendar type of this Calendar.
+     */
+    @Override
+    public String getCalendarType() {
+        return "buddhist";
+    }
+
+    /**
      * Compares this BuddhistCalendar to an object reference.
      * @param obj the object reference with which to compare
      * @return true if this object is equal to <code>obj</code>; false otherwise
      */
+    @Override
     public boolean equals(Object obj) {
         return obj instanceof BuddhistCalendar
             && super.equals(obj);
@@ -104,6 +110,7 @@ public class BuddhistCalendar extends GregorianCalendar {
      * Override hashCode.
      * Generates the hash code for the BuddhistCalendar object
      */
+    @Override
     public int hashCode() {
         return super.hashCode() ^ BUDDHIST_YEAR_OFFSET;
     }
@@ -113,6 +120,7 @@ public class BuddhistCalendar extends GregorianCalendar {
      * @param field the given time field.
      * @return the value for the given time field.
      */
+    @Override
     public int get(int field)
     {
         if (field == YEAR) {
@@ -126,6 +134,7 @@ public class BuddhistCalendar extends GregorianCalendar {
      * @param field the given time field.
      * @param value the value to be set for the given time field.
      */
+    @Override
     public void set(int field, int value)
     {
         if (field == YEAR) {
@@ -140,6 +149,7 @@ public class BuddhistCalendar extends GregorianCalendar {
      * @param field the time field.
      * @param amount the amount of date or time to be added to the field.
      */
+    @Override
     public void add(int field, int amount)
     {
         int savedYearOffset = yearOffset;
@@ -160,6 +170,7 @@ public class BuddhistCalendar extends GregorianCalendar {
      * @param field the time field.
      * @param amount the signed amount to add to <code>field</code>.
      */
+    @Override
     public void roll(int field, int amount)
     {
         int savedYearOffset = yearOffset;
@@ -173,72 +184,21 @@ public class BuddhistCalendar extends GregorianCalendar {
         }
     }
 
+    @Override
     public String getDisplayName(int field, int style, Locale locale) {
         if (field != ERA) {
             return super.getDisplayName(field, style, locale);
         }
 
-        // Handle Thai BuddhistCalendar specific era names
-        if (field < 0 || field >= fields.length ||
-            style < SHORT || style > LONG) {
-            throw new IllegalArgumentException();
-        }
-        if (locale == null) {
-            throw new NullPointerException();
-        }
-        ResourceBundle rb = LocaleData.getDateFormatData(locale);
-        String[] eras = rb.getStringArray(getKey(style));
-        return eras[get(field)];
+        return CalendarDataUtility.retrieveFieldValueName("buddhist", field, get(field), style, locale);
     }
 
+    @Override
     public Map<String,Integer> getDisplayNames(int field, int style, Locale locale) {
         if (field != ERA) {
             return super.getDisplayNames(field, style, locale);
         }
-
-        // Handle Thai BuddhistCalendar specific era names
-        if (field < 0 || field >= fields.length ||
-            style < ALL_STYLES || style > LONG) {
-            throw new IllegalArgumentException();
-        }
-        if (locale == null) {
-            throw new NullPointerException();
-        }
-        // ALL_STYLES
-        if (style == ALL_STYLES) {
-            Map<String,Integer> shortNames = getDisplayNamesImpl(field, SHORT, locale);
-            Map<String,Integer> longNames = getDisplayNamesImpl(field, LONG, locale);
-            if (shortNames == null) {
-                return longNames;
-            }
-            if (longNames != null) {
-                shortNames.putAll(longNames);
-            }
-            return shortNames;
-        }
-
-        // SHORT or LONG
-        return getDisplayNamesImpl(field, style, locale);
-    }
-
-    private Map<String,Integer> getDisplayNamesImpl(int field, int style, Locale locale) {
-        ResourceBundle rb = LocaleData.getDateFormatData(locale);
-        String[] eras = rb.getStringArray(getKey(style));
-        Map<String,Integer> map = new HashMap<String,Integer>(4);
-        for (int i = 0; i < eras.length; i++) {
-            map.put(eras[i], i);
-        }
-        return map;
-    }
-
-    private String getKey(int style) {
-        StringBuilder key = new StringBuilder();
-        key.append(BuddhistCalendar.class.getName());
-        if (style == SHORT) {
-            key.append(".short");
-        }
-        key.append(".Eras");
-        return key.toString();
+        return CalendarDataUtility.retrieveFieldValueNames("buddhist", field, style, locale);
     }
 
     /**
@@ -250,6 +210,7 @@ public class BuddhistCalendar extends GregorianCalendar {
      * @param field the field to determine the maximum of
      * @return the maximum of the given field for the current date of this Calendar
      */
+    @Override
     public int getActualMaximum(int field) {
         int savedYearOffset = yearOffset;
         // To let the superclass calculate date-time values correctly,
@@ -262,6 +223,8 @@ public class BuddhistCalendar extends GregorianCalendar {
         }
     }
 
+    @Override
+    @SuppressWarnings("empty-statement")
     public String toString() {
         // The super class produces a String with the Gregorian year
         // value (or '?')

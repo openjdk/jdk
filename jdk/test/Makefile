@@ -507,7 +507,8 @@ JDK_ALL_TARGETS += jdk_misc
 JDK_DEFAULT_TARGETS += jdk_misc
 jdk_misc: $(call TestDirs, \
           demo/jvmti demo/zipfs javax/naming javax/script \
-          javax/smartcardio com/sun/jndi com/sun/xml sun/misc)
+          javax/smartcardio com/sun/jndi com/sun/xml \
+          com/sun/corba sun/misc)
 	$(call RunAgentvmBatch)
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)

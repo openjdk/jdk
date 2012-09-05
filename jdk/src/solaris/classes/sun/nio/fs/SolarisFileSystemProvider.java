@@ -27,6 +27,7 @@ package sun.nio.fs;
 
 import java.nio.file.*;
 import java.nio.file.attribute.*;
+import java.nio.file.spi.FileTypeDetector;
 import java.io.IOException;
 
 /**
@@ -78,5 +79,10 @@ public class SolarisFileSystemProvider extends UnixFileSystemProvider {
             return new SolarisUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
                                                            Util.followLinks(options));
         return super.getFileAttributeView(obj, name, options);
+    }
+
+    @Override
+    FileTypeDetector getFileTypeDetector() {
+        return new GnomeFileTypeDetector();
     }
 }
