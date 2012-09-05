@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.*;
 import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
-import static sun.nio.fs.UnixNativeDispatcher.*;
+import static sun.nio.fs.SolarisNativeDispatcher.*;
 
 /**
  * Solaris implementation of FileSystem

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ JAVA="${TESTJAVA}/bin/java"
 # and we can not set -XX:+UsePerfData as that invalidates the test premise of
 # there being no jvm flags
 
-${JAVA} -cp ${TESTCLASSES} Sleeper &
+${JAVA} -cp ${TESTCLASSPATH:-${TESTCLASSES}} Sleeper &
 SLEEPER_PID=$!
 
 ${JPS} -J-XX:Flags=${TESTSRC}/vmflags -Vvml | awk -f ${TESTSRC}/jps-Vvml_Output2.awk

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 /* @test
    @bug 4091757 4939819 6728842
    @summary Basic test for setReadOnly method
+   @build SetReadOnly Util
+   @run main SetReadOnly
  */
 
 import java.io.*;
@@ -32,6 +34,11 @@ import java.io.*;
 public class SetReadOnly {
 
     public static void main(String[] args) throws Exception {
+        if (Util.isPrivileged()) {
+            System.out.println("Unable to test file permissions when running with privileges");
+            return;
+        }
+
         File d = new File(System.getProperty("test.dir", "."));
         File f = new File(d, "x.SetReadOnly");
 

@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6443 $"/>
+		<generation date="$Date: 2012-01-26 04:51:07 +0900 (Thu, 26 Jan 2012) $"/>
+		<language type="ii"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="de">ꄓꇩꉙ</language>
+			<language type="en">ꑱꇩꉙ</language>
+			<language type="es">ꑭꀠꑸꉙ</language>
+			<language type="fr">ꃔꇩꉙ</language>
+			<language type="ii">ꆈꌠꉙ</language>
+			<language type="it">ꑴꄊꆺꉙ</language>
+			<language type="ja">ꏝꀪꉙ</language>
+			<language type="pt">ꁍꄨꑸꉙ</language>
+			<language type="pt_BR">ꀠꑟꁍꄨꑸꉙ</language>
+			<language type="ru">ꊉꇩꉙ</language>
+			<language type="und">ꅉꀋꌠꅇꂷ</language>
+			<language type="zh">ꍏꇩꉙ</language>
+			<language type="zh_Hans">ꈝꐯꍏꇩꉙ</language>
+			<language type="zh_Hant">ꀎꋏꍏꇩꉙ</language>
+		</languages>
+		<scripts>
+			<script type="Arab">ꀊꇁꀨꁱꂷ</script>
+			<script type="Cyrl">ꀊꆨꌦꇁꃚꁱꂷ</script>
+			<script type="Hans">ꈝꐯꉌꈲꁱꂷ</script>
+			<script type="Hant">ꀎꋏꉌꈲꁱꂷ</script>
+			<script type="Latn">ꇁꄀꁱꂷ</script>
+			<script type="Yiii">ꆈꌠꁱꂷ</script>
+			<script type="Zxxx">ꁱꀋꉆꌠ</script>
+			<script type="Zzzz">ꅉꀋꐚꌠꁱꂷ</script>
+		</scripts>
+		<territories>
+			<territory type="BR">ꀠꑭ</territory>
+			<territory type="CN">ꍏꇩ</territory>
+			<territory type="DE">ꄓꇩ</territory>
+			<territory type="FR">ꃔꇩ</territory>
+			<territory type="GB">ꑱꇩ</territory>
+			<territory type="IN">ꑴꄗ</territory>
+			<territory type="IT">ꑴꄊꆺ</territory>
+			<territory type="JP">ꏝꀪ</territory>
+			<territory type="RU">ꊉꇆꌦ</territory>
+			<territory type="US">ꂰꇩ</territory>
+			<territory type="ZZ">ꃅꄷꅉꀋꐚꌠ</territory>
+		</territories>
+		<types>
+			<type type="gregorian" key="calendar">ꄉꉻꃅꑍ</type>
+			<type type="islamic" key="calendar">ꑳꌦꇂꑍꉖ</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">ꂰꌬꌠ</measurementSystemName>
+			<measurementSystemName type="US">ꂰꇩ</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">ꅇꉙ: {0}</codePattern>
+			<codePattern type="script">ꇇꁱ: {0}</codePattern>
+			<codePattern type="territory">ꃅꄷ: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[ꀀ-ꒌ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[ꀀ ꀋ ꀗ ꀣ ꀯ ꀺ ꁆ ꁒ ꁞ ꁩ ꁵ ꂁ ꂍ ꂘ ꂤ ꂰ ꂼ ꃇ ꃓ ꃟ ꃫ ꃶ ꄂ ꄎ ꄚ ꄥ ꄱ ꄽ ꅉ ꅔ ꅠ ꅬ ꅸ ꆃ ꆏ ꆛ ꆧ ꆳ ꆾ ꇊ ꇖ ꇢ ꇭ ꇹ ꈅ ꈑ ꈜ ꈨ ꈴ ꉀ ꉋ ꉗ ꉣ ꉯ ꉺ ꊆ ꊒ ꊞ ꊩ ꊵ ꋁ ꋍ ꋘ ꋤ ꋰ ꋼ ꌇ ꌓ ꌟ ꌫ ꌷ ꍂ ꍎ ꍚ ꍦ ꍱ ꍽ ꎉ ꎕ ꎠ ꎬ ꎸ ꏄ ꏏ ꏛ ꏧ ꏳ ꏾ ꐊ ꐖ ꐢ ꐭ ꐹ ꑅ ꑑ ꑜ ꑨ ꑴ ꒀ ꒋ]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="provisional">1</month>
+							<month type="2" draft="provisional">2</month>
+							<month type="3" draft="provisional">3</month>
+							<month type="4" draft="provisional">4</month>
+							<month type="5" draft="provisional">5</month>
+							<month type="6" draft="provisional">6</month>
+							<month type="7" draft="provisional">7</month>
+							<month type="8" draft="provisional">8</month>
+							<month type="9" draft="provisional">9</month>
+							<month type="10" draft="provisional">10</month>
+							<month type="11" draft="provisional">11</month>
+							<month type="12" draft="provisional">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ꋍꆪ</month>
+							<month type="2">ꑍꆪ</month>
+							<month type="3">ꌕꆪ</month>
+							<month type="4">ꇖꆪ</month>
+							<month type="5">ꉬꆪ</month>
+							<month type="6">ꃘꆪ</month>
+							<month type="7">ꏃꆪ</month>
+							<month type="8">ꉆꆪ</month>
+							<month type="9">ꈬꆪ</month>
+							<month type="10">ꊰꆪ</month>
+							<month type="11">ꊰꊪꆪ</month>
+							<month type="12">ꊰꑋꆪ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">ꑭꆏ</day>
+							<day type="mon">ꆏꋍ</day>
+							<day type="tue">ꆏꑍ</day>
+							<day type="wed">ꆏꌕ</day>
+							<day type="thu">ꆏꇖ</day>
+							<day type="fri">ꆏꉬ</day>
+							<day type="sat">ꆏꃘ</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">ꑭꆏꑍ</day>
+							<day type="mon">ꆏꊂꋍ</day>
+							<day type="tue">ꆏꊂꑍ</day>
+							<day type="wed">ꆏꊂꌕ</day>
+							<day type="thu">ꆏꊂꇖ</day>
+							<day type="fri">ꆏꊂꉬ</day>
+							<day type="sat">ꆏꊂꃘ</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">ꆏ</day>
+							<day type="mon">ꋍ</day>
+							<day type="tue">ꑍ</day>
+							<day type="wed">ꌕ</day>
+							<day type="thu">ꇖ</day>
+							<day type="fri">ꉬ</day>
+							<day type="sat">ꃘ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="wide">
+							<quarter type="1">ꃅꑌ</quarter>
+							<quarter type="2">ꃅꎸ</quarter>
+							<quarter type="3">ꃅꍵ</quarter>
+							<quarter type="4">ꃅꋆ</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">ꎸꄑ</dayPeriod>
+							<dayPeriod type="pm">ꁯꋒ</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraAbbr>
+						<era type="0">ꃅꋊꂿ</era>
+						<era type="1">ꃅꋊꊂ</era>
+					</eraAbbr>
+				</eras>
+				<fields>
+					<field type="era">
+						<displayName>ꃅꋊ</displayName>
+					</field>
+					<field type="year">
+						<displayName>ꈎ</displayName>
+					</field>
+					<field type="month">
+						<displayName>ꆪ</displayName>
+					</field>
+					<field type="week">
+						<displayName>ꑭꆏ</displayName>
+					</field>
+					<field type="day">
+						<displayName>ꑍ</displayName>
+						<relative type="-2">ꎴꂿꋍꑍ</relative>
+						<relative type="-1">ꀋꅔꉈ</relative>
+						<relative type="0">ꀃꑍ</relative>
+						<relative type="1">ꃆꏂꑍ</relative>
+						<relative type="2">ꌕꀿꑍ</relative>
+					</field>
+					<field type="weekday">
+						<displayName>ꆏꑍ</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName>ꎸꄑ/ꁯꋒ</displayName>
+					</field>
+					<field type="hour">
+						<displayName>ꄮꈉ</displayName>
+					</field>
+					<field type="minute">
+						<displayName>ꃏ</displayName>
+					</field>
+					<field type="second">
+						<displayName>ꇙ</displayName>
+					</field>
+					<field type="zone">
+						<displayName>ꃅꄷꄮꈉ</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<zone type="Etc/Unknown">
+				<exemplarCity>ꅉꀋꐚꌠ</exemplarCity>
+			</zone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>.</decimal>
+			<group>,</group>
+		</symbols>
+		<currencies>
+			<currency type="XXX">
+				<displayName>ꅉꀋꐚꌠꌋꆀꎆꃀꀋꈁꀐꌠ</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr>ꉬ</yesstr>
+			<nostr>ꀋꉬ</nostr>
+		</messages>
+	</posix>
+</ldml>

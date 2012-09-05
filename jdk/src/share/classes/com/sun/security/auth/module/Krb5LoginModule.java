@@ -458,6 +458,10 @@ public class Krb5LoginModule implements LoginModule {
         useKeyTab = "true".equalsIgnoreCase((String)options.get("useKeyTab"));
         ticketCacheName = (String)options.get("ticketCache");
         keyTabName = (String)options.get("keyTab");
+        if (keyTabName != null) {
+            keyTabName = sun.security.krb5.internal.ktab.KeyTab.normalize(
+                         keyTabName);
+        }
         princName = (String)options.get("principal");
         refreshKrb5Config =
             "true".equalsIgnoreCase((String)options.get("refreshKrb5Config"));
