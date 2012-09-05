@@ -235,9 +235,6 @@ class Exceptions {
 #define THROW_ARG(name, signature, args) \
   { Exceptions::_throw_args(THREAD_AND_LOCATION, name, signature, args);   return; }
 
-#define THROW_MSG_CAUSE(name, message, cause) \
-  { Exceptions::_throw_msg_cause(THREAD_AND_LOCATION, name, message, cause); return; }
-
 #define THROW_OOP_(e, result)                       \
   { Exceptions::_throw_oop(THREAD_AND_LOCATION, e);                           return result; }
 
