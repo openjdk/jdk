@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,15 @@ import sun.misc.Unsafe;
 
 import java.awt.*;
 import java.awt.KeyboardFocusManager;
+import java.awt.DefaultKeyboardFocusManager;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.geom.Point2D;
 import java.awt.peer.ComponentPeer;
 import java.security.AccessControlContext;
 
 import java.io.File;
+import java.util.Vector;
 
 /**
  * The AWTAccessor utility class.
@@ -314,7 +317,7 @@ public final class AWTAccessor {
         void setTrayIconWindow(Window w, boolean isTrayIconWindow);
     }
 
-    /*
+    /**
      * An accessor for the AWTEvent class.
      */
     public interface AWTEventAccessor {
@@ -334,12 +337,20 @@ public final class AWTAccessor {
          */
         boolean isSystemGenerated(AWTEvent ev);
 
-
-        /*
+        /**
          * Returns the acc this event was constructed with.
          */
         AccessControlContext getAccessControlContext(AWTEvent ev);
 
+        /**
+         * Returns binary data associated with this event;
+         */
+        byte[] getBData(AWTEvent ev);
+
+        /**
+         * Associates binary data with this event;
+         */
+        void setBData(AWTEvent ev, byte[] bdata);
     }
 
     public interface InputEventAccessor {
@@ -367,11 +378,11 @@ public final class AWTAccessor {
        Rectangle getMaximizedBounds(Frame frame);
     }
 
-    /*
+    /**
      * An interface of accessor for the java.awt.KeyboardFocusManager class.
      */
     public interface KeyboardFocusManagerAccessor {
-        /*
+        /**
          * Indicates whether the native implementation should
          * proceed with a pending focus request for the heavyweight.
          */
@@ -381,7 +392,7 @@ public final class AWTAccessor {
                                            boolean focusedWindowChangeAllowed,
                                            long time,
                                            CausedFocusEvent.Cause cause);
-        /*
+        /**
          * Delivers focus for the lightweight descendant of the heavyweight
          * synchronously.
          */
@@ -390,23 +401,28 @@ public final class AWTAccessor {
                                                       boolean temporary,
                                                       boolean focusedWindowChangeAllowed,
                                                       long time);
-        /*
+        /**
          * Removes the last focus request for the heavyweight from the queue.
          */
         void removeLastFocusRequest(Component heavyweight);
 
-        /*
+        /**
          * Sets the most recent focus owner in the window.
          */
         void setMostRecentFocusOwner(Window window, Component component);
 
-        /*
+        /**
          * Returns current KFM of the specified AppContext.
          */
         KeyboardFocusManager getCurrentKeyboardFocusManager(AppContext ctx);
+
+        /**
+         * Return the current focus cycle root
+         */
+        Container getCurrentFocusCycleRoot();
     }
 
-    /*
+    /**
      * An accessor for the MenuComponent class.
      */
     public interface MenuComponentAccessor {
@@ -424,20 +440,42 @@ public final class AWTAccessor {
          * Returns the menu container of the menu component
          */
         MenuContainer getParent(MenuComponent menuComp);
+
+        /**
+         * Gets the font used for this menu component.
+         */
+        Font getFont_NoClientCode(MenuComponent menuComp);
     }
 
-    /*
+    /**
      * An accessor for the EventQueue class
      */
     public interface EventQueueAccessor {
-        /*
+        /**
          * Gets the event dispatch thread.
          */
         Thread getDispatchThread(EventQueue eventQueue);
-        /*
+
+        /**
          * Checks if the current thread is EDT for the given EQ.
          */
         public boolean isDispatchThreadImpl(EventQueue eventQueue);
+
+        /**
+         * Removes any pending events for the specified source object.
+         */
+        void removeSourceEvents(EventQueue eventQueue, Object source, boolean removeAllEvents);
+
+        /**
+         * Returns whether an event is pending on any of the separate Queues.
+         */
+        boolean noEvents(EventQueue eventQueue);
+
+        /**
+         * Called from PostEventQueue.postEvent to notify that a new event
+         * appeared.
+         */
+        void wakeup(EventQueue eventQueue, boolean isShutdown);
     }
 
     /*
@@ -486,6 +524,148 @@ public final class AWTAccessor {
                            final int type);
     }
 
+    /**
+     * An accessor for the CheckboxMenuItem class
+     */
+    public interface CheckboxMenuItemAccessor {
+        /**
+         * Returns whether menu item is checked
+         */
+        boolean getState(CheckboxMenuItem cmi);
+    }
+
+    /**
+     * An accessor for the Cursor class
+     */
+    public interface CursorAccessor {
+        /**
+         * Returns pData of the Cursor class
+         */
+        long getPData(Cursor cursor);
+
+        /**
+         * Sets pData to the Cursor class
+         */
+        void setPData(Cursor cursor, long pData);
+
+        /**
+         * Return type of the Cursor class
+         */
+        int getType(Cursor cursor);
+    }
+
+    /**
+     * An accessor for the MenuBar class
+     */
+    public interface MenuBarAccessor {
+        /**
+         * Returns help menu
+         */
+        Menu getHelpMenu(MenuBar menuBar);
+
+        /**
+         * Returns menus
+         */
+        Vector getMenus(MenuBar menuBar);
+    }
+
+    /**
+     * An accessor for the MenuItem class
+     */
+    public interface MenuItemAccessor {
+        /**
+         * Returns whether menu item is enabled
+         */
+        boolean isEnabled(MenuItem item);
+
+        /**
+         * Gets the command name of the action event that is fired
+         * by this menu item.
+         */
+        String getActionCommandImpl(MenuItem item);
+
+        /**
+         * Returns true if the item and all its ancestors are
+         * enabled, false otherwise
+         */
+        boolean isItemEnabled(MenuItem item);
+
+        /**
+         * Returns label
+         */
+        String getLabel(MenuItem item);
+
+        /**
+         * Returns shortcut
+         */
+        MenuShortcut getShortcut(MenuItem item);
+    }
+
+    /**
+     * An accessor for the Menu class
+     */
+    public interface MenuAccessor {
+        /**
+         * Returns vector of the items that are part of the Menu
+         */
+        Vector getItems(Menu menu);
+    }
+
+    /**
+     * An accessor for the KeyEvent class
+     */
+    public interface KeyEventAccessor {
+        /**
+         * Sets rawCode field for KeyEvent
+         */
+        void setRawCode(KeyEvent ev, long rawCode);
+
+        /**
+         * Sets primaryLevelUnicode field for KeyEvent
+         */
+        void setPrimaryLevelUnicode(KeyEvent ev, long primaryLevelUnicode);
+
+        /**
+         * Sets extendedKeyCode field for KeyEvent
+         */
+        void setExtendedKeyCode(KeyEvent ev, long extendedKeyCode);
+    }
+
+    /**
+     * An accessor for the ClientPropertyKey class
+     */
+    public interface ClientPropertyKeyAccessor {
+        /**
+         * Retrieves JComponent_TRANSFER_HANDLER enum object
+         */
+        Object getJComponent_TRANSFER_HANDLER();
+    }
+
+    /**
+     * An accessor for the SystemTray class
+     */
+    public interface SystemTrayAccessor {
+        /**
+         * Support for reporting bound property changes for Object properties.
+         */
+        void firePropertyChange(SystemTray tray, String propertyName, Object oldValue, Object newValue);
+    }
+
+    /**
+     * An accessor for the TrayIcon class
+     */
+    public interface TrayIconAccessor {
+        void addNotify(TrayIcon trayIcon) throws AWTException;
+        void removeNotify(TrayIcon trayIcon);
+    }
+
+    /**
+     * An accessor for the DefaultKeyboardFocusManager class
+     */
+    public interface DefaultKeyboardFocusManagerAccessor {
+        public void consumeNextKeyTyped(DefaultKeyboardFocusManager dkfm, KeyEvent e);
+    }
+
     /*
      * Accessor instances are initialized in the static initializers of
      * corresponding AWT classes by using setters defined below.
@@ -502,6 +682,16 @@ public final class AWTAccessor {
     private static PopupMenuAccessor popupMenuAccessor;
     private static FileDialogAccessor fileDialogAccessor;
     private static ScrollPaneAdjustableAccessor scrollPaneAdjustableAccessor;
+    private static CheckboxMenuItemAccessor checkboxMenuItemAccessor;
+    private static CursorAccessor cursorAccessor;
+    private static MenuBarAccessor menuBarAccessor;
+    private static MenuItemAccessor menuItemAccessor;
+    private static MenuAccessor menuAccessor;
+    private static KeyEventAccessor keyEventAccessor;
+    private static ClientPropertyKeyAccessor clientPropertyKeyAccessor;
+    private static SystemTrayAccessor systemTrayAccessor;
+    private static TrayIconAccessor trayIconAccessor;
+    private static DefaultKeyboardFocusManagerAccessor defaultKeyboardFocusManagerAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -708,5 +898,175 @@ public final class AWTAccessor {
             unsafe.ensureClassInitialized(ScrollPaneAdjustable.class);
         }
         return scrollPaneAdjustableAccessor;
+    }
+
+    /**
+     * Set an accessor object for the java.awt.CheckboxMenuItem class.
+     */
+    public static void setCheckboxMenuItemAccessor(CheckboxMenuItemAccessor cmia) {
+        checkboxMenuItemAccessor = cmia;
+    }
+
+    /**
+     * Retrieve the accessor object for the java.awt.CheckboxMenuItem class.
+     */
+    public static CheckboxMenuItemAccessor getCheckboxMenuItemAccessor() {
+        if (checkboxMenuItemAccessor == null) {
+            unsafe.ensureClassInitialized(CheckboxMenuItemAccessor.class);
+        }
+        return checkboxMenuItemAccessor;
+    }
+
+    /**
+     * Set an accessor object for the java.awt.Cursor class.
+     */
+    public static void setCursorAccessor(CursorAccessor ca) {
+        cursorAccessor = ca;
+    }
+
+    /**
+     * Retrieve the accessor object for the java.awt.Cursor class.
+     */
+    public static CursorAccessor getCursorAccessor() {
+        if (cursorAccessor == null) {
+            unsafe.ensureClassInitialized(CursorAccessor.class);
+        }
+        return cursorAccessor;
+    }
+
+    /**
+     * Set an accessor object for the java.awt.MenuBar class.
+     */
+    public static void setMenuBarAccessor(MenuBarAccessor mba) {
+        menuBarAccessor = mba;
+    }
+
+    /**
+     * Retrieve the accessor object for the java.awt.MenuBar class.
+     */
+    public static MenuBarAccessor getMenuBarAccessor() {
+        if (menuBarAccessor == null) {
+            unsafe.ensureClassInitialized(MenuBarAccessor.class);
+        }
+        return menuBarAccessor;
+    }
+
+    /**
+     * Set an accessor object for the java.awt.MenuItem class.
+     */
+    public static void setMenuItemAccessor(MenuItemAccessor mia) {
+        menuItemAccessor = mia;
+    }
+
+    /**
+     * Retrieve the accessor object for the java.awt.MenuItem class.
+     */
+    public static MenuItemAccessor getMenuItemAccessor() {
+        if (menuItemAccessor == null) {
+            unsafe.ensureClassInitialized(MenuItemAccessor.class);
+        }
+        return menuItemAccessor;
+    }
+
+    /**
+     * Set an accessor object for the java.awt.Menu class.
+     */
+    public static void setMenuAccessor(MenuAccessor ma) {
+        menuAccessor = ma;
+    }
+
+    /**
+     * Retrieve the accessor object for the java.awt.Menu class.
+     */
+    public static MenuAccessor getMenuAccessor() {
+        if (menuAccessor == null) {
+            unsafe.ensureClassInitialized(MenuAccessor.class);
+        }
+        return menuAccessor;
+    }
+
+    /**
+     * Set an accessor object for the java.awt.event.KeyEvent class.
+     */
+    public static void setKeyEventAccessor(KeyEventAccessor kea) {
+        keyEventAccessor = kea;
+    }
+
+    /**
+     * Retrieve the accessor object for the java.awt.event.KeyEvent class.
+     */
+    public static KeyEventAccessor getKeyEventAccessor() {
+        if (keyEventAccessor == null) {
+            unsafe.ensureClassInitialized(KeyEventAccessor.class);
+        }
+        return keyEventAccessor;
+    }
+
+    /**
+     * Set an accessor object for the javax.swing.ClientPropertyKey class.
+     */
+    public static void setClientPropertyKeyAccessor(ClientPropertyKeyAccessor cpka) {
+        clientPropertyKeyAccessor = cpka;
+    }
+
+    /**
+     * Retrieve the accessor object for the javax.swing.ClientPropertyKey class.
+     */
+    public static ClientPropertyKeyAccessor getClientPropertyKeyAccessor() {
+        if (clientPropertyKeyAccessor == null) {
+            unsafe.ensureClassInitialized(ClientPropertyKeyAccessor.class);
+        }
+        return clientPropertyKeyAccessor;
+    }
+
+    /**
+     * Set an accessor object for the java.awt.SystemTray class.
+     */
+    public static void setSystemTrayAccessor(SystemTrayAccessor sta) {
+        systemTrayAccessor = sta;
+    }
+
+    /**
+     * Retrieve the accessor object for the java.awt.SystemTray class.
+     */
+    public static SystemTrayAccessor getSystemTrayAccessor() {
+        if (systemTrayAccessor == null) {
+            unsafe.ensureClassInitialized(SystemTrayAccessor.class);
+        }
+        return systemTrayAccessor;
+    }
+
+    /**
+     * Set an accessor object for the java.awt.TrayIcon class.
+     */
+    public static void setTrayIconAccessor(TrayIconAccessor tia) {
+        trayIconAccessor = tia;
+    }
+
+    /**
+     * Retrieve the accessor object for the java.awt.TrayIcon class.
+     */
+    public static TrayIconAccessor getTrayIconAccessor() {
+        if (trayIconAccessor == null) {
+            unsafe.ensureClassInitialized(TrayIconAccessor.class);
+        }
+        return trayIconAccessor;
+    }
+
+    /**
+     * Set an accessor object for the java.awt.DefaultKeyboardFocusManager class.
+     */
+    public static void setDefaultKeyboardFocusManagerAccessor(DefaultKeyboardFocusManagerAccessor dkfma) {
+        defaultKeyboardFocusManagerAccessor = dkfma;
+    }
+
+    /**
+     * Retrieve the accessor object for the java.awt.DefaultKeyboardFocusManager class.
+     */
+    public static DefaultKeyboardFocusManagerAccessor getDefaultKeyboardFocusManagerAccessor() {
+        if (defaultKeyboardFocusManagerAccessor == null) {
+            unsafe.ensureClassInitialized(DefaultKeyboardFocusManagerAccessor.class);
+        }
+        return defaultKeyboardFocusManagerAccessor;
     }
 }

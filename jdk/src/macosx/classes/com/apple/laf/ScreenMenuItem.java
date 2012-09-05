@@ -34,7 +34,7 @@ import javax.swing.plaf.ComponentUI;
 
 import sun.lwawt.macosx.CMenuItem;
 
-class ScreenMenuItem extends MenuItem implements ActionListener, ComponentListener, ScreenMenuPropertyHandler {
+final class ScreenMenuItem extends MenuItem implements ActionListener, ComponentListener, ScreenMenuPropertyHandler {
     ScreenMenuPropertyListener fListener;
     JMenuItem fMenuItem;
 
@@ -96,19 +96,29 @@ class ScreenMenuItem extends MenuItem implements ActionListener, ComponentListen
         fMenuItem.removeComponentListener(this);
     }
 
-    public void setAccelerator(final KeyStroke ks) {
-        if (ks == null) {
-            setShortcut(null);
+    static void syncLabelAndKS(MenuItem menuItem, String label, KeyStroke ks) {
+        final MenuComponentPeer peer = menuItem.getPeer();
+        if (!(peer instanceof CMenuItem)) {
+            //Is it possible?
             return;
         }
-
-        final MenuComponentPeer peer = getPeer();
-        if (peer instanceof CMenuItem) {
-            final CMenuItem ourPeer = (CMenuItem)peer;
-            ourPeer.setLabel(fMenuItem.getText(), ks.getKeyChar(), ks.getKeyCode(), ks.getModifiers());
+        final CMenuItem cmi = (CMenuItem) peer;
+        if (ks == null) {
+            cmi.setLabel(label);
         } else {
-            setShortcut(new MenuShortcut(ks.getKeyCode(), (ks.getModifiers() & InputEvent.SHIFT_MASK) != 0));
+            cmi.setLabel(label, ks.getKeyChar(), ks.getKeyCode(),
+                         ks.getModifiers());
         }
+    }
+
+    @Override
+    public synchronized void setLabel(final String label) {
+        syncLabelAndKS(this, label, fMenuItem.getAccelerator());
+    }
+
+    @Override
+    public void setAccelerator(final KeyStroke ks) {
+        syncLabelAndKS(this, fMenuItem.getText(), ks);
     }
 
     public void actionPerformed(final ActionEvent e) {
