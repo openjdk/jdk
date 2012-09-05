@@ -31,8 +31,6 @@ import java.awt.peer.*;
 
 import java.beans.*;
 
-import java.lang.reflect.*;
-
 import java.util.*;
 import java.util.List;
 import sun.util.logging.PlatformLogger;

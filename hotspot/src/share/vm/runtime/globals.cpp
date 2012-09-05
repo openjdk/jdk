@@ -43,7 +43,6 @@
 #include "shark/shark_globals.hpp"
 #endif
 
-
 RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \
               MATERIALIZE_PRODUCT_FLAG, MATERIALIZE_PD_PRODUCT_FLAG, \
               MATERIALIZE_DIAGNOSTIC_FLAG, MATERIALIZE_EXPERIMENTAL_FLAG, \
@@ -54,6 +53,10 @@ RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \
 RUNTIME_OS_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \
                  MATERIALIZE_PRODUCT_FLAG, MATERIALIZE_PD_PRODUCT_FLAG, \
                  MATERIALIZE_DIAGNOSTIC_FLAG, MATERIALIZE_NOTPRODUCT_FLAG)
+
+ARCH_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PRODUCT_FLAG, \
+           MATERIALIZE_DIAGNOSTIC_FLAG, MATERIALIZE_EXPERIMENTAL_FLAG, \
+           MATERIALIZE_NOTPRODUCT_FLAG)
 
 MATERIALIZE_FLAGS_EXT
 
@@ -212,7 +215,6 @@ void Flag::print_as_flag(outputStream* st) {
   #define C1_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{C1 notproduct}", DEFAULT },
 #endif
 
-
 #define C2_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{C2 product}", DEFAULT },
 #define C2_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{C2 pd product}", DEFAULT },
 #define C2_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{C2 diagnostic}", DEFAULT },
@@ -225,6 +227,17 @@ void Flag::print_as_flag(outputStream* st) {
   #define C2_DEVELOP_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{C2}", DEFAULT },
   #define C2_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, doc, "{C2 pd}", DEFAULT },
   #define C2_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{C2 notproduct}", DEFAULT },
+#endif
+
+#define ARCH_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{ARCH product}", DEFAULT },
+#define ARCH_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{ARCH diagnostic}", DEFAULT },
+#define ARCH_EXPERIMENTAL_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{ARCH experimental}", DEFAULT },
+#ifdef PRODUCT
+  #define ARCH_DEVELOP_FLAG_STRUCT(type, name, value, doc) /* flag is constant */
+  #define ARCH_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc)
+#else
+  #define ARCH_DEVELOP_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{ARCH}", DEFAULT },
+  #define ARCH_NOTPRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, doc, "{ARCH notproduct}", DEFAULT },
 #endif
 
 #define SHARK_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{Shark product}", DEFAULT },
@@ -255,6 +268,7 @@ static Flag flagTable[] = {
 #ifdef SHARK
  SHARK_FLAGS(SHARK_DEVELOP_FLAG_STRUCT, SHARK_PD_DEVELOP_FLAG_STRUCT, SHARK_PRODUCT_FLAG_STRUCT, SHARK_PD_PRODUCT_FLAG_STRUCT, SHARK_DIAGNOSTIC_FLAG_STRUCT, SHARK_NOTPRODUCT_FLAG_STRUCT)
 #endif
+ ARCH_FLAGS(ARCH_DEVELOP_FLAG_STRUCT, ARCH_PRODUCT_FLAG_STRUCT, ARCH_DIAGNOSTIC_FLAG_STRUCT, ARCH_EXPERIMENTAL_FLAG_STRUCT, ARCH_NOTPRODUCT_FLAG_STRUCT)
  FLAGTABLE_EXT
  {0, NULL, NULL}
 };

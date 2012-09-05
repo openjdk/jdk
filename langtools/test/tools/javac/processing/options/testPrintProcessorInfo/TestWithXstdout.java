@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,8 @@ import java.util.*;
 public class TestWithXstdout {
     public static void main(String... args) throws Exception {
         File testSrc = new File(System.getProperty("test.src"));
-        File testClasses = new File(System.getProperty("test.classes"));
+        String testClasses = System.getProperty("test.classes", ".");
+        String testClassPath = System.getProperty("test.class.path", testClasses);
         File stdout = new File("stdout.out");
         run_javac("-XDrawDiagnostics",
                 "-XprintProcessorInfo",
@@ -46,7 +47,7 @@ public class TestWithXstdout {
                 "-proc:only",
                 "-processor",  "Test",
                 "-Xstdout", stdout.getPath(),
-                "-classpath", testClasses.getPath(),
+                "-classpath", testClassPath,
                 new File(testSrc, "Test.java").getPath());
         boolean ok = compare(stdout, new File(testSrc, "Test.out"));
         if (!ok)

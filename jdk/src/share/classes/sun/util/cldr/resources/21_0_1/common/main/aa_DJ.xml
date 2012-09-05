@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 5717 $"/>
+		<generation date="$Date: 2011-04-28 12:37:06 +0900 (Thu, 28 Apr 2011) $"/>
+		<language type="aa"/>
+		<territory type="DJ"/>
+	</identity>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="8" draft="unconfirmed">Leqeeni</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="DJF">
+				<symbol>Fdj</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

@@ -1646,19 +1646,15 @@ Dependencies* GraphBuilder::dependency_recorder() const {
 
 
 void GraphBuilder::invoke(Bytecodes::Code code) {
-  const bool has_receiver =
-    code == Bytecodes::_invokespecial   ||
-    code == Bytecodes::_invokevirtual   ||
-    code == Bytecodes::_invokeinterface;
-  const bool is_invokedynamic = (code == Bytecodes::_invokedynamic);
-
   bool will_link;
-  ciMethod*             target = stream()->get_method(will_link);
+  ciSignature* declared_signature = NULL;
+  ciMethod*             target = stream()->get_method(will_link, &declared_signature);
   ciKlass*              holder = stream()->get_declared_method_holder();
   const Bytecodes::Code bc_raw = stream()->cur_bc_raw();
+  assert(declared_signature != NULL, "cannot be null");
 
   // FIXME bail out for now
-  if ((bc_raw == Bytecodes::_invokehandle || is_invokedynamic) && !will_link) {
+  if (Bytecodes::has_optional_appendix(bc_raw) && !will_link) {
     BAILOUT("unlinked call site (FIXME needs patching or recompile support)");
   }
 
@@ -1690,8 +1686,12 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   // convert them directly to an invokespecial or invokestatic.
   if (target->is_loaded() && !target->is_abstract() && target->can_be_statically_bound()) {
     switch (bc_raw) {
-    case Bytecodes::_invokevirtual:  code = Bytecodes::_invokespecial;  break;
-    case Bytecodes::_invokehandle:   code = Bytecodes::_invokestatic;   break;
+    case Bytecodes::_invokevirtual:
+      code = Bytecodes::_invokespecial;
+      break;
+    case Bytecodes::_invokehandle:
+      code = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokespecial;
+      break;
     }
   }
 
@@ -1840,7 +1840,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       bool success = false;
       if (target->is_method_handle_intrinsic()) {
         // method handle invokes
-        success = for_method_handle_inline(target);
+        success = try_method_handle_inline(target);
       } else {
         // static binding => check if callee is ok
         success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), code, better_receiver);
@@ -1877,12 +1877,14 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
 
   // inlining not successful => standard invoke
   bool is_loaded = target->is_loaded();
-  ValueType* result_type = as_ValueType(target->return_type());
+  ValueType* result_type = as_ValueType(declared_signature->return_type());
+  ValueStack* state_before = copy_state_exhandling();
 
-  // We require the debug info to be the "state before" because
-  // invokedynamics may deoptimize.
-  ValueStack* state_before = is_invokedynamic ? copy_state_before() : copy_state_exhandling();
-
+  // The bytecode (code) might change in this method so we are checking this very late.
+  const bool has_receiver =
+    code == Bytecodes::_invokespecial   ||
+    code == Bytecodes::_invokevirtual   ||
+    code == Bytecodes::_invokeinterface;
   Values* args = state()->pop_arguments(target->arg_size_no_receiver());
   Value recv = has_receiver ? apop() : NULL;
   int vtable_index = methodOopDesc::invalid_vtable_index;
@@ -3058,7 +3060,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
 
   case vmIntrinsics::_Reference_get:
     {
-      if (UseG1GC) {
+      {
         // With java.lang.ref.reference.get() we must go through the
         // intrinsic - when G1 is enabled - even when get() is the root
         // method of the compile so that, if necessary, the value in
@@ -3069,6 +3071,9 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
         // result in the referent being marked live and the reference
         // object removed from the list of discovered references during
         // reference processing.
+
+        // Also we need intrinsic to prevent commoning reads from this field
+        // across safepoint since GC can change its value.
 
         // Set up a stream so that appending instructions works properly.
         ciBytecodeStream s(scope->method());
@@ -3226,7 +3231,6 @@ const char* GraphBuilder::should_not_inline(ciMethod* callee) const {
 
 
 bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
-  if (!InlineNatives           ) INLINE_BAILOUT("intrinsic method inlining disabled");
   if (callee->is_synchronized()) {
     // We don't currently support any synchronized intrinsics
     return false;
@@ -3234,9 +3238,13 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
 
   // callee seems like a good candidate
   // determine id
+  vmIntrinsics::ID id = callee->intrinsic_id();
+  if (!InlineNatives && id != vmIntrinsics::_Reference_get) {
+    // InlineNatives does not control Reference.get
+    INLINE_BAILOUT("intrinsic method inlining disabled");
+  }
   bool preserves_state = false;
   bool cantrap = true;
-  vmIntrinsics::ID id = callee->intrinsic_id();
   switch (id) {
     case vmIntrinsics::_arraycopy:
       if (!InlineArrayCopy) return false;
@@ -3376,11 +3384,10 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
       return true;
 
     case vmIntrinsics::_Reference_get:
-      // It is only when G1 is enabled that we absolutely
-      // need to use the intrinsic version of Reference.get()
-      // so that the value in the referent field, if necessary,
-      // can be registered by the pre-barrier code.
-      if (!UseG1GC) return false;
+      // Use the intrinsic version of Reference.get() so that the value in
+      // the referent field can be registered by the G1 pre-barrier code.
+      // Also to prevent commoning reads from this field across safepoint
+      // since GC can change its value.
       preserves_state = true;
       break;
 
@@ -3816,7 +3823,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
 }
 
 
-bool GraphBuilder::for_method_handle_inline(ciMethod* callee) {
+bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
   ValueStack* state_before = state()->copy_for_parsing();
   vmIntrinsics::ID iid = callee->intrinsic_id();
   switch (iid) {
@@ -3851,7 +3858,7 @@ bool GraphBuilder::for_method_handle_inline(ciMethod* callee) {
         // If the target is another method handle invoke try recursivly to get
         // a better target.
         if (target->is_method_handle_intrinsic()) {
-          if (for_method_handle_inline(target)) {
+          if (try_method_handle_inline(target)) {
             return true;
           }
         } else {

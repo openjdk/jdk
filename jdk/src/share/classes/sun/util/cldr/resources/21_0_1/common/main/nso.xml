@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="nso"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="nso" draft="provisional">Sesotho sa Leboa</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b d e ê f g h i j k l m n o ô p r s š t u w x y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[c q v z]</exemplarCharacters>
+		<exemplarCharacters type="currencySymbol">[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="unconfirmed">‘</quotationStart>
+		<quotationEnd draft="unconfirmed">’</quotationEnd>
+		<alternateQuotationStart draft="unconfirmed">“</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">”</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Jan</month>
+							<month type="2" draft="unconfirmed">Feb</month>
+							<month type="3" draft="unconfirmed">Mat</month>
+							<month type="4" draft="unconfirmed">Apo</month>
+							<month type="5" draft="unconfirmed">Mei</month>
+							<month type="6" draft="unconfirmed">Jun</month>
+							<month type="7" draft="unconfirmed">Jul</month>
+							<month type="8" draft="unconfirmed">Ago</month>
+							<month type="9" draft="unconfirmed">Set</month>
+							<month type="10" draft="unconfirmed">Okt</month>
+							<month type="11" draft="unconfirmed">Nof</month>
+							<month type="12" draft="unconfirmed">Dis</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Janaware</month>
+							<month type="2" draft="unconfirmed">Feberware</month>
+							<month type="3" draft="unconfirmed">Matšhe</month>
+							<month type="4" draft="unconfirmed">Aporele</month>
+							<month type="5" draft="unconfirmed">Mei</month>
+							<month type="6" draft="unconfirmed">June</month>
+							<month type="7" draft="unconfirmed">Julae</month>
+							<month type="8" draft="unconfirmed">Agostose</month>
+							<month type="9" draft="unconfirmed">Setemere</month>
+							<month type="10" draft="unconfirmed">Oktobore</month>
+							<month type="11" draft="unconfirmed">Nofemere</month>
+							<month type="12" draft="unconfirmed">Disemere</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Son</day>
+							<day type="mon" draft="unconfirmed">Mos</day>
+							<day type="tue" draft="unconfirmed">Bed</day>
+							<day type="wed" draft="unconfirmed">Rar</day>
+							<day type="thu" draft="unconfirmed">Ne</day>
+							<day type="fri" draft="unconfirmed">Hla</day>
+							<day type="sat" draft="unconfirmed">Mok</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Sontaga</day>
+							<day type="mon" draft="unconfirmed">Mosupalogo</day>
+							<day type="tue" draft="unconfirmed">Labobedi</day>
+							<day type="wed" draft="unconfirmed">Laboraro</day>
+							<day type="thu" draft="unconfirmed">Labone</day>
+							<day type="fri" draft="unconfirmed">Labohlano</day>
+							<day type="sat" draft="unconfirmed">Mokibelo</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group> </group>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="ZAR">
+				<symbol>R</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

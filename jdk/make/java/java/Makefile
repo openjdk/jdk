@@ -156,6 +156,11 @@ vpath %.c $(PLATFORM_SRC)/native/common
 vpath %.c $(PLATFORM_SRC)/native/java/util
 vpath %.c $(PLATFORM_SRC)/native/sun/security/provider
 vpath %.c $(PLATFORM_SRC)/native/sun/io
+ifeq ($(PLATFORM),macosx)
+vpath %.c $(PLATFORM_SRC_MACOS)/native/sun/util/locale/provider
+else # PLATFORM
+vpath %.c $(PLATFORM_SRC)/native/sun/util/locale/provider
+endif # PLATFORM
 
 #
 # Includes the fdlibm header file.
