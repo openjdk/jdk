@@ -26,9 +26,7 @@ package sun.awt.windows;
 
 import java.awt.*;
 import java.awt.peer.*;
-import java.lang.reflect.Field;
 
-import sun.awt.SunToolkit;
 import sun.awt.AWTAccessor;
 
 public class WPopupMenuPeer extends WMenuPeer implements PopupMenuPeer {

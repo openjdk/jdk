@@ -795,7 +795,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   _trace_gen0_time_data.record_start_collection(s_w_t_ms);
   _stop_world_start = 0.0;
 
-  phase_times()->_cur_collection_start_sec = start_time_sec;
+  phase_times()->record_cur_collection_start_sec(start_time_sec);
   _cur_collection_pause_used_at_start_bytes = start_used;
   _cur_collection_pause_used_regions_at_start = _g1->used_regions();
   _pending_cards = _g1->pending_card_num();
@@ -947,7 +947,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
     _trace_gen0_time_data.record_end_collection(pause_time_ms, phase_times());
     // this is where we update the allocation rate of the application
     double app_time_ms =
-      (phase_times()->_cur_collection_start_sec * 1000.0 - _prev_collection_pause_end_ms);
+      (phase_times()->cur_collection_start_sec() * 1000.0 - _prev_collection_pause_end_ms);
     if (app_time_ms < MIN_TIMER_GRANULARITY) {
       // This usually happens due to the timer not having the required
       // granularity. Some Linuxes are the usual culprits.
@@ -1035,7 +1035,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
   if (update_stats) {
     double cost_per_card_ms = 0.0;
     if (_pending_cards > 0) {
-      cost_per_card_ms = phase_times()->_update_rs_time / (double) _pending_cards;
+      cost_per_card_ms = phase_times()->average_last_update_rs_time() / (double) _pending_cards;
       _cost_per_card_ms_seq->add(cost_per_card_ms);
     }
 
@@ -1043,7 +1043,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
 
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
-      cost_per_entry_ms = phase_times()->_scan_rs_time / (double) cards_scanned;
+      cost_per_entry_ms = phase_times()->average_last_scan_rs_time() / (double) cards_scanned;
       if (_last_gc_was_young) {
         _cost_per_entry_ms_seq->add(cost_per_entry_ms);
       } else {
@@ -1083,7 +1083,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
     size_t copied_bytes = surviving_bytes;
     double cost_per_byte_ms = 0.0;
     if (copied_bytes > 0) {
-      cost_per_byte_ms = phase_times()->_obj_copy_time / (double) copied_bytes;
+      cost_per_byte_ms = phase_times()->average_last_obj_copy_time() / (double) copied_bytes;
       if (_in_marking_window) {
         _cost_per_byte_ms_during_cm_seq->add(cost_per_byte_ms);
       } else {
@@ -1092,21 +1092,22 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
     }
 
     double all_other_time_ms = pause_time_ms -
-      (phase_times()->_update_rs_time + phase_times()->_scan_rs_time + phase_times()->_obj_copy_time + phase_times()->_termination_time);
+      (phase_times()->average_last_update_rs_time() + phase_times()->average_last_scan_rs_time()
+      + phase_times()->average_last_obj_copy_time() + phase_times()->average_last_termination_time());
 
     double young_other_time_ms = 0.0;
     if (young_cset_region_length() > 0) {
       young_other_time_ms =
-        phase_times()->_recorded_young_cset_choice_time_ms +
-        phase_times()->_recorded_young_free_cset_time_ms;
+        phase_times()->young_cset_choice_time_ms() +
+        phase_times()->young_free_cset_time_ms();
       _young_other_cost_per_region_ms_seq->add(young_other_time_ms /
                                           (double) young_cset_region_length());
     }
     double non_young_other_time_ms = 0.0;
     if (old_cset_region_length() > 0) {
       non_young_other_time_ms =
-        phase_times()->_recorded_non_young_cset_choice_time_ms +
-        phase_times()->_recorded_non_young_free_cset_time_ms;
+        phase_times()->non_young_cset_choice_time_ms() +
+        phase_times()->non_young_free_cset_time_ms();
 
       _non_young_other_cost_per_region_ms_seq->add(non_young_other_time_ms /
                                             (double) old_cset_region_length());
@@ -1133,7 +1134,8 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
-  adjust_concurrent_refinement(phase_times()->_update_rs_time, phase_times()->_update_rs_processed_buffers, update_rs_time_goal_ms);
+  adjust_concurrent_refinement(phase_times()->average_last_update_rs_time(),
+                               phase_times()->sum_last_update_rs_processed_buffers(), update_rs_time_goal_ms);
 
   _collectionSetChooser->verify();
 }
@@ -1144,7 +1146,11 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
   proper_unit_for_byte_size((bytes))
 
 void G1CollectorPolicy::print_heap_transition() {
-  if (G1Log::finer()) {
+  _g1->print_size_transition(gclog_or_tty,
+    _cur_collection_pause_used_at_start_bytes, _g1->used(), _g1->capacity());
+}
+
+void G1CollectorPolicy::print_detailed_heap_transition() {
     YoungList* young_list = _g1->young_list();
     size_t eden_bytes = young_list->eden_used_bytes();
     size_t survivor_bytes = young_list->survivor_used_bytes();
@@ -1171,11 +1177,6 @@ void G1CollectorPolicy::print_heap_transition() {
       EXT_SIZE_PARAMS(capacity));
 
     _prev_eden_capacity = eden_capacity;
-  } else if (G1Log::fine()) {
-    _g1->print_size_transition(gclog_or_tty,
-                               _cur_collection_pause_used_at_start_bytes,
-                               _g1->used(), _g1->capacity());
-  }
 }
 
 void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
@@ -1900,8 +1901,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
   set_recorded_rs_lengths(_inc_cset_recorded_rs_lengths);
 
   double young_end_time_sec = os::elapsedTime();
-  phase_times()->_recorded_young_cset_choice_time_ms =
-    (young_end_time_sec - young_start_time_sec) * 1000.0;
+  phase_times()->record_young_cset_choice_time_ms((young_end_time_sec - young_start_time_sec) * 1000.0);
 
   // Set the start of the non-young choice time.
   double non_young_start_time_sec = young_end_time_sec;
@@ -2015,8 +2015,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
                 predicted_pause_time_ms, target_pause_time_ms);
 
   double non_young_end_time_sec = os::elapsedTime();
-  phase_times()->_recorded_non_young_cset_choice_time_ms =
-    (non_young_end_time_sec - non_young_start_time_sec) * 1000.0;
+  phase_times()->record_non_young_cset_choice_time_ms((non_young_end_time_sec - non_young_start_time_sec) * 1000.0);
 }
 
 void TraceGen0TimeData::record_start_collection(double time_to_stop_the_world_ms) {
@@ -2035,25 +2034,25 @@ void TraceGen0TimeData::record_end_collection(double pause_time_ms, G1GCPhaseTim
   if(TraceGen0Time) {
     _total.add(pause_time_ms);
     _other.add(pause_time_ms - phase_times->accounted_time_ms());
-    _root_region_scan_wait.add(phase_times->_root_region_scan_wait_time_ms);
-    _parallel.add(phase_times->_cur_collection_par_time_ms);
-    _ext_root_scan.add(phase_times->_ext_root_scan_time);
-    _satb_filtering.add(phase_times->_satb_filtering_time);
-    _update_rs.add(phase_times->_update_rs_time);
-    _scan_rs.add(phase_times->_scan_rs_time);
-    _obj_copy.add(phase_times->_obj_copy_time);
-    _termination.add(phase_times->_termination_time);
+    _root_region_scan_wait.add(phase_times->root_region_scan_wait_time_ms());
+    _parallel.add(phase_times->cur_collection_par_time_ms());
+    _ext_root_scan.add(phase_times->average_last_ext_root_scan_time());
+    _satb_filtering.add(phase_times->average_last_satb_filtering_times_ms());
+    _update_rs.add(phase_times->average_last_update_rs_time());
+    _scan_rs.add(phase_times->average_last_scan_rs_time());
+    _obj_copy.add(phase_times->average_last_obj_copy_time());
+    _termination.add(phase_times->average_last_termination_time());
 
-    double parallel_known_time = phase_times->_ext_root_scan_time +
-      phase_times->_satb_filtering_time +
-      phase_times->_update_rs_time +
-      phase_times->_scan_rs_time +
-      phase_times->_obj_copy_time +
-      + phase_times->_termination_time;
+    double parallel_known_time = phase_times->average_last_ext_root_scan_time() +
+      phase_times->average_last_satb_filtering_times_ms() +
+      phase_times->average_last_update_rs_time() +
+      phase_times->average_last_scan_rs_time() +
+      phase_times->average_last_obj_copy_time() +
+      + phase_times->average_last_termination_time();
 
-    double parallel_other_time = phase_times->_cur_collection_par_time_ms - parallel_known_time;
+    double parallel_other_time = phase_times->cur_collection_par_time_ms() - parallel_known_time;
     _parallel_other.add(parallel_other_time);
-    _clear_ct.add(phase_times->_cur_clear_ct_time_ms);
+    _clear_ct.add(phase_times->cur_clear_ct_time_ms());
   }
 }
 

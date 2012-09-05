@@ -124,6 +124,9 @@ TOOL_WRAPPERGENERATOR=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 TOOL_TOBIN=$(JAVA) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
 	sun.awt.X11.ToBin
 
+TOOL_CLDRCONVERTER=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.cldrconverter.CLDRConverter
+
 ##########################################################################################
 
 # Tools needed on solaris because OBJCOPY is broken.

@@ -14,7 +14,7 @@ case "$OS" in
     PS=":"
     FS="/"
     ;;
-  Windows_* )
+  Windows_* | CYGWIN_* )
     echo "Test skipped for Windows"
     exit 0 
     ;;

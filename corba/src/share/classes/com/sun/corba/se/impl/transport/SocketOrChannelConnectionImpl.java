@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1521,7 +1521,7 @@ public class SocketOrChannelConnectionImpl
             // connection and give them the SystemException;
 
             responseWaitingRoom.signalExceptionToAllWaiters(systemException);
-
+        } finally {
             if (contactInfo != null) {
                 ((OutboundConnectionCache)getConnectionCache()).remove(contactInfo);
             } else if (acceptor != null) {
@@ -1542,7 +1542,6 @@ public class SocketOrChannelConnectionImpl
 
             writeUnlock();
 
-        } finally {
             if (orb.transportDebugFlag) {
                 dprint(".purgeCalls<-: "
                        + minor_code + "/" + die + "/" + lockHeld

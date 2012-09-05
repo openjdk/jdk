@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,20 +47,29 @@ OUTPUT_FILE=$5
 localelist=
 getlocalelist() {
     localelist=""
-    localelist=`$NAWK -F$1_ '{print $2}' $2 | $SORT`
+    localelist=`$NAWK -F$1_ '{print $2}' $2 | $SORT | $SED -e 's/_/-/g'`
 }
 
-sed_script="$SED -e \"s@^#warn .*@// -- This file was mechanically generated: Do not edit! -- //@\" " 
+sed_script="$SED -e \"s@^#warn .*@// -- This file was mechanically generated: Do not edit! -- //@\" "
 
-for FILE in $RESOURCE_NAMES 
+# ja-JP-JP and th-TH-TH need to be manually added, as they don't have any resource files.
+noneuroall=" ja-JP-JP th-TH-TH "
+
+for FILE in $RESOURCE_NAMES
 do
     getlocalelist $FILE $EURO_FILES_LIST
     sed_script=$sed_script"-e \"s@#"$FILE"_EuroLocales#@$localelist@g\" "
+    euroall=$euroall" "$localelist
     getlocalelist $FILE $NONEURO_FILES_LIST
     sed_script=$sed_script"-e \"s@#"$FILE"_NonEuroLocales#@$localelist@g\" "
+    noneuroall=$noneuroall" "$localelist
 done
+
+euroall=`(for LOC in $euroall; do echo $LOC;done) |$SORT -u`
+noneuroall=`(for LOC in $noneuroall; do echo $LOC;done) |$SORT -u`
+
+sed_script=$sed_script"-e \"s@#AvailableLocales_EuroLocales#@$euroall@g\" "
+sed_script=$sed_script"-e \"s@#AvailableLocales_NonEuroLocales#@$noneuroall@g\" "
 
 sed_script=$sed_script"$INPUT_FILE > $OUTPUT_FILE"
 eval $sed_script
-
-

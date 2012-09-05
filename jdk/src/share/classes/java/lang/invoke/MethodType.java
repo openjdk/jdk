@@ -111,6 +111,36 @@ class MethodType implements java.io.Serializable {
 
     void setForm(MethodTypeForm f) { form = f; }
 
+    /** This number, mandated by the JVM spec as 255,
+     *  is the maximum number of <em>slots</em>
+     *  that any Java method can receive in its argument list.
+     *  It limits both JVM signatures and method type objects.
+     *  The longest possible invocation will look like
+     *  {@code staticMethod(arg1, arg2, ..., arg255)} or
+     *  {@code x.virtualMethod(arg1, arg2, ..., arg254)}.
+     */
+    /*non-public*/ static final int MAX_JVM_ARITY = 255;  // this is mandated by the JVM spec.
+
+    /** This number is the maximum arity of a method handle, 254.
+     *  It is derived from the absolute JVM-imposed arity by subtracting one,
+     *  which is the slot occupied by the method handle itself at the
+     *  beginning of the argument list used to invoke the method handle.
+     *  The longest possible invocation will look like
+     *  {@code mh.invoke(arg1, arg2, ..., arg254)}.
+     */
+    // Issue:  Should we allow MH.invokeWithArguments to go to the full 255?
+    /*non-public*/ static final int MAX_MH_ARITY = MAX_JVM_ARITY-1;  // deduct one for mh receiver
+
+    /** This number is the maximum arity of a method handle invoker, 253.
+     *  It is derived from the absolute JVM-imposed arity by subtracting two,
+     *  which are the slots occupied by invoke method handle, and the the
+     *  target method handle, which are both at the beginning of the argument
+     *  list used to invoke the target method handle.
+     *  The longest possible invocation will look like
+     *  {@code invokermh.invoke(targetmh, arg1, arg2, ..., arg253)}.
+     */
+    /*non-public*/ static final int MAX_MH_INVOKER_ARITY = MAX_MH_ARITY-1;  // deduct one more for invoker
+
     private static void checkRtype(Class<?> rtype) {
         rtype.equals(rtype);  // null check
     }
@@ -131,7 +161,9 @@ class MethodType implements java.io.Serializable {
         return slots;
     }
     static void checkSlotCount(int count) {
-        if ((count & 0xFF) != count)
+        assert((MAX_JVM_ARITY & (MAX_JVM_ARITY+1)) == 0);
+        // MAX_JVM_ARITY must be power of 2 minus 1 for following code trick to work:
+        if ((count & MAX_JVM_ARITY) != count)
             throw newIllegalArgumentException("bad parameter count "+count);
     }
     private static IndexOutOfBoundsException newIndexOutOfBoundsException(Object num) {

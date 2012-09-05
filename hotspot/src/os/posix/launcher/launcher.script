@@ -29,7 +29,7 @@
 # inside Emacs".
 #
 # If the first parameter is "-dbx", HotSpot will be launched inside dbx.
-# 
+#
 # If the first parameter is "-valgrind", HotSpot will be launched
 # inside Valgrind (http://valgrind.kde.org) using the Memcheck skin,
 # and with memory leak detection enabled.  This currently (2005jan19)
@@ -45,19 +45,19 @@
 
 # This is the name of the gdb binary to use
 if [ ! "$GDB" ]
-then 
+then
     GDB=gdb
 fi
 
 # This is the name of the gdb binary to use
 if [ ! "$DBX" ]
-then 
+then
     DBX=dbx
 fi
 
 # This is the name of the Valgrind binary to use
 if [ ! "$VALGRIND" ]
-then 
+then
     VALGRIND=valgrind
 fi
 
@@ -98,7 +98,7 @@ esac
 JDK=
 if [ "${ALT_JAVA_HOME}" = "" ]; then
     . ${MYDIR}/jdkpath.sh
-else 
+else
     JDK=${ALT_JAVA_HOME%%/jre};
 fi
 
@@ -114,21 +114,33 @@ fi
 # any.
 JRE=$JDK/jre
 JAVA_HOME=$JDK
-ARCH=@@LIBARCH@@
+export JAVA_HOME
 
+ARCH=@@LIBARCH@@
 SBP=${MYDIR}:${JRE}/lib/${ARCH}
 
-# Set up a suitable LD_LIBRARY_PATH
 
-if [ -z "$LD_LIBRARY_PATH" ]
+# Set up a suitable LD_LIBRARY_PATH or DYLD_LIBRARY_PATH
+OS=`uname -s`
+if [ "${OS}" = "Darwin" ]
 then
-    LD_LIBRARY_PATH="$SBP"
+    if [ -z "$DYLD_LIBRARY_PATH" ]
+    then
+        DYLD_LIBRARY_PATH="$SBP"
+    else
+        DYLD_LIBRARY_PATH="$SBP:$DYLD_LIBRARY_PATH"
+    fi
+    export DYLD_LIBRARY_PATH
 else
-    LD_LIBRARY_PATH="$SBP:$LD_LIBRARY_PATH"
+    # not 'Darwin'
+    if [ -z "$LD_LIBRARY_PATH" ]
+    then
+        LD_LIBRARY_PATH="$SBP"
+    else
+        LD_LIBRARY_PATH="$SBP:$LD_LIBRARY_PATH"
+    fi
+    export LD_LIBRARY_PATH
 fi
-
-export LD_LIBRARY_PATH
-export JAVA_HOME
 
 JPARMS="$@ $JAVA_ARGS";
 
