@@ -36,15 +36,11 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.spi.CurrencyNameProvider;
-import java.util.spi.LocaleServiceProvider;
-import sun.util.LocaleServiceProviderPool;
+import sun.util.locale.provider.LocaleServiceProviderPool;
 import sun.util.logging.PlatformLogger;
-import sun.util.resources.LocaleData;
-import sun.util.resources.OpenListResourceBundle;
 
 
 /**
@@ -191,37 +187,38 @@ public final class Currency implements Serializable {
     private static final int VALID_FORMAT_VERSION = 1;
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
                 String homeDir = System.getProperty("java.home");
                 try {
                     String dataFile = homeDir + File.separator +
                             "lib" + File.separator + "currency.data";
-                    DataInputStream dis = new DataInputStream(
-                        new BufferedInputStream(
-                        new FileInputStream(dataFile)));
-                    if (dis.readInt() != MAGIC_NUMBER) {
-                        throw new InternalError("Currency data is possibly corrupted");
+                    try (DataInputStream dis = new DataInputStream(
+                             new BufferedInputStream(
+                             new FileInputStream(dataFile)))) {
+                        if (dis.readInt() != MAGIC_NUMBER) {
+                            throw new InternalError("Currency data is possibly corrupted");
+                        }
+                        formatVersion = dis.readInt();
+                        if (formatVersion != VALID_FORMAT_VERSION) {
+                            throw new InternalError("Currency data format is incorrect");
+                        }
+                        dataVersion = dis.readInt();
+                        mainTable = readIntArray(dis, A_TO_Z * A_TO_Z);
+                        int scCount = dis.readInt();
+                        scCutOverTimes = readLongArray(dis, scCount);
+                        scOldCurrencies = readStringArray(dis, scCount);
+                        scNewCurrencies = readStringArray(dis, scCount);
+                        scOldCurrenciesDFD = readIntArray(dis, scCount);
+                        scNewCurrenciesDFD = readIntArray(dis, scCount);
+                        scOldCurrenciesNumericCode = readIntArray(dis, scCount);
+                        scNewCurrenciesNumericCode = readIntArray(dis, scCount);
+                        int ocCount = dis.readInt();
+                        otherCurrencies = dis.readUTF();
+                        otherCurrenciesDFD = readIntArray(dis, ocCount);
+                        otherCurrenciesNumericCode = readIntArray(dis, ocCount);
                     }
-                    formatVersion = dis.readInt();
-                    if (formatVersion != VALID_FORMAT_VERSION) {
-                        throw new InternalError("Currency data format is incorrect");
-                    }
-                    dataVersion = dis.readInt();
-                    mainTable = readIntArray(dis, A_TO_Z * A_TO_Z);
-                    int scCount = dis.readInt();
-                    scCutOverTimes = readLongArray(dis, scCount);
-                    scOldCurrencies = readStringArray(dis, scCount);
-                    scNewCurrencies = readStringArray(dis, scCount);
-                    scOldCurrenciesDFD = readIntArray(dis, scCount);
-                    scNewCurrenciesDFD = readIntArray(dis, scCount);
-                    scOldCurrenciesNumericCode = readIntArray(dis, scCount);
-                    scNewCurrenciesNumericCode = readIntArray(dis, scCount);
-                    int ocCount = dis.readInt();
-                    otherCurrencies = dis.readUTF();
-                    otherCurrenciesDFD = readIntArray(dis, ocCount);
-                    otherCurrenciesNumericCode = readIntArray(dis, ocCount);
-                    dis.close();
                 } catch (IOException e) {
                     throw new InternalError(e);
                 }
@@ -344,10 +341,10 @@ public final class Currency implements Serializable {
      * @param locale the locale for whose country a <code>Currency</code>
      * instance is needed
      * @return the <code>Currency</code> instance for the country of the given
-     * locale, or null
+     * locale, or {@code null}
      * @exception NullPointerException if <code>locale</code> or its country
-     * code is null
-     * @exception IllegalArgumentException if the country of the given locale
+     * code is {@code null}
+     * @exception IllegalArgumentException if the country of the given {@code locale}
      * is not a supported ISO 3166 country code.
      */
     public static Currency getInstance(Locale locale) {
@@ -368,7 +365,7 @@ public final class Currency implements Serializable {
             char finalChar = (char) ((tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) + 'A');
             int defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
             int numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
-            StringBuffer sb = new StringBuffer(country);
+            StringBuilder sb = new StringBuilder(country);
             sb.append(finalChar);
             return getInstance(sb.toString(), defaultFractionDigits, numericCode);
         } else {
@@ -470,33 +467,17 @@ public final class Currency implements Serializable {
      * @exception NullPointerException if <code>locale</code> is null
      */
     public String getSymbol(Locale locale) {
-        try {
-            // Check whether a provider can provide an implementation that's closer
-            // to the requested locale than what the Java runtime itself can provide.
-            LocaleServiceProviderPool pool =
-                LocaleServiceProviderPool.getPool(CurrencyNameProvider.class);
-
-            if (pool.hasProviders()) {
-                // Assuming that all the country locales include necessary currency
-                // symbols in the Java runtime's resources,  so there is no need to
-                // examine whether Java runtime's currency resource bundle is missing
-                // names.  Therefore, no resource bundle is provided for calling this
-                // method.
-                String symbol = pool.getLocalizedObject(
-                                    CurrencyNameGetter.INSTANCE,
-                                    locale, (OpenListResourceBundle)null,
-                                    currencyCode, SYMBOL);
-                if (symbol != null) {
-                    return symbol;
-                }
-            }
-
-            ResourceBundle bundle = LocaleData.getCurrencyNames(locale);
-            return bundle.getString(currencyCode);
-        } catch (MissingResourceException e) {
-            // use currency code as symbol of last resort
-            return currencyCode;
+        LocaleServiceProviderPool pool =
+            LocaleServiceProviderPool.getPool(CurrencyNameProvider.class);
+        String symbol = pool.getLocalizedObject(
+                                CurrencyNameGetter.INSTANCE,
+                                locale, currencyCode, SYMBOL);
+        if (symbol != null) {
+            return symbol;
         }
+
+        // use currency code as symbol of last resort
+        return currencyCode;
     }
 
     /**
@@ -546,30 +527,13 @@ public final class Currency implements Serializable {
      * @since 1.7
      */
     public String getDisplayName(Locale locale) {
-        try {
-            OpenListResourceBundle bundle = LocaleData.getCurrencyNames(locale);
-            String result = null;
-            String bundleKey = currencyCode.toLowerCase(Locale.ROOT);
-
-            // Check whether a provider can provide an implementation that's closer
-            // to the requested locale than what the Java runtime itself can provide.
-            LocaleServiceProviderPool pool =
-                LocaleServiceProviderPool.getPool(CurrencyNameProvider.class);
-            if (pool.hasProviders()) {
-                result = pool.getLocalizedObject(
-                                    CurrencyNameGetter.INSTANCE,
-                                    locale, bundleKey, bundle, currencyCode, DISPLAYNAME);
-            }
-
-            if (result == null) {
-                result = bundle.getString(bundleKey);
-            }
-
-            if (result != null) {
-                return result;
-            }
-        } catch (MissingResourceException e) {
-            // fall through
+        LocaleServiceProviderPool pool =
+            LocaleServiceProviderPool.getPool(CurrencyNameProvider.class);
+        String result = pool.getLocalizedObject(
+                                CurrencyNameGetter.INSTANCE,
+                                locale, currencyCode, DISPLAYNAME);
+        if (result != null) {
+            return result;
         }
 
         // use currency code as symbol of last resort
@@ -581,6 +545,7 @@ public final class Currency implements Serializable {
      *
      * @return the ISO 4217 currency code of this currency
      */
+    @Override
     public String toString() {
         return currencyCode;
     }
@@ -623,6 +588,7 @@ public final class Currency implements Serializable {
                                                                    String> {
         private static final CurrencyNameGetter INSTANCE = new CurrencyNameGetter();
 
+        @Override
         public String getObject(CurrencyNameProvider currencyNameProvider,
                                 Locale locale,
                                 String key,

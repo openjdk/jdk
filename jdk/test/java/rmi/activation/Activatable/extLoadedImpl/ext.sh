@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,22 @@
 # @build ExtLoadedImplTest ExtLoadedImpl ExtLoadedImpl_Stub CheckLoader
 # @run shell ext.sh
 
+OS=`uname -s`
+case "$OS" in
+  SunOS | Linux | Darwin )
+    PS=":"
+    ;;
+  Windows* | CYGWIN* )
+    PS=";"
+    ;;
+  * )
+    echo "Unrecognized system!"
+    exit 1;
+    ;;
+esac
+
 mkdir -p classes
-cp $TESTCLASSES/*.class classes
+for dir in `echo ${TESTCLASSPATH:-$TESTCLASSES} | sed -e "s/$PS/ /"` ; do cp $dir/*.class classes ; done
 rm classes/ExtLoadedImpl.class classes/ExtLoadedImpl_Stub.class classes/CheckLoader.class
 mkdir -p ext
 $TESTJAVA/bin/jar cf ext/ext.jar -C $TESTCLASSES ExtLoadedImpl.class -C $TESTCLASSES ExtLoadedImpl_Stub.class -C $TESTCLASSES CheckLoader.class

@@ -222,6 +222,7 @@ void PhaseChaitin::Register_Allocate() {
   _alternate = 0;
   _matcher._allocation_started = true;
 
+  ResourceArea split_arena;     // Arena for Split local resources
   ResourceArea live_arena;      // Arena for liveness & IFG info
   ResourceMark rm(&live_arena);
 
@@ -324,7 +325,7 @@ void PhaseChaitin::Register_Allocate() {
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit)
     C->check_node_count(10*must_spill, "out of nodes before split");
     if (C->failing())  return;
-    _maxlrg = Split( _maxlrg );        // Split spilling LRG everywhere
+    _maxlrg = Split(_maxlrg, &split_arena);  // Split spilling LRG everywhere
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
     // or we failed to split
     C->check_node_count(2*NodeLimitFudgeFactor, "out of nodes after physical split");
@@ -390,7 +391,7 @@ void PhaseChaitin::Register_Allocate() {
     }
 
     if( !_maxlrg ) return;
-    _maxlrg = Split( _maxlrg );        // Split spilling LRG everywhere
+    _maxlrg = Split(_maxlrg, &split_arena);  // Split spilling LRG everywhere
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
     C->check_node_count(2*NodeLimitFudgeFactor, "out of nodes after split");
     if (C->failing())  return;

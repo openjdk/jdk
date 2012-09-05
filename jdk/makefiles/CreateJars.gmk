@@ -74,37 +74,15 @@ JARS+=$(JDK_OUTPUTDIR)/lib/ext/dnsns.jar
 
 ##########################################################################################
 
-LOCALEDATA_INCLUDE_PATTERNS := \
-	sun/text/resources/*_ar* \
-	sun/text/resources/*_hi* \
-	sun/text/resources/*_iw* \
-	sun/text/resources/*_iw* \
-	sun/text/resources/*_ja* \
-	sun/text/resources/*_ko* \
-	sun/text/resources/*_th.* \
-	sun/text/resources/*_th_* \
-	sun/text/resources/*_vi* \
-	sun/text/resources/*_zh* \
-	sun/text/resources/*Data_th \
-	sun/text/resources/thai_dict \
-	sun/util/resources/*_ar* \
-	sun/util/resources/*_hi* \
-	sun/util/resources/*_iw* \
-	sun/util/resources/*_iw* \
-	sun/util/resources/*_ja* \
-	sun/util/resources/*_ko* \
-	sun/util/resources/*_th_* \
-	sun/util/resources/*_th.* \
-	sun/util/resources/*_vi* \
-	sun/util/resources/*_zh*
-
-LOCALEDATA_INCLUDES := $(patsubst $(JDK_OUTPUTDIR)/classes/%,%,\
-	$(foreach i,$(LOCALEDATA_INCLUDE_PATTERNS), $(wildcard $(JDK_OUTPUTDIR)/classes/$i)))
+LOCALEDATA_INCLUDE_LOCALES := ar hi iw ja ko th vi zh
+LOCALEDATA_INCLUDES := $(addprefix sun/text/resources/,$(LOCALEDATA_INCLUDE_LOCALES)) \
+		       $(addprefix sun/util/resources/,$(LOCALEDATA_INCLUDE_LOCALES))
 
 $(eval $(call SetupArchive,BUILD_LOCALEDATA_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
 		SUFFIXES:=.class _dict _th,\
 		INCLUDES:=$(LOCALEDATA_INCLUDES),\
+		EXCLUDES:=sun/text/resources/th/BreakIteratorRules_th.class,\
 		JAR:=$(JDK_OUTPUTDIR)/lib/ext/localedata.jar,\
 		SKIP_METAINF:=true))
 
@@ -244,7 +222,10 @@ RT_JAR_EXCLUDES := \
 	javax/swing/SwingBeanInfoBase.class \
 	javax/swing/text/JTextComponentBeanInfo.class \
 	sun/swing/BeanInfoUtils.class \
-	$(LOCALEDATA_INCLUDES)
+	$(LOCALEDATA_INCLUDES) \
+	sun/text/resources/cldr \
+	sun/util/resources/cldr \
+	sun/util/cldr/CLDRLocaleDataMetaInfo.class
 
 # These files should never be put into rt.jar
 # but due to a misstake...some are put there if embedded
@@ -631,6 +612,26 @@ JARS += $(UCRYPTO_JAR_DST)
 
 endif
 endif
+
+##########################################################################################
+
+# Get the CLDRVERSION
+include GensrcCLDR.gmk
+
+CLDRDATA_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/cldrdata.jar
+
+$(eval $(call SetupArchive,BUILD_CLDRDATA_JAR,$(CLDRDATA_DEPS),\
+		SRCS:=$(JDK_OUTPUTDIR)/classes,\
+		SUFFIXES:=.class,\
+		INCLUDES:=sun/text/resources/cldr \
+			  sun/util/cldr \
+			  sun/util/resources/cldr,\
+		EXCLUDES:=sun/util/cldr/CLDRLocaleProviderAdapter,\
+		JAR:=$(CLDRDATA_JAR_DST),\
+		EXTRA_MANIFEST_ATTR:=CLDR-Version: $(CLDRVERSION),\
+		SKIP_METAINF:=true))
+
+JARS += $(CLDRDATA_JAR_DST)
 
 ##########################################################################################
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package com.sun.beans.decoder;
 import com.sun.beans.finder.MethodFinder;
 
 import java.lang.reflect.Method;
+
+import sun.reflect.misc.MethodUtil;
 
 /**
  * This class is intended to handle &lt;method&gt; element.
@@ -101,7 +103,7 @@ final class MethodElementHandler extends NewElementHandler {
         if (method.isVarArgs()) {
             args = getArguments(args, method.getParameterTypes());
         }
-        Object value = method.invoke(bean, args);
+        Object value = MethodUtil.invoke(method, bean, args);
         return method.getReturnType().equals(void.class)
                 ? ValueObjectImpl.VOID
                 : ValueObjectImpl.create(value);

@@ -38,6 +38,18 @@ case "$OS" in
     PS=";"
     FS="\\"
     ;;
+  CYGWIN_NT* )
+    NULL=/dev/null
+    PS=";"
+    FS="/"
+    ;;
+  CYGWIN_* )
+    NULL=/dev/null
+    PS=";"
+    FS="/"
+    echo "Test skipped, only for WinNT"
+    exit 0
+    ;;
   * )
     echo "Unrecognized system!"
     exit 1;

@@ -140,6 +140,11 @@ BUILD_HEADLESS = true
 
 _CUPS_HEADERS_PATH=/opt/sfw/cups/include
 
+# Set ZLIB_LIBS if not already set
+ifeq ("$(ZLIB_LIBS)", "")
+  ZLIB_LIBS=-lz
+endif
+
 # Import JDK images allow for partial builds, components not built are
 #    imported (or copied from) these import areas when needed.
 

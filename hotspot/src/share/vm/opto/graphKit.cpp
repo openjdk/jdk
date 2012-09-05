@@ -1006,11 +1006,11 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth, bool for_parse) {
   case Bytecodes::_putfield:
     {
       bool is_get = (depth >= 0), is_static = (depth & 1);
-      bool ignore;
       ciBytecodeStream iter(method());
       iter.reset_to_bci(bci());
       iter.next();
-      ciField* field = iter.get_field(ignore);
+      bool ignored_will_link;
+      ciField* field = iter.get_field(ignored_will_link);
       int      size  = field->type()->size();
       inputs  = (is_static ? 0 : 1);
       if (is_get) {
@@ -1028,11 +1028,13 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth, bool for_parse) {
   case Bytecodes::_invokedynamic:
   case Bytecodes::_invokeinterface:
     {
-      bool ignore;
       ciBytecodeStream iter(method());
       iter.reset_to_bci(bci());
       iter.next();
-      ciMethod* callee = iter.get_method(ignore);
+      bool ignored_will_link;
+      ciSignature* declared_signature = NULL;
+      ciMethod* callee = iter.get_method(ignored_will_link, &declared_signature);
+      assert(declared_signature != NULL, "cannot be null");
       // (Do not use ciMethod::arg_size(), because
       // it might be an unloaded method, which doesn't
       // know whether it is static or not.)
@@ -1046,7 +1048,7 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth, bool for_parse) {
         //         remove any appendix arguments that were popped.
         inputs = callee->invoke_arg_size(code) - (callee->has_member_arg() ? 1 : 0);
       }
-      int size = callee->return_type()->size();
+      int size = declared_signature->return_type()->size();
       depth = size - inputs;
     }
     break;

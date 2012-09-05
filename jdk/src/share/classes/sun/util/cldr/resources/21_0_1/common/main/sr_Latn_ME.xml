@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 5695 $"/>
+		<generation date="$Date: 2011-04-27 03:39:31 +0900 (Wed, 27 Apr 2011) $"/>
+		<language type="sr"/>
+		<script type="Latn"/>
+		<territory type="ME"/>
+	</identity>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<dateFormats>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d.MM.yyyy.</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">d.MM - d.MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d.MM - d.MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d.MM - E, d.MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d.MM - E, d.MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">MM.yyyy - MM.yyyy</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM.yyyy - MM.yyyy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d.MM.yyyy. - d.MM.yyyy.</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d.MM.yyyy. - d.MM.yyyy.</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d.MM.yyyy. - d.MM.yyyy.</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+</ldml>
+

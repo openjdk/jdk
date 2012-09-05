@@ -41,8 +41,6 @@ import java.awt.im.spi.InputMethodDescriptor;
 import java.awt.image.ColorModel;
 import java.awt.peer.*;
 import java.beans.PropertyChangeListener;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -50,10 +48,10 @@ import javax.swing.LookAndFeel;
 import javax.swing.UIDefaults;
 import sun.awt.*;
 import sun.font.FontConfigManager;
-import sun.font.FontManager;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.misc.PerformanceLogger;
 import sun.print.PrintJob2D;
+import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
 import sun.util.logging.PlatformLogger;
 
@@ -113,7 +111,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static volatile int screenWidth = -1, screenHeight = -1; // Dimensions of default screen
     static long awt_defaultFg; // Pixel
     private static XMouseInfoPeer xPeer;
-    private static Method m_removeSourceEvents;
 
     static {
         initSecurityWarning();
@@ -131,8 +128,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             initIDs();
             setBackingStoreType();
         }
-        m_removeSourceEvents = SunToolkit.getMethod(EventQueue.class, "removeSourceEvents", new Class[] {Object.class, Boolean.TYPE}) ;
-
         noisyAwtHandler = AccessController.doPrivileged(new GetBooleanAction("sun.awt.noisyerrorhandler"));
     }
 
@@ -223,7 +218,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     static void initSecurityWarning() {
         // Enable warning only for internal builds
-        String runtime = getSystemProperty("java.runtime.version");
+        String runtime = AccessController.doPrivileged(
+                             new GetPropertyAction("java.runtime.version"));
         securityWarningEnabled = (runtime != null && runtime.contains("internal"));
     }
 
@@ -1101,8 +1097,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      */
     public synchronized static boolean getSunAwtDisableGtkFileDialogs() {
         if (sunAwtDisableGtkFileDialogs == null) {
-            sunAwtDisableGtkFileDialogs =
-                getBooleanSystemProperty("sun.awt.disableGtkFileDialogs");
+            sunAwtDisableGtkFileDialogs = AccessController.doPrivileged(
+                                              new GetBooleanAction("sun.awt.disableGtkFileDialogs"));
         }
         return sunAwtDisableGtkFileDialogs.booleanValue();
     }
@@ -2090,17 +2086,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return null;
     }
 
-    static void removeSourceEvents(EventQueue queue, Object source, boolean removeAllEvents) {
-        try {
-            m_removeSourceEvents.invoke(queue, source, removeAllEvents);
-        }
-        catch (IllegalAccessException e)
-        {
-            e.printStackTrace();
-        }
-        catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
+    static void removeSourceEvents(EventQueue queue,
+                                   Object source,
+                                   boolean removeAllEvents) {
+        AWTAccessor.getEventQueueAccessor()
+            .removeSourceEvents(queue, source, removeAllEvents);
     }
 
     public boolean isAlwaysOnTopSupported() {
