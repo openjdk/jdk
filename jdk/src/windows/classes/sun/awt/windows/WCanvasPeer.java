@@ -27,7 +27,6 @@ package sun.awt.windows;
 import java.awt.*;
 import java.awt.peer.*;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import sun.awt.SunToolkit;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.PaintEventDispatcher;

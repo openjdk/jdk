@@ -35,7 +35,7 @@
 #include "jni.h"
 #include "jvm.h"
 #include "jni_util.h"
-#include "zlib.h"
+#include <zlib.h>
 #include "java_util_zip_Inflater.h"
 
 #define ThrowDataFormatException(env, msg) \

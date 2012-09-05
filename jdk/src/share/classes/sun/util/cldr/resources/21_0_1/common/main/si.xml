@@ -1,0 +1,836 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="si"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ar">අරාබි</language>
+			<language type="bn">බෙංගලි</language>
+			<language type="bo">ටිබෙට්</language>
+			<language type="de">ජර්මන්</language>
+			<language type="de_AT">ඔස්ට්‍රියානු ජර්මන්</language>
+			<language type="dv">දිවෙහි</language>
+			<language type="el">ග්‍රීක</language>
+			<language type="en">ඉංග්‍රීසි</language>
+			<language type="en_AU">ඕස්ට්‍රේලියානු ඉංග්‍රීසි</language>
+			<language type="en_CA">කැනේඩියානු ඉංග්‍රීසි</language>
+			<language type="en_GB">බ්‍රිතාන්‍ය ඉංග්‍රීසින්‍ය</language>
+			<language type="en_US">ඇමෙරිකානු ඉංග්‍රීසි</language>
+			<language type="es">ස්පාඤ්ඤ</language>
+			<language type="fa">පර්සියානු</language>
+			<language type="fr">ප්‍රංශ</language>
+			<language type="fr_CA">කැනේඩියානු ප්‍රංශ</language>
+			<language type="gu">ගුජරාටි</language>
+			<language type="he">හීබෲ</language>
+			<language type="hi">හින්දි</language>
+			<language type="hu">හන්ගේරියානු</language>
+			<language type="hy">ආර්මේනියානු</language>
+			<language type="it">ඉතාලි</language>
+			<language type="ja">ජපන්</language>
+			<language type="kn">කණ්ණඩ</language>
+			<language type="ko">කොරියානු</language>
+			<language type="la">ලතින්</language>
+			<language type="ms">මැලේ</language>
+			<language type="nl">ලන්දේසි</language>
+			<language type="pl">පෝලන්ත</language>
+			<language type="pt">පෘතුගීසි</language>
+			<language type="ru">රුසියානු</language>
+			<language type="sa">සංස්කෘත</language>
+			<language type="si">සිංහල</language>
+			<language type="ta">දෙමළ</language>
+			<language type="th">තායි</language>
+			<language type="tr">තුර්කි</language>
+			<language type="zh">චීන</language>
+		</languages>
+		<scripts>
+			<script type="Arab">අරාබි</script>
+			<script type="Armn">ආර්මේනියානු</script>
+			<script type="Cyrl">සිරිලික්</script>
+			<script type="Deva">දේවනාගරී</script>
+			<script type="Grek">ග්‍රීක</script>
+			<script type="Gujr">ගුජරාටි</script>
+			<script type="Hans">සරළ</script>
+			<script type="Hant">සාම්ප්‍රදායික</script>
+			<script type="Hebr">හීබෲ</script>
+			<script type="Hira">හිරඟනා</script>
+			<script type="Jpan">ජපන්</script>
+			<script type="Knda">කණ්ණඩ</script>
+			<script type="Kore">කොරියානු</script>
+			<script type="Latn">ලතින්</script>
+			<script type="Mlym">මලයාලම්</script>
+			<script type="Mong">මොන්ගෝලියානු</script>
+			<script type="Sinh">සිංහල</script>
+			<script type="Taml">දෙමල</script>
+			<script type="Telu">තෙළිඟු</script>
+			<script type="Thai">තායි</script>
+			<script type="Tibt">ටි‍බෙට්</script>
+		</scripts>
+		<territories>
+			<territory type="001">ලෝකය</territory>
+			<territory type="002">අප්‍රිකාව</territory>
+			<territory type="003">උතුරු ඇමෙරිකාව</territory>
+			<territory type="005">දකුණු ඇමෙරිකාව</territory>
+			<territory type="009">ඔෂනියාව</territory>
+			<territory type="011">බටහිරදිග අප්‍රිකාව</territory>
+			<territory type="013">මධ්‍යම ඇමෙරිකාව</territory>
+			<territory type="014">පෙරදිග අප්‍රිකාව</territory>
+			<territory type="015">උතුරුදිග අප්‍රිකාව</territory>
+			<territory type="017">මධ්‍යම අප්‍රිකාව</territory>
+			<territory type="018">දකුණුදිග අප්‍රිකාව</territory>
+			<territory type="021">උතුරුදිග ඇමෙරිකාව</territory>
+			<territory type="029">කැරීබියන්</territory>
+			<territory type="030">නැගෙනහිර ආසියාව</territory>
+			<territory type="034">දකුණු ආසියාව</territory>
+			<territory type="035">අග්නිදිග ආසියාව</territory>
+			<territory type="039">දකුණුදිග යුරෝපය</territory>
+			<territory type="053">ඕස්ට්‍රේලියාව සහ නවසීලන්තය</territory>
+			<territory type="057">මයික්‍රෝනීසියානු කළාපය</territory>
+			<territory type="061">පොලිනීසියාව</territory>
+			<territory type="142">ආසියාව</territory>
+			<territory type="143">මධ්‍යම ආසියාව</territory>
+			<territory type="145">බටහිර ආසියාව</territory>
+			<territory type="150">යුරෝපය</territory>
+			<territory type="151">නැගෙනහිර යුරෝපය</territory>
+			<territory type="154">උතුරු යුරෝපය</territory>
+			<territory type="155">බටහිර යුරෝපය</territory>
+			<territory type="419">ලතින් ඇමෙරිකාව</territory>
+			<territory type="AC">ඇසෙන්ෂන් දිවයින</territory>
+			<territory type="AD">ඇන්ඩෝරාව</territory>
+			<territory type="AE">එක්සත් අරාබි එමිර් රාජ්‍යය</territory>
+			<territory type="AF">ඇෆ්ගනිස්ථානය</territory>
+			<territory type="AG">ඇන්ටිගුවා සහ බාබියුඩා</territory>
+			<territory type="AI">ඇන්ගුයිලාව</territory>
+			<territory type="AL">ඇල්බේනියාව</territory>
+			<territory type="AM">ආර්මේනියාව</territory>
+			<territory type="AN">නෙදර්ලන්ත ඇන්ටිලීසිය</territory>
+			<territory type="AO">ඇන්ගෝලාව</territory>
+			<territory type="AQ">ඇන්ටාක්ටිකාව</territory>
+			<territory type="AR">ආර්ජෙන්ටිනාව</territory>
+			<territory type="AS">ඇමරිකානු සැමෝවාව</territory>
+			<territory type="AT">ඔස්ට්‍රියාව</territory>
+			<territory type="AU">ඕස්ට්‍රේලියාව</territory>
+			<territory type="AW">අරුබාව</territory>
+			<territory type="AX">ඕලන්ඩ් දූපත්</territory>
+			<territory type="AZ">අසර්බයිජානය</territory>
+			<territory type="BA">බොස්නියාව සහ හර්සගොවීනාව</territory>
+			<territory type="BB">බාර්බඩෝස්</territory>
+			<territory type="BD">බංගලිදේශය</territory>
+			<territory type="BE">බෙල්ජියම</territory>
+			<territory type="BF">බර්කිනා ෆාසෝ</territory>
+			<territory type="BG">බල්ගේරියාව</territory>
+			<territory type="BH">බහරේන්</territory>
+			<territory type="BI">බුරුන්ඩි</territory>
+			<territory type="BJ">බෙනින්</territory>
+			<territory type="BM">බර්මියුඩා</territory>
+			<territory type="BN">බෲනායි</territory>
+			<territory type="BO">බොලීවියාව</territory>
+			<territory type="BR">බ්‍රසීලය</territory>
+			<territory type="BS">බහමාස්</territory>
+			<territory type="BT">භූතානය</territory>
+			<territory type="BW">බොස්ට්වානා</territory>
+			<territory type="BY">බෙලරුස්</territory>
+			<territory type="BZ">බෙලීස්</territory>
+			<territory type="CA">කැනඩාව</territory>
+			<territory type="CC">කොකෝස් දූපත්</territory>
+			<territory type="CD" alt="variant">කොන්ගෝව</territory>
+			<territory type="CG" alt="variant">කොංගෝව</territory>
+			<territory type="CH">ස්විස්ටර්ලන්තය</territory>
+			<territory type="CI" alt="variant">අයිවරි කෝස්ට්</territory>
+			<territory type="CK">කුක් දූපත්</territory>
+			<territory type="CL">චිලී</territory>
+			<territory type="CM">කැමරූන්</territory>
+			<territory type="CN">චීනය</territory>
+			<territory type="CO">කොළොම්බියාව</territory>
+			<territory type="CU">කියුබාව</territory>
+			<territory type="CY">සයිප්‍රසය</territory>
+			<territory type="DE">ජර්මනිය</territory>
+			<territory type="DK">ඩෙන්මාර්කය</territory>
+			<territory type="DZ">ඇල්ජීරියාව</territory>
+			<territory type="EC">ඉක්වදෝරය</territory>
+			<territory type="EE">එස්තෝනියාව</territory>
+			<territory type="EG">ඊජිප්තුව</territory>
+			<territory type="EH">බටහිර සහරාව</territory>
+			<territory type="ER">එරිත්‍රියාව</territory>
+			<territory type="ES">ස්පාඤ්ඤය</territory>
+			<territory type="ET">ඉතියෝපියාව</territory>
+			<territory type="EU">යුරෝපා සංගමය</territory>
+			<territory type="FI">ෆින්ලන්තය</territory>
+			<territory type="FJ">ෆීජී</territory>
+			<territory type="FK">ෆෝක්ලන්ත දූපත්</territory>
+			<territory type="FO">ෆැරෝ දූපත්</territory>
+			<territory type="FR">ප්‍රංශය</territory>
+			<territory type="GA">ගැබොන්</territory>
+			<territory type="GB">එක්සත් රාජධානිය</territory>
+			<territory type="GD">ග්‍රැනඩාව</territory>
+			<territory type="GE">ජෝර්ජියාව</territory>
+			<territory type="GF">ප්‍රංශ ගයනාව</territory>
+			<territory type="GH">ඝානාව</territory>
+			<territory type="GI">ජිබ්‍රෝල්ටාව</territory>
+			<territory type="GL">ග්‍රීන්ලන්තය</territory>
+			<territory type="GM">ගැම්බියාව</territory>
+			<territory type="GN">ගිණියාව</territory>
+			<territory type="GQ">සමක ගිනියාව</territory>
+			<territory type="GR">ග්‍රීසිය</territory>
+			<territory type="HK">හොංකොං චීන විශේෂ පරිපාලන කලාපය</territory>
+			<territory type="HK" alt="short">හොංකොං</territory>
+			<territory type="HM">හාඩ් සහ මැක්ඩොනල්ඩ් දූපත්</territory>
+			<territory type="HN">හොන්ඩුරාස්</territory>
+			<territory type="HT">හයිටි</territory>
+			<territory type="HU">හන්ගේරියාව</territory>
+			<territory type="ID">ඉන්දුනීසියාව</territory>
+			<territory type="IE">අයර්ලන්තය</territory>
+			<territory type="IL">ඊශ්‍රායලය</territory>
+			<territory type="IN">ඉන්දියාව</territory>
+			<territory type="IO">බ්‍රිතාන්‍ය ඉන්දීය සාගර ප්‍රාන්තය</territory>
+			<territory type="IQ">ඉරාකය</territory>
+			<territory type="IR">ඉරානය</territory>
+			<territory type="IS">අයිස්ලන්තය</territory>
+			<territory type="IT">ඉතාලිය</territory>
+			<territory type="JM">ජැමෙයිකාව</territory>
+			<territory type="JO">ජෝර්දානය</territory>
+			<territory type="JP">ජපානය</territory>
+			<territory type="KE">කෙන්යාව</territory>
+			<territory type="KP">උතුරු කොරියාව</territory>
+			<territory type="KR">දකුණු කොරියාව</territory>
+			<territory type="KW">කුවේටය</territory>
+			<territory type="LA">ලාඕසය</territory>
+			<territory type="LB">ලෙබනනය</territory>
+			<territory type="LC">ශාන්ත ලුසියා</territory>
+			<territory type="LK">ශ්‍රී ලංකාව</territory>
+			<territory type="LR">ලයිබීරියාව</territory>
+			<territory type="LT">ලිතුවේනියාව</territory>
+			<territory type="LV">ලැට්වියාව</territory>
+			<territory type="LY">ලිබියාව</territory>
+			<territory type="MA">මොරොක්කෝව</territory>
+			<territory type="MC">මොනාකෝව</territory>
+			<territory type="MD">මොල්ඩෝවාව</territory>
+			<territory type="ME">මොන්ඩිනීග්‍රෝ</territory>
+			<territory type="ML">මාලි</territory>
+			<territory type="MM">මියන්මාරය</territory>
+			<territory type="MN">මොන්ගෝලියාව</territory>
+			<territory type="MR">මාර්ටිනික්</territory>
+			<territory type="MS">මොන්සෙරාට්</territory>
+			<territory type="MT">මෝල්ටාව</territory>
+			<territory type="MU">මුරුසිය</territory>
+			<territory type="MV">මාල දිවයින</territory>
+			<territory type="MX">මෙක්සිකෝව</territory>
+			<territory type="MY">මැලේසියාව</territory>
+			<territory type="MZ">මොසැම්බික්</territory>
+			<territory type="NA">නැමීබියාව</territory>
+			<territory type="NC">නව කැලිඩෝනියාව</territory>
+			<territory type="NE">නයිජර්</territory>
+			<territory type="NF">නෝෆෝක් දූපත</territory>
+			<territory type="NG">නයිජීරියාව</territory>
+			<territory type="NI">නිකරගුවාව</territory>
+			<territory type="NL">නෙදර්ලන්තය</territory>
+			<territory type="NO">නෝර්වේ</territory>
+			<territory type="NP">නේපාලය</territory>
+			<territory type="NR">නාවුරු</territory>
+			<territory type="NU">නියූ</territory>
+			<territory type="NZ">නවසීලන්තය</territory>
+			<territory type="OM">ඕමානය</territory>
+			<territory type="PA">පැනමා</territory>
+			<territory type="PE">පේරු</territory>
+			<territory type="PF">ප්‍රංශ පොලිනීසියාව</territory>
+			<territory type="PG">පැපුවා නිව් ගිනියාව</territory>
+			<territory type="PH">පිලිපීනය</territory>
+			<territory type="PK">පාකිස්තානය</territory>
+			<territory type="PL">පෝලන්තය</territory>
+			<territory type="PN">පිට්කෙය්න් දූපත්</territory>
+			<territory type="PS">පලස්තීනය</territory>
+			<territory type="PT">පෘතුගාලය</territory>
+			<territory type="PW">පලාවු</territory>
+			<territory type="PY">පැරගුවේ</territory>
+			<territory type="QA">කටාර්ය</territory>
+			<territory type="RO">රුමේනියාව</territory>
+			<territory type="RS">සර්බියාව</territory>
+			<territory type="RU">රුසියාව</territory>
+			<territory type="SA">සෞදි අරාබිය</territory>
+			<territory type="SD">සූඩානය</territory>
+			<territory type="SE">ස්වීඩනය</territory>
+			<territory type="SG">සිංගප්පූරුව</territory>
+			<territory type="SI">ස්ලෝවේනියාව</territory>
+			<territory type="SK">ස්ලෝවැකියාව</territory>
+			<territory type="SV">එල් සැල්වදෝරය</territory>
+			<territory type="TC">ටර්ක්ස් සහ කයිකොස් දූපත්</territory>
+			<territory type="TH">තායිලන්තය</territory>
+			<territory type="TK">ටොකලාවු</territory>
+			<territory type="TM">තුර්ක්මෙනිස්ථානය</territory>
+			<territory type="TN">ටියුනීසියාව</territory>
+			<territory type="TR">තුර්කිය</territory>
+			<territory type="TT">ට්‍රිනිඩෑඩ් සහ ටොබැගෝ</territory>
+			<territory type="TV">ටුවාලූ</territory>
+			<territory type="TW">තායිවානය</territory>
+			<territory type="UA">යුක්රේනය</territory>
+			<territory type="US">එක්සත් ජනපදය</territory>
+			<territory type="UZ">උස්බෙකිස්ථානය</territory>
+			<territory type="VG">බ්‍රිතාන්‍ය වර්ජින් දූපත්</territory>
+			<territory type="VI">ඇමරිකානු වර්ජින් දූපත්</territory>
+			<territory type="VN">වියට්නාමය</territory>
+			<territory type="VU">වනුවාටු</territory>
+			<territory type="WS">සැමෝවා</territory>
+			<territory type="YE">යේමනය</territory>
+			<territory type="ZA">දකුණු අප්‍රිකාව</territory>
+			<territory type="ZM">සැම්බියාව</territory>
+			<territory type="ZW">සිම්බාබ්වේ</territory>
+			<territory type="ZZ">හඳුනා නොගත් කළාපය</territory>
+		</territories>
+		<keys>
+			<key type="calendar">දිනදසුන</key>
+			<key type="currency">මුදල්</key>
+		</keys>
+		<types>
+			<type type="arab" key="numbers">ඉන්දු අරාබි ඉලක්කම්</type>
+			<type type="buddhist" key="calendar">බොදු දිනදසුන</type>
+			<type type="chinese" key="calendar">චීන දිනදසුන</type>
+			<type type="gregorian" key="calendar">දිනදසුන</type>
+			<type type="hebrew" key="calendar">හීබෲ දිනදසුන</type>
+			<type type="taml" key="numbers">දෙමළ ඉලක්කම්</type>
+		</types>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[අ ආ ඇ ඈ ඉ ඊ උ ඌ ඍ එ ඒ ඓ ඔ ඕ ඖ ං ඃ ක ඛ ග ඝ ඞ ඟ ච ඡ ජ ඣ ඥ ඤ ට ඨ ඩ ඪ ණ ඬ ත ථ ද ධ න ඳ ප ඵ බ භ ම ඹ ය ර ල ව ශ ෂ ස හ ළ ෆ ා ැ ෑ \u0DD2 \u0DD3 \u0DD4 \u0DD6 ෘ ෲ ෟ ෙ ේ ෛ ො ෝ ෞ \u0DCA]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200B\u200C\u200D ඎ ඏ ඐ ඦ ෳ]</exemplarCharacters>
+		<exemplarCharacters type="currencySymbol">[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index">[අ ආ ඇ ඈ ඉ ඊ උ ඌ ඍ එ ඒ ඓ ඔ ඕ ඖ ක ඛ ග ඝ ඞ ඟ ච ඡ ජ ඣ ඥ ඤ ට ඨ ඩ ඪ ණ ඬ ත ථ ද ධ න ඳ ප ඵ බ භ ම ඹ ය ර ල ව ශ ෂ ස හ ළ ෆ]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">ජන</month>
+							<month type="2">පෙබ</month>
+							<month type="3">මාර්තු</month>
+							<month type="4">අප්‍රේල්</month>
+							<month type="5">මැයි</month>
+							<month type="6">ජූනි</month>
+							<month type="7">ජූලි</month>
+							<month type="8">අගෝ</month>
+							<month type="9">සැප්</month>
+							<month type="10">ඔක්</month>
+							<month type="11">නොවැ</month>
+							<month type="12">දෙසැ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">ජ</month>
+							<month type="2">පෙ</month>
+							<month type="3">මා</month>
+							<month type="4">අ</month>
+							<month type="5">මැ</month>
+							<month type="6">ජූ</month>
+							<month type="7">ජූ</month>
+							<month type="8">අ</month>
+							<month type="9">සැ</month>
+							<month type="10">ඔ</month>
+							<month type="11">නො</month>
+							<month type="12">දෙ</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ජනවාරි</month>
+							<month type="2">පෙබරවාරි</month>
+							<month type="3">මාර්තු</month>
+							<month type="4">අප්‍රේල්</month>
+							<month type="5">මැයි</month>
+							<month type="6">ජූනි</month>
+							<month type="7">ජූලි</month>
+							<month type="8">අගෝස්තු</month>
+							<month type="9">සැප්තැම්බර්</month>
+							<month type="10">ඔක්තෝබර්</month>
+							<month type="11">නොවැම්බර්</month>
+							<month type="12">දෙසැම්බර්</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">ජන</month>
+							<month type="2">පෙබ</month>
+							<month type="3">මාර්</month>
+							<month type="4">අප්‍රේල්</month>
+							<month type="5">මැයි</month>
+							<month type="6">ජූනි</month>
+							<month type="7">ජූලි</month>
+							<month type="8">අගෝ</month>
+							<month type="9">සැප්</month>
+							<month type="10">ඔක්</month>
+							<month type="11">නොවැ</month>
+							<month type="12">දෙසැ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">ජ</month>
+							<month type="2">පෙ</month>
+							<month type="3">මා</month>
+							<month type="4">අ</month>
+							<month type="5">මැ</month>
+							<month type="6">ජූ</month>
+							<month type="7">ජූ</month>
+							<month type="8">අ</month>
+							<month type="9">සැ</month>
+							<month type="10">ඔ</month>
+							<month type="11">නො</month>
+							<month type="12">දෙ</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ජනවාරි</month>
+							<month type="2">පෙබරවාරි</month>
+							<month type="3">මාර්තු</month>
+							<month type="4">අප්‍රේල්</month>
+							<month type="5">මැයි</month>
+							<month type="6">ජූනි</month>
+							<month type="7">ජූලි</month>
+							<month type="8">අගෝස්තු</month>
+							<month type="9">සැප්තැම්බර්</month>
+							<month type="10">ඔක්තෝබර්</month>
+							<month type="11">නොවැම්බර්</month>
+							<month type="12">දෙසැම්බර්</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">ඉරි</day>
+							<day type="mon">සඳු</day>
+							<day type="tue">අඟ</day>
+							<day type="wed">බදා</day>
+							<day type="thu">බ්‍රහ</day>
+							<day type="fri">සිකු</day>
+							<day type="sat">සෙන</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">ඉ</day>
+							<day type="mon">ස</day>
+							<day type="tue">අ</day>
+							<day type="wed">බ</day>
+							<day type="thu">බ්‍ර</day>
+							<day type="fri">සි</day>
+							<day type="sat">සෙ</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">ඉරිදා</day>
+							<day type="mon">සඳුදා</day>
+							<day type="tue">අඟහරුවාදා</day>
+							<day type="wed">බදාදා</day>
+							<day type="thu">බ්‍රහස්පතින්දා</day>
+							<day type="fri">සිකුරාදා</day>
+							<day type="sat">සෙනසුරාදා</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">ඉරි</day>
+							<day type="mon">සඳු</day>
+							<day type="tue">අඟ</day>
+							<day type="wed">බදා</day>
+							<day type="thu">බ්‍රහ</day>
+							<day type="fri">සිකු</day>
+							<day type="sat">සෙන</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">ඉ</day>
+							<day type="mon">ස</day>
+							<day type="tue">අ</day>
+							<day type="wed">බ</day>
+							<day type="thu">බ්‍ර</day>
+							<day type="fri">සි</day>
+							<day type="sat">සෙ</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">ඉරිදා</day>
+							<day type="mon">සඳුදා</day>
+							<day type="tue">අඟහරුවාදා</day>
+							<day type="wed">බදාදා</day>
+							<day type="thu">බ්‍රහස්පතින්දා</day>
+							<day type="fri">සිකුරාදා</day>
+							<day type="sat">සෙනසුරාදා</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">කාර්:1</quarter>
+							<quarter type="2">කාර්:2</quarter>
+							<quarter type="3">කාර්:3</quarter>
+							<quarter type="4">කාර්:4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1 වන කාර්තුව</quarter>
+							<quarter type="2">2 වන කාර්තුව</quarter>
+							<quarter type="3">3 වන කාර්තුව</quarter>
+							<quarter type="4">4 වන කාර්තුව</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">කාර්:1</quarter>
+							<quarter type="2">කාර්:2</quarter>
+							<quarter type="3">කාර්:3</quarter>
+							<quarter type="4">කාර්:4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1 වන කාර්තුව</quarter>
+							<quarter type="2">2 වන කාර්තුව</quarter>
+							<quarter type="3">3 වන කාර්තුව</quarter>
+							<quarter type="4">4 වන කාර්තුව</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">පෙ.ව.</dayPeriod>
+							<dayPeriod type="pm">ප.ව.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">ක්‍රිස්තු පූර්‍ව</era>
+						<era type="1">ක්‍රිස්තු වර්‍ෂ</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">ක්‍රි.පූ.</era>
+						<era type="1">ක්‍රි.ව.</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>y MMMM d, EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>y MMMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>y MMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>yyyy/MM/dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>a h.mm.ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>a h.mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="h">a h</dateFormatItem>
+						<dateFormatItem id="hm">a h.mm</dateFormatItem>
+						<dateFormatItem id="hms">a h.mm.ss</dateFormatItem>
+						<dateFormatItem id="MEd">M-d, E</dateFormatItem>
+						<dateFormatItem id="MMMEd">MMM d E</dateFormatItem>
+						<dateFormatItem id="ms">mm.ss</dateFormatItem>
+						<dateFormatItem id="yMEd">y-M-d, E</dateFormatItem>
+						<dateFormatItem id="yMMMEd">y MMM d, E</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">a h - a h</greatestDifference>
+							<greatestDifference id="h">a h-h</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a">a h.mm - a h.mmmm</greatestDifference>
+							<greatestDifference id="h">a h.mm - h.mmmm</greatestDifference>
+							<greatestDifference id="m">a h.mm - h.mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">a h.mm - a hhh.mm v</greatestDifference>
+							<greatestDifference id="h">a h.mm - h.mm v</greatestDifference>
+							<greatestDifference id="m">a h:mm - h.mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">a h - h vv</greatestDifference>
+							<greatestDifference id="h">a h - h vv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">MMM d-d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">MMM-dd, E – MMM-dd, E</greatestDifference>
+							<greatestDifference id="M">MMM-dd, E – MMM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">yy-M-d, E - yy-M-d, E</greatestDifference>
+							<greatestDifference id="M">yy-M-d, E - yy-M-d, E</greatestDifference>
+							<greatestDifference id="y">yyyy-MM-dd, E - yyyy-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">y MMM d - d</greatestDifference>
+							<greatestDifference id="M">y MMM d - MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">y MMM d, E - y MMM d, E</greatestDifference>
+							<greatestDifference id="M">y MMM d, E - y MMM d, E</greatestDifference>
+							<greatestDifference id="y">y MMM d, E - y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">y MMMM - MMMM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="year">
+						<displayName>වර්ෂ</displayName>
+					</field>
+					<field type="month">
+						<displayName>මාසය</displayName>
+					</field>
+					<field type="week">
+						<displayName>සතිය</displayName>
+					</field>
+					<field type="day">
+						<relative type="-1">ඊයෙ</relative>
+						<relative type="0">අද</relative>
+						<relative type="1">හෙට</relative>
+					</field>
+					<field type="hour">
+						<displayName>පැය</displayName>
+					</field>
+					<field type="minute">
+						<displayName>මිනිත්තු</displayName>
+					</field>
+					<field type="second">
+						<displayName>තත්පර</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<zone type="Etc/Unknown">
+				<exemplarCity>හඳුනා නොගත් නගරය</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity>ඩුබායි</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity>කාබුල්</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity>පර්ත්</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity>ඩාවින්</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity>මෙල්බෝර්න්</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity>හෝබාර්ට්</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity>සිඩ්නි</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity>බ්‍රිස්බේන්</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity>ධකා</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity>බහරේන්</exemplarCity>
+			</zone>
+			<zone type="Asia/Brunei">
+				<exemplarCity>බෲනායි</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity>බර්ලින්</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity>පැරිස්ස්</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity>හොංකොං</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity>ජකර්තා</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity>කල්කටා</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity>බැග්ඩෑඩ්</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity>රෝමය</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity>අම්මාන්</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity>කුවේට්</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity>කොළඹ</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity>මාල දිවයින</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity>ඔස්ලෝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity>කත්මන්දු</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity>මැනිලා</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity>කරච්චිචි</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity>බෙල්ග්‍රේඩ්ඩ්</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity>මොස්කව්</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity>ශා. හෙලේනා</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity>බැංකොක්</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity>ඉස්තාන්බුල්</exemplarCity>
+			</zone>
+			<metazone type="Lanka">
+				<long>
+					<standard>ශ්‍රී ලංකා වේලාව</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤#,##,##0.00;(¤#,##,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="AED">
+				<displayName>එක්සත් අරාබි එමිරේට්ස් ඩිරාම්</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName>ඔස්ට්‍රේලියානු ඩොලර්</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName>බංග්ලාදේශ් ටකා</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName>බහරේන් ඩිනාර්</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>චීන යුආන්</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>යුරෝ</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName>බ්‍රිතාන්‍ය ස්ටර්ලින් පවුම්</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName>හොංකොං ඩොලර්</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>ඉන්දියන් රුපියල්</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName>ජෝර්දාන් ඩිනාර්</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>ජපන් යෙන්</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName>ලංකා රුපියල්</displayName>
+				<symbol>රු.</symbol>
+			</currency>
+			<currency type="NOK">
+				<displayName>නොර්වීජියන් ක්‍රෝන්</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName>නේපාල් රුපියල්</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName>නවසීලන්ත ඩොලර්</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName>ඕමාන් රියාල්</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName>රුසියන් රූබල්</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName>සවුදි රියාල්</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName>තායි බාත්</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>ඇමෙරිකන් ඩොලර්</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr>ඔව්:ඔ</yesstr>
+			<nostr>නැත:නැ</nostr>
+		</messages>
+	</posix>
+</ldml>
+

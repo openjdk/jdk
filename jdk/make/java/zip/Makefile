@@ -56,6 +56,10 @@ ifneq ($(PLATFORM), windows)
   endif
 endif
 
+ifeq ($(SYSTEM_ZLIB),true)
+  OTHER_CFLAGS += $(ZLIB_CFLAGS)
+endif
+
 #
 # Library to compile.
 #
@@ -90,7 +94,7 @@ endif
 # Link to JVM library for JVM_Zip* functions
 #
 ifeq ($(SYSTEM_ZLIB),true)
-OTHER_LDLIBS = -lz
+OTHER_LDLIBS = $(ZLIB_LIBS)
 else
 OTHER_LDLIBS = $(JVMLIB)
 endif

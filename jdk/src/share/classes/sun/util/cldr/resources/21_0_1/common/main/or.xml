@@ -1,0 +1,1127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="or"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="aa">ଅଫାର୍</language>
+			<language type="ab">ଆବ୍ଖାଜିଆନ୍</language>
+			<language type="ace">ଆଚାଇନୀଜ୍</language>
+			<language type="ach">ଆକୋଲି</language>
+			<language type="ada">ଆଦାଙ୍ଗେମ୍</language>
+			<language type="ady">ଅଦ୍ୟଘେ</language>
+			<language type="ae">ଅବେସ୍ତନ</language>
+			<language type="af">ଆଫ୍ରିକାନସ୍</language>
+			<language type="afa">ଆଫ୍ରୋ ଏସିଆଟିକ୍ ଭାଷା</language>
+			<language type="afh">ଆଫ୍ରିହିଲି</language>
+			<language type="ain">ଆଇନୁ</language>
+			<language type="ak">ଅକନ୍</language>
+			<language type="akk">ଆକାଡିଆନ୍</language>
+			<language type="ale">ଆଲେଇଟୁ</language>
+			<language type="alg">ଏଲ୍ଗୋନକ୍ବିନା ଭାଷା</language>
+			<language type="alt">ଦକ୍ଷିଣ ଆଲ୍ଟାଇ</language>
+			<language type="am">ଆମହାରକି</language>
+			<language type="an">ଆର୍ଗୋନୀ</language>
+			<language type="ang">ପୁରୁଣା ଇଁରାଜୀ</language>
+			<language type="anp">ଅଁଗୀକା</language>
+			<language type="apa">ଆପାଚୀ ଭାଷା</language>
+			<language type="ar">ଆରବିକ୍</language>
+			<language type="arc">ଆରାମାଇକ୍</language>
+			<language type="arn">ଆରାଉକାନିଆନ୍</language>
+			<language type="arp">ଆରାପାହୋ</language>
+			<language type="art">କୃତ୍ରିମ ଭାଷା</language>
+			<language type="arw">ଆରୱକ</language>
+			<language type="as">ଆସାମୀ</language>
+			<language type="ast">ଆଷ୍ଟୁରିଆନ୍</language>
+			<language type="ath">ଆଥପାସ୍କାନ୍ ଭାଷା</language>
+			<language type="aus">ଅଷ୍ଟ୍ରେଲିଆନ୍ ଭାଷା</language>
+			<language type="av">ଆଭାରିକ୍</language>
+			<language type="awa">ଆୱାଧି</language>
+			<language type="ay">ଆୟମାରା</language>
+			<language type="az">ଆଜେରବାଇଜାନି</language>
+			<language type="ba">ବଶଖିର୍</language>
+			<language type="bad">ବାନ୍ଦା</language>
+			<language type="bai">ବମିଲେକେ ଭାଷା</language>
+			<language type="bal">ବାଲୁଚି</language>
+			<language type="ban">ବାଲିନୀଜ୍</language>
+			<language type="bas">ବାସା</language>
+			<language type="bat">ବାଲାଟିକ୍ ଭାଷା</language>
+			<language type="be">ବେଲାରୁଷିଆନ୍</language>
+			<language type="bej">ବେଜା</language>
+			<language type="bem">ବେମ୍ବା</language>
+			<language type="ber">ବେରବର୍</language>
+			<language type="bg">ବୁଲଗେରିଆନ୍</language>
+			<language type="bh">ବିହାରୀ</language>
+			<language type="bho">ଭୋଜପୁରୀ</language>
+			<language type="bi">ବିସଲାମା</language>
+			<language type="bik">ବିକୋଲ୍</language>
+			<language type="bin">ବିନି</language>
+			<language type="bla">ବିକ୍ସିକା</language>
+			<language type="bm">ବାମ୍ବାରା</language>
+			<language type="bn">ବଙ୍ଗାଳୀ</language>
+			<language type="bnt">ବାଣ୍ଟୁ</language>
+			<language type="bo">ତିବେତାନ୍</language>
+			<language type="br">ବ୍ରେଟନ୍</language>
+			<language type="bra">ବ୍ରାଜ୍</language>
+			<language type="bs">କାଟଲାନ୍</language>
+			<language type="btk">ବାଟାକ୍</language>
+			<language type="bua">ବୁରିଆଟ୍</language>
+			<language type="bug">ବୁଗୀନୀଜ୍</language>
+			<language type="byn">ବ୍ଲିନ୍</language>
+			<language type="ca">କାଟାଲାନ୍</language>
+			<language type="cad">କାଡୋ</language>
+			<language type="cai">ମଧ୍ୟ ଆମେରିକା ଭାରତୀୟ ଭାଷା</language>
+			<language type="car">କାରିବ୍</language>
+			<language type="cau">କାକୋଶୀ ଭାଷା</language>
+			<language type="cch">ଆତ୍ସମ୍</language>
+			<language type="ce">ଚେଚନ୍</language>
+			<language type="ceb">ସୀବୁଆନୋ</language>
+			<language type="cel">କେଲ୍ଟ ଭାଷା</language>
+			<language type="ch">ଚାମୋରୋ</language>
+			<language type="chb">ଚିବ୍ଚା</language>
+			<language type="chg">ଛଗତାଇ</language>
+			<language type="chk">ଚୁକୀସେ</language>
+			<language type="chm">ମାରୀ</language>
+			<language type="chn">ଚିନୁକ୍ ଜାରଗାଁନ୍</language>
+			<language type="cho">ଚୋଟୱା</language>
+			<language type="chp">ଚିପେୱାନ୍</language>
+			<language type="chr">ଚେରୋକୀ</language>
+			<language type="chy">ଚେଚେନା</language>
+			<language type="cmc">ଚାମିକ୍ ଭାଷା</language>
+			<language type="co">କୋର୍ସିକାନ୍</language>
+			<language type="cop">କପ୍ଟିକ୍</language>
+			<language type="cpe">ଇଁରାଜୀ ଆଧାରିତ କ୍ରେଓଲ୍ କିମ୍ବା ପିଜିନ୍</language>
+			<language type="cpf">ଫ୍ରେଞ୍ଚ ଆଧାରିତ କ୍ରେଓଲ୍ କିମ୍ବା ପିଜିନ୍</language>
+			<language type="cpp">ପର୍ତ୍ତୁଗ୍ରୀଜ୍ ଆଧାରିତ କ୍ରେଓଲ୍ କିମ୍ବା ପିଜିନ୍</language>
+			<language type="cr">କ୍ରୀ</language>
+			<language type="crh">କ୍ରୀମିନ୍ ତୁର୍କୀସ୍</language>
+			<language type="crp">କ୍ରେଓଲ୍ କିମ୍ବା ପିଜିନ୍</language>
+			<language type="cs">ଚେକ୍</language>
+			<language type="csb">କାଶୁବିଆନ୍</language>
+			<language type="cu">ଚର୍ଚ୍ଚ ସ୍ଲାଭିକ୍</language>
+			<language type="cus">କୁଶିତିକ୍ ଭାଷା</language>
+			<language type="cv">ଚୁଭାଶ୍</language>
+			<language type="cy">ୱେଲ୍ସ</language>
+			<language type="da">ଡାନ୍ନିସ୍</language>
+			<language type="dak">ଡାକୋଟା</language>
+			<language type="dar">ଡାରାଗ୍ୱା</language>
+			<language type="day">ଡାୟକ୍</language>
+			<language type="de">ଜର୍ମାନ୍</language>
+			<language type="de_AT">ଅଷ୍ଟ୍ରିଆନ୍ ଜର୍ମାନ</language>
+			<language type="de_CH">ସ୍ବିସ୍ ହାଇ ଜର୍ମାନ୍</language>
+			<language type="del">ଡେଲାୱେର୍</language>
+			<language type="den">ସ୍ଲେଭ୍</language>
+			<language type="dgr">ଡୋଗ୍ରିବ୍</language>
+			<language type="din">ଦିଙ୍କା</language>
+			<language type="doi">ଡୋଗ୍ରୀ</language>
+			<language type="dra">ଦ୍ରାବିଡିଆନ୍ ଭାଷା</language>
+			<language type="dsb">ନିଚଳା ସର୍ବିଆନ୍</language>
+			<language type="dua">ଡୁଆନା</language>
+			<language type="dum">ମଧ୍ୟ ପର୍ତ୍ତୁଗାଲୀ</language>
+			<language type="dv">ଡିଭେହୀ</language>
+			<language type="dyu">ଡୁଆଲା</language>
+			<language type="dz">ଭୂଟାନୀ</language>
+			<language type="ee">ଇୱେ</language>
+			<language type="efi">ଏଫିକ୍</language>
+			<language type="egy">ପ୍ରାଚୀନ୍ ମିଶିରି</language>
+			<language type="eka">ଏକାଜୁକ୍</language>
+			<language type="el">ଗ୍ରୀକ୍</language>
+			<language type="elx">ଏଲାମାଇଟ୍</language>
+			<language type="en">ଇଂରାଜୀ</language>
+			<language type="en_AU">ଅଷ୍ଟ୍ରେଲିଆନ୍ ଇଁରାଜୀ</language>
+			<language type="en_CA">କାନାଡିଆନ୍ ଇଁରାଜୀ</language>
+			<language type="en_GB">ବ୍ରିଟିଶ୍ ଇଁରାଜୀ</language>
+			<language type="en_US">ୟୁ.ଏସ୍. ଇଁରାଜୀ</language>
+			<language type="enm">ମଧ୍ୟ ଇଁରାଜୀ</language>
+			<language type="eo">ଏସ୍ପାରେଣ୍ଟୋ</language>
+			<language type="es">ସ୍ପାନିସ୍</language>
+			<language type="es_419">ଲାଟିନ୍ ଆମେରିକାନ୍ ସ୍ପାନିଶ୍</language>
+			<language type="es_ES">ଲେବେରିଆନ୍ ସ୍ପାନିଶ୍</language>
+			<language type="et">ଏସ୍ତୋନିଆନ୍</language>
+			<language type="eu">ବାସ୍କ୍ୱି</language>
+			<language type="ewo">ଇୱୋଣ୍ଡୋ</language>
+			<language type="fa">ପର୍ସିଆନ୍</language>
+			<language type="fan">ଫାଙ୍ଗ</language>
+			<language type="fat">ଫାଣ୍ଟି</language>
+			<language type="ff">ଫୁଲାହ</language>
+			<language type="fi">ଫିନ୍ନିସ୍</language>
+			<language type="fil">ଫିଲିପିନୋ</language>
+			<language type="fiu">ଫାଣ୍ଟିଫିନ୍ନୋ-ଉଗ୍ରୀଆନ୍ ଭାଷା</language>
+			<language type="fj">ଫିଜି</language>
+			<language type="fo">ଫାରୋଏସେ</language>
+			<language type="fon">ଫନ୍</language>
+			<language type="fr">ଫ୍ରେଞ୍ଚ</language>
+			<language type="fr_CA">କାନାଡିଆନ୍ ଫ୍ରେଞ୍ଚ</language>
+			<language type="fr_CH">ସ୍ବିସ୍ ଫ୍ରେଞ୍ଚ୍</language>
+			<language type="frm">ମଧ୍ୟ ଫ୍ରେଞ୍ଚ</language>
+			<language type="fro">ପୁରୁଣା ଫ୍ରେଞ୍ଚ</language>
+			<language type="frr">ଉତ୍ତର ଫ୍ରିସିୟାନ୍</language>
+			<language type="frs">ପୂର୍ବ ଫ୍ରିସିୟାନ୍</language>
+			<language type="fur">ଫ୍ରିୟୁଲୀୟାନ୍</language>
+			<language type="fy">ପଶ୍ଚିମ ଫ୍ରିସିୟନ୍</language>
+			<language type="ga">ଇରିସ୍</language>
+			<language type="gaa">ଗା</language>
+			<language type="gay">ଗାୟୋ</language>
+			<language type="gba">ଗବାୟା</language>
+			<language type="gd">ସ୍କଟିସ୍ ଗାଏଲିକ୍</language>
+			<language type="gem">ଜର୍ମାନିକ୍ ଭାଷା</language>
+			<language type="gez">ଗୀଜ୍</language>
+			<language type="gil">ଜିବ୍ରାଟୀଜ୍</language>
+			<language type="gl">ଗାଲସିଆନ୍</language>
+			<language type="gmh">ମିଡିଲ୍ ହାଇ ଜର୍ମାନ୍</language>
+			<language type="gn">ଗୁଆରାନୀ</language>
+			<language type="goh">ପୁରୁଣା ହାଇ ଜର୍ମାନ୍</language>
+			<language type="gon">ଗୋଣ୍ଡି</language>
+			<language type="gor">ଗୋରୋଣ୍ଟାଲୋ</language>
+			<language type="got">ଗୋଥିକ୍</language>
+			<language type="grb">ଗ୍ରେବୋ</language>
+			<language type="grc">ପ୍ରାଚୀନ୍ ୟୁନାନୀ</language>
+			<language type="gsw">ସ୍ବିସ୍ ଜର୍ମାନ୍</language>
+			<language type="gu">ଗୁଜୁରାଟୀ</language>
+			<language type="gv">ମାଁକ୍ସ</language>
+			<language type="gwi">ସ୍ବିଚ୍ ଇନ୍</language>
+			<language type="ha">ହୌସା</language>
+			<language type="hai">ହାଇଡା</language>
+			<language type="haw">ହାୱାଇନ୍</language>
+			<language type="he">ହେବ୍ର୍ୟୁ</language>
+			<language type="hi">ହିନ୍ଦୀ</language>
+			<language type="hil">ହିଲିଗୈନନ୍</language>
+			<language type="him">ହିମାଚଳୀ</language>
+			<language type="hit">ହିତୀତେ</language>
+			<language type="hmn">ହଁଙ୍ଗ</language>
+			<language type="ho">ହିରି ମୋଟୁ</language>
+			<language type="hr">କ୍ରୋଆଟିଆନ୍</language>
+			<language type="hsb">ଉପର ସର୍ବିଆନ୍</language>
+			<language type="ht">ହୈତାୟିନ୍</language>
+			<language type="hu">ହଙ୍ଗେରିଆନ୍</language>
+			<language type="hup">ହୁପା</language>
+			<language type="hy">ଆର୍ମେନିଆନ୍</language>
+			<language type="hz">ହେରେରୋ</language>
+			<language type="ia">ଇର୍ଣ୍ଟଲିଙ୍ଗୁଆ</language>
+			<language type="iba">ଇବାନ୍</language>
+			<language type="id">ଇଣ୍ଡୋନେସିଆନ୍</language>
+			<language type="ie">ଇର୍ଣ୍ଟରଲିଙ୍ଗୁଇ</language>
+			<language type="ig">ଇଗ୍ବୋ</language>
+			<language type="ii">ସିଚୁଆନ୍ ୟୀ</language>
+			<language type="ijo">ଇଜୋ</language>
+			<language type="ik">ଇନୁପିୟାକ୍</language>
+			<language type="ilo">ଇଲୋକୋ</language>
+			<language type="inc">ଇଣ୍ଡିକ୍ ଭାଷା</language>
+			<language type="ine">ଇଣ୍ଡୋ-ୟୁରୋପୀୟ ଭାଷା</language>
+			<language type="inh">ଇଁଙ୍ଗୁଶ୍</language>
+			<language type="io">ଇଡୋ</language>
+			<language type="ira">ଇରାନୀ ଭାଷା</language>
+			<language type="iro">ଇରୋକ୍ୱୋୟାନ୍ ଭାଷା</language>
+			<language type="is">ଆଇସଲାଣ୍ଡିକ୍</language>
+			<language type="it">ଇଟାଲିଆନ୍</language>
+			<language type="iu">ଇନକୀଟୁତ୍</language>
+			<language type="ja">ଜାପାନୀଜ୍</language>
+			<language type="jbo">ଲୋଜବାନ୍</language>
+			<language type="jpr">ଜୁଡେଓ-ପର୍ସିଆନ୍</language>
+			<language type="jrb">ଜୁଡେଓ-ଆରବୀକ୍</language>
+			<language type="jv">ଜାଭାନୀଜ୍</language>
+			<language type="ka">ଜର୍ଜିଆନ୍</language>
+			<language type="kaa">କାରା-କଲ୍ପକ୍</language>
+			<language type="kab">କବାଇଲ୍</language>
+			<language type="kac">କଚିନ୍</language>
+			<language type="kaj">ଜ୍ଜୁ</language>
+			<language type="kam">କମ୍ବା</language>
+			<language type="kar">କାରେନ୍</language>
+			<language type="kaw">କାୱି</language>
+			<language type="kbd">କାବାର୍ଡିଆନ୍</language>
+			<language type="kcg">ତ୍ୟାପ୍</language>
+			<language type="kfo">କୋରୋ</language>
+			<language type="kg">କଙ୍ଗୋ</language>
+			<language type="kha">ଖାସୀ</language>
+			<language type="khi">ଖୋସୀୟାନ୍ ଭାଷା</language>
+			<language type="kho">ଖୋତାନୀଜ୍</language>
+			<language type="ki">କୀକୁୟୁ</language>
+			<language type="kj">କ୍ୱାନ୍ୟାମ୍</language>
+			<language type="kk">କାଜାକ୍</language>
+			<language type="kl">ଗ୍ରୀନଲାଣ୍ଡିକ୍</language>
+			<language type="km">ଖ୍ମେର୍</language>
+			<language type="kmb">କିମ୍ବୁଣ୍ଡୁ</language>
+			<language type="kn">କନ୍ନଡ</language>
+			<language type="ko">କୋରିଆନ୍</language>
+			<language type="kok">କୋନକାନୀ</language>
+			<language type="kos">କୋସରୈନ୍</language>
+			<language type="kpe">କୈପେଲେ</language>
+			<language type="kr">କନୁରୀ</language>
+			<language type="krc">କରାଚୟ-ବଲ୍କାର</language>
+			<language type="krl">କାରେଲିୟାନ୍</language>
+			<language type="kro">କ୍ରୁ</language>
+			<language type="kru">କୁରୁଖ</language>
+			<language type="ks">କାଶ୍ମିରୀ</language>
+			<language type="ku">କୁର୍ଦ୍ଦିଶ୍</language>
+			<language type="kum">କୁମୀକ୍</language>
+			<language type="kut">କୁତେନାଉ</language>
+			<language type="kv">କୋମି</language>
+			<language type="kw">କୋର୍ନିସ୍</language>
+			<language type="ky">କିରଗିଜ୍</language>
+			<language type="la">ଲାଟିନ୍</language>
+			<language type="lad">ଲାଦିନୋ</language>
+			<language type="lah">ଲାହାଣ୍ଡା</language>
+			<language type="lam">ଲାମ୍ବା</language>
+			<language type="lb">ଲକ୍ସେମବର୍ଗିସ୍</language>
+			<language type="lez">ଲେଜଗିୟାନ୍</language>
+			<language type="lg">ଗନ୍ଦା</language>
+			<language type="li">ଲିମ୍ବୁର୍ଗିସ୍</language>
+			<language type="ln">ଲିଙ୍ଗାଲା</language>
+			<language type="lo">ଲାଓ</language>
+			<language type="lol">ମଙ୍ଗୋ</language>
+			<language type="loz">ଲୋଜି</language>
+			<language type="lt">ଲିଥୁଆନିଆନ୍</language>
+			<language type="lu">ଲ୍ୟୁବା-କାଟାଙ୍ଗା</language>
+			<language type="lua">ଲୁବା-ଲୁଲୁଆ</language>
+			<language type="lui">ଲୁଇସେନୋ</language>
+			<language type="lun">ଲୁଣ୍ଡା</language>
+			<language type="luo">ଲୁଓ</language>
+			<language type="lus">ଲୁସାଉ</language>
+			<language type="lv">ଲାଟଭିଆନ୍</language>
+			<language type="mad">ମାଦୁରୀସ୍</language>
+			<language type="mag">ମାଗାହୀ</language>
+			<language type="mai">ମୈଥିଳୀ</language>
+			<language type="mak">ମକାସର୍</language>
+			<language type="man">ମାଣ୍ଡିଙ୍ଗୋ</language>
+			<language type="map">ଅଷ୍ଟ୍ରୋନେସିଆନ୍</language>
+			<language type="mas">ମାସାଇ</language>
+			<language type="mdf">ମୋକ୍ଷ</language>
+			<language type="mdr">ମନ୍ଦାର</language>
+			<language type="men">ମେଣ୍ଡେ</language>
+			<language type="mg">ମାଲାଗାସୀ</language>
+			<language type="mga">ମଧ୍ୟ ଇରିଶ୍</language>
+			<language type="mh">ମାର୍ଶାଲୀଜ୍</language>
+			<language type="mi">ମାଓରୀ</language>
+			<language type="mic">ମିକମୌକ୍</language>
+			<language type="min">ମିନାଙ୍ଗାବାଉ</language>
+			<language type="mis">ବିବିଧ ଭାଷା</language>
+			<language type="mk">ମାକଡୋନିଆନ୍</language>
+			<language type="mkh">ମଁନ୍-ଖ୍ମେର୍ ଭାଷା</language>
+			<language type="ml">ମାଲାୟଲମ୍</language>
+			<language type="mn">ମଙ୍ଗୋଲିଆନ୍</language>
+			<language type="mnc">ମାଞ୍ଚୁ</language>
+			<language type="mni">ମଣିପୁରୀ</language>
+			<language type="mno">ମନୋବୋ ଭାଷା</language>
+			<language type="mo">ମୋଲଡୋଭିଆନ୍</language>
+			<language type="moh">ମୋହୌକ</language>
+			<language type="mos">ମୋସି</language>
+			<language type="mr">ମରାଠୀ</language>
+			<language type="ms">ମାଲୟ</language>
+			<language type="mt">ମାଲଟୀଜ୍</language>
+			<language type="mul">ବିବିଧ ଭାଷାମାନ</language>
+			<language type="mun">ମୁଣ୍ଡା ଭାଷା</language>
+			<language type="mus">କ୍ରୀକ୍</language>
+			<language type="mwl">ମିରାଣ୍ଡିଜ୍</language>
+			<language type="mwr">ମାରୱାରୀ</language>
+			<language type="my">ବର୍ମୀଜ୍</language>
+			<language type="myn">ମାୟା ଭାଷା</language>
+			<language type="myv">ଏର୍ଜୟା</language>
+			<language type="na">ନାଉରୁ</language>
+			<language type="nah">ନାଉହାତି</language>
+			<language type="nai">ଉତ୍ତର ଆମେରିକା ଇଣ୍ଡିଆନ୍ ଭାଷା</language>
+			<language type="nap">ନୀପୋଲିଟାନ୍</language>
+			<language type="nb">ନରୱେଜିଆନ୍ ବୋକମଲ୍</language>
+			<language type="nd">ଉତ୍ତର ନେଡବେଲେ</language>
+			<language type="nds">ଲୋ ଜର୍ମାନ୍</language>
+			<language type="ne">ନେପାଳୀ</language>
+			<language type="new">ନେୱାରୀ</language>
+			<language type="ng">ଡୋଙ୍ଗା</language>
+			<language type="nia">ନୀୟାସ୍</language>
+			<language type="nic">ନାଇଜର୍-କୋର୍ଡୋଫୌନିୟାନ୍ ଭାଷା</language>
+			<language type="niu">ନିୟୁଆନ୍</language>
+			<language type="nl">ଡଚ୍</language>
+			<language type="nl_BE">ଫ୍ଲେମିଶ୍</language>
+			<language type="nn">ନରୱେଜିଆନ୍ ନିୟୋର୍ସ୍କ</language>
+			<language type="no">ନରୱେଜିଆନ୍</language>
+			<language type="nog">ନୋଗାଇ</language>
+			<language type="non">ପୁରୁଣା ନର୍ସ</language>
+			<language type="nqo">ଏନ୍କୋ</language>
+			<language type="nr">ଦକ୍ଷିଣ ନେଡବେଲେ</language>
+			<language type="nso">ଉତ୍ତରୀ ସୋଥୋ</language>
+			<language type="nub">ନ୍ୟୁବିଆନ୍ ଭାଷା</language>
+			<language type="nv">ନାଭାଜୋ</language>
+			<language type="nwc">ପାରମ୍ପରିକ ନେୱାରୀ</language>
+			<language type="ny">ନିୟାଞ୍ଜ</language>
+			<language type="nym">ନ୍ୟାମୱେଜୀ</language>
+			<language type="nyn">ନ୍ୟାନକୋଲ୍</language>
+			<language type="nyo">ନ୍ୟାରୋ</language>
+			<language type="nzi">ଞ୍ଜିମା</language>
+			<language type="oc">ଓସିଟାନ୍</language>
+			<language type="oj">ଓଜିୱା</language>
+			<language type="om">ଓରୋମୋ</language>
+			<language type="or">ଓଡ଼ିଆ</language>
+			<language type="os">ଓସେଟିକ୍</language>
+			<language type="osa">ୱୌସେଜ୍</language>
+			<language type="ota">ଓଟ୍ଟୋମନ୍ ତୁର୍କିସ୍</language>
+			<language type="oto">ଓଟ୍ଟୋମିଆନ୍ ଭାଷା</language>
+			<language type="pa">ପଞ୍ଜାବୀ</language>
+			<language type="paa">ପାପୁଆନ୍ ଭାଷା</language>
+			<language type="pag">ପାଙ୍ଗାସିନିଆନ୍</language>
+			<language type="pal">ପାହ୍ଲାଭି</language>
+			<language type="pam">ପାମ୍ପାଙ୍ଗା</language>
+			<language type="pap">ପାପିୟାମିଣ୍ଟୋ</language>
+			<language type="pau">ପାଲାଉଆନ୍</language>
+			<language type="peo">ପୁରୁଣା ପର୍ସିଆନ୍</language>
+			<language type="phi">ଫିଲିପାଇନ୍ ଭାଷା</language>
+			<language type="phn">ଫୋନେସିଆନ୍</language>
+			<language type="pi">ପାଲି</language>
+			<language type="pl">ପୋଲିଶ୍</language>
+			<language type="pon">ପୋହପିଏନ୍</language>
+			<language type="pra">ପ୍ରାକୃତ ଭାଷା</language>
+			<language type="pro">ପୁରୁଣା ପ୍ରେଭେନେସିଆଲ୍</language>
+			<language type="ps">ପାସ୍ତୋ</language>
+			<language type="pt">ପର୍ତ୍ତୁଗ୍ରୀଜ୍</language>
+			<language type="pt_BR">ବ୍ରାଜିଲିଆନ୍ ପର୍ତ୍ତୁଗୀଜ୍</language>
+			<language type="pt_PT">ଲେବେରିଆନ୍ ପର୍ତ୍ତୁଗୀଜ୍</language>
+			<language type="qu">କ୍ୱେଚୁଆ</language>
+			<language type="raj">ରାଜସ୍ଥାନୀ</language>
+			<language type="rap">ରାପାନୁଇ</language>
+			<language type="rar">ରାରୋତୋଙ୍ଗନ୍</language>
+			<language type="rm">ରେହେଟୋ-ରୋମାନ୍ସ</language>
+			<language type="rn">ରୁଣ୍ଡି</language>
+			<language type="ro">ରୋମାନିଆନ୍</language>
+			<language type="roa">ରୋମାନ୍ସ ଭାଷା</language>
+			<language type="rom">ରୋମାନି</language>
+			<language type="root">ମୂଳ</language>
+			<language type="ru">ରଷିଆନ୍</language>
+			<language type="rup">ଆରୋମାନିଆନ୍</language>
+			<language type="rw">କିନ୍ୟାରୱାଣ୍ଡା</language>
+			<language type="sa">ସଂସ୍କୃତ</language>
+			<language type="sad">ସଣ୍ଡାୱେ</language>
+			<language type="sah">ୟାକୁଟ୍</language>
+			<language type="sai">ଦକ୍ଷିଣ ଆମେରିକା ଇଣ୍ଡିଆନ୍ ଭାଷା</language>
+			<language type="sal">ଶଲୀସନ୍ ଭାଷା</language>
+			<language type="sam">ସାମୌରିଟନ୍ ଆରମାଇକ୍</language>
+			<language type="sas">ସାସାକ୍</language>
+			<language type="sat">ସାନ୍ତାଳି</language>
+			<language type="sc">ସର୍ଦିନିଆନ୍</language>
+			<language type="scn">ସିଶିଲିଆନ୍</language>
+			<language type="sco">ସ୍କଟସ୍</language>
+			<language type="sd">ସିନ୍ଧୀ</language>
+			<language type="se">ଉତ୍ତର ସାମି</language>
+			<language type="sel">ସେଲ୍କପ୍</language>
+			<language type="sem">ସେମିଟିକ୍ ଭାଷା</language>
+			<language type="sg">ସାଙ୍ଗୋ</language>
+			<language type="sga">ପୁରୁଣା ଇରିଶ୍</language>
+			<language type="sgn">ସାଙ୍କେତିକ ଭାଷା</language>
+			<language type="sh">ସର୍ବୋ-କ୍ରୋଆଟିଆନ୍</language>
+			<language type="shn">ଶାନ୍</language>
+			<language type="si">ସିଂହଳ</language>
+			<language type="sid">ସିଦାମୋ</language>
+			<language type="sio">ସିଓନ୍ ଭାଷା</language>
+			<language type="sit">ସିନୋ-ତିବ୍ବେତାନ୍ ଭାଷା</language>
+			<language type="sk">ସ୍ଲୋଭାକ୍</language>
+			<language type="sl">ସ୍ଲୋଭେନିଆନ୍</language>
+			<language type="sla">ସାଲ୍ଭିକ୍ ଭାଷା</language>
+			<language type="sm">ସାମୋଆନ୍</language>
+			<language type="sma">ଦକ୍ଷିଣ ସାମି</language>
+			<language type="smi">ସାମି ଭାଷା</language>
+			<language type="smj">ଲୁଲେ ସାମି</language>
+			<language type="smn">ଇନାରୀ ସାମି</language>
+			<language type="sms">ସ୍କୋଲ୍ଟ ସାମୀ</language>
+			<language type="sn">ଶୋନା</language>
+			<language type="snk">ସୋନିଙ୍କେ</language>
+			<language type="so">ସୋମାଲିଆ</language>
+			<language type="sog">ସୋଗଡିଏନ୍</language>
+			<language type="son">ସୋଙ୍ଘାଇ</language>
+			<language type="sq">ଆଲବାନିଆନ୍</language>
+			<language type="sr">ସର୍ବିଆନ୍</language>
+			<language type="srn">ଶାରାନା ଟୋଙ୍ଗୋ</language>
+			<language type="srr">ଶେରେର୍</language>
+			<language type="ss">ସ୍ବାତୀ</language>
+			<language type="ssa">ନୀଲ୍ ସାହାରି ଭାଷା</language>
+			<language type="st">ସେସୋଥୋ</language>
+			<language type="su">ସୁଦାନୀଜ୍</language>
+			<language type="suk">ସୁକୁମା</language>
+			<language type="sus">ଶୁଶୁ</language>
+			<language type="sux">ସୁମେରିଆନ୍</language>
+			<language type="sv">ସ୍ୱେଡିସ୍</language>
+			<language type="sw">ସ୍ୱାହିଲ୍</language>
+			<language type="syc">କ୍ଲାସିକାଲ୍ ସିରିକ୍</language>
+			<language type="syr">ସିରିକ୍</language>
+			<language type="ta">ତାମିଲ୍</language>
+			<language type="tai">ତାଇ ଭାଷା</language>
+			<language type="te">ତେଲୁଗୁ</language>
+			<language type="tem">ତିମନେ</language>
+			<language type="ter">ତେରେନୋ</language>
+			<language type="tet">ତେତୁମ୍</language>
+			<language type="tg">ତାଜିକ୍</language>
+			<language type="th">ଥାଇ</language>
+			<language type="ti">ଟ୍ରିଗିନିଆ</language>
+			<language type="tig">ଟାଇଗ୍ରେ</language>
+			<language type="tiv">ତୀଭ୍</language>
+			<language type="tk">ତୁର୍କମେନ୍</language>
+			<language type="tkl">ଟୋକେଲାଉ</language>
+			<language type="tl">ଟାଗାଲଗ୍</language>
+			<language type="tlh">କ୍ଲିଙ୍ଗନ୍</language>
+			<language type="tli">ତ୍ଲିଙ୍ଗିଟ୍</language>
+			<language type="tmh">ତାମାଶେକ୍</language>
+			<language type="tn">ସେସ୍ବାନା</language>
+			<language type="to">ଟୋଙ୍ଗା</language>
+			<language type="tog">ନ୍ୟାସା ଟୋଙ୍ଗୋ</language>
+			<language type="tpi">ଟୋକ୍ ପିସିନ୍</language>
+			<language type="tr">ତୁର୍କିସ୍</language>
+			<language type="ts">ସୋଂଗା</language>
+			<language type="tsi">ତିସିମିସିଆନ୍</language>
+			<language type="tt">ତାତାର୍</language>
+			<language type="tum">ଟୁମ୍ବୁକା</language>
+			<language type="tup">ଟୁପି ଭାଷା</language>
+			<language type="tut">ଆଲ୍ଟିକ୍ ଭାଷା</language>
+			<language type="tvl">ତୁଭାଲୁ</language>
+			<language type="tw">ତ୍ୱି</language>
+			<language type="ty">ତାହିତିଆନ୍</language>
+			<language type="tyv">ତୁଭିନିଆନ୍</language>
+			<language type="udm">ଉଦମୂର୍ତ୍ତ</language>
+			<language type="ug">ୟୁଘୁର୍</language>
+			<language type="uga">ୟୁଗୋରଟିକ୍</language>
+			<language type="uk">ୟୁକ୍ରାନିଆନ୍</language>
+			<language type="umb">ଉମ୍ବୁଣ୍ଡୁ</language>
+			<language type="und">ଅଜଣା ଏବଂ ଅବୈଧ ଭାଷା</language>
+			<language type="ur">ଉର୍ଦ୍ଦୁ</language>
+			<language type="uz">ଉଜବେକ୍</language>
+			<language type="vai">ଭାଇ</language>
+			<language type="ve">ଭେଣ୍ଡା</language>
+			<language type="vi">ଭିଏତନାମିଜ୍</language>
+			<language type="vo">ବୋଲାପୁକ</language>
+			<language type="vot">ଭୋଟିକ୍</language>
+			<language type="wa">ୱାଲୁନ୍</language>
+			<language type="wak">ୱାକଶନ୍ ଭାଷା</language>
+			<language type="wal">ୱାଲମୋ</language>
+			<language type="war">ୱାରୈ</language>
+			<language type="was">ୱାସୋ</language>
+			<language type="wen">ସର୍ବିଆନ୍ ଭାଷା</language>
+			<language type="wo">ୱୋଲଫ୍</language>
+			<language type="xal">କାଲ୍ମୀକ୍</language>
+			<language type="xh">ଖୋସା</language>
+			<language type="yao">ୟାଓ</language>
+			<language type="yap">ୟାପୀସ୍</language>
+			<language type="yi">ୟିଡିସ୍</language>
+			<language type="yo">ୟୋରୁବା</language>
+			<language type="ypk">ୟୁପିକ୍ ଭାଷା</language>
+			<language type="za">ଜୁଆଙ୍ଗ</language>
+			<language type="zap">ଜାପୋଟେକ୍</language>
+			<language type="zbl">ବ୍ଲିସିମ୍ବଲସ୍</language>
+			<language type="zen">ଜେନାଗା</language>
+			<language type="zh">ଚାଇନୀଜ୍</language>
+			<language type="zh_Hans">ସରଳିକରଣ ଚାଇନୀଜ୍</language>
+			<language type="zh_Hant">ପାରମ୍ପରିକ ଚାଇନୀଜ୍</language>
+			<language type="znd">ଜାଣ୍ଡେ</language>
+			<language type="zu">ଜୁଲୁ</language>
+			<language type="zun">ଜୁନୀ</language>
+			<language type="zxx">କୌଣସି ଲିଙ୍ଗୁଇଷ୍ଟ ସାମଗ୍ରୀ ନାହିଁ</language>
+			<language type="zza">ଜାଜା</language>
+		</languages>
+		<scripts>
+			<script type="Arab">ଆରବିକ୍</script>
+			<script type="Armi">ଇମ୍ପେରିଆଲ୍ ଆରମିକ୍</script>
+			<script type="Armn">ଆର୍ମେନିଆନ୍</script>
+			<script type="Avst">ଆବେସ୍ଥାନ୍</script>
+			<script type="Bali">ବାଲିନୀଜ୍</script>
+			<script type="Batk">ବାଟାକ୍</script>
+			<script type="Beng">ବଙ୍ଗାଳୀ</script>
+			<script type="Blis">ବ୍ଲିସିମ୍ବଲସ୍</script>
+			<script type="Bopo">ବୋପୋମୋଫୋ</script>
+			<script type="Brah">ବ୍ରାହ୍ମୀ</script>
+			<script type="Brai">ବ୍ରିଲ୍</script>
+			<script type="Bugi">ବୁଗାନୀଜ୍</script>
+			<script type="Buhd">ବୁହିଦ୍</script>
+			<script type="Cakm">ଚକମା</script>
+			<script type="Cans">ୟୁନିଫାଏଡ୍ କାନାଡିଆନ୍ ଆବ୍ରୋଜିନାଲ୍ ସିଲାବିକସ୍</script>
+			<script type="Cari">କୈରନ୍</script>
+			<script type="Cham">ଛମ୍</script>
+			<script type="Cher">ଚିରୁକୀ</script>
+			<script type="Cirt">ସିର୍ଥ</script>
+			<script type="Copt">କପଟିକ୍</script>
+			<script type="Cprt">ସିପ୍ରଅଟ୍</script>
+			<script type="Cyrl">ସିରିଲିକ୍</script>
+			<script type="Cyrs">ଓଲ୍ଡ ଚର୍ଚ୍ଚ ସାଲଭୋନିକ୍ ସିରିଲିକ୍</script>
+			<script type="Deva">ଦେବାନଗିରି</script>
+			<script type="Dsrt">ଡେସର୍ଟ</script>
+			<script type="Egyd">ଇଜିପ୍ଟିଆନ୍ ଡେମୋଟିକ୍</script>
+			<script type="Egyh">ଇଜିପ୍ଟିଆନ୍ ହାଇଅରଟିକ୍</script>
+			<script type="Egyp">ଇଜିପ୍ଟିଆନ୍ ହାଅରଗ୍ଲିପସ୍</script>
+			<script type="Ethi">ଇଥୋପିକ୍</script>
+			<script type="Geok">ଜର୍ଜିଆନ୍ ଖୁଟସୁରୀ</script>
+			<script type="Geor">ଜର୍ଜିଆନ୍</script>
+			<script type="Glag">ଗ୍ଲାଗ୍ଲୋଟିକ୍</script>
+			<script type="Goth">ଗୋଥିକ୍</script>
+			<script type="Grek">ଗ୍ରୀକ୍</script>
+			<script type="Gujr">ଗୁଜୁରାଟୀ</script>
+			<script type="Guru">ଗୁରୁମୁଖୀ</script>
+			<script type="Hang">ହାଙ୍ଗୁଲ୍</script>
+			<script type="Hani">ହାନ୍</script>
+			<script type="Hano">ହାନୁନ୍</script>
+			<script type="Hans">ସରଳୀକୃତ ହାନ୍</script>
+			<script type="Hant">ପାରମ୍ପରିକ୍ ହାନ୍</script>
+			<script type="Hebr">ହେବ୍ର୍ୟୁ</script>
+			<script type="Hira">ହିରାଗାନା</script>
+			<script type="Hmng">ପାହୋ ହୋଙ୍ଗ</script>
+			<script type="Hrkt">କାଟାକାନ୍ କିମ୍ବା ହିରାଗାନ୍</script>
+			<script type="Hung">ପୁରୁଣା ହଙ୍ଗେରିଆନ୍</script>
+			<script type="Inds">ସିନ୍ଧୁ</script>
+			<script type="Ital">ପୁରୁଣା ଇଟାଲୀ</script>
+			<script type="Java">ଜାଭାନୀଜ୍</script>
+			<script type="Jpan">ଜାପାନୀଜ୍</script>
+			<script type="Kali">କାୟାହା ଲୀ</script>
+			<script type="Kana">କାଟକାନ୍</script>
+			<script type="Khar">ଖାରୋସ୍ଥି</script>
+			<script type="Khmr">ଖ୍ମେର୍</script>
+			<script type="Knda">କନ୍ନଡ</script>
+			<script type="Kore">କୋରିଆନ୍</script>
+			<script type="Kthi">କୈଥି</script>
+			<script type="Lana">ଲାନା</script>
+			<script type="Laoo">ଲାଓ</script>
+			<script type="Latf">ଫ୍ରାକଥୁର୍ ଲାଟିନ୍</script>
+			<script type="Latg">ଗାଏଲିକ୍ ଲାଟିନ୍</script>
+			<script type="Latn">ଲାଟିନ୍</script>
+			<script type="Lepc">ଲେପଚା</script>
+			<script type="Limb">ଲିମ୍ବୁ</script>
+			<script type="Lina">ଲିନିୟର୍</script>
+			<script type="Linb">ଲିନିୟର୍ ବି</script>
+			<script type="Lyci">ଲିଶିୟନ୍</script>
+			<script type="Lydi">ଲିଡିୟନ୍</script>
+			<script type="Mand">ମାନଡେନ୍</script>
+			<script type="Mani">ମନଶୀନ୍</script>
+			<script type="Maya">ମୟାନ୍ ହାୟରଲଜିକସ୍</script>
+			<script type="Mero">ମେରୋଇଟିକ୍</script>
+			<script type="Mlym">ମାଲୟଲମ୍</script>
+			<script type="Mong">ମଙ୍ଗୋଲିଆନ୍</script>
+			<script type="Moon">ଚନ୍ଦ୍ର</script>
+			<script type="Mtei">ମାଏତି ମାୟେକ୍</script>
+			<script type="Mymr">ମିଆମାର୍</script>
+			<script type="Nkoo">ଏନ୍ କୋ</script>
+			<script type="Ogam">ଓଘାମା</script>
+			<script type="Olck">ଓଲ୍ ଚିକି</script>
+			<script type="Orkh">ଓରୋଖନ୍</script>
+			<script type="Orya">ଓଡିଆ</script>
+			<script type="Osma">ଓସୋମାନିୟା</script>
+			<script type="Perm">ଓଲ୍ଡ ପରମିକ୍</script>
+			<script type="Phag">ଫାଗସ୍-ପା</script>
+			<script type="Phli">ଇନସ୍କ୍ରୀପସାନଲ୍ ପାହାଲାୱୀ</script>
+			<script type="Phlp">ସ୍ଲାଟର୍ ପାହାଲାୱୀ</script>
+			<script type="Phlv">ବୁକ୍ ପାହାଲାୱୀ</script>
+			<script type="Phnx">ଫେନୋସିଆନ୍</script>
+			<script type="Plrd">ପୋଲାର୍ଡ ଫୋନେଟିକ୍</script>
+			<script type="Prti">ଇନସ୍କ୍ରୀପସାନଲ୍ ପାର୍ଥିଆନ୍</script>
+			<script type="Rjng">ରେଜାଙ୍ଗ</script>
+			<script type="Roro">ରୋଙ୍ଗୋରୋଙ୍ଗୋ</script>
+			<script type="Runr">ରନିକ୍</script>
+			<script type="Samr">ସମୌରିଟନ୍</script>
+			<script type="Sara">ସାରାତି</script>
+			<script type="Saur">ସୌରାଷ୍ଟ୍ର</script>
+			<script type="Sgnw">ସାଙ୍କେତିକ ଲିଖ</script>
+			<script type="Shaw">ସାବିୟାନ୍</script>
+			<script type="Sinh">ସିଂହଳ</script>
+			<script type="Sund">ସୁଦାନୀଜ୍</script>
+			<script type="Sylo">ସୀଲିତୋ ନଗରୀ</script>
+			<script type="Syrc">ସିରିୟାକ୍</script>
+			<script type="Syre">ଏଷ୍ଟ୍ରାଙ୍ଗେଲୋ ସିରିକ୍</script>
+			<script type="Syrj">ୱେଷ୍ଟର୍ନ ସିରିକ୍</script>
+			<script type="Syrn">ଇଷ୍ଟର୍ନ ସିରିକ୍</script>
+			<script type="Tagb">ତଗବାନ୍ୱା</script>
+			<script type="Tale">ତାଇ ଲେ</script>
+			<script type="Talu">ନୂତନ ତାଇ ଲୁଏ</script>
+			<script type="Taml">ତାମିଲ୍</script>
+			<script type="Tavt">ତାଇ ଭିଏତ୍</script>
+			<script type="Telu">ତେଲୁଗୁ</script>
+			<script type="Teng">ତେଙ୍ଗୱାର୍</script>
+			<script type="Tfng">ତିଫିଙ୍ଘା</script>
+			<script type="Tglg">ଟାଗାଲୋଗ୍</script>
+			<script type="Thaa">ଥାନା</script>
+			<script type="Thai">ଥାଇ</script>
+			<script type="Tibt">ତିବେତାନ୍</script>
+			<script type="Ugar">ୟୁଗାରିଟିକ୍</script>
+			<script type="Vaii">ୱାଇ</script>
+			<script type="Visp">ଭିଜିବଲ୍ ସ୍ପିଚ୍</script>
+			<script type="Xpeo">ପୁରୁଣା ଫରାସୀ</script>
+			<script type="Xsux">ସୁମେରୋ-ଆକ୍କାଡିଆନ୍ ସୁନିଫର୍ମ</script>
+			<script type="Yiii">ୟୀ</script>
+			<script type="Zinh">ବଂଶଗତ</script>
+			<script type="Zmth">ଗାଣିତିକ ନୋଟେସନ୍</script>
+			<script type="Zsym">ସିମ୍ବଲ୍</script>
+			<script type="Zxxx">ଅଲିଖିତ</script>
+			<script type="Zyyy">ସାଧାରଣ</script>
+			<script type="Zzzz">ଅଞ୍ଜାତ କିମ୍ବା ଅବୈଧ ସ୍କ୍ରୀପ୍ଟ</script>
+		</scripts>
+		<territories>
+			<territory type="001">ବିଶ୍ବ</territory>
+			<territory type="002">ଆଫ୍ରିକା</territory>
+			<territory type="003">ଉତ୍ତର ଆମେରିକା</territory>
+			<territory type="005">ଦକ୍ଷିଣ ଆମେରିକା</territory>
+			<territory type="009">ଓସୋନିଆନ୍</territory>
+			<territory type="011">ପଶ୍ଚିମ ଆଫ୍ରିକା</territory>
+			<territory type="013">ମଧ୍ୟ ଆମେରିକା</territory>
+			<territory type="014">ପୂର୍ବ ଆଫ୍ରିକା</territory>
+			<territory type="015">ଉତ୍ତର ଆଫ୍ରିକା</territory>
+			<territory type="017">ମଧ୍ୟ ଆଫ୍ରିକା</territory>
+			<territory type="018">ଦକ୍ଷିଣସ୍ଥ ଆଫ୍ରିକା</territory>
+			<territory type="019">ଆମେରିକାସ୍</territory>
+			<territory type="021">ଉତ୍ତରସ୍ଥ ଆମେରିକା</territory>
+			<territory type="029">କାରିବିଆନ୍</territory>
+			<territory type="030">ପୂର୍ବ ଏସିଆ</territory>
+			<territory type="034">ଦକ୍ଷିଣ ଏସିଆ</territory>
+			<territory type="035">ଦକ୍ଷିଣ-ପୂର୍ବ ଏସିଆ</territory>
+			<territory type="039">ଦକ୍ଷିଣ ୟୁରୋପ୍</territory>
+			<territory type="053">ଅଷ୍ଟ୍ରେଲିଆ ଏବଂ ନ୍ୟୁଜିଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="054">ମେଲାନେସିଆ</territory>
+			<territory type="057">ମାଇକ୍ରୋନେସିଆନ୍ ଅଞ୍ଚଳ</territory>
+			<territory type="061">ପଲିନେସିଆ</territory>
+			<territory type="142">ଏସିଆ</territory>
+			<territory type="143">ମଧ୍ୟ ଏସିଆ</territory>
+			<territory type="145">ପଶ୍ଚିମ ଏସିଆ</territory>
+			<territory type="150">ୟୁରୋପ୍</territory>
+			<territory type="151">ପୂର୍ବ ୟୁରୋପ୍</territory>
+			<territory type="154">ଉତ୍ତର ୟୁରୋପ୍</territory>
+			<territory type="155">ପଶ୍ଚିମ ୟୁରୋପ୍</territory>
+			<territory type="419">ଲାଟିନ୍ ଆମେରିକା ଏବଂ କାରିବିଆନ୍</territory>
+			<territory type="AD">ଆଣ୍ଡୋରା</territory>
+			<territory type="AE">ସଂଯୁକ୍ତ ଆରବ ଏମିରେଟସ୍</territory>
+			<territory type="AF">ଆଫାଗାନିସ୍ତାନ୍</territory>
+			<territory type="AG">ଆଣ୍ଟିଗୁଆ ଏବଂ ବାରବୁଦା</territory>
+			<territory type="AI">ଆଙ୍ଗୁଇଲ୍ଲା</territory>
+			<territory type="AL">ଆଲବାନିଆ</territory>
+			<territory type="AM">ଆର୍ମେନିଆ</territory>
+			<territory type="AN">ନେଦରଲ୍ୟାଣ୍ଡସ୍ ଆଣ୍ଟିଲିଜ୍</territory>
+			<territory type="AO">ଆଙ୍ଗୋଲା</territory>
+			<territory type="AQ">ଆର୍ଣ୍ଟକଟିକା</territory>
+			<territory type="AR">ଆର୍ଜେଣ୍ଟିନା</territory>
+			<territory type="AS">ଆମେରିକାନ୍ ସାମୋଆ</territory>
+			<territory type="AT">ଅଷ୍ଟ୍ରିଆ</territory>
+			<territory type="AU">ଅଷ୍ଟ୍ରେଲିଆ</territory>
+			<territory type="AW">ଆରୁବା</territory>
+			<territory type="AX">ଆଲାଣ୍ଡ ଆଇସଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="AZ">ଆଜେରବାଇଜାନ୍</territory>
+			<territory type="BA">ବୋସନିଆ ଏବଂ ହର୍ଜଗୋଭିନା</territory>
+			<territory type="BB">ବାରବାଡୋସ୍</territory>
+			<territory type="BD">ବାଙ୍ଗଲାଦେଶ୍</territory>
+			<territory type="BE">ବେଲଜିୟମ୍</territory>
+			<territory type="BF">ବୁର୍କିନୋ ଫାସୋ</territory>
+			<territory type="BG">ବୁଲଗେରିଆ</territory>
+			<territory type="BH">ବାହାରିନ୍</territory>
+			<territory type="BI">ବୁରୁନ୍ଦି</territory>
+			<territory type="BJ">ବେନିନ୍</territory>
+			<territory type="BL">ସେଣ୍ଟ ବାର୍ଥେଲେମି</territory>
+			<territory type="BM">ବରମୁଡା</territory>
+			<territory type="BN">ବ୍ରୁନେଇ</territory>
+			<territory type="BO">ବୋଲଭିଆ</territory>
+			<territory type="BR">ବ୍ରାଜିଲ୍</territory>
+			<territory type="BS">ବାହାମାସ୍</territory>
+			<territory type="BT">ଭୁଟାନ୍</territory>
+			<territory type="BV">ବୌଭେଟ୍ ଆଇସଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="BW">ବୋଟସ୍ବାନ୍</territory>
+			<territory type="BY">ବେଲାରୁଷ୍</territory>
+			<territory type="BZ">ବେଲିଜ୍</territory>
+			<territory type="CA">କାନାଡା</territory>
+			<territory type="CC">କୋକୋସ୍ ଆଇସଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="CD">କଙ୍ଗୋ-କିନସାସା</territory>
+			<territory type="CF">ମଧ୍ୟ ଆଫ୍ରିକୀୟ ଗଣତନ୍ତ୍ର</territory>
+			<territory type="CG">କଙ୍ଗୋ-ବ୍ରାଜିଭିଲ୍ଲେ</territory>
+			<territory type="CH">ସ୍ବିଜରଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="CI">ଆଇବରୀ କୋଷ୍ଟ</territory>
+			<territory type="CK">କୁକ୍ ଆଇସଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="CL">ଚିଲ୍ଲୀ</territory>
+			<territory type="CM">କାମେରୁନ୍</territory>
+			<territory type="CN">ଚିନ୍</territory>
+			<territory type="CO">କୋଲମ୍ବିଆ</territory>
+			<territory type="CR">କୋଷ୍ଟା ରିକା</territory>
+			<territory type="CS">ସର୍ବିଆ ଏବଂ ମଣ୍ଟେନଗ୍ରୋ</territory>
+			<territory type="CU">କ୍ୱିବା</territory>
+			<territory type="CV">କେପ୍ ଭର୍ଦେ</territory>
+			<territory type="CX">ଖ୍ରୀଷ୍ଟମାସ ଆଇଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="CY">ସାଇପ୍ରସ୍</territory>
+			<territory type="CZ">ଚେକ୍ ସାଧାରଣତନ୍ତ୍ର</territory>
+			<territory type="DE">ଜର୍ମାନୀ</territory>
+			<territory type="DJ">ଡିବୌଟି</territory>
+			<territory type="DK">ଡେନମାର୍କ</territory>
+			<territory type="DM">ଡୋମିନାକା</territory>
+			<territory type="DO">ଡୋମିନକାନ୍ ପ୍ରଜାତନ୍ତ୍ର</territory>
+			<territory type="DZ">ଆଲଜେରିଆ</territory>
+			<territory type="EC">ଇକ୍ୱାଡୋର୍</territory>
+			<territory type="EE">ଏସ୍ତୋନିଆ</territory>
+			<territory type="EG">ଇଜିପ୍ଟ</territory>
+			<territory type="EH">ପଶ୍ଚିମ ସାହାରା</territory>
+			<territory type="ER">ଇରିଟ୍ରିୟା</territory>
+			<territory type="ES">ସ୍ପେନ୍</territory>
+			<territory type="ET">ଇଥିଓପିଆ</territory>
+			<territory type="EU">ୟୁରୋପିଆନ୍ ୟୁନିଅନ୍</territory>
+			<territory type="FI">ଫିନଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="FJ">ଫିଜି</territory>
+			<territory type="FK">ଫଲ୍କଲ୍ୟାଣ୍ଡ ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="FM">ମାଇକ୍ରୋନେସିଆ</territory>
+			<territory type="FO">ଫାରୋଇ ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="FR">ଫ୍ରାନ୍ସ</territory>
+			<territory type="GA">ଗାବୋନ୍</territory>
+			<territory type="GB">ବ୍ରିଟେନ୍</territory>
+			<territory type="GD">ଗ୍ରେନାଡା</territory>
+			<territory type="GE">ଜର୍ଜିଆ</territory>
+			<territory type="GF">ଫ୍ରେଞ୍ଚ ଗୁଇନା</territory>
+			<territory type="GG">ଗୁଏରନେସି</territory>
+			<territory type="GH">ଘାନା</territory>
+			<territory type="GI">ଜିବ୍ରାଲ୍ଟର୍</territory>
+			<territory type="GL">ଗ୍ରୀନଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="GM">ଗାମ୍ବିଆ</territory>
+			<territory type="GN">ଗୁଏନେଆ</territory>
+			<territory type="GP">ଗୌଡେଲୌପେ</territory>
+			<territory type="GQ">ଇକ୍ବାଟେରିଆଲ୍ ଗୁଇନିଆ</territory>
+			<territory type="GR">ଗ୍ରୀସ୍</territory>
+			<territory type="GS">ଦକ୍ଷିଣ ଜର୍ଜିଆ ଏବଂ ଦକ୍ଷିଣ ସାଣ୍ଡୱିଚ୍ ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="GT">ଗୁଏତମାଲା</territory>
+			<territory type="GU">ଗୁଆମ୍</territory>
+			<territory type="GW">ଗୁଇନିଆ-ବିସାଉ</territory>
+			<territory type="GY">ଗୁଇନା</territory>
+			<territory type="HK">ହଂକଂ ବିଶେଷ ପ୍ରଶାସନିକ କ୍ଷେତ୍ର ଚୀନ୍</territory>
+			<territory type="HM">ହାର୍ଡ ଦ୍ବୀପପୁଞ୍ଜ ଏବଂ ମ୍ୟାକଡୋନାଲ୍ ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="HN">ହୋଣ୍ଡାରୁସ୍</territory>
+			<territory type="HR">କ୍ରୋଆଟିଆ</territory>
+			<territory type="HT">ହାଇତି</territory>
+			<territory type="HU">ହଙ୍ଗେରୀ</territory>
+			<territory type="ID">ଇଣ୍ଡୋନେସିଆ</territory>
+			<territory type="IE">ଆୟରଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="IL">ଇସ୍ରାଏଲ୍</territory>
+			<territory type="IM">ଆଇଲ୍ ଅଫ୍ ମୈନ୍</territory>
+			<territory type="IN">ଭାରତ</territory>
+			<territory type="IO">ବ୍ରିଟିଶ୍ ଭାରତୀୟ ସାମୁଦ୍ରିକ କ୍ଷେତ୍ର</territory>
+			<territory type="IQ">ଇରାକ୍</territory>
+			<territory type="IR">ଇରାନ୍</territory>
+			<territory type="IS">ଆଇସଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="IT">ଇଟାଲୀ</territory>
+			<territory type="JE">ଜର୍ସି</territory>
+			<territory type="JM">ଜାମାଇକା</territory>
+			<territory type="JO">ଜୋର୍ଡାନ୍</territory>
+			<territory type="JP">ଜାପାନ୍</territory>
+			<territory type="KE">କେନିୟା</territory>
+			<territory type="KG">କିର୍ଗିଜିସ୍ଥାନ</territory>
+			<territory type="KH">କାମ୍ବୋଡିଆ</territory>
+			<territory type="KI">କିରିବାଟୀ</territory>
+			<territory type="KM">କାମୋରସ୍</territory>
+			<territory type="KN">ସେଣ୍ଟ କିଟସ୍ ଏଣ୍ଡ ନେଭିସ୍</territory>
+			<territory type="KP">ଉତ୍ତର କୋରିଆ</territory>
+			<territory type="KR">ଦକ୍ଷିଣ କୋରିଆ</territory>
+			<territory type="KW">କୁଏତ୍</territory>
+			<territory type="KY">କେମ୍ୟାନ୍ ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="KZ">କାଜାକାସ୍ଥାନ୍</territory>
+			<territory type="LA">ଲାଓସ୍</territory>
+			<territory type="LB">ଲେବାନନ୍</territory>
+			<territory type="LC">ସେଣ୍ଟ ଲୁସିଆ</territory>
+			<territory type="LI">ଲିଚେସ୍ତିଆନାନ୍</territory>
+			<territory type="LK">ଶ୍ରୀଲଙ୍କା</territory>
+			<territory type="LR">ଲିବେରିଆ</territory>
+			<territory type="LS">ଲେସୋଥୋ</territory>
+			<territory type="LT">ଲିଥାଆନିଆ</territory>
+			<territory type="LU">ଲକ୍ସେମବର୍ଗ</territory>
+			<territory type="LV">ଲାଟଭିଆ</territory>
+			<territory type="LY">ଲିବିଆ</territory>
+			<territory type="MA">ମୋରୋକ୍କୋ</territory>
+			<territory type="MC">ମୋନାକୋ</territory>
+			<territory type="MD">ମାଲଡୋଭା</territory>
+			<territory type="ME">ମଣ୍ଟେଗ୍ରୋ</territory>
+			<territory type="MF">ସେଣ୍ଟ ମାର୍ଟିନ୍</territory>
+			<territory type="MG">ମାଡାଗାସ୍କର୍</territory>
+			<territory type="MH">ମାର୍ଶଲ୍ ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="MK">ମାସେଡୋନିଆ</territory>
+			<territory type="ML">ମାଳୀ</territory>
+			<territory type="MM">ମିୟାମାର୍</territory>
+			<territory type="MN">ମଙ୍ଗୋଲିଆ</territory>
+			<territory type="MO">ମାକାଉ SAR ଚିନ୍</territory>
+			<territory type="MP">ଉତ୍ତର ମାରିଆନା ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="MQ">ମାର୍ଟିନିକ୍ୟୁ</territory>
+			<territory type="MR">ମାଉରିଟାନିଆ</territory>
+			<territory type="MS">ମଣ୍ଟେସେରାଟ୍</territory>
+			<territory type="MT">ମାଲ୍ଟା</territory>
+			<territory type="MU">ମୌରିସସ୍</territory>
+			<territory type="MV">ମାଳଦ୍ବୀପ</territory>
+			<territory type="MW">ମାଲୱି</territory>
+			<territory type="MX">ମେକ୍ସିକୋ</territory>
+			<territory type="MY">ମାଲେସିଆ</territory>
+			<territory type="MZ">ମୋଜାମ୍ବିକ୍ୟୁ</territory>
+			<territory type="NA">ନାମ୍ବିଆ</territory>
+			<territory type="NC">ନୂତନ କାଲେଡୋନିଆ</territory>
+			<territory type="NE">ନାଇଜର୍</territory>
+			<territory type="NF">ନରଫ୍ଲକ୍ ଦ୍ବୀପ</territory>
+			<territory type="NG">ନାଇଜେରିଆ</territory>
+			<territory type="NI">ନିକାରାଗୁଆ</territory>
+			<territory type="NL">ନେଦରଲ୍ୟାଣ୍ଡ</territory>
+			<territory type="NO">ନରୱେ</territory>
+			<territory type="NP">ନେପାଳ</territory>
+			<territory type="NR">ନାଉରୁ</territory>
+			<territory type="NU">ନିଉ</territory>
+			<territory type="NZ">ନ୍ୟୁଜିଲାଣ୍ଡ</territory>
+			<territory type="OM">ଓମାନ୍</territory>
+			<territory type="PA">ପାନାମା</territory>
+			<territory type="PE">ପେରୁ</territory>
+			<territory type="PF">ଫ୍ରେଞ୍ଚ ପଲିନେସିଆ</territory>
+			<territory type="PG">ପପୁଆ ନ୍ୟୁ ଗୁଏନିଆ</territory>
+			<territory type="PH">ଫିଲିପାଇନସ୍</territory>
+			<territory type="PK">ପାକିସ୍ତାନ</territory>
+			<territory type="PL">ପୋଲାଣ୍ଡ</territory>
+			<territory type="PM">ସେଣ୍ଟ ପିଏରେ ଏବଂ ମିକ୍ବାଲୋନ୍</territory>
+			<territory type="PN">ପିଟକାଇରିନ୍</territory>
+			<territory type="PR">ପୁଏର୍ତ୍ତୋ ରିକୋ</territory>
+			<territory type="PS">ପାଲେସ୍ତେନିଆ</territory>
+			<territory type="PT">ପର୍ତ୍ତୁଗାଲ୍</territory>
+			<territory type="PW">ପାଲାଉ</territory>
+			<territory type="PY">ପାରାଗୁଏ</territory>
+			<territory type="QA">କତାର୍</territory>
+			<territory type="QO">ଆଉଟଲେଇଂ ଓସେନିଆ</territory>
+			<territory type="RE">ରିୟୁନିଅନ୍</territory>
+			<territory type="RO">ରୋମାନିଆ</territory>
+			<territory type="RS">ସର୍ବିଆ</territory>
+			<territory type="RU">ରୁଷିଆ</territory>
+			<territory type="RW">ରାୱାଣ୍ଡା</territory>
+			<territory type="SA">ସାଉଦି ଆରବିଆ</territory>
+			<territory type="SB">ସୋଲୋମନ୍ ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="SC">ସେଚେଲସ୍</territory>
+			<territory type="SD">ସୁଦାନ୍</territory>
+			<territory type="SE">ସ୍ୱେଡେନ୍</territory>
+			<territory type="SG">ସିଙ୍ଗାପୁର୍</territory>
+			<territory type="SH">ସେଣ୍ଟ ହେଲେନା</territory>
+			<territory type="SI">ସ୍ଲୋଭେନିଆ</territory>
+			<territory type="SJ">ସାଲ୍ଭାର୍ଡ ଏବଂ ଜାନ୍ ମାୟୋନ୍</territory>
+			<territory type="SK">ସ୍ଲୋଭାକିଆ</territory>
+			<territory type="SL">ସିଓରା ଲିଓନ୍</territory>
+			<territory type="SM">ସାନ୍ ମାରିନୋ</territory>
+			<territory type="SN">ସେନେଗାଲ୍</territory>
+			<territory type="SO">ସୋମାଲିଆ</territory>
+			<territory type="SR">ସୁରିନାମ</territory>
+			<territory type="ST">ସାଓ ଟୋମେ ଏବଂ ପ୍ରିନସିପି</territory>
+			<territory type="SV">ଏଲ୍ ସାଲଭାଡୋର୍</territory>
+			<territory type="SY">ସିରିଆ</territory>
+			<territory type="SZ">ସ୍ବାଜିଲାଣ୍ଡ</territory>
+			<territory type="TC">ତୁର୍କସ୍ ଏବଂ ସାଇକସ୍ ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="TD">ଚାଦ୍</territory>
+			<territory type="TF">ଫରାସୀ ଦକ୍ଷିଣ କ୍ଷେତ୍ର</territory>
+			<territory type="TG">ଟୋଗୋ</territory>
+			<territory type="TH">ଥାଇଲାଣ୍ଡ</territory>
+			<territory type="TJ">ତାଜିକିସ୍ଥାନ୍</territory>
+			<territory type="TK">ଟୋକେଲାଉ</territory>
+			<territory type="TL">ପୁର୍ବ ତିମୋର୍</territory>
+			<territory type="TM">ତୁର୍କମେନିସ୍ତାନ୍</territory>
+			<territory type="TN">ତୁନିସିଆ</territory>
+			<territory type="TO">ଟୋଙ୍ଗା</territory>
+			<territory type="TR">ତୁର୍କୀ</territory>
+			<territory type="TT">ତ୍ରିନିଦାଦ୍ ଏବଂ ଟୋବାଗୋ</territory>
+			<territory type="TV">ଟୁଭାଲୁ</territory>
+			<territory type="TW">ତାଇୱାନ୍</territory>
+			<territory type="TZ">ତାଞ୍ଜାନିଆ</territory>
+			<territory type="UA">ୟୁକ୍ରାଇନ୍</territory>
+			<territory type="UG">ଉଗାଣ୍ଡା</territory>
+			<territory type="UM">ୟୁନାଇଟେଡ୍ ଷ୍ଟେଟସ୍ ମାଇନର୍ ଆଉଟଲେଇଂ ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="US">ଯୁକ୍ତ ରାଷ୍ଟ୍ର ଆମେରିକା</territory>
+			<territory type="UY">ଉରୁଗୁଏ</territory>
+			<territory type="UZ">ଉଜବେକିସ୍ଥାନ୍</territory>
+			<territory type="VA">ଭାଟିକାନ୍</territory>
+			<territory type="VC">ସେଣ୍ଟ ଭିନସେଣ୍ଟ ଏବଂ ଦି ଗ୍ରେନାଡିସ୍</territory>
+			<territory type="VE">ଭେନଜୁଏଲା</territory>
+			<territory type="VG">ବ୍ରିଟିଶ୍ ଭର୍ଜିନ୍ ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="VI">ୟୁଏସ୍ ଭର୍ଜିନ୍ ଦ୍ବୀପପୁଞ୍ଜ</territory>
+			<territory type="VN">ଭିଏତନାମ୍</territory>
+			<territory type="VU">ଭାନୁଆତୁ</territory>
+			<territory type="WF">ୱାଲିସ୍ ଏବଂ ଫୁତୁନା</territory>
+			<territory type="WS">ସାମୋଆ</territory>
+			<territory type="YE">ୟେମେନ୍</territory>
+			<territory type="YT">ମାୟୋଟେ</territory>
+			<territory type="ZA">ଦକ୍ଷିଣ ଆଫ୍ରିକା</territory>
+			<territory type="ZM">ଜାମ୍ବିଆ</territory>
+			<territory type="ZW">ଜିମ୍ବାୱେ</territory>
+			<territory type="ZZ">ଅଜଣା କିମ୍ବା ଅବୈଧ ପ୍ରଦେଶ</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[\u0B3C ଅ ଆ ଇ ଈ ଉ ଊ ଋ ଏ ଐ ଓ ଔ \u0B01 ଂ ଃ କ ଖ ଗ ଘ ଙ ଚ ଛ ଜ ଝ ଞ ଟ ଠ ଡ {ଡ\u0B3C} ଢ {ଢ\u0B3C} ଣ ତ ଥ ଦ ଧ ନ ପ ଫ ବ ଭ ମ ଯ ୟ ର ଲ ଳ ଵ ୱ ଶ ଷ ସ ହ ା \u0B3F ୀ \u0B41 \u0B42 \u0B43 େ ୈ ୋ ୌ \u0B4D]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[ଅ ଆ ଇ ଈ ଉ ଊ ଋ ଏ ଐ ଓ ଔ କ ଖ ଗ ଘ ଙ ଚ ଛ ଜ ଝ ଞ ଟ ଠ ଡ ଢ ଣ ତ ଥ ଦ ଧ ନ ପ ଫ ବ ଭ ମ ଯ ର ଲ ଳ ଶ ଷ ସ ହ {କ\u0B4Dଷ}]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">ଜାନୁଆରୀ</month>
+							<month type="2">ଫେବ୍ରୁୟାରୀ</month>
+							<month type="3">ମାର୍ଚ୍ଚ</month>
+							<month type="4">ଅପ୍ରେଲ</month>
+							<month type="5">ମେ</month>
+							<month type="6">ଜୁନ</month>
+							<month type="7">ଜୁଲାଇ</month>
+							<month type="8">ଅଗଷ୍ଟ</month>
+							<month type="9">ସେପ୍ଟେମ୍ବର</month>
+							<month type="10">ଅକ୍ଟୋବର</month>
+							<month type="11">ନଭେମ୍ବର</month>
+							<month type="12">ଡିସେମ୍ବର</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">ଜା</month>
+							<month type="2">ଫେ</month>
+							<month type="3">ମା</month>
+							<month type="4">ଅ</month>
+							<month type="5">ମେ</month>
+							<month type="6">ଜୁ</month>
+							<month type="7">ଜୁ</month>
+							<month type="8">ଅ</month>
+							<month type="9">ସେ</month>
+							<month type="10">ଅ</month>
+							<month type="11">ନ</month>
+							<month type="12">ଡି</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">ରବି</day>
+							<day type="mon">ସୋମ</day>
+							<day type="tue">ମଙ୍ଗଳ</day>
+							<day type="wed">ବୁଧ</day>
+							<day type="thu">ଗୁରୁ</day>
+							<day type="fri">ଶୁକ୍ର</day>
+							<day type="sat">ଶନି</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">ରବିବାର</day>
+							<day type="mon">ସୋମବାର</day>
+							<day type="tue">ମଙ୍ଗଳବାର</day>
+							<day type="wed">ବୁଧବାର</day>
+							<day type="thu">ଗୁରୁବାର</day>
+							<day type="fri">ଶୁକ୍ରବାର</day>
+							<day type="sat">ଶନିବାର</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">ର</day>
+							<day type="mon">ସୋ</day>
+							<day type="tue">ମ</day>
+							<day type="wed">ବୁ</day>
+							<day type="thu">ଗୁ</day>
+							<day type="fri">ଶୁ</day>
+							<day type="sat">ଶ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">am</dayPeriod>
+							<dayPeriod type="pm">pm</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d-M-yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM-yyyy</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<metazone type="Christmas">
+				<long>
+					<standard>ଖ୍ରୀଷ୍ଟମାସ ଆଇଲ୍ୟାଣ୍ଡ ସମୟ</standard>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<short>
+					<standard>IST</standard>
+				</short>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native>orya</native>
+		</otherNumberingSystems>
+		<symbols numberSystem="latn">
+			<decimal>.</decimal>
+			<group>,</group>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤ #,##,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="INR">
+				<displayName>ଟଙକା</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr>ହଁ</yesstr>
+			<nostr>ନା</nostr>
+		</messages>
+	</posix>
+</ldml>
+

@@ -1,0 +1,680 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 5806 $"/>
+		<generation date="$Date: 2011-05-03 03:42:02 +0900 (Tue, 03 May 2011) $"/>
+		<language type="eo"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="aa">afara</language>
+			<language type="ab">abĥaza</language>
+			<language type="af">afrikansa</language>
+			<language type="am">amhara</language>
+			<language type="ar">araba</language>
+			<language type="as">asama</language>
+			<language type="ay">ajmara</language>
+			<language type="az">azerbajĝana</language>
+			<language type="ba">baŝkira</language>
+			<language type="be">belorusa</language>
+			<language type="bg">bulgara</language>
+			<language type="bh">bihara</language>
+			<language type="bi">bislamo</language>
+			<language type="bn">bengala</language>
+			<language type="bo">tibeta</language>
+			<language type="br">bretona</language>
+			<language type="bs" draft="contributed">bosnia</language>
+			<language type="ca">kataluna</language>
+			<language type="co">korsika</language>
+			<language type="cs">ĉeĥa</language>
+			<language type="cy">kimra</language>
+			<language type="da">dana</language>
+			<language type="de">germana</language>
+			<language type="dv">mahla</language>
+			<language type="dz">dzonko</language>
+			<language type="efi">ibibioefika</language>
+			<language type="el">greka</language>
+			<language type="en">angla</language>
+			<language type="eo">esperanto</language>
+			<language type="es">hispana</language>
+			<language type="et">estona</language>
+			<language type="eu">eŭska</language>
+			<language type="fa">persa</language>
+			<language type="fi">finna</language>
+			<language type="fil" draft="contributed">filipina</language>
+			<language type="fj">fiĝia</language>
+			<language type="fo">feroa</language>
+			<language type="fr">franca</language>
+			<language type="fy">frisa</language>
+			<language type="ga">irlanda</language>
+			<language type="gd">gaela</language>
+			<language type="gl">galega</language>
+			<language type="gn">gvarania</language>
+			<language type="gu">guĝarata</language>
+			<language type="ha">haŭsa</language>
+			<language type="haw">havaja</language>
+			<language type="he">hebrea</language>
+			<language type="hi">hinda</language>
+			<language type="hr">kroata</language>
+			<language type="ht">haitia kreola</language>
+			<language type="hu">hungara</language>
+			<language type="hy">armena</language>
+			<language type="ia">interlingvao</language>
+			<language type="id">indonezia</language>
+			<language type="ie">okcidentalo</language>
+			<language type="ik">eskima</language>
+			<language type="is">islanda</language>
+			<language type="it">itala</language>
+			<language type="iu">inuita</language>
+			<language type="ja">japana</language>
+			<language type="jv">java</language>
+			<language type="ka">kartvela</language>
+			<language type="kk">kazaĥa</language>
+			<language type="kl">gronlanda</language>
+			<language type="km">kmera</language>
+			<language type="kn">kanara</language>
+			<language type="ko">korea</language>
+			<language type="ks">kaŝmira</language>
+			<language type="ku">kurda</language>
+			<language type="ky">kirgiza</language>
+			<language type="la">latino</language>
+			<language type="lb">luksemburga</language>
+			<language type="ln">lingala</language>
+			<language type="lo">laŭa</language>
+			<language type="lt">litova</language>
+			<language type="lv">latva</language>
+			<language type="mg">malagasa</language>
+			<language type="mi">maoria</language>
+			<language type="mk">makedona</language>
+			<language type="ml">malajalama</language>
+			<language type="mn">mongola</language>
+			<language type="mr">marata</language>
+			<language type="ms">malaja</language>
+			<language type="mt">malta</language>
+			<language type="mul" draft="unconfirmed">pluraj lingvoj</language>
+			<language type="my">birma</language>
+			<language type="na">naura</language>
+			<language type="nb">dannorvega</language>
+			<language type="ne">nepala</language>
+			<language type="nl">nederlanda</language>
+			<language type="nn" draft="contributed">novnorvega</language>
+			<language type="no">norvega</language>
+			<language type="oc">okcitana</language>
+			<language type="om">oroma</language>
+			<language type="or">orijo</language>
+			<language type="pa">panĝaba</language>
+			<language type="pl">pola</language>
+			<language type="ps">paŝtoa</language>
+			<language type="pt">portugala</language>
+			<language type="pt_BR" draft="contributed">brazilportugala</language>
+			<language type="pt_PT" draft="contributed">portugalportugala</language>
+			<language type="qu">keĉua</language>
+			<language type="rm">romanĉa</language>
+			<language type="rn">burunda</language>
+			<language type="ro">rumana</language>
+			<language type="ru">rusa</language>
+			<language type="rw">ruanda</language>
+			<language type="sa">sanskrito</language>
+			<language type="sd">sinda</language>
+			<language type="sg">sangoa</language>
+			<language type="sh">serbo-Kroata</language>
+			<language type="si">sinhala</language>
+			<language type="sk">slovaka</language>
+			<language type="sl">slovena</language>
+			<language type="sm">samoa</language>
+			<language type="sn">ŝona</language>
+			<language type="so">somala</language>
+			<language type="sq">albana</language>
+			<language type="sr">serba</language>
+			<language type="ss">svazia</language>
+			<language type="st">sota</language>
+			<language type="su">sunda</language>
+			<language type="sv">sveda</language>
+			<language type="sw">svahila</language>
+			<language type="ta">tamila</language>
+			<language type="te">telugua</language>
+			<language type="tg">taĝika</language>
+			<language type="th">taja</language>
+			<language type="ti">tigraja</language>
+			<language type="tk">turkmena</language>
+			<language type="tl">tagaloga</language>
+			<language type="tlh" draft="contributed">klingona</language>
+			<language type="tn">cvana</language>
+			<language type="to">tongaa</language>
+			<language type="tr">turka</language>
+			<language type="ts">conga</language>
+			<language type="tt">tatara</language>
+			<language type="tw">akana</language>
+			<language type="ug">ujgura</language>
+			<language type="uk">ukraina</language>
+			<language type="und">nekonata aŭ nevalida lingvo</language>
+			<language type="ur">urduo</language>
+			<language type="uz">uzbeka</language>
+			<language type="vi">vjetnama</language>
+			<language type="vo">volapuko</language>
+			<language type="wo">volofa</language>
+			<language type="xh">ksosa</language>
+			<language type="yi">jida</language>
+			<language type="yo">joruba</language>
+			<language type="za">ĝuanga</language>
+			<language type="zh">ĉina</language>
+			<language type="zh_Hans">ĉina simpligita</language>
+			<language type="zh_Hant">ĉina tradicia</language>
+			<language type="zu">zulua</language>
+			<language type="zxx">nelingvaĵo</language>
+		</languages>
+		<territories>
+			<territory type="AD">Andoro</territory>
+			<territory type="AE">Unuiĝintaj Arabaj Emirlandos</territory>
+			<territory type="AF">Afganujo</territory>
+			<territory type="AG">Antigvo-Barbudo</territory>
+			<territory type="AI">Angvilo</territory>
+			<territory type="AL">Albanujo</territory>
+			<territory type="AM">Armenujo</territory>
+			<territory type="AN">Nederlandaj Antiloj</territory>
+			<territory type="AO">Angolo</territory>
+			<territory type="AQ">Antarkto</territory>
+			<territory type="AR">Argentino</territory>
+			<territory type="AT">Aŭstrujo</territory>
+			<territory type="AU">Aŭstralio</territory>
+			<territory type="AW">Arubo</territory>
+			<territory type="AZ">Azerbajĝano</territory>
+			<territory type="BA">Bosnio-Hercegovino</territory>
+			<territory type="BB">Barbado</territory>
+			<territory type="BD">Bangladeŝo</territory>
+			<territory type="BE">Belgujo</territory>
+			<territory type="BF">Burkino</territory>
+			<territory type="BG">Bulgarujo</territory>
+			<territory type="BH">Barejno</territory>
+			<territory type="BI">Burundo</territory>
+			<territory type="BJ">Benino</territory>
+			<territory type="BM">Bermudoj</territory>
+			<territory type="BN">Brunejo</territory>
+			<territory type="BO">Bolivio</territory>
+			<territory type="BR">Brazilo</territory>
+			<territory type="BS">Bahamoj</territory>
+			<territory type="BT">Butano</territory>
+			<territory type="BW">Bocvano</territory>
+			<territory type="BY">Belorusujo</territory>
+			<territory type="BZ">Belizo</territory>
+			<territory type="CA">Kanado</territory>
+			<territory type="CF">Centr-Afrika Respubliko</territory>
+			<territory type="CG">Kongolo</territory>
+			<territory type="CH">Svisujo</territory>
+			<territory type="CI">Ebur-Bordo</territory>
+			<territory type="CK">Kukinsuloj</territory>
+			<territory type="CL">Ĉilio</territory>
+			<territory type="CM">Kameruno</territory>
+			<territory type="CN">Ĉinujo</territory>
+			<territory type="CO">Kolombio</territory>
+			<territory type="CR">Kostariko</territory>
+			<territory type="CS" draft="unconfirmed">Serbujo</territory>
+			<territory type="CU">Kubo</territory>
+			<territory type="CV">Kabo-Verdo</territory>
+			<territory type="CY">Kipro</territory>
+			<territory type="CZ">Ĉeĥujo</territory>
+			<territory type="DE">Germanujo</territory>
+			<territory type="DJ">Ĝibutio</territory>
+			<territory type="DK">Danujo</territory>
+			<territory type="DM">Dominiko</territory>
+			<territory type="DO">Domingo</territory>
+			<territory type="DZ">Alĝerio</territory>
+			<territory type="EC">Ekvadoro</territory>
+			<territory type="EE">Estonujo</territory>
+			<territory type="EG">Egipto</territory>
+			<territory type="EH">Okcidenta Saharo</territory>
+			<territory type="ER">Eritreo</territory>
+			<territory type="ES">Hispanujo</territory>
+			<territory type="ET">Etiopujo</territory>
+			<territory type="FI">Finnlando</territory>
+			<territory type="FJ">Fiĝoj</territory>
+			<territory type="FM">Mikronezio</territory>
+			<territory type="FO">Ferooj</territory>
+			<territory type="FR">Francujo</territory>
+			<territory type="GA">Gabono</territory>
+			<territory type="GB">Unuiĝinta Reĝlando</territory>
+			<territory type="GD">Grenado</territory>
+			<territory type="GE">Kartvelujo</territory>
+			<territory type="GF">Franca Gviano</territory>
+			<territory type="GH">Ganao</territory>
+			<territory type="GI">Ĝibraltaro</territory>
+			<territory type="GL">Gronlando</territory>
+			<territory type="GM">Gambio</territory>
+			<territory type="GN">Gvineo</territory>
+			<territory type="GP">Gvadelupo</territory>
+			<territory type="GQ">Ekvatora Gvineo</territory>
+			<territory type="GR">Grekujo</territory>
+			<territory type="GS">Sud-Georgio kaj Sud-Sandviĉinsuloj</territory>
+			<territory type="GT">Gvatemalo</territory>
+			<territory type="GU">Gvamo</territory>
+			<territory type="GW">Gvineo-Bisaŭo</territory>
+			<territory type="GY">Gujano</territory>
+			<territory type="HM">Herda kaj Makdonaldaj Insuloj</territory>
+			<territory type="HN">Honduro</territory>
+			<territory type="HR">Kroatujo</territory>
+			<territory type="HT">Haitio</territory>
+			<territory type="HU">Hungarujo</territory>
+			<territory type="ID">Indonezio</territory>
+			<territory type="IE">Irlando</territory>
+			<territory type="IL">Israelo</territory>
+			<territory type="IN">Hindujo</territory>
+			<territory type="IO">Brita Hindoceana Teritorio</territory>
+			<territory type="IQ">Irako</territory>
+			<territory type="IR">Irano</territory>
+			<territory type="IS">Islando</territory>
+			<territory type="IT">Italujo</territory>
+			<territory type="JM">Jamajko</territory>
+			<territory type="JO">Jordanio</territory>
+			<territory type="JP">Japanujo</territory>
+			<territory type="KE">Kenjo</territory>
+			<territory type="KG">Kirgizistano</territory>
+			<territory type="KH">Kamboĝo</territory>
+			<territory type="KI">Kiribato</territory>
+			<territory type="KM">Komoroj</territory>
+			<territory type="KN">Sent-Kristofo kaj Neviso</territory>
+			<territory type="KP">Nord-Koreo</territory>
+			<territory type="KR">Sud-Koreo</territory>
+			<territory type="KW">Kuvajto</territory>
+			<territory type="KY">Kejmanoj</territory>
+			<territory type="KZ">Kazaĥstano</territory>
+			<territory type="LA">Laoso</territory>
+			<territory type="LB">Libano</territory>
+			<territory type="LC">Sent-Lucio</territory>
+			<territory type="LI">Liĥtenŝtejno</territory>
+			<territory type="LK">Sri-Lanko</territory>
+			<territory type="LR">Liberio</territory>
+			<territory type="LS">Lesoto</territory>
+			<territory type="LT">Litovujo</territory>
+			<territory type="LU">Luksemburgo</territory>
+			<territory type="LV">Latvujo</territory>
+			<territory type="LY">Libio</territory>
+			<territory type="MA">Maroko</territory>
+			<territory type="MC">Monako</territory>
+			<territory type="MD">Moldavujo</territory>
+			<territory type="MG">Madagaskaro</territory>
+			<territory type="MH">Marŝaloj</territory>
+			<territory type="MK">Makedonujo</territory>
+			<territory type="ML">Malio</territory>
+			<territory type="MM">Mjanmao</territory>
+			<territory type="MN">Mongolujo</territory>
+			<territory type="MP">Nord-Marianoj</territory>
+			<territory type="MQ">Martiniko</territory>
+			<territory type="MR">Maŭritanujo</territory>
+			<territory type="MT">Malto</territory>
+			<territory type="MU">Maŭricio</territory>
+			<territory type="MV">Maldivoj</territory>
+			<territory type="MW">Malavio</territory>
+			<territory type="MX">Meksiko</territory>
+			<territory type="MY">Malajzio</territory>
+			<territory type="MZ">Mozambiko</territory>
+			<territory type="NA">Namibio</territory>
+			<territory type="NC">Nov-Kaledonio</territory>
+			<territory type="NE">Niĝero</territory>
+			<territory type="NF">Norfolkinsulo</territory>
+			<territory type="NG">Niĝerio</territory>
+			<territory type="NI">Nikaragvo</territory>
+			<territory type="NL">Nederlando</territory>
+			<territory type="NO">Norvegujo</territory>
+			<territory type="NP">Nepalo</territory>
+			<territory type="NR">Nauro</territory>
+			<territory type="NU">Niuo</territory>
+			<territory type="NZ">Nov-Zelando</territory>
+			<territory type="OM">Omano</territory>
+			<territory type="PA">Panamo</territory>
+			<territory type="PE">Peruo</territory>
+			<territory type="PF">Franca Polinezio</territory>
+			<territory type="PG">Papuo-Nov-Gvineo</territory>
+			<territory type="PH">Filipinoj</territory>
+			<territory type="PK">Pakistano</territory>
+			<territory type="PL">Pollando</territory>
+			<territory type="PM">Sent-Piero kaj Mikelono</territory>
+			<territory type="PN">Pitkarna Insulo</territory>
+			<territory type="PR">Puerto-Riko</territory>
+			<territory type="PT">Portugalujo</territory>
+			<territory type="PW">Belaŭo</territory>
+			<territory type="PY">Paragvajo</territory>
+			<territory type="QA">Kataro</territory>
+			<territory type="RE">Reunio</territory>
+			<territory type="RO">Rumanujo</territory>
+			<territory type="RU">Rusujo</territory>
+			<territory type="RW">Ruando</territory>
+			<territory type="SA">Saŭda Arabujo</territory>
+			<territory type="SB">Salomonoj</territory>
+			<territory type="SC">Sejŝeloj</territory>
+			<territory type="SD">Sudano</territory>
+			<territory type="SE">Svedujo</territory>
+			<territory type="SG">Singapuro</territory>
+			<territory type="SH">Sent-Heleno</territory>
+			<territory type="SI">Slovenujo</territory>
+			<territory type="SJ">Svalbardo kaj Jan-Majen-insulo</territory>
+			<territory type="SK">Slovakujo</territory>
+			<territory type="SL">Siera-Leono</territory>
+			<territory type="SM">San-Marino</territory>
+			<territory type="SN">Senegalo</territory>
+			<territory type="SO">Somalujo</territory>
+			<territory type="SR">Surinamo</territory>
+			<territory type="ST">Sao-Tomeo kaj Principeo</territory>
+			<territory type="SV">Salvadoro</territory>
+			<territory type="SY">Sirio</territory>
+			<territory type="SZ">Svazilando</territory>
+			<territory type="TD">Ĉado</territory>
+			<territory type="TG">Togolo</territory>
+			<territory type="TH">Tajlando</territory>
+			<territory type="TJ">Taĝikujo</territory>
+			<territory type="TM">Turkmenujo</territory>
+			<territory type="TN">Tunizio</territory>
+			<territory type="TO">Tongo</territory>
+			<territory type="TR">Turkujo</territory>
+			<territory type="TT">Trinidado kaj Tobago</territory>
+			<territory type="TV">Tuvalo</territory>
+			<territory type="TW">Tajvano</territory>
+			<territory type="TZ">Tanzanio</territory>
+			<territory type="UA">Ukrajno</territory>
+			<territory type="UG">Ugando</territory>
+			<territory type="UM">Usonaj malgrandaj insuloj</territory>
+			<territory type="US">Usono</territory>
+			<territory type="UY">Urugvajo</territory>
+			<territory type="UZ">Uzbekujo</territory>
+			<territory type="VA">Vatikano</territory>
+			<territory type="VC">Sent-Vincento kaj la Grenadinoj</territory>
+			<territory type="VE">Venezuelo</territory>
+			<territory type="VG">Britaj Virgulininsuloj</territory>
+			<territory type="VI">Usonaj Virgulininsuloj</territory>
+			<territory type="VN">Vjetnamo</territory>
+			<territory type="VU">Vanuatuo</territory>
+			<territory type="WF">Valiso kaj Futuno</territory>
+			<territory type="WS">Samoo</territory>
+			<territory type="YE">Jemeno</territory>
+			<territory type="YT">Majoto</territory>
+			<territory type="ZA">Sud-Afriko</territory>
+			<territory type="ZM">Zambio</territory>
+			<territory type="ZW">Zimbabvo</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c ĉ d e f g ĝ h ĥ i j ĵ k l m n o p r s ŝ t u ŭ v z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[q w x y]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C Ĉ D E F G Ĝ H Ĥ I J Ĵ K L M N O P R S Ŝ T U Ŭ V Z]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">jan</month>
+							<month type="2">feb</month>
+							<month type="3">mar</month>
+							<month type="4">apr</month>
+							<month type="5">maj</month>
+							<month type="6">jun</month>
+							<month type="7">jul</month>
+							<month type="8">aŭg</month>
+							<month type="9">sep</month>
+							<month type="10">okt</month>
+							<month type="11">nov</month>
+							<month type="12">dec</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">januaro</month>
+							<month type="2">februaro</month>
+							<month type="3">marto</month>
+							<month type="4">aprilo</month>
+							<month type="5">majo</month>
+							<month type="6">junio</month>
+							<month type="7">julio</month>
+							<month type="8">aŭgusto</month>
+							<month type="9">septembro</month>
+							<month type="10">oktobro</month>
+							<month type="11">novembro</month>
+							<month type="12">decembro</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">di</day>
+							<day type="mon">lu</day>
+							<day type="tue">ma</day>
+							<day type="wed">me</day>
+							<day type="thu">ĵa</day>
+							<day type="fri">ve</day>
+							<day type="sat">sa</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">dimanĉo</day>
+							<day type="mon">lundo</day>
+							<day type="tue">mardo</day>
+							<day type="wed">merkredo</day>
+							<day type="thu">ĵaŭdo</day>
+							<day type="fri">vendredo</day>
+							<day type="sat">sabato</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">K1</quarter>
+							<quarter type="2" draft="unconfirmed">K2</quarter>
+							<quarter type="3" draft="unconfirmed">K3</quarter>
+							<quarter type="4" draft="unconfirmed">K4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">1a kvaronjaro</quarter>
+							<quarter type="2" draft="unconfirmed">2a kvaronjaro</quarter>
+							<quarter type="3" draft="unconfirmed">3a kvaronjaro</quarter>
+							<quarter type="4" draft="unconfirmed">4a kvaronjaro</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">atm</dayPeriod>
+							<dayPeriod type="pm">ptm</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraAbbr>
+						<era type="0">aK</era>
+						<era type="1">pK</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d-'a' 'de' MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>y-MMMM-dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>y-MMM-dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>yy-MM-dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>H-'a' 'horo' 'kaj' m:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="unconfirmed">{0} - {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="unconfirmed">d-d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="h" draft="unconfirmed">h-h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H" draft="unconfirmed">HH-HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="h" draft="unconfirmed">h:mm-h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm-h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H" draft="unconfirmed">HH:mm-HH:mm</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm-HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="h" draft="unconfirmed">h:mm-h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm-h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H" draft="unconfirmed">HH:mm-HH:mm v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm-HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="h" draft="unconfirmed">h-h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H" draft="unconfirmed">HH-HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">M-M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">MM-dd - MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM-dd - MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E, MM-dd - E, MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MM-dd - E, MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM-MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">MMM-dd - MMM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM-dd - MMM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, MMM-dd - E, MMM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MMM-dd - E, MMM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="unconfirmed">y-y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">yy-MM - yy-MM</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">yy-MM - yy-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">yy-MM-dd - yy-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">yy-MM-dd - yy-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">yy-MM-dd - yy-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, yy-MM-dd - E, yy-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, yy-MM-dd - E, yy-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, yy-MM-dd - E, yy-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">y-MMM - y-MMM</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y-MMM - y-MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">y-MMM-dd - y-MMM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">y-MMM-dd - y-MMM-dd</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y-MMM-dd - y-MMM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d-'a' - E, d-'a' 'de' MMM y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d-'a' 'de' MMM - E, d-'a' 'de' MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d-'a' 'de' MMM y - E, d-'a' 'de' MMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group> </group>
+		</symbols>
+		<currencies>
+			<currency type="AUD">
+				<displayName draft="unconfirmed">aŭstrala dolaro</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName draft="unconfirmed">brazila realo</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="unconfirmed">ĉina juano</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="unconfirmed">eŭro</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="unconfirmed">brita sterlinga funto</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="unconfirmed">hinda rupio</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="unconfirmed">japana eno</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="unconfirmed">norvega krono</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="unconfirmed">rusa rublo</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName draft="unconfirmed">usona dolaro</displayName>
+			</currency>
+			<currency type="XAG">
+				<displayName draft="unconfirmed">arĝento</displayName>
+			</currency>
+			<currency type="XAU">
+				<displayName draft="unconfirmed">oro</displayName>
+			</currency>
+			<currency type="XBB">
+				<displayName draft="unconfirmed">eŭropa monunuo</displayName>
+			</currency>
+			<currency type="XFO">
+				<displayName draft="unconfirmed">franca ora franko</displayName>
+			</currency>
+			<currency type="XPD">
+				<displayName draft="unconfirmed">paladio</displayName>
+			</currency>
+			<currency type="XPT">
+				<displayName draft="unconfirmed">plateno</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>
+

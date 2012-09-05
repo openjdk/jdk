@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 import java.text.*;
 import java.util.*;
-import sun.util.resources.*;
+import sun.util.locale.provider.*;
 
 public class GenericTest {
 
@@ -40,6 +40,7 @@ public class GenericTest {
     com.bar.CurrencyNameProviderImpl currencyNP = new com.bar.CurrencyNameProviderImpl();
     com.bar.LocaleNameProviderImpl localeNP = new com.bar.LocaleNameProviderImpl();
     com.bar.TimeZoneNameProviderImpl tzNP = new com.bar.TimeZoneNameProviderImpl();
+    com.bar.CalendarDataProviderImpl calDataP = new com.bar.CalendarDataProviderImpl();
 
     public static void main(String[] s) {
         new GenericTest();
@@ -57,9 +58,9 @@ public class GenericTest {
         // Check that Locale.getAvailableLocales() returns the union of the JRE supported
         // locales and providers' locales
         HashSet<Locale> result =
-            new HashSet<Locale>(Arrays.asList(Locale.getAvailableLocales()));
+            new HashSet<>(Arrays.asList(Locale.getAvailableLocales()));
         HashSet<Locale> expected =
-            new HashSet<Locale>(Arrays.asList(LocaleData.getAvailableLocales()));
+            new HashSet<>(Arrays.asList(LocaleProviderAdapter.forJRE().getAvailableLocales()));
         expected.addAll(Arrays.asList(breakIP.getAvailableLocales()));
         expected.addAll(Arrays.asList(collatorP.getAvailableLocales()));
         expected.addAll(Arrays.asList(dateFP.getAvailableLocales()));
@@ -69,8 +70,11 @@ public class GenericTest {
         expected.addAll(Arrays.asList(currencyNP.getAvailableLocales()));
         expected.addAll(Arrays.asList(localeNP.getAvailableLocales()));
         expected.addAll(Arrays.asList(tzNP.getAvailableLocales()));
+        expected.addAll(Arrays.asList(calDataP.getAvailableLocales()));
+        expected.remove(Locale.ROOT);
         if (!result.equals(expected)) {
-            throw new RuntimeException("Locale.getAvailableLocales() does not return the union of locales");
+            throw new RuntimeException("Locale.getAvailableLocales() does not return the union of locales: diff="
+                                       + getDiff(result, expected));
         }
     }
 
@@ -88,5 +92,15 @@ public class GenericTest {
         if (!xxname.equals(expected)) {
             throw new RuntimeException("Locale fallback did not perform correctly. got: "+xxname+" expected: "+expected);
         }
+    }
+
+    private static String getDiff(Set set1, Set set2) {
+        Set s1 = (Set)((HashSet)set1).clone();
+        s1.removeAll(set2);
+
+        Set s2 = (Set)((HashSet)set2).clone();
+        s2.removeAll(set1);
+        s2.addAll(s1);
+        return s2.toString();
     }
 }

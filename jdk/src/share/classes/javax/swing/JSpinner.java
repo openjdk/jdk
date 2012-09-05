@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,13 @@ import java.util.*;
 import java.beans.*;
 import java.text.*;
 import java.io.*;
-import java.util.HashMap;
-import sun.util.resources.LocaleData;
+import java.text.spi.DateFormatProvider;
+import java.text.spi.NumberFormatProvider;
 
 import javax.accessibility.*;
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.LocaleResources;
+import sun.util.locale.provider.LocaleServiceProviderPool;
 
 
 /**
@@ -946,11 +949,12 @@ public class JSpinner extends JComponent implements Accessible
         // This is here until SimpleDateFormat gets a constructor that
         // takes a Locale: 4923525
         private static String getDefaultPattern(Locale loc) {
-            ResourceBundle r = LocaleData.getDateFormatData(loc);
-            String[] dateTimePatterns = r.getStringArray("DateTimePatterns");
-            Object[] dateTimeArgs = {dateTimePatterns[DateFormat.SHORT],
-                                     dateTimePatterns[DateFormat.SHORT + 4]};
-            return MessageFormat.format(dateTimePatterns[8], dateTimeArgs);
+            LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DateFormatProvider.class, loc);
+            LocaleResources lr = adapter.getLocaleResources(loc);
+            if (lr == null) {
+                lr = LocaleProviderAdapter.forJRE().getLocaleResources(loc);
+            }
+            return lr.getDateTimePattern(DateFormat.SHORT, DateFormat.SHORT, null);
         }
 
         /**
@@ -1125,8 +1129,14 @@ public class JSpinner extends JComponent implements Accessible
         // takes a Locale: 4923525
         private static String getDefaultPattern(Locale locale) {
             // Get the pattern for the default locale.
-            ResourceBundle rb = LocaleData.getNumberFormatData(locale);
-            String[] all = rb.getStringArray("NumberPatterns");
+            LocaleProviderAdapter adapter;
+            adapter = LocaleProviderAdapter.getAdapter(NumberFormatProvider.class,
+                                                       locale);
+            LocaleResources lr = adapter.getLocaleResources(locale);
+            if (lr == null) {
+                lr = LocaleProviderAdapter.forJRE().getLocaleResources(locale);
+            }
+            String[] all = lr.getNumberPatterns();
             return all[0];
         }
 
