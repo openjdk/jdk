@@ -1265,7 +1265,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
                                                      bootstrap_specifier,
                                                      method_name, method_signature,
                                                      &resolved_appendix,
-                                                     CHECK);
+                                                     THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (TraceMethodHandles) {
       tty->print_cr("invokedynamic throws BSME for "INTPTR_FORMAT, PENDING_EXCEPTION);
@@ -1282,8 +1282,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
     // See the "Linking Exceptions" section for the invokedynamic instruction in the JVMS.
     Handle nested_exception(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
-    THROW_MSG_CAUSE(vmSymbols::java_lang_BootstrapMethodError(),
-                    "BootstrapMethodError", nested_exception)
+    THROW_CAUSE(vmSymbols::java_lang_BootstrapMethodError(), nested_exception)
   }
   result.set_handle(resolved_method, resolved_appendix, CHECK);
 }
