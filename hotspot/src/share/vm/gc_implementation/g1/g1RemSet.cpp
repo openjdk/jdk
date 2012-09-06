@@ -324,7 +324,7 @@ void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
   if (G1UseParallelRSetUpdating || (worker_i == 0)) {
     updateRS(&into_cset_dcq, worker_i);
   } else {
-    _g1p->phase_times()->record_update_rs_processed_buffers(worker_i, 0.0);
+    _g1p->phase_times()->record_update_rs_processed_buffers(worker_i, 0);
     _g1p->phase_times()->record_update_rs_time(worker_i, 0.0);
   }
   if (G1UseParallelRSetScanning || (worker_i == 0)) {

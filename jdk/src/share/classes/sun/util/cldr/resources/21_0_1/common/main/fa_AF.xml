@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+	<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="fa"/>
+		<territory type="AF"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="es">هسپانوی</language>
+			<language type="fa">دری</language>
+			<language type="fi">فنلندی</language>
+			<language type="ga">آیرلندی</language>
+			<language type="hr">کروشیایی</language>
+			<language type="id">اندونیزیایی</language>
+			<language type="is">آیسلندی</language>
+			<language type="it">ایتالوی</language>
+			<language type="ja">جاپانی</language>
+			<language type="ko">کوریایی</language>
+			<language type="ky">قرغزی</language>
+			<language type="mn">مغلی</language>
+			<language type="ne">نیپالی</language>
+			<language type="nl">هالندی</language>
+			<language type="no">نارویژی</language>
+			<language type="pl">پولندی</language>
+			<language type="pt">پرتگالی</language>
+			<language type="sv">سویدنی</language>
+			<language type="tg">تاجکی</language>
+		</languages>
+		<scripts>
+			<script type="Mong">مغلی</script>
+		</scripts>
+		<territories>
+			<territory type="AD">اندورا</territory>
+			<territory type="AG">انتیگوا و باربودا</territory>
+			<territory type="AL">البانیا</territory>
+			<territory type="AO">انگولا</territory>
+			<territory type="AR">ارجنتاین</territory>
+			<territory type="AU">آسترالیا</territory>
+			<territory type="BA">بوسنیا و هرزه‌گوینا</territory>
+			<territory type="BD">بنگله‌دیش</territory>
+			<territory type="BE">بلجیم</territory>
+			<territory type="BG">بلغاریا</territory>
+			<territory type="BN">برونی</territory>
+			<territory type="BO">بولیویا</territory>
+			<territory type="BR">برازیل</territory>
+			<territory type="BS">بهاماس</territory>
+			<territory type="BY">روسیهٔ سفید</territory>
+			<territory type="CD">جمهوری دموکراتیک کانگو</territory>
+			<territory type="CF">افریقای مرکزی</territory>
+			<territory type="CG">کانگو</territory>
+			<territory type="CH">سویس</territory>
+			<territory type="CL">چلی</territory>
+			<territory type="CO">کولمبیا</territory>
+			<territory type="CR">کاستریکا</territory>
+			<territory type="CU">کیوبا</territory>
+			<territory type="DK">دنمارک</territory>
+			<territory type="EE">استونیا</territory>
+			<territory type="ER">اریتریا</territory>
+			<territory type="ES">هسپانیه</territory>
+			<territory type="ET">ایتوپیا</territory>
+			<territory type="FI">فنلند</territory>
+			<territory type="FM">میکرونزیا</territory>
+			<territory type="GD">گرینادا</territory>
+			<territory type="GN">گینیا</territory>
+			<territory type="GQ">گینیا استوایی</territory>
+			<territory type="GT">گواتیمالا</territory>
+			<territory type="GW">گینیا بیسائو</territory>
+			<territory type="GY">گیانا</territory>
+			<territory type="HN">هاندوراس</territory>
+			<territory type="HR">کروشیا</territory>
+			<territory type="HT">هایتی</territory>
+			<territory type="ID">اندونیزیا</territory>
+			<territory type="IE">آیرلند</territory>
+			<territory type="IS">آیسلند</territory>
+			<territory type="JP">جاپان</territory>
+			<territory type="KE">کینیا</territory>
+			<territory type="KG">قرغزستان</territory>
+			<territory type="KH">کمپوچیا</territory>
+			<territory type="KM">کومور</territory>
+			<territory type="KN">سنت کیتس و نیویس</territory>
+			<territory type="KP">کوریای شمالی</territory>
+			<territory type="KR">کوریای جنوبی</territory>
+			<territory type="LK">سریلانکا</territory>
+			<territory type="LS">لیسوتو</territory>
+			<territory type="LT">لتوانیا</territory>
+			<territory type="LV">لاتویا</territory>
+			<territory type="LY">لیبیا</territory>
+			<territory type="MG">مادغاسکر</territory>
+			<territory type="MN">منگولیا</territory>
+			<territory type="MR">موریتانیا</territory>
+			<territory type="MT">مالتا</territory>
+			<territory type="MX">مکسیکو</territory>
+			<territory type="MY">مالیزیا</territory>
+			<territory type="MZ">موزمبیق</territory>
+			<territory type="NG">نیجریا</territory>
+			<territory type="NI">نیکاراگوا</territory>
+			<territory type="NL">هالند</territory>
+			<territory type="NO">ناروی</territory>
+			<territory type="NP">نیپال</territory>
+			<territory type="NZ">زیلاند جدید</territory>
+			<territory type="PA">پانامه</territory>
+			<territory type="PE">پیرو</territory>
+			<territory type="PG">پاپوا نیو گینیا</territory>
+			<territory type="PL">پولند</territory>
+			<territory type="PT">پرتگال</territory>
+			<territory type="PY">پاراگوای</territory>
+			<territory type="RO">رومانیا</territory>
+			<territory type="RW">روآندا</territory>
+			<territory type="SB">جزایر سلومون</territory>
+			<territory type="SE">سویدن</territory>
+			<territory type="SG">سینگاپور</territory>
+			<territory type="SI">سلونیا</territory>
+			<territory type="SK">سلواکیا</territory>
+			<territory type="SL">سیرالیون</territory>
+			<territory type="SN">سینیگال</territory>
+			<territory type="SO">سومالیه</territory>
+			<territory type="ST">سائو تومه و پرینسیپ</territory>
+			<territory type="SV">السلوادور</territory>
+			<territory type="TJ">تاجکستان</territory>
+			<territory type="UA">اکراین</territory>
+			<territory type="UY">یوروگوای</territory>
+			<territory type="VC">سنت وینسنت و گرینادین</territory>
+			<territory type="VE">ونزویلا</territory>
+			<territory type="WS">ساموآ</territory>
+			<territory type="ZW">زیمبابوی</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters type="auxiliary">[\u0656 \u0670 \u200C \u200D ټ ځ څ ډ ړ ږ ښ ګ ڼ ي]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">جنو</month>
+							<month type="5">مـی</month>
+							<month type="7">جول</month>
+							<month type="12">دسم</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">جنوری</month>
+							<month type="2">فبروری</month>
+							<month type="3">مارچ</month>
+							<month type="4">اپریل</month>
+							<month type="5">می</month>
+							<month type="6">جون</month>
+							<month type="7">جولای</month>
+							<month type="8">اگست</month>
+							<month type="9">سپتمبر</month>
+							<month type="10">اکتوبر</month>
+							<month type="11">نومبر</month>
+							<month type="12">دسمبر</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">ج</month>
+							<month type="2">ف</month>
+							<month type="3">م</month>
+							<month type="4">ا</month>
+							<month type="5">م</month>
+							<month type="6">ج</month>
+							<month type="7">ج</month>
+							<month type="8">ا</month>
+							<month type="9">س</month>
+							<month type="10">ا</month>
+							<month type="11">ن</month>
+							<month type="12">د</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="persian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">حمل</month>
+							<month type="2">ثور</month>
+							<month type="3">جوزا</month>
+							<month type="4">سرطان</month>
+							<month type="5">اسد</month>
+							<month type="6">سنبلهٔ</month>
+							<month type="7">میزان</month>
+							<month type="8">عقرب</month>
+							<month type="9">قوس</month>
+							<month type="10">جدی</month>
+							<month type="11">دلو</month>
+							<month type="12">حوت</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">ح</month>
+							<month type="2">ث</month>
+							<month type="3">ج</month>
+							<month type="4">س</month>
+							<month type="5">ا</month>
+							<month type="6">س</month>
+							<month type="7">م</month>
+							<month type="8">ع</month>
+							<month type="9">ق</month>
+							<month type="10">ج</month>
+							<month type="11">د</month>
+							<month type="12">ح</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraAbbr>
+						<era type="0">ه‍. ش.</era>
+					</eraAbbr>
+				</eras>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>'‪'#,##0%'‬'</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencies>
+			<currency type="AFN">
+				<symbol>؋</symbol>
+			</currency>
+			<currency type="AUD">
+				<displayName>دالر آسترالیا</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName>دالر برونی</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>روبل روسیهٔ سفید</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>دالر کانادا</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName>فرانک سویس</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName>کرون دنمارک</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>ین جاپان</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName>پزوی مکسیکو</displayName>
+			</currency>
+			<currency type="NLG">
+				<displayName>گیلدر هالند</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName>کرون ناروی</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName>کرون سویدن</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName>دالر سینگاپور</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName>سامانی تاجکستان</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>دالر امریکا</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

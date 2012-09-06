@@ -147,6 +147,9 @@ public abstract class KeyboardFocusManager
                 public KeyboardFocusManager getCurrentKeyboardFocusManager(AppContext ctx) {
                     return KeyboardFocusManager.getCurrentKeyboardFocusManager(ctx);
                 }
+                public Container getCurrentFocusCycleRoot() {
+                    return KeyboardFocusManager.currentFocusCycleRoot;
+                }
             }
         );
     }

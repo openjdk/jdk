@@ -3499,7 +3499,6 @@ public class Lower extends TreeTranslator {
                 JCExpression expression = oneCase.getExpression();
 
                 if (expression != null) { // expression for a "default" case is null
-                    expression = TreeInfo.skipParens(expression);
                     String labelExpr = (String) expression.type.constValue();
                     Integer mapping = caseLabelToPosition.put(labelExpr, casePosition);
                     Assert.checkNull(mapping);

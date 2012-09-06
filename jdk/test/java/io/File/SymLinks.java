@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 /* @test
  * @bug 6595866
  * @summary Test java.io.File operations with sym links
+ * @build SymLinks Util
+ * @run main SymLinks
  */
 
 import java.io.*;
@@ -338,7 +340,7 @@ public class SymLinks {
         assertTrue(link2link2file.canRead());
         assertTrue(link2link2file.canWrite());
 
-        if (file.setReadOnly()) {
+        if (!Util.isPrivileged() && file.setReadOnly()) {
             assertFalse(file.canWrite());
             assertFalse(link2file.canWrite());
             assertFalse(link2link2file.canWrite());

@@ -152,9 +152,6 @@ private:
   ciMethod*  get_method_by_index_impl(constantPoolHandle cpool,
                                       int method_index, Bytecodes::Code bc,
                                       ciInstanceKlass* loading_klass);
-  ciMethod*  get_fake_invokedynamic_method_impl(constantPoolHandle cpool,
-                                                int index, Bytecodes::Code bc,
-                                                ciInstanceKlass* accessor);
 
   // Helper methods
   bool       check_klass_accessibility(ciKlass* accessing_klass,

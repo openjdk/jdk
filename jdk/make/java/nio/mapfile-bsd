@@ -121,10 +121,6 @@ SUNWprivate_1.1 {
 		Java_sun_nio_fs_BsdNativeDispatcher_getfsstat;
 		Java_sun_nio_fs_BsdNativeDispatcher_fsstatEntry;
 		Java_sun_nio_fs_BsdNativeDispatcher_endfsstat;
-		Java_sun_nio_fs_GnomeFileTypeDetector_initializeGio;
-		Java_sun_nio_fs_GnomeFileTypeDetector_probeUsingGio;
-		Java_sun_nio_fs_GnomeFileTypeDetector_initializeGnomeVfs;
-		Java_sun_nio_fs_GnomeFileTypeDetector_probeUsingGnomeVfs;
 		Java_sun_nio_fs_UnixNativeDispatcher_init;
 		Java_sun_nio_fs_UnixNativeDispatcher_getcwd;
 		Java_sun_nio_fs_UnixNativeDispatcher_strerror;
@@ -170,7 +166,6 @@ SUNWprivate_1.1 {
 		Java_sun_nio_fs_UnixNativeDispatcher_getgrgid;
 		Java_sun_nio_fs_UnixNativeDispatcher_getpwnam0;
 		Java_sun_nio_fs_UnixNativeDispatcher_getgrnam0;
-		Java_sun_nio_fs_UnixNativeDispatcher_getextmntent;
 		Java_sun_nio_fs_UnixCopyFile_transfer;
 		handleSocketError;
 

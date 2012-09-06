@@ -1,0 +1,1765 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6610 $"/>
+		<generation date="$Date: 2012-02-27 09:50:26 +0900 (Mon, 27 Feb 2012) $"/>
+		<language type="ksh"/>
+	</identity>
+	<fallback draft="unconfirmed">de_DE nl nds en</fallback>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localePattern draft="unconfirmed">{0} en {1}</localePattern>
+			<localeSeparator draft="unconfirmed"> uß </localeSeparator>
+		</localeDisplayPattern>
+		<languages>
+			<language type="ab" draft="unconfirmed">Abchaasesch</language>
+			<language type="af" draft="unconfirmed">Afrikaans</language>
+			<language type="am" draft="unconfirmed">Amhaaresch</language>
+			<language type="ar" draft="unconfirmed">Arabescha</language>
+			<language type="as" draft="unconfirmed">Aßameesesch</language>
+			<language type="asa" draft="unconfirmed">Pare</language>
+			<language type="ay" draft="unconfirmed">Aimaresch</language>
+			<language type="az" draft="unconfirmed">Asserbaidschaanesch</language>
+			<language type="be" draft="unconfirmed">Wiißrußesch</language>
+			<language type="bem" draft="unconfirmed">Bemba</language>
+			<language type="bez" draft="unconfirmed">Bena</language>
+			<language type="bg" draft="unconfirmed">Bulljaaresch</language>
+			<language type="bm" draft="unconfirmed">Bambara</language>
+			<language type="bn" draft="unconfirmed">Bängjaalesch</language>
+			<language type="bo" draft="unconfirmed">Tibeetesch</language>
+			<language type="brx" draft="unconfirmed">Boddo</language>
+			<language type="bs" draft="unconfirmed">Boßnesch</language>
+			<language type="ca" draft="unconfirmed">Kattalanesch</language>
+			<language type="cs" draft="unconfirmed">Tschäschesch</language>
+			<language type="cy" draft="unconfirmed">Walliisesch</language>
+			<language type="da" draft="unconfirmed">Dänesch</language>
+			<language type="de" draft="unconfirmed">Deutsch</language>
+			<language type="de_AT" draft="unconfirmed">Deutsch uß Ößterich</language>
+			<language type="de_CH" draft="unconfirmed">Deutsch uß der Schweijz</language>
+			<language type="dv" draft="unconfirmed">Divehesch</language>
+			<language type="dz" draft="unconfirmed">Butanesch</language>
+			<language type="ebu" draft="unconfirmed">Embu</language>
+			<language type="efi" draft="unconfirmed">Efik</language>
+			<language type="el" draft="unconfirmed">Jriischesch</language>
+			<language type="en" draft="unconfirmed">Änglesch</language>
+			<language type="en_AU" draft="unconfirmed">Änglesch uß Außtraalije</language>
+			<language type="en_CA" draft="unconfirmed">Änglesch uß Kannaada</language>
+			<language type="en_GB" draft="unconfirmed">Brittesch Änglesch</language>
+			<language type="en_US" draft="unconfirmed">Amärreskaanesch Änglesch</language>
+			<language type="eo" draft="unconfirmed">Esperanto</language>
+			<language type="es" draft="unconfirmed">Schpaanesch</language>
+			<language type="es_419" draft="unconfirmed">Schpaanesch uß Lattein-Ammärrika</language>
+			<language type="es_ES" draft="unconfirmed">Schpaanesch uß Schpaaneje</language>
+			<language type="et" draft="unconfirmed">Äßnesch</language>
+			<language type="eu" draft="unconfirmed">Baskesch</language>
+			<language type="fa" draft="unconfirmed">Pärsesch</language>
+			<language type="fi" draft="unconfirmed">Finnesch</language>
+			<language type="fil" draft="unconfirmed">Fillipiinesch</language>
+			<language type="fj" draft="unconfirmed">Fidschesch</language>
+			<language type="fr" draft="unconfirmed">Franzüüsesch</language>
+			<language type="fr_CA" draft="unconfirmed">Franzüüsesch uß Kannada</language>
+			<language type="fr_CH" draft="unconfirmed">Franzüüsesch uß de Schweijz</language>
+			<language type="ga" draft="unconfirmed">Ieresch</language>
+			<language type="gl" draft="unconfirmed">Jalliizesch</language>
+			<language type="gn" draft="unconfirmed">Juwaraanesch</language>
+			<language type="gsw" draft="unconfirmed">Schwitzerdütsch</language>
+			<language type="gu" draft="unconfirmed">Gutscharatesch</language>
+			<language type="ha" draft="unconfirmed">Haußa</language>
+			<language type="haw" draft="unconfirmed">Hauajaanesch</language>
+			<language type="he" draft="unconfirmed">Hebrähesch</language>
+			<language type="hi" draft="unconfirmed">Hindi</language>
+			<language type="hr" draft="unconfirmed">Krowatesch</language>
+			<language type="ht" draft="unconfirmed">Ha'iitesch</language>
+			<language type="hu" draft="unconfirmed">Unjarresch</language>
+			<language type="hy" draft="unconfirmed">Areenesch</language>
+			<language type="id" draft="unconfirmed">Indoneesesch</language>
+			<language type="ig" draft="unconfirmed">Igbo</language>
+			<language type="is" draft="unconfirmed">Ißländesch</language>
+			<language type="it" draft="unconfirmed">Etalljänesch</language>
+			<language type="ja" draft="unconfirmed">Japaanesch</language>
+			<language type="jv" draft="unconfirmed">Javaanesch</language>
+			<language type="ka" draft="unconfirmed">Je'orjesch</language>
+			<language type="kea" draft="unconfirmed">Kapvärdesch</language>
+			<language type="kk" draft="unconfirmed">Kassakesch</language>
+			<language type="km" draft="unconfirmed">Khmer</language>
+			<language type="kn" draft="unconfirmed">Kannada</language>
+			<language type="ko" draft="unconfirmed">Korrejaanesch</language>
+            <language type="ks" draft="unconfirmed">Kschamieresch</language>
+            <language type="ksh" draft="unconfirmed">Kölsch</language>
+			<language type="ku" draft="unconfirmed">Kurdesch</language>
+			<language type="ky" draft="unconfirmed">Kirjiisesch</language>
+			<language type="la" draft="unconfirmed">Lateijnesch</language>
+			<language type="lah" draft="unconfirmed">de Landa-Schprooche</language>
+			<language type="lb" draft="unconfirmed">Luxemborjesch</language>
+			<language type="ln" draft="unconfirmed">Lingjalla</language>
+			<language type="lo" draft="unconfirmed">Lahootesch</language>
+			<language type="lt" draft="unconfirmed">Littouesch</language>
+			<language type="luy" draft="unconfirmed">Luyjanesch</language>
+			<language type="lv" draft="unconfirmed">Lättesch</language>
+			<language type="mg" draft="unconfirmed">Madajaßesch</language>
+			<language type="mi" draft="unconfirmed">Maahori</language>
+			<language type="mk" draft="unconfirmed">Mazedoonesch</language>
+			<language type="ml" draft="unconfirmed">Mallajalam</language>
+			<language type="mn" draft="unconfirmed">Mongjolesch</language>
+			<language type="mr" draft="unconfirmed">Marraatesch</language>
+			<language type="ms" draft="unconfirmed">Mallaijesch</language>
+			<language type="mt" draft="unconfirmed">Malteesesch</language>
+			<language type="mul" draft="unconfirmed">-ongerscheidlijje Schprooche-</language>
+			<language type="my" draft="unconfirmed">Burmessesch</language>
+			<language type="nb" draft="unconfirmed">Norrweejesch Bokmål</language>
+			<language type="nd" draft="unconfirmed">Nood-Ndebele</language>
+			<language type="ne" draft="unconfirmed">Nepallessesch</language>
+			<language type="nl" draft="unconfirmed">Holländesch</language>
+			<language type="nl_BE" draft="unconfirmed">Flämesch</language>
+			<language type="nn" draft="unconfirmed">Neu-Norrweejesch</language>
+			<language type="no" draft="unconfirmed">Norrweejesch</language>
+			<language type="nso" draft="unconfirmed">Nood-Sooto</language>
+			<language type="ny" draft="unconfirmed">Schi-Schewa</language>
+			<language type="or" draft="unconfirmed">Oriija</language>
+			<language type="os" draft="unconfirmed">Oßeetesch</language>
+			<language type="pa" draft="unconfirmed">Panschaabesch</language>
+			<language type="pl" draft="unconfirmed">Pollnesch</language>
+			<language type="ps" draft="unconfirmed">Paschtunesch</language>
+			<language type="pt" draft="unconfirmed">Pochtojiesesch</language>
+			<language type="pt_BR" draft="unconfirmed">Brasilljaanesch Pochtojiesesch</language>
+			<language type="pt_PT" draft="unconfirmed">Pochtojiisesch uß Pochtojall</language>
+			<language type="qu" draft="unconfirmed">Kättschowa</language>
+			<language type="rm" draft="unconfirmed">Räto-Romaanesch</language>
+			<language type="rn" draft="unconfirmed">K-Rundesch</language>
+			<language type="ro" draft="unconfirmed">Rumänesch</language>
+			<language type="rof" draft="unconfirmed">Kirombo</language>
+			<language type="ru" draft="unconfirmed">Rußßesch</language>
+			<language type="rw" draft="unconfirmed">Kinja-Ruandesch</language>
+			<language type="sa" draft="unconfirmed">Sanskrit</language>
+			<language type="sah" draft="unconfirmed">Jackutesch</language>
+			<language type="sd" draft="unconfirmed">Sinndi</language>
+			<language type="se" draft="unconfirmed">Nood-Lappländesch</language>
+			<language type="sg" draft="unconfirmed">Sangjo</language>
+			<language type="sh" draft="unconfirmed">Särbokowatesch</language>
+			<language type="si" draft="unconfirmed">Singjaleesesch</language>
+			<language type="sk" draft="unconfirmed">ẞlovakesch</language>
+			<language type="sl" draft="unconfirmed">ẞloveenesch</language>
+			<language type="sm" draft="unconfirmed">Sammohanesch</language>
+			<language type="sn" draft="unconfirmed">Schi-Schona</language>
+			<language type="so" draft="unconfirmed">Somaalesch</language>
+			<language type="sq" draft="unconfirmed">Albaanesch</language>
+			<language type="sr" draft="unconfirmed">Särbesch</language>
+			<language type="ss" draft="unconfirmed">Si-Swatesch</language>
+			<language type="st" draft="unconfirmed">Söd-Sooto</language>
+			<language type="su" draft="unconfirmed">Sindaneesesch</language>
+			<language type="sv" draft="unconfirmed">Schweedesch</language>
+			<language type="sw" draft="unconfirmed">Suaheelesch</language>
+			<language type="swb" draft="unconfirmed">Kommooresch</language>
+			<language type="ta" draft="unconfirmed">Tamiilesch</language>
+			<language type="te" draft="unconfirmed">Telluuju</language>
+			<language type="tet" draft="unconfirmed">Tetumsch</language>
+			<language type="tg" draft="unconfirmed">Tadschiikesch</language>
+			<language type="th" draft="unconfirmed">Tailändesch</language>
+			<language type="ti" draft="unconfirmed">Tigrinianesch</language>
+			<language type="tk" draft="unconfirmed">Törkmeenesch</language>
+			<language type="tl" draft="unconfirmed">Tagalog</language>
+			<language type="tn" draft="unconfirmed">Se-Zwaanesch</language>
+			<language type="to" draft="unconfirmed">Tongjaanesch</language>
+			<language type="tpi" draft="unconfirmed">Took Pisin</language>
+			<language type="tr" draft="unconfirmed">Törkesch</language>
+			<language type="ts" draft="unconfirmed">Xi-Zongjanesch</language>
+			<language type="ty" draft="unconfirmed">Tahitesch</language>
+			<language type="ug" draft="unconfirmed">Uj'juuersch</language>
+			<language type="uk" draft="unconfirmed">Ukrainesch</language>
+			<language type="und" draft="unconfirmed">-onbikannt-</language>
+			<language type="ur" draft="unconfirmed">Urdu/Hindi</language>
+			<language type="uz" draft="unconfirmed">Ußbeekesch</language>
+			<language type="ve" draft="unconfirmed">Wenda</language>
+			<language type="vi" draft="unconfirmed">Vijätnammeesesch</language>
+			<language type="wae" draft="unconfirmed">Walserdütsch</language>
+			<language type="wo" draft="unconfirmed">Woloff</language>
+			<language type="xh" draft="unconfirmed">Isi-Khoosa</language>
+			<language type="yo" draft="unconfirmed">Joruuba</language>
+			<language type="yue" draft="unconfirmed">Kanton-Schineesesch</language>
+			<language type="zh" draft="unconfirmed">Schineesesch</language>
+			<language type="zh_Hans" draft="unconfirmed">Schineesesch en de eijfacher Schreff</language>
+			<language type="zh_Hant" draft="unconfirmed">Schineesesch en de tradizjonälle Schreff</language>
+			<language type="zu" draft="unconfirmed">Suulu</language>
+			<language type="zxx" draft="unconfirmed">-kein Schprooch-</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="unconfirmed">arraabesche Schreff</script>
+			<script type="Armn" draft="unconfirmed">armeenesche Schreff</script>
+			<script type="Beng" draft="unconfirmed">bängjaalesche Schreff</script>
+			<script type="Bopo" draft="unconfirmed">schineeseche Ömschreff Bopomofo</script>
+			<script type="Brai" draft="unconfirmed">Blindeschreff</script>
+			<script type="Cyrl" draft="unconfirmed">kürrellesche Schreff</script>
+			<script type="Deva" draft="unconfirmed">indesche Devanajari-Schreff</script>
+			<script type="Ethi" draft="unconfirmed">ätejoopesche Schreff</script>
+			<script type="Geor" draft="unconfirmed">je'orrjesche Schreff</script>
+			<script type="Grek" draft="unconfirmed">jriischesche Schreff</script>
+			<script type="Gujr" draft="unconfirmed">jujaraatesche Schreff</script>
+			<script type="Guru" draft="unconfirmed">indesche Gurmukhi-Schreff</script>
+			<script type="Hang" draft="unconfirmed">korrejaanesche Schreff</script>
+			<script type="Hani" draft="unconfirmed">en schineesesche Schreff</script>
+			<script type="Hans" draft="unconfirmed">eijfacher schineesesche Schreff</script>
+			<script type="Hant" draft="unconfirmed">tradizjonäll schineesesche Schreff</script>
+			<script type="Hebr" draft="unconfirmed">hebrääjesche Schreff</script>
+			<script type="Hira" draft="unconfirmed">japaanesche Hiddajaana-Schreff</script>
+			<script type="Jpan" draft="unconfirmed">en japaanesche Schreff</script>
+			<script type="Kana" draft="unconfirmed">japaanesche Kattakaana-Schreff</script>
+			<script type="Khmr" draft="unconfirmed">Khmer-Schreff</script>
+			<script type="Knda" draft="unconfirmed">indesche Kannada-Schreff</script>
+			<script type="Kore" draft="unconfirmed">korrejaanesche Schreff udder en schineesesche Schreff</script>
+			<script type="Laoo" draft="unconfirmed">lahootesche Schreff</script>
+			<script type="Latn" draft="unconfirmed">lateinesche Schreff</script>
+			<script type="Mlym" draft="unconfirmed">indesche Malajalam-Schreff</script>
+			<script type="Mong" draft="unconfirmed">mongjoolesche Schreff</script>
+			<script type="Mymr" draft="unconfirmed">birmaanesche Schreff</script>
+			<script type="Orya" draft="unconfirmed">indesche Orija-Schreff</script>
+			<script type="Sinh" draft="unconfirmed">singjaleesesche Schreff</script>
+			<script type="Taml" draft="unconfirmed">tamiilesche Schreff</script>
+			<script type="Telu" draft="unconfirmed">indesche Telugu-Schreff</script>
+			<script type="Thaa" draft="unconfirmed">malledivesche Taana-Schreff</script>
+			<script type="Thai" draft="unconfirmed">tailändesche Schreff</script>
+			<script type="Tibt" draft="unconfirmed">tibeetesche Schreff</script>
+			<script type="Zsym" draft="unconfirmed">-Zeiche ävver kein Schreff-</script>
+			<script type="Zxxx" draft="unconfirmed">-jaa keij Schreff-</script>
+			<script type="Zyyy" draft="unconfirmed">-öhnß en Schreff-</script>
+			<script type="Zzzz" draft="unconfirmed">-onbikannte Schreff-</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="unconfirmed">de Ääd</territory>
+			<territory type="002" draft="unconfirmed">Affrika</territory>
+			<territory type="003" draft="unconfirmed">Nood-Amärrika</territory>
+			<territory type="005" draft="unconfirmed">Söd-Amärrika</territory>
+			<territory type="009" draft="unconfirmed">Ozejaanije</territory>
+			<territory type="011" draft="unconfirmed">Wäß-Affrika</territory>
+			<territory type="013" draft="unconfirmed">Meddelammärrika</territory>
+			<territory type="014" draft="unconfirmed">Oß-Affrika</territory>
+			<territory type="015" draft="unconfirmed">Nood-Affrika</territory>
+			<territory type="017" draft="unconfirmed">Meddel-Affrika</territory>
+			<territory type="018" draft="unconfirmed">Söd-Affrika</territory>
+			<territory type="019" draft="unconfirmed">Ammärrika</territory>
+			<territory type="021" draft="unconfirmed">der Norde vun Amärrika</territory>
+			<territory type="029" draft="unconfirmed">de Karribik</territory>
+			<territory type="030" draft="unconfirmed">Oß-Aasije</territory>
+			<territory type="034" draft="unconfirmed">Söd-Aasije</territory>
+			<territory type="035" draft="unconfirmed">Söd-Oß-Aasije</territory>
+			<territory type="039" draft="unconfirmed">Söd-Europpa</territory>
+			<territory type="053" draft="unconfirmed">de Rejjohn Austraalije</territory>
+			<territory type="054" draft="unconfirmed">Mellaneesije</territory>
+			<territory type="057" draft="unconfirmed">de Rejohn vun Mikroneeseje</territory>
+			<territory type="061" draft="unconfirmed">Polineesije</territory>
+			<territory type="142" draft="unconfirmed">Aasije</territory>
+			<territory type="143" draft="unconfirmed">Meddelaasije</territory>
+			<territory type="145" draft="unconfirmed">Wäß-Aasije</territory>
+			<territory type="150" draft="unconfirmed">Europpa</territory>
+			<territory type="151" draft="unconfirmed">Oß-Europpa</territory>
+			<territory type="154" draft="unconfirmed">Nood-Europpa</territory>
+			<territory type="155" draft="unconfirmed">Wäß-Europpa</territory>
+			<territory type="419" draft="unconfirmed">Lateinamärrika</territory>
+			<territory type="AC" draft="unconfirmed">Aßension</territory>
+			<territory type="AD" draft="unconfirmed">Andorra</territory>
+			<territory type="AE" draft="unconfirmed">Vereinschte Arrabesche Emmirate</territory>
+			<territory type="AF" draft="unconfirmed">Afjaanistahn</territory>
+			<territory type="AG" draft="unconfirmed">Antigwa un Barbuda</territory>
+			<territory type="AI" draft="unconfirmed">Anggwilla</territory>
+			<territory type="AL" draft="unconfirmed">Albaanije</territory>
+			<territory type="AM" draft="unconfirmed">Arrmeenije</territory>
+			<territory type="AN" draft="unconfirmed">de Nederlängsche Antille</territory>
+			<territory type="AO" draft="unconfirmed">Angjoola</territory>
+			<territory type="AQ" draft="unconfirmed">der Södpol</territory>
+			<territory type="AR" draft="unconfirmed">Ajjentiinije</territory>
+			<territory type="AS" draft="unconfirmed">Ammerikaanesch Sammoha</territory>
+			<territory type="AT" draft="unconfirmed">Öösterisch</territory>
+			<territory type="AU" draft="unconfirmed">Austraalije</territory>
+			<territory type="AW" draft="unconfirmed">Aruba</territory>
+			<territory type="AX" draft="unconfirmed">de Ohland-Enselle</territory>
+			<territory type="AZ" draft="unconfirmed">Asserbaidschahn</territory>
+			<territory type="BA" draft="unconfirmed">Boßnije</territory>
+			<territory type="BB" draft="unconfirmed">de Ensel Barbados</territory>
+			<territory type="BD" draft="unconfirmed">Bangladesch</territory>
+			<territory type="BE" draft="unconfirmed">Bellje</territory>
+			<territory type="BF" draft="unconfirmed">Bukkinna-Faase</territory>
+			<territory type="BG" draft="unconfirmed">Bulljaarije</territory>
+			<territory type="BH" draft="unconfirmed">Bachrain</territory>
+			<territory type="BI" draft="unconfirmed">Burundi</territory>
+			<territory type="BJ" draft="unconfirmed">dä Benin</territory>
+			<territory type="BL" draft="unconfirmed">de Zint Battälmi-Enselle</territory>
+			<territory type="BM" draft="unconfirmed">de Bermudas</territory>
+			<territory type="BN" draft="unconfirmed">Brunei</territory>
+			<territory type="BO" draft="unconfirmed">Bolliivije</territory>
+			<territory type="BR" draft="unconfirmed">Brasilije</territory>
+			<territory type="BS" draft="unconfirmed">de Bahamas</territory>
+			<territory type="BT" draft="unconfirmed">Buttaan</territory>
+			<territory type="BV" draft="unconfirmed">Buvee-Ensel</territory>
+			<territory type="BW" draft="unconfirmed">Bozwaana</territory>
+			<territory type="BY" draft="unconfirmed">Wießrußland</territory>
+			<territory type="BZ" draft="unconfirmed">Belize</territory>
+			<territory type="CA" draft="unconfirmed">Kannada</territory>
+			<territory type="CC" draft="unconfirmed">de Kokkos-Enselle</territory>
+			<territory type="CD" draft="unconfirmed">dä Konggo (Kinschasa)</territory>
+			<territory type="CD" alt="variant" draft="unconfirmed">de Demmokraatesche Republik Konggo</territory>
+			<territory type="CF" draft="unconfirmed">de Zäntraalaffrikaanesche Republik</territory>
+			<territory type="CG" draft="unconfirmed">dä Konggo (Brassavill)</territory>
+			<territory type="CG" alt="variant" draft="unconfirmed">de Republik Konggo</territory>
+			<territory type="CH" draft="unconfirmed">de Schweiz</territory>
+			<territory type="CI" draft="unconfirmed">Älfebeijn-Köß</territory>
+			<territory type="CK" draft="unconfirmed">de Kuuk-Enselle</territory>
+			<territory type="CL" draft="unconfirmed">Schiile</territory>
+			<territory type="CM" draft="unconfirmed">Kammeruhn</territory>
+			<territory type="CN" draft="unconfirmed">Schiina</territory>
+			<territory type="CO" draft="unconfirmed">Kolumbije</territory>
+			<territory type="CP" draft="unconfirmed">de Klipperton-Ensel</territory>
+			<territory type="CR" draft="unconfirmed">Kostarika</territory>
+			<territory type="CU" draft="unconfirmed">Kuba</territory>
+			<territory type="CV" draft="unconfirmed">de Kapvärdesche Enselle</territory>
+			<territory type="CX" draft="unconfirmed">de Weihnaachs-Ensel</territory>
+			<territory type="CY" draft="unconfirmed">Züppere</territory>
+			<territory type="CZ" draft="unconfirmed">de Tschäschei</territory>
+			<territory type="DE" draft="unconfirmed">Doütschland</territory>
+			<territory type="DG" draft="unconfirmed">de Diego-Garcia-Ensel</territory>
+			<territory type="DJ" draft="unconfirmed">Dschibutti</territory>
+			<territory type="DK" draft="unconfirmed">Dänemark</territory>
+			<territory type="DM" draft="unconfirmed">Dominnika</territory>
+			<territory type="DO" draft="unconfirmed">de Dommenekaanesche Reppublik</territory>
+			<territory type="DZ" draft="unconfirmed">Alljeerije</territory>
+			<territory type="EA" draft="unconfirmed">Ze'uta un Meliija</territory>
+			<territory type="EC" draft="unconfirmed">Äkwador</territory>
+			<territory type="EE" draft="unconfirmed">Äßland</territory>
+			<territory type="EG" draft="unconfirmed">Äjüpte</territory>
+			<territory type="EH" draft="unconfirmed">Wäß-Sahara</territory>
+			<territory type="ER" draft="unconfirmed">Äritreja</territory>
+			<territory type="ES" draft="unconfirmed">Schpaanije</territory>
+			<territory type="ET" draft="unconfirmed">Ättijoopije</territory>
+			<territory type="EU" draft="unconfirmed">de Eurppäesche Unijon</territory>
+			<territory type="FI" draft="unconfirmed">Finnland</territory>
+			<territory type="FJ" draft="unconfirmed">de Fidschi-Endelle</territory>
+			<territory type="FK" draft="unconfirmed">de Falkland-Enselle</territory>
+			<territory type="FK" alt="variant" draft="unconfirmed">de Malleviinesche Enselle</territory>
+			<territory type="FM" draft="unconfirmed">Mikroneesije</territory>
+			<territory type="FO" draft="unconfirmed">de Färrör-Enselle</territory>
+			<territory type="FR" draft="unconfirmed">Frankrisch</territory>
+			<territory type="GA" draft="unconfirmed">Jabuhn</territory>
+			<territory type="GB" draft="unconfirmed">Jruußbrettannije</territory>
+			<territory type="GD" draft="unconfirmed">Jrenaada</territory>
+			<territory type="GE" draft="unconfirmed">Jeorrjije</territory>
+			<territory type="GF" draft="unconfirmed">Franzüüsesch Jujaana</territory>
+			<territory type="GG" draft="unconfirmed">Jöönsei</territory>
+			<territory type="GH" draft="unconfirmed">Jaana</territory>
+			<territory type="GI" draft="unconfirmed">Jibralltaa</territory>
+			<territory type="GL" draft="unconfirmed">Jröhnland</territory>
+			<territory type="GM" draft="unconfirmed">Jambija</territory>
+			<territory type="GN" draft="unconfirmed">Jinneha</territory>
+			<territory type="GP" draft="unconfirmed">Juadelupp</territory>
+			<territory type="GQ" draft="unconfirmed">Äquatorial Jineeja</territory>
+			<territory type="GR" draft="unconfirmed">Jriescheland</territory>
+			<territory type="GS" draft="unconfirmed">Söd-Jeorjie un de södlijje Botteramms-Enselle</territory>
+			<territory type="GT" draft="unconfirmed">Juwatemaala</territory>
+			<territory type="GU" draft="unconfirmed">Juham</territory>
+			<territory type="GW" draft="unconfirmed">Jinneha_Bißau</territory>
+			<territory type="GY" draft="unconfirmed">Jujaana</territory>
+			<territory type="HK" draft="unconfirmed">Hong-Kong</territory>
+			<territory type="HK" alt="short" draft="unconfirmed">Hongkong</territory>
+			<territory type="HM" draft="unconfirmed">de Heart Ensel un de McDonald-Enselle</territory>
+			<territory type="HN" draft="unconfirmed">Honduras</territory>
+			<territory type="HR" draft="unconfirmed">Krowazije</territory>
+			<territory type="HT" draft="unconfirmed">Ha'itti</territory>
+			<territory type="HU" draft="unconfirmed">Unjann</territory>
+			<territory type="IC" draft="unconfirmed">de Kannaresche Enselle</territory>
+			<territory type="ID" draft="unconfirmed">Indoneesije</territory>
+			<territory type="IE" draft="unconfirmed">Irrland</territory>
+			<territory type="IL" draft="unconfirmed">Ißraäl</territory>
+			<territory type="IM" draft="unconfirmed">de Ensel Män</territory>
+			<territory type="IN" draft="unconfirmed">Indije</territory>
+			<territory type="IO" draft="unconfirmed">Brettesche Besezunge em indesche Oozejahn</territory>
+			<territory type="IQ" draft="unconfirmed">der Irak</territory>
+			<territory type="IR" draft="unconfirmed">Persije</territory>
+			<territory type="IS" draft="unconfirmed">Ißland</territory>
+			<territory type="IT" draft="unconfirmed">Itaalije</territory>
+			<territory type="JE" draft="unconfirmed">Jööseh</territory>
+			<territory type="JM" draft="unconfirmed">Jammaika</territory>
+			<territory type="JO" draft="unconfirmed">Jordaanija</territory>
+			<territory type="JP" draft="unconfirmed">Japan</territory>
+			<territory type="KE" draft="unconfirmed">Keenija</territory>
+			<territory type="KG" draft="unconfirmed">Kirrjiisije</territory>
+			<territory type="KH" draft="unconfirmed">Kambodscha</territory>
+			<territory type="KI" draft="unconfirmed">Kiribati</territory>
+			<territory type="KM" draft="unconfirmed">de Kommoore</territory>
+			<territory type="KN" draft="unconfirmed">Zimt Kitts un Nevis</territory>
+			<territory type="KP" draft="unconfirmed">Nood-Koreja</territory>
+			<territory type="KR" draft="unconfirmed">Söd-Koreja</territory>
+			<territory type="KW" draft="unconfirmed">Kuweit</territory>
+			<territory type="KY" draft="unconfirmed">de Kaiman-Enselle</territory>
+			<territory type="KZ" draft="unconfirmed">Kassakstahn</territory>
+			<territory type="LA" draft="unconfirmed">La'os</territory>
+			<territory type="LB" draft="unconfirmed">der Lebbannon</territory>
+			<territory type="LC" draft="unconfirmed">de Ensel Zint-Lutscha</territory>
+			<territory type="LI" draft="unconfirmed">Lischtestein</territory>
+			<territory type="LK" draft="unconfirmed">Sri Lanka</territory>
+			<territory type="LR" draft="unconfirmed">Libeerija</territory>
+			<territory type="LS" draft="unconfirmed">Lesooto</territory>
+			<territory type="LT" draft="unconfirmed">Littaue</territory>
+			<territory type="LU" draft="unconfirmed">Luxembursch</territory>
+			<territory type="LV" draft="unconfirmed">Lätland</territory>
+			<territory type="LY" draft="unconfirmed">Libbije</territory>
+			<territory type="MA" draft="unconfirmed">Marokko</territory>
+			<territory type="MC" draft="unconfirmed">Monakko</territory>
+			<territory type="MD" draft="unconfirmed">Moldaavije</territory>
+			<territory type="ME" draft="unconfirmed">et Monteneejro</territory>
+			<territory type="MF" draft="unconfirmed">de Sint-Määtes-Ensel</territory>
+			<territory type="MG" draft="unconfirmed">Maddajaska</territory>
+			<territory type="MH" draft="unconfirmed">de Machschall-Enselle</territory>
+			<territory type="MK" draft="unconfirmed">Mazedoonije</territory>
+			<territory type="MK" alt="variant" draft="unconfirmed">de vörmaals ens jugoßlaawesch jewääse Republik Mazedoonije</territory>
+			<territory type="ML" draft="unconfirmed">Maali</territory>
+			<territory type="MM" draft="unconfirmed">Birma</territory>
+			<territory type="MN" draft="unconfirmed">de Mongjolei</territory>
+			<territory type="MO" draft="unconfirmed">Makau</territory>
+			<territory type="MO" alt="short" draft="unconfirmed">Makau</territory>
+			<territory type="MP" draft="unconfirmed">de nöödlijje Marijanne-Enselle</territory>
+			<territory type="MQ" draft="unconfirmed">Machtinik</territory>
+			<territory type="MR" draft="unconfirmed">Mautitaanije</territory>
+			<territory type="MS" draft="unconfirmed">Mongßerrat</territory>
+			<territory type="MT" draft="unconfirmed">Malta</territory>
+			<territory type="MU" draft="unconfirmed">Maurizijus</territory>
+			<territory type="MV" draft="unconfirmed">de Mallediive</territory>
+			<territory type="MW" draft="unconfirmed">Malawi</territory>
+			<territory type="MX" draft="unconfirmed">Mexico</territory>
+			<territory type="MY" draft="unconfirmed">Malaisije</territory>
+			<territory type="MZ" draft="unconfirmed">Mosambik</territory>
+			<territory type="NA" draft="unconfirmed">Namiibije</territory>
+			<territory type="NC" draft="unconfirmed">Neuschottland</territory>
+			<territory type="NE" draft="unconfirmed">Nijer</territory>
+			<territory type="NF" draft="unconfirmed">de Noofok-Ensel</territory>
+			<territory type="NG" draft="unconfirmed">Nikaraagua</territory>
+			<territory type="NI" draft="unconfirmed">Nikaraaguwa</territory>
+			<territory type="NL" draft="unconfirmed">de Nederläng</territory>
+			<territory type="NO" draft="unconfirmed">Norrweeje</territory>
+			<territory type="NP" draft="unconfirmed">Nepall</territory>
+			<territory type="NR" draft="unconfirmed">Nauru</territory>
+			<territory type="NU" draft="unconfirmed">Niue</territory>
+			<territory type="NZ" draft="unconfirmed">Neuseeland</territory>
+			<territory type="OM" draft="unconfirmed">der Oman</territory>
+			<territory type="PA" draft="unconfirmed">Pannama</territory>
+			<territory type="PE" draft="unconfirmed">Perruh</territory>
+			<territory type="PF" draft="unconfirmed">Franzüüsesch Pollineesije</territory>
+			<territory type="PG" draft="unconfirmed">Papuwa Neujineeja</territory>
+			<territory type="PH" draft="unconfirmed">de Fillipiine</territory>
+			<territory type="PK" draft="unconfirmed">Pakistahn</territory>
+			<territory type="PL" draft="unconfirmed">Pole</territory>
+			<territory type="PM" draft="unconfirmed">Zint Pjäär un Mikelong</territory>
+			<territory type="PN" draft="unconfirmed">de Pitkärn-Ensel</territory>
+			<territory type="PR" draft="unconfirmed">Pochtoriko</territory>
+			<territory type="PS" draft="unconfirmed">Palästina</territory>
+			<territory type="PT" draft="unconfirmed">Pochtojall</territory>
+			<territory type="PW" draft="unconfirmed">Pallau</territory>
+			<territory type="PY" draft="unconfirmed">Parraguwai</territory>
+			<territory type="QA" draft="unconfirmed">Kataa</territory>
+			<territory type="QO" draft="unconfirmed">Ozejaanije ußerhallef</territory>
+			<territory type="RE" draft="unconfirmed">Rehunjohn</territory>
+			<territory type="RO" draft="unconfirmed">Romäänije</territory>
+			<territory type="RS" draft="unconfirmed">Särbije</territory>
+			<territory type="RU" draft="unconfirmed">Rußland</territory>
+			<territory type="RW" draft="unconfirmed">Ruanda</territory>
+			<territory type="SA" draft="unconfirmed">Saudi Arraabije</territory>
+			<territory type="SB" draft="unconfirmed">de Solomone-Enselle</territory>
+			<territory type="SC" draft="unconfirmed">de Seischälle</territory>
+			<territory type="SD" draft="unconfirmed">der Sudahn</territory>
+			<territory type="SE" draft="unconfirmed">Schweede</territory>
+			<territory type="SG" draft="unconfirmed">Singjapuur</territory>
+			<territory type="SH" draft="unconfirmed">de Sint-Hellena-Ensel</territory>
+			<territory type="SI" draft="unconfirmed">ßloveenije</territory>
+			<territory type="SJ" draft="unconfirmed">de Enselle Svalbard un Jan Mayen</territory>
+			<territory type="SK" draft="unconfirmed">de ẞlovakei</territory>
+			<territory type="SL" draft="unconfirmed">Sjärra Lejone</territory>
+			<territory type="SM" draft="unconfirmed">San-Marino</territory>
+			<territory type="SN" draft="unconfirmed">der Sennejall</territory>
+			<territory type="SO" draft="unconfirmed">Somaalije</territory>
+			<territory type="SR" draft="unconfirmed">Sürinamm</territory>
+			<territory type="ST" draft="unconfirmed">Zint Tommeh un Printschipe</territory>
+			<territory type="SV" draft="unconfirmed">Äl Slavadoor</territory>
+			<territory type="SY" draft="unconfirmed">Sürije</territory>
+			<territory type="SZ" draft="unconfirmed">ßwaasiland</territory>
+			<territory type="TA" draft="unconfirmed">Tristan da Cunja</territory>
+			<territory type="TC" draft="unconfirmed">de Enselle Turks un Kaikos</territory>
+			<territory type="TD" draft="unconfirmed">der Tschadd</territory>
+			<territory type="TF" draft="unconfirmed">Franzüüsesche Södsee-Enselle</territory>
+			<territory type="TG" draft="unconfirmed">Toojo</territory>
+			<territory type="TH" draft="unconfirmed">Tailand</territory>
+			<territory type="TJ" draft="unconfirmed">Tadschikistahn</territory>
+			<territory type="TK" draft="unconfirmed">Tokelau</territory>
+			<territory type="TL" draft="unconfirmed">Oß-Timor</territory>
+			<territory type="TL" alt="variant" draft="unconfirmed">Oß-Timor</territory>
+			<territory type="TM" draft="unconfirmed">Turkmenistahn</territory>
+			<territory type="TN" draft="unconfirmed">Tuneesije</territory>
+			<territory type="TO" draft="unconfirmed">Tongga</territory>
+			<territory type="TR" draft="unconfirmed">de Törkei</territory>
+			<territory type="TT" draft="unconfirmed">Trinidad un Tobääjo</territory>
+			<territory type="TV" draft="unconfirmed">Tuvalu</territory>
+			<territory type="TW" draft="unconfirmed">Taiwan</territory>
+			<territory type="TZ" draft="unconfirmed">Tansanija</territory>
+			<territory type="UA" draft="unconfirmed">de Ukra'iine</territory>
+			<territory type="UG" draft="unconfirmed">Ujanda</territory>
+			<territory type="UM" draft="unconfirmed">de Vereineschte Schtaate vun Amärrika ier klein Enselsche ußerhallef</territory>
+			<territory type="US" draft="unconfirmed">de Vereineschte Schtaate vun Ammärrika</territory>
+			<territory type="UY" draft="unconfirmed">Urrujwai</territory>
+			<territory type="UZ" draft="unconfirmed">Ußbeekistahn</territory>
+			<territory type="VA" draft="unconfirmed">der Vattikahn</territory>
+			<territory type="VC" draft="unconfirmed">Zint Vinzänz un de Jrenadines-Enselle</territory>
+			<territory type="VE" draft="unconfirmed">Venezuela</territory>
+			<territory type="VG" draft="unconfirmed">de brettesche Juffer-Enselle</territory>
+			<territory type="VI" draft="unconfirmed">de ammärrikahnesche Juffer-Enselle</territory>
+			<territory type="VN" draft="unconfirmed">Vijätnamm</territory>
+			<territory type="VU" draft="unconfirmed">Vanuatu</territory>
+			<territory type="WF" draft="unconfirmed">Wallis un Futuna</territory>
+			<territory type="WS" draft="unconfirmed">Sammoha</territory>
+			<territory type="YE" draft="unconfirmed">der Jämme</territory>
+			<territory type="YT" draft="unconfirmed">Majott</territory>
+			<territory type="ZA" draft="unconfirmed">Södaffrika</territory>
+			<territory type="ZM" draft="unconfirmed">Sambija</territory>
+			<territory type="ZW" draft="unconfirmed">Simbabwe</territory>
+			<territory type="ZZ" draft="unconfirmed">- Jääjend onbikannt -</territory>
+		</territories>
+		<variants>
+			<variant type="1901" draft="unconfirmed">Schriefwiiß vun 1901 aff</variant>
+			<variant type="1994" draft="unconfirmed">resijanesch schtandatt Schriefwiiß vun 1994</variant>
+			<variant type="1996" draft="unconfirmed">Schriefwiiß vun 1996 aff</variant>
+			<variant type="1606NICT" draft="unconfirmed">späätmeddelfranzüüsesch vör 1606</variant>
+			<variant type="1694ACAD" draft="unconfirmed">fröhneufranzüüsesch aff 1694</variant>
+			<variant type="1959ACAD" draft="unconfirmed">akademesche Schriefwiiß vun 1959</variant>
+			<variant type="ALALC97" draft="unconfirmed">de lateinesche Ömschreff ALA-LC vun 1997</variant>
+			<variant type="AREVELA" draft="unconfirmed">oß-armeensch</variant>
+			<variant type="AREVMDA" draft="unconfirmed">wäß-armeenesch</variant>
+			<variant type="BAKU1926" draft="unconfirmed">eijheijtlesch törkesch lateijnesch Allfabeet</variant>
+			<variant type="BISKE" draft="unconfirmed">zint jorjo'sche uder bila'sche reijanesche Dijaläk</variant>
+			<variant type="BOONT" draft="unconfirmed">boontlingsche Dijaläk</variant>
+			<variant type="FONIPA" draft="unconfirmed">IPA-Loutschreff</variant>
+			<variant type="FONUPA" draft="unconfirmed">UPA-Loutschreff</variant>
+			<variant type="HEPBURN" draft="unconfirmed">De Lateinesche Ömschreff noh Hepburn</variant>
+			<variant type="HOGNORSK" draft="unconfirmed">Huhnorrweejesch</variant>
+			<variant type="KKCOR" draft="unconfirmed">jemeinsam widderbeläf kornesche Schriefwiiß</variant>
+			<variant type="LIPAW" draft="unconfirmed">lipovazesch resijanesche Dijaläk</variant>
+			<variant type="MONOTON" draft="unconfirmed">monnotoonesch</variant>
+			<variant type="NDYUKA" draft="unconfirmed">ndyukanesche Dijaläk</variant>
+			<variant type="NEDIS" draft="unconfirmed">natisonesche Dijaläk</variant>
+			<variant type="NJIVA" draft="unconfirmed">gniva'sche uder njiva'sche reijanesche Dijaläk</variant>
+			<variant type="OSOJS" draft="unconfirmed">oseacco'sche uder osojanesche reijanesche Dijaläk</variant>
+			<variant type="PAMAKA" draft="unconfirmed">pamakanesche Dijaläk</variant>
+			<variant type="PINYIN" draft="unconfirmed">Pinjin-Ömschreff</variant>
+			<variant type="POLYTON" draft="unconfirmed">pollütoonesch</variant>
+			<variant type="REVISED" draft="unconfirmed">neu opjelate Schriefwiiß</variant>
+			<variant type="ROZAJ" draft="unconfirmed">resijanesche Dijaläk</variant>
+			<variant type="SCOTLAND" draft="unconfirmed">schottesche Dijaläk</variant>
+			<variant type="SCOUSE" draft="unconfirmed">scouse Dijaläk</variant>
+			<variant type="SOLBA" draft="unconfirmed">stolvizanesche uder solbizanesch reijanesche Dijaläk</variant>
+			<variant type="TARASK" draft="unconfirmed">Taraskijeviza-Schriefwiiß</variant>
+			<variant type="UCCOR" draft="unconfirmed">eijheijtlesch Schriefwiiß</variant>
+			<variant type="UCRCOR" draft="unconfirmed">eijheijtlesch, neu opjelate Schriefwiiß</variant>
+			<variant type="VALENCIA" draft="unconfirmed">valenzijaanesche Dijaläk</variant>
+			<variant type="WADEGILE" draft="unconfirmed">lateijnesche Ömschreff noh Wade-Giles</variant>
+		</variants>
+		<keys>
+			<key type="calendar" draft="unconfirmed">dä Kalländer</key>
+			<key type="collation" draft="unconfirmed">de Reijefollsch zom Zotiere</key>
+			<key type="currency" draft="unconfirmed">de Zoot Jeld</key>
+			<key type="numbers" draft="unconfirmed">de Nummere</key>
+		</keys>
+		<types>
+			<type type="arab" key="numbers" draft="unconfirmed">araabesche un indesche Zeffere</type>
+			<type type="armn" key="numbers" draft="unconfirmed">armeenesche Zahle</type>
+			<type type="armnlow" key="numbers" draft="unconfirmed">klein jeschrevve armeenesche Zahle</type>
+			<type type="beng" key="numbers" draft="unconfirmed">bängjaalesche Zeffere</type>
+			<type type="big5han" key="collation" draft="unconfirmed">zoteert nohm tradizjonäll schineesesch Big5</type>
+			<type type="buddhist" key="calendar" draft="unconfirmed">buddistesche Kaländer</type>
+			<type type="chinese" key="calendar" draft="unconfirmed">schineesesche Kaländer</type>
+			<type type="coptic" key="calendar" draft="unconfirmed">kopttesche Kaländer</type>
+			<type type="deva" key="numbers" draft="unconfirmed">Devanagari-Zeffere</type>
+			<type type="dictionary" key="collation" draft="unconfirmed">zoteert wi em Wööterbooch</type>
+			<type type="ducet" key="collation" draft="unconfirmed">standattmääßesch zoteert nohm Unicode</type>
+			<type type="ethi" key="numbers" draft="unconfirmed">ätejoopesche Zahle</type>
+			<type type="ethiopic" key="calendar" draft="unconfirmed">ätejoopesche Kaländer</type>
+			<type type="ethiopic-amete-alem" key="calendar" draft="unconfirmed">ätejoopesche Amete Alem Kaländer</type>
+			<type type="gb2312han" key="collation" draft="unconfirmed">zoteert nohm eijfacher schineesesch GB2312</type>
+			<type type="geor" key="numbers" draft="unconfirmed">jeorjeesche Zahle</type>
+			<type type="gregorian" key="calendar" draft="unconfirmed">jrejorejaanesche Kaländer</type>
+			<type type="grek" key="numbers" draft="unconfirmed">jriischesche Zahle</type>
+			<type type="greklow" key="numbers" draft="unconfirmed">klein jeschrevve jriischesche Zahle</type>
+			<type type="gujr" key="numbers" draft="unconfirmed">Jujarati-Zeffere</type>
+			<type type="guru" key="numbers" draft="unconfirmed">Jurmukhi-Zeffere</type>
+			<type type="hebr" key="numbers" draft="unconfirmed">hebräjesche Zahle</type>
+			<type type="hebrew" key="calendar" draft="unconfirmed">jüdesche Kaländer</type>
+			<type type="indian" key="calendar" draft="unconfirmed">indesche Nazjonahl-Kaländer</type>
+			<type type="islamic" key="calendar" draft="unconfirmed">ißlaamesche Kaländer</type>
+			<type type="islamic-civil" key="calendar" draft="unconfirmed">wältlesche islaamesche Kaländer</type>
+			<type type="japanese" key="calendar" draft="unconfirmed">japaanesche Kaländer</type>
+			<type type="jpan" key="numbers" draft="unconfirmed">japanesche Zahle</type>
+			<type type="khmr" key="numbers" draft="unconfirmed">Khmer-Zeffere</type>
+			<type type="knda" key="numbers" draft="unconfirmed">Kannada-Zeffere</type>
+			<type type="laoo" key="numbers" draft="unconfirmed">laootesche Zeffere</type>
+			<type type="latn" key="numbers" draft="unconfirmed">wäßlejje Zeffere</type>
+			<type type="mlym" key="numbers" draft="unconfirmed">Malayalam-Zeffere</type>
+			<type type="mong" key="numbers" draft="unconfirmed">mongjoolesche Zeffere</type>
+			<type type="mymr" key="numbers" draft="unconfirmed">Myanmar-Zeffere</type>
+			<type type="orya" key="numbers" draft="unconfirmed">Oriya-Zeffere</type>
+			<type type="persian" key="calendar" draft="unconfirmed">pärsesche Kaländer</type>
+			<type type="phonebook" key="collation" draft="unconfirmed">zoteert wi em Tollefoonbooch</type>
+			<type type="pinyin" key="collation" draft="unconfirmed">zoteert noh de Pinjin Ömschreff vum Schineesesch</type>
+			<type type="roc" key="calendar" draft="unconfirmed">rotschineesesche Kaländer</type>
+			<type type="roman" key="numbers" draft="unconfirmed">römesche Zahle</type>
+			<type type="romanlow" key="numbers" draft="unconfirmed">klein jeschrevve römesche Zahle</type>
+			<type type="stroke" key="collation" draft="unconfirmed">zoteert noh de Stresche vum tradizjonäll schineesesch</type>
+			<type type="taml" key="numbers" draft="unconfirmed">tamilesche Zahle</type>
+			<type type="telu" key="numbers" draft="unconfirmed">Teluju-Zeffere</type>
+			<type type="thai" key="numbers" draft="unconfirmed">thailändesche Zeffere</type>
+			<type type="tibt" key="numbers" draft="unconfirmed">tibetaanesche Zeffere</type>
+			<type type="traditional" key="collation" draft="unconfirmed">tradizjonäll zoteert</type>
+			<type type="unihan" key="collation" draft="unconfirmed">zoteert noh de Radikaale un Stresche vum Schineesesch</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="unconfirmed">metresch-europpäjesch</measurementSystemName>
+			<measurementSystemName type="UK" draft="unconfirmed">änglesch</measurementSystemName>
+			<measurementSystemName type="US" draft="unconfirmed">ammärekaanesch</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">de Schprooch afjekööz met „{0}“</codePattern>
+			<codePattern type="script" draft="unconfirmed">de Schreff afjekööz met „{0}“</codePattern>
+			<codePattern type="territory" draft="unconfirmed">de Jääjend afjekööz met „{0}“</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a å ä æ b c d e ë ė f g h i j k l m n o ö œ p q r s t u ů ü v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ ç é è ĕ ê ë ē ğ í ì ĭ î ï ī ĳ ı ł ñ ó ò ŏ ô ö ø ō œ ú ù ŭ û ü ū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="currencySymbol" draft="unconfirmed">[a b c č d e f ƒ g h i j k l ł m n o º p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="unconfirmed">„</quotationStart>
+		<quotationEnd draft="unconfirmed">“</quotationEnd>
+		<alternateQuotationStart draft="unconfirmed">‚</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">‘</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="buddhist">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, d. MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Jan.</month>
+							<month type="2" draft="unconfirmed">Fäb.</month>
+							<month type="3" draft="unconfirmed">Mar.</month>
+							<month type="4" draft="unconfirmed">Apr.</month>
+							<month type="5" draft="unconfirmed">Mäi</month>
+							<month type="6" draft="unconfirmed">Jun.</month>
+							<month type="7" draft="unconfirmed">Jul.</month>
+							<month type="8" draft="unconfirmed">Oug.</month>
+							<month type="9" draft="unconfirmed">Säp.</month>
+							<month type="10" draft="unconfirmed">Okt.</month>
+							<month type="11" draft="unconfirmed">Nov.</month>
+							<month type="12" draft="unconfirmed">Dez.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Jannewa</month>
+							<month type="2" draft="unconfirmed">Fäbrowa</month>
+							<month type="3" draft="unconfirmed">Määz</month>
+							<month type="4" draft="unconfirmed">Aprell</month>
+							<month type="5" draft="unconfirmed">Mäi</month>
+							<month type="6" draft="unconfirmed">Juuni</month>
+							<month type="7" draft="unconfirmed">Juuli</month>
+							<month type="8" draft="unconfirmed">Oujoß</month>
+							<month type="9" draft="unconfirmed">Septämber</month>
+							<month type="10" draft="unconfirmed">Oktoober</month>
+							<month type="11" draft="unconfirmed">Novämber</month>
+							<month type="12" draft="unconfirmed">Dezämber</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">J</month>
+							<month type="2" draft="unconfirmed">F</month>
+							<month type="3" draft="unconfirmed">M</month>
+							<month type="4" draft="unconfirmed">A</month>
+							<month type="5" draft="unconfirmed">M</month>
+							<month type="6" draft="unconfirmed">J</month>
+							<month type="7" draft="unconfirmed">J</month>
+							<month type="8" draft="unconfirmed">A</month>
+							<month type="9" draft="unconfirmed">S</month>
+							<month type="10" draft="unconfirmed">O</month>
+							<month type="11" draft="unconfirmed">N</month>
+							<month type="12" draft="unconfirmed">D</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Su.</day>
+							<day type="mon" draft="unconfirmed">Mo.</day>
+							<day type="tue" draft="unconfirmed">Di.</day>
+							<day type="wed" draft="unconfirmed">Me.</day>
+							<day type="thu" draft="unconfirmed">Du.</day>
+							<day type="fri" draft="unconfirmed">Fr.</day>
+							<day type="sat" draft="unconfirmed">Sa.</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Sunndaach</day>
+							<day type="mon" draft="unconfirmed">Moondaach</day>
+							<day type="tue" draft="unconfirmed">Dinnsdaach</day>
+							<day type="wed" draft="unconfirmed">Metwoch</day>
+							<day type="thu" draft="unconfirmed">Dunnersdaach</day>
+							<day type="fri" draft="unconfirmed">Friidaach</day>
+							<day type="sat" draft="unconfirmed">Samsdaach</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">S</day>
+							<day type="mon" draft="unconfirmed">M</day>
+							<day type="tue" draft="unconfirmed">D</day>
+							<day type="wed" draft="unconfirmed">M</day>
+							<day type="thu" draft="unconfirmed">D</day>
+							<day type="fri" draft="unconfirmed">F</day>
+							<day type="sat" draft="unconfirmed">S</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">1.Q.</quarter>
+							<quarter type="2" draft="unconfirmed">2.Q.</quarter>
+							<quarter type="3" draft="unconfirmed">3.Q.</quarter>
+							<quarter type="4" draft="unconfirmed">4.Q.</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">1. Quattaal</quarter>
+							<quarter type="2" draft="unconfirmed">2. Quattaal</quarter>
+							<quarter type="3" draft="unconfirmed">3. Quattaal</quarter>
+							<quarter type="4" draft="unconfirmed">4. Quattaal</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">v.m.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">n.m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">Uhr des vormittags</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">Uhr des nachmittags</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">Vormittag</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">Nachmittag</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0" draft="unconfirmed">vür Chrestus</era>
+						<era type="1" draft="unconfirmed">noh Chrestus</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">v.Ch.</era>
+						<era type="1" draft="unconfirmed">n.Ch.</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="1" draft="unconfirmed">n.Ch.</era>
+					</eraNarrow>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, 'dä' d. MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d. MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d. MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">d. M. yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d" draft="unconfirmed">d</dateFormatItem>
+						<dateFormatItem id="Ed" draft="unconfirmed">E, 'dä' d.</dateFormatItem>
+						<dateFormatItem id="hm" draft="unconfirmed">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm" draft="unconfirmed">H:mm</dateFormatItem>
+						<dateFormatItem id="hms" draft="unconfirmed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms" draft="unconfirmed">H:mm:ss</dateFormatItem>
+						<dateFormatItem id="M" draft="unconfirmed">L</dateFormatItem>
+						<dateFormatItem id="MMM" draft="unconfirmed">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">d. MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">d. MMMM</dateFormatItem>
+						<dateFormatItem id="ms" draft="unconfirmed">mm:ss</dateFormatItem>
+						<dateFormatItem id="y" draft="unconfirmed">y</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="unconfirmed">y MMM</dateFormatItem>
+						<dateFormatItem id="yMMMM" draft="unconfirmed">MMMM y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="unconfirmed">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">dd. - dd. MM.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">LLL–LLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="unconfirmed">y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMMM–MMMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMMM–MMMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMMM–MMMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMMM y – MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="era">
+						<displayName draft="unconfirmed">Ära</displayName>
+					</field>
+					<field type="year">
+						<displayName draft="unconfirmed">Johr</displayName>
+					</field>
+					<field type="month">
+						<displayName draft="unconfirmed">Mohnd</displayName>
+					</field>
+					<field type="week">
+						<displayName draft="unconfirmed">Woch</displayName>
+					</field>
+					<field type="day">
+						<displayName draft="unconfirmed">Daach</displayName>
+						<relative type="-2" draft="unconfirmed">vörjestere</relative>
+						<relative type="-1" draft="unconfirmed">jestere</relative>
+						<relative type="0" draft="unconfirmed">hück</relative>
+						<relative type="1" draft="unconfirmed">morje</relative>
+						<relative type="2" draft="unconfirmed">övvermorje</relative>
+					</field>
+					<field type="weekday">
+						<displayName draft="unconfirmed">Wochedaach</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName draft="unconfirmed">v.m./n.m.</displayName>
+					</field>
+					<field type="hour">
+						<displayName draft="unconfirmed">Schtund</displayName>
+					</field>
+					<field type="minute">
+						<displayName draft="unconfirmed">Menutt</displayName>
+					</field>
+					<field type="second">
+						<displayName draft="unconfirmed">Sekund</displayName>
+					</field>
+					<field type="zone">
+						<displayName draft="unconfirmed">Zickzon</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<hourFormat draft="unconfirmed">+HH:mm;−HH:mm</hourFormat>
+			<gmtFormat draft="unconfirmed">GMT{0}</gmtFormat>
+			<regionFormat draft="unconfirmed">Zick vun {0}</regionFormat>
+			<fallbackFormat draft="unconfirmed">{1} ({0})</fallbackFormat>
+			<fallbackRegionFormat draft="unconfirmed">Zick vun {1} ({0})</fallbackRegionFormat>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity draft="unconfirmed">Beulah en Nood Dakota</exemplarCity>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="unconfirmed">- weße mer nit -</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity draft="unconfirmed">Tiraana</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity draft="unconfirmed">Eriwan</exemplarCity>
+			</zone>
+			<zone type="Antarctica/South_Pole">
+				<exemplarCity draft="unconfirmed">Södpol</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity draft="unconfirmed">Schoowa-Schtazjohn op dä Ensel Onjul</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity draft="unconfirmed">Wostok</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity draft="unconfirmed">Dumont-d'Urville-Schtazjohn</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity draft="unconfirmed">Wien</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity draft="unconfirmed">Brüssel</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity draft="unconfirmed">Zint John's</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity draft="unconfirmed">Zürisch</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity draft="unconfirmed">Urrumptschi</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity draft="unconfirmed">Koßtaricka</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity draft="unconfirmed">Kap Verde</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity draft="unconfirmed">Nikosija</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity draft="unconfirmed">Prag</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity draft="unconfirmed">Kopenharen</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity draft="unconfirmed">Jalapagos</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity draft="unconfirmed">Kaijro</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity draft="unconfirmed">Kannaare</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity draft="unconfirmed">Färör</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity draft="unconfirmed">Jöönsei</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity draft="unconfirmed">Jibraltaa</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity draft="unconfirmed">Athen</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity draft="unconfirmed">Juam</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity draft="unconfirmed">Hongkong</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity draft="unconfirmed">Ensel Män</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity draft="unconfirmed">Rom</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity draft="unconfirmed">Jöösei</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity draft="unconfirmed">Pnom Penh</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity draft="unconfirmed">Aqtöbe</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity draft="unconfirmed">Qysylorda</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity draft="unconfirmed">Riija</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity draft="unconfirmed">Ulan Bator</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity draft="unconfirmed">Malldive</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity draft="unconfirmed">Schtadt Mexiko</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity draft="unconfirmed">Windhuk</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity draft="unconfirmed">Laajos</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity draft="unconfirmed">Pitkern</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity draft="unconfirmed">Jaasa</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity draft="unconfirmed">Azoore</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity draft="unconfirmed">Bukarest</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity draft="unconfirmed">Kalinninjraad</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity draft="unconfirmed">Moskau</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity draft="unconfirmed">Woljojrad</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="unconfirmed">Jekaterinburg</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity draft="unconfirmed">Krasnojarsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity draft="unconfirmed">Jakutsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity draft="unconfirmed">Wladiwostok</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity draft="unconfirmed">Kamschattka</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity draft="unconfirmed">Zint Helena</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity draft="unconfirmed">Istambul</exemplarCity>
+			</zone>
+			<zone type="Europe/Uzhgorod">
+				<exemplarCity draft="unconfirmed">Uschjorod</exemplarCity>
+			</zone>
+			<zone type="Europe/Zaporozhye">
+				<exemplarCity draft="unconfirmed">Saporischschja</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity draft="unconfirmed">Honululu</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity draft="unconfirmed">Jakutat</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity draft="unconfirmed">Neu Salem en Nood Dakota</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity draft="unconfirmed">Zenter en Nood Dakota</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity draft="unconfirmed">Vincennes en Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity draft="unconfirmed">Petersburg en Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity draft="unconfirmed">Tell City en Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity draft="unconfirmed">Knox en Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity draft="unconfirmed">Winamac en Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity draft="unconfirmed">Marengo en Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity draft="unconfirmed">Vevay en Indiana</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity draft="unconfirmed">Monticello en Kentucky</exemplarCity>
+			</zone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard draft="unconfirmed">Zentraal-Affrekaanesche Ziggzohn</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard draft="unconfirmed">Oß-Affrekaanesche Ziggzohn</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard draft="unconfirmed">Söd-Affrekaanesche Ziggzohn</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic draft="unconfirmed">Wäß-Affrekaanesche Ziggzohn</generic>
+					<standard draft="unconfirmed">Wäß-Affrekaanesche Ziggzohn</standard>
+					<daylight draft="unconfirmed">Wäß-Affrekaanesche Sommerzigg</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<standard draft="unconfirmed">Zick vun Meddel-Europpa</standard>
+					<daylight draft="unconfirmed">Meddel-Europpa sing Summerzick</daylight>
+				</long>
+				<short>
+					<generic>MEZ</generic>
+					<standard>MEZ</standard>
+					<daylight>MESZ</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="unconfirmed">Zick vun Oß-Europpa</generic>
+					<standard draft="unconfirmed">Zick vun Oß-Europpa</standard>
+					<daylight draft="unconfirmed">Summerzick vun Oß-Europpa</daylight>
+				</long>
+				<short>
+					<generic>OEZ</generic>
+					<standard>OEZ</standard>
+					<daylight>OESZ</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="unconfirmed">Weß-Europpa sing Zick</generic>
+					<standard draft="unconfirmed">Weß-Europpa sing Zick</standard>
+					<daylight draft="unconfirmed">Weß-Europpa sing Summerzick</daylight>
+				</long>
+				<short>
+					<generic>WEZ</generic>
+					<standard>WEZ</standard>
+					<daylight>WESZ</daylight>
+				</short>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard draft="unconfirmed">Greenwich Standat-Zick</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard draft="unconfirmed">dem Indische Ozejan sing Zick</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">−</minusSign>
+			<exponential draft="unconfirmed">×10^</exponential>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">¤¤¤</nan>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="AED">
+				<displayName draft="unconfirmed">de vereineschte arraabesche Emiraate ier Dirham</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName draft="unconfirmed">Afjahni</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName draft="unconfirmed">albaanesche Lek</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName draft="unconfirmed">armeenesche Dram</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName draft="unconfirmed">neederlängsch antillesche Jullde</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName draft="unconfirmed">angjolaanesche Kwansa</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName draft="unconfirmed">ajentiinesche Peesos</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName draft="unconfirmed">austraalesche Dollaa</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName draft="unconfirmed">arubesche Florin</displayName>
+			</currency>
+			<currency type="AZM">
+				<displayName draft="unconfirmed">Asserbaidschaani Manat (1993-2006)</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName draft="unconfirmed">Asserbaidschaani Manat</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName draft="unconfirmed">öpmtuuschbaa Mark us Boßnije un dä Hächejovvina</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName draft="unconfirmed">Barbados-Dollaa</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName draft="unconfirmed">Taka us Bangladäsch</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName draft="unconfirmed">buljaaresche Lev</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName draft="unconfirmed">Bachrainesche Denaa</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName draft="unconfirmed">burundesche Franke</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName draft="unconfirmed">Bermuuda-Dollaa</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName draft="unconfirmed">Brunei-Dollaaa</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName draft="unconfirmed">Bollivijano</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName draft="unconfirmed">brasilljaanesche Real</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName draft="unconfirmed">bahama'sche Dollaa</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName draft="unconfirmed">Bhutanesesche Ngultrum</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName draft="unconfirmed">Pula us Bozwaana</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName draft="unconfirmed">wiißrußesche Rubel</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName draft="unconfirmed">Belizjaanesche Dollaa</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName draft="unconfirmed">kannaadesche Dollaa</displayName>
+			</currency>
+			<currency type="CDF">
+				<displayName draft="unconfirmed">kongjoleesesche Frang</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName draft="unconfirmed">schweijzer Fränkli</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName draft="unconfirmed">schileenesche Peesos</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="unconfirmed">schineesesche Yuan Renminbi</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName draft="unconfirmed">kolumbesche Pesos</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName draft="unconfirmed">Kaßtarikaanesche Colón</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName draft="unconfirmed">ömtuuschbaa kubaanesche Pesos</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName draft="unconfirmed">kubaanesche Peesos</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName draft="unconfirmed">kapverdesche Eskuudos</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName draft="unconfirmed">tschäschesche Kruhne</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName draft="unconfirmed">Franke uß Dschibuti</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName draft="unconfirmed">dänesche Kruhne</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName draft="unconfirmed">aljeresche Denaa</displayName>
+			</currency>
+			<currency type="EEK">
+				<displayName draft="unconfirmed">Äßnesche Kruhne</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName draft="unconfirmed">äjiptesche Pongk</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName draft="unconfirmed">Nafka uß Erritreja</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName draft="unconfirmed">ätejoopesche Birr</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="unconfirmed">Euro</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName draft="unconfirmed">Fidschi-Dollaa</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName draft="unconfirmed">Pongk vun de Falkland-Enselle</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="unconfirmed">brittesche £</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName draft="unconfirmed">jeorjesche LAri</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName draft="unconfirmed">janaaesche Cedi</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName draft="unconfirmed">jibraltaa'sche Pongk</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName draft="unconfirmed">jambesche Dalasi</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName draft="unconfirmed">Jineea-Franke</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName draft="unconfirmed">juatemalesche Quetzal</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName draft="unconfirmed">Juaana-Dollaa</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName draft="unconfirmed">Hongkong-Dollaa</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName draft="unconfirmed">hondureanesche Lempira</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName draft="unconfirmed">korwaatesche Kuna</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName draft="unconfirmed">haiitesche Gourde</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName draft="unconfirmed">unjarresche Forint</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName draft="unconfirmed">indoneesesche Ruupije</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName draft="unconfirmed">ißraeelesche Schekel</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="unconfirmed">indesche Ruupije</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName draft="unconfirmed">iraakesche Denaa</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName draft="unconfirmed">persesche Rial</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName draft="unconfirmed">ißländesche Kruhne</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName draft="unconfirmed">jamaikaanesche Dollaa</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName draft="unconfirmed">Jordaanesche Dollaa</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="unconfirmed">japaanesche Jen</displayName>
+			</currency>
+			<currency type="KES">
+				<displayName draft="unconfirmed">Kenjaanesche Schillinge</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName draft="unconfirmed">kirjiisesche Som</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName draft="unconfirmed">kambodschaanesche Riel</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName draft="unconfirmed">kommooresche Frangke</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName draft="unconfirmed">noodkorejaansche Won</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName draft="unconfirmed">söödkorejaansche Won</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName draft="unconfirmed">kuwaitesche Denaa</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName draft="unconfirmed">Kaimann-Dollaa</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName draft="unconfirmed">kasakstaanesche Tenge</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName draft="unconfirmed">loaatesche Kip</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName draft="unconfirmed">libaneesesche Pongk</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName draft="unconfirmed">schri-lankesche Ruupije</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName draft="unconfirmed">liberijaanesche Dollaa</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName draft="unconfirmed">lesoothesche Loti</displayName>
+			</currency>
+			<currency type="LTL">
+				<displayName draft="unconfirmed">littouesche Litas</displayName>
+			</currency>
+			<currency type="LVL">
+				<displayName draft="unconfirmed">lättesche Lats</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName draft="unconfirmed">libesche Denaa</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName draft="unconfirmed">marrokaanesche Dirhamm</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName draft="unconfirmed">moldaavesche Leu</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName draft="unconfirmed">madajaskesche Ariary</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName draft="unconfirmed">mazedoonesche Denaa</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName draft="unconfirmed">burmeesesche Kyat</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName draft="unconfirmed">mongjoolesche Tugrik</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName draft="unconfirmed">makaneesesche Pataca</displayName>
+			</currency>
+			<currency type="MRO">
+				<displayName draft="unconfirmed">mauretanesche Ouguiya</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName draft="unconfirmed">maurizjahnesche Ruupije</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName draft="unconfirmed">mallediivesche Rufiyaa</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName draft="unconfirmed">malaawesche Kwache</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName draft="unconfirmed">mexekaanesche Peeso</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName draft="unconfirmed">malaisesche Ringgit</displayName>
+			</currency>
+			<currency type="MZM">
+				<displayName draft="unconfirmed">mosambikaanesche Metical (1980-2006)</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName draft="unconfirmed">namiibesche Dollaa</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName draft="unconfirmed">nijerijaanesche Naira</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName draft="unconfirmed">nikarajaanesche Córdoba</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="unconfirmed">norrweejesche Kruhne</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName draft="unconfirmed">nepaleesesche Ruupije</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName draft="unconfirmed">neuseeländesche Dollaa</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName draft="unconfirmed">ommaanesche Rijal</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName draft="unconfirmed">pannameesesche Balboa</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName draft="unconfirmed">perruaanesche Nuevo Sol</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName draft="unconfirmed">papua neujinejaanesche Kina</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName draft="unconfirmed">fillipiinesche Pesos</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName draft="unconfirmed">pakestaanesche Ruupije</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName draft="unconfirmed">polnesche Złoty</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName draft="unconfirmed">parajuaanesche Juarani</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName draft="unconfirmed">kataaresche Rijal</displayName>
+			</currency>
+			<currency type="ROL">
+				<displayName draft="unconfirmed">romäänesche Leu (1952-2006)</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName draft="unconfirmed">särbesche Denaare</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="unconfirmed">russesche Ruubel</displayName>
+			</currency>
+			<currency type="RWF">
+				<displayName draft="unconfirmed">ruandesche Frang</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName draft="unconfirmed">saudesche Rijal</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName draft="unconfirmed">solomonesche Dollaa</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName draft="unconfirmed">seischellesche Ruupije</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName draft="unconfirmed">sudaneesesche Pongk</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName draft="unconfirmed">schweedesche Kruhne</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName draft="unconfirmed">singjapurejaanesche Dollaa</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName draft="unconfirmed">Zint-Hellena-Pongk</displayName>
+			</currency>
+			<currency type="SKK">
+				<displayName draft="unconfirmed">ßlovaakesche Kruhne</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">ẞjärra-lejoneesesche Leone</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName draft="unconfirmed">somaalesche Schillenge</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName draft="unconfirmed">sürinameesesche Dollaa</displayName>
+			</currency>
+			<currency type="STD">
+				<displayName draft="unconfirmed">Dobra vun São Tomé un Príncipe</displayName>
+			</currency>
+			<currency type="SVC">
+				<displayName draft="unconfirmed">asalvadorejaanesche Cosan</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName draft="unconfirmed">süüresche Pund</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName draft="unconfirmed">swasiländesche Lilangeni</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName draft="unconfirmed">tailändesche Baht</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName draft="unconfirmed">tadschikißtaanesche Somoni</displayName>
+			</currency>
+			<currency type="TMM">
+				<displayName draft="unconfirmed">turkmeneßtaanesche Manat (1993-2009)</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName draft="unconfirmed">turkmeneßtaanesche Manat</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName draft="unconfirmed">tuneesesche Denaa</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName draft="unconfirmed">tongjanes Paʻangache</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName draft="unconfirmed">törkesche Liire</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName draft="unconfirmed">neu taiwaneesesche Dollaa</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName draft="unconfirmed">tansaanesche Schillenge</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName draft="unconfirmed">ukraijnesche Hryvnia</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName draft="unconfirmed">ujandesche Schillenge</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName draft="unconfirmed">ammärrikaanesche Dollaa</displayName>
+			</currency>
+			<currency type="UYU">
+				<displayName draft="unconfirmed">urrujuwaische Peeso</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName draft="unconfirmed">ußbeekesche Som</displayName>
+			</currency>
+			<currency type="VEF">
+				<displayName draft="unconfirmed">venezuelaanesche Bolívar</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName draft="unconfirmed">vijätnammeesesche Dong</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName draft="unconfirmed">vanuatesche Vatu</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName draft="unconfirmed">samowaanesche Tala</displayName>
+			</currency>
+			<currency type="XAG">
+				<displayName draft="unconfirmed">Sellver</displayName>
+			</currency>
+			<currency type="XAU">
+				<displayName draft="unconfirmed">Jold</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName draft="unconfirmed">oß-karribbesche Dollaa</displayName>
+			</currency>
+			<currency type="XFO">
+				<displayName draft="unconfirmed">franzüüsesche Joldfranke</displayName>
+			</currency>
+			<currency type="XPD">
+				<displayName draft="unconfirmed">Palladijum</displayName>
+			</currency>
+			<currency type="XPT">
+				<displayName draft="unconfirmed">Plaatin</displayName>
+			</currency>
+			<currency type="XTS">
+				<displayName draft="unconfirmed">Währong zum Prööfe</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="unconfirmed">onbikannte Währong</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName draft="unconfirmed">jemenitesche Rijal</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName draft="unconfirmed">södaffrekaanesche Rand</displayName>
+			</currency>
+			<currency type="ZMK">
+				<displayName draft="unconfirmed">sambesche Kwacha</displayName>
+			</currency>
+			<currency type="ZWD">
+				<displayName draft="unconfirmed">simbabwesche Dollaa (1980-2008)</displayName>
+			</currency>
+			<currency type="ZWL">
+				<displayName draft="unconfirmed">simbabwesche Dollaa (2009)</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unit type="day">
+			<unitPattern count="other" draft="unconfirmed">{0} Dääsch</unitPattern>
+		</unit>
+		<unit type="hour">
+			<unitPattern count="other" draft="unconfirmed">{0} Schtunde</unitPattern>
+		</unit>
+		<unit type="minute">
+			<unitPattern count="other" draft="unconfirmed">{0} Menutte</unitPattern>
+		</unit>
+		<unit type="month">
+			<unitPattern count="other" draft="unconfirmed">{0} Mohnde</unitPattern>
+		</unit>
+		<unit type="second">
+			<unitPattern count="other" draft="unconfirmed">{0} Sekunde</unitPattern>
+		</unit>
+		<unit type="week">
+			<unitPattern count="other" draft="unconfirmed">{0} Woche</unitPattern>
+		</unit>
+		<unit type="year">
+			<unitPattern count="other" draft="unconfirmed">{0} Johre</unitPattern>
+		</unit>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="2" draft="unconfirmed">{0} un {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} un {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr draft="unconfirmed">jo:joh:joo:j</yesstr>
+			<nostr draft="unconfirmed">nä:nää:näh:n</nostr>
+		</messages>
+	</posix>
+</ldml>
+

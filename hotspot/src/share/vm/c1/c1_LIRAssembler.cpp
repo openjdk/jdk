@@ -448,10 +448,10 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
 
   switch (op->code()) {
   case lir_static_call:
+  case lir_dynamic_call:
     call(op, relocInfo::static_call_type);
     break;
   case lir_optvirtual_call:
-  case lir_dynamic_call:
     call(op, relocInfo::opt_virtual_call_type);
     break;
   case lir_icvirtual_call:
@@ -460,7 +460,9 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   case lir_virtual_call:
     vtable_call(op);
     break;
-  default: ShouldNotReachHere();
+  default:
+    fatal(err_msg_res("unexpected op code: %s", op->name()));
+    break;
   }
 
   // JSR 292

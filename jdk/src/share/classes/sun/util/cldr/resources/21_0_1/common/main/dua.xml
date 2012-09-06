@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="dua"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="dua">duálá</language>
+		</languages>
+		<territories>
+			<territory type="CM">Cameroun</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a á b ɓ c d ɗ e é ɛ {ɛ\u0301} f g i í j k l m n {ny} ŋ o ó ɔ {ɔ\u0301} p r s t u ú ū w y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[h q v x z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B Ɓ C D Ɗ E Ɛ F G I J K L M N Ŋ O Ɔ P S T U W Y]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>«</quotationStart>
+		<quotationEnd>»</quotationEnd>
+		<alternateQuotationStart>‘</alternateQuotationStart>
+		<alternateQuotationEnd>’</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">di</month>
+							<month type="2">ŋgɔn</month>
+							<month type="3">sɔŋ</month>
+							<month type="4">diɓ</month>
+							<month type="5">emi</month>
+							<month type="6">esɔ</month>
+							<month type="7">mad</month>
+							<month type="8">diŋ</month>
+							<month type="9">nyɛt</month>
+							<month type="10">may</month>
+							<month type="11">tin</month>
+							<month type="12">elá</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">dimɔ́di</month>
+							<month type="2">ŋgɔndɛ</month>
+							<month type="3">sɔŋɛ</month>
+							<month type="4">diɓáɓá</month>
+							<month type="5">emiasele</month>
+							<month type="6">esɔpɛsɔpɛ</month>
+							<month type="7">madiɓɛ́díɓɛ́</month>
+							<month type="8">diŋgindi</month>
+							<month type="9">nyɛtɛki</month>
+							<month type="10">mayésɛ́</month>
+							<month type="11">tiníní</month>
+							<month type="12">eláŋgɛ́</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">d</month>
+							<month type="2">ŋ</month>
+							<month type="3">s</month>
+							<month type="4">d</month>
+							<month type="5">e</month>
+							<month type="6">e</month>
+							<month type="7">m</month>
+							<month type="8">d</month>
+							<month type="9">n</month>
+							<month type="10">m</month>
+							<month type="11">t</month>
+							<month type="12">e</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">ét</day>
+							<day type="mon">mɔ́s</day>
+							<day type="tue">kwa</day>
+							<day type="wed">muk</day>
+							<day type="thu">ŋgi</day>
+							<day type="fri">ɗón</day>
+							<day type="sat">esa</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">éti</day>
+							<day type="mon">mɔ́sú</day>
+							<day type="tue">kwasú</day>
+							<day type="wed">mukɔ́sú</day>
+							<day type="thu">ŋgisú</day>
+							<day type="fri">ɗónɛsú</day>
+							<day type="sat">esaɓasú</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">e</day>
+							<day type="mon">m</day>
+							<day type="tue">k</day>
+							<day type="wed">m</day>
+							<day type="thu">ŋ</day>
+							<day type="fri">ɗ</day>
+							<day type="sat">e</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">ndu1</quarter>
+							<quarter type="2">ndu2</quarter>
+							<quarter type="3">ndu3</quarter>
+							<quarter type="4">ndu4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">ndúmbū nyá ɓosó</quarter>
+							<quarter type="2">ndúmbū ní lóndɛ́ íɓaá</quarter>
+							<quarter type="3">ndúmbū ní lóndɛ́ ílálo</quarter>
+							<quarter type="4">ndúmbū ní lóndɛ́ ínɛ́y</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">idiɓa</dayPeriod>
+							<dayPeriod type="pm">ebyámu</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">ɓoso ɓwá yáɓe lá</era>
+						<era type="1">mbúsa kwédi a Yés</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">ɓ.Ys</era>
+						<era type="1">mb.Ys</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E d/M</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="ms">m:ss</dateFormatItem>
+						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
+						<dateFormatItem id="yQ">Q y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="era">
+						<displayName>póndá</displayName>
+					</field>
+					<field type="year">
+						<displayName>mbú</displayName>
+					</field>
+					<field type="month">
+						<displayName>mɔ́di</displayName>
+					</field>
+					<field type="week">
+						<displayName>disama</displayName>
+					</field>
+					<field type="day">
+						<displayName>búnyá</displayName>
+						<relative type="-1">kíɛlɛ nítómb́í</relative>
+						<relative type="0">wɛ́ŋgɛ̄</relative>
+						<relative type="1">kíɛlɛ</relative>
+					</field>
+					<field type="weekday">
+						<displayName>mínyá má disama</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName>epasi a búnyá</displayName>
+					</field>
+					<field type="hour">
+						<displayName>ŋgandɛ</displayName>
+					</field>
+					<field type="minute">
+						<displayName>ndɔkɔ</displayName>
+					</field>
+					<field type="second">
+						<displayName>píndí</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group> </group>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr>ee:e</yesstr>
+			<nostr>kɛ́m:k</nostr>
+		</messages>
+	</posix>
+</ldml>
