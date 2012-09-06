@@ -152,6 +152,10 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
 
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
+
+  // restore the C++ vtable from the shared archive
+  restore_vtable();
+
   if (SystemDictionary::Object_klass_loaded()) {
     // Recreate the object array and add to ClassLoaderData.
     int map_length = resolved_reference_length();

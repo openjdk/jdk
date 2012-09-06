@@ -1953,7 +1953,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
     // Initialize the constant pool for the Object_class
     InstanceKlass* ik = InstanceKlass::cast(Object_klass());
     ik->constants()->restore_unshareable_info(CHECK);
-  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Class_klass), scan, CHECK);
+    initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Class_klass), scan, CHECK);
   } else {
     initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Class_klass), scan, CHECK);
   }

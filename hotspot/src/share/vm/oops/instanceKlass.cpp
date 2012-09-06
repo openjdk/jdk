@@ -2165,6 +2165,8 @@ void InstanceKlass::restore_unshareable_info(TRAPS) {
   for (int index2 = 0; index2 < num_methods; ++index2) {
     methodHandle m(THREAD, methods->at(index2));
     m()->link_method(m, CHECK);
+    // restore method's vtable by calling a virtual function
+    m->restore_vtable();
   }
   if (JvmtiExport::has_redefined_a_class()) {
     // Reinitialize vtable because RedefineClasses may have changed some
