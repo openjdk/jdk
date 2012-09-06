@@ -153,9 +153,9 @@ static void calculate_fingerprints() {
 //
 // Execution time:
 //   First virtual method call for any object of these metadata types:
-//   1. object->klass->klass_part
-//   2. vtable entry for that klass_part points to the jump table entries
-//   3. branches to common_code with %O0/klass_part, %L0: Klass index <<8 + method index
+//   1. object->klass
+//   2. vtable entry for that klass points to the jump table entries
+//   3. branches to common_code with %O0/klass, %L0: Klass index <<8 + method index
 //   4. common_code:
 //      Get address of new vtbl pointer for this Klass from updated table
 //      Update new vtbl pointer in the Klass: future virtual calls go direct

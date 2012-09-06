@@ -168,9 +168,16 @@ class Method : public Metadata {
                             TRAPS);
 
   Method() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+
+  // The Method vtable is restored by this call when the Method is in the
+  // shared archive.  See patch_klass_vtables() in metaspaceShared.cpp for
+  // all the gory details.  SA, dtrace and pstack helpers distinguish metadata
+  // by their vtable.
+  void restore_vtable() { guarantee(is_method(), "vtable restored by this call"); }
   bool is_method() const volatile { return true; }
 
   // accessors for instance variables
+
   ConstMethod* constMethod() const             { return _constMethod; }
   void set_constMethod(ConstMethod* xconst)    { _constMethod = xconst; }
 
