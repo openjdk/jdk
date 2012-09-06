@@ -35,32 +35,11 @@ public class MaxPathLength {
     private static String fileName =
                  "areallylongfilenamethatsforsur";
     private static boolean isWindows = false;
-    private static long totalSpace;
-    private static long freeSpace;
-    private static long usableSpace;
-    private static long ONEMEGA = 1024*1024;
 
     public static void main(String[] args) throws Exception {
         String osName = System.getProperty("os.name");
         if (osName.startsWith("Windows")) {
             isWindows = true;
-            if (osName.startsWith("Windows 9") ||
-                osName.startsWith("Windows Me"))
-            return; // win9x/Me cannot handle long paths
-        }
-
-        if (osName.startsWith("SunOS")) {
-            return; // We don't run this test on Solaris either.
-                    // Some Solaris machines have very "slow" disk
-                    // access performance which causes this one
-                    // to timeout.
-        }
-
-        if (isWindows) {
-            File f = new File(".");
-            totalSpace = f.getTotalSpace()/ONEMEGA;
-            freeSpace = f.getFreeSpace()/ONEMEGA;
-            usableSpace = f.getUsableSpace()/ONEMEGA;
         }
 
         for (int i = 4; i < 7; i++) {
@@ -72,25 +51,17 @@ public class MaxPathLength {
             }
         }
 
-        // Testing below will not be run if "-extra" is not
-        if (args.length == 0 ||
-            !"-extra".equals(args[0]) ||
-            !isWindows)
-            return;
-
-        /* Testings below should not be run on a remote
-           dir that exists on a Solaris machine */
-        for (int i = 20; i < 21; i++) {
+        // test long paths on windows
+        if (isWindows) {
             String name = fileName;
             while (name.length() < 256) {
-                testLongPath (i, name, false);
-                testLongPath (i, name, true);
+                testLongPath (20, name, false);
+                testLongPath (20, name, true);
                 name += "A";
             }
         }
     }
 
-    private static int lastMax = 0;
     static void testLongPath(int max, String fn,
                              boolean tryAbsolute) throws Exception {
         String[] created = new String[max];
@@ -125,18 +96,6 @@ public class MaxPathLength {
                 dirFile = new File(dirFile.getCanonicalPath());
             if (!dirFile.isDirectory())
                 throw new RuntimeException ("File.isDirectory() failed");
-            if (isWindows && lastMax != max) {
-                long diff = totalSpace - dirFile.getTotalSpace()/ONEMEGA;
-                if (diff < -5 || diff > 5)
-                    throw new RuntimeException ("File.getTotalSpace() failed");
-                diff = freeSpace - dirFile.getFreeSpace()/ONEMEGA;
-                if (diff < -5 || diff > 5)
-                    throw new RuntimeException ("File.getFreeSpace() failed");
-                diff = usableSpace - dirFile.getUsableSpace()/ONEMEGA;
-                if (diff < -5 || diff > 5)
-                    throw new RuntimeException ("File.getUsableSpace() failed");
-                lastMax = max;
-            }
             f = new File(tPath);
             if (!f.createNewFile()) {
                 throw new RuntimeException ("File.createNewFile() failed");

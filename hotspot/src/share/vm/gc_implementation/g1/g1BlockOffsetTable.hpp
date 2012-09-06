@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,14 +159,30 @@ private:
            "right address out of range");
     assert(left  < right, "Heap addresses out of order");
     size_t num_cards = pointer_delta(right, left) >> LogN_words;
-    memset(&_offset_array[index_for(left)], offset, num_cards);
+    if (UseMemSetInBOT) {
+      memset(&_offset_array[index_for(left)], offset, num_cards);
+    } else {
+      size_t i = index_for(left);
+      const size_t end = i + num_cards;
+      for (; i < end; i++) {
+        _offset_array[i] = offset;
+      }
+    }
   }
 
   void set_offset_array(size_t left, size_t right, u_char offset) {
     assert(right < _vs.committed_size(), "right address out of range");
-    assert(left  <= right, "indexes out of order");
+    assert(left <= right, "indexes out of order");
     size_t num_cards = right - left + 1;
-    memset(&_offset_array[left], offset, num_cards);
+    if (UseMemSetInBOT) {
+      memset(&_offset_array[left], offset, num_cards);
+    } else {
+      size_t i = left;
+      const size_t end = i + num_cards;
+      for (; i < end; i++) {
+        _offset_array[i] = offset;
+      }
+    }
   }
 
   void check_offset_array(size_t index, HeapWord* high, HeapWord* low) const {

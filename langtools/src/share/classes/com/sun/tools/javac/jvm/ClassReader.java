@@ -188,7 +188,7 @@ public class ClassReader implements Completer {
 
     /** The current input pointer.
      */
-    int bp;
+    protected int bp;
 
     /** The objects of the constant pool.
      */
@@ -890,13 +890,13 @@ public class ClassReader implements Completer {
 
     protected enum AttributeKind { CLASS, MEMBER };
     protected abstract class AttributeReader {
-        AttributeReader(Name name, ClassFile.Version version, Set<AttributeKind> kinds) {
+        protected AttributeReader(Name name, ClassFile.Version version, Set<AttributeKind> kinds) {
             this.name = name;
             this.version = version;
             this.kinds = kinds;
         }
 
-        boolean accepts(AttributeKind kind) {
+        protected boolean accepts(AttributeKind kind) {
             if (kinds.contains(kind)) {
                 if (majorVersion > version.major || (majorVersion == version.major && minorVersion >= version.minor))
                     return true;
@@ -915,11 +915,11 @@ public class ClassReader implements Completer {
             return false;
         }
 
-        abstract void read(Symbol sym, int attrLen);
+        protected abstract void read(Symbol sym, int attrLen);
 
-        final Name name;
-        final ClassFile.Version version;
-        final Set<AttributeKind> kinds;
+        protected final Name name;
+        protected final ClassFile.Version version;
+        protected final Set<AttributeKind> kinds;
     }
 
     protected Set<AttributeKind> CLASS_ATTRIBUTE =
@@ -936,7 +936,7 @@ public class ClassReader implements Completer {
             // v45.3 attributes
 
             new AttributeReader(names.Code, V45_3, MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     if (readAllOfClassFile || saveParameterNames)
                         ((MethodSymbol)sym).code = readCode(sym);
                     else
@@ -945,7 +945,7 @@ public class ClassReader implements Completer {
             },
 
             new AttributeReader(names.ConstantValue, V45_3, MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     Object v = readPool(nextChar());
                     // Ignore ConstantValue attribute if field not final.
                     if ((sym.flags() & FINAL) != 0)
@@ -954,13 +954,13 @@ public class ClassReader implements Completer {
             },
 
             new AttributeReader(names.Deprecated, V45_3, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     sym.flags_field |= DEPRECATED;
                 }
             },
 
             new AttributeReader(names.Exceptions, V45_3, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     int nexceptions = nextChar();
                     List<Type> thrown = List.nil();
                     for (int j = 0; j < nexceptions; j++)
@@ -971,14 +971,14 @@ public class ClassReader implements Completer {
             },
 
             new AttributeReader(names.InnerClasses, V45_3, CLASS_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     ClassSymbol c = (ClassSymbol) sym;
                     readInnerClasses(c);
                 }
             },
 
             new AttributeReader(names.LocalVariableTable, V45_3, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     int newbp = bp + attrLen;
                     if (saveParameterNames) {
                         // Pick up parameter names from the variable table.
@@ -1014,7 +1014,7 @@ public class ClassReader implements Completer {
             },
 
             new AttributeReader(names.SourceFile, V45_3, CLASS_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     ClassSymbol c = (ClassSymbol) sym;
                     Name n = readName(nextChar());
                     c.sourcefile = new SourceFileObject(n, c.flatname);
@@ -1022,7 +1022,7 @@ public class ClassReader implements Completer {
             },
 
             new AttributeReader(names.Synthetic, V45_3, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     // bridge methods are visible when generics not enabled
                     if (allowGenerics || (sym.flags_field & BRIDGE) == 0)
                         sym.flags_field |= SYNTHETIC;
@@ -1032,7 +1032,7 @@ public class ClassReader implements Completer {
             // standard v49 attributes
 
             new AttributeReader(names.EnclosingMethod, V49, CLASS_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     int newbp = bp + attrLen;
                     readEnclosingMethodAttr(sym);
                     bp = newbp;
@@ -1041,11 +1041,11 @@ public class ClassReader implements Completer {
 
             new AttributeReader(names.Signature, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
                 @Override
-                boolean accepts(AttributeKind kind) {
+                protected boolean accepts(AttributeKind kind) {
                     return super.accepts(kind) && allowGenerics;
                 }
 
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     if (sym.kind == TYP) {
                         ClassSymbol c = (ClassSymbol) sym;
                         readingClassAttr = true;
@@ -1074,31 +1074,31 @@ public class ClassReader implements Completer {
             // v49 annotation attributes
 
             new AttributeReader(names.AnnotationDefault, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     attachAnnotationDefault(sym);
                 }
             },
 
             new AttributeReader(names.RuntimeInvisibleAnnotations, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     attachAnnotations(sym);
                 }
             },
 
             new AttributeReader(names.RuntimeInvisibleParameterAnnotations, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     attachParameterAnnotations(sym);
                 }
             },
 
             new AttributeReader(names.RuntimeVisibleAnnotations, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     attachAnnotations(sym);
                 }
             },
 
             new AttributeReader(names.RuntimeVisibleParameterAnnotations, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     attachParameterAnnotations(sym);
                 }
             },
@@ -1106,14 +1106,14 @@ public class ClassReader implements Completer {
             // additional "legacy" v49 attributes, superceded by flags
 
             new AttributeReader(names.Annotation, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     if (allowAnnotations)
                         sym.flags_field |= ANNOTATION;
                 }
             },
 
             new AttributeReader(names.Bridge, V49, MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     sym.flags_field |= BRIDGE;
                     if (!allowGenerics)
                         sym.flags_field &= ~SYNTHETIC;
@@ -1121,13 +1121,13 @@ public class ClassReader implements Completer {
             },
 
             new AttributeReader(names.Enum, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     sym.flags_field |= ENUM;
                 }
             },
 
             new AttributeReader(names.Varargs, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
-                void read(Symbol sym, int attrLen) {
+                protected void read(Symbol sym, int attrLen) {
                     if (allowVarargs)
                         sym.flags_field |= VARARGS;
                 }
@@ -1153,7 +1153,7 @@ public class ClassReader implements Completer {
 
 
 
-    void readEnclosingMethodAttr(Symbol sym) {
+    protected void readEnclosingMethodAttr(Symbol sym) {
         // sym is a nested class with an "Enclosing Method" attribute
         // remove sym from it's current owners scope and place it in
         // the scope specified by the attribute

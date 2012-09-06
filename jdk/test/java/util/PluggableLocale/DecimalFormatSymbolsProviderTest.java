@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 import java.text.*;
 import java.util.*;
-import sun.util.*;
+import sun.util.locale.provider.*;
 import sun.util.resources.*;
 
 public class DecimalFormatSymbolsProviderTest extends ProviderTest {
@@ -34,7 +34,8 @@ public class DecimalFormatSymbolsProviderTest extends ProviderTest {
     com.foo.DecimalFormatSymbolsProviderImpl dfsp = new com.foo.DecimalFormatSymbolsProviderImpl();
     List<Locale> availloc = Arrays.asList(DecimalFormatSymbols.getAvailableLocales());
     List<Locale> providerloc = Arrays.asList(dfsp.getAvailableLocales());
-    List<Locale> jreloc = Arrays.asList(LocaleData.getAvailableLocales());
+    List<Locale> jreloc = Arrays.asList(LocaleProviderAdapter.forJRE().getAvailableLocales());
+    List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getDecimalFormatSymbolsProvider().getAvailableLocales());
 
     public static void main(String[] s) {
         new DecimalFormatSymbolsProviderTest();
@@ -47,7 +48,8 @@ public class DecimalFormatSymbolsProviderTest extends ProviderTest {
 
     void availableLocalesTest() {
         Set<Locale> localesFromAPI = new HashSet<Locale>(availloc);
-        Set<Locale> localesExpected = new HashSet<Locale>(jreloc);
+        Set<Locale> localesExpected = new HashSet<Locale>(jreimplloc);
+        localesExpected.remove(Locale.ROOT);
         localesExpected.addAll(providerloc);
         if (localesFromAPI.equals(localesExpected)) {
             System.out.println("availableLocalesTest passed.");
@@ -60,8 +62,8 @@ public class DecimalFormatSymbolsProviderTest extends ProviderTest {
 
         for (Locale target: availloc) {
             // pure JRE implementation
-            ResourceBundle rb = LocaleData.getNumberFormatData(target);
-            boolean jreSupportsLocale = jreloc.contains(target);
+            ResourceBundle rb = LocaleProviderAdapter.forJRE().getLocaleData().getNumberFormatData(target);
+            boolean jreSupportsLocale = jreimplloc.contains(target);
 
             // JRE string arrays
             String[] jres = new String[2];
