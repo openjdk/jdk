@@ -164,6 +164,10 @@ final class P11Cipher extends CipherSpi {
     // if we do the padding
     private int bytesBuffered;
 
+    // length of key size in bytes; currently only used by AES given its oid
+    // specification mandates a fixed size of the key
+    private int fixedKeySize = -1;
+
     P11Cipher(Token token, String algorithm, long mechanism)
             throws PKCS11Exception, NoSuchAlgorithmException {
         super();
@@ -172,19 +176,26 @@ final class P11Cipher extends CipherSpi {
         this.mechanism = mechanism;
 
         String algoParts[] = algorithm.split("/");
-        keyAlgorithm = algoParts[0];
 
-        if (keyAlgorithm.equals("AES")) {
+        if (algoParts[0].startsWith("AES")) {
             blockSize = 16;
-        } else if (keyAlgorithm.equals("RC4") ||
-                keyAlgorithm.equals("ARCFOUR")) {
-            blockSize = 0;
-        } else { // DES, DESede, Blowfish
-            blockSize = 8;
-        }
-        this.blockMode =
+            int index = algoParts[0].indexOf('_');
+            if (index != -1) {
+                // should be well-formed since we specify what we support
+                fixedKeySize = Integer.parseInt(algoParts[0].substring(index+1))/8;
+            }
+            keyAlgorithm = "AES";
+        } else {
+            keyAlgorithm = algoParts[0];
+            if (keyAlgorithm.equals("RC4") ||
+                    keyAlgorithm.equals("ARCFOUR")) {
+                blockSize = 0;
+            } else { // DES, DESede, Blowfish
+                blockSize = 8;
+            }
+            this.blockMode =
                 (algoParts.length > 1 ? parseMode(algoParts[1]) : MODE_ECB);
-
+        }
         String defPadding = (blockSize == 0 ? "NoPadding" : "PKCS5Padding");
         String paddingStr =
                 (algoParts.length > 2 ? algoParts[2] : defPadding);
@@ -333,6 +344,9 @@ final class P11Cipher extends CipherSpi {
             SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         cancelOperation();
+        if (fixedKeySize != -1 && key.getEncoded().length != fixedKeySize) {
+            throw new InvalidKeyException("Key size is invalid");
+        }
         switch (opmode) {
             case Cipher.ENCRYPT_MODE:
                 encrypt = true;

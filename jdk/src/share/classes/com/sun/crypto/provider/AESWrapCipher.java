@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,27 @@ import javax.crypto.spec.*;
  *
  * @see AESCipher
  */
-public final class AESWrapCipher extends CipherSpi {
-
+abstract class AESWrapCipher extends CipherSpi {
+    public static final class General extends AESWrapCipher {
+        public General() {
+            super(-1);
+        }
+    }
+    public static final class AES128 extends AESWrapCipher {
+        public AES128() {
+            super(16);
+        }
+    }
+    public static final class AES192 extends AESWrapCipher {
+        public AES192() {
+            super(24);
+        }
+    }
+    public static final class AES256 extends AESWrapCipher {
+        public AES256() {
+            super(32);
+        }
+    }
     private static final byte[] IV = {
         (byte) 0xA6, (byte) 0xA6, (byte) 0xA6, (byte) 0xA6,
         (byte) 0xA6, (byte) 0xA6, (byte) 0xA6, (byte) 0xA6
@@ -62,12 +81,20 @@ public final class AESWrapCipher extends CipherSpi {
      */
     private boolean decrypting = false;
 
+    /*
+     * needed to support AES oids which associates a fixed key size
+     * to the cipher object.
+     */
+    private final int fixedKeySize; // in bytes, -1 if no restriction
+
     /**
      * Creates an instance of AES KeyWrap cipher with default
      * mode, i.e. "ECB" and padding scheme, i.e. "NoPadding".
      */
-    public AESWrapCipher() {
+    public AESWrapCipher(int keySize) {
         cipher = new AESCrypt();
+        fixedKeySize = keySize;
+
     }
 
     /**
@@ -170,6 +197,7 @@ public final class AESWrapCipher extends CipherSpi {
             throw new UnsupportedOperationException("This cipher can " +
                 "only be used for key wrapping and unwrapping");
         }
+        AESCipher.checkKeySize(key, fixedKeySize);
         cipher.init(decrypting, key.getAlgorithm(), key.getEncoded());
     }
 

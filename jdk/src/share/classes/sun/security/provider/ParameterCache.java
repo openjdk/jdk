@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.provider;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.math.BigInteger;
 
 import java.security.*;
@@ -55,11 +56,17 @@ public final class ParameterCache {
     private final static Map<Integer,DHParameterSpec> dhCache;
 
     /**
-     * Return cached DSA parameters for the given keylength, or null if none
-     * are available in the cache.
+     * Return cached DSA parameters for the given length combination of
+     * prime and subprime, or null if none are available in the cache.
      */
-    public static DSAParameterSpec getCachedDSAParameterSpec(int keyLength) {
-        return dsaCache.get(Integer.valueOf(keyLength));
+    public static DSAParameterSpec getCachedDSAParameterSpec(int primeLen,
+            int subprimeLen) {
+        // ensure the sum is unique in all cases, i.e.
+        // case#1: (512 <= p <= 1024) AND q=160
+        // case#2: p=2048 AND q=224
+        // case#3: p=2048 AND q=256
+        // (NOT-YET-SUPPORTED)case#4: p=3072 AND q=256
+        return dsaCache.get(Integer.valueOf(primeLen+subprimeLen));
     }
 
     /**
@@ -71,18 +78,39 @@ public final class ParameterCache {
     }
 
     /**
-     * Return DSA parameters for the given keylength. Uses cache if possible,
-     * generates new parameters and adds them to the cache otherwise.
+     * Return DSA parameters for the given primeLen. Uses cache if
+     * possible, generates new parameters and adds them to the cache
+     * otherwise.
      */
-    public static DSAParameterSpec getDSAParameterSpec(int keyLength,
+    public static DSAParameterSpec getDSAParameterSpec(int primeLen,
             SecureRandom random)
-            throws NoSuchAlgorithmException, InvalidParameterSpecException {
-        DSAParameterSpec spec = getCachedDSAParameterSpec(keyLength);
+            throws NoSuchAlgorithmException, InvalidParameterSpecException,
+                   InvalidAlgorithmParameterException {
+        if (primeLen <= 1024) {
+            return getDSAParameterSpec(primeLen, 160, random);
+        } else if (primeLen == 2048) {
+            return getDSAParameterSpec(primeLen, 224, random);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Return DSA parameters for the given primeLen and subprimeLen.
+     * Uses cache if possible, generates new parameters and adds them to the
+     * cache otherwise.
+     */
+    public static DSAParameterSpec getDSAParameterSpec(int primeLen,
+            int subprimeLen, SecureRandom random)
+            throws NoSuchAlgorithmException, InvalidParameterSpecException,
+                   InvalidAlgorithmParameterException {
+        DSAParameterSpec spec =
+            getCachedDSAParameterSpec(primeLen, subprimeLen);
         if (spec != null) {
             return spec;
         }
-        spec = getNewDSAParameterSpec(keyLength, random);
-        dsaCache.put(Integer.valueOf(keyLength), spec);
+        spec = getNewDSAParameterSpec(primeLen, subprimeLen, random);
+        dsaCache.put(Integer.valueOf(primeLen + subprimeLen), spec);
         return spec;
     }
 
@@ -107,28 +135,28 @@ public final class ParameterCache {
     }
 
     /**
-     * Return new DSA parameters for the given keylength. Do not lookup in
-     * cache and do not cache the newly generated parameters. This method
-     * really only exists for the legacy method
+     * Return new DSA parameters for the given length combination of prime and
+     * sub prime. Do not lookup in cache and do not cache the newly generated
+     * parameters. This method really only exists for the legacy method
      * DSAKeyPairGenerator.initialize(int, boolean, SecureRandom).
      */
-    public static DSAParameterSpec getNewDSAParameterSpec(int keyLength,
-            SecureRandom random)
-            throws NoSuchAlgorithmException, InvalidParameterSpecException {
+    public static DSAParameterSpec getNewDSAParameterSpec(int primeLen,
+            int subprimeLen, SecureRandom random)
+            throws NoSuchAlgorithmException, InvalidParameterSpecException,
+                   InvalidAlgorithmParameterException {
         AlgorithmParameterGenerator gen =
                 AlgorithmParameterGenerator.getInstance("DSA");
-        gen.init(keyLength, random);
+        DSAGenParameterSpec genParams =
+            new DSAGenParameterSpec(primeLen, subprimeLen);
+        gen.init(genParams, random);
         AlgorithmParameters params = gen.generateParameters();
         DSAParameterSpec spec = params.getParameterSpec(DSAParameterSpec.class);
         return spec;
     }
 
     static {
-        // XXX change to ConcurrentHashMap once available
-        dhCache = Collections.synchronizedMap
-                        (new HashMap<Integer,DHParameterSpec>());
-        dsaCache = Collections.synchronizedMap
-                        (new HashMap<Integer,DSAParameterSpec>());
+        dhCache = new ConcurrentHashMap<Integer,DHParameterSpec>();
+        dsaCache = new ConcurrentHashMap<Integer,DSAParameterSpec>();
 
         /*
          * We support precomputed parameter for 512, 768 and 1024 bit
@@ -210,17 +238,99 @@ public final class ParameterCache {
                            "83dfe15ae59f06928b665e807b552564014c3bfecf" +
                            "492a", 16);
 
-        dsaCache.put(Integer.valueOf(512),
+        dsaCache.put(Integer.valueOf(512+160),
                                 new DSAParameterSpec(p512, q512, g512));
-        dsaCache.put(Integer.valueOf(768),
+        dsaCache.put(Integer.valueOf(768+160),
                                 new DSAParameterSpec(p768, q768, g768));
-        dsaCache.put(Integer.valueOf(1024),
+        dsaCache.put(Integer.valueOf(1024+160),
                                 new DSAParameterSpec(p1024, q1024, g1024));
+        /*
+         * L = 2048, N = 224
+         * SEED = 584236080cfa43c09b02354135f4cc5198a19efada08bd866d601ba4
+         * counter = 2666
+         */
+        BigInteger p2048_224 =
+            new BigInteger("8f7935d9b9aae9bfabed887acf4951b6f32ec59e3b" +
+                           "af3718e8eac4961f3efd3606e74351a9c4183339b8" +
+                           "09e7c2ae1c539ba7475b85d011adb8b47987754984" +
+                           "695cac0e8f14b3360828a22ffa27110a3d62a99345" +
+                           "3409a0fe696c4658f84bdd20819c3709a01057b195" +
+                           "adcd00233dba5484b6291f9d648ef883448677979c" +
+                           "ec04b434a6ac2e75e9985de23db0292fc1118c9ffa" +
+                           "9d8181e7338db792b730d7b9e349592f6809987215" +
+                           "3915ea3d6b8b4653c633458f803b32a4c2e0f27290" +
+                           "256e4e3f8a3b0838a1c450e4e18c1a29a37ddf5ea1" +
+                           "43de4b66ff04903ed5cf1623e158d487c608e97f21" +
+                           "1cd81dca23cb6e380765f822e342be484c05763939" +
+                           "601cd667", 16);
+
+        BigInteger q2048_224 =
+            new BigInteger("baf696a68578f7dfdee7fa67c977c785ef32b233ba" +
+                           "e580c0bcd5695d", 16);
+
+        BigInteger g2048_224 =
+            new BigInteger("16a65c58204850704e7502a39757040d34da3a3478" +
+                           "c154d4e4a5c02d242ee04f96e61e4bd0904abdac8f" +
+                           "37eeb1e09f3182d23c9043cb642f88004160edf9ca" +
+                           "09b32076a79c32a627f2473e91879ba2c4e744bd20" +
+                           "81544cb55b802c368d1fa83ed489e94e0fa0688e32" +
+                           "428a5c78c478c68d0527b71c9a3abb0b0be12c4468" +
+                           "9639e7d3ce74db101a65aa2b87f64c6826db3ec72f" +
+                           "4b5599834bb4edb02f7c90e9a496d3a55d535bebfc" +
+                           "45d4f619f63f3dedbb873925c2f224e07731296da8" +
+                           "87ec1e4748f87efb5fdeb75484316b2232dee553dd" +
+                           "af02112b0d1f02da30973224fe27aeda8b9d4b2922" +
+                           "d9ba8be39ed9e103a63c52810bc688b7e2ed4316e1" +
+                           "ef17dbde", 16);
+        dsaCache.put(Integer.valueOf(2048+224),
+                     new DSAParameterSpec(p2048_224, q2048_224, g2048_224));
+
+        /*
+         * L = 2048, N = 256
+         * SEED = b0b4417601b59cbc9d8ac8f935cadaec4f5fbb2f23785609ae466748d9b5a536
+         * counter = 497
+         */
+        BigInteger p2048_256 =
+            new BigInteger("95475cf5d93e596c3fcd1d902add02f427f5f3c721" +
+                           "0313bb45fb4d5bb2e5fe1cbd678cd4bbdd84c9836b" +
+                           "e1f31c0777725aeb6c2fc38b85f48076fa76bcd814" +
+                           "6cc89a6fb2f706dd719898c2083dc8d896f84062e2" +
+                           "c9c94d137b054a8d8096adb8d51952398eeca852a0" +
+                           "af12df83e475aa65d4ec0c38a9560d5661186ff98b" +
+                           "9fc9eb60eee8b030376b236bc73be3acdbd74fd61c" +
+                           "1d2475fa3077b8f080467881ff7e1ca56fee066d79" +
+                           "506ade51edbb5443a563927dbc4ba520086746175c" +
+                           "8885925ebc64c6147906773496990cb714ec667304" +
+                           "e261faee33b3cbdf008e0c3fa90650d97d3909c927" +
+                           "5bf4ac86ffcb3d03e6dfc8ada5934242dd6d3bcca2" +
+                           "a406cb0b", 16);
+
+        BigInteger q2048_256 =
+            new BigInteger("f8183668ba5fc5bb06b5981e6d8b795d30b8978d43" +
+                           "ca0ec572e37e09939a9773", 16);
+
+        BigInteger g2048_256 =
+            new BigInteger("42debb9da5b3d88cc956e08787ec3f3a09bba5f48b" +
+                           "889a74aaf53174aa0fbe7e3c5b8fcd7a53bef563b0" +
+                           "e98560328960a9517f4014d3325fc7962bf1e04937" +
+                           "0d76d1314a76137e792f3f0db859d095e4a5b93202" +
+                           "4f079ecf2ef09c797452b0770e1350782ed57ddf79" +
+                           "4979dcef23cb96f183061965c4ebc93c9c71c56b92" +
+                           "5955a75f94cccf1449ac43d586d0beee43251b0b22" +
+                           "87349d68de0d144403f13e802f4146d882e057af19" +
+                           "b6f6275c6676c8fa0e3ca2713a3257fd1b27d0639f" +
+                           "695e347d8d1cf9ac819a26ca9b04cb0eb9b7b03598" +
+                           "8d15bbac65212a55239cfc7e58fae38d7250ab9991" +
+                           "ffbc97134025fe8ce04c4399ad96569be91a546f49" +
+                           "78693c7a", 16);
+        dsaCache.put(Integer.valueOf(2048+256),
+                                new DSAParameterSpec(p2048_256, q2048_256, g2048_256));
 
         // use DSA parameters for DH as well
         dhCache.put(Integer.valueOf(512), new DHParameterSpec(p512, g512));
         dhCache.put(Integer.valueOf(768), new DHParameterSpec(p768, g768));
         dhCache.put(Integer.valueOf(1024), new DHParameterSpec(p1024, g1024));
+        dhCache.put(Integer.valueOf(2048), new DHParameterSpec(p2048_224, g2048_224));
     }
 
 }

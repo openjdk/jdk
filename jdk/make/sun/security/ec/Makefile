@@ -128,7 +128,6 @@ AUTO_FILES_JAVA_DIRS = $(PKGDIR)
 # Exclude the sources that get built by ../other/Makefile
 #
 AUTO_JAVA_PRUNE = \
-    ECKeyFactory.java \
     ECParameters.java \
     ECPrivateKeyImpl.java \
     ECPublicKeyImpl.java \
