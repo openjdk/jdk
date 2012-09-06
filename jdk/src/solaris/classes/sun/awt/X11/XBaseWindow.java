@@ -1001,6 +1001,13 @@ public class XBaseWindow {
         switch (xev.get_type()) {
         case XConstants.ButtonPress:
             if (buttonState == 0) {
+                XWindowPeer parent = getToplevelXWindow();
+                // See 6385277, 6981400.
+                if (parent != null && parent.isFocusableWindow()) {
+                    // A click in a client area drops the actual focused window retaining.
+                    parent.setActualFocusedWindow(null);
+                    parent.requestWindowFocus(xbe.get_time(), true);
+                }
                 XAwtState.setAutoGrabWindow(this);
             }
             break;

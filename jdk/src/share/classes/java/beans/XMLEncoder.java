@@ -631,7 +631,12 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
         }
 
         if (d.name != null) {
-            outputXML(isArgument ? "object" : "void", " idref=" + quote(d.name), value);
+            if (isArgument) {
+                writeln("<object idref=" + quote(d.name) + "/>");
+            }
+            else {
+                outputXML("void", " idref=" + quote(d.name), value);
+            }
         }
         else if (d.exp != null) {
             outputStatement(d.exp, outer, isArgument);
@@ -710,12 +715,14 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
         }
         else {
             d.refs = 2;
-            getValueData(target).refs++;
-            List<Statement> statements = statementList(target);
-            if (!statements.contains(exp)) {
-                statements.add(exp);
+            if (d.name == null) {
+                getValueData(target).refs++;
+                List<Statement> statements = statementList(target);
+                if (!statements.contains(exp)) {
+                    statements.add(exp);
+                }
+                outputValue(target, outer, false);
             }
-            outputValue(target, outer, false);
             if (expression) {
                 outputValue(value, outer, isArgument);
             }

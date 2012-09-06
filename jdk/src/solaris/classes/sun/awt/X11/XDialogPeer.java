@@ -135,7 +135,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
      * Thus we don't have to perform any transitive (a blocker of a blocker) checks.
      */
     boolean isFocusedWindowModalBlocker() {
-        Window focusedWindow = XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow();
+        Window focusedWindow = XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow();
         XWindowPeer focusedWindowPeer = null;
 
         if (focusedWindow != null) {

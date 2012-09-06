@@ -23,36 +23,61 @@
 
 /*
  * @test
- * @bug 7189112
- * @summary Tests overridden getter
+ * @bug 7192955
+ * @summary Tests that all properties are bound
  * @author Sergey Malenkov
  */
 
-public class Test7189112 {
+import java.beans.PropertyChangeListener;
+import java.util.List;
+
+public class Test7192955 {
 
     public static void main(String[] args) {
-        if (null == BeanUtils.findPropertyDescriptor(MyBean.class, "value").getWriteMethod()) {
-            throw new Error("The property setter is not found");
+        if (!BeanUtils.findPropertyDescriptor(MyBean.class, "test").isBound()) {
+            throw new Error("a simple property is not bound");
+        }
+        if (!BeanUtils.findPropertyDescriptor(MyBean.class, "list").isBound()) {
+            throw new Error("a generic property is not bound");
+        }
+        if (!BeanUtils.findPropertyDescriptor(MyBean.class, "readOnly").isBound()) {
+            throw new Error("a read-only property is not bound");
         }
     }
 
     public static class BaseBean {
 
-        private Object value;
+        private List<String> list;
 
-        public Object getValue() {
-            return this.value;
+        public List<String> getList() {
+            return this.list;
         }
 
-        public void setValue(Object value) {
-            this.value = value;
+        public void setList(List<String> list) {
+            this.list = list;
+        }
+
+        public void addPropertyChangeListener(PropertyChangeListener listener) {
+        }
+
+        public void removePropertyChangeListener(PropertyChangeListener listener) {
+        }
+
+        public List<String> getReadOnly() {
+            return this.list;
         }
     }
 
     public static class MyBean extends BaseBean {
-        @Override
-        public String getValue() {
-            return (String) super.getValue();
+
+        private String test;
+
+        public String getTest() {
+            return this.test;
+        }
+
+        public void setTest(String test) {
+            this.test = test;
         }
     }
 }
