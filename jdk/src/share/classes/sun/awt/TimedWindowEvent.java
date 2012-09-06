@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,50 +23,29 @@
  * questions.
  */
 
-package sun.lwawt;
+package sun.awt;
 
-import java.awt.Component;
+import java.awt.event.WindowEvent;
 import java.awt.Window;
-import sun.awt.KeyboardFocusManagerPeerImpl;
 
-public class LWKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
-    private static final LWKeyboardFocusManagerPeer inst = new LWKeyboardFocusManagerPeer();
+public class TimedWindowEvent extends WindowEvent {
 
-    private Window focusedWindow;
-    private Component focusOwner;
+    private long time;
 
-    public static LWKeyboardFocusManagerPeer getInstance() {
-        return inst;
+    public long getWhen() {
+        return time;
     }
 
-    private LWKeyboardFocusManagerPeer() {
+    public TimedWindowEvent(Window source, int id, Window opposite, long time) {
+        super(source, id, opposite);
+        this.time = time;
     }
 
-    @Override
-    public void setCurrentFocusedWindow(Window win) {
-        synchronized (this) {
-            focusedWindow = win;
-        }
-    }
-
-    @Override
-    public Window getCurrentFocusedWindow() {
-        synchronized (this) {
-            return focusedWindow;
-        }
-    }
-
-    @Override
-    public Component getCurrentFocusOwner() {
-        synchronized (this) {
-            return focusOwner;
-        }
-    }
-
-    @Override
-    public void setCurrentFocusOwner(Component comp) {
-        synchronized (this) {
-            focusOwner = comp;
-        }
+    public TimedWindowEvent(Window source, int id, Window opposite,
+                            int oldState, int newState, long time)
+    {
+        super(source, id, opposite, oldState, newState);
+        this.time = time;
     }
 }
+

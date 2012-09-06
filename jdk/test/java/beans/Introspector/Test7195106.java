@@ -23,36 +23,45 @@
 
 /*
  * @test
- * @bug 7189112
- * @summary Tests overridden getter
+ * @bug 7195106
+ * @summary Tests that explicit BeanInfo is not collected
  * @author Sergey Malenkov
  */
 
-public class Test7189112 {
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.beans.BeanInfo;
+import java.beans.Introspector;
+import java.beans.SimpleBeanInfo;
 
-    public static void main(String[] args) {
-        if (null == BeanUtils.findPropertyDescriptor(MyBean.class, "value").getWriteMethod()) {
-            throw new Error("The property setter is not found");
+public class Test7195106 {
+
+    public static void main(String[] arg) throws Exception {
+        BeanInfo info = Introspector.getBeanInfo(My.class);
+        if (null == info.getIcon(BeanInfo.ICON_COLOR_16x16)) {
+            throw new Error("Unexpected behavior");
+        }
+        try {
+            int[] array = new int[1024];
+            while (true) {
+                array = new int[array.length << 1];
+            }
+        }
+        catch (OutOfMemoryError error) {
+            System.gc();
+        }
+        if (null == info.getIcon(BeanInfo.ICON_COLOR_16x16)) {
+            throw new Error("Explicit BeanInfo is collected");
         }
     }
 
-    public static class BaseBean {
-
-        private Object value;
-
-        public Object getValue() {
-            return this.value;
-        }
-
-        public void setValue(Object value) {
-            this.value = value;
-        }
+    public static class My {
     }
 
-    public static class MyBean extends BaseBean {
+    public static class MyBeanInfo extends SimpleBeanInfo {
         @Override
-        public String getValue() {
-            return (String) super.getValue();
+        public Image getIcon(int type) {
+            return new BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB);
         }
     }
 }
