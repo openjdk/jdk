@@ -25,7 +25,7 @@
  * @test
  * @bug 4962064
  * @library ../../../sun/net/www/httptest/
- * @build HttpCallback HttpServer ClosedChannelList HttpTransaction
+ * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main/othervm B4962064
  * @summary Extend Authenticator to provide access to request URI and server/proxy
  */
@@ -85,12 +85,12 @@ public class B4962064 implements HttpCallback {
         is.close();
     }
 
-    static HttpServer server;
+    static TestHttpServer server;
     static URL urlsave;
 
     public static void main (String[] args) throws Exception {
         try {
-            server = new HttpServer (new B4962064(), 1, 10, 0);
+            server = new TestHttpServer (new B4962064(), 1, 10, 0);
             int port = server.getLocalPort();
             System.setProperty ("http.proxyHost", "localhost");
             System.setProperty ("http.proxyPort", Integer.toString (port));
