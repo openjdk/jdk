@@ -2779,19 +2779,22 @@ void Metaspace::initialize_class_space(ReservedSpace rs) {
   _class_space_list = new VirtualSpaceList(rs);
 }
 
-// Class space probably needs a lot less than data space
-const int class_space_divisor = 4;
 
 void Metaspace::initialize(Mutex* lock, size_t initial_size) {
-  // Use SmallChunk size if not specified, adjust class to smaller size if so.
+  // Use SmallChunk size if not specified.   If specified, use this size for
+  // the data metaspace.
   size_t word_size;
   size_t class_word_size;
   if (initial_size == 0) {
     word_size = (size_t) SpaceManager::SmallChunk;
-    class_word_size = word_size;
+    class_word_size = (size_t) SpaceManager::SmallChunk;
   } else {
     word_size = initial_size;
-    class_word_size = initial_size/class_space_divisor;
+    // Make the first class chunk bigger than a medium chunk so it's not put
+    // on the medium chunk list.   The next chunk will be small and progress
+    // from there.  This size calculated by -version.
+    class_word_size = MIN2((size_t)SpaceManager::MediumChunk*5,
+                           (ClassMetaspaceSize/BytesPerWord)*2);
   }
 
   assert(space_list() != NULL,
