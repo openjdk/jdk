@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,12 @@
  */
 
 import java.io.*;
+import java.text.*;
 import java.util.*;
 import java.util.regex.*;
 
 public class PropertiesTest {
-    public static void main(String[] s) {
+    public static void main(String[] s) throws Exception {
         for (int i = 0; i < s.length; i ++) {
             if ("-d".equals(s[i])) {
                 i++;
@@ -76,7 +77,7 @@ public class PropertiesTest {
         pw.close();
     }
 
-    private static void compare(String beforeFile, String afterFile) {
+    private static void compare(String beforeFile, String afterFile) throws Exception {
         // load file contents
         Properties before = new Properties();
         Properties after = new Properties();
@@ -114,11 +115,23 @@ public class PropertiesTest {
         // test each replacements
         keys = p.stringPropertyNames();
         Pattern propertiesPattern =
-            Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*([0-3])");
+            Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*" +
+                "([0-3])\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
+                "\\d{2}:\\d{2})?");
         for (String key: keys) {
             String val = p.getProperty(key);
+            try {
+                if (countOccurrences(val, ',') == 3 && !isPastCutoverDate(val)) {
+                    System.out.println("Skipping since date is in future");
+                    continue; // skip since date in future (no effect)
+                }
+            } catch (ParseException pe) {
+                // swallow - currency class should not honour this value
+                continue;
+            }
             String afterVal = after.getProperty(key);
             System.out.printf("Testing key: %s, val: %s... ", key, val);
+            System.out.println("AfterVal is : " + afterVal);
 
             Matcher m = propertiesPattern.matcher(val.toUpperCase(Locale.ROOT));
             if (!m.find()) {
@@ -131,7 +144,6 @@ public class PropertiesTest {
                 // ignore this
                 continue;
             }
-
             Matcher mAfter = propertiesPattern.matcher(afterVal);
             mAfter.find();
 
@@ -163,5 +175,30 @@ public class PropertiesTest {
             }
             throw new RuntimeException(sb.toString());
         }
+    }
+
+    private static boolean isPastCutoverDate(String s)
+            throws IndexOutOfBoundsException, NullPointerException, ParseException {
+        String dateString = s.substring(s.lastIndexOf(',')+1, s.length()).trim();
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
+        format.setTimeZone(TimeZone.getTimeZone("GMT"));
+        format.setLenient(false);
+
+        long time = format.parse(dateString).getTime();
+        if (System.currentTimeMillis() - time >= 0L) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static int countOccurrences(String value, char match) {
+        int count = 0;
+        for (char c : value.toCharArray()) {
+            if (c == match) {
+               ++count;
+            }
+        }
+        return count;
     }
 }
