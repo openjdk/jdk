@@ -1976,7 +1976,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
 
   // Preload ref klasses and set reference types
   InstanceKlass::cast(WK_KLASS(Reference_klass))->set_reference_type(REF_OTHER);
-  instanceRefKlass::update_nonstatic_oop_maps(WK_KLASS(Reference_klass));
+  InstanceRefKlass::update_nonstatic_oop_maps(WK_KLASS(Reference_klass));
 
   initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(PhantomReference_klass), scan, CHECK);
   InstanceKlass::cast(WK_KLASS(SoftReference_klass))->set_reference_type(REF_SOFT);

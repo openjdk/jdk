@@ -27,7 +27,7 @@
 
 #include "oops/instanceKlass.hpp"
 
-// An instanceRefKlass is a specialized InstanceKlass for Java
+// An InstanceRefKlass is a specialized InstanceKlass for Java
 // classes that are subclasses of java/lang/ref/Reference.
 //
 // These classes are used to implement soft/weak/final/phantom
@@ -44,22 +44,22 @@
 // and the pending list lock object in the same class is notified.
 
 
-class instanceRefKlass: public InstanceKlass {
+class InstanceRefKlass: public InstanceKlass {
   friend class InstanceKlass;
 
   // Constructor
-  instanceRefKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags, bool is_anonymous)
+  InstanceRefKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags, bool is_anonymous)
     : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt, access_flags, is_anonymous) {}
 
  public:
-  instanceRefKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceRefKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
   // Type testing
   bool oop_is_instanceRef() const             { return true; }
 
   // Casting from Klass*
-  static instanceRefKlass* cast(Klass* k) {
-    assert(k->oop_is_instanceRef(), "cast to instanceRefKlass");
-    return (instanceRefKlass*) k;
+  static InstanceRefKlass* cast(Klass* k) {
+    assert(k->oop_is_instanceRef(), "cast to InstanceRefKlass");
+    return (InstanceRefKlass*) k;
   }
 
   // Garbage collection

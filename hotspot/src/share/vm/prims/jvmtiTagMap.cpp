@@ -2790,7 +2790,7 @@ inline bool VM_HeapWalkOperation::iterate_over_type_array(oop o) {
 static inline bool verify_static_oop(InstanceKlass* ik,
                                      oop mirror, int offset) {
   address obj_p = (address)mirror + offset;
-  address start = (address)instanceMirrorKlass::start_of_static_fields(mirror);
+  address start = (address)InstanceMirrorKlass::start_of_static_fields(mirror);
   address end = start + (java_lang_Class::static_oop_field_count(mirror) * heapOopSize);
   assert(end >= start, "sanity check");
 

@@ -45,7 +45,7 @@ public class InstanceClassLoaderKlass extends InstanceKlass {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     // Just make sure it's there for now
-    Type type = db.lookupType("instanceClassLoaderKlass");
+    Type type = db.lookupType("InstanceClassLoaderKlass");
   }
 
   public InstanceClassLoaderKlass(Address addr) {

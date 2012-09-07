@@ -839,7 +839,7 @@ class PSParallelCompact : AllStatic {
   friend class AdjustKlassClosure;
   friend class FollowKlassClosure;
   friend class FollowRootClosure;
-  friend class instanceClassLoaderKlass;
+  friend class InstanceClassLoaderKlass;
   friend class RefProcTaskProxy;
 
  private:
