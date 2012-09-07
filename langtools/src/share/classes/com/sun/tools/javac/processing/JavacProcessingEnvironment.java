@@ -1072,8 +1072,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             Assert.checkNonNull(tokens);
             next.put(Tokens.tokensKey, tokens);
 
+            Log nextLog = Log.instance(next);
             // propogate the log's writers directly, instead of going through context
-            Log.instance(next).setWriters(log);
+            nextLog.setWriters(log);
+            nextLog.setSourceMap(log);
 
             JavaCompiler oldCompiler = JavaCompiler.instance(context);
             JavaCompiler nextCompiler = JavaCompiler.instance(next);
