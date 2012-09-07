@@ -3271,7 +3271,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     int next_nonstatic_field_offset;
 
     // Calculate the starting byte offsets
-    next_static_oop_offset      = instanceMirrorKlass::offset_of_static_fields();
+    next_static_oop_offset      = InstanceMirrorKlass::offset_of_static_fields();
     next_static_double_offset   = next_static_oop_offset +
                                   (fac.count[STATIC_OOP] * heapOopSize);
     if ( fac.count[STATIC_DOUBLE] &&

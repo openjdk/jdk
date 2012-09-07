@@ -1108,7 +1108,7 @@ void CompileBroker::compile_method_base(methodHandle method,
   // the pending list lock or a 3-way deadlock may occur
   // between the reference handler thread, a GC (instigated
   // by a compiler thread), and compiled method registration.
-  if (instanceRefKlass::owns_pending_list_lock(JavaThread::current())) {
+  if (InstanceRefKlass::owns_pending_list_lock(JavaThread::current())) {
     return;
   }
 
@@ -1440,7 +1440,7 @@ uint CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
 // Should the current thread be blocked until this compilation request
 // has been fulfilled?
 bool CompileBroker::is_compile_blocking(methodHandle method, int osr_bci) {
-  assert(!instanceRefKlass::owns_pending_list_lock(JavaThread::current()), "possible deadlock");
+  assert(!InstanceRefKlass::owns_pending_list_lock(JavaThread::current()), "possible deadlock");
   return !BackgroundCompilation;
 }
 

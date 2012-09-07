@@ -169,9 +169,9 @@ class   CompiledICHolder;
 
 class Klass;
 class   InstanceKlass;
-class     instanceMirrorKlass;
-class     instanceClassLoaderKlass;
-class     instanceRefKlass;
+class     InstanceMirrorKlass;
+class     InstanceClassLoaderKlass;
+class     InstanceRefKlass;
 class   arrayKlass;
 class     objArrayKlass;
 class     typeArrayKlass;

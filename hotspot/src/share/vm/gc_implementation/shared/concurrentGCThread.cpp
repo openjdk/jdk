@@ -255,13 +255,13 @@ void SurrogateLockerThread::loop() {
     }
     switch(msg) {
       case acquirePLL: {
-        instanceRefKlass::acquire_pending_list_lock(&pll_basic_lock);
+        InstanceRefKlass::acquire_pending_list_lock(&pll_basic_lock);
         debug_only(owned++;)
         break;
       }
       case releaseAndNotifyPLL: {
         assert(owned > 0, "Don't have PLL");
-        instanceRefKlass::release_and_notify_pending_list_lock(&pll_basic_lock);
+        InstanceRefKlass::release_and_notify_pending_list_lock(&pll_basic_lock);
         debug_only(owned--;)
         break;
       }

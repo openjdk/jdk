@@ -1036,7 +1036,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
       list = &_discoveredPhantomRefs[id];
       break;
     case REF_NONE:
-      // we should not reach here if we are an instanceRefKlass
+      // we should not reach here if we are an InstanceRefKlass
     default:
       ShouldNotReachHere();
   }

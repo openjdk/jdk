@@ -47,7 +47,7 @@
 #include "oops/oop.pcgc.inline.hpp"
 #endif
 
-int instanceMirrorKlass::_offset_of_static_fields = 0;
+int InstanceMirrorKlass::_offset_of_static_fields = 0;
 
 #ifdef ASSERT
 template <class T> void assert_is_in(T *p) {
@@ -148,7 +148,7 @@ template <class T> void assert_nothing(T *p) {}
 }
 
 
-void instanceMirrorKlass::oop_follow_contents(oop obj) {
+void InstanceMirrorKlass::oop_follow_contents(oop obj) {
   InstanceKlass::oop_follow_contents(obj);
 
   // Follow the klass field in the mirror.
@@ -169,7 +169,7 @@ void instanceMirrorKlass::oop_follow_contents(oop obj) {
 }
 
 #ifndef SERIALGC
-void instanceMirrorKlass::oop_follow_contents(ParCompactionManager* cm,
+void InstanceMirrorKlass::oop_follow_contents(ParCompactionManager* cm,
                                               oop obj) {
   InstanceKlass::oop_follow_contents(cm, obj);
 
@@ -191,7 +191,7 @@ void instanceMirrorKlass::oop_follow_contents(ParCompactionManager* cm,
 }
 #endif // SERIALGC
 
-int instanceMirrorKlass::oop_adjust_pointers(oop obj) {
+int InstanceMirrorKlass::oop_adjust_pointers(oop obj) {
   int size = oop_size(obj);
   InstanceKlass::oop_adjust_pointers(obj);
 
@@ -235,12 +235,12 @@ int instanceMirrorKlass::oop_adjust_pointers(oop obj) {
       "Inconsistency in do_metadata");                                \
   if (closure->do_metadata##nv_suffix())
 
-// Macro to define instanceMirrorKlass::oop_oop_iterate for virtual/nonvirtual for
+// Macro to define InstanceMirrorKlass::oop_oop_iterate for virtual/nonvirtual for
 // all closures.  Macros calling macros above for each oop size.
 
 #define InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)           \
                                                                                       \
-int instanceMirrorKlass::                                                             \
+int InstanceMirrorKlass::                                                             \
 oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                        \
   /* Get size before changing pointers */                                             \
   SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);      \
@@ -265,7 +265,7 @@ oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  
 #ifndef SERIALGC
 #define InstanceMirrorKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix) \
                                                                                       \
-int instanceMirrorKlass::                                                             \
+int InstanceMirrorKlass::                                                             \
 oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {              \
   /* Get size before changing pointers */                                             \
   SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);      \
@@ -283,7 +283,7 @@ oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {        
 
 #define InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)         \
                                                                                       \
-int instanceMirrorKlass::                                                             \
+int InstanceMirrorKlass::                                                             \
 oop_oop_iterate##nv_suffix##_m(oop obj,                                               \
                                OopClosureType* closure,                               \
                                MemRegion mr) {                                        \
@@ -318,7 +318,7 @@ ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN_m)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN_m)
 
 #ifndef SERIALGC
-void instanceMirrorKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
+void InstanceMirrorKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   // Note that we don't have to follow the mirror -> klass pointer, since all
   // klasses that are dirty will be scavenged when we iterate over the
   // ClassLoaderData objects.
@@ -332,7 +332,7 @@ void instanceMirrorKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
     assert_nothing )
 }
 
-int instanceMirrorKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
+int InstanceMirrorKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   int size = oop_size(obj);
   InstanceKlass::oop_update_pointers(cm, obj);
 
@@ -355,14 +355,14 @@ int instanceMirrorKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) 
 }
 #endif // SERIALGC
 
-int instanceMirrorKlass::instance_size(KlassHandle k) {
+int InstanceMirrorKlass::instance_size(KlassHandle k) {
   if (k() != NULL && k->oop_is_instance()) {
     return align_object_size(size_helper() + InstanceKlass::cast(k())->static_field_size());
   }
   return size_helper();
 }
 
-instanceOop instanceMirrorKlass::allocate_instance(KlassHandle k, TRAPS) {
+instanceOop InstanceMirrorKlass::allocate_instance(KlassHandle k, TRAPS) {
   // Query before forming handle.
   int size = instance_size(k);
   KlassHandle h_k(THREAD, this);
@@ -370,11 +370,11 @@ instanceOop instanceMirrorKlass::allocate_instance(KlassHandle k, TRAPS) {
   return i;
 }
 
-int instanceMirrorKlass::oop_size(oop obj) const {
+int InstanceMirrorKlass::oop_size(oop obj) const {
   return java_lang_Class::oop_size(obj);
 }
 
-int instanceMirrorKlass::compute_static_oop_field_count(oop obj) {
+int InstanceMirrorKlass::compute_static_oop_field_count(oop obj) {
   Klass* k = java_lang_Class::as_Klass(obj);
   if (k != NULL && k->oop_is_instance()) {
     return InstanceKlass::cast(k)->static_oop_field_count();

@@ -191,14 +191,14 @@ Klass* InstanceKlass::allocate_instance_klass(ClassLoaderData* loader_data,
   InstanceKlass* ik;
   if (rt == REF_NONE) {
     if (name == vmSymbols::java_lang_Class()) {
-      ik = new (loader_data, size, THREAD) instanceMirrorKlass(
+      ik = new (loader_data, size, THREAD) InstanceMirrorKlass(
         vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
         access_flags, !host_klass.is_null());
     } else if (name == vmSymbols::java_lang_ClassLoader() ||
           (SystemDictionary::ClassLoader_klass_loaded() &&
           super_klass != NULL &&
           super_klass->is_subtype_of(SystemDictionary::ClassLoader_klass()))) {
-      ik = new (loader_data, size, THREAD) instanceClassLoaderKlass(
+      ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(
         vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
         access_flags, !host_klass.is_null());
     } else {
@@ -209,7 +209,7 @@ Klass* InstanceKlass::allocate_instance_klass(ClassLoaderData* loader_data,
     }
   } else {
     // reference klass
-    ik = new (loader_data, size, THREAD) instanceRefKlass(
+    ik = new (loader_data, size, THREAD) InstanceRefKlass(
         vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
         access_flags, !host_klass.is_null());
   }
@@ -2284,7 +2284,7 @@ void InstanceKlass::set_source_debug_extension(char* array, int length) {
 }
 
 address InstanceKlass::static_field_addr(int offset) {
-  return (address)(offset + instanceMirrorKlass::offset_of_static_fields() + (intptr_t)java_mirror());
+  return (address)(offset + InstanceMirrorKlass::offset_of_static_fields() + (intptr_t)java_mirror());
 }
 
 
@@ -3073,7 +3073,7 @@ void JNIid::deallocate(JNIid* current) {
 
 
 void JNIid::verify(Klass* holder) {
-  int first_field_offset  = instanceMirrorKlass::offset_of_static_fields();
+  int first_field_offset  = InstanceMirrorKlass::offset_of_static_fields();
   int end_field_offset;
   end_field_offset = first_field_offset + (InstanceKlass::cast(holder)->static_field_size() * wordSize);
 

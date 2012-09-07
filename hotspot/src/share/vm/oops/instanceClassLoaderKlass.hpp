@@ -27,24 +27,24 @@
 
 #include "oops/instanceKlass.hpp"
 
-// An instanceClassLoaderKlass is a specialization of the InstanceKlass. It does
+// An InstanceClassLoaderKlass is a specialization of the InstanceKlass. It does
 // not add any field.  It is added to walk the dependencies for the class loader
 // key that this class loader points to.  This is how the loader_data graph is
 // walked and dependant class loaders are kept alive.  I thought we walked
 // the list later?
 
-class instanceClassLoaderKlass: public InstanceKlass {
+class InstanceClassLoaderKlass: public InstanceKlass {
   friend class VMStructs;
   friend class InstanceKlass;
 
   // Constructor
-  instanceClassLoaderKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags, bool is_anonymous)
+  InstanceClassLoaderKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags, bool is_anonymous)
     : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt, access_flags, is_anonymous) {}
 
 public:
   virtual bool oop_is_instanceClassLoader() const { return true; }
 
-  instanceClassLoaderKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceClassLoaderKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
 
   // Iterators
   int oop_oop_iterate(oop obj, ExtendedOopClosure* blk) {

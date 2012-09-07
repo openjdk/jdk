@@ -29,7 +29,7 @@
 #include "oops/instanceKlass.hpp"
 #include "runtime/handles.hpp"
 
-// An instanceMirrorKlass is a specialized InstanceKlass for
+// An InstanceMirrorKlass is a specialized InstanceKlass for
 // java.lang.Class instances.  These instances are special because
 // they contain the static fields of the class in addition to the
 // normal fields of Class.  This means they are variable sized
@@ -37,7 +37,7 @@
 // iteration of their oops.
 
 
-class instanceMirrorKlass: public InstanceKlass {
+class InstanceMirrorKlass: public InstanceKlass {
   friend class VMStructs;
   friend class InstanceKlass;
 
@@ -45,18 +45,18 @@ class instanceMirrorKlass: public InstanceKlass {
   static int _offset_of_static_fields;
 
   // Constructor
-  instanceMirrorKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags,  bool is_anonymous)
+  InstanceMirrorKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags,  bool is_anonymous)
     : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt, access_flags, is_anonymous) {}
 
  public:
-  instanceMirrorKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceMirrorKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
   // Type testing
   bool oop_is_instanceMirror() const             { return true; }
 
   // Casting from Klass*
-  static instanceMirrorKlass* cast(Klass* k) {
-    assert(k->oop_is_instanceMirror(), "cast to instanceMirrorKlass");
-    return (instanceMirrorKlass*) k;
+  static InstanceMirrorKlass* cast(Klass* k) {
+    assert(k->oop_is_instanceMirror(), "cast to InstanceMirrorKlass");
+    return (InstanceMirrorKlass*) k;
   }
 
   // Returns the size of the instance including the extra static fields.
@@ -71,7 +71,7 @@ class instanceMirrorKlass: public InstanceKlass {
   static void init_offset_of_static_fields() {
     // Cache the offset of the static fields in the Class instance
     assert(_offset_of_static_fields == 0, "once");
-    _offset_of_static_fields = instanceMirrorKlass::cast(SystemDictionary::Class_klass())->size_helper() << LogHeapWordSize;
+    _offset_of_static_fields = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->size_helper() << LogHeapWordSize;
   }
 
   static int offset_of_static_fields() {
