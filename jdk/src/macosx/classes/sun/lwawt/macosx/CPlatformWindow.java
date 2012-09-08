@@ -61,8 +61,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeSetNSWindowRepresentedFilename(long nsWindowPtr, String representedFilename);
     private static native void nativeSetNSWindowSecurityWarningPositioning(long nsWindowPtr, double x, double y, float biasX, float biasY);
     private static native void nativeSetEnabled(long nsWindowPtr, boolean isEnabled);
-    private static native void nativeSynthesizeMouseEnteredExitedEvents(long nsWindowPtr);
+    private static native void nativeSynthesizeMouseEnteredExitedEvents();
     private static native void nativeDispose(long nsWindowPtr);
+    private static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
 
     private static native int nativeGetNSWindowDisplayID_AppKitThread(long nsWindowPtr);
 
@@ -588,7 +589,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         }
 
-        nativeSynthesizeMouseEnteredExitedEvents(nsWindowPtr);
+        nativeSynthesizeMouseEnteredExitedEvents();
 
         // Configure stuff #2
         updateFocusabilityForAutoRequestFocus(true);
@@ -672,20 +673,15 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         // Re-apply the size constraints and the size to ensure the space
         // occupied by the grow box is counted properly
-        setMinimumSize(1, 1); // the method ignores its arguments
+        peer.updateMinimumSize();
 
         Rectangle bounds = peer.getBounds();
         setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
     @Override
-    public void setMinimumSize(int width, int height) {
-        //TODO width, height should be used
-        //NOTE: setResizable() calls setMinimumSize(1,1) relaying on the logic below
-        final long nsWindowPtr = getNSWindowPtr();
-        final Dimension min = target.getMinimumSize();
-        final Dimension max = target.getMaximumSize();
-        nativeSetNSWindowMinMax(nsWindowPtr, min.getWidth(), min.getHeight(), max.getWidth(), max.getHeight());
+    public void setSizeConstraints(int minW, int minH, int maxW, int maxH) {
+        nativeSetNSWindowMinMax(getNSWindowPtr(), minW, minH, maxW, maxH);
     }
 
     @Override
@@ -732,6 +728,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     @Override
     public void setAlwaysOnTop(boolean isAlwaysOnTop) {
         setStyleBits(ALWAYS_ON_TOP, isAlwaysOnTop);
+    }
+
+    public PlatformWindow getTopmostPlatformWindowUnderMouse(){
+        return CPlatformWindow.nativeGetTopmostPlatformWindowUnderMouse();
     }
 
     @Override
@@ -808,7 +808,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 throw new RuntimeException("Unknown window state: " + windowState);
         }
 
-        nativeSynthesizeMouseEnteredExitedEvents(nsWindowPtr);
+        nativeSynthesizeMouseEnteredExitedEvents();
 
         // NOTE: the SWP.windowState field gets updated to the newWindowState
         //       value when the native notification comes to us

@@ -32,7 +32,7 @@
 #include "jlong.h"
 #include "jni.h"
 #include "jni_util.h"
-#include "zlib.h"
+#include <zlib.h>
 
 #include "java_util_zip_Deflater.h"
 
@@ -213,18 +213,6 @@ JNIEXPORT jint JNICALL
 Java_java_util_zip_Deflater_getAdler(JNIEnv *env, jclass cls, jlong addr)
 {
     return ((z_stream *)jlong_to_ptr(addr))->adler;
-}
-
-JNIEXPORT jlong JNICALL
-Java_java_util_zip_Deflater_getBytesRead(JNIEnv *env, jclass cls, jlong addr)
-{
-    return ((z_stream *)jlong_to_ptr(addr))->total_in;
-}
-
-JNIEXPORT jlong JNICALL
-Java_java_util_zip_Deflater_getBytesWritten(JNIEnv *env, jclass cls, jlong addr)
-{
-    return ((z_stream *)jlong_to_ptr(addr))->total_out;
 }
 
 JNIEXPORT void JNICALL

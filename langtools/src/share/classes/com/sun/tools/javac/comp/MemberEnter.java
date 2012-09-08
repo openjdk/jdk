@@ -76,10 +76,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Annotate annotate;
     private final Types types;
     private final JCDiagnostic.Factory diags;
+    private final Source source;
     private final Target target;
     private final DeferredLintHandler deferredLintHandler;
-
-    private final boolean skipAnnotations;
 
     public static MemberEnter instance(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
@@ -102,10 +101,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         annotate = Annotate.instance(context);
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
+        source = Source.instance(context);
         target = Target.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
-        Options options = Options.instance(context);
-        skipAnnotations = options.isSet("skipAnnotations");
     }
 
     /** A queue for classes whose members still need to be entered into the
@@ -690,7 +688,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
     public Env<AttrContext> getMethodEnv(JCMethodDecl tree, Env<AttrContext> env) {
         Env<AttrContext> mEnv = methodEnv(tree, env);
-        mEnv.info.lint = mEnv.info.lint.augment(tree.sym.attributes_field, tree.sym.flags());
+        mEnv.info.lint = mEnv.info.lint.augment(tree.sym.annotations, tree.sym.flags());
         for (List<JCTypeParameter> l = tree.typarams; l.nonEmpty(); l = l.tail)
             mEnv.info.scope.enterIfAbsent(l.head.type.tsym);
         for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail)
@@ -727,18 +725,24 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     void annotateLater(final List<JCAnnotation> annotations,
                        final Env<AttrContext> localEnv,
                        final Symbol s) {
-        if (annotations.isEmpty()) return;
-        if (s.kind != PCK) s.attributes_field = null; // mark it incomplete for now
-        annotate.later(new Annotate.Annotator() {
+        if (annotations.isEmpty()) {
+            return;
+        }
+        if (s.kind != PCK) {
+            s.annotations.reset(); // mark Annotations as incomplete for now
+        }
+        annotate.normal(new Annotate.Annotator() {
+                @Override
                 public String toString() {
                     return "annotate " + annotations + " onto " + s + " in " + s.owner;
                 }
+
+                @Override
                 public void enterAnnotation() {
-                    Assert.check(s.kind == PCK || s.attributes_field == null);
+                    Assert.check(s.kind == PCK || s.annotations.pendingCompletion());
                     JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
                     try {
-                        if (s.attributes_field != null &&
-                            s.attributes_field.nonEmpty() &&
+                        if (!s.annotations.isEmpty() &&
                             annotations.nonEmpty())
                             log.error(annotations.head.pos,
                                       "already.annotated",
@@ -756,7 +760,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
      * java.lang.Deprecated.
      **/
     private boolean hasDeprecatedAnnotation(List<JCAnnotation> annotations) {
-        for (List<JCAnnotation> al = annotations; al.nonEmpty(); al = al.tail) {
+        for (List<JCAnnotation> al = annotations; !al.isEmpty(); al = al.tail) {
             JCAnnotation a = al.head;
             if (a.annotationType.type == syms.deprecatedType && a.args.isEmpty())
                 return true;
@@ -764,42 +768,62 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         return false;
     }
 
-
     /** Enter a set of annotations. */
     private void enterAnnotations(List<JCAnnotation> annotations,
                           Env<AttrContext> env,
                           Symbol s) {
-        ListBuffer<Attribute.Compound> buf =
-            new ListBuffer<Attribute.Compound>();
-        Set<TypeSymbol> annotated = new HashSet<TypeSymbol>();
-        if (!skipAnnotations)
-        for (List<JCAnnotation> al = annotations; al.nonEmpty(); al = al.tail) {
+        Map<TypeSymbol, ListBuffer<Attribute.Compound>> annotated =
+                new LinkedHashMap<TypeSymbol, ListBuffer<Attribute.Compound>>();
+        Map<Attribute.Compound, DiagnosticPosition> pos =
+                new HashMap<Attribute.Compound, DiagnosticPosition>();
+
+        for (List<JCAnnotation> al = annotations; !al.isEmpty(); al = al.tail) {
             JCAnnotation a = al.head;
             Attribute.Compound c = annotate.enterAnnotation(a,
                                                             syms.annotationType,
                                                             env);
-            if (c == null) continue;
-            buf.append(c);
+            if (c == null) {
+                continue;
+            }
+
+            if (annotated.containsKey(a.type.tsym)) {
+                if (source.allowRepeatedAnnotations()) {
+                    ListBuffer<Attribute.Compound> l = annotated.get(a.type.tsym);
+                    l = l.append(c);
+                    annotated.put(a.type.tsym, l);
+                    pos.put(c, a.pos());
+                } else {
+                    log.error(a.pos(), "duplicate.annotation");
+                }
+            } else {
+                annotated.put(a.type.tsym, ListBuffer.of(c));
+                pos.put(c, a.pos());
+            }
+
             // Note: @Deprecated has no effect on local variables and parameters
             if (!c.type.isErroneous()
                 && s.owner.kind != MTH
-                && types.isSameType(c.type, syms.deprecatedType))
+                && types.isSameType(c.type, syms.deprecatedType)) {
                 s.flags_field |= Flags.DEPRECATED;
-            if (!annotated.add(a.type.tsym))
-                log.error(a.pos, "duplicate.annotation");
         }
-        s.attributes_field = buf.toList();
+        }
+
+        s.annotations.setAttributesWithCompletion(
+                annotate.new AnnotateRepeatedContext(env, annotated, pos, log));
     }
 
     /** Queue processing of an attribute default value. */
     void annotateDefaultValueLater(final JCExpression defaultValue,
                                    final Env<AttrContext> localEnv,
                                    final MethodSymbol m) {
-        annotate.later(new Annotate.Annotator() {
+        annotate.normal(new Annotate.Annotator() {
+                @Override
                 public String toString() {
                     return "annotate " + m.owner + "." +
                         m + " default " + defaultValue;
                 }
+
+                @Override
                 public void enterAnnotation() {
                     JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
                     try {

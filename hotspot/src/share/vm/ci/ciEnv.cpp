@@ -50,7 +50,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "prims/methodHandleWalk.hpp"
 #include "runtime/init.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -582,7 +581,7 @@ ciConstant ciEnv::get_constant_by_index_impl(constantPoolHandle cpool,
     assert(index < 0, "only one kind of index at a time");
     ConstantPoolCacheEntry* cpc_entry = cpool->cache()->entry_at(cache_index);
     index = cpc_entry->constant_pool_index();
-    oop obj = cpc_entry->f1();
+    oop obj = cpc_entry->f1_as_instance();
     if (obj != NULL) {
       assert(obj->is_instance() || obj->is_array(), "must be a Java reference");
       ciObject* ciobj = get_object(obj);
@@ -739,88 +738,81 @@ methodOop ciEnv::lookup_method(instanceKlass*  accessor,
 ciMethod* ciEnv::get_method_by_index_impl(constantPoolHandle cpool,
                                           int index, Bytecodes::Code bc,
                                           ciInstanceKlass* accessor) {
-  int holder_index = cpool->klass_ref_index_at(index);
-  bool holder_is_accessible;
-  ciKlass* holder = get_klass_by_index_impl(cpool, holder_index, holder_is_accessible, accessor);
-  ciInstanceKlass* declared_holder = get_instance_klass_for_declared_method_holder(holder);
-
-  // Get the method's name and signature.
-  Symbol* name_sym = cpool->name_ref_at(index);
-  Symbol* sig_sym  = cpool->signature_ref_at(index);
-
-  if (cpool->has_preresolution()
-      || (holder == ciEnv::MethodHandle_klass() &&
-          methodOopDesc::is_method_handle_invoke_name(name_sym))) {
-    // Short-circuit lookups for JSR 292-related call sites.
-    // That is, do not rely only on name-based lookups, because they may fail
-    // if the names are not resolvable in the boot class loader (7056328).
-    switch (bc) {
-    case Bytecodes::_invokevirtual:
-    case Bytecodes::_invokeinterface:
-    case Bytecodes::_invokespecial:
-    case Bytecodes::_invokestatic:
-      {
-        methodOop m = constantPoolOopDesc::method_at_if_loaded(cpool, index, bc);
-        if (m != NULL) {
-          return get_object(m)->as_method();
-        }
-      }
-    }
-  }
-
-  if (holder_is_accessible) { // Our declared holder is loaded.
-    instanceKlass* lookup = declared_holder->get_instanceKlass();
-    methodOop m = lookup_method(accessor->get_instanceKlass(), lookup, name_sym, sig_sym, bc);
-    if (m != NULL &&
-        (bc == Bytecodes::_invokestatic
-         ?  instanceKlass::cast(m->method_holder())->is_not_initialized()
-         : !instanceKlass::cast(m->method_holder())->is_loaded())) {
-      m = NULL;
-    }
-    if (m != NULL) {
-      // We found the method.
-      return get_object(m)->as_method();
-    }
-  }
-
-  // Either the declared holder was not loaded, or the method could
-  // not be found.  Create a dummy ciMethod to represent the failed
-  // lookup.
-  ciSymbol* name      = get_symbol(name_sym);
-  ciSymbol* signature = get_symbol(sig_sym);
-  return get_unloaded_method(declared_holder, name, signature, accessor);
-}
-
-
-// ------------------------------------------------------------------
-// ciEnv::get_fake_invokedynamic_method_impl
-ciMethod* ciEnv::get_fake_invokedynamic_method_impl(constantPoolHandle cpool,
-                                                    int index, Bytecodes::Code bc,
-                                                    ciInstanceKlass* accessor) {
-  // Compare the following logic with InterpreterRuntime::resolve_invokedynamic.
-  assert(bc == Bytecodes::_invokedynamic, "must be invokedynamic");
-
-  bool is_resolved = cpool->cache()->main_entry_at(index)->is_resolved(bc);
-  if (is_resolved && cpool->cache()->secondary_entry_at(index)->is_f1_null())
+  if (bc == Bytecodes::_invokedynamic) {
+    ConstantPoolCacheEntry* secondary_entry = cpool->cache()->secondary_entry_at(index);
+    const bool is_resolved = !secondary_entry->is_f1_null();
     // FIXME: code generation could allow for null (unlinked) call site
-    is_resolved = false;
+    // The call site could be made patchable as follows:
+    // Load the appendix argument from the constant pool.
+    // Test the appendix argument and jump to a known deopt routine if it is null.
+    // Jump through a patchable call site, which is initially a deopt routine.
+    // Patch the call site to the nmethod entry point of the static compiled lambda form.
+    // As with other two-component call sites, both values must be independently verified.
 
-  // Call site might not be resolved yet.  We could create a real invoker method from the
-  // compiler, but it is simpler to stop the code path here with an unlinked method.
-  if (!is_resolved) {
+    if (is_resolved) {
+      // Get the invoker methodOop and the extra argument from the constant pool.
+      methodOop adapter = secondary_entry->f2_as_vfinal_method();
+      return get_object(adapter)->as_method();
+    }
+
+    // Fake a method that is equivalent to a declared method.
     ciInstanceKlass* holder    = get_object(SystemDictionary::MethodHandle_klass())->as_instance_klass();
-    ciSymbol*        name      = ciSymbol::invokeExact_name();
+    ciSymbol*        name      = ciSymbol::invokeBasic_name();
     ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index));
     return get_unloaded_method(holder, name, signature, accessor);
+  } else {
+    const int holder_index = cpool->klass_ref_index_at(index);
+    bool holder_is_accessible;
+    ciKlass* holder = get_klass_by_index_impl(cpool, holder_index, holder_is_accessible, accessor);
+    ciInstanceKlass* declared_holder = get_instance_klass_for_declared_method_holder(holder);
+
+    // Get the method's name and signature.
+    Symbol* name_sym = cpool->name_ref_at(index);
+    Symbol* sig_sym  = cpool->signature_ref_at(index);
+
+    if (cpool->has_preresolution()
+        || (holder == ciEnv::MethodHandle_klass() &&
+            MethodHandles::is_signature_polymorphic_name(holder->get_klassOop(), name_sym))) {
+      // Short-circuit lookups for JSR 292-related call sites.
+      // That is, do not rely only on name-based lookups, because they may fail
+      // if the names are not resolvable in the boot class loader (7056328).
+      switch (bc) {
+      case Bytecodes::_invokevirtual:
+      case Bytecodes::_invokeinterface:
+      case Bytecodes::_invokespecial:
+      case Bytecodes::_invokestatic:
+        {
+          methodOop m = constantPoolOopDesc::method_at_if_loaded(cpool, index);
+          if (m != NULL) {
+            return get_object(m)->as_method();
+          }
+        }
+        break;
+      }
+    }
+
+    if (holder_is_accessible) {  // Our declared holder is loaded.
+      instanceKlass* lookup = declared_holder->get_instanceKlass();
+      methodOop m = lookup_method(accessor->get_instanceKlass(), lookup, name_sym, sig_sym, bc);
+      if (m != NULL &&
+          (bc == Bytecodes::_invokestatic
+           ?  instanceKlass::cast(m->method_holder())->is_not_initialized()
+           : !instanceKlass::cast(m->method_holder())->is_loaded())) {
+        m = NULL;
+      }
+      if (m != NULL) {
+        // We found the method.
+        return get_object(m)->as_method();
+      }
+    }
+
+    // Either the declared holder was not loaded, or the method could
+    // not be found.  Create a dummy ciMethod to represent the failed
+    // lookup.
+    ciSymbol* name      = get_symbol(name_sym);
+    ciSymbol* signature = get_symbol(sig_sym);
+    return get_unloaded_method(declared_holder, name, signature, accessor);
   }
-
-  // Get the invoker methodOop from the constant pool.
-  oop f1_value = cpool->cache()->main_entry_at(index)->f1();
-  methodOop signature_invoker = (methodOop) f1_value;
-  assert(signature_invoker != NULL && signature_invoker->is_method() && signature_invoker->is_method_handle_invoke(),
-         "correct result from LinkResolver::resolve_invokedynamic");
-
-  return get_object(signature_invoker)->as_method();
 }
 
 
@@ -851,11 +843,7 @@ ciInstanceKlass* ciEnv::get_instance_klass_for_declared_method_holder(ciKlass* m
 ciMethod* ciEnv::get_method_by_index(constantPoolHandle cpool,
                                      int index, Bytecodes::Code bc,
                                      ciInstanceKlass* accessor) {
-  if (bc == Bytecodes::_invokedynamic) {
-    GUARDED_VM_ENTRY(return get_fake_invokedynamic_method_impl(cpool, index, bc, accessor);)
-  } else {
-    GUARDED_VM_ENTRY(return get_method_by_index_impl(          cpool, index, bc, accessor);)
-  }
+  GUARDED_VM_ENTRY(return get_method_by_index_impl(cpool, index, bc, accessor);)
 }
 
 
@@ -1131,7 +1119,7 @@ uint ciEnv::compile_id() {
 // ------------------------------------------------------------------
 // ciEnv::notice_inlined_method()
 void ciEnv::notice_inlined_method(ciMethod* method) {
-  _num_inlined_bytecodes += method->code_size();
+  _num_inlined_bytecodes += method->code_size_for_inlining();
 }
 
 // ------------------------------------------------------------------

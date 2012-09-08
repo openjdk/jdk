@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 // key: compiler.misc.type.var
 // key: compiler.err.cant.apply.symbol.1
 // key: compiler.misc.no.conforming.assignment.exists
+// key: compiler.misc.inconvertible.types
 // options: -XDdiags=where,disambiguateTvars
 // run: simple
 

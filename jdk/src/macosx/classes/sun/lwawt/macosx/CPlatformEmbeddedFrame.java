@@ -151,6 +151,10 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
     @Override
     public void setAlwaysOnTop(boolean value) {}
 
+    // This method should be properly implemented for applets.
+    // It returns null just as a stub.
+    public PlatformWindow getTopmostPlatformWindowUnderMouse() { return null; }
+
     @Override
     public void updateFocusableWindowState() {}
 
@@ -180,7 +184,7 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
     public void setResizable(boolean resizable) {}
 
     @Override
-    public void setMinimumSize(int width, int height) {}
+    public void setSizeConstraints(int minW, int minH, int maxW, int maxH) {}
 
     @Override
     public Graphics transformGraphics(Graphics g) {

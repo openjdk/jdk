@@ -160,7 +160,7 @@ public class ToolsOpts extends TestHelper {
         for (String arg[] : optionPatterns) {
             jpos = indexOfJoption(arg);
             //Build a cmd string for output in results reporting.
-            String cmdString = javacCmd + JBCP_PREPEND + sTestJar;
+            String cmdString = javacCmd + " " + JBCP_PREPEND + sTestJar;
             for (String opt : arg) {
                 cmdString = cmdString.concat(" " + opt);
             }

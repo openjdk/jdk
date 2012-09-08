@@ -91,7 +91,7 @@ ifeq ($(PLATFORM), macosx)
   LDFLAGS += $(OUTPUTDIR)/tmp/java/jli/$(OBJDIRNAME)/static/libjli.a
 
   ifeq ($(SYSTEM_ZLIB),true)
-    OTHER_LDLIBS += -lz
+    OTHER_LDLIBS += $(ZLIB_LIBS)
   endif
 endif
 
@@ -126,6 +126,26 @@ ifeq ($(PLATFORM), windows)
 endif
 
 #
+# Applications expect to be able to link against libjawt without invoking
+# System.loadLibrary("jawt") first. This was the behaviour described in the
+# devloper documentation of JAWT and what worked with OpenJDK6.
+#
+ifeq ($(PLATFORM), solaris)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    LDFLAGS += -R \$$ORIGIN/../lib/$(LIBARCH)
+    LDFLAGS += -R \$$ORIGIN/../jre/lib/$(LIBARCH)
+  else # ! ARCH_DATA_MODEL 64-bit
+    LDFLAGS += -R \$$ORIGIN/../../lib/$(LIBARCH)
+    LDFLAGS += -R \$$ORIGIN/../../jre/lib/$(LIBARCH)
+  endif # ARCH_DATA_MODEL
+endif # PLATFORM SOLARIS
+ifeq ($(PLATFORM), linux)
+  LDFLAGS += -Wl,-rpath -Wl,\$$ORIGIN/../lib/$(LIBARCH)
+  LDFLAGS += -Wl,-rpath -Wl,\$$ORIGIN/../jre/lib/$(LIBARCH)
+endif # PLATFORM LINUX
+
+
+#
 # Launcher specific files.
 #
 FILES_o = $(OBJDIR)/main.$(OBJECT_SUFFIX)
@@ -153,7 +173,6 @@ ifeq ($(PLATFORM), windows)
   ifndef LOCAL_RESOURCE_FILE
 	@$(ECHO) $(OBJDIR)/$(PROGRAM).res >> $@
   endif
-	@$(ECHO) setargv.obj >> $@
 	@$(ECHO) Created $@ 
 
   $(ACTUAL_PROGRAM):: $(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX)
@@ -243,7 +262,7 @@ else
 	$(ECHO) Rebuilding $@ because of $$1 $$2 $$3 $$4 $$5 $$6 $${7:+...};
 	@$(MKDIR) -p $(TEMPDIR)
 	$(LINK_PRE_CMD) $(CC) $(CC_OBJECT_OUTPUT_FLAG)$@ $(LDFLAGS) \
-	$(FILES_o) $(THREADLIBS) $(LDLIBS)
+	$(sort $(FILES_o)) $(THREADLIBS) $(LDLIBS)
   ifeq ($(findstring privileged, $(INFO_PLIST_FILE)), privileged)
 	-codesign -s openjdk_codesign $@
   endif
@@ -372,8 +391,6 @@ VERSION_DEFINES += -DFULL_VERSION='"$(FULL_VERSION)"'
 
 VERSION_DEFINES += -DJDK_MAJOR_VERSION='"$(JDK_MAJOR_VERSION)"' \
                    -DJDK_MINOR_VERSION='"$(JDK_MINOR_VERSION)"'
-
-
 
 $(OBJDIR)/main.$(OBJECT_SUFFIX): $(LAUNCHER_SHARE_SRC)/bin/main.c
 	@$(prep-target)

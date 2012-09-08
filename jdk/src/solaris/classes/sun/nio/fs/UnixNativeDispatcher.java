@@ -498,11 +498,6 @@ class UnixNativeDispatcher {
     private static native int getgrnam0(long nameAddress) throws UnixException;
 
     /**
-     * int getextmntent(FILE *fp, struct extmnttab *mp, int len);
-     */
-    static native int getextmntent(long fp, UnixMountEntry entry) throws UnixException;
-
-    /**
      * statvfs(const char* path, struct statvfs *buf)
      */
     static void statvfs(UnixPath path, UnixFileStoreAttributes attrs)

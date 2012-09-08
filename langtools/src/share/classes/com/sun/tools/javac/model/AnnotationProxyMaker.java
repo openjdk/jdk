@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ public class AnnotationProxyMaker {
         }
 
         public void visitClass(Attribute.Class c) {
-            value = new MirroredTypeExceptionProxy(c.type);
+            value = new MirroredTypeExceptionProxy(c.classType);
         }
 
         public void visitArray(Attribute.Array a) {
@@ -187,7 +187,7 @@ public class AnnotationProxyMaker {
                 // Construct a proxy for a MirroredTypesException
                 ListBuffer<TypeMirror> elems = new ListBuffer<TypeMirror>();
                 for (Attribute value : a.values) {
-                    Type elem = ((Attribute.Class) value).type;
+                    Type elem = ((Attribute.Class) value).classType;
                     elems.append(elem);
                 }
                 value = new MirroredTypesExceptionProxy(elems.toList());

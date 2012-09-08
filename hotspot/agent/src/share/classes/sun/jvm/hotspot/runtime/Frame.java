@@ -147,12 +147,6 @@ public abstract class Frame implements Cloneable {
     }
   }
 
-  public boolean isRicochetFrame() {
-    CodeBlob cb = VM.getVM().getCodeCache().findBlob(getPC());
-    RicochetBlob rcb = VM.getVM().ricochetBlob();
-    return (cb == rcb && rcb != null && rcb.returnsToBounceAddr(getPC()));
-  }
-
   public boolean isCompiledFrame() {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(!VM.getVM().isCore(), "noncore builds only");
@@ -216,8 +210,7 @@ public abstract class Frame implements Cloneable {
   public Frame realSender(RegisterMap map) {
     if (!VM.getVM().isCore()) {
       Frame result = sender(map);
-      while (result.isRuntimeFrame() ||
-             result.isRicochetFrame()) {
+      while (result.isRuntimeFrame()) {
         result = result.sender(map);
       }
       return result;
@@ -631,9 +624,6 @@ public abstract class Frame implements Cloneable {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(cb != null, "sanity check");
     }
-    if (cb == VM.getVM().ricochetBlob()) {
-      oopsRicochetDo(oopVisitor, regMap);
-    }
     if (cb.getOopMaps() != null) {
       OopMapSet.oopsDo(this, cb, regMap, oopVisitor, VM.getVM().isDebugging());
 
@@ -648,10 +638,6 @@ public abstract class Frame implements Cloneable {
     //    if (cb->is_nmethod() && ((nmethod *)cb)->is_not_entrant()) {
     //      ((nmethod*)cb)->mark_as_seen_on_stack();
     //    }
-  }
-
-  private void oopsRicochetDo      (AddressVisitor oopVisitor, RegisterMap regMap) {
-    // XXX Empty for now
   }
 
   // FIXME: implement the above routines, plus add

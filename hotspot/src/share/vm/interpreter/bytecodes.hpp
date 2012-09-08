@@ -282,6 +282,9 @@ class Bytecodes: AllStatic {
 
     _return_register_finalizer    ,
 
+    // special handling of signature-polymorphic methods:
+    _invokehandle         ,
+
     _shouldnotreachhere,      // For debugging
 
     // Platform specific JVM bytecodes
@@ -356,8 +359,8 @@ class Bytecodes: AllStatic {
 
  public:
   // Conversion
-  static void        check          (Code code)    { assert(is_defined(code), "illegal code"); }
-  static void        wide_check     (Code code)    { assert(wide_is_defined(code), "illegal code"); }
+  static void        check          (Code code)    { assert(is_defined(code),      err_msg("illegal code: %d", (int)code)); }
+  static void        wide_check     (Code code)    { assert(wide_is_defined(code), err_msg("illegal code: %d", (int)code)); }
   static Code        cast           (int  code)    { return (Code)code; }
 
 
@@ -420,6 +423,8 @@ class Bytecodes: AllStatic {
   static bool        is_zero_const  (Code code)    { return (code == _aconst_null || code == _iconst_0
                                                            || code == _fconst_0 || code == _dconst_0); }
   static bool        is_invoke      (Code code)    { return (_invokevirtual <= code && code <= _invokedynamic); }
+
+  static bool        has_optional_appendix(Code code) { return code == _invokedynamic || code == _invokehandle; }
 
   static int         compute_flags  (const char* format, int more_flags = 0);  // compute the flags
   static int         flags          (int code, bool is_wide) {

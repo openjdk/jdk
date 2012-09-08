@@ -43,10 +43,10 @@ fi
 
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     FS="/"
     ;;
-  Windows_* )
+  Windows_* | CYGWIN_* )
     printf "Not testing libjsig.so on Windows. PASSED.\n "
     exit 0
     ;;

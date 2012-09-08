@@ -355,12 +355,47 @@ int ciBytecodeStream::get_method_index() {
 // ciBytecodeStream::get_method
 //
 // If this is a method invocation bytecode, get the invoked method.
-ciMethod* ciBytecodeStream::get_method(bool& will_link) {
+// Additionally return the declared signature to get more concrete
+// type information if required (Cf. invokedynamic and invokehandle).
+ciMethod* ciBytecodeStream::get_method(bool& will_link, ciSignature* *declared_signature_result) {
+  VM_ENTRY_MARK;
+  ciEnv* env = CURRENT_ENV;
+  constantPoolHandle cpool(_method->get_methodOop()->constants());
+  ciMethod* m = env->get_method_by_index(cpool, get_method_index(), cur_bc(), _holder);
+  will_link = m->is_loaded();
+  // Get declared method signature and return it.
+  if (has_optional_appendix()) {
+    const int sig_index = get_method_signature_index();
+    Symbol* sig_sym = cpool->symbol_at(sig_index);
+    ciKlass* pool_holder = env->get_object(cpool->pool_holder())->as_klass();
+    (*declared_signature_result) = new (env->arena()) ciSignature(pool_holder, cpool, env->get_symbol(sig_sym));
+  } else {
+    (*declared_signature_result) = m->signature();
+  }
+  return m;
+}
+
+// ------------------------------------------------------------------
+// ciBytecodeStream::has_appendix
+//
+// Returns true if there is an appendix argument stored in the
+// constant pool cache at the current bci.
+bool ciBytecodeStream::has_appendix() {
   VM_ENTRY_MARK;
   constantPoolHandle cpool(_method->get_methodOop()->constants());
-  ciMethod* m = CURRENT_ENV->get_method_by_index(cpool, get_method_index(), cur_bc(), _holder);
-  will_link = m->is_loaded();
-  return m;
+  return constantPoolOopDesc::has_appendix_at_if_loaded(cpool, get_method_index());
+}
+
+// ------------------------------------------------------------------
+// ciBytecodeStream::get_appendix
+//
+// Return the appendix argument stored in the constant pool cache at
+// the current bci.
+ciObject* ciBytecodeStream::get_appendix() {
+  VM_ENTRY_MARK;
+  constantPoolHandle cpool(_method->get_methodOop()->constants());
+  oop appendix_oop = constantPoolOopDesc::appendix_at_if_loaded(cpool, get_method_index());
+  return CURRENT_ENV->get_object(appendix_oop);
 }
 
 // ------------------------------------------------------------------
@@ -378,9 +413,9 @@ ciKlass* ciBytecodeStream::get_declared_method_holder() {
   VM_ENTRY_MARK;
   constantPoolHandle cpool(_method->get_methodOop()->constants());
   bool ignore;
-  // report as InvokeDynamic for invokedynamic, which is syntactically classless
+  // report as MethodHandle for invokedynamic, which is syntactically classless
   if (cur_bc() == Bytecodes::_invokedynamic)
-    return CURRENT_ENV->get_klass_by_name(_holder, ciSymbol::java_lang_invoke_InvokeDynamic(), false);
+    return CURRENT_ENV->get_klass_by_name(_holder, ciSymbol::java_lang_invoke_MethodHandle(), false);
   return CURRENT_ENV->get_klass_by_index(cpool, get_method_holder_index(), ignore, _holder);
 }
 
@@ -402,11 +437,12 @@ int ciBytecodeStream::get_method_holder_index() {
 // referenced by the current bytecode.  Used for generating
 // deoptimization information.
 int ciBytecodeStream::get_method_signature_index() {
-  VM_ENTRY_MARK;
-  constantPoolOop cpool = _holder->get_instanceKlass()->constants();
-  int method_index = get_method_index();
-  int name_and_type_index = cpool->name_and_type_ref_index_at(method_index);
-  return cpool->signature_ref_index_at(name_and_type_index);
+  GUARDED_VM_ENTRY(
+    constantPoolOop cpool = _holder->get_instanceKlass()->constants();
+    const int method_index = get_method_index();
+    const int name_and_type_index = cpool->name_and_type_ref_index_at(method_index);
+    return cpool->signature_ref_index_at(name_and_type_index);
+  )
 }
 
 // ------------------------------------------------------------------
@@ -434,7 +470,7 @@ ciCallSite* ciBytecodeStream::get_call_site() {
   // Get the CallSite from the constant pool cache.
   int method_index = get_method_index();
   ConstantPoolCacheEntry* cpcache_entry = cpcache->secondary_entry_at(method_index);
-  oop call_site_oop = cpcache_entry->f1();
+  oop call_site_oop = cpcache_entry->f1_as_instance();
 
   // Create a CallSite object and return it.
   return CURRENT_ENV->get_object(call_site_oop)->as_call_site();

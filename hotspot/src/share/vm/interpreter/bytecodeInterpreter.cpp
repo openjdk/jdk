@@ -1774,7 +1774,7 @@ run:
 
           oop obj;
           if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {
-            obj = (oop) cache->f1();
+            obj = (oop) cache->f1_as_instance();
             MORE_STACK(1);  // Assume single slot push
           } else {
             obj = (oop) STACK_OBJECT(-1);
@@ -1785,7 +1785,7 @@ run:
           // Now store the result on the stack
           //
           TosState tos_type = cache->flag_state();
-          int field_offset = cache->f2();
+          int field_offset = cache->f2_as_index();
           if (cache->is_volatile()) {
             if (tos_type == atos) {
               VERIFY_OOP(obj->obj_field_acquire(field_offset));
@@ -1885,7 +1885,7 @@ run:
             --count;
           }
           if ((Bytecodes::Code)opcode == Bytecodes::_putstatic) {
-            obj = (oop) cache->f1();
+            obj = (oop) cache->f1_as_instance();
           } else {
             --count;
             obj = (oop) STACK_OBJECT(count);
@@ -1895,7 +1895,7 @@ run:
           //
           // Now store the result
           //
-          int field_offset = cache->f2();
+          int field_offset = cache->f2_as_index();
           if (cache->is_volatile()) {
             if (tos_type == itos) {
               obj->release_int_field_put(field_offset, STACK_INT(-1));
@@ -2177,13 +2177,15 @@ run:
         // This kind of CP cache entry does not need to match the flags byte, because
         // there is a 1-1 relation between bytecode type and CP entry type.
         ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        if (cache->is_f1_null()) {
+        oop result = cache->f1_as_instance();
+        if (result == NULL) {
           CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode),
                   handle_exception);
+          result = cache->f1_as_instance();
         }
 
-        VERIFY_OOP(cache->f1());
-        SET_STACK_OBJECT(cache->f1(), 0);
+        VERIFY_OOP(result);
+        SET_STACK_OBJECT(result, 0);
         UPDATE_PC_AND_TOS_AND_CONTINUE(incr, 1);
       }
 
@@ -2204,13 +2206,15 @@ run:
         // there is a 1-1 relation between bytecode type and CP entry type.
         assert(constantPoolCacheOopDesc::is_secondary_index(index), "incorrect format");
         ConstantPoolCacheEntry* cache = cp->secondary_entry_at(index);
-        if (cache->is_f1_null()) {
+        oop result = cache->f1_as_instance();
+        if (result == NULL) {
           CALL_VM(InterpreterRuntime::resolve_invokedynamic(THREAD),
                   handle_exception);
+          result = cache->f1_as_instance();
         }
 
-        VERIFY_OOP(cache->f1());
-        oop method_handle = java_lang_invoke_CallSite::target(cache->f1());
+        VERIFY_OOP(result);
+        oop method_handle = java_lang_invoke_CallSite::target(result);
         CHECK_NULL(method_handle);
 
         istate->set_msg(call_method_handle);
@@ -2239,11 +2243,11 @@ run:
         // java.lang.Object.  See cpCacheOop.cpp for details.
         // This code isn't produced by javac, but could be produced by
         // another compliant java compiler.
-        if (cache->is_methodInterface()) {
+        if (cache->is_forced_virtual()) {
           methodOop callee;
           CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
           if (cache->is_vfinal()) {
-            callee = (methodOop) cache->f2();
+            callee = cache->f2_as_vfinal_method();
           } else {
             // get receiver
             int parms = cache->parameter_size();
@@ -2251,7 +2255,7 @@ run:
             VERIFY_OOP(STACK_OBJECT(-parms));
             instanceKlass* rcvrKlass = (instanceKlass*)
                                  STACK_OBJECT(-parms)->klass()->klass_part();
-            callee = (methodOop) rcvrKlass->start_of_vtable()[ cache->f2()];
+            callee = (methodOop) rcvrKlass->start_of_vtable()[ cache->f2_as_index()];
           }
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
@@ -2266,7 +2270,7 @@ run:
 
         // this could definitely be cleaned up QQQ
         methodOop callee;
-        klassOop iclass = (klassOop)cache->f1();
+        klassOop iclass = cache->f1_as_klass();
         // instanceKlass* interface = (instanceKlass*) iclass->klass_part();
         // get receiver
         int parms = cache->parameter_size();
@@ -2284,7 +2288,7 @@ run:
         if (i == int2->itable_length()) {
           VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), "");
         }
-        int mindex = cache->f2();
+        int mindex = cache->f2_as_index();
         itableMethodEntry* im = ki->first_method_entry(rcvr->klass());
         callee = im[mindex].method();
         if (callee == NULL) {
@@ -2322,12 +2326,12 @@ run:
           methodOop callee;
           if ((Bytecodes::Code)opcode == Bytecodes::_invokevirtual) {
             CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
-            if (cache->is_vfinal()) callee = (methodOop) cache->f2();
+            if (cache->is_vfinal()) callee = cache->f2_as_vfinal_method();
             else {
               // get receiver
               int parms = cache->parameter_size();
               // this works but needs a resourcemark and seems to create a vtable on every call:
-              // methodOop callee = rcvr->klass()->klass_part()->vtable()->method_at(cache->f2());
+              // methodOop callee = rcvr->klass()->klass_part()->vtable()->method_at(cache->f2_as_index());
               //
               // this fails with an assert
               // instanceKlass* rcvrKlass = instanceKlass::cast(STACK_OBJECT(-parms)->klass());
@@ -2350,13 +2354,13 @@ run:
                   However it seems to have a vtable in the right location. Huh?
 
               */
-              callee = (methodOop) rcvrKlass->start_of_vtable()[ cache->f2()];
+              callee = (methodOop) rcvrKlass->start_of_vtable()[ cache->f2_as_index()];
             }
           } else {
             if ((Bytecodes::Code)opcode == Bytecodes::_invokespecial) {
               CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
             }
-            callee = (methodOop) cache->f1();
+            callee = cache->f1_as_method();
           }
 
           istate->set_callee(callee);

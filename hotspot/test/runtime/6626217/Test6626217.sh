@@ -49,7 +49,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"
@@ -61,6 +61,14 @@ case "$OS" in
     NULL=NUL
     PS=";"
     FS="\\"
+    RM=rm
+    CP=cp
+    MV=mv
+    ;;
+  CYGWIN_* )
+    NULL=/dev/null
+    PS=";"
+    FS="/"
     RM=rm
     CP=cp
     MV=mv

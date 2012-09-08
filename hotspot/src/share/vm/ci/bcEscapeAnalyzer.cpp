@@ -236,11 +236,17 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
   ciInstanceKlass* callee_holder = ciEnv::get_instance_klass_for_declared_method_holder(holder);
   ciInstanceKlass* actual_recv = callee_holder;
 
-  // some methods are obviously bindable without any type checks so
-  // convert them directly to an invokespecial.
-  if (target->is_loaded() && !target->is_abstract() &&
-      target->can_be_statically_bound() && code == Bytecodes::_invokevirtual) {
-    code = Bytecodes::_invokespecial;
+  // Some methods are obviously bindable without any type checks so
+  // convert them directly to an invokespecial or invokestatic.
+  if (target->is_loaded() && !target->is_abstract() && target->can_be_statically_bound()) {
+    switch (code) {
+    case Bytecodes::_invokevirtual:
+      code = Bytecodes::_invokespecial;
+      break;
+    case Bytecodes::_invokehandle:
+      code = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokespecial;
+      break;
+    }
   }
 
   // compute size of arguments
@@ -824,8 +830,8 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         break;
       case Bytecodes::_getstatic:
       case Bytecodes::_getfield:
-        { bool will_link;
-          ciField* field = s.get_field(will_link);
+        { bool ignored_will_link;
+          ciField* field = s.get_field(ignored_will_link);
           BasicType field_type = field->type()->basic_type();
           if (s.cur_bc() != Bytecodes::_getstatic) {
             set_method_escape(state.apop());
@@ -863,11 +869,21 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
       case Bytecodes::_invokestatic:
       case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
-        { bool will_link;
-          ciMethod* target = s.get_method(will_link);
-          ciKlass* holder = s.get_declared_method_holder();
-          invoke(state, s.cur_bc(), target, holder);
-          ciType* return_type = target->return_type();
+        { bool ignored_will_link;
+          ciSignature* declared_signature = NULL;
+          ciMethod* target = s.get_method(ignored_will_link, &declared_signature);
+          ciKlass*  holder = s.get_declared_method_holder();
+          assert(declared_signature != NULL, "cannot be null");
+          // Push appendix argument, if one.
+          if (s.has_appendix()) {
+            state.apush(unknown_obj);
+          }
+          // Pass in raw bytecode because we need to see invokehandle instructions.
+          invoke(state, s.cur_bc_raw(), target, holder);
+          // We are using the return type of the declared signature here because
+          // it might be a more concrete type than the one from the target (for
+          // e.g. invokedynamic and invokehandle).
+          ciType* return_type = declared_signature->return_type();
           if (!return_type->is_primitive_type()) {
             state.apush(unknown_obj);
           } else if (return_type->is_one_word()) {

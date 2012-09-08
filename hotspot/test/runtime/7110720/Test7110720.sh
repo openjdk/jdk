@@ -37,7 +37,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     FS="/"
     RM=/bin/rm
     CP=/bin/cp
@@ -51,6 +51,12 @@ case "$OS" in
     ;;
   Windows_* )
     FS="\\"
+    RM=rm
+    CP=cp
+    MV=mv
+    ;;
+  CYGWIN_* )
+    FS="/"
     RM=rm
     CP=cp
     MV=mv

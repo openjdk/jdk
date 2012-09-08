@@ -225,7 +225,7 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   void load_constant();
   void load_local(ValueType* type, int index);
   void store_local(ValueType* type, int index);
-  void store_local(ValueStack* state, Value value, ValueType* type, int index);
+  void store_local(ValueStack* state, Value value, int index);
   void load_indexed (BasicType type);
   void store_indexed(BasicType type);
   void stack_op(Bytecodes::Code code);
@@ -337,14 +337,16 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   void fill_sync_handler(Value lock, BlockBegin* sync_handler, bool default_handler = false);
 
   // inliners
-  bool try_inline(           ciMethod* callee, bool holder_known, Value receiver = NULL);
+  bool try_inline(           ciMethod* callee, bool holder_known, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = NULL);
   bool try_inline_intrinsics(ciMethod* callee);
-  bool try_inline_full(      ciMethod* callee, bool holder_known, BlockBegin* cont_block, Value receiver);
+  bool try_inline_full(      ciMethod* callee, bool holder_known, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = NULL);
   bool try_inline_jsr(int jsr_dest_bci);
 
+  const char* check_can_parse(ciMethod* callee) const;
+  const char* should_not_inline(ciMethod* callee) const;
+
   // JSR 292 support
-  bool for_method_handle_inline(ciMethod* callee);
-  bool for_invokedynamic_inline(ciMethod* callee);
+  bool try_method_handle_inline(ciMethod* callee);
 
   // helpers
   void inline_bailout(const char* msg);
@@ -366,9 +368,9 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   bool append_unsafe_prefetch(ciMethod* callee, bool is_store, bool is_static);
   void append_unsafe_CAS(ciMethod* callee);
 
-  NOT_PRODUCT(void print_inline_result(ciMethod* callee, bool res);)
+  void print_inlining(ciMethod* callee, const char* msg, bool success = true);
 
-  void profile_call(Value recv, ciKlass* predicted_holder);
+  void profile_call(ciMethod* callee, Value recv, ciKlass* predicted_holder);
   void profile_invocation(ciMethod* inlinee, ValueStack* state);
 
   // Shortcuts to profiling control.

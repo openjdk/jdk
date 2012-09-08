@@ -38,8 +38,7 @@ import infos.ThirdBeanBeanInfo;
 
 import java.beans.BeanInfo;
 import java.beans.Introspector;
-import java.lang.ref.Reference;
-import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public class TestBeanInfo implements Runnable {
 
@@ -60,10 +59,9 @@ public class TestBeanInfo implements Runnable {
         try {
             actual = Introspector.getBeanInfo(type);
             type = actual.getClass();
-            Field field = type.getDeclaredField("targetBeanInfoRef"); // NON-NLS: field name
-            field.setAccessible(true);
-            Reference ref = (Reference) field.get(actual);
-            actual = (BeanInfo) ref.get();
+            Method method = type.getDeclaredMethod("getTargetBeanInfo"); // NON-NLS: method name
+            method.setAccessible(true);
+            actual = (BeanInfo) method.invoke(actual);
         }
         catch (Exception exception) {
             throw new Error("unexpected error", exception);

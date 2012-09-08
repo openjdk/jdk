@@ -35,7 +35,7 @@
 #include "jni.h"
 #include "jvm.h"
 #include "jni_util.h"
-#include "zlib.h"
+#include <zlib.h>
 #include "java_util_zip_Inflater.h"
 
 #define ThrowDataFormatException(env, msg) \
@@ -172,18 +172,6 @@ JNIEXPORT jint JNICALL
 Java_java_util_zip_Inflater_getAdler(JNIEnv *env, jclass cls, jlong addr)
 {
     return ((z_stream *)jlong_to_ptr(addr))->adler;
-}
-
-JNIEXPORT jlong JNICALL
-Java_java_util_zip_Inflater_getBytesRead(JNIEnv *env, jclass cls, jlong addr)
-{
-    return ((z_stream *)jlong_to_ptr(addr))->total_in;
-}
-
-JNIEXPORT jlong JNICALL
-Java_java_util_zip_Inflater_getBytesWritten(JNIEnv *env, jclass cls, jlong addr)
-{
-    return ((z_stream *)jlong_to_ptr(addr))->total_out;
 }
 
 JNIEXPORT void JNICALL

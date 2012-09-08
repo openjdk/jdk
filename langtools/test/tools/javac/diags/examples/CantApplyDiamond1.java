@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.prob.found.req.1
+// key: compiler.err.prob.found.req
 // key: compiler.misc.cant.apply.diamond.1
 // key: compiler.misc.inferred.do.not.conform.to.upper.bounds
 // key: compiler.misc.diamond

@@ -34,7 +34,8 @@ package sun.nio.ch;
 import sun.misc.*;
 import java.io.IOException;
 import java.io.FileDescriptor;
-
+import java.util.Iterator;
+import java.util.LinkedList;
 
 /*
  * struct kevent {           // 32-bit    64-bit
@@ -100,6 +101,18 @@ class KQueueArrayWrapper {
         kq = init();
     }
 
+    // Used to update file description registrations
+    private static class Update {
+        SelChImpl channel;
+        int events;
+        Update(SelChImpl channel, int events) {
+            this.channel = channel;
+            this.events = events;
+        }
+    }
+
+    private LinkedList<Update> updateList = new LinkedList<Update>();
+
     void initInterrupt(int fd0, int fd1) {
         outgoingInterruptFD = fd1;
         incomingInterruptFD = fd0;
@@ -137,13 +150,40 @@ class KQueueArrayWrapper {
         }
     }
 
-    void setInterest(int fd, int events) {
-        register0(kq, fd, events & POLLIN, events & POLLOUT);
+    void setInterest(SelChImpl channel, int events) {
+        synchronized (updateList) {
+            // update existing registration
+            updateList.add(new Update(channel, events));
+        }
     }
 
-    void release(int fd) {
-        register0(kq, fd, 0, 0);
+    void release(SelChImpl channel) {
+        synchronized (updateList) {
+            // flush any pending updates
+            for (Iterator<Update> it = updateList.iterator(); it.hasNext();) {
+                if (it.next().channel == channel) {
+                    it.remove();
+                }
+            }
+
+            // remove
+            register0(kq, channel.getFDVal(), 0, 0);
+        }
     }
+
+    void updateRegistrations() {
+        synchronized (updateList) {
+            Update u = null;
+            while ((u = updateList.poll()) != null) {
+                SelChImpl ch = u.channel;
+                if (!ch.isOpen())
+                    continue;
+
+                register0(kq, ch.getFDVal(), u.events & POLLIN, u.events & POLLOUT);
+            }
+        }
+    }
+
 
     void close() throws IOException {
         if (keventArray != null) {
@@ -157,6 +197,7 @@ class KQueueArrayWrapper {
     }
 
     int poll(long timeout) {
+        updateRegistrations();
         int updated = kevent0(kq, keventArrayAddress, NUM_KEVENTS, timeout);
         return updated;
     }
@@ -173,4 +214,3 @@ class KQueueArrayWrapper {
                                long timeout);
     private static native void interrupt(int fd);
 }
-

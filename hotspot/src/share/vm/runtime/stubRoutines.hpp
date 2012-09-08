@@ -130,7 +130,6 @@ class StubRoutines: AllStatic {
   static address _throw_IncompatibleClassChangeError_entry;
   static address _throw_NullPointerException_at_call_entry;
   static address _throw_StackOverflowError_entry;
-  static address _throw_WrongMethodTypeException_entry;
   static address _handler_for_unsafe_access_entry;
 
   static address _atomic_xchg_entry;
@@ -225,6 +224,9 @@ class StubRoutines: AllStatic {
       (_code2 != NULL && _code2->blob_contains(addr)) ;
   }
 
+  static CodeBlob* code1() { return _code1; }
+  static CodeBlob* code2() { return _code2; }
+
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }
   static jint*   verify_oop_count_addr()                   { return &_verify_oop_count; }
@@ -254,7 +256,6 @@ class StubRoutines: AllStatic {
   static address throw_IncompatibleClassChangeError_entry(){ return _throw_IncompatibleClassChangeError_entry; }
   static address throw_NullPointerException_at_call_entry(){ return _throw_NullPointerException_at_call_entry; }
   static address throw_StackOverflowError_entry()          { return _throw_StackOverflowError_entry; }
-  static address throw_WrongMethodTypeException_entry()    { return _throw_WrongMethodTypeException_entry; }
 
   // Exceptions during unsafe access - should throw Java exception rather
   // than crash.

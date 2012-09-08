@@ -27,6 +27,7 @@ package sun.nio.fs;
 
 import java.nio.file.*;
 import java.nio.file.attribute.*;
+import java.nio.file.spi.FileTypeDetector;
 import java.nio.channels.*;
 import java.net.URI;
 import java.util.concurrent.ExecutorService;
@@ -495,4 +496,17 @@ public abstract class UnixFileSystemProvider
             return null;    // keep compiler happy
         }
     }
+
+    /**
+     * Returns a {@code FileTypeDetector} for this platform.
+     */
+    FileTypeDetector getFileTypeDetector() {
+        return new AbstractFileTypeDetector() {
+            @Override
+            public String implProbeContentType(Path file) {
+                return null;
+            }
+        };
+    }
+
 }

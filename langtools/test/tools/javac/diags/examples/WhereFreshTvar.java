@@ -23,8 +23,7 @@
 
 // key: compiler.misc.where.fresh.typevar
 // key: compiler.misc.where.description.typevar
-// key: compiler.err.cant.apply.symbol.1
-// key: compiler.misc.no.args
+// key: compiler.err.prob.found.req
 // key: compiler.misc.inferred.do.not.conform.to.upper.bounds
 // options: -XDdiags=where,simpleNames
 // run: simple

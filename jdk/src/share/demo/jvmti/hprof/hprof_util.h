@@ -41,6 +41,11 @@
 #ifndef HPROF_UTIL_H
 #define HPROF_UTIL_H
 
+/* Use THIS_FILE when it is available. */
+#ifndef THIS_FILE
+    #define THIS_FILE __FILE__
+#endif
+
 /* Macros that protect code from accidently using a local ref improperly */
 #define WITH_LOCAL_REFS(env, number)            \
     {                                           \
@@ -184,8 +189,8 @@ void          hprof_free(void *ptr);
 #ifdef DEBUG
     void *        hprof_debug_malloc(int size, char *file, int line);
     void          hprof_debug_free(void *ptr, char *file, int line);
-    #define HPROF_MALLOC(size)  hprof_debug_malloc(size, __FILE__, __LINE__)
-    #define HPROF_FREE(ptr)     hprof_debug_free(ptr, __FILE__, __LINE__)
+    #define HPROF_MALLOC(size)  hprof_debug_malloc(size, THIS_FILE, __LINE__)
+    #define HPROF_FREE(ptr)     hprof_debug_free(ptr, THIS_FILE, __LINE__)
 #else
     #define HPROF_MALLOC(size)  hprof_malloc(size)
     #define HPROF_FREE(ptr)     hprof_free(ptr)

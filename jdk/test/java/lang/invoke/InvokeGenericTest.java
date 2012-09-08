@@ -68,24 +68,6 @@ public class InvokeGenericTest {
     public InvokeGenericTest() {
     }
 
-    @Before
-    public void checkImplementedPlatform() {
-        boolean platformOK = false;
-        Properties properties = System.getProperties();
-        String vers = properties.getProperty("java.vm.version");
-        String name = properties.getProperty("java.vm.name");
-        String arch = properties.getProperty("os.arch");
-        if ((arch.equals("amd64") || arch.equals("i386") || arch.equals("x86") ||
-             arch.equals("x86_64") || arch.equals("sparc") || arch.equals("sparcv9")) &&
-            (name.contains("Client") || name.contains("Server"))
-            ) {
-            platformOK = true;
-        } else {
-            System.err.println("Skipping tests for unsupported platform: "+Arrays.asList(vers, name, arch));
-        }
-        assumeTrue(platformOK);
-    }
-
     String testName;
     static int allPosTests, allNegTests;
     int posTests, negTests;

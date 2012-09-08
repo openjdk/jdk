@@ -1916,7 +1916,7 @@ bool Arguments::check_vm_args_consistency() {
       (ExplicitGCInvokesConcurrent ||
        ExplicitGCInvokesConcurrentAndUnloadsClasses)) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: +ExplictGCInvokesConcurrent[AndUnloadsClasses] conflicts"
+                "error: +ExplicitGCInvokesConcurrent[AndUnloadsClasses] conflicts"
                 " with -UseAsyncConcMarkSweepGC");
     status = false;
   }
@@ -3086,15 +3086,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
   }
 #endif // PRODUCT
-
-  // Transitional
-  if (EnableMethodHandles || AnonymousClasses) {
-    if (!EnableInvokeDynamic && !FLAG_IS_DEFAULT(EnableInvokeDynamic)) {
-      warning("EnableMethodHandles and AnonymousClasses are obsolete.  Keeping EnableInvokeDynamic disabled.");
-    } else {
-      EnableInvokeDynamic = true;
-    }
-  }
 
   // JSR 292 is not supported before 1.7
   if (!JDK_Version::is_gte_jdk17x_version()) {

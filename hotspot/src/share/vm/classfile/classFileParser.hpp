@@ -89,6 +89,9 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     enum ID {
       _unknown = 0,
       _method_ForceInline,
+      _method_DontInline,
+      _method_LambdaForm_Compiled,
+      _method_LambdaForm_Hidden,
       _annotation_LIMIT
     };
     const Location _location;

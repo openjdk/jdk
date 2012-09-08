@@ -218,6 +218,14 @@ public class VM {
     }
 
     /**
+     * Returns true if the given class loader is in the system domain
+     * in which all permissions are granted.
+     */
+    public static boolean isSystemDomainLoader(ClassLoader loader) {
+        return loader == null;
+    }
+
+    /**
      * Returns the system property of the specified key saved at
      * system initialization time.  This method should only be used
      * for the system properties that are not changed during runtime.
