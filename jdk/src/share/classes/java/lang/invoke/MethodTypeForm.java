@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import sun.invoke.util.Wrapper;
 import static java.lang.invoke.MethodHandleStatics.*;
+import static java.lang.invoke.MethodHandleNatives.Constants.*;
 
 /**
  * Shared information for a group of method types, which differ
@@ -41,27 +42,70 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * No more than half of these are likely to be loaded at once.
  * @author John Rose
  */
-class MethodTypeForm {
+final class MethodTypeForm {
     final int[] argToSlotTable, slotToArgTable;
     final long argCounts;               // packed slot & value counts
     final long primCounts;              // packed prim & double counts
     final int vmslots;                  // total number of parameter slots
-    private Object vmlayout;            // vm-specific information for calls
     final MethodType erasedType;        // the canonical erasure
-
-    /*lazy*/ MethodType primsAsBoxes;   // replace prims by wrappers
-    /*lazy*/ MethodType primArgsAsBoxes; // wrap args only; make raw return
-    /*lazy*/ MethodType primsAsInts;    // replace prims by int/long
-    /*lazy*/ MethodType primsAsLongs;   // replace prims by long
-    /*lazy*/ MethodType primsAtEnd;     // reorder primitives to the end
+    final MethodType basicType;         // the canonical erasure, with primitives simplified
 
     // Cached adapter information:
-    /*lazy*/ MethodHandle genericInvoker; // hook for inexact invoke
+    /*lazy*/ MethodHandle genericInvoker; // JVM hook for inexact invoke
+    /*lazy*/ MethodHandle basicInvoker;   // cached instance of MH.invokeBasic
+    /*lazy*/ MethodHandle namedFunctionInvoker; // cached helper for LF.NamedFunction
+
+    // Cached lambda form information, for basic types only:
+    final LambdaForm[] lambdaForms;
+    // Indexes into lambdaForms:
+    static final int
+            LF_INVVIRTUAL     =  0,  // DMH invokeVirtual
+            LF_INVSTATIC      =  1,
+            LF_INVSPECIAL     =  2,
+            LF_NEWINVSPECIAL  =  3,
+            LF_INVINTERFACE   =  4,
+            LF_INVSTATIC_INIT =  5,  // DMH invokeStatic with <clinit> barrier
+            LF_INTERPRET      =  6,  // LF interpreter
+            LF_COUNTER        =  7,  // CMH wrapper
+            LF_REINVOKE       =  8,  // other wrapper
+            LF_EX_LINKER      =  9,  // invokeExact_MT
+            LF_EX_INVOKER     = 10,  // invokeExact MH
+            LF_GEN_LINKER     = 11,
+            LF_GEN_INVOKER    = 12,
+            LF_CS_LINKER      = 13,  // linkToCallSite_CS
+            LF_LIMIT          = 14;
 
     public MethodType erasedType() {
         return erasedType;
     }
 
+    public MethodType basicType() {
+        return basicType;
+    }
+
+    public LambdaForm cachedLambdaForm(int which) {
+        return lambdaForms[which];
+    }
+
+    public LambdaForm setCachedLambdaForm(int which, LambdaForm form) {
+        // Should we perform some sort of CAS, to avoid racy duplication?
+        return lambdaForms[which] = form;
+    }
+
+    public MethodHandle basicInvoker() {
+        assert(erasedType == basicType) : "erasedType: " + erasedType + " != basicType: " + basicType;  // primitives must be flattened also
+        MethodHandle invoker = basicInvoker;
+        if (invoker != null)  return invoker;
+        invoker = basicType.invokers().makeBasicInvoker();
+        basicInvoker = invoker;
+        return invoker;
+    }
+
+    /**
+     * Build an MTF for a given type, which must have all references erased to Object.
+     * This MTF will stand for that type and all un-erased variations.
+     * Eagerly compute some basic properties of the type, common to all variations.
+     */
     protected MethodTypeForm(MethodType erasedType) {
         this.erasedType = erasedType;
 
@@ -75,25 +119,40 @@ class MethodTypeForm {
 
         // Walk the argument types, looking for primitives.
         int pac = 0, lac = 0, prc = 0, lrc = 0;
-        Class<?> epts[] = ptypes;
+        Class<?>[] epts = ptypes;
+        Class<?>[] bpts = epts;
         for (int i = 0; i < epts.length; i++) {
             Class<?> pt = epts[i];
             if (pt != Object.class) {
-                assert(pt.isPrimitive());
                 ++pac;
-                if (hasTwoArgSlots(pt))  ++lac;
+                Wrapper w = Wrapper.forPrimitiveType(pt);
+                if (w.isDoubleWord())  ++lac;
+                if (w.isSubwordOrInt() && pt != int.class) {
+                    if (bpts == epts)
+                        bpts = bpts.clone();
+                    bpts[i] = int.class;
+                }
             }
         }
         pslotCount += lac;                  // #slots = #args + #longs
         Class<?> rt = erasedType.returnType();
+        Class<?> bt = rt;
         if (rt != Object.class) {
             ++prc;          // even void.class counts as a prim here
-            if (hasTwoArgSlots(rt))  ++lrc;
+            Wrapper w = Wrapper.forPrimitiveType(rt);
+            if (w.isDoubleWord())  ++lrc;
+            if (w.isSubwordOrInt() && rt != int.class)
+                bt = int.class;
             // adjust #slots, #args
             if (rt == void.class)
                 rtypeCount = rslotCount = 0;
             else
                 rslotCount += lrc;
+        }
+        if (epts == bpts && bt == rt) {
+            this.basicType = erasedType;
+        } else {
+            this.basicType = MethodType.makeImpl(bt, bpts, true);
         }
         if (lac != 0) {
             int slot = ptypeCount + lac;
@@ -102,7 +161,8 @@ class MethodTypeForm {
             argToSlotTab[0] = slot;  // argument "-1" is past end of slots
             for (int i = 0; i < epts.length; i++) {
                 Class<?> pt = epts[i];
-                if (hasTwoArgSlots(pt))  --slot;
+                Wrapper w = Wrapper.forBasicType(pt);
+                if (w.isDoubleWord())  --slot;
                 --slot;
                 slotToArgTab[slot] = i+1; // "+1" see argSlotToParameter note
                 argToSlotTab[1+i]  = slot;
@@ -130,162 +190,11 @@ class MethodTypeForm {
         // send a few bits down to the JVM:
         this.vmslots = parameterSlotCount();
 
-        // short circuit some no-op canonicalizations:
-        if (!hasPrimitives()) {
-            primsAsBoxes = erasedType;
-            primArgsAsBoxes = erasedType;
-            primsAsInts  = erasedType;
-            primsAsLongs = erasedType;
-            primsAtEnd   = erasedType;
+        if (basicType == erasedType) {
+            lambdaForms = new LambdaForm[LF_LIMIT];
+        } else {
+            lambdaForms = null;  // could be basicType.form().lambdaForms;
         }
-    }
-
-    /** Turn all primitive types to corresponding wrapper types.
-     */
-    public MethodType primsAsBoxes() {
-        MethodType ct = primsAsBoxes;
-        if (ct != null)  return ct;
-        MethodType t = erasedType;
-        ct = canonicalize(erasedType, WRAP, WRAP);
-        if (ct == null)  ct = t;  // no prims to box
-        return primsAsBoxes = ct;
-    }
-
-    /** Turn all primitive argument types to corresponding wrapper types.
-     *  Subword and void return types are promoted to int.
-     */
-    public MethodType primArgsAsBoxes() {
-        MethodType ct = primArgsAsBoxes;
-        if (ct != null)  return ct;
-        MethodType t = erasedType;
-        ct = canonicalize(erasedType, RAW_RETURN, WRAP);
-        if (ct == null)  ct = t;  // no prims to box
-        return primArgsAsBoxes = ct;
-    }
-
-    /** Turn all primitive types to either int or long.
-     *  Floating point return types are not changed, because
-     *  they may require special calling sequences.
-     *  A void return value is turned to int.
-     */
-    public MethodType primsAsInts() {
-        MethodType ct = primsAsInts;
-        if (ct != null)  return ct;
-        MethodType t = erasedType;
-        ct = canonicalize(t, RAW_RETURN, INTS);
-        if (ct == null)  ct = t;  // no prims to int-ify
-        return primsAsInts = ct;
-    }
-
-    /** Turn all primitive types to either int or long.
-     *  Floating point return types are not changed, because
-     *  they may require special calling sequences.
-     *  A void return value is turned to int.
-     */
-    public MethodType primsAsLongs() {
-        MethodType ct = primsAsLongs;
-        if (ct != null)  return ct;
-        MethodType t = erasedType;
-        ct = canonicalize(t, RAW_RETURN, LONGS);
-        if (ct == null)  ct = t;  // no prims to int-ify
-        return primsAsLongs = ct;
-    }
-
-    /** Stably sort parameters into 3 buckets: ref, int, long. */
-    public MethodType primsAtEnd() {
-        MethodType ct = primsAtEnd;
-        if (ct != null)  return ct;
-        MethodType t = erasedType;
-
-        int pac = primitiveParameterCount();
-        if (pac == 0)
-            return primsAtEnd = t;
-
-        int argc = parameterCount();
-        int lac = longPrimitiveParameterCount();
-        if (pac == argc && (lac == 0 || lac == argc))
-            return primsAtEnd = t;
-
-        // known to have a mix of 2 or 3 of ref, int, long
-        int[] reorder = primsAtEndOrder(t);
-        ct = reorderParameters(t, reorder, null);
-        //System.out.println("t="+t+" / reorder="+java.util.Arrays.toString(reorder)+" => "+ct);
-        return primsAtEnd = ct;
-    }
-
-    /** Compute a new ordering of parameters so that all references
-     *  are before all ints or longs, and all ints are before all longs.
-     *  For this ordering, doubles count as longs, and all other primitive
-     *  values count as ints.
-     *  As a special case, if the parameters are already in the specified
-     *  order, this method returns a null reference, rather than an array
-     *  specifying a null permutation.
-     *  <p>
-     *  For example, the type {@code (int,boolean,int,Object,String)void}
-     *  produces the order {@code {3,4,0,1,2}}, the type
-     *  {@code (long,int,String)void} produces {@code {2,1,2}}, and
-     *  the type {@code (Object,int)Object} produces {@code null}.
-     */
-    public static int[] primsAtEndOrder(MethodType mt) {
-        MethodTypeForm form = mt.form();
-        if (form.primsAtEnd == form.erasedType)
-            // quick check shows no reordering is necessary
-            return null;
-
-        int argc = form.parameterCount();
-        int[] paramOrder = new int[argc];
-
-        // 3-way bucket sort:
-        int pac = form.primitiveParameterCount();
-        int lac = form.longPrimitiveParameterCount();
-        int rfill = 0, ifill = argc - pac, lfill = argc - lac;
-
-        Class<?>[] ptypes = mt.ptypes();
-        boolean changed = false;
-        for (int i = 0; i < ptypes.length; i++) {
-            Class<?> pt = ptypes[i];
-            int ord;
-            if (!pt.isPrimitive())             ord = rfill++;
-            else if (!hasTwoArgSlots(pt))      ord = ifill++;
-            else                               ord = lfill++;
-            if (ord != i)  changed = true;
-            assert(paramOrder[ord] == 0);
-            paramOrder[ord] = i;
-        }
-        assert(rfill == argc - pac && ifill == argc - lac && lfill == argc);
-        if (!changed) {
-            form.primsAtEnd = form.erasedType;
-            return null;
-        }
-        return paramOrder;
-    }
-
-    /** Put the existing parameters of mt into a new order, given by newParamOrder.
-     *  The third argument is logically appended to mt.parameterArray,
-     *  so that elements of newParamOrder can index either pre-existing or
-     *  new parameter types.
-     */
-    public static MethodType reorderParameters(MethodType mt, int[] newParamOrder, Class<?>[] moreParams) {
-        if (newParamOrder == null)  return mt;  // no-op reordering
-        Class<?>[] ptypes = mt.ptypes();
-        Class<?>[] ntypes = new Class<?>[newParamOrder.length];
-        int maxParam = ptypes.length + (moreParams == null ? 0 : moreParams.length);
-        boolean changed = (ntypes.length != ptypes.length);
-        for (int i = 0; i < newParamOrder.length; i++) {
-            int param = newParamOrder[i];
-            if (param != i)  changed = true;
-            Class<?> nt;
-            if (param < ptypes.length)   nt = ptypes[param];
-            else if (param == maxParam)  nt = mt.returnType();
-            else                         nt = moreParams[param - ptypes.length];
-            ntypes[i] = nt;
-        }
-        if (!changed)  return mt;
-        return MethodType.makeImpl(mt.returnType(), ntypes, true);
-    }
-
-    private static boolean hasTwoArgSlots(Class<?> type) {
-        return type == long.class || type == double.class;
     }
 
     private static long pack(int a, int b, int c, int d) {
@@ -325,11 +234,11 @@ class MethodTypeForm {
     public boolean hasPrimitives() {
         return primCounts != 0;
     }
-//    public boolean hasNonVoidPrimitives() {
-//        if (primCounts == 0)  return false;
-//        if (primitiveParameterCount() != 0)  return true;
-//        return (primitiveReturnCount() != 0 && returnCount() != 0);
-//    }
+    public boolean hasNonVoidPrimitives() {
+        if (primCounts == 0)  return false;
+        if (primitiveParameterCount() != 0)  return true;
+        return (primitiveReturnCount() != 0 && returnCount() != 0);
+    }
     public boolean hasLongPrimitives() {
         return (longPrimitiveParameterCount() | longPrimitiveReturnCount()) != 0;
     }
@@ -453,18 +362,6 @@ class MethodTypeForm {
             }
         }
         return cs;
-    }
-
-    /*non-public*/ void notifyGenericMethodType() {
-        if (genericInvoker != null)  return;
-        try {
-            // Trigger adapter creation.
-            genericInvoker = InvokeGeneric.generalInvokerOf(erasedType);
-        } catch (Exception ex) {
-            Error err = new InternalError("Exception while resolving inexact invoke", ex);
-            err.initCause(ex);
-            throw err;
-        }
     }
 
     @Override

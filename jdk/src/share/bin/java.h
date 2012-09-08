@@ -219,6 +219,10 @@ typedef jclass (JNICALL FindClassFromBootLoader_t(JNIEnv *env,
                                                   const char *name));
 jclass FindBootStrapClass(JNIEnv *env, const char *classname);
 
+jobjectArray CreateApplicationArgs(JNIEnv *env, char **strv, int argc);
+jobjectArray NewPlatformStringArray(JNIEnv *env, char **strv, int strc);
+jclass GetLauncherHelperClass(JNIEnv *env);
+
 int JNICALL JavaMain(void * args); /* entry point                  */
 
 enum LaunchMode {               // cf. sun.launcher.LauncherHelper

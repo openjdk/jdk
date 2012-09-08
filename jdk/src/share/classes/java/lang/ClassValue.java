@@ -489,9 +489,18 @@ public abstract class ClassValue<T> {
         /** Remove an entry. */
         synchronized
         void removeEntry(ClassValue<?> classValue) {
-            // make all cache elements for this guy go stale:
-            if (remove(classValue.identity) != null) {
+            Entry<?> e = remove(classValue.identity);
+            if (e == null) {
+                // Uninitialized, and no pending calls to computeValue.  No change.
+            } else if (e.isPromise()) {
+                // State is uninitialized, with a pending call to finishEntry.
+                // Since remove is a no-op in such a state, keep the promise
+                // by putting it back into the map.
+                put(classValue.identity, e);
+            } else {
+                // In an initialized state.  Bump forward, and de-initialize.
                 classValue.bumpVersion();
+                // Make all cache elements for this guy go stale.
                 removeStaleEntries(classValue);
             }
         }

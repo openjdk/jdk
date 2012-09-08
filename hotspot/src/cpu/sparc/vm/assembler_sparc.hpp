@@ -2538,6 +2538,11 @@ public:
                                Register temp_reg, Register temp2_reg,
                                Label& no_such_interface);
 
+  // virtual method calling
+  void lookup_virtual_method(Register recv_klass,
+                             RegisterOrConstant vtable_index,
+                             Register method_result);
+
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
@@ -2577,12 +2582,6 @@ public:
                            Label& L_success);
 
   // method handles (JSR 292)
-  void check_method_handle_type(Register mtype_reg, Register mh_reg,
-                                Register temp_reg,
-                                Label& wrong_method_type);
-  void load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
-                                  Register temp_reg);
-  void jump_to_method_handle_entry(Register mh_reg, Register temp_reg, bool emit_delayed_nop = true);
   // offset relative to Gargs of argument at tos[arg_slot].
   // (arg_slot == 0 means the last argument, not the first).
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot,
@@ -2590,7 +2589,7 @@ public:
                                      int extra_slot_offset = 0);
   // Address of Gargs and argument_offset.
   Address            argument_address(RegisterOrConstant arg_slot,
-                                      Register temp_reg,
+                                      Register temp_reg = noreg,
                                       int extra_slot_offset = 0);
 
   // Stack overflow checking

@@ -73,7 +73,7 @@ ifeq ($(ARCH_DATA_MODEL),64)
 else ifeq ($(ARCH),universal)
   MAX_VM_MEMORY = 1024
 else
-  MAX_VM_MEMORY = 612
+  MAX_VM_MEMORY = 768
 endif
 
 # List of all possible directories for javadoc to look for sources

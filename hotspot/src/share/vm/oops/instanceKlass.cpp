@@ -2429,6 +2429,22 @@ void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
   } else if (java_lang_boxing_object::is_instance(obj)) {
     st->print(" = ");
     java_lang_boxing_object::print(obj, st);
+  } else if (as_klassOop() == SystemDictionary::LambdaForm_klass()) {
+    oop vmentry = java_lang_invoke_LambdaForm::vmentry(obj);
+    if (vmentry != NULL) {
+      st->print(" => ");
+      vmentry->print_value_on(st);
+    }
+  } else if (as_klassOop() == SystemDictionary::MemberName_klass()) {
+    oop vmtarget = java_lang_invoke_MemberName::vmtarget(obj);
+    if (vmtarget != NULL) {
+      st->print(" = ");
+      vmtarget->print_value_on(st);
+    } else {
+      java_lang_invoke_MemberName::clazz(obj)->print_value_on(st);
+      st->print(".");
+      java_lang_invoke_MemberName::name(obj)->print_value_on(st);
+    }
   }
 }
 

@@ -59,13 +59,13 @@ void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_met
 }
 #endif
 
-CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual,
+CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool call_is_virtual,
                                        JVMState* jvms, bool allow_inline,
                                        float prof_factor, bool allow_intrinsics) {
   ciMethod*       caller   = jvms->method();
   int             bci      = jvms->bci();
   Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
-  guarantee(call_method != NULL, "failed method resolution");
+  guarantee(callee != NULL, "failed method resolution");
 
   // Dtrace currently doesn't work unless all calls are vanilla
   if (env()->dtrace_method_probes()) {
@@ -91,7 +91,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
     int rid = (receiver_count >= 0)? log->identify(profile.receiver(0)): -1;
     int r2id = (rid != -1 && profile.has_receiver(1))? log->identify(profile.receiver(1)):-1;
     log->begin_elem("call method='%d' count='%d' prof_factor='%g'",
-                    log->identify(call_method), site_count, prof_factor);
+                    log->identify(callee), site_count, prof_factor);
     if (call_is_virtual)  log->print(" virtual='1'");
     if (allow_inline)     log->print(" inline='1'");
     if (receiver_count >= 0) {
@@ -109,7 +109,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   // We do this before the strict f.p. check below because the
   // intrinsics handle strict f.p. correctly.
   if (allow_inline && allow_intrinsics) {
-    CallGenerator* cg = find_intrinsic(call_method, call_is_virtual);
+    CallGenerator* cg = find_intrinsic(callee, call_is_virtual);
     if (cg != NULL)  return cg;
   }
 
@@ -117,19 +117,12 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   // NOTE: This must happen before normal inlining logic below since
   // MethodHandle.invoke* are native methods which obviously don't
   // have bytecodes and so normal inlining fails.
-  if (call_method->is_method_handle_invoke()) {
-    if (bytecode != Bytecodes::_invokedynamic) {
-      GraphKit kit(jvms);
-      Node* method_handle = kit.argument(0);
-      return CallGenerator::for_method_handle_call(method_handle, jvms, caller, call_method, profile);
-    }
-    else {
-      return CallGenerator::for_invokedynamic_call(jvms, caller, call_method, profile);
-    }
+  if (callee->is_method_handle_intrinsic()) {
+    return CallGenerator::for_method_handle_call(jvms, caller, callee);
   }
 
   // Do not inline strict fp into non-strict code, or the reverse
-  if (caller->is_strict() ^ call_method->is_strict()) {
+  if (caller->is_strict() ^ callee->is_strict()) {
     allow_inline = false;
   }
 
@@ -155,26 +148,26 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
       }
       WarmCallInfo scratch_ci;
       if (!UseOldInlining)
-        scratch_ci.init(jvms, call_method, profile, prof_factor);
-      WarmCallInfo* ci = ilt->ok_to_inline(call_method, jvms, profile, &scratch_ci);
+        scratch_ci.init(jvms, callee, profile, prof_factor);
+      WarmCallInfo* ci = ilt->ok_to_inline(callee, jvms, profile, &scratch_ci);
       assert(ci != &scratch_ci, "do not let this pointer escape");
       bool allow_inline   = (ci != NULL && !ci->is_cold());
       bool require_inline = (allow_inline && ci->is_hot());
 
       if (allow_inline) {
-        CallGenerator* cg = CallGenerator::for_inline(call_method, expected_uses);
-        if (require_inline && cg != NULL && should_delay_inlining(call_method, jvms)) {
+        CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
+        if (require_inline && cg != NULL && should_delay_inlining(callee, jvms)) {
           // Delay the inlining of this method to give us the
           // opportunity to perform some high level optimizations
           // first.
-          return CallGenerator::for_late_inline(call_method, cg);
+          return CallGenerator::for_late_inline(callee, cg);
         }
         if (cg == NULL) {
           // Fall through.
         } else if (require_inline || !InlineWarmCalls) {
           return cg;
         } else {
-          CallGenerator* cold_cg = call_generator(call_method, vtable_index, call_is_virtual, jvms, false, prof_factor);
+          CallGenerator* cold_cg = call_generator(callee, vtable_index, call_is_virtual, jvms, false, prof_factor);
           return CallGenerator::for_warm_call(ci, cold_cg, cg);
         }
       }
@@ -189,7 +182,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
           (profile.morphism() == 2 && UseBimorphicInlining)) {
         // receiver_method = profile.method();
         // Profiles do not suggest methods now.  Look it up in the major receiver.
-        receiver_method = call_method->resolve_invoke(jvms->method()->holder(),
+        receiver_method = callee->resolve_invoke(jvms->method()->holder(),
                                                       profile.receiver(0));
       }
       if (receiver_method != NULL) {
@@ -201,7 +194,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
           CallGenerator* next_hit_cg = NULL;
           ciMethod* next_receiver_method = NULL;
           if (profile.morphism() == 2 && UseBimorphicInlining) {
-            next_receiver_method = call_method->resolve_invoke(jvms->method()->holder(),
+            next_receiver_method = callee->resolve_invoke(jvms->method()->holder(),
                                                                profile.receiver(1));
             if (next_receiver_method != NULL) {
               next_hit_cg = this->call_generator(next_receiver_method,
@@ -224,12 +217,12 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
              ) {
             // Generate uncommon trap for class check failure path
             // in case of monomorphic or bimorphic virtual call site.
-            miss_cg = CallGenerator::for_uncommon_trap(call_method, reason,
+            miss_cg = CallGenerator::for_uncommon_trap(callee, reason,
                         Deoptimization::Action_maybe_recompile);
           } else {
             // Generate virtual call for class check failure path
             // in case of polymorphic virtual call site.
-            miss_cg = CallGenerator::for_virtual_call(call_method, vtable_index);
+            miss_cg = CallGenerator::for_virtual_call(callee, vtable_index);
           }
           if (miss_cg != NULL) {
             if (next_hit_cg != NULL) {
@@ -252,11 +245,11 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   // There was no special inlining tactic, or it bailed out.
   // Use a more generic tactic, like a simple call.
   if (call_is_virtual) {
-    return CallGenerator::for_virtual_call(call_method, vtable_index);
+    return CallGenerator::for_virtual_call(callee, vtable_index);
   } else {
     // Class Hierarchy Analysis or Type Profile reveals a unique target,
     // or it is a static or special call.
-    return CallGenerator::for_direct_call(call_method, should_delay_inlining(call_method, jvms));
+    return CallGenerator::for_direct_call(callee, should_delay_inlining(callee, jvms));
   }
 }
 
@@ -348,39 +341,47 @@ void Parse::do_call() {
   kill_dead_locals();
 
   // Set frequently used booleans
-  bool is_virtual = bc() == Bytecodes::_invokevirtual;
-  bool is_virtual_or_interface = is_virtual || bc() == Bytecodes::_invokeinterface;
-  bool has_receiver = is_virtual_or_interface || bc() == Bytecodes::_invokespecial;
-  bool is_invokedynamic = bc() == Bytecodes::_invokedynamic;
+  const bool is_virtual = bc() == Bytecodes::_invokevirtual;
+  const bool is_virtual_or_interface = is_virtual || bc() == Bytecodes::_invokeinterface;
+  const bool has_receiver = is_virtual_or_interface || bc() == Bytecodes::_invokespecial;
 
   // Find target being called
   bool             will_link;
-  ciMethod*        dest_method   = iter().get_method(will_link);
-  ciInstanceKlass* holder_klass  = dest_method->holder();
-  ciKlass* holder = iter().get_declared_method_holder();
+  ciSignature*     declared_signature = NULL;
+  ciMethod*        orig_callee  = iter().get_method(will_link, &declared_signature);  // callee in the bytecode
+  ciInstanceKlass* holder_klass = orig_callee->holder();
+  ciKlass*         holder       = iter().get_declared_method_holder();
   ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
-
-  int nargs = dest_method->arg_size();
-  if (is_invokedynamic)  nargs -= 1;
+  assert(declared_signature != NULL, "cannot be null");
 
   // uncommon-trap when callee is unloaded, uninitialized or will not link
   // bailout when too many arguments for register representation
-  if (!will_link || can_not_compile_call_site(dest_method, klass)) {
+  if (!will_link || can_not_compile_call_site(orig_callee, klass)) {
 #ifndef PRODUCT
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name(); tty->print_cr(" can not compile call at bci %d to:", bci());
-      dest_method->print_name(); tty->cr();
+      orig_callee->print_name(); tty->cr();
     }
 #endif
     return;
   }
   assert(holder_klass->is_loaded(), "");
-  assert((dest_method->is_static() || is_invokedynamic) == !has_receiver , "must match bc");
+  //assert((bc_callee->is_static() || is_invokedynamic) == !has_receiver , "must match bc");  // XXX invokehandle (cur_bc_raw)
   // Note: this takes into account invokeinterface of methods declared in java/lang/Object,
   // which should be invokevirtuals but according to the VM spec may be invokeinterfaces
   assert(holder_klass->is_interface() || holder_klass->super() == NULL || (bc() != Bytecodes::_invokeinterface), "must match bc");
   // Note:  In the absence of miranda methods, an abstract class K can perform
   // an invokevirtual directly on an interface method I.m if K implements I.
+
+  const int nargs = orig_callee->arg_size();
+
+  // Push appendix argument (MethodType, CallSite, etc.), if one.
+  if (iter().has_appendix()) {
+    ciObject* appendix_arg = iter().get_appendix();
+    const TypeOopPtr* appendix_arg_type = TypeOopPtr::make_from_constant(appendix_arg);
+    Node* appendix_arg_node = _gvn.makecon(appendix_arg_type);
+    push(appendix_arg_node);
+  }
 
   // ---------------------
   // Does Class Hierarchy Analysis reveal only a single target of a v-call?
@@ -392,21 +393,21 @@ void Parse::do_call() {
   // Choose call strategy.
   bool call_is_virtual = is_virtual_or_interface;
   int vtable_index = methodOopDesc::invalid_vtable_index;
-  ciMethod* call_method = dest_method;
+  ciMethod* callee = orig_callee;
 
   // Try to get the most accurate receiver type
   if (is_virtual_or_interface) {
     Node*             receiver_node = stack(sp() - nargs);
     const TypeOopPtr* receiver_type = _gvn.type(receiver_node)->isa_oopptr();
-    ciMethod* optimized_virtual_method = optimize_inlining(method(), bci(), klass, dest_method, receiver_type);
+    ciMethod* optimized_virtual_method = optimize_inlining(method(), bci(), klass, orig_callee, receiver_type);
 
     // Have the call been sufficiently improved such that it is no longer a virtual?
     if (optimized_virtual_method != NULL) {
-      call_method     = optimized_virtual_method;
+      callee          = optimized_virtual_method;
       call_is_virtual = false;
-    } else if (!UseInlineCaches && is_virtual && call_method->is_loaded()) {
+    } else if (!UseInlineCaches && is_virtual && callee->is_loaded()) {
       // We can make a vtable call at this site
-      vtable_index = call_method->resolve_vtable_index(method()->holder(), klass);
+      vtable_index = callee->resolve_vtable_index(method()->holder(), klass);
     }
   }
 
@@ -416,22 +417,25 @@ void Parse::do_call() {
   bool try_inline = (C->do_inlining() || InlineAccessors);
 
   // ---------------------
-  inc_sp(- nargs);              // Temporarily pop args for JVM state of call
+  dec_sp(nargs);              // Temporarily pop args for JVM state of call
   JVMState* jvms = sync_jvms();
 
   // ---------------------
   // Decide call tactic.
   // This call checks with CHA, the interpreter profile, intrinsics table, etc.
   // It decides whether inlining is desirable or not.
-  CallGenerator* cg = C->call_generator(call_method, vtable_index, call_is_virtual, jvms, try_inline, prof_factor());
+  CallGenerator* cg = C->call_generator(callee, vtable_index, call_is_virtual, jvms, try_inline, prof_factor());
+
+  // NOTE:  Don't use orig_callee and callee after this point!  Use cg->method() instead.
+  orig_callee = callee = NULL;
 
   // ---------------------
   // Round double arguments before call
-  round_double_arguments(dest_method);
+  round_double_arguments(cg->method());
 
 #ifndef PRODUCT
   // bump global counters for calls
-  count_compiled_calls(false/*at_method_entry*/, cg->is_inline());
+  count_compiled_calls(/*at_method_entry*/ false, cg->is_inline());
 
   // Record first part of parsing work for this call
   parse_histogram()->record_change();
@@ -447,8 +451,8 @@ void Parse::do_call() {
   // because exceptions don't return to the call site.)
   profile_call(receiver);
 
-  JVMState* new_jvms;
-  if ((new_jvms = cg->generate(jvms)) == NULL) {
+  JVMState* new_jvms = cg->generate(jvms);
+  if (new_jvms == NULL) {
     // When inlining attempt fails (e.g., too many arguments),
     // it may contaminate the current compile state, making it
     // impossible to pull back and try again.  Once we call
@@ -460,7 +464,7 @@ void Parse::do_call() {
     // the call site, perhaps because it did not match a pattern the
     // intrinsic was expecting to optimize. Should always be possible to
     // get a normal java call that may inline in that case
-    cg = C->call_generator(call_method, vtable_index, call_is_virtual, jvms, try_inline, prof_factor(), /* allow_intrinsics= */ false);
+    cg = C->call_generator(cg->method(), vtable_index, call_is_virtual, jvms, try_inline, prof_factor(), /* allow_intrinsics= */ false);
     if ((new_jvms = cg->generate(jvms)) == NULL) {
       guarantee(failing(), "call failed to generate:  calls should work");
       return;
@@ -469,8 +473,8 @@ void Parse::do_call() {
 
   if (cg->is_inline()) {
     // Accumulate has_loops estimate
-    C->set_has_loops(C->has_loops() || call_method->has_loops());
-    C->env()->notice_inlined_method(call_method);
+    C->set_has_loops(C->has_loops() || cg->method()->has_loops());
+    C->env()->notice_inlined_method(cg->method());
   }
 
   // Reset parser state from [new_]jvms, which now carries results of the call.
@@ -492,20 +496,72 @@ void Parse::do_call() {
     }
 
     // Round double result after a call from strict to non-strict code
-    round_double_result(dest_method);
+    round_double_result(cg->method());
+
+    ciType* rtype = cg->method()->return_type();
+    if (Bytecodes::has_optional_appendix(iter().cur_bc_raw())) {
+      // Be careful here with return types.
+      ciType* ctype = declared_signature->return_type();
+      if (ctype != rtype) {
+        BasicType rt = rtype->basic_type();
+        BasicType ct = ctype->basic_type();
+        Node* retnode = peek();
+        if (ct == T_VOID) {
+          // It's OK for a method  to return a value that is discarded.
+          // The discarding does not require any special action from the caller.
+          // The Java code knows this, at VerifyType.isNullConversion.
+          pop_node(rt);  // whatever it was, pop it
+          retnode = top();
+        } else if (rt == T_INT || is_subword_type(rt)) {
+          // FIXME: This logic should be factored out.
+          if (ct == T_BOOLEAN) {
+            retnode = _gvn.transform( new (C, 3) AndINode(retnode, intcon(0x1)) );
+          } else if (ct == T_CHAR) {
+            retnode = _gvn.transform( new (C, 3) AndINode(retnode, intcon(0xFFFF)) );
+          } else if (ct == T_BYTE) {
+            retnode = _gvn.transform( new (C, 3) LShiftINode(retnode, intcon(24)) );
+            retnode = _gvn.transform( new (C, 3) RShiftINode(retnode, intcon(24)) );
+          } else if (ct == T_SHORT) {
+            retnode = _gvn.transform( new (C, 3) LShiftINode(retnode, intcon(16)) );
+            retnode = _gvn.transform( new (C, 3) RShiftINode(retnode, intcon(16)) );
+          } else {
+            assert(ct == T_INT, err_msg_res("rt=%s, ct=%s", type2name(rt), type2name(ct)));
+          }
+        } else if (rt == T_OBJECT || rt == T_ARRAY) {
+          assert(ct == T_OBJECT || ct == T_ARRAY, err_msg_res("rt=%s, ct=%s", type2name(rt), type2name(ct)));
+          if (ctype->is_loaded()) {
+            const TypeOopPtr* arg_type = TypeOopPtr::make_from_klass(rtype->as_klass());
+            const Type*       sig_type = TypeOopPtr::make_from_klass(ctype->as_klass());
+            if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
+              Node* cast_obj = _gvn.transform(new (C, 2) CheckCastPPNode(control(), retnode, sig_type));
+              pop();
+              push(cast_obj);
+            }
+          }
+        } else {
+          assert(ct == rt, err_msg_res("unexpected mismatch rt=%d, ct=%d", rt, ct));
+          // push a zero; it's better than getting an oop/int mismatch
+          retnode = pop_node(rt);
+          retnode = zerocon(ct);
+          push_node(ct, retnode);
+        }
+        // Now that the value is well-behaved, continue with the call-site type.
+        rtype = ctype;
+      }
+    }
 
     // If the return type of the method is not loaded, assert that the
     // value we got is a null.  Otherwise, we need to recompile.
-    if (!dest_method->return_type()->is_loaded()) {
+    if (!rtype->is_loaded()) {
 #ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
         method()->print_name(); tty->print_cr(" asserting nullness of result at bci: %d", bci());
-        dest_method->print_name(); tty->cr();
+        cg->method()->print_name(); tty->cr();
       }
 #endif
       if (C->log() != NULL) {
         C->log()->elem("assert_null reason='return' klass='%d'",
-                       C->log()->identify(dest_method->return_type()));
+                       C->log()->identify(rtype));
       }
       // If there is going to be a trap, put it at the next bytecode:
       set_bci(iter().next_bci());
@@ -585,8 +641,8 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
 #ifndef PRODUCT
       // We do not expect the same handler bci to take both cold unloaded
       // and hot loaded exceptions.  But, watch for it.
-      if (extype->is_loaded()) {
-        tty->print_cr("Warning: Handler @%d takes mixed loaded/unloaded exceptions in ");
+      if ((Verbose || WizardMode) && extype->is_loaded()) {
+        tty->print("Warning: Handler @%d takes mixed loaded/unloaded exceptions in ", bci());
         method()->print_name(); tty->cr();
       } else if (PrintOpto && (Verbose || WizardMode)) {
         tty->print("Bailing out on unloaded exception type ");

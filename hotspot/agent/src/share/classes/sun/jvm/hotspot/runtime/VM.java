@@ -87,13 +87,13 @@ public class VM {
   private StubRoutines stubRoutines;
   private Bytes        bytes;
 
-  private RicochetBlob ricochetBlob;
-
   /** Flags indicating whether we are attached to a core, C1, or C2 build */
   private boolean      usingClientCompiler;
   private boolean      usingServerCompiler;
   /** Flag indicating whether UseTLAB is turned on */
   private boolean      useTLAB;
+  /** Flag indicating whether invokedynamic support is on */
+  private boolean      enableInvokeDynamic;
   /** alignment constants */
   private boolean      isLP64;
   private int          bytesPerLong;
@@ -319,6 +319,7 @@ public class VM {
     }
 
     useTLAB = (db.lookupIntConstant("UseTLAB").intValue() != 0);
+    enableInvokeDynamic = (db.lookupIntConstant("EnableInvokeDynamic").intValue() != 0);
 
     if (debugger != null) {
       isLP64 = debugger.getMachineDescription().isLP64();
@@ -554,6 +555,10 @@ public class VM {
     return useTLAB;
   }
 
+  public boolean getEnableInvokeDynamic() {
+    return enableInvokeDynamic;
+  }
+
   public TypeDataBase getTypeDataBase() {
     return db;
   }
@@ -626,18 +631,6 @@ public class VM {
       stubRoutines = new StubRoutines();
     }
     return stubRoutines;
-  }
-
-  public RicochetBlob ricochetBlob() {
-    if (ricochetBlob == null) {
-      Type ricochetType  = db.lookupType("SharedRuntime");
-      AddressField ricochetBlobAddress = ricochetType.getAddressField("_ricochet_blob");
-      Address addr = ricochetBlobAddress.getValue();
-      if (addr != null) {
-        ricochetBlob = new RicochetBlob(addr);
-      }
-    }
-    return ricochetBlob;
   }
 
   public VMRegImpl getVMRegImplInfo() {

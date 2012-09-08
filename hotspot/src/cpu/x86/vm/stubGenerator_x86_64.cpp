@@ -3102,14 +3102,6 @@ class StubGenerator: public StubCodeGenerator {
 
     StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
 
-    // Build this early so it's available for the interpreter.  Stub
-    // expects the required and actual types as register arguments in
-    // j_rarg0 and j_rarg1 respectively.
-    StubRoutines::_throw_WrongMethodTypeException_entry =
-      generate_throw_exception("WrongMethodTypeException throw_exception",
-                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_WrongMethodTypeException),
-                               rax, rcx);
-
     // Build this early so it's available for the interpreter.
     StubRoutines::_throw_StackOverflowError_entry =
       generate_throw_exception("StackOverflowError throw_exception",

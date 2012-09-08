@@ -36,7 +36,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "prims/jvm.h"
-#include "prims/methodHandleWalk.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -500,11 +499,6 @@ bool Reflection::can_relax_access_check_for(
   // because one is inside the other.
   if (under_host_klass(accessor_ik, accessee) ||
       under_host_klass(accessee_ik, accessor))
-    return true;
-
-  // Adapter frames can access anything.
-  if (MethodHandleCompiler::klass_is_method_handle_adapter_holder(accessor))
-    // This is an internal adapter frame from the MethodHandleCompiler.
     return true;
 
   if (RelaxAccessControlCheck ||

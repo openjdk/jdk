@@ -769,38 +769,36 @@ int ciMethod::scale_count(int count, float prof_factor) {
 // invokedynamic support
 
 // ------------------------------------------------------------------
-// ciMethod::is_method_handle_invoke
+// ciMethod::is_method_handle_intrinsic
 //
-// Return true if the method is an instance of one of the two
-// signature-polymorphic MethodHandle methods, invokeExact or invokeGeneric.
-bool ciMethod::is_method_handle_invoke() const {
-  if (!is_loaded()) {
-    bool flag = (holder()->name() == ciSymbol::java_lang_invoke_MethodHandle() &&
-                 methodOopDesc::is_method_handle_invoke_name(name()->sid()));
-    return flag;
-  }
-  VM_ENTRY_MARK;
-  return get_methodOop()->is_method_handle_invoke();
+// Return true if the method is an instance of the JVM-generated
+// signature-polymorphic MethodHandle methods, _invokeBasic, _linkToVirtual, etc.
+bool ciMethod::is_method_handle_intrinsic() const {
+  vmIntrinsics::ID iid = _intrinsic_id;  // do not check if loaded
+  return (MethodHandles::is_signature_polymorphic(iid) &&
+          MethodHandles::is_signature_polymorphic_intrinsic(iid));
 }
 
 // ------------------------------------------------------------------
-// ciMethod::is_method_handle_adapter
+// ciMethod::is_compiled_lambda_form
 //
 // Return true if the method is a generated MethodHandle adapter.
-// These are built by MethodHandleCompiler.
-bool ciMethod::is_method_handle_adapter() const {
-  if (!is_loaded())  return false;
-  VM_ENTRY_MARK;
-  return get_methodOop()->is_method_handle_adapter();
+// These are built by Java code.
+bool ciMethod::is_compiled_lambda_form() const {
+  vmIntrinsics::ID iid = _intrinsic_id;  // do not check if loaded
+  return iid == vmIntrinsics::_compiledLambdaForm;
 }
 
-ciInstance* ciMethod::method_handle_type() {
-  check_is_loaded();
-  VM_ENTRY_MARK;
-  oop mtype = get_methodOop()->method_handle_type();
-  return CURRENT_THREAD_ENV->get_object(mtype)->as_instance();
+// ------------------------------------------------------------------
+// ciMethod::has_member_arg
+//
+// Return true if the method is a linker intrinsic like _linkToVirtual.
+// These are built by the JVM.
+bool ciMethod::has_member_arg() const {
+  vmIntrinsics::ID iid = _intrinsic_id;  // do not check if loaded
+  return (MethodHandles::is_signature_polymorphic(iid) &&
+          MethodHandles::has_member_arg(iid));
 }
-
 
 // ------------------------------------------------------------------
 // ciMethod::ensure_method_data
@@ -1024,28 +1022,13 @@ int ciMethod::highest_osr_comp_level() {
 // ------------------------------------------------------------------
 // ciMethod::code_size_for_inlining
 //
-// Code size for inlining decisions.
-//
-// Don't fully count method handle adapters against inlining budgets:
-// the metric we use here is the number of call sites in the adapter
-// as they are probably the instructions which generate some code.
+// Code size for inlining decisions.  This method returns a code
+// size of 1 for methods which has the ForceInline annotation.
 int ciMethod::code_size_for_inlining() {
   check_is_loaded();
-
-  // Method handle adapters
-  if (is_method_handle_adapter()) {
-    // Count call sites
-    int call_site_count = 0;
-    ciBytecodeStream iter(this);
-    while (iter.next() != ciBytecodeStream::EOBC()) {
-      if (Bytecodes::is_invoke(iter.cur_bc())) {
-        call_site_count++;
-      }
-    }
-    return call_site_count;
+  if (get_methodOop()->force_inline()) {
+    return 1;
   }
-
-  // Normal method
   return code_size();
 }
 
@@ -1127,7 +1110,8 @@ bool ciMethod::check_call(int refinfo_index, bool is_static) const {
     constantPoolHandle pool (THREAD, get_methodOop()->constants());
     methodHandle spec_method;
     KlassHandle  spec_klass;
-    LinkResolver::resolve_method(spec_method, spec_klass, pool, refinfo_index, THREAD);
+    Bytecodes::Code code = (is_static ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual);
+    LinkResolver::resolve_method_statically(spec_method, spec_klass, code, pool, refinfo_index, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       return false;
@@ -1207,8 +1191,16 @@ void ciMethod::print_name(outputStream* st) {
 //
 // Print the name of this method, without signature.
 void ciMethod::print_short_name(outputStream* st) {
-  check_is_loaded();
-  GUARDED_VM_ENTRY(get_methodOop()->print_short_name(st);)
+  if (is_loaded()) {
+    GUARDED_VM_ENTRY(get_methodOop()->print_short_name(st););
+  } else {
+    // Fall back if method is not loaded.
+    holder()->print_name_on(st);
+    st->print("::");
+    name()->print_symbol_on(st);
+    if (WizardMode)
+      signature()->as_symbol()->print_symbol_on(st);
+  }
 }
 
 // ------------------------------------------------------------------
@@ -1224,7 +1216,9 @@ void ciMethod::print_impl(outputStream* st) {
   st->print(" signature=");
   signature()->as_symbol()->print_symbol_on(st);
   if (is_loaded()) {
-    st->print(" loaded=true flags=");
+    st->print(" loaded=true");
+    st->print(" arg_size=%d", arg_size());
+    st->print(" flags=");
     flags().print_member_flags(st);
   } else {
     st->print(" loaded=false");

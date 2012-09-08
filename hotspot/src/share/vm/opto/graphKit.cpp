@@ -965,7 +965,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
   assert(call->jvms()->debug_depth() == call->req() - non_debug_edges, "");
 }
 
-bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
+bool GraphKit::compute_stack_effects(int& inputs, int& depth, bool for_parse) {
   Bytecodes::Code code = java_bc();
   if (code == Bytecodes::_wide) {
     code = method()->java_code_at_bci(bci() + 1);
@@ -1006,11 +1006,11 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_putfield:
     {
       bool is_get = (depth >= 0), is_static = (depth & 1);
-      bool ignore;
       ciBytecodeStream iter(method());
       iter.reset_to_bci(bci());
       iter.next();
-      ciField* field = iter.get_field(ignore);
+      bool ignored_will_link;
+      ciField* field = iter.get_field(ignored_will_link);
       int      size  = field->type()->size();
       inputs  = (is_static ? 0 : 1);
       if (is_get) {
@@ -1028,16 +1028,27 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_invokedynamic:
   case Bytecodes::_invokeinterface:
     {
-      bool ignore;
       ciBytecodeStream iter(method());
       iter.reset_to_bci(bci());
       iter.next();
-      ciMethod* method = iter.get_method(ignore);
+      bool ignored_will_link;
+      ciSignature* declared_signature = NULL;
+      ciMethod* callee = iter.get_method(ignored_will_link, &declared_signature);
+      assert(declared_signature != NULL, "cannot be null");
       // (Do not use ciMethod::arg_size(), because
       // it might be an unloaded method, which doesn't
       // know whether it is static or not.)
-      inputs = method->invoke_arg_size(code);
-      int size = method->return_type()->size();
+      if (for_parse) {
+        // Case 1: When called from parse we are *before* the invoke (in the
+        //         caller) and need to to adjust the inputs by an appendix
+        //         argument that will be pushed implicitly.
+        inputs = callee->invoke_arg_size(code) - (iter.has_appendix() ? 1 : 0);
+      } else {
+        // Case 2: Here we are *after* the invoke (in the callee) and need to
+        //         remove any appendix arguments that were popped.
+        inputs = callee->invoke_arg_size(code) - (callee->has_member_arg() ? 1 : 0);
+      }
+      int size = declared_signature->return_type()->size();
       depth = size - inputs;
     }
     break;
@@ -1371,7 +1382,6 @@ void GraphKit::replace_in_map(Node* old, Node* neww) {
   // The expense of doing this is that the PreserveJVMState class
   // would have to preserve caller states too, with a deep copy.
 }
-
 
 
 //=============================================================================

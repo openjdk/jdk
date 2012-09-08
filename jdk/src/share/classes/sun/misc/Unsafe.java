@@ -82,7 +82,7 @@ public final class Unsafe {
      */
     public static Unsafe getUnsafe() {
         Class<?> cc = sun.reflect.Reflection.getCallerClass(2);
-        if (cc.getClassLoader() != null)
+        if (!VM.isSystemDomainLoader(cc.getClassLoader()))
             throw new SecurityException("Unsafe");
         return theUnsafe;
     }
@@ -676,6 +676,14 @@ public final class Unsafe {
      * this class.
      */
     public native Object staticFieldBase(Field f);
+
+    /**
+     * Detect if the given class may need to be initialized. This is often
+     * needed in conjunction with obtaining the static field base of a
+     * class.
+     * @return false only if a call to {@code ensureClassInitialized} would have no effect
+     */
+    public native boolean shouldBeInitialized(Class<?> c);
 
     /**
      * Ensure the given class has been initialized. This is often

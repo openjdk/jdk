@@ -645,7 +645,9 @@ void ciTypeFlow::StateVector::do_getstatic(ciBytecodeStream* str) {
 void ciTypeFlow::StateVector::do_invoke(ciBytecodeStream* str,
                                         bool has_receiver) {
   bool will_link;
-  ciMethod* method = str->get_method(will_link);
+  ciSignature* declared_signature = NULL;
+  ciMethod* callee = str->get_method(will_link, &declared_signature);
+  assert(declared_signature != NULL, "cannot be null");
   if (!will_link) {
     // We weren't able to find the method.
     if (str->cur_bc() == Bytecodes::_invokedynamic) {
@@ -654,14 +656,16 @@ void ciTypeFlow::StateVector::do_invoke(ciBytecodeStream* str,
            (Deoptimization::Reason_uninitialized,
             Deoptimization::Action_reinterpret));
     } else {
-      ciKlass* unloaded_holder = method->holder();
+      ciKlass* unloaded_holder = callee->holder();
       trap(str, unloaded_holder, str->get_method_holder_index());
     }
   } else {
-    ciSignature* signature = method->signature();
-    ciSignatureStream sigstr(signature);
-    int arg_size = signature->size();
-    int stack_base = stack_size() - arg_size;
+    // We are using the declared signature here because it might be
+    // different from the callee signature (Cf. invokedynamic and
+    // invokehandle).
+    ciSignatureStream sigstr(declared_signature);
+    const int arg_size = declared_signature->size();
+    const int stack_base = stack_size() - arg_size;
     int i = 0;
     for( ; !sigstr.at_return_type(); sigstr.next()) {
       ciType* type = sigstr.type();

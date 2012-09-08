@@ -44,6 +44,7 @@ public class ValueConversions {
     static {
         final Object[] values = { 255 };
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
                 public Void run() {
                     values[0] = Integer.getInteger(THIS_CLASS.getName()+".MAX_ARITY", 255);
                     return null;
@@ -118,42 +119,15 @@ public class ValueConversions {
         return primitiveConversion(Wrapper.DOUBLE, x, cast).doubleValue();
     }
 
-    /// Converting references to "raw" values.
-    /// A raw primitive value is always an int or long.
-
-    static int unboxByteRaw(Object x, boolean cast) {
-        return unboxByte(x, cast);
-    }
-
-    static int unboxShortRaw(Object x, boolean cast) {
-        return unboxShort(x, cast);
-    }
-
-    static int unboxBooleanRaw(Object x, boolean cast) {
-        return unboxBoolean(x, cast) ? 1 : 0;
-    }
-
-    static int unboxCharacterRaw(Object x, boolean cast) {
-        return unboxCharacter(x, cast);
-    }
-
-    static int unboxFloatRaw(Object x, boolean cast) {
-        return Float.floatToIntBits(unboxFloat(x, cast));
-    }
-
-    static long unboxDoubleRaw(Object x, boolean cast) {
-        return Double.doubleToRawLongBits(unboxDouble(x, cast));
-    }
-
-    private static MethodType unboxType(Wrapper wrap, boolean raw) {
-        return MethodType.methodType(rawWrapper(wrap, raw).primitiveType(), Object.class, boolean.class);
+    private static MethodType unboxType(Wrapper wrap) {
+        return MethodType.methodType(wrap.primitiveType(), Object.class, boolean.class);
     }
 
     private static final EnumMap<Wrapper, MethodHandle>[]
-            UNBOX_CONVERSIONS = newWrapperCaches(4);
+            UNBOX_CONVERSIONS = newWrapperCaches(2);
 
-    private static MethodHandle unbox(Wrapper wrap, boolean raw, boolean cast) {
-        EnumMap<Wrapper, MethodHandle> cache = UNBOX_CONVERSIONS[(cast?1:0)+(raw?2:0)];
+    private static MethodHandle unbox(Wrapper wrap, boolean cast) {
+        EnumMap<Wrapper, MethodHandle> cache = UNBOX_CONVERSIONS[(cast?1:0)];
         MethodHandle mh = cache.get(wrap);
         if (mh != null) {
             return mh;
@@ -163,19 +137,15 @@ public class ValueConversions {
             case OBJECT:
                 mh = IDENTITY; break;
             case VOID:
-                mh = raw ? ALWAYS_ZERO : IGNORE; break;
-            case INT: case LONG:
-                // these guys don't need separate raw channels
-                if (raw)  mh = unbox(wrap, false, cast);
-                break;
+                mh = IGNORE; break;
         }
         if (mh != null) {
             cache.put(wrap, mh);
             return mh;
         }
         // look up the method
-        String name = "unbox" + wrap.simpleName() + (raw ? "Raw" : "");
-        MethodType type = unboxType(wrap, raw);
+        String name = "unbox" + wrap.wrapperSimpleName();
+        MethodType type = unboxType(wrap);
         try {
             mh = IMPL_LOOKUP.findStatic(THIS_CLASS, name, type);
         } catch (ReflectiveOperationException ex) {
@@ -187,35 +157,33 @@ public class ValueConversions {
             return mh;
         }
         throw new IllegalArgumentException("cannot find unbox adapter for " + wrap
-                + (cast ? " (cast)" : "") + (raw ? " (raw)" : ""));
+                + (cast ? " (cast)" : ""));
     }
 
     public static MethodHandle unboxCast(Wrapper type) {
-        return unbox(type, false, true);
-    }
-
-    public static MethodHandle unboxRaw(Wrapper type) {
-        return unbox(type, true, false);
+        return unbox(type, true);
     }
 
     public static MethodHandle unbox(Class<?> type) {
-        return unbox(Wrapper.forPrimitiveType(type), false, false);
+        return unbox(Wrapper.forPrimitiveType(type), false);
     }
 
     public static MethodHandle unboxCast(Class<?> type) {
-        return unbox(Wrapper.forPrimitiveType(type), false, true);
-    }
-
-    public static MethodHandle unboxRaw(Class<?> type) {
-        return unbox(Wrapper.forPrimitiveType(type), true, false);
+        return unbox(Wrapper.forPrimitiveType(type), true);
     }
 
     static private final Integer ZERO_INT = 0, ONE_INT = 1;
 
     /// Primitive conversions
+    /**
+     * Produce a Number which represents the given value {@code x}
+     * according to the primitive type of the given wrapper {@code wrap}.
+     * Caller must invoke intValue, byteValue, longValue (etc.) on the result
+     * to retrieve the desired primitive value.
+     */
     public static Number primitiveConversion(Wrapper wrap, Object x, boolean cast) {
         // Maybe merge this code with Wrapper.convert/cast.
-        Number res = null;
+        Number res;
         if (x == null) {
             if (!cast)  return null;
             return ZERO_INT;
@@ -235,6 +203,27 @@ public class ValueConversions {
             // this will fail with the required ClassCastException:
             return (Number) wrap.wrapperType().cast(x);
         return res;
+    }
+
+    /**
+     * The JVM verifier allows boolean, byte, short, or char to widen to int.
+     * Support exactly this conversion, from a boxed value type Boolean,
+     * Byte, Short, Character, or Integer.
+     */
+    public static int widenSubword(Object x) {
+        if (x instanceof Integer)
+            return (int) x;
+        else if (x instanceof Boolean)
+            return fromBoolean((boolean) x);
+        else if (x instanceof Character)
+            return (char) x;
+        else if (x instanceof Short)
+            return (short) x;
+        else if (x instanceof Byte)
+            return (byte) x;
+        else
+            // Fail with a ClassCastException.
+            return (int) x;
     }
 
     /// Converting primitives to references
@@ -271,53 +260,17 @@ public class ValueConversions {
         return x;
     }
 
-    /// Converting raw primitives to references
-
-    static Byte boxByteRaw(int x) {
-        return boxByte((byte)x);
-    }
-
-    static Short boxShortRaw(int x) {
-        return boxShort((short)x);
-    }
-
-    static Boolean boxBooleanRaw(int x) {
-        return boxBoolean(x != 0);
-    }
-
-    static Character boxCharacterRaw(int x) {
-        return boxCharacter((char)x);
-    }
-
-    static Float boxFloatRaw(int x) {
-        return boxFloat(Float.intBitsToFloat(x));
-    }
-
-    static Double boxDoubleRaw(long x) {
-        return boxDouble(Double.longBitsToDouble(x));
-    }
-
-    // a raw void value is (arbitrarily) a garbage int
-    static Void boxVoidRaw(int x) {
-        return null;
-    }
-
-    private static MethodType boxType(Wrapper wrap, boolean raw) {
+    private static MethodType boxType(Wrapper wrap) {
         // be exact, since return casts are hard to compose
         Class<?> boxType = wrap.wrapperType();
-        return MethodType.methodType(boxType, rawWrapper(wrap, raw).primitiveType());
-    }
-
-    private static Wrapper rawWrapper(Wrapper wrap, boolean raw) {
-        if (raw)  return wrap.isDoubleWord() ? Wrapper.LONG : Wrapper.INT;
-        return wrap;
+        return MethodType.methodType(boxType, wrap.primitiveType());
     }
 
     private static final EnumMap<Wrapper, MethodHandle>[]
-            BOX_CONVERSIONS = newWrapperCaches(4);
+            BOX_CONVERSIONS = newWrapperCaches(2);
 
-    private static MethodHandle box(Wrapper wrap, boolean exact, boolean raw) {
-        EnumMap<Wrapper, MethodHandle> cache = BOX_CONVERSIONS[(exact?1:0)+(raw?2:0)];
+    private static MethodHandle box(Wrapper wrap, boolean exact) {
+        EnumMap<Wrapper, MethodHandle> cache = BOX_CONVERSIONS[(exact?1:0)];
         MethodHandle mh = cache.get(wrap);
         if (mh != null) {
             return mh;
@@ -327,11 +280,7 @@ public class ValueConversions {
             case OBJECT:
                 mh = IDENTITY; break;
             case VOID:
-                if (!raw)  mh = ZERO_OBJECT;
-                break;
-            case INT: case LONG:
-                // these guys don't need separate raw channels
-                if (raw)  mh = box(wrap, exact, false);
+                mh = ZERO_OBJECT;
                 break;
         }
         if (mh != null) {
@@ -339,8 +288,8 @@ public class ValueConversions {
             return mh;
         }
         // look up the method
-        String name = "box" + wrap.simpleName() + (raw ? "Raw" : "");
-        MethodType type = boxType(wrap, raw);
+        String name = "box" + wrap.wrapperSimpleName();
+        MethodType type = boxType(wrap);
         if (exact) {
             try {
                 mh = IMPL_LOOKUP.findStatic(THIS_CLASS, name, type);
@@ -348,171 +297,35 @@ public class ValueConversions {
                 mh = null;
             }
         } else {
-            mh = box(wrap, !exact, raw).asType(type.erase());
+            mh = box(wrap, !exact).asType(type.erase());
         }
         if (mh != null) {
             cache.put(wrap, mh);
             return mh;
         }
         throw new IllegalArgumentException("cannot find box adapter for "
-                + wrap + (exact ? " (exact)" : "") + (raw ? " (raw)" : ""));
+                + wrap + (exact ? " (exact)" : ""));
     }
 
     public static MethodHandle box(Class<?> type) {
         boolean exact = false;
         // e.g., boxShort(short)Short if exact,
         // e.g., boxShort(short)Object if !exact
-        return box(Wrapper.forPrimitiveType(type), exact, false);
-    }
-
-    public static MethodHandle boxRaw(Class<?> type) {
-        boolean exact = false;
-        // e.g., boxShortRaw(int)Short if exact
-        // e.g., boxShortRaw(int)Object if !exact
-        return box(Wrapper.forPrimitiveType(type), exact, true);
+        return box(Wrapper.forPrimitiveType(type), exact);
     }
 
     public static MethodHandle box(Wrapper type) {
         boolean exact = false;
-        return box(type, exact, false);
-    }
-
-    public static MethodHandle boxRaw(Wrapper type) {
-        boolean exact = false;
-        return box(type, exact, true);
-    }
-
-    /// Kludges for when raw values get accidentally boxed.
-
-    static int unboxRawInteger(Object x) {
-        if (x instanceof Integer)
-            return (int) x;
-        else
-            return (int) unboxLong(x, false);
-    }
-
-    static Integer reboxRawInteger(Object x) {
-        if (x instanceof Integer)
-            return (Integer) x;
-        else
-            return (int) unboxLong(x, false);
-    }
-
-    static Byte reboxRawByte(Object x) {
-        if (x instanceof Byte)  return (Byte) x;
-        return boxByteRaw(unboxRawInteger(x));
-    }
-
-    static Short reboxRawShort(Object x) {
-        if (x instanceof Short)  return (Short) x;
-        return boxShortRaw(unboxRawInteger(x));
-    }
-
-    static Boolean reboxRawBoolean(Object x) {
-        if (x instanceof Boolean)  return (Boolean) x;
-        return boxBooleanRaw(unboxRawInteger(x));
-    }
-
-    static Character reboxRawCharacter(Object x) {
-        if (x instanceof Character)  return (Character) x;
-        return boxCharacterRaw(unboxRawInteger(x));
-    }
-
-    static Float reboxRawFloat(Object x) {
-        if (x instanceof Float)  return (Float) x;
-        return boxFloatRaw(unboxRawInteger(x));
-    }
-
-    static Long reboxRawLong(Object x) {
-        return (Long) x;  //never a rebox
-    }
-
-    static Double reboxRawDouble(Object x) {
-        if (x instanceof Double)  return (Double) x;
-        return boxDoubleRaw(unboxLong(x, true));
-    }
-
-    private static MethodType reboxType(Wrapper wrap) {
-        Class<?> boxType = wrap.wrapperType();
-        return MethodType.methodType(boxType, Object.class);
-    }
-
-    private static final EnumMap<Wrapper, MethodHandle>[]
-            REBOX_CONVERSIONS = newWrapperCaches(1);
-
-    /**
-     * Because we normalize primitive types to reduce the number of signatures,
-     * primitives are sometimes manipulated under an "erased" type,
-     * either int (for types other than long/double) or long (for all types).
-     * When the erased primitive value is then boxed into an Integer or Long,
-     * the final boxed primitive is sometimes required.  This transformation
-     * is called a "rebox".  It takes an Integer or Long and produces some
-     * other boxed value, typed (inexactly) as an Object
-     */
-    public static MethodHandle rebox(Wrapper wrap) {
-        EnumMap<Wrapper, MethodHandle> cache = REBOX_CONVERSIONS[0];
-        MethodHandle mh = cache.get(wrap);
-        if (mh != null) {
-            return mh;
-        }
-        // slow path
-        switch (wrap) {
-            case OBJECT:
-                mh = IDENTITY; break;
-            case VOID:
-                throw new IllegalArgumentException("cannot rebox a void");
-        }
-        if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
-        }
-        // look up the method
-        String name = "reboxRaw" + wrap.simpleName();
-        MethodType type = reboxType(wrap);
-        try {
-            mh = IMPL_LOOKUP.findStatic(THIS_CLASS, name, type);
-            mh = mh.asType(IDENTITY.type());
-        } catch (ReflectiveOperationException ex) {
-            mh = null;
-        }
-        if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
-        }
-        throw new IllegalArgumentException("cannot find rebox adapter for " + wrap);
-    }
-
-    public static MethodHandle rebox(Class<?> type) {
-        return rebox(Wrapper.forPrimitiveType(type));
-    }
-
-    /// Width-changing conversions between int and long.
-
-    static long widenInt(int x) {
-        return (long) x;
-    }
-
-    static Long widenBoxedInt(Integer x) {
-        return (long)(int)x;
-    }
-
-    static int narrowLong(long x) {
-        return (int) x;
-    }
-
-    static Integer narrowBoxedLong(Long x) {
-        return (int)(long) x;
+        return box(type, exact);
     }
 
     /// Constant functions
 
     static void ignore(Object x) {
         // no value to return; this is an unbox of null
-        return;
     }
 
     static void empty() {
-        return;
     }
 
     static Object zeroObject() {
@@ -553,7 +366,7 @@ public class ValueConversions {
             case OBJECT:
             case INT: case LONG: case FLOAT: case DOUBLE:
                 try {
-                    mh = IMPL_LOOKUP.findStatic(THIS_CLASS, "zero"+wrap.simpleName(), type);
+                    mh = IMPL_LOOKUP.findStatic(THIS_CLASS, "zero"+wrap.wrapperSimpleName(), type);
                 } catch (ReflectiveOperationException ex) {
                     mh = null;
                 }
@@ -564,12 +377,9 @@ public class ValueConversions {
             return mh;
         }
 
-        // use the raw method
-        Wrapper rawWrap = wrap.rawPrimitive();
-        if (mh == null && rawWrap != wrap) {
-            mh = MethodHandles.explicitCastArguments(zeroConstantFunction(rawWrap), type);
-        }
-        if (mh != null) {
+        // use zeroInt and cast the result
+        if (wrap.isSubwordOrInt() && wrap != Wrapper.INT) {
+            mh = MethodHandles.explicitCastArguments(zeroConstantFunction(Wrapper.INT), type);
             cache.put(wrap, mh);
             return mh;
         }
@@ -579,29 +389,15 @@ public class ValueConversions {
     /// Converting references to references.
 
     /**
-     * Value-killing function.
-     * @param x an arbitrary reference value
-     * @return a null
-     */
-    static Object alwaysNull(Object x) {
-        return null;
-    }
-
-    /**
-     * Value-killing function.
-     * @param x an arbitrary reference value
-     * @return a zero
-     */
-    static int alwaysZero(Object x) {
-        return 0;
-    }
-
-    /**
      * Identity function.
      * @param x an arbitrary reference value
      * @return the same value x
      */
     static <T> T identity(T x) {
+        return x;
+    }
+
+    static <T> T[] identity(T[] x) {
         return x;
     }
 
@@ -657,31 +453,33 @@ public class ValueConversions {
         return t.cast(x);
     }
 
-    private static final MethodHandle IDENTITY, IDENTITY_I, IDENTITY_J, CAST_REFERENCE, ALWAYS_NULL, ALWAYS_ZERO, ZERO_OBJECT, IGNORE, EMPTY, NEW_ARRAY;
+    private static final MethodHandle IDENTITY, CAST_REFERENCE, ZERO_OBJECT, IGNORE, EMPTY,
+            ARRAY_IDENTITY, FILL_NEW_TYPED_ARRAY, FILL_NEW_ARRAY;
     static {
         try {
             MethodType idType = MethodType.genericMethodType(1);
             MethodType castType = idType.insertParameterTypes(0, Class.class);
-            MethodType alwaysZeroType = idType.changeReturnType(int.class);
             MethodType ignoreType = idType.changeReturnType(void.class);
             MethodType zeroObjectType = MethodType.genericMethodType(0);
             IDENTITY = IMPL_LOOKUP.findStatic(THIS_CLASS, "identity", idType);
-            IDENTITY_I = IMPL_LOOKUP.findStatic(THIS_CLASS, "identity", MethodType.methodType(int.class, int.class));
-            IDENTITY_J = IMPL_LOOKUP.findStatic(THIS_CLASS, "identity", MethodType.methodType(long.class, long.class));
             //CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
             CAST_REFERENCE = IMPL_LOOKUP.findStatic(THIS_CLASS, "castReference", castType);
-            ALWAYS_NULL = IMPL_LOOKUP.findStatic(THIS_CLASS, "alwaysNull", idType);
-            ALWAYS_ZERO = IMPL_LOOKUP.findStatic(THIS_CLASS, "alwaysZero", alwaysZeroType);
             ZERO_OBJECT = IMPL_LOOKUP.findStatic(THIS_CLASS, "zeroObject", zeroObjectType);
             IGNORE = IMPL_LOOKUP.findStatic(THIS_CLASS, "ignore", ignoreType);
             EMPTY = IMPL_LOOKUP.findStatic(THIS_CLASS, "empty", ignoreType.dropParameterTypes(0, 1));
-            NEW_ARRAY = IMPL_LOOKUP.findStatic(THIS_CLASS, "newArray", MethodType.methodType(Object[].class, int.class));
+            ARRAY_IDENTITY = IMPL_LOOKUP.findStatic(THIS_CLASS, "identity", MethodType.methodType(Object[].class, Object[].class));
+            FILL_NEW_ARRAY = IMPL_LOOKUP
+                    .findStatic(THIS_CLASS, "fillNewArray",
+                          MethodType.methodType(Object[].class, Integer.class, Object[].class));
+            FILL_NEW_TYPED_ARRAY = IMPL_LOOKUP
+                    .findStatic(THIS_CLASS, "fillNewTypedArray",
+                          MethodType.methodType(Object[].class, Object[].class, Integer.class, Object[].class));
         } catch (NoSuchMethodException | IllegalAccessException ex) {
             throw new InternalError("uncaught exception", ex);
         }
     }
 
-    // Varargs methods need to be in a separately initialized class, to bootstrapping problems.
+    // Varargs methods need to be in a separately initialized class, to avoid bootstrapping problems.
     static class LazyStatics {
         private static final MethodHandle COPY_AS_REFERENCE_ARRAY, COPY_AS_PRIMITIVE_ARRAY, MAKE_LIST;
         static {
@@ -696,35 +494,64 @@ public class ValueConversions {
         }
     }
 
+    static MethodHandle collectArguments(MethodHandle mh, int pos, MethodHandle collector) {
+        // FIXME: API needs public MHs.collectArguments.
+        // Should be:
+        //   return MethodHandles.collectArguments(mh, 0, collector);
+        // The rest of this code is a workaround for not having that API.
+        if (COLLECT_ARGUMENTS != null) {
+            try {
+                return (MethodHandle)
+                    COLLECT_ARGUMENTS.invokeExact(mh, pos, collector);
+            } catch (Throwable ex) {
+                if (ex instanceof RuntimeException)
+                    throw (RuntimeException) ex;
+                if (ex instanceof Error)
+                    throw (Error) ex;
+                throw new Error(ex.getMessage(), ex);
+            }
+        }
+        // Emulate MHs.collectArguments using fold + drop.
+        // This is slightly inefficient.
+        // More seriously, it can put a MH over the 255-argument limit.
+        mh = MethodHandles.dropArguments(mh, 1, collector.type().parameterList());
+        mh = MethodHandles.foldArguments(mh, collector);
+        return mh;
+    }
+    private static final MethodHandle COLLECT_ARGUMENTS;
+    static {
+        MethodHandle mh = null;
+        try {
+            java.lang.reflect.Method m = MethodHandles.class
+                .getDeclaredMethod("collectArguments",
+                    MethodHandle.class, int.class, MethodHandle.class);
+            m.setAccessible(true);
+            mh = IMPL_LOOKUP.unreflect(m);
+
+        } catch (ReflectiveOperationException | SecurityException ex) {
+            throw new InternalError(ex);
+        }
+        COLLECT_ARGUMENTS = mh;
+    }
+
     private static final EnumMap<Wrapper, MethodHandle>[] WRAPPER_CASTS
-            = newWrapperCaches(2);
+            = newWrapperCaches(1);
 
     /** Return a method that casts its sole argument (an Object) to the given type
-     *  and returns it as the given type (if exact is true), or as plain Object (if erase is true).
+     *  and returns it as the given type.
      */
     public static MethodHandle cast(Class<?> type) {
-        boolean exact = false;
         if (type.isPrimitive())  throw new IllegalArgumentException("cannot cast primitive type "+type);
-        MethodHandle mh = null;
+        MethodHandle mh;
         Wrapper wrap = null;
         EnumMap<Wrapper, MethodHandle> cache = null;
         if (Wrapper.isWrapperType(type)) {
             wrap = Wrapper.forWrapperType(type);
-            cache = WRAPPER_CASTS[exact?1:0];
+            cache = WRAPPER_CASTS[0];
             mh = cache.get(wrap);
             if (mh != null)  return mh;
         }
-        if (VerifyType.isNullReferenceConversion(Object.class, type))
-            mh = IDENTITY;
-        else if (VerifyType.isNullType(type))
-            mh = ALWAYS_NULL;
-        else
-            mh = MethodHandles.insertArguments(CAST_REFERENCE, 0, type);
-        if (exact) {
-            MethodType xmt = MethodType.methodType(type, Object.class);
-            mh = MethodHandles.explicitCastArguments(mh, xmt);
-            //mh = AdapterMethodHandle.makeRetypeRaw(IMPL_TOKEN, xmt, mh);
-        }
+        mh = MethodHandles.insertArguments(CAST_REFERENCE, 0, type);
         if (cache != null)
             cache.put(wrap, mh);
         return mh;
@@ -735,8 +562,10 @@ public class ValueConversions {
     }
 
     public static MethodHandle identity(Class<?> type) {
-        // This stuff has been moved into MethodHandles:
-        return MethodHandles.identity(type);
+        if (!type.isPrimitive())
+            // Reference identity has been moved into MethodHandles:
+            return MethodHandles.identity(type);
+        return identity(Wrapper.findPrimitiveType(type));
     }
 
     public static MethodHandle identity(Wrapper wrap) {
@@ -769,95 +598,203 @@ public class ValueConversions {
         throw new IllegalArgumentException("cannot find identity for " + wrap);
     }
 
-    /// Float/non-float conversions.
+    /// Primitive conversions.
+    // These are supported directly by the JVM, usually by a single instruction.
+    // In the case of narrowing to a subword, there may be a pair of instructions.
+    // In the case of booleans, there may be a helper routine to manage a 1-bit value.
+    // This is the full 8x8 matrix (minus the diagonal).
 
-    static float doubleToFloat(double x) {
+    // narrow double to all other types:
+    static float doubleToFloat(double x) {  // bytecode: d2f
         return (float) x;
     }
-    static double floatToDouble(float x) {
-        return x;
-    }
-
-    // narrow double to integral type
-    static long doubleToLong(double x) {
+    static long doubleToLong(double x) {  // bytecode: d2l
         return (long) x;
     }
-    static int doubleToInt(double x) {
+    static int doubleToInt(double x) {  // bytecode: d2i
         return (int) x;
     }
-    static short doubleToShort(double x) {
+    static short doubleToShort(double x) {  // bytecodes: d2i, i2s
         return (short) x;
     }
-    static char doubleToChar(double x) {
+    static char doubleToChar(double x) {  // bytecodes: d2i, i2c
         return (char) x;
     }
-    static byte doubleToByte(double x) {
+    static byte doubleToByte(double x) {  // bytecodes: d2i, i2b
         return (byte) x;
     }
     static boolean doubleToBoolean(double x) {
         return toBoolean((byte) x);
     }
 
-    // narrow float to integral type
-    static long floatToLong(float x) {
+    // widen float:
+    static double floatToDouble(float x) {  // bytecode: f2d
+        return x;
+    }
+    // narrow float:
+    static long floatToLong(float x) {  // bytecode: f2l
         return (long) x;
     }
-    static int floatToInt(float x) {
+    static int floatToInt(float x) {  // bytecode: f2i
         return (int) x;
     }
-    static short floatToShort(float x) {
+    static short floatToShort(float x) {  // bytecodes: f2i, i2s
         return (short) x;
     }
-    static char floatToChar(float x) {
+    static char floatToChar(float x) {  // bytecodes: f2i, i2c
         return (char) x;
     }
-    static byte floatToByte(float x) {
+    static byte floatToByte(float x) {  // bytecodes: f2i, i2b
         return (byte) x;
     }
     static boolean floatToBoolean(float x) {
         return toBoolean((byte) x);
     }
 
-    // widen integral type to double
-    static double longToDouble(long x) {
+    // widen long:
+    static double longToDouble(long x) {  // bytecode: l2d
         return x;
     }
-    static double intToDouble(int x) {
+    static float longToFloat(long x) {  // bytecode: l2f
         return x;
     }
-    static double shortToDouble(short x) {
-        return x;
+    // narrow long:
+    static int longToInt(long x) {  // bytecode: l2i
+        return (int) x;
     }
-    static double charToDouble(char x) {
-        return x;
+    static short longToShort(long x) {  // bytecodes: f2i, i2s
+        return (short) x;
     }
-    static double byteToDouble(byte x) {
-        return x;
+    static char longToChar(long x) {  // bytecodes: f2i, i2c
+        return (char) x;
     }
-    static double booleanToDouble(boolean x) {
-        return fromBoolean(x);
+    static byte longToByte(long x) {  // bytecodes: f2i, i2b
+        return (byte) x;
+    }
+    static boolean longToBoolean(long x) {
+        return toBoolean((byte) x);
     }
 
-    // widen integral type to float
-    static float longToFloat(long x) {
+    // widen int:
+    static double intToDouble(int x) {  // bytecode: i2d
         return x;
     }
-    static float intToFloat(int x) {
+    static float intToFloat(int x) {  // bytecode: i2f
         return x;
     }
-    static float shortToFloat(short x) {
+    static long intToLong(int x) {  // bytecode: i2l
         return x;
     }
-    static float charToFloat(char x) {
+    // narrow int:
+    static short intToShort(int x) {  // bytecode: i2s
+        return (short) x;
+    }
+    static char intToChar(int x) {  // bytecode: i2c
+        return (char) x;
+    }
+    static byte intToByte(int x) {  // bytecode: i2b
+        return (byte) x;
+    }
+    static boolean intToBoolean(int x) {
+        return toBoolean((byte) x);
+    }
+
+    // widen short:
+    static double shortToDouble(short x) {  // bytecode: i2d (implicit 's2i')
         return x;
     }
-    static float byteToFloat(byte x) {
+    static float shortToFloat(short x) {  // bytecode: i2f (implicit 's2i')
         return x;
+    }
+    static long shortToLong(short x) {  // bytecode: i2l (implicit 's2i')
+        return x;
+    }
+    static int shortToInt(short x) {  // (implicit 's2i')
+        return x;
+    }
+    // narrow short:
+    static char shortToChar(short x) {  // bytecode: i2c (implicit 's2i')
+        return (char)x;
+    }
+    static byte shortToByte(short x) {  // bytecode: i2b (implicit 's2i')
+        return (byte)x;
+    }
+    static boolean shortToBoolean(short x) {
+        return toBoolean((byte) x);
+    }
+
+    // widen char:
+    static double charToDouble(char x) {  // bytecode: i2d (implicit 'c2i')
+        return x;
+    }
+    static float charToFloat(char x) {  // bytecode: i2f (implicit 'c2i')
+        return x;
+    }
+    static long charToLong(char x) {  // bytecode: i2l (implicit 'c2i')
+        return x;
+    }
+    static int charToInt(char x) {  // (implicit 'c2i')
+        return x;
+    }
+    // narrow char:
+    static short charToShort(char x) {  // bytecode: i2s (implicit 'c2i')
+        return (short)x;
+    }
+    static byte charToByte(char x) {  // bytecode: i2b (implicit 'c2i')
+        return (byte)x;
+    }
+    static boolean charToBoolean(char x) {
+        return toBoolean((byte) x);
+    }
+
+    // widen byte:
+    static double byteToDouble(byte x) {  // bytecode: i2d (implicit 'b2i')
+        return x;
+    }
+    static float byteToFloat(byte x) {  // bytecode: i2f (implicit 'b2i')
+        return x;
+    }
+    static long byteToLong(byte x) {  // bytecode: i2l (implicit 'b2i')
+        return x;
+    }
+    static int byteToInt(byte x) {  // (implicit 'b2i')
+        return x;
+    }
+    static short byteToShort(byte x) {  // bytecode: i2s (implicit 'b2i')
+        return (short)x;
+    }
+    static char byteToChar(byte x) {  // bytecode: i2b (implicit 'b2i')
+        return (char)x;
+    }
+    // narrow byte to boolean:
+    static boolean byteToBoolean(byte x) {
+        return toBoolean(x);
+    }
+
+    // widen boolean to all types:
+    static double booleanToDouble(boolean x) {
+        return fromBoolean(x);
     }
     static float booleanToFloat(boolean x) {
         return fromBoolean(x);
     }
+    static long booleanToLong(boolean x) {
+        return fromBoolean(x);
+    }
+    static int booleanToInt(boolean x) {
+        return fromBoolean(x);
+    }
+    static short booleanToShort(boolean x) {
+        return fromBoolean(x);
+    }
+    static char booleanToChar(boolean x) {
+        return (char)fromBoolean(x);
+    }
+    static byte booleanToByte(boolean x) {
+        return fromBoolean(x);
+    }
 
+    // helpers to force boolean into the conversion scheme:
     static boolean toBoolean(byte x) {
         // see javadoc for MethodHandles.explicitCastArguments
         return ((x & 1) != 0);
@@ -868,62 +805,48 @@ public class ValueConversions {
     }
 
     private static final EnumMap<Wrapper, MethodHandle>[]
-            CONVERT_FLOAT_FUNCTIONS = newWrapperCaches(4);
+            CONVERT_PRIMITIVE_FUNCTIONS = newWrapperCaches(Wrapper.values().length);
 
-    static MethodHandle convertFloatFunction(Wrapper wrap, boolean toFloat, boolean doubleSize) {
-        EnumMap<Wrapper, MethodHandle> cache = CONVERT_FLOAT_FUNCTIONS[(toFloat?1:0)+(doubleSize?2:0)];
-        MethodHandle mh = cache.get(wrap);
+    public static MethodHandle convertPrimitive(Wrapper wsrc, Wrapper wdst) {
+        EnumMap<Wrapper, MethodHandle> cache = CONVERT_PRIMITIVE_FUNCTIONS[wsrc.ordinal()];
+        MethodHandle mh = cache.get(wdst);
         if (mh != null) {
             return mh;
         }
         // slow path
-        Wrapper fwrap = (doubleSize ? Wrapper.DOUBLE : Wrapper.FLOAT);
-        Class<?> fix = wrap.primitiveType();
-        Class<?> flt = (doubleSize ? double.class : float.class);
-        Class<?> src = toFloat ? fix : flt;
-        Class<?> dst = toFloat ? flt : fix;
-        if (src == dst)  return identity(wrap);
-        MethodType type = MethodType.methodType(dst, src);
-        switch (wrap) {
-            case VOID:
-                mh = toFloat ? zeroConstantFunction(fwrap) : MethodHandles.dropArguments(EMPTY, 0, flt);
-                break;
-            case OBJECT:
-                mh = toFloat ? unbox(flt) : box(flt);
-                break;
-            default:
-                try {
-                    mh = IMPL_LOOKUP.findStatic(THIS_CLASS, src.getSimpleName()+"To"+capitalize(dst.getSimpleName()), type);
-                } catch (ReflectiveOperationException ex) {
-                    mh = null;
-                }
-                break;
+        Class<?> src = wsrc.primitiveType();
+        Class<?> dst = wdst.primitiveType();
+        MethodType type = src == void.class ? MethodType.methodType(dst) : MethodType.methodType(dst, src);
+        if (wsrc == wdst) {
+            mh = identity(src);
+        } else if (wsrc == Wrapper.VOID) {
+            mh = zeroConstantFunction(wdst);
+        } else if (wdst == Wrapper.VOID) {
+            mh = MethodHandles.dropArguments(EMPTY, 0, src);  // Defer back to MethodHandles.
+        } else if (wsrc == Wrapper.OBJECT) {
+            mh = unboxCast(dst);
+        } else if (wdst == Wrapper.OBJECT) {
+            mh = box(src);
+        } else {
+            assert(src.isPrimitive() && dst.isPrimitive());
+            try {
+                mh = IMPL_LOOKUP.findStatic(THIS_CLASS, src.getSimpleName()+"To"+capitalize(dst.getSimpleName()), type);
+            } catch (ReflectiveOperationException ex) {
+                mh = null;
+            }
         }
         if (mh != null) {
             assert(mh.type() == type) : mh;
-            cache.put(wrap, mh);
+            cache.put(wdst, mh);
             return mh;
         }
 
-        throw new IllegalArgumentException("cannot find float conversion constant for " +
+        throw new IllegalArgumentException("cannot find primitive conversion function for " +
                                            src.getSimpleName()+" -> "+dst.getSimpleName());
     }
 
-    public static MethodHandle convertFromFloat(Class<?> fixType) {
-        Wrapper wrap = Wrapper.forPrimitiveType(fixType);
-        return convertFloatFunction(wrap, false, false);
-    }
-    public static MethodHandle convertFromDouble(Class<?> fixType) {
-        Wrapper wrap = Wrapper.forPrimitiveType(fixType);
-        return convertFloatFunction(wrap, false, true);
-    }
-    public static MethodHandle convertToFloat(Class<?> fixType) {
-        Wrapper wrap = Wrapper.forPrimitiveType(fixType);
-        return convertFloatFunction(wrap, true, false);
-    }
-    public static MethodHandle convertToDouble(Class<?> fixType) {
-        Wrapper wrap = Wrapper.forPrimitiveType(fixType);
-        return convertFloatFunction(wrap, true, true);
+    public static MethodHandle convertPrimitive(Class<?> src, Class<?> dst) {
+        return convertPrimitive(Wrapper.forPrimitiveType(src), Wrapper.forPrimitiveType(dst));
     }
 
     private static String capitalize(String x) {
@@ -1016,37 +939,47 @@ public class ValueConversions {
     }
     private static final MethodHandle[] ARRAYS = makeArrays();
 
-    // mh-fill versions of the above:
-    private static Object[] newArray(int len) { return new Object[len]; }
+    // filling versions of the above:
+    // using Integer len instead of int len and no varargs to avoid bootstrapping problems
+    private static Object[] fillNewArray(Integer len, Object[] /*not ...*/ args) {
+        Object[] a = new Object[len];
+        fillWithArguments(a, 0, args);
+        return a;
+    }
+    private static Object[] fillNewTypedArray(Object[] example, Integer len, Object[] /*not ...*/ args) {
+        Object[] a = Arrays.copyOf(example, len);
+        fillWithArguments(a, 0, args);
+        return a;
+    }
     private static void fillWithArguments(Object[] a, int pos, Object... args) {
         System.arraycopy(args, 0, a, pos, args.length);
     }
     // using Integer pos instead of int pos to avoid bootstrapping problems
-    private static Object[] fillArray(Object[] a, Integer pos, Object a0)
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0)
                 { fillWithArguments(a, pos, a0); return a; }
-    private static Object[] fillArray(Object[] a, Integer pos, Object a0, Object a1)
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1)
                 { fillWithArguments(a, pos, a0, a1); return a; }
-    private static Object[] fillArray(Object[] a, Integer pos, Object a0, Object a1, Object a2)
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2)
                 { fillWithArguments(a, pos, a0, a1, a2); return a; }
-    private static Object[] fillArray(Object[] a, Integer pos, Object a0, Object a1, Object a2, Object a3)
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3)
                 { fillWithArguments(a, pos, a0, a1, a2, a3); return a; }
-    private static Object[] fillArray(Object[] a, Integer pos, Object a0, Object a1, Object a2, Object a3,
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
                                   Object a4)
                 { fillWithArguments(a, pos, a0, a1, a2, a3, a4); return a; }
-    private static Object[] fillArray(Object[] a, Integer pos, Object a0, Object a1, Object a2, Object a3,
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
                                   Object a4, Object a5)
                 { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5); return a; }
-    private static Object[] fillArray(Object[] a, Integer pos, Object a0, Object a1, Object a2, Object a3,
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
                                   Object a4, Object a5, Object a6)
                 { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6); return a; }
-    private static Object[] fillArray(Object[] a, Integer pos, Object a0, Object a1, Object a2, Object a3,
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
                                   Object a4, Object a5, Object a6, Object a7)
                 { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7); return a; }
-    private static Object[] fillArray(Object[] a, Integer pos, Object a0, Object a1, Object a2, Object a3,
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
                                   Object a4, Object a5, Object a6, Object a7,
                                   Object a8)
                 { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7, a8); return a; }
-    private static Object[] fillArray(Object[] a, Integer pos, Object a0, Object a1, Object a2, Object a3,
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
                                   Object a4, Object a5, Object a6, Object a7,
                                   Object a8, Object a9)
                 { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); return a; }
@@ -1054,7 +987,7 @@ public class ValueConversions {
         ArrayList<MethodHandle> mhs = new ArrayList<>();
         mhs.add(null);  // there is no empty fill; at least a0 is required
         for (;;) {
-            MethodHandle mh = findCollector("fillArray", mhs.size(), Object[].class, Object[].class, Integer.class);
+            MethodHandle mh = findCollector("fillArray", mhs.size(), Object[].class, Integer.class, Object[].class);
             if (mh == null)  break;
             mhs.add(mh);
         }
@@ -1080,68 +1013,94 @@ public class ValueConversions {
         if (mh != null)  return mh;
         mh = findCollector("array", nargs, Object[].class);
         if (mh != null)  return ARRAYS[nargs] = mh;
-        MethodHandle producer = filler(0);  // identity function produces result
-        return ARRAYS[nargs] = buildVarargsArray(producer, nargs);
+        mh = buildVarargsArray(FILL_NEW_ARRAY, ARRAY_IDENTITY, nargs);
+        assert(assertCorrectArity(mh, nargs));
+        return ARRAYS[nargs] = mh;
     }
 
-    private static MethodHandle buildVarargsArray(MethodHandle producer, int nargs) {
+    private static boolean assertCorrectArity(MethodHandle mh, int arity) {
+        assert(mh.type().parameterCount() == arity) : "arity != "+arity+": "+mh;
+        return true;
+    }
+
+    private static MethodHandle buildVarargsArray(MethodHandle newArray, MethodHandle finisher, int nargs) {
         // Build up the result mh as a sequence of fills like this:
-        //   producer(fill(fill(fill(newArray(23),0,x1..x10),10,x11..x20),20,x21..x23))
+        //   finisher(fill(fill(newArrayWA(23,x1..x10),10,x11..x20),20,x21..x23))
         // The various fill(_,10*I,___*[J]) are reusable.
-        MethodHandle filler = filler(nargs);
-        MethodHandle mh = producer;
-        mh = MethodHandles.dropArguments(mh, 1, filler.type().parameterList());
-        mh = MethodHandles.foldArguments(mh, filler);
-        mh = MethodHandles.foldArguments(mh, buildNewArray(nargs));
+        int leftLen = Math.min(nargs, LEFT_ARGS);  // absorb some arguments immediately
+        int rightLen = nargs - leftLen;
+        MethodHandle leftCollector = newArray.bindTo(nargs);
+        leftCollector = leftCollector.asCollector(Object[].class, leftLen);
+        MethodHandle mh = finisher;
+        if (rightLen > 0) {
+            MethodHandle rightFiller = fillToRight(LEFT_ARGS + rightLen);
+            if (mh == ARRAY_IDENTITY)
+                mh = rightFiller;
+            else
+                mh = collectArguments(mh, 0, rightFiller);
+        }
+        if (mh == ARRAY_IDENTITY)
+            mh = leftCollector;
+        else
+            mh = collectArguments(mh, 0, leftCollector);
         return mh;
     }
 
-    private static MethodHandle buildNewArray(int nargs) {
-        return MethodHandles.insertArguments(NEW_ARRAY, 0, nargs);
-    }
-
-    private static final MethodHandle[] FILLERS = new MethodHandle[MAX_ARITY+1];
-    // filler(N).invoke(a, arg0..arg[N-1]) fills a[0]..a[N-1]
-    private static MethodHandle filler(int nargs) {
-        MethodHandle filler = FILLERS[nargs];
+    private static final int LEFT_ARGS = (FILL_ARRAYS.length - 1);
+    private static final MethodHandle[] FILL_ARRAY_TO_RIGHT = new MethodHandle[MAX_ARITY+1];
+    /** fill_array_to_right(N).invoke(a, argL..arg[N-1])
+     *  fills a[L]..a[N-1] with corresponding arguments,
+     *  and then returns a.  The value L is a global constant (LEFT_ARGS).
+     */
+    private static MethodHandle fillToRight(int nargs) {
+        MethodHandle filler = FILL_ARRAY_TO_RIGHT[nargs];
         if (filler != null)  return filler;
-        return FILLERS[nargs] = buildFiller(nargs);
+        filler = buildFiller(nargs);
+        assert(assertCorrectArity(filler, nargs - LEFT_ARGS + 1));
+        return FILL_ARRAY_TO_RIGHT[nargs] = filler;
     }
     private static MethodHandle buildFiller(int nargs) {
-        if (nargs == 0)
-            return MethodHandles.identity(Object[].class);
-        final int CHUNK = (FILL_ARRAYS.length - 1);
+        if (nargs <= LEFT_ARGS)
+            return ARRAY_IDENTITY;  // no args to fill; return the array unchanged
+        // we need room for both mh and a in mh.invoke(a, arg*[nargs])
+        final int CHUNK = LEFT_ARGS;
         int rightLen = nargs % CHUNK;
-        int leftLen = nargs - rightLen;
+        int midLen = nargs - rightLen;
         if (rightLen == 0) {
-            leftLen = nargs - (rightLen = CHUNK);
-            if (FILLERS[leftLen] == null) {
+            midLen = nargs - (rightLen = CHUNK);
+            if (FILL_ARRAY_TO_RIGHT[midLen] == null) {
                 // build some precursors from left to right
-                for (int j = 0; j < leftLen; j += CHUNK)  filler(j);
+                for (int j = LEFT_ARGS % CHUNK; j < midLen; j += CHUNK)
+                    if (j > LEFT_ARGS)  fillToRight(j);
             }
         }
-        MethodHandle leftFill = filler(leftLen);  // recursive fill
-        MethodHandle rightFill = FILL_ARRAYS[rightLen];
-        rightFill = MethodHandles.insertArguments(rightFill, 1, leftLen);  // [leftLen..nargs-1]
+        if (midLen < LEFT_ARGS) rightLen = nargs - (midLen = LEFT_ARGS);
+        assert(rightLen > 0);
+        MethodHandle midFill = fillToRight(midLen);  // recursive fill
+        MethodHandle rightFill = FILL_ARRAYS[rightLen].bindTo(midLen);  // [midLen..nargs-1]
+        assert(midFill.type().parameterCount()   == 1 + midLen - LEFT_ARGS);
+        assert(rightFill.type().parameterCount() == 1 + rightLen);
 
-        // Combine the two fills: right(left(newArray(nargs), x1..x20), x21..x23)
-        MethodHandle mh = filler(0);  // identity function produces result
-        mh = MethodHandles.dropArguments(mh, 1, rightFill.type().parameterList());
-        mh = MethodHandles.foldArguments(mh, rightFill);
-        if (leftLen > 0) {
-            mh = MethodHandles.dropArguments(mh, 1, leftFill.type().parameterList());
-            mh = MethodHandles.foldArguments(mh, leftFill);
-        }
-        return mh;
+        // Combine the two fills:
+        //   right(mid(a, x10..x19), x20..x23)
+        // The final product will look like this:
+        //   right(mid(newArrayLeft(24, x0..x9), x10..x19), x20..x23)
+        if (midLen == LEFT_ARGS)
+            return rightFill;
+        else
+            return collectArguments(rightFill, 0, midFill);
     }
 
     // Type-polymorphic version of varargs maker.
     private static final ClassValue<MethodHandle[]> TYPED_COLLECTORS
         = new ClassValue<MethodHandle[]>() {
+            @Override
             protected MethodHandle[] computeValue(Class<?> type) {
                 return new MethodHandle[256];
             }
     };
+
+    static final int MAX_JVM_ARITY = 255;  // limit imposed by the JVM
 
     /** Return a method handle that takes the indicated number of
      *  typed arguments and returns an array of them.
@@ -1151,16 +1110,36 @@ public class ValueConversions {
         Class<?> elemType = arrayType.getComponentType();
         if (elemType == null)  throw new IllegalArgumentException("not an array: "+arrayType);
         // FIXME: Need more special casing and caching here.
+        if (nargs >= MAX_JVM_ARITY/2 - 1) {
+            int slots = nargs;
+            final int MAX_ARRAY_SLOTS = MAX_JVM_ARITY - 1;  // 1 for receiver MH
+            if (arrayType == double[].class || arrayType == long[].class)
+                slots *= 2;
+            if (slots > MAX_ARRAY_SLOTS)
+                throw new IllegalArgumentException("too many arguments: "+arrayType.getSimpleName()+", length "+nargs);
+        }
         if (elemType == Object.class)
             return varargsArray(nargs);
         // other cases:  primitive arrays, subtypes of Object[]
         MethodHandle cache[] = TYPED_COLLECTORS.get(elemType);
         MethodHandle mh = nargs < cache.length ? cache[nargs] : null;
         if (mh != null)  return mh;
-        MethodHandle producer = buildArrayProducer(arrayType);
-        mh = buildVarargsArray(producer, nargs);
+        if (elemType.isPrimitive()) {
+            MethodHandle builder = FILL_NEW_ARRAY;
+            MethodHandle producer = buildArrayProducer(arrayType);
+            mh = buildVarargsArray(builder, producer, nargs);
+        } else {
+            @SuppressWarnings("unchecked")
+            Class<? extends Object[]> objArrayType = (Class<? extends Object[]>) arrayType;
+            Object[] example = Arrays.copyOf(NO_ARGS_ARRAY, 0, objArrayType);
+            MethodHandle builder = FILL_NEW_TYPED_ARRAY.bindTo(example);
+            MethodHandle producer = ARRAY_IDENTITY;
+            mh = buildVarargsArray(builder, producer, nargs);
+        }
         mh = mh.asType(MethodType.methodType(arrayType, Collections.<Class<?>>nCopies(nargs, elemType)));
-        cache[nargs] = mh;
+        assert(assertCorrectArity(mh, nargs));
+        if (nargs < cache.length)
+            cache[nargs] = mh;
         return mh;
     }
 

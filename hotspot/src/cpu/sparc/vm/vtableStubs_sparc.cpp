@@ -70,7 +70,6 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   __ load_klass(O0, G3_scratch);
 
   // set methodOop (in case of interpreted method), and destination address
-  int entry_offset = instanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
@@ -82,13 +81,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     __ bind(L);
   }
 #endif
-  int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
-  if (Assembler::is_simm13(v_off)) {
-    __ ld_ptr(G3, v_off, G5_method);
-  } else {
-    __ set(v_off,G5);
-    __ ld_ptr(G3, G5, G5_method);
-  }
+
+  __ lookup_virtual_method(G3_scratch, vtable_index, G5_method);
 
 #ifndef PRODUCT
   if (DebugVtables) {

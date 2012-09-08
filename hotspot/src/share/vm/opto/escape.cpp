@@ -1055,7 +1055,7 @@ bool ConnectionGraph::complete_connection_graph(
       C->log()->text("%s", (iterations >= CG_BUILD_ITER_LIMIT) ? "iterations" : "time");
       C->log()->end_elem(" limit'");
     }
-    assert(false, err_msg("infinite EA connection graph build (%f sec, %d iterations) with %d nodes and worklist size %d",
+    assert(false, err_msg_res("infinite EA connection graph build (%f sec, %d iterations) with %d nodes and worklist size %d",
            time.seconds(), iterations, nodes_size(), ptnodes_worklist.length()));
     // Possible infinite build_connection_graph loop,
     // bailout (no changes to ideal graph were made).
@@ -1768,8 +1768,12 @@ void ConnectionGraph::add_field(Node *n, PointsToNode::EscapeState es, int offse
     assert(ptadr->is_Field() && ptadr->ideal_node() == n, "sanity");
     return;
   }
+  bool unsafe = false;
+  bool is_oop = is_oop_field(n, offset, &unsafe);
+  if (unsafe) {
+    es = PointsToNode::GlobalEscape;
+  }
   Compile* C = _compile;
-  bool is_oop = is_oop_field(n, offset);
   FieldNode* field = new (C->comp_arena()) FieldNode(C, n, es, offset, is_oop);
   _nodes.at_put(n->_idx, field);
 }
@@ -1794,7 +1798,7 @@ void ConnectionGraph::add_arraycopy(Node *n, PointsToNode::EscapeState es,
   dst->set_arraycopy_dst();
 }
 
-bool ConnectionGraph::is_oop_field(Node* n, int offset) {
+bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
   const Type* adr_type = n->as_AddP()->bottom_type();
   BasicType bt = T_INT;
   if (offset == Type::OffsetBot) {
@@ -1813,7 +1817,16 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset) {
       if (field != NULL) {
         bt = field->layout_type();
       } else {
-        // Ignore non field load (for example, klass load)
+        // Check for unsafe oop field access
+        for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+          int opcode = n->fast_out(i)->Opcode();
+          if (opcode == Op_StoreP || opcode == Op_LoadP ||
+              opcode == Op_StoreN || opcode == Op_LoadN) {
+            bt = T_OBJECT;
+            (*unsafe) = true;
+            break;
+          }
+        }
       }
     } else if (adr_type->isa_aryptr()) {
       if (offset == arrayOopDesc::length_offset_in_bytes()) {
@@ -1831,6 +1844,7 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset) {
         if (opcode == Op_StoreP || opcode == Op_LoadP ||
             opcode == Op_StoreN || opcode == Op_LoadN) {
           bt = T_OBJECT;
+          break;
         }
       }
     }

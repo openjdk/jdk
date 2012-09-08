@@ -197,7 +197,7 @@ public:
 
 private:
   JVMState*         _caller;    // List pointer for forming scope chains
-  uint              _depth;     // One mroe than caller depth, or one.
+  uint              _depth;     // One more than caller depth, or one.
   uint              _locoff;    // Offset to locals in input edge mapping
   uint              _stkoff;    // Offset to stack in input edge mapping
   uint              _monoff;    // Offset to monitors in input edge mapping
@@ -223,6 +223,8 @@ public:
   JVMState(int stack_size);  // root state; has a null method
 
   // Access functions for the JVM
+  // ... --|--- loc ---|--- stk ---|--- arg ---|--- mon ---|--- scl ---|
+  //       \ locoff    \ stkoff    \ argoff    \ monoff    \ scloff    \ endoff
   uint              locoff() const { return _locoff; }
   uint              stkoff() const { return _stkoff; }
   uint              argoff() const { return _stkoff + _sp; }
@@ -231,15 +233,16 @@ public:
   uint              endoff() const { return _endoff; }
   uint              oopoff() const { return debug_end(); }
 
-  int            loc_size() const { return _stkoff - _locoff; }
-  int            stk_size() const { return _monoff - _stkoff; }
-  int            mon_size() const { return _scloff - _monoff; }
-  int            scl_size() const { return _endoff - _scloff; }
+  int            loc_size() const { return stkoff() - locoff(); }
+  int            stk_size() const { return monoff() - stkoff(); }
+  int            arg_size() const { return monoff() - argoff(); }
+  int            mon_size() const { return scloff() - monoff(); }
+  int            scl_size() const { return endoff() - scloff(); }
 
-  bool        is_loc(uint i) const { return i >= _locoff && i < _stkoff; }
-  bool        is_stk(uint i) const { return i >= _stkoff && i < _monoff; }
-  bool        is_mon(uint i) const { return i >= _monoff && i < _scloff; }
-  bool        is_scl(uint i) const { return i >= _scloff && i < _endoff; }
+  bool        is_loc(uint i) const { return locoff() <= i && i < stkoff(); }
+  bool        is_stk(uint i) const { return stkoff() <= i && i < monoff(); }
+  bool        is_mon(uint i) const { return monoff() <= i && i < scloff(); }
+  bool        is_scl(uint i) const { return scloff() <= i && i < endoff(); }
 
   uint                      sp() const { return _sp; }
   int                      bci() const { return _bci; }

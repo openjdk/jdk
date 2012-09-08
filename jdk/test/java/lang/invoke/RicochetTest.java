@@ -256,7 +256,7 @@ public class RicochetTest {
                     //System.out.println("  expect="+expect);
 
                     // now use the combined MH, and test the output:
-                    MethodHandle mh = collectArguments(lister, pos, INT_COLLECTORS[collects]);
+                    MethodHandle mh = collectArguments(lister, pos, int[].class, INT_COLLECTORS[collects]);
                     if (mh == null)  continue;  // no infix collection, yet
                     assert(mh.type().parameterCount() == inputs);
                     Object observe = mh.asSpreader(int[].class, args.length).invokeExact(args);
@@ -266,13 +266,53 @@ public class RicochetTest {
         }
     }
 
-    private static MethodHandle collectArguments(MethodHandle lister, int pos, MethodHandle collector) {
+    @Test
+    public void testByteCollects() throws Throwable {
+        if (!startTest("testByteCollects"))  return;
+        for (MethodHandle lister : BYTE_LISTERS) {
+            int outputs = lister.type().parameterCount();
+            for (int collects = 0; collects <= Math.min(outputs, BYTE_COLLECTORS.length-1); collects++) {
+                int inputs = outputs - 1 + collects;
+                if (inputs < 0)  continue;
+                for (int pos = 0; pos + collects <= inputs; pos++) {
+                    MethodHandle collector = BYTE_COLLECTORS[collects];
+                    byte[] args = new byte[inputs];
+                    int ap = 0, arg = 31;
+                    for (int i = 0; i < pos; i++)
+                        args[ap++] = (byte)(arg++ + 0);
+                    for (int i = 0; i < collects; i++)
+                        args[ap++] = (byte)(arg++ + 10);
+                    while (ap < args.length)
+                        args[ap++] = (byte)(arg++ + 20);
+                    // calculate piecemeal:
+                    //System.out.println("testIntCollects "+Arrays.asList(lister, pos, collector)+" on "+Arrays.toString(args));
+                    byte[] collargs = Arrays.copyOfRange(args, pos, pos+collects);
+                    byte coll = (byte) collector.asSpreader(byte[].class, collargs.length).invokeExact(collargs);
+                    byte[] listargs = Arrays.copyOfRange(args, 0, outputs);
+                    System.arraycopy(args, pos+collects, listargs, pos+1, outputs - (pos+1));
+                    listargs[pos] = coll;
+                    //System.out.println("  coll="+coll+" listargs="+Arrays.toString(listargs));
+                    Object expect = lister.asSpreader(byte[].class, listargs.length).invokeExact(listargs);
+                    //System.out.println("  expect="+expect);
+
+                    // now use the combined MH, and test the output:
+                    MethodHandle mh = collectArguments(lister, pos, byte[].class, BYTE_COLLECTORS[collects]);
+                    if (mh == null)  continue;  // no infix collection, yet
+                    assert(mh.type().parameterCount() == inputs);
+                    Object observe = mh.asSpreader(byte[].class, args.length).invokeExact(args);
+                    assertEquals(expect, observe);
+                }
+            }
+        }
+    }
+
+    private static MethodHandle collectArguments(MethodHandle lister, int pos, Class<?> array, MethodHandle collector) {
         int collects = collector.type().parameterCount();
         int outputs = lister.type().parameterCount();
         if (pos == outputs - 1)
             return MethodHandles.filterArguments(lister, pos,
-                        collector.asSpreader(int[].class, collects))
-                            .asCollector(int[].class, collects);
+                        collector.asSpreader(array, collects))
+                            .asCollector(array, collects);
         //return MethodHandles.collectArguments(lister, pos, collector); //no such animal
         return null;
     }
@@ -537,6 +577,9 @@ public class RicochetTest {
     private static final MethodHandle[] INT_COLLECTORS = {
         constant(int.class, 42), opI, opI2, opI3, opI4
     };
+    private static final MethodHandle[] BYTE_COLLECTORS = {
+        constant(byte.class, (byte)42), i2b(opI), i2b(opI2), i2b(opI3), i2b(opI4)
+    };
     private static final MethodHandle[] LONG_COLLECTORS = {
         constant(long.class, 42), opJ, opJ2, opJ3
     };
@@ -559,21 +602,36 @@ public class RicochetTest {
                                                              Collections.nCopies(8, int.class));
     private static final MethodHandle list8longs = findStatic("list8longs", Object.class,
                                                               Collections.nCopies(8, long.class));
-    private static final MethodHandle[] INT_LISTERS, LONG_LISTERS;
+    private static final MethodHandle[] INT_LISTERS, LONG_LISTERS, BYTE_LISTERS;
     static {
         int listerCount = list8ints.type().parameterCount() + 1;
         INT_LISTERS  = new MethodHandle[listerCount];
         LONG_LISTERS = new MethodHandle[listerCount];
+        BYTE_LISTERS = new MethodHandle[listerCount];
         MethodHandle lister = list8ints;
         MethodHandle llister = list8longs;
         for (int i = listerCount - 1; ; i--) {
             INT_LISTERS[i] = lister;
             LONG_LISTERS[i] = llister;
+            BYTE_LISTERS[i] = i2b(lister);
             if (i == 0)  break;
             lister  = insertArguments(lister,  i-1, 0);
             llister = insertArguments(llister, i-1, 0L);
         }
     }
+    private static MethodHandle i2b(MethodHandle mh) {
+        return MethodHandles.explicitCastArguments(mh, subst(mh.type(), int.class, byte.class));
+    }
+    private static MethodType subst(MethodType mt, Class<?> from, Class<?> to) {
+        for (int i = 0; i < mt.parameterCount(); i++) {
+            if (mt.parameterType(i) == from)
+                mt = mt.changeParameterType(i, to);
+        }
+        if (mt.returnType() == from)
+            mt = mt.changeReturnType(to);
+        return mt;
+    }
+
 
     private static Object  convI_L(int     x) { stress(); return (Object)  x; }
     private static int     convL_I(Object  x) { stress(); return (int)     x; }

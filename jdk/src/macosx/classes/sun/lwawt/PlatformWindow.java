@@ -118,6 +118,8 @@ public interface PlatformWindow {
 
     public void setAlwaysOnTop(boolean value);
 
+    public PlatformWindow getTopmostPlatformWindowUnderMouse();
+
     public void updateFocusableWindowState();
 
     public boolean rejectFocusRequest(CausedFocusEvent.Cause cause);
@@ -131,7 +133,10 @@ public interface PlatformWindow {
 
     public void setResizable(boolean resizable);
 
-    public void setMinimumSize(int width, int height);
+    /**
+     * Applies the minimum and maximum size to the platform window.
+     */
+    public void setSizeConstraints(int minW, int minH, int maxW, int maxH);
 
     /**
      * Transforms the given Graphics object according to the native

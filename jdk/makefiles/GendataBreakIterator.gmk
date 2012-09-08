@@ -37,8 +37,8 @@ TEXT_SRCDIR = $(JDK_TOPDIR)/src/share/classes
 TEXT_PKG  = sun/text/resources
 TEXT_SOURCES = 	$(TEXT_PKG)/BreakIteratorRules.java \
 		$(TEXT_PKG)/BreakIteratorInfo.java \
-		$(TEXT_PKG)/BreakIteratorRules_th.java \
-		$(TEXT_PKG)/BreakIteratorInfo_th.java
+		$(TEXT_PKG)/th/BreakIteratorRules_th.java \
+		$(TEXT_PKG)/th/BreakIteratorInfo_th.java
 
 # Generate BreakIteratorData
 BREAK_ITERATOR_DIR = $(JDK_OUTPUTDIR)/break_iterator
@@ -67,8 +67,8 @@ BIFILES	= 	$(DATA_PKG_DIR)/CharacterBreakIteratorData \
 		$(DATA_PKG_DIR)/WordBreakIteratorData \
 		$(DATA_PKG_DIR)/LineBreakIteratorData \
 		$(DATA_PKG_DIR)/SentenceBreakIteratorData
-BIFILES_TH =	$(DATA_PKG_DIR)/WordBreakIteratorData_th \
-		$(DATA_PKG_DIR)/LineBreakIteratorData_th
+BIFILES_TH =	$(DATA_PKG_DIR)/th/WordBreakIteratorData_th \
+		$(DATA_PKG_DIR)/th/LineBreakIteratorData_th
 
 $(BIFILES): $(BREAK_ITERATOR_DIR)/_the.bifiles
 $(BREAK_ITERATOR_DIR)/_the.bifiles: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
@@ -85,7 +85,7 @@ $(BIFILES_TH): $(BREAK_ITERATOR_DIR)/_the.bifiles_th
 $(BREAK_ITERATOR_DIR)/_the.bifiles_th: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
 $(BREAK_ITERATOR_DIR)/_the.bifiles_th: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKITERATOR)
 	$(ECHO) "Generating BreakIteratorData_th"
-	$(MKDIR) -p  $(DATA_PKG_DIR)
+	$(MKDIR) -p  $(DATA_PKG_DIR)/th
 	$(RM) -f $(BIFILES_TH)
 	$(TOOL_GENERATEBREAKITERATORDATA) \
 		-o $(DATA_PKG_DIR) \
