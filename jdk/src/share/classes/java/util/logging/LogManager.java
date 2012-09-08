@@ -314,7 +314,7 @@ public class LogManager {
      */
     public void addPropertyChangeListener(PropertyChangeListener l) throws SecurityException {
         PropertyChangeListener listener = Objects.requireNonNull(l);
-        checkAccess();
+        checkPermission();
         synchronized (listenerMap) {
             // increment the registration count if already registered
             Integer value = listenerMap.get(listener);
@@ -338,7 +338,7 @@ public class LogManager {
      *             the caller does not have LoggingPermission("control").
      */
     public void removePropertyChangeListener(PropertyChangeListener l) throws SecurityException {
-        checkAccess();
+        checkPermission();
         if (l != null) {
             PropertyChangeListener listener = l;
             synchronized (listenerMap) {
@@ -793,7 +793,7 @@ public class LogManager {
      * @exception  IOException if there are IO problems reading the configuration.
      */
     public void readConfiguration() throws IOException, SecurityException {
-        checkAccess();
+        checkPermission();
 
         // if a configuration class is specified, load it and use it.
         String cname = System.getProperty("java.util.logging.config.class");
@@ -851,7 +851,7 @@ public class LogManager {
      */
 
     public void reset() throws SecurityException {
-        checkAccess();
+        checkPermission();
         synchronized (this) {
             props = new Properties();
             // Since we are doing a reset we no longer want to initialize
@@ -936,7 +936,7 @@ public class LogManager {
      * @exception  IOException if there are problems reading from the stream.
      */
     public void readConfiguration(InputStream ins) throws IOException, SecurityException {
-        checkAccess();
+        checkPermission();
         reset();
 
         // Load the properties
@@ -1113,8 +1113,13 @@ public class LogManager {
         loadLoggerHandlers(rootLogger, null, "handlers");
     }
 
+    private final Permission controlPermission = new LoggingPermission("control", null);
 
-    private Permission ourPermission = new LoggingPermission("control", null);
+    void checkPermission() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+            sm.checkPermission(controlPermission);
+    }
 
     /**
      * Check that the current context is trusted to modify the logging
@@ -1127,11 +1132,7 @@ public class LogManager {
      *             the caller does not have LoggingPermission("control").
      */
     public void checkAccess() throws SecurityException {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            return;
-        }
-        sm.checkPermission(ourPermission);
+        checkPermission();
     }
 
     // Nested class to represent a node in our tree of named loggers.
