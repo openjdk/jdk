@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,16 +70,16 @@ public class Lint
      * Returns the result of combining the values in this object with
      * the given annotations.
      */
-    public Lint augment(List<Attribute.Compound> attrs) {
-        return augmentor.augment(this, attrs);
+    public Lint augment(Annotations annots) {
+        return augmentor.augment(this, annots.getAttributes());
     }
 
     /**
      * Returns the result of combining the values in this object with
      * the given annotations and flags.
      */
-    public Lint augment(List<Attribute.Compound> attrs, long flags) {
-        Lint l = augmentor.augment(this, attrs);
+    public Lint augment(Annotations annots, long flags) {
+        Lint l = augmentor.augment(this, annots.getAttributes());
         if ((flags & DEPRECATED) != 0) {
             if (l == this)
                 l = new Lint(this);
