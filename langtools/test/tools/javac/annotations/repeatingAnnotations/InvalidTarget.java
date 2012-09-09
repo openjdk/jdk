@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,25 @@
  * questions.
  */
 
-// key: compiler.err.duplicate.annotation
-// key: compiler.warn.source.no.bootclasspath
-// options: -source 7
+/**
+ * @test
+ * @summary Smoke test for repeating annotations
+ * @bug 7151010
+ *
+ * @run clean Foos Foo
+ * @run compile/fail InvalidTarget.java
+ */
 
-@interface Anno { }
+import java.lang.annotation.*;
 
-@Anno
-@Anno
-class DuplicateAnnotation { }
+@ContainedBy(Foos.class)
+@Target(ElementType.ANNOTATION_TYPE)
+@interface Foo {}
+
+@ContainerFor(Foo.class)
+@Target(ElementType.TYPE)
+@interface Foos {
+    Foo[] value();
+}
+
+public class InvalidTargets {}

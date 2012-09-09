@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,40 @@
  * questions.
  */
 
-// key: compiler.err.duplicate.annotation
-// key: compiler.warn.source.no.bootclasspath
-// options: -source 7
+/**
+ * @test
+ * @summary Smoke test for repeating annotations
+ * @bug 7151010
+ *
+ * @run clean RepSelfMemberAnno BarContainer BarContainerContainer
+ * @run compile RepSelfMemberAnno.java
+ */
 
-@interface Anno { }
+import java.lang.annotation.*;
 
-@Anno
-@Anno
-class DuplicateAnnotation { }
+
+@Retention(RetentionPolicy.RUNTIME)
+@ContainedBy(BarContainer.class)
+public @interface RepSelfMemberAnno {
+    @RepSelfMemberAnno @RepSelfMemberAnno
+    String meh() default "banan";
+}
+
+
+@ContainedBy(BarContainerContainer.class)
+@Retention(RetentionPolicy.RUNTIME)
+@ContainerFor(RepSelfMemberAnno.class)
+@interface BarContainer {
+    RepSelfMemberAnno[] value();
+}
+
+@ContainerFor(BarContainer.class)
+@Retention(RetentionPolicy.RUNTIME)
+@interface BarContainerContainer {
+    BarContainer[] value();
+    String meh() default "apa";
+}
+
+@BarContainer(value={})
+@BarContainer(value={})
+@interface Bar {}
