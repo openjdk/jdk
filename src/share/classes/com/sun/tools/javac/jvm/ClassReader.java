@@ -1321,7 +1321,7 @@ public class ClassReader implements Completer {
                 else
                     proxies.append(proxy);
             }
-            annotate.later(new AnnotationCompleter(sym, proxies.toList()));
+            annotate.normal(new AnnotationCompleter(sym, proxies.toList()));
         }
     }
 
@@ -1347,7 +1347,7 @@ public class ClassReader implements Completer {
     void attachAnnotationDefault(final Symbol sym) {
         final MethodSymbol meth = (MethodSymbol)sym; // only on methods
         final Attribute value = readAttributeValue();
-        annotate.later(new AnnotationDefaultCompleter(meth, value));
+        annotate.normal(new AnnotationDefaultCompleter(meth, value));
     }
 
     Type readTypeOrClassSymbol(int i) {
@@ -1693,10 +1693,13 @@ public class ClassReader implements Completer {
             JavaFileObject previousClassFile = currentClassFile;
             try {
                 currentClassFile = classFile;
+                Annotations annotations = sym.annotations;
                 List<Attribute.Compound> newList = deproxyCompoundList(l);
-                sym.attributes_field = ((sym.attributes_field == null)
-                                        ? newList
-                                        : newList.prependList(sym.attributes_field));
+                if (annotations.pendingCompletion()) {
+                    annotations.setAttributes(newList);
+                } else {
+                    annotations.append(newList);
+                }
             } finally {
                 currentClassFile = previousClassFile;
             }
