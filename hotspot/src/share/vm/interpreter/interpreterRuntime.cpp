@@ -734,6 +734,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokehandle(JavaThread* thread)) {
   } // end JvmtiHideSingleStepping
 
   cache_entry(thread)->set_method_handle(
+      pool,
       info.resolved_method(),
       info.resolved_appendix(),
       pool->resolved_references());
@@ -761,6 +762,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
 
   ConstantPoolCacheEntry* cp_cache_entry = pool->invokedynamic_cp_cache_entry_at(index);
   cp_cache_entry->set_dynamic_call(
+      pool,
       info.resolved_method(),
       info.resolved_appendix(),
       pool->resolved_references());
