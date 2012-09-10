@@ -235,9 +235,22 @@ void JavaCT_DrawTextUsingQSD(JNIEnv *env, const QuartzSDOps *qsdo, const AWTStri
     CGContextSetTextMatrix(cgRef, CGAffineTransformIdentity); // resets the damage from CoreText
 
     NSString *string = [NSString stringWithCharacters:chars length:length];
+    /*
+       The calls below were used previously but for unknown reason did not 
+       render using the right font (see bug 7183516) when attribString is not 
+       initialized with font dictionary attributes.  It seems that "options" 
+       in CTTypesetterCreateWithAttributedStringAndOptions which contains the 
+       font dictionary is ignored.
+
     NSAttributedString *attribString = [[NSAttributedString alloc] initWithString:string];
 
     CTTypesetterRef typeSetterRef = CTTypesetterCreateWithAttributedStringAndOptions((CFAttributedStringRef) attribString, (CFDictionaryRef) ctsDictionaryFor(nsFont, JRSFontStyleUsesFractionalMetrics(strike->fStyle)));
+    */
+    NSAttributedString *attribString = [[NSAttributedString alloc]
+        initWithString:string
+        attributes:ctsDictionaryFor(nsFont, JRSFontStyleUsesFractionalMetrics(strike->fStyle))];
+    
+    CTTypesetterRef typeSetterRef = CTTypesetterCreateWithAttributedString((CFAttributedStringRef) attribString);
 
     CFRange range = {0, length};
     CTLineRef lineRef = CTTypesetterCreateLine(typeSetterRef, range);
