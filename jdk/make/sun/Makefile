@@ -87,7 +87,7 @@ else
 endif
 SUBDIRS_desktop    = audio $(RENDER_SUBDIR) image \
                      $(LWAWT_PRE_SUBDIR) $(DISPLAY_LIBS) $(DGA_SUBDIR) $(LWAWT_SUBDIR) \
-                     jawt font jpeg cmm $(DISPLAY_TOOLS) beans
+                     jawt font jpeg cmm $(DISPLAY_TOOLS)
 SUBDIRS_management = management
 SUBDIRS_misc       = $(ORG_SUBDIR) rmi $(JDBC_SUBDIR) tracing
 SUBDIRS_tools      = native2ascii serialver tools jconsole

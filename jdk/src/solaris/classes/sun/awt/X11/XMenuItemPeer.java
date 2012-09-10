@@ -28,10 +28,7 @@ import java.awt.*;
 import java.awt.peer.*;
 import java.awt.event.*;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
-import sun.awt.SunToolkit;
+import sun.awt.AWTAccessor;
 
 public class XMenuItemPeer implements MenuItemPeer {
 
@@ -81,24 +78,6 @@ public class XMenuItemPeer implements MenuItemPeer {
     private final static int SEPARATOR_WIDTH = 20;
     private final static int SEPARATOR_HEIGHT = 5;
 
-    /*
-     * MenuItem's fields & methods
-     */
-    private final static Field f_enabled;
-    private final static Field f_label;
-    private final static Field f_shortcut;
-    private final static Method m_getFont;
-    private final static Method m_isItemEnabled;
-    private final static Method m_getActionCommand;
-    static {
-        f_enabled = SunToolkit.getField(MenuItem.class, "enabled");
-        f_label = SunToolkit.getField(MenuItem.class, "label");
-        f_shortcut = SunToolkit.getField(MenuItem.class, "shortcut");
-
-        m_getFont = SunToolkit.getMethod(MenuComponent.class, "getFont_NoClientCode", null);
-        m_getActionCommand = SunToolkit.getMethod(MenuItem.class, "getActionCommandImpl", null);
-        m_isItemEnabled = SunToolkit.getMethod(MenuItem.class, "isItemEnabled", null);
-    }
     /************************************************
      *
      * Text Metrics
@@ -216,39 +195,22 @@ public class XMenuItemPeer implements MenuItemPeer {
         if (target == null) {
             return XWindow.getDefaultFont();
         }
-        try {
-            return (Font)m_getFont.invoke(target, new Object[0]);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return XWindow.getDefaultFont();
+        return AWTAccessor.getMenuComponentAccessor().getFont_NoClientCode(target);
     }
 
     String getTargetLabel() {
         if (target == null) {
             return "";
         }
-        try {
-            String label = (String)f_label.get(target);
-            return (label == null) ? "" : label;
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return "";
+        String label = AWTAccessor.getMenuItemAccessor().getLabel(target);
+        return (label == null) ? "" : label;
     }
 
     boolean isTargetEnabled() {
         if (target == null) {
             return false;
         }
-        try {
-            return f_enabled.getBoolean(target);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return false;
+        return AWTAccessor.getMenuItemAccessor().isEnabled(target);
     }
 
     /**
@@ -260,40 +222,21 @@ public class XMenuItemPeer implements MenuItemPeer {
         if (target == null) {
             return false;
         }
-        try {
-            return ((Boolean)m_isItemEnabled.invoke(target, new Object[0])).booleanValue();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return false;
+        return AWTAccessor.getMenuItemAccessor().isItemEnabled(target);
     }
 
     String getTargetActionCommand() {
         if (target == null) {
             return "";
         }
-        try {
-            return (String) m_getActionCommand.invoke(target,(Object[]) null);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return "";
+        return AWTAccessor.getMenuItemAccessor().getActionCommandImpl(target);
     }
 
     MenuShortcut getTargetShortcut() {
         if (target == null) {
             return null;
         }
-        try {
-            return (MenuShortcut)f_shortcut.get(target);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return AWTAccessor.getMenuItemAccessor().getShortcut(target);
     }
 
     String getShortcutText() {
