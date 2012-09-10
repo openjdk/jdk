@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class Test4520754 {
     public static void main(String[] args) {
         // ensure that 4168475 does not regress
         test4168475(Component.class);
-        // AWT classes (sun.beans.infos.ComponentBeanInfo)
+        // AWT classes (com.sun.beans.infos.ComponentBeanInfo)
         test(null, Button.class, Component.class, List.class, Menu.class, Panel.class);
         // Swing classes (dt.jar)
         test(null, JApplet.class, JButton.class, JCheckBox.class);

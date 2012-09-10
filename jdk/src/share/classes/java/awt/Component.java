@@ -150,7 +150,7 @@ import sun.util.logging.PlatformLogger;
  *    import java.awt.event.*;
  *    import java.io.Serializable;
  *
- *    class MyApp java.io.Serializable
+ *    class MyApp implements java.io.Serializable
  *    {
  *         BigObjectThatShouldNotBeSerializedWithAButton bigOne;
  *         Button aButton = new Button();

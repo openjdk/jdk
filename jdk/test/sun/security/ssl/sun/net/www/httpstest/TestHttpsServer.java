@@ -51,7 +51,7 @@ import java.security.*;
  * NOTE NOTE NOTE NOTE NOTE NOTE NOTE
  */
 
-public class HttpServer {
+public class TestHttpsServer {
 
     ServerSocketChannel schan;
     int threads;
@@ -63,19 +63,19 @@ public class HttpServer {
     static SSLContext sslCtx;
 
     /**
-     * Create a <code>HttpServer<code> instance with the specified callback object
+     * Create a <code>TestHttpsServer<code> instance with the specified callback object
      * for handling requests. One thread is created to handle requests,
      * and up to ten TCP connections will be handled simultaneously.
      * @param cb the callback object which is invoked to handle each
      *  incoming request
      */
 
-    public HttpServer (HttpCallback cb) throws IOException {
+    public TestHttpsServer (HttpCallback cb) throws IOException {
         this (cb, 1, 10, 0);
     }
 
     /**
-     * Create a <code>HttpServer<code> instance with the specified number of
+     * Create a <code>TestHttpsServer<code> instance with the specified number of
      * threads and maximum number of connections per thread. This functions
      * the same as the 4 arg constructor, where the port argument is set to zero.
      * @param cb the callback object which is invoked to handle each
@@ -86,13 +86,13 @@ public class HttpServer {
      *     handle per thread
      */
 
-    public HttpServer (HttpCallback cb, int threads, int cperthread)
+    public TestHttpsServer (HttpCallback cb, int threads, int cperthread)
         throws IOException {
         this (cb, threads, cperthread, 0);
     }
 
     /**
-     * Create a <code>HttpServer<code> instance with the specified number
+     * Create a <code>TestHttpsServer<code> instance with the specified number
      * of threads and maximum number of connections per thread and running on
      * the specified port. The specified number of threads are created to
      * handle incoming requests, and each thread is allowed
@@ -107,7 +107,7 @@ public class HttpServer {
      *  means choose any free port.
      */
 
-    public HttpServer (HttpCallback cb, int threads, int cperthread, int port)
+    public TestHttpsServer (HttpCallback cb, int threads, int cperthread, int port)
         throws IOException {
         schan = ServerSocketChannel.open ();
         InetSocketAddress addr = new InetSocketAddress (port);
