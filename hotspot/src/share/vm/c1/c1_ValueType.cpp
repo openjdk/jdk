@@ -168,6 +168,7 @@ BasicType as_BasicType(ValueType* type) {
     case floatTag:   return T_FLOAT;
     case doubleTag:  return T_DOUBLE;
     case objectTag:  return T_OBJECT;
+    case metaDataTag:return T_METADATA;
     case addressTag: return T_ADDRESS;
     case illegalTag: return T_ILLEGAL;
   }

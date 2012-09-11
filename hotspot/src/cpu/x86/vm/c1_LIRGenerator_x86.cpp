@@ -1002,13 +1002,12 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
 #endif
   CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr reg = result_register_for(x->type());
-  LIR_Opr klass_reg = new_register(objectType);
   new_instance(reg, x->klass(),
                        FrameMap::rcx_oop_opr,
                        FrameMap::rdi_oop_opr,
                        FrameMap::rsi_oop_opr,
                        LIR_OprFact::illegalOpr,
-                       FrameMap::rdx_oop_opr, info);
+                       FrameMap::rdx_metadata_opr, info);
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);
 }
@@ -1025,11 +1024,11 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   LIR_Opr tmp2 = FrameMap::rsi_oop_opr;
   LIR_Opr tmp3 = FrameMap::rdi_oop_opr;
   LIR_Opr tmp4 = reg;
-  LIR_Opr klass_reg = FrameMap::rdx_oop_opr;
+  LIR_Opr klass_reg = FrameMap::rdx_metadata_opr;
   LIR_Opr len = length.result();
   BasicType elem_type = x->elt_type();
 
-  __ oop2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
+  __ metadata2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
 
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len, reg, info);
   __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path);
@@ -1055,7 +1054,7 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr tmp2 = FrameMap::rsi_oop_opr;
   LIR_Opr tmp3 = FrameMap::rdi_oop_opr;
   LIR_Opr tmp4 = reg;
-  LIR_Opr klass_reg = FrameMap::rdx_oop_opr;
+  LIR_Opr klass_reg = FrameMap::rdx_metadata_opr;
 
   length.load_item_force(FrameMap::rbx_opr);
   LIR_Opr len = length.result();
@@ -1103,17 +1102,18 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
     store_stack_parameter(size->result(), in_ByteSize(i*4));
   }
 
-  LIR_Opr reg = result_register_for(x->type());
-  klass2reg_with_patching(reg, x->klass(), patching_info);
+  LIR_Opr klass_reg = FrameMap::rax_metadata_opr;
+  klass2reg_with_patching(klass_reg, x->klass(), patching_info);
 
   LIR_Opr rank = FrameMap::rbx_opr;
   __ move(LIR_OprFact::intConst(x->rank()), rank);
   LIR_Opr varargs = FrameMap::rcx_opr;
   __ move(FrameMap::rsp_opr, varargs);
   LIR_OprList* args = new LIR_OprList(3);
-  args->append(reg);
+  args->append(klass_reg);
   args->append(rank);
   args->append(varargs);
+  LIR_Opr reg = result_register_for(x->type());
   __ call_runtime(Runtime1::entry_for(Runtime1::new_multi_array_id),
                   LIR_OprFact::illegalOpr,
                   reg, args, info);

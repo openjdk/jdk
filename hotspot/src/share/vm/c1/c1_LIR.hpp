@@ -299,6 +299,7 @@ class LIR_OprDesc: public CompilationResourceObj {
     , address_type  = 4 << type_shift
     , float_type    = 5 << type_shift
     , double_type   = 6 << type_shift
+    , metadata_type = 7 << type_shift
   };
   friend OprType as_OprType(BasicType t);
   friend BasicType as_BasicType(OprType t);
@@ -322,6 +323,7 @@ class LIR_OprDesc: public CompilationResourceObj {
       case T_ADDRESS:
       case T_OBJECT:
       case T_ARRAY:
+      case T_METADATA:
         return single_size;
         break;
 
@@ -474,6 +476,7 @@ inline LIR_OprDesc::OprType as_OprType(BasicType type) {
   case T_OBJECT:
   case T_ARRAY:    return LIR_OprDesc::object_type;
   case T_ADDRESS:  return LIR_OprDesc::address_type;
+  case T_METADATA: return LIR_OprDesc::metadata_type;
   case T_ILLEGAL:  // fall through
   default: ShouldNotReachHere(); return LIR_OprDesc::unknown_type;
   }
@@ -487,6 +490,7 @@ inline BasicType as_BasicType(LIR_OprDesc::OprType t) {
   case LIR_OprDesc::double_type:  return T_DOUBLE;
   case LIR_OprDesc::object_type:  return T_OBJECT;
   case LIR_OprDesc::address_type: return T_ADDRESS;
+  case LIR_OprDesc::metadata_type:return T_METADATA;
   case LIR_OprDesc::unknown_type: // fall through
   default: ShouldNotReachHere();  return T_ILLEGAL;
   }
@@ -587,6 +591,12 @@ class LIR_OprFact: public AllStatic {
                                LIR_OprDesc::cpu_register         |
                                LIR_OprDesc::single_size);
   }
+  static LIR_Opr single_cpu_metadata(int reg) {
+    return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |
+                               LIR_OprDesc::metadata_type        |
+                               LIR_OprDesc::cpu_register         |
+                               LIR_OprDesc::single_size);
+  }
   static LIR_Opr double_cpu(int reg1, int reg2) {
     LP64_ONLY(assert(reg1 == reg2, "must be identical"));
     return (LIR_Opr)(intptr_t)((reg1 << LIR_OprDesc::reg1_shift) |
@@ -655,6 +665,14 @@ class LIR_OprFact: public AllStatic {
       case T_ARRAY:
         res = (LIR_Opr)(intptr_t)((index << LIR_OprDesc::data_shift)  |
                                             LIR_OprDesc::object_type  |
+                                            LIR_OprDesc::cpu_register |
+                                            LIR_OprDesc::single_size  |
+                                            LIR_OprDesc::virtual_mask);
+        break;
+
+      case T_METADATA:
+        res = (LIR_Opr)(intptr_t)((index << LIR_OprDesc::data_shift)  |
+                                            LIR_OprDesc::metadata_type|
                                             LIR_OprDesc::cpu_register |
                                             LIR_OprDesc::single_size  |
                                             LIR_OprDesc::virtual_mask);
@@ -757,6 +775,12 @@ class LIR_OprFact: public AllStatic {
                                   LIR_OprDesc::single_size);
         break;
 
+      case T_METADATA:
+        res = (LIR_Opr)(intptr_t)((index << LIR_OprDesc::data_shift) |
+                                  LIR_OprDesc::metadata_type         |
+                                  LIR_OprDesc::stack_value           |
+                                  LIR_OprDesc::single_size);
+        break;
       case T_INT:
         res = (LIR_Opr)(intptr_t)((index << LIR_OprDesc::data_shift) |
                                   LIR_OprDesc::int_type              |
@@ -2006,10 +2030,10 @@ class LIR_List: public CompilationResourceObj {
   }
   void volatile_move(LIR_Opr src, LIR_Opr dst, BasicType type, CodeEmitInfo* info = NULL, LIR_PatchCode patch_code = lir_patch_none) { append(new LIR_Op1(lir_move, src, dst, type, patch_code, info, lir_move_volatile)); }
 
-  void oop2reg  (jobject o, LIR_Opr reg)         { append(new LIR_Op1(lir_move, LIR_OprFact::oopConst(o),    reg));   }
+  void oop2reg  (jobject o, LIR_Opr reg)         { assert(reg->type() == T_OBJECT, "bad reg"); append(new LIR_Op1(lir_move, LIR_OprFact::oopConst(o),    reg));   }
   void oop2reg_patch(jobject o, LIR_Opr reg, CodeEmitInfo* info);
 
-  void oop2reg  (Metadata* o, LIR_Opr reg)       { append(new LIR_Op1(lir_move, LIR_OprFact::metadataConst(o), reg));   }
+  void metadata2reg  (Metadata* o, LIR_Opr reg)  { assert(reg->type() == T_METADATA, "bad reg"); append(new LIR_Op1(lir_move, LIR_OprFact::metadataConst(o), reg));   }
   void klass2reg_patch(Metadata* o, LIR_Opr reg, CodeEmitInfo* info);
 
   void return_op(LIR_Opr result)                 { append(new LIR_Op1(lir_return, result)); }

@@ -938,6 +938,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     case T_OBJECT:
     case T_ARRAY:
     case T_ADDRESS:
+    case T_METADATA:
       regs[i].set1(VMRegImpl::stack2reg(stack++));
       break;
     case T_LONG:
