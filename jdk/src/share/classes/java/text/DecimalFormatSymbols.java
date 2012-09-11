@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,12 @@ import java.io.Serializable;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.util.Currency;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
-
-import sun.util.LocaleServiceProviderPool;
-import sun.util.resources.LocaleData;
+import java.util.concurrent.ConcurrentMap;
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.LocaleServiceProviderPool;
 
 /**
  * This class represents the set of symbols (such as the decimal separator,
@@ -87,6 +88,14 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * {@link java.text.spi.DecimalFormatSymbolsProvider DecimalFormatSymbolsProvider}
      * implementations. For full locale coverage, use the
      * {@link #getInstance(Locale) getInstance} method.
+     * If the specified locale contains the {@link java.util.Locale#UNICODE_LOCALE_EXTENSION}
+     * for the numbering system, the instance is initialized with the specified numbering
+     * system if the JRE implementation supports it. For example,
+     * <pre>
+     * NumberFormat.getNumberInstance(Locale.forLanguageTag("th-TH-u-nu-thai"))
+     * </pre>
+     * This may return a {@code NumberFormat} instance with the Thai numbering system,
+     * instead of the Latin numbering system.
      *
      * @exception NullPointerException if <code>locale</code> is null
      */
@@ -135,26 +144,29 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * as for those supported by installed
      * {@link java.text.spi.DecimalFormatSymbolsProvider
      * DecimalFormatSymbolsProvider} implementations.
+     * If the specified locale contains the {@link java.util.Locale#UNICODE_LOCALE_EXTENSION}
+     * for the numbering system, the instance is initialized with the specified numbering
+     * system if the JRE implementation supports it. For example,
+     * <pre>
+     * NumberFormat.getNumberInstance(Locale.forLanguageTag("th-TH-u-nu-thai"))
+     * </pre>
+     * This may return a {@code NumberFormat} instance with the Thai numbering system,
+     * instead of the Latin numbering system.
      * @param locale the desired locale.
      * @return a <code>DecimalFormatSymbols</code> instance.
      * @exception NullPointerException if <code>locale</code> is null
      * @since 1.6
      */
     public static final DecimalFormatSymbols getInstance(Locale locale) {
-
-        // Check whether a provider can provide an implementation that's closer
-        // to the requested locale than what the Java runtime itself can provide.
-        LocaleServiceProviderPool pool =
-            LocaleServiceProviderPool.getPool(DecimalFormatSymbolsProvider.class);
-        if (pool.hasProviders()) {
-            DecimalFormatSymbols providersInstance = pool.getLocalizedObject(
-                                DecimalFormatSymbolsGetter.INSTANCE, locale);
-            if (providersInstance != null) {
-                return providersInstance;
-            }
+        LocaleProviderAdapter adapter;
+        adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, locale);
+        DecimalFormatSymbolsProvider provider = adapter.getDecimalFormatSymbolsProvider();
+        DecimalFormatSymbols dfsyms = provider.getInstance(locale);
+        if (dfsyms == null) {
+            provider = LocaleProviderAdapter.forJRE().getDecimalFormatSymbolsProvider();
+            dfsyms = provider.getInstance(locale);
         }
-
-        return new DecimalFormatSymbols(locale);
+        return dfsyms;
     }
 
     /**
@@ -474,6 +486,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     /**
      * Standard override.
      */
+    @Override
     public Object clone() {
         try {
             return (DecimalFormatSymbols)super.clone();
@@ -486,6 +499,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     /**
      * Override equals.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == null) return false;
         if (this == obj) return true;
@@ -512,6 +526,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     /**
      * Override hashCode.
      */
+    @Override
     public int hashCode() {
             int result = zeroDigit;
             result = result * 37 + groupingSeparator;
@@ -529,16 +544,30 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         boolean needCacheUpdate = false;
         Object[] data = cachedLocaleData.get(locale);
         if (data == null) {  /* cache miss */
-            // When numbering system is thai (Locale's extension contains u-nu-thai),
-            // we read the data from th_TH_TH.
-            Locale lookupLocale = locale;
-            String numberType = locale.getUnicodeLocaleType("nu");
-            if (numberType != null && numberType.equals("thai")) {
-                lookupLocale = new Locale("th", "TH", "TH");
+            LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, locale);
+            // Avoid potential recursions
+            switch (adapter.getAdapterType()) {
+            case HOST:
+            case SPI:
+                adapter = LocaleProviderAdapter.getResourceBundleBased();
+                break;
             }
+            ResourceBundle rb = adapter.getLocaleData().getNumberFormatData(locale);
             data = new Object[3];
-            ResourceBundle rb = LocaleData.getNumberFormatData(lookupLocale);
-            data[0] = rb.getStringArray("NumberElements");
+            String numberType = locale.getUnicodeLocaleType("nu");
+            StringBuilder numElemKey =
+                new StringBuilder(numberType != null ?
+                                  numberType : rb.getString("DefaultNumberingSystem"));
+            if (numElemKey.length() != 0) {
+                numElemKey.append(".");
+            }
+            numElemKey.append("NumberElements");
+            try {
+                data[0] = rb.getStringArray(numElemKey.toString());
+            } catch (MissingResourceException mre) {
+                // numberType must be bogus. Use the last resort numbering system.
+                data[0] = rb.getStringArray("NumberElements");
+            }
             needCacheUpdate = true;
         }
 
@@ -561,7 +590,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         // Check for empty country string separately because it's a valid
         // country ID for Locale (and used for the C locale), but not a valid
         // ISO 3166 country code, and exceptions are expensive.
-        if (!"".equals(locale.getCountry())) {
+        if (locale.getCountry().length() > 0) {
             try {
                 currency = Currency.getInstance(locale);
             } catch (IllegalArgumentException e) {
@@ -813,25 +842,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * cache to hold the NumberElements and the Currency
      * of a Locale.
      */
-    private static final ConcurrentHashMap<Locale, Object[]> cachedLocaleData = new ConcurrentHashMap<Locale, Object[]>(3);
-
-    /**
-     * Obtains a DecimalFormatSymbols instance from a DecimalFormatSymbolsProvider
-     * implementation.
-     */
-    private static class DecimalFormatSymbolsGetter
-        implements LocaleServiceProviderPool.LocalizedObjectGetter<DecimalFormatSymbolsProvider,
-                                                                   DecimalFormatSymbols> {
-        private static final DecimalFormatSymbolsGetter INSTANCE =
-            new DecimalFormatSymbolsGetter();
-
-        public DecimalFormatSymbols getObject(
-                                DecimalFormatSymbolsProvider decimalFormatSymbolsProvider,
-                                Locale locale,
-                                String key,
-                                Object... params) {
-            assert params.length == 0;
-            return decimalFormatSymbolsProvider.getInstance(locale);
-        }
-    }
+    private static final ConcurrentMap<Locale, Object[]> cachedLocaleData
+            = new ConcurrentHashMap<>(3);
 }

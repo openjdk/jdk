@@ -1485,7 +1485,7 @@ public class MethodHandlesTest {
         RuntimeException error = null;
         try {
             target = id.asType(newType);
-        } catch (RuntimeException ex) {
+        } catch (WrongMethodTypeException ex) {
             error = ex;
         }
         if (verbosity >= 3)
@@ -2381,47 +2381,100 @@ public class MethodHandlesTest {
         assertSame(thrown, caught);
     }
 
-    //@Test
+    @Test
     public void testInterfaceCast() throws Throwable {
         //if (CAN_SKIP_WORKING)  return;
         startTest("interfaceCast");
-        for (Class<?> ctype : new Class<?>[]{ Object.class, String.class, CharSequence.class, Number.class, Iterable.class}) {
-            testInterfaceCast(ctype, false, false);
-            testInterfaceCast(ctype, true,  false);
-            testInterfaceCast(ctype, false, true);
-            testInterfaceCast(ctype, true,  true);
+        assert( (((Object)"foo") instanceof CharSequence));
+        assert(!(((Object)"foo") instanceof Iterable));
+        for (MethodHandle mh : new MethodHandle[]{
+            MethodHandles.identity(String.class),
+            MethodHandles.identity(CharSequence.class),
+            MethodHandles.identity(Iterable.class)
+        }) {
+            if (verbosity > 0)  System.out.println("-- mh = "+mh);
+            for (Class<?> ctype : new Class<?>[]{
+                Object.class, String.class, CharSequence.class,
+                Number.class, Iterable.class
+            }) {
+                if (verbosity > 0)  System.out.println("---- ctype = "+ctype.getName());
+                //                           doret  docast
+                testInterfaceCast(mh, ctype, false, false);
+                testInterfaceCast(mh, ctype, true,  false);
+                testInterfaceCast(mh, ctype, false, true);
+                testInterfaceCast(mh, ctype, true,  true);
+            }
         }
     }
-    public void testInterfaceCast(Class<?> ctype, boolean doret, boolean docast) throws Throwable {
-        String str = "normal return value";
-        MethodHandle mh = MethodHandles.identity(String.class);
+    private static Class<?> i2o(Class<?> c) {
+        return (c.isInterface() ? Object.class : c);
+    }
+    public void testInterfaceCast(MethodHandle mh, Class<?> ctype,
+                                                   boolean doret, boolean docast) throws Throwable {
+        MethodHandle mh0 = mh;
+        if (verbosity > 1)
+            System.out.println("mh="+mh+", ctype="+ctype.getName()+", doret="+doret+", docast="+docast);
+        String normalRetVal = "normal return value";
         MethodType mt = mh.type();
+        MethodType mt0 = mt;
         if (doret)  mt = mt.changeReturnType(ctype);
         else        mt = mt.changeParameterType(0, ctype);
         if (docast) mh = MethodHandles.explicitCastArguments(mh, mt);
         else        mh = mh.asType(mt);
+        assertEquals(mt, mh.type());
+        MethodType mt1 = mt;
         // this bit is needed to make the interface types disappear for invokeWithArguments:
         mh = MethodHandles.explicitCastArguments(mh, mt.generic());
-        boolean expectFail = !ctype.isInstance(str);
-        if (ctype.isInterface()) {
-            // special rules:  interfaces slide by more frequently
-            if (docast || !doret)  expectFail = false;
+        Class<?>[] step = {
+            mt1.parameterType(0),  // param as passed to mh at first
+            mt0.parameterType(0),  // param after incoming cast
+            mt0.returnType(),      // return value before cast
+            mt1.returnType(),      // return value after outgoing cast
+        };
+        // where might a checkCast occur?
+        boolean[] checkCast = new boolean[step.length];
+        // the string value must pass each step without causing an exception
+        if (!docast) {
+            if (!doret) {
+                if (step[0] != step[1])
+                    checkCast[1] = true;  // incoming value is cast
+            } else {
+                if (step[2] != step[3])
+                    checkCast[3] = true;  // outgoing value is cast
+            }
         }
+        boolean expectFail = false;
+        for (int i = 0; i < step.length; i++) {
+            Class<?> c = step[i];
+            if (!checkCast[i])  c = i2o(c);
+            if (!c.isInstance(normalRetVal)) {
+                if (verbosity > 3)
+                    System.out.println("expect failure at step "+i+" in "+Arrays.toString(step)+Arrays.toString(checkCast));
+                expectFail = true;
+                break;
+            }
+        }
+        countTest(!expectFail);
+        if (verbosity > 2)
+            System.out.println("expectFail="+expectFail+", mt="+mt);
         Object res;
         try {
-            res = mh.invokeWithArguments(str);
+            res = mh.invokeWithArguments(normalRetVal);
         } catch (Exception ex) {
             res = ex;
         }
         boolean sawFail = !(res instanceof String);
         if (sawFail != expectFail) {
-            System.out.println("*** testInterfaceCast: "+mh+" was "+mt+" => "+res+(docast ? " (explicitCastArguments)" : ""));
+            System.out.println("*** testInterfaceCast: mh0 = "+mh0);
+            System.out.println("  retype using "+(docast ? "explicitCastArguments" : "asType")+" to "+mt+" => "+mh);
+            System.out.println("  call returned "+res);
+            System.out.println("  expected "+(expectFail ? "an exception" : normalRetVal));
         }
-        if (!sawFail) {
-            assertFalse(res.toString(), expectFail);
-            assertEquals(str, res);
+        if (!expectFail) {
+            assertFalse(res.toString(), sawFail);
+            assertEquals(normalRetVal, res);
         } else {
-            assertTrue(res.toString(), expectFail);
+            assertTrue(res.toString(), sawFail);
         }
     }
 

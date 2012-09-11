@@ -1589,9 +1589,16 @@ public class Types {
      * type parameters in t are deleted.
      */
     public Type erasure(Type t) {
-        return erasure(t, false);
+        return eraseNotNeeded(t)? t : erasure(t, false);
     }
     //where
+    private boolean eraseNotNeeded(Type t) {
+        // We don't want to erase primitive types and String type as that
+        // operation is idempotent. Also, erasing these could result in loss
+        // of information such as constant values attached to such types.
+        return (t.tag <= lastBaseTag) || (syms.stringType.tsym == t.tsym);
+    }
+
     private Type erasure(Type t, boolean recurse) {
         if (t.tag <= lastBaseTag)
             return t; /* fast special case */

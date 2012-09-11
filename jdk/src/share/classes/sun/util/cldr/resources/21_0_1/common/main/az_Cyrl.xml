@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6708 $"/>
+		<generation date="$Date: 2012-03-16 15:58:36 +0900 (Fri, 16 Mar 2012) $"/>
+		<language type="az"/>
+		<script type="Cyrl"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="az">Азәрбајҹан</language>
+			<language type="de">алманҹа</language>
+			<language type="en">инҝилисҹә</language>
+			<language type="es">испанҹа</language>
+			<language type="fr">франсызҹа</language>
+			<language type="it">италјанҹа</language>
+			<language type="ja">јапонҹа</language>
+			<language type="pt">португалҹа</language>
+			<language type="ru">русҹа</language>
+			<language type="zh">чинҹә</language>
+		</languages>
+		<territories>
+			<territory type="AZ">Азәрбајҹан</territory>
+			<territory type="BR">Бразилија</territory>
+			<territory type="CN">Чин</territory>
+			<territory type="DE">Алманија</territory>
+			<territory type="FR">Франса</territory>
+			<territory type="IN">Һиндистан</territory>
+			<territory type="IT">Италија</territory>
+			<territory type="JP">Јапонија</territory>
+			<territory type="RU">Русија</territory>
+			<territory type="US">Америка Бирләшмиш Штатлары</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[а ә б в г ғ д е ж з и й ј к ҝ л м н о ө п р с т у ү ф х һ ч ҹ ш ы]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ц щ ъ ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[А Ә Б В Г Ғ Д Е Ж З И Й Ј К Ҝ Л М Н О Ө П Р С Т У Ү Ф Х Һ Ч Ҹ Ш Ы]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>«</quotationStart>
+		<quotationEnd>»</quotationEnd>
+		<alternateQuotationStart>‹</alternateQuotationStart>
+		<alternateQuotationEnd>›</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">јанвар</month>
+							<month type="2">феврал</month>
+							<month type="3">март</month>
+							<month type="4">апрел</month>
+							<month type="5">май</month>
+							<month type="6">ијун</month>
+							<month type="7">ијул</month>
+							<month type="8">август</month>
+							<month type="9">сентјабр</month>
+							<month type="10">октјабр</month>
+							<month type="11">нојабр</month>
+							<month type="12">декабр</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">базар</day>
+							<day type="mon">базар ертәси</day>
+							<day type="tue">чәршәнбә ахшамы</day>
+							<day type="wed">чәршәнбә</day>
+							<day type="thu">ҹүмә ахшамы</day>
+							<day type="fri">ҹүмә</day>
+							<day type="sat">шәнбә</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">7</day>
+							<day type="mon">1</day>
+							<day type="tue">2</day>
+							<day type="wed">3</day>
+							<day type="thu">4</day>
+							<day type="fri">5</day>
+							<day type="sat">6</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d, MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM , y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">yy/MM/dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d, MMM</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d, MMM, y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal draft="contributed">,</decimal>
+			<group draft="contributed">.</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<exponential draft="contributed">E</exponential>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern draft="contributed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="AZN">
+				<displayName draft="unconfirmed">манат</displayName>
+				<symbol>ман.</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

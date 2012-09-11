@@ -404,6 +404,19 @@ public class BasicDouble
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
         // Compact
 
         relPut(b);

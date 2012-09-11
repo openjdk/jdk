@@ -25,19 +25,11 @@
 
 package java.awt;
 
-import java.awt.Point;
-import java.awt.Toolkit;
-import java.awt.GraphicsEnvironment;
 import java.awt.event.*;
-import java.awt.AWTEvent;
-import java.awt.AWTEventMulticaster;
-import java.awt.EventQueue;
-import java.awt.PopupMenu;
-import java.awt.Image;
-import java.util.EventListener;
 import java.awt.peer.TrayIconPeer;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
+import sun.awt.AWTAccessor;
 import sun.awt.HeadlessToolkit;
 import java.util.EventObject;
 import java.security.AccessControlContext;
@@ -129,6 +121,16 @@ public class TrayIcon {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+
+        AWTAccessor.setTrayIconAccessor(
+            new AWTAccessor.TrayIconAccessor() {
+                public void addNotify(TrayIcon trayIcon) throws AWTException {
+                    trayIcon.addNotify();
+                }
+                public void removeNotify(TrayIcon trayIcon) {
+                    trayIcon.removeNotify();
+                }
+            });
     }
 
     private TrayIcon()

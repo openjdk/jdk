@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
+import java.util.Arrays;
 
 /**
  * Rijndael --pronounced Reindaal-- is a symmetric cipher with a 128-bit
@@ -54,7 +55,12 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
     private Object[] sessionK = null;
     private int[] K = null;
 
-    /** (ROUNDS-1) * 4 */
+    /** Cipher encryption/decryption key */
+    // skip re-generating Session and Sub keys if the cipher key is
+    // the same
+    private byte[] lastKey = null;
+
+    /** ROUNDS * 4 */
     private int limit = 0;
 
     AESCrypt() {
@@ -82,41 +88,45 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
                 key.length + " bytes");
         }
 
-        // generate session key and reset sub key.
-        sessionK = makeKey(key);
-        setSubKey(decrypting);
+        if (!Arrays.equals(key, lastKey)) {
+            // re-generate session key 'sessionK' when cipher key changes
+            makeSessionKey(key);
+            lastKey = key.clone();  // save cipher key
+        }
+
+        // set sub key to the corresponding session Key
+        this.K = (int[]) sessionK[(decrypting? 1:0)];
     }
 
-    private void setSubKey(boolean decrypting) {
-        int[][] Kd = (int[][]) sessionK[decrypting ? 1 : 0];
-        int rounds = Kd.length;
-        this.K = new int[rounds*4];
-        for(int i=0; i<rounds; i++) {
-            for(int j=0; j<4; j++) {
-                K[i*4 + j] = Kd[i][j];
-            }
-        }
-
+    /**
+     * Expand an int[(ROUNDS+1)][4] into int[(ROUNDS+1)*4].
+     * For decryption round keys, need to rotate right by 4 ints.
+     * @param kr The round keys for encryption or decryption.
+     * @param decrypting True if 'kr' is for decryption and false otherwise.
+     */
+    private static final int[] expandToSubKey(int[][] kr, boolean decrypting) {
+        int total = kr.length;
+        int[] expK = new int[total*4];
         if (decrypting) {
-            int j0 = K[K.length-4];
-            int j1 = K[K.length-3];
-            int j2 = K[K.length-2];
-            int j3 = K[K.length-1];
-
-            for (int i=this.K.length-1; i>3; i--) {
-                this.K[i] = this.K[i-4];
+            // decrypting, rotate right by 4 ints
+            // i.e. i==0
+            for(int j=0; j<4; j++) {
+                expK[j] = kr[total-1][j];
             }
-            K[0] = j0;
-            K[1] = j1;
-            K[2] = j2;
-            K[3] = j3;
+            for(int i=1; i<total; i++) {
+                for(int j=0; j<4; j++) {
+                    expK[i*4 + j] = kr[i-1][j];
+                }
+            }
+        } else {
+            // encrypting, straight expansion
+            for(int i=0; i<total; i++) {
+                for(int j=0; j<4; j++) {
+                    expK[i*4 + j] = kr[i][j];
+                }
+            }
         }
-
-        ROUNDS_12 = (rounds>=13);
-        ROUNDS_14 = (rounds==15);
-
-        rounds--;
-        limit=rounds*4;
+        return expK;
     }
 
     private static int[]
@@ -566,10 +576,10 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
     /**
      * Expand a user-supplied key material into a session key.
      *
-     * @param key The 128/192/256-bit user-key to use.
+     * @param k The 128/192/256-bit cipher key to use.
      * @exception InvalidKeyException  If the key is invalid.
      */
-    private static Object[] makeKey(byte[] k) throws InvalidKeyException {
+    private void makeSessionKey(byte[] k) throws InvalidKeyException {
         if (k == null) {
             throw new InvalidKeyException("Empty key");
         }
@@ -639,10 +649,18 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
                            U4[ tt         & 0xFF];
             }
         }
-        // assemble the encryption (Ke) and decryption (Kd) round keys into
-        // one sessionKey object
-        Object[] result = new Object[] {Ke, Kd};
-        return result;
+
+        // assemble the encryption (Ke) and decryption (Kd) round keys
+        // and expand them into arrays of ints.
+        int[] expandedKe = expandToSubKey(Ke, false); // decrypting==false
+        int[] expandedKd = expandToSubKey(Kd, true);  // decrypting==true
+
+        ROUNDS_12 = (ROUNDS>=12);
+        ROUNDS_14 = (ROUNDS==14);
+        limit = ROUNDS*4;
+
+        // store the expanded sub keys into 'sessionK'
+        sessionK = new Object[] { expandedKe, expandedKd };
     }
 
 
