@@ -52,7 +52,6 @@ BOOL postEventDuringEventSynthesis = NO;
 
 AWT_ASSERT_APPKIT_THREAD;
     fApplicationName = nil;
-    fUseDefaultIcon = NO;
 
     // NSApplication will call _RegisterApplication with the application's bundle, but there may not be one.
     // So, we need to call it ourselves to ensure the app is set up properly.
@@ -147,10 +146,6 @@ AWT_ASSERT_APPKIT_THREAD;
     if (appName != NULL) {
         fApplicationName = [NSString stringWithUTF8String:appName];
         unsetenv(envVar);
-
-        // If this environment variable was set we were launched from the command line, so we
-        // should use a generic app icon if one wasn't set.
-        fUseDefaultIcon = YES;
     }
 
     // If it wasn't specified as an argument, see if it was specified as a system property.
@@ -171,9 +166,6 @@ AWT_ASSERT_APPKIT_THREAD;
             if (lastPeriod.location != NSNotFound) {
                 fApplicationName = [fApplicationName substringFromIndex:lastPeriod.location + 1];
             }
-            // If this environment variable was set we were launched from the command line, so we
-            // should use a generic app icon if one wasn't set.
-            fUseDefaultIcon = YES;
         }
     }
 
@@ -266,8 +258,11 @@ AWT_ASSERT_APPKIT_THREAD;
     // If the icon file wasn't specified as an argument and we need to get an icon
     // we'll use the generic java app icon.
     NSString *defaultIconPath = [NSString stringWithFormat:@"%@%@", SHARED_FRAMEWORK_BUNDLE, @"/Resources/GenericApp.icns"];
-    if (fUseDefaultIcon && (theIconPath == nil)) {
-        theIconPath = defaultIconPath;
+    if (theIconPath == nil) {
+        NSString* bundleIcon = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleIconFile"];
+        if (bundleIcon == nil) {
+            theIconPath = defaultIconPath;
+        }
     }
 
     // Set up the dock icon if we have an icon name.

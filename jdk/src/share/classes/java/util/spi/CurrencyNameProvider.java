@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Currency;
 import java.util.List;
 import java.util.Locale;
+import java.util.ResourceBundle.Control;
 
 /**
  * An abstract class for service providers that
@@ -109,11 +110,13 @@ public abstract class CurrencyNameProvider extends LocaleServiceProvider {
         }
 
         // Check whether the locale is valid
-        List<Locale> avail = Arrays.asList(getAvailableLocales());
-        if (!avail.contains(locale)) {
-            throw new IllegalArgumentException("The locale is not available");
+        Control c = Control.getNoFallbackControl(Control.FORMAT_DEFAULT);
+        for (Locale l : getAvailableLocales()) {
+            if (c.getCandidateLocales("", l).contains(locale)) {
+                return null;
+            }
         }
 
-        return null;
+        throw new IllegalArgumentException("The locale is not available");
     }
 }

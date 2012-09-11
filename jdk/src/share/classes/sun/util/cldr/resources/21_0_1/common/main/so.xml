@@ -1,0 +1,743 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="so"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="af" draft="unconfirmed">Afrikaanays</language>
+			<language type="ak">Akan</language>
+			<language type="am">Axmaari</language>
+			<language type="ar">Carabi</language>
+			<language type="as" draft="unconfirmed">Asaamiis</language>
+			<language type="az" draft="unconfirmed">Azerbaijan</language>
+			<language type="be">Beleruusiyaan</language>
+			<language type="bg">Bulgeeriyaan</language>
+			<language type="bh" draft="unconfirmed">Bixaari</language>
+			<language type="bn">Bangaali</language>
+			<language type="br" draft="unconfirmed">Bereton</language>
+			<language type="bs" draft="unconfirmed">Boosniya</language>
+			<language type="ca" draft="unconfirmed">Katalaan</language>
+			<language type="cs">Jeeg</language>
+			<language type="cy" draft="unconfirmed">Welsh</language>
+			<language type="da" draft="unconfirmed">Danmarkays</language>
+			<language type="de">Jarmal</language>
+			<language type="de_CH" draft="unconfirmed">Jarmal (Iswiiserlaand)</language>
+			<language type="el">Giriik</language>
+			<language type="en">Ingiriisi</language>
+			<language type="en_GB" draft="unconfirmed">Ingiriisi (Boqortooyada Midowday)</language>
+			<language type="en_US" draft="unconfirmed">Ingiriisi (Maraykan)</language>
+			<language type="eo" draft="unconfirmed">Isberento</language>
+			<language type="es">Isbaanish</language>
+			<language type="es_419" draft="unconfirmed">Isbaanishka Laatiin Ameerika</language>
+			<language type="es_ES" draft="unconfirmed">Isbaanish (Isbayn)</language>
+			<language type="et" draft="unconfirmed">Istooniyaan</language>
+			<language type="eu" draft="unconfirmed">Basquu</language>
+			<language type="fa">Faarisi</language>
+			<language type="fi" draft="unconfirmed">Fiinlaandees</language>
+			<language type="fil" draft="unconfirmed">Tagalog</language>
+			<language type="fo" draft="unconfirmed">Farowsi</language>
+			<language type="fr">Faransiis</language>
+			<language type="fr_CH" draft="unconfirmed">Faransiis (Iswiiserlaand)</language>
+			<language type="fy">Firiisiyan Galbeed</language>
+			<language type="ga" draft="unconfirmed">Ayrish</language>
+			<language type="gd" draft="unconfirmed">Iskot Giilik</language>
+			<language type="gl" draft="unconfirmed">Galiisiyaan</language>
+			<language type="gn" draft="unconfirmed">Guraani</language>
+			<language type="gu" draft="unconfirmed">Gujaraati</language>
+			<language type="ha">Hawsa</language>
+			<language type="he" draft="unconfirmed">Cibri</language>
+			<language type="hi">Hindi</language>
+			<language type="hr" draft="unconfirmed">Koro'eeshiyaan</language>
+			<language type="hu">Hangariyaan</language>
+			<language type="hy" draft="unconfirmed">Armeeniyaan</language>
+			<language type="ia" draft="unconfirmed">Interlinguwa</language>
+			<language type="id">Indunuusiyaan</language>
+			<language type="ie" draft="unconfirmed">Interlingue</language>
+			<language type="ig">Igbo</language>
+			<language type="is" draft="unconfirmed">Ayslandays</language>
+			<language type="it">Talyaani</language>
+			<language type="ja">Jabbaaniis</language>
+			<language type="jv">Jafaaniis</language>
+			<language type="ka" draft="unconfirmed">Joorijiyaan</language>
+			<language type="km">Kamboodhian</language>
+			<language type="kn" draft="unconfirmed">Kannadays</language>
+			<language type="ko">Kuuriyaan</language>
+			<language type="ku" draft="unconfirmed">Kurdishka</language>
+			<language type="ky" draft="unconfirmed">Kirgiis</language>
+			<language type="la" draft="unconfirmed">Laatiin</language>
+			<language type="ln" draft="unconfirmed">Lingala</language>
+			<language type="lo" draft="unconfirmed">Laothian</language>
+			<language type="lt" draft="unconfirmed">Lituwaanays</language>
+			<language type="lv" draft="unconfirmed">Laatfiyaan</language>
+			<language type="mk" draft="unconfirmed">Masadooniyaan</language>
+			<language type="ml" draft="unconfirmed">Malayalam</language>
+			<language type="mn" draft="unconfirmed">Mangooli</language>
+			<language type="mr" draft="unconfirmed">Maarati</language>
+			<language type="ms">Malaay</language>
+			<language type="mt" draft="unconfirmed">Maltiis</language>
+			<language type="my">Burmese</language>
+			<language type="ne">Nebaali</language>
+			<language type="nl">Holandays</language>
+			<language type="nn" draft="unconfirmed">Nowrwejiyan (naynoroski)</language>
+			<language type="no" draft="unconfirmed">Af Noorwiijiyaan</language>
+			<language type="oc" draft="unconfirmed">Okitaan</language>
+			<language type="or" draft="unconfirmed">Oriya</language>
+			<language type="pa">Bunjaabi</language>
+			<language type="pl">Boolish</language>
+			<language type="ps" draft="unconfirmed">Bashtuu</language>
+			<language type="pt">Boortaqiis</language>
+			<language type="pt_BR" draft="unconfirmed">Boortaqiiska Baraasiil</language>
+			<language type="pt_PT" draft="unconfirmed">Boortaqiis (Boortuqaal)</language>
+			<language type="ro">Romanka</language>
+			<language type="ru">Ruush</language>
+			<language type="rw">Rwanda</language>
+			<language type="sa" draft="unconfirmed">Sanskrit</language>
+			<language type="sd" draft="unconfirmed">SINDHI</language>
+			<language type="sh" draft="unconfirmed">Serbiyaan</language>
+			<language type="si" draft="unconfirmed">Sinhaleys</language>
+			<language type="sk" draft="unconfirmed">Isloofaak</language>
+			<language type="sl" draft="unconfirmed">Islofeeniyaan</language>
+			<language type="so">Soomaali</language>
+			<language type="sq" draft="unconfirmed">Albaaniyaan</language>
+			<language type="sr" draft="unconfirmed">Seerbiyaan</language>
+			<language type="st" draft="unconfirmed">Sesooto</language>
+			<language type="su" draft="unconfirmed">Suudaaniis</language>
+			<language type="sv">Swiidhis</language>
+			<language type="sw" draft="unconfirmed">Sawaaxili</language>
+			<language type="ta">Tamiil</language>
+			<language type="te" draft="unconfirmed">Teluugu</language>
+			<language type="th">Taaylandays</language>
+			<language type="ti" draft="unconfirmed">Tigrinya</language>
+			<language type="tk" draft="unconfirmed">Turkumaanish</language>
+			<language type="tlh" draft="unconfirmed">Kiligoon</language>
+			<language type="tr">Turkish</language>
+			<language type="tw" draft="unconfirmed">Tiwiyan</language>
+			<language type="ug" draft="unconfirmed">UIGHUR</language>
+			<language type="uk">Yukreeniyaan</language>
+			<language type="und" draft="unconfirmed">Af aan la aqoon ama aan sax ahayn</language>
+			<language type="ur">Urduu</language>
+			<language type="uz" draft="unconfirmed">Usbakis</language>
+			<language type="vi">Fiitnaamays</language>
+			<language type="xh" draft="unconfirmed">Hoosta</language>
+			<language type="yi" draft="unconfirmed">Yadhish</language>
+			<language type="yo">Yoruuba</language>
+			<language type="zh">Jayniis</language>
+			<language type="zu">Zuulu</language>
+		</languages>
+		<scripts>
+			<script type="Latn" draft="unconfirmed">Laatiin</script>
+			<script type="Zxxx">Aan la qorin</script>
+			<script type="Zzzz">Far aan la aqoon amase aan saxnayn</script>
+		</scripts>
+		<territories>
+			<territory type="014" draft="unconfirmed">Afrikada Bari</territory>
+			<territory type="030" draft="unconfirmed">Aasiyada Bari</territory>
+			<territory type="151" draft="unconfirmed">Yurubta Bari</territory>
+			<territory type="AD">Andora</territory>
+			<territory type="AE">Imaaraadka Carabta ee Midoobay</territory>
+			<territory type="AF">Afgaanistaan</territory>
+			<territory type="AG">Antigua iyo Barbuda</territory>
+			<territory type="AI">Anguilla</territory>
+			<territory type="AL">Albaaniya</territory>
+			<territory type="AM">Armeeniya</territory>
+			<territory type="AN">Netherlands Antilles</territory>
+			<territory type="AO">Angoola</territory>
+			<territory type="AR">Arjantiin</territory>
+			<territory type="AS">Samowa Ameerika</territory>
+			<territory type="AT">Awsteriya</territory>
+			<territory type="AU">Awstaraaliya</territory>
+			<territory type="AW">Aruba</territory>
+			<territory type="AZ">Azerbajaan</territory>
+			<territory type="BA">Bosniya Hersigoviina</territory>
+			<territory type="BB">Baarbadoos</territory>
+			<territory type="BD">Bangaaladheesh</territory>
+			<territory type="BE">Biljam</territory>
+			<territory type="BF">Burkiina Faaso</territory>
+			<territory type="BG">Bulgaariya</territory>
+			<territory type="BH">Baxreyn</territory>
+			<territory type="BI">Burundi</territory>
+			<territory type="BJ">Biniin</territory>
+			<territory type="BM">Bermuuda</territory>
+			<territory type="BN">Buruneeya</territory>
+			<territory type="BO">Boliifiya</territory>
+			<territory type="BR">Braasiil</territory>
+			<territory type="BS">Bahaamas</territory>
+			<territory type="BT">Bhutan</territory>
+			<territory type="BW">Botuswaana</territory>
+			<territory type="BY">Belarus</territory>
+			<territory type="BZ">Belize</territory>
+			<territory type="CA">Kanada</territory>
+			<territory type="CD">Jamhuuriyadda Dimuquraadiga Kongo</territory>
+			<territory type="CF">Jamhuuriyadda Afrikada Dhexe</territory>
+			<territory type="CG">Kongo</territory>
+			<territory type="CH">Swiiserlaand</territory>
+			<territory type="CI">Ivory coast</territory>
+			<territory type="CK">Jaziiradda Cook</territory>
+			<territory type="CL">Jili</territory>
+			<territory type="CM">Kaameruun</territory>
+			<territory type="CN">Shiinaha</territory>
+			<territory type="CO">Kolombiya</territory>
+			<territory type="CR">Kosta Riika</territory>
+			<territory type="CS">serbiya iyo Monteneegro</territory>
+			<territory type="CU">Kuuba</territory>
+			<territory type="CV">Cape Verde Islands</territory>
+			<territory type="CY">Qubrus</territory>
+			<territory type="CZ">Jamhuuriyadda Jek</territory>
+			<territory type="DE">Jarmal</territory>
+			<territory type="DJ">Jabuuti</territory>
+			<territory type="DK">Denmark</territory>
+			<territory type="DM">Domeenika</territory>
+			<territory type="DO">Jamhuuriyadda Domeenika</territory>
+			<territory type="DZ">Aljeeriya</territory>
+			<territory type="EC">Ikuwadoor</territory>
+			<territory type="EE">Estooniya</territory>
+			<territory type="EG">Masar</territory>
+			<territory type="ER">Eretereeya</territory>
+			<territory type="ES">Isbeyn</territory>
+			<territory type="ET">Itoobiya</territory>
+			<territory type="FI">Finland</territory>
+			<territory type="FJ">Fiji</territory>
+			<territory type="FK">Jaziiradaha Fooklaan</territory>
+			<territory type="FM">Micronesia</territory>
+			<territory type="FR">Faransiis</territory>
+			<territory type="GA">Gaaboon</territory>
+			<territory type="GB">United Kingdom</territory>
+			<territory type="GD">Giriinaada</territory>
+			<territory type="GE">Joorjiya</territory>
+			<territory type="GF">French Guiana</territory>
+			<territory type="GH">Gaana</territory>
+			<territory type="GI">Gibraltar</territory>
+			<territory type="GL">Greenland</territory>
+			<territory type="GM">Gambiya</territory>
+			<territory type="GN">Gini</territory>
+			<territory type="GP">Guadeloupe</territory>
+			<territory type="GQ">Equatorial Guinea</territory>
+			<territory type="GR">Giriig</territory>
+			<territory type="GT">Guwaatamaala</territory>
+			<territory type="GU">Guam</territory>
+			<territory type="GW">Gini-Bisaaw</territory>
+			<territory type="GY">Guyana</territory>
+			<territory type="HN">Honduras</territory>
+			<territory type="HR">Korweeshiya</territory>
+			<territory type="HT">Hayti</territory>
+			<territory type="HU">Hangeri</territory>
+			<territory type="ID">Indoneesiya</territory>
+			<territory type="IE">Ayrlaand</territory>
+			<territory type="IL">Israaʼiil</territory>
+			<territory type="IN">Hindiya</territory>
+			<territory type="IO">British Indian Ocean Territory</territory>
+			<territory type="IQ">Ciraaq</territory>
+			<territory type="IR">Iiraan</territory>
+			<territory type="IS">Iislaand</territory>
+			<territory type="IT">Talyaani</territory>
+			<territory type="JM">Jameyka</territory>
+			<territory type="JO">Urdun</territory>
+			<territory type="JP">Jabaan</territory>
+			<territory type="KE">Kiiniya</territory>
+			<territory type="KG">Kirgistaan</territory>
+			<territory type="KH">Kamboodiya</territory>
+			<territory type="KI">Kiribati</territory>
+			<territory type="KM">Komooros</territory>
+			<territory type="KN">Saint Kitts and Nevis</territory>
+			<territory type="KP">Kuuriyada Waqooyi</territory>
+			<territory type="KR">Kuuriyada Koonfureed</territory>
+			<territory type="KW">Kuwayt</territory>
+			<territory type="KY">Cayman Islands</territory>
+			<territory type="KZ">Kasaakhistaan</territory>
+			<territory type="LA">Laos</territory>
+			<territory type="LB">Lubnaan</territory>
+			<territory type="LC">Saint Lucia</territory>
+			<territory type="LI">Liechtenstein</territory>
+			<territory type="LK">Sirilaanka</territory>
+			<territory type="LR">Laybeeriya</territory>
+			<territory type="LS">Losooto</territory>
+			<territory type="LT">Lituweeniya</territory>
+			<territory type="LU">Luksemboorg</territory>
+			<territory type="LV">Latfiya</territory>
+			<territory type="LY">Liibiya</territory>
+			<territory type="MA">Marooko</territory>
+			<territory type="MC">Moonako</territory>
+			<territory type="MD">Moldofa</territory>
+			<territory type="MG">Madagaskar</territory>
+			<territory type="MH">Marshall Islands</territory>
+			<territory type="MK">Makadooniya</territory>
+			<territory type="ML">Maali</territory>
+			<territory type="MM">Myanmar</territory>
+			<territory type="MN">Mongooliya</territory>
+			<territory type="MP">Northern Mariana Islands</territory>
+			<territory type="MQ">Martinique</territory>
+			<territory type="MR">Muritaaniya</territory>
+			<territory type="MS">Montserrat</territory>
+			<territory type="MT">Maalda</territory>
+			<territory type="MU">Murishiyoos</territory>
+			<territory type="MV">Maaldiqeen</territory>
+			<territory type="MW">Malaawi</territory>
+			<territory type="MX">Meksiko</territory>
+			<territory type="MY">Malaysia</territory>
+			<territory type="MZ">Musambiig</territory>
+			<territory type="NA">Namiibiya</territory>
+			<territory type="NC">New Caledonia</territory>
+			<territory type="NE">Nayjer</territory>
+			<territory type="NF">Norfolk Island</territory>
+			<territory type="NG">Nayjeeriya</territory>
+			<territory type="NI">Nikaraaguwa</territory>
+			<territory type="NL">Netherlands</territory>
+			<territory type="NO">Noorweey</territory>
+			<territory type="NP">Nebaal</territory>
+			<territory type="NR">Nauru</territory>
+			<territory type="NU">Niue</territory>
+			<territory type="NZ">Neyuusilaand</territory>
+			<territory type="OM">Cumaan</territory>
+			<territory type="PA">Panama</territory>
+			<territory type="PE">Peru</territory>
+			<territory type="PF">French Polynesia</territory>
+			<territory type="PG">Papua New Guinea</territory>
+			<territory type="PH">Filibiin</territory>
+			<territory type="PK">Bakistaan</territory>
+			<territory type="PL">Booland</territory>
+			<territory type="PM">Saint Pierre and Miquelon</territory>
+			<territory type="PN">Pitcairn</territory>
+			<territory type="PR">Puerto Rico</territory>
+			<territory type="PS">Falastiin Daanka galbeed iyo Qasa</territory>
+			<territory type="PT">Bortuqaal</territory>
+			<territory type="PW">Palau</territory>
+			<territory type="PY">Paraguay</territory>
+			<territory type="QA">Qadar</territory>
+			<territory type="RE">Réunion</territory>
+			<territory type="RO">Rumaaniya</territory>
+			<territory type="RU">Ruush</territory>
+			<territory type="RW">Ruwanda</territory>
+			<territory type="SA">Sacuudi Carabiya</territory>
+			<territory type="SB">Solomon Islands</territory>
+			<territory type="SC">Sishelis</territory>
+			<territory type="SD">Suudaan</territory>
+			<territory type="SE">Iswidhan</territory>
+			<territory type="SG">Singaboor</territory>
+			<territory type="SH">Saint Helena</territory>
+			<territory type="SI">Slovenia</territory>
+			<territory type="SK">Slovakia</territory>
+			<territory type="SL">Siraaliyoon</territory>
+			<territory type="SM">San Marino</territory>
+			<territory type="SN">Sinigaal</territory>
+			<territory type="SO">Soomaaliya</territory>
+			<territory type="SR">Suriname</territory>
+			<territory type="ST">São Tomé and Príncipe</territory>
+			<territory type="SV">El Salvador</territory>
+			<territory type="SY">Suuriya</territory>
+			<territory type="SZ">Iswaasilaand</territory>
+			<territory type="TC">Turks and Caicos Islands</territory>
+			<territory type="TD">Jaad</territory>
+			<territory type="TG">Toogo</territory>
+			<territory type="TH">Taylaand</territory>
+			<territory type="TJ">Tajikistan</territory>
+			<territory type="TK">Tokelau</territory>
+			<territory type="TL">Timorka bari</territory>
+			<territory type="TM">Turkmenistan</territory>
+			<territory type="TN">Tuniisiya</territory>
+			<territory type="TO">Tonga</territory>
+			<territory type="TR">Turki</territory>
+			<territory type="TT">Trinidad and Tobago</territory>
+			<territory type="TV">Tuvalu</territory>
+			<territory type="TW">Taywaan</territory>
+			<territory type="TZ">Tansaaniya</territory>
+			<territory type="UA">Ukrayn</territory>
+			<territory type="UG">Ugaanda</territory>
+			<territory type="US">Maraykanka</territory>
+			<territory type="UY">Uruguwaay</territory>
+			<territory type="UZ">Uusbakistaan</territory>
+			<territory type="VA">Faatikaan</territory>
+			<territory type="VC">Saint Vincent and the Grenadines</territory>
+			<territory type="VE">Fenisuweela</territory>
+			<territory type="VG">British Virgin Islands</territory>
+			<territory type="VI">U.S. Virgin Islands</territory>
+			<territory type="VN">Fiyetnaam</territory>
+			<territory type="VU">Vanuatu</territory>
+			<territory type="WF">Wallis and Futuna</territory>
+			<territory type="WS">Samoa</territory>
+			<territory type="YE">Yaman</territory>
+			<territory type="YT">Mayotte</territory>
+			<territory type="ZA">Koonfur Afrika</territory>
+			<territory type="ZM">Saambiya</territory>
+			<territory type="ZW">Simbaabwe</territory>
+			<territory type="ZZ">Far aan la aqoon amase aan saxnayn</territory>
+		</territories>
+		<keys>
+			<key type="calendar" draft="unconfirmed">Habeentiris</key>
+			<key type="currency" draft="unconfirmed">Lacag</key>
+		</keys>
+		<types>
+			<type type="hebrew" key="calendar" draft="unconfirmed">Habeentiriska yuhuudda</type>
+			<type type="islamic" key="calendar" draft="unconfirmed">Habeentiriska islaamka</type>
+			<type type="japanese" key="calendar" draft="unconfirmed">Habeentiriska jabbaanka</type>
+		</types>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>“</quotationStart>
+		<quotationEnd>”</quotationEnd>
+		<alternateQuotationStart>‘</alternateQuotationStart>
+		<alternateQuotationEnd>’</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">Kob</month>
+							<month type="2">Lab</month>
+							<month type="3">Sad</month>
+							<month type="4">Afr</month>
+							<month type="5">Sha</month>
+							<month type="6">Lix</month>
+							<month type="7">Tod</month>
+							<month type="8">Sid</month>
+							<month type="9">Sag</month>
+							<month type="10">Tob</month>
+							<month type="11">KIT</month>
+							<month type="12">LIT</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Bisha Koobaad</month>
+							<month type="2">Bisha Labaad</month>
+							<month type="3">Bisha Saddexaad</month>
+							<month type="4">Bisha Afraad</month>
+							<month type="5">Bisha Shanaad</month>
+							<month type="6">Bisha Lixaad</month>
+							<month type="7">Bisha Todobaad</month>
+							<month type="8">Bisha Sideedaad</month>
+							<month type="9">Bisha Sagaalaad</month>
+							<month type="10">Bisha Tobnaad</month>
+							<month type="11">Bisha Kow iyo Tobnaad</month>
+							<month type="12">Bisha Laba iyo Tobnaad</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">K</month>
+							<month type="2" draft="unconfirmed">L</month>
+							<month type="3" draft="unconfirmed">S</month>
+							<month type="4" draft="unconfirmed">A</month>
+							<month type="5" draft="unconfirmed">S</month>
+							<month type="6" draft="unconfirmed">L</month>
+							<month type="7" draft="unconfirmed">T</month>
+							<month type="8" draft="unconfirmed">S</month>
+							<month type="9" draft="unconfirmed">S</month>
+							<month type="10" draft="unconfirmed">T</month>
+							<month type="11" draft="unconfirmed">K</month>
+							<month type="12" draft="unconfirmed">L</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">Axd</day>
+							<day type="mon">Isn</day>
+							<day type="tue">Tal</day>
+							<day type="wed">Arb</day>
+							<day type="thu">Kha</day>
+							<day type="fri">Jim</day>
+							<day type="sat">Sab</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Axad</day>
+							<day type="mon">Isniin</day>
+							<day type="tue">Talaado</day>
+							<day type="wed">Arbaco</day>
+							<day type="thu">Khamiis</day>
+							<day type="fri">Jimco</day>
+							<day type="sat">Sabti</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">A</day>
+							<day type="mon">I</day>
+							<day type="tue">T</day>
+							<day type="wed">A</day>
+							<day type="thu">K</day>
+							<day type="fri">J</day>
+							<day type="sat">S</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">R1</quarter>
+							<quarter type="2">R2</quarter>
+							<quarter type="3">R3</quarter>
+							<quarter type="4">R4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">Rubaca 1aad</quarter>
+							<quarter type="2">Rubaca 2aad</quarter>
+							<quarter type="3">Rubaca 3aad</quarter>
+							<quarter type="4">Rubaca 4aad</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">sn.</dayPeriod>
+							<dayPeriod type="pm">gn.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">Ciise ka hor (CS)</era>
+						<era type="1">Ciise ka dib (CS)</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">CK</era>
+						<era type="1">CD</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, MMMM dd, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>dd MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd-MMM-y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">M/d</dateFormatItem>
+						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, MMMM d</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQ">Q y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="unconfirmed">{0} - {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="unconfirmed">d-d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="unconfirmed">h a - h a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h-h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a - h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm-h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm-h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a - h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm-h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm-h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="unconfirmed">h a - h a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h-h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">M-M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">dd/MM - dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd/MM - dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E, dd/MM - E, dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, dd/MM - E, dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM-MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">dd-dd MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd MMM - dd MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, dd - E, dd MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, dd MMM - E, dd MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="unconfirmed">y-y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">MM/yy - MM/yy</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM/yy - MM/yy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">dd/MM/yy - dd/MM/yy</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd/MM/yy - dd/MM/yy</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd/MM/yy - dd/MM/yy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, dd/MM/yy - E, dd/MM/yy</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, dd/MM/yy - E, dd/MM/yy</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, dd/MM/yy - E, dd/MM/yy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM-MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y - MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">dd-dd MMM y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd MMM - dd MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd MMM y - dd MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, MMM dd - E, MMM dd, y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MMM dd - E, MMM dd, y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, MMM dd, y - E, MMM dd, y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="era">
+						<displayName>Qarni</displayName>
+					</field>
+					<field type="year">
+						<displayName>Sanad</displayName>
+					</field>
+					<field type="month">
+						<displayName>Bil</displayName>
+					</field>
+					<field type="week">
+						<displayName>Toddobaad</displayName>
+					</field>
+					<field type="day">
+						<displayName>Maalin</displayName>
+						<relative type="-1">Shalay</relative>
+						<relative type="0">Maanta</relative>
+						<relative type="1">Berri</relative>
+					</field>
+					<field type="weekday">
+						<displayName>Maalinta toddobaadka</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName>sn./gn.</displayName>
+					</field>
+					<field type="hour">
+						<displayName>Saacad</displayName>
+					</field>
+					<field type="minute">
+						<displayName>Daqiiqad</displayName>
+					</field>
+					<field type="second">
+						<displayName>Il biriqsi</displayName>
+					</field>
+					<field type="zone">
+						<displayName>Xadka waqtiga</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<zone type="Etc/Unknown">
+				<exemplarCity>Far aan la aqoon amase aan saxnayn</exemplarCity>
+			</zone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>.</decimal>
+			<group>,</group>
+		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="DJF">
+				<displayName>Faran Jabbuuti</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName>Birta Itoobbiya</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>Yuuroo</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName>Riyaalka Sacuudiga</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName>Shilin soomaali</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName>Shilin Tansaani</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>Doollar maraykan</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="unconfirmed">Lacag aan la qoon ama aan saxnayn</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr>haa:h</yesstr>
+			<nostr>maya:m</nostr>
+		</messages>
+	</posix>
+</ldml>

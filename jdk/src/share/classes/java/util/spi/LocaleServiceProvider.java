@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,11 +83,13 @@ import java.util.Locale;
  * service provider methods when needed to support the requested locale.
  * The methods first check whether the Java runtime environment itself
  * supports the requested locale, and use its support if available.
- * Otherwise, they call the <code>getAvailableLocales()</code> methods of
- * installed providers for the appropriate interface to find one that
+ * Otherwise, they call the {@link #isSupportedLocale(Locale) isSupportedLocale}
+ * methods of installed providers for the appropriate interface to find one that
  * supports the requested locale. If such a provider is found, its other
  * methods are called to obtain the requested object or name.  When checking
- * whether a locale is supported, the locale's extensions are ignored.
+ * whether a locale is supported, the <a href="../Locale.html#def_extensions">
+ * locale's extensions</a> are ignored by default. (If locale's extensions should
+ * also be checked, the {@code isSupportedLocale} method must be overridden.)
  * If neither the Java runtime environment itself nor an installed provider
  * supports the requested locale, the methods go through a list of candidate
  * locales and repeat the availability check for each until a match is found.
@@ -96,9 +98,9 @@ import java.util.Locale;
  * {@link java.util.ResourceBundle.Control#getCandidateLocales getCandidateLocales}
  * for the details).  Even if a locale is resolved from the candidate list,
  * methods that return requested objects or names are invoked with the original
- * requested locale including extensions.  The Java runtime environment must
- * support the root locale for all locale sensitive services in order to
- * guarantee that this process terminates.
+ * requested locale including {@code Locale} extensions. The Java runtime
+ * environment must support the root locale for all locale sensitive services in
+ * order to guarantee that this process terminates.
  * <p>
  * Providers of names (but not providers of other objects) are allowed to
  * return null for some name requests even for locales that they claim to
@@ -110,6 +112,22 @@ import java.util.Locale;
  * feasible to cover them completely. If the Java runtime environment or a
  * provider returns null instead of a name, the lookup will proceed as
  * described above as if the locale was not supported.
+ * <p>
+ * Starting from JDK8, the search order of locale sensitive services can
+ * be configured by using the "java.locale.providers" system property.
+ * This system property declares the user's preferred order for looking up
+ * the locale sensitive services separated by a comma. It is only read at
+ * the Java runtime startup, so the later call to System.setProperty() won't
+ * affect the order.
+ * <p>
+ * For example, if the following is specified in the property:
+ * <pre>
+ * java.locale.providers=SPI,JRE
+ * </pre>
+ * where "SPI" represents the locale sensitive services implemented in the
+ * installed SPI providers, and "JRE" represents the locale sensitive services
+ * in the Java Runtime Environment, the locale sensitive services in the SPI
+ * providers are looked up first.
  *
  * @since        1.6
  */
@@ -124,15 +142,52 @@ public abstract class LocaleServiceProvider {
 
     /**
      * Returns an array of all locales for which this locale service provider
-     * can provide localized objects or names.
-     * <p>
-     * <b>Note:</b> Extensions in a <code>Locale</code> are ignored during
-     * service provider lookup.  So the array returned by this method should
-     * not include two or more <code>Locale</code> objects only differing in
-     * their extensions.
+     * can provide localized objects or names. This information is used to
+     * compose {@code getAvailableLocales()} values of the locale-dependent
+     * services, such as {@code DateFormat.getAvailableLocales()}.
+     *
+     * <p>The array returned by this method should not include two or more
+     * {@code Locale} objects only differing in their extensions.
      *
      * @return An array of all locales for which this locale service provider
      * can provide localized objects or names.
      */
     public abstract Locale[] getAvailableLocales();
+
+    /**
+     * Returns {@code true} if the given {@code locale} is supported by
+     * this locale service provider. The given {@code locale} may contain
+     * <a href="../Locale.html#def_extensions">extensions<a/> that should be
+     * taken into account for the support determination.
+     *
+     * <p>The default implementation returns {@code true} if the given {@code locale}
+     * is equal to any of the available {@code Locale}s returned by
+     * {@link #getAvailableLocales()} with ignoring any extensions in both the
+     * given {@code locale} and the available locales. Concrete locale service
+     * provider implementations should override this method if those
+     * implementations are {@code Locale} extensions-aware. For example,
+     * {@code DecimalFormatSymbolsProvider} implementations will need to check
+     * extensions in the given {@code locale} to see if any numbering system is
+     * specified and can be supported. However, {@code CollatorProvider}
+     * implementations may not be affected by any particular numbering systems,
+     * and in that case, extensions for numbering systems should be ignored.
+     *
+     * @param locale a {@code Locale} to be tested
+     * @return {@code true} if the given {@code locale} is supported by this
+     *         provider; {@code false} otherwise.
+     * @throws NullPointerException
+     *         if the given {@code locale} is {@code null}
+     * @see Locale#hasExtensions()
+     * @see Locale#stripExtensions()
+     * @since 1.8
+     */
+    public boolean isSupportedLocale(Locale locale) {
+        locale = locale.stripExtensions(); // throws NPE if locale == null
+        for (Locale available : getAvailableLocales()) {
+            if (locale.equals(available.stripExtensions())) {
+                return true;
+}
+        }
+        return false;
+    }
 }

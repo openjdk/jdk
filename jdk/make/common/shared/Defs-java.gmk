@@ -160,7 +160,7 @@ JAVAHFLAGS += -bootclasspath "$(CLASSBINDIR)$(JCE_PATH)"
 
 # Needed for javadoc to ensure it builds documentation
 # against the newly built classes
-JAVADOCFLAGS += -bootclasspath $(CLASSBINDIR)
+JAVADOCFLAGS += -bootclasspath "$(CLASSBINDIR)$(JCE_PATH)"
 
 # Needed for JAVADOC and BOOT_JAVACFLAGS
 NO_PROPRIETARY_API_WARNINGS = -XDignore.symbol.file=true

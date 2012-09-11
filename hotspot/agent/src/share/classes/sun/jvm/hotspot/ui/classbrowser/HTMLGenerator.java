@@ -204,7 +204,13 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       } else if (cpu.equals("ia64")) {
          cpuHelper = new IA64Helper();
       } else {
+        try {
+          cpuHelper = (CPUHelper)Class.forName("sun.jvm.hotspot.asm." +
+             cpu.toLowerCase() + "." + cpu.toUpperCase() +
+             "Helper").newInstance();
+        } catch (Exception e) {
           throw new RuntimeException("cpu '" + cpu + "' is not yet supported!");
+        }
       }
    }
 

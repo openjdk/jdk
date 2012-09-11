@@ -282,7 +282,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
      * Note that we call setVisible() at the end of initialization.
      */
     public final void initialize() {
-        platformComponent.initialize(target, this, getPlatformWindow());
+        platformComponent.initialize(getPlatformWindow());
         initializeImpl();
         setVisible(target.isVisible());
     }

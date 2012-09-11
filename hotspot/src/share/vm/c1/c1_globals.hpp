@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,17 +156,11 @@
   develop(bool, CanonicalizeNodes, true,                                    \
           "Canonicalize graph nodes")                                       \
                                                                             \
-  develop(bool, CanonicalizeExperimental, false,                            \
-          "Canonicalize graph nodes, experimental code")                    \
-                                                                            \
   develop(bool, PrintCanonicalization, false,                               \
           "Print graph node canonicalization")                              \
                                                                             \
   develop(bool, UseTableRanges, true,                                       \
           "Faster versions of lookup table using ranges")                   \
-                                                                            \
-  develop(bool, UseFastExceptionHandling, true,                             \
-          "Faster handling of exceptions")                                  \
                                                                             \
   develop_pd(bool, RoundFPResults,                                          \
           "Indicates whether rounding is needed for floating point results")\
@@ -223,9 +217,6 @@
                                                                             \
   develop(bool, PinAllInstructions, false,                                  \
           "All instructions are pinned")                                    \
-                                                                            \
-  develop(bool, ValueStackPinStackAll, true,                                \
-          "Pinning in ValueStack pin everything")                           \
                                                                             \
   develop(bool, UseFastNewInstance, true,                                   \
           "Use fast inlined instance allocation")                           \

@@ -76,7 +76,7 @@ else
 endif
 
 # nio need to be compiled before awt to have all charsets ready
-SUBDIRS            = jar security javazic misc net nio text util launcher
+SUBDIRS            = jar security javazic misc net nio text util launcher cldr
 
 ifdef BUILD_HEADLESS_ONLY
   DISPLAY_LIBS = awt $(HEADLESS_SUBDIR)
@@ -87,7 +87,7 @@ else
 endif
 SUBDIRS_desktop    = audio $(RENDER_SUBDIR) image \
                      $(LWAWT_PRE_SUBDIR) $(DISPLAY_LIBS) $(DGA_SUBDIR) $(LWAWT_SUBDIR) \
-                     jawt font jpeg cmm $(DISPLAY_TOOLS) beans
+                     jawt font jpeg cmm $(DISPLAY_TOOLS)
 SUBDIRS_management = management
 SUBDIRS_misc       = $(ORG_SUBDIR) rmi $(JDBC_SUBDIR) tracing
 SUBDIRS_tools      = native2ascii serialver tools jconsole

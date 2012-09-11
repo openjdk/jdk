@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -711,7 +711,10 @@ public class File
 
     /**
      * Tests whether the application can read the file denoted by this
-     * abstract pathname.
+     * abstract pathname. On some platforms it may be possible to start the
+     * Java virtual machine with special privileges that allow it to read
+     * files that are marked as unreadable. Consequently this method may return
+     * {@code true} even though the file does not have read permissions.
      *
      * @return  <code>true</code> if and only if the file specified by this
      *          abstract pathname exists <em>and</em> can be read by the
@@ -732,7 +735,10 @@ public class File
 
     /**
      * Tests whether the application can modify the file denoted by this
-     * abstract pathname.
+     * abstract pathname. On some platforms it may be possible to start the
+     * Java virtual machine with special privileges that allow it to modify
+     * files that are marked read-only. Consequently this method may return
+     * {@code true} even though the file is marked read-only.
      *
      * @return  <code>true</code> if and only if the file system actually
      *          contains a file denoted by this abstract pathname <em>and</em>
@@ -1351,9 +1357,11 @@ public class File
 
     /**
      * Marks the file or directory named by this abstract pathname so that
-     * only read operations are allowed.  After invoking this method the file
-     * or directory is guaranteed not to change until it is either deleted or
-     * marked to allow write access.  Whether or not a read-only file or
+     * only read operations are allowed. After invoking this method the file
+     * or directory will not change until it is either deleted or marked
+     * to allow write access. On some platforms it may be possible to start the
+     * Java virtual machine with special privileges that allow it to modify
+     * files that are marked read-only. Whether or not a read-only file or
      * directory may be deleted depends upon the underlying system.
      *
      * @return <code>true</code> if and only if the operation succeeded;
@@ -1376,7 +1384,9 @@ public class File
 
     /**
      * Sets the owner's or everybody's write permission for this abstract
-     * pathname.
+     * pathname. On some platforms it may be possible to start the Java virtual
+     * machine with special privileges that allow it to modify files that
+     * disallow write operations.
      *
      * <p> The {@link java.nio.file.Files} class defines methods that operate on
      * file attributes including file permissions. This may be used when finer
@@ -1414,7 +1424,9 @@ public class File
 
     /**
      * A convenience method to set the owner's write permission for this abstract
-     * pathname.
+     * pathname. On some platforms it may be possible to start the Java virtual
+     * machine with special privileges that allow it to modify files that
+     * disallow write operations.
      *
      * <p> An invocation of this method of the form <tt>file.setWritable(arg)</tt>
      * behaves in exactly the same way as the invocation
@@ -1443,7 +1455,9 @@ public class File
 
     /**
      * Sets the owner's or everybody's read permission for this abstract
-     * pathname.
+     * pathname. On some platforms it may be possible to start the Java virtual
+     * machine with special privileges that allow it to read files that are
+     * marked as unreadable.
      *
      * <p> The {@link java.nio.file.Files} class defines methods that operate on
      * file attributes including file permissions. This may be used when finer
@@ -1484,7 +1498,9 @@ public class File
 
     /**
      * A convenience method to set the owner's read permission for this abstract
-     * pathname.
+     * pathname. On some platforms it may be possible to start the Java virtual
+     * machine with special privileges that allow it to read files that that are
+     * marked as unreadable.
      *
      * <p>An invocation of this method of the form <tt>file.setReadable(arg)</tt>
      * behaves in exactly the same way as the invocation
@@ -1516,7 +1532,9 @@ public class File
 
     /**
      * Sets the owner's or everybody's execute permission for this abstract
-     * pathname.
+     * pathname. On some platforms it may be possible to start the Java virtual
+     * machine with special privileges that allow it to execute files that are
+     * not marked executable.
      *
      * <p> The {@link java.nio.file.Files} class defines methods that operate on
      * file attributes including file permissions. This may be used when finer
@@ -1556,8 +1574,10 @@ public class File
     }
 
     /**
-     * A convenience method to set the owner's execute permission for this abstract
-     * pathname.
+     * A convenience method to set the owner's execute permission for this
+     * abstract pathname. On some platforms it may be possible to start the Java
+     * virtual machine with special privileges that allow it to execute files
+     * that are not marked executable.
      *
      * <p>An invocation of this method of the form <tt>file.setExcutable(arg)</tt>
      * behaves in exactly the same way as the invocation
@@ -1589,7 +1609,10 @@ public class File
 
     /**
      * Tests whether the application can execute the file denoted by this
-     * abstract pathname.
+     * abstract pathname. On some platforms it may be possible to start the
+     * Java virtual machine with special privileges that allow it to execute
+     * files that are not marked executable. Consequently this method may return
+     * {@code true} even though the file does not have execute permissions.
      *
      * @return  <code>true</code> if and only if the abstract pathname exists
      *          <em>and</em> the application is allowed to execute the file

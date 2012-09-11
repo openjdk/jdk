@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,14 @@
 
 package java.text;
 
+import java.lang.ref.SoftReference;
 import java.text.spi.CollatorProvider;
 import java.util.Locale;
-import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.spi.LocaleServiceProvider;
-import sun.misc.SoftCache;
-import sun.util.resources.LocaleData;
-import sun.util.LocaleServiceProviderPool;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.LocaleServiceProviderPool;
 
 
 /**
@@ -231,60 +231,36 @@ public abstract class Collator
      * @see java.util.Locale
      * @see java.util.ResourceBundle
      */
-    public static synchronized
-    Collator getInstance(Locale desiredLocale)
-    {
-        Collator result = (Collator) cache.get(desiredLocale);
-        if (result != null) {
-                 return (Collator)result.clone();  // make the world safe
-        }
-
-        // Check whether a provider can provide an implementation that's closer
-        // to the requested locale than what the Java runtime itself can provide.
-        LocaleServiceProviderPool pool =
-            LocaleServiceProviderPool.getPool(CollatorProvider.class);
-        if (pool.hasProviders()) {
-            Collator providersInstance = pool.getLocalizedObject(
-                                            CollatorGetter.INSTANCE,
-                                            desiredLocale,
-                                            desiredLocale);
-            if (providersInstance != null) {
-                return providersInstance;
+    public static Collator getInstance(Locale desiredLocale) {
+        SoftReference<Collator> ref = cache.get(desiredLocale);
+        Collator result = (ref != null) ? ref.get() : null;
+        if (result == null) {
+            LocaleProviderAdapter adapter;
+            adapter = LocaleProviderAdapter.getAdapter(CollatorProvider.class,
+                                                       desiredLocale);
+            CollatorProvider provider = adapter.getCollatorProvider();
+            result = provider.getInstance(desiredLocale);
+            if (result == null) {
+                result = LocaleProviderAdapter.forJRE()
+                             .getCollatorProvider().getInstance(desiredLocale);
+            }
+            while (true) {
+                if (ref != null) {
+                    // Remove the empty SoftReference if any
+                    cache.remove(desiredLocale, ref);
+                }
+                ref = cache.putIfAbsent(desiredLocale, new SoftReference<>(result));
+                if (ref == null) {
+                    break;
+                }
+                Collator cachedColl = ref.get();
+                if (cachedColl != null) {
+                    result = cachedColl;
+                    break;
+                }
             }
         }
-
-        // Load the resource of the desired locale from resource
-        // manager.
-        String colString = "";
-        try {
-            ResourceBundle resource = LocaleData.getCollationData(desiredLocale);
-
-            colString = resource.getString("Rule");
-        } catch (MissingResourceException e) {
-            // Use default values
-        }
-        try
-        {
-            result = new RuleBasedCollator( CollationRules.DEFAULTRULES +
-                                            colString,
-                                            CANONICAL_DECOMPOSITION );
-        }
-        catch(ParseException foo)
-        {
-            // predefined tables should contain correct grammar
-            try {
-                result = new RuleBasedCollator( CollationRules.DEFAULTRULES );
-            } catch (ParseException bar) {
-                // do nothing
-            }
-        }
-        // Now that RuleBasedCollator adds expansions for pre-composed characters
-        // into their decomposed equivalents, the default collators don't need
-        // to have decomposition turned on.  Laura, 5/5/98, bug 4114077
-        result.setDecomposition(NO_DECOMPOSITION);
-
-        cache.put(desiredLocale,result);
-        return (Collator)result.clone();
+        return (Collator) result.clone(); // make the world safe
     }
 
     /**
@@ -323,6 +299,7 @@ public abstract class Collator
      * @see java.util.Comparator
      * @since   1.2
      */
+    @Override
     public int compare(Object o1, Object o2) {
     return compare((String)o1, (String)o2);
     }
@@ -387,8 +364,9 @@ public abstract class Collator
         if ((newStrength != PRIMARY) &&
             (newStrength != SECONDARY) &&
             (newStrength != TERTIARY) &&
-            (newStrength != IDENTICAL))
+            (newStrength != IDENTICAL)) {
             throw new IllegalArgumentException("Incorrect comparison level.");
+        }
         strength = newStrength;
     }
 
@@ -429,8 +407,9 @@ public abstract class Collator
     public synchronized void setDecomposition(int decompositionMode) {
         if ((decompositionMode != NO_DECOMPOSITION) &&
             (decompositionMode != CANONICAL_DECOMPOSITION) &&
-            (decompositionMode != FULL_DECOMPOSITION))
+            (decompositionMode != FULL_DECOMPOSITION)) {
             throw new IllegalArgumentException("Wrong decomposition mode.");
+        }
         decmp = decompositionMode;
     }
 
@@ -456,6 +435,7 @@ public abstract class Collator
     /**
      * Overrides Cloneable
      */
+    @Override
     public Object clone()
     {
         try {
@@ -471,11 +451,18 @@ public abstract class Collator
      * @return true if this Collator is the same as that Collator;
      * false otherwise.
      */
+    @Override
     public boolean equals(Object that)
     {
-        if (this == that) return true;
-        if (that == null) return false;
-        if (getClass() != that.getClass()) return false;
+        if (this == that) {
+            return true;
+        }
+        if (that == null) {
+            return false;
+        }
+        if (getClass() != that.getClass()) {
+            return false;
+        }
         Collator other = (Collator) that;
         return ((strength == other.strength) &&
                 (decmp == other.decmp));
@@ -484,6 +471,7 @@ public abstract class Collator
     /**
      * Generates the hash code for this Collator.
      */
+    @Override
     abstract public int hashCode();
 
     /**
@@ -500,7 +488,8 @@ public abstract class Collator
 
     private int strength = 0;
     private int decmp = 0;
-    private static SoftCache cache = new SoftCache();
+    private static final ConcurrentMap<Locale, SoftReference<Collator>> cache
+            = new ConcurrentHashMap<>();
 
     //
     // FIXME: These three constants should be removed.
@@ -523,31 +512,4 @@ public abstract class Collator
      * @see java.text.Collator#compare
      */
     final static int GREATER = 1;
-
-    /**
-     * Obtains a Collator instance from a CollatorProvider
-     * implementation.
-     */
-    private static class CollatorGetter
-        implements LocaleServiceProviderPool.LocalizedObjectGetter<CollatorProvider, Collator> {
-        private static final CollatorGetter INSTANCE = new CollatorGetter();
-
-        public Collator getObject(CollatorProvider collatorProvider,
-                                Locale locale,
-                                String key,
-                                Object... params) {
-            assert params.length == 1;
-            Collator result = collatorProvider.getInstance(locale);
-            if (result != null) {
-                // put this Collator instance in the cache for two locales, one
-                // is for the desired locale, and the other is for the actual
-                // locale where the provider is found, which may be a fall back locale.
-                cache.put((Locale)params[0], result);
-                cache.put(locale, result);
-                return (Collator)result.clone();
-            }
-
-            return null;
-        }
-    }
  }

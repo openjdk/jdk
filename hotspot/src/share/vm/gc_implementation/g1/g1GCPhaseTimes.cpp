@@ -79,119 +79,145 @@ public:
   }
 };
 
-G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
-  _max_gc_threads(max_gc_threads),
-  _min_clear_cc_time_ms(-1.0),
-  _max_clear_cc_time_ms(-1.0),
-  _cur_clear_cc_time_ms(0.0),
-  _cum_clear_cc_time_ms(0.0),
-  _num_cc_clears(0L)
-{
-  assert(max_gc_threads > 0, "Must have some GC threads");
-  _par_last_gc_worker_start_times_ms = new double[_max_gc_threads];
-  _par_last_ext_root_scan_times_ms = new double[_max_gc_threads];
-  _par_last_satb_filtering_times_ms = new double[_max_gc_threads];
-  _par_last_update_rs_times_ms = new double[_max_gc_threads];
-  _par_last_update_rs_processed_buffers = new double[_max_gc_threads];
-  _par_last_scan_rs_times_ms = new double[_max_gc_threads];
-  _par_last_obj_copy_times_ms = new double[_max_gc_threads];
-  _par_last_termination_times_ms = new double[_max_gc_threads];
-  _par_last_termination_attempts = new double[_max_gc_threads];
-  _par_last_gc_worker_end_times_ms = new double[_max_gc_threads];
-  _par_last_gc_worker_times_ms = new double[_max_gc_threads];
-  _par_last_gc_worker_other_times_ms = new double[_max_gc_threads];
-}
-
-void G1GCPhaseTimes::note_gc_start(double pause_start_time_sec, uint active_gc_threads,
-  bool is_young_gc, bool is_initial_mark_gc, GCCause::Cause gc_cause) {
-  assert(active_gc_threads > 0, "The number of threads must be > 0");
-  assert(active_gc_threads <= _max_gc_threads, "The number of active threads must be <= the max nubmer of threads");
-  _active_gc_threads = active_gc_threads;
-  _pause_start_time_sec = pause_start_time_sec;
-  _is_young_gc = is_young_gc;
-  _is_initial_mark_gc = is_initial_mark_gc;
-  _gc_cause = gc_cause;
-
-#ifdef ASSERT
-  // initialise the timing data to something well known so that we can spot
-  // if something is not set properly
-
-  for (uint i = 0; i < _max_gc_threads; ++i) {
-    _par_last_gc_worker_start_times_ms[i] = -1234.0;
-    _par_last_ext_root_scan_times_ms[i] = -1234.0;
-    _par_last_satb_filtering_times_ms[i] = -1234.0;
-    _par_last_update_rs_times_ms[i] = -1234.0;
-    _par_last_update_rs_processed_buffers[i] = -1234.0;
-    _par_last_scan_rs_times_ms[i] = -1234.0;
-    _par_last_obj_copy_times_ms[i] = -1234.0;
-    _par_last_termination_times_ms[i] = -1234.0;
-    _par_last_termination_attempts[i] = -1234.0;
-    _par_last_gc_worker_end_times_ms[i] = -1234.0;
-    _par_last_gc_worker_times_ms[i] = -1234.0;
-    _par_last_gc_worker_other_times_ms[i] = -1234.0;
-  }
-#endif
-}
-
-void G1GCPhaseTimes::note_gc_end(double pause_end_time_sec) {
-  if (G1Log::fine()) {
-    double pause_time_ms = (pause_end_time_sec - _pause_start_time_sec) * MILLIUNITS;
-
-    for (uint i = 0; i < _active_gc_threads; i++) {
-      _par_last_gc_worker_times_ms[i] = _par_last_gc_worker_end_times_ms[i] -
-        _par_last_gc_worker_start_times_ms[i];
-
-      double worker_known_time = _par_last_ext_root_scan_times_ms[i] +
-        _par_last_satb_filtering_times_ms[i] +
-        _par_last_update_rs_times_ms[i] +
-        _par_last_scan_rs_times_ms[i] +
-        _par_last_obj_copy_times_ms[i] +
-        _par_last_termination_times_ms[i];
-
-      _par_last_gc_worker_other_times_ms[i] = _par_last_gc_worker_times_ms[i] -
-        worker_known_time;
-    }
-
-    print(pause_time_ms);
+template <class T>
+void WorkerDataArray<T>::print(int level, const char* title) {
+  if (_length == 1) {
+    // No need for min, max, average and sum for only one worker
+    LineBuffer buf(level);
+    buf.append("[%s:  ", title);
+    buf.append(_print_format, _data[0]);
+    buf.append_and_print_cr("]");
+    return;
   }
 
-}
+  T min = _data[0];
+  T max = _data[0];
+  T sum = 0;
 
-void G1GCPhaseTimes::print_par_stats(int level,
-                                        const char* str,
-                                        double* data,
-                                        bool showDecimals) {
-  double min = data[0], max = data[0];
-  double total = 0.0;
   LineBuffer buf(level);
-  buf.append("[%s (ms):", str);
-  for (uint i = 0; i < _active_gc_threads; ++i) {
-    double val = data[i];
-    if (val < min)
-      min = val;
-    if (val > max)
-      max = val;
-    total += val;
+  buf.append("[%s:", title);
+  for (uint i = 0; i < _length; ++i) {
+    T val = _data[i];
+    min = MIN2(val, min);
+    max = MAX2(val, max);
+    sum += val;
     if (G1Log::finest()) {
-      if (showDecimals) {
-        buf.append("  %.1lf", val);
-      } else {
-        buf.append("  %d", (int)val);
-      }
+      buf.append("  ");
+      buf.append(_print_format, val);
     }
   }
 
   if (G1Log::finest()) {
     buf.append_and_print_cr("");
   }
-  double avg = total / (double) _active_gc_threads;
-  if (showDecimals) {
-    buf.append_and_print_cr(" Min: %.1lf, Avg: %.1lf, Max: %.1lf, Diff: %.1lf, Sum: %.1lf]",
-      min, avg, max, max - min, total);
-  } else {
-    buf.append_and_print_cr(" Min: %d, Avg: %d, Max: %d, Diff: %d, Sum: %d]",
-      (int)min, (int)avg, (int)max, (int)max - (int)min, (int)total);
+
+  double avg = (double)sum / (double)_length;
+  buf.append(" Min: ");
+  buf.append(_print_format, min);
+  buf.append(", Avg: ");
+  buf.append("%.1lf", avg); // Always print average as a double
+  buf.append(", Max: ");
+  buf.append(_print_format, max);
+  buf.append(", Diff: ");
+  buf.append(_print_format, max - min);
+  if (_print_sum) {
+    // for things like the start and end times the sum is not
+    // that relevant
+    buf.append(", Sum: ");
+    buf.append(_print_format, sum);
   }
+  buf.append_and_print_cr("]");
+}
+
+#ifdef ASSERT
+
+template <class T>
+void WorkerDataArray<T>::reset() {
+  for (uint i = 0; i < _length; i++) {
+    _data[i] = (T)-1;
+  }
+}
+
+template <class T>
+void WorkerDataArray<T>::verify() {
+  for (uint i = 0; i < _length; i++) {
+    assert(_data[i] >= (T)0, err_msg("Invalid data for worker %d", i));
+  }
+}
+
+#endif
+
+G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
+  _max_gc_threads(max_gc_threads),
+  _min_clear_cc_time_ms(-1.0),
+  _max_clear_cc_time_ms(-1.0),
+  _cur_clear_cc_time_ms(0.0),
+  _cum_clear_cc_time_ms(0.0),
+  _num_cc_clears(0L),
+  _last_gc_worker_start_times_ms(_max_gc_threads, "%.1lf", false),
+  _last_ext_root_scan_times_ms(_max_gc_threads, "%.1lf"),
+  _last_satb_filtering_times_ms(_max_gc_threads, "%.1lf"),
+  _last_update_rs_times_ms(_max_gc_threads, "%.1lf"),
+  _last_update_rs_processed_buffers(_max_gc_threads, "%d"),
+  _last_scan_rs_times_ms(_max_gc_threads, "%.1lf"),
+  _last_obj_copy_times_ms(_max_gc_threads, "%.1lf"),
+  _last_termination_times_ms(_max_gc_threads, "%.1lf"),
+  _last_termination_attempts(_max_gc_threads, SIZE_FORMAT),
+  _last_gc_worker_end_times_ms(_max_gc_threads, "%.1lf", false),
+  _last_gc_worker_times_ms(_max_gc_threads, "%.1lf"),
+  _last_gc_worker_other_times_ms(_max_gc_threads, "%.1lf")
+{
+  assert(max_gc_threads > 0, "Must have some GC threads");
+}
+
+void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
+  assert(active_gc_threads > 0, "The number of threads must be > 0");
+  assert(active_gc_threads <= _max_gc_threads, "The number of active threads must be <= the max nubmer of threads");
+  _active_gc_threads = active_gc_threads;
+
+  _last_gc_worker_start_times_ms.reset();
+  _last_ext_root_scan_times_ms.reset();
+  _last_satb_filtering_times_ms.reset();
+  _last_update_rs_times_ms.reset();
+  _last_update_rs_processed_buffers.reset();
+  _last_scan_rs_times_ms.reset();
+  _last_obj_copy_times_ms.reset();
+  _last_termination_times_ms.reset();
+  _last_termination_attempts.reset();
+  _last_gc_worker_end_times_ms.reset();
+  _last_gc_worker_times_ms.reset();
+  _last_gc_worker_other_times_ms.reset();
+}
+
+void G1GCPhaseTimes::note_gc_end() {
+  _last_gc_worker_start_times_ms.verify();
+  _last_ext_root_scan_times_ms.verify();
+  _last_satb_filtering_times_ms.verify();
+  _last_update_rs_times_ms.verify();
+  _last_update_rs_processed_buffers.verify();
+  _last_scan_rs_times_ms.verify();
+  _last_obj_copy_times_ms.verify();
+  _last_termination_times_ms.verify();
+  _last_termination_attempts.verify();
+  _last_gc_worker_end_times_ms.verify();
+
+    for (uint i = 0; i < _active_gc_threads; i++) {
+      double worker_time = _last_gc_worker_end_times_ms.get(i) - _last_gc_worker_start_times_ms.get(i);
+      _last_gc_worker_times_ms.set(i, worker_time);
+
+      double worker_known_time = _last_ext_root_scan_times_ms.get(i) +
+        _last_satb_filtering_times_ms.get(i) +
+        _last_update_rs_times_ms.get(i) +
+        _last_scan_rs_times_ms.get(i) +
+        _last_obj_copy_times_ms.get(i) +
+        _last_termination_times_ms.get(i);
+
+      double worker_other_time = worker_time - worker_known_time;
+      _last_gc_worker_other_times_ms.set(i, worker_other_time);
+    }
+
+  _last_gc_worker_times_ms.verify();
+  _last_gc_worker_other_times_ms.verify();
 }
 
 void G1GCPhaseTimes::print_stats(int level, const char* str, double value) {
@@ -200,73 +226,6 @@ void G1GCPhaseTimes::print_stats(int level, const char* str, double value) {
 
 void G1GCPhaseTimes::print_stats(int level, const char* str, double value, int workers) {
   LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: %d]", str, value, workers);
-}
-
-void G1GCPhaseTimes::print_stats(int level, const char* str, int value) {
-  LineBuffer(level).append_and_print_cr("[%s: %d]", str, value);
-}
-
-double G1GCPhaseTimes::avg_value(double* data) {
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    double ret = 0.0;
-    for (uint i = 0; i < _active_gc_threads; ++i) {
-      ret += data[i];
-    }
-    return ret / (double) _active_gc_threads;
-  } else {
-    return data[0];
-  }
-}
-
-double G1GCPhaseTimes::max_value(double* data) {
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    double ret = data[0];
-    for (uint i = 1; i < _active_gc_threads; ++i) {
-      if (data[i] > ret) {
-        ret = data[i];
-      }
-    }
-    return ret;
-  } else {
-    return data[0];
-  }
-}
-
-double G1GCPhaseTimes::sum_of_values(double* data) {
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    double sum = 0.0;
-    for (uint i = 0; i < _active_gc_threads; i++) {
-      sum += data[i];
-    }
-    return sum;
-  } else {
-    return data[0];
-  }
-}
-
-double G1GCPhaseTimes::max_sum(double* data1, double* data2) {
-  double ret = data1[0] + data2[0];
-
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    for (uint i = 1; i < _active_gc_threads; ++i) {
-      double data = data1[i] + data2[i];
-      if (data > ret) {
-        ret = data;
-      }
-    }
-  }
-  return ret;
-}
-
-void G1GCPhaseTimes::collapse_par_times() {
-    _ext_root_scan_time = avg_value(_par_last_ext_root_scan_times_ms);
-    _satb_filtering_time = avg_value(_par_last_satb_filtering_times_ms);
-    _update_rs_time = avg_value(_par_last_update_rs_times_ms);
-    _update_rs_processed_buffers =
-      sum_of_values(_par_last_update_rs_processed_buffers);
-    _scan_rs_time = avg_value(_par_last_scan_rs_times_ms);
-    _obj_copy_time = avg_value(_par_last_obj_copy_times_ms);
-    _termination_time = avg_value(_par_last_termination_times_ms);
 }
 
 double G1GCPhaseTimes::accounted_time_ms() {
@@ -286,58 +245,37 @@ double G1GCPhaseTimes::accounted_time_ms() {
     return misc_time_ms;
 }
 
-void G1GCPhaseTimes::print(double pause_time_ms) {
-
-  if (PrintGCTimeStamps) {
-    gclog_or_tty->stamp();
-    gclog_or_tty->print(": ");
-  }
-
-  GCCauseString gc_cause_str = GCCauseString("GC pause", _gc_cause)
-    .append(_is_young_gc ? " (young)" : " (mixed)")
-    .append(_is_initial_mark_gc ? " (initial-mark)" : "");
-  gclog_or_tty->print_cr("[%s, %3.7f secs]", (const char*)gc_cause_str, pause_time_ms / 1000.0);
-
-  if (!G1Log::finer()) {
-    return;
-  }
-
+void G1GCPhaseTimes::print(double pause_time_sec) {
   if (_root_region_scan_wait_time_ms > 0.0) {
     print_stats(1, "Root Region Scan Waiting", _root_region_scan_wait_time_ms);
   }
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     print_stats(1, "Parallel Time", _cur_collection_par_time_ms, _active_gc_threads);
-    print_par_stats(2, "GC Worker Start", _par_last_gc_worker_start_times_ms);
-    print_par_stats(2, "Ext Root Scanning", _par_last_ext_root_scan_times_ms);
-    if (_satb_filtering_time > 0.0) {
-      print_par_stats(2, "SATB Filtering", _par_last_satb_filtering_times_ms);
+    _last_gc_worker_start_times_ms.print(2, "GC Worker Start (ms)");
+    _last_ext_root_scan_times_ms.print(2, "Ext Root Scanning (ms)");
+    if (_last_satb_filtering_times_ms.sum() > 0.0) {
+      _last_satb_filtering_times_ms.print(2, "SATB Filtering (ms)");
     }
-    print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
+    _last_update_rs_times_ms.print(2, "Update RS (ms)");
+      _last_update_rs_processed_buffers.print(3, "Processed Buffers");
+    _last_scan_rs_times_ms.print(2, "Scan RS (ms)");
+    _last_obj_copy_times_ms.print(2, "Object Copy (ms)");
+    _last_termination_times_ms.print(2, "Termination (ms)");
     if (G1Log::finest()) {
-      print_par_stats(3, "Processed Buffers", _par_last_update_rs_processed_buffers,
-        false /* showDecimals */);
+      _last_termination_attempts.print(3, "Termination Attempts");
     }
-    print_par_stats(2, "Scan RS", _par_last_scan_rs_times_ms);
-    print_par_stats(2, "Object Copy", _par_last_obj_copy_times_ms);
-    print_par_stats(2, "Termination", _par_last_termination_times_ms);
-    if (G1Log::finest()) {
-      print_par_stats(3, "Termination Attempts", _par_last_termination_attempts,
-        false /* showDecimals */);
-    }
-    print_par_stats(2, "GC Worker Other", _par_last_gc_worker_other_times_ms);
-    print_par_stats(2, "GC Worker Total", _par_last_gc_worker_times_ms);
-    print_par_stats(2, "GC Worker End", _par_last_gc_worker_end_times_ms);
+    _last_gc_worker_other_times_ms.print(2, "GC Worker Other (ms)");
+    _last_gc_worker_times_ms.print(2, "GC Worker Total (ms)");
+    _last_gc_worker_end_times_ms.print(2, "GC Worker End (ms)");
   } else {
-    print_stats(1, "Ext Root Scanning", _ext_root_scan_time);
-    if (_satb_filtering_time > 0.0) {
-      print_stats(1, "SATB Filtering", _satb_filtering_time);
+    _last_ext_root_scan_times_ms.print(1, "Ext Root Scanning (ms)");
+    if (_last_satb_filtering_times_ms.sum() > 0.0) {
+      _last_satb_filtering_times_ms.print(1, "SATB Filtering (ms)");
     }
-    print_stats(1, "Update RS", _update_rs_time);
-    if (G1Log::finest()) {
-      print_stats(2, "Processed Buffers", (int)_update_rs_processed_buffers);
-    }
-    print_stats(1, "Scan RS", _scan_rs_time);
-    print_stats(1, "Object Copying", _obj_copy_time);
+    _last_update_rs_times_ms.print(1, "Update RS (ms)");
+      _last_update_rs_processed_buffers.print(2, "Processed Buffers");
+    _last_scan_rs_times_ms.print(1, "Scan RS (ms)");
+    _last_obj_copy_times_ms.print(1, "Object Copy (ms)");
   }
   print_stats(1, "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
   print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
@@ -350,8 +288,11 @@ void G1GCPhaseTimes::print(double pause_time_ms) {
       print_stats(1, "Avg Clear CC", _cum_clear_cc_time_ms / ((double)_num_cc_clears));
     }
   }
-  double misc_time_ms = pause_time_ms - accounted_time_ms();
+  double misc_time_ms = pause_time_sec * MILLIUNITS - accounted_time_ms();
   print_stats(1, "Other", misc_time_ms);
+  if (_cur_verify_before_time_ms > 0.0) {
+    print_stats(2, "Verify Before", _cur_verify_before_time_ms);
+  }
   print_stats(2, "Choose CSet",
     (_recorded_young_cset_choice_time_ms +
     _recorded_non_young_cset_choice_time_ms));
@@ -360,6 +301,9 @@ void G1GCPhaseTimes::print(double pause_time_ms) {
   print_stats(2, "Free CSet",
     (_recorded_young_free_cset_time_ms +
     _recorded_non_young_free_cset_time_ms));
+  if (_cur_verify_after_time_ms > 0.0) {
+    print_stats(2, "Verify After", _cur_verify_after_time_ms);
+  }
 }
 
 void G1GCPhaseTimes::record_cc_clear_time_ms(double ms) {

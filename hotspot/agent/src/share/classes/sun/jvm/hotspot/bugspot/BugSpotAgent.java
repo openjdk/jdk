@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -737,8 +737,15 @@ public class BugSpotAgent {
                machDesc = new MachineDescriptionSPARC32Bit();
             }
         } else {
-            throw new DebuggerException("Linux only supported on x86/ia64/amd64/sparc/sparc64");
+          try {
+            machDesc = (MachineDescription)
+              Class.forName("sun.jvm.hotspot.debugger.MachineDescription" +
+              cpu.toUpperCase()).newInstance();
+          } catch (Exception e) {
+            throw new DebuggerException("unsupported machine type");
+          }
         }
+
 
         // Note we do not use a cache for the local debugger in server
         // mode; it will be taken care of on the client side (once remote
