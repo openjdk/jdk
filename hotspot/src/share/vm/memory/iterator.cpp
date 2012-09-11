@@ -26,6 +26,10 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 
+void KlassToOopClosure::do_klass(Klass* k) {
+  k->oops_do(_oop_closure);
+}
+
 void ObjectToOopClosure::do_object(oop obj) {
   obj->oop_iterate(_cl);
 }
