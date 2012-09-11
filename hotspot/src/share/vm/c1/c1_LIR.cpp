@@ -89,8 +89,12 @@ LIR_Opr LIR_OprFact::value_type(ValueType* type) {
     ClassConstant* c = type->as_ClassConstant();
     if (c != NULL && !c->value()->is_loaded()) {
       return LIR_OprFact::metadataConst(NULL);
-    } else {
+    } else if (c != NULL) {
       return LIR_OprFact::metadataConst(c->value()->constant_encoding());
+    } else {
+      MethodConstant* m = type->as_MethodConstant();
+      assert (m != NULL, "not a class or a method?");
+      return LIR_OprFact::metadataConst(m->value()->constant_encoding());
     }
   }
   case objectTag : {
@@ -1166,10 +1170,12 @@ void LIR_List::append(LIR_InsertionBuffer* buffer) {
 
 
 void LIR_List::oop2reg_patch(jobject o, LIR_Opr reg, CodeEmitInfo* info) {
+  assert(reg->type() == T_OBJECT, "bad reg");
   append(new LIR_Op1(lir_move, LIR_OprFact::oopConst(o),  reg, T_OBJECT, lir_patch_normal, info));
 }
 
 void LIR_List::klass2reg_patch(Metadata* o, LIR_Opr reg, CodeEmitInfo* info) {
+  assert(reg->type() == T_METADATA, "bad reg");
   append(new LIR_Op1(lir_move, LIR_OprFact::metadataConst(o), reg, T_METADATA, lir_patch_normal, info));
 }
 

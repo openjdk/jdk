@@ -467,7 +467,7 @@ void LIRGenerator::klass2reg_with_patching(LIR_Opr r, ciMetadata* obj, CodeEmitI
     __ klass2reg_patch(NULL, r, info);
   } else {
     // no patching needed
-    __ oop2reg(obj->constant_encoding(), r);
+    __ metadata2reg(obj->constant_encoding(), r);
   }
 }
 
@@ -955,8 +955,8 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
       not_taken_count_offset = t;
     }
 
-    LIR_Opr md_reg = new_register(T_OBJECT);
-    __ oop2reg(md->constant_encoding(), md_reg);
+    LIR_Opr md_reg = new_register(T_METADATA);
+    __ metadata2reg(md->constant_encoding(), md_reg);
 
     LIR_Opr data_offset_reg = new_pointer_register();
     __ cmove(lir_cond(cond),
@@ -1192,8 +1192,8 @@ void LIRGenerator::do_Return(Return* x) {
     signature.append(T_OBJECT); // Method*
     LIR_OprList* args = new LIR_OprList();
     args->append(getThreadPointer());
-    LIR_Opr meth = new_register(T_OBJECT);
-    __ oop2reg(method()->constant_encoding(), meth);
+    LIR_Opr meth = new_register(T_METADATA);
+    __ metadata2reg(method()->constant_encoding(), meth);
     args->append(meth);
     call_runtime(&signature, args, CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), voidType, NULL);
   }
@@ -2553,8 +2553,8 @@ void LIRGenerator::do_Goto(Goto* x) {
       assert(data->is_JumpData(), "need JumpData for branches");
       offset = md->byte_offset_of_slot(data, JumpData::taken_offset());
     }
-    LIR_Opr md_reg = new_register(T_OBJECT);
-    __ oop2reg(md->constant_encoding(), md_reg);
+    LIR_Opr md_reg = new_register(T_METADATA);
+    __ metadata2reg(md->constant_encoding(), md_reg);
 
     increment_counter(new LIR_Address(md_reg, offset,
                                       NOT_LP64(T_INT) LP64_ONLY(T_LONG)), DataLayout::counter_increment);
@@ -2611,8 +2611,8 @@ void LIRGenerator::do_Base(Base* x) {
     signature.append(T_OBJECT); // Method*
     LIR_OprList* args = new LIR_OprList();
     args->append(getThreadPointer());
-    LIR_Opr meth = new_register(T_OBJECT);
-    __ oop2reg(method()->constant_encoding(), meth);
+    LIR_Opr meth = new_register(T_METADATA);
+    __ metadata2reg(method()->constant_encoding(), meth);
     args->append(meth);
     call_runtime(&signature, args, CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry), voidType, NULL);
   }
@@ -3032,21 +3032,21 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   assert(level > CompLevel_simple, "Shouldn't be here");
 
   int offset = -1;
-  LIR_Opr counter_holder = new_register(T_OBJECT);
+  LIR_Opr counter_holder = new_register(T_METADATA);
   LIR_Opr meth;
   if (level == CompLevel_limited_profile) {
     offset = in_bytes(backedge ? Method::backedge_counter_offset() :
                                  Method::invocation_counter_offset());
-    __ oop2reg(method->constant_encoding(), counter_holder);
+    __ metadata2reg(method->constant_encoding(), counter_holder);
     meth = counter_holder;
   } else if (level == CompLevel_full_profile) {
     offset = in_bytes(backedge ? MethodData::backedge_counter_offset() :
                                  MethodData::invocation_counter_offset());
     ciMethodData* md = method->method_data_or_null();
     assert(md != NULL, "Sanity");
-    __ oop2reg(md->constant_encoding(), counter_holder);
-    meth = new_register(T_OBJECT);
-    __ oop2reg(method->constant_encoding(), meth);
+    __ metadata2reg(md->constant_encoding(), counter_holder);
+    meth = new_register(T_METADATA);
+    __ metadata2reg(method->constant_encoding(), meth);
   } else {
     ShouldNotReachHere();
   }
