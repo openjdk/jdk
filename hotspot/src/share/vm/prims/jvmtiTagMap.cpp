@@ -2552,15 +2552,17 @@ class SimpleRootsClosure : public OopClosure {
       return;
     }
 
-    jvmtiHeapReferenceKind kind = root_kind();
-
     assert(Universe::heap()->is_in_reserved(o), "should be impossible");
+
+    jvmtiHeapReferenceKind kind = root_kind();
+    if (kind == JVMTI_HEAP_REFERENCE_SYSTEM_CLASS) {
       // SystemDictionary::always_strong_oops_do reports the application
       // class loader as a root. We want this root to be reported as
       // a root kind of "OTHER" rather than "SYSTEM_CLASS".
-      if (o->is_instance() && root_kind() == JVMTI_HEAP_REFERENCE_SYSTEM_CLASS) {
+      if (!o->is_instanceMirror()) {
         kind = JVMTI_HEAP_REFERENCE_OTHER;
       }
+    }
 
     // some objects are ignored - in the case of simple
     // roots it's mostly Symbol*s that we are skipping
@@ -2991,7 +2993,8 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
   // Preloaded classes and loader from the system dictionary
   blk.set_kind(JVMTI_HEAP_REFERENCE_SYSTEM_CLASS);
   SystemDictionary::always_strong_oops_do(&blk);
-  ClassLoaderDataGraph::always_strong_oops_do(&blk, NULL, false);
+  KlassToOopClosure klass_blk(&blk);
+  ClassLoaderDataGraph::always_strong_oops_do(&blk, &klass_blk, false);
   if (blk.stopped()) {
     return false;
   }

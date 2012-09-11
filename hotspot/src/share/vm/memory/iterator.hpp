@@ -128,6 +128,13 @@ class KlassClosure : public Closure {
   virtual void do_klass(Klass* k) = 0;
 };
 
+class KlassToOopClosure : public KlassClosure {
+  OopClosure* _oop_closure;
+ public:
+  KlassToOopClosure(OopClosure* oop_closure) : _oop_closure(oop_closure) {}
+  virtual void do_klass(Klass* k);
+};
+
 // ObjectClosure is used for iterating through an object space
 
 class ObjectClosure : public Closure {
