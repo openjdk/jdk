@@ -242,7 +242,7 @@ else
 	$(ECHO) Rebuilding $@ because of $$1 $$2 $$3 $$4 $$5 $$6 $${7:+...};
 	@$(MKDIR) -p $(TEMPDIR)
 	$(LINK_PRE_CMD) $(CC) $(CC_OBJECT_OUTPUT_FLAG)$@ $(LDFLAGS) \
-	$(FILES_o) $(THREADLIBS) $(LDLIBS)
+	$(sort $(FILES_o)) $(THREADLIBS) $(LDLIBS)
   ifeq ($(findstring privileged, $(INFO_PLIST_FILE)), privileged)
 	-codesign -s openjdk_codesign $@
   endif
@@ -371,8 +371,6 @@ VERSION_DEFINES += -DFULL_VERSION='"$(FULL_VERSION)"'
 
 VERSION_DEFINES += -DJDK_MAJOR_VERSION='"$(JDK_MAJOR_VERSION)"' \
                    -DJDK_MINOR_VERSION='"$(JDK_MINOR_VERSION)"'
-
-
 
 $(OBJDIR)/main.$(OBJECT_SUFFIX): $(LAUNCHER_SHARE_SRC)/bin/main.c
 	@$(prep-target)
