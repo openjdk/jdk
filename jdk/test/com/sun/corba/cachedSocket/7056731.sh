@@ -115,5 +115,8 @@ else
     exitCode=0
 fi
 
+#jtreg complaining about not being able to clean up; let's sleep
+sleep 2
 rm -rf out.$$ client.$$
+sleep 2
 exit ${exitCode}

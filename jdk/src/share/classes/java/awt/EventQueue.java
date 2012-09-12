@@ -162,6 +162,11 @@ public class EventQueue {
      */
     private long mostRecentEventTime = System.currentTimeMillis();
 
+    /*
+     * The time stamp of the last KeyEvent .
+     */
+    private long mostRecentKeyEventTime = System.currentTimeMillis();
+
     /**
      * The modifiers field of the current event, if the current event is an
      * InputEvent or ActionEvent.
@@ -1142,6 +1147,15 @@ public class EventQueue {
         }
     }
 
+    synchronized long getMostRecentKeyEventTime() {
+        pushPopLock.lock();
+        try {
+            return mostRecentKeyEventTime;
+        } finally {
+            pushPopLock.unlock();
+        }
+    }
+
     static void setCurrentEventAndMostRecentTime(AWTEvent e) {
         Toolkit.getEventQueue().setCurrentEventAndMostRecentTimeImpl(e);
     }
@@ -1166,6 +1180,9 @@ public class EventQueue {
             if (e instanceof InputEvent) {
                 InputEvent ie = (InputEvent)e;
                 mostRecentEventTime2 = ie.getWhen();
+                if (e instanceof KeyEvent) {
+                    mostRecentKeyEventTime = ie.getWhen();
+                }
             } else if (e instanceof InputMethodEvent) {
                 InputMethodEvent ime = (InputMethodEvent)e;
                 mostRecentEventTime2 = ime.getWhen();
