@@ -318,10 +318,9 @@ void Thread::record_stack_base_and_size() {
   set_stack_size(os::current_stack_size());
 
   // record thread's native stack, stack grows downward
-  address vm_base = _stack_base - _stack_size;
-  MemTracker::record_virtual_memory_reserve(vm_base, _stack_size,
-    CURRENT_PC, this);
-  MemTracker::record_virtual_memory_type(vm_base, mtThreadStack);
+  address low_stack_addr = stack_base() - stack_size();
+  MemTracker::record_thread_stack(low_stack_addr, stack_size(), this,
+             CURRENT_PC);
 }
 
 
@@ -329,8 +328,8 @@ Thread::~Thread() {
   // Reclaim the objectmonitors from the omFreeList of the moribund thread.
   ObjectSynchronizer::omFlush (this) ;
 
-  MemTracker::record_virtual_memory_release((_stack_base - _stack_size),
-    _stack_size, this);
+  address low_stack_addr = stack_base() - stack_size();
+  MemTracker::release_thread_stack(low_stack_addr, stack_size(), this);
 
   // deallocate data structures
   delete resource_area();
