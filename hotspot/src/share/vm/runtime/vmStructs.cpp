@@ -1374,9 +1374,9 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
            declare_type(objArrayKlass, arrayKlass)                        \
            declare_type(typeArrayKlass, arrayKlass)                       \
       declare_type(InstanceKlass, Klass)                                  \
-        declare_type(instanceClassLoaderKlass, InstanceKlass)             \
-        declare_type(instanceMirrorKlass, InstanceKlass)                  \
-        declare_type(instanceRefKlass, InstanceKlass)                     \
+        declare_type(InstanceClassLoaderKlass, InstanceKlass)             \
+        declare_type(InstanceMirrorKlass, InstanceKlass)                  \
+        declare_type(InstanceRefKlass, InstanceKlass)                     \
     declare_type(ConstantPool, Metadata)                           \
     declare_type(ConstantPoolCache, MetaspaceObj)                  \
     declare_type(MethodData, Metadata)                             \

@@ -1427,6 +1427,16 @@ void Arguments::set_ergonomics_flags() {
     // if (FLAG_IS_DEFAULT(UseCompressedKlassPointers)) {
     //   FLAG_SET_ERGO(bool, UseCompressedKlassPointers, true);
     // }
+    // Set the ClassMetaspaceSize to something that will not need to be
+    // expanded, since it cannot be expanded.
+    if (UseCompressedKlassPointers && FLAG_IS_DEFAULT(ClassMetaspaceSize)) {
+      // 100,000 classes seems like a good size, so 100M assumes around 1K
+      // per klass.   The vtable and oopMap is embedded so we don't have a fixed
+      // size per klass.   Eventually, this will be parameterized because it
+      // would also be useful to determine the optimal size of the
+      // systemDictionary.
+      FLAG_SET_ERGO(uintx, ClassMetaspaceSize, 100*M);
+    }
   }
   // Also checks that certain machines are slower with compressed oops
   // in vm_version initialization code.
@@ -1964,6 +1974,9 @@ bool Arguments::check_vm_args_consistency() {
                                      1, 100, "TLABWasteTargetPercent");
 
   status = status && verify_object_alignment();
+
+  status = status && verify_min_value(ClassMetaspaceSize, 1*M,
+                                      "ClassMetaspaceSize");
 
   return status;
 }
@@ -2916,7 +2929,7 @@ void Arguments::set_shared_spaces_flags() {
                             (UseLargePages && FLAG_IS_CMDLINE(UseLargePages));
   if (cannot_share) {
     if (must_share) {
-        warning("disabling large pages%s"
+        warning("disabling large pages %s"
                 "because of %s", "" LP64_ONLY("and compressed oops "),
                 DumpSharedSpaces ? "-Xshare:dump" : "-Xshare:on");
         FLAG_SET_CMDLINE(bool, UseLargePages, false);

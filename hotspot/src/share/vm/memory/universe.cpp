@@ -435,9 +435,9 @@ static inline void add_vtable(void** list, int* n, void* o, int count) {
 void Universe::init_self_patching_vtbl_list(void** list, int count) {
   int n = 0;
   { InstanceKlass o;          add_vtable(list, &n, &o, count); }
-  { instanceClassLoaderKlass o; add_vtable(list, &n, &o, count); }
-  { instanceMirrorKlass o;    add_vtable(list, &n, &o, count); }
-  { instanceRefKlass o;       add_vtable(list, &n, &o, count); }
+  { InstanceClassLoaderKlass o; add_vtable(list, &n, &o, count); }
+  { InstanceMirrorKlass o;    add_vtable(list, &n, &o, count); }
+  { InstanceRefKlass o;       add_vtable(list, &n, &o, count); }
   { typeArrayKlass o;         add_vtable(list, &n, &o, count); }
   { objArrayKlass o;          add_vtable(list, &n, &o, count); }
   { Method o;                 add_vtable(list, &n, &o, count); }
@@ -486,7 +486,7 @@ void Universe::fixup_mirrors(TRAPS) {
   assert(SystemDictionary::Class_klass_loaded(), "java.lang.Class should be loaded");
   HandleMark hm(THREAD);
   // Cache the start of the static fields
-  instanceMirrorKlass::init_offset_of_static_fields();
+  InstanceMirrorKlass::init_offset_of_static_fields();
 
   GrowableArray <Klass*>* list = java_lang_Class::fixup_mirror_list();
   int list_length = list->length();
@@ -858,7 +858,7 @@ jint Universe::initialize_heap() {
 ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   // Add in the class metaspace area so the classes in the headers can
   // be compressed the same as instances.
-  size_t total_reserved = heap_size + ClassMetaspaceSize;
+  size_t total_reserved = align_size_up(heap_size + ClassMetaspaceSize, alignment);
   char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
 
   ReservedHeapSpace total_rs(total_reserved, alignment, UseLargePages, addr);

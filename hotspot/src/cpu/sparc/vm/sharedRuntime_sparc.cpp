@@ -1340,6 +1340,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
       case T_ADDRESS: // raw pointers, like current thread, for VM calls
       case T_ARRAY:
       case T_OBJECT:
+      case T_METADATA:
         regs[i].set2( int_stk_helper( j ) );
         break;
       case T_FLOAT:
@@ -1388,6 +1389,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
       case T_FLOAT:
       case T_INT:
       case T_OBJECT:
+      case T_METADATA:
       case T_SHORT:
         regs[i].set1( int_stk_helper( i ) );
         break;

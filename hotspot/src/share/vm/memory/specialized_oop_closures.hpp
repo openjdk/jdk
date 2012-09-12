@@ -199,7 +199,7 @@ class SpecializationStats {
 public:
   enum Kind {
     ik,             // InstanceKlass
-    irk,            // instanceRefKlass
+    irk,            // InstanceRefKlass
     oa,             // objArrayKlass
     NUM_Kinds
   };

@@ -2993,7 +2993,7 @@ class CommandLineFlags {
   product(uintx, MaxMetaspaceSize, max_uintx,                               \
           "Maximum size of Metaspaces (in bytes)")                          \
                                                                             \
-  product(uintx, ClassMetaspaceSize, NOT_LP64(1*M) LP64_ONLY(512*M),        \
+  product(uintx, ClassMetaspaceSize, 2*M,                                   \
           "Maximum size of InstanceKlass area in Metaspace used for "       \
           "UseCompressedKlassPointers")                                     \
                                                                             \

@@ -2380,7 +2380,7 @@ TypeOopPtr::TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int 
           assert(this->isa_instptr(), "must be an instance ptr.");
           _is_ptr_to_narrowoop = false;
         } else if (klass() == ciEnv::current()->Class_klass() &&
-                   _offset >= instanceMirrorKlass::offset_of_static_fields()) {
+                   _offset >= InstanceMirrorKlass::offset_of_static_fields()) {
           // Static fields
           assert(o != NULL, "must be constant");
           ciInstanceKlass* k = o->as_instance()->java_lang_Class_klass()->as_instance_klass();

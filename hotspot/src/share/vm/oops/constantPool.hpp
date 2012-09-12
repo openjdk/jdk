@@ -643,6 +643,11 @@ class ConstantPool : public Metadata {
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
   bool resolve_class_constants(TRAPS);
+  // The ConstantPool vtable is restored by this call when the ConstantPool is
+  // in the shared archive.  See patch_klass_vtables() in metaspaceShared.cpp for
+  // all the gory details.  SA, dtrace and pstack helpers distinguish metadata
+  // by their vtable.
+  void restore_vtable() { guarantee(is_constantPool(), "vtable restored by this call"); }
 
  private:
   enum { _no_index_sentinel = -1, _possible_index_sentinel = -2 };

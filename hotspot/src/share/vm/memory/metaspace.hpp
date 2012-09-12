@@ -149,10 +149,6 @@ class MetaspaceAux : AllStatic {
 
   // Statistics for class space and data space in metaspace.
   static size_t used_in_bytes(Metaspace::MetadataType mdtype);
-  // Same as used_in_bytes() without the consistency checking.
-  // Use this version if not at a safepoint (so consistency is
-  // not necessarily expected).
-  static size_t used_in_bytes_unsafe(Metaspace::MetadataType mdtype);
   static size_t free_in_bytes(Metaspace::MetadataType mdtype);
   static size_t capacity_in_bytes(Metaspace::MetadataType mdtype);
   static size_t reserved_in_bytes(Metaspace::MetadataType mdtype);
@@ -165,11 +161,6 @@ class MetaspaceAux : AllStatic {
   static size_t used_in_bytes() {
     return used_in_bytes(Metaspace::ClassType) +
            used_in_bytes(Metaspace::NonClassType);
-  }
-
-  static size_t used_in_bytes_unsafe() {
-    return used_in_bytes_unsafe(Metaspace::ClassType) +
-           used_in_bytes_unsafe(Metaspace::NonClassType);
   }
 
   // Total of available space in all Metaspaces

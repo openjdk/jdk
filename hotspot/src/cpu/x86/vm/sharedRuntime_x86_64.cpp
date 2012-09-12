@@ -903,6 +903,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
       case T_OBJECT:
       case T_ARRAY:
       case T_ADDRESS:
+      case T_METADATA:
         if (int_args < Argument::n_int_register_parameters_c) {
           regs[i].set2(INT_ArgReg[int_args++]->as_VMReg());
 #ifdef _WIN64

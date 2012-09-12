@@ -447,9 +447,12 @@ int LIR_Assembler::emit_unwind_handler() {
 
   if (compilation()->env()->dtrace_method_probes()) {
     __ mov(G2_thread, O0);
+    __ save_thread(I1); // need to preserve thread in G2 across
+                        // runtime call
     metadata2reg(method()->constant_encoding(), O1);
     __ call(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), relocInfo::runtime_call_type);
     __ delayed()->nop();
+    __ restore_thread(I1);
   }
 
   if (method()->is_synchronized() || compilation()->env()->dtrace_method_probes()) {
@@ -843,6 +846,7 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType 
 #endif
         break;
       case T_ADDRESS:
+      case T_METADATA:
         __ st_ptr(from_reg->as_register(), base, offset);
         break;
       case T_ARRAY : // fall through
@@ -965,6 +969,7 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
 #endif
         }
         break;
+      case T_METADATA:
       case T_ADDRESS:  __ ld_ptr(base, offset, to_reg->as_register()); break;
       case T_ARRAY : // fall through
       case T_OBJECT:
@@ -1366,6 +1371,7 @@ Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
 void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide, bool unaligned) {
 
+  assert(type != T_METADATA, "load of metadata ptr not supported");
   LIR_Address* addr = src_opr->as_address_ptr();
   LIR_Opr to_reg = dest;
 
@@ -1513,6 +1519,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
 void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack,
                             bool wide, bool unaligned) {
+  assert(type != T_METADATA, "store of metadata ptr not supported");
   LIR_Address* addr = dest->as_address_ptr();
 
   Register src = addr->base()->as_pointer_register();
