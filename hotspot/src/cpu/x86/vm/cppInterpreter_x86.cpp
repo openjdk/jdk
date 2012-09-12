@@ -1110,7 +1110,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // allocate space for parameters
   __ movptr(method, STATE(_method));
-  __ verify_oop(method);
+  __ verify_method_ptr(method);
   __ load_unsigned_short(t, Address(method, Method::size_of_parameters_offset()));
   __ shll(t, 2);
 #ifdef _LP64
@@ -1134,7 +1134,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ movptr(method, STATE(_method));
     __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
     __ jcc(Assembler::notEqual, pending_exception_present);
-    __ verify_oop(method);
+    __ verify_method_ptr(method);
     __ movptr(t, Address(method, Method::signature_handler_offset()));
     __ bind(L);
   }
@@ -1162,7 +1162,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   __ movptr(from_ptr, STATE(_locals));  // get the from pointer
   __ call(t);
   __ movptr(method, STATE(_method));
-  __ verify_oop(method);
+  __ verify_method_ptr(method);
 
   // result handler is in rax
   // set result handler
@@ -1176,7 +1176,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ jcc(Assembler::notZero, L);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::prepare_native_call), method);
     __ movptr(method, STATE(_method));
-    __ verify_oop(method);
+    __ verify_method_ptr(method);
     __ movptr(rax, Address(method, Method::native_function_offset()));
     __ bind(L);
   }
@@ -1351,7 +1351,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ increment(rsp, wordSize);
 
     __ movptr(method, STATE(_method));
-    __ verify_oop(method);
+    __ verify_method_ptr(method);
     __ movptr(thread, STATE(_thread));                       // get thread
 
     __ bind(Continue);

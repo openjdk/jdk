@@ -3158,7 +3158,7 @@ void TemplateTable::invokehandle(int byte_no) {
   prepare_invoke(byte_no,
                  rbx_method, rax_mtype,  // get f2 Method*, f1 MethodType
                  rcx_recv);
-  __ verify_oop(rbx_method);
+  __ verify_method_ptr(rbx_method);
   __ verify_oop(rcx_recv);
   __ null_check(rcx_recv);
 
