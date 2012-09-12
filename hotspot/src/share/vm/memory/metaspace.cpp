@@ -2541,41 +2541,14 @@ void SpaceManager::mangle_freed_chunks() {
 
 // MetaspaceAux
 
-size_t MetaspaceAux::used_in_bytes_unsafe(Metaspace::MetadataType mdtype) {
-  size_t used = 0;
-  ClassLoaderDataGraphMetaspaceIterator iter;
-  while (iter.repeat()) {
-    Metaspace* msp = iter.get_next();
-    // Sum allocation_total for each metaspace
-    if (msp != NULL) {
-      used += msp->used_words(mdtype);
-    }
-  }
-  return used * BytesPerWord;
-}
-
 size_t MetaspaceAux::used_in_bytes(Metaspace::MetadataType mdtype) {
-  assert(SafepointSynchronize::is_at_safepoint(),
-    "Consistency checks require being at a safepoint");
   size_t used = 0;
-#ifdef ASSERT
-  size_t free = 0;
-  size_t capacity = 0;
-#endif
   ClassLoaderDataGraphMetaspaceIterator iter;
   while (iter.repeat()) {
     Metaspace* msp = iter.get_next();
     // Sum allocation_total for each metaspace
     if (msp != NULL) {
       used += msp->used_words(mdtype);
-#ifdef ASSERT
-      free += msp->free_words(mdtype);
-      capacity += msp->capacity_words(mdtype);
-      assert(used + free == capacity,
-        err_msg("Accounting is wrong used " SIZE_FORMAT
-                " free " SIZE_FORMAT " capacity " SIZE_FORMAT,
-                used, free, capacity));
-#endif
     }
   }
   return used * BytesPerWord;
@@ -2661,15 +2634,15 @@ void MetaspaceAux::print_on(outputStream* out) {
   out->print_cr(" Metaspace total "
                 SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
                 " reserved " SIZE_FORMAT "K",
-                capacity_in_bytes()/K, used_in_bytes_unsafe()/K, reserved_in_bytes()/K);
+                capacity_in_bytes()/K, used_in_bytes()/K, reserved_in_bytes()/K);
   out->print_cr("  data space     "
                 SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
                 " reserved " SIZE_FORMAT "K",
-                capacity_in_bytes(nct)/K, used_in_bytes_unsafe(nct)/K, reserved_in_bytes(nct)/K);
+                capacity_in_bytes(nct)/K, used_in_bytes(nct)/K, reserved_in_bytes(nct)/K);
   out->print_cr("  class space    "
                 SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
                 " reserved " SIZE_FORMAT "K",
-                capacity_in_bytes(ct)/K, used_in_bytes_unsafe(ct)/K, reserved_in_bytes(ct)/K);
+                capacity_in_bytes(ct)/K, used_in_bytes(ct)/K, reserved_in_bytes(ct)/K);
 }
 
 // Print information for class space and data space separately.
@@ -2806,19 +2779,22 @@ void Metaspace::initialize_class_space(ReservedSpace rs) {
   _class_space_list = new VirtualSpaceList(rs);
 }
 
-// Class space probably needs a lot less than data space
-const int class_space_divisor = 4;
 
 void Metaspace::initialize(Mutex* lock, size_t initial_size) {
-  // Use SmallChunk size if not specified, adjust class to smaller size if so.
+  // Use SmallChunk size if not specified.   If specified, use this size for
+  // the data metaspace.
   size_t word_size;
   size_t class_word_size;
   if (initial_size == 0) {
     word_size = (size_t) SpaceManager::SmallChunk;
-    class_word_size = word_size;
+    class_word_size = (size_t) SpaceManager::SmallChunk;
   } else {
     word_size = initial_size;
-    class_word_size = initial_size/class_space_divisor;
+    // Make the first class chunk bigger than a medium chunk so it's not put
+    // on the medium chunk list.   The next chunk will be small and progress
+    // from there.  This size calculated by -version.
+    class_word_size = MIN2((size_t)SpaceManager::MediumChunk*5,
+                           (ClassMetaspaceSize/BytesPerWord)*2);
   }
 
   assert(space_list() != NULL,

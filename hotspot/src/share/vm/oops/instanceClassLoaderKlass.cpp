@@ -49,14 +49,14 @@
       "Inconsistency in do_metadata");                                \
   if (closure->do_metadata##nv_suffix())
 
-// Macro to define instanceClassLoaderKlass::oop_oop_iterate for virtual/nonvirtual for
+// Macro to define InstanceClassLoaderKlass::oop_oop_iterate for virtual/nonvirtual for
 // all closures.  Macros calling macros above for each oop size.
 // Since ClassLoader objects have only a pointer to the loader_data, they are not
 // compressed nor does the pointer move.
 
 #define InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)\
                                                                                 \
-int instanceClassLoaderKlass::                                                  \
+int InstanceClassLoaderKlass::                                                  \
 oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  \
   /* Get size before changing pointers */                                       \
   SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);\
@@ -76,7 +76,7 @@ oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  
 #ifndef SERIALGC
 #define InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix) \
                                                                                 \
-int instanceClassLoaderKlass::                                                  \
+int InstanceClassLoaderKlass::                                                  \
 oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {        \
   /* Get size before changing pointers */                                       \
   SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);\
@@ -88,7 +88,7 @@ oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {        
 
 #define InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)      \
                                                                                 \
-int instanceClassLoaderKlass::                                                  \
+int InstanceClassLoaderKlass::                                                  \
 oop_oop_iterate##nv_suffix##_m(oop obj,                                         \
                                OopClosureType* closure,                         \
                                MemRegion mr) {                                  \
@@ -118,7 +118,7 @@ ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARD
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN_m)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN_m)
 
-void instanceClassLoaderKlass::oop_follow_contents(oop obj) {
+void InstanceClassLoaderKlass::oop_follow_contents(oop obj) {
   InstanceKlass::oop_follow_contents(obj);
   ClassLoaderData * const loader_data = java_lang_ClassLoader::loader_data(obj);
 
@@ -130,7 +130,7 @@ void instanceClassLoaderKlass::oop_follow_contents(oop obj) {
 }
 
 #ifndef SERIALGC
-void instanceClassLoaderKlass::oop_follow_contents(ParCompactionManager* cm,
+void InstanceClassLoaderKlass::oop_follow_contents(ParCompactionManager* cm,
         oop obj) {
   InstanceKlass::oop_follow_contents(cm, obj);
   ClassLoaderData * const loader_data = java_lang_ClassLoader::loader_data(obj);
@@ -139,7 +139,7 @@ void instanceClassLoaderKlass::oop_follow_contents(ParCompactionManager* cm,
   }
 }
 
-void instanceClassLoaderKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
+void InstanceClassLoaderKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   InstanceKlass::oop_push_contents(pm, obj);
 
   // This is called by the young collector. It will already have taken care of
@@ -147,7 +147,7 @@ void instanceClassLoaderKlass::oop_push_contents(PSPromotionManager* pm, oop obj
   // class loader data link.
 }
 
-int instanceClassLoaderKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
+int InstanceClassLoaderKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   InstanceKlass::oop_update_pointers(cm, obj);
   ClassLoaderData * const loader_data = java_lang_ClassLoader::loader_data(obj);
   if (loader_data != NULL) {

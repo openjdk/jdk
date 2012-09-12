@@ -884,7 +884,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   LIR_Opr tmp2 = FrameMap::G3_oop_opr;
   LIR_Opr tmp3 = FrameMap::G4_oop_opr;
   LIR_Opr tmp4 = FrameMap::O1_oop_opr;
-  LIR_Opr klass_reg = FrameMap::G5_oop_opr;
+  LIR_Opr klass_reg = FrameMap::G5_metadata_opr;
   new_instance(reg, x->klass(), tmp1, tmp2, tmp3, tmp4, klass_reg, info);
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);
@@ -903,11 +903,11 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   LIR_Opr tmp2 = FrameMap::G3_oop_opr;
   LIR_Opr tmp3 = FrameMap::G4_oop_opr;
   LIR_Opr tmp4 = FrameMap::O1_oop_opr;
-  LIR_Opr klass_reg = FrameMap::G5_oop_opr;
+  LIR_Opr klass_reg = FrameMap::G5_metadata_opr;
   LIR_Opr len = length.result();
   BasicType elem_type = x->elt_type();
 
-  __ oop2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
+  __ metadata2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
 
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len, reg, info);
   __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path);
@@ -935,7 +935,7 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr tmp2 = FrameMap::G3_oop_opr;
   LIR_Opr tmp3 = FrameMap::G4_oop_opr;
   LIR_Opr tmp4 = FrameMap::O1_oop_opr;
-  LIR_Opr klass_reg = FrameMap::G5_oop_opr;
+  LIR_Opr klass_reg = FrameMap::G5_metadata_opr;
   LIR_Opr len = length.result();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info);
@@ -985,8 +985,8 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
 
   // This instruction can be deoptimized in the slow path : use
   // O0 as result register.
-  const LIR_Opr reg = result_register_for(x->type());
-  klass2reg_with_patching(reg, x->klass(), patching_info);
+  const LIR_Opr klass_reg = FrameMap::O0_metadata_opr;
+  klass2reg_with_patching(klass_reg, x->klass(), patching_info);
   LIR_Opr rank = FrameMap::O1_opr;
   __ move(LIR_OprFact::intConst(x->rank()), rank);
   LIR_Opr varargs = FrameMap::as_pointer_opr(O2);
@@ -995,9 +995,10 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
          LIR_OprFact::intptrConst(offset_from_sp),
          varargs);
   LIR_OprList* args = new LIR_OprList(3);
-  args->append(reg);
+  args->append(klass_reg);
   args->append(rank);
   args->append(varargs);
+  const LIR_Opr reg = result_register_for(x->type());
   __ call_runtime(Runtime1::entry_for(Runtime1::new_multi_array_id),
                   LIR_OprFact::illegalOpr,
                   reg, args, info);

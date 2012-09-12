@@ -516,7 +516,7 @@ oop CollectedHeap::Class_obj_allocate(KlassHandle klass, int size, KlassHandle r
     real_klass->set_java_mirror(mirror);
   }
 
-  instanceMirrorKlass* mk = instanceMirrorKlass::cast(mirror->klass());
+  InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(size == mk->instance_size(real_klass), "should have been set");
 
   // notify jvmti and dtrace

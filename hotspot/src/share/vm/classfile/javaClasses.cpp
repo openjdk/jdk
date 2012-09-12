@@ -500,7 +500,7 @@ static void initialize_static_field(fieldDescriptor* fd, TRAPS) {
 
 
 void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
-  assert(instanceMirrorKlass::offset_of_static_fields() != 0, "must have been computed already");
+  assert(InstanceMirrorKlass::offset_of_static_fields() != 0, "must have been computed already");
 
   // If the offset was read from the shared archive, it was fixed up already
   if (!k->is_shared()) {
@@ -510,7 +510,7 @@ void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
     // update all the static field offsets to included the size.
       for (JavaFieldStream fs(InstanceKlass::cast(k())); !fs.done(); fs.next()) {
       if (fs.access_flags().is_static()) {
-        int real_offset = fs.offset() + instanceMirrorKlass::offset_of_static_fields();
+        int real_offset = fs.offset() + InstanceMirrorKlass::offset_of_static_fields();
         fs.set_offset(real_offset);
       }
     }
@@ -531,9 +531,9 @@ oop java_lang_Class::create_mirror(KlassHandle k, TRAPS) {
   // the mirror.
   if (SystemDictionary::Class_klass_loaded()) {
     // Allocate mirror (java.lang.Class instance)
-    Handle mirror = instanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(k, CHECK_0);
+    Handle mirror = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(k, CHECK_0);
 
-    instanceMirrorKlass* mk = instanceMirrorKlass::cast(mirror->klass());
+    InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
     java_lang_Class::set_static_oop_field_count(mirror(), mk->compute_static_oop_field_count(mirror()));
 
     // It might also have a component mirror.  This mirror must already exist.
@@ -592,14 +592,14 @@ void java_lang_Class::set_static_oop_field_count(oop java_class, int size) {
 oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS) {
   // This should be improved by adding a field at the Java level or by
   // introducing a new VM klass (see comment in ClassFileParser)
-  oop java_class = instanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(NULL, CHECK_0);
+  oop java_class = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(NULL, CHECK_0);
   if (type != T_VOID) {
     Klass* aklass = Universe::typeArrayKlassObj(type);
     assert(aklass != NULL, "correct bootstrap");
     set_array_klass(java_class, aklass);
   }
 #ifdef ASSERT
-  instanceMirrorKlass* mk = instanceMirrorKlass::cast(SystemDictionary::Class_klass());
+  InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(SystemDictionary::Class_klass());
   assert(java_lang_Class::static_oop_field_count(java_class) == 0, "should have been zeroed by allocation");
 #endif
   return java_class;
@@ -2835,17 +2835,17 @@ oop java_lang_ClassLoader::non_reflection_class_loader(oop loader) {
 
 // Support for java_lang_System
 int java_lang_System::in_offset_in_bytes() {
-  return (instanceMirrorKlass::offset_of_static_fields() + static_in_offset);
+  return (InstanceMirrorKlass::offset_of_static_fields() + static_in_offset);
 }
 
 
 int java_lang_System::out_offset_in_bytes() {
-  return (instanceMirrorKlass::offset_of_static_fields() + static_out_offset);
+  return (InstanceMirrorKlass::offset_of_static_fields() + static_out_offset);
 }
 
 
 int java_lang_System::err_offset_in_bytes() {
-  return (instanceMirrorKlass::offset_of_static_fields() + static_err_offset);
+  return (InstanceMirrorKlass::offset_of_static_fields() + static_err_offset);
 }
 
 
@@ -3124,10 +3124,10 @@ bool JavaClasses::check_static_offset(const char *klass_name, int hardcoded_offs
     tty->print_cr("Static field %s.%s appears to be nonstatic", klass_name, field_name);
     return false;
   }
-  if (fd.offset() == hardcoded_offset + instanceMirrorKlass::offset_of_static_fields()) {
+  if (fd.offset() == hardcoded_offset + InstanceMirrorKlass::offset_of_static_fields()) {
     return true;
   } else {
-    tty->print_cr("Offset of static field %s.%s is hardcoded as %d but should really be %d.", klass_name, field_name, hardcoded_offset, fd.offset() - instanceMirrorKlass::offset_of_static_fields());
+    tty->print_cr("Offset of static field %s.%s is hardcoded as %d but should really be %d.", klass_name, field_name, hardcoded_offset, fd.offset() - InstanceMirrorKlass::offset_of_static_fields());
     return false;
   }
 }

@@ -376,7 +376,7 @@ void Method::print_invocation_count() {
 void Method::build_interpreter_method_data(methodHandle method, TRAPS) {
   // Do not profile method if current thread holds the pending list lock,
   // which avoids deadlock for acquiring the MethodData_lock.
-  if (instanceRefKlass::owns_pending_list_lock((JavaThread*)THREAD)) {
+  if (InstanceRefKlass::owns_pending_list_lock((JavaThread*)THREAD)) {
     return;
   }
 

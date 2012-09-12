@@ -45,7 +45,7 @@ public class InstanceRefKlass extends InstanceKlass {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     // Just make sure it's there for now
-    Type type = db.lookupType("instanceRefKlass");
+    Type type = db.lookupType("InstanceRefKlass");
   }
 
   public InstanceRefKlass(Address addr) {

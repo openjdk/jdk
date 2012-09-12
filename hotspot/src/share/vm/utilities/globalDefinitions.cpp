@@ -213,7 +213,7 @@ BasicType name2type(const char* name) {
 
 
 // Map BasicType to size in words
-int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, 1, -1};
+int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, -1};
 
 BasicType type2field[T_CONFLICT+1] = {
   (BasicType)0,            // 0,

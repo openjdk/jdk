@@ -243,17 +243,20 @@ void ConstantPoolCacheEntry::set_interface_call(methodHandle method, int index) 
 }
 
 
-void ConstantPoolCacheEntry::set_method_handle(methodHandle adapter, Handle appendix,
+void ConstantPoolCacheEntry::set_method_handle(constantPoolHandle cpool,
+                                               methodHandle adapter, Handle appendix,
                                                objArrayHandle resolved_references) {
-  set_method_handle_common(Bytecodes::_invokehandle, adapter, appendix, resolved_references);
+  set_method_handle_common(cpool, Bytecodes::_invokehandle, adapter, appendix, resolved_references);
 }
 
-void ConstantPoolCacheEntry::set_dynamic_call(methodHandle adapter, Handle appendix,
+void ConstantPoolCacheEntry::set_dynamic_call(constantPoolHandle cpool,
+                                              methodHandle adapter, Handle appendix,
                                               objArrayHandle resolved_references) {
-  set_method_handle_common(Bytecodes::_invokedynamic, adapter, appendix, resolved_references);
+  set_method_handle_common(cpool, Bytecodes::_invokedynamic, adapter, appendix, resolved_references);
 }
 
-void ConstantPoolCacheEntry::set_method_handle_common(Bytecodes::Code invoke_code,
+void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
+                                                      Bytecodes::Code invoke_code,
                                                       methodHandle adapter,
                                                       Handle appendix,
                                                       objArrayHandle resolved_references) {
@@ -261,28 +264,23 @@ void ConstantPoolCacheEntry::set_method_handle_common(Bytecodes::Code invoke_cod
   // There are three words to update: flags, refs[f2], f1 (in that order).
   // Writers must store all other values before f1.
   // Readers must test f1 first for non-null before reading other fields.
-  // Competing writers must acquire exclusive access on the first
-  // write, to flags, using a compare/exchange.
-  // A losing writer to flags must spin until the winner writes f1,
-  // so that when he returns, he can use the linked cache entry.
+  // Competing writers must acquire exclusive access via a lock.
+  // A losing writer waits on the lock until the winner writes f1 and leaves
+  // the lock, so that when the losing writer returns, he can use the linked
+  // cache entry.
+
+  MonitorLockerEx ml(cpool->lock());
+  if (!is_f1_null()) {
+    return;
+  }
 
   bool has_appendix = appendix.not_null();
 
   // Write the flags.
-  bool owner =
-    init_method_flags_atomic(as_TosState(adapter->result_type()),
+  set_method_flags(as_TosState(adapter->result_type()),
                    ((has_appendix ?  1 : 0) << has_appendix_shift) |
                    (                 1      << is_final_shift),
                    adapter->size_of_parameters());
-  if (!owner) {
-    // Somebody else is working on the same CPCE.  Let them proceed.
-    while (is_f1_null()) {
-      // Pause momentarily on a low-level lock, to allow racing thread to win.
-      MutexLockerEx mu(Patching_lock, Mutex::_no_safepoint_check_flag);
-      os::yield();
-    }
-    return;
-  }
 
   if (TraceInvokeDynamic) {
     tty->print_cr("set_method_handle bc=%d appendix="PTR_FORMAT"%s method="PTR_FORMAT" ",

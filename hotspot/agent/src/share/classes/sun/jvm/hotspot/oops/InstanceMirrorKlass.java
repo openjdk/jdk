@@ -45,7 +45,7 @@ public class InstanceMirrorKlass extends InstanceKlass {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     // Just make sure it's there for now
-    Type type = db.lookupType("instanceMirrorKlass");
+    Type type = db.lookupType("InstanceMirrorKlass");
   }
 
   public InstanceMirrorKlass(Address addr) {

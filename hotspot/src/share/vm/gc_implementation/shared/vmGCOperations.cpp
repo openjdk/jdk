@@ -70,13 +70,13 @@ void VM_GC_Operation::notify_gc_end() {
 
 void VM_GC_Operation::acquire_pending_list_lock() {
   // we may enter this with pending exception set
-  instanceRefKlass::acquire_pending_list_lock(&_pending_list_basic_lock);
+  InstanceRefKlass::acquire_pending_list_lock(&_pending_list_basic_lock);
 }
 
 
 void VM_GC_Operation::release_and_notify_pending_list_lock() {
 
-  instanceRefKlass::release_and_notify_pending_list_lock(&_pending_list_basic_lock);
+  InstanceRefKlass::release_and_notify_pending_list_lock(&_pending_list_basic_lock);
 }
 
 // Allocations may fail in several threads at about the same time,
