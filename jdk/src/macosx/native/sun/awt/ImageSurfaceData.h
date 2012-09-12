@@ -41,7 +41,7 @@ void        UnlockImagePixels(JNIEnv* env, ImageSDOps* isdo);
 // If there is an image present, this is a no-op
 void makeSureImageIsCreated(ImageSDOps* isdo);
 
-struct _ContextInfo
+typedef struct _ContextInfo
 {
     BOOL                useWindowContextReference;
     BOOL                canUseJavaPixelsAsContext;
@@ -50,10 +50,9 @@ struct _ContextInfo
     size_t                bytesPerRow;
     CGImageAlphaInfo    alphaInfo;
     CGColorSpaceRef        colorSpace;
-}
-typedef ContextInfo;
+} ContextInfo;
 
-struct _ImageInfo
+typedef struct _ImageInfo
 {
     size_t                bitsPerComponent;
     size_t                bitsPerPixel;
@@ -61,8 +60,7 @@ struct _ImageInfo
     size_t                bytesPerRow;
     CGImageAlphaInfo    alphaInfo;
     CGColorSpaceRef        colorSpace;
-}
-typedef ImageInfo;
+} ImageInfo;
 
 struct _ImageSDOps
 {

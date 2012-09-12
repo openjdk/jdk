@@ -53,10 +53,6 @@
 // for vImage framework headers
 #include <Accelerate/Accelerate.h>
 
-
-// private Quartz routines needed here
-CG_EXTERN void CGContextSetCTM(CGContextRef ref, CGAffineTransform tx);
-
 static ContextInfo sDefaultContextInfo[sun_java2d_OSXOffScreenSurfaceData_TYPE_3BYTE_RGB+1] =
 {
     {YES,    YES,    8,        4,        0,        kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Host,    NULL},    // TYPE_CUSTOM            // special case
@@ -942,7 +938,6 @@ PRINT("createContext")
     // intitalize the context to match the Java coordinate system
 
     // BG, since the context is created above, we can just concat
-    //CGContextSetCTM(qsdo->cgRef, CGAffineTransformMake(1, 0, 0, -1, 0, isdo->height));
     CGContextConcatCTM(qsdo->cgRef, CGAffineTransformMake(1, 0, 0, -1, 0, isdo->height));
 
     CGContextSaveGState(qsdo->cgRef); // this will make sure we don't go pass device context settings
@@ -1114,7 +1109,10 @@ PRINT("syncFromJavaPixels")
                 if (qsdo->cgRef != NULL)
                 {
                     CGContextSaveGState(qsdo->cgRef);
-                    CGContextSetCTM(qsdo->cgRef, CGAffineTransformMake(1, 0, 0, 1, 0, 0));
+                    CGAffineTransform currCTM = CGContextGetCTM(qsdo->cgRef);
+                    CGAffineTransform inverse = CGAffineTransformInvert(currCTM);
+                    CGContextConcatCTM(qsdo->cgRef, inverse);
+                    CGContextConcatCTM(qsdo->cgRef, CGAffineTransformMake(1, 0, 0, 1, 0, 0));
                     CGContextSetBlendMode(qsdo->cgRef, kCGBlendModeCopy);
                     CGContextSetAlpha(qsdo->cgRef, 1.0f);
                     CGContextDrawImage(qsdo->cgRef, CGRectMake(0, 0, width, height), javaImg);
