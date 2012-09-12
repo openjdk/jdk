@@ -567,9 +567,6 @@ void Dependencies::print_dependency(DepType dept, int nargs, DepArgument args[],
 
 void Dependencies::DepStream::log_dependency(Klass* witness) {
   if (_deps == NULL && xtty == NULL)  return;  // fast cutout for runtime
-  if (type() == call_site_target_value) {
-    os::breakpoint();
-  }
   int nargs = argument_count();
   DepArgument args[max_arg_count];
   for (int j = 0; j < nargs; j++) {

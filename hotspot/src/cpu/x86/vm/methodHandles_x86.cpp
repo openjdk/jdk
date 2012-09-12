@@ -118,7 +118,7 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
 void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp,
                                             bool for_compiler_entry) {
   assert(method == rbx, "interpreter calling convention");
-  __ verify_oop(method);
+  __ verify_method_ptr(method);
 
   if (!for_compiler_entry && JvmtiExport::can_post_interpreter_events()) {
     Label run_compiled_code;
@@ -358,7 +358,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         // load receiver klass itself
         __ null_check(receiver_reg, oopDesc::klass_offset_in_bytes());
         __ load_klass(temp1_recv_klass, receiver_reg);
-        __ verify_oop(temp1_recv_klass);
+        __ verify_klass_ptr(temp1_recv_klass);
       }
       BLOCK_COMMENT("check_receiver {");
       // The receiver for the MemberName must be in receiver_reg.
@@ -366,14 +366,14 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles && iid == vmIntrinsics::_linkToSpecial) {
         // Did not load it above...
         __ load_klass(temp1_recv_klass, receiver_reg);
-        __ verify_oop(temp1_recv_klass);
+        __ verify_klass_ptr(temp1_recv_klass);
       }
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {
         Label L_ok;
         Register temp2_defc = temp2;
         __ load_heap_oop(temp2_defc, member_clazz);
         load_klass_from_Class(_masm, temp2_defc);
-        __ verify_oop(temp2_defc);
+        __ verify_klass_ptr(temp2_defc);
         __ check_klass_subtype(temp1_recv_klass, temp2_defc, temp3, L_ok);
         // If we get here, the type check failed!
         __ STOP("receiver class disagrees with MemberName.clazz");
@@ -451,7 +451,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       Register temp3_intf = temp3;
       __ load_heap_oop(temp3_intf, member_clazz);
       load_klass_from_Class(_masm, temp3_intf);
-      __ verify_oop(temp3_intf);
+      __ verify_klass_ptr(temp3_intf);
 
       Register rbx_index = rbx_method;
       __ movptr(rbx_index, member_vmindex);
@@ -471,7 +471,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                                  temp2,
                                  L_no_such_interface);
 
-      __ verify_oop(rbx_method);
+      __ verify_method_ptr(rbx_method);
       jump_from_method_handle(_masm, rbx_method, temp2, for_compiler_entry);
       __ hlt();
 
@@ -491,7 +491,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       // After figuring out which concrete method to call, jump into it.
       // Note that this works in the interpreter with no data motion.
       // But the compiled version will require that rcx_recv be shifted out.
-      __ verify_oop(rbx_method);
+      __ verify_method_ptr(rbx_method);
       jump_from_method_handle(_masm, rbx_method, temp1, for_compiler_entry);
     }
   }

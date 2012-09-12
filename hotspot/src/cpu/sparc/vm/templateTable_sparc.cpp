@@ -3018,7 +3018,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   // get receiver klass
   __ null_check(O0_recv, oopDesc::klass_offset_in_bytes());
   __ load_klass(O0_recv, O0_recv);
-  __ verify_oop(O0_recv);
+  __ verify_klass_ptr(O0_recv);
 
   __ profile_virtual_call(O0_recv, O4);
 
