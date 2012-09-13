@@ -1364,7 +1364,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * {@inheritdoc}
      *
      * Command line options suitable for presenting to annotation
-     * processors.  "-Afoo=bar" should be "-Afoo" => "bar".
+     * processors.
+     * {@literal "-Afoo=bar"} should be {@literal "-Afoo" => "bar"}.
      */
     public Map<String,String> getOptions() {
         return processorOptions;
