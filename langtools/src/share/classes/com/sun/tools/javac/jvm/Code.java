@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class Code {
 
 /*---------- internal fields: --------------- */
 
-    /** Are we generating code with jumps >= 32K?
+    /** Are we generating code with jumps &ge; 32K?
      */
     public boolean fatcode;
 
@@ -1077,13 +1077,15 @@ public class Code {
             while (cp % incr != 0) emitop0(nop);
     }
 
-    /** Place a byte into code at address pc. Pre: pc + 1 <= cp.
+    /** Place a byte into code at address pc.
+     *  Pre: {@literal pc + 1 <= cp }.
      */
     private void put1(int pc, int op) {
         code[pc] = (byte)op;
     }
 
-    /** Place two bytes into code at address pc. Pre: pc + 2 <= cp.
+    /** Place two bytes into code at address pc.
+     *  Pre: {@literal pc + 2 <= cp }.
      */
     private void put2(int pc, int od) {
         // pre: pc + 2 <= cp
@@ -1091,7 +1093,8 @@ public class Code {
         put1(pc+1, od);
     }
 
-    /** Place four  bytes into code at address pc. Pre: pc + 4 <= cp.
+    /** Place four  bytes into code at address pc.
+     *  Pre: {@literal pc + 4 <= cp }.
      */
     public void put4(int pc, int od) {
         // pre: pc + 4 <= cp
@@ -1990,7 +1993,7 @@ public class Code {
         nextreg = max_locals;
     }
 
-    /** End scopes of all variables with registers >= first.
+    /** End scopes of all variables with registers &ge; first.
      */
     public void endScopes(int first) {
         int prevNextReg = nextreg;

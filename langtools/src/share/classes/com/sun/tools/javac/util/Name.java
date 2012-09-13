@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,28 +43,28 @@ public abstract class Name implements javax.lang.model.element.Name {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public boolean contentEquals(CharSequence cs) {
         return toString().equals(cs.toString());
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public int length() {
         return toString().length();
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public char charAt(int index) {
         return toString().charAt(index);
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public CharSequence subSequence(int start, int end) {
         return toString().subSequence(start, end);
@@ -142,6 +142,7 @@ public abstract class Name implements javax.lang.model.element.Name {
 
     /** Return the string representation of this name.
      */
+    @Override
     public String toString() {
         return Convert.utf2string(getByteArray(), getByteOffset(), getByteLength());
     }
