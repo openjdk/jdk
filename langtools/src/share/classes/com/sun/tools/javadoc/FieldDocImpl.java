@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ public class FieldDocImpl extends MemberDocImpl implements FieldDoc {
      * Return the serialField tags in this FieldDocImpl item.
      *
      * @return an array of <tt>SerialFieldTagImpl</tt> containing all
-     *         <code>&#64serialField</code> tags.
+     *         <code>&#64;serialField</code> tags.
      */
     public SerialFieldTag[] serialFieldTags() {
         return comment().serialFieldTags();
