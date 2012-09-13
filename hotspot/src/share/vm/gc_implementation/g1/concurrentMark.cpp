@@ -110,7 +110,7 @@ int CMBitMapRO::heapWordDiffToOffsetDiff(size_t diff) const {
 #ifndef PRODUCT
 bool CMBitMapRO::covers(ReservedSpace rs) const {
   // assert(_bm.map() == _virtual_space.low(), "map inconsistency");
-  assert(((size_t)_bm.size() * (size_t)(1 << _shifter)) == _bmWordSize,
+  assert(((size_t)_bm.size() * ((size_t)1 << _shifter)) == _bmWordSize,
          "size inconsistency");
   return _bmStartWord == (HeapWord*)(rs.base()) &&
          _bmWordSize  == rs.size()>>LogHeapWordSize;
