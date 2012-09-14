@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,11 +103,11 @@ public abstract class Attribute implements AnnotationValue {
      *  represented as a ClassSymbol.
      */
     public static class Class extends Attribute {
-        public final Type type;
+        public final Type classType;
         public void accept(Visitor v) { v.visitClass(this); }
         public Class(Types types, Type type) {
             super(makeClassType(types, type));
-            this.type = type;
+            this.classType = type;
         }
         static Type makeClassType(Types types, Type type) {
             Type arg = type.isPrimitive()
@@ -118,13 +118,13 @@ public abstract class Attribute implements AnnotationValue {
                                       types.syms.classType.tsym);
         }
         public String toString() {
-            return type + ".class";
+            return classType + ".class";
         }
         public Type getValue() {
-            return type;
+            return classType;
         }
         public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
-            return v.visitType(type, p);
+            return v.visitType(classType, p);
         }
     }
 
@@ -212,6 +212,12 @@ public abstract class Attribute implements AnnotationValue {
             super(type);
             this.values = values;
         }
+
+        public Array(Type type, List<Attribute> values) {
+            super(type);
+            this.values = values.toArray(new Attribute[values.size()]);
+        }
+
         public void accept(Visitor v) { v.visitArray(this); }
         public String toString() {
             StringBuilder buf = new StringBuilder();

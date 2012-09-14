@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,4 +75,43 @@ define_pd_global(bool, UseMembar,            false);
 
 // GC Ergo Flags
 define_pd_global(intx, CMSYoungGenPerWorker, 16*M);  // default max size of CMS young gen, per GC worker thread
+
+#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct) \
+                                                                            \
+  product(intx, UseVIS, 99,                                                 \
+          "Highest supported VIS instructions set on Sparc")                \
+                                                                            \
+  product(bool, UseCBCond, false,                                           \
+          "Use compare and branch instruction on SPARC")                    \
+                                                                            \
+  product(bool, UseBlockZeroing, false,                                     \
+          "Use special cpu instructions for block zeroing")                 \
+                                                                            \
+  product(intx, BlockZeroingLowLimit, 2048,                                 \
+          "Minimum size in bytes when block zeroing will be used")          \
+                                                                            \
+  product(bool, UseBlockCopy, false,                                        \
+          "Use special cpu instructions for block copy")                    \
+                                                                            \
+  product(intx, BlockCopyLowLimit, 2048,                                    \
+          "Minimum size in bytes when block copy will be used")             \
+                                                                            \
+  develop(bool, UseV8InstrsOnly, false,                                     \
+          "Use SPARC-V8 Compliant instruction subset")                      \
+                                                                            \
+  product(bool, UseNiagaraInstrs, false,                                    \
+          "Use Niagara-efficient instruction subset")                       \
+                                                                            \
+  develop(bool, UseCASForSwap, false,                                       \
+          "Do not use swap instructions, but only CAS (in a loop) on SPARC")\
+                                                                            \
+  product(uintx,  ArraycopySrcPrefetchDistance, 0,                          \
+          "Distance to prefetch source array in arracopy")                  \
+                                                                            \
+  product(uintx,  ArraycopyDstPrefetchDistance, 0,                          \
+          "Distance to prefetch destination array in arracopy")             \
+                                                                            \
+  develop(intx, V8AtomicOperationUnderLockSpinCount,    50,                 \
+          "Number of times to spin wait on a v8 atomic operation lock")     \
+
 #endif // CPU_SPARC_VM_GLOBALS_SPARC_HPP

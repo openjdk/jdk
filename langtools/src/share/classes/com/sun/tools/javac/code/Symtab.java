@@ -156,6 +156,10 @@ public class Symtab {
     public final Type systemType;
     public final Type autoCloseableType;
     public final Type trustMeType;
+    public final Type containedByType;
+    public final Type containerForType;
+    public final Type documentedType;
+    public final Type elementTypeType;
 
     /** The symbol representing the length field of an array.
      */
@@ -468,6 +472,10 @@ public class Symtab {
         deprecatedType = enterClass("java.lang.Deprecated");
         suppressWarningsType = enterClass("java.lang.SuppressWarnings");
         inheritedType = enterClass("java.lang.annotation.Inherited");
+        containedByType = enterClass("java.lang.annotation.ContainedBy");
+        containerForType = enterClass("java.lang.annotation.ContainerFor");
+        documentedType = enterClass("java.lang.annotation.Documented");
+        elementTypeType = enterClass("java.lang.annotation.ElementType");
         systemType = enterClass("java.lang.System");
         autoCloseableType = enterClass("java.lang.AutoCloseable");
         autoCloseableClose = new MethodSymbol(PUBLIC,

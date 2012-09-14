@@ -1215,9 +1215,10 @@ void ciMethod::print_impl(outputStream* st) {
   holder()->print_name_on(st);
   st->print(" signature=");
   signature()->as_symbol()->print_symbol_on(st);
-  st->print(" arg_size=%d", arg_size());
   if (is_loaded()) {
-    st->print(" loaded=true flags=");
+    st->print(" loaded=true");
+    st->print(" arg_size=%d", arg_size());
+    st->print(" flags=");
     flags().print_member_flags(st);
   } else {
     st->print(" loaded=false");
