@@ -25,7 +25,7 @@
  * @test
  * @bug 6296310
  * @library ../../httptest/
- * @build HttpCallback HttpServer HttpTransaction
+ * @build HttpCallback TestHttpServer HttpTransaction
  * @run main/othervm B6296310
  * @summary  REGRESSION: AppletClassLoader.getResourceAsStream() behaviour is wrong in some cases
  */
@@ -42,7 +42,7 @@ import java.util.*;
 public class B6296310
 {
    static SimpleHttpTransaction httpTrans;
-   static HttpServer server;
+   static TestHttpServer server;
 
    public static void main(String[] args)
    {
@@ -55,7 +55,7 @@ public class B6296310
    public static void startHttpServer() {
       try {
          httpTrans = new SimpleHttpTransaction();
-         server = new HttpServer(httpTrans, 1, 10, 0);
+         server = new TestHttpServer(httpTrans, 1, 10, 0);
       } catch (IOException e) {
          e.printStackTrace();
       }

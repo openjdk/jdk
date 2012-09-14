@@ -31,7 +31,6 @@ import java.awt.peer.*;
 import java.lang.reflect.*;
 
 import sun.awt.AWTAccessor;
-import sun.awt.SunToolkit;
 
 class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollbarClient {
 
