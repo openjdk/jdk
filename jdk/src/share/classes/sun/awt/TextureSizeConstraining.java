@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,23 @@
  * questions.
  */
 
-package sun.beans.editors;
+package sun.awt;
 
 /**
- * Property editor for a java builtin "float" type.
- *
+ * A GraphicsConfiguration implements the TextureSizeConstraining
+ * interface to indicate that it imposes certain limitations on the
+ * maximum size of supported textures.
  */
+public interface TextureSizeConstraining {
 
-import java.beans.*;
+    /**
+     * Returns the maximum width of any texture image.
+     */
+    public int getMaxTextureWidth();
 
-public class FloatEditor extends NumberEditor {
-
-    public String getJavaInitializationString() {
-        Object value = getValue();
-        return (value != null)
-                ? value + "F"
-                : "null";
-    }
-
-    public void setAsText(String text) throws IllegalArgumentException {
-        setValue((text == null) ? null : Float.valueOf(text));
-    }
+    /**
+     * Returns the maximum height of any texture image.
+     */
+    public int getMaxTextureHeight();
 
 }
