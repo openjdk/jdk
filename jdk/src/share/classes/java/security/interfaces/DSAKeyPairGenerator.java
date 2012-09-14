@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,9 @@ import java.security.*;
  * interface is all that is needed when you accept defaults for algorithm-specific
  * parameters.
  *
+ * <p>Note: Some earlier implementations of this interface may not support
+ * larger sizes of DSA parameters such as 2048 and 3072-bit.
+ *
  * @see java.security.KeyPairGenerator
  */
 public interface DSAKeyPairGenerator {
@@ -78,7 +81,7 @@ public interface DSAKeyPairGenerator {
      * can be null.
      *
      * @exception InvalidParameterException if the <code>params</code>
-     * value is invalid or null.
+     * value is invalid, null, or unsupported.
      */
    public void initialize(DSAParams params, SecureRandom random)
    throws InvalidParameterException;
@@ -97,7 +100,7 @@ public interface DSAKeyPairGenerator {
      * default parameters for modulus lengths of 512 and 1024 bits.
      *
      * @param modlen the modulus length in bits. Valid values are any
-     * multiple of 8 between 512 and 1024, inclusive.
+     * multiple of 64 between 512 and 1024, inclusive, 2048, and 3072.
      *
      * @param random the random bit source to use to generate key bits;
      * can be null.
@@ -105,10 +108,9 @@ public interface DSAKeyPairGenerator {
      * @param genParams whether or not to generate new parameters for
      * the modulus length requested.
      *
-     * @exception InvalidParameterException if <code>modlen</code> is not
-     * between 512 and 1024, or if <code>genParams</code> is false and
-     * there are no precomputed parameters for the requested modulus
-     * length.
+     * @exception InvalidParameterException if <code>modlen</code> is
+     * invalid, or unsupported, or if <code>genParams</code> is false and there
+     * are no precomputed parameters for the requested modulus length.
      */
     public void initialize(int modlen, boolean genParams, SecureRandom random)
     throws InvalidParameterException;

@@ -68,12 +68,23 @@ int     JLI_GetStdArgc();
 #define JLI_StrNCaseCmp(p1, p2, p3)     strnicmp((p1), (p2), (p3))
 #define JLI_Snprintf                    _snprintf
 void JLI_CmdToArgs(char *cmdline);
-#else
+#define JLI_Lseek                       _lseeki64
+#else  /* NIXES */
 #include <unistd.h>
 #include <strings.h>
 #define JLI_StrCaseCmp(p1, p2)          strcasecmp((p1), (p2))
 #define JLI_StrNCaseCmp(p1, p2, p3)     strncasecmp((p1), (p2), (p3))
 #define JLI_Snprintf                    snprintf
+#ifdef __solaris__
+#define JLI_Lseek                       llseek
+#endif
+#ifdef __linux__
+#define _LARGFILE64_SOURCE
+#define JLI_Lseek                       lseek64
+#endif
+#ifdef MACOSX
+#define JLI_Lseek                       lseek
+#endif
 #endif /* _WIN32 */
 
 /*
