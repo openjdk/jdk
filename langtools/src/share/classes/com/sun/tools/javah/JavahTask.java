@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -506,7 +506,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         List<String> opts = new ArrayList<String>();
         opts.add("-proc:only");
         opts.addAll(javac_extras);
-        CompilationTask t = c.getTask(log, fileManager, diagnosticListener, opts, internalize(classes), null);
+        CompilationTask t = c.getTask(log, fileManager, diagnosticListener, opts, classes, null);
         JavahProcessor p = new JavahProcessor(g);
         t.setProcessors(Collections.singleton(p));
 
@@ -514,14 +514,6 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         if (p.exit != null)
             throw new Util.Exit(p.exit);
         return ok;
-    }
-
-    private List<String> internalize(List<String> classes) {
-        List<String> l = new ArrayList<String>();
-        for (String c: classes) {
-            l.add(c.replace('$', '.'));
-        }
-        return l;
     }
 
     private List<File> pathToFiles(String path) {

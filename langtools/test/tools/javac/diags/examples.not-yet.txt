@@ -5,6 +5,9 @@ compiler.err.cant.apply.symbol
 compiler.err.cant.read.file                             # (apt.JavaCompiler?)
 compiler.err.cant.select.static.class.from.param.type
 compiler.err.illegal.char.for.encoding
+compiler.err.invalid.containedby.annotation             # should not happen
+compiler.err.invalid.containedby.annotation.invalid.value # "can't" happen
+compiler.err.invalid.containedby.annotation.multiple.values # can't happen
 compiler.err.io.exception                               # (javah.JavahTask?)
 compiler.err.limit.code                                 # Code
 compiler.err.limit.code.too.large.for.try.stmt          # Gen

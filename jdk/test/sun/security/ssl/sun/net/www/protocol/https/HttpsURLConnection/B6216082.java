@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,9 @@
  * @library ../../../httpstest/
  * @build HttpCallback HttpServer ClosedChannelList HttpTransaction TunnelProxy
  * @summary  Redirect problem with HttpsURLConnection using a proxy
- * @run main/othervm B6216082
- *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
+ * @run main/othervm B6216082
  */
 
 import java.io.*;
@@ -54,7 +53,9 @@ public class B6216082 {
         try {
             // XXX workaround for CNFE
             Class.forName("java.nio.channels.ClosedByInterruptException");
-            setupEnv();
+            if (!setupEnv()) {
+                return;
+            }
 
             startHttpServer();
 
@@ -69,6 +70,12 @@ public class B6216082 {
                 throw new RuntimeException("Test failed : bad http request");
             }
         } finally {
+            if (proxy != null) {
+                proxy.terminate();
+            }
+            if (server != null) {
+               server.terminate();
+            }
             HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
     }
@@ -80,18 +87,13 @@ public class B6216082 {
     static String keyStoreFile = "keystore";
     static String trustStoreFile = "truststore";
     static String passwd = "passphrase";
-    public static void setupEnv() {
-        try {
-            firstNonLoAddress = getNonLoAddress();
-
-            if (firstNonLoAddress == null) {
-                System.out.println("The test needs at least one non-loopback address to run. Quit now.");
-                System.exit(0);
-            }
-            System.out.println(firstNonLoAddress.getHostAddress());
-        } catch (Exception e) {
-            e.printStackTrace();
+    public static boolean setupEnv() throws Exception {
+        firstNonLoAddress = getNonLoAddress();
+        if (firstNonLoAddress == null) {
+            System.err.println("The test needs at least one non-loopback address to run. Quit now.");
+            return false;
         }
+        System.out.println(firstNonLoAddress.getHostAddress());
         // will use proxy
         System.setProperty( "https.proxyHost", firstNonLoAddress.getHostAddress());
 
@@ -106,6 +108,7 @@ public class B6216082 {
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
         HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
+        return true;
     }
 
     public static InetAddress getNonLoAddress() throws Exception {
@@ -126,33 +129,22 @@ public class B6216082 {
         return null;
     }
 
-    public static void startHttpServer() {
-        try {
-            // Both the https server and the proxy let the
-            // system pick up an ephemeral port.
-            httpTrans = new SimpleHttpTransaction();
-            server = new HttpServer(httpTrans, 1, 10, 0);
-            proxy = new TunnelProxy(1, 10, 0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public static void startHttpServer() throws IOException {
+        // Both the https server and the proxy let the
+        // system pick up an ephemeral port.
+        httpTrans = new SimpleHttpTransaction();
+        server = new HttpServer(httpTrans, 1, 10, 0);
+        proxy = new TunnelProxy(1, 10, 0);
     }
 
-    public static void makeHttpCall() {
-        try {
-            System.out.println("https server listen on: " + server.getLocalPort());
-            System.out.println("https proxy listen on: " + proxy.getLocalPort());
-            URL url = new URL("https" , firstNonLoAddress.getHostAddress(),
-                                server.getLocalPort(), "/");
-            HttpURLConnection uc = (HttpURLConnection)url.openConnection();
-            System.out.println(uc.getResponseCode());
-            uc.disconnect();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            proxy.terminate();
-            server.terminate();
-        }
+    public static void makeHttpCall() throws Exception {
+        System.out.println("https server listen on: " + server.getLocalPort());
+        System.out.println("https proxy listen on: " + proxy.getLocalPort());
+        URL url = new URL("https" , firstNonLoAddress.getHostAddress(),
+                            server.getLocalPort(), "/");
+        HttpURLConnection uc = (HttpURLConnection)url.openConnection();
+        System.out.println(uc.getResponseCode());
+        uc.disconnect();
     }
 
     static class NameVerifier implements HostnameVerifier {
@@ -189,7 +181,7 @@ class SimpleHttpTransaction implements HttpCallback {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }
