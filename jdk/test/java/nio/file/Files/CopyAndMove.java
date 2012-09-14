@@ -86,10 +86,12 @@ public class CopyAndMove {
         assertTrue(attrs1.isSymbolicLink() == attrs2.isSymbolicLink());
         assertTrue(attrs1.isOther() == attrs2.isOther());
 
-        // check last modified time
-        long time1 = attrs1.lastModifiedTime().toMillis();
-        long time2 = attrs2.lastModifiedTime().toMillis();
-        assertTrue(time1 == time2);
+        // check last modified time if not a symbolic link
+        if (!attrs1.isSymbolicLink()) {
+            long time1 = attrs1.lastModifiedTime().toMillis();
+            long time2 = attrs2.lastModifiedTime().toMillis();
+            assertTrue(time1 == time2);
+        }
 
         // check size
         if (attrs1.isRegularFile())

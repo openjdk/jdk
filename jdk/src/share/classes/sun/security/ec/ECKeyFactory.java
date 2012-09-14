@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,33 +51,21 @@ import java.security.spec.*;
  */
 public final class ECKeyFactory extends KeyFactorySpi {
 
-    // Used by translateKey() and the SunPKCS11 provider
-    public final static KeyFactory INSTANCE;
+    // Used by translateKey()
+    private static KeyFactory instance;
 
-    // Internal provider object we can obtain the KeyFactory and
-    // AlgorithmParameters from. Used by ECParameters and AlgorithmId.
-    // This can go away once we have EC always available in the SUN provider.
-    // Used by ECParameters and AlgorithmId.
-    public final static Provider ecInternalProvider;
-
-    static {
-        final Provider p = new Provider("SunEC-Internal", 1.0d, null) {
-            private static final long serialVersionUID = 970685700309471261L;
-        };
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                p.put("KeyFactory.EC", "sun.security.ec.ECKeyFactory");
-                p.put("AlgorithmParameters.EC", "sun.security.ec.ECParameters");
-                p.put("Alg.Alias.AlgorithmParameters.1.2.840.10045.2.1", "EC");
-                return null;
+    private static KeyFactory getInstance() {
+        if (instance == null) {
+            try {
+                instance = KeyFactory.getInstance("EC", "SunEC");
+            } catch (NoSuchProviderException e) {
+                throw new RuntimeException(e);
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
             }
-        });
-        try {
-            INSTANCE = KeyFactory.getInstance("EC", p);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
         }
-        ecInternalProvider = p;
+
+        return instance;
     }
 
     public ECKeyFactory() {
@@ -102,7 +90,12 @@ public final class ECKeyFactory extends KeyFactorySpi {
             checkKey(ecKey);
             return ecKey;
         } else {
-            return (ECKey)INSTANCE.translateKey(key);
+            /*
+             * We don't call the engineTranslateKey method directly
+             * because KeyFactory.translateKey adds code to loop through
+             * all key factories.
+             */
+            return (ECKey)getInstance().translateKey(key);
         }
     }
 

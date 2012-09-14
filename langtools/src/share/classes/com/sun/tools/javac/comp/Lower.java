@@ -2257,7 +2257,7 @@ public class Lower extends TreeTranslator {
                                 null, List.<JCExpression>nil(), List.<JCTree>nil());
             ClassSymbol c = tree.packge.package_info;
             c.flags_field |= flags;
-            c.attributes_field = tree.packge.attributes_field;
+            c.annotations.setAttributes(tree.packge.annotations);
             ClassType ctype = (ClassType) c.type;
             ctype.supertype_field = syms.objectType;
             ctype.interfaces_field = List.nil();
@@ -2274,7 +2274,8 @@ public class Lower extends TreeTranslator {
             case LEGACY:
                 return tree.packageAnnotations.nonEmpty();
             case NONEMPTY:
-                for (Attribute.Compound a: tree.packge.attributes_field) {
+                for (Attribute.Compound a :
+                         tree.packge.annotations.getAttributes()) {
                     Attribute.RetentionPolicy p = types.getRetention(a);
                     if (p != Attribute.RetentionPolicy.SOURCE)
                         return true;
