@@ -1460,7 +1460,7 @@ class GenericBeanInfo extends SimpleBeanInfo {
     private PropertyDescriptor[] properties;
     private int defaultProperty;
     private MethodDescriptor[] methods;
-    private final Reference<BeanInfo> targetBeanInfoRef;
+    private Reference<BeanInfo> targetBeanInfoRef;
 
     public GenericBeanInfo(BeanDescriptor beanDescriptor,
                 EventSetDescriptor[] events, int defaultEvent,
@@ -1472,7 +1472,9 @@ class GenericBeanInfo extends SimpleBeanInfo {
         this.properties = properties;
         this.defaultProperty = defaultProperty;
         this.methods = methods;
-        this.targetBeanInfoRef = new SoftReference<>(targetBeanInfo);
+        this.targetBeanInfoRef = (targetBeanInfo != null)
+                ? new SoftReference<>(targetBeanInfo)
+                : null;
     }
 
     /**
@@ -1539,10 +1541,25 @@ class GenericBeanInfo extends SimpleBeanInfo {
     }
 
     public java.awt.Image getIcon(int iconKind) {
-        BeanInfo targetBeanInfo = this.targetBeanInfoRef.get();
+        BeanInfo targetBeanInfo = getTargetBeanInfo();
         if (targetBeanInfo != null) {
             return targetBeanInfo.getIcon(iconKind);
         }
         return super.getIcon(iconKind);
+    }
+
+    private BeanInfo getTargetBeanInfo() {
+        if (this.targetBeanInfoRef == null) {
+            return null;
+        }
+        BeanInfo targetBeanInfo = this.targetBeanInfoRef.get();
+        if (targetBeanInfo == null) {
+            targetBeanInfo = ThreadGroupContext.getContext().getBeanInfoFinder()
+                    .find(this.beanDescriptor.getBeanClass());
+            if (targetBeanInfo != null) {
+                this.targetBeanInfoRef = new SoftReference<>(targetBeanInfo);
+            }
+        }
+        return targetBeanInfo;
     }
 }

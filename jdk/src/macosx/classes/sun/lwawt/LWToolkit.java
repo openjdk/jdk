@@ -415,8 +415,8 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     }
 
     @Override
-    public KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager) {
-        return LWKeyboardFocusManagerPeer.getInstance(manager);
+    public KeyboardFocusManagerPeer getKeyboardFocusManagerPeer() {
+        return LWKeyboardFocusManagerPeer.getInstance();
     }
 
     @Override

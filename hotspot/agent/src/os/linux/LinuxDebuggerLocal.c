@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,11 @@ static jmethodID listAdd_ID = 0;
 #define THROW_NEW_DEBUGGER_EXCEPTION_(str, value) { throw_new_debugger_exception(env, str); return value; }
 #define THROW_NEW_DEBUGGER_EXCEPTION(str) { throw_new_debugger_exception(env, str); return;}
 
-static void throw_new_debugger_exception(JNIEnv* env, const char* errMsg) {
+void throw_new_debugger_exception(JNIEnv* env, const char* errMsg) {
   (*env)->ThrowNew(env, (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException"), errMsg);
 }
 
-static struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj) {
+struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj) {
   jlong ptr = (*env)->GetLongField(env, this_obj, p_ps_prochandle_ID);
   return (struct ps_prochandle*)(intptr_t)ptr;
 }
@@ -280,6 +280,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   return (err == PS_OK)? array : 0;
 }
 
+#if defined(i386) || defined(ia64) || defined(amd64) || defined(sparc) || defined(sparcv9)
 JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_getThreadIntegerRegisterSet0
   (JNIEnv *env, jobject this_obj, jint lwp_id) {
 
@@ -410,3 +411,4 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   (*env)->ReleaseLongArrayElements(env, array, regs, JNI_COMMIT);
   return array;
 }
+#endif

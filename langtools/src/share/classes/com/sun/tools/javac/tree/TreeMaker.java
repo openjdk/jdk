@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -740,7 +740,7 @@ public class TreeMaker implements JCTree.Factory {
             result = Literal(v.value);
         }
         public void visitClass(Attribute.Class clazz) {
-            result = ClassLiteral(clazz.type).setType(syms.classType);
+            result = ClassLiteral(clazz.classType).setType(syms.classType);
         }
         public void visitEnum(Attribute.Enum e) {
             result = QualIdent(e.value);

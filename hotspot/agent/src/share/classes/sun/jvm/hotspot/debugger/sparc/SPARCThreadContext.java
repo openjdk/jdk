@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.debugger.sparc;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.debugger.cdbg.*;
 
 /** Currently provides just the minimal information necessary to get
     stack traces working. FIXME: currently hardwired for v9 -- will
@@ -122,6 +123,10 @@ public abstract class SPARCThreadContext implements ThreadContext {
 
   public long getRegister(int index) {
     return data[index];
+  }
+
+  public CFrame getTopFrame(Debugger dbg) {
+    return null;
   }
 
   /** This can't be implemented in this class since we would have to
