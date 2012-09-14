@@ -271,6 +271,24 @@ class PKIX {
     }
 
     /**
+     * A CertStoreException with additional information about the type of
+     * CertStore that generated the exception.
+     */
+    static class CertStoreTypeException extends CertStoreException {
+        private static final long serialVersionUID = 7463352639238322556L;
+
+        private final String type;
+
+        CertStoreTypeException(String type, CertStoreException cse) {
+            super(cse.getMessage(), cse.getCause());
+            this.type = type;
+        }
+        String getType() {
+            return type;
+        }
+    }
+
+    /**
      * Comparator that orders CertStores so that local CertStores come before
      * remote CertStores.
      */

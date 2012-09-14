@@ -50,7 +50,7 @@ import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 
 import static sun.security.provider.certpath.OCSP.*;
-import sun.security.provider.certpath.PKIX.ValidatorParams;
+import static sun.security.provider.certpath.PKIX.*;
 import sun.security.action.GetPropertyAction;
 import sun.security.x509.*;
 import static sun.security.x509.PKIXExtensions.*;
@@ -458,14 +458,23 @@ class RevocationChecker extends PKIXRevocationChecker {
         sel.setCertificateChecking(cert);
         CertPathHelper.setDateAndTime(sel, params.date(), MAX_CLOCK_SKEW);
 
-        // First, check cached CRLs
+        // First, check user-specified CertStores
+        NetworkFailureException nfe = null;
         for (CertStore store : certStores) {
             try {
                 for (CRL crl : store.getCRLs(sel)) {
                     possibleCRLs.add((X509CRL)crl);
                 }
             } catch (CertStoreException e) {
-                // XXX ignore?
+                if (debug != null) {
+                    debug.println("RevocationChecker.checkCRLs() " +
+                                  "CertStoreException: " + e.getMessage());
+                }
+                if (softFail && nfe == null &&
+                    CertStoreHelper.isCausedByNetworkIssue(store.getType(),e)) {
+                    // save this exception, we may need to throw it later
+                    nfe = new NetworkFailureException(e);
+                }
             }
         }
 
@@ -504,9 +513,12 @@ class RevocationChecker extends PKIXRevocationChecker {
                                         reasonsMask, anchors, params.date()));
                 }
             } catch (CertStoreException e) {
-                if (debug != null) {
-                    debug.println("RevocationChecker.checkCRLs() " +
-                                  "unexpected exception: " + e.getMessage());
+                if (softFail && e instanceof CertStoreTypeException) {
+                    CertStoreTypeException cste = (CertStoreTypeException)e;
+                    if (CertStoreHelper.isCausedByNetworkIssue(cste.getType(),
+                                                               e)) {
+                        throw new NetworkFailureException(e);
+                    }
                 }
                 throw new CertPathValidatorException(e);
             }
@@ -516,10 +528,28 @@ class RevocationChecker extends PKIXRevocationChecker {
                 checkApprovedCRLs(cert, approvedCRLs);
             } else {
                 if (allowSeparateKey) {
-                    verifyWithSeparateSigningKey(cert, prevKey, signFlag,
-                                                 stackedCerts);
-                    return;
+                    try {
+                        verifyWithSeparateSigningKey(cert, prevKey, signFlag,
+                                                     stackedCerts);
+                        return;
+                    } catch (CertPathValidatorException cpve) {
+                        if (nfe != null) {
+                            // if a network issue previously prevented us from
+                            // retrieving a CRL from one of the user-specified
+                            // CertStores and SOFT_FAIL is enabled, throw it now
+                            // so it can be handled appropriately
+                            throw nfe;
+                        }
+                        throw cpve;
+                    }
                 } else {
+                    if (nfe != null) {
+                        // if a network issue previously prevented us from
+                        // retrieving a CRL from one of the user-specified
+                        // CertStores and SOFT_FAIL is enabled, throw it now
+                        // so it can be handled appropriately
+                        throw nfe;
+                    }
                     throw new CertPathValidatorException
                     ("Could not determine revocation status", null, null, -1,
                      BasicReason.UNDETERMINED_REVOCATION_STATUS);
