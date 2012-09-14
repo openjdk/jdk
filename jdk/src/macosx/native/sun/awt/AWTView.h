@@ -33,8 +33,8 @@
 @private
     jobject m_cPlatformView;
 
-    // Handler for the tracking rect needed for Enter/Exit events management.
-    NSTrackingRectTag rolloverTrackingRectTag;
+    // Handler for the tracking area needed for Enter/Exit events management.
+    NSTrackingArea* rolloverTrackingArea;
 
     // TODO: NSMenu *contextualMenu;
 
@@ -61,7 +61,7 @@
 
 - (id) initWithRect:(NSRect) rect platformView:(jobject)cPlatformView windowLayer:(CALayer*)windowLayer;
 - (void) deliverJavaMouseEvent: (NSEvent *) event;
-- (void) resetTrackingRect;
+- (void) resetTrackingArea;
 - (void) deliverJavaKeyEventHelper: (NSEvent *) event;
 - (jobject) awtComponent:(JNIEnv *)env;
 

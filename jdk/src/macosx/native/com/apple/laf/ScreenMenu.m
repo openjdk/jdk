@@ -37,7 +37,11 @@
 #import "ThreadUtilities.h"
 #import "CMenuBar.h"
 
-
+/* Use THIS_FILE when it is available. */
+#ifndef THIS_FILE
+    #define THIS_FILE __FILE__     
+#endif 
+ 
 static JNF_CLASS_CACHE(sjc_ScreenMenu, "com/apple/laf/ScreenMenu");
 
 static jint ns2awtModifiers(NSUInteger keyMods) {
@@ -97,7 +101,7 @@ static jint ns2awtMouseButton(NSInteger mouseButton) {
 {
     if (self.javaObjectWrapper == nil) {
 #ifdef DEBUG
-        NSLog(@"_javaObject is NULL: (%s - %s : %d)", __FILE__, __FUNCTION__, __LINE__);
+        NSLog(@"_javaObject is NULL: (%s - %s : %d)", THIS_FILE, __FUNCTION__, __LINE__);
 #endif
         return;
     }
@@ -115,7 +119,7 @@ JNF_COCOA_EXIT(env);
 {
     if (self.javaObjectWrapper == nil) {
 #ifdef DEBUG
-        NSLog(@"_javaObject is NULL: (%s - %s : %d)", __FILE__, __FUNCTION__, __LINE__);
+        NSLog(@"_javaObject is NULL: (%s - %s : %d)", THIS_FILE, __FUNCTION__, __LINE__);
 #endif
         return;
     }
@@ -133,7 +137,7 @@ JNF_COCOA_EXIT(env);
 {
     if (self.javaObjectWrapper == nil) {
 #ifdef DEBUG
-        NSLog(@"_javaObject is NULL: (%s - %s : %d)", __FILE__, __FUNCTION__, __LINE__);
+        NSLog(@"_javaObject is NULL: (%s - %s : %d)", THIS_FILE, __FUNCTION__, __LINE__);
 #endif
         return;
     }
