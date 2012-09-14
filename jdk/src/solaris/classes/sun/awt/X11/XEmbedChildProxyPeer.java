@@ -96,11 +96,11 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     public void handleEvent(AWTEvent e) {
         switch (e.getID()) {
           case FocusEvent.FOCUS_GAINED:
-              XKeyboardFocusManagerPeer.setCurrentNativeFocusOwner(proxy);
+              XKeyboardFocusManagerPeer.getInstance().setCurrentFocusOwner(proxy);
               container.focusGained(handle);
               break;
           case FocusEvent.FOCUS_LOST:
-              XKeyboardFocusManagerPeer.setCurrentNativeFocusOwner(null);
+              XKeyboardFocusManagerPeer.getInstance().setCurrentFocusOwner(null);
               container.focusLost(handle);
               break;
           case KeyEvent.KEY_PRESSED:
@@ -172,7 +172,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
         if (lightweightChild == null) {
             lightweightChild = (Component)proxy;
         }
-        Component currentOwner = XKeyboardFocusManagerPeer.getCurrentNativeFocusOwner();
+        Component currentOwner = XKeyboardFocusManagerPeer.getInstance().getCurrentFocusOwner();
         if (currentOwner != null && currentOwner.getPeer() == null) {
             currentOwner = null;
         }
@@ -224,7 +224,8 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
               if (parent != null) {
                   Window parentWindow = (Window)parent;
                   // and check that it is focused
-                  if (!parentWindow.isFocused() && XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow() == parentWindow) {
+                  if (!parentWindow.isFocused() &&
+                      XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow() == parentWindow) {
                       // if it is not - skip requesting focus on Solaris
                       // but return true for compatibility.
                       return true;

@@ -53,6 +53,10 @@ public class ReadPKCS12 extends PKCS11Test {
             System.out.println("Provider does not support ECDSA, skipping...");
             return;
         }
+
+        /*
+         * PKCS11Test.main will remove this provider if needed
+         */
         Providers.setAt(p, 1);
 
         CertificateFactory factory = CertificateFactory.getInstance("X.509");
@@ -147,7 +151,6 @@ public class ReadPKCS12 extends PKCS11Test {
             out.close();
         }
 
-        Security.removeProvider(p.getName());
         System.out.println("OK");
     }
 

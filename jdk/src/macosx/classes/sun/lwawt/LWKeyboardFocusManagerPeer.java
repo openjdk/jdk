@@ -26,85 +26,47 @@
 package sun.lwawt;
 
 import java.awt.Component;
-import java.awt.KeyboardFocusManager;
 import java.awt.Window;
-
-import java.util.Map;
-import java.util.HashMap;
-
-import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.KeyboardFocusManagerPeerImpl;
 
 public class LWKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
+    private static final LWKeyboardFocusManagerPeer inst = new LWKeyboardFocusManagerPeer();
 
-    private Object lock = new Object();
-    private LWWindowPeer focusedWindow;
-    private LWComponentPeer focusOwner;
+    private Window focusedWindow;
+    private Component focusOwner;
 
-    private static Map<KeyboardFocusManager, LWKeyboardFocusManagerPeer> instances =
-        new HashMap<KeyboardFocusManager, LWKeyboardFocusManagerPeer>();
-
-    public static synchronized LWKeyboardFocusManagerPeer getInstance(AppContext ctx) {
-        return getInstance(AWTAccessor.getKeyboardFocusManagerAccessor().
-                           getCurrentKeyboardFocusManager(ctx));
+    public static LWKeyboardFocusManagerPeer getInstance() {
+        return inst;
     }
 
-    public static synchronized LWKeyboardFocusManagerPeer getInstance(KeyboardFocusManager manager) {
-        LWKeyboardFocusManagerPeer instance = instances.get(manager);
-        if (instance == null) {
-            instance = new LWKeyboardFocusManagerPeer(manager);
-            instances.put(manager, instance);
+    private LWKeyboardFocusManagerPeer() {
+    }
+
+    @Override
+    public void setCurrentFocusedWindow(Window win) {
+        synchronized (this) {
+            focusedWindow = win;
         }
-        return instance;
-    }
-
-    public LWKeyboardFocusManagerPeer(KeyboardFocusManager manager) {
-        super(manager);
     }
 
     @Override
     public Window getCurrentFocusedWindow() {
-        synchronized (lock) {
-            return (focusedWindow != null) ? (Window)focusedWindow.getTarget() : null;
+        synchronized (this) {
+            return focusedWindow;
         }
     }
 
     @Override
     public Component getCurrentFocusOwner() {
-        synchronized (lock) {
-            return (focusOwner != null) ? focusOwner.getTarget() : null;
+        synchronized (this) {
+            return focusOwner;
         }
     }
 
     @Override
     public void setCurrentFocusOwner(Component comp) {
-        synchronized (lock) {
-            focusOwner = (comp != null) ? (LWComponentPeer)comp.getPeer() : null;
-        }
-    }
-
-    void setFocusedWindow(LWWindowPeer peer) {
-        synchronized (lock) {
-            focusedWindow = peer;
-        }
-    }
-
-    LWWindowPeer getFocusedWindow() {
-        synchronized (lock) {
-            return focusedWindow;
-        }
-    }
-
-    void setFocusOwner(LWComponentPeer peer) {
-        synchronized (lock) {
-            focusOwner = peer;
-        }
-    }
-
-    LWComponentPeer getFocusOwner() {
-        synchronized (lock) {
-            return focusOwner;
+        synchronized (this) {
+            focusOwner = comp;
         }
     }
 }
