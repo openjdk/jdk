@@ -663,7 +663,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 long w = 0;
                 if (windowToXWindow(ev.get_xany().get_window()) != null) {
                     Component owner =
-                        XKeyboardFocusManagerPeer.getCurrentNativeFocusOwner();
+                        XKeyboardFocusManagerPeer.getInstance().getCurrentFocusOwner();
                     if (owner != null) {
                         XWindow ownerWindow = (XWindow) AWTAccessor.getComponentAccessor().getPeer(owner);
                         if (ownerWindow != null) {
@@ -1155,9 +1155,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return peer;
     }
 
-    public KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager) throws HeadlessException {
-        XKeyboardFocusManagerPeer peer = new XKeyboardFocusManagerPeer(manager);
-        return peer;
+    public KeyboardFocusManagerPeer getKeyboardFocusManagerPeer() throws HeadlessException {
+        return XKeyboardFocusManagerPeer.getInstance();
     }
 
     /**

@@ -2863,7 +2863,7 @@ public class Container extends Component {
 
         // keep the KeyEvents from being dispatched
         // until the focus has been transfered
-        long time = Toolkit.getEventQueue().getMostRecentEventTime();
+        long time = Toolkit.getEventQueue().getMostRecentKeyEventTime();
         Component predictedFocusOwner = (Component.isInstanceOf(this, "javax.swing.JInternalFrame")) ? ((javax.swing.JInternalFrame)(this)).getMostRecentFocusOwner() : null;
         if (predictedFocusOwner != null) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().

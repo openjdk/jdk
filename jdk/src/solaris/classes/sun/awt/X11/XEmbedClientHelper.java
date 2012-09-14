@@ -204,7 +204,7 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
         // XEMBED_FOCUS_OUT client messages), so we first need to check if
         // embedded is an active window before sending WINDOW_LOST_FOCUS
         // to shared code
-        if (XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow() == embedded.target) {
+        if (XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow() == embedded.target) {
             embedded.handleWindowFocusOut(null, 0);
         }
     }
