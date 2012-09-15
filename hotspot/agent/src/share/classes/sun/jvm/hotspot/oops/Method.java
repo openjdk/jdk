@@ -36,7 +36,7 @@ import sun.jvm.hotspot.utilities.*;
 
 // A Method represents a Java method
 
-public class Method extends Oop {
+public class Method extends Metadata {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -46,9 +46,9 @@ public class Method extends Oop {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type                  = db.lookupType("methodOopDesc");
-    constMethod                = new OopField(type.getOopField("_constMethod"), 0);
-    methodData                 = new OopField(type.getOopField("_method_data"), 0);
+    Type type                  = db.lookupType("Method");
+    constMethod                = type.getAddressField("_constMethod");
+    methodData                 = type.getAddressField("_method_data");
     methodSize                 = new CIntField(type.getCIntegerField("_method_size"), 0);
     maxStack                   = new CIntField(type.getCIntegerField("_max_stack"), 0);
     maxLocals                  = new CIntField(type.getCIntegerField("_max_locals"), 0);
@@ -74,15 +74,15 @@ public class Method extends Oop {
     classInitializerName = null;
   }
 
-  Method(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public Method(Address addr) {
+    super(addr);
   }
 
   public boolean isMethod()            { return true; }
 
   // Fields
-  private static OopField  constMethod;
-  private static OopField  methodData;
+  private static AddressField  constMethod;
+  private static AddressField  methodData;
   private static CIntField methodSize;
   private static CIntField maxStack;
   private static CIntField maxLocals;
@@ -122,11 +122,17 @@ public class Method extends Oop {
   */
 
   // Accessors for declared fields
-  public ConstMethod  getConstMethod()                { return (ConstMethod)  constMethod.getValue(this);       }
+  public ConstMethod  getConstMethod()                {
+    Address addr = constMethod.getValue(getAddress());
+    return (ConstMethod) VMObjectFactory.newObject(ConstMethod.class, addr);
+  }
   public ConstantPool getConstants()                  {
     return getConstMethod().getConstants();
   }
-  public MethodData   getMethodData()                 { return (MethodData) methodData.getValue(this);          }
+  public MethodData   getMethodData()                 {
+    Address addr = methodData.getValue(getAddress());
+    return (MethodData) VMObjectFactory.newObject(MethodData.class, addr);
+  }
   /** WARNING: this is in words, not useful in this system; use getObjectSize() instead */
   public long         getMethodSize()                 { return                methodSize.getValue(this);        }
   public long         getMaxStack()                   { return                maxStack.getValue(this);          }
@@ -153,7 +159,7 @@ public class Method extends Oop {
 
   // get associated compiled native method, if available, else return null.
   public NMethod getNativeMethod() {
-    Address addr = code.getValue(getHandle());
+    Address addr = code.getValue(getAddress());
     return (NMethod) VMObjectFactory.newObject(NMethod.class, addr);
   }
 
@@ -268,25 +274,21 @@ public class Method extends Oop {
     return entry;
   }
 
-  public long getObjectSize() {
-    return getMethodSize() * getHeap().getOopSize();
+  public long getSize() {
+    return getMethodSize();
   }
 
   public void printValueOn(PrintStream tty) {
-    tty.print("Method " + getName().asString() + getSignature().asString() + "@" + getHandle());
+    tty.print("Method " + getName().asString() + getSignature().asString() + "@" + getAddress());
   }
 
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
-      visitor.doOop(constMethod, true);
+  public void iterateFields(MetadataVisitor visitor) {
       visitor.doCInt(methodSize, true);
       visitor.doCInt(maxStack, true);
       visitor.doCInt(maxLocals, true);
       visitor.doCInt(sizeOfParameters, true);
       visitor.doCInt(accessFlags, true);
     }
-  }
 
   public boolean hasLineNumberTable() {
     return getConstMethod().hasLineNumberTable();
@@ -357,10 +359,10 @@ public class Method extends Oop {
     return buf.toString().replace('/', '.');
   }
   public int interpreterThrowoutCount() {
-    return (int) interpreterThrowoutCountField.getValue(getHandle());
+    return (int) interpreterThrowoutCountField.getValue(this);
   }
 
   public int interpreterInvocationCount() {
-    return (int) interpreterInvocationCountField.getValue(getHandle());
+    return (int) interpreterInvocationCountField.getValue(this);
   }
 }

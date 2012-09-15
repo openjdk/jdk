@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/constantPool.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #ifdef TARGET_OS_FAMILY_linux
@@ -70,8 +71,10 @@ static uintx chunk_oops_do(OopClosure* f, Chunk* chunk, char* chunk_top) {
   // during GC phase 3, a handle may be a forward pointer that
   // is not yet valid, so loosen the assertion
   while (bottom < top) {
-//    assert((*bottom)->is_oop(), "handle should point to oop");
-      assert(Universe::heap()->is_in(*bottom), "handle should be valid heap address");
+    // This test can be moved up but for now check every oop.
+
+    assert((*bottom)->is_oop(), "handle should point to oop");
+
     f->do_oop(bottom++);
   }
   return handles_visited;
@@ -148,6 +151,8 @@ HandleMark::~HandleMark() {
       // Note: _nof_handlemarks is only set in debug mode
       warning("%d: Allocated in HandleMark : %d", _nof_handlemarks, handles);
     }
+
+    tty->print_cr("Handles %d", handles);
   }
 #endif
 

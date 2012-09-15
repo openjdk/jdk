@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,21 +194,6 @@ void InterpreterOopMap::initialize() {
   for (int i = 0; i < N; i++) _bit_mask[i] = 0;
 }
 
-
-void InterpreterOopMap::oop_iterate(OopClosure *blk) {
-  if (method() != NULL) {
-    blk->do_oop((oop*) &_method);
-  }
-}
-
-void InterpreterOopMap::oop_iterate(OopClosure *blk, MemRegion mr) {
-  if (method() != NULL && mr.contains(&_method)) {
-    blk->do_oop((oop*) &_method);
-  }
-}
-
-
-
 void InterpreterOopMap::iterate_oop(OffsetClosure* oop_closure) {
   int n = number_of_entries();
   int word_index = 0;
@@ -226,13 +211,6 @@ void InterpreterOopMap::iterate_oop(OffsetClosure* oop_closure) {
   }
 }
 
-void InterpreterOopMap::verify() {
-  // If we are doing mark sweep _method may not have a valid header
-  // $$$ This used to happen only for m/s collections; we might want to
-  // think of an appropriate generalization of this distinction.
-  guarantee(Universe::heap()->is_gc_active() || _method->is_oop_or_null(),
-            "invalid oop in oopMapCache");
-}
 
 #ifdef ENABLE_ZAP_DEAD_LOCALS
 
@@ -387,9 +365,6 @@ void OopMapCacheEntry::fill(methodHandle method, int bci) {
     OopMapForCacheEntry gen(method, bci, this);
     gen.compute_map(CATCH);
   }
-  #ifdef ASSERT
-    verify();
-  #endif
 }
 
 
@@ -464,7 +439,6 @@ long OopMapCache::memory_usage() {
 void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
   assert(_resource_allocate_bit_mask,
     "Should not resource allocate the _bit_mask");
-  assert(from->method()->is_oop(), "MethodOop is bad");
 
   set_method(from->method());
   set_bci(from->bci());
@@ -544,18 +518,6 @@ void OopMapCache::flush_obsolete_entries() {
     }
 }
 
-void OopMapCache::oop_iterate(OopClosure *blk) {
-  for (int i = 0; i < _size; i++) _array[i].oop_iterate(blk);
-}
-
-void OopMapCache::oop_iterate(OopClosure *blk, MemRegion mr) {
-    for (int i = 0; i < _size; i++) _array[i].oop_iterate(blk, mr);
-}
-
-void OopMapCache::verify() {
-  for (int i = 0; i < _size; i++) _array[i].verify();
-}
-
 void OopMapCache::lookup(methodHandle method,
                          int bci,
                          InterpreterOopMap* entry_for) {
@@ -586,10 +548,10 @@ void OopMapCache::lookup(methodHandle method,
   // Compute entry and return it
 
   if (method->should_not_be_cached()) {
-    // It is either not safe or not a good idea to cache this methodOop
+    // It is either not safe or not a good idea to cache this Method*
     // at this time. We give the caller of lookup() a copy of the
     // interesting info via parameter entry_for, but we don't add it to
-    // the cache. See the gory details in methodOop.cpp.
+    // the cache. See the gory details in Method*.cpp.
     compute_one_oop_map(method, bci, entry_for);
     return;
   }

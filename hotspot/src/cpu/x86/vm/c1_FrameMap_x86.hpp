@@ -73,6 +73,14 @@
   static LIR_Opr rax_oop_opr;
   static LIR_Opr rdx_oop_opr;
   static LIR_Opr rcx_oop_opr;
+
+  static LIR_Opr rsi_metadata_opr;
+  static LIR_Opr rdi_metadata_opr;
+  static LIR_Opr rbx_metadata_opr;
+  static LIR_Opr rax_metadata_opr;
+  static LIR_Opr rdx_metadata_opr;
+  static LIR_Opr rcx_metadata_opr;
+
 #ifdef _LP64
 
   static LIR_Opr  r8_opr;
@@ -91,6 +99,14 @@
   static LIR_Opr r12_oop_opr;
   static LIR_Opr r13_oop_opr;
   static LIR_Opr r14_oop_opr;
+
+  static LIR_Opr  r8_metadata_opr;
+  static LIR_Opr  r9_metadata_opr;
+
+  static LIR_Opr r11_metadata_opr;
+  static LIR_Opr r12_metadata_opr;
+  static LIR_Opr r13_metadata_opr;
+  static LIR_Opr r14_metadata_opr;
 
 #endif // _LP64
 

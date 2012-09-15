@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ class CodeCache : AllStatic {
   static void blobs_do(void f(CodeBlob* cb));       // iterates over all CodeBlobs
   static void blobs_do(CodeBlobClosure* f);         // iterates over all CodeBlobs
   static void nmethods_do(void f(nmethod* nm));     // iterates over all nmethods
+  static void alive_nmethods_do(void f(nmethod* nm)); // iterates over all alive nmethods
 
   // Lookup
   static CodeBlob* find_blob(void* start);
@@ -170,7 +171,7 @@ class CodeCache : AllStatic {
   static void set_needs_cache_clean(bool v)      { _needs_cache_clean = v;    }
   static void clear_inline_caches();             // clear all inline caches
 
-  static nmethod* find_and_remove_saved_code(methodOop m);
+  static nmethod* find_and_remove_saved_code(Method* m);
   static void remove_saved_code(nmethod* nm);
   static void speculatively_disconnect(nmethod* nm);
 
@@ -181,7 +182,7 @@ class CodeCache : AllStatic {
 #endif // HOTSWAP
 
   static void mark_all_nmethods_for_deoptimization();
-  static int  mark_for_deoptimization(methodOop dependee);
+  static int  mark_for_deoptimization(Method* dependee);
   static void make_marked_nmethods_zombies();
   static void make_marked_nmethods_not_entrant();
 

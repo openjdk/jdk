@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,6 @@ void PSAdaptiveSizePolicy::compute_generation_free_space(
                                            size_t young_live,
                                            size_t eden_live,
                                            size_t old_live,
-                                           size_t perm_live,
                                            size_t cur_eden,
                                            size_t max_old_gen_size,
                                            size_t max_eden_size,
@@ -208,7 +207,7 @@ void PSAdaptiveSizePolicy::compute_generation_free_space(
 
   // Update statistics
   // Time statistics are updated as we go, update footprint stats here
-  _avg_base_footprint->sample(BaseFootPrintEstimate + perm_live);
+  _avg_base_footprint->sample(BaseFootPrintEstimate);
   avg_young_live()->sample(young_live);
   avg_eden_live()->sample(eden_live);
   if (is_full_gc) {

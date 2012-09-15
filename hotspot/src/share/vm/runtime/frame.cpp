@@ -29,8 +29,8 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/markOop.hpp"
-#include "oops/methodDataOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/methodData.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "prims/methodHandles.hpp"
@@ -383,15 +383,15 @@ void frame::interpreter_frame_set_locals(intptr_t* locs)  {
   *interpreter_frame_locals_addr() = locs;
 }
 
-methodOop frame::interpreter_frame_method() const {
+Method* frame::interpreter_frame_method() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
-  methodOop m = *interpreter_frame_method_addr();
-  assert(m->is_perm(), "bad methodOop in interpreter frame");
-  assert(m->is_method(), "not a methodOop");
+  Method* m = *interpreter_frame_method_addr();
+  assert(m->is_metadata(), "bad Method* in interpreter frame");
+  assert(m->is_method(), "not a Method*");
   return m;
 }
 
-void frame::interpreter_frame_set_method(methodOop method) {
+void frame::interpreter_frame_set_method(Method* method) {
   assert(is_interpreted_frame(), "interpreted frame expected");
   *interpreter_frame_method_addr() = method;
 }
@@ -410,7 +410,7 @@ void frame::interpreter_frame_set_bcx(intptr_t bcx) {
         if (!is_now_bci) {
           // The bcx was just converted from bci to bcp.
           // Convert the mdx in parallel.
-          methodDataOop mdo = interpreter_frame_method()->method_data();
+          MethodData* mdo = interpreter_frame_method()->method_data();
           assert(mdo != NULL, "");
           int mdi = mdx - 1; // We distinguish valid mdi from zero by adding one.
           address mdp = mdo->di_to_dp(mdi);
@@ -420,7 +420,7 @@ void frame::interpreter_frame_set_bcx(intptr_t bcx) {
         if (is_now_bci) {
           // The bcx was just converted from bcp to bci.
           // Convert the mdx in parallel.
-          methodDataOop mdo = interpreter_frame_method()->method_data();
+          MethodData* mdo = interpreter_frame_method()->method_data();
           assert(mdo != NULL, "");
           int mdi = mdo->dp_to_di((address)mdx);
           interpreter_frame_set_mdx((intptr_t)mdi + 1); // distinguish valid from 0.
@@ -691,7 +691,7 @@ static void print_C_frame(outputStream* st, char* buf, int buflen, address pc) {
 void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose) const {
   if (_cb != NULL) {
     if (Interpreter::contains(pc())) {
-      methodOop m = this->interpreter_frame_method();
+      Method* m = this->interpreter_frame_method();
       if (m != NULL) {
         m->name_and_sig_as_C_string(buf, buflen);
         st->print("j  %s", buf);
@@ -709,7 +709,7 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
     } else if (_cb->is_buffer_blob()) {
       st->print("v  ~BufferBlob::%s", ((BufferBlob *)_cb)->name());
     } else if (_cb->is_nmethod()) {
-      methodOop m = ((nmethod *)_cb)->method();
+      Method* m = ((nmethod *)_cb)->method();
       if (m != NULL) {
         m->name_and_sig_as_C_string(buf, buflen);
         st->print("J  %s", buf);
@@ -736,8 +736,8 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
 /*
   The interpreter_frame_expression_stack_at method in the case of SPARC needs the
   max_stack value of the method in order to compute the expression stack address.
-  It uses the methodOop in order to get the max_stack value but during GC this
-  methodOop value saved on the frame is changed by reverse_and_push and hence cannot
+  It uses the Method* in order to get the max_stack value but during GC this
+  Method* value saved on the frame is changed by reverse_and_push and hence cannot
   be used. So we save the max_stack value in the FrameClosure object and pass it
   down to the interpreter_frame_expression_stack_at method
 */
@@ -886,9 +886,12 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
   methodHandle m (thread, interpreter_frame_method());
   jint      bci = interpreter_frame_bci();
 
-  assert(Universe::heap()->is_in(m()), "must be valid oop");
+  assert(!Universe::heap()->is_in(m()),
+          "must be valid oop");
   assert(m->is_method(), "checking frame value");
-  assert((m->is_native() && bci == 0)  || (!m->is_native() && bci >= 0 && bci < m->code_size()), "invalid bci value");
+  assert((m->is_native() && bci == 0)  ||
+         (!m->is_native() && bci >= 0 && bci < m->code_size()),
+         "invalid bci value");
 
   // Handle the monitor elements in the activation
   for (
@@ -903,23 +906,10 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
   }
 
   // process fixed part
-  f->do_oop((oop*)interpreter_frame_method_addr());
-  f->do_oop((oop*)interpreter_frame_cache_addr());
-
-  // Hmm what about the mdp?
-#ifdef CC_INTERP
-  // Interpreter frame in the midst of a call have a methodOop within the
-  // object.
-  interpreterState istate = get_interpreterState();
-  if (istate->msg() == BytecodeInterpreter::call_method) {
-    f->do_oop((oop*)&istate->_result._to_call._callee);
-  }
-
-#endif /* CC_INTERP */
-
 #if !defined(PPC) || defined(ZERO)
   if (m->is_native()) {
 #ifdef CC_INTERP
+    interpreterState istate = get_interpreterState();
     f->do_oop((oop*)&istate->_oop_temp);
 #else
     f->do_oop((oop*)( fp() + interpreter_frame_oop_temp_offset ));
@@ -1148,9 +1138,19 @@ void frame::nmethods_do(CodeBlobClosure* cf) {
 }
 
 
+// call f() on the interpreted Method*s in the stack.
+// Have to walk the entire code cache for the compiled frames Yuck.
+void frame::metadata_do(void f(Metadata*)) {
+  if (_cb != NULL && Interpreter::contains(pc())) {
+    Method* m = this->interpreter_frame_method();
+    assert(m != NULL, "huh?");
+    f(m);
+  }
+}
+
 void frame::gc_prologue() {
   if (is_interpreted_frame()) {
-    // set bcx to bci to become methodOop position independent during GC
+    // set bcx to bci to become Method* position independent during GC
     interpreter_frame_set_bcx(interpreter_frame_bci());
   }
 }
@@ -1225,7 +1225,7 @@ void frame::zap_dead_locals(JavaThread* thread, const RegisterMap* map) {
 void frame::zap_dead_interpreted_locals(JavaThread *thread, const RegisterMap* map) {
   // get current interpreter 'pc'
   assert(is_interpreted_frame(), "Not an interpreted frame");
-  methodOop m   = interpreter_frame_method();
+  Method* m   = interpreter_frame_method();
   int       bci = interpreter_frame_bci();
 
   int max_locals = m->is_native() ? m->size_of_parameters() : m->max_locals();
@@ -1269,7 +1269,7 @@ void frame::zap_dead_deoptimized_locals(JavaThread*, const RegisterMap*) {
 void frame::verify(const RegisterMap* map) {
   // for now make sure receiver type is correct
   if (is_interpreted_frame()) {
-    methodOop method = interpreter_frame_method();
+    Method* method = interpreter_frame_method();
     guarantee(method->is_method(), "method is wrong in frame::verify");
     if (!method->is_static()) {
       // fetch the receiver
@@ -1334,7 +1334,7 @@ void frame::describe(FrameValues& values, int frame_no) {
   }
 
   if (is_interpreted_frame()) {
-    methodOop m = interpreter_frame_method();
+    Method* m = interpreter_frame_method();
     int bci = interpreter_frame_bci();
 
     // Label the method and current bci

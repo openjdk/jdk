@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,7 +362,7 @@ public class Bytecodes {
 
   // find a bytecode, behind a breakpoint if necessary:
   // FIXME: not yet implementable
-  //   static Code       non_breakpoint_code_at(address bcp, methodOop method = null);
+  //   static Code       non_breakpoint_code_at(address bcp, Method* method = null);
 
   // Bytecode attributes
   public static boolean   isDefined    (int code) { return 0 <= code && code < number_of_codes && flags(code, false) != 0; }
@@ -743,7 +743,7 @@ public class Bytecodes {
     def(_invokespecial       , "invokespecial"       , "bJJ"  , null    , BasicType.getTIllegal(), -1, true );
     def(_invokestatic        , "invokestatic"        , "bJJ"  , null    , BasicType.getTIllegal(),  0, true );
     def(_invokeinterface     , "invokeinterface"     , "bJJ__", null    , BasicType.getTIllegal(), -1, true );
-    def(_invokedynamic       , "invokedynamic"       , "bJJJJ", null    , BasicType.getTIllegal(), -1, true );
+    def(_invokedynamic       , "invokedynamic"       , "bJJJJ", null    , BasicType.getTIllegal(),  0, true );
     def(_new                 , "new"                 , "bkk"  , null    , BasicType.getTObject() ,  1, true );
     def(_newarray            , "newarray"            , "bc"   , null    , BasicType.getTObject() ,  0, true );
     def(_anewarray           , "anewarray"           , "bkk"  , null    , BasicType.getTObject() ,  0, true );
@@ -763,6 +763,7 @@ public class Bytecodes {
 
     //  JVM bytecodes
     //  bytecode               bytecode name           format   wide f.   result tp               stk traps  std code
+
     def(_fast_agetfield      , "fast_agetfield"      , "bJJ"  , null    , BasicType.getTObject() ,  0, true , _getfield       );
     def(_fast_bgetfield      , "fast_bgetfield"      , "bJJ"  , null    , BasicType.getTInt()    ,  0, true , _getfield       );
     def(_fast_cgetfield      , "fast_cgetfield"      , "bJJ"  , null    , BasicType.getTChar()   ,  0, true , _getfield       );

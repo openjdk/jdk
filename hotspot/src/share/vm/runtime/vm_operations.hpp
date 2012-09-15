@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,13 +56,12 @@
   template(PrintJNI)                              \
   template(HeapDumper)                            \
   template(DeoptimizeTheWorld)                    \
+  template(CollectForMetadataAllocation)          \
   template(GC_HeapInspection)                     \
   template(GenCollectFull)                        \
   template(GenCollectFullConcurrent)              \
   template(GenCollectForAllocation)               \
-  template(GenCollectForPermanentAllocation)      \
   template(ParallelGCFailedAllocation)            \
-  template(ParallelGCFailedPermanentAllocation)   \
   template(ParallelGCSystemGC)                    \
   template(CGC_Operation)                         \
   template(CMS_Initial_Mark)                      \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/instanceOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -234,7 +234,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // call Java function
     __ BIND(parameters_done);
-    __ movptr(rbx, method);           // get methodOop
+    __ movptr(rbx, method);           // get Method*
     __ movptr(rax, entry_point);      // get entry_point
     __ mov(rsi, rsp);                 // set sender sp
     BLOCK_COMMENT("call Java function");
@@ -682,29 +682,11 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpptr(rdx, oop_bits);
     __ jcc(Assembler::notZero, error);
 
-    // make sure klass is 'reasonable'
+    // make sure klass is 'reasonable', which is not zero.
     __ movptr(rax, Address(rax, oopDesc::klass_offset_in_bytes())); // get klass
     __ testptr(rax, rax);
     __ jcc(Assembler::zero, error);              // if klass is NULL it is broken
-
-    // Check if the klass is in the right area of memory
-    const int klass_mask = Universe::verify_klass_mask();
-    const int klass_bits = Universe::verify_klass_bits();
-    __ mov(rdx, rax);
-    __ andptr(rdx, klass_mask);
-    __ cmpptr(rdx, klass_bits);
-    __ jcc(Assembler::notZero, error);
-
-    // make sure klass' klass is 'reasonable'
-    __ movptr(rax, Address(rax, oopDesc::klass_offset_in_bytes())); // get klass' klass
-    __ testptr(rax, rax);
-    __ jcc(Assembler::zero, error);              // if klass' klass is NULL it is broken
-
-    __ mov(rdx, rax);
-    __ andptr(rdx, klass_mask);
-    __ cmpptr(rdx, klass_bits);
-    __ jcc(Assembler::notZero, error);           // if klass not in right area
-                                                 // of memory it is broken too.
+    // TODO: Future assert that klass is lower 4g memory for UseCompressedKlassPointers
 
     // return if everything seems ok
     __ bind(exit);

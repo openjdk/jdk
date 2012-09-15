@@ -57,6 +57,7 @@ AddressLiteral::AddressLiteral(address target, relocInfo::relocType rtype) {
   _target = target;
   switch (rtype) {
   case relocInfo::oop_type:
+  case relocInfo::metadata_type:
     // Oops are a special case. Normally they would be their own section
     // but in cases like icBuffer they are literals in the code stream that
     // we don't have a section for. We use none so that we get a literal address
@@ -154,10 +155,10 @@ Address::Address(address loc, RelocationHolder spec) {
 // Convert the raw encoding form into the form expected by the constructor for
 // Address.  An index of 4 (rsp) corresponds to having no index, so convert
 // that to noreg for the Address constructor.
-Address Address::make_raw(int base, int index, int scale, int disp, bool disp_is_oop) {
+Address Address::make_raw(int base, int index, int scale, int disp, relocInfo::relocType disp_reloc) {
   RelocationHolder rspec;
-  if (disp_is_oop) {
-    rspec = Relocation::spec_simple(relocInfo::oop_type);
+  if (disp_reloc != relocInfo::none) {
+    rspec = Relocation::spec_simple(disp_reloc);
   }
   bool valid_index = index != rsp->encoding();
   if (valid_index) {
@@ -268,17 +269,6 @@ void Assembler::emit_arith_operand(int op1, Register rm, Address adr, int32_t im
     emit_operand(rm, adr, 4);
     emit_long(imm32);
   }
-}
-
-void Assembler::emit_arith(int op1, int op2, Register dst, jobject obj) {
-  LP64_ONLY(ShouldNotReachHere());
-  assert(isByte(op1) && isByte(op2), "wrong opcode");
-  assert((op1 & 0x01) == 1, "should be 32bit operation");
-  assert((op1 & 0x02) == 0, "sign-extension bit should not be set");
-  InstructionMark im(this);
-  emit_byte(op1);
-  emit_byte(op2 | encode(dst));
-  emit_data((intptr_t)obj, relocInfo::oop_type, 0);
 }
 
 
@@ -5572,6 +5562,14 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
   increment(rsp, number_of_arguments * wordSize);
 }
 
+void MacroAssembler::cmpklass(Address src1, Metadata* obj) {
+  cmp_literal32(src1, (int32_t)obj, metadata_Relocation::spec_for_immediate());
+}
+
+void MacroAssembler::cmpklass(Register src1, Metadata* obj) {
+  cmp_literal32(src1, (int32_t)obj, metadata_Relocation::spec_for_immediate());
+}
+
 void MacroAssembler::cmpoop(Address src1, jobject obj) {
   cmp_literal32(src1, (int32_t)obj, oop_Relocation::spec_for_immediate());
 }
@@ -5753,6 +5751,14 @@ void MacroAssembler::movoop(Address dst, jobject obj) {
   mov_literal32(dst, (int32_t)obj, oop_Relocation::spec_for_immediate());
 }
 
+void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
+  mov_literal32(dst, (int32_t)obj, metadata_Relocation::spec_for_immediate());
+}
+
+void MacroAssembler::mov_metadata(Address dst, Metadata* obj) {
+  mov_literal32(dst, (int32_t)obj, metadata_Relocation::spec_for_immediate());
+}
+
 void MacroAssembler::movptr(Register dst, AddressLiteral src) {
   if (src.is_lval()) {
     mov_literal32(dst, (intptr_t)src.target(), src.rspec());
@@ -5804,6 +5810,9 @@ void MacroAssembler::pushoop(jobject obj) {
   push_literal32((int32_t)obj, oop_Relocation::spec_for_immediate());
 }
 
+void MacroAssembler::pushklass(Metadata* obj) {
+  push_literal32((int32_t)obj, metadata_Relocation::spec_for_immediate());
+}
 
 void MacroAssembler::pushptr(AddressLiteral src) {
   if (src.is_lval()) {
@@ -5856,13 +5865,13 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
     if (os::message_box(msg, "Execution stopped, print registers?")) {
       print_state32(rdi, rsi, rbp, rsp, rbx, rdx, rcx, rax, eip);
       BREAKPOINT;
-      assert(false, "start up GDB");
     }
   } else {
     ttyLocker ttyl;
     ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n", msg);
-    assert(false, err_msg("DEBUG MESSAGE: %s", msg));
   }
+  // Don't assert holding the ttyLock
+    assert(false, err_msg("DEBUG MESSAGE: %s", msg));
   ThreadStateTransition::transition(thread, _thread_in_vm, saved_state);
 }
 
@@ -6280,6 +6289,15 @@ void MacroAssembler::movoop(Address dst, jobject obj) {
   movq(dst, rscratch1);
 }
 
+void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
+  mov_literal64(dst, (intptr_t)obj, metadata_Relocation::spec_for_immediate());
+}
+
+void MacroAssembler::mov_metadata(Address dst, Metadata* obj) {
+  mov_literal64(rscratch1, (intptr_t)obj, metadata_Relocation::spec_for_immediate());
+  movq(dst, rscratch1);
+}
+
 void MacroAssembler::movptr(Register dst, AddressLiteral src) {
   if (src.is_lval()) {
     mov_literal64(dst, (intptr_t)src.target(), src.rspec());
@@ -6318,6 +6336,11 @@ void MacroAssembler::movptr(Register dst, int32_t src) {
 
 void MacroAssembler::pushoop(jobject obj) {
   movoop(rscratch1, obj);
+  push(rscratch1);
+}
+
+void MacroAssembler::pushklass(Metadata* obj) {
+  mov_metadata(rscratch1, obj);
   push(rscratch1);
 }
 
@@ -6655,6 +6678,12 @@ void MacroAssembler::call(AddressLiteral entry) {
   }
 }
 
+void MacroAssembler::ic_call(address entry) {
+  RelocationHolder rh = virtual_call_Relocation::spec(pc());
+  movptr(rax, (intptr_t)Universe::non_oop_word());
+  call(AddressLiteral(entry, rh));
+}
+
 // Implementation of call_VM versions
 
 void MacroAssembler::call_VM(Register oop_result,
@@ -6923,9 +6952,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
-    movptr(oop_result, Address(java_thread, JavaThread::vm_result_offset()));
-    movptr(Address(java_thread, JavaThread::vm_result_offset()), NULL_WORD);
-    verify_oop(oop_result, "broken oop in call_VM_base");
+    get_vm_result(oop_result, java_thread);
   }
 }
 
@@ -7014,6 +7041,17 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
   pass_arg1(this, arg_1);
   pass_arg0(this, arg_0);
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
+}
+
+void MacroAssembler::get_vm_result(Register oop_result, Register java_thread) {
+  movptr(oop_result, Address(java_thread, JavaThread::vm_result_offset()));
+  movptr(Address(java_thread, JavaThread::vm_result_offset()), NULL_WORD);
+  verify_oop(oop_result, "broken oop in call_VM_base");
+}
+
+void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thread) {
+  movptr(metadata_result, Address(java_thread, JavaThread::vm_result_2_offset()));
+  movptr(Address(java_thread, JavaThread::vm_result_2_offset()), NULL_WORD);
 }
 
 void MacroAssembler::check_and_handle_earlyret(Register java_thread) {
@@ -9097,20 +9135,20 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
          "caller must use same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
-  int vtable_base = instanceKlass::vtable_start_offset() * wordSize;
+  int vtable_base = InstanceKlass::vtable_start_offset() * wordSize;
   int itentry_off = itableMethodEntry::method_offset_in_bytes();
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int vte_size    = vtableEntry::size() * wordSize;
   Address::ScaleFactor times_vte_scale = Address::times_ptr;
   assert(vte_size == wordSize, "else adjust times_vte_scale");
 
-  movl(scan_temp, Address(recv_klass, instanceKlass::vtable_length_offset() * wordSize));
+  movl(scan_temp, Address(recv_klass, InstanceKlass::vtable_length_offset() * wordSize));
 
   // %%% Could store the aligned, prescaled offset in the klassoop.
   lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
   if (HeapWordsPerLong > 1) {
     // Round up to align_object_offset boundary
-    // see code for instanceKlass::start_of_itable!
+    // see code for InstanceKlass::start_of_itable!
     round_to(scan_temp, BytesPerLong);
   }
 
@@ -9160,7 +9198,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = instanceKlass::vtable_start_offset() * wordSize;
+  const int base = InstanceKlass::vtable_start_offset() * wordSize;
   assert(vtableEntry::size() * wordSize == wordSize, "else adjust the scaling in the code below");
   Address vtable_entry_addr(recv_klass,
                             vtable_index, Address::times_ptr,
@@ -9335,33 +9373,19 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   // We will consult the secondary-super array.
   movptr(rdi, secondary_supers_addr);
   // Load the array length.  (Positive movl does right thing on LP64.)
-  movl(rcx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));
+  movl(rcx, Address(rdi, Array<Klass*>::length_offset_in_bytes()));
   // Skip to start of data.
-  addptr(rdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+  addptr(rdi, Array<Klass*>::base_offset_in_bytes());
 
   // Scan RCX words at [RDI] for an occurrence of RAX.
   // Set NZ/Z based on last compare.
   // Z flag value will not be set by 'repne' if RCX == 0 since 'repne' does
   // not change flags (only scas instruction which is repeated sets flags).
   // Set Z = 0 (not equal) before 'repne' to indicate that class was not found.
-#ifdef _LP64
-  // This part is tricky, as values in supers array could be 32 or 64 bit wide
-  // and we store values in objArrays always encoded, thus we need to encode
-  // the value of rax before repne.  Note that rax is dead after the repne.
-  if (UseCompressedOops) {
-    encode_heap_oop_not_null(rax); // Changes flags.
-    // The superclass is never null; it would be a basic system error if a null
-    // pointer were to sneak in here.  Note that we have already loaded the
-    // Klass::super_check_offset from the super_klass in the fast path,
-    // so if there is a null in that register, we are already in the afterlife.
-    testl(rax,rax); // Set Z = 0
-    repne_scanl();
-  } else
-#endif // _LP64
-  {
+
     testptr(rax,rax); // Set Z = 0
     repne_scan();
-  }
+
   // Unspill the temp. registers:
   if (pushed_rdi)  pop(rdi);
   if (pushed_rcx)  pop(rcx);
@@ -9907,7 +9931,7 @@ void MacroAssembler::verify_FPU(int stack_depth, const char* s) {
 
 void MacroAssembler::load_klass(Register dst, Register src) {
 #ifdef _LP64
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_heap_oop_not_null(dst);
   } else
@@ -9917,7 +9941,7 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 
 void MacroAssembler::load_prototype_header(Register dst, Register src) {
 #ifdef _LP64
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     assert (Universe::heap() != NULL, "java heap should be initialized");
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     if (Universe::narrow_oop_shift() != 0) {
@@ -9942,7 +9966,7 @@ void MacroAssembler::load_prototype_header(Register dst, Register src) {
 
 void MacroAssembler::store_klass(Register dst, Register src) {
 #ifdef _LP64
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     encode_heap_oop_not_null(src);
     movl(Address(dst, oopDesc::klass_offset_in_bytes()), src);
   } else
@@ -9952,6 +9976,7 @@ void MacroAssembler::store_klass(Register dst, Register src) {
 
 void MacroAssembler::load_heap_oop(Register dst, Address src) {
 #ifdef _LP64
+  // FIXME: Must change all places where we try to load the klass.
   if (UseCompressedOops) {
     movl(dst, src);
     decode_heap_oop(dst);
@@ -10016,7 +10041,7 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
 
 #ifdef _LP64
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     // Store to klass gap in destination
     movl(Address(dst, oopDesc::klass_gap_offset_in_bytes()), src);
   }

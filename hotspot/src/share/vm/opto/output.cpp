@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -626,7 +626,7 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       sv = new ObjectValue(spobj->_idx,
-                           new ConstantOopWriteValue(cik->constant_encoding()));
+                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
       Compile::set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index();
@@ -715,8 +715,7 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     array->append(new ConstantOopWriteValue(NULL));
     break;
   case Type::AryPtr:
-  case Type::InstPtr:
-  case Type::KlassPtr:          // fall through
+  case Type::InstPtr:          // fall through
     array->append(new ConstantOopWriteValue(t->isa_oopptr()->const_oop()->constant_encoding()));
     break;
   case Type::NarrowOop:
@@ -902,7 +901,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
           ObjectValue* sv = new ObjectValue(spobj->_idx,
-                                new ConstantOopWriteValue(cik->constant_encoding()));
+                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
           Compile::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index();
@@ -1658,8 +1657,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
                    "");
       }
       if (method() != NULL) {
-        method()->print_oop();
-        print_codes();
+        method()->print_metadata();
       }
       dump_asm(node_offsets, node_offset_limit);
       if (xtty != NULL) {

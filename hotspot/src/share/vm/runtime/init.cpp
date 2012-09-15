@@ -94,12 +94,13 @@ jint init_globals() {
   management_init();
   bytecodes_init();
   classLoader_init();
+  Metaspace::global_initialize(); // must be before codeCache
   codeCache_init();
   VM_Version_init();
   os_init_globals();
   stubRoutines_init1();
   jint status = universe_init();  // dependent on codeCache_init and
-                                  // stubRoutines_init1
+                                  // stubRoutines_init1 and metaspace_init.
   if (status != JNI_OK)
     return status;
 

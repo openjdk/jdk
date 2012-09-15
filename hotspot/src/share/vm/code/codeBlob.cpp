@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   size = align_code_offset(size);
   size += round_to(cb->total_content_size(), oopSize);
   size += round_to(cb->total_oop_size(), oopSize);
+  size += round_to(cb->total_metadata_size(), oopSize);
   return size;
 }
 

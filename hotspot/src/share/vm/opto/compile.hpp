@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,36 +141,51 @@ class Compile : public Phase {
   };
   struct AliasCacheEntry { const TypePtr* _adr_type; int _index; };  // simple duple type
   enum {
-    trapHistLength = methodDataOopDesc::_trap_hist_limit
+    trapHistLength = MethodData::_trap_hist_limit
   };
 
   // Constant entry of the constant table.
   class Constant {
   private:
     BasicType _type;
+    union {
     jvalue    _value;
+      Metadata* _metadata;
+    } _v;
     int       _offset;         // offset of this constant (in bytes) relative to the constant table base.
     float     _freq;
     bool      _can_be_reused;  // true (default) if the value can be shared with other users.
 
   public:
-    Constant() : _type(T_ILLEGAL), _offset(-1), _freq(0.0f), _can_be_reused(true) { _value.l = 0; }
+    Constant() : _type(T_ILLEGAL), _offset(-1), _freq(0.0f), _can_be_reused(true) { _v._value.l = 0; }
     Constant(BasicType type, jvalue value, float freq = 0.0f, bool can_be_reused = true) :
       _type(type),
-      _value(value),
       _offset(-1),
       _freq(freq),
       _can_be_reused(can_be_reused)
-    {}
+    {
+      assert(type != T_METADATA, "wrong constructor");
+      _v._value = value;
+    }
+    Constant(Metadata* metadata, bool can_be_reused = true) :
+      _type(T_METADATA),
+      _offset(-1),
+      _freq(0.0f),
+      _can_be_reused(can_be_reused)
+    {
+      _v._metadata = metadata;
+    }
 
     bool operator==(const Constant& other);
 
     BasicType type()      const    { return _type; }
 
-    jlong   get_jlong()   const    { return _value.j; }
-    jfloat  get_jfloat()  const    { return _value.f; }
-    jdouble get_jdouble() const    { return _value.d; }
-    jobject get_jobject() const    { return _value.l; }
+    jlong   get_jlong()   const    { return _v._value.j; }
+    jfloat  get_jfloat()  const    { return _v._value.f; }
+    jdouble get_jdouble() const    { return _v._value.d; }
+    jobject get_jobject() const    { return _v._value.l; }
+
+    Metadata* get_metadata() const { return _v._metadata; }
 
     int         offset()  const    { return _offset; }
     void    set_offset(int offset) {        _offset = offset; }
@@ -219,6 +234,7 @@ class Compile : public Phase {
 
     void     add(Constant& con);
     Constant add(MachConstantNode* n, BasicType type, jvalue value);
+    Constant add(Metadata* metadata);
     Constant add(MachConstantNode* n, MachOper* oper);
     Constant add(MachConstantNode* n, jfloat f) {
       jvalue value; value.f = f;
@@ -270,7 +286,7 @@ class Compile : public Phase {
   bool                  _do_scheduling;         // True if we intend to do scheduling
   bool                  _do_freq_based_layout;  // True if we intend to do frequency based block layout
   bool                  _do_count_invocations;  // True if we generate code to count invocations
-  bool                  _do_method_data_update; // True if we generate code to update methodDataOops
+  bool                  _do_method_data_update; // True if we generate code to update MethodData*s
   int                   _AliasLevel;            // Locally-adjusted version of AliasLevel flag.
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
 #ifndef PRODUCT
@@ -895,9 +911,6 @@ class Compile : public Phase {
   // The option no_dead_code enables stronger checks that the
   // graph is strongly connected from root in both directions.
   void verify_graph_edges(bool no_dead_code = false) PRODUCT_RETURN;
-
-  // Print bytecodes, including the scope inlining tree
-  void print_codes();
 
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;

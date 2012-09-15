@@ -40,7 +40,7 @@ size_t HeapRegion::GrainWords        = 0;
 size_t HeapRegion::CardsPerRegion    = 0;
 
 HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
-                                 HeapRegion* hr, OopClosure* cl,
+                                 HeapRegion* hr, ExtendedOopClosure* cl,
                                  CardTableModRefBS::PrecisionStyle precision,
                                  FilterKind fk) :
   ContiguousSpaceDCTOC(hr, cl, precision, NULL),
@@ -83,8 +83,8 @@ public:
 
   void print_object(outputStream* out, oop obj) {
 #ifdef PRODUCT
-    klassOop k = obj->klass();
-    const char* class_name = instanceKlass::cast(k)->external_name();
+    Klass* k = obj->klass();
+    const char* class_name = InstanceKlass::cast(k)->external_name();
     out->print_cr("class name %s", class_name);
 #else // PRODUCT
     obj->print_on(out);
@@ -213,10 +213,10 @@ HeapWord* walk_mem_region_loop(ClosureType* cl, G1CollectedHeap* g1h,
 void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
                                               HeapWord* bottom,
                                               HeapWord* top,
-                                              OopClosure* cl) {
+                                              ExtendedOopClosure* cl) {
   G1CollectedHeap* g1h = _g1;
   int oop_size;
-  OopClosure* cl2 = NULL;
+  ExtendedOopClosure* cl2 = NULL;
 
   FilterIntoCSClosure intoCSFilt(this, g1h, cl);
   FilterOutOfRegionClosure outOfRegionFilt(_hr, cl);
@@ -535,7 +535,7 @@ void HeapRegion::save_marks() {
   set_saved_mark();
 }
 
-void HeapRegion::oops_in_mr_iterate(MemRegion mr, OopClosure* cl) {
+void HeapRegion::oops_in_mr_iterate(MemRegion mr, ExtendedOopClosure* cl) {
   HeapWord* p = mr.start();
   HeapWord* e = mr.end();
   oop obj;
@@ -553,7 +553,7 @@ void HeapRegion::oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl) { \
 SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(HeapRegion_OOP_SINCE_SAVE_MARKS_DEFN)
 
 
-void HeapRegion::oop_before_save_marks_iterate(OopClosure* cl) {
+void HeapRegion::oop_before_save_marks_iterate(ExtendedOopClosure* cl) {
   oops_in_mr_iterate(MemRegion(bottom(), saved_mark_word()), cl);
 }
 
@@ -801,10 +801,10 @@ void HeapRegion::verify(VerifyOption vo,
 
     if (!g1->is_obj_dead_cond(obj, this, vo)) {
       if (obj->is_oop()) {
-        klassOop klass = obj->klass();
-        if (!klass->is_perm()) {
+        Klass* klass = obj->klass();
+        if (!klass->is_metadata()) {
           gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
-                                 "not in perm", klass, obj);
+                                 "not metadata", klass, obj);
           *failures = true;
           return;
         } else if (!klass->is_klass()) {
@@ -814,7 +814,7 @@ void HeapRegion::verify(VerifyOption vo,
           return;
         } else {
           vl_cl.set_containing_obj(obj);
-          obj->oop_iterate(&vl_cl);
+          obj->oop_iterate_no_header(&vl_cl);
           if (vl_cl.failures()) {
             *failures = true;
           }
