@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,7 @@ import sun.jvm.hotspot.utilities.*;
 // A ConstantPool is an oop containing class constants
 // as described in the class file
 
-public class ConstantPool extends Oop implements ClassConstants {
-
+public class ConstantPool extends Metadata implements ClassConstants {
   public class CPSlot {
     private Address ptr;
 
@@ -46,24 +45,20 @@ public class ConstantPool extends Oop implements ClassConstants {
       this.ptr = sym.getAddress().orWithMask(1);
     }
 
-    public boolean isOop() {
+    public boolean isResolved() {
       return (ptr.minus(null) & 1) == 0;
     }
-    public boolean isMetaData() {
+    public boolean isUnresolved() {
       return (ptr.minus(null) & 1) == 1;
     }
 
     public Symbol getSymbol() {
-      if (isMetaData()) {
+      if (!isUnresolved()) throw new InternalError("not a symbol");
         return Symbol.create(ptr.xorWithMask(1));
       }
-      throw new InternalError("not a symbol");
-    }
-    public Oop getOop() {
-      if (isOop()) {
-        return VM.getVM().getObjectHeap().newOop(ptr.addOffsetToAsOopHandle(0));
-      }
-      throw new InternalError("not an oop");
+    public Klass getKlass() {
+      if (!isResolved()) throw new InternalError("not klass");
+      return (Klass)Metadata.instantiateWrapperFor(ptr);
     }
   }
 
@@ -83,31 +78,35 @@ public class ConstantPool extends Oop implements ClassConstants {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type   = db.lookupType("constantPoolOopDesc");
-    tags        = new OopField(type.getOopField("_tags"), 0);
-    operands    = new OopField(type.getOopField("_operands"), 0);
-    cache       = new OopField(type.getOopField("_cache"), 0);
-    poolHolder  = new OopField(type.getOopField("_pool_holder"), 0);
+    Type type   = db.lookupType("ConstantPool");
+    tags        = type.getAddressField("_tags");
+    operands    = type.getAddressField("_operands");
+    cache       = type.getAddressField("_cache");
+    poolHolder  = new MetadataField(type.getAddressField("_pool_holder"), 0);
     length      = new CIntField(type.getCIntegerField("_length"), 0);
+    resolvedReferences      = type.getAddressField("_resolved_references");
+    referenceMap = type.getAddressField("_reference_map");
     headerSize  = type.getSize();
     elementSize = 0;
     // fetch constants:
-    INDY_BSM_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_bsm_offset").intValue();
-    INDY_ARGC_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_argc_offset").intValue();
-    INDY_ARGV_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_argv_offset").intValue();
+    INDY_BSM_OFFSET = db.lookupIntConstant("ConstantPool::_indy_bsm_offset").intValue();
+    INDY_ARGC_OFFSET = db.lookupIntConstant("ConstantPool::_indy_argc_offset").intValue();
+    INDY_ARGV_OFFSET = db.lookupIntConstant("ConstantPool::_indy_argv_offset").intValue();
   }
 
-  ConstantPool(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public ConstantPool(Address addr) {
+    super(addr);
   }
 
   public boolean isConstantPool()      { return true; }
 
-  private static OopField tags;
-  private static OopField operands;
-  private static OopField cache;
-  private static OopField poolHolder;
+  private static AddressField tags;
+  private static AddressField operands;
+  private static AddressField cache;
+  private static MetadataField poolHolder;
   private static CIntField length; // number of elements in oop
+  private static AddressField  resolvedReferences;
+  private static AddressField  referenceMap;
 
   private static long headerSize;
   private static long elementSize;
@@ -116,11 +115,31 @@ public class ConstantPool extends Oop implements ClassConstants {
   private static int INDY_ARGC_OFFSET;
   private static int INDY_ARGV_OFFSET;
 
-  public TypeArray         getTags()       { return (TypeArray)         tags.getValue(this); }
-  public TypeArray         getOperands()   { return (TypeArray)         operands.getValue(this); }
-  public ConstantPoolCache getCache()      { return (ConstantPoolCache) cache.getValue(this); }
+  public U1Array           getTags()       { return new U1Array(tags.getValue(getAddress())); }
+  public U2Array           getOperands()   { return new U2Array(operands.getValue(getAddress())); }
+  public ConstantPoolCache getCache()      {
+    Address addr = cache.getValue(getAddress());
+    return (ConstantPoolCache) VMObjectFactory.newObject(ConstantPoolCache.class, addr);
+  }
   public Klass             getPoolHolder() { return (Klass)             poolHolder.getValue(this); }
-  public int               getLength()     { return (int)length.getValue(this); }
+  public int               getLength()     { return (int)length.getValue(getAddress()); }
+  public Oop               getResolvedReferences() {
+    Address handle = resolvedReferences.getValue(getAddress());
+    if (handle != null) {
+      // Load through the handle
+      OopHandle refs = handle.getOopHandleAt(0);
+      return VM.getVM().getObjectHeap().newOop(refs);
+    }
+    return null;
+  }
+
+  public U2Array referenceMap() {
+    return new U2Array(referenceMap.getValue(getAddress()));
+  }
+
+  public int objectToCPIndex(int index) {
+    return referenceMap().at(index);
+  }
 
   private long getElementSize() {
     if (elementSize !=0 ) {
@@ -139,33 +158,32 @@ public class ConstantPool extends Oop implements ClassConstants {
   }
 
   public ConstantTag getTagAt(long index) {
-    return new ConstantTag(getTags().getByteAt((int) index));
+    return new ConstantTag((byte)getTags().at((int) index));
   }
 
   public CPSlot getSlotAt(long index) {
-    return new CPSlot(getHandle().getAddressAt(indexOffset(index)));
+    return new CPSlot(getAddressAtRaw(index));
   }
 
-  public Oop getObjAtRaw(long index){
-    return getHeap().newOop(getHandle().getOopHandleAt(indexOffset(index)));
+  public Address getAddressAtRaw(long index) {
+    return getAddress().getAddressAt(indexOffset(index));
   }
 
   public Symbol getSymbolAt(long index) {
-    CPSlot slot = getSlotAt(index);
-    return slot.getSymbol();
+    return Symbol.create(getAddressAtRaw(index));
   }
 
   public int getIntAt(long index){
-    return getHandle().getJIntAt(indexOffset(index));
+    return getAddress().getJIntAt(indexOffset(index));
   }
 
   public float getFloatAt(long index){
-    return getHandle().getJFloatAt(indexOffset(index));
+    return getAddress().getJFloatAt(indexOffset(index));
   }
 
   public long getLongAt(long index) {
-    int oneHalf = getHandle().getJIntAt(indexOffset(index + 1));
-    int otherHalf   = getHandle().getJIntAt(indexOffset(index));
+    int oneHalf = getAddress().getJIntAt(indexOffset(index + 1));
+    int otherHalf   = getAddress().getJIntAt(indexOffset(index));
     // buildLongFromIntsPD accepts higher address value, lower address value
     // in that order.
     return VM.getVM().buildLongFromIntsPD(oneHalf, otherHalf);
@@ -185,7 +203,7 @@ public class ConstantPool extends Oop implements ClassConstants {
       i = which;
     } else {
       // change byte-ordering and go via cache
-      i = cache.getEntryAt(0xFFFF & VM.getVM().getBytes().swapShort((short) which)).getConstantPoolIndex();
+      i = cache.getEntryAt(0xFFFF & which).getConstantPoolIndex();
     }
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(getTagAt(i).isFieldOrMethod(), "Corrupted constant pool");
@@ -202,7 +220,7 @@ public class ConstantPool extends Oop implements ClassConstants {
 
   public int[] getNameAndTypeAt(int which) {
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that(getTagAt(which).isNameAndType(), "Corrupted constant pool");
+      Assert.that(getTagAt(which).isNameAndType(), "Corrupted constant pool: " + which + " " + getTagAt(which));
     }
     int i = getIntAt(which);
     if (DEBUG) {
@@ -215,6 +233,10 @@ public class ConstantPool extends Oop implements ClassConstants {
     return implGetNameRefAt(which, false);
   }
 
+  public Symbol uncachedGetNameRefAt(int which) {
+    return implGetNameRefAt(which, true);
+  }
+
   private Symbol implGetNameRefAt(int which, boolean uncached) {
     int signatureIndex = getNameRefIndexAt(implNameAndTypeRefIndexAt(which, uncached));
     return getSymbolAt(signatureIndex);
@@ -224,35 +246,57 @@ public class ConstantPool extends Oop implements ClassConstants {
     return implGetSignatureRefAt(which, false);
   }
 
+  public Symbol uncachedGetSignatureRefAt(int which) {
+    return implGetSignatureRefAt(which, true);
+  }
+
   private Symbol implGetSignatureRefAt(int which, boolean uncached) {
     int signatureIndex = getSignatureRefIndexAt(implNameAndTypeRefIndexAt(which, uncached));
     return getSymbolAt(signatureIndex);
   }
 
+  public static boolean isInvokedynamicIndex(int i) { return (i < 0); }
+
+  public static int  decodeInvokedynamicIndex(int i) { Assert.that(isInvokedynamicIndex(i),  ""); return ~i; }
+
+  // The invokedynamic points at the object index.  The object map points at
+  // the cpCache index and the cpCache entry points at the original constant
+  // pool index.
+  public int invokedynamicCPCacheIndex(int index) {
+    Assert.that(isInvokedynamicIndex(index), "should be a invokedynamic index");
+    int rawIndex = decodeInvokedynamicIndex(index);
+    return referenceMap().at(rawIndex);
+  }
+
+  ConstantPoolCacheEntry invokedynamicCPCacheEntryAt(int index) {
+    // decode index that invokedynamic points to.
+    int cpCacheIndex = invokedynamicCPCacheIndex(index);
+    return getCache().getEntryAt(cpCacheIndex);
+  }
 
   private int implNameAndTypeRefIndexAt(int which, boolean uncached) {
     int i = which;
     if (!uncached && getCache() != null) {
-      if (ConstantPoolCache.isSecondaryIndex(which)) {
-        // Invokedynamic index.
-        int pool_index = getCache().getMainEntryAt(which).getConstantPoolIndex();
-        pool_index = invokeDynamicNameAndTypeRefIndexAt(pool_index);
-        // assert(tagAt(pool_index).isNameAndType(), "");
-        return pool_index;
+      if (isInvokedynamicIndex(which)) {
+        // Invokedynamic index is index into resolved_references
+        int poolIndex = invokedynamicCPCacheEntryAt(which).getConstantPoolIndex();
+        poolIndex = invokeDynamicNameAndTypeRefIndexAt(poolIndex);
+        Assert.that(getTagAt(poolIndex).isNameAndType(), "");
+        return poolIndex;
       }
       // change byte-ordering and go via cache
       i = remapInstructionOperandFromCache(which);
     } else {
       if (getTagAt(which).isInvokeDynamic()) {
-        int pool_index = invokeDynamicNameAndTypeRefIndexAt(which);
-        // assert(tag_at(pool_index).is_name_and_type(), "");
-        return pool_index;
+        int poolIndex = invokeDynamicNameAndTypeRefIndexAt(which);
+        Assert.that(getTagAt(poolIndex).isNameAndType(), "");
+        return poolIndex;
       }
     }
     // assert(tag_at(i).is_field_or_method(), "Corrupted constant pool");
     // assert(!tag_at(i).is_invoke_dynamic(), "Must be handled above");
-    int ref_index = getIntAt(i);
-    return extractHighShortFromInt(ref_index);
+    int refIndex = getIntAt(i);
+    return extractHighShortFromInt(refIndex);
   }
 
   private int remapInstructionOperandFromCache(int operand) {
@@ -269,16 +313,29 @@ public class ConstantPool extends Oop implements ClassConstants {
   }
 
   // returns null, if not resolved.
-  public Klass getKlassRefAt(int which) {
+  public Klass getKlassAt(int which) {
     if( ! getTagAt(which).isKlass()) return null;
-    return (Klass) getObjAtRaw(which);
+    return (Klass)Metadata.instantiateWrapperFor(getAddressAtRaw(which));
+  }
+
+  public Symbol getKlassNameAt(int which) {
+    CPSlot entry = getSlotAt(which);
+    if (entry.isResolved()) {
+      return entry.getKlass().getName();
+    } else {
+      return entry.getSymbol();
+    }
+  }
+
+  public Symbol getUnresolvedStringAt(int which) {
+    return getSymbolAt(which);
   }
 
   // returns null, if not resolved.
   public InstanceKlass getFieldOrMethodKlassRefAt(int which) {
     int refIndex = getFieldOrMethodAt(which);
     int klassIndex = extractLowShortFromInt(refIndex);
-    return (InstanceKlass) getKlassRefAt(klassIndex);
+    return (InstanceKlass) getKlassAt(klassIndex);
   }
 
   // returns null, if not resolved.
@@ -371,16 +428,16 @@ public class ConstantPool extends Oop implements ClassConstants {
       Assert.that(getTagAt(i).isInvokeDynamic(), "Corrupted constant pool");
     }
     int bsmSpec = extractLowShortFromInt(this.getIntAt(i));
-    TypeArray operands = getOperands();
+    U2Array operands = getOperands();
     if (operands == null)  return null;  // safety first
-    int basePos = VM.getVM().buildIntFromShorts(operands.getShortAt(bsmSpec * 2 + 0),
-                                                operands.getShortAt(bsmSpec * 2 + 1));
+    int basePos = VM.getVM().buildIntFromShorts(operands.at(bsmSpec * 2 + 0),
+                                                operands.at(bsmSpec * 2 + 1));
     int argv = basePos + INDY_ARGV_OFFSET;
-    int argc = operands.getShortAt(basePos + INDY_ARGC_OFFSET);
+    int argc = operands.at(basePos + INDY_ARGC_OFFSET);
     int endPos = argv + argc;
     short[] values = new short[endPos - basePos];
     for (int j = 0; j < values.length; j++) {
-        values[j] = operands.getShortAt(basePos+j);
+        values[j] = operands.at(basePos+j);
     }
     return values;
   }
@@ -407,25 +464,24 @@ public class ConstantPool extends Oop implements ClassConstants {
     case JVM_CONSTANT_InvokeDynamic:      return "JVM_CONSTANT_InvokeDynamic";
     case JVM_CONSTANT_Invalid:            return "JVM_CONSTANT_Invalid";
     case JVM_CONSTANT_UnresolvedClass:    return "JVM_CONSTANT_UnresolvedClass";
-    case JVM_CONSTANT_UnresolvedClassInError:    return "JVM_CONSTANT_UnresolvedClassInError";
     case JVM_CONSTANT_ClassIndex:         return "JVM_CONSTANT_ClassIndex";
-    case JVM_CONSTANT_UnresolvedString:   return "JVM_CONSTANT_UnresolvedString";
     case JVM_CONSTANT_StringIndex:        return "JVM_CONSTANT_StringIndex";
+    case JVM_CONSTANT_UnresolvedClassInError:    return "JVM_CONSTANT_UnresolvedClassInError";
+    case JVM_CONSTANT_MethodHandleInError:return "JVM_CONSTANT_MethodHandleInError";
+    case JVM_CONSTANT_MethodTypeInError:  return "JVM_CONSTANT_MethodTypeInError";
+    case JVM_CONSTANT_Object:             return "JVM_CONSTANT_Object";
     }
     throw new InternalError("Unknown tag: " + tag);
   }
 
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
-      visitor.doOop(tags, true);
-      visitor.doOop(cache, true);
-      visitor.doOop(poolHolder, true);
+  public void iterateFields(MetadataVisitor visitor) {
+    super.iterateFields(visitor);
+    visitor.doMetadata(poolHolder, true);
 
       final int length = (int) getLength();
       // zero'th pool entry is always invalid. ignore it.
       for (int index = 1; index < length; index++) {
-        int ctag = (int) getTags().getByteAt((int) index);
+      int ctag = (int) getTags().at((int) index);
         switch (ctag) {
         case JVM_CONSTANT_ClassIndex:
         case JVM_CONSTANT_StringIndex:
@@ -452,7 +508,6 @@ public class ConstantPool extends Oop implements ClassConstants {
         case JVM_CONSTANT_UnresolvedClassInError:
         case JVM_CONSTANT_UnresolvedClass:
         case JVM_CONSTANT_Class:
-        case JVM_CONSTANT_UnresolvedString:
         case JVM_CONSTANT_Utf8:
           visitor.doOop(new OopField(new NamedFieldIdentifier(nameForTag(ctag)), indexOffset(index), true), true);
           break;
@@ -469,27 +524,19 @@ public class ConstantPool extends Oop implements ClassConstants {
         }
       }
     }
-    /*
-    int length = getLength();
-    for (int index = 0; index < length; index++) {
-      long offset = baseOffset + (index + typeDataBase.getOopSize());
-      visitor.doOop(new IndexableField(index, offset, false), getObjAt(index));
-    }
-    */
-  }
 
   public void writeBytes(OutputStream os) throws IOException {
           // Map between any modified UTF-8 and it's constant pool index.
           Map utf8ToIndex = new HashMap();
       DataOutputStream dos = new DataOutputStream(os);
-      TypeArray tags = getTags();
+      U1Array tags = getTags();
       int len = (int)getLength();
       int ci = 0; // constant pool index
 
       // collect all modified UTF-8 Strings from Constant Pool
 
       for (ci = 1; ci < len; ci++) {
-          byte cpConstType = tags.getByteAt(ci);
+          int cpConstType = tags.at(ci);
           if(cpConstType == JVM_CONSTANT_Utf8) {
               Symbol sym = getSymbolAt(ci);
               utf8ToIndex.put(sym.asString(), new Short((short) ci));
@@ -502,7 +549,7 @@ public class ConstantPool extends Oop implements ClassConstants {
 
 
       for(ci = 1; ci < len; ci++) {
-          int cpConstType = (int)tags.getByteAt(ci);
+          int cpConstType = tags.at(ci);
           // write cp_info
           // write constant type
           switch(cpConstType) {
@@ -548,8 +595,8 @@ public class ConstantPool extends Oop implements ClassConstants {
 
               case JVM_CONSTANT_Class: {
                   dos.writeByte(cpConstType);
-                  // Klass already resolved. ConstantPool constains klassOop.
-                  Klass refKls = (Klass) getObjAtRaw(ci);
+                  // Klass already resolved. ConstantPool constains Klass*.
+                  Klass refKls = (Klass)Metadata.instantiateWrapperFor(getAddressAtRaw(ci));
                   String klassName = refKls.getName().asString();
                   Short s = (Short) utf8ToIndex.get(klassName);
                   dos.writeShort(s.shortValue());
@@ -570,19 +617,8 @@ public class ConstantPool extends Oop implements ClassConstants {
 
               case JVM_CONSTANT_String: {
                   dos.writeByte(cpConstType);
-                  String str = OopUtilities.stringOopToString(getObjAtRaw(ci));
+                  String str = getUnresolvedStringAt(ci).asString();
                   Short s = (Short) utf8ToIndex.get(str);
-                  dos.writeShort(s.shortValue());
-                  if (DEBUG) debugMessage("CP[" + ci + "] = string " + s);
-                  break;
-              }
-
-                  // case JVM_CONSTANT_StringIndex:
-              case JVM_CONSTANT_UnresolvedString: {
-                  dos.writeByte(JVM_CONSTANT_String);
-                  String val = getSymbolAt(ci).asString();
-
-                  Short s = (Short) utf8ToIndex.get(val);
                   dos.writeShort(s.shortValue());
                   if (DEBUG) debugMessage("CP[" + ci + "] = string " + s);
                   break;
@@ -618,12 +654,21 @@ public class ConstantPool extends Oop implements ClassConstants {
               case JVM_CONSTANT_MethodHandle: {
                   dos.writeByte(cpConstType);
                   int value = getIntAt(ci);
-                  short nameIndex = (short) extractLowShortFromInt(value);
-                  short signatureIndex = (short) extractHighShortFromInt(value);
-                  dos.writeShort(nameIndex);
-                  dos.writeShort(signatureIndex);
-                  if (DEBUG) debugMessage("CP[" + ci + "] = N&T name = " + nameIndex
-                                          + ", type = " + signatureIndex);
+                  byte refKind = (byte) extractLowShortFromInt(value);
+                  short memberIndex = (short) extractHighShortFromInt(value);
+                  dos.writeByte(refKind);
+                  dos.writeShort(memberIndex);
+                  if (DEBUG) debugMessage("CP[" + ci + "] = MH kind = " +
+                                          refKind + ", mem = " + memberIndex);
+                  break;
+              }
+
+              case JVM_CONSTANT_MethodType: {
+                  dos.writeByte(cpConstType);
+                  int value = getIntAt(ci);
+                  short refIndex = (short) value;
+                  dos.writeShort(refIndex);
+                  if (DEBUG) debugMessage("CP[" + ci + "] = MT index = " + refIndex);
                   break;
               }
 
@@ -634,13 +679,13 @@ public class ConstantPool extends Oop implements ClassConstants {
                   short nameAndTypeIndex = (short) extractHighShortFromInt(value);
                   dos.writeShort(bsmIndex);
                   dos.writeShort(nameAndTypeIndex);
-                  if (DEBUG) debugMessage("CP[" + ci + "] = indy BSM = " + bsmIndex
-                                          + ", N&T = " + nameAndTypeIndex);
+                  if (DEBUG) debugMessage("CP[" + ci + "] = INDY bsm = " +
+                                          bsmIndex + ", N&T = " + nameAndTypeIndex);
                   break;
               }
 
               default:
-                  throw new InternalError("unknown tag: " + cpConstType);
+                  throw new InternalError("Unknown tag: " + cpConstType);
           } // switch
       }
       dos.flush();
@@ -648,16 +693,11 @@ public class ConstantPool extends Oop implements ClassConstants {
   }
 
   public void printValueOn(PrintStream tty) {
-    Oop holder = poolHolder.getValue(this);
-    if (holder instanceof Klass) {
-      tty.print("ConstantPool for " + ((Klass)holder).getName().asString());
-    } else {
-      tty.print("ConstantPool for partially loaded class");
-    }
+    tty.print("ConstantPool for " + getPoolHolder().getName().asString());
   }
 
-  public long getObjectSize() {
-    return alignObjectSize(headerSize + (getLength() * getElementSize()));
+  public long getSize() {
+    return Oop.alignObjectSize(headerSize + getLength());
   }
 
   //----------------------------------------------------------------------
@@ -665,12 +705,12 @@ public class ConstantPool extends Oop implements ClassConstants {
   //
 
   private static int extractHighShortFromInt(int val) {
-    // must stay in sync with constantPoolOopDesc::name_and_type_at_put, method_at_put, etc.
+    // must stay in sync with ConstantPool::name_and_type_at_put, method_at_put, etc.
     return (val >> 16) & 0xFFFF;
   }
 
   private static int extractLowShortFromInt(int val) {
-    // must stay in sync with constantPoolOopDesc::name_and_type_at_put, method_at_put, etc.
+    // must stay in sync with ConstantPool::name_and_type_at_put, method_at_put, etc.
     return val & 0xFFFF;
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,28 +210,23 @@
 // lazily resolved. Before explaining the copying complication, we need
 // to digress into CP entry resolution.
 //
-// JVM_CONSTANT_Class and JVM_CONSTANT_String entries are present in
-// the class file, but are not stored in memory as such until they are
-// resolved. The entries are not resolved unless they are used because
-// resolution is expensive. During class file parsing the entries are
-// initially stored in memory as JVM_CONSTANT_ClassIndex and
-// JVM_CONSTANT_StringIndex entries. These special CP entry types
-// indicate that the JVM_CONSTANT_Class and JVM_CONSTANT_String entries
-// have been parsed, but the index values in the entries have not been
+// JVM_CONSTANT_Class entries are present in the class file, but are not
+// stored in memory as such until they are resolved. The entries are not
+// resolved unless they are used because resolution is expensive. During class
+// file parsing the entries are initially stored in memory as
+// JVM_CONSTANT_ClassIndex and JVM_CONSTANT_StringIndex entries. These special
+// CP entry types indicate that the JVM_CONSTANT_Class and JVM_CONSTANT_String
+// entries have been parsed, but the index values in the entries have not been
 // validated. After the entire constant pool has been parsed, the index
 // values can be validated and then the entries are converted into
-// JVM_CONSTANT_UnresolvedClass and JVM_CONSTANT_UnresolvedString
+// JVM_CONSTANT_UnresolvedClass and JVM_CONSTANT_String
 // entries. During this conversion process, the UTF8 values that are
 // indirectly referenced by the JVM_CONSTANT_ClassIndex and
 // JVM_CONSTANT_StringIndex entries are changed into Symbol*s and the
 // entries are modified to refer to the Symbol*s. This optimization
 // eliminates one level of indirection for those two CP entry types and
-// gets the entries ready for verification. During class file parsing
-// it is also possible for JVM_CONSTANT_UnresolvedString entries to be
-// resolved into JVM_CONSTANT_String entries. Verification expects to
-// find JVM_CONSTANT_UnresolvedClass and either JVM_CONSTANT_String or
-// JVM_CONSTANT_UnresolvedString entries and not JVM_CONSTANT_Class
-// entries.
+// gets the entries ready for verification.  Verification expects to
+// find JVM_CONSTANT_UnresolvedClass but not JVM_CONSTANT_Class entries.
 //
 // Now we can get back to the copying complication. When we copy
 // entries from old_cp to merge_cp, we have to revert any
@@ -260,9 +255,9 @@
 // in merge_cp, then the change in index value is tracked.
 //
 // Note: the above discussion for the direct CP entries also applies
-// to the JVM_CONSTANT_Unresolved{Class,String} entry types.
+// to the JVM_CONSTANT_UnresolvedClass entry types.
 //
-// For the JVM_CONSTANT_{Class,String} entry types, since there is only
+// For the JVM_CONSTANT_Class entry types, since there is only
 // one data element at the end of the recursion, we know that we have
 // either one or two unique entries. If the JVM_CONSTANT_Utf8 entry is
 // unique then it is appended to merge_cp before the current entry.
@@ -271,9 +266,9 @@
 // appended to merge_cp. Again, any changes in index values are tracked
 // as needed.
 //
-// Note: the above discussion for JVM_CONSTANT_{Class,String} entry
+// Note: the above discussion for JVM_CONSTANT_Class entry
 // types is theoretical. Since those entry types have already been
-// optimized into JVM_CONSTANT_Unresolved{Class,String} entry types,
+// optimized into JVM_CONSTANT_UnresolvedClass entry types,
 // they are handled as direct CP entries.
 //
 // For the JVM_CONSTANT_NameAndType entry type, since there are two
@@ -320,17 +315,11 @@
 //   6 bytes. Perhaps Relocator only needs a 4 byte buffer to do
 //   what it does to the bytecodes. More investigation is needed.
 //
-// - java.lang.Object methods can be called on arrays. This is
-//   implemented via the arrayKlassOop vtable which we don't
-//   update. For example, if we redefine java.lang.Object.toString(),
-//   then the new version of the method will not be called for array
-//   objects.
-//
 // - How do we know if redefine_single_class() and the guts of
-//   instanceKlass are out of sync? I don't think this can be
+//   InstanceKlass are out of sync? I don't think this can be
 //   automated, but we should probably order the work in
 //   redefine_single_class() to match the order of field
-//   definitions in instanceKlass. We also need to add some
+//   definitions in InstanceKlass. We also need to add some
 //   comments about keeping things in sync.
 //
 // - set_new_constant_pool() is huge and we should consider refactoring
@@ -346,16 +335,16 @@ class VM_RedefineClasses: public VM_Operation {
  private:
   // These static fields are needed by SystemDictionary::classes_do()
   // facility and the adjust_cpool_cache_and_vtable() helper:
-  static objArrayOop     _old_methods;
-  static objArrayOop     _new_methods;
-  static methodOop*      _matching_old_methods;
-  static methodOop*      _matching_new_methods;
-  static methodOop*      _deleted_methods;
-  static methodOop*      _added_methods;
+  static Array<Method*>* _old_methods;
+  static Array<Method*>* _new_methods;
+  static Method**      _matching_old_methods;
+  static Method**      _matching_new_methods;
+  static Method**      _deleted_methods;
+  static Method**      _added_methods;
   static int             _matching_methods_length;
   static int             _deleted_methods_length;
   static int             _added_methods_length;
-  static klassOop        _the_class_oop;
+  static Klass*          _the_class_oop;
 
   // The instance fields are used to pass information from
   // doit_prologue() to doit() and doit_epilogue().
@@ -371,7 +360,7 @@ class VM_RedefineClasses: public VM_Operation {
   int                         _index_map_count;
   intArray *                  _index_map_p;
   // ptr to _class_count scratch_classes
-  instanceKlassHandle *       _scratch_classes;
+  Klass**                   _scratch_classes;
   jvmtiError                  _res;
 
   // Performance measurement support. These timers do not cover all
@@ -398,7 +387,7 @@ class VM_RedefineClasses: public VM_Operation {
   // Swap annotations[i] with annotations[j]
   // Used by compare_and_normalize_class_versions() when normalizing
   // overloaded methods or changing idnum as when adding or deleting methods.
-  void swap_all_method_annotations(int i, int j, instanceKlassHandle scratch_class);
+  void swap_all_method_annotations(int i, int j, instanceKlassHandle scratch_class, TRAPS);
 
   // Figure out which new methods match old methods in name and signature,
   // which methods have been added, and which are no longer present
@@ -421,15 +410,16 @@ class VM_RedefineClasses: public VM_Operation {
   // from their constant pool caches, itables, and/or vtables. We
   // use the SystemDictionary::classes_do() facility and this helper
   // to fix up these pointers.
-  static void adjust_cpool_cache_and_vtable(klassOop k_oop, oop loader, TRAPS);
+  static void adjust_cpool_cache_and_vtable(Klass* k_oop, ClassLoaderData* initiating_loader, TRAPS);
+  static void adjust_array_vtable(Klass* k_oop);
 
   // Install the redefinition of a class
   void redefine_single_class(jclass the_jclass,
-    instanceKlassHandle scratch_class, TRAPS);
+    Klass* scratch_class_oop, TRAPS);
 
-  // Increment the classRedefinedCount field in the specific instanceKlass
+  // Increment the classRedefinedCount field in the specific InstanceKlass
   // and in all direct and indirect subclasses.
-  void increment_class_counter(instanceKlass *ik, TRAPS);
+  void increment_class_counter(InstanceKlass *ik, TRAPS);
 
   // Support for constant pool merging (these routines are in alpha
   // order):
@@ -438,8 +428,6 @@ class VM_RedefineClasses: public VM_Operation {
   int find_new_index(int old_index);
   bool is_unresolved_class_mismatch(constantPoolHandle cp1, int index1,
     constantPoolHandle cp2, int index2);
-  bool is_unresolved_string_mismatch(constantPoolHandle cp1, int index1,
-    constantPoolHandle cp2, int index2);
   void map_index(constantPoolHandle scratch_cp, int old_index, int new_index);
   bool merge_constant_pools(constantPoolHandle old_cp,
     constantPoolHandle scratch_cp, constantPoolHandle *merge_cp_p,
@@ -447,17 +435,17 @@ class VM_RedefineClasses: public VM_Operation {
   jvmtiError merge_cp_and_rewrite(instanceKlassHandle the_class,
     instanceKlassHandle scratch_class, TRAPS);
   u2 rewrite_cp_ref_in_annotation_data(
-    typeArrayHandle annotations_typeArray, int &byte_i_ref,
+    AnnotationArray* annotations_typeArray, int &byte_i_ref,
     const char * trace_mesg, TRAPS);
   bool rewrite_cp_refs(instanceKlassHandle scratch_class, TRAPS);
   bool rewrite_cp_refs_in_annotation_struct(
-    typeArrayHandle class_annotations, int &byte_i_ref, TRAPS);
+    AnnotationArray* class_annotations, int &byte_i_ref, TRAPS);
   bool rewrite_cp_refs_in_annotations_typeArray(
-    typeArrayHandle annotations_typeArray, int &byte_i_ref, TRAPS);
+    AnnotationArray* annotations_typeArray, int &byte_i_ref, TRAPS);
   bool rewrite_cp_refs_in_class_annotations(
     instanceKlassHandle scratch_class, TRAPS);
   bool rewrite_cp_refs_in_element_value(
-    typeArrayHandle class_annotations, int &byte_i_ref, TRAPS);
+    AnnotationArray* class_annotations, int &byte_i_ref, TRAPS);
   bool rewrite_cp_refs_in_fields_annotations(
     instanceKlassHandle scratch_class, TRAPS);
   void rewrite_cp_refs_in_method(methodHandle method,
@@ -473,12 +461,13 @@ class VM_RedefineClasses: public VM_Operation {
   void rewrite_cp_refs_in_verification_type_info(
          address& stackmap_addr_ref, address stackmap_end, u2 frame_i,
          u1 frame_size, TRAPS);
-  void set_new_constant_pool(instanceKlassHandle scratch_class,
-    constantPoolHandle scratch_cp, int scratch_cp_length, bool shrink, TRAPS);
+  void set_new_constant_pool(ClassLoaderData* loader_data,
+         instanceKlassHandle scratch_class,
+         constantPoolHandle scratch_cp, int scratch_cp_length, TRAPS);
 
   void flush_dependent_code(instanceKlassHandle k_h, TRAPS);
 
-  static void check_class(klassOop k_oop, oop initiating_loader, TRAPS) PRODUCT_RETURN;
+  static void check_class(Klass* k_oop, ClassLoaderData* initiating_loader, TRAPS) PRODUCT_RETURN;
 
   static void dump_methods()   PRODUCT_RETURN;
 
@@ -497,6 +486,18 @@ class VM_RedefineClasses: public VM_Operation {
   // Modifiable test must be shared between IsModifiableClass query
   // and redefine implementation
   static bool is_modifiable_class(oop klass_mirror);
+};
+
+
+// Helper class to mark and unmark metadata used on the stack as either handles
+// or executing methods, so that it can't be deleted during class redefinition
+// and class unloading.
+class MetadataOnStackMark : public StackObj {
+  NOT_PRODUCT(static bool _is_active;)
+ public:
+  MetadataOnStackMark();
+  ~MetadataOnStackMark();
+  static void record(Metadata* m);
 };
 
 #endif // SHARE_VM_PRIMS_JVMTIREDEFINECLASSES_HPP

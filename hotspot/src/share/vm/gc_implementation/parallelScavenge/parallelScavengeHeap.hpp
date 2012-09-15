@@ -28,7 +28,6 @@
 #include "gc_implementation/parallelScavenge/objectStartArray.hpp"
 #include "gc_implementation/parallelScavenge/psGCAdaptivePolicyCounters.hpp"
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
-#include "gc_implementation/parallelScavenge/psPermGen.hpp"
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 #include "gc_implementation/shared/gcPolicyCounters.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
@@ -45,7 +44,6 @@ class ParallelScavengeHeap : public CollectedHeap {
  private:
   static PSYoungGen* _young_gen;
   static PSOldGen*   _old_gen;
-  static PSPermGen*  _perm_gen;
 
   // Sizing policy for entire heap
   static PSAdaptiveSizePolicy* _size_policy;
@@ -53,7 +51,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   static ParallelScavengeHeap* _psh;
 
-  size_t _perm_gen_alignment;
   size_t _young_gen_alignment;
   size_t _old_gen_alignment;
 
@@ -79,7 +76,6 @@ class ParallelScavengeHeap : public CollectedHeap {
  public:
   ParallelScavengeHeap() : CollectedHeap() {
     _death_march_count = 0;
-    set_alignment(_perm_gen_alignment, intra_heap_alignment());
     set_alignment(_young_gen_alignment, intra_heap_alignment());
     set_alignment(_old_gen_alignment, intra_heap_alignment());
   }
@@ -94,12 +90,10 @@ class ParallelScavengeHeap : public CollectedHeap {
     return CollectedHeap::ParallelScavengeHeap;
   }
 
-CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector_policy; }
-  // GenerationSizer* collector_policy() const { return _collector_policy; }
+  virtual CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector_policy; }
 
   static PSYoungGen* young_gen()     { return _young_gen; }
   static PSOldGen* old_gen()         { return _old_gen; }
-  static PSPermGen* perm_gen()       { return _perm_gen; }
 
   virtual PSAdaptiveSizePolicy* size_policy() { return _size_policy; }
 
@@ -117,7 +111,6 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   void post_initialize();
   void update_counters();
   // The alignment used for the various generations.
-  size_t perm_gen_alignment()  const { return _perm_gen_alignment; }
   size_t young_gen_alignment() const { return _young_gen_alignment; }
   size_t old_gen_alignment()  const { return _old_gen_alignment; }
 
@@ -128,7 +121,7 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   size_t capacity() const;
   size_t used() const;
 
-  // Return "true" if all generations (but perm) have reached the
+  // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
   // collection.
   virtual bool is_maximal_no_gc() const;
@@ -142,29 +135,19 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   // Does this heap support heap inspection? (+PrintClassHistogram)
   bool supports_heap_inspection() const { return true; }
 
-  size_t permanent_capacity() const;
-  size_t permanent_used() const;
-
   size_t max_capacity() const;
 
   // Whether p is in the allocated part of the heap
   bool is_in(const void* p) const;
 
   bool is_in_reserved(const void* p) const;
-  bool is_in_permanent(const void *p) const {    // reserved part
-    return perm_gen()->reserved().contains(p);
-  }
 
 #ifdef ASSERT
   virtual bool is_in_partial_collection(const void *p);
 #endif
 
-  bool is_permanent(const void *p) const {    // committed part
-    return perm_gen()->is_in(p);
-  }
-
-  inline bool is_in_young(oop p);        // reserved part
-  inline bool is_in_old_or_perm(oop p);  // reserved part
+  bool is_in_young(oop p);        // reserved part
+  bool is_in_old(oop p);          // reserved part
 
   // Memory allocation.   "gc_time_limit_was_exceeded" will
   // be set to true if the adaptive size policy determine that
@@ -179,17 +162,8 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   // of the old generation.
   HeapWord* failed_mem_allocate(size_t size);
 
-  HeapWord* permanent_mem_allocate(size_t size);
-  HeapWord* failed_permanent_mem_allocate(size_t size);
-
   // Support for System.gc()
   void collect(GCCause::Cause cause);
-
-  // This interface assumes that it's being called by the
-  // vm thread. It collects the heap assuming that the
-  // heap lock is already held and that we are executing in
-  // the context of the vm thread.
-  void collect_as_vm_thread(GCCause::Cause cause);
 
   // These also should be called by the vm thread at a safepoint (e.g., from a
   // VM operation).
@@ -199,7 +173,9 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   // maximum_compaction is true, it will compact everything and clear all soft
   // references.
   inline void invoke_scavenge();
-  inline void invoke_full_gc(bool maximum_compaction);
+
+  // Perform a full collection
+  virtual void do_full_collection(bool clear_all_soft_refs);
 
   bool supports_inline_contig_alloc() const { return !UseNUMA; }
 
@@ -232,18 +208,9 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   // initializing stores to an object at this address.
   virtual bool can_elide_initializing_store_barrier(oop new_obj);
 
-  // Can a compiler elide a store barrier when it writes
-  // a permanent oop into the heap?  Applies when the compiler
-  // is storing x to the heap, where x->is_perm() is true.
-  virtual bool can_elide_permanent_oop_store_barriers() const {
-    return true;
-  }
-
-  void oop_iterate(OopClosure* cl);
+  void oop_iterate(ExtendedOopClosure* cl);
   void object_iterate(ObjectClosure* cl);
   void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
-  void permanent_oop_iterate(OopClosure* cl);
-  void permanent_object_iterate(ObjectClosure* cl);
 
   HeapWord* block_start(const void* addr) const;
   size_t block_size(const HeapWord* addr) const;

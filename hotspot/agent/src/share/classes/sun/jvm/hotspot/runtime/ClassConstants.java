@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,20 +61,13 @@ public interface ClassConstants
     // For bad value initialization
     public static final int JVM_CONSTANT_Invalid            = 0;
 
-    // Temporary tag until actual use
-    public static final int JVM_CONSTANT_UnresolvedClass    = 100;
-
-    // Temporary tag while constructing constant pool
-    public static final int JVM_CONSTANT_ClassIndex         = 101;
-
-    // Temporary tag until actual use
-    public static final int JVM_CONSTANT_UnresolvedString   = 102;
-
-    // Temporary tag while constructing constant pool
-    public static final int JVM_CONSTANT_StringIndex        = 103;
-
-    // Temporary tag while constructing constant pool
-    public static final int JVM_CONSTANT_UnresolvedClassInError = 104;
+    public static final int JVM_CONSTANT_UnresolvedClass          = 100;  // Temporary tag until actual use
+    public static final int JVM_CONSTANT_ClassIndex               = 101;  // Temporary tag while constructing constant pool
+    public static final int JVM_CONSTANT_StringIndex              = 102;  // Temporary tag while constructing constant pool
+    public static final int JVM_CONSTANT_UnresolvedClassInError   = 103;  // Error tag due to resolution error
+    public static final int JVM_CONSTANT_MethodHandleInError      = 104;  // Error tag due to resolution error
+    public static final int JVM_CONSTANT_MethodTypeInError        = 105;  // Error tag due to resolution error
+    public static final int JVM_CONSTANT_Object                   = 106;  // Required for BoundMethodHandle arguments.
 
     // 1.5 major/minor version numbers from JVM spec. 3rd edition
     public static final short MAJOR_VERSION = 49;
@@ -109,7 +102,7 @@ public interface ClassConstants
     // flags actually put in .class file
     public static final long JVM_ACC_WRITTEN_FLAGS = 0x00007FFF;
 
-    // methodOop flags
+    // Method* flags
     // monitorenter/monitorexit bytecodes match
     public static final long JVM_ACC_MONITOR_MATCH = 0x10000000;
     // Method contains monitorenter/monitorexit bytecodes
@@ -130,7 +123,7 @@ public interface ClassConstants
     // RedefineClasses() has made method obsolete
     public static final long JVM_ACC_IS_OBSOLETE            = 0x00010000;
 
-    // klassOop flags
+    // Klass* flags
     // True if this class has miranda methods in it's vtable
     public static final long JVM_ACC_HAS_MIRANDA_METHODS      = 0x10000000;
     // True if klass has a vanilla default constructor
@@ -140,14 +133,14 @@ public interface ClassConstants
     // True if klass supports the Clonable interface
     public static final long JVM_ACC_IS_CLONEABLE             = 0x80000000;
 
-    // klassOop and methodOop flags
+    // Klass* and Method* flags
     public static final long JVM_ACC_HAS_LOCAL_VARIABLE_TABLE = 0x00200000;
     // flags promoted from methods to the holding klass
     public static final long JVM_ACC_PROMOTED_FLAGS           = 0x00200000;
 
     // field flags
     // Note: these flags must be defined in the low order 16 bits because
-    // instanceKlass only stores a ushort worth of information from the
+    // InstanceKlass only stores a ushort worth of information from the
     // AccessFlags value.
     // field access is watched by JVMTI
     public static final long JVM_ACC_FIELD_ACCESS_WATCHED         = 0x00002000;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,11 +133,11 @@ public class CTypeTreeNodeAdapter extends FieldTreeNodeAdapter {
           Oop oop = VM.getVM().getObjectHeap().newOop(handle);
           return new OopTreeNodeAdapter(oop, cf, getTreeTableMode());
         } catch (AddressException e) {
-          return new BadOopTreeNodeAdapter(handle,
+          return new BadAddressTreeNodeAdapter(handle,
                                            new CTypeFieldIdentifier(type, f),
                                            getTreeTableMode());
         } catch (UnknownOopException e) {
-          return new BadOopTreeNodeAdapter(handle,
+          return new BadAddressTreeNodeAdapter(handle,
                                            new CTypeFieldIdentifier(type, f),
                                            getTreeTableMode());
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 // The memory management system uses the cache when locating object
 // references in an interpreted frame.
 //
-// OopMapCache's are allocated lazily per instanceKlass.
+// OopMapCache's are allocated lazily per InstanceKlass.
 
 // The oopMap (InterpreterOopMap) is stored as a bit mask. If the
 // bit_mask can fit into two words it is stored in
@@ -83,7 +83,7 @@ class InterpreterOopMap: ResourceObj {
   };
 
  private:
-  methodOop      _method;         // the method for which the mask is valid
+  Method*        _method;         // the method for which the mask is valid
   unsigned short _bci;            // the bci    for which the mask is valid
   int            _mask_size;      // the mask size in bits
   int            _expression_stack_size; // the size of the expression stack in slots
@@ -100,8 +100,8 @@ class InterpreterOopMap: ResourceObj {
 #endif
 
   // access methods
-  methodOop      method() const                  { return _method; }
-  void           set_method(methodOop v)         { _method = v; }
+  Method*        method() const                  { return _method; }
+  void           set_method(Method* v)         { _method = v; }
   int            bci() const                     { return _bci; }
   void           set_bci(int v)                  { _bci = v; }
   int            mask_size() const               { return _mask_size; }
@@ -142,9 +142,6 @@ class InterpreterOopMap: ResourceObj {
   void resource_copy(OopMapCacheEntry* from);
 
   void iterate_oop(OffsetClosure* oop_closure);
-  void oop_iterate(OopClosure * blk);
-  void oop_iterate(OopClosure * blk, MemRegion mr);
-  void verify();
   void print();
 
   bool is_oop  (int offset)                      { return (entry_at(offset) & (1 << oop_bit_number )) != 0; }
@@ -184,12 +181,6 @@ class OopMapCache : public CHeapObj<mtClass> {
 
   // Compute an oop map without updating the cache or grabbing any locks (for debugging)
   static void compute_one_oop_map(methodHandle method, int bci, InterpreterOopMap* entry);
-
-  // Helpers
-  // Iterate over the entries in the cached OopMapCacheEntry's
-  void oop_iterate(OopClosure *blk);
-  void oop_iterate(OopClosure *blk, MemRegion mr);
-  void verify();
 
   // Returns total no. of bytes allocated as part of OopMapCache's
   static long memory_usage()                     PRODUCT_RETURN0;

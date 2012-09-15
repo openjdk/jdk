@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -33,35 +34,23 @@
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/cardTableModRefBS.hpp"
-#include "memory/filemap.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/genRemSet.hpp"
 #include "memory/generation.hpp"
+#include "memory/metadataFactory.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
-#include "memory/permGen.hpp"
 #include "memory/space.hpp"
 #include "memory/universe.hpp"
 #include "memory/universe.inline.hpp"
-#include "oops/arrayKlassKlass.hpp"
-#include "oops/compiledICHolderKlass.hpp"
-#include "oops/constMethodKlass.hpp"
-#include "oops/constantPoolKlass.hpp"
-#include "oops/constantPoolOop.hpp"
-#include "oops/cpCacheKlass.hpp"
-#include "oops/cpCacheOop.hpp"
+#include "oops/constantPool.hpp"
+#include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
-#include "oops/instanceKlassKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
-#include "oops/klassKlass.hpp"
-#include "oops/klassOop.hpp"
-#include "oops/methodDataKlass.hpp"
-#include "oops/methodKlass.hpp"
-#include "oops/objArrayKlassKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
-#include "oops/typeArrayKlassKlass.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/aprofiler.hpp"
 #include "runtime/arguments.hpp"
@@ -101,28 +90,16 @@
 #endif
 
 // Known objects
-klassOop Universe::_boolArrayKlassObj                 = NULL;
-klassOop Universe::_byteArrayKlassObj                 = NULL;
-klassOop Universe::_charArrayKlassObj                 = NULL;
-klassOop Universe::_intArrayKlassObj                  = NULL;
-klassOop Universe::_shortArrayKlassObj                = NULL;
-klassOop Universe::_longArrayKlassObj                 = NULL;
-klassOop Universe::_singleArrayKlassObj               = NULL;
-klassOop Universe::_doubleArrayKlassObj               = NULL;
-klassOop Universe::_typeArrayKlassObjs[T_VOID+1]      = { NULL /*, NULL...*/ };
-klassOop Universe::_objectArrayKlassObj               = NULL;
-klassOop Universe::_methodKlassObj                    = NULL;
-klassOop Universe::_constMethodKlassObj               = NULL;
-klassOop Universe::_methodDataKlassObj                = NULL;
-klassOop Universe::_klassKlassObj                     = NULL;
-klassOop Universe::_arrayKlassKlassObj                = NULL;
-klassOop Universe::_objArrayKlassKlassObj             = NULL;
-klassOop Universe::_typeArrayKlassKlassObj            = NULL;
-klassOop Universe::_instanceKlassKlassObj             = NULL;
-klassOop Universe::_constantPoolKlassObj              = NULL;
-klassOop Universe::_constantPoolCacheKlassObj         = NULL;
-klassOop Universe::_compiledICHolderKlassObj          = NULL;
-klassOop Universe::_systemObjArrayKlassObj            = NULL;
+Klass* Universe::_boolArrayKlassObj                 = NULL;
+Klass* Universe::_byteArrayKlassObj                 = NULL;
+Klass* Universe::_charArrayKlassObj                 = NULL;
+Klass* Universe::_intArrayKlassObj                  = NULL;
+Klass* Universe::_shortArrayKlassObj                = NULL;
+Klass* Universe::_longArrayKlassObj                 = NULL;
+Klass* Universe::_singleArrayKlassObj               = NULL;
+Klass* Universe::_doubleArrayKlassObj               = NULL;
+Klass* Universe::_typeArrayKlassObjs[T_VOID+1]      = { NULL /*, NULL...*/ };
+Klass* Universe::_objectArrayKlassObj               = NULL;
 oop Universe::_int_mirror                             = NULL;
 oop Universe::_float_mirror                           = NULL;
 oop Universe::_double_mirror                          = NULL;
@@ -135,16 +112,11 @@ oop Universe::_void_mirror                            = NULL;
 oop Universe::_mirrors[T_VOID+1]                      = { NULL /*, NULL...*/ };
 oop Universe::_main_thread_group                      = NULL;
 oop Universe::_system_thread_group                    = NULL;
-typeArrayOop Universe::_the_empty_byte_array          = NULL;
-typeArrayOop Universe::_the_empty_short_array         = NULL;
-typeArrayOop Universe::_the_empty_int_array           = NULL;
-objArrayOop Universe::_the_empty_system_obj_array     = NULL;
 objArrayOop Universe::_the_empty_class_klass_array    = NULL;
-objArrayOop Universe::_the_array_interfaces_array     = NULL;
+Array<Klass*>* Universe::_the_array_interfaces_array = NULL;
 oop Universe::_the_null_string                        = NULL;
 oop Universe::_the_min_jint_string                   = NULL;
 LatestMethodOopCache* Universe::_finalizer_register_cache = NULL;
-LatestMethodOopCache* Universe::_loader_addClass_cache    = NULL;
 ActiveMethodOopsCache* Universe::_reflect_invoke_cache    = NULL;
 oop Universe::_out_of_memory_error_java_heap          = NULL;
 oop Universe::_out_of_memory_error_perm_gen           = NULL;
@@ -157,11 +129,14 @@ oop Universe::_null_ptr_exception_instance            = NULL;
 oop Universe::_arithmetic_exception_instance          = NULL;
 oop Universe::_virtual_machine_error_instance         = NULL;
 oop Universe::_vm_exception                           = NULL;
+Array<int>* Universe::_the_empty_int_array            = NULL;
+Array<u2>* Universe::_the_empty_short_array           = NULL;
+Array<Klass*>* Universe::_the_empty_klass_array     = NULL;
+Array<Method*>* Universe::_the_empty_method_array   = NULL;
 
 // These variables are guarded by FullGCALot_lock.
 debug_only(objArrayOop Universe::_fullgc_alot_dummy_array = NULL;)
 debug_only(int Universe::_fullgc_alot_dummy_next      = 0;)
-
 
 // Heap
 int             Universe::_verify_count = 0;
@@ -178,7 +153,7 @@ CollectedHeap*  Universe::_collectedHeap = NULL;
 NarrowOopStruct Universe::_narrow_oop = { NULL, 0, true };
 
 
-void Universe::basic_type_classes_do(void f(klassOop)) {
+void Universe::basic_type_classes_do(void f(Klass*)) {
   f(boolArrayKlassObj());
   f(byteArrayKlassObj());
   f(charArrayKlassObj());
@@ -187,20 +162,6 @@ void Universe::basic_type_classes_do(void f(klassOop)) {
   f(longArrayKlassObj());
   f(singleArrayKlassObj());
   f(doubleArrayKlassObj());
-}
-
-
-void Universe::system_classes_do(void f(klassOop)) {
-  f(methodKlassObj());
-  f(constMethodKlassObj());
-  f(methodDataKlassObj());
-  f(klassKlassObj());
-  f(arrayKlassKlassObj());
-  f(objArrayKlassKlassObj());
-  f(typeArrayKlassKlassObj());
-  f(instanceKlassKlassObj());
-  f(constantPoolKlassObj());
-  f(systemObjArrayKlassObj());
 }
 
 void Universe::oops_do(OopClosure* f, bool do_all) {
@@ -215,63 +176,19 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*) &_short_mirror);
   f->do_oop((oop*) &_void_mirror);
 
-  // It's important to iterate over these guys even if they are null,
-  // since that's how shared heaps are restored.
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     f->do_oop((oop*) &_mirrors[i]);
   }
   assert(_mirrors[0] == NULL && _mirrors[T_BOOLEAN - 1] == NULL, "checking");
 
-  // %%% Consider moving those "shared oops" over here with the others.
-  f->do_oop((oop*)&_boolArrayKlassObj);
-  f->do_oop((oop*)&_byteArrayKlassObj);
-  f->do_oop((oop*)&_charArrayKlassObj);
-  f->do_oop((oop*)&_intArrayKlassObj);
-  f->do_oop((oop*)&_shortArrayKlassObj);
-  f->do_oop((oop*)&_longArrayKlassObj);
-  f->do_oop((oop*)&_singleArrayKlassObj);
-  f->do_oop((oop*)&_doubleArrayKlassObj);
-  f->do_oop((oop*)&_objectArrayKlassObj);
-  {
-    for (int i = 0; i < T_VOID+1; i++) {
-      if (_typeArrayKlassObjs[i] != NULL) {
-        assert(i >= T_BOOLEAN, "checking");
-        f->do_oop((oop*)&_typeArrayKlassObjs[i]);
-      } else if (do_all) {
-        f->do_oop((oop*)&_typeArrayKlassObjs[i]);
-      }
-    }
-  }
-  f->do_oop((oop*)&_methodKlassObj);
-  f->do_oop((oop*)&_constMethodKlassObj);
-  f->do_oop((oop*)&_methodDataKlassObj);
-  f->do_oop((oop*)&_klassKlassObj);
-  f->do_oop((oop*)&_arrayKlassKlassObj);
-  f->do_oop((oop*)&_objArrayKlassKlassObj);
-  f->do_oop((oop*)&_typeArrayKlassKlassObj);
-  f->do_oop((oop*)&_instanceKlassKlassObj);
-  f->do_oop((oop*)&_constantPoolKlassObj);
-  f->do_oop((oop*)&_constantPoolCacheKlassObj);
-  f->do_oop((oop*)&_compiledICHolderKlassObj);
-  f->do_oop((oop*)&_systemObjArrayKlassObj);
-  f->do_oop((oop*)&_the_empty_byte_array);
-  f->do_oop((oop*)&_the_empty_short_array);
-  f->do_oop((oop*)&_the_empty_int_array);
-  f->do_oop((oop*)&_the_empty_system_obj_array);
   f->do_oop((oop*)&_the_empty_class_klass_array);
-  f->do_oop((oop*)&_the_array_interfaces_array);
   f->do_oop((oop*)&_the_null_string);
   f->do_oop((oop*)&_the_min_jint_string);
-  _finalizer_register_cache->oops_do(f);
-  _loader_addClass_cache->oops_do(f);
-  _reflect_invoke_cache->oops_do(f);
   f->do_oop((oop*)&_out_of_memory_error_java_heap);
   f->do_oop((oop*)&_out_of_memory_error_perm_gen);
   f->do_oop((oop*)&_out_of_memory_error_array_size);
   f->do_oop((oop*)&_out_of_memory_error_gc_overhead_limit);
-  if (_preallocated_out_of_memory_error_array != (oop)NULL) {   // NULL when DumpSharedSpaces
     f->do_oop((oop*)&_preallocated_out_of_memory_error_array);
-  }
   f->do_oop((oop*)&_null_ptr_exception_instance);
   f->do_oop((oop*)&_arithmetic_exception_instance);
   f->do_oop((oop*)&_virtual_machine_error_instance);
@@ -281,6 +198,38 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   debug_only(f->do_oop((oop*)&_fullgc_alot_dummy_array);)
 }
 
+// Serialize metadata in and out of CDS archive, not oops.
+void Universe::serialize(SerializeClosure* f, bool do_all) {
+
+  f->do_ptr((void**)&_boolArrayKlassObj);
+  f->do_ptr((void**)&_byteArrayKlassObj);
+  f->do_ptr((void**)&_charArrayKlassObj);
+  f->do_ptr((void**)&_intArrayKlassObj);
+  f->do_ptr((void**)&_shortArrayKlassObj);
+  f->do_ptr((void**)&_longArrayKlassObj);
+  f->do_ptr((void**)&_singleArrayKlassObj);
+  f->do_ptr((void**)&_doubleArrayKlassObj);
+  f->do_ptr((void**)&_objectArrayKlassObj);
+
+  {
+    for (int i = 0; i < T_VOID+1; i++) {
+      if (_typeArrayKlassObjs[i] != NULL) {
+        assert(i >= T_BOOLEAN, "checking");
+        f->do_ptr((void**)&_typeArrayKlassObjs[i]);
+      } else if (do_all) {
+        f->do_ptr((void**)&_typeArrayKlassObjs[i]);
+      }
+    }
+  }
+
+  f->do_ptr((void**)&_the_array_interfaces_array);
+  f->do_ptr((void**)&_the_empty_int_array);
+  f->do_ptr((void**)&_the_empty_short_array);
+  f->do_ptr((void**)&_the_empty_method_array);
+  f->do_ptr((void**)&_the_empty_klass_array);
+  _finalizer_register_cache->serialize(f);
+  _reflect_invoke_cache->serialize(f);
+}
 
 void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
   if (size < alignment || size % alignment != 0) {
@@ -292,9 +241,20 @@ void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
   }
 }
 
+void initialize_basic_type_klass(Klass* k, TRAPS) {
+  Klass* ok = SystemDictionary::Object_klass();
+  if (UseSharedSpaces) {
+    assert(k->super() == ok, "u3");
+    k->restore_unshareable_info(CHECK);
+  } else {
+    k->initialize_supers(ok, CHECK);
+  }
+  k->append_to_sibling_list();
+}
 
 void Universe::genesis(TRAPS) {
   ResourceMark rm;
+
   { FlagSetting fs(_bootstrapping, true);
 
     { MutexLocker mc(Compile_lock);
@@ -303,13 +263,6 @@ void Universe::genesis(TRAPS) {
       compute_base_vtable_size();
 
       if (!UseSharedSpaces) {
-        _klassKlassObj          = klassKlass::create_klass(CHECK);
-        _arrayKlassKlassObj     = arrayKlassKlass::create_klass(CHECK);
-
-        _objArrayKlassKlassObj  = objArrayKlassKlass::create_klass(CHECK);
-        _instanceKlassKlassObj  = instanceKlassKlass::create_klass(CHECK);
-        _typeArrayKlassKlassObj = typeArrayKlassKlass::create_klass(CHECK);
-
         _boolArrayKlassObj      = typeArrayKlass::create_klass(T_BOOLEAN, sizeof(jboolean), CHECK);
         _charArrayKlassObj      = typeArrayKlass::create_klass(T_CHAR,    sizeof(jchar),    CHECK);
         _singleArrayKlassObj    = typeArrayKlass::create_klass(T_FLOAT,   sizeof(jfloat),   CHECK);
@@ -328,21 +281,13 @@ void Universe::genesis(TRAPS) {
         _typeArrayKlassObjs[T_INT]     = _intArrayKlassObj;
         _typeArrayKlassObjs[T_LONG]    = _longArrayKlassObj;
 
-        _methodKlassObj             = methodKlass::create_klass(CHECK);
-        _constMethodKlassObj        = constMethodKlass::create_klass(CHECK);
-        _methodDataKlassObj         = methodDataKlass::create_klass(CHECK);
-        _constantPoolKlassObj       = constantPoolKlass::create_klass(CHECK);
-        _constantPoolCacheKlassObj  = constantPoolCacheKlass::create_klass(CHECK);
+        ClassLoaderData* null_cld = ClassLoaderData::the_null_class_loader_data();
 
-        _compiledICHolderKlassObj   = compiledICHolderKlass::create_klass(CHECK);
-        _systemObjArrayKlassObj     = objArrayKlassKlass::cast(objArrayKlassKlassObj())->allocate_system_objArray_klass(CHECK);
-
-        _the_empty_byte_array       = oopFactory::new_permanent_byteArray(0, CHECK);
-        _the_empty_short_array      = oopFactory::new_permanent_shortArray(0, CHECK);
-        _the_empty_int_array        = oopFactory::new_permanent_intArray(0, CHECK);
-        _the_empty_system_obj_array = oopFactory::new_system_objArray(0, CHECK);
-
-        _the_array_interfaces_array = oopFactory::new_system_objArray(2, CHECK);
+        _the_array_interfaces_array = MetadataFactory::new_array<Klass*>(null_cld, 2, NULL, CHECK);
+        _the_empty_int_array        = MetadataFactory::new_array<int>(null_cld, 0, CHECK);
+        _the_empty_short_array      = MetadataFactory::new_array<u2>(null_cld, 0, CHECK);
+        _the_empty_method_array     = MetadataFactory::new_array<Method*>(null_cld, 0, CHECK);
+        _the_empty_klass_array      = MetadataFactory::new_array<Klass*>(null_cld, 0, CHECK);
       }
     }
 
@@ -350,83 +295,53 @@ void Universe::genesis(TRAPS) {
 
     SystemDictionary::initialize(CHECK);
 
-    klassOop ok = SystemDictionary::Object_klass();
+    Klass* ok = SystemDictionary::Object_klass();
 
     _the_null_string            = StringTable::intern("null", CHECK);
     _the_min_jint_string       = StringTable::intern("-2147483648", CHECK);
 
     if (UseSharedSpaces) {
       // Verify shared interfaces array.
-      assert(_the_array_interfaces_array->obj_at(0) ==
+      assert(_the_array_interfaces_array->at(0) ==
              SystemDictionary::Cloneable_klass(), "u3");
-      assert(_the_array_interfaces_array->obj_at(1) ==
+      assert(_the_array_interfaces_array->at(1) ==
              SystemDictionary::Serializable_klass(), "u3");
-
-      // Verify element klass for system obj array klass
-      assert(objArrayKlass::cast(_systemObjArrayKlassObj)->element_klass() == ok, "u1");
-      assert(objArrayKlass::cast(_systemObjArrayKlassObj)->bottom_klass() == ok, "u2");
-
-      // Verify super class for the classes created above
-      assert(Klass::cast(boolArrayKlassObj()     )->super() == ok, "u3");
-      assert(Klass::cast(charArrayKlassObj()     )->super() == ok, "u3");
-      assert(Klass::cast(singleArrayKlassObj()   )->super() == ok, "u3");
-      assert(Klass::cast(doubleArrayKlassObj()   )->super() == ok, "u3");
-      assert(Klass::cast(byteArrayKlassObj()     )->super() == ok, "u3");
-      assert(Klass::cast(shortArrayKlassObj()    )->super() == ok, "u3");
-      assert(Klass::cast(intArrayKlassObj()      )->super() == ok, "u3");
-      assert(Klass::cast(longArrayKlassObj()     )->super() == ok, "u3");
-      assert(Klass::cast(constantPoolKlassObj()  )->super() == ok, "u3");
-      assert(Klass::cast(systemObjArrayKlassObj())->super() == ok, "u3");
     } else {
       // Set up shared interfaces array.  (Do this before supers are set up.)
-      _the_array_interfaces_array->obj_at_put(0, SystemDictionary::Cloneable_klass());
-      _the_array_interfaces_array->obj_at_put(1, SystemDictionary::Serializable_klass());
-
-      // Set element klass for system obj array klass
-      objArrayKlass::cast(_systemObjArrayKlassObj)->set_element_klass(ok);
-      objArrayKlass::cast(_systemObjArrayKlassObj)->set_bottom_klass(ok);
-
-      // Set super class for the classes created above
-      Klass::cast(boolArrayKlassObj()     )->initialize_supers(ok, CHECK);
-      Klass::cast(charArrayKlassObj()     )->initialize_supers(ok, CHECK);
-      Klass::cast(singleArrayKlassObj()   )->initialize_supers(ok, CHECK);
-      Klass::cast(doubleArrayKlassObj()   )->initialize_supers(ok, CHECK);
-      Klass::cast(byteArrayKlassObj()     )->initialize_supers(ok, CHECK);
-      Klass::cast(shortArrayKlassObj()    )->initialize_supers(ok, CHECK);
-      Klass::cast(intArrayKlassObj()      )->initialize_supers(ok, CHECK);
-      Klass::cast(longArrayKlassObj()     )->initialize_supers(ok, CHECK);
-      Klass::cast(constantPoolKlassObj()  )->initialize_supers(ok, CHECK);
-      Klass::cast(systemObjArrayKlassObj())->initialize_supers(ok, CHECK);
-      Klass::cast(boolArrayKlassObj()     )->set_super(ok);
-      Klass::cast(charArrayKlassObj()     )->set_super(ok);
-      Klass::cast(singleArrayKlassObj()   )->set_super(ok);
-      Klass::cast(doubleArrayKlassObj()   )->set_super(ok);
-      Klass::cast(byteArrayKlassObj()     )->set_super(ok);
-      Klass::cast(shortArrayKlassObj()    )->set_super(ok);
-      Klass::cast(intArrayKlassObj()      )->set_super(ok);
-      Klass::cast(longArrayKlassObj()     )->set_super(ok);
-      Klass::cast(constantPoolKlassObj()  )->set_super(ok);
-      Klass::cast(systemObjArrayKlassObj())->set_super(ok);
+      _the_array_interfaces_array->at_put(0, SystemDictionary::Cloneable_klass());
+      _the_array_interfaces_array->at_put(1, SystemDictionary::Serializable_klass());
     }
 
-    Klass::cast(boolArrayKlassObj()     )->append_to_sibling_list();
-    Klass::cast(charArrayKlassObj()     )->append_to_sibling_list();
-    Klass::cast(singleArrayKlassObj()   )->append_to_sibling_list();
-    Klass::cast(doubleArrayKlassObj()   )->append_to_sibling_list();
-    Klass::cast(byteArrayKlassObj()     )->append_to_sibling_list();
-    Klass::cast(shortArrayKlassObj()    )->append_to_sibling_list();
-    Klass::cast(intArrayKlassObj()      )->append_to_sibling_list();
-    Klass::cast(longArrayKlassObj()     )->append_to_sibling_list();
-    Klass::cast(constantPoolKlassObj()  )->append_to_sibling_list();
-    Klass::cast(systemObjArrayKlassObj())->append_to_sibling_list();
+    initialize_basic_type_klass(boolArrayKlassObj(), CHECK);
+    initialize_basic_type_klass(charArrayKlassObj(), CHECK);
+    initialize_basic_type_klass(singleArrayKlassObj(), CHECK);
+    initialize_basic_type_klass(doubleArrayKlassObj(), CHECK);
+    initialize_basic_type_klass(byteArrayKlassObj(), CHECK);
+    initialize_basic_type_klass(shortArrayKlassObj(), CHECK);
+    initialize_basic_type_klass(intArrayKlassObj(), CHECK);
+    initialize_basic_type_klass(longArrayKlassObj(), CHECK);
   } // end of core bootstrapping
 
+  // Maybe this could be lifted up now that object array can be initialized
+  // during the bootstrapping.
+
+  // OLD
   // Initialize _objectArrayKlass after core bootstraping to make
   // sure the super class is set up properly for _objectArrayKlass.
-  _objectArrayKlassObj = instanceKlass::
+  // ---
+  // NEW
+  // Since some of the old system object arrays have been converted to
+  // ordinary object arrays, _objectArrayKlass will be loaded when
+  // SystemDictionary::initialize(CHECK); is run. See the extra check
+  // for Object_klass_loaded in objArrayKlassKlass::allocate_objArray_klass_impl.
+  _objectArrayKlassObj = InstanceKlass::
     cast(SystemDictionary::Object_klass())->array_klass(1, CHECK);
+  // OLD
   // Add the class to the class hierarchy manually to make sure that
   // its vtable is initialized after core bootstrapping is completed.
+  // ---
+  // New
+  // Have already been initialized.
   Klass::cast(_objectArrayKlassObj)->append_to_sibling_list();
 
   // Compute is_jdk version flags.
@@ -435,7 +350,7 @@ void Universe::genesis(TRAPS) {
   // Only 1.5 or later has the java.lang.management.MemoryUsage class.
   if (JDK_Version::is_partially_initialized()) {
     uint8_t jdk_version;
-    klassOop k = SystemDictionary::resolve_or_null(
+    Klass* k = SystemDictionary::resolve_or_null(
         vmSymbols::java_lang_management_MemoryUsage(), THREAD);
     CLEAR_PENDING_EXCEPTION; // ignore exceptions
     if (k == NULL) {
@@ -479,17 +394,12 @@ void Universe::genesis(TRAPS) {
     } else {
       size = FullGCALotDummies * 2;
     }
-    objArrayOop    naked_array = oopFactory::new_system_objArray(size, CHECK);
+    objArrayOop    naked_array = oopFactory::new_objArray(SystemDictionary::Object_klass(), size, CHECK);
     objArrayHandle dummy_array(THREAD, naked_array);
     int i = 0;
     while (i < size) {
-      if (!UseConcMarkSweepGC) {
         // Allocate dummy in old generation
-        oop dummy = instanceKlass::cast(SystemDictionary::Object_klass())->allocate_instance(CHECK);
-        dummy_array->obj_at_put(i++, dummy);
-      }
-      // Allocate dummy in permanent generation
-      oop dummy = instanceKlass::cast(SystemDictionary::Object_klass())->allocate_permanent_instance(CHECK);
+      oop dummy = InstanceKlass::cast(SystemDictionary::Object_klass())->allocate_instance(CHECK);
       dummy_array->obj_at_put(i++, dummy);
     }
     {
@@ -506,7 +416,11 @@ void Universe::genesis(TRAPS) {
   #endif
 }
 
-
+// CDS support for patching vtables in metadata in the shared archive.
+// All types inherited from Metadata have vtables, but not types inherited
+// from MetaspaceObj, because the latter does not have virtual functions.
+// If the metadata type has a vtable, it cannot be shared in the read-only
+// section of the CDS archive, because the vtable pointer is patched.
 static inline void* dereference(void* addr) {
   return *(void**)addr;
 }
@@ -520,56 +434,17 @@ static inline void add_vtable(void** list, int* n, void* o, int count) {
 
 void Universe::init_self_patching_vtbl_list(void** list, int count) {
   int n = 0;
-  { klassKlass o;             add_vtable(list, &n, &o, count); }
-  { arrayKlassKlass o;        add_vtable(list, &n, &o, count); }
-  { objArrayKlassKlass o;     add_vtable(list, &n, &o, count); }
-  { instanceKlassKlass o;     add_vtable(list, &n, &o, count); }
-  { instanceKlass o;          add_vtable(list, &n, &o, count); }
-  { instanceMirrorKlass o;    add_vtable(list, &n, &o, count); }
-  { instanceRefKlass o;       add_vtable(list, &n, &o, count); }
-  { typeArrayKlassKlass o;    add_vtable(list, &n, &o, count); }
+  { InstanceKlass o;          add_vtable(list, &n, &o, count); }
+  { InstanceClassLoaderKlass o; add_vtable(list, &n, &o, count); }
+  { InstanceMirrorKlass o;    add_vtable(list, &n, &o, count); }
+  { InstanceRefKlass o;       add_vtable(list, &n, &o, count); }
   { typeArrayKlass o;         add_vtable(list, &n, &o, count); }
-  { methodKlass o;            add_vtable(list, &n, &o, count); }
-  { constMethodKlass o;       add_vtable(list, &n, &o, count); }
-  { constantPoolKlass o;      add_vtable(list, &n, &o, count); }
-  { constantPoolCacheKlass o; add_vtable(list, &n, &o, count); }
   { objArrayKlass o;          add_vtable(list, &n, &o, count); }
-  { methodDataKlass o;        add_vtable(list, &n, &o, count); }
-  { compiledICHolderKlass o;  add_vtable(list, &n, &o, count); }
-#ifndef PRODUCT
-  // In non-product builds CHeapObj is derived from AllocatedObj,
-  // so symbols in CDS archive should have their vtable pointer patched.
-  { Symbol o;                 add_vtable(list, &n, &o, count); }
-#endif
+  { Method o;                 add_vtable(list, &n, &o, count); }
+  { ConstantPool o;           add_vtable(list, &n, &o, count); }
 }
 
-
-class FixupMirrorClosure: public ObjectClosure {
- public:
-  virtual void do_object(oop obj) {
-    if (obj->is_klass()) {
-      EXCEPTION_MARK;
-      KlassHandle k(THREAD, klassOop(obj));
-      // We will never reach the CATCH below since Exceptions::_throw will cause
-      // the VM to exit if an exception is thrown during initialization
-      java_lang_Class::fixup_mirror(k, CATCH);
-      // This call unconditionally creates a new mirror for k,
-      // and links in k's component_mirror field if k is an array.
-      // If k is an objArray, k's element type must already have
-      // a mirror.  In other words, this closure must process
-      // the component type of an objArray k before it processes k.
-      // This works because the permgen iterator presents arrays
-      // and their component types in order of creation.
-    }
-  }
-};
-
 void Universe::initialize_basic_type_mirrors(TRAPS) {
-  if (UseSharedSpaces) {
-    assert(_int_mirror != NULL, "already loaded");
-    assert(_void_mirror == _mirrors[T_VOID], "consistently loaded");
-  } else {
-
     assert(_int_mirror==NULL, "basic type mirrors already initialized");
     _int_mirror     =
       java_lang_Class::create_basic_type_mirror("int",    T_INT, CHECK);
@@ -599,9 +474,8 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
     _mirrors[T_LONG]    = _long_mirror;
     _mirrors[T_SHORT]   = _short_mirror;
     _mirrors[T_VOID]    = _void_mirror;
-    //_mirrors[T_OBJECT]  = instanceKlass::cast(_object_klass)->java_mirror();
-    //_mirrors[T_ARRAY]   = instanceKlass::cast(_object_klass)->java_mirror();
-  }
+  //_mirrors[T_OBJECT]  = InstanceKlass::cast(_object_klass)->java_mirror();
+  //_mirrors[T_ARRAY]   = InstanceKlass::cast(_object_klass)->java_mirror();
 }
 
 void Universe::fixup_mirrors(TRAPS) {
@@ -610,14 +484,22 @@ void Universe::fixup_mirrors(TRAPS) {
   // walk over permanent objects created so far (mostly classes) and fixup their mirrors. Note
   // that the number of objects allocated at this point is very small.
   assert(SystemDictionary::Class_klass_loaded(), "java.lang.Class should be loaded");
-
+  HandleMark hm(THREAD);
   // Cache the start of the static fields
-  instanceMirrorKlass::init_offset_of_static_fields();
+  InstanceMirrorKlass::init_offset_of_static_fields();
 
-  FixupMirrorClosure blk;
-  Universe::heap()->permanent_object_iterate(&blk);
+  GrowableArray <Klass*>* list = java_lang_Class::fixup_mirror_list();
+  int list_length = list->length();
+  for (int i = 0; i < list_length; i++) {
+    Klass* k = list->at(i);
+    assert(k->is_klass(), "List should only hold classes");
+    EXCEPTION_MARK;
+    KlassHandle kh(THREAD, k);
+    java_lang_Class::fixup_mirror(kh, CATCH);
 }
-
+  delete java_lang_Class::fixup_mirror_list();
+  java_lang_Class::set_fixup_mirror_list(NULL);
+}
 
 static bool has_run_finalizers_on_exit = false;
 
@@ -650,20 +532,20 @@ void Universe::run_finalizers_on_exit() {
 // In case those ever change we use handles for oops
 void Universe::reinitialize_vtable_of(KlassHandle k_h, TRAPS) {
   // init vtable of k and all subclasses
-  Klass* ko = k_h()->klass_part();
+  Klass* ko = k_h();
   klassVtable* vt = ko->vtable();
   if (vt) vt->initialize_vtable(false, CHECK);
   if (ko->oop_is_instance()) {
-    instanceKlass* ik = (instanceKlass*)ko;
-    for (KlassHandle s_h(THREAD, ik->subklass()); s_h() != NULL; s_h = (THREAD, s_h()->klass_part()->next_sibling())) {
+    InstanceKlass* ik = (InstanceKlass*)ko;
+    for (KlassHandle s_h(THREAD, ik->subklass()); s_h() != NULL; s_h = (THREAD, s_h()->next_sibling())) {
       reinitialize_vtable_of(s_h, CHECK);
     }
   }
 }
 
 
-void initialize_itable_for_klass(klassOop k, TRAPS) {
-  instanceKlass::cast(k)->itable()->initialize_itable(false, CHECK);
+void initialize_itable_for_klass(Klass* k, TRAPS) {
+  InstanceKlass::cast(k)->itable()->initialize_itable(false, CHECK);
 }
 
 
@@ -758,49 +640,28 @@ jint universe_init() {
   GC_locker::lock();  // do not allow gc during bootstrapping
   JavaClasses::compute_hard_coded_offsets();
 
-  // Get map info from shared archive file.
-  if (DumpSharedSpaces)
-    UseSharedSpaces = false;
-
-  FileMapInfo* mapinfo = NULL;
-  if (UseSharedSpaces) {
-    mapinfo = NEW_C_HEAP_OBJ(FileMapInfo, mtInternal);
-    memset(mapinfo, 0, sizeof(FileMapInfo));
-
-    // Open the shared archive file, read and validate the header. If
-    // initialization files, shared spaces [UseSharedSpaces] are
-    // disabled and the file is closed.
-
-    if (mapinfo->initialize()) {
-      FileMapInfo::set_current_info(mapinfo);
-    } else {
-      assert(!mapinfo->is_open() && !UseSharedSpaces,
-             "archive file not closed or shared spaces not disabled.");
-    }
-  }
-
   jint status = Universe::initialize_heap();
   if (status != JNI_OK) {
     return status;
   }
 
-  // We have a heap so create the methodOop caches before
-  // CompactingPermGenGen::initialize_oops() tries to populate them.
+  // Create memory for metadata.  Must be after initializing heap for
+  // DumpSharedSpaces.
+  ClassLoaderData::init_null_class_loader_data();
+
+  // We have a heap so create the Method* caches before
+  // Metaspace::initialize_shared_spaces() tries to populate them.
   Universe::_finalizer_register_cache = new LatestMethodOopCache();
-  Universe::_loader_addClass_cache    = new LatestMethodOopCache();
   Universe::_reflect_invoke_cache     = new ActiveMethodOopsCache();
 
   if (UseSharedSpaces) {
-
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.).  After that, access to
     // the file (other than the mapped regions) is no longer needed, and
     // the file is closed. Closing the file does not affect the
     // currently mapped regions.
-
-    CompactingPermGenGen::initialize_oops();
-    mapinfo->close();
-
+    MetaspaceShared::initialize_shared_spaces();
+    StringTable::create_table();
   } else {
     SymbolTable::create_table();
     StringTable::create_table();
@@ -992,6 +853,54 @@ jint Universe::initialize_heap() {
   return JNI_OK;
 }
 
+
+// Reserve the Java heap, which is now the same for all GCs.
+ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
+  // Add in the class metaspace area so the classes in the headers can
+  // be compressed the same as instances.
+  size_t total_reserved = align_size_up(heap_size + ClassMetaspaceSize, alignment);
+  char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
+
+  ReservedHeapSpace total_rs(total_reserved, alignment, UseLargePages, addr);
+
+  if (UseCompressedOops) {
+    if (addr != NULL && !total_rs.is_reserved()) {
+      // Failed to reserve at specified address - the requested memory
+      // region is taken already, for example, by 'java' launcher.
+      // Try again to reserver heap higher.
+      addr = Universe::preferred_heap_base(total_reserved, Universe::ZeroBasedNarrowOop);
+
+      ReservedHeapSpace total_rs0(total_reserved, alignment,
+                                  UseLargePages, addr);
+
+      if (addr != NULL && !total_rs0.is_reserved()) {
+        // Failed to reserve at specified address again - give up.
+        addr = Universe::preferred_heap_base(total_reserved, Universe::HeapBasedNarrowOop);
+        assert(addr == NULL, "");
+
+        ReservedHeapSpace total_rs1(total_reserved, alignment,
+                                    UseLargePages, addr);
+        total_rs = total_rs1;
+      } else {
+        total_rs = total_rs0;
+      }
+    }
+  }
+
+  if (!total_rs.is_reserved()) {
+    vm_exit_during_initialization(err_msg("Could not reserve enough space for object heap %d bytes", total_reserved));
+    return total_rs;
+  }
+
+  // Split the reserved space into main Java heap and a space for classes
+  // so that they can be compressed using the same algorithm as compressed oops
+  ReservedSpace heap_rs = total_rs.first_part(heap_size);
+  ReservedSpace class_rs = total_rs.last_part(heap_size, alignment);
+  Metaspace::initialize_class_space(class_rs);
+  return heap_rs;
+}
+
+
 // It's the caller's repsonsibility to ensure glitch-freedom
 // (if required).
 void Universe::update_heap_info_at_gc() {
@@ -1026,55 +935,56 @@ bool universe_post_init() {
   { ResourceMark rm;
     Interpreter::initialize();      // needed for interpreter entry points
     if (!UseSharedSpaces) {
+      HandleMark hm(THREAD);
       KlassHandle ok_h(THREAD, SystemDictionary::Object_klass());
       Universe::reinitialize_vtable_of(ok_h, CHECK_false);
       Universe::reinitialize_itables(CHECK_false);
     }
   }
 
-  klassOop k;
+  HandleMark hm(THREAD);
+  Klass* k;
   instanceKlassHandle k_h;
-  if (!UseSharedSpaces) {
     // Setup preallocated empty java.lang.Class array
     Universe::_the_empty_class_klass_array = oopFactory::new_objArray(SystemDictionary::Class_klass(), 0, CHECK_false);
+
     // Setup preallocated OutOfMemoryError errors
     k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_OutOfMemoryError(), true, CHECK_false);
     k_h = instanceKlassHandle(THREAD, k);
-    Universe::_out_of_memory_error_java_heap = k_h->allocate_permanent_instance(CHECK_false);
-    Universe::_out_of_memory_error_perm_gen = k_h->allocate_permanent_instance(CHECK_false);
-    Universe::_out_of_memory_error_array_size = k_h->allocate_permanent_instance(CHECK_false);
+    Universe::_out_of_memory_error_java_heap = k_h->allocate_instance(CHECK_false);
+    Universe::_out_of_memory_error_perm_gen = k_h->allocate_instance(CHECK_false);
+    Universe::_out_of_memory_error_array_size = k_h->allocate_instance(CHECK_false);
     Universe::_out_of_memory_error_gc_overhead_limit =
-      k_h->allocate_permanent_instance(CHECK_false);
+      k_h->allocate_instance(CHECK_false);
 
     // Setup preallocated NullPointerException
     // (this is currently used for a cheap & dirty solution in compiler exception handling)
     k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_NullPointerException(), true, CHECK_false);
-    Universe::_null_ptr_exception_instance = instanceKlass::cast(k)->allocate_permanent_instance(CHECK_false);
+    Universe::_null_ptr_exception_instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
     // Setup preallocated ArithmeticException
     // (this is currently used for a cheap & dirty solution in compiler exception handling)
     k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_ArithmeticException(), true, CHECK_false);
-    Universe::_arithmetic_exception_instance = instanceKlass::cast(k)->allocate_permanent_instance(CHECK_false);
+    Universe::_arithmetic_exception_instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
     // Virtual Machine Error for when we get into a situation we can't resolve
     k = SystemDictionary::resolve_or_fail(
       vmSymbols::java_lang_VirtualMachineError(), true, CHECK_false);
-    bool linked = instanceKlass::cast(k)->link_class_or_fail(CHECK_false);
+    bool linked = InstanceKlass::cast(k)->link_class_or_fail(CHECK_false);
     if (!linked) {
       tty->print_cr("Unable to link/verify VirtualMachineError class");
       return false; // initialization failed
     }
     Universe::_virtual_machine_error_instance =
-      instanceKlass::cast(k)->allocate_permanent_instance(CHECK_false);
+      InstanceKlass::cast(k)->allocate_instance(CHECK_false);
 
-    Universe::_vm_exception               = instanceKlass::cast(k)->allocate_permanent_instance(CHECK_false);
+    Universe::_vm_exception               = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
 
-  }
   if (!DumpSharedSpaces) {
     // These are the only Java fields that are currently set during shared space dumping.
     // We prefer to not handle this generally, so we always reinitialize these detail messages.
     Handle msg = java_lang_String::create_from_str("Java heap space", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_java_heap, msg());
 
-    msg = java_lang_String::create_from_str("PermGen space", CHECK_false);
+    msg = java_lang_String::create_from_str("Metadata space", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_perm_gen, msg());
 
     msg = java_lang_String::create_from_str("Requested array size exceeds VM limit", CHECK_false);
@@ -1088,13 +998,13 @@ bool universe_post_init() {
 
     // Setup the array of errors that have preallocated backtrace
     k = Universe::_out_of_memory_error_java_heap->klass();
-    assert(k->klass_part()->name() == vmSymbols::java_lang_OutOfMemoryError(), "should be out of memory error");
+    assert(k->name() == vmSymbols::java_lang_OutOfMemoryError(), "should be out of memory error");
     k_h = instanceKlassHandle(THREAD, k);
 
     int len = (StackTraceInThrowable) ? (int)PreallocatedOutOfMemoryErrorCount : 0;
     Universe::_preallocated_out_of_memory_error_array = oopFactory::new_objArray(k_h(), len, CHECK_false);
     for (int i=0; i<len; i++) {
-      oop err = k_h->allocate_permanent_instance(CHECK_false);
+      oop err = k_h->allocate_instance(CHECK_false);
       Handle err_h = Handle(THREAD, err);
       java_lang_Throwable::allocate_backtrace(err_h, CHECK_false);
       Universe::preallocated_out_of_memory_errors()->obj_at_put(i, err_h());
@@ -1106,8 +1016,8 @@ bool universe_post_init() {
   // Setup static method for registering finalizers
   // The finalizer klass must be linked before looking up the method, in
   // case it needs to get rewritten.
-  instanceKlass::cast(SystemDictionary::Finalizer_klass())->link_class(CHECK_false);
-  methodOop m = instanceKlass::cast(SystemDictionary::Finalizer_klass())->find_method(
+  InstanceKlass::cast(SystemDictionary::Finalizer_klass())->link_class(CHECK_false);
+  Method* m = InstanceKlass::cast(SystemDictionary::Finalizer_klass())->find_method(
                                   vmSymbols::register_method_name(),
                                   vmSymbols::register_method_signature());
   if (m == NULL || !m->is_static()) {
@@ -1131,16 +1041,6 @@ bool universe_post_init() {
   }
   Universe::_reflect_invoke_cache->init(k_h(), m, CHECK_false);
 
-  // Setup method for registering loaded classes in class loader vector
-  instanceKlass::cast(SystemDictionary::ClassLoader_klass())->link_class(CHECK_false);
-  m = instanceKlass::cast(SystemDictionary::ClassLoader_klass())->find_method(vmSymbols::addClass_name(), vmSymbols::class_void_signature());
-  if (m == NULL || m->is_static()) {
-    THROW_MSG_(vmSymbols::java_lang_NoSuchMethodException(),
-      "java.lang.ClassLoader.addClass", false);
-  }
-  Universe::_loader_addClass_cache->init(
-    SystemDictionary::ClassLoader_klass(), m, CHECK_false);
-
   // The folowing is initializing converter functions for serialization in
   // JVM.cpp. If we clean up the StrictMath code above we may want to find
   // a better solution for this as well.
@@ -1155,6 +1055,9 @@ bool universe_post_init() {
 
   // ("weak") refs processing infrastructure initialization
   Universe::heap()->post_initialize();
+
+  // Initialize performance counters for metaspaces
+  MetaspaceCounters::initialize_performance_counters();
 
   GC_locker::unlock();  // allow gc after bootstrapping
 
@@ -1204,14 +1107,14 @@ void Universe::flush_dependents_on(Handle call_site, Handle method_handle) {
   CallSiteDepChange changes(call_site(), method_handle());
 
   // Compute the dependent nmethods that have a reference to a
-  // CallSite object.  We use instanceKlass::mark_dependent_nmethod
+  // CallSite object.  We use InstanceKlass::mark_dependent_nmethod
   // directly instead of CodeCache::mark_for_deoptimization because we
   // want dependents on the call site class only not all classes in
   // the ContextStream.
   int marked = 0;
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    instanceKlass* call_site_klass = instanceKlass::cast(call_site->klass());
+    InstanceKlass* call_site_klass = InstanceKlass::cast(call_site->klass());
     marked = call_site_klass->mark_dependent_nmethods(changes);
   }
   if (marked > 0) {
@@ -1363,6 +1266,10 @@ void Universe::verify(bool silent, VerifyOption option) {
   }
   if (!silent) gclog_or_tty->print("dict ");
   SystemDictionary::verify();
+#ifndef PRODUCT
+  if (!silent) gclog_or_tty->print("cldg ");
+  ClassLoaderDataGraph::verify();
+#endif
   if (!silent) gclog_or_tty->print("hand ");
   JNIHandles::verify();
   if (!silent) gclog_or_tty->print("C-heap ");
@@ -1433,61 +1340,9 @@ uintptr_t Universe::verify_oop_bits() {
   return _verify_oop_data[1];
 }
 
-
-uintptr_t Universe::verify_klass_mask() {
-  /* $$$
-  // A klass can never live in the new space.  Since the new and old
-  // spaces can change size, we must settle for bounds-checking against
-  // the bottom of the world, plus the smallest possible new and old
-  // space sizes that may arise during execution.
-  size_t min_new_size = Universe::new_size();   // in bytes
-  size_t min_old_size = Universe::old_size();   // in bytes
-  calculate_verify_data(_verify_klass_data,
-          (HeapWord*)((uintptr_t)_new_gen->low_boundary + min_new_size + min_old_size),
-          _perm_gen->high_boundary);
-                        */
-  // Why doesn't the above just say that klass's always live in the perm
-  // gen?  I'll see if that seems to work...
-  MemRegion permanent_reserved;
-  switch (Universe::heap()->kind()) {
-  default:
-    // ???: What if a CollectedHeap doesn't have a permanent generation?
-    ShouldNotReachHere();
-    break;
-  case CollectedHeap::GenCollectedHeap:
-  case CollectedHeap::G1CollectedHeap: {
-    SharedHeap* sh = (SharedHeap*) Universe::heap();
-    permanent_reserved = sh->perm_gen()->reserved();
-   break;
-  }
-#ifndef SERIALGC
-  case CollectedHeap::ParallelScavengeHeap: {
-    ParallelScavengeHeap* psh = (ParallelScavengeHeap*) Universe::heap();
-    permanent_reserved = psh->perm_gen()->reserved();
-    break;
-  }
-#endif // SERIALGC
-  }
-  calculate_verify_data(_verify_klass_data,
-                        permanent_reserved.start(),
-                        permanent_reserved.end());
-
-  return _verify_klass_data[0];
-}
-
-
-
-uintptr_t Universe::verify_klass_bits() {
-  verify_klass_mask();
-  return _verify_klass_data[1];
-}
-
-
 uintptr_t Universe::verify_mark_mask() {
   return markOopDesc::lock_mask_in_place;
 }
-
-
 
 uintptr_t Universe::verify_mark_bits() {
   intptr_t mask = verify_mark_mask();
@@ -1503,12 +1358,10 @@ void Universe::compute_verify_oop_data() {
   verify_oop_bits();
   verify_mark_mask();
   verify_mark_bits();
-  verify_klass_mask();
-  verify_klass_bits();
 }
 
 
-void CommonMethodOopCache::init(klassOop k, methodOop m, TRAPS) {
+void CommonMethodOopCache::init(Klass* k, Method* m, TRAPS) {
   if (!UseSharedSpaces) {
     _klass = k;
   }
@@ -1526,27 +1379,24 @@ void CommonMethodOopCache::init(klassOop k, methodOop m, TRAPS) {
 
 ActiveMethodOopsCache::~ActiveMethodOopsCache() {
   if (_prev_methods != NULL) {
-    for (int i = _prev_methods->length() - 1; i >= 0; i--) {
-      jweak method_ref = _prev_methods->at(i);
-      if (method_ref != NULL) {
-        JNIHandles::destroy_weak_global(method_ref);
-      }
-    }
     delete _prev_methods;
     _prev_methods = NULL;
   }
 }
 
 
-void ActiveMethodOopsCache::add_previous_version(const methodOop method) {
+void ActiveMethodOopsCache::add_previous_version(Method* const method) {
   assert(Thread::current()->is_VM_thread(),
     "only VMThread can add previous versions");
+
+  // Only append the previous method if it is executing on the stack.
+  if (method->on_stack()) {
 
   if (_prev_methods == NULL) {
     // This is the first previous version so make some space.
     // Start with 2 elements under the assumption that the class
     // won't be redefined much.
-    _prev_methods = new (ResourceObj::C_HEAP, mtClass) GrowableArray<jweak>(2, true);
+      _prev_methods = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Method*>(2, true);
   }
 
   // RC_TRACE macro has an embedded ResourceMark
@@ -1555,42 +1405,35 @@ void ActiveMethodOopsCache::add_previous_version(const methodOop method) {
     method->name()->as_C_string(), method->signature()->as_C_string(),
     _prev_methods->length()));
 
-  methodHandle method_h(method);
-  jweak method_ref = JNIHandles::make_weak_global(method_h);
-  _prev_methods->append(method_ref);
+    _prev_methods->append(method);
+  }
 
-  // Using weak references allows previous versions of the cached
-  // method to be GC'ed when they are no longer needed. Since the
-  // caller is the VMThread and we are at a safepoint, this is a good
-  // time to clear out unused weak references.
+
+  // Since the caller is the VMThread and we are at a safepoint, this is a good
+  // time to clear out unused method references.
+
+  if (_prev_methods == NULL) return;
 
   for (int i = _prev_methods->length() - 1; i >= 0; i--) {
-    jweak method_ref = _prev_methods->at(i);
-    assert(method_ref != NULL, "weak method ref was unexpectedly cleared");
-    if (method_ref == NULL) {
-      _prev_methods->remove_at(i);
-      // Since we are traversing the array backwards, we don't have to
-      // do anything special with the index.
-      continue;  // robustness
-    }
+    Method* method = _prev_methods->at(i);
+    assert(method != NULL, "weak method ref was unexpectedly cleared");
 
-    methodOop m = (methodOop)JNIHandles::resolve(method_ref);
-    if (m == NULL) {
-      // this method entry has been GC'ed so remove it
-      JNIHandles::destroy_weak_global(method_ref);
+    if (!method->on_stack()) {
+      // This method isn't running anymore so remove it
       _prev_methods->remove_at(i);
+      MetadataFactory::free_metadata(method->method_holder()->class_loader_data(), method);
     } else {
       // RC_TRACE macro has an embedded ResourceMark
       RC_TRACE(0x00000400, ("add: %s(%s): previous cached method @%d is alive",
-        m->name()->as_C_string(), m->signature()->as_C_string(), i));
+        method->name()->as_C_string(), method->signature()->as_C_string(), i));
     }
   }
 } // end add_previous_version()
 
 
-bool ActiveMethodOopsCache::is_same_method(const methodOop method) const {
-  instanceKlass* ik = instanceKlass::cast(klass());
-  methodOop check_method = ik->method_with_idnum(method_idnum());
+bool ActiveMethodOopsCache::is_same_method(Method* const method) const {
+  InstanceKlass* ik = InstanceKlass::cast(klass());
+  Method* check_method = ik->method_with_idnum(method_idnum());
   assert(check_method != NULL, "sanity check");
   if (check_method == method) {
     // done with the easy case
@@ -1601,13 +1444,7 @@ bool ActiveMethodOopsCache::is_same_method(const methodOop method) const {
     // The cached method has been redefined at least once so search
     // the previous versions for a match.
     for (int i = 0; i < _prev_methods->length(); i++) {
-      jweak method_ref = _prev_methods->at(i);
-      assert(method_ref != NULL, "weak method ref was unexpectedly cleared");
-      if (method_ref == NULL) {
-        continue;  // robustness
-      }
-
-      check_method = (methodOop)JNIHandles::resolve(method_ref);
+      check_method = _prev_methods->at(i);
       if (check_method == method) {
         // a previous version matches
         return true;
@@ -1620,9 +1457,9 @@ bool ActiveMethodOopsCache::is_same_method(const methodOop method) const {
 }
 
 
-methodOop LatestMethodOopCache::get_methodOop() {
-  instanceKlass* ik = instanceKlass::cast(klass());
-  methodOop m = ik->method_with_idnum(method_idnum());
+Method* LatestMethodOopCache::get_Method() {
+  InstanceKlass* ik = InstanceKlass::cast(klass());
+  Method* m = ik->method_with_idnum(method_idnum());
   assert(m != NULL, "sanity check");
   return m;
 }

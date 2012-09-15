@@ -141,12 +141,12 @@ public:
   void verify_aligned_region_empty(MemRegion mr);
 
   void clear(MemRegion mr) { _ct_bs->clear(mr); }
-  void clear_into_younger(Generation* gen, bool clear_perm);
+  void clear_into_younger(Generation* gen);
 
   void invalidate(MemRegion mr, bool whole_heap = false) {
     _ct_bs->invalidate(mr, whole_heap);
   }
-  void invalidate_or_clear(Generation* gen, bool younger, bool perm);
+  void invalidate_or_clear(Generation* gen, bool younger);
 
   static uintx ct_max_alignment_constraint() {
     return CardTableModRefBS::ct_max_alignment_constraint();

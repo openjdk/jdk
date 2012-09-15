@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 #define SHARE_VM_CODE_COMPILEDIC_HPP
 
 #include "interpreter/linkResolver.hpp"
-#include "oops/compiledICHolderKlass.hpp"
-#include "oops/compiledICHolderOop.hpp"
-#include "oops/klassOop.hpp"
+#include "oops/compiledICHolder.hpp"
 #ifdef TARGET_ARCH_x86
 # include "nativeInst_x86.hpp"
 #endif
@@ -57,36 +55,88 @@
 //           /                     \      /-<-\
 //          /          [2]          \    /     \
 //      Interpreted  ---------> Monomorphic     | [3]
-//  (compiledICHolderOop)        (klassOop)     |
+//  (CompiledICHolder*)            (Klass*)     |
 //          \                        /   \     /
 //       [4] \                      / [4] \->-/
 //            \->-  Megamorphic -<-/
-//                  (methodOop)
+//                  (Method*)
 //
 // The text in paranteses () refere to the value of the inline cache receiver (mov instruction)
 //
 // The numbers in square brackets refere to the kind of transition:
 // [1]: Initial fixup. Receiver it found from debug information
 // [2]: Compilation of a method
-// [3]: Recompilation of a method (note: only entry is changed. The klassOop must stay the same)
+// [3]: Recompilation of a method (note: only entry is changed. The Klass* must stay the same)
 // [4]: Inline cache miss. We go directly to megamorphic call.
 //
 // The class automatically inserts transition stubs (using the InlineCacheBuffer) when an MT-unsafe
 // transition is made to a stub.
 //
 class CompiledIC;
+class ICStub;
 
-class CompiledICInfo {
-  friend class CompiledIC;
+class CompiledICInfo : public StackObj {
  private:
   address _entry;              // entry point for call
-  Handle  _cached_oop;         // Value of cached_oop (either in stub or inline cache)
+  void*   _cached_value;         // Value of cached_value (either in stub or inline cache)
+  bool    _is_icholder;          // Is the cached value a CompiledICHolder*
   bool    _is_optimized;       // it is an optimized virtual call (i.e., can be statically bound)
   bool    _to_interpreter;     // Call it to interpreter
+  bool    _release_icholder;
  public:
   address entry() const        { return _entry; }
-  Handle  cached_oop() const   { return _cached_oop; }
+  Metadata*    cached_metadata() const         { assert(!_is_icholder, ""); return (Metadata*)_cached_value; }
+  CompiledICHolder*    claim_cached_icholder() {
+    assert(_is_icholder, "");
+    assert(_cached_value != NULL, "must be non-NULL");
+    _release_icholder = false;
+    CompiledICHolder* icholder = (CompiledICHolder*)_cached_value;
+    icholder->claim();
+    return icholder;
+  }
   bool    is_optimized() const { return _is_optimized; }
+  bool         to_interpreter() const  { return _to_interpreter; }
+
+  void set_compiled_entry(address entry, Klass* klass, bool is_optimized) {
+    _entry      = entry;
+    _cached_value = (void*)klass;
+    _to_interpreter = false;
+    _is_icholder = false;
+    _is_optimized = is_optimized;
+    _release_icholder = false;
+  }
+
+  void set_interpreter_entry(address entry, Method* method) {
+    _entry      = entry;
+    _cached_value = (void*)method;
+    _to_interpreter = true;
+    _is_icholder = false;
+    _is_optimized = true;
+    _release_icholder = false;
+  }
+
+  void set_icholder_entry(address entry, CompiledICHolder* icholder) {
+    _entry      = entry;
+    _cached_value = (void*)icholder;
+    _to_interpreter = true;
+    _is_icholder = true;
+    _is_optimized = false;
+    _release_icholder = true;
+  }
+
+  CompiledICInfo(): _entry(NULL), _cached_value(NULL), _is_icholder(false),
+                    _to_interpreter(false), _is_optimized(false), _release_icholder(false) {
+  }
+  ~CompiledICInfo() {
+    // In rare cases the info is computed but not used, so release any
+    // CompiledICHolder* that was created
+    if (_release_icholder) {
+      assert(_is_icholder, "must be");
+      CompiledICHolder* icholder = (CompiledICHolder*)_cached_value;
+      icholder->claim();
+      delete icholder;
+    }
+  }
 };
 
 class CompiledIC: public ResourceObj {
@@ -96,18 +146,32 @@ class CompiledIC: public ResourceObj {
 
  private:
   NativeCall*   _ic_call;       // the call instruction
-  oop*          _oop_addr;      // patchable oop cell for this IC
-  RelocIterator _oops;          // iteration over any and all set-oop instructions
+  NativeMovConstReg* _value;    // patchable value cell for this IC
   bool          _is_optimized;  // an optimized virtual call (i.e., no compiled IC)
 
-  CompiledIC(NativeCall* ic_call);
-  CompiledIC(Relocation* ic_reloc);    // Must be of virtual_call_type/opt_virtual_call_type
+  CompiledIC(nmethod* nm, NativeCall* ic_call);
+
+  static bool is_icholder_entry(address entry);
 
   // low-level inline-cache manipulation. Cannot be accessed directly, since it might not be MT-safe
   // to change an inline-cache. These changes the underlying inline-cache directly. They *newer* make
   // changes to a transition stub.
-  void set_ic_destination(address entry_point);
-  void set_cached_oop(oop cache);
+  void internal_set_ic_destination(address entry_point, bool is_icstub, void* cache, bool is_icholder);
+  void set_ic_destination(ICStub* stub);
+  void set_ic_destination(address entry_point) {
+    assert(_is_optimized, "use set_ic_destination_and_value instead");
+    internal_set_ic_destination(entry_point, false, NULL, false);
+  }
+  // This only for use by ICStubs where the type of the value isn't known
+  void set_ic_destination_and_value(address entry_point, void* value) {
+    internal_set_ic_destination(entry_point, false, value, is_icholder_entry(entry_point));
+  }
+  void set_ic_destination_and_value(address entry_point, Metadata* value) {
+    internal_set_ic_destination(entry_point, false, value, false);
+  }
+  void set_ic_destination_and_value(address entry_point, CompiledICHolder* value) {
+    internal_set_ic_destination(entry_point, false, value, true);
+  }
 
   // Reads the location of the transition stub. This will fail with an assertion, if no transition stub is
   // associated with the inline cache.
@@ -116,13 +180,28 @@ class CompiledIC: public ResourceObj {
 
  public:
   // conversion (machine PC to CompiledIC*)
-  friend CompiledIC* CompiledIC_before(address return_addr);
-  friend CompiledIC* CompiledIC_at(address call_site);
+  friend CompiledIC* CompiledIC_before(nmethod* nm, address return_addr);
+  friend CompiledIC* CompiledIC_at(nmethod* nm, address call_site);
   friend CompiledIC* CompiledIC_at(Relocation* call_site);
 
-  // Return the cached_oop/destination associated with this inline cache. If the cache currently points
+  // This is used to release CompiledICHolder*s from nmethods that
+  // are about to be freed.  The callsite might contain other stale
+  // values of other kinds so it must be careful.
+  static void cleanup_call_site(virtual_call_Relocation* call_site);
+  static bool is_icholder_call_site(virtual_call_Relocation* call_site);
+
+  // Return the cached_metadata/destination associated with this inline cache. If the cache currently points
   // to a transition stub, it will read the values from the transition stub.
-  oop  cached_oop() const;
+  void* cached_value() const;
+  CompiledICHolder* cached_icholder() const {
+    assert(is_icholder_call(), "must be");
+    return (CompiledICHolder*) cached_value();
+  }
+  Metadata* cached_metadata() const {
+    assert(!is_icholder_call(), "must be");
+    return (Metadata*) cached_value();
+  }
+
   address ic_destination() const;
 
   bool is_optimized() const   { return _is_optimized; }
@@ -132,6 +211,8 @@ class CompiledIC: public ResourceObj {
   bool is_megamorphic() const;
   bool is_call_to_compiled() const;
   bool is_call_to_interpreted() const;
+
+  bool is_icholder_call() const;
 
   address end_of_call() { return  _ic_call->return_address(); }
 
@@ -144,7 +225,7 @@ class CompiledIC: public ResourceObj {
   // They all takes a TRAP argument, since they can cause a GC if the inline-cache buffer is full.
   //
   void set_to_clean();  // Can only be called during a safepoint operation
-  void set_to_monomorphic(const CompiledICInfo& info);
+  void set_to_monomorphic(CompiledICInfo& info);
   void set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS);
 
   static void compute_monomorphic_entry(methodHandle method, KlassHandle receiver_klass,
@@ -159,20 +240,22 @@ class CompiledIC: public ResourceObj {
   void verify()            PRODUCT_RETURN;
 };
 
-inline CompiledIC* CompiledIC_before(address return_addr) {
-  CompiledIC* c_ic = new CompiledIC(nativeCall_before(return_addr));
+inline CompiledIC* CompiledIC_before(nmethod* nm, address return_addr) {
+  CompiledIC* c_ic = new CompiledIC(nm, nativeCall_before(return_addr));
   c_ic->verify();
   return c_ic;
 }
 
-inline CompiledIC* CompiledIC_at(address call_site) {
-  CompiledIC* c_ic = new CompiledIC(nativeCall_at(call_site));
+inline CompiledIC* CompiledIC_at(nmethod* nm, address call_site) {
+  CompiledIC* c_ic = new CompiledIC(nm, nativeCall_at(call_site));
   c_ic->verify();
   return c_ic;
 }
 
 inline CompiledIC* CompiledIC_at(Relocation* call_site) {
-  CompiledIC* c_ic = new CompiledIC(call_site);
+  assert(call_site->type() == relocInfo::virtual_call_type ||
+         call_site->type() == relocInfo::opt_virtual_call_type, "wrong reloc. info");
+  CompiledIC* c_ic = new CompiledIC(call_site->code(), nativeCall_at(call_site->addr()));
   c_ic->verify();
   return c_ic;
 }
@@ -191,7 +274,7 @@ inline CompiledIC* CompiledIC_at(Relocation* call_site) {
 //
 //  Clean:            Calls directly to runtime method for fixup
 //  Compiled code:    Calls directly to compiled code
-//  Interpreted code: Calls to stub that set methodOop reference
+//  Interpreted code: Calls to stub that set Method* reference
 //
 //
 class CompiledStaticCall;
