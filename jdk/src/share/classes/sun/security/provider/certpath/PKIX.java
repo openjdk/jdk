@@ -26,7 +26,9 @@ package sun.security.provider.certpath;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
+import java.security.PublicKey;
 import java.security.cert.*;
+import java.security.interfaces.DSAPublicKey;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
@@ -41,6 +43,11 @@ class PKIX {
     private static final Debug debug = Debug.getInstance("certpath");
 
     private PKIX() { }
+
+    static boolean isDSAPublicKeyWithoutParams(PublicKey publicKey) {
+        return (publicKey instanceof DSAPublicKey &&
+               ((DSAPublicKey)publicKey).getParams() == null);
+    }
 
     static ValidatorParams checkParams(CertPath cp, CertPathParameters params)
         throws InvalidAlgorithmParameterException

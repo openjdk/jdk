@@ -38,7 +38,6 @@ import java.security.Security;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.Extension;
 import java.security.cert.*;
-import java.security.interfaces.DSAPublicKey;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -406,8 +405,7 @@ class RevocationChecker extends PKIXRevocationChecker {
 
         // Make new public key if parameters are missing
         PublicKey pubKey = cert.getPublicKey();
-        if (pubKey instanceof DSAPublicKey &&
-            ((DSAPublicKey)pubKey).getParams() == null) {
+        if (PKIX.isDSAPublicKeyWithoutParams(pubKey)) {
             // pubKey needs to inherit DSA parameters from prev key
             pubKey = BasicChecker.makeInheritedParamsKey(pubKey, prevPubKey);
         }
