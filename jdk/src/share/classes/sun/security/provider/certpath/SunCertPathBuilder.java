@@ -31,7 +31,6 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.PublicKey;
 import java.security.cert.*;
 import java.security.cert.PKIXReason;
-import java.security.interfaces.DSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -240,6 +239,15 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                 this.pathCompleted = true;
                 this.finalPublicKey = anchor.getTrustedCert().getPublicKey();
                 break;
+            }
+
+            // skip anchor if it contains a DSA key with no DSA params
+            X509Certificate trustedCert = anchor.getTrustedCert();
+            PublicKey pubKey = trustedCert != null ? trustedCert.getPublicKey()
+                                                   : anchor.getCAPublicKey();
+
+            if (PKIX.isDSAPublicKeyWithoutParams(pubKey)) {
+                continue;
             }
 
             /* Initialize current state */
@@ -705,9 +713,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                  * Extract and save the final target public key
                  */
                 finalPublicKey = cert.getPublicKey();
-                if (finalPublicKey instanceof DSAPublicKey &&
-                    ((DSAPublicKey)finalPublicKey).getParams() == null)
-                {
+                if (PKIX.isDSAPublicKeyWithoutParams(finalPublicKey)) {
                     finalPublicKey =
                         BasicChecker.makeInheritedParamsKey
                             (finalPublicKey, currentState.pubKey);
