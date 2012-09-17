@@ -1593,12 +1593,12 @@ class ComputeMoveOrder: public StackObj {
 };
 
 static void verify_oop_args(MacroAssembler* masm,
-                            int total_args_passed,
+                            methodHandle method,
                             const BasicType* sig_bt,
                             const VMRegPair* regs) {
   Register temp_reg = rbx;  // not part of any compiled calling seq
   if (VerifyOops) {
-    for (int i = 0; i < total_args_passed; i++) {
+    for (int i = 0; i < method->size_of_parameters(); i++) {
       if (sig_bt[i] == T_OBJECT ||
           sig_bt[i] == T_ARRAY) {
         VMReg r = regs[i].first();
@@ -1615,35 +1615,32 @@ static void verify_oop_args(MacroAssembler* masm,
 }
 
 static void gen_special_dispatch(MacroAssembler* masm,
-                                 int total_args_passed,
-                                 int comp_args_on_stack,
-                                 vmIntrinsics::ID special_dispatch,
+                                 methodHandle method,
                                  const BasicType* sig_bt,
                                  const VMRegPair* regs) {
-  verify_oop_args(masm, total_args_passed, sig_bt, regs);
+  verify_oop_args(masm, method, sig_bt, regs);
+  vmIntrinsics::ID iid = method->intrinsic_id();
 
   // Now write the args into the outgoing interpreter space
   bool     has_receiver   = false;
   Register receiver_reg   = noreg;
   int      member_arg_pos = -1;
   Register member_reg     = noreg;
-  int      ref_kind       = MethodHandles::signature_polymorphic_intrinsic_ref_kind(special_dispatch);
+  int      ref_kind       = MethodHandles::signature_polymorphic_intrinsic_ref_kind(iid);
   if (ref_kind != 0) {
-    member_arg_pos = total_args_passed - 1;  // trailing MemberName argument
+    member_arg_pos = method->size_of_parameters() - 1;  // trailing MemberName argument
     member_reg = rbx;  // known to be free at this point
     has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
-  } else if (special_dispatch == vmIntrinsics::_invokeBasic) {
+  } else if (iid == vmIntrinsics::_invokeBasic) {
     has_receiver = true;
   } else {
-    guarantee(false, err_msg("special_dispatch=%d", special_dispatch));
+    fatal(err_msg_res("unexpected intrinsic id %d", iid));
   }
 
   if (member_reg != noreg) {
     // Load the member_arg into register, if necessary.
-    assert(member_arg_pos >= 0 && member_arg_pos < total_args_passed, "oob");
-    assert(sig_bt[member_arg_pos] == T_OBJECT, "dispatch argument must be an object");
+    SharedRuntime::check_member_name_argument_is_last_argument(method, sig_bt, regs);
     VMReg r = regs[member_arg_pos].first();
-    assert(r->is_valid(), "bad member arg");
     if (r->is_stack()) {
       __ movptr(member_reg, Address(rsp, r->reg2stack() * VMRegImpl::stack_slot_size + wordSize));
     } else {
@@ -1654,7 +1651,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
 
   if (has_receiver) {
     // Make sure the receiver is loaded into a register.
-    assert(total_args_passed > 0, "oob");
+    assert(method->size_of_parameters() > 0, "oob");
     assert(sig_bt[0] == T_OBJECT, "receiver argument must be an object");
     VMReg r = regs[0].first();
     assert(r->is_valid(), "bad receiver arg");
@@ -1662,7 +1659,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
       // Porting note:  This assumes that compiled calling conventions always
       // pass the receiver oop in a register.  If this is not true on some
       // platform, pick a temp and load the receiver from stack.
-      assert(false, "receiver always in a register");
+      fatal("receiver always in a register");
       receiver_reg = j_rarg0;  // known to be free at this point
       __ movptr(receiver_reg, Address(rsp, r->reg2stack() * VMRegImpl::stack_slot_size + wordSize));
     } else {
@@ -1672,7 +1669,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
   }
 
   // Figure out which address we are really jumping to:
-  MethodHandles::generate_method_handle_dispatch(masm, special_dispatch,
+  MethodHandles::generate_method_handle_dispatch(masm, iid,
                                                  receiver_reg, member_reg, /*for_compiler_entry:*/ true);
 }
 
@@ -1708,8 +1705,6 @@ static void gen_special_dispatch(MacroAssembler* masm,
 nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 methodHandle method,
                                                 int compile_id,
-                                                int total_in_args,
-                                                int comp_args_on_stack,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,
                                                 BasicType ret_type) {
@@ -1718,9 +1713,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     intptr_t start = (intptr_t)__ pc();
     int vep_offset = ((intptr_t)__ pc()) - start;
     gen_special_dispatch(masm,
-                         total_in_args,
-                         comp_args_on_stack,
-                         method->intrinsic_id(),
+                         method,
                          in_sig_bt,
                          in_regs);
     int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
@@ -1754,6 +1747,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // we convert the java signature to a C signature by inserting
   // the hidden arguments as arg[0] and possibly arg[1] (static method)
 
+  const int total_in_args = method->size_of_parameters();
   int total_c_args = total_in_args;
   if (!is_critical_native) {
     total_c_args += 1;

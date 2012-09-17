@@ -2428,9 +2428,6 @@ public:
   static void test();
 #endif
 
-  // convert an incoming arglist to varargs format; put the pointer in d
-  void set_varargs( Argument a, Register d );
-
   int total_frame_size_in_bytes(int extraWords);
 
   // used when extraWords known statically
