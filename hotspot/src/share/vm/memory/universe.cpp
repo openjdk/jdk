@@ -117,6 +117,7 @@ Array<Klass*>* Universe::_the_array_interfaces_array = NULL;
 oop Universe::_the_null_string                        = NULL;
 oop Universe::_the_min_jint_string                   = NULL;
 LatestMethodOopCache* Universe::_finalizer_register_cache = NULL;
+LatestMethodOopCache* Universe::_loader_addClass_cache    = NULL;
 ActiveMethodOopsCache* Universe::_reflect_invoke_cache    = NULL;
 oop Universe::_out_of_memory_error_java_heap          = NULL;
 oop Universe::_out_of_memory_error_perm_gen           = NULL;
@@ -228,6 +229,7 @@ void Universe::serialize(SerializeClosure* f, bool do_all) {
   f->do_ptr((void**)&_the_empty_method_array);
   f->do_ptr((void**)&_the_empty_klass_array);
   _finalizer_register_cache->serialize(f);
+  _loader_addClass_cache->serialize(f);
   _reflect_invoke_cache->serialize(f);
 }
 
@@ -652,6 +654,7 @@ jint universe_init() {
   // We have a heap so create the Method* caches before
   // Metaspace::initialize_shared_spaces() tries to populate them.
   Universe::_finalizer_register_cache = new LatestMethodOopCache();
+  Universe::_loader_addClass_cache    = new LatestMethodOopCache();
   Universe::_reflect_invoke_cache     = new ActiveMethodOopsCache();
 
   if (UseSharedSpaces) {
@@ -1040,6 +1043,16 @@ bool universe_post_init() {
       "java.lang.reflect.Method.invoke", false);
   }
   Universe::_reflect_invoke_cache->init(k_h(), m, CHECK_false);
+
+  // Setup method for registering loaded classes in class loader vector
+  InstanceKlass::cast(SystemDictionary::ClassLoader_klass())->link_class(CHECK_false);
+  m = InstanceKlass::cast(SystemDictionary::ClassLoader_klass())->find_method(vmSymbols::addClass_name(), vmSymbols::class_void_signature());
+  if (m == NULL || m->is_static()) {
+    THROW_MSG_(vmSymbols::java_lang_NoSuchMethodException(),
+      "java.lang.ClassLoader.addClass", false);
+  }
+  Universe::_loader_addClass_cache->init(
+    SystemDictionary::ClassLoader_klass(), m, CHECK_false);
 
   // The folowing is initializing converter functions for serialization in
   // JVM.cpp. If we clean up the StrictMath code above we may want to find

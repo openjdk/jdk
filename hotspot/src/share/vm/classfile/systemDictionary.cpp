@@ -1496,6 +1496,19 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
   int d_index = dictionary()->hash_to_index(d_hash);
   check_constraints(d_index, d_hash, k, class_loader_h, true, CHECK);
 
+  // Register class just loaded with class loader (placed in Vector)
+  // Note we do this before updating the dictionary, as this can
+  // fail with an OutOfMemoryError (if it does, we will *not* put this
+  // class in the dictionary and will not update the class hierarchy).
+  // JVMTI FollowReferences needs to find the classes this way.
+  if (k->class_loader() != NULL) {
+    methodHandle m(THREAD, Universe::loader_addClass_method());
+    JavaValue result(T_VOID);
+    JavaCallArguments args(class_loader_h);
+    args.push_oop(Handle(THREAD, k->java_mirror()));
+    JavaCalls::call(&result, m, &args, CHECK);
+  }
+
   // Add the new class. We need recompile lock during update of CHA.
   {
     unsigned int p_hash = placeholders()->compute_hash(name_h, loader_data);
