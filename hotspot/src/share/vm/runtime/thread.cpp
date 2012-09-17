@@ -308,19 +308,25 @@ void Thread::initialize_thread_local_storage() {
 
   // initialize structure dependent on thread local storage
   ThreadLocalStorage::set_thread(this);
-
-  // set up any platform-specific state.
-  os::initialize_thread();
 }
 
 void Thread::record_stack_base_and_size() {
   set_stack_base(os::current_stack_base());
   set_stack_size(os::current_stack_size());
+  // CR 7190089: on Solaris, primordial thread's stack is adjusted
+  // in initialize_thread(). Without the adjustment, stack size is
+  // incorrect if stack is set to unlimited (ulimit -s unlimited).
+  // So far, only Solaris has real implementation of initialize_thread().
+  //
+  // set up any platform-specific state.
+  os::initialize_thread(this);
 
-  // record thread's native stack, stack grows downward
-  address low_stack_addr = stack_base() - stack_size();
-  MemTracker::record_thread_stack(low_stack_addr, stack_size(), this,
-             CURRENT_PC);
+   // record thread's native stack, stack grows downward
+  if (MemTracker::is_on()) {
+    address stack_low_addr = stack_base() - stack_size();
+    MemTracker::record_thread_stack(stack_low_addr, stack_size(), this,
+      CURRENT_PC);
+  }
 }
 
 

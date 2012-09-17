@@ -341,6 +341,7 @@ void MemTracker::release_thread_recorder(MemRecorder* rec) {
  */
 void MemTracker::create_memory_record(address addr, MEMFLAGS flags,
     size_t size, address pc, Thread* thread) {
+  assert(addr != NULL, "Sanity check");
   if (!shutdown_in_progress()) {
     // single thread, we just write records direct to global recorder,'
     // with any lock
