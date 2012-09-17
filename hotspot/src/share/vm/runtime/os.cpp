@@ -201,14 +201,21 @@ OSReturn os::set_priority(Thread* thread, ThreadPriority p) {
   }
 }
 
-
+// The mapping from OS priority back to Java priority may be inexact because
+// Java priorities can map M:1 with native priorities. If you want the definite
+// Java priority then use JavaThread::java_priority()
 OSReturn os::get_priority(const Thread* const thread, ThreadPriority& priority) {
   int p;
   int os_prio;
   OSReturn ret = get_native_priority(thread, &os_prio);
   if (ret != OS_OK) return ret;
 
-  for (p = MaxPriority; p > MinPriority && java_to_os_priority[p] > os_prio; p--) ;
+  if (java_to_os_priority[MaxPriority] > java_to_os_priority[MinPriority]) {
+    for (p = MaxPriority; p > MinPriority && java_to_os_priority[p] > os_prio; p--) ;
+  } else {
+    // niceness values are in reverse order
+    for (p = MaxPriority; p > MinPriority && java_to_os_priority[p] < os_prio; p--) ;
+  }
   priority = (ThreadPriority)p;
   return OS_OK;
 }
