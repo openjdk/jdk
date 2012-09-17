@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Rules to build gamma launcher, used by vm.make
@@ -41,6 +41,8 @@ LAUNCHERFLAGS := $(ARCHFLAG) \
                 -DLAUNCHER_TYPE=\"gamma\" \
                 -DLINK_INTO_$(LINK_INTO) \
                 $(TARGET_DEFINES)
+# Give the launcher task_for_pid() privileges so that it can be used to run JStack, JInfo, et al.
+LFLAGS_LAUNCHER += -sectcreate __TEXT __info_plist $(GAMMADIR)/src/os/bsd/launcher/Info-privileged.plist
 
 ifeq ($(LINK_INTO),AOUT)
   LAUNCHER.o                 = launcher.o $(JVM_OBJ_FILES)
@@ -50,22 +52,22 @@ ifeq ($(LINK_INTO),AOUT)
   LIBS_LAUNCHER             += $(STATIC_STDCXX) $(LIBS)
 else
   LAUNCHER.o                 = launcher.o
-  LFLAGS_LAUNCHER           += -L`pwd` 
+  LFLAGS_LAUNCHER           += -L`pwd`
 
   # The gamma launcher runs the JDK from $JAVA_HOME, overriding the JVM with a
-  # freshly built JVM at ./libjvm.{so|dylib}.  This is accomplished by setting 
-  # the library searchpath using ({DY}LD_LIBRARY_PATH) to find the local JVM 
+  # freshly built JVM at ./libjvm.{so|dylib}.  This is accomplished by setting
+  # the library searchpath using ({DY}LD_LIBRARY_PATH) to find the local JVM
   # first.  Gamma dlopen()s libjava from $JAVA_HOME/jre/lib{/$arch}, which is
   # statically linked with CoreFoundation framework libs. Unfortunately, gamma's
-  # unique searchpath results in some unresolved symbols in the framework 
+  # unique searchpath results in some unresolved symbols in the framework
   # libraries, because JDK libraries are inadvertently discovered first on the
   # searchpath, e.g. libjpeg.  On Mac OS X, filenames are case *insensitive*.
   # So, the actual filename collision is libjpeg.dylib and libJPEG.dylib.
-  # To resolve this, gamma needs to also statically link with the CoreFoundation 
+  # To resolve this, gamma needs to also statically link with the CoreFoundation
   # framework libraries.
 
   ifeq ($(OS_VENDOR),Darwin)
-    LFLAGS_LAUNCHER         += -framework CoreFoundation 
+    LFLAGS_LAUNCHER         += -framework CoreFoundation
   endif
 
   LIBS_LAUNCHER             += -l$(JVM) $(LIBS)
@@ -101,6 +103,9 @@ $(LAUNCHER): $(OBJS) $(LIBJVM) $(LAUNCHER_MAPFILE)
 	$(QUIETLY) $(LINK_LAUNCHER/PRE_HOOK)
 	$(QUIETLY) $(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(OBJS) $(LIBS_LAUNCHER)
 	$(QUIETLY) $(LINK_LAUNCHER/POST_HOOK)
+	# Sign the launcher with the development certificate (if present) so that it can be used
+	# to run JStack, JInfo, et al.
+	$(QUIETLY) -codesign -s openjdk_codesign $@
 
 $(LAUNCHER): $(LAUNCHER_SCRIPT)
 
