@@ -245,6 +245,7 @@ static struct _nsKeyToJavaModifier
     //NSUInteger cgsRightMask;
     unsigned short leftKeyCode;
     unsigned short rightKeyCode;
+    jint javaExtMask;
     jint javaMask;
     jint javaKey;
 }
@@ -255,6 +256,7 @@ const nsKeyToJavaModifierTable[] =
         0,
         0,
         0, // no Java equivalent
+        0, // no Java equivalent
         java_awt_event_KeyEvent_VK_CAPS_LOCK
     },
     {
@@ -264,6 +266,7 @@ const nsKeyToJavaModifierTable[] =
         56,
         60,
         java_awt_event_InputEvent_SHIFT_DOWN_MASK,
+        java_awt_event_InputEvent_SHIFT_MASK,
         java_awt_event_KeyEvent_VK_SHIFT
     },
     {
@@ -273,6 +276,7 @@ const nsKeyToJavaModifierTable[] =
         59,
         62,
         java_awt_event_InputEvent_CTRL_DOWN_MASK,
+        java_awt_event_InputEvent_CTRL_MASK,
         java_awt_event_KeyEvent_VK_CONTROL
     },
     {
@@ -282,6 +286,7 @@ const nsKeyToJavaModifierTable[] =
         58,
         61,
         java_awt_event_InputEvent_ALT_DOWN_MASK,
+        java_awt_event_InputEvent_ALT_MASK,
         java_awt_event_KeyEvent_VK_ALT
     },
     {
@@ -291,6 +296,7 @@ const nsKeyToJavaModifierTable[] =
         55,
         54,
         java_awt_event_InputEvent_META_DOWN_MASK,
+        java_awt_event_InputEvent_META_MASK,
         java_awt_event_KeyEvent_VK_META
     },
     // NSNumericPadKeyMask
@@ -299,10 +305,11 @@ const nsKeyToJavaModifierTable[] =
         0,
         0,
         0, // no Java equivalent
+        0, // no Java equivalent
         java_awt_event_KeyEvent_VK_HELP
     },
     // NSFunctionKeyMask
-    {0, 0, 0, 0, 0}
+    {0, 0, 0, 0, 0, 0}
 };
 
 /*
@@ -533,25 +540,51 @@ NsKeyModifiersToJavaKeyInfo(NSUInteger nsFlags, unsigned short eventKeyCode,
 /*
  * This returns the java modifiers for a key NSEvent.
  */
-static jint
-NsKeyModifiersToJavaModifiers(NSUInteger nsFlags)
+jint NsKeyModifiersToJavaModifiers(NSUInteger nsFlags, BOOL isExtMods)
 {
     jint javaModifiers = 0;
     const struct _nsKeyToJavaModifier* cur;
 
     for (cur = nsKeyToJavaModifierTable; cur->nsMask != 0; ++cur) {
         if ((cur->nsMask & nsFlags) != 0) {
-            javaModifiers |= cur->javaMask;
+            javaModifiers |= isExtMods? cur->javaExtMask : cur->javaMask;
         }
     }
 
     return javaModifiers;
 }
 
+/*
+ * This returns the NSEvent flags for java key modifiers.
+ */
+NSUInteger JavaModifiersToNsKeyModifiers(jint javaModifiers, BOOL isExtMods)
+{
+    NSUInteger nsFlags = 0;
+    const struct _nsKeyToJavaModifier* cur;
+
+    for (cur = nsKeyToJavaModifierTable; cur->nsMask != 0; ++cur) {
+        jint mask = isExtMods? cur->javaExtMask : cur->javaMask; 
+        if ((mask & javaModifiers) != 0) {
+            nsFlags |= cur->nsMask;
+        }
+    }
+
+    // special case
+    jint mask = isExtMods? java_awt_event_InputEvent_ALT_GRAPH_DOWN_MASK : 
+                           java_awt_event_InputEvent_ALT_GRAPH_MASK;
+
+    if ((mask & javaModifiers) != 0) {
+        nsFlags |= NSAlternateKeyMask;      
+    }
+
+    return nsFlags;
+}
+
+
 jint GetJavaMouseModifiers(NSInteger button, NSUInteger modifierFlags)
 {
     // Mousing needs the key modifiers
-    jint modifiers = NsKeyModifiersToJavaModifiers(modifierFlags);
+    jint modifiers = NsKeyModifiersToJavaModifiers(modifierFlags, YES);
 
 
     /*
@@ -632,7 +665,7 @@ Java_sun_lwawt_macosx_event_NSEvent_nsToJavaKeyModifiers
 
 JNF_COCOA_ENTER(env);
 
-    jmodifiers = NsKeyModifiersToJavaModifiers(modifierFlags);
+    jmodifiers = NsKeyModifiersToJavaModifiers(modifierFlags, YES);
 
 JNF_COCOA_EXIT(env);
 
