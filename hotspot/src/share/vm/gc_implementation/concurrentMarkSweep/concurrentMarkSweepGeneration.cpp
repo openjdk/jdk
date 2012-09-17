@@ -3425,10 +3425,7 @@ CMSPhaseAccounting::~CMSPhaseAccounting() {
   _wallclock.stop();
   if (PrintGCDetails) {
     gclog_or_tty->date_stamp(PrintGCDateStamps);
-    if (PrintGCTimeStamps) {
-      gclog_or_tty->stamp();
-      gclog_or_tty->print(": ");
-    }
+    gclog_or_tty->stamp(PrintGCTimeStamps);
     gclog_or_tty->print("[%s-concurrent-%s: %3.3f/%3.3f secs]",
                  _collector->cmsGen()->short_name(),
                  _phase, _collector->timerValue(), _wallclock.seconds());

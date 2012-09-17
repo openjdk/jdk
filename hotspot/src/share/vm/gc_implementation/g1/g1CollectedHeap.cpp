@@ -3663,6 +3663,43 @@ void G1CollectedHeap::reset_taskqueue_stats() {
 }
 #endif // TASKQUEUE_STATS
 
+void G1CollectedHeap::log_gc_header() {
+  if (!G1Log::fine()) {
+    return;
+  }
+
+  gclog_or_tty->date_stamp(PrintGCDateStamps);
+  gclog_or_tty->stamp(PrintGCTimeStamps);
+
+  GCCauseString gc_cause_str = GCCauseString("GC pause", gc_cause())
+    .append(g1_policy()->gcs_are_young() ? " (young)" : " (mixed)")
+    .append(g1_policy()->during_initial_mark_pause() ? " (initial-mark)" : "");
+
+  gclog_or_tty->print("[%s", (const char*)gc_cause_str);
+}
+
+void G1CollectedHeap::log_gc_footer(double pause_time_sec) {
+  if (!G1Log::fine()) {
+    return;
+  }
+
+  if (G1Log::finer()) {
+    if (evacuation_failed()) {
+      gclog_or_tty->print(" (to-space exhausted)");
+    }
+    gclog_or_tty->print_cr(", %3.7f secs]", pause_time_sec);
+    g1_policy()->phase_times()->note_gc_end();
+    g1_policy()->phase_times()->print(pause_time_sec);
+    g1_policy()->print_detailed_heap_transition();
+  } else {
+    if (evacuation_failed()) {
+      gclog_or_tty->print("--");
+    }
+    g1_policy()->print_heap_transition();
+    gclog_or_tty->print_cr(", %3.7f secs]", pause_time_sec);
+  }
+}
+
 bool
 G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   assert_at_safepoint(true /* should_be_vm_thread */);
@@ -3705,17 +3742,13 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // full collection counter.
       increment_old_marking_cycles_started();
     }
-    // if the log level is "finer" is on, we'll print long statistics information
-    // in the collector policy code, so let's not print this as the output
-    // is messy if we do.
-    gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
     int active_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
                                 workers()->active_workers() : 1);
     double pause_start_sec = os::elapsedTime();
     g1_policy()->phase_times()->note_gc_start(active_workers);
-    bool initial_mark_gc = g1_policy()->during_initial_mark_pause();
+    log_gc_header();
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
@@ -4012,35 +4045,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
       gc_epilogue(false);
 
-      if (G1Log::fine()) {
-        if (PrintGCTimeStamps) {
-          gclog_or_tty->stamp();
-          gclog_or_tty->print(": ");
-        }
-
-        GCCauseString gc_cause_str = GCCauseString("GC pause", gc_cause())
-          .append(g1_policy()->gcs_are_young() ? " (young)" : " (mixed)")
-          .append(initial_mark_gc ? " (initial-mark)" : "");
-
-        double pause_time_sec = os::elapsedTime() - pause_start_sec;
-
-        if (G1Log::finer()) {
-          if (evacuation_failed()) {
-            gc_cause_str.append(" (to-space exhausted)");
-          }
-          gclog_or_tty->print_cr("[%s, %3.7f secs]", (const char*)gc_cause_str, pause_time_sec);
-          g1_policy()->phase_times()->note_gc_end();
-          g1_policy()->phase_times()->print(pause_time_sec);
-          g1_policy()->print_detailed_heap_transition();
-        } else {
-          if (evacuation_failed()) {
-            gc_cause_str.append("--");
-          }
-          gclog_or_tty->print("[%s", (const char*)gc_cause_str);
-      g1_policy()->print_heap_transition();
-          gclog_or_tty->print_cr(", %3.7f secs]", pause_time_sec);
-        }
-      }
+      log_gc_footer(os::elapsedTime() - pause_start_sec);
     }
 
     // It is not yet to safe to tell the concurrent mark to

@@ -408,6 +408,9 @@ private:
   void verify_before_gc();
   void verify_after_gc();
 
+  void log_gc_header();
+  void log_gc_footer(double pause_time_sec);
+
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
 
