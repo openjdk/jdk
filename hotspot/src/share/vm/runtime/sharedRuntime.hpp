@@ -345,7 +345,11 @@ class SharedRuntime: AllStatic {
   // the bottom of the frame the first 16 words will be skipped and SharedInfo::stack0
   // will be just above it. (
   // return value is the maximum number of VMReg stack slots the convention will use.
-  static int java_calling_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed, int is_outgoing);
+  static int java_calling_convention(const BasicType* sig_bt, VMRegPair* regs, int total_args_passed, int is_outgoing);
+
+  static void check_member_name_argument_is_last_argument(methodHandle method,
+                                                          const BasicType* sig_bt,
+                                                          const VMRegPair* regs) NOT_DEBUG_RETURN;
 
   // Ditto except for calling C
   static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed);
@@ -425,13 +429,11 @@ class SharedRuntime: AllStatic {
   // The wrapper may contain special-case code if the given method
   // is a JNI critical method, or a compiled method handle adapter,
   // such as _invokeBasic, _linkToVirtual, etc.
-  static nmethod *generate_native_wrapper(MacroAssembler* masm,
+  static nmethod* generate_native_wrapper(MacroAssembler* masm,
                                           methodHandle method,
                                           int compile_id,
-                                          int total_args_passed,
-                                          int max_arg,
-                                          BasicType *sig_bt,
-                                          VMRegPair *regs,
+                                          BasicType* sig_bt,
+                                          VMRegPair* regs,
                                           BasicType ret_type );
 
   // Block before entering a JNI critical method

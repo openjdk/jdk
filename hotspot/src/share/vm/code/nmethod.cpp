@@ -700,7 +700,9 @@ nmethod::nmethod(
     // then print the requested information
     if (PrintNativeNMethods) {
       print_code();
-      oop_maps->print();
+      if (oop_maps != NULL) {
+        oop_maps->print();
+      }
     }
     if (PrintRelocations) {
       print_relocations();
