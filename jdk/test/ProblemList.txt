@@ -147,6 +147,9 @@ javax/management/remote/mandatory/connection/ReconnectTest.java	generic-all
 # 7158614, locks up Windows machines at least
 sun/management/jmxremote/startstop/JMXStartStopTest.sh		windows-all
 
+# 7120365
+javax/management/remote/mandatory/notif/DiffHBTest.java 	generic-all
+
 ############################################################################
 
 # jdk_math
