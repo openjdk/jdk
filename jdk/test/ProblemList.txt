@@ -216,11 +216,6 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 sun/net/www/protocol/http/B6299712.java                         macosx-all
 java/net/CookieHandler/CookieManagerTest.java                   macosx-all
 
-# 7164518
-sun/security/krb5/auto/Unreachable.java                         macosx-all
-
-# JPRT needs to set 127.0.0.1 in proxy bypass list
-java/net/URLClassLoader/closetest/CloseTest.java                macosx-all
 ############################################################################
 
 # jdk_io
@@ -276,6 +271,9 @@ sun/rmi/transport/proxy/EagerHttpFallback.java                  linux-all
 ############################################################################
 
 # jdk_security
+
+# 7164518: no PortUnreachableException on Mac
+sun/security/krb5/auto/Unreachable.java                         macosx-all
 
 # 7193792
 sun/security/pkcs11/ec/TestECDSA.java				solaris-all
