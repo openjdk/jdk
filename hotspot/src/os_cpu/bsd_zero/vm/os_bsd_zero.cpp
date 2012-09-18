@@ -103,7 +103,7 @@ char* os::non_memory_address_word() {
 #endif // SPARC
 }
 
-void os::initialize_thread() {
+void os::initialize_thread(Thread* thr) {
   // Nothing to do.
 }
 
