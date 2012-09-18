@@ -34,7 +34,7 @@ AC_DEFUN([ADD_JVM_ARG_IF_OK],
     fi
 ])
 
-AC_DEFUN([WHICHCMD],
+AC_DEFUN([SET_FULL_PATH],
 [
     # Translate "gcc -E" into "`which gcc` -E" ie
     # extract the full path to the binary and at the
@@ -46,7 +46,7 @@ AC_DEFUN([WHICHCMD],
     cdr="${tmp#* }"
     # On windows we want paths without spaces.
     if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-        WHICHCMD_SPACESAFE(car)
+        SET_FULL_PATH_SPACESAFE(car)
     else
         # "which" is not portable, but is used here
         # because we know that the command exists!
@@ -66,15 +66,19 @@ AC_DEFUN([SPACESAFE],
     HAS_SPACE=`echo "[$]$1" | grep " "`
     if test "x$HAS_SPACE" != x; then
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+            # First convert it to DOS-style, short mode (no spaces)
             $1=`$CYGPATH -s -m -a "[$]$1"`
-            $1=`$CYGPATH -u "[$]$1"`            
+            # Now it's case insensitive; let's make it lowercase to improve readability
+            $1=`$ECHO "[$]$1" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+            # Now convert it back to Unix-stile (cygpath)
+            $1=`$CYGPATH -u "[$]$1"`
         else
             AC_MSG_ERROR([You cannot have spaces in $2! "[$]$1"])
         fi
     fi
 ])
 
-AC_DEFUN([WHICHCMD_SPACESAFE],
+AC_DEFUN([SET_FULL_PATH_SPACESAFE],
 [
     # Translate long cygdrive or C:\sdfsf path
     # into a short mixed mode path that has no
@@ -148,15 +152,16 @@ AC_DEFUN_ONCE([BASIC_INIT],
 AC_SUBST(CONFIGURE_COMMAND_LINE)
 DATE_WHEN_CONFIGURED=`LANG=C date`
 AC_SUBST(DATE_WHEN_CONFIGURED)
-
-# Locate the directory of this script.
-SCRIPT="[$]0"
-REMOVE_SYMBOLIC_LINKS(SCRIPT)        
-AUTOCONF_DIR=`dirname [$]0`
 ])
 
+# Setup basic configuration paths, and platform-specific stuff related to PATHs.
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
+# Locate the directory of this script.
+SCRIPT="[$]0"
+REMOVE_SYMBOLIC_LINKS(SCRIPT)
+AUTOCONF_DIR=`dirname [$]0`
+
 # Where is the source? It is located two levels above the configure script.
 CURDIR="$PWD"
 cd "$AUTOCONF_DIR/../.."
@@ -172,18 +177,12 @@ cd "$CURDIR"
 
 SPACESAFE(SRC_ROOT,[the path to the source root])
 SPACESAFE(CURDIR,[the path to the current directory])
-])
 
-AC_DEFUN_ONCE([BASIC_SETUP_SEARCHPATH],
-[
 if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
     # Add extra search paths on solaris for utilities like ar and as etc...
     PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
 fi
-])
 
-AC_DEFUN_ONCE([BASIC_SETUP_PATH_SEP],
-[
 # For cygwin we need cygpath first, since it is used everywhere.
 AC_PATH_PROG(CYGPATH, cygpath)
 PATH_SEP=":"
@@ -194,6 +193,36 @@ if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
     PATH_SEP=";"
 fi
 AC_SUBST(PATH_SEP)
+
+# You can force the sys-root if the sys-root encoded into the cross compiler tools
+# is not correct.
+AC_ARG_WITH(sys-root, [AS_HELP_STRING([--with-sys-root],
+  [pass this sys-root to the compilers and linker (useful if the sys-root encoded in
+   the cross compiler tools is incorrect)])])
+
+if test "x$with_sys_root" != x; then
+  SYS_ROOT=$with_sys_root
+else
+  SYS_ROOT=/
+fi
+AC_SUBST(SYS_ROOT)
+
+AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
+  [search this directory for (cross-compiling) compilers and tools])], [TOOLS_DIR=$with_tools_dir])
+
+AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
+  [use this directory as base for tools-dir and sys-root (for cross-compiling)])],
+  [
+    if test "x$with_sys_root" != x; then
+      AC_MSG_ERROR([Cannot specify both --with-devkit and --with-sys-root at the same time])
+    fi
+    if test "x$with_tools_dir" != x; then
+      AC_MSG_ERROR([Cannot specify both --with-devkit and --with-tools-dir at the same time])
+    fi
+    TOOLS_DIR=$with_devkit/bin
+    SYS_ROOT=$with_devkit/$host_alias/libc
+  ])
+
 ])
 
 AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
@@ -236,7 +265,13 @@ AC_SUBST(OUTPUT_ROOT, $OUTPUT_ROOT)
 AC_CONFIG_HEADERS([$OUTPUT_ROOT/config.h:$AUTOCONF_DIR/config.h.in])
 # The spec.gmk file contains all variables for the make system.
 AC_CONFIG_FILES([$OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
-# The spec.sh file contains variables for compare{images|-objects}.sh scrips.
+# The hotspot-spec.gmk file contains legacy variables for the hotspot make system.
+AC_CONFIG_FILES([$OUTPUT_ROOT/hotspot-spec.gmk:$AUTOCONF_DIR/hotspot-spec.gmk.in])
+# The bootcycle-spec.gmk file contains support for boot cycle builds.
+AC_CONFIG_FILES([$OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in])
+# The compare.sh is used to compare the build output to other builds.
+AC_CONFIG_FILES([$OUTPUT_ROOT/compare.sh:$AUTOCONF_DIR/compare.sh.in])
+# Spec.sh is currently used by compare-objects.sh
 AC_CONFIG_FILES([$OUTPUT_ROOT/spec.sh:$AUTOCONF_DIR/spec.sh.in])
 # The generated Makefile knows where the spec.gmk is and where the source is.
 # You can run make from the OUTPUT_ROOT, or from the top-level Makefile
@@ -261,6 +296,79 @@ AC_SUBST(BUILD_LOG_WRAPPER)
 
 #%%% Simple tools %%%
 
+# Check if we have found a usable version of make
+# $1: the path to a potential make binary (or empty)
+# $2: the description on how we found this
+AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
+[
+  MAKE_CANDIDATE="$1"
+  DESCRIPTION="$2"
+  if test "x$MAKE_CANDIDATE" != x; then
+    AC_MSG_NOTICE([Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION])
+    SET_FULL_PATH(MAKE_CANDIDATE)
+    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
+    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
+    if test "x$IS_GNU_MAKE" = x; then
+      AC_MSG_NOTICE([Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring.])
+    else
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[[12346789]]'`
+      if test "x$IS_MODERN_MAKE" = x; then
+        AC_MSG_NOTICE([Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring.])
+      else 
+        FOUND_MAKE=$MAKE_CANDIDATE
+      fi
+    fi
+  fi
+])
+
+# Goes looking for a usable version of GNU make.
+AC_DEFUN([BASIC_CHECK_GNU_MAKE],
+[
+  # We need to find a recent version of GNU make. Especially on Solaris, this can be tricky.
+  if test "x$MAKE" != x; then
+    # User has supplied a make, test it.
+    if test ! -f "$MAKE"; then
+      AC_MSG_ERROR([The specified make (by MAKE=$MAKE) is not found.])
+    fi
+    BASIC_CHECK_MAKE_VERSION("$MAKE", [user supplied MAKE=])
+    if test "x$FOUND_MAKE" = x; then
+      AC_MSG_ERROR([The specified make (by MAKE=$MAKE) is not GNU make 3.81 or newer.])
+    fi
+  else
+    # Try our hardest to locate a correct version of GNU make
+    AC_PATH_PROGS(CHECK_GMAKE, gmake)
+    BASIC_CHECK_MAKE_VERSION("$CHECK_GMAKE", [gmake in PATH])
+
+    if test "x$FOUND_MAKE" = x; then
+      AC_PATH_PROGS(CHECK_MAKE, make)
+      BASIC_CHECK_MAKE_VERSION("$CHECK_MAKE", [make in PATH])
+    fi
+
+    if test "x$FOUND_MAKE" = x; then
+      if test "x$TOOLS_DIR" != x; then
+        # We have a tools-dir, check that as well before giving up.
+        OLD_PATH=$PATH
+        PATH=$TOOLS_DIR:$PATH
+        AC_PATH_PROGS(CHECK_TOOLSDIR_GMAKE, gmake)
+        BASIC_CHECK_MAKE_VERSION("$CHECK_TOOLSDIR_GMAKE", [gmake in tools-dir])
+        if test "x$FOUND_MAKE" = x; then
+          AC_PATH_PROGS(CHECK_TOOLSDIR_MAKE, make)
+          BASIC_CHECK_MAKE_VERSION("$CHECK_TOOLSDIR_MAKE", [make in tools-dir])
+        fi
+        PATH=$OLD_PATH
+      fi
+    fi
+
+    if test "x$FOUND_MAKE" = x; then
+      AC_MSG_ERROR([Cannot find GNU make 3.81 or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure.])
+    fi
+  fi
+
+  MAKE=$FOUND_MAKE
+  AC_SUBST(MAKE)
+  AC_MSG_NOTICE([Using GNU make 3.81 (or later) at $FOUND_MAKE (version: $MAKE_VERSION_STRING)])
+])
+
 AC_DEFUN([BASIC_CHECK_FIND_DELETE],
 [
     # Test if find supports -delete
@@ -283,10 +391,30 @@ AC_DEFUN([BASIC_CHECK_FIND_DELETE],
     rmdir $DELETEDIR
 ])
 
+# Test that variable $1 denoting a program is not empty. If empty, exit with an error.
+# $1: variable to check
+# $2: executable name to print in warning (optional)
 AC_DEFUN([CHECK_NONEMPTY],
 [
-    # Test that variable $1 is not empty.
-    if test "" = "[$]$1"; then AC_MSG_ERROR(Could not find translit($1,A-Z,a-z) !); fi
+    if test "x[$]$1" = x; then
+        if test "x$2" = x; then
+          PROG_NAME=translit($1,A-Z,a-z)
+        else
+          PROG_NAME=$2
+        fi
+        AC_MSG_NOTICE([Could not find $PROG_NAME!])
+        AC_MSG_ERROR([Cannot continue])
+    fi
+])
+
+# Does AC_PATH_PROG followed by CHECK_NONEMPTY.
+# Arguments as AC_PATH_PROG:
+# $1: variable to set
+# $2: executable name to look for
+AC_DEFUN([BASIC_REQUIRE_PROG],
+[
+    AC_PATH_PROGS($1, $2)
+    CHECK_NONEMPTY($1, $2)
 ])
 
 AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
@@ -295,90 +423,68 @@ AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
 # and can be expected to be found in the default PATH. These tools are
 # used by configure. Nor are these tools expected to be found in the
 # devkit from the builddeps server either, since they are
-# needed to download the devkit. 
+# needed to download the devkit.
+
+# First are all the simple required tools.
+BASIC_REQUIRE_PROG(BASENAME, basename)
+BASIC_REQUIRE_PROG(CAT, cat)
+BASIC_REQUIRE_PROG(CHMOD, chmod)
+BASIC_REQUIRE_PROG(CMP, cmp)
+BASIC_REQUIRE_PROG(CP, cp)
+BASIC_REQUIRE_PROG(CPIO, cpio)
+BASIC_REQUIRE_PROG(CUT, cut)
+BASIC_REQUIRE_PROG(DATE, date)
+BASIC_REQUIRE_PROG(DF, df)
+BASIC_REQUIRE_PROG(DIFF, [gdiff diff])
+BASIC_REQUIRE_PROG(ECHO, echo)
+BASIC_REQUIRE_PROG(EXPR, expr)
+BASIC_REQUIRE_PROG(FILE, file)
+BASIC_REQUIRE_PROG(FIND, find)
+BASIC_REQUIRE_PROG(HEAD, head)
+BASIC_REQUIRE_PROG(LN, ln)
+BASIC_REQUIRE_PROG(LS, ls)
+BASIC_REQUIRE_PROG(MKDIR, mkdir)
+BASIC_REQUIRE_PROG(MV, mv)
+BASIC_REQUIRE_PROG(PRINTF, printf)
+BASIC_REQUIRE_PROG(SH, sh)
+BASIC_REQUIRE_PROG(SORT, sort)
+BASIC_REQUIRE_PROG(TAIL, tail)
+BASIC_REQUIRE_PROG(TAR, tar)
+BASIC_REQUIRE_PROG(TEE, tee)
+BASIC_REQUIRE_PROG(TOUCH, touch)
+BASIC_REQUIRE_PROG(TR, tr)
+BASIC_REQUIRE_PROG(UNIQ, uniq)
+BASIC_REQUIRE_PROG(UNZIP, unzip)
+BASIC_REQUIRE_PROG(WC, wc)
+BASIC_REQUIRE_PROG(XARGS, xargs)
+BASIC_REQUIRE_PROG(ZIP, zip)
+
+# Then required tools that require some special treatment.
 AC_PROG_AWK
 CHECK_NONEMPTY(AWK)
-AC_PATH_PROG(CAT, cat)
-CHECK_NONEMPTY(CAT)
-AC_PATH_PROG(CHMOD, chmod)
-CHECK_NONEMPTY(CHMOD)
-AC_PATH_PROG(CP, cp)
-CHECK_NONEMPTY(CP)
-AC_PATH_PROG(CPIO, cpio)
-CHECK_NONEMPTY(CPIO)
-AC_PATH_PROG(CUT, cut)
-CHECK_NONEMPTY(CUT)
-AC_PATH_PROG(DATE, date)
-CHECK_NONEMPTY(DATE)
-AC_PATH_PROG(DF, df)
-CHECK_NONEMPTY(DF)
-AC_PATH_PROG(DIFF, diff)
-CHECK_NONEMPTY(DIFF)
-# Warning echo is really, really unportable!!!!! Different
-# behaviour in bash and dash and in a lot of other shells!
-# Use printf for serious work! 
-AC_PATH_PROG(ECHO, echo)
-CHECK_NONEMPTY(ECHO)
+AC_PROG_GREP
+CHECK_NONEMPTY(GREP)
 AC_PROG_EGREP
 CHECK_NONEMPTY(EGREP)
 AC_PROG_FGREP
 CHECK_NONEMPTY(FGREP)
+AC_PROG_SED
+CHECK_NONEMPTY(SED)
 
-AC_PATH_PROG(FIND, find)
-CHECK_NONEMPTY(FIND)
+AC_PATH_PROGS(NAWK, [nawk gawk awk])
+CHECK_NONEMPTY(NAWK)
+
+BASIC_CHECK_GNU_MAKE
+
+BASIC_REQUIRE_PROG(RM, rm)
+RM="$RM -f"
+
 BASIC_CHECK_FIND_DELETE
 AC_SUBST(FIND_DELETE)
 
-AC_PROG_GREP
-CHECK_NONEMPTY(GREP)
-AC_PATH_PROG(HEAD, head)
-CHECK_NONEMPTY(HEAD)
-AC_PATH_PROG(LN, ln)
-CHECK_NONEMPTY(LN)
-AC_PATH_PROG(LS, ls)
-CHECK_NONEMPTY(LS)
-AC_PATH_PROGS(MAKE, [gmake make])
-CHECK_NONEMPTY(MAKE)
-MAKE_VERSION=`$MAKE --version | head -n 1 | grep '3.8[[12346789]]'`
-if test "x$MAKE_VERSION" = x; then
-    AC_MSG_ERROR([You must use GNU make 3.81 or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure.])
-fi
-AC_PATH_PROG(MKDIR, mkdir)
-CHECK_NONEMPTY(MKDIR)
-AC_PATH_PROG(MV, mv)
-CHECK_NONEMPTY(MV)
-AC_PATH_PROGS(NAWK, [nawk gawk awk])
-CHECK_NONEMPTY(NAWK)
-AC_PATH_PROG(PRINTF, printf)
-CHECK_NONEMPTY(PRINTF)
+# Non-required basic tools
+
 AC_PATH_PROG(THEPWDCMD, pwd)
-AC_PATH_PROG(RM, rm)
-CHECK_NONEMPTY(RM)
-RM="$RM -f"
-AC_PROG_SED
-CHECK_NONEMPTY(SED)
-AC_PATH_PROG(SH, sh)
-CHECK_NONEMPTY(SH)
-AC_PATH_PROG(SORT, sort)
-CHECK_NONEMPTY(SORT)
-AC_PATH_PROG(TAR, tar)
-CHECK_NONEMPTY(TAR)
-AC_PATH_PROG(TAIL, tail)
-CHECK_NONEMPTY(TAIL)
-AC_PATH_PROG(TEE, tee)
-CHECK_NONEMPTY(TEE)
-AC_PATH_PROG(TR, tr)
-CHECK_NONEMPTY(TR)
-AC_PATH_PROG(TOUCH, touch)
-CHECK_NONEMPTY(TOUCH)
-AC_PATH_PROG(WC, wc)
-CHECK_NONEMPTY(WC)
-AC_PATH_PROG(XARGS, xargs)
-CHECK_NONEMPTY(XARGS)
-AC_PATH_PROG(ZIP, zip)
-CHECK_NONEMPTY(ZIP)
-AC_PATH_PROG(UNZIP, unzip)
-CHECK_NONEMPTY(UNZIP)
 AC_PATH_PROG(LDD, ldd)
 if test "x$LDD" = "x"; then
     # List shared lib dependencies is used for
@@ -390,15 +496,10 @@ AC_PATH_PROG(OTOOL, otool)
 if test "x$OTOOL" = "x"; then
    OTOOL="true"
 fi
-AC_PATH_PROG(READELF, readelf)
-AC_PATH_PROG(EXPR, expr)
-CHECK_NONEMPTY(EXPR)
-AC_PATH_PROG(FILE, file)
-CHECK_NONEMPTY(FILE)
+AC_PATH_PROGS(READELF, [readelf greadelf])
+AC_PATH_PROGS(OBJDUMP, [objdump gobjdump])
 AC_PATH_PROG(HG, hg)
 ])
-
-
 
 AC_DEFUN_ONCE([BASIC_COMPILE_UNCYGDRIVE],
 [
@@ -433,6 +534,8 @@ if test "x$OPENJDK_BUILD_OS" = xwindows; then
     fi
     AC_MSG_RESULT([yes])
     rm -f $OUTPUT_ROOT/uncygdrive?.??? $OUTPUT_ROOT/uncygdrive.obj
+    # The path to uncygdrive to use should be Unix-style
+    UNCYGDRIVE="$OUTPUT_ROOT/uncygdrive.exe"
 fi
 
 AC_SUBST(UNCYGDRIVE)

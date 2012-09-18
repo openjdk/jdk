@@ -53,9 +53,9 @@ m4_include([source-dirs.m4])
 m4_include([toolchain.m4])
 
 # This line needs to be here, verbatim, after all includes.
-# It is replaced with closed functionality when building
-# closed sources.
-AC_DEFUN_ONCE([CLOSED_HOOK])
+# It is replaced with custom functionality when building
+# custom sources.
+AC_DEFUN_ONCE([CUSTOM_HOOK])
 
 ###############################################################################
 #
@@ -65,6 +65,12 @@ AC_DEFUN_ONCE([CLOSED_HOOK])
 
 # Basic initialization that must happen first of all
 BASIC_INIT
+
+# Now we can determine OpenJDK build and target platforms. This is required to
+# have early on.
+PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET
+
+# Continue setting up basic stuff.
 BASIC_SETUP_PATHS
 BASIC_SETUP_LOGGING
 
@@ -75,27 +81,17 @@ HELP_SETUP_DEPENDENCY_HELP
 # Without these, we can't properly run the rest of the configure script.
 BASIC_SETUP_TOOLS
 
+# Check if pkg-config is available.
+PKG_PROG_PKG_CONFIG
+
+# After basic tools have been setup, we can check build os specific details.
+PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION
+
 # Setup builddeps, for automatic downloading of tools we need.
 # This is needed before we can call BDEPS_CHECK_MODULE, which is done in
 # boot-jdk setup, but we need to have basic tools setup first.
 BDEPS_CONFIGURE_BUILDDEPS
 BDEPS_SCAN_FOR_BUILDDEPS
-
-# Check if pkg-config is available.
-PKG_PROG_PKG_CONFIG
-
-###############################################################################
-#
-# Determine OpenJDK build and target platforms.
-#
-###############################################################################
-
-PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET
-PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION
-
-# With knowledge of the build platform, setup more basic things.
-BASIC_SETUP_PATH_SEP
-BASIC_SETUP_SEARCHPATH
 
 ###############################################################################
 #
@@ -148,7 +144,7 @@ TOOLCHAIN_SETUP_PATHS
 # FIXME: Currently we must test this after paths but before flags. Fix!
 
 # And we can test some aspects on the target using configure macros.
-PLATFORM_TEST_OPENJDK_TARGET_BITS
+PLATFORM_SETUP_OPENJDK_TARGET_BITS
 PLATFORM_SETUP_OPENJDK_TARGET_ENDIANNESS
 
 # Configure flags for the tools
@@ -213,14 +209,17 @@ BPERF_SETUP_CCACHE
 # Check for some common pitfalls
 BASIC_TEST_USABILITY_ISSUES
 
-# At the end, call the closed hook. (Dummy macro if no closed sources available)
-CLOSED_HOOK
+# At the end, call the custom hook. (Dummy macro if no custom sources available)
+CUSTOM_HOOK
 
 # We're messing a bit with internal autoconf variables to put the config.status
 # in the output directory instead of the current directory.
 CONFIG_STATUS="$OUTPUT_ROOT/config.status"
 # Create the actual output files. Now the main work of configure is done.
 AC_OUTPUT
+
+# Make the compare script executable
+$CHMOD +x $OUTPUT_ROOT/compare.sh
 
 # Finally output some useful information to the user
 HELP_PRINT_SUMMARY_AND_WARNINGS
