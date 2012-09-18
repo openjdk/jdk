@@ -2843,6 +2843,21 @@ MetaWord* Metaspace::allocate(size_t word_size, MetadataType mdtype) {
   }
 }
 
+MetaWord* Metaspace::expand_and_allocate(size_t word_size, MetadataType mdtype) {
+  MetaWord* result;
+  MetaspaceGC::set_expand_after_GC(true);
+  size_t before_inc = MetaspaceGC::capacity_until_GC();
+  size_t delta_words = MetaspaceGC::delta_capacity_until_GC(word_size);
+  MetaspaceGC::inc_capacity_until_GC(delta_words);
+  if (PrintGCDetails && Verbose) {
+    gclog_or_tty->print_cr("Increase capacity to GC from " SIZE_FORMAT
+      " to " SIZE_FORMAT, before_inc, MetaspaceGC::capacity_until_GC());
+  }
+  result = allocate(word_size, mdtype);
+
+  return result;
+}
+
 // Space allocated in the Metaspace.  This may
 // be across several metadata virtual spaces.
 char* Metaspace::bottom() const {

@@ -130,8 +130,10 @@ class Metaspace : public CHeapObj<mtClass> {
 
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t size,
                             bool read_only, MetadataType mdtype, TRAPS);
-
   void deallocate(MetaWord* ptr, size_t byte_size, bool is_class);
+
+  MetaWord* expand_and_allocate(size_t size,
+                                MetadataType mdtype);
 
 #ifndef PRODUCT
   bool contains(const void *ptr) const;

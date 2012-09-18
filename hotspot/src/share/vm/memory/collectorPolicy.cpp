@@ -743,6 +743,36 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
   uint full_gc_count = 0;
 
   do {
+    MetaWord* result = NULL;
+    if (GC_locker::is_active_and_needs_gc()) {
+      // If the GC_locker is active, just expand and allocate.
+      // If that does not succeed, wait if this thread is not
+      // in a critical section itself.
+      result =
+        loader_data->metaspace_non_null()->expand_and_allocate(word_size,
+                                                               mdtype);
+      if (result != NULL) {
+        return result;
+      }
+      JavaThread* jthr = JavaThread::current();
+      if (!jthr->in_critical()) {
+        MutexUnlocker mul(Heap_lock);
+        // Wait for JNI critical section to be exited
+        GC_locker::stall_until_clear();
+        // The GC invoked by the last thread leaving the critical
+        // section will be a young collection and a full collection
+        // is (currently) needed for unloading classes so continue
+        // to the next iteration to get a full GC.
+        continue;
+      } else {
+        if (CheckJNICalls) {
+          fatal("Possible deadlock due to allocating while"
+                " in jni critical section");
+        }
+        return NULL;
+      }
+    }
+
     {  // Need lock to get self consistent gc_count's
       MutexLocker ml(Heap_lock);
       gc_count      = Universe::heap()->total_collections();

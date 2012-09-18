@@ -230,15 +230,9 @@ void VM_CollectForMetadataAllocation::doit() {
       // amount of the expansion.
       // This should work unless there really is no more space
       // or a MaxMetaspaceSize has been specified on the command line.
-      MetaspaceGC::set_expand_after_GC(true);
-      size_t before_inc = MetaspaceGC::capacity_until_GC();
-      size_t delta_words = MetaspaceGC::delta_capacity_until_GC(_size);
-      MetaspaceGC::inc_capacity_until_GC(delta_words);
-      if (PrintGCDetails && Verbose) {
-        gclog_or_tty->print_cr("Increase capacity to GC from " SIZE_FORMAT
-          " to " SIZE_FORMAT, before_inc, MetaspaceGC::capacity_until_GC());
-  }
-      _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+      _result =
+        _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
+
       if (do_cms_concurrent && _result == NULL) {
         // Rather than fail with a metaspace out-of-memory, do a full
         // GC for CMS.
