@@ -316,6 +316,8 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 
 # jdk_text
 
+# 7196199
+java/text/Bidi/Bug6665028.java                                  generic-all
 ############################################################################
 
 # jdk_tools
