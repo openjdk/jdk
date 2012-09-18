@@ -138,7 +138,7 @@ endef
 
 # Hook to be called as the very first thing when running a normal build
 define AtRootMakeStart
-	$(if $(findstring -j,$(MAKEFLAGS)), $(error make -j is not supported, use make JOBS=n))
+	$(if $(findstring --jobserver,$(MAKEFLAGS)), $(error make -j is not supported, use make JOBS=n))
 	$(call PrintStartMessage)
 	$(call StartTimer)
 endef
