@@ -85,7 +85,7 @@ class MemTracker : AllStatic {
     NMT_shutdown                         // shutdown
   };
 
-
+ public:
   // native memory tracking level
   enum NMTLevel {
     NMT_off,              // native memory tracking is off
@@ -93,7 +93,6 @@ class MemTracker : AllStatic {
     NMT_detail            // track callsite also
   };
 
- public:
    enum ShutdownReason {
      NMT_shutdown_none,     // no shutdown requested
      NMT_shutdown_user,     // user requested shutdown
@@ -115,6 +114,10 @@ class MemTracker : AllStatic {
   static inline bool is_on() {
     return (_tracking_level >= NMT_summary &&
       _state >= NMT_bootstrapping_single_thread);
+  }
+
+  static inline enum NMTLevel tracking_level() {
+    return _tracking_level;
   }
 
   // user readable reason for shutting down NMT
