@@ -159,7 +159,7 @@ $(UNPACK_EXE): $(UNPACK_EXE_FILES_o) updatefiles winres
 	$(prep-target)
 	$(RM) $(TEMPDIR)/mapfile-vers
 	$(CP) mapfile-vers-unpack200 $(TEMPDIR)/mapfile-vers
-	$(LINKER)  $(LDDFLAGS) $(UNPACK_EXE_FILES_o) $(RES) $(LIBCXX) $(LDOUTPUT)$(TEMPDIR)/unpack200$(EXE_SUFFIX)
+	$(LINKER)  $(LDDFLAGS) $(sort $(UNPACK_EXE_FILES_o)) $(RES) $(LIBCXX) $(LDOUTPUT)$(TEMPDIR)/unpack200$(EXE_SUFFIX)
 ifdef MT
 	$(MT) /manifest $(OBJDIR)/unpack200$(EXE_SUFFIX).manifest /outputresource:$(TEMPDIR)/unpack200$(EXE_SUFFIX);#1
 endif
