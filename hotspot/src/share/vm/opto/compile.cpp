@@ -825,7 +825,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                            &_handler_table, &_inc_table,
                            compiler,
                            env()->comp_level(),
-                           has_unsafe_access()
+                           has_unsafe_access(),
+                           SharedRuntime::is_wide_vector(max_vector_size())
                            );
   }
 }
@@ -963,6 +964,7 @@ void Compile::Init(int aliaslevel) {
   _trap_can_recompile = false;  // no traps emitted yet
   _major_progress = true; // start out assuming good things will happen
   set_has_unsafe_access(false);
+  set_max_vector_size(0);
   Copy::zero_to_bytes(_trap_hist, sizeof(_trap_hist));
   set_decompile_count(0);
 

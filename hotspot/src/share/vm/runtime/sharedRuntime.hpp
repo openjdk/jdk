@@ -62,6 +62,7 @@ class SharedRuntime: AllStatic {
 
   static DeoptimizationBlob* _deopt_blob;
 
+  static SafepointBlob*      _polling_page_vectors_safepoint_handler_blob;
   static SafepointBlob*      _polling_page_safepoint_handler_blob;
   static SafepointBlob*      _polling_page_return_handler_blob;
 
@@ -75,7 +76,8 @@ class SharedRuntime: AllStatic {
 #endif // !PRODUCT
 
  private:
-  static SafepointBlob* generate_handler_blob(address call_ptr, bool cause_return);
+  enum { POLL_AT_RETURN,  POLL_AT_LOOP, POLL_AT_VECTOR_LOOP };
+  static SafepointBlob* generate_handler_blob(address call_ptr, int poll_type);
   static RuntimeStub*   generate_resolve_blob(address destination, const char* name);
 
  public:
@@ -223,6 +225,7 @@ class SharedRuntime: AllStatic {
 
   static SafepointBlob* polling_page_return_handler_blob()     { return _polling_page_return_handler_blob; }
   static SafepointBlob* polling_page_safepoint_handler_blob()  { return _polling_page_safepoint_handler_blob; }
+  static SafepointBlob* polling_page_vectors_safepoint_handler_blob()  { return _polling_page_vectors_safepoint_handler_blob; }
 
   // Counters
 #ifndef PRODUCT
@@ -415,6 +418,10 @@ class SharedRuntime: AllStatic {
   // On Sparc this describes the words reserved for storing a register window
   // when an interrupt occurs.
   static uint out_preserve_stack_slots();
+
+  // Is vector's size (in bytes) bigger than a size saved by default?
+  // For example, on x86 16 bytes XMM registers are saved by default.
+  static bool is_wide_vector(int size);
 
   // Save and restore a native result
   static void    save_native_result(MacroAssembler *_masm, BasicType ret_type, int frame_slots );

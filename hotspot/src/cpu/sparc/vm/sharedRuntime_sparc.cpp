@@ -313,6 +313,14 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
 
 }
 
+// Is vector's size (in bytes) bigger than a size saved by default?
+// 8 bytes FP registers are saved by default on SPARC.
+bool SharedRuntime::is_wide_vector(int size) {
+  // Note, MaxVectorSize == 8 on SPARC.
+  assert(size <= 8, err_msg_res("%d bytes vectors are not supported", size));
+  return size > 8;
+}
+
 // The java_calling_convention describes stack locations as ideal slots on
 // a frame with no abi restrictions. Since we must observe abi restrictions
 // (like the placement of the register window) the slots must be biased by
@@ -3734,7 +3742,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 // the 64-bit %o's, then do a save, then fixup the caller's SP (our FP).
 // Tricky, tricky, tricky...
 
-SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, bool cause_return) {
+SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_type) {
   assert (StubRoutines::forward_exception_entry() != NULL, "must be generated before");
 
   // allocate space for the code
@@ -3752,6 +3760,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, bool cause
 
   int start = __ offset();
 
+  bool cause_return = (poll_type == POLL_AT_RETURN);
   // If this causes a return before the processing, then do a "restore"
   if (cause_return) {
     __ restore();

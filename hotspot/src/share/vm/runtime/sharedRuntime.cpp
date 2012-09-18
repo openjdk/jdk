@@ -88,6 +88,7 @@ RuntimeStub*        SharedRuntime::_resolve_virtual_call_blob;
 RuntimeStub*        SharedRuntime::_resolve_static_call_blob;
 
 DeoptimizationBlob* SharedRuntime::_deopt_blob;
+SafepointBlob*      SharedRuntime::_polling_page_vectors_safepoint_handler_blob;
 SafepointBlob*      SharedRuntime::_polling_page_safepoint_handler_blob;
 SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
 
@@ -104,8 +105,14 @@ void SharedRuntime::generate_stubs() {
   _resolve_virtual_call_blob           = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_virtual_call_C),      "resolve_virtual_call");
   _resolve_static_call_blob            = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_static_call_C),       "resolve_static_call");
 
-  _polling_page_safepoint_handler_blob = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), false);
-  _polling_page_return_handler_blob    = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), true);
+#ifdef COMPILER2
+  // Vectors are generated only by C2.
+  if (is_wide_vector(MaxVectorSize)) {
+    _polling_page_vectors_safepoint_handler_blob = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), POLL_AT_VECTOR_LOOP);
+  }
+#endif // COMPILER2
+  _polling_page_safepoint_handler_blob = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), POLL_AT_LOOP);
+  _polling_page_return_handler_blob    = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), POLL_AT_RETURN);
 
   generate_deopt_blob();
 
@@ -535,10 +542,15 @@ address SharedRuntime::get_poll_stub(address pc) {
     "Only polling locations are used for safepoint");
 
   bool at_poll_return = ((nmethod*)cb)->is_at_poll_return(pc);
+  bool has_wide_vectors = ((nmethod*)cb)->has_wide_vectors();
   if (at_poll_return) {
     assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
            "polling page return stub not created yet");
     stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+  } else if (has_wide_vectors) {
+    assert(SharedRuntime::polling_page_vectors_safepoint_handler_blob() != NULL,
+           "polling page vectors safepoint stub not created yet");
+    stub = SharedRuntime::polling_page_vectors_safepoint_handler_blob()->entry_point();
   } else {
     assert(SharedRuntime::polling_page_safepoint_handler_blob() != NULL,
            "polling page safepoint stub not created yet");
