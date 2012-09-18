@@ -249,9 +249,6 @@ java/nio/channels/DatagramChannel/ChangingAddress.java          macosx-all
 # 7132677
 java/nio/channels/Selector/OutOfBand.java                       macosx-all
 
-# 7142919
-java/nio/channels/AsyncCloseAndInterrupt.java			solaris-all
-
 ############################################################################
 
 # jdk_rmi
