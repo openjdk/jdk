@@ -34,8 +34,9 @@ include JavaCompilation.gmk
 # and the bootstrap javac, to be run by the bootdir jvm.
 $(eval $(call SetupJavaCompiler,BOOT_JAVAC,\
 	JAVAC:=$(JAVAC),\
-        FLAGS:=-Xprefer:source -XDignore.symbol.file=true -g,\
-        MODE:=SINGLE_THREADED_BATCH))
+        SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
+        SERVER_JVM:=$(SJAVAC_SERVER_JAVA),\
+        FLAGS:=-XDignore.symbol.file=true -g -Xlint:all$(COMMA)-deprecation -Werror))
 
 # Now setup the compilation of the properties compilation tool. You can depend
 # upon $(BUILD_TOOLS) to trigger a compilation of the tools. Note that we
@@ -43,6 +44,8 @@ $(eval $(call SetupJavaCompiler,BOOT_JAVAC,\
 # program needs to be linked and run towards the new javac sources.
 $(eval $(call SetupJavaCompilation,BUILD_TOOLS,\
 		SETUP:=BOOT_JAVAC,\
+		DISABLE_SJAVAC:=true,\
+                ADD_JAVAC_FLAGS:=-Xprefer:source,\
 		SRC:=$(LANGTOOLS_TOPDIR)/make/tools $(LANGTOOLS_TOPDIR)/src/share/classes,\
 		INCLUDES:=compileproperties genstubs,\
 		BIN:=$(LANGTOOLS_OUTPUTDIR)/btclasses))
@@ -93,6 +96,7 @@ ifeq ($(PROPS_ARE_CREATED),yes)
         # to compile javac again and to build the complete new jdk.
         $(eval $(call SetupJavaCompilation,BUILD_BOOTSTRAP_LANGTOOLS,\
 		SETUP:=BOOT_JAVAC,\
+		DISABLE_SJAVAC:=true,\
 		SRC:=$(LANGTOOLS_TOPDIR)/src/share/classes $(LANGTOOLS_OUTPUTDIR)/gensrc,\
 		EXCLUDES:=com/sun/tools/javac/nio,\
 		BIN:=$(LANGTOOLS_OUTPUTDIR)/btclasses/bootstrap))
@@ -122,7 +126,7 @@ ifeq ($(PROPS_ARE_CREATED),yes)
         # exercises the functionality to verify that it works.
         TOOL_GENSTUBS_CMD=$(JAVA) \
              "-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar" \
-             -cp "$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar$(PATH_SEP)$(LANGTOOLS_OUTPUTDIR)/btclasses" \
+             -classpath $(LANGTOOLS_OUTPUTDIR)/btclasses \
              genstubs.GenStubs
         # We fetch source from the JDK...
         JDKS=$(JDK_TOPDIR)/src/share/classes
@@ -164,11 +168,9 @@ ifeq ($(PROPS_ARE_CREATED),yes)
                   JVM:=$(JAVA),\
                   JAVAC:="-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar" \
 			 -jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar,\
-                  FLAGS:=-Xprefer:source -XDignore.symbol.file=true,\
-                  SERVER_DIR:=$(JAVAC_SERVERS),\
-                  SERVER_JVM:=$(SERVER_JAVA),\
-                  MODE:=$(JAVAC_USE_MODE),\
-		  USE_DEPS:=$(JAVAC_USE_DEPS)))
+                  FLAGS:=-XDignore.symbol.file=true -Xlint:all$(COMMA)-deprecation -Werror,\
+                  SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
+                  SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
                 # javax.tools.JavaCompilerTool isn't really a suffix but this gets the file copied.
 		RESOURCE_SUFFIXES:=.gif .xml .css javax.tools.JavaCompilerTool
