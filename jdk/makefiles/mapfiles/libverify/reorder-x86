@@ -1,0 +1,40 @@
+data = R0x2000;
+text = LOAD ?RXO;
+# Test Null
+text: .text%VerifyFixClassname;
+text: .text%VerifyClassname;
+text: .text%skip_over_fieldname: OUTPUTDIR/check_format.o;
+text: .text%skip_over_field_signature: OUTPUTDIR/check_format.o;
+text: .text%VerifyClass;
+text: .text%make_class_info_from_name: OUTPUTDIR/check_code.o;
+text: .text%class_name_to_ID: OUTPUTDIR/check_code.o;
+text: .text%make_class_info: OUTPUTDIR/check_code.o;
+text: .text%free_block: OUTPUTDIR/check_code.o;
+text: .text%verify_method: OUTPUTDIR/check_code.o;
+text: .text%verify_opcode_operands: OUTPUTDIR/check_code.o;
+text: .text%initialize_dataflow: OUTPUTDIR/check_code.o;
+text: .text%signature_to_fieldtype: OUTPUTDIR/check_code.o;
+text: .text%check_register_values: OUTPUTDIR/check_code.o;
+text: .text%pop_stack: OUTPUTDIR/check_code.o;
+text: .text%update_registers: OUTPUTDIR/check_code.o;
+text: .text%push_stack: OUTPUTDIR/check_code.o;
+text: .text%merge_into_successors: OUTPUTDIR/check_code.o;
+text: .text%cp_index_to_class_fullinfo: OUTPUTDIR/check_code.o;
+text: .text%set_protected: OUTPUTDIR/check_code.o;
+text: .text%merge_into_one_successor: OUTPUTDIR/check_code.o;
+text: .text%merge_registers: OUTPUTDIR/check_code.o;
+# Test Exit
+# Test Hello
+text: .text%merge_fullinfo_types: OUTPUTDIR/check_code.o;
+text: .text%isAssignableTo: OUTPUTDIR/check_code.o;
+# Test Sleep
+text: .text%isLegalTarget: OUTPUTDIR/check_code.o;
+text: .text%verify_constant_pool_type: OUTPUTDIR/check_code.o;
+# Test IntToString
+# Test LoadToolkit
+# Test LoadFrame
+# Test LoadJFrame
+# Test JHello
+# SwingSet
+text: .text%copy_stack: OUTPUTDIR/check_code.o;
+text: .text%ntohl: OUTPUTDIR/check_code.o;

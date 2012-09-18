@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,27 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+#
+# Specify what global symbols we export.  Note that we're not really
+# interested in declaring a version, simply scoping the file is sufficient.
+#
 
-# Translate the Java debugger wire protocol (jdwp.spec) file into a JDWP.java file
-# and a JDWPCommands.h C-header file.
+SUNWprivate_1.1 {
+	global:
+		main;		# Provides basic adb symbol offsets
+		environ;	# Public symbols and required by Java run time
+		_environ;
+		__environ_lock;
+		___Argv;	# The following are private, but as they are
+		_start;		# exported from ctr1/crtn, the clever hacker
+		_init;		# might know about them.  However note, that
+		_fini;		# their use is strictly not supported.
+		_lib_version;
+#		_mcount;
+		__fsr;
+		__fsr_init_value;
+		__longdouble_used;
 
-$(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h : $(JDK_TOPDIR)/makefiles/jpda/jdwp/jdwp.spec
-
-$(JDK_OUTPUTDIR)/gensrc_jdwp/com/sun/tools/jdi/JDWP.java : $(JDK_TOPDIR)/makefiles/jpda/jdwp/jdwp.spec
-	$(MKDIR) -p $(@D)
-	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_jdwp_headers
-	$(RM) $@ $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
-	$(ECHO) Creating JDWP.java and JDWPCommands.h from jdwp.spec
-	$(TOOL_JDWPGEN) $< -jdi $@ -include $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
-
-$(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html : $(JDK_TOPDIR)/makefiles/jpda/jdwp/jdwp.spec
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(ECHO) Creating $(@F) from jdwp.spec
-	$(TOOL_JDWPGEN) $< -doc $@
-
-GENSRC_JDWP:=	$(JDK_OUTPUTDIR)/gensrc_jdwp/com/sun/tools/jdi/JDWP.java \
-		$(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h \
-		$(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html
-
+	local:
+		*;
+};
