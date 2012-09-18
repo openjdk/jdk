@@ -285,47 +285,17 @@ sun/security/pkcs11/ec/TestECDSA.java				linux-all
 # 7193793
 sun/security/pkcs11/ec/TestECDH.java				linux-all
 
+# 7198198: the test also fails on SuSE Linux
+sun/security/pkcs11/ec/ReadCertificates.java                    linux-all
+
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
 
-# Failing on Solaris i586, 3/9/2010, not a -samevm issue (jdk_security3)
-sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-i586
-sun/security/pkcs11/ec/ReadCertificates.java                    generic-all
-sun/security/pkcs11/ec/ReadPKCS12.java                          generic-all
-sun/security/pkcs11/ec/TestCurves.java                          solaris-i586
-#sun/security/pkcs11/ec/TestECGenSpec.java                      solaris-i586
-#sun/security/pkcs11/ec/TestKeyFactory.java                     solaris-i586
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            generic-all
-
-# Fails on Fedora 9/Ubuntu 10.04 64bit, PKCS11Exception: CKR_DEVICE_ERROR
-sun/security/pkcs11/KeyAgreement/TestDH.java                    generic-all
-
-# Run too slow on Solaris 10 sparc
-sun/security/ssl/com/sun/net/ssl/internal/ssl/InputRecord/SSLSocketTimeoutNulls.java solaris-sparc
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/ClientTimeout.java solaris-sparc
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/ServerTimeout.java solaris-sparc
-sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/ReadTimeout.java solaris-sparc
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/NotifyHandshakeTest.sh solaris-sparc
-
-# Solaris 10 sparc, passed/failed confusion? java.security.ProviderException: update() failed
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.java generic-all
-
-# Othervm, sparc, NoRouteToHostException: Cannot assign requested address
-sun/security/ssl/javax/net/ssl/NewAPIs/SessionCacheSizeTests.java generic-all
-
-# Times out on windows X64, othervm mode
-#    Solaris sparc and sparcv9 -server, timeout
-sun/security/ssl/javax/net/ssl/NewAPIs/SessionTimeOutTests.java generic-all
-
-# Various failures on Linux Fedora 9 X64, othervm mode
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/TestAllSuites.java generic-all
-sun/security/ssl/sanity/ciphersuites/CheckCipherSuites.java     generic-all
-
-# Various failures on Linux Fedora 9 X64, othervm mode
-sun/security/ssl/sanity/interop/ClientJSSEServerJSSE.java       generic-all
-
-# 7079203 sun/security/tools/keytool/printssl.sh fails on solaris with timeout
-sun/security/tools/keytool/printssl.sh                          solaris-all
+# 6988842: 4 tests failing on Solaris 5.10
+sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-all
+sun/security/pkcs11/ec/ReadCertificates.java                    solaris-all
+sun/security/pkcs11/ec/ReadPKCS12.java                          solaris-all
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 
 # 7041639, Solaris DSA keypair generation bug (Note: jdk_util also affected)
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
