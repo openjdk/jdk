@@ -1350,11 +1350,14 @@ void SuperWord::output() {
     insert_extracts(_packset.at(i));
   }
 
+  Compile* C = _phase->C;
+  uint max_vlen_in_bytes = 0;
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
     if (p && n == executed_last(p)) {
       uint vlen = p->size();
+      uint vlen_in_bytes = 0;
       Node* vn = NULL;
       Node* low_adr = p->at(0);
       Node* first   = executed_first(p);
@@ -1364,7 +1367,8 @@ void SuperWord::output() {
         Node* mem = first->in(MemNode::Memory);
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        vn = LoadVectorNode::make(_phase->C, opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n));
+        vn = LoadVectorNode::make(C, opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_LoadVector()->memory_size();
       } else if (n->is_Store()) {
         // Promote value to be stored to vector
         Node* val = vector_opd(p, MemNode::ValueIn);
@@ -1372,7 +1376,8 @@ void SuperWord::output() {
         Node* mem = first->in(MemNode::Memory);
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        vn = StoreVectorNode::make(_phase->C, opc, ctl, mem, adr, atyp, val, vlen);
+        vn = StoreVectorNode::make(C, opc, ctl, mem, adr, atyp, val, vlen);
+        vlen_in_bytes = vn->as_StoreVector()->memory_size();
       } else if (n->req() == 3) {
         // Promote operands to vector
         Node* in1 = vector_opd(p, 1);
@@ -1383,7 +1388,8 @@ void SuperWord::output() {
           in1 = in2;
           in2 = tmp;
         }
-        vn = VectorNode::make(_phase->C, opc, in1, in2, vlen, velt_basic_type(n));
+        vn = VectorNode::make(C, opc, in1, in2, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else {
         ShouldNotReachHere();
       }
@@ -1395,6 +1401,10 @@ void SuperWord::output() {
         _igvn.replace_node(pm, vn);
       }
       _igvn._worklist.push(vn);
+
+      if (vlen_in_bytes > max_vlen_in_bytes) {
+        max_vlen_in_bytes = vlen_in_bytes;
+      }
 #ifdef ASSERT
       if (TraceNewVectors) {
         tty->print("new Vector node: ");
@@ -1403,6 +1413,7 @@ void SuperWord::output() {
 #endif
     }
   }
+  C->set_max_vector_size(max_vlen_in_bytes);
 }
 
 //------------------------------vector_opd---------------------------
@@ -1439,7 +1450,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
         }
         assert(opd->bottom_type()->isa_int(), "int type only");
         // Move non constant shift count into XMM register.
-        cnt = new (_phase->C, 2) MoveI2FNode(cnt);
+        cnt = new (C, 2) MoveI2FNode(cnt);
       }
       if (cnt != opd) {
         _phase->_igvn.register_new_node_with_optimizer(cnt);
@@ -1480,10 +1491,10 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   _phase->_igvn.register_new_node_with_optimizer(pk);
   _phase->set_ctrl(pk, _phase->get_ctrl(opd));
 #ifdef ASSERT
-    if (TraceNewVectors) {
-      tty->print("new Vector node: ");
-      pk->dump();
-    }
+  if (TraceNewVectors) {
+    tty->print("new Vector node: ");
+    pk->dump();
+  }
 #endif
   return pk;
 }
