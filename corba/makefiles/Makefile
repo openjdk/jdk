@@ -48,10 +48,8 @@ $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(JAVAC_JARS),\
      FLAGS:=$(BOOT_JDK_SOURCETARGET) -bootclasspath $(BOOT_RTJAR) $(DISABLE_CORBA_WARNINGS),\
-     SERVER_DIR:=$(JAVAC_SERVERS),\
-     SERVER_JVM:=$(SERVER_JAVA),\
-     MODE:=$(JAVAC_USE_MODE),\
-     USE_DEPS:=$(JAVAC_USE_DEPS)))
+     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
+     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
 # The "generate new bytecode" uses the new compiler to generate bytecode
 # for the new jdk that is being built. The code compiled by this setup
@@ -59,13 +57,9 @@ $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE,\
 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(JAVAC_JARS),\
-     FLAGS:=-Xprefer:source -XDignore.symbol.file=true \
-		-cp $(BOOT_JDK)/lib/tools.jar \
-		$(DISABLE_CORBA_WARNINGS),\
-     SERVER_DIR:=$(JAVAC_SERVERS),\
-     SERVER_JVM:=$(SERVER_JAVA),\
-     MODE:=$(JAVAC_USE_MODE),\
-     USE_DEPS:=$(JAVAC_USE_DEPS)))
+     FLAGS:=-cp $(BOOT_TOOLSJAR) -XDignore.symbol.file=true $(DISABLE_CORBA_WARNINGS),\
+     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
+     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
 $(eval $(call SetupJavaCompilation,BUILD_STRIPPROP,\
 		SETUP:=GENERATE_OLDBYTECODE,\
