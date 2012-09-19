@@ -191,7 +191,7 @@ class VM_GenCollectFull: public VM_GC_Operation {
 class VM_CollectForMetadataAllocation: public VM_GC_Operation {
  private:
   MetaWord*                _result;
-  size_t      _size;                       // size of object to be allocated
+  size_t                   _size;     // size of object to be allocated
   Metaspace::MetadataType  _mdtype;
   ClassLoaderData*         _loader_data;
  public:
