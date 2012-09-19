@@ -535,7 +535,7 @@
   notproduct(bool, TraceSpilling, false,                                    \
           "Trace spilling")                                                 \
                                                                             \
-  notproduct(bool, TraceTypeProfile, false,                                 \
+  diagnostic(bool, TraceTypeProfile, false,                                 \
           "Trace type profile")                                             \
                                                                             \
   develop(bool, PoisonOSREntry, true,                                       \
