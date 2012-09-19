@@ -165,10 +165,8 @@ class G1OffsetTableContigSpace: public ContiguousSpace {
   HeapWord* _pre_dummy_top;
 
  public:
-  // Constructor.  If "is_zeroed" is true, the MemRegion "mr" may be
-  // assumed to contain zeros.
   G1OffsetTableContigSpace(G1BlockOffsetSharedArray* sharedOffsetArray,
-                           MemRegion mr, bool is_zeroed = false);
+                           MemRegion mr);
 
   void set_bottom(HeapWord* value);
   void set_end(HeapWord* value);
@@ -189,7 +187,6 @@ class G1OffsetTableContigSpace: public ContiguousSpace {
   }
   void reset_pre_dummy_top() { _pre_dummy_top = NULL; }
 
-  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
   virtual void clear(bool mangle_space);
 
   HeapWord* block_start(const void* p);
@@ -340,10 +337,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
   size_t _predicted_bytes_to_copy;
 
  public:
-  // If "is_zeroed" is "true", the region "mr" can be assumed to contain zeros.
   HeapRegion(uint hrs_index,
              G1BlockOffsetSharedArray* sharedOffsetArray,
-             MemRegion mr, bool is_zeroed);
+             MemRegion mr);
 
   static int    LogOfHRGrainBytes;
   static int    LogOfHRGrainWords;
@@ -597,8 +593,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // Reset HR stuff to default values.
   void hr_clear(bool par, bool clear_space);
   void par_clear();
-
-  void initialize(MemRegion mr, bool clear_space, bool mangle_space);
 
   // Get the start of the unmarked area in this region.
   HeapWord* prev_top_at_mark_start() const { return _prev_top_at_mark_start; }
