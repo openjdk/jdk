@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -560,7 +560,7 @@ public class Arrays {
      * off is the offset to generate corresponding low, high in src
      * To be removed in a future release.
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static void mergeSort(Object[] src,
                                   Object[] dest,
                                   int low,
@@ -747,7 +747,7 @@ public class Arrays {
      * off is the offset into src corresponding to low in dest
      * To be removed in a future release.
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private static void mergeSort(Object[] src,
                                   Object[] dest,
                                   int low, int high, int off,
@@ -2832,6 +2832,7 @@ public class Arrays {
      * @return a list view of the specified array
      */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public static <T> List<T> asList(T... a) {
         return new ArrayList<>(a);
     }
