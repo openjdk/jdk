@@ -6423,7 +6423,7 @@ HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
   MemRegion mr(bottom, end);
   assert(_g1_reserved.contains(mr), "invariant");
   // This might return NULL if the allocation fails
-  return new HeapRegion(hrs_index, _bot_shared, mr, true /* is_zeroed */);
+  return new HeapRegion(hrs_index, _bot_shared, mr);
 }
 
 void G1CollectedHeap::verify_region_sets() {

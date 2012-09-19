@@ -476,10 +476,6 @@ HeapWord* HeapRegion::next_block_start_careful(HeapWord* addr) {
   return low;
 }
 
-void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
-  G1OffsetTableContigSpace::initialize(mr, false, mangle_space);
-  hr_clear(false/*par*/, clear_space);
-}
 #ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif // _MSC_VER
@@ -487,8 +483,8 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
 
 HeapRegion::HeapRegion(uint hrs_index,
                        G1BlockOffsetSharedArray* sharedOffsetArray,
-                       MemRegion mr, bool is_zeroed) :
-    G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
+                       MemRegion mr) :
+    G1OffsetTableContigSpace(sharedOffsetArray, mr),
     _hrs_index(hrs_index),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
     _in_collection_set(false),
@@ -507,7 +503,7 @@ HeapRegion::HeapRegion(uint hrs_index,
   _orig_end = mr.end();
   // Note that initialize() will set the start of the unmarked area of the
   // region.
-  this->initialize(mr, !is_zeroed, SpaceDecorator::Mangle);
+  hr_clear(false /*par*/, false /*clear_space*/);
   set_top(bottom());
   set_saved_mark();
 
@@ -908,14 +904,6 @@ void HeapRegion::verify(VerifyOption vo,
 // G1OffsetTableContigSpace code; copied from space.cpp.  Hope this can go
 // away eventually.
 
-void G1OffsetTableContigSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
-  // false ==> we'll do the clearing if there's clearing to be done.
-  ContiguousSpace::initialize(mr, false, mangle_space);
-  _offsets.zero_bottom_entry();
-  _offsets.initialize_threshold();
-  if (clear_space) clear(mangle_space);
-}
-
 void G1OffsetTableContigSpace::clear(bool mangle_space) {
   ContiguousSpace::clear(mangle_space);
   _offsets.zero_bottom_entry();
@@ -983,11 +971,14 @@ void G1OffsetTableContigSpace::set_saved_mark() {
 
 G1OffsetTableContigSpace::
 G1OffsetTableContigSpace(G1BlockOffsetSharedArray* sharedOffsetArray,
-                         MemRegion mr, bool is_zeroed) :
+                         MemRegion mr) :
   _offsets(sharedOffsetArray, mr),
   _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true),
   _gc_time_stamp(0)
 {
   _offsets.set_space(this);
-  initialize(mr, !is_zeroed, SpaceDecorator::Mangle);
+  // false ==> we'll do the clearing if there's clearing to be done.
+  ContiguousSpace::initialize(mr, false, SpaceDecorator::Mangle);
+  _offsets.zero_bottom_entry();
+  _offsets.initialize_threshold();
 }
