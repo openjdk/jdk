@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.ob
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * </ul>
      * If the {@code minimumCapacity} argument is nonpositive, this
      * method takes no action and simply returns.
+     * Note that subsequent operations on this object can reduce the
+     * actual capacity below that requested here.
      *
      * @param   minimumCapacity   the minimum desired capacity.
      */
