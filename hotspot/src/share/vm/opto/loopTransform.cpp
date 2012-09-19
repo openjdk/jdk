@@ -2716,6 +2716,8 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   result_mem = new (C, 1) ProjNode(call,TypeFunc::Memory);
   _igvn.register_new_node_with_optimizer(result_mem);
 
+/* Disable following optimization until proper fix (add missing checks).
+
   // If this fill is tightly coupled to an allocation and overwrites
   // the whole body, allow it to take over the zeroing.
   AllocateNode* alloc = AllocateNode::Ideal_allocation(base, this);
@@ -2739,6 +2741,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 #endif
     }
   }
+*/
 
   // Redirect the old control and memory edges that are outside the loop.
   Node* exit = head->loopexit()->proj_out(0);
