@@ -400,7 +400,7 @@ class SuperWord : public ResourceObj {
   // Return the node executed last in pack p.
   Node* executed_last(Node_List* p);
   // Alignment within a vector memory reference
-  int memory_alignment(MemNode* s, int iv_adjust_in_bytes);
+  int memory_alignment(MemNode* s, int iv_adjust);
   // (Start, end] half-open range defining which operands are vector
   void vector_opd_range(Node* n, uint* start, uint* end);
   // Smallest type containing range of values

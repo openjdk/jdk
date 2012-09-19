@@ -85,7 +85,7 @@
           "Max vector size in bytes, "                                      \
           "actual size could be less depending on elements type")           \
                                                                             \
-  product(bool, AlignVector, false,                                         \
+  product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
                                                                             \
   product(intx, NumberOfLoopInstrToAlign, 4,                                \

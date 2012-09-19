@@ -179,6 +179,7 @@ void SuperWord::find_adjacent_refs() {
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     if (n->is_Mem() && !n->is_LoadStore() && in_bb(n) &&
+        n->Opcode() != Op_LoadUI2L &&
         is_java_primitive(n->as_Mem()->memory_type())) {
       int align = memory_alignment(n->as_Mem(), 0);
       if (align != bottom_align) {
@@ -481,12 +482,19 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
   int vw       = vector_width_in_bytes(mem_ref);
   assert(vw > 1, "sanity");
   int stride_sign   = (scale * iv_stride()) > 0 ? 1 : -1;
-  int iv_adjustment = (stride_sign * vw - (offset % vw)) % vw;
+  // At least one iteration is executed in pre-loop by default. As result
+  // several iterations are needed to align memory operations in main-loop even
+  // if offset is 0.
+  int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
+  int elt_size = align_to_ref_p.memory_size();
+  assert(((ABS(iv_adjustment_in_bytes) % elt_size) == 0),
+         err_msg_res("(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size));
+  int iv_adjustment = iv_adjustment_in_bytes/elt_size;
 
 #ifndef PRODUCT
   if (TraceSuperWord)
     tty->print_cr("\noffset = %d iv_adjust = %d elt_size = %d scale = %d iv_stride = %d vect_size %d",
-                  offset, iv_adjustment, align_to_ref_p.memory_size(), scale, iv_stride(), vw);
+                  offset, iv_adjustment, elt_size, scale, iv_stride(), vw);
 #endif
   return iv_adjustment;
 }
@@ -1816,7 +1824,7 @@ void SuperWord::compute_vector_element_type() {
 
 //------------------------------memory_alignment---------------------------
 // Alignment within a vector memory reference
-int SuperWord::memory_alignment(MemNode* s, int iv_adjust_in_bytes) {
+int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
   SWPointer p(s, this);
   if (!p.valid()) {
     return bottom_align;
@@ -1826,7 +1834,7 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust_in_bytes) {
     return bottom_align; // No vectors for this type
   }
   int offset  = p.offset_in_bytes();
-  offset     += iv_adjust_in_bytes;
+  offset     += iv_adjust*p.memory_size();
   int off_rem = offset % vw;
   int off_mod = off_rem >= 0 ? off_rem : off_rem + vw;
   return off_mod;
@@ -1849,7 +1857,7 @@ const Type* SuperWord::container_type(Node* n) {
 
 bool SuperWord::same_velt_type(Node* n1, Node* n2) {
   const Type* vt1 = velt_type(n1);
-  const Type* vt2 = velt_type(n1);
+  const Type* vt2 = velt_type(n2);
   if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
     // Compare vectors element sizes for integer types.
     return data_size(n1) == data_size(n2);

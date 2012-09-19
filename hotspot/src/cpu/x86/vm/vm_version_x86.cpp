@@ -562,10 +562,10 @@ void VM_Version::get_processor_features() {
         AllocatePrefetchInstr = 3;
       }
       // On family 15h processors use XMM and UnalignedLoadStores for Array Copy
-      if( supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy) ) {
+      if (supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
         UseXMMForArrayCopy = true;
       }
-      if( FLAG_IS_DEFAULT(UseUnalignedLoadStores) && UseXMMForArrayCopy ) {
+      if (supports_sse2() && FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
         UseUnalignedLoadStores = true;
       }
     }
@@ -612,16 +612,16 @@ void VM_Version::get_processor_features() {
         MaxLoopPad = 11;
       }
 #endif // COMPILER2
-      if( FLAG_IS_DEFAULT(UseXMMForArrayCopy) ) {
+      if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
         UseXMMForArrayCopy = true; // use SSE2 movq on new Intel cpus
       }
-      if( supports_sse4_2() && supports_ht() ) { // Newest Intel cpus
-        if( FLAG_IS_DEFAULT(UseUnalignedLoadStores) && UseXMMForArrayCopy ) {
+      if (supports_sse4_2() && supports_ht()) { // Newest Intel cpus
+        if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }
       }
-      if( supports_sse4_2() && UseSSE >= 4 ) {
-        if( FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+      if (supports_sse4_2() && UseSSE >= 4) {
+        if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
           UseSSE42Intrinsics = true;
         }
       }
@@ -637,6 +637,13 @@ void VM_Version::get_processor_features() {
     warning("POPCNT instruction is not available on this CPU");
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
+
+#ifdef COMPILER2
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    // Modern processors allow misaligned memory operations for vectors.
+    AlignVector = !UseUnalignedLoadStores;
+  }
+#endif // COMPILER2
 
   assert(0 <= ReadPrefetchInstr && ReadPrefetchInstr <= 3, "invalid value");
   assert(0 <= AllocatePrefetchInstr && AllocatePrefetchInstr <= 3, "invalid value");
