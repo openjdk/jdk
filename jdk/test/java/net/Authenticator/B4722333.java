@@ -25,7 +25,7 @@
  * @test
  * @bug 4722333
  * @library ../../../sun/net/www/httptest/
- * @build HttpCallback HttpServer ClosedChannelList HttpTransaction
+ * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main B4722333
  * @summary JRE Proxy Authentication Not Working with ISA2000
  */
@@ -114,13 +114,13 @@ public class B4722333 implements HttpCallback {
         is.close();
     }
 
-    static HttpServer server;
+    static TestHttpServer server;
 
     public static void main (String[] args) throws Exception {
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
         try {
-            server = new HttpServer (new B4722333(), 1, 10, 0);
+            server = new TestHttpServer (new B4722333(), 1, 10, 0);
             System.out.println ("Server started: listening on port: " + server.getLocalPort());
             client ("http://localhost:"+server.getLocalPort()+"/d1/d2/d3/foo.html");
             client ("http://localhost:"+server.getLocalPort()+"/ASD/d3/x.html");
