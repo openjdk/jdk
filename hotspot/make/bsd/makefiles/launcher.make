@@ -101,7 +101,7 @@ $(LAUNCHER_OUT)/%.o: $(LAUNCHERDIR)/%.c
 $(LAUNCHER): $(OBJS) $(LIBJVM) $(LAUNCHER_MAPFILE)
 	$(QUIETLY) echo Linking launcher...
 	$(QUIETLY) $(LINK_LAUNCHER/PRE_HOOK)
-	$(QUIETLY) $(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(OBJS) $(LIBS_LAUNCHER)
+	$(QUIETLY) $(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(sort $(OBJS)) $(LIBS_LAUNCHER)
 	$(QUIETLY) $(LINK_LAUNCHER/POST_HOOK)
 	# Sign the launcher with the development certificate (if present) so that it can be used
 	# to run JStack, JInfo, et al.
