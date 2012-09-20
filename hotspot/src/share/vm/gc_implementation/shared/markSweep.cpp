@@ -84,8 +84,6 @@ void MarkSweep::AdjustKlassClosure::do_klass(Klass* klass) {
 
 void MarkSweep::follow_klass(Klass* klass) {
   ClassLoaderData* cld = klass->class_loader_data();
-  assert(cld->has_defined(klass), "inconsistency!");
-
   // The actual processing of the klass is done when we
   // traverse the list of Klasses in the class loader data.
   MarkSweep::follow_class_loader(cld);
@@ -93,8 +91,6 @@ void MarkSweep::follow_klass(Klass* klass) {
 
 void MarkSweep::adjust_klass(Klass* klass) {
   ClassLoaderData* cld = klass->class_loader_data();
-  assert(cld->has_defined(klass), "inconsistency!");
-
   // The actual processing of the klass is done when we
   // traverse the list of Klasses in the class loader data.
   MarkSweep::adjust_class_loader(cld);
