@@ -96,6 +96,7 @@ void VM_Version::initialize() {
   UseSSE = 0; // Only on x86 and x64
 
   _supports_cx8 = has_v9();
+  _supports_atomic_getset4 = true; // swap instruction
 
   if (is_niagara()) {
     // Indirect branch is the same cost as direct

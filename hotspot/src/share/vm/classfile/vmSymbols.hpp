@@ -872,6 +872,20 @@
    do_name(     putOrderedInt_name,                              "putOrderedInt")                                       \
    do_alias(    putOrderedInt_signature,                        /*(Ljava/lang/Object;JI)V*/ putInt_signature)           \
                                                                                                                         \
+  do_intrinsic(_getAndAddInt,             sun_misc_Unsafe,        getAndAddInt_name, getAndAddInt_signature, F_R)       \
+   do_name(     getAndAddInt_name,                                "getAndAddInt")                                       \
+   do_signature(getAndAddInt_signature,                           "(Ljava/lang/Object;JI)I" )                           \
+  do_intrinsic(_getAndAddLong,            sun_misc_Unsafe,        getAndAddLong_name, getAndAddLong_signature, F_R)     \
+   do_name(     getAndAddLong_name,                               "getAndAddLong")                                      \
+   do_signature(getAndAddLong_signature,                          "(Ljava/lang/Object;JJ)J" )                           \
+  do_intrinsic(_getAndSetInt,             sun_misc_Unsafe,        getAndSet_name, getAndSetInt_signature, F_R)          \
+   do_name(     getAndSet_name,                                   "getAndSet")                                          \
+   do_alias(    getAndSetInt_signature,                         /*"(Ljava/lang/Object;JI)I"*/ getAndAddInt_signature)   \
+  do_intrinsic(_getAndSetLong,            sun_misc_Unsafe,        getAndSet_name, getAndSetLong_signature, F_R)         \
+   do_alias(    getAndSetLong_signature,                        /*"(Ljava/lang/Object;JJ)J"*/ getAndAddLong_signature)  \
+  do_intrinsic(_getAndSetObject,          sun_misc_Unsafe,        getAndSet_name, getAndSetObject_signature,  F_R)      \
+   do_signature(getAndSetObject_signature,                        "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
+                                                                                                                        \
   /* prefetch_signature is shared by all prefetch variants */                                                           \
   do_signature( prefetch_signature,        "(Ljava/lang/Object;J)V")                                                    \
                                                                                                                         \

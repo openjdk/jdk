@@ -3794,5 +3794,49 @@ void LIR_Assembler::peephole(LIR_List*) {
   // do nothing for now
 }
 
+void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr dest, LIR_Opr tmp) {
+  assert(data == dest, "xchg/xadd uses only 2 operands");
+
+  if (data->type() == T_INT) {
+    if (code == lir_xadd) {
+      if (os::is_MP()) {
+        __ lock();
+      }
+      __ xaddl(as_Address(src->as_address_ptr()), data->as_register());
+    } else {
+      __ xchgl(data->as_register(), as_Address(src->as_address_ptr()));
+    }
+  } else if (data->is_oop()) {
+    assert (code == lir_xchg, "xadd for oops");
+    Register obj = data->as_register();
+#ifdef _LP64
+    if (UseCompressedOops) {
+      __ encode_heap_oop(obj);
+      __ xchgl(obj, as_Address(src->as_address_ptr()));
+      __ decode_heap_oop(obj);
+    } else {
+      __ xchgptr(obj, as_Address(src->as_address_ptr()));
+    }
+#else
+    __ xchgl(obj, as_Address(src->as_address_ptr()));
+#endif
+  } else if (data->type() == T_LONG) {
+#ifdef _LP64
+    assert(data->as_register_lo() == data->as_register_hi(), "should be a single register");
+    if (code == lir_xadd) {
+      if (os::is_MP()) {
+        __ lock();
+      }
+      __ xaddq(as_Address(src->as_address_ptr()), data->as_register_lo());
+    } else {
+      __ xchgq(data->as_register_lo(), as_Address(src->as_address_ptr()));
+    }
+#else
+    ShouldNotReachHere();
+#endif
+  } else {
+    ShouldNotReachHere();
+  }
+}
 
 #undef __
