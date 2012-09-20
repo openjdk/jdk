@@ -101,14 +101,13 @@ FormatBufferResource::FormatBufferResource(const char * format, ...)
 
 void warning(const char* format, ...) {
   if (PrintWarnings) {
-    // In case error happens before init or during shutdown
-    if (tty == NULL) ostream_init();
-
-    tty->print("%s warning: ", VM_Version::vm_name());
+    FILE* const err = defaultStream::error_stream();
+    jio_fprintf(err, "%s warning: ", VM_Version::vm_name());
     va_list ap;
     va_start(ap, format);
-    tty->vprint_cr(format, ap);
+    vfprintf(err, format, ap);
     va_end(ap);
+    fputc('\n', err);
   }
   if (BreakAtWarning) BREAKPOINT;
 }
