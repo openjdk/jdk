@@ -157,6 +157,7 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_Invoke         (Invoke*          x) { kill_memory(); }
   void do_UnsafePutRaw   (UnsafePutRaw*    x) { kill_memory(); }
   void do_UnsafePutObject(UnsafePutObject* x) { kill_memory(); }
+  void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) { kill_memory(); }
   void do_Intrinsic      (Intrinsic*       x) { if (!x->preserves_state()) kill_memory(); }
 
   void do_Phi            (Phi*             x) { /* nothing to do */ }

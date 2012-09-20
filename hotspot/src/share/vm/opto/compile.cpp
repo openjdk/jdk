@@ -2276,6 +2276,12 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   case Op_CompareAndSwapL:
   case Op_CompareAndSwapP:
   case Op_CompareAndSwapN:
+  case Op_GetAndAddI:
+  case Op_GetAndAddL:
+  case Op_GetAndSetI:
+  case Op_GetAndSetL:
+  case Op_GetAndSetP:
+  case Op_GetAndSetN:
   case Op_StoreP:
   case Op_StoreN:
   case Op_LoadB:

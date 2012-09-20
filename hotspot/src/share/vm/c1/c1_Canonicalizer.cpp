@@ -931,6 +931,7 @@ void Canonicalizer::do_UnsafeGetRaw(UnsafeGetRaw* x) { if (OptimizeUnsafes) do_U
 void Canonicalizer::do_UnsafePutRaw(UnsafePutRaw* x) { if (OptimizeUnsafes) do_UnsafeRawOp(x); }
 void Canonicalizer::do_UnsafeGetObject(UnsafeGetObject* x) {}
 void Canonicalizer::do_UnsafePutObject(UnsafePutObject* x) {}
+void Canonicalizer::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {}
 void Canonicalizer::do_UnsafePrefetchRead (UnsafePrefetchRead*  x) {}
 void Canonicalizer::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {}
 void Canonicalizer::do_ProfileCall(ProfileCall* x) {}

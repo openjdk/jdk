@@ -7242,6 +7242,7 @@ instruct compareAndSwapP(rRegI res,
                          rax_RegP oldval, rRegP newval,
                          rFlagsReg cr)
 %{
+  predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
 
@@ -7265,6 +7266,7 @@ instruct compareAndSwapL(rRegI res,
                          rax_RegL oldval, rRegL newval,
                          rFlagsReg cr)
 %{
+  predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
 
@@ -7326,6 +7328,88 @@ instruct compareAndSwapN(rRegI res,
              REX_breg(res), Opcode(0x0F), Opcode(0x94), reg(res), // sete
              REX_reg_breg(res, res), // movzbl
              Opcode(0xF), Opcode(0xB6), reg_reg(res, res));
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddI_no_res( memory mem, Universe dummy, immI add, rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddI mem add));
+  effect(KILL cr);
+  format %{ "ADDL  [$mem],$add" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ addl($mem$$Address, $add$$constant);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddI( memory mem, rRegI newval, rFlagsReg cr) %{
+  match(Set newval (GetAndAddI mem newval));
+  effect(KILL cr);
+  format %{ "XADDL  [$mem],$newval" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ xaddl($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddL_no_res( memory mem, Universe dummy, immL add, rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddL mem add));
+  effect(KILL cr);
+  format %{ "ADDQ  [$mem],$add" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ addq($mem$$Address, $add$$constant);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddL( memory mem, rRegL newval, rFlagsReg cr) %{
+  match(Set newval (GetAndAddL mem newval));
+  effect(KILL cr);
+  format %{ "XADDQ  [$mem],$newval" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ xaddq($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgI( memory mem, rRegI newval) %{
+  match(Set newval (GetAndSetI mem newval));
+  format %{ "XCHGL  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgl($newval$$Register, $mem$$Address);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgL( memory mem, rRegL newval) %{
+  match(Set newval (GetAndSetL mem newval));
+  format %{ "XCHGL  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgq($newval$$Register, $mem$$Address);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgP( memory mem, rRegP newval) %{
+  match(Set newval (GetAndSetP mem newval));
+  format %{ "XCHGQ  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgq($newval$$Register, $mem$$Address);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgN( memory mem, rRegN newval) %{
+  match(Set newval (GetAndSetN mem newval));
+  format %{ "XCHGL  $newval,$mem]" %}
+  ins_encode %{
+    __ xchgl($newval$$Register, $mem$$Address);
+  %}
   ins_pipe( pipe_cmpxchg );
 %}
 

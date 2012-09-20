@@ -363,6 +363,11 @@ void VM_Version::get_processor_features() {
   }
 
   _supports_cx8 = supports_cmpxchg8();
+  // xchg and xadd instructions
+  _supports_atomic_getset4 = true;
+  _supports_atomic_getadd4 = true;
+  LP64_ONLY(_supports_atomic_getset8 = true);
+  LP64_ONLY(_supports_atomic_getadd8 = true);
 
 #ifdef _LP64
   // OS should support SSE for x64 and hardware should support at least SSE2.

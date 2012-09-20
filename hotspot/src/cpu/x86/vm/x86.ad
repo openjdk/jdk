@@ -503,6 +503,13 @@ const bool Matcher::match_rule_supported(int opcode) {
       if ((UseSSE < 4) && (UseAVX < 1)) // only with SSE4_1 or AVX
         return false;
     break;
+    case Op_CompareAndSwapL:
+#ifdef _LP64
+    case Op_CompareAndSwapP:
+#endif
+      if (!VM_Version::supports_cx8())
+        return false;
+    break;
   }
 
   return true;  // Per default match rules are supported.

@@ -753,9 +753,24 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   LIR_Opr addr = new_pointer_register();
   LIR_Address* a;
   if(offset.result()->is_constant()) {
+#ifdef _LP64
+    jlong c = offset.result()->as_jlong();
+    if ((jlong)((jint)c) == c) {
+      a = new LIR_Address(obj.result(),
+                          (jint)c,
+                          as_BasicType(type));
+    } else {
+      LIR_Opr tmp = new_register(T_LONG);
+      __ move(offset.result(), tmp);
+      a = new LIR_Address(obj.result(),
+                          tmp,
+                          as_BasicType(type));
+    }
+#else
     a = new LIR_Address(obj.result(),
-                        NOT_LP64(offset.result()->as_constant_ptr()->as_jint()) LP64_ONLY((int)offset.result()->as_constant_ptr()->as_jlong()),
+                        offset.result()->as_jint(),
                         as_BasicType(type));
+#endif
   } else {
     a = new LIR_Address(obj.result(),
                         offset.result(),
@@ -1342,6 +1357,60 @@ void LIRGenerator::put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data,
       post_barrier(LIR_OprFact::address(addr), data);
     } else {
       __ move(data, addr);
+    }
+  }
+}
+
+void LIRGenerator::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {
+  BasicType type = x->basic_type();
+  LIRItem src(x->object(), this);
+  LIRItem off(x->offset(), this);
+  LIRItem value(x->value(), this);
+
+  src.load_item();
+  value.load_item();
+  off.load_nonconstant();
+
+  LIR_Opr dst = rlock_result(x, type);
+  LIR_Opr data = value.result();
+  bool is_obj = (type == T_ARRAY || type == T_OBJECT);
+  LIR_Opr offset = off.result();
+
+  assert (type == T_INT || (!x->is_add() && is_obj) LP64_ONLY( || type == T_LONG ), "unexpected type");
+  LIR_Address* addr;
+  if (offset->is_constant()) {
+#ifdef _LP64
+    jlong c = offset->as_jlong();
+    if ((jlong)((jint)c) == c) {
+      addr = new LIR_Address(src.result(), (jint)c, type);
+    } else {
+      LIR_Opr tmp = new_register(T_LONG);
+      __ move(offset, tmp);
+      addr = new LIR_Address(src.result(), tmp, type);
+    }
+#else
+    addr = new LIR_Address(src.result(), offset->as_jint(), type);
+#endif
+  } else {
+    addr = new LIR_Address(src.result(), offset, type);
+  }
+
+  if (data != dst) {
+    __ move(data, dst);
+    data = dst;
+  }
+  if (x->is_add()) {
+    __ xadd(LIR_OprFact::address(addr), data, dst, LIR_OprFact::illegalOpr);
+  } else {
+    if (is_obj) {
+      // Do the pre-write barrier, if any.
+      pre_barrier(LIR_OprFact::address(addr), LIR_OprFact::illegalOpr /* pre_val */,
+                  true /* do_load */, false /* patch */, NULL);
+    }
+    __ xchg(LIR_OprFact::address(addr), data, dst, LIR_OprFact::illegalOpr);
+    if (is_obj) {
+      // Seems to be a precise address
+      post_barrier(LIR_OprFact::address(addr), data);
     }
   }
 }
