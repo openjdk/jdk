@@ -48,11 +48,6 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     protected InetAddress connectedAddress = null;
     private int connectedPort = -1;
 
-    /* cached socket options */
-    private int multicastInterface = 0;
-    private boolean loopbackMode = true;
-    private int ttl = -1;
-
     private static final String os = AccessController.doPrivileged(
         new sun.security.action.GetPropertyAction("os.name")
     );
