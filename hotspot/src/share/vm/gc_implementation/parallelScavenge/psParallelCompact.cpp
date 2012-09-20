@@ -2392,8 +2392,6 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
 
 void PSParallelCompact::follow_klass(ParCompactionManager* cm, Klass* klass) {
   ClassLoaderData* cld = klass->class_loader_data();
-  assert(cld->has_defined(klass), "inconsistency!");
-
   // The actual processing of the klass is done when we
   // traverse the list of Klasses in the class loader data.
   PSParallelCompact::follow_class_loader(cm, cld);
@@ -2401,8 +2399,6 @@ void PSParallelCompact::follow_klass(ParCompactionManager* cm, Klass* klass) {
 
 void PSParallelCompact::adjust_klass(ParCompactionManager* cm, Klass* klass) {
   ClassLoaderData* cld = klass->class_loader_data();
-  assert(cld->has_defined(klass), "inconsistency!");
-
   // The actual processing of the klass is done when we
   // traverse the list of Klasses in the class loader data.
   PSParallelCompact::adjust_class_loader(cm, cld);
