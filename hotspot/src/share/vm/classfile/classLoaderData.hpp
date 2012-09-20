@@ -204,15 +204,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   void classes_do(KlassClosure* klass_closure);
 
-  bool has_defined(Klass* klass) {
-    for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
-      if (klass == k) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   JNIMethodBlock* jmethod_ids() const              { return _jmethod_ids; }
   void set_jmethod_ids(JNIMethodBlock* new_block)  { _jmethod_ids = new_block; }
 
