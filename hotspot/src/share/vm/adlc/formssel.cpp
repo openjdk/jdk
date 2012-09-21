@@ -2383,8 +2383,8 @@ void OperandForm::disp_is_oop(FILE *fp, FormDict &globals) {
   if ( op->is_base_constant(globals) == Form::idealP ) {
     // Find the constant's index:  _c0, _c1, _c2, ... , _cN
     uint idx  = op->constant_position( globals, rep_var);
-    fprintf(fp,"  virtual bool disp_is_oop() const {");
-    fprintf(fp,  "  return _c%d->isa_oop_ptr();", idx);
+    fprintf(fp,"  virtual relocInfo::relocType disp_reloc() const {");
+    fprintf(fp,  "  return _c%d->reloc();", idx);
     fprintf(fp, " }\n");
   }
 }

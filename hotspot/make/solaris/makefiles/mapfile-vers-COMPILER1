@@ -1,7 +1,7 @@
 #
 
 #
-# Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 SUNWprivate_1.1 {
         global:
                 # Dtrace support
-                __1cIUniverseP_methodKlassObj_;
                 __1cJCodeCacheF_heap_;
                 __1cIUniverseO_collectedHeap_;
+                __1cGMethodG__vtbl_;
                 __1cHnmethodG__vtbl_;
                 __1cICodeBlobG__vtbl_;
                 __1cKBufferBlobG__vtbl_;

@@ -110,7 +110,7 @@ int CMBitMapRO::heapWordDiffToOffsetDiff(size_t diff) const {
 #ifndef PRODUCT
 bool CMBitMapRO::covers(ReservedSpace rs) const {
   // assert(_bm.map() == _virtual_space.low(), "map inconsistency");
-  assert(((size_t)_bm.size() * (size_t)(1 << _shifter)) == _bmWordSize,
+  assert(((size_t)_bm.size() * ((size_t)1 << _shifter)) == _bmWordSize,
          "size inconsistency");
   return _bmStartWord == (HeapWord*)(rs.base()) &&
          _bmWordSize  == rs.size()>>LogHeapWordSize;
@@ -315,9 +315,7 @@ void CMMarkStack::oops_do(OopClosure* f) {
 }
 
 bool ConcurrentMark::not_yet_marked(oop obj) const {
-  return (_g1h->is_obj_ill(obj)
-          || (_g1h->is_in_permanent(obj)
-              && !nextMarkBitMap()->isMarked((HeapWord*)obj)));
+  return _g1h->is_obj_ill(obj);
 }
 
 CMRootRegions::CMRootRegions() :
@@ -1207,7 +1205,8 @@ protected:
     } else {
       assert(last_idx < _card_bm->size(), "sanity");
       // Note BitMap::par_at_put_range() is exclusive.
-      _card_bm->par_at_put_range(start_idx, last_idx+1, true);
+      BitMap::idx_t max_idx = MAX2(last_idx+1, _card_bm->size());
+      _card_bm->par_at_put_range(start_idx, max_idx, true);
     }
   }
 
@@ -1553,8 +1552,21 @@ class FinalCountDataUpdateClosure: public CMCountDataClosureBase {
 
     // Now set the bits for [ntams, top]
     BitMap::idx_t start_idx = _cm->card_bitmap_index_for(ntams);
-    BitMap::idx_t last_idx = _cm->card_bitmap_index_for(top);
+    // set_card_bitmap_range() expects the last_idx to be with
+    // the range of the bit map (see assertion in set_card_bitmap_range()),
+    // so limit it to that range with this application of MIN2.
+    BitMap::idx_t last_idx = MIN2(_cm->card_bitmap_index_for(top),
+                                  _card_bm->size()-1);
+    if (start_idx < _card_bm->size()) {
     set_card_bitmap_range(start_idx, last_idx);
+    } else {
+      // To reach here start_idx must be beyond the end of
+      // the bit map and last_idx must have been limited by
+      // the MIN2().
+      assert(start_idx == last_idx + 1,
+        err_msg("Not beyond end start_idx " SIZE_FORMAT " last_idx "
+                SIZE_FORMAT, start_idx, last_idx));
+    }
 
     // Set the bit for the region if it contains live data
     if (hr->next_marked_bytes() > 0) {
@@ -2011,7 +2023,7 @@ bool G1CMIsAliveClosure::do_object_b(oop obj) {
          (!_g1->is_in_g1_reserved(addr) || !_g1->is_obj_ill(obj));
 }
 
-class G1CMKeepAliveClosure: public OopClosure {
+class G1CMKeepAliveClosure: public ExtendedOopClosure {
   G1CollectedHeap* _g1;
   ConcurrentMark*  _cm;
  public:
@@ -2052,7 +2064,7 @@ class G1CMDrainMarkingStackClosure: public VoidClosure {
     _oopClosure(oopClosure) { }
 
   void do_void() {
-    _markStack->drain((OopClosure*)_oopClosure, _cm->nextMarkBitMap(), false);
+    _markStack->drain(_oopClosure, _cm->nextMarkBitMap(), false);
   }
 };
 
@@ -2494,7 +2506,7 @@ public:
       _out->print_cr(" "PTR_FORMAT"%s",
                      o, (over_tams) ? " >" : (marked) ? " M" : "");
       PrintReachableOopClosure oopCl(_out, _vo, _all);
-      o->oop_iterate(&oopCl);
+      o->oop_iterate_no_header(&oopCl);
     }
   }
 };

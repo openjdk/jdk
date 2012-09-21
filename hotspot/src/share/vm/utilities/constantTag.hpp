@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,12 @@ enum {
   JVM_CONSTANT_InternalMin              = 100,  // First implementation tag (aside from bad value of course)
   JVM_CONSTANT_UnresolvedClass          = 100,  // Temporary tag until actual use
   JVM_CONSTANT_ClassIndex               = 101,  // Temporary tag while constructing constant pool
-  JVM_CONSTANT_UnresolvedString         = 102,  // Temporary tag until actual use
-  JVM_CONSTANT_StringIndex              = 103,  // Temporary tag while constructing constant pool
-  JVM_CONSTANT_UnresolvedClassInError   = 104,  // Error tag due to resolution error
-  JVM_CONSTANT_Object                   = 105,  // Required for BoundMethodHandle arguments.
-  JVM_CONSTANT_InternalMax              = 105   // Last implementation tag
+  JVM_CONSTANT_StringIndex              = 102,  // Temporary tag while constructing constant pool
+  JVM_CONSTANT_UnresolvedClassInError   = 103,  // Error tag due to resolution error
+  JVM_CONSTANT_MethodHandleInError      = 104,  // Error tag due to resolution error
+  JVM_CONSTANT_MethodTypeInError        = 105,  // Error tag due to resolution error
+  JVM_CONSTANT_Object                   = 106,  // Required for BoundMethodHandle arguments.
+  JVM_CONSTANT_InternalMax              = 106   // Last implementation tag
 };
 
 
@@ -73,8 +74,14 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
     return _tag == JVM_CONSTANT_UnresolvedClassInError;
   }
 
+  bool is_method_handle_in_error() const {
+    return _tag == JVM_CONSTANT_MethodHandleInError;
+  }
+  bool is_method_type_in_error() const {
+    return _tag == JVM_CONSTANT_MethodTypeInError;
+  }
+
   bool is_klass_index() const       { return _tag == JVM_CONSTANT_ClassIndex; }
-  bool is_unresolved_string() const { return _tag == JVM_CONSTANT_UnresolvedString; }
   bool is_string_index() const      { return _tag == JVM_CONSTANT_StringIndex; }
 
   bool is_object() const            { return _tag == JVM_CONSTANT_Object; }
@@ -91,8 +98,7 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
   bool is_loadable_constant() const {
     return ((_tag >= JVM_CONSTANT_Integer && _tag <= JVM_CONSTANT_String) ||
             is_method_type() || is_method_handle() ||
-            is_unresolved_klass() || is_unresolved_string() ||
-            is_object());
+            is_unresolved_klass() || is_object());
   }
 
   constantTag() {

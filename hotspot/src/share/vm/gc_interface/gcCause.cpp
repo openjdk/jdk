@@ -60,8 +60,8 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _tenured_generation_full:
       return "Tenured Generation Full";
 
-    case _permanent_generation_full:
-      return "Permanent Generation Full";
+    case _metadata_GC_threshold:
+      return "Metadata GC Threshold";
 
     case _cms_generation_full:
       return "CMS Generation Full";

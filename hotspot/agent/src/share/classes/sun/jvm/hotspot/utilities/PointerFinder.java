@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,8 @@ public class PointerFinder {
           }
         }
 
-        if (loc.gen == null) {
-          // Should be in perm gen
-          Generation permGen = genheap.permGen();
           if (Assert.ASSERTS_ENABLED) {
-            Assert.that(permGen.isIn(a), "should have been in ordinary or perm gens if it's in the heap");
-          }
-          loc.permGen = permGen;
+          Assert.that(loc.gen != null, "Should have found this in a generation");
         }
 
         if (VM.getVM().getUseTLAB()) {
