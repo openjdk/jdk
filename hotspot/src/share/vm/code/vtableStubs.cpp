@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ void VtableStubs::initialize() {
 }
 
 
-address VtableStubs::create_stub(bool is_vtable_stub, int vtable_index, methodOop method) {
+address VtableStubs::create_stub(bool is_vtable_stub, int vtable_index, Method* method) {
   assert(vtable_index >= 0, "must be positive");
 
   VtableStub* s = ShareVtableStubs ? lookup(is_vtable_stub, vtable_index) : NULL;
@@ -200,10 +200,10 @@ void vtableStubs_init() {
 extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int index) {
   ResourceMark rm;
   HandleMark hm;
-  klassOop klass = receiver->klass();
-  instanceKlass* ik = instanceKlass::cast(klass);
+  Klass* klass = receiver->klass();
+  InstanceKlass* ik = InstanceKlass::cast(klass);
   klassVtable* vt = ik->vtable();
-  klass->print();
+  ik->print();
   fatal(err_msg("bad compiled vtable dispatch: receiver " INTPTR_FORMAT ", "
                 "index %d (vtable length %d)",
                 (address)receiver, index, vt->length()));

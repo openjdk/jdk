@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,7 +229,7 @@ int JvmtiThreadState::count_frames() {
   // tty->print_cr("CSD: counting frames on %s ...",
   //               JvmtiTrace::safe_get_thread_name(get_thread()));
   while (jvf != NULL) {
-    methodOop method = jvf->method();
+    Method* method = jvf->method();
     // tty->print_cr("CSD: frame - method %s.%s - loc %d",
     //               method->klass_name()->as_C_string(),
     //               method->name()->as_C_string(),

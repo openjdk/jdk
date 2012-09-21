@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1447,7 +1447,7 @@ void Parse::do_one_bytecode() {
                       NULL, tag.internal_name());
         break;
       }
-      assert(constant.basic_type() != T_OBJECT || !constant.as_object()->is_klass(),
+      assert(constant.basic_type() != T_OBJECT || constant.as_object()->is_instance(),
              "must be java_mirror of klass");
       bool pushed = push_constant(constant, true);
       guarantee(pushed, "must be possible to push this constant");

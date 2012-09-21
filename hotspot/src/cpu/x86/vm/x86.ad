@@ -488,17 +488,6 @@ source %{
   static address double_signflip() { return (address)double_signflip_pool; }
 #endif
 
-// Map Types to machine register types
-const int Matcher::base2reg[Type::lastype] = {
-  Node::NotAMachineReg,0,0, Op_RegI, Op_RegL, 0, Op_RegN,
-  Node::NotAMachineReg, Node::NotAMachineReg, /* tuple, array */
-  Op_VecS, Op_VecD, Op_VecX, Op_VecY, /* Vectors */
-  Op_RegP, Op_RegP, Op_RegP, Op_RegP, Op_RegP, Op_RegP, /* the pointers */
-  0, 0/*abio*/,
-  Op_RegP /* Return address */, 0, /* the memories */
-  Op_RegF, Op_RegF, Op_RegF, Op_RegD, Op_RegD, Op_RegD,
-  0  /*bottom*/
-};
 
 const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))

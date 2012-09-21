@@ -198,7 +198,7 @@ void Matcher::match( ) {
   const TypeTuple *range = C->tf()->range();
   if( range->cnt() > TypeFunc::Parms ) { // If not a void function
     // Get ideal-register return type
-    int ireg = base2reg[range->field_at(TypeFunc::Parms)->base()];
+    int ireg = range->field_at(TypeFunc::Parms)->ideal_reg();
     // Get machine return register
     uint sop = C->start()->Opcode();
     OptoRegPair regs = return_value(ireg, false);
@@ -1285,7 +1285,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     // a little in-place argument insertion.
     // FIXME: Is this still necessary?
     int regs_per_word  = NOT_LP64(1) LP64_ONLY(2); // %%% make a global const!
-    out_arg_limit_per_call += methodOopDesc::extra_stack_entries() * regs_per_word;
+    out_arg_limit_per_call += Method::extra_stack_entries() * regs_per_word;
     // Do not update mcall->_argsize because (a) the extra space is not
     // pushed as arguments and (b) _argsize is dead (not used anywhere).
   }

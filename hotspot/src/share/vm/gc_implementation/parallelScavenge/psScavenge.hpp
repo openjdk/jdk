@@ -137,6 +137,8 @@ class PSScavenge: AllStatic {
   template <class T, bool promote_immediately>
     inline static void copy_and_push_safe_barrier(PSPromotionManager* pm, T* p);
 
+  static void copy_and_push_safe_barrier_from_klass(PSPromotionManager* pm, oop* p);
+
   // Is an object in the young generation
   // This assumes that the HeapWord argument is in the heap,
   // so it only checks one side of the complete predicate.

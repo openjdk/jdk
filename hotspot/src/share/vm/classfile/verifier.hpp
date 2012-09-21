@@ -28,7 +28,7 @@
 #include "classfile/verificationType.hpp"
 #include "memory/gcLocker.hpp"
 #include "oops/klass.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 
@@ -224,7 +224,7 @@ class ErrorContext VALUE_OBJ_CLASS_SPEC {
     _expected.reset_frame();
   }
 
-  void details(outputStream* ss, methodOop method) const;
+  void details(outputStream* ss, Method* method) const;
 
 #ifdef ASSERT
   void print_on(outputStream* str) const {
@@ -237,12 +237,12 @@ class ErrorContext VALUE_OBJ_CLASS_SPEC {
 #endif
 
  private:
-  void location_details(outputStream* ss, methodOop method) const;
+  void location_details(outputStream* ss, Method* method) const;
   void reason_details(outputStream* ss) const;
   void frame_details(outputStream* ss) const;
-  void bytecode_details(outputStream* ss, methodOop method) const;
-  void handler_details(outputStream* ss, methodOop method) const;
-  void stackmap_details(outputStream* ss, methodOop method) const;
+  void bytecode_details(outputStream* ss, Method* method) const;
+  void handler_details(outputStream* ss, Method* method) const;
+  void stackmap_details(outputStream* ss, Method* method) const;
 };
 
 // A new instance of this class is created for each class being verified
@@ -268,7 +268,7 @@ class ClassVerifier : public StackObj {
   }
 
   bool is_protected_access(
-    instanceKlassHandle this_class, klassOop target_class,
+    instanceKlassHandle this_class, Klass* target_class,
     Symbol* field_name, Symbol* field_sig, bool is_method);
 
   void verify_cp_index(u2 bci, constantPoolHandle cp, int index, TRAPS);
@@ -380,7 +380,7 @@ class ClassVerifier : public StackObj {
   void verify_error(ErrorContext ctx, const char* fmt, ...);
   void class_format_error(const char* fmt, ...);
 
-  klassOop load_class(Symbol* name, TRAPS);
+  Klass* load_class(Symbol* name, TRAPS);
 
   int change_sig_to_verificationType(
     SignatureStream* sig_type, VerificationType* inference_type, TRAPS);

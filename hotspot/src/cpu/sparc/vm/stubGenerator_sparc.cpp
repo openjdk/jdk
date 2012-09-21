@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_sparc.hpp"
 #include "oops/instanceOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -3016,7 +3016,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("arraycopy argument klass checks");
     //  get src->klass()
-    if (UseCompressedOops) {
+    if (UseCompressedKlassPointers) {
       __ delayed()->nop(); // ??? not good
       __ load_klass(src, G3_src_klass);
     } else {
@@ -3051,7 +3051,7 @@ class StubGenerator: public StubCodeGenerator {
     // Load 32-bits signed value. Use br() instruction with it to check icc.
     __ lduw(G3_src_klass, lh_offset, G5_lh);
 
-    if (UseCompressedOops) {
+    if (UseCompressedKlassPointers) {
       __ load_klass(dst, G4_dst_klass);
     }
     // Handle objArrays completely differently...
@@ -3059,7 +3059,7 @@ class StubGenerator: public StubCodeGenerator {
     __ set(objArray_lh, O5_temp);
     __ cmp(G5_lh,       O5_temp);
     __ br(Assembler::equal, false, Assembler::pt, L_objArray);
-    if (UseCompressedOops) {
+    if (UseCompressedKlassPointers) {
       __ delayed()->nop();
     } else {
       __ delayed()->ld_ptr(dst, oopDesc::klass_offset_in_bytes(), G4_dst_klass);

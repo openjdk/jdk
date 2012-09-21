@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,9 +110,6 @@ private:
   // popped.  If -1, there has not been any entry popped.
   static int                      _recycled_bottom;
 
-  Stack<Klass*, mtGC>                 _revisit_klass_stack;
-  Stack<DataLayout*, mtGC>            _revisit_mdo_stack;
-
   static ParMarkBitMap* _mark_bitmap;
 
   Action _action;
@@ -167,16 +164,10 @@ private:
   static void verify_region_list_empty(uint stack_index);
   ParMarkBitMap* mark_bitmap() { return _mark_bitmap; }
 
-  // Take actions in preparation for a compaction.
-  static void reset();
-
   // void drain_stacks();
 
   bool should_update();
   bool should_copy();
-
-  Stack<Klass*, mtGC>* revisit_klass_stack() { return &_revisit_klass_stack; }
-  Stack<DataLayout*, mtGC>* revisit_mdo_stack() { return &_revisit_mdo_stack; }
 
   // Save for later processing.  Must not fail.
   inline void push(oop obj) { _marking_stack.push(obj); }

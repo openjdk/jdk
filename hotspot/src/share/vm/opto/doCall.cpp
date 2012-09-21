@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "ci/ciCPCache.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciMethodHandle.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -392,7 +391,7 @@ void Parse::do_call() {
 
   // Choose call strategy.
   bool call_is_virtual = is_virtual_or_interface;
-  int vtable_index = methodOopDesc::invalid_vtable_index;
+  int vtable_index = Method::invalid_vtable_index;
   ciMethod* callee = orig_callee;
 
   // Try to get the most accurate receiver type
@@ -539,7 +538,7 @@ void Parse::do_call() {
             }
           }
         } else {
-          assert(ct == rt, err_msg_res("unexpected mismatch rt=%d, ct=%d", rt, ct));
+          assert(ct == rt, err_msg("unexpected mismatch rt=%d, ct=%d", rt, ct));
           // push a zero; it's better than getting an oop/int mismatch
           retnode = pop_node(rt);
           retnode = zerocon(ct);
@@ -836,9 +835,9 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
     if( at_method_entry ) {
       // bump invocation counter if top method (for statistics)
       if (CountCompiledCalls && depth() == 1) {
-        const TypeOopPtr* addr_type = TypeOopPtr::make_from_constant(method());
+        const TypePtr* addr_type = TypeMetadataPtr::make(method());
         Node* adr1 = makecon(addr_type);
-        Node* adr2 = basic_plus_adr(adr1, adr1, in_bytes(methodOopDesc::compiled_invocation_counter_offset()));
+        Node* adr2 = basic_plus_adr(adr1, adr1, in_bytes(Method::compiled_invocation_counter_offset()));
         increment_counter(adr2);
       }
     } else if (is_inline) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "interpreter/interpreter.hpp"
-#include "oops/methodDataOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/methodData.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/advancedThresholdPolicy.hpp"
@@ -222,7 +222,7 @@ void NonTieredCompPolicy::reset_counter_for_back_branch_event(methodHandle m) {
 //
 class CounterDecay : public AllStatic {
   static jlong _last_timestamp;
-  static void do_method(methodOop m) {
+  static void do_method(Method* m) {
     m->invocation_counter()->decay();
   }
 public:
@@ -245,9 +245,9 @@ void CounterDecay::decay() {
   double classes_per_tick = nclasses * (CounterDecayMinIntervalLength * 1e-3 /
                                         CounterHalfLifeTime);
   for (int i = 0; i < classes_per_tick; i++) {
-    klassOop k = SystemDictionary::try_get_next_class();
-    if (k != NULL && k->klass_part()->oop_is_instance()) {
-      instanceKlass::cast(k)->methods_do(do_method);
+    Klass* k = SystemDictionary::try_get_next_class();
+    if (k != NULL && k->oop_is_instance()) {
+      InstanceKlass::cast(k)->methods_do(do_method);
     }
   }
 }
@@ -277,12 +277,12 @@ void NonTieredCompPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
 
 // This method can be called by any component of the runtime to notify the policy
 // that it's recommended to delay the complation of this method.
-void NonTieredCompPolicy::delay_compilation(methodOop method) {
+void NonTieredCompPolicy::delay_compilation(Method* method) {
   method->invocation_counter()->decay();
   method->backedge_counter()->decay();
 }
 
-void NonTieredCompPolicy::disable_compilation(methodOop method) {
+void NonTieredCompPolicy::disable_compilation(Method* method) {
   method->invocation_counter()->set_state(InvocationCounter::wait_for_nothing);
   method->backedge_counter()->set_state(InvocationCounter::wait_for_nothing);
 }
@@ -291,8 +291,8 @@ CompileTask* NonTieredCompPolicy::select_task(CompileQueue* compile_queue) {
   return compile_queue->first();
 }
 
-bool NonTieredCompPolicy::is_mature(methodOop method) {
-  methodDataOop mdo = method->method_data();
+bool NonTieredCompPolicy::is_mature(Method* method) {
+  MethodData* mdo = method->method_data();
   assert(mdo != NULL, "Should be");
   uint current = mdo->mileage_of(method);
   uint initial = mdo->creation_mileage();
@@ -371,7 +371,7 @@ void NonTieredCompPolicy::trace_frequency_counter_overflow(methodHandle m, int b
     bc->print();
     if (ProfileInterpreter) {
       if (bci != InvocationEntryBci) {
-        methodDataOop mdo = m->method_data();
+        MethodData* mdo = m->method_data();
         if (mdo != NULL) {
           int count = mdo->bci_to_data(branch_bci)->as_JumpData()->taken();
           tty->print_cr("back branch count = %d", count);
@@ -627,7 +627,7 @@ const char* StackWalkCompPolicy::shouldNotInline(methodHandle m) {
   // negative filter: should send NOT be inlined?  returns NULL (--> inline) or rejection msg
   if (m->is_abstract()) return (_msg = "abstract method");
   // note: we allow ik->is_abstract()
-  if (!instanceKlass::cast(m->method_holder())->is_initialized()) return (_msg = "method holder not initialized");
+  if (!InstanceKlass::cast(m->method_holder())->is_initialized()) return (_msg = "method holder not initialized");
   if (m->is_native()) return (_msg = "native method");
   nmethod* m_code = m->code();
   if (m_code != NULL && m_code->code_size() > InlineSmallCode)
@@ -639,7 +639,7 @@ const char* StackWalkCompPolicy::shouldNotInline(methodHandle m) {
     if ((m->code() == NULL) && m->was_never_executed()) return (_msg = "never executed");
     if (!m->was_executed_more_than(MIN2(MinInliningThreshold, CompileThreshold >> 1))) return (_msg = "executed < MinInliningThreshold times");
   }
-  if (methodOopDesc::has_unloaded_classes_in_signature(m, JavaThread::current())) return (_msg = "unloaded signature classes");
+  if (Method::has_unloaded_classes_in_signature(m, JavaThread::current())) return (_msg = "unloaded signature classes");
 
   return NULL;
 }

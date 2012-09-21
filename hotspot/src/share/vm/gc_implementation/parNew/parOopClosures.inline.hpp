@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,13 @@ template <class T> inline void ParScanWeakRefClosure::do_oop_work(T* p) {
   if ((HeapWord*)obj < _boundary && !_g->to()->is_in_reserved(obj)) {
     // we need to ensure that it is copied (see comment in
     // ParScanClosure::do_oop_work).
-    klassOop objK = obj->klass();
+    Klass* objK = obj->klass();
     markOop m = obj->mark();
     oop new_obj;
     if (m->is_marked()) { // Contains forwarding pointer.
       new_obj = ParNewGeneration::real_forwardee(obj);
     } else {
-      size_t obj_sz = obj->size_given_klass(objK->klass_part());
+      size_t obj_sz = obj->size_given_klass(objK);
       new_obj = ((ParNewGeneration*)_g)->copy_to_survivor_space(_par_scan_state,
                                                                 obj, obj_sz, m);
     }
@@ -100,14 +100,22 @@ inline void ParScanClosure::do_oop_work(T* p,
       // forwarding pointer, then the klass is valid: the klass is only
       // overwritten with an overflow next pointer after the object is
       // forwarded.
-      klassOop objK = obj->klass();
+      Klass* objK = obj->klass();
       markOop m = obj->mark();
       oop new_obj;
       if (m->is_marked()) { // Contains forwarding pointer.
         new_obj = ParNewGeneration::real_forwardee(obj);
         oopDesc::encode_store_heap_oop_not_null(p, new_obj);
+#ifndef PRODUCT
+        if (TraceScavenge) {
+          gclog_or_tty->print_cr("{%s %s ( " PTR_FORMAT " ) " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
+             "forwarded ",
+             new_obj->klass()->internal_name(), p, obj, new_obj, new_obj->size());
+        }
+#endif
+
       } else {
-        size_t obj_sz = obj->size_given_klass(objK->klass_part());
+        size_t obj_sz = obj->size_given_klass(objK);
         new_obj = _g->copy_to_survivor_space(_par_scan_state, obj, obj_sz, m);
         oopDesc::encode_store_heap_oop_not_null(p, new_obj);
         if (root_scan) {
@@ -117,7 +125,9 @@ inline void ParScanClosure::do_oop_work(T* p,
           (void)_par_scan_state->trim_queues(10 * ParallelGCThreads);
         }
       }
-      if (gc_barrier) {
+      if (is_scanning_a_klass()) {
+        do_klass_barrier();
+      } else if (gc_barrier) {
         // Now call parent closure
         par_do_barrier(p);
       }

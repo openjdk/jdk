@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
     return new StackValue(value.p);
   } else if (sv->is_constant_oop()) {
     // constant oop
-    return new StackValue(((ConstantOopReadValue *)sv)->value());
+    return new StackValue(sv->as_ConstantOopReadValue()->value());
 #ifdef _LP64
   } else if (sv->is_constant_double()) {
     // Constant double in a single stack slot
