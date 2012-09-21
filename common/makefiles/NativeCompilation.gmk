@@ -55,22 +55,22 @@ define add_native_source
 
     ifneq (,$$(filter %.c,$2))
         # Compile as a C file
-        $1_$2_FLAGS=$4 $$($1_$(notdir $2)_CFLAGS) -c
+        $1_$2_FLAGS=$4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
         $1_$2_COMP=$5
         $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
     else ifneq (,$$(filter %.m,$2))
         # Compile as a objective-c file
-        $1_$2_FLAGS=-x objective-c $4 $$($1_$(notdir $2)_CFLAGS) -c
+        $1_$2_FLAGS=-x objective-c $4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
         $1_$2_COMP=$5
         $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
     else ifneq (,$$(filter %.s,$2))
         # Compile as assembler file
-        $1_$2_FLAGS=$8
+        $1_$2_FLAGS=$8 -DTHIS_FILE='"$$(<F)"'
         $1_$2_COMP=$(AS)
         $1_$2_DEP_FLAG:=
     else
         # Compile as a C++ file
-        $1_$2_FLAGS=$6 $$($1_$(notdir $2)_CXXFLAGS) -c
+        $1_$2_FLAGS=$6 $$($1_$(notdir $2)_CXXFLAGS) -DTHIS_FILE='"$$(<F)"' -c
         $1_$2_COMP=$7
         $1_$2_DEP_FLAG:=$(CXX_FLAG_DEPS)
     endif
@@ -98,7 +98,6 @@ define add_native_source
 		$$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
         endif
         ifeq ($(COMPILER_TYPE),CL)
-		$$(call COMPILING_MSG,$$(notdir $2))
 		$$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEBUG_OUT_FLAGS) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
         endif
     endif
@@ -129,6 +128,7 @@ define SetupNativeCompilation
     #    DEBUG_SYMBOLS add debug symbols (if configured on)
     #    CC the compiler to use, default is $(CC)
     #    LDEXE the linker to use for linking executables, default is $(LDEXE)
+    #    OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
     $(if $2,$1_$(strip $2))
     $(if $3,$1_$(strip $3))
     $(if $4,$1_$(strip $4))
@@ -149,7 +149,11 @@ define SetupNativeCompilation
     $(if $(19),$1_$(strip $(19)))
     $(if $(20),$1_$(strip $(20)))
     $(if $(21),$1_$(strip $(21)))
-    $(if $(22),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
+    $(if $(22),$1_$(strip $(22)))
+    $(if $(23),$1_$(strip $(23)))
+    $(if $(24),$1_$(strip $(24)))
+    $(if $(25),$1_$(strip $(25)))
+    $(if $(26),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
 
     ifneq (,$$($1_BIN))
         $$(error BIN has been replaced with OBJECT_DIR)
@@ -315,6 +319,17 @@ define SetupNativeCompilation
         $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)_release)
     endif
 
+    ifneq (,$$($1_DEBUG_SYMBOLS))	
+        ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+            # Programs don't get the debug symbols added in the old build. It's not clear if
+            # this is intentional.
+            ifeq ($$($1_PROGRAM),)
+                $1_EXTRA_CFLAGS+=$(CFLAGS_DEBUG_SYMBOLS)
+                $1_EXTRA_CXXFLAGS+=$(CXXFLAGS_DEBUG_SYMBOLS)
+            endif
+        endif
+    endif
+
     ifeq ($$($1_CXXFLAGS),)
         $1_CXXFLAGS:=$$($1_CFLAGS)
     endif
@@ -327,40 +342,20 @@ define SetupNativeCompilation
           $1_EXTRA_CXXFLAGS += $$(CXX_FLAG_REORDER)
     endif
 
-    ifneq (no, $(ENABLE_DEBUG_SYMBOLS))
-	ifneq ($(OPENJDK_TARGET_OS), solaris)
-# <weird code />
-# There is very weird code in Defs-solaris.gmk that first sets variables as decribed below
-#   and then a couple of hundreds of line below resets them...
-#   this feels like a sure bug...but before this is confirmed, mimic this behaviour
-# (note: skip indenting this as it will surely be removed anyway)
-# <weird code />
-
-        ifneq (,$$($1_DEBUG_SYMBOLS))
-		$1_OPTIMIZATION := LOW
-		$1_EXTRA_CFLAGS += $(CFLAGS_DEBUG_SYMBOLS)
-		$1_EXTRA_CXXFLAGS += $(CXXFLAGS_DEBUG_SYMBOLS)
-        endif
-
-# <weird code />
-	endif
-# <weird code />
-    endif
-
     ifeq (NONE, $$($1_OPTIMIZATION))
-	$1_EXTRA_CFLAGS += $$(C_O_FLAG_NONE)
-	$1_EXTRA_CXXFLAGS += $$(CXX_O_FLAG_NONE)
+        $1_EXTRA_CFLAGS += $(C_O_FLAG_NONE)
+        $1_EXTRA_CXXFLAGS += $(CXX_O_FLAG_NONE)
     else ifeq (LOW, $$($1_OPTIMIZATION))
-	$1_EXTRA_CFLAGS += $$(C_O_FLAG_NORM)
-	$1_EXTRA_CXXFLAGS += $$(CXX_O_FLAG_NORM)
+        $1_EXTRA_CFLAGS += $(C_O_FLAG_NORM)
+        $1_EXTRA_CXXFLAGS += $(CXX_O_FLAG_NORM)
     else ifeq (HIGH, $$($1_OPTIMIZATION))
-	$1_EXTRA_CFLAGS += $$(C_O_FLAG_HI)
-	$1_EXTRA_CXXFLAGS += $$(CXX_O_FLAG_HI)
+        $1_EXTRA_CFLAGS += $(C_O_FLAG_HI)
+        $1_EXTRA_CXXFLAGS += $(CXX_O_FLAG_HI)
     else ifeq (HIGHEST, $$($1_OPTIMIZATION))
-	$1_EXTRA_CFLAGS += $$(C_O_FLAG_HIGHEST)
-	$1_EXTRA_CXXFLAGS += $$(CXX_O_FLAG_HIGHEST)
+        $1_EXTRA_CFLAGS += $(C_O_FLAG_HIGHEST)
+        $1_EXTRA_CXXFLAGS += $(CXX_O_FLAG_HIGHEST)
     else ifneq (, $$($1_OPTIMIZATION))
-	$$(error Unknown value for OPTIMIZATION: $$($1_OPTIMIZATION))
+        $$(error Unknown value for OPTIMIZATION: $$($1_OPTIMIZATION))
     endif
 
     # Now create a list of the packages that are about to compile. Used when sending source
@@ -375,7 +370,7 @@ define SetupNativeCompilation
 			$$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS),$(CXX),$$($1_ASFLAGS))))
 
     # On windows we need to create a resource file
-    ifeq ($(OPENJDK_TARGET_OS_API), winapi)
+    ifeq ($(OPENJDK_TARGET_OS), windows)
         ifneq (,$$($1_VERSIONINFO_RESOURCE))
             $1_RES:=$$($1_OBJECT_DIR)/$$($1_BASENAME).res
             $$($1_RES): $$($1_VERSIONINFO_RESOURCE)
@@ -409,8 +404,8 @@ define SetupNativeCompilation
     endif
     endif
 
-    # Pickup extra OPENJDK_TARGET_OS_API dependent variables (posix or winapi) and 
-    # (linux,solaris,windows,bsd) for LDFLAGS and LDFLAGS_SUFFIX
+    # Pickup extra OPENJDK_TARGET_OS_API and/or OPENJDK_TARGET_OS dependent variables
+    # for LDFLAGS and LDFLAGS_SUFFIX
     $1_EXTRA_LDFLAGS:=$$($1_LDFLAGS_$(OPENJDK_TARGET_OS_API)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS))
     $1_EXTRA_LDFLAGS_SUFFIX:=$$($1_LDFLAGS_SUFFIX_$(OPENJDK_TARGET_OS_API)) $$($1_LDFLAGS_SUFFIX_$(OPENJDK_TARGET_OS))
     ifneq (,$$($1_REAL_MAPFILE))
@@ -432,9 +427,10 @@ define SetupNativeCompilation
 				      "-map:$$($1_OBJECT_DIR)/$$($1_LIBRARY).map"
                 endif
 
-                $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/%
+                ifneq ($$($1_OUTPUT_DIR),$$($1_OBJECT_DIR))
+                    $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/%
 			$(CP) $$< $$@
-
+                endif
 
                 ifeq ($(OPENJDK_TARGET_OS), solaris)
                     # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
@@ -509,8 +505,10 @@ define SetupNativeCompilation
 				      "-map:$$($1_OBJECT_DIR)/$$($1_PROGRAM).map"
                 endif
 
-                $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/%
+                ifneq ($$($1_OUTPUT_DIR),$$($1_OBJECT_DIR))
+                    $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/%
 			$(CP) $$< $$@
+                endif
 
                 ifeq ($(OPENJDK_TARGET_OS), solaris)
                     # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
