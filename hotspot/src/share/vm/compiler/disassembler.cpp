@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ bool        Disassembler::_tried_to_load_library = false;
 Disassembler::decode_func Disassembler::_decode_instructions = NULL;
 
 static const char hsdis_library_name[] = "hsdis-"HOTSPOT_LIB_ARCH;
-static const char decode_instructions_name[] = "decode_instructions";
+static const char decode_instructions_name[] = "decode_instructions_virtual";
 
 #define COMMENT_COLUMN  40 LP64_ONLY(+8) /*could be an option*/
 #define BYTES_COMMENT   ";..."  /* funky byte display comment */
@@ -218,6 +218,8 @@ class decode_env {
         }
       }
     }
+    // follow each complete insn by a nice newline
+    st->cr();
   }
 
   address handle_event(const char* event, address arg);
@@ -446,14 +448,16 @@ address decode_env::decode_instructions(address start, address end) {
     FILE* out = stdout;
     FILE* xmlout = (_print_raw > 1 ? out : NULL);
     return (address)
-      (*Disassembler::_decode_instructions)(start, end,
+      (*Disassembler::_decode_instructions)((uintptr_t)start, (uintptr_t)end,
+                                            start, end - start,
                                             NULL, (void*) xmlout,
                                             NULL, (void*) out,
                                             options());
   }
 
   return (address)
-    (*Disassembler::_decode_instructions)(start, end,
+    (*Disassembler::_decode_instructions)((uintptr_t)start, (uintptr_t)end,
+                                          start, end - start,
                                           &event_to_env,  (void*) this,
                                           &printf_to_env, (void*) this,
                                           options());
