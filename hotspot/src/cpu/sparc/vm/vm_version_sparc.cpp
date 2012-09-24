@@ -339,7 +339,11 @@ void VM_Version::revert() {
 
 unsigned int VM_Version::calc_parallel_worker_threads() {
   unsigned int result;
-  if (is_niagara_plus()) {
+  if (is_M_series()) {
+    // for now, use same gc thread calculation for M-series as for niagara-plus
+    // in future, we may want to tweak parameters for nof_parallel_worker_thread
+    result = nof_parallel_worker_threads(5, 16, 8);
+  } else if (is_niagara_plus()) {
     result = nof_parallel_worker_threads(5, 16, 8);
   } else {
     result = nof_parallel_worker_threads(5, 8, 8);
