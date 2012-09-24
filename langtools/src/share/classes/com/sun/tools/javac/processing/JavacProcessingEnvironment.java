@@ -49,7 +49,7 @@ import static javax.tools.StandardLocation.*;
 
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent;
-import com.sun.tools.javac.api.JavacTaskImpl;
+import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
@@ -1086,10 +1086,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             elementUtils.setContext(next);
             typeUtils.setContext(next);
 
-            JavacTaskImpl task = (JavacTaskImpl) context.get(JavacTask.class);
+            JavacTask task = context.get(JavacTask.class);
             if (task != null) {
                 next.put(JavacTask.class, task);
-                task.updateContext(next);
+                if (task instanceof BasicJavacTask)
+                    ((BasicJavacTask) task).updateContext(next);
             }
 
             JavacTrees trees = context.get(JavacTrees.class);
