@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,17 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 withPermissions( new MBeanPermission("*", "getClassLoaderRepository"),
                                  new RuntimePermission("createClassLoader"))
             );
+
+
+        this.defaultContextClassLoader =
+            AccessController.doPrivileged(
+                new PrivilegedAction<ClassLoader>() {
+            @Override
+                    public ClassLoader run() {
+                        return new CombinedClassLoader(Thread.currentThread().getContextClassLoader(),
+                                dcl);
+                    }
+                });
 
         serverCommunicatorAdmin = new
           RMIServerCommunicatorAdmin(EnvHelp.getServerConnectionTimeout(env));
@@ -510,7 +521,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  "connectionId=" + connectionId
                  +" unwrapping query with defaultClassLoader.");
 
-        queryValue = unwrap(query, defaultClassLoader, QueryExp.class);
+        queryValue = unwrap(query, defaultContextClassLoader, QueryExp.class);
 
         try {
             final Object params[] = new Object[] { name, queryValue };
@@ -545,7 +556,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  "connectionId=" + connectionId
                  +" unwrapping query with defaultClassLoader.");
 
-        queryValue = unwrap(query, defaultClassLoader, QueryExp.class);
+        queryValue = unwrap(query, defaultContextClassLoader, QueryExp.class);
 
         try {
             final Object params[] = new Object[] { name, queryValue };
@@ -1579,7 +1590,8 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             ClassLoader orderCL = AccessController.doPrivileged(
                 new PrivilegedExceptionAction<ClassLoader>() {
                     public ClassLoader run() throws Exception {
-                        return new OrderClassLoaders(cl1, cl2);
+                        return new CombinedClassLoader(Thread.currentThread().getContextClassLoader(),
+                                new OrderClassLoaders(cl1, cl2));
                     }
                 }
             );
@@ -1671,6 +1683,8 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
 
     private final ClassLoader defaultClassLoader;
 
+    private final ClassLoader defaultContextClassLoader;
+
     private final ClassLoaderWithRepository classLoaderWithRepository;
 
     private boolean terminated = false;
@@ -1753,4 +1767,43 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
 
     private static final ClassLogger logger =
         new ClassLogger("javax.management.remote.rmi", "RMIConnectionImpl");
+
+    private static final class CombinedClassLoader extends ClassLoader {
+
+        private final static class ClassLoaderWrapper extends ClassLoader {
+            ClassLoaderWrapper(ClassLoader cl) {
+                super(cl);
+            }
+
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve)
+                    throws ClassNotFoundException {
+                return super.loadClass(name, resolve);
+            }
+        };
+
+        final ClassLoaderWrapper defaultCL;
+
+        private CombinedClassLoader(ClassLoader parent, ClassLoader defaultCL) {
+            super(parent);
+            this.defaultCL = new ClassLoaderWrapper(defaultCL);
+        }
+
+        @Override
+        protected Class<?> loadClass(String name, boolean resolve)
+        throws ClassNotFoundException {
+            try {
+                super.loadClass(name, resolve);
+            } catch(Exception e) {
+                for(Throwable t = e; t != null; t = t.getCause()) {
+                    if(t instanceof SecurityException) {
+                        throw t==e?(SecurityException)t:new SecurityException(t.getMessage(), e);
+                    }
+                }
+            }
+            final Class<?> cl = defaultCL.loadClass(name, resolve);
+            return cl;
+        }
+
+    }
 }
