@@ -1026,25 +1026,30 @@ class CodeComment: public CHeapObj<mtCode> {
     }
     return a;
   }
+
+  // Convenience for add_comment.
+  CodeComment* find_last(intptr_t offset) {
+    CodeComment* a = find(offset);
+    if (a != NULL) {
+      while ((a->_next != NULL) && (a->_next->_offset == offset)) {
+        a = a->_next;
+      }
+    }
+    return a;
+  }
 };
 
 
 void CodeComments::add_comment(intptr_t offset, const char * comment) {
-  CodeComment* c = new CodeComment(offset, comment);
-  CodeComment* insert = NULL;
-  if (_comments != NULL) {
-    CodeComment* c = _comments->find(offset);
-    insert = c;
-    while (c && c->offset() == offset) {
-      insert = c;
-      c = c->next();
-    }
-  }
-  if (insert) {
-    // insert after comments with same offset
-    c->set_next(insert->next());
-    insert->set_next(c);
+  CodeComment* c      = new CodeComment(offset, comment);
+  CodeComment* inspos = (_comments == NULL) ? NULL : _comments->find_last(offset);
+
+  if (inspos) {
+    // insert after already existing comments with same offset
+    c->set_next(inspos->next());
+    inspos->set_next(c);
   } else {
+    // no comments with such offset, yet. Insert before anything else.
     c->set_next(_comments);
     _comments = c;
   }
@@ -1052,12 +1057,11 @@ void CodeComments::add_comment(intptr_t offset, const char * comment) {
 
 
 void CodeComments::assign(CodeComments& other) {
-  assert(_comments == NULL, "don't overwrite old value");
   _comments = other._comments;
 }
 
 
-void CodeComments::print_block_comment(outputStream* stream, intptr_t offset) {
+void CodeComments::print_block_comment(outputStream* stream, intptr_t offset) const {
   if (_comments != NULL) {
     CodeComment* c = _comments->find(offset);
     while (c && c->offset() == offset) {
@@ -1085,6 +1089,7 @@ void CodeComments::free() {
 
 
 void CodeBuffer::decode() {
+  ttyLocker ttyl;
   Disassembler::decode(decode_begin(), insts_end());
   _decode_begin = insts_end();
 }
@@ -1096,6 +1101,7 @@ void CodeBuffer::skip_decode() {
 
 
 void CodeBuffer::decode_all() {
+  ttyLocker ttyl;
   for (int n = 0; n < (int)SECT_LIMIT; n++) {
     // dump contents of each section
     CodeSection* cs = code_section(n);

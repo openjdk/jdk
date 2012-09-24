@@ -2460,6 +2460,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
 #ifndef PRODUCT
     // debugging suppport
     if (PrintAdapterHandlers || PrintStubCode) {
+      ttyLocker ttyl;
       entry->print_adapter_on(tty);
       tty->print_cr("i2c argument handler #%d for: %s %s (%d bytes generated)",
                     _adapters->number_of_entries(), (method->is_static() ? "static" : "receiver"),
@@ -2467,8 +2468,10 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
       tty->print_cr("c2i argument handler starts at %p",entry->get_c2i_entry());
       if (Verbose || PrintStubCode) {
         address first_pc = entry->base_address();
-        if (first_pc != NULL)
+        if (first_pc != NULL) {
           Disassembler::decode(first_pc, first_pc + insts_size);
+          tty->cr();
+        }
       }
     }
 #endif

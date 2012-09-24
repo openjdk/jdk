@@ -253,7 +253,7 @@ public:
   }
 
   void add_comment(intptr_t offset, const char * comment) PRODUCT_RETURN;
-  void print_block_comment(outputStream* stream, intptr_t offset)  PRODUCT_RETURN;
+  void print_block_comment(outputStream* stream, intptr_t offset) const PRODUCT_RETURN;
   void assign(CodeComments& other)  PRODUCT_RETURN;
   void free() PRODUCT_RETURN;
 };
