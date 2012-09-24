@@ -48,10 +48,12 @@ class InterpreterCodelet: public Stub {
   int         _size;                             // the size in bytes
   const char* _description;                      // a description of the codelet, for debugging & printing
   Bytecodes::Code _bytecode;                     // associated bytecode if any
+  DEBUG_ONLY(CodeComments _comments;)            // Comments for annotating assembler output.
 
  public:
   // Initialization/finalization
-  void    initialize(int size)                   { _size = size; }
+  void    initialize(int size,
+                     CodeComments& comments)     { _size = size; DEBUG_ONLY(_comments.assign(comments);) }
   void    finalize()                             { ShouldNotCallThis(); }
 
   // General info/converters
@@ -129,7 +131,7 @@ class CodeletMark: ResourceMark {
 
 
     // commit Codelet
-    AbstractInterpreter::code()->commit((*_masm)->code()->pure_insts_size());
+    AbstractInterpreter::code()->commit((*_masm)->code()->pure_insts_size(), (*_masm)->code()->comments());
     // make sure nobody can use _masm outside a CodeletMark lifespan
     *_masm = NULL;
   }
