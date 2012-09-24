@@ -751,6 +751,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
         !strcmp(_matrule->_rChild->_opType,"DecodeN")    ||
         !strcmp(_matrule->_rChild->_opType,"EncodeP")    ||
         !strcmp(_matrule->_rChild->_opType,"LoadN")      ||
+        !strcmp(_matrule->_rChild->_opType,"GetAndSetN") ||
         !strcmp(_matrule->_rChild->_opType,"LoadNKlass") ||
         !strcmp(_matrule->_rChild->_opType,"CreateEx")   ||  // type of exception
         !strcmp(_matrule->_rChild->_opType,"CheckCastPP")) ) return true;
@@ -3399,7 +3400,9 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StorePConditional", "StoreIConditional", "StoreLConditional",
     "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP", "CompareAndSwapN",
     "StoreCM",
-    "ClearArray"
+    "ClearArray",
+    "GetAndAddI", "GetAndSetI", "GetAndSetP",
+    "GetAndAddL", "GetAndSetL", "GetAndSetN",
   };
   int cnt = sizeof(needs_ideal_memory_list)/sizeof(char*);
   if( strcmp(_opType,"PrefetchRead")==0 ||

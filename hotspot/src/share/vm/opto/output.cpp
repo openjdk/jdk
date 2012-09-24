@@ -1869,7 +1869,9 @@ void Compile::ScheduleAndBundle() {
   if (!do_scheduling())
     return;
 
-  assert(MaxVectorSize <= 8, "scheduling code works only with pairs");
+  // Scheduling code works only with pairs (8 bytes) maximum.
+  if (max_vector_size() > 8)
+    return;
 
   NOT_PRODUCT( TracePhase t2("isched", &_t_instrSched, TimeCompiler); )
 

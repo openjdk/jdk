@@ -480,7 +480,9 @@ static bool can_cause_alias(Node *n, PhaseTransform *phase) {
         opc == Op_CheckCastPP ||
         opc == Op_StorePConditional ||
         opc == Op_CompareAndSwapP ||
-        opc == Op_CompareAndSwapN;
+        opc == Op_CompareAndSwapN ||
+        opc == Op_GetAndSetP ||
+        opc == Op_GetAndSetN;
   }
   return possible_alias;
 }

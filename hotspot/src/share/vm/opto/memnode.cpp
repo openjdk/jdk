@@ -2552,14 +2552,38 @@ const Type * SCMemProjNode::Value( PhaseTransform *phase ) const
 }
 
 //=============================================================================
-LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex ) : Node(5) {
+//----------------------------------LoadStoreNode------------------------------
+LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required )
+  : Node(required),
+    _type(rt),
+    _adr_type(at)
+{
   init_req(MemNode::Control, c  );
   init_req(MemNode::Memory , mem);
   init_req(MemNode::Address, adr);
   init_req(MemNode::ValueIn, val);
-  init_req(         ExpectedIn, ex );
   init_class_id(Class_LoadStore);
+}
 
+uint LoadStoreNode::ideal_reg() const {
+  return _type->ideal_reg();
+}
+
+bool LoadStoreNode::result_not_used() const {
+  for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {
+    Node *x = fast_out(i);
+    if (x->Opcode() == Op_SCMemProj) continue;
+    return false;
+  }
+  return true;
+}
+
+uint LoadStoreNode::size_of() const { return sizeof(*this); }
+
+//=============================================================================
+//----------------------------------LoadStoreConditionalNode--------------------
+LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex ) : LoadStoreNode(c, mem, adr, val, NULL, TypeInt::BOOL, 5) {
+  init_req(ExpectedIn, ex );
 }
 
 //=============================================================================

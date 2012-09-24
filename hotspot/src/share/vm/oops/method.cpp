@@ -251,8 +251,12 @@ void Method::mask_for(int bci, InterpreterOopMap* mask) {
 
 
 int Method::bci_from(address bcp) const {
+#ifdef ASSERT
+  { ResourceMark rm;
   assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(),
          err_msg("bcp doesn't belong to this method: bcp: " INTPTR_FORMAT ", method: %s", bcp, name_and_sig_as_C_string()));
+  }
+#endif
   return bcp - code_base();
 }
 

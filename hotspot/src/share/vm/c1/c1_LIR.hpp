@@ -963,6 +963,8 @@ enum LIR_Code {
       , lir_alloc_array
       , lir_throw
       , lir_compare_to
+      , lir_xadd
+      , lir_xchg
   , end_op2
   , begin_op3
       , lir_idiv
@@ -2191,6 +2193,9 @@ class LIR_List: public CompilationResourceObj {
   void profile_call(ciMethod* method, int bci, ciMethod* callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* cha_klass) {
     append(new LIR_OpProfileCall(lir_profile_call, method, bci, callee, mdo, recv, t1, cha_klass));
   }
+
+  void xadd(LIR_Opr src, LIR_Opr add, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_xadd, src, add, res, tmp)); }
+  void xchg(LIR_Opr src, LIR_Opr set, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_xchg, src, set, res, tmp)); }
 };
 
 void print_LIR(BlockList* blocks);
@@ -2287,16 +2292,21 @@ class LIR_OpVisitState: public StackObj {
       LIR_Address* address = opr->as_address_ptr();
       if (address != NULL) {
         // special handling for addresses: add base and index register of the address
-        // both are always input operands!
+        // both are always input operands or temp if we want to extend
+        // their liveness!
+        if (mode == outputMode) {
+          mode = inputMode;
+        }
+        assert (mode == inputMode || mode == tempMode, "input or temp only for addresses");
         if (address->_base->is_valid()) {
           assert(address->_base->is_register(), "must be");
-          assert(_oprs_len[inputMode] < maxNumberOfOperands, "array overflow");
-          _oprs_new[inputMode][_oprs_len[inputMode]++] = &address->_base;
+          assert(_oprs_len[mode] < maxNumberOfOperands, "array overflow");
+          _oprs_new[mode][_oprs_len[mode]++] = &address->_base;
         }
         if (address->_index->is_valid()) {
           assert(address->_index->is_register(), "must be");
-          assert(_oprs_len[inputMode] < maxNumberOfOperands, "array overflow");
-          _oprs_new[inputMode][_oprs_len[inputMode]++] = &address->_index;
+          assert(_oprs_len[mode] < maxNumberOfOperands, "array overflow");
+          _oprs_new[mode][_oprs_len[mode]++] = &address->_index;
         }
 
       } else {
