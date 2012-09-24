@@ -725,24 +725,6 @@ void MacroAssembler::jump(const AddressLiteral& addrlit, Register temp, int offs
 }
 
 
-// Convert to C varargs format
-void MacroAssembler::set_varargs( Argument inArg, Register d ) {
-  // spill register-resident args to their memory slots
-  // (SPARC calling convention requires callers to have already preallocated these)
-  // Note that the inArg might in fact be an outgoing argument,
-  // if a leaf routine or stub does some tricky argument shuffling.
-  // This routine must work even though one of the saved arguments
-  // is in the d register (e.g., set_varargs(Argument(0, false), O0)).
-  for (Argument savePtr = inArg;
-       savePtr.is_register();
-       savePtr = savePtr.successor()) {
-    st_ptr(savePtr.as_register(), savePtr.address_in_frame());
-  }
-  // return the address of the first memory slot
-  Address a = inArg.address_in_frame();
-  add(a.base(), a.disp(), d);
-}
-
 // Conditional breakpoint (for assertion checks in assembly code)
 void MacroAssembler::breakpoint_trap(Condition c, CC cc) {
   trap(c, cc, G0, ST_RESERVED_FOR_USER_0);
@@ -2943,6 +2925,20 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   assert(itable_index.is_constant() || itable_index.as_register() == method_result,
          "caller must use same register for non-constant itable index as for method");
 
+  Label L_no_such_interface_restore;
+  bool did_save = false;
+  if (scan_temp == noreg || sethi_temp == noreg) {
+    Register recv_2 = recv_klass->is_global() ? recv_klass : L0;
+    Register intf_2 = intf_klass->is_global() ? intf_klass : L1;
+    assert(method_result->is_global(), "must be able to return value");
+    scan_temp  = L2;
+    sethi_temp = L3;
+    save_frame_and_mov(0, recv_klass, recv_2, intf_klass, intf_2);
+    recv_klass = recv_2;
+    intf_klass = intf_2;
+    did_save = true;
+  }
+
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
   int vtable_base = InstanceKlass::vtable_start_offset() * wordSize;
   int scan_step   = itableOffsetEntry::size() * wordSize;
@@ -2981,7 +2977,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   //     result = (klass + scan->offset() + itable_index);
   //   }
   // }
-  Label search, found_method;
+  Label L_search, L_found_method;
 
   for (int peel = 1; peel >= 0; peel--) {
     // %%%% Could load both offset and interface in one ldx, if they were
@@ -2991,23 +2987,23 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
     // Check that this entry is non-null.  A null entry means that
     // the receiver class doesn't implement the interface, and wasn't the
     // same as when the caller was compiled.
-    bpr(Assembler::rc_z, false, Assembler::pn, method_result, L_no_such_interface);
+    bpr(Assembler::rc_z, false, Assembler::pn, method_result, did_save ? L_no_such_interface_restore : L_no_such_interface);
     delayed()->cmp(method_result, intf_klass);
 
     if (peel) {
-      brx(Assembler::equal,    false, Assembler::pt, found_method);
+      brx(Assembler::equal,    false, Assembler::pt, L_found_method);
     } else {
-      brx(Assembler::notEqual, false, Assembler::pn, search);
+      brx(Assembler::notEqual, false, Assembler::pn, L_search);
       // (invert the test to fall through to found_method...)
     }
     delayed()->add(scan_temp, scan_step, scan_temp);
 
     if (!peel)  break;
 
-    bind(search);
+    bind(L_search);
   }
 
-  bind(found_method);
+  bind(L_found_method);
 
   // Got a hit.
   int ito_offset = itableOffsetEntry::offset_offset_in_bytes();
@@ -3015,6 +3011,18 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   ito_offset -= scan_step;
   lduw(scan_temp, ito_offset, scan_temp);
   ld_ptr(recv_klass, scan_temp, method_result);
+
+  if (did_save) {
+    Label L_done;
+    ba(L_done);
+    delayed()->restore();
+
+    bind(L_no_such_interface_restore);
+    ba(L_no_such_interface);
+    delayed()->restore();
+
+    bind(L_done);
+  }
 }
 
 

@@ -65,6 +65,8 @@ class LibraryCallKit : public GraphKit {
  private:
   LibraryIntrinsic* _intrinsic;   // the library intrinsic being called
 
+  const TypeOopPtr* sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type, bool is_native_ptr = false);
+
  public:
   LibraryCallKit(JVMState* caller, LibraryIntrinsic* intrinsic)
     : GraphKit(caller),
@@ -241,7 +243,8 @@ class LibraryCallKit : public GraphKit {
                                     Node* src,  Node* src_offset,
                                     Node* dest, Node* dest_offset,
                                     Node* copy_length, bool dest_uninitialized);
-  bool inline_unsafe_CAS(BasicType type);
+  typedef enum { LS_xadd, LS_xchg, LS_cmpxchg } LoadStoreKind;
+  bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind);
   bool inline_unsafe_ordered_store(BasicType type);
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_numberOfLeadingZeros(vmIntrinsics::ID id);
@@ -290,6 +293,11 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     case vmIntrinsics::_compareTo:
     case vmIntrinsics::_equals:
     case vmIntrinsics::_equalsC:
+    case vmIntrinsics::_getAndAddInt:
+    case vmIntrinsics::_getAndAddLong:
+    case vmIntrinsics::_getAndSetInt:
+    case vmIntrinsics::_getAndSetLong:
+    case vmIntrinsics::_getAndSetObject:
       break;  // InlineNatives does not control String.compareTo
     case vmIntrinsics::_Reference_get:
       break;  // InlineNatives does not control Reference.get
@@ -368,6 +376,42 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     // Also add memory barrier to prevent commoning reads from this field
     // across safepoint since GC can change it value.
     break;
+
+  case vmIntrinsics::_compareAndSwapObject:
+#ifdef _LP64
+    if (!UseCompressedOops && !Matcher::match_rule_supported(Op_CompareAndSwapP)) return NULL;
+#endif
+    break;
+
+  case vmIntrinsics::_compareAndSwapLong:
+    if (!Matcher::match_rule_supported(Op_CompareAndSwapL)) return NULL;
+    break;
+
+  case vmIntrinsics::_getAndAddInt:
+    if (!Matcher::match_rule_supported(Op_GetAndAddI)) return NULL;
+    break;
+
+  case vmIntrinsics::_getAndAddLong:
+    if (!Matcher::match_rule_supported(Op_GetAndAddL)) return NULL;
+    break;
+
+  case vmIntrinsics::_getAndSetInt:
+    if (!Matcher::match_rule_supported(Op_GetAndSetI)) return NULL;
+    break;
+
+  case vmIntrinsics::_getAndSetLong:
+    if (!Matcher::match_rule_supported(Op_GetAndSetL)) return NULL;
+    break;
+
+  case vmIntrinsics::_getAndSetObject:
+#ifdef _LP64
+    if (!UseCompressedOops && !Matcher::match_rule_supported(Op_GetAndSetP)) return NULL;
+    if (UseCompressedOops && !Matcher::match_rule_supported(Op_GetAndSetN)) return NULL;
+    break;
+#else
+    if (!Matcher::match_rule_supported(Op_GetAndSetP)) return NULL;
+    break;
+#endif
 
  default:
     assert(id <= vmIntrinsics::LAST_COMPILER_INLINE, "caller responsibility");
@@ -620,11 +664,11 @@ bool LibraryCallKit::try_to_inline() {
     return inline_unsafe_prefetch(!is_native_ptr, is_store, is_static);
 
   case vmIntrinsics::_compareAndSwapObject:
-    return inline_unsafe_CAS(T_OBJECT);
+    return inline_unsafe_load_store(T_OBJECT, LS_cmpxchg);
   case vmIntrinsics::_compareAndSwapInt:
-    return inline_unsafe_CAS(T_INT);
+    return inline_unsafe_load_store(T_INT, LS_cmpxchg);
   case vmIntrinsics::_compareAndSwapLong:
-    return inline_unsafe_CAS(T_LONG);
+    return inline_unsafe_load_store(T_LONG, LS_cmpxchg);
 
   case vmIntrinsics::_putOrderedObject:
     return inline_unsafe_ordered_store(T_OBJECT);
@@ -632,6 +676,17 @@ bool LibraryCallKit::try_to_inline() {
     return inline_unsafe_ordered_store(T_INT);
   case vmIntrinsics::_putOrderedLong:
     return inline_unsafe_ordered_store(T_LONG);
+
+  case vmIntrinsics::_getAndAddInt:
+    return inline_unsafe_load_store(T_INT, LS_xadd);
+  case vmIntrinsics::_getAndAddLong:
+    return inline_unsafe_load_store(T_LONG, LS_xadd);
+  case vmIntrinsics::_getAndSetInt:
+    return inline_unsafe_load_store(T_INT, LS_xchg);
+  case vmIntrinsics::_getAndSetLong:
+    return inline_unsafe_load_store(T_LONG, LS_xchg);
+  case vmIntrinsics::_getAndSetObject:
+    return inline_unsafe_load_store(T_OBJECT, LS_xchg);
 
   case vmIntrinsics::_currentThread:
     return inline_native_currentThread();
@@ -2301,6 +2356,43 @@ void LibraryCallKit::insert_pre_barrier(Node* base_oop, Node* offset,
 // Interpret Unsafe.fieldOffset cookies correctly:
 extern jlong Unsafe_field_offset_to_byte_offset(jlong field_offset);
 
+const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type, bool is_native_ptr) {
+  // Attempt to infer a sharper value type from the offset and base type.
+  ciKlass* sharpened_klass = NULL;
+
+  // See if it is an instance field, with an object type.
+  if (alias_type->field() != NULL) {
+    assert(!is_native_ptr, "native pointer op cannot use a java address");
+    if (alias_type->field()->type()->is_klass()) {
+      sharpened_klass = alias_type->field()->type()->as_klass();
+    }
+  }
+
+  // See if it is a narrow oop array.
+  if (adr_type->isa_aryptr()) {
+    if (adr_type->offset() >= objArrayOopDesc::base_offset_in_bytes()) {
+      const TypeOopPtr *elem_type = adr_type->is_aryptr()->elem()->isa_oopptr();
+      if (elem_type != NULL) {
+        sharpened_klass = elem_type->klass();
+      }
+    }
+  }
+
+  if (sharpened_klass != NULL) {
+    const TypeOopPtr* tjp = TypeOopPtr::make_from_klass(sharpened_klass);
+
+#ifndef PRODUCT
+    if (PrintIntrinsics || PrintInlining || PrintOptoInlining) {
+      tty->print("  from base type:  ");   adr_type->dump();
+      tty->print("  sharpened value: ");   tjp->dump();
+    }
+#endif
+    // Sharpen the value type.
+    return tjp;
+  }
+  return NULL;
+}
+
 bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, BasicType type, bool is_volatile) {
   if (callee()->is_static())  return false;  // caller must have the capability!
 
@@ -2430,39 +2522,9 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
                            offset != top() && heap_base_oop != top();
 
   if (!is_store && type == T_OBJECT) {
-    // Attempt to infer a sharper value type from the offset and base type.
-    ciKlass* sharpened_klass = NULL;
-
-    // See if it is an instance field, with an object type.
-    if (alias_type->field() != NULL) {
-      assert(!is_native_ptr, "native pointer op cannot use a java address");
-      if (alias_type->field()->type()->is_klass()) {
-        sharpened_klass = alias_type->field()->type()->as_klass();
-      }
-    }
-
-    // See if it is a narrow oop array.
-    if (adr_type->isa_aryptr()) {
-      if (adr_type->offset() >= objArrayOopDesc::base_offset_in_bytes()) {
-        const TypeOopPtr *elem_type = adr_type->is_aryptr()->elem()->isa_oopptr();
-        if (elem_type != NULL) {
-          sharpened_klass = elem_type->klass();
-        }
-      }
-    }
-
-    if (sharpened_klass != NULL) {
-      const TypeOopPtr* tjp = TypeOopPtr::make_from_klass(sharpened_klass);
-
-      // Sharpen the value type.
+    const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type, is_native_ptr);
+    if (tjp != NULL) {
       value_type = tjp;
-
-#ifndef PRODUCT
-      if (PrintIntrinsics || PrintInlining || PrintOptoInlining) {
-        tty->print("  from base type:  ");   adr_type->dump();
-        tty->print("  sharpened value: "); value_type->dump();
-      }
-#endif
     }
   }
 
@@ -2673,9 +2735,9 @@ bool LibraryCallKit::inline_unsafe_prefetch(bool is_native_ptr, bool is_store, b
   return true;
 }
 
-//----------------------------inline_unsafe_CAS----------------------------
+//----------------------------inline_unsafe_load_store----------------------------
 
-bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
+bool LibraryCallKit::inline_unsafe_load_store(BasicType type, LoadStoreKind kind) {
   // This basic scheme here is the same as inline_unsafe_access, but
   // differs in enough details that combining them would make the code
   // overly confusing.  (This is a true fact! I originally combined
@@ -2686,37 +2748,47 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
   if (callee()->is_static())  return false;  // caller must have the capability!
 
 #ifndef PRODUCT
+  BasicType rtype;
   {
     ResourceMark rm;
-    // Check the signatures.
     ciSignature* sig = signature();
+    rtype = sig->return_type()->basic_type();
+    if (kind == LS_xadd || kind == LS_xchg) {
+      // Check the signatures.
 #ifdef ASSERT
-    BasicType rtype = sig->return_type()->basic_type();
-    assert(rtype == T_BOOLEAN, "CAS must return boolean");
-    assert(sig->count() == 4, "CAS has 4 arguments");
-    assert(sig->type_at(0)->basic_type() == T_OBJECT, "CAS base is object");
-    assert(sig->type_at(1)->basic_type() == T_LONG, "CAS offset is long");
+      assert(rtype == type, "get and set must return the expected type");
+      assert(sig->count() == 3, "get and set has 3 arguments");
+      assert(sig->type_at(0)->basic_type() == T_OBJECT, "get and set base is object");
+      assert(sig->type_at(1)->basic_type() == T_LONG, "get and set offset is long");
+      assert(sig->type_at(2)->basic_type() == type, "get and set must take expected type as new value/delta");
 #endif // ASSERT
+    } else if (kind == LS_cmpxchg) {
+      // Check the signatures.
+#ifdef ASSERT
+      assert(rtype == T_BOOLEAN, "CAS must return boolean");
+      assert(sig->count() == 4, "CAS has 4 arguments");
+      assert(sig->type_at(0)->basic_type() == T_OBJECT, "CAS base is object");
+      assert(sig->type_at(1)->basic_type() == T_LONG, "CAS offset is long");
+#endif // ASSERT
+    } else {
+      ShouldNotReachHere();
+    }
   }
 #endif //PRODUCT
 
   // number of stack slots per value argument (1 or 2)
   int type_words = type2size[type];
 
-  // Cannot inline wide CAS on machines that don't support it natively
-  if (type2aelembytes(type) > BytesPerInt && !VM_Version::supports_cx8())
-    return false;
-
   C->set_has_unsafe_access(true);  // Mark eventual nmethod as "unsafe".
 
-  // Argument words:  "this" plus oop plus offset plus oldvalue plus newvalue;
-  int nargs = 1 + 1 + 2  + type_words + type_words;
+  // Argument words:  "this" plus oop plus offset (plus oldvalue) plus newvalue/delta;
+  int nargs = 1 + 1 + 2  + ((kind == LS_cmpxchg) ? type_words : 0) + type_words;
 
-  // pop arguments: newval, oldval, offset, base, and receiver
+  // pop arguments: newval, offset, base, and receiver
   debug_only(int saved_sp = _sp);
   _sp += nargs;
   Node* newval   = (type_words == 1) ? pop() : pop_pair();
-  Node* oldval   = (type_words == 1) ? pop() : pop_pair();
+  Node* oldval   = (kind == LS_cmpxchg) ? ((type_words == 1) ? pop() : pop_pair()) : NULL;
   Node *offset   = pop_pair();
   Node *base     = pop();
   Node *receiver = pop();
@@ -2740,16 +2812,24 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
   Node* adr = make_unsafe_address(base, offset);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
-  // (Unlike inline_unsafe_access, there seems no point in trying
-  // to refine types. Just use the coarse types here.
+  // For CAS, unlike inline_unsafe_access, there seems no point in
+  // trying to refine types. Just use the coarse types here.
   const Type *value_type = Type::get_const_basic_type(type);
   Compile::AliasType* alias_type = C->alias_type(adr_type);
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
+
+  if (kind == LS_xchg && type == T_OBJECT) {
+    const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type);
+    if (tjp != NULL) {
+      value_type = tjp;
+    }
+  }
+
   int alias_idx = C->get_alias_index(adr_type);
 
-  // Memory-model-wise, a CAS acts like a little synchronized block,
-  // so needs barriers on each side.  These don't translate into
-  // actual barriers on most machines, but we still need rest of
+  // Memory-model-wise, a LoadStore acts like a little synchronized
+  // block, so needs barriers on each side.  These don't translate
+  // into actual barriers on most machines, but we still need rest of
   // compiler to respect ordering.
 
   insert_mem_bar(Op_MemBarRelease);
@@ -2762,13 +2842,29 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
 
   // For now, we handle only those cases that actually exist: ints,
   // longs, and Object. Adding others should be straightforward.
-  Node* cas;
+  Node* load_store;
   switch(type) {
   case T_INT:
-    cas = _gvn.transform(new (C, 5) CompareAndSwapINode(control(), mem, adr, newval, oldval));
+    if (kind == LS_xadd) {
+      load_store = _gvn.transform(new (C, 4) GetAndAddINode(control(), mem, adr, newval, adr_type));
+    } else if (kind == LS_xchg) {
+      load_store = _gvn.transform(new (C, 4) GetAndSetINode(control(), mem, adr, newval, adr_type));
+    } else if (kind == LS_cmpxchg) {
+      load_store = _gvn.transform(new (C, 5) CompareAndSwapINode(control(), mem, adr, newval, oldval));
+    } else {
+      ShouldNotReachHere();
+    }
     break;
   case T_LONG:
-    cas = _gvn.transform(new (C, 5) CompareAndSwapLNode(control(), mem, adr, newval, oldval));
+    if (kind == LS_xadd) {
+      load_store = _gvn.transform(new (C, 4) GetAndAddLNode(control(), mem, adr, newval, adr_type));
+    } else if (kind == LS_xchg) {
+      load_store = _gvn.transform(new (C, 4) GetAndSetLNode(control(), mem, adr, newval, adr_type));
+    } else if (kind == LS_cmpxchg) {
+      load_store = _gvn.transform(new (C, 5) CompareAndSwapLNode(control(), mem, adr, newval, oldval));
+    } else {
+      ShouldNotReachHere();
+    }
     break;
   case T_OBJECT:
     // Transformation of a value which could be NULL pointer (CastPP #NULL)
@@ -2778,7 +2874,6 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
       newval = _gvn.makecon(TypePtr::NULL_PTR);
 
     // Reference stores need a store barrier.
-    // (They don't if CAS fails, but it isn't worth checking.)
     pre_barrier(true /* do_load*/,
                 control(), base, adr, alias_idx, newval, value_type->make_oopptr(),
                 NULL /* pre_val*/,
@@ -2786,32 +2881,50 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       Node *newval_enc = _gvn.transform(new (C, 2) EncodePNode(newval, newval->bottom_type()->make_narrowoop()));
-      Node *oldval_enc = _gvn.transform(new (C, 2) EncodePNode(oldval, oldval->bottom_type()->make_narrowoop()));
-      cas = _gvn.transform(new (C, 5) CompareAndSwapNNode(control(), mem, adr,
-                                                          newval_enc, oldval_enc));
+      if (kind == LS_xchg) {
+        load_store = _gvn.transform(new (C, 4) GetAndSetNNode(control(), mem, adr,
+                                                              newval_enc, adr_type, value_type->make_narrowoop()));
+      } else {
+        assert(kind == LS_cmpxchg, "wrong LoadStore operation");
+        Node *oldval_enc = _gvn.transform(new (C, 2) EncodePNode(oldval, oldval->bottom_type()->make_narrowoop()));
+        load_store = _gvn.transform(new (C, 5) CompareAndSwapNNode(control(), mem, adr,
+                                                                   newval_enc, oldval_enc));
+      }
     } else
 #endif
     {
-      cas = _gvn.transform(new (C, 5) CompareAndSwapPNode(control(), mem, adr, newval, oldval));
+      if (kind == LS_xchg) {
+        load_store = _gvn.transform(new (C, 4) GetAndSetPNode(control(), mem, adr, newval, adr_type, value_type->is_oopptr()));
+      } else {
+        assert(kind == LS_cmpxchg, "wrong LoadStore operation");
+        load_store = _gvn.transform(new (C, 5) CompareAndSwapPNode(control(), mem, adr, newval, oldval));
+      }
     }
-    post_barrier(control(), cas, base, adr, alias_idx, newval, T_OBJECT, true);
+    post_barrier(control(), load_store, base, adr, alias_idx, newval, T_OBJECT, true);
     break;
   default:
     ShouldNotReachHere();
     break;
   }
 
-  // SCMemProjNodes represent the memory state of CAS. Their main
-  // role is to prevent CAS nodes from being optimized away when their
-  // results aren't used.
-  Node* proj = _gvn.transform( new (C, 1) SCMemProjNode(cas));
+  // SCMemProjNodes represent the memory state of a LoadStore. Their
+  // main role is to prevent LoadStore nodes from being optimized away
+  // when their results aren't used.
+  Node* proj = _gvn.transform( new (C, 1) SCMemProjNode(load_store));
   set_memory(proj, alias_idx);
 
   // Add the trailing membar surrounding the access
   insert_mem_bar(Op_MemBarCPUOrder);
   insert_mem_bar(Op_MemBarAcquire);
 
-  push(cas);
+#ifdef _LP64
+  if (type == T_OBJECT && adr->bottom_type()->is_ptr_to_narrowoop() && kind == LS_xchg) {
+    load_store = _gvn.transform(new (C, 2) DecodeNNode(load_store, load_store->bottom_type()->make_ptr()));
+  }
+#endif
+
+  assert(type2size[load_store->bottom_type()->basic_type()] == type2size[rtype], "result type should match");
+  push_node(load_store->bottom_type()->basic_type(), load_store);
   return true;
 }
 

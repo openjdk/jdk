@@ -40,11 +40,10 @@
 #include "prims/nativeLookup.hpp"
 #include "runtime/sharedRuntime.hpp"
 
-#ifndef PRODUCT
 void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
-  if (TraceTypeProfile || PrintInlining || PrintOptoInlining) {
+  if (TraceTypeProfile || PrintInlining NOT_PRODUCT(|| PrintOptoInlining)) {
     if (!PrintInlining) {
-      if (!PrintOpto && !PrintCompilation) {
+      if (NOT_PRODUCT(!PrintOpto &&) !PrintCompilation) {
         method->print_short_name();
         tty->cr();
       }
@@ -56,7 +55,6 @@ void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_met
     tty->cr();
   }
 }
-#endif
 
 CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool call_is_virtual,
                                        JVMState* jvms, bool allow_inline,
@@ -225,13 +223,13 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           }
           if (miss_cg != NULL) {
             if (next_hit_cg != NULL) {
-              NOT_PRODUCT(trace_type_profile(jvms->method(), jvms->depth() - 1, jvms->bci(), next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1)));
+              trace_type_profile(jvms->method(), jvms->depth() - 1, jvms->bci(), next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1));
               // We don't need to record dependency on a receiver here and below.
               // Whenever we inline, the dependency is added by Parse::Parse().
               miss_cg = CallGenerator::for_predicted_call(profile.receiver(1), miss_cg, next_hit_cg, PROB_MAX);
             }
             if (miss_cg != NULL) {
-              NOT_PRODUCT(trace_type_profile(jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, profile.receiver(0), site_count, receiver_count));
+              trace_type_profile(jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, profile.receiver(0), site_count, receiver_count);
               CallGenerator* cg = CallGenerator::for_predicted_call(profile.receiver(0), miss_cg, hit_cg, profile.receiver_prob(0));
               if (cg != NULL)  return cg;
             }

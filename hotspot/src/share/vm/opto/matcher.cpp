@@ -2134,10 +2134,10 @@ void Matcher::find_shared( Node *n ) {
       case Op_CompareAndSwapP:
       case Op_CompareAndSwapN: {   // Convert trinary to binary-tree
         Node *newval = n->in(MemNode::ValueIn );
-        Node *oldval  = n->in(LoadStoreNode::ExpectedIn);
+        Node *oldval  = n->in(LoadStoreConditionalNode::ExpectedIn);
         Node *pair = new (C, 3) BinaryNode( oldval, newval );
         n->set_req(MemNode::ValueIn,pair);
-        n->del_req(LoadStoreNode::ExpectedIn);
+        n->del_req(LoadStoreConditionalNode::ExpectedIn);
         break;
       }
       case Op_CMoveD:              // Convert trinary to binary-tree
