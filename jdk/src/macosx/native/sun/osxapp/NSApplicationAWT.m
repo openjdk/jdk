@@ -52,6 +52,9 @@ BOOL postEventDuringEventSynthesis = NO;
 
 AWT_ASSERT_APPKIT_THREAD;
     fApplicationName = nil;
+    dummyEventTimestamp = 0.0;
+    seenDummyEventLock = nil;
+
 
     // NSApplication will call _RegisterApplication with the application's bundle, but there may not be one.
     // So, we need to call it ourselves to ensure the app is set up properly.
@@ -326,6 +329,45 @@ AWT_ASSERT_APPKIT_THREAD;
     postEventDuringEventSynthesis = NO;
 
     return event;
+}
+
+// NSTimeInterval has microseconds precision
+#define TS_EQUAL(ts1, ts2) (fabs((ts1) - (ts2)) < 1e-6)
+
+- (void)sendEvent:(NSEvent *)event
+{
+    if ([event type] == NSApplicationDefined && TS_EQUAL([event timestamp], dummyEventTimestamp)) {
+        [seenDummyEventLock lockWhenCondition:NO];
+        [seenDummyEventLock unlockWithCondition:YES];
+    } else {
+        [super sendEvent:event];
+    }
+}
+
+- (void)postDummyEvent {
+    seenDummyEventLock = [[NSConditionLock alloc] initWithCondition:NO];
+    dummyEventTimestamp = [NSProcessInfo processInfo].systemUptime;
+    
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];    
+    NSEvent* event = [NSEvent otherEventWithType: NSApplicationDefined
+                                        location: NSMakePoint(0,0)
+                                   modifierFlags: 0
+                                       timestamp: dummyEventTimestamp
+                                    windowNumber: 0
+                                         context: nil
+                                         subtype: 0
+                                           data1: 0
+                                           data2: 0];
+    [NSApp postEvent: event atStart: NO];
+    [pool drain];
+}
+
+- (void)waitForDummyEvent {
+    [seenDummyEventLock lockWhenCondition:YES];
+    [seenDummyEventLock unlock];
+    [seenDummyEventLock release];
+
+    seenDummyEventLock = nil;
 }
 
 @end
