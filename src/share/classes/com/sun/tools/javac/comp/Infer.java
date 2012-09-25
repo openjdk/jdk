@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
 import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
 import com.sun.tools.javac.tree.JCTree;
@@ -39,6 +40,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static com.sun.tools.javac.code.TypeTags.*;
 
@@ -120,8 +122,8 @@ public class Infer {
      *  Throw a NoInstanceException if this not possible.
      */
    void maximizeInst(UndetVar that, Warner warn) throws InferenceException {
-        List<Type> hibounds = Type.filter(that.hibounds, boundFilter);
-        if (that.eq.isEmpty()) {
+        List<Type> hibounds = Type.filter(that.getBounds(InferenceBound.UPPER), boundFilter);
+        if (that.getBounds(InferenceBound.EQ).isEmpty()) {
             if (hibounds.isEmpty())
                 that.inst = syms.objectType;
             else if (hibounds.tail.isEmpty())
@@ -129,7 +131,7 @@ public class Infer {
             else
                 that.inst = types.glb(hibounds);
         } else {
-            that.inst = that.eq.head;
+            that.inst = that.getBounds(InferenceBound.EQ).head;
         }
         if (that.inst == null ||
             that.inst.isErroneous())
@@ -149,8 +151,8 @@ public class Infer {
      *  Throw a NoInstanceException if this not possible.
      */
     void minimizeInst(UndetVar that, Warner warn) throws InferenceException {
-        List<Type> lobounds = Type.filter(that.lobounds, boundFilter);
-        if (that.eq.isEmpty()) {
+        List<Type> lobounds = Type.filter(that.getBounds(InferenceBound.LOWER), boundFilter);
+        if (that.getBounds(InferenceBound.EQ).isEmpty()) {
             if (lobounds.isEmpty()) {
                 //do nothing - the inference variable is under-constrained
                 return;
@@ -164,7 +166,7 @@ public class Infer {
                         .setMessage("no.unique.minimal.instance.exists",
                                     that.qtype, lobounds);
         } else {
-            that.inst = that.eq.head;
+            that.inst = that.getBounds(InferenceBound.EQ).head;
         }
     }
 
@@ -201,7 +203,8 @@ public class Infer {
             boolean stuck = true;
             for (Type t : inferenceContext.undetvars) {
                 UndetVar uv = (UndetVar)t;
-                if (uv.inst == null && (uv.eq.nonEmpty() || !inferenceContext.free(uv.hibounds))) {
+                if (uv.inst == null && (uv.getBounds(InferenceBound.EQ).nonEmpty() ||
+                        !inferenceContext.free(uv.getBounds(InferenceBound.UPPER)))) {
                     maximizeInst((UndetVar)t, warn);
                     stuck = false;
                 }
@@ -219,7 +222,7 @@ public class Infer {
                 //variables in remaining upper bounds and continue
                 for (Type t : inferenceContext.undetvars) {
                     UndetVar uv = (UndetVar)t;
-                    uv.hibounds = inferenceContext.asInstTypes(uv.hibounds, types);
+                    uv.substBounds(inferenceContext.inferenceVars(), inferenceContext.instTypes(), types);
                 }
             }
         }
@@ -235,7 +238,7 @@ public class Infer {
             UndetVar uv = (UndetVar)t;
             if (uv.inst == null) {
                 TypeSymbol fresh_tvar = new TypeSymbol(Flags.SYNTHETIC, uv.qtype.tsym.name, null, uv.qtype.tsym.owner);
-                fresh_tvar.type = new TypeVar(fresh_tvar, types.makeCompoundType(uv.hibounds), null);
+                fresh_tvar.type = new TypeVar(fresh_tvar, types.makeCompoundType(uv.getBounds(InferenceBound.UPPER)), null);
                 todo.append(uv);
                 uv.inst = fresh_tvar.type;
             }
@@ -267,7 +270,7 @@ public class Infer {
                                   boolean useVarargs,
                                   Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
-        final InferenceContext inferenceContext = new InferenceContext(tvars, types);
+        final InferenceContext inferenceContext = new InferenceContext(tvars, this);
         inferenceException.clear();
 
         try {
@@ -286,7 +289,7 @@ public class Infer {
             List<Type> restvars = inferenceContext.restvars();
 
             if (!restvars.isEmpty()) {
-                if (resultInfo != null) {
+                if (resultInfo != null && !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
                     instantiateUninferred(env.tree.pos(), inferenceContext, mt, resultInfo, warn);
                     checkWithinBounds(inferenceContext, warn);
                     mt = (MethodType)inferenceContext.asInstType(mt, types);
@@ -332,34 +335,58 @@ public class Infer {
     /** check that type parameters are within their bounds.
      */
     void checkWithinBounds(InferenceContext inferenceContext,
-                           Warner warn)
-        throws InferenceException {
-        List<Type> tvars = inferenceContext.inferenceVars();
+                           Warner warn) throws InferenceException {
+        //step 1 - check compatibility of instantiated type w.r.t. initial bounds
         for (Type t : inferenceContext.undetvars) {
             UndetVar uv = (UndetVar)t;
-            uv.hibounds = inferenceContext.asInstTypes(uv.hibounds, types);
-            uv.lobounds = inferenceContext.asInstTypes(uv.lobounds, types);
-            uv.eq = inferenceContext.asInstTypes(uv.eq, types);
+            uv.substBounds(inferenceContext.inferenceVars(), inferenceContext.instTypes(), types);
             checkCompatibleUpperBounds(uv, inferenceContext.inferenceVars());
-            if (!inferenceContext.restvars().contains(tvars.head)) {
+            if (!inferenceContext.restvars().contains(uv.qtype)) {
                 Type inst = inferenceContext.asInstType(t, types);
-                for (Type u : uv.hibounds) {
+                for (Type u : uv.getBounds(InferenceBound.UPPER)) {
                     if (!types.isSubtypeUnchecked(inst, inferenceContext.asFree(u, types), warn)) {
                         reportBoundError(uv, BoundErrorKind.UPPER);
                     }
                 }
-                for (Type l : uv.lobounds) {
-                    if (!types.isSubtypeUnchecked(inferenceContext.asFree(l, types), inst, warn)) {
+                for (Type l : uv.getBounds(InferenceBound.LOWER)) {
+                    Assert.check(!inferenceContext.free(l));
+                    if (!types.isSubtypeUnchecked(l, inst, warn)) {
                         reportBoundError(uv, BoundErrorKind.LOWER);
                     }
                 }
-                for (Type e : uv.eq) {
-                    if (!types.isSameType(inst, inferenceContext.asFree(e, types))) {
+                for (Type e : uv.getBounds(InferenceBound.EQ)) {
+                    Assert.check(!inferenceContext.free(e));
+                    if (!types.isSameType(inst, e)) {
                         reportBoundError(uv, BoundErrorKind.EQ);
                     }
                 }
             }
-            tvars = tvars.tail;
+        }
+
+        //step 2 - check that eq bounds are consistent w.r.t. eq/lower bounds
+        for (Type t : inferenceContext.undetvars) {
+            UndetVar uv = (UndetVar)t;
+            //check eq bounds consistency
+            Type eq = null;
+            for (Type e : uv.getBounds(InferenceBound.EQ)) {
+                Assert.check(!inferenceContext.free(e));
+                if (eq != null && !types.isSameType(e, eq)) {
+                    reportBoundError(uv, BoundErrorKind.EQ);
+                }
+                eq = e;
+                for (Type l : uv.getBounds(InferenceBound.LOWER)) {
+                    Assert.check(!inferenceContext.free(l));
+                    if (!types.isSubtypeUnchecked(l, e, warn)) {
+                        reportBoundError(uv, BoundErrorKind.BAD_EQ_LOWER);
+                    }
+                }
+                for (Type u : uv.getBounds(InferenceBound.UPPER)) {
+                    if (inferenceContext.free(u)) continue;
+                    if (!types.isSubtypeUnchecked(e, u, warn)) {
+                        reportBoundError(uv, BoundErrorKind.BAD_EQ_UPPER);
+                    }
+                }
+            }
         }
     }
 
@@ -367,7 +394,7 @@ public class Infer {
         // VGJ: sort of inlined maximizeInst() below.  Adding
         // bounds can cause lobounds that are above hibounds.
         ListBuffer<Type> hiboundsNoVars = ListBuffer.lb();
-        for (Type t : Type.filter(uv.hibounds, boundFilter)) {
+        for (Type t : Type.filter(uv.getBounds(InferenceBound.UPPER), boundFilter)) {
             if (!t.containsAny(tvars)) {
                 hiboundsNoVars.append(t);
             }
@@ -388,25 +415,43 @@ public class Infer {
         BAD_UPPER() {
             @Override
             InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("incompatible.upper.bounds", uv.qtype, uv.hibounds);
+                return ex.setMessage("incompatible.upper.bounds", uv.qtype,
+                        uv.getBounds(InferenceBound.UPPER));
+            }
+        },
+        BAD_EQ_UPPER() {
+            @Override
+            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
+                return ex.setMessage("incompatible.eq.upper.bounds", uv.qtype,
+                        uv.getBounds(InferenceBound.EQ), uv.getBounds(InferenceBound.UPPER));
+            }
+        },
+        BAD_EQ_LOWER() {
+            @Override
+            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
+                return ex.setMessage("incompatible.eq.lower.bounds", uv.qtype,
+                        uv.getBounds(InferenceBound.EQ), uv.getBounds(InferenceBound.LOWER));
             }
         },
         UPPER() {
             @Override
             InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("inferred.do.not.conform.to.upper.bounds", uv.inst, uv.hibounds);
+                return ex.setMessage("inferred.do.not.conform.to.upper.bounds", uv.inst,
+                        uv.getBounds(InferenceBound.UPPER));
             }
         },
         LOWER() {
             @Override
             InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("inferred.do.not.conform.to.lower.bounds", uv.inst, uv.lobounds);
+                return ex.setMessage("inferred.do.not.conform.to.lower.bounds", uv.inst,
+                        uv.getBounds(InferenceBound.LOWER));
             }
         },
         EQ() {
             @Override
             InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("inferred.do.not.conform.to.eq.bounds", uv.inst, uv.eq);
+                return ex.setMessage("inferred.do.not.conform.to.eq.bounds", uv.inst,
+                        uv.getBounds(InferenceBound.EQ));
             }
         };
 
@@ -480,9 +525,9 @@ public class Infer {
      * Mapping that turns inference variables into undet vars
      * (used by inference context)
      */
-    static Mapping fromTypeVarFun = new Mapping("fromTypeVarFun") {
+    Mapping fromTypeVarFun = new Mapping("fromTypeVarFun") {
         public Type apply(Type t) {
-            if (t.tag == TYPEVAR) return new UndetVar(t);
+            if (t.tag == TYPEVAR) return new UndetVar((TypeVar)t, types);
             else return t.map(this);
         }
     };
@@ -517,13 +562,9 @@ public class Infer {
 
         List<FreeTypeListener> freetypeListeners = List.nil();
 
-        public InferenceContext(List<Type> inferencevars, Types types) {
-            this.undetvars = Type.map(inferencevars, fromTypeVarFun);
+        public InferenceContext(List<Type> inferencevars, Infer infer) {
+            this.undetvars = Type.map(inferencevars, infer.fromTypeVarFun);
             this.inferencevars = inferencevars;
-            for (Type t : this.undetvars) {
-                UndetVar uv = (UndetVar)t;
-                uv.hibounds = types.getBounds((TypeVar)uv.qtype);
-            }
         }
 
         /**
@@ -669,5 +710,5 @@ public class Infer {
         }
     }
 
-    final InferenceContext emptyContext = new InferenceContext(List.<Type>nil(), types);
+    final InferenceContext emptyContext = new InferenceContext(List.<Type>nil(), this);
 }
