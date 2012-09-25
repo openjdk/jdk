@@ -40,6 +40,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -57,6 +58,7 @@ import static com.sun.tools.javac.code.Kinds.ERRONEOUS;
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import java.util.Iterator;
 
 /** Helper class for name resolution, used mostly by the attribution phase.
  *
@@ -1035,8 +1037,8 @@ public class Resolve {
                             return this;
                         else
                             return super.implementation(origin, types, checkResult);
-                    }
-                };
+                        }
+                    };
                 return result;
             }
             if (m1SignatureMoreSpecific) return m1;
@@ -1160,12 +1162,10 @@ public class Resolve {
                           argtypes,
                           typeargtypes,
                           site.tsym.type,
-                          true,
                           bestSoFar,
                           allowBoxing,
                           useVarargs,
-                          operator,
-                          new HashSet<TypeSymbol>());
+                          operator);
         reportVerboseResolutionDiagnostic(env.tree.pos(), name, site, argtypes, typeargtypes, bestSoFar);
         return bestSoFar;
     }
@@ -1176,55 +1176,136 @@ public class Resolve {
                               List<Type> argtypes,
                               List<Type> typeargtypes,
                               Type intype,
-                              boolean abstractok,
                               Symbol bestSoFar,
                               boolean allowBoxing,
                               boolean useVarargs,
-                              boolean operator,
-                              Set<TypeSymbol> seen) {
-        for (Type ct = intype; ct.tag == CLASS || ct.tag == TYPEVAR; ct = types.supertype(ct)) {
-            while (ct.tag == TYPEVAR)
-                ct = ct.getUpperBound();
-            ClassSymbol c = (ClassSymbol)ct.tsym;
-            if (!seen.add(c)) return bestSoFar;
-            if ((c.flags() & (ABSTRACT | INTERFACE | ENUM)) == 0)
-                abstractok = false;
-            for (Scope.Entry e = c.members().lookup(name);
-                 e.scope != null;
-                 e = e.next()) {
-                //- System.out.println(" e " + e.sym);
-                if (e.sym.kind == MTH &&
-                    (e.sym.flags_field & SYNTHETIC) == 0) {
-                    bestSoFar = selectBest(env, site, argtypes, typeargtypes,
-                                           e.sym, bestSoFar,
-                                           allowBoxing,
-                                           useVarargs,
-                                           operator);
+                              boolean operator) {
+        boolean abstractOk = true;
+        List<Type> itypes = List.nil();
+        for (TypeSymbol s : superclasses(intype)) {
+            bestSoFar = lookupMethod(env, site, name, argtypes, typeargtypes,
+                    s.members(), bestSoFar, allowBoxing, useVarargs, operator, true);
+            abstractOk &= excludeAbstractsFilter.accepts(s);
+            if (abstractOk) {
+                for (Type itype : types.interfaces(s.type)) {
+                    itypes = types.union(types.closure(itype), itypes);
                 }
             }
-            if (name == names.init)
-                break;
-            //- System.out.println(" - " + bestSoFar);
-            if (abstractok) {
-                Symbol concrete = methodNotFound;
-                if ((bestSoFar.flags() & ABSTRACT) == 0)
-                    concrete = bestSoFar;
-                for (List<Type> l = types.interfaces(c.type);
-                     l.nonEmpty();
-                     l = l.tail) {
-                    bestSoFar = findMethod(env, site, name, argtypes,
-                                           typeargtypes,
-                                           l.head, abstractok, bestSoFar,
-                                           allowBoxing, useVarargs, operator, seen);
-                }
-                if (concrete != bestSoFar &&
-                    concrete.kind < ERR  && bestSoFar.kind < ERR &&
-                    types.isSubSignature(concrete.type, bestSoFar.type))
-                    bestSoFar = concrete;
+            if (name == names.init) break;
+        }
+
+        Symbol concrete = bestSoFar.kind < ERR &&
+                (bestSoFar.flags() & ABSTRACT) == 0 ?
+                bestSoFar : methodNotFound;
+
+        if (name != names.init) {
+            //keep searching for abstract methods
+            for (Type itype : itypes) {
+                if (!itype.isInterface()) continue; //skip j.l.Object (included by Types.closure())
+                bestSoFar = lookupMethod(env, site, name, argtypes, typeargtypes,
+                    itype.tsym.members(), bestSoFar, allowBoxing, useVarargs, operator, true);
+                    if (concrete != bestSoFar &&
+                            concrete.kind < ERR  && bestSoFar.kind < ERR &&
+                            types.isSubSignature(concrete.type, bestSoFar.type)) {
+                        //this is an hack - as javac does not do full membership checks
+                        //most specific ends up comparing abstract methods that might have
+                        //been implemented by some concrete method in a subclass and,
+                        //because of raw override, it is possible for an abstract method
+                        //to be more specific than the concrete method - so we need
+                        //to explicitly call that out (see CR 6178365)
+                        bestSoFar = concrete;
+                    }
             }
         }
         return bestSoFar;
     }
+
+    /**
+     * Return an Iterable object to scan the superclasses of a given type.
+     * It's crucial that the scan is done lazily, as we don't want to accidentally
+     * access more supertypes than strictly needed (as this could trigger completion
+     * errors if some of the not-needed supertypes are missing/ill-formed).
+     */
+    Iterable<TypeSymbol> superclasses(final Type intype) {
+        return new Iterable<TypeSymbol>() {
+            public Iterator<TypeSymbol> iterator() {
+                return new Iterator<TypeSymbol>() {
+
+                    List<TypeSymbol> seen = List.nil();
+                    TypeSymbol currentSym = getSymbol(intype);
+
+                    public boolean hasNext() {
+                        return currentSym != null;
+                    }
+
+                    public TypeSymbol next() {
+                        TypeSymbol prevSym = currentSym;
+                        currentSym = getSymbol(types.supertype(currentSym.type));
+                        return prevSym;
+                    }
+
+                    public void remove() {
+                        throw new UnsupportedOperationException("Not supported yet.");
+                    }
+
+                    TypeSymbol getSymbol(Type intype) {
+                        if (intype.tag != CLASS &&
+                                intype.tag != TYPEVAR) {
+                            return null;
+                        }
+                        while (intype.tag == TYPEVAR)
+                            intype = intype.getUpperBound();
+                        if (seen.contains(intype.tsym)) {
+                            //degenerate case in which we have a circular
+                            //class hierarchy - because of ill-formed classfiles
+                            return null;
+                        }
+                        seen = seen.prepend(intype.tsym);
+                        return intype.tsym;
+                    }
+                };
+            }
+        };
+    }
+
+    /**
+     * We should not look for abstract methods if receiver is a concrete class
+     * (as concrete classes are expected to implement all abstracts coming
+     * from superinterfaces)
+     */
+    Filter<Symbol> excludeAbstractsFilter = new Filter<Symbol>() {
+        public boolean accepts(Symbol s) {
+            return (s.flags() & (ABSTRACT | INTERFACE | ENUM)) != 0;
+        }
+    };
+
+    /**
+     * Lookup a method with given name and argument types in a given scope
+     */
+    Symbol lookupMethod(Env<AttrContext> env,
+            Type site,
+            Name name,
+            List<Type> argtypes,
+            List<Type> typeargtypes,
+            Scope sc,
+            Symbol bestSoFar,
+            boolean allowBoxing,
+            boolean useVarargs,
+            boolean operator,
+            boolean abstractok) {
+        for (Symbol s : sc.getElementsByName(name, lookupFilter)) {
+            bestSoFar = selectBest(env, site, argtypes, typeargtypes, s,
+                    bestSoFar, allowBoxing, useVarargs, operator);
+        }
+        return bestSoFar;
+    }
+    //where
+        Filter<Symbol> lookupFilter = new Filter<Symbol>() {
+            public boolean accepts(Symbol s) {
+                return s.kind == MTH &&
+                        (s.flags() & SYNTHETIC) == 0;
+            }
+        };
 
     /** Find unqualified method matching given name, type and value arguments.
      *  @param env       The current environment.
