@@ -109,17 +109,26 @@ else
   endif
 endif
 
+# We allow for potential specialization of build files. This has to be
+# done on a file-by-file, case-by-case basis. Here we define the basic control
+# over where custom files are being used. Later we will -include the custom
+# Defs.gmk if present. This works best because all Makefiles include defs.gmk.
+# In other cases we can either have foo.gmk include custom/foo.gmk, or
+# a Makefile can do:
+#  include foo.gmk
+#  -include $CUSTOM_MAKE_DIR/foo.gmk
+#
+# For non-OpenJDK builds the default location is the make/closed repository.
+# For OpenJDK builds a real value has to be supplied externally.
+ifneq ($(OPENJDK),true)
+  CUSTOM_MAKE_DIR = $(BUILDDIR)/closed
+endif
+
 #
 # Get platform definitions
 #
 
 include $(JDK_TOPDIR)/make/common/Defs-$(PLATFORM).gmk
-
-#
-# SE-Embedded support, if enabled
-#
-
-include $(JDK_TOPDIR)/make/common/Defs-embedded.gmk
 
 #
 # Cross-compilation Settings
@@ -542,6 +551,21 @@ CFLAGS_$(VARIANT)/BYFILE    = $(CFLAGS_$(VARIANT)/$(@F)) \
 CXXFLAGS_$(VARIANT)/BYFILE  = $(CXXFLAGS_$(VARIANT)/$(@F)) \
                               $(CXXFLAGS_$(VARIANT)$(CXXFLAGS_$(VARIANT)/$(@F)))
 
+# Command line define to provide basename of file being compiled to source.
+#   The C macro THIS_FILE can replace the use of __FILE__ in the source
+#   files for the current filename being compiled.
+#   The value of the __FILE__ macro is unpredictable and can be anything
+#   from a relative path to a full path, THIS_FILE will be more consistent..
+#   The THIS_FILE macro will always be just the basename of the file being
+#   compiled.
+#   Different string literals in the the object files makes it difficult to
+#   compare shared libraries from different builds.
+#
+#   NOTE: If the THIS_FILE macro is actually expanded while in an included
+#         source file, it will not return the name of the included file.
+#
+CPP_THIS_FILE = -DTHIS_FILE='"$(<F)"'
+
 #
 # Tool flags
 #
@@ -551,7 +575,7 @@ ASFLAGS         = $(ASFLAGS_$(VARIANT)) $(ASFLAGS_COMMON) $(OTHER_ASFLAGS)
 CFLAGS          = $(CFLAGS_$(VARIANT)/BYFILE)   $(CFLAGS_COMMON) $(OTHER_CFLAGS) $(EXTRA_CFLAGS)
 CXXFLAGS        = $(CXXFLAGS_$(VARIANT)/BYFILE) $(CXXFLAGS_COMMON) $(OTHER_CXXFLAGS) $(EXTRA_CFLAGS)
 CPPFLAGS        = $(CPPFLAGS_$(VARIANT)) $(CPPFLAGS_COMMON) $(OTHER_CPPFLAGS) \
-		  $(DEFINES) $(OPTIONS:%=-D%)
+		  $(DEFINES) $(OPTIONS:%=-D%) $(CPP_THIS_FILE)
 LDFLAGS         = $(LDFLAGS_$(VARIANT)) $(LDFLAGS_COMMON) $(OTHER_LDFLAGS)
 LDLIBS          = $(OTHER_LDLIBS) $(LDLIBS_$(VARIANT)) $(LDLIBS_COMMON)
 LINTFLAGS       = $(LINTFLAGS_$(VARIANT)) $(LINTFLAGS_COMMON) \
@@ -595,5 +619,7 @@ endef
 define install-import-file
 $(install-importonly-file)
 endef
+
+-include $(CUSTOM_MAKE_DIR)/Defs.gmk
 
 .PHONY: all build clean clobber

@@ -72,22 +72,24 @@ public abstract class Symbol implements Element {
      */
     public long flags() { return flags_field; }
 
-    /** The attributes of this symbol.
+    /** The attributes of this symbol are contained in this
+     * Annotations. The Annotations instance is NOT immutable.
      */
-    public List<Attribute.Compound> attributes_field;
+    public final Annotations annotations = new Annotations(this);
 
     /** An accessor method for the attributes of this symbol.
      *  Attributes of class symbols should be accessed through the accessor
      *  method to make sure that the class symbol is loaded.
      */
     public List<Attribute.Compound> getAnnotationMirrors() {
-        return Assert.checkNonNull(attributes_field);
+        return Assert.checkNonNull(annotations.getAttributes());
     }
 
     /** Fetch a particular annotation from a symbol. */
     public Attribute.Compound attribute(Symbol anno) {
-        for (Attribute.Compound a : getAnnotationMirrors())
+        for (Attribute.Compound a : getAnnotationMirrors()) {
             if (a.type.tsym == anno) return a;
+        }
         return null;
     }
 
@@ -120,7 +122,6 @@ public abstract class Symbol implements Element {
         this.owner = owner;
         this.completer = null;
         this.erasure_field = null;
-        this.attributes_field = List.nil();
         this.name = name;
     }
 
@@ -657,10 +658,11 @@ public abstract class Symbol implements Element {
             if (completer != null) complete();
             if (package_info != null && package_info.completer != null) {
                 package_info.complete();
-                if (attributes_field.isEmpty())
-                    attributes_field = package_info.attributes_field;
+                if (annotations.isEmpty()) {
+                    annotations.setAttributes(package_info.annotations);
             }
-            return Assert.checkNonNull(attributes_field);
+            }
+            return Assert.checkNonNull(annotations.getAttributes());
         }
 
         /** A package "exists" if a type or package that exists has
@@ -762,7 +764,7 @@ public abstract class Symbol implements Element {
 
         public List<Attribute.Compound> getAnnotationMirrors() {
             if (completer != null) complete();
-            return Assert.checkNonNull(attributes_field);
+            return Assert.checkNonNull(annotations.getAttributes());
         }
 
         public Type erasure(Types types) {

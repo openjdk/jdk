@@ -23,7 +23,11 @@
 # questions.
 #
 
-# Configured @DATE_WHEN_CONFIGURED@ to build for a @OPENJDK_TARGET_SYSTEM@ system,
+# Configured @DATE_WHEN_CONFIGURED@ to build
+# for target system @OPENJDK_TARGET_OS@-@OPENJDK_TARGET_CPU@
+#   (called @OPENJDK_TARGET_AUTOCONF_NAME@ by autoconf)
+# on build system @OPENJDK_BUILD_OS@-@OPENJDK_BUILD_CPU@
+#   (called @OPENJDK_BUILD_AUTOCONF_NAME@ by autoconf)
 # using 'configure @CONFIGURE_COMMAND_LINE@'
 
 # When calling macros, the spaces between arguments are 
@@ -40,6 +44,17 @@ DQUOTE:="
 define NEWLINE:=
 endef
 
+# A self-referential reference to this file.
+SPEC:=@SPEC@
+
+# Specify where the spec file is.
+MAKE_ARGS="SPEC=$(SPEC)"
+
+# TODO The logic for finding and setting MAKE is currently not working 
+# well on windows. Disable it TEMPORARILY there for now.
+ifneq (@OPENJDK_TARGET_OS@,windows)
+    MAKE:=@MAKE@
+endif
 
 # Pass along the verbosity setting.
 ifeq (,$(findstring VERBOSE=,$(MAKE)))
@@ -51,27 +66,16 @@ ifeq (,$(findstring -R,$(MAKE)))
     MAKE:=$(MAKE) -R
 endif
 
-# Specify where the spec file is.
-ifeq (,$(findstring SPEC=,$(MAKE)))
-    MAKE:=$(MAKE) SPEC=@SPEC@
-endif
-
 # Specify where the common include directory for makefiles is.
 ifeq (,$(findstring -I @SRC_ROOT@/common/makefiles,$(MAKE)))
     MAKE:=$(MAKE) -I @SRC_ROOT@/common/makefiles
 endif
 
-# A self-referential reference to this file.
-SPEC:=@SPEC@
-
 # The "human readable" name of this configuration
 CONF_NAME:=@CONF_NAME@
 
 # The built jdk will run in this target system.
-OPENJDK_TARGET_SYSTEM:=@OPENJDK_TARGET_SYSTEM@
-
 OPENJDK_TARGET_OS:=@OPENJDK_TARGET_OS@
-OPENJDK_TARGET_OS_FAMILY:=@OPENJDK_TARGET_OS_FAMILY@
 OPENJDK_TARGET_OS_API:=@OPENJDK_TARGET_OS_API@
 
 OPENJDK_TARGET_CPU:=@OPENJDK_TARGET_CPU@
@@ -79,12 +83,20 @@ OPENJDK_TARGET_CPU_ARCH:=@OPENJDK_TARGET_CPU_ARCH@
 OPENJDK_TARGET_CPU_BITS:=@OPENJDK_TARGET_CPU_BITS@
 OPENJDK_TARGET_CPU_ENDIAN:=@OPENJDK_TARGET_CPU_ENDIAN@
 
+COMPILE_TYPE:=@COMPILE_TYPE@
+
+# Legacy support
+OPENJDK_TARGET_CPU_ISADIR:=@OPENJDK_TARGET_CPU_ISADIR@
+OPENJDK_TARGET_CPU_LIBDIR:=@OPENJDK_TARGET_CPU_LIBDIR@
+OPENJDK_TARGET_CPU_LEGACY:=@OPENJDK_TARGET_CPU_LEGACY@
+OPENJDK_TARGET_CPU_LEGACY_LIB:=@OPENJDK_TARGET_CPU_LEGACY_LIB@
+OPENJDK_TARGET_CPU_OSARCH:=@OPENJDK_TARGET_CPU_OSARCH@
+OPENJDK_TARGET_CPU_JLI_CFLAGS:=@OPENJDK_TARGET_CPU_JLI_CFLAGS@
+OPENJDK_TARGET_OS_API_DIR:=@OPENJDK_TARGET_OS_API_DIR@
+
 # We are building on this build system.
 # When not cross-compiling, it is the same as the target.
-OPENJDK_BUILD_SYSTEM:=@OPENJDK_BUILD_SYSTEM@
-
 OPENJDK_BUILD_OS:=@OPENJDK_BUILD_OS@
-OPENJDK_BUILD_OS_FAMILY:=@OPENJDK_BUILD_OS_FAMILY@
 OPENJDK_BUILD_OS_API:=@OPENJDK_BUILD_OS_API@
 
 OPENJDK_BUILD_CPU:=@OPENJDK_BUILD_CPU@
@@ -96,21 +108,6 @@ OPENJDK_BUILD_CPU_ENDIAN:=@OPENJDK_BUILD_CPU_ENDIAN@
 REQUIRED_OS_NAME:=@REQUIRED_OS_NAME@
 REQUIRED_OS_VERSION:=@REQUIRED_OS_VERSION@
 
-# Old name for OPENJDK_TARGET_OS (aix,bsd,hpux,linux,macosx,solaris,windows etc)
-PLATFORM:=@OPENJDK_TARGET_OS@
-# Old name for OPENJDK_TARGET_CPU, uses i586 and amd64, instead of ia32 and x64.
-ARCH:=@LEGACY_OPENJDK_TARGET_CPU1@
-# Yet another name for arch used for an extra subdir below the jvm lib.
-# Uses i386 and amd64, instead of ia32 and x64.
-LIBARCH:=@LEGACY_OPENJDK_TARGET_CPU2@
-# Use to switch between solaris and windows subdirs in the jdk.
-LEGACY_OPENJDK_TARGET_OS_API:=@LEGACY_OPENJDK_TARGET_OS_API@
-# 32 or 64 bit
-ARCH_DATA_MODEL:=@OPENJDK_TARGET_CPU_BITS@
-# Legacy setting for building for a 64 bit machine.
-# If yes then this expands to _LP64:=1
-@LP64@
-ENDIAN:=@OPENJDK_TARGET_CPU_ENDIAN@
 @SET_OPENJDK@
 JIGSAW:=@JIGSAW@
 LIBM:=-lm
@@ -143,6 +140,9 @@ JAXWS_TOPDIR:=@JAXWS_TOPDIR@
 HOTSPOT_TOPDIR:=@HOTSPOT_TOPDIR@
 COPYRIGHT_YEAR:=@COPYRIGHT_YEAR@
 
+# Location where build customization files may be found
+CUSTOM_MAKE_DIR:=@CUSTOM_MAKE_DIR@
+
 # Information gathered from the version.numbers file.
 JDK_MAJOR_VERSION:=@JDK_MAJOR_VERSION@
 JDK_MINOR_VERSION:=@JDK_MINOR_VERSION@
@@ -171,17 +171,12 @@ DEBUG_LEVEL:=@DEBUG_LEVEL@
 # The JDK variant is a name for a specific set of modules to be compiled for the JDK.
 JDK_VARIANT:=@JDK_VARIANT@
 
-# Legacy defines controlling the JDK variant embedded.
-@JAVASE_EMBEDDED@
-@MINIMIZE_RAM_USAGE@
-
 # Should we compile support for running with a graphical UI? (ie headful)
 # Should we compile support for running without? (ie headless)
 SUPPORT_HEADFUL:=@SUPPORT_HEADFUL@
 SUPPORT_HEADLESS:=@SUPPORT_HEADLESS@
 # Legacy defines controlled by the SUPPORT_HEADLESS and SUPPORT_HEADFUL options.
 @BUILD_HEADLESS@
-@BUILD_HEADLESS_ONLY@
 
 # These are the libjvms that we want to build.
 # The java launcher uses the default.
@@ -194,53 +189,43 @@ JVM_VARIANT_KERNEL:=@JVM_VARIANT_KERNEL@
 JVM_VARIANT_ZERO:=@JVM_VARIANT_ZERO@
 JVM_VARIANT_ZEROSHARK:=@JVM_VARIANT_ZEROSHARK@
 
-# Legacy setting: OPT or DBG
-VARIANT:=@VARIANT@
-# Legacy setting: true or false
-FASTDEBUG:=@FASTDEBUG@
-# Legacy setting: debugging the class files?
-DEBUG_CLASSFILES:=@DEBUG_CLASSFILES@
+# Universal binaries on macosx
+MACOSX_UNIVERSAL=@MACOSX_UNIVERSAL@
+
 # Legacy setting: -debug or -fastdebug
+# Still used in version string...
 BUILD_VARIANT_RELEASE:=@BUILD_VARIANT_RELEASE@
 
-LANGTOOLS_OUTPUTDIR:=@LANGTOOLS_OUTPUTDIR@
-CORBA_OUTPUTDIR:=@CORBA_OUTPUTDIR@
-JAXP_OUTPUTDIR:=@JAXP_OUTPUTDIR@
-JAXWS_OUTPUTDIR:=@JAXWS_OUTPUTDIR@
-HOTSPOT_OUTPUTDIR:=@HOTSPOT_OUTPUTDIR@
-
-# This where a working jvm is built.
+# JDK_OUTPUTDIR specifies where a working jvm is built.
 # You can run $(JDK_OUTPUTDIR)/bin/java
 # Though the layout of the contents of $(JDK_OUTPUTDIR) is not
 # yet the same as a default installation.
-JDK_OUTPUTDIR:=@OUTPUT_ROOT@/jdk
-
+#
 # When you run "make install" it will create the standardized
-# layout for the jdk and the jre inside the images subdir.
+# layout for the jdk and the jre inside the IMAGES_OUTPUTDIR subdir.
 # Then it will copy the contents of the jdk into the installation
 # directory.
-IMAGES_OUTPUTDIR:=@OUTPUT_ROOT@/images
 
-LANGTOOLS_DIST:=@LANGTOOLS_DIST@
-CORBA_DIST:=@CORBA_DIST@
-JAXP_DIST:=@JAXP_DIST@
-JAXWS_DIST:=@JAXWS_DIST@
-HOTSPOT_DIST:=@HOTSPOT_DIST@
+BUILD_OUTPUT:=@BUILD_OUTPUT@
+LANGTOOLS_OUTPUTDIR=$(BUILD_OUTPUT)/langtools
+CORBA_OUTPUTDIR=$(BUILD_OUTPUT)/corba
+JAXP_OUTPUTDIR=$(BUILD_OUTPUT)/jaxp
+JAXWS_OUTPUTDIR=$(BUILD_OUTPUT)/jaxws
+HOTSPOT_OUTPUTDIR=$(BUILD_OUTPUT)/hotspot
+JDK_OUTPUTDIR=$(BUILD_OUTPUT)/jdk
+IMAGES_OUTPUTDIR=$(BUILD_OUTPUT)/images
 
-# Legacy variables used by Release.gmk
-JDK_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2sdk-image
-JRE_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2re-image
-
-# Can be /sparcv9 or /amd64 on Solaris
-ISA_DIR:=@LEGACY_OPENJDK_TARGET_CPU3@
-BINDIR:=$(JDK_OUTPUTDIR)/bin$(ISA_DIR)
+LANGTOOLS_DIST=$(LANGTOOLS_OUTPUTDIR)/dist
+CORBA_DIST=$(CORBA_OUTPUTDIR)/dist
+JAXP_DIST=$(JAXP_OUTPUTDIR)/dist
+JAXWS_DIST=$(JAXWS_OUTPUTDIR)/dist
+HOTSPOT_DIST=$(HOTSPOT_OUTPUTDIR)/dist
 
 # The boot jdk to use
-ALT_BOOTDIR:=@BOOT_JDK@
 BOOT_JDK:=@BOOT_JDK@
 BOOT_JDK_JVMARGS:=@BOOT_JDK_JVMARGS@
 BOOT_RTJAR:=@BOOT_RTJAR@
-BOOT_TOOLSJAR:=@BOOT_TOOLSJAR@
+BOOT_TOOLSJAR=$(BOOT_JDK)/lib/tools.jar
 
 # When compiling Java source to be run by the boot jdk
 # use these extra flags, eg -source 6 -target 6
@@ -248,30 +233,18 @@ BOOT_JDK_SOURCETARGET:=@BOOT_JDK_SOURCETARGET@
 
 # Information about the build system
 NUM_CORES:=@NUM_CORES@
-# This is used from the jdk build for C/C++ code.
-PARALLEL_COMPILE_JOBS:=@CONCURRENT_BUILD_JOBS@
-# Store javac server synchronization files here, and
-# the javac server log files.
-JAVAC_SERVERS:=@JAVAC_SERVERS@
-# Should we use a javac server or not? The javac server gives
-# an enormous performance improvement since it reduces the
-# startup costs of javac and reuses as much as possible of intermediate
-# compilation work. But if we want to compile with a non-Java
-# javac compiler, like gcj. Then we cannot use javac server and
-# this variable is set to false.
-JAVAC_USE_REMOTE:=@JAVAC_USE_REMOTE@
+# Enable sjavac support = use a javac server,
+# multi core javac compilation and dependency tracking.
+ENABLE_SJAVAC:=@ENABLE_SJAVAC@
+# Store sjavac server synchronization files here, and
+# the sjavac server log files.
+SJAVAC_SERVER_DIR:=@SJAVAC_SERVER_DIR@
 # We can block the Javac server to never use more cores than this.
 # This is not for performance reasons, but for memory usage, since each
 # core requires its own JavaCompiler. We might have 64 cores and 4GB
 # of memory, 64 JavaCompilers will currently not fit in a 3GB heap.
 # Since there is no sharing of data between the JavaCompilers.
-JAVAC_SERVER_CORES:=@JAVAC_SERVER_CORES@
-# Should we use dependency tracking between Java packages? true or false.
-JAVAC_USE_DEPS:=@JAVAC_USE_DEPS@
-# We can invoke javac: SINGLE_THREADED_BATCH or MULTI_CORE_CONCURRENT
-JAVAC_USE_MODE:=@JAVAC_USE_MODE@
-# Enable not yet complete sjavac support.
-ENABLE_SJAVAC:=@ENABLE_SJAVAC@
+SJAVAC_SERVER_CORES:=@SJAVAC_SERVER_CORES@
 
 # The OpenJDK makefiles should be changed to using the standard
 # configure output ..._CFLAGS and ..._LIBS. In the meantime we
@@ -280,15 +253,12 @@ FREETYPE2_LIB_PATH:=@FREETYPE2_LIB_PATH@
 FREETYPE2_LIBS:=@FREETYPE2_LIBS@
 FREETYPE2_CFLAGS:=@FREETYPE2_CFLAGS@
 USING_SYSTEM_FT_LIB=@USING_SYSTEM_FT_LIB@
-ALT_CUPS_HEADERS_PATH:=$(patsubst -I%,%,$(filter -I%,@CUPS_CFLAGS@))
 CUPS_CFLAGS:=@CUPS_CFLAGS@
 
 PACKAGE_PATH=@PACKAGE_PATH@
 
 # Source file for cacerts
 CACERTS_FILE=@CACERTS_FILE@
-
-#MOZILLA_HEADERS_PATH:=
 
 # Necessary additional compiler flags to compile X11 
 X_CFLAGS:=@X_CFLAGS@
@@ -338,7 +308,7 @@ OBJC:=@CCACHE@ @OBJC@
 CPP:=@UNCYGDRIVE@ @CPP@
 #CPPFLAGS:=@CPPFLAGS@
 
-# The linker can be gcc or ld on posix systems, or link.exe on winapi systems.
+# The linker can be gcc or ld on posix systems, or link.exe on windows systems.
 LD:=@UNCYGDRIVE@ @LD@
 
 # LDFLAGS used to link the jdk native libraries (C-code)
@@ -353,6 +323,9 @@ LDEXE:=@UNCYGDRIVE@ @LDEXE@
 LDFLAGS_JDKEXE:=@LDFLAGS_JDKEXE@
 LDFLAGS_JDKEXE_SUFFIX:=@LDFLAGS_JDKEXE_SUFFIX@
 
+# LDFLAGS specific to C++ linking.
+LDFLAGS_CXX_JDK:=@LDFLAGS_CXX_JDK@
+
 # Sometimes a different linker is needed for c++ libs
 LDCXX:=@UNCYGDRIVE@ @LDCXX@
 # The flags for linking libstdc++ linker.
@@ -361,28 +334,22 @@ LIBCXX:=@LIBCXX@
 # Sometimes a different linker is needed for c++ executables
 LDEXECXX:=@UNCYGDRIVE@ @LDEXECXX@
 
-# If cross compiling, then define CROSS_COMPILE_ARCH:=cpu_name here.
-@DEFINE_CROSS_COMPILE_ARCH@
-# The HOSTCC should really be named BUILDCC, ie build executable for
-# the build platform. Same as CC when not cross compiling.
-HOSTCC:=@UNCYGDRIVE@ @HOSTCC@
-HOSTCXX:=@UNCYGDRIVE@ @HOSTCXX@
-# And of course, the jdk spells HOSTCC as NIO_CC/HOST_CC 
-HOST_CC:=@UNCYGDRIVE@ @HOSTCC@
-NIO_CC:=@UNCYGDRIVE@ @HOSTCC@
-
-HOST_LD:=@UNCYGDRIVE@ @HOSTLD@
+# BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
+# build platform.
+BUILD_CC:=@UNCYGDRIVE@ @BUILD_CC@
+BUILD_LD:=@UNCYGDRIVE@ @BUILD_LD@
 
 AS:=@UNCYGDRIVE@ @AS@
-ASFLAGS:=@ASFLAGS@
 
-# AR is used to create a static library (is ar in posix, lib.exe in winapi)
+# AR is used to create a static library (is ar in posix, lib.exe in windows)
 AR:=@UNCYGDRIVE@ @AR@
 ARFLAGS:=@ARFLAGS@
 
-NM:=@UNCYGDRIVE@ @NM@
-STRIP:=@UNCYGDRIVE@ @STRIP@
-MCS:=@UNCYGDRIVE@ @MCS@
+NM:=@NM@
+STRIP:=@STRIP@
+MCS:=@MCS@
+
+LIPO:=@LIPO@
 
 # Command to create a shared library
 SHARED_LIBRARY_FLAGS:=@SHARED_LIBRARY_FLAGS@
@@ -414,6 +381,7 @@ SET_SHARED_LIBRARY_NAME=@SET_SHARED_LIBRARY_NAME@
 # Set origin using the linker, ie use the relative path to the dependent library to find the dependees.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
 SET_SHARED_LIBRARY_ORIGIN=@SET_SHARED_LIBRARY_ORIGIN@
+SET_EXECUTABLE_ORIGIN=@SET_EXECUTABLE_ORIGIN@
 
 # Different OS:es have different ways of naming shared libraries.
 # The SHARED_LIBRARY macro takes "verify" as and argument and returns:
@@ -432,21 +400,20 @@ POST_MCS_CMD:=@POST_MCS_CMD@
 
 JAVA_FLAGS:=@BOOT_JDK_JVMARGS@
 
-JAVA=@UNCYGDRIVE@ @JAVA@ $(JAVA_FLAGS)
+JAVA=@UNCYGDRIVE@ $(BOOT_JDK)/bin/java $(JAVA_FLAGS)
 
-JAVAC:=@UNCYGDRIVE@ @JAVAC@
-JAVAC_FLAGS:=@JAVAC_FLAGS@
+JAVAC=@UNCYGDRIVE@ $(BOOT_JDK)/bin/javac
+# Hotspot sets this variable before reading the SPEC when compiling sa-jdi.jar. Avoid
+# overriding that value by using ?=.
+JAVAC_FLAGS?=@JAVAC_FLAGS@
 
-JAVAH:=@UNCYGDRIVE@ @JAVAH@
+JAVAH=@UNCYGDRIVE@ $(BOOT_JDK)/bin/javah
 
-JAR:=@UNCYGDRIVE@ @JAR@
+JAR=@UNCYGDRIVE@ $(BOOT_JDK)/bin/jar
 
-RMIC:=@UNCYGDRIVE@ @RMIC@
+RMIC=@UNCYGDRIVE@ $(BOOT_JDK)/bin/rmic
 
-NATIVE2ASCII:=@UNCYGDRIVE@ @NATIVE2ASCII@
-
-BOOT_JAR_CMD:=@UNCYGDRIVE@ @JAR@
-BOOT_JAR_JFLAGS:=
+NATIVE2ASCII=@UNCYGDRIVE@ $(BOOT_JDK)/bin/native2ascii
 
 # Base flags for RC
 # Guarding this against resetting value. Legacy make files include spec multiple
@@ -456,11 +423,12 @@ RC_FLAGS:=@RC_FLAGS@
 endif
 
 # A specific java binary with specific options can be used to run
-# the long running background javac server and other long running tasks.
-SERVER_JAVA:=@UNCYGDRIVE@ @SERVER_JAVA@
+# the long running background sjavac servers and other long running tasks.
+SJAVAC_SERVER_JAVA:=@UNCYGDRIVE@ @SJAVAC_SERVER_JAVA@
 
 # Tools adhering to a minimal and common standard of posix compliance.
 AWK:=@AWK@
+BASENAME:=@BASENAME@
 CAT:=@CAT@
 CCACHE:=@CCACHE@
 # CD is going away, but remains to cater for legacy makefiles.
@@ -520,8 +488,6 @@ BUILD_LOG_PREVIOUS:=@BUILD_LOG_PREVIOUS@
 BUILD_LOG_WRAPPER:=@BUILD_LOG_WRAPPER@
 
 # Build setup
-ENABLE_DOCS:=@ENABLE_DOCS@
-GENERATE_DOCS:=@ENABLE_DOCS@
 DISABLE_NIMBUS:=@DISABLE_NIMBUS@
 ENABLE_JFR=@ENABLE_JFR@
 USE_EXTERNAL_LIBJPEG:=@USE_EXTERNAL_LIBJPEG@
@@ -558,17 +524,6 @@ ifneq (,$(OVERRIDE_SRC_ROOT))
 else
     OVR_SRCS:=
 endif
-
-####################################################
-#
-# Legacy Hotspot support
-
-HOTSPOT_DIST:=@HOTSPOT_DIST@
-HOTSPOT_MAKE_ARGS:=@HOTSPOT_MAKE_ARGS@
-# This is used from the libjvm build for C/C++ code.
-HOTSPOT_BUILD_JOBS:=@CONCURRENT_BUILD_JOBS@
-# Control wether Hotspot runs Queens test after building
-TEST_IN_BUILD=@TEST_IN_BUILD@
 
 ####################################################
 #
@@ -634,5 +589,5 @@ OS_VERSION_MAJOR:=@OS_VERSION_MAJOR@
 OS_VERSION_MINOR:=@OS_VERSION_MINOR@
 OS_VERSION_MICRO:=@OS_VERSION_MICRO@
 
-# Include the closed-spec.gmk file if it exists
--include $(dir @SPEC@)/closed-spec.gmk
+# Include the custom-spec.gmk file if it exists
+-include $(dir @SPEC@)/custom-spec.gmk

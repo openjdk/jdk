@@ -53,12 +53,6 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
     public static final int SNFH_SUCCESS_HANDLED = 1;
     public static final int SNFH_SUCCESS_PROCEED = 2;
 
-    protected KeyboardFocusManager manager;
-
-    public KeyboardFocusManagerPeerImpl(KeyboardFocusManager manager) {
-        this.manager = manager;
-    }
-
     @Override
     public void clearGlobalFocusOwner(Window activeWindow) {
         if (activeWindow != null) {
@@ -134,7 +128,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
 
             if (focusLog.isLoggable(PlatformLogger.FINER))
                 focusLog.finer("Posting focus event: " + fl);
-            SunToolkit.postPriorityEvent(fl);
+            SunToolkit.postEvent(SunToolkit.targetToAppContext(currentOwner), fl);
         }
 
         FocusEvent fg = new CausedFocusEvent(lightweightChild, FocusEvent.FOCUS_GAINED,
@@ -142,7 +136,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
 
         if (focusLog.isLoggable(PlatformLogger.FINER))
             focusLog.finer("Posting focus event: " + fg);
-        SunToolkit.postPriorityEvent(fg);
+        SunToolkit.postEvent(SunToolkit.targetToAppContext(lightweightChild), fg);
         return true;
     }
 

@@ -73,6 +73,10 @@ if test "x$OPENJDK" = "xfalse"; then
     FREETYPE2_NOT_NEEDED=yes
 fi
 
+if test "x$SUPPORT_HEADFUL" = xno; then
+    X11_NOT_NEEDED=yes
+fi
+
 ###############################################################################
 #
 # Check for MacOSX support for OpenJDK. If this exists, try to build a JVM
@@ -518,9 +522,7 @@ AC_SUBST(USE_EXTERNAL_LIBZ)
 
 ###############################################################################
 LIBZIP_CAN_USE_MMAP=true
-if test "x$JDK_VARIANT" = "xembedded"; then
-   LIBZIP_CAN_USE_MMAP=false
-fi
+
 AC_SUBST(LIBZIP_CAN_USE_MMAP)
 
 ###############################################################################
@@ -629,7 +631,7 @@ fi
 
 # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
 if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$LIBCXX" = x; then
-    LIBCXX="/usr/lib${LEGACY_OPENJDK_TARGET_CPU3}/libCrun.so.1"
+    LIBCXX="/usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libCrun.so.1"
 fi
 
 # TODO better (platform agnostic) test

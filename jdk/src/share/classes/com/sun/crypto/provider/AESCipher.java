@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,18 +47,122 @@ import javax.crypto.BadPaddingException;
  * @see OutputFeedback
  */
 
-public final class AESCipher extends CipherSpi {
+abstract class AESCipher extends CipherSpi {
+    public static final class General extends AESCipher {
+        public General() {
+            super(-1);
+        }
+    }
+    abstract static class OidImpl extends AESCipher {
+        protected OidImpl(int keySize, String mode, String padding) {
+            super(keySize);
+            try {
+                engineSetMode(mode);
+                engineSetPadding(padding);
+            } catch (GeneralSecurityException gse) {
+                // internal error; re-throw as provider exception
+                ProviderException pe =new ProviderException("Internal Error");
+                pe.initCause(gse);
+                throw pe;
+            }
+        }
+    }
+    public static final class AES128_ECB_NoPadding extends OidImpl {
+        public AES128_ECB_NoPadding() {
+            super(16, "ECB", "NOPADDING");
+        }
+    }
+    public static final class AES192_ECB_NoPadding extends OidImpl {
+        public AES192_ECB_NoPadding() {
+            super(24, "ECB", "NOPADDING");
+        }
+    }
+    public static final class AES256_ECB_NoPadding extends OidImpl {
+        public AES256_ECB_NoPadding() {
+            super(32, "ECB", "NOPADDING");
+        }
+    }
+    public static final class AES128_CBC_NoPadding extends OidImpl {
+        public AES128_CBC_NoPadding() {
+            super(16, "CBC", "NOPADDING");
+        }
+    }
+    public static final class AES192_CBC_NoPadding extends OidImpl {
+        public AES192_CBC_NoPadding() {
+            super(24, "CBC", "NOPADDING");
+        }
+    }
+    public static final class AES256_CBC_NoPadding extends OidImpl {
+        public AES256_CBC_NoPadding() {
+            super(32, "CBC", "NOPADDING");
+        }
+    }
+    public static final class AES128_OFB_NoPadding extends OidImpl {
+        public AES128_OFB_NoPadding() {
+            super(16, "OFB", "NOPADDING");
+        }
+    }
+    public static final class AES192_OFB_NoPadding extends OidImpl {
+        public AES192_OFB_NoPadding() {
+            super(24, "OFB", "NOPADDING");
+        }
+    }
+    public static final class AES256_OFB_NoPadding extends OidImpl {
+        public AES256_OFB_NoPadding() {
+            super(32, "OFB", "NOPADDING");
+        }
+    }
+    public static final class AES128_CFB_NoPadding extends OidImpl {
+        public AES128_CFB_NoPadding() {
+            super(16, "CFB", "NOPADDING");
+        }
+    }
+    public static final class AES192_CFB_NoPadding extends OidImpl {
+        public AES192_CFB_NoPadding() {
+            super(24, "CFB", "NOPADDING");
+        }
+    }
+    public static final class AES256_CFB_NoPadding extends OidImpl {
+        public AES256_CFB_NoPadding() {
+            super(32, "CFB", "NOPADDING");
+        }
+    }
+
+    // utility method used by AESCipher and AESWrapCipher
+    static final void checkKeySize(Key key, int fixedKeySize)
+        throws InvalidKeyException {
+        if (fixedKeySize != -1) {
+            if (key == null) {
+                throw new InvalidKeyException("The key must not be null");
+            }
+            byte[] value = key.getEncoded();
+            if (value == null) {
+                throw new InvalidKeyException("Key encoding must not be null");
+            } else if (value.length != fixedKeySize) {
+                throw new InvalidKeyException("The key must be " +
+                    fixedKeySize*8 + " bits");
+            }
+        }
+    }
+
     /*
      * internal CipherCore object which does the real work.
      */
     private CipherCore core = null;
 
+    /*
+     * needed to support AES oids which associates a fixed key size
+     * to the cipher object.
+     */
+    private final int fixedKeySize; // in bytes, -1 if no restriction
+
     /**
      * Creates an instance of AES cipher with default ECB mode and
      * PKCS5Padding.
      */
-    public AESCipher() {
+    protected AESCipher(int keySize) {
         core = new CipherCore(new AESCrypt(), AESConstants.AES_BLOCK_SIZE);
+        fixedKeySize = keySize;
     }
 
     /**
@@ -183,6 +287,7 @@ public final class AESCipher extends CipherSpi {
      */
     protected void engineInit(int opmode, Key key, SecureRandom random)
         throws InvalidKeyException {
+        checkKeySize(key, fixedKeySize);
         core.init(opmode, key, random);
     }
 
@@ -214,6 +319,7 @@ public final class AESCipher extends CipherSpi {
                               AlgorithmParameterSpec params,
                               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
+        checkKeySize(key, fixedKeySize);
         core.init(opmode, key, params, random);
     }
 
@@ -221,6 +327,7 @@ public final class AESCipher extends CipherSpi {
                               AlgorithmParameters params,
                               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
+        checkKeySize(key, fixedKeySize);
         core.init(opmode, key, params, random);
     }
 

@@ -28,17 +28,11 @@
  * @author Sergey Malenkov
  */
 
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-
 public class Test7189112 {
 
-    public static void main(String[] args) throws IntrospectionException {
-        for (PropertyDescriptor pd : Introspector.getBeanInfo(MyBean.class).getPropertyDescriptors()) {
-            if (pd.getName().equals("value") && (null == pd.getWriteMethod())) {
-                throw new Error("The property setter is not found");
-            }
+    public static void main(String[] args) {
+        if (null == BeanUtils.findPropertyDescriptor(MyBean.class, "value").getWriteMethod()) {
+            throw new Error("The property setter is not found");
         }
     }
 

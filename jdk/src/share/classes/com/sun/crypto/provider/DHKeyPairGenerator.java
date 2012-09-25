@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,10 +80,10 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
      * @param random the source of randomness
      */
     public void initialize(int keysize, SecureRandom random) {
-        if ((keysize < 512) || (keysize > 1024) || (keysize % 64 != 0)) {
+        if ((keysize < 512) || (keysize > 2048) || (keysize % 64 != 0)) {
             throw new InvalidParameterException("Keysize must be multiple "
                                                 + "of 64, and can only range "
-                                                + "from 512 to 1024 "
+                                                + "from 512 to 2048 "
                                                 + "(inclusive)");
         }
         this.pSize = keysize;
@@ -115,11 +115,11 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
 
         params = (DHParameterSpec)algParams;
         pSize = params.getP().bitLength();
-        if ((pSize < 512) || (pSize > 1024) ||
+        if ((pSize < 512) || (pSize > 2048) ||
             (pSize % 64 != 0)) {
             throw new InvalidAlgorithmParameterException
                 ("Prime size must be multiple of 64, and can only range "
-                 + "from 512 to 1024 (inclusive)");
+                 + "from 512 to 2048 (inclusive)");
         }
 
         // exponent size is optional, could be 0
@@ -156,10 +156,11 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
         BigInteger g = params.getG();
 
         if (lSize <= 0) {
+            lSize = pSize >> 1;
             // use an exponent size of (pSize / 2) but at least 384 bits
-            lSize = Math.max(384, pSize >> 1);
-            // if lSize is larger than pSize, limit by pSize
-            lSize = Math.min(lSize, pSize);
+            if (lSize < 384) {
+                lSize = 384;
+            }
         }
 
         BigInteger x;
