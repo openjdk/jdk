@@ -4043,18 +4043,27 @@ Form::DataType MatchRule::is_ideal_load() const {
 }
 
 bool MatchRule::is_vector() const {
-  if( _rChild ) {
+  static const char *vector_list[] = {
+    "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
+    "SubVB","SubVS","SubVI","SubVL","SubVF","SubVD",
+    "MulVS","MulVI","MulVF","MulVD",
+    "DivVF","DivVD",
+    "AndV" ,"XorV" ,"OrV",
+    "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
+    "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
+    "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
+    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD",
+    "LoadVector","StoreVector",
+    // Next are not supported currently.
+    "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
+    "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"
+  };
+  int cnt = sizeof(vector_list)/sizeof(char*);
+  if (_rChild) {
     const char  *opType = _rChild->_opType;
-    if( strcmp(opType,"ReplicateB")==0 ||
-        strcmp(opType,"ReplicateS")==0 ||
-        strcmp(opType,"ReplicateI")==0 ||
-        strcmp(opType,"ReplicateL")==0 ||
-        strcmp(opType,"ReplicateF")==0 ||
-        strcmp(opType,"ReplicateD")==0 ||
-        strcmp(opType,"LoadVector")==0 ||
-        strcmp(opType,"StoreVector")==0 ||
-        0 /* 0 to line up columns nicely */ )
-      return true;
+    for (int i=0; i<cnt; i++)
+      if (strcmp(opType,vector_list[i]) == 0)
+        return true;
   }
   return false;
 }

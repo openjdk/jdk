@@ -1606,6 +1606,12 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         fprintf(fp, "  ((MachFastLockNode*)n%d)->_counters = _counters;\n",cnt);
       }
 
+      // Fill in the bottom_type where requested
+      if (node->captures_bottom_type(_globalNames) &&
+          new_inst->captures_bottom_type(_globalNames)) {
+        fprintf(fp, "  ((MachTypeNode*)n%d)->_bottom_type = bottom_type();\n", cnt);
+      }
+
       const char *resultOper = new_inst->reduce_result();
       fprintf(fp,"  n%d->set_opnd_array(0, state->MachOperGenerator( %s, C ));\n",
               cnt, machOperEnum(resultOper));
