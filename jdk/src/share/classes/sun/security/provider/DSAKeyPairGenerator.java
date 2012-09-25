@@ -82,7 +82,9 @@ implements java.security.interfaces.DSAKeyPairGenerator {
     }
 
     public void initialize(int modlen, SecureRandom random) {
-        initialize(modlen, false, random);
+        // generate new parameters when no precomputed ones available.
+        initialize(modlen, true, random);
+        this.forceNewParameters = false;
     }
 
     /**
