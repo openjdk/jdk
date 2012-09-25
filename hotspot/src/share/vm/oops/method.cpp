@@ -692,30 +692,18 @@ void Method::set_signature_handler(address handler) {
 }
 
 
-bool Method::is_not_compilable(int comp_level) const {
-  if (number_of_breakpoints() > 0) {
-    return true;
-  }
-  if (is_method_handle_intrinsic()) {
-    return !is_synthetic();  // the generated adapters must be compiled
-  }
-  if (comp_level == CompLevel_any) {
-    return is_not_c1_compilable() || is_not_c2_compilable();
-  }
-  if (is_c1_compile(comp_level)) {
-    return is_not_c1_compilable();
-  }
-  if (is_c2_compile(comp_level)) {
-    return is_not_c2_compilable();
-  }
-  return false;
-}
-
-// call this when compiler finds that this method is not compilable
-void Method::set_not_compilable(int comp_level, bool report) {
+void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report) {
   if (PrintCompilation && report) {
     ttyLocker ttyl;
-    tty->print("made not compilable ");
+    tty->print("made not %scompilable on ", is_osr ? "OSR " : "");
+    if (comp_level == CompLevel_all) {
+      tty->print("all levels ");
+    } else {
+      tty->print("levels ");
+      for (int i = (int)CompLevel_none; i <= comp_level; i++) {
+        tty->print("%d ", i);
+      }
+    }
     this->print_short_name(tty);
     int size = this->code_size();
     if (size > 0)
@@ -724,21 +712,64 @@ void Method::set_not_compilable(int comp_level, bool report) {
   }
   if ((TraceDeoptimization || LogCompilation) && (xtty != NULL)) {
     ttyLocker ttyl;
-    xtty->begin_elem("make_not_compilable thread='%d'", (int) os::current_thread_id());
+    xtty->begin_elem("make_not_%scompilable thread='%d'", is_osr ? "osr_" : "", (int) os::current_thread_id());
     xtty->method(this);
     xtty->stamp();
     xtty->end_elem();
   }
+}
+
+bool Method::is_not_compilable(int comp_level) const {
+  if (number_of_breakpoints() > 0)
+    return true;
+  if (is_method_handle_intrinsic())
+    return !is_synthetic();  // the generated adapters must be compiled
+  if (comp_level == CompLevel_any)
+    return is_not_c1_compilable() || is_not_c2_compilable();
+  if (is_c1_compile(comp_level))
+    return is_not_c1_compilable();
+  if (is_c2_compile(comp_level))
+    return is_not_c2_compilable();
+  return false;
+}
+
+// call this when compiler finds that this method is not compilable
+void Method::set_not_compilable(int comp_level, bool report) {
+  print_made_not_compilable(comp_level, /*is_osr*/ false, report);
   if (comp_level == CompLevel_all) {
     set_not_c1_compilable();
     set_not_c2_compilable();
   } else {
-    if (is_c1_compile(comp_level)) {
+    if (is_c1_compile(comp_level))
       set_not_c1_compilable();
-    } else
-      if (is_c2_compile(comp_level)) {
-        set_not_c2_compilable();
-      }
+    if (is_c2_compile(comp_level))
+      set_not_c2_compilable();
+  }
+  CompilationPolicy::policy()->disable_compilation(this);
+}
+
+bool Method::is_not_osr_compilable(int comp_level) const {
+  if (is_not_compilable(comp_level))
+    return true;
+  if (comp_level == CompLevel_any)
+    return is_not_c1_osr_compilable() || is_not_c2_osr_compilable();
+  if (is_c1_compile(comp_level))
+    return is_not_c1_osr_compilable();
+  if (is_c2_compile(comp_level))
+    return is_not_c2_osr_compilable();
+  return false;
+}
+
+void Method::set_not_osr_compilable(int comp_level, bool report) {
+  print_made_not_compilable(comp_level, /*is_osr*/ true, report);
+  if (comp_level == CompLevel_all) {
+    set_not_c1_osr_compilable();
+    set_not_c2_osr_compilable();
+  } else {
+    if (is_c1_compile(comp_level))
+      set_not_c1_osr_compilable();
+    if (is_c2_compile(comp_level))
+      set_not_c2_osr_compilable();
   }
   CompilationPolicy::policy()->disable_compilation(this);
 }

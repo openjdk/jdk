@@ -394,28 +394,27 @@ void NonTieredCompPolicy::trace_osr_request(methodHandle method, nmethod* osr, i
 // SimpleCompPolicy - compile current method
 
 void SimpleCompPolicy::method_invocation_event(methodHandle m, JavaThread* thread) {
-  int hot_count = m->invocation_count();
+  const int comp_level = CompLevel_highest_tier;
+  const int hot_count = m->invocation_count();
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
 
   if (is_compilation_enabled() && can_be_compiled(m)) {
     nmethod* nm = m->code();
     if (nm == NULL ) {
-      const char* comment = "count";
-      CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_highest_tier,
-                                    m, hot_count, comment, thread);
+      CompileBroker::compile_method(m, InvocationEntryBci, comp_level, m, hot_count, comment, thread);
     }
   }
 }
 
 void SimpleCompPolicy::method_back_branch_event(methodHandle m, int bci, JavaThread* thread) {
-  int hot_count = m->backedge_count();
+  const int comp_level = CompLevel_highest_tier;
+  const int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
-  if (is_compilation_enabled() && !m->is_not_osr_compilable() && can_be_compiled(m)) {
-    CompileBroker::compile_method(m, bci, CompLevel_highest_tier,
-                                  m, hot_count, comment, thread);
-    NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, CompLevel_highest_tier, true));)
+  if (is_compilation_enabled() && !m->is_not_osr_compilable(comp_level) && can_be_compiled(m)) {
+    CompileBroker::compile_method(m, bci, comp_level, m, hot_count, comment, thread);
+    NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, comp_level, true));)
   }
 }
 // StackWalkCompPolicy - walk up stack to find a suitable method to compile
@@ -426,7 +425,8 @@ const char* StackWalkCompPolicy::_msg = NULL;
 
 // Consider m for compilation
 void StackWalkCompPolicy::method_invocation_event(methodHandle m, JavaThread* thread) {
-  int hot_count = m->invocation_count();
+  const int comp_level = CompLevel_highest_tier;
+  const int hot_count = m->invocation_count();
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
 
@@ -457,20 +457,20 @@ void StackWalkCompPolicy::method_invocation_event(methodHandle m, JavaThread* th
       if (TimeCompilationPolicy) accumulated_time()->stop();
       assert(top != NULL, "findTopInlinableFrame returned null");
       if (TraceCompilationPolicy) top->print();
-      CompileBroker::compile_method(top->top_method(), InvocationEntryBci, CompLevel_highest_tier,
+      CompileBroker::compile_method(top->top_method(), InvocationEntryBci, comp_level,
                                     m, hot_count, comment, thread);
     }
   }
 }
 
 void StackWalkCompPolicy::method_back_branch_event(methodHandle m, int bci, JavaThread* thread) {
-  int hot_count = m->backedge_count();
+  const int comp_level = CompLevel_highest_tier;
+  const int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
-  if (is_compilation_enabled() && !m->is_not_osr_compilable() && can_be_compiled(m)) {
-    CompileBroker::compile_method(m, bci, CompLevel_highest_tier, m, hot_count, comment, thread);
-
-    NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, CompLevel_highest_tier, true));)
+  if (is_compilation_enabled() && !m->is_not_osr_compilable(comp_level) && can_be_compiled(m)) {
+    CompileBroker::compile_method(m, bci, comp_level, m, hot_count, comment, thread);
+    NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, comp_level, true));)
   }
 }
 
