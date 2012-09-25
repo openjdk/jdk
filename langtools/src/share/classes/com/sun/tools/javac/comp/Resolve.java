@@ -737,7 +737,7 @@ public class Resolve {
         return attr.new ResultInfo(VAL, to, checkContext) {
             @Override
             protected Type check(DiagnosticPosition pos, Type found) {
-                return super.check(pos, chk.checkNonVoid(pos, types.capture(types.upperBound(found))));
+                return super.check(pos, chk.checkNonVoid(pos, types.capture(types.upperBound(found.baseType()))));
             }
         };
     }

@@ -34,6 +34,7 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.comp.Check;
 
 import static com.sun.tools.javac.code.Scope.*;
@@ -510,7 +511,7 @@ public class Types {
                     return false;
                 }
 
-                t.hibounds = t.hibounds.prepend(s);
+                t.addBound(InferenceBound.UPPER, s, Types.this);
                 return true;
             }
 
@@ -578,7 +579,7 @@ public class Types {
                 undet.qtype == s ||
                 s.tag == ERROR ||
                 s.tag == BOT) return true;
-            undet.lobounds = undet.lobounds.prepend(s);
+            undet.addBound(InferenceBound.LOWER, s, this);
             return true;
         }
         default:
@@ -723,7 +724,7 @@ public class Types {
                 if (t == s || t.qtype == s || s.tag == ERROR || s.tag == UNKNOWN)
                     return true;
 
-                t.eq = t.eq.prepend(s);
+                t.addBound(InferenceBound.EQ, s, Types.this);
 
                 return true;
             }
@@ -731,19 +732,6 @@ public class Types {
             @Override
             public Boolean visitErrorType(ErrorType t, Type s) {
                 return true;
-            }
-        };
-    // </editor-fold>
-
-    // <editor-fold defaultstate="collapsed" desc="fromUnknownFun">
-    /**
-     * A mapping that turns all unknown types in this type to fresh
-     * unknown variables.
-     */
-    public Mapping fromUnknownFun = new Mapping("fromUnknownFun") {
-            public Type apply(Type t) {
-                if (t.tag == UNKNOWN) return new UndetVar(t);
-                else return t.map(this);
             }
         };
     // </editor-fold>
@@ -759,12 +747,12 @@ public class Types {
                     case UNBOUND: //similar to ? extends Object
                     case EXTENDS: {
                         Type bound = upperBound(s);
-                        undetvar.hibounds = undetvar.hibounds.prepend(bound);
+                        undetvar.addBound(InferenceBound.UPPER, bound, this);
                         break;
                     }
                     case SUPER: {
                         Type bound = lowerBound(s);
-                        undetvar.lobounds = undetvar.lobounds.prepend(bound);
+                        undetvar.addBound(InferenceBound.LOWER, bound, this);
                         break;
                     }
                 }
