@@ -169,6 +169,9 @@ public class Names {
     public final Name ex;
     public final Name package_info;
 
+    // lambda-related
+    public final Name BootstrapMethods;
+
     public final Name.Table table;
 
     public Names(Context context) {
@@ -296,6 +299,9 @@ public class Names {
         deprecated = fromString("deprecated");
         ex = fromString("ex");
         package_info = fromString("package-info");
+
+        //lambda-related
+        BootstrapMethods = fromString("BootstrapMethods");
     }
 
     protected Name.Table createTable(Options options) {
