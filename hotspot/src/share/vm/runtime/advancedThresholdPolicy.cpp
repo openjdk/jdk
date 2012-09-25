@@ -30,12 +30,12 @@
 // Print an event.
 void AdvancedThresholdPolicy::print_specific(EventType type, methodHandle mh, methodHandle imh,
                                              int bci, CompLevel level) {
-  tty->print(" rate: ");
+  tty->print(" rate=");
   if (mh->prev_time() == 0) tty->print("n/a");
   else tty->print("%f", mh->rate());
 
-  tty->print(" k: %.2lf,%.2lf", threshold_scale(CompLevel_full_profile, Tier3LoadFeedback),
-                                threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback));
+  tty->print(" k=%.2lf,%.2lf", threshold_scale(CompLevel_full_profile, Tier3LoadFeedback),
+                               threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback));
 
 }
 

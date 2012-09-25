@@ -2182,7 +2182,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_constant(JVM_ACC_HAS_LOOPS)                                     \
   declare_constant(JVM_ACC_LOOPS_FLAG_INIT)                               \
   declare_constant(JVM_ACC_QUEUED)                                        \
-  declare_constant(JVM_ACC_NOT_OSR_COMPILABLE)                            \
+  declare_constant(JVM_ACC_NOT_C2_OSR_COMPILABLE)                         \
   declare_constant(JVM_ACC_HAS_LINE_NUMBER_TABLE)                         \
   declare_constant(JVM_ACC_HAS_CHECKED_EXCEPTIONS)                        \
   declare_constant(JVM_ACC_HAS_JSRS)                                      \
