@@ -47,12 +47,12 @@ H_TARGET_FILES =$(INCLUDEDIR)/jdwpTransport.h		\
 
 $(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/share/javavm/export/%.h
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
-$(OPENJDK_TARGET_OS_INCLUDE)/%.h: $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/javavm/export/%.h
+$(OPENJDK_TARGET_OS_INCLUDE)/%.h: $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/javavm/export/%.h
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES = $(H_TARGET_FILES)
@@ -64,7 +64,7 @@ SERVICETAG_LIBDIR = $(LIBDIR)/servicetag
 
 $(SERVICETAG_LIBDIR)/jdk_header.png: $(JDK_TOPDIR)/src/share/classes/com/sun/servicetag/resources/jdk_header.png
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 	$(CHMOD) 444 $@
 
@@ -79,20 +79,20 @@ MGMT_TARGET_FILES = $(subst $(MGMT_LIB_SRC),$(MGMT_LIBDIR),$(MGMT_SRC_FILES))
 
 $(MGMT_LIBDIR)/management.properties: $(MGMT_LIB_SRC)/management.properties
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 	$(CHMOD) 644 $@
 
 # this file has different permissions...don't know why...
 $(MGMT_LIBDIR)/jmxremote.access: $(MGMT_LIB_SRC)/jmxremote.access
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 	$(CHMOD) 644 $@
 
 $(MGMT_LIBDIR)/%: $(MGMT_LIB_SRC)/%
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 	$(CHMOD) 444 $@
 
@@ -104,7 +104,7 @@ LOGGING_LIB_SRC = $(JDK_TOPDIR)/src/share/lib
 
 $(LIBDIR)/logging.properties: $(LOGGING_LIB_SRC)/logging.properties
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(LIBDIR)/logging.properties
@@ -119,7 +119,7 @@ PSFONTPROPFILE_TARGET_FILES = $(subst $(PSFONTPROPFILE_SRC_DIR),$(LIBDIR),$(PSFO
 
 $(LIBDIR)/%: $(PSFONTPROPFILE_SRC_DIR)/%
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(PSFONTPROPFILE_TARGET_FILES)
@@ -129,24 +129,24 @@ COPY_FILES += $(PSFONTPROPFILE_TARGET_FILES)
 # Copy flavormap.properties, cursor.properties and cursors gif files to LIBDIR
 #
 ifneq ($(OPENJDK_TARGET_OS), macosx)
-OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/lib
+OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
 else
 OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/macosx/lib
 endif
 
 $(LIBDIR)/flavormap.properties: $(OPENJDK_TARGET_OS_LIB_SRC)/flavormap.properties
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(LIBDIR)/flavormap.properties
 
 CURSORS_DEST_DIR = $(LIBDIR)/images/cursors
-CURSORS_OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/lib/images/cursors
+CURSORS_OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib/images/cursors
 
 $(CURSORS_DEST_DIR)/cursors.properties: $(CURSORS_OPENJDK_TARGET_OS_LIB_SRC)/cursors.properties
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(CURSORS_DEST_DIR)/cursors.properties
@@ -161,18 +161,18 @@ CURSORS_TARGET_FILES =  $(subst $(CURSORS_LIB_SRC),$(CURSORS_DEST_DIR),$(CURSORS
 
 $(CURSORS_DEST_DIR)/%: $(CURSORS_LIB_SRC)/%
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(CURSORS_TARGET_FILES)
 
 ##########################################################################################
 
-CONTENT_TYPES_SRC=$(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/lib
+CONTENT_TYPES_SRC=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
 
 $(LIBDIR)/content-types.properties: $(CONTENT_TYPES_SRC)/content-types.properties
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(LIBDIR)/content-types.properties
@@ -183,7 +183,7 @@ CALENDARS_SRC := $(JDK_TOPDIR)/src/share/lib
 
 $(LIBDIR)/calendars.properties: $(CALENDARS_SRC)/calendars.properties
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(LIBDIR)/calendars.properties
@@ -192,11 +192,11 @@ COPY_FILES += $(LIBDIR)/calendars.properties
 
 ifeq ($(OPENJDK_TARGET_OS),windows)
 
-TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/lib
+TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
 
 $(LIBDIR)/tzmappings: $(TZMAPPINGS_SRC)/tzmappings
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(LIBDIR)/tzmappings
@@ -218,7 +218,7 @@ ICCPROFILE_TARGET_FILES:=$(subst $(ICCPROFILE_SRC_DIR),$(ICCPROFILE_DEST_DIR),$(
 
 $(ICCPROFILE_DEST_DIR)%.pf: $(ICCPROFILE_SRC_DIR)%.pf
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 	$(CHMOD) 444 $@
 
@@ -248,7 +248,7 @@ ifdef OPENJDK
         FREETYPE_LIB = $(JDK_OUTPUTDIR)/bin/$(call SHARED_LIBRARY,freetype)
     else 
         ifeq ($(USING_SYSTEM_FT_LIB), false)
-            FREETYPE_LIB = $(JDK_OUTPUTDIR)/lib/$(LIBARCH)/$(call SHARED_LIBRARY,freetype).6
+            FREETYPE_LIB = $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/$(call SHARED_LIBRARY,freetype).6
         endif
     endif 
 
@@ -269,7 +269,7 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
     MSVCRNN_TARGET := $(JDK_OUTPUTDIR)/bin/$(notdir $(MSVCRNN_DLL))
     $(MSVCRNN_TARGET): $(MSVCRNN_DLL)
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
     COPY_FILES += $(MSVCRNN_TARGET)
@@ -281,7 +281,7 @@ HPROF_SRC=$(JDK_TOPDIR)/src/share/demo/jvmti/hprof/jvm.hprof.txt
 
 $(LIBDIR)/jvm.hprof.txt : $(HPROF_SRC)
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(LIBDIR)/jvm.hprof.txt
@@ -292,26 +292,21 @@ COPY_FILES += $(LIBDIR)/jvm.hprof.txt
 # How to install jvm.cfg.
 #
 ifeq ($(JVM_VARIANT_ZERO), true)
-JVMCFG_ARCH := zero
+    JVMCFG_ARCH := zero
 else
-    JVMCFG_ARCH := $(ARCH)
+    JVMCFG_ARCH := $(OPENJDK_TARGET_CPU_LEGACY)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS),macosx)
-  ifeq ($(JVMCFG_ARCH),amd64)
-      JVMCFG_ARCH := x86_64
-  endif
   JVMCFG_SRC := $(JDK_TOPDIR)/src/macosx/bin/$(JVMCFG_ARCH)/jvm.cfg
-  JVMCFG_DIR := $(JDK_OUTPUTDIR)/lib
 else
-  JVMCFG_SRC := $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/bin/$(JVMCFG_ARCH)/jvm.cfg
-  JVMCFG_DIR := $(JDK_OUTPUTDIR)/lib/$(LIBARCH)
+  JVMCFG_SRC := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/bin/$(JVMCFG_ARCH)/jvm.cfg
 endif
-
+JVMCFG_DIR := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
 JVMCFG := $(JVMCFG_DIR)/jvm.cfg
 
 
-ifeq ($(ARCH_DATA_MODEL),32)
+ifeq ($(OPENJDK_TARGET_CPU_BITS),32)
     # On 32 bit machines, we can have client and/or server libjvms installed.
     # Since the currently committed jvm.cfg expects clientANDserver, we need 
     # to patch the jvm.cfg when we have built only a client or only a server.
@@ -320,7 +315,7 @@ ifeq ($(ARCH_DATA_MODEL),32)
         # Create a patched jvm.cfg to use -client by default and alias -server to -client.
         $(JVMCFG):
 		$(MKDIR) -p $(@D)
-		$(RM) -f $(JVMCFG)
+		$(RM) $(JVMCFG)
 		$(PRINTF) "-client KNOWN\n">$(JVMCFG)
 		$(PRINTF) "-server IGNORE\n">>$(JVMCFG)
 		$(PRINTF) "-hotspot ALIASED_TO -client\n">>$(JVMCFG)
@@ -334,7 +329,7 @@ ifeq ($(ARCH_DATA_MODEL),32)
 
             $(JVMCFG):
 		$(MKDIR) -p $(@D)
-		$(RM) -f $(JVMCFG)
+		$(RM) $(JVMCFG)
 		$(PRINTF) "-server KNOWN\n">$(JVMCFG)
 		$(PRINTF) "-client IGNORE\n">>$(JVMCFG)
 		$(PRINTF) "-hotspot IGNORE\n">>$(JVMCFG)
@@ -345,7 +340,7 @@ ifeq ($(ARCH_DATA_MODEL),32)
             # Use the default jvm.cfg for this 32 bit setup. 
             $(JVMCFG): $(JVMCFG_SRC)
 	    	$(MKDIR) -p $(@D)
-		$(RM) -f $@
+		$(RM) $@
 		$(CP) $< $@
         endif
     endif
@@ -353,7 +348,7 @@ else
     # Use the default jvm.cfg for this 64 bit setup.
     $(JVMCFG): $(JVMCFG_SRC)
 		$(MKDIR) -p $(@D)
-		$(RM) -f $@
+		$(RM) $@
 		$(CP) $< $@
 endif
 
@@ -378,7 +373,7 @@ endif
 
 $(PROPS_DST): $(PROPS_SRC)
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(PROPS_DST)
@@ -390,7 +385,7 @@ POLICY_DST := $(JDK_OUTPUTDIR)/lib/security/java.policy
 
 $(POLICY_DST): $(POLICY_SRC)
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(POLICY_DST)
@@ -402,7 +397,7 @@ CACERTS_DST := $(JDK_OUTPUTDIR)/lib/security/cacerts
 
 $(CACERTS_DST): $(CACERTS_SRC)
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(CACERTS_DST)
@@ -419,14 +414,14 @@ TRUSTEDLIBS_DST := $(JDK_OUTPUTDIR)/lib/security/trusted.libraries
 
 $(BLACKLIST_DST): $(BLACKLIST_SRC)
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(BLACKLIST_DST)
 
 $(TRUSTEDLIBS_DST): $(TRUSTEDLIBS_SRC)
 	$(MKDIR) -p $(@D)
-	$(RM) -f $@
+	$(RM) $@
 	$(CP) $< $@
 
 COPY_FILES += $(TRUSTEDLIBS_DST)
@@ -462,7 +457,11 @@ $(SHARED_FONTS_DST_DIR)/fonts.dir : $(JDK_TOPDIR)/src/solaris/classes/sun/awt/mo
 	$(RM) $@
 	$(CP) $< $@
 
-COPY_FILES += $(SHARED_FONTS_DST) $(SHARED_FONTS_DST_DIR)/fonts.dir
+COPY_FILES += $(SHARED_FONTS_DST)
+
+ifneq ($(OPENJDK_TARGET_OS), windows)
+    COPY_FILES += $(SHARED_FONTS_DST_DIR)/fonts.dir
+endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
 
@@ -537,21 +536,21 @@ _DGALIBS_i586 = 	# no i586 library yet
 
 _DGALIBS_amd64 = 	# no amd64 library yet
 
-DGALIBS = $(_DGALIBS_$(ARCH):%=$(JDK_OUTPUTDIR)/lib/$(LIBARCH)/%)
+DGALIBS = $(_DGALIBS_$(OPENJDK_TARGET_CPU_LEGACY):%=$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/%)
 
-$(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libxinerama.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(ARCH)/libxinerama.so
+$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libxinerama.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(OPENJDK_TARGET_CPU_LEGACY)/libxinerama.so
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@
 	$(CHMOD) 755 $@
 
-$(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libjdgaSUNW%.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(ARCH)/libjdgaSUNW%.so
+$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNW%.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(OPENJDK_TARGET_CPU_LEGACY)/libjdgaSUNW%.so
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@
 	$(CHMOD) 755 $@
 
-$(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libjdgaSUNWafb.so: $(JDK_OUTPUTDIR)/lib/$(LIBARCH)/libjdgaSUNWffb.so
+$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNWafb.so: $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNWffb.so
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s $< $@

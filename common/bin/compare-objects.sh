@@ -30,7 +30,7 @@
 #
 
 if [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ] || [ "x$1" == "x" ]; then
-    echo "bash ./common/bin/compare-build.sh old_jdk_build_dir new_jdk_build_dir"
+    echo "bash ./common/bin/compare-objects.sh old_jdk_build_dir new_jdk_build_dir <pattern>"
     echo ""
     echo "Compare object files"
     echo ""

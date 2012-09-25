@@ -169,10 +169,10 @@ SUNWprivate_1.1 {
 		Java_sun_nio_fs_UnixNativeDispatcher_getgrgid;
 		Java_sun_nio_fs_UnixNativeDispatcher_getpwnam0;
 		Java_sun_nio_fs_UnixNativeDispatcher_getgrnam0;
-		Java_sun_nio_fs_UnixNativeDispatcher_getextmntent;
 		Java_sun_nio_fs_UnixCopyFile_transfer;
 		Java_sun_nio_fs_SolarisNativeDispatcher_init;
 		Java_sun_nio_fs_SolarisNativeDispatcher_facl;
+		Java_sun_nio_fs_SolarisNativeDispatcher_getextmntent;
 		Java_sun_nio_fs_SolarisWatchService_init;
 		Java_sun_nio_fs_SolarisWatchService_portCreate;
 		Java_sun_nio_fs_SolarisWatchService_portAssociate;
