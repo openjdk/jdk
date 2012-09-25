@@ -31,6 +31,8 @@ import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
 import com.sun.tools.javac.comp.Check.CheckContext;
+import com.sun.tools.javac.comp.Infer.InferenceContext;
+import com.sun.tools.javac.comp.Infer.InferenceContext.FreeTypeListener;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionContext.Candidate;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
@@ -586,7 +588,7 @@ public class Resolve {
                                 boolean allowBoxing,
                                 boolean useVarargs,
                                 Warner warn) {
-        checkRawArgumentsAcceptable(env, List.<Type>nil(), argtypes, formals,
+        checkRawArgumentsAcceptable(env, infer.emptyContext, argtypes, formals,
                 allowBoxing, useVarargs, warn, resolveHandler);
     }
 
@@ -606,8 +608,8 @@ public class Resolve {
      *
      * A method check handler (see above) is used in order to report errors.
      */
-    List<Type> checkRawArgumentsAcceptable(Env<AttrContext> env,
-                                List<Type> undetvars,
+    void checkRawArgumentsAcceptable(final Env<AttrContext> env,
+                                final Infer.InferenceContext inferenceContext,
                                 List<Type> argtypes,
                                 List<Type> formals,
                                 boolean allowBoxing,
@@ -623,7 +625,7 @@ public class Resolve {
         }
 
         while (argtypes.nonEmpty() && formals.head != varargsFormal) {
-            ResultInfo resultInfo = methodCheckResult(formals.head, allowBoxing, false, undetvars, handler, warn);
+            ResultInfo resultInfo = methodCheckResult(formals.head, allowBoxing, false, inferenceContext, handler, warn);
             checkedArgs.append(resultInfo.check(env.tree.pos(), argtypes.head));
             argtypes = argtypes.tail;
             formals = formals.tail;
@@ -638,17 +640,29 @@ public class Resolve {
             //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
             Type elt = types.elemtype(varargsFormal);
             while (argtypes.nonEmpty()) {
-                ResultInfo resultInfo = methodCheckResult(elt, allowBoxing, true, undetvars, handler, warn);
+                ResultInfo resultInfo = methodCheckResult(elt, allowBoxing, true, inferenceContext, handler, warn);
                 checkedArgs.append(resultInfo.check(env.tree.pos(), argtypes.head));
                 argtypes = argtypes.tail;
             }
             //check varargs element type accessibility
-            if (undetvars.isEmpty() && !isAccessible(env, elt)) {
+            varargsAccessible(env, elt, handler, inferenceContext);
+        }
+    }
+
+    void varargsAccessible(final Env<AttrContext> env, final Type t, final Resolve.MethodCheckHandler handler, final InferenceContext inferenceContext) {
+        if (inferenceContext.free(t)) {
+            inferenceContext.addFreeTypeListener(List.of(t), new FreeTypeListener() {
+                @Override
+                public void typesInferred(InferenceContext inferenceContext) {
+                    varargsAccessible(env, inferenceContext.asInstType(t, types), handler, inferenceContext);
+                }
+            });
+        } else {
+            if (!isAccessible(env, t)) {
                 Symbol location = env.enclClass.sym;
-                throw handler.inaccessibleVarargs(location, elt);
+                throw handler.inaccessibleVarargs(location, t);
             }
         }
-        return checkedArgs.toList();
     }
 
     /**
@@ -659,13 +673,13 @@ public class Resolve {
 
         MethodCheckHandler handler;
         boolean useVarargs;
-        List<Type> undetvars;
+        Infer.InferenceContext inferenceContext;
         Warner rsWarner;
 
-        public MethodCheckContext(MethodCheckHandler handler, boolean useVarargs, List<Type> undetvars, Warner rsWarner) {
+        public MethodCheckContext(MethodCheckHandler handler, boolean useVarargs, Infer.InferenceContext inferenceContext, Warner rsWarner) {
             this.handler = handler;
             this.useVarargs = useVarargs;
-            this.undetvars = undetvars;
+            this.inferenceContext = inferenceContext;
             this.rsWarner = rsWarner;
         }
 
@@ -676,6 +690,10 @@ public class Resolve {
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
             return rsWarner;
         }
+
+        public InferenceContext inferenceContext() {
+            return inferenceContext;
+        }
     }
 
     /**
@@ -684,12 +702,12 @@ public class Resolve {
      */
     class StrictMethodContext extends MethodCheckContext {
 
-        public StrictMethodContext(MethodCheckHandler handler, boolean useVarargs, List<Type> undetvars, Warner rsWarner) {
-            super(handler, useVarargs, undetvars, rsWarner);
+        public StrictMethodContext(MethodCheckHandler handler, boolean useVarargs, Infer.InferenceContext inferenceContext, Warner rsWarner) {
+            super(handler, useVarargs, inferenceContext, rsWarner);
         }
 
         public boolean compatible(Type found, Type req, Warner warn) {
-            return types.isSubtypeUnchecked(found, infer.asUndetType(req, undetvars), warn);
+            return types.isSubtypeUnchecked(found, inferenceContext.asFree(req, types), warn);
         }
     }
 
@@ -699,12 +717,12 @@ public class Resolve {
      */
     class LooseMethodContext extends MethodCheckContext {
 
-        public LooseMethodContext(MethodCheckHandler handler, boolean useVarargs, List<Type> undetvars, Warner rsWarner) {
-            super(handler, useVarargs, undetvars, rsWarner);
+        public LooseMethodContext(MethodCheckHandler handler, boolean useVarargs, Infer.InferenceContext inferenceContext, Warner rsWarner) {
+            super(handler, useVarargs, inferenceContext, rsWarner);
         }
 
         public boolean compatible(Type found, Type req, Warner warn) {
-            return types.isConvertible(found, infer.asUndetType(req, undetvars), warn);
+            return types.isConvertible(found, inferenceContext.asFree(req, types), warn);
         }
     }
 
@@ -712,10 +730,10 @@ public class Resolve {
      * Create a method check context to be used during method applicability check
      */
     ResultInfo methodCheckResult(Type to, boolean allowBoxing, boolean useVarargs,
-            List<Type> undetvars, MethodCheckHandler methodHandler, Warner rsWarner) {
+            Infer.InferenceContext inferenceContext, MethodCheckHandler methodHandler, Warner rsWarner) {
         MethodCheckContext checkContext = allowBoxing ?
-                new LooseMethodContext(methodHandler, useVarargs, undetvars, rsWarner) :
-                new StrictMethodContext(methodHandler, useVarargs, undetvars, rsWarner);
+                new LooseMethodContext(methodHandler, useVarargs, inferenceContext, rsWarner) :
+                new StrictMethodContext(methodHandler, useVarargs, inferenceContext, rsWarner);
         return attr.new ResultInfo(VAL, to, checkContext) {
             @Override
             protected Type check(DiagnosticPosition pos, Type found) {
@@ -735,16 +753,13 @@ public class Resolve {
             this.diags = diags;
         }
         InapplicableMethodException setMessage() {
-            this.diagnostic = null;
-            return this;
+            return setMessage((JCDiagnostic)null);
         }
         InapplicableMethodException setMessage(String key) {
-            this.diagnostic = key != null ? diags.fragment(key) : null;
-            return this;
+            return setMessage(key != null ? diags.fragment(key) : null);
         }
         InapplicableMethodException setMessage(String key, Object... args) {
-            this.diagnostic = key != null ? diags.fragment(key, args) : null;
-            return this;
+            return setMessage(key != null ? diags.fragment(key, args) : null);
         }
         InapplicableMethodException setMessage(JCDiagnostic diag) {
             this.diagnostic = diag;
