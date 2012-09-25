@@ -1318,11 +1318,7 @@ public class Flow {
          *  index into the vars array.
          */
         void newVar(VarSymbol sym) {
-            if (nextadr == vars.length) {
-                VarSymbol[] newvars = new VarSymbol[nextadr * 2];
-                System.arraycopy(vars, 0, newvars, 0, nextadr);
-                vars = newvars;
-            }
+            vars = ArrayUtils.ensureCapacity(vars, nextadr);
             if ((sym.flags() & FINAL) == 0) {
                 sym.flags_field |= EFFECTIVELY_FINAL;
             }

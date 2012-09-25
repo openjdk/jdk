@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.*;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.util.ArrayUtils;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Filter;
 import com.sun.tools.javac.util.Name;
@@ -91,14 +92,6 @@ public class Pool {
         indices.clear();
     }
 
-    /** Double pool buffer in size.
-     */
-    private void doublePool() {
-        Object[] newpool = new Object[pool.length * 2];
-        System.arraycopy(pool, 0, newpool, 0, pool.length);
-        pool = newpool;
-    }
-
     /** Place an object in the pool, unless it is already there.
      *  If object is a symbol also enter its owner unless the owner is a
      *  package.  Return the object's index in the pool.
@@ -114,10 +107,10 @@ public class Pool {
 //          System.err.println("put " + value + " " + value.getClass());//DEBUG
             index = pp;
             indices.put(value, index);
-            if (pp == pool.length) doublePool();
+            pool = ArrayUtils.ensureCapacity(pool, pp);
             pool[pp++] = value;
             if (value instanceof Long || value instanceof Double) {
-                if (pp == pool.length) doublePool();
+                pool = ArrayUtils.ensureCapacity(pool, pp);
                 pool[pp++] = null;
             }
         }

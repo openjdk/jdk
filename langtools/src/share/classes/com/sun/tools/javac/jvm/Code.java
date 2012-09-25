@@ -314,11 +314,7 @@ public class Code {
      */
     private  void emit1(int od) {
         if (!alive) return;
-        if (cp == code.length) {
-            byte[] newcode = new byte[cp * 2];
-            System.arraycopy(code, 0, newcode, 0, cp);
-            code = newcode;
-        }
+        code = ArrayUtils.ensureCapacity(code, cp);
         code[cp++] = (byte)od;
     }
 
@@ -1247,12 +1243,8 @@ public class Code {
 
         if (stackMapBuffer == null) {
             stackMapBuffer = new StackMapFrame[20];
-        } else if (stackMapBuffer.length == stackMapBufferSize) {
-            StackMapFrame[] newStackMapBuffer =
-                new StackMapFrame[stackMapBufferSize << 1];
-            System.arraycopy(stackMapBuffer, 0, newStackMapBuffer,
-                             0, stackMapBufferSize);
-            stackMapBuffer = newStackMapBuffer;
+        } else {
+            stackMapBuffer = ArrayUtils.ensureCapacity(stackMapBuffer, stackMapBufferSize);
         }
         StackMapFrame frame =
             stackMapBuffer[stackMapBufferSize++] = new StackMapFrame();
@@ -1320,12 +1312,10 @@ public class Code {
 
         if (stackMapTableBuffer == null) {
             stackMapTableBuffer = new StackMapTableFrame[20];
-        } else if (stackMapTableBuffer.length == stackMapBufferSize) {
-            StackMapTableFrame[] newStackMapTableBuffer =
-                new StackMapTableFrame[stackMapBufferSize << 1];
-            System.arraycopy(stackMapTableBuffer, 0, newStackMapTableBuffer,
-                             0, stackMapBufferSize);
-            stackMapTableBuffer = newStackMapTableBuffer;
+        } else {
+            stackMapTableBuffer = ArrayUtils.ensureCapacity(
+                                    stackMapTableBuffer,
+                                    stackMapBufferSize);
         }
         stackMapTableBuffer[stackMapBufferSize++] =
                 StackMapTableFrame.getInstance(frame, lastFrame.pc, lastFrame.locals, types);
@@ -1651,10 +1641,8 @@ public class Code {
         void lock(int register) {
             if (locks == null) {
                 locks = new int[20];
-            } else if (locks.length == nlocks) {
-                int[] newLocks = new int[locks.length << 1];
-                System.arraycopy(locks, 0, newLocks, 0, locks.length);
-                locks = newLocks;
+            } else {
+                locks = ArrayUtils.ensureCapacity(locks, nlocks);
             }
             locks[nlocks] = register;
             nlocks++;
@@ -1680,11 +1668,7 @@ public class Code {
             default:
                 break;
             }
-            if (stacksize+2 >= stack.length) {
-                Type[] newstack = new Type[2*stack.length];
-                System.arraycopy(stack, 0, newstack, 0, stack.length);
-                stack = newstack;
-            }
+            stack = ArrayUtils.ensureCapacity(stack, stacksize+2);
             stack[stacksize++] = t;
             switch (width(t)) {
             case 1:
@@ -1871,13 +1855,7 @@ public class Code {
     /** Add a new local variable. */
     private void addLocalVar(VarSymbol v) {
         int adr = v.adr;
-        if (adr+1 >= lvar.length) {
-            int newlength = lvar.length << 1;
-            if (newlength <= adr) newlength = adr + 10;
-            LocalVar[] new_lvar = new LocalVar[newlength];
-            System.arraycopy(lvar, 0, new_lvar, 0, lvar.length);
-            lvar = new_lvar;
-        }
+        lvar = ArrayUtils.ensureCapacity(lvar, adr+1);
         Assert.checkNull(lvar[adr]);
         if (pendingJumps != null) resolvePending();
         lvar[adr] = new LocalVar(v);
@@ -1957,11 +1935,8 @@ public class Code {
         if ((var.sym.flags() & Flags.SYNTHETIC) != 0) return;
         if (varBuffer == null)
             varBuffer = new LocalVar[20];
-        else if (varBufferSize >= varBuffer.length) {
-            LocalVar[] newVarBuffer = new LocalVar[varBufferSize*2];
-            System.arraycopy(varBuffer, 0, newVarBuffer, 0, varBuffer.length);
-            varBuffer = newVarBuffer;
-        }
+        else
+            varBuffer = ArrayUtils.ensureCapacity(varBuffer, varBufferSize);
         varBuffer[varBufferSize++] = var;
     }
 
