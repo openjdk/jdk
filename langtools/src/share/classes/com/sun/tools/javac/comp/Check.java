@@ -69,7 +69,6 @@ public class Check {
     private final Infer infer;
     private final Types types;
     private final JCDiagnostic.Factory diags;
-    private final boolean skipAnnotations;
     private boolean warnOnSyntheticConflicts;
     private boolean suppressAbortOnBadClassFile;
     private boolean enableSunApiLintControl;
@@ -113,7 +112,6 @@ public class Check {
         allowCovariantReturns = source.allowCovariantReturns();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
         complexInference = options.isSet("complexinference");
-        skipAnnotations = options.isSet("skipAnnotations");
         warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
         suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
         enableSunApiLintControl = options.isSet("enableSunApiLintControl");
@@ -2422,14 +2420,13 @@ public class Check {
     /** Check the annotations of a symbol.
      */
     public void validateAnnotations(List<JCAnnotation> annotations, Symbol s) {
-        if (skipAnnotations) return;
         for (JCAnnotation a : annotations)
             validateAnnotation(a, s);
     }
 
     /** Check an annotation of a symbol.
      */
-    public void validateAnnotation(JCAnnotation a, Symbol s) {
+    private void validateAnnotation(JCAnnotation a, Symbol s) {
         validateAnnotationTree(a);
 
         if (!annotationApplicable(a, s))
@@ -2439,6 +2436,215 @@ public class Check {
             if (!isOverrider(s))
                 log.error(a.pos(), "method.does.not.override.superclass");
         }
+    }
+
+    /**
+     * Validate the proposed container 'containedBy' on the
+     * annotation type symbol 's'. Report errors at position
+     * 'pos'.
+     *
+     * @param s The (annotation)type declaration annotated with a @ContainedBy
+     * @param containerAnno the @ContainedBy on 's'
+     * @param pos where to report errors
+     */
+    public void validateContainedBy(TypeSymbol s, Attribute.Compound containedBy, DiagnosticPosition pos) {
+        Assert.check(types.isSameType(containedBy.type, syms.containedByType));
+
+        Type t = null;
+        List<Pair<MethodSymbol,Attribute>> l = containedBy.values;
+        if (!l.isEmpty()) {
+            Assert.check(l.head.fst.name == names.value);
+            t = ((Attribute.Class)l.head.snd).getValue();
+        }
+
+        if (t == null) {
+            log.error(pos, "invalid.container.wrong.containedby", s, containedBy);
+            return;
+        }
+
+        validateHasContainerFor(t.tsym, s, pos);
+        validateRetention(t.tsym, s, pos);
+        validateDocumented(t.tsym, s, pos);
+        validateInherited(t.tsym, s, pos);
+        validateTarget(t.tsym, s, pos);
+    }
+
+    /**
+     * Validate the proposed container 'containerFor' on the
+     * annotation type symbol 's'. Report errors at position
+     * 'pos'.
+     *
+     * @param s The (annotation)type declaration annotated with a @ContainerFor
+     * @param containerFor the @ContainedFor on 's'
+     * @param pos where to report errors
+     */
+    public void validateContainerFor(TypeSymbol s, Attribute.Compound containerFor, DiagnosticPosition pos) {
+        Assert.check(types.isSameType(containerFor.type, syms.containerForType));
+
+        Type t = null;
+        List<Pair<MethodSymbol,Attribute>> l = containerFor.values;
+        if (!l.isEmpty()) {
+            Assert.check(l.head.fst.name == names.value);
+            t = ((Attribute.Class)l.head.snd).getValue();
+        }
+
+        if (t == null) {
+            log.error(pos, "invalid.container.wrong.containerfor", s, containerFor);
+            return;
+        }
+
+        validateHasContainedBy(t.tsym, s, pos);
+    }
+
+    private void validateHasContainedBy(TypeSymbol container, TypeSymbol contained, DiagnosticPosition pos) {
+        Attribute.Compound containedBy = container.attribute(syms.containedByType.tsym);
+
+        if (containedBy == null) {
+            log.error(pos, "invalid.container.no.containedby", container, syms.containedByType.tsym);
+            return;
+        }
+
+        Type t = null;
+        List<Pair<MethodSymbol,Attribute>> l = containedBy.values;
+        if (!l.isEmpty()) {
+            Assert.check(l.head.fst.name == names.value);
+            t = ((Attribute.Class)l.head.snd).getValue();
+        }
+
+        if (t == null) {
+            log.error(pos, "invalid.container.wrong.containedby", container, contained);
+            return;
+        }
+
+        if (!types.isSameType(t, contained.type))
+            log.error(pos, "invalid.container.wrong.containedby", t.tsym, contained);
+    }
+
+    private void validateHasContainerFor(TypeSymbol container, TypeSymbol contained, DiagnosticPosition pos) {
+        Attribute.Compound containerFor = container.attribute(syms.containerForType.tsym);
+
+        if (containerFor == null) {
+            log.error(pos, "invalid.container.no.containerfor", container, syms.containerForType.tsym);
+            return;
+        }
+
+        Type t = null;
+        List<Pair<MethodSymbol,Attribute>> l = containerFor.values;
+        if (!l.isEmpty()) {
+            Assert.check(l.head.fst.name == names.value);
+            t = ((Attribute.Class)l.head.snd).getValue();
+        }
+
+        if (t == null) {
+            log.error(pos, "invalid.container.wrong.containerfor", container, contained);
+            return;
+        }
+
+        if (!types.isSameType(t, contained.type))
+            log.error(pos, "invalid.container.wrong.containerfor", t.tsym, contained);
+    }
+
+    private void validateRetention(Symbol container, Symbol contained, DiagnosticPosition pos) {
+        Attribute.RetentionPolicy containerRetention = types.getRetention(container);
+        Attribute.RetentionPolicy containedRetention = types.getRetention(contained);
+
+        boolean error = false;
+        switch (containedRetention) {
+        case RUNTIME:
+            if (containerRetention != Attribute.RetentionPolicy.RUNTIME) {
+                error = true;
+            }
+            break;
+        case CLASS:
+            if (containerRetention == Attribute.RetentionPolicy.SOURCE)  {
+                error = true;
+            }
+        }
+        if (error ) {
+            log.error(pos, "invalid.containedby.annotation.retention",
+                      container, containerRetention,
+                      contained, containedRetention);
+        }
+    }
+
+    private void validateDocumented(Symbol container, Symbol contained, DiagnosticPosition pos) {
+        if (contained.attribute(syms.documentedType.tsym) != null) {
+            if (container.attribute(syms.documentedType.tsym) == null) {
+                log.error(pos, "invalid.containedby.annotation.not.documented", container, contained);
+            }
+        }
+    }
+
+    private void validateInherited(Symbol container, Symbol contained, DiagnosticPosition pos) {
+        if (contained.attribute(syms.inheritedType.tsym) != null) {
+            if (container.attribute(syms.inheritedType.tsym) == null) {
+                log.error(pos, "invalid.containedby.annotation.not.inherited", container, contained);
+            }
+        }
+    }
+
+    private void validateTarget(Symbol container, Symbol contained, DiagnosticPosition pos) {
+        Attribute.Array containedTarget = getAttributeTargetAttribute(contained);
+
+        // If contained has no Target, we are done
+        if (containedTarget == null) {
+            return;
+        }
+
+        // If contained has Target m1, container must have a Target
+        // annotation, m2, and m2 must be a subset of m1. (This is
+        // trivially true if contained has no target as per above).
+
+        // contained has target, but container has not, error
+        Attribute.Array containerTarget = getAttributeTargetAttribute(container);
+        if (containerTarget == null) {
+            log.error(pos, "invalid.containedby.annotation.incompatible.target", container, contained);
+            return;
+        }
+
+        Set<Name> containerTargets = new HashSet<Name>();
+        for (Attribute app : containerTarget.values) {
+            if (!(app instanceof Attribute.Enum)) {
+                continue; // recovery
+            }
+            Attribute.Enum e = (Attribute.Enum)app;
+            containerTargets.add(e.value.name);
+        }
+
+        Set<Name> containedTargets = new HashSet<Name>();
+        for (Attribute app : containedTarget.values) {
+            if (!(app instanceof Attribute.Enum)) {
+                continue; // recovery
+            }
+            Attribute.Enum e = (Attribute.Enum)app;
+            containedTargets.add(e.value.name);
+        }
+
+        if (!isTargetSubset(containedTargets, containerTargets)) {
+            log.error(pos, "invalid.containedby.annotation.incompatible.target", container, contained);
+        }
+    }
+
+    /** Checks that t is a subset of s, with respect to ElementType
+     * semantics, specifically {ANNOTATION_TYPE} is a subset of {TYPE}
+     */
+    private boolean isTargetSubset(Set<Name> s, Set<Name> t) {
+        // Check that all elements in t are present in s
+        for (Name n2 : t) {
+            boolean currentElementOk = false;
+            for (Name n1 : s) {
+                if (n1 == n2) {
+                    currentElementOk = true;
+                    break;
+                } else if (n1 == names.TYPE && n2 == names.ANNOTATION_TYPE) {
+                    currentElementOk = true;
+                    break;
+                }
+            }
+            if (!currentElementOk)
+                return false;
+        }
+        return true;
     }
 
     /** Is s a method symbol that overrides a method in a superclass? */
@@ -2461,12 +2667,10 @@ public class Check {
 
     /** Is the annotation applicable to the symbol? */
     boolean annotationApplicable(JCAnnotation a, Symbol s) {
-        Attribute.Compound atTarget =
-            a.annotationType.type.tsym.attribute(syms.annotationTargetType.tsym);
-        if (atTarget == null) return true;
-        Attribute atValue = atTarget.member(names.value);
-        if (!(atValue instanceof Attribute.Array)) return true; // error recovery
-        Attribute.Array arr = (Attribute.Array) atValue;
+        Attribute.Array arr = getAttributeTargetAttribute(a.annotationType.type.tsym);
+        if (arr == null) {
+            return true;
+        }
         for (Attribute app : arr.values) {
             if (!(app instanceof Attribute.Enum)) return true; // recovery
             Attribute.Enum e = (Attribute.Enum) app;
@@ -2506,6 +2710,16 @@ public class Check {
                 return true; // recovery
         }
         return false;
+    }
+
+
+    Attribute.Array getAttributeTargetAttribute(Symbol s) {
+        Attribute.Compound atTarget =
+            s.attribute(syms.annotationTargetType.tsym);
+        if (atTarget == null) return null; // ok, is applicable
+        Attribute atValue = atTarget.member(names.value);
+        if (!(atValue instanceof Attribute.Array)) return null; // error recovery
+        return (Attribute.Array) atValue;
     }
 
     /** Check an annotation value.

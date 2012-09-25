@@ -662,10 +662,12 @@ public class Attr extends JCTree.Visitor {
         // env.info.enclVar.attributes_field might not yet have been evaluated, and so might be
         // null. In that case, calling augment will throw an NPE. To avoid this, for now we
         // revert to the jdk 6 behavior and ignore the (unevaluated) attributes.
-        if (env.info.enclVar.attributes_field == null)
+        if (env.info.enclVar.annotations.pendingCompletion()) {
             env.info.lint = lintEnv.info.lint;
-        else
-            env.info.lint = lintEnv.info.lint.augment(env.info.enclVar.attributes_field, env.info.enclVar.flags());
+        } else {
+            env.info.lint = lintEnv.info.lint.augment(env.info.enclVar.annotations,
+                                                      env.info.enclVar.flags());
+        }
 
         Lint prevLint = chk.setLint(env.info.lint);
         JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
@@ -776,7 +778,7 @@ public class Attr extends JCTree.Visitor {
     public void visitMethodDef(JCMethodDecl tree) {
         MethodSymbol m = tree.sym;
 
-        Lint lint = env.info.lint.augment(m.attributes_field, m.flags());
+        Lint lint = env.info.lint.augment(m.annotations, m.flags());
         Lint prevLint = chk.setLint(lint);
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
@@ -921,7 +923,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         VarSymbol v = tree.sym;
-        Lint lint = env.info.lint.augment(v.attributes_field, v.flags());
+        Lint lint = env.info.lint.augment(v.annotations, v.flags());
         Lint prevLint = chk.setLint(lint);
 
         // Check that the variable's declared type is well-formed.
@@ -3069,7 +3071,7 @@ public class Attr extends JCTree.Visitor {
                 lintEnv = lintEnv.next;
 
             // Having found the enclosing lint value, we can initialize the lint value for this class
-            env.info.lint = lintEnv.info.lint.augment(c.attributes_field, c.flags());
+            env.info.lint = lintEnv.info.lint.augment(c.annotations, c.flags());
 
             Lint prevLint = chk.setLint(env.info.lint);
             JavaFileObject prev = log.useSource(c.sourcefile);
@@ -3133,6 +3135,26 @@ public class Attr extends JCTree.Visitor {
             if (tree.typarams.nonEmpty())
                 log.error(tree.typarams.head.pos(),
                           "intf.annotation.cant.have.type.params");
+
+            // If this annotation has a @ContainedBy, validate
+            Attribute.Compound containedBy = c.attribute(syms.containedByType.tsym);
+            if (containedBy != null) {
+                // get diagnositc position for error reporting
+                DiagnosticPosition cbPos = getDiagnosticPosition(tree, containedBy.type);
+                Assert.checkNonNull(cbPos);
+
+                chk.validateContainedBy(c, containedBy, cbPos);
+            }
+
+            // If this annotation has a @ContainerFor, validate
+            Attribute.Compound containerFor = c.attribute(syms.containerForType.tsym);
+            if (containerFor != null) {
+                // get diagnositc position for error reporting
+                DiagnosticPosition cfPos = getDiagnosticPosition(tree, containerFor.type);
+                Assert.checkNonNull(cfPos);
+
+                chk.validateContainerFor(c, containerFor, cfPos);
+            }
         } else {
             // Check that all extended classes and interfaces
             // are compatible (i.e. no two define methods with same arguments
@@ -3194,6 +3216,16 @@ public class Attr extends JCTree.Visitor {
         }
     }
         // where
+        /** get a diagnostic position for an attribute of Type t, or null if attribute missing */
+        private DiagnosticPosition getDiagnosticPosition(JCClassDecl tree, Type t) {
+            for(List<JCAnnotation> al = tree.mods.annotations; !al.isEmpty(); al = al.tail) {
+                if (types.isSameType(al.head.annotationType.type, t))
+                    return al.head.pos();
+            }
+
+            return null;
+        }
+
         /** check if a class is a subtype of Serializable, if that is available. */
         private boolean isSerializable(ClassSymbol c) {
             try {

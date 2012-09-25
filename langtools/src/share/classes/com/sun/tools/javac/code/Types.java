@@ -1358,6 +1358,20 @@ public class Types {
         }
         return result;
     }
+
+    /**
+     * Returns an ArrayType with the component type t
+     *
+     * @param t The component type of the ArrayType
+     * @return the ArrayType for the given component
+     */
+    public ArrayType makeArrayType(Type t) {
+        if (t.tag == VOID ||
+            t.tag >= PACKAGE) {
+            Assert.error("Type t must not be a a VOID or PACKAGE type, " + t.toString());
+        }
+        return new ArrayType(t, syms.arrayClass);
+    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="asSuper">
@@ -3811,8 +3825,12 @@ public class Types {
     // <editor-fold defaultstate="collapsed" desc="Annotation support">
 
     public RetentionPolicy getRetention(Attribute.Compound a) {
+        return getRetention(a.type.tsym);
+    }
+
+    public RetentionPolicy getRetention(Symbol sym) {
         RetentionPolicy vis = RetentionPolicy.CLASS; // the default
-        Attribute.Compound c = a.type.tsym.attribute(syms.retentionType.tsym);
+        Attribute.Compound c = sym.attribute(syms.retentionType.tsym);
         if (c != null) {
             Attribute value = c.member(names.value);
             if (value != null && value instanceof Attribute.Enum) {
