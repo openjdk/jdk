@@ -161,28 +161,6 @@ There are several problems with Drag and Drop - notably, the mismatch between Ja
 }
 
 // Mouse and key modifiers mapping:
-+ (NSUInteger)mapJavaExtModifiersToNSKeyModifiers:(jint)modifiers
-{
-    NSUInteger result = 0;
-
-    if ((modifiers & java_awt_event_InputEvent_SHIFT_DOWN_MASK) != 0)
-        result |= NSShiftKeyMask;
-
-    if ((modifiers & java_awt_event_InputEvent_CTRL_DOWN_MASK) != 0)
-        result |= NSControlKeyMask;
-
-    if ((modifiers & java_awt_event_InputEvent_META_DOWN_MASK) != 0)
-        result |= NSCommandKeyMask;
-
-    if ((modifiers & java_awt_event_InputEvent_ALT_DOWN_MASK) != 0)
-        result |= NSAlternateKeyMask;
-
-    if ((modifiers & java_awt_event_InputEvent_ALT_GRAPH_DOWN_MASK) != 0)
-        result |= NSAlternateKeyMask;
-
-    return result;
-}
-
 + (NSUInteger)mapJavaExtModifiersToNSMouseDownButtons:(jint)modifiers
 {
     NSUInteger result = NSLeftMouseDown;
@@ -244,32 +222,6 @@ There are several problems with Drag and Drop - notably, the mismatch between Ja
     // Get results
     return modifiers & mask;
 }
-
-
-+ (jint)currentJavaExtKeyModifiers
-{
-    NSUInteger modifiers = [NSEvent modifierFlags];
-    jint jmodifiers = 0;
-
-    if(modifiers & NSShiftKeyMask) {
-        jmodifiers |= java_awt_event_InputEvent_SHIFT_DOWN_MASK;
-    }
-
-    if(modifiers & NSControlKeyMask) {
-        jmodifiers |= java_awt_event_InputEvent_CTRL_DOWN_MASK;
-    }
-
-    if(modifiers & NSAlternateKeyMask) {
-        jmodifiers |= java_awt_event_InputEvent_ALT_DOWN_MASK;
-    }
-
-    if(modifiers & NSCommandKeyMask) {
-        jmodifiers |= java_awt_event_InputEvent_META_DOWN_MASK;
-    }
-
-    return jmodifiers;
-}
-
 
 + (NSDragOperation) nsDragOperationForModifiers:(NSUInteger)modifiers {
 

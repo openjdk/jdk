@@ -1047,6 +1047,10 @@ public class EventQueue {
 
     final boolean detachDispatchThread(EventDispatchThread edt, boolean forceDetach) {
         /*
+         * Minimize discard possibility for non-posted events
+         */
+        SunToolkit.flushPendingEvents();
+        /*
          * This synchronized block is to secure that the event dispatch
          * thread won't die in the middle of posting a new event to the
          * associated event queue. It is important because we notify
@@ -1060,11 +1064,8 @@ public class EventQueue {
                 /*
                  * Don't detach the thread if any events are pending. Not
                  * sure if it's a possible scenario, though.
-                 *
-                 * Fix for 4648733. Check both the associated java event
-                 * queue and the PostEventQueue.
                  */
-                if (!forceDetach && (peekEvent() != null) || !SunToolkit.isPostEventQueueEmpty()) {
+                if (!forceDetach && (peekEvent() != null)) {
                     return false;
                 }
                 dispatchThread = null;

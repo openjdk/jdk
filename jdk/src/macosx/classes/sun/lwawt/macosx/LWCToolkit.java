@@ -536,7 +536,7 @@ public class LWCToolkit extends LWToolkit {
             SunToolkit.postEvent(appContext, invocationEvent);
 
             // 3746956 - flush events from PostEventQueue to prevent them from getting stuck and causing a deadlock
-            sun.awt.SunToolkitSubclass.flushPendingEvents(appContext);
+            SunToolkit.flushPendingEvents(appContext);
         } else {
             // This should be the equivalent to EventQueue.invokeAndWait
             ((LWCToolkit)Toolkit.getDefaultToolkit()).getSystemEventQueueForInvokeAndWait().postEvent(invocationEvent);
@@ -561,7 +561,7 @@ public class LWCToolkit extends LWToolkit {
             SunToolkit.postEvent(appContext, invocationEvent);
 
             // 3746956 - flush events from PostEventQueue to prevent them from getting stuck and causing a deadlock
-            sun.awt.SunToolkitSubclass.flushPendingEvents(appContext);
+            SunToolkit.flushPendingEvents(appContext);
         } else {
             // This should be the equivalent to EventQueue.invokeAndWait
             ((LWCToolkit)Toolkit.getDefaultToolkit()).getSystemEventQueueForInvokeAndWait().postEvent(invocationEvent);
