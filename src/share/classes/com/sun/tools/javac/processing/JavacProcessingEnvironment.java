@@ -1072,8 +1072,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             Assert.checkNonNull(tokens);
             next.put(Tokens.tokensKey, tokens);
 
+            Log nextLog = Log.instance(next);
             // propogate the log's writers directly, instead of going through context
-            Log.instance(next).setWriters(log);
+            nextLog.setWriters(log);
+            nextLog.setSourceMap(log);
 
             JavaCompiler oldCompiler = JavaCompiler.instance(context);
             JavaCompiler nextCompiler = JavaCompiler.instance(next);
@@ -1362,7 +1364,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * {@inheritdoc}
      *
      * Command line options suitable for presenting to annotation
-     * processors.  "-Afoo=bar" should be "-Afoo" => "bar".
+     * processors.
+     * {@literal "-Afoo=bar"} should be {@literal "-Afoo" => "bar"}.
      */
     public Map<String,String> getOptions() {
         return processorOptions;

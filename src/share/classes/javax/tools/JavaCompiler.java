@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ import javax.annotation.processing.Processor;
  *       StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
  *       compiler.getTask(null, fileManager, diagnostics, null, null, compilationUnits).call();
  *
- *       for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics())
+ *       for ({@code Diagnostic<? extends JavaFileObject>} diagnostic : diagnostics.getDiagnostics())
  *           System.out.format("Error on line %d in %s%n",
  *                             diagnostic.getLineNumber(),
  *                             diagnostic.getSource().toUri());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -600,6 +600,7 @@ public class TagletManager {
         ArrayList<Taglet> mTags = new ArrayList<Taglet>(customTags.size());
         ArrayList<Taglet> iTags = new ArrayList<Taglet>(customTags.size());
         ArrayList<Taglet> oTags = new ArrayList<Taglet>(customTags.size());
+        ArrayList<Taglet> sTags = new ArrayList<Taglet>();
         Taglet current;
         while (it.hasNext()) {
             current = it.next();
@@ -634,11 +635,12 @@ public class TagletManager {
         inlineTags = iTags.toArray(new Taglet[] {});
 
         //Init the serialized form tags
-        serializedFormTags = new Taglet[4];
-        serializedFormTags[0] = customTags.get("serialData");
-        serializedFormTags[1] = customTags.get("throws");
-        serializedFormTags[2] = customTags.get("since");
-        serializedFormTags[3] = customTags.get("see");
+        sTags.add(customTags.get("serialData"));
+        sTags.add(customTags.get("throws"));
+        if (!nosince)
+            sTags.add(customTags.get("since"));
+        sTags.add(customTags.get("see"));
+        serializedFormTags = sTags.toArray(new Taglet[] {});
     }
 
     /**
