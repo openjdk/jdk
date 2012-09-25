@@ -903,6 +903,8 @@ public class Code {
         if (o instanceof Double) return syms.doubleType;
         if (o instanceof ClassSymbol) return syms.classType;
         if (o instanceof Type.ArrayType) return syms.classType;
+        if (o instanceof Type.MethodType) return syms.methodTypeType;
+        if (o instanceof Pool.MethodHandle) return syms.methodHandleType;
         throw new AssertionError(o);
     }
 
