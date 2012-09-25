@@ -126,6 +126,7 @@ public class Symtab {
     public final Type cloneableType;
     public final Type serializableType;
     public final Type methodHandleType;
+    public final Type methodTypeType;
     public final Type nativeHeaderType;
     public final Type throwableType;
     public final Type errorType;
@@ -440,6 +441,7 @@ public class Symtab {
         throwableType = enterClass("java.lang.Throwable");
         serializableType = enterClass("java.io.Serializable");
         methodHandleType = enterClass("java.lang.invoke.MethodHandle");
+        methodTypeType = enterClass("java.lang.invoke.MethodType");
         errorType = enterClass("java.lang.Error");
         illegalArgumentExceptionType = enterClass("java.lang.IllegalArgumentException");
         interruptedExceptionType = enterClass("java.lang.InterruptedException");

@@ -25,9 +25,17 @@
 
 package com.sun.tools.javac.jvm;
 
+import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Kinds;
 import java.util.*;
 
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.Filter;
+import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Names;
 
 /** An internal structure that corresponds to the constant pool of a classfile.
  *
@@ -166,5 +174,91 @@ public class Pool {
                 v.owner.hashCode() * 9 +
                 v.type.hashCode();
         }
+    }
+
+    public static class MethodHandle {
+
+        /** Reference kind - see ClassFile */
+        int refKind;
+
+        /** Reference symbol */
+        Symbol refSym;
+
+        /** Reference to the name table */
+        Names names;
+
+        public MethodHandle(int refKind, Symbol refSym, Names names) {
+            this.refKind = refKind;
+            this.refSym = refSym;
+            this.names = names;
+            checkConsistent();
+        }
+        public boolean equals(Object other) {
+            if (!(other instanceof MethodHandle)) return false;
+            MethodHandle mr = (MethodHandle) other;
+            if (mr.refKind != refKind)  return false;
+            Symbol o = mr.refSym;
+            return
+                o.name == refSym.name &&
+                o.owner == refSym.owner &&
+                o.type.equals(refSym.type);
+        }
+        public int hashCode() {
+            return
+                refKind * 65 +
+                refSym.name.hashCode() * 33 +
+                refSym.owner.hashCode() * 9 +
+                refSym.type.hashCode();
+        }
+
+        /**
+         * Check consistency of reference kind and symbol (see JVMS 4.4.8)
+         */
+        @SuppressWarnings("fallthrough")
+        private void checkConsistent() {
+            boolean staticOk = false;
+            int expectedKind = -1;
+            Filter<Name> nameFilter = nonInitFilter;
+            boolean interfaceOwner = false;
+            switch (refKind) {
+                case ClassFile.REF_getStatic:
+                case ClassFile.REF_putStatic:
+                    staticOk = true;
+                case ClassFile.REF_getField:
+                case ClassFile.REF_putField:
+                    expectedKind = Kinds.VAR;
+                    break;
+                case ClassFile.REF_newInvokeSpecial:
+                    nameFilter = initFilter;
+                    expectedKind = Kinds.MTH;
+                    break;
+                case ClassFile.REF_invokeInterface:
+                    interfaceOwner = true;
+                    expectedKind = Kinds.MTH;
+                    break;
+                case ClassFile.REF_invokeStatic:
+                    staticOk = true;
+                case ClassFile.REF_invokeVirtual:
+                case ClassFile.REF_invokeSpecial:
+                    expectedKind = Kinds.MTH;
+                    break;
+            }
+            Assert.check(!refSym.isStatic() || staticOk);
+            Assert.check(refSym.kind == expectedKind);
+            Assert.check(nameFilter.accepts(refSym.name));
+            Assert.check(!refSym.owner.isInterface() || interfaceOwner);
+        }
+        //where
+                Filter<Name> nonInitFilter = new Filter<Name>() {
+                    public boolean accepts(Name n) {
+                        return n != names.init && n != names.clinit;
+                    }
+                };
+
+                Filter<Name> initFilter = new Filter<Name>() {
+                    public boolean accepts(Name n) {
+                        return n == names.init;
+                    }
+                };
     }
 }
