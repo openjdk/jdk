@@ -556,10 +556,8 @@ public:
   void set_method(Method* method) { _method = method; }
 
   // GC support
-  void do_unloading(BoolObjectClosure* is_alive, OopClosure* keep_alive,
-                    bool unloading_occurred);
-  bool can_unload(BoolObjectClosure* is_alive, OopClosure* keep_alive,
-                  oop* root, bool unloading_occurred);
+  void do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred);
+  bool can_unload(BoolObjectClosure* is_alive, oop* root, bool unloading_occurred);
 
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map,
                                      OopClosure* f);
