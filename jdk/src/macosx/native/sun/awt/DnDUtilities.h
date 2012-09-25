@@ -42,16 +42,12 @@
 + (jint)narrowJavaDropActions:(jint)actions;
 
 // Mouse and key modifiers mapping:
-+ (NSUInteger)mapJavaExtModifiersToNSKeyModifiers:(jint)modifiers;
 + (NSUInteger)mapJavaExtModifiersToNSMouseDownButtons:(jint)modifiers;
 + (NSUInteger)mapJavaExtModifiersToNSMouseUpButtons:(jint)modifiers;
 
 // Specialized key and mouse modifiers mapping (for operationChanged)
 + (jint)extractJavaExtKeyModifiersFromJavaExtModifiers:(jint)modifiers;
 + (jint)extractJavaExtMouseModifiersFromJavaExtModifiers:(jint)modifiers;
-
-// Get the current keyboard modifier keys as java modifiers (for operationChanged)
-+ (jint)currentJavaExtKeyModifiers;
 
 // Getting the state of the current Drag
 + (NSDragOperation)nsDragOperationForModifiers:(NSUInteger)modifiers;
