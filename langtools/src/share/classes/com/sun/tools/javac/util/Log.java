@@ -301,6 +301,10 @@ public class Log extends AbstractLog {
         this.errWriter = other.errWriter;
     }
 
+    public void setSourceMap(Log other) {
+        this.sourceMap = other.sourceMap;
+    }
+
     /** Flush the logs
      */
     public void flush() {

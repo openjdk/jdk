@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,7 +277,7 @@ public interface ByteCodes {
 
     /** Shift and mask constants for shifting prefix instructions.
      *  a pair of instruction codes such as LCMP ; IFEQ is encoded
-     *  in Symtab as (LCMP << preShift) + IFEQ.
+     *  in Symtab as {@literal (LCMP << preShift) + IFEQ }.
      */
     int preShift        = 9;
     int preMask         = (1 << preShift) - 1;
