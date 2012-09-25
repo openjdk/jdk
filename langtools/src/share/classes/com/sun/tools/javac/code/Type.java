@@ -30,6 +30,10 @@ import java.util.Collections;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.Symbol.*;
 
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
 import javax.lang.model.type.*;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -1168,22 +1172,55 @@ public class Type implements PrimitiveType {
         }
     }
 
-    /** A class for instantiatable variables, for use during type
-     *  inference.
+    /** A class for inference variables, for use during method/diamond type
+     *  inference. An inference variable has upper/lower bounds and a set
+     *  of equality constraints. Such bounds are set during subtyping, type-containment,
+     *  type-equality checks, when the types being tested contain inference variables.
+     *  A change listener can be attached to an inference variable, to receive notifications
+     *  whenever the bounds of an inference variable change.
      */
     public static class UndetVar extends DelegatedType {
-        public List<Type> lobounds = List.nil();
-        public List<Type> hibounds = List.nil();
-        public List<Type> eq = List.nil();
+
+        /** Inference variable change listener. The listener method is called
+         *  whenever a change to the inference variable's bounds occurs
+         */
+        public interface UndetVarListener {
+            /** called when some inference variable bounds (of given kinds ibs) change */
+            void varChanged(UndetVar uv, Set<InferenceBound> ibs);
+        }
+
+        /**
+         * Inference variable bound kinds
+         */
+        public enum InferenceBound {
+            /** upper bounds */
+            UPPER,
+            /** lower bounds */
+            LOWER,
+            /** equality constraints */
+            EQ;
+        }
+
+        /** inference variable bounds */
+        private Map<InferenceBound, List<Type>> bounds;
+
+        /** inference variable's inferred type (set from Infer.java) */
         public Type inst = null;
+
+        /** inference variable's change listener */
+        public UndetVarListener listener = null;
 
         @Override
         public <R,S> R accept(Type.Visitor<R,S> v, S s) {
             return v.visitUndetVar(this, s);
         }
 
-        public UndetVar(Type origin) {
+        public UndetVar(TypeVar origin, Types types) {
             super(UNDETVAR, origin);
+            bounds = new EnumMap<InferenceBound, List<Type>>(InferenceBound.class);
+            bounds.put(InferenceBound.UPPER, types.getBounds(origin));
+            bounds.put(InferenceBound.LOWER, List.<Type>nil());
+            bounds.put(InferenceBound.EQ, List.<Type>nil());
         }
 
         public String toString() {
@@ -1194,6 +1231,48 @@ public class Type implements PrimitiveType {
         public Type baseType() {
             if (inst != null) return inst.baseType();
             else return this;
+        }
+
+        /** get all bounds of a given kind */
+        public List<Type> getBounds(InferenceBound ib) {
+            return bounds.get(ib);
+        }
+
+        /** add a bound of a given kind - this might trigger listener notification */
+        public void addBound(InferenceBound ib, Type bound, Types types) {
+            List<Type> prevBounds = bounds.get(ib);
+            for (Type b : prevBounds) {
+                if (types.isSameType(b, bound)) {
+                    return;
+                }
+            }
+            bounds.put(ib, prevBounds.prepend(bound));
+            notifyChange(EnumSet.of(ib));
+        }
+
+        /** replace types in all bounds - this might trigger listener notification */
+        public void substBounds(List<Type> from, List<Type> to, Types types) {
+            EnumSet<InferenceBound> changed = EnumSet.noneOf(InferenceBound.class);
+            Map<InferenceBound, List<Type>> bounds2 = new EnumMap<InferenceBound, List<Type>>(InferenceBound.class);
+            for (Map.Entry<InferenceBound, List<Type>> _entry : bounds.entrySet()) {
+                InferenceBound ib = _entry.getKey();
+                List<Type> prevBounds = _entry.getValue();
+                List<Type> newBounds = types.subst(prevBounds, from, to);
+                bounds2.put(ib, newBounds);
+                if (prevBounds != newBounds) {
+                    changed.add(ib);
+                }
+            }
+            if (!changed.isEmpty()) {
+                bounds = bounds2;
+                notifyChange(changed);
+            }
+        }
+
+        private void notifyChange(EnumSet<InferenceBound> ibs) {
+            if (listener != null) {
+                listener.varChanged(this, ibs);
+            }
         }
     }
 
