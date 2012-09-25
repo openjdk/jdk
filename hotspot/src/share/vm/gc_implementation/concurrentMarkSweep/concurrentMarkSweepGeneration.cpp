@@ -5954,9 +5954,7 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
       bool purged_class = SystemDictionary::do_unloading(&_is_alive_closure);
 
       // Follow CodeCache roots and unload any methods marked for unloading
-      CodeCache::do_unloading(&_is_alive_closure,
-                              &cmsKeepAliveClosure,
-                              purged_class);
+      CodeCache::do_unloading(&_is_alive_closure, purged_class);
 
       cmsDrainMarkingStackClosure.do_void();
       verify_work_stacks_empty();
