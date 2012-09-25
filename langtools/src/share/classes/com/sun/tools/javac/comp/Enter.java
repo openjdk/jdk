@@ -77,12 +77,12 @@ import static com.sun.tools.javac.code.Kinds.*;
  *
  *  <p>Classes migrate from one phase to the next via queues:
  *
- *  <pre>
+ *  <pre>{@literal
  *  class enter -> (Enter.uncompleted)         --> member enter (1)
  *              -> (MemberEnter.halfcompleted) --> member enter (2)
  *              -> (Todo)                      --> attribute
  *                                              (only for toplevel classes)
- *  </pre>
+ *  }</pre>
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

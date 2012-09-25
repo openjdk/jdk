@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,12 +79,12 @@ public class Position {
     }
 
     /** Encode line and column numbers in an integer as:
-     *  line-number << LINESHIFT + column-number
-     *  {@link Position.NOPOS represents an undefined position.
+     *  {@code line-number << LINESHIFT + column-number }.
+     *  {@link Position.NOPOS} represents an undefined position.
      *
      * @param  line  number of line (first is 1)
      * @param  col   number of character on line (first is 1)
-     * @return       an encoded position or {@link Position.NOPOS
+     * @return       an encoded position or {@link Position.NOPOS}
      *               if the line or column number is too big to
      *               represent in the encoded format
      * @throws IllegalArgumentException if line or col is less than 1
@@ -107,8 +107,8 @@ public class Position {
          * @param line number of line (first is 1)
          * @return     position of first character in line
          * @throws  ArrayIndexOutOfBoundsException
-         *           if <tt>lineNumber < 1</tt>
-         *           if <tt>lineNumber > no. of lines</tt>
+         *           if {@code lineNumber < 1}
+         *           if {@code lineNumber > no. of lines}
          */
         int getStartPosition(int line);
 
@@ -119,8 +119,8 @@ public class Position {
          *
          * @return  position of character
          * @throws  ArrayIndexOutOfBoundsException
-         *           if <tt>line < 1</tt>
-         *           if <tt>line > no. of lines</tt>
+         *           if {@code line < 1}
+         *           if {@code line > no. of lines}
          */
         int getPosition(int line, int column);
 
