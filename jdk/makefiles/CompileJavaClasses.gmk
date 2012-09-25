@@ -45,10 +45,6 @@ EXCLUDES +=	com/sun/pept \
 		com/sun/tools/example/debug/gui \
 		com/oracle/security
 
-ifeq ($(OPENJDK_TARGET_OS)-$(ARCH_DATA_MODEL),windows-64)
-     EXCLUDES += sun/security/pkcs11
-endif
-
 ifdef OPENJDK
     EXCLUDES+=	sun/dc \
 		com/sun/jmx/snmp \
@@ -59,6 +55,13 @@ endif
 ifndef OPENJDK
    # There exists two versions of this file...
    EXFILES := $(JDK_TOPDIR)/src/share/classes/javax/crypto/JarVerifier.java
+
+   ifeq ($(OPENJDK_TARGET_OS),windows)
+      # This gets built on unix platforms implicitly in the old build even though
+      # it's excluded in the closed build.
+      EXCLUDES+=sun/java2d/pisces
+   endif
+
 endif
 
 ifneq ($(OPENJDK_TARGET_OS),solaris)
@@ -90,12 +93,14 @@ ifneq ($(OPENJDK_TARGET_OS),windows)
     # Exclude Window security related files in src/share/classes
     EXFILES+=NTLoginModule.java \
              NTSystem.java
-
+else
+    EXFILES+=UnixLoginModule.java \
+	     UnixSystem.java
 endif
 
 ifeq ($(OPENJDK_TARGET_OS),windows)
     # Don't build GTK L&F on Windows
-    EXCLUDES+=	com/sun/java/swing/plaf/gtk
+    EXCLUDES+=com/sun/java/swing/plaf/gtk
 endif
 
 ifneq ($(OPENJDK_TARGET_OS),linux)
@@ -115,6 +120,9 @@ ifneq ($(OPENJDK_TARGET_OS),macosx)
 	     sun/nio/fs/BsdFileSystem.java \
              sun/nio/fs/BsdFileSystemProvider.java \
              sun/nio/fs/BsdNativeDispatcher.java \
+             sun/nio/fs/MacOSXFileSystemProvider.java \
+             sun/nio/fs/MacOSXFileSystem.java \
+             sun/nio/fs/MacOSXNativeDispatcher.java \
              sun/tools/attach/BsdAttachProvider.java \
              sun/tools/attach/BsdVirtualMachine.java
 endif
@@ -122,7 +130,7 @@ endif
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
 EXFILES+=sun/text/resources/BreakIteratorRules.java \
-	sun/text/resources/BreakIteratorRules_th.java
+	 sun/text/resources/BreakIteratorRules_th.java
 
 # TODO: Add BUILD_HEADLESS_ONLY to configure?
 ifdef BUILD_HEADLESS_ONLY
@@ -245,7 +253,7 @@ include CopyIntoClasses.gmk
 
 ifndef OPENJDK
     CLOSED_SRC_DIRS:=$(JDK_TOPDIR)/src/closed/share/classes \
-		     $(JDK_TOPDIR)/src/closed/$(LEGACY_OPENJDK_TARGET_OS_API)/classes
+		     $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS_API_DIR)/classes
 endif
 
 MACOSX_SRC_DIRS :=
@@ -257,7 +265,8 @@ ifeq ($(OPENJDK_TARGET_OS),macosx)
                $(JDK_TOPDIR)/src/solaris/classes/sun/java2d/BackBufferCapsProvider.java \
                $(JDK_TOPDIR)/src/solaris/classes/java/net/DefaultInterface.java \
                $(JDK_TOPDIR)/src/solaris/classes/java/lang/ClassLoaderHelper.java \
-               $(JDK_TOPDIR)/src/solaris/classes/sun/util/locale/provider/HostLocaleProviderAdapterImpl.java
+               $(JDK_TOPDIR)/src/solaris/classes/sun/util/locale/provider/HostLocaleProviderAdapterImpl.java \
+               $(JDK_TOPDIR)/src/solaris/classes/sun/nio/fs/GnomeFileTypeDetector.java
 
      # JObjC.jar contains 1.5 byte-code...so skip it here :-(
      # MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/native/jobjc/src
@@ -273,14 +282,21 @@ $(JDK_OUTPUTDIR)/classes/javax/swing/beaninfo/images/%.gif: $(JDK_TOPDIR)/make/t
 	$(MKDIR) -p $(@D)
 	$(CP) $< $@
 
+# The JDK_USER_DEFINED_FILTER is a poor man's incremental build: by specifying
+# JDK_FILTER at the make command line, only a subset of the JDK java files will
+# be recompiled. If multiple paths are separated by comma, convert that into a
+# space separated list.
+JDK_USER_DEFINED_FILTER:=$(strip $(subst $(COMMA),$(SPACE),$(JDK_FILTER)))
+
 $(eval $(call SetupJavaCompilation,BUILD_JDK,\
                 SETUP:=GENERATE_JDKBYTECODE,\
 		SRC:=$(JDK_TOPDIR)/src/share/classes \
-		     $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes \
+		     $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
 		     $(MACOSX_SRC_DIRS) \
 		     $(JDK_OUTPUTDIR)/gensrc \
 		     $(JDK_OUTPUTDIR)/gensrc_swing/javax/swing/beaninfo \
 		     $(CLOSED_SRC_DIRS),\
+		INCLUDES:=$(JDK_USER_DEFINED_FILTER),\
 		EXCLUDES:=$(EXCLUDES),\
 		EXCLUDE_FILES:=$(EXFILES),\
 		BIN:=$(JDK_OUTPUTDIR)/classes,\
@@ -360,13 +376,12 @@ ifeq ($(OPENJDK_TARGET_OS),macosx)
 $(eval $(call SetupJavaCompiler,GENERATE_15BYTECODE,\
      JAVAC:=$(JAVAC),\
      FLAGS:=-source 1.5 -target 1.5 -g -bootclasspath $(BOOT_RTJAR) -cp $(JDK_OUTPUTDIR)/../langtools/dist/lib/classes.jar $(DISABLE_WARNINGS),\
-     SERVER_DIR:=$(JAVAC_SERVERS),\
-     SERVER_JVM:=$(SERVER_JAVA),\
-     MODE:=$(JAVAC_USE_MODE),\
-     USE_DEPS:=$(JAVAC_USE_DEPS)))
+     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
+     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
 $(eval $(call SetupJavaCompilation,BUILD_JOBJC_JAR,\
 		SETUP:=GENERATE_15BYTECODE,\
+		DISABLE_SJAVAC:=true,\
 		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
 		     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
 		     $(JDK_OUTPUTDIR)/gensrc, \

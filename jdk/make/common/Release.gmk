@@ -750,10 +750,6 @@ $(RT_JAR): $(RT_JAR_FILELIST) $(RT_JAR_MANIFEST_FILE)
 
 BUILDMETAINDEX_JARFILE = $(ABS_BUILDTOOLJARDIR)/buildmetaindex.jar
 
-# SE-Embedded targets if enabled
-include $(JDK_TOPDIR)/make/common/Release-embedded.gmk
-
-
 ######################################################
 # JRE Image
 ######################################################

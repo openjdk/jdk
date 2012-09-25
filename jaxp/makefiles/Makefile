@@ -40,11 +40,9 @@ DISABLE_JAXP_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-seria
 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG,\
      JVM:=$(JAVA),\
      JAVAC:=$(JAVAC_JARS),\
-     FLAGS:=-Xprefer:source -XDignore.symbol.file=true $(DISABLE_JAXP_WARNINGS) -g,\
-     SERVER_DIR:=$(JAVAC_SERVERS),\
-     SERVER_JVM:=$(SERVER_JAVA),\
-     MODE:=$(JAVAC_USE_MODE),\
-     USE_DEPS:=$(JAVAC_USE_DEPS)))
+     FLAGS:=-XDignore.symbol.file=true $(DISABLE_JAXP_WARNINGS) -g,\
+     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
+     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
 $(eval $(call SetupJavaCompilation,BUILD_JAXP,\
 		SETUP:=GENERATE_NEWBYTECODE_DEBUG,\

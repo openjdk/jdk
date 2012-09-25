@@ -40,12 +40,9 @@ DISABLE_JAXWS_WARNINGS:=-Xlint:all,-varargs,-rawtypes,-deprecation,-unchecked,-s
 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG,\
      JVM:=$(JAVA),\
      JAVAC:=$(JAVAC_JARS),\
-     FLAGS:=-Xprefer:source -XDignore.symbol.file=true -cp $(BOOT_JDK)/lib/tools.jar \
-		$(DISABLE_JAXWS_WARNINGS) -g,\
-     SERVER_DIR:=$(JAVAC_SERVERS),\
-     SERVER_JVM:=$(SERVER_JAVA),\
-     MODE:=$(JAVAC_USE_MODE),\
-     USE_DEPS:=$(JAVAC_USE_DEPS)))
+     FLAGS:=-XDignore.symbol.file=true $(DISABLE_JAXWS_WARNINGS) -g,\
+     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
+     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
 # Dummy here is needed to trigger copying of META-INF
 $(eval $(call SetupJavaCompilation,BUILD_JAF,\
