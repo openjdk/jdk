@@ -262,11 +262,7 @@ public class TagletManager {
                 urls[count++] = url;
             }
         }
-        if (urls.length != count) {
-            URL[] tmp = new URL[count];
-            System.arraycopy(urls, 0, tmp, 0, count);
-            urls = tmp;
-        }
+        urls = Arrays.copyOf(urls, count);
         return urls;
     }
 
