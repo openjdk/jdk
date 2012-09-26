@@ -168,6 +168,10 @@ public abstract class Symbol implements Element {
         return owner;
     }
 
+    public Symbol baseSymbol() {
+        return this;
+    }
+
     /** The symbol's erased type.
      */
     public Type erasure(Types types) {

@@ -1972,10 +1972,12 @@ public class Resolve {
                 steps = steps.tail;
             }
             if (sym.kind >= AMBIGUOUS) {
-                final JCDiagnostic details = sym.kind == WRONG_MTH ?
-                                currentResolutionContext.candidates.head.details :
+                Symbol errSym =
+                        currentResolutionContext.resolutionCache.get(currentResolutionContext.firstErroneousResolutionPhase());
+                final JCDiagnostic details = errSym.kind == WRONG_MTH ?
+                                ((InapplicableSymbolError)errSym).errCandidate().details :
                                 null;
-                Symbol errSym = new ResolveError(WRONG_MTH, "diamond error") {
+                errSym = new InapplicableSymbolError(errSym.kind, "diamondError") {
                     @Override
                     JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
                             Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
@@ -2015,16 +2017,23 @@ public class Resolve {
         for (Scope.Entry e = site.tsym.members().lookup(names.init);
              e.scope != null;
              e = e.next()) {
+            final Symbol sym = e.sym;
             //- System.out.println(" e " + e.sym);
-            if (e.sym.kind == MTH &&
-                (e.sym.flags_field & SYNTHETIC) == 0) {
+            if (sym.kind == MTH &&
+                (sym.flags_field & SYNTHETIC) == 0) {
                     List<Type> oldParams = e.sym.type.tag == FORALL ?
-                            ((ForAll)e.sym.type).tvars :
+                            ((ForAll)sym.type).tvars :
                             List.<Type>nil();
                     Type constrType = new ForAll(site.tsym.type.getTypeArguments().appendList(oldParams),
-                            types.createMethodTypeWithReturn(e.sym.type.asMethodType(), site));
+                            types.createMethodTypeWithReturn(sym.type.asMethodType(), site));
+                    MethodSymbol newConstr = new MethodSymbol(sym.flags(), names.init, constrType, site.tsym) {
+                        @Override
+                        public Symbol baseSymbol() {
+                            return sym;
+                        }
+                    };
                     bestSoFar = selectBest(env, site, argtypes, typeargtypes,
-                            new MethodSymbol(e.sym.flags(), names.init, constrType, site.tsym),
+                            newConstr,
                             bestSoFar,
                             allowBoxing,
                             useVarargs,

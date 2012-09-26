@@ -1730,39 +1730,16 @@ public class Attr extends JCTree.Visitor {
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
 
         if (TreeInfo.isDiamond(tree) && !clazztype.isErroneous()) {
-            clazztype = attribDiamond(localEnv, tree, clazztype, argtypes, typeargtypes);
-            clazz.type = clazztype;
-        } else if (allowDiamondFinder &&
-                tree.def == null &&
-                !clazztype.isErroneous() &&
-                clazztype.getTypeArguments().nonEmpty() &&
-                findDiamonds) {
-            boolean prevDeferDiags = log.deferDiagnostics;
-            Queue<JCDiagnostic> prevDeferredDiags = log.deferredDiagnostics;
-            Type inferred = null;
-            try {
-                //disable diamond-related diagnostics
-                log.deferDiagnostics = true;
-                log.deferredDiagnostics = ListBuffer.lb();
-                inferred = attribDiamond(localEnv,
-                        tree,
-                        clazztype,
-                        argtypes,
-                        typeargtypes);
+            Pair<Symbol, Type> diamondResult =
+                    attribDiamond(localEnv, tree, clazztype, argtypes, typeargtypes);
+            tree.clazz.type = types.createErrorType(clazztype);
+            tree.constructor = diamondResult.fst;
+            tree.constructorType = diamondResult.snd;
+            if (!diamondResult.snd.isErroneous()) {
+                tree.clazz.type = clazztype = diamondResult.snd.getReturnType();
+                tree.constructorType = types.createMethodTypeWithReturn(diamondResult.snd, syms.voidType);
             }
-            finally {
-                log.deferDiagnostics = prevDeferDiags;
-                log.deferredDiagnostics = prevDeferredDiags;
-            }
-            if (inferred != null &&
-                    !inferred.isErroneous() &&
-                    inferred.tag == CLASS &&
-                    types.isAssignable(inferred, pt().tag == NONE ? clazztype : pt(), Warner.noWarnings)) {
-                String key = types.isSameType(clazztype, inferred) ?
-                    "diamond.redundant.args" :
-                    "diamond.redundant.args.1";
-                log.warning(tree.clazz.pos(), key, clazztype, inferred);
-            }
+            clazztype = chk.checkClassType(tree.clazz, tree.clazz.type, true);
         }
 
         // If we have made no mistakes in the class type...
@@ -1796,7 +1773,7 @@ public class Attr extends JCTree.Visitor {
             // Resolve the called constructor under the assumption
             // that we are referring to a superclass instance of the
             // current instance (JLS ???).
-            else {
+            else if (!TreeInfo.isDiamond(tree)) {
                 //the following code alters some of the fields in the current
                 //AttrContext - hence, the current context must be dup'ed in
                 //order to avoid downstream failures
@@ -1805,17 +1782,47 @@ public class Attr extends JCTree.Visitor {
                 rsEnv.info.varArgs = false;
                 tree.constructor = rs.resolveConstructor(
                     tree.pos(), rsEnv, clazztype, argtypes, typeargtypes);
-                tree.constructorType = tree.constructor.type.isErroneous() ?
-                    syms.errType :
-                    checkConstructor(clazztype,
-                        tree.constructor,
-                        rsEnv,
-                        tree.args,
-                        argtypes,
-                        typeargtypes,
-                        rsEnv.info.varArgs);
-                if (rsEnv.info.varArgs)
-                    Assert.check(tree.constructorType.isErroneous() || tree.varargsElement != null);
+                if (cdef == null) { //do not check twice!
+                    tree.constructorType = checkId(tree,
+                            clazztype,
+                            tree.constructor,
+                            rsEnv,
+                            new ResultInfo(MTH, newMethodTemplate(syms.voidType, argtypes, typeargtypes)),
+                            rsEnv.info.varArgs);
+                    if (rsEnv.info.varArgs)
+                        Assert.check(tree.constructorType.isErroneous() || tree.varargsElement != null);
+                }
+                if (tree.def == null &&
+                        !clazztype.isErroneous() &&
+                        clazztype.getTypeArguments().nonEmpty() &&
+                        findDiamonds) {
+                    boolean prevDeferDiags = log.deferDiagnostics;
+                    Queue<JCDiagnostic> prevDeferredDiags = log.deferredDiagnostics;
+                    Type inferred = null;
+                    try {
+                        //disable diamond-related diagnostics
+                        log.deferDiagnostics = true;
+                        log.deferredDiagnostics = ListBuffer.lb();
+                        inferred = attribDiamond(localEnv,
+                                tree,
+                                clazztype,
+                                argtypes,
+                                typeargtypes).snd;
+                    } finally {
+                        log.deferDiagnostics = prevDeferDiags;
+                        log.deferredDiagnostics = prevDeferredDiags;
+                    }
+                    if (!inferred.isErroneous()) {
+                        inferred = inferred.getReturnType();
+                    }
+                    if (inferred != null &&
+                            types.isAssignable(inferred, pt().tag == NONE ? syms.objectType : pt(), Warner.noWarnings)) {
+                        String key = types.isSameType(clazztype, inferred) ?
+                            "diamond.redundant.args" :
+                            "diamond.redundant.args.1";
+                        log.warning(tree.clazz.pos(), key, clazztype, inferred);
+                    }
+                }
             }
 
             if (cdef != null) {
@@ -1872,24 +1879,16 @@ public class Attr extends JCTree.Visitor {
 
                 // Reassign clazztype and recompute constructor.
                 clazztype = cdef.sym.type;
-                boolean useVarargs = tree.varargsElement != null;
-                Symbol sym = rs.resolveConstructor(
-                    tree.pos(), localEnv, clazztype, argtypes,
-                    typeargtypes, true, useVarargs);
-                Assert.check(sym.kind < AMBIGUOUS || tree.constructor.type.isErroneous());
+                Symbol sym = tree.constructor = rs.resolveConstructor(
+                    tree.pos(), localEnv, clazztype, argtypes, typeargtypes);
+                Assert.check(sym.kind < AMBIGUOUS);
                 tree.constructor = sym;
-                if (tree.constructor.kind > ERRONEOUS) {
-                    tree.constructorType =  syms.errType;
-                }
-                else {
-                    tree.constructorType = checkConstructor(clazztype,
-                            tree.constructor,
-                            localEnv,
-                            tree.args,
-                            argtypes,
-                            typeargtypes,
-                            useVarargs);
-                }
+                tree.constructorType = checkId(tree,
+                    clazztype,
+                    tree.constructor,
+                    localEnv,
+                    new ResultInfo(VAL, newMethodTemplate(syms.voidType, argtypes, typeargtypes)),
+                    localEnv.info.varArgs);
             }
 
             if (tree.constructor != null && tree.constructor.kind == MTH)
@@ -1899,7 +1898,7 @@ public class Attr extends JCTree.Visitor {
         chk.validate(tree.typeargs, localEnv);
     }
 
-    Type attribDiamond(Env<AttrContext> env,
+    Pair<Symbol, Type> attribDiamond(Env<AttrContext> env,
                         final JCNewClass tree,
                         final Type clazztype,
                         List<Type> argtypes,
@@ -1909,7 +1908,7 @@ public class Attr extends JCTree.Visitor {
             //if the type of the instance creation expression is erroneous,
             //or if it's an interface, or if something prevented us to form a valid
             //mapping, return the (possibly erroneous) type unchanged
-            return clazztype;
+            return new Pair<Symbol, Type>(syms.noSymbol, clazztype);
         }
 
         //dup attribution environment and augment the set of inference variables
@@ -1928,26 +1927,21 @@ public class Attr extends JCTree.Visitor {
                     argtypes,
                     typeargtypes);
 
-        Type owntype = types.createErrorType(clazztype);
-        if (constructor.kind == MTH) {
-            ResultInfo diamondResult = new ResultInfo(VAL, resultInfo.pt, new Check.NestedCheckContext(resultInfo.checkContext) {
-                @Override
-                public void report(DiagnosticPosition pos, JCDiagnostic details) {
-                    enclosingContext.report(tree.clazz.pos(),
-                            diags.fragment("cant.apply.diamond.1", diags.fragment("diamond", clazztype.tsym), details));
-                }
-            });
-            owntype = checkMethod(site,
-                    constructor,
-                    diamondResult,
-                    localEnv,
-                    tree.args,
-                    argtypes,
-                    typeargtypes,
-                    localEnv.info.varArgs).getReturnType();
-        }
+        Type constructorType = types.createErrorType(clazztype);
+        ResultInfo diamondResult = new ResultInfo(MTH, newMethodTemplate(resultInfo.pt, argtypes, typeargtypes), new Check.NestedCheckContext(resultInfo.checkContext) {
+            @Override
+            public void report(DiagnosticPosition _unused, JCDiagnostic details) {
+                enclosingContext.report(tree.clazz,
+                        diags.fragment("cant.apply.diamond.1", diags.fragment("diamond", clazztype.tsym), details));
+            }
+        });
+        constructorType = checkId(tree, site,
+                constructor,
+                localEnv,
+                diamondResult,
+                localEnv.info.varArgs);
 
-        return chk.checkClassType(tree.clazz.pos(), owntype, true);
+        return new Pair<Symbol, Type>(constructor.baseSymbol(), constructorType);
     }
 
     /** Make an attributed null check tree.
@@ -2563,10 +2557,9 @@ public class Attr extends JCTree.Visitor {
                 }
                 break;
             case MTH: {
-                JCMethodInvocation app = (JCMethodInvocation)env.tree;
                 owntype = checkMethod(site, sym,
                         new ResultInfo(VAL, resultInfo.pt.getReturnType(), resultInfo.checkContext),
-                        env, app.args, resultInfo.pt.getParameterTypes(),
+                        env, TreeInfo.args(env.tree), resultInfo.pt.getParameterTypes(),
                         resultInfo.pt.getTypeArguments(), env.info.varArgs);
                 break;
             }
@@ -2755,21 +2748,6 @@ public class Attr extends JCTree.Visitor {
             Assert.error();
             return null;
         }
-    }
-
-    /**
-     * Check that constructor arguments conform to its instantiation.
-     **/
-    public Type checkConstructor(Type site,
-                            Symbol sym,
-                            Env<AttrContext> env,
-                            final List<JCExpression> argtrees,
-                            List<Type> argtypes,
-                            List<Type> typeargtypes,
-                            boolean useVarargs) {
-        Type owntype = checkMethod(site, sym, new ResultInfo(VAL, syms.voidType), env, argtrees, argtypes, typeargtypes, useVarargs);
-        chk.checkType(env.tree.pos(), owntype.getReturnType(), syms.voidType);
-        return owntype;
     }
 
     public void visitLiteral(JCLiteral tree) {
