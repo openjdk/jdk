@@ -970,9 +970,11 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 List<Type> thrown = List.nil();
                 long ctorFlags = 0;
                 boolean based = false;
+                boolean addConstructor = true;
                 if (c.name.isEmpty()) {
                     JCNewClass nc = (JCNewClass)env.next.tree;
                     if (nc.constructor != null) {
+                        addConstructor = nc.constructor.kind != ERR;
                         Type superConstrType = types.memberType(c.type,
                                                                 nc.constructor);
                         argtypes = superConstrType.getParameterTypes();
@@ -985,10 +987,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                         thrown = superConstrType.getThrownTypes();
                     }
                 }
-                JCTree constrDef = DefaultConstructor(make.at(tree.pos), c,
-                                                    typarams, argtypes, thrown,
-                                                    ctorFlags, based);
-                tree.defs = tree.defs.prepend(constrDef);
+                if (addConstructor) {
+                    JCTree constrDef = DefaultConstructor(make.at(tree.pos), c,
+                                                        typarams, argtypes, thrown,
+                                                        ctorFlags, based);
+                    tree.defs = tree.defs.prepend(constrDef);
+                }
             }
 
             // If this is a class, enter symbols for this and super into
