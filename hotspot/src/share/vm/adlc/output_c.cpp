@@ -1773,7 +1773,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         }
 
         fprintf(fp,"  kill = ");
-        fprintf(fp,"new (C, 1) MachProjNode( %s, %d, (%s), Op_%s );\n",
+        fprintf(fp,"new (C) MachProjNode( %s, %d, (%s), Op_%s );\n",
                 machNode, proj_no++, regmask, ideal_type);
         fprintf(fp,"  proj_list.push(kill);\n");
       }

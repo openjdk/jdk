@@ -45,16 +45,16 @@ uint ConNode::hash() const {
 //------------------------------make-------------------------------------------
 ConNode *ConNode::make( Compile* C, const Type *t ) {
   switch( t->basic_type() ) {
-  case T_INT:       return new (C, 1) ConINode( t->is_int() );
-  case T_LONG:      return new (C, 1) ConLNode( t->is_long() );
-  case T_FLOAT:     return new (C, 1) ConFNode( t->is_float_constant() );
-  case T_DOUBLE:    return new (C, 1) ConDNode( t->is_double_constant() );
-  case T_VOID:      return new (C, 1) ConNode ( Type::TOP );
-  case T_OBJECT:    return new (C, 1) ConPNode( t->is_ptr() );
-  case T_ARRAY:     return new (C, 1) ConPNode( t->is_aryptr() );
-  case T_ADDRESS:   return new (C, 1) ConPNode( t->is_ptr() );
-  case T_NARROWOOP: return new (C, 1) ConNNode( t->is_narrowoop() );
-  case T_METADATA:  return new (C, 1) ConPNode( t->is_ptr() );
+  case T_INT:       return new (C) ConINode( t->is_int() );
+  case T_LONG:      return new (C) ConLNode( t->is_long() );
+  case T_FLOAT:     return new (C) ConFNode( t->is_float_constant() );
+  case T_DOUBLE:    return new (C) ConDNode( t->is_double_constant() );
+  case T_VOID:      return new (C) ConNode ( Type::TOP );
+  case T_OBJECT:    return new (C) ConPNode( t->is_ptr() );
+  case T_ARRAY:     return new (C) ConPNode( t->is_aryptr() );
+  case T_ADDRESS:   return new (C) ConPNode( t->is_ptr() );
+  case T_NARROWOOP: return new (C) ConNNode( t->is_narrowoop() );
+  case T_METADATA:  return new (C) ConPNode( t->is_ptr() );
     // Expected cases:  TypePtr::NULL_PTR, any is_rawptr()
     // Also seen: AnyPtr(TopPTR *+top); from command line:
     //   r -XX:+PrintOpto -XX:CIStart=285 -XX:+CompileTheWorld -XX:CompileTheWorldStartAt=660
@@ -195,13 +195,13 @@ const Type *CMoveNode::Value( PhaseTransform *phase ) const {
 // from the inputs we do not need to specify it here.
 CMoveNode *CMoveNode::make( Compile *C, Node *c, Node *bol, Node *left, Node *right, const Type *t ) {
   switch( t->basic_type() ) {
-  case T_INT:     return new (C, 4) CMoveINode( bol, left, right, t->is_int() );
-  case T_FLOAT:   return new (C, 4) CMoveFNode( bol, left, right, t );
-  case T_DOUBLE:  return new (C, 4) CMoveDNode( bol, left, right, t );
-  case T_LONG:    return new (C, 4) CMoveLNode( bol, left, right, t->is_long() );
-  case T_OBJECT:  return new (C, 4) CMovePNode( c, bol, left, right, t->is_oopptr() );
-  case T_ADDRESS: return new (C, 4) CMovePNode( c, bol, left, right, t->is_ptr() );
-  case T_NARROWOOP: return new (C, 4) CMoveNNode( c, bol, left, right, t );
+  case T_INT:     return new (C) CMoveINode( bol, left, right, t->is_int() );
+  case T_FLOAT:   return new (C) CMoveFNode( bol, left, right, t );
+  case T_DOUBLE:  return new (C) CMoveDNode( bol, left, right, t );
+  case T_LONG:    return new (C) CMoveLNode( bol, left, right, t->is_long() );
+  case T_OBJECT:  return new (C) CMovePNode( c, bol, left, right, t->is_oopptr() );
+  case T_ADDRESS: return new (C) CMovePNode( c, bol, left, right, t->is_ptr() );
+  case T_NARROWOOP: return new (C) CMoveNNode( c, bol, left, right, t );
   default:
     ShouldNotReachHere();
     return NULL;
@@ -268,9 +268,9 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #ifndef PRODUCT
   if( PrintOpto ) tty->print_cr("CMOV to I2B");
 #endif
-  Node *n = new (phase->C, 2) Conv2BNode( cmp->in(1) );
+  Node *n = new (phase->C) Conv2BNode( cmp->in(1) );
   if( flip )
-    n = new (phase->C, 3) XorINode( phase->transform(n), phase->intcon(1) );
+    n = new (phase->C) XorINode( phase->transform(n), phase->intcon(1) );
 
   return n;
 }
@@ -324,9 +324,9 @@ Node *CMoveFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       sub->in(2) != X ||
       phase->type(sub->in(1)) != TypeF::ZERO ) return NULL;
 
-  Node *abs = new (phase->C, 2) AbsFNode( X );
+  Node *abs = new (phase->C) AbsFNode( X );
   if( flip )
-    abs = new (phase->C, 3) SubFNode(sub->in(1), phase->transform(abs));
+    abs = new (phase->C) SubFNode(sub->in(1), phase->transform(abs));
 
   return abs;
 }
@@ -380,9 +380,9 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       sub->in(2) != X ||
       phase->type(sub->in(1)) != TypeD::ZERO ) return NULL;
 
-  Node *abs = new (phase->C, 2) AbsDNode( X );
+  Node *abs = new (phase->C) AbsDNode( X );
   if( flip )
-    abs = new (phase->C, 3) SubDNode(sub->in(1), phase->transform(abs));
+    abs = new (phase->C) SubDNode(sub->in(1), phase->transform(abs));
 
   return abs;
 }
@@ -961,11 +961,11 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       ryhi = -rylo0;
     }
 
-    Node* cx = phase->transform( new (phase->C, 2) ConvI2LNode(x, TypeLong::make(rxlo, rxhi, widen)) );
-    Node* cy = phase->transform( new (phase->C, 2) ConvI2LNode(y, TypeLong::make(rylo, ryhi, widen)) );
+    Node* cx = phase->transform( new (phase->C) ConvI2LNode(x, TypeLong::make(rxlo, rxhi, widen)) );
+    Node* cy = phase->transform( new (phase->C) ConvI2LNode(y, TypeLong::make(rylo, ryhi, widen)) );
     switch (op) {
-    case Op_AddI:  return new (phase->C, 3) AddLNode(cx, cy);
-    case Op_SubI:  return new (phase->C, 3) SubLNode(cx, cy);
+    case Op_AddI:  return new (phase->C) AddLNode(cx, cy);
+    case Op_SubI:  return new (phase->C) SubLNode(cx, cy);
     default:       ShouldNotReachHere();
     }
   }
@@ -1039,9 +1039,9 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
     assert( x != andl && y != andl, "dead loop in ConvL2INode::Ideal" );
     if (phase->type(x) == Type::TOP)  return NULL;
     if (phase->type(y) == Type::TOP)  return NULL;
-    Node *add1 = phase->transform(new (phase->C, 2) ConvL2INode(x));
-    Node *add2 = phase->transform(new (phase->C, 2) ConvL2INode(y));
-    return new (phase->C, 3) AddINode(add1,add2);
+    Node *add1 = phase->transform(new (phase->C) ConvL2INode(x));
+    Node *add2 = phase->transform(new (phase->C) ConvL2INode(y));
+    return new (phase->C) AddINode(add1,add2);
   }
 
   // Disable optimization: LoadL->ConvL2I ==> LoadI.
@@ -1078,10 +1078,10 @@ static inline Node* addP_of_X2P(PhaseGVN *phase,
                                 Node* dispX,
                                 bool negate = false) {
   if (negate) {
-    dispX = new (phase->C, 3) SubXNode(phase->MakeConX(0), phase->transform(dispX));
+    dispX = new (phase->C) SubXNode(phase->MakeConX(0), phase->transform(dispX));
   }
-  return new (phase->C, 4) AddPNode(phase->C->top(),
-                          phase->transform(new (phase->C, 2) CastX2PNode(base)),
+  return new (phase->C) AddPNode(phase->C->top(),
+                          phase->transform(new (phase->C) CastX2PNode(base)),
                           phase->transform(dispX));
 }
 
