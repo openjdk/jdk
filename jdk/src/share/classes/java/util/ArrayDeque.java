@@ -121,6 +121,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      *
      * @param numElements  the number of elements to hold
      */
+    @SuppressWarnings("unchecked")
     private void allocateElements(int numElements) {
         int initialCapacity = MIN_INITIAL_CAPACITY;
         // Find the best power of two to hold elements.
@@ -152,10 +153,11 @@ public class ArrayDeque<E> extends AbstractCollection<E>
         int newCapacity = n << 1;
         if (newCapacity < 0)
             throw new IllegalStateException("Sorry, deque too big");
-        Object[] a = new Object[newCapacity];
+        @SuppressWarnings("unchecked")
+        E[] a = (E[]) new Object[newCapacity];
         System.arraycopy(elements, p, a, 0, r);
         System.arraycopy(elements, 0, a, r, p);
-        elements = (E[])a;
+        elements = a;
         head = 0;
         tail = n;
     }
@@ -182,6 +184,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      * Constructs an empty array deque with an initial capacity
      * sufficient to hold 16 elements.
      */
+    @SuppressWarnings("unchecked")
     public ArrayDeque() {
         elements = (E[]) new Object[16];
     }
@@ -793,6 +796,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      *         this deque
      * @throws NullPointerException if the specified array is null
      */
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         int size = size();
         if (a.length < size)
