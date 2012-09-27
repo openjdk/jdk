@@ -42,6 +42,7 @@ import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.opto.*;
 import sun.jvm.hotspot.ci.*;
+import sun.jvm.hotspot.asm.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.soql.*;
@@ -562,6 +563,71 @@ public class CommandProcessor {
                     if (printIndex) out.print(i + " ");
                     out.println(history.get(i));
                 }
+            }
+        },
+        // decode raw address
+        new Command("dis", "dis address [length]", false) {
+            public void doit(Tokens t) {
+                int tokens = t.countTokens();
+                if (tokens != 1 && tokens != 2) {
+                    usage();
+                    return;
+                }
+                String name = t.nextToken();
+                Address addr = null;
+                int len = 0x10; // default length
+                try {
+                    addr = VM.getVM().getDebugger().parseAddress(name);
+                } catch (NumberFormatException e) {
+                   out.println(e);
+                   return;
+                }
+                if (tokens == 2) {
+                    try {
+                        len = Integer.parseInt(t.nextToken());
+                    } catch (NumberFormatException e) {
+                        out.println(e);
+                        return;
+                    }
+                }
+                HTMLGenerator generator = new HTMLGenerator(false);
+                out.println(generator.genHTMLForRawDisassembly(addr, len));
+            }
+
+        },
+        // decode codeblob or nmethod
+        new Command("disassemble", "disassemble address", false) {
+            public void doit(Tokens t) {
+                int tokens = t.countTokens();
+                if (tokens != 1) {
+                    usage();
+                    return;
+                }
+                String name = t.nextToken();
+                Address addr = null;
+                try {
+                    addr = VM.getVM().getDebugger().parseAddress(name);
+                } catch (NumberFormatException e) {
+                   out.println(e);
+                   return;
+                }
+
+                HTMLGenerator generator = new HTMLGenerator(false);
+                out.println(generator.genHTML(addr));
+            }
+        },
+        // print Java bytecode disassembly
+        new Command("jdis", "jdis address", false) {
+            public void doit(Tokens t) {
+                int tokens = t.countTokens();
+                if (tokens != 1) {
+                    usage();
+                    return;
+                }
+                Address a = VM.getVM().getDebugger().parseAddress(t.nextToken());
+                Method m = (Method)Metadata.instantiateWrapperFor(a);
+                HTMLGenerator html = new HTMLGenerator(false);
+                out.println(html.genHTML(m));
             }
         },
         new Command("revptrs", "revptrs address", false) {

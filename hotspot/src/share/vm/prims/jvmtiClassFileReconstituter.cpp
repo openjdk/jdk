@@ -43,7 +43,7 @@
 #ifdef TARGET_ARCH_ppc
 # include "bytes_ppc.hpp"
 #endif
-// FIXME: add Deprecated, LVTT attributes
+// FIXME: add Deprecated attribute
 // FIXME: fix Synthetic attribute
 // FIXME: per Serguei, add error return handling for ConstantPool::copy_cpool_bytes()
 
@@ -135,6 +135,7 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
   u2 line_num_cnt = 0;
   int stackmap_len = 0;
   int local_variable_table_length = 0;
+  int local_variable_type_table_length = 0;
 
   // compute number and length of attributes
   int attr_count = 0;
@@ -171,8 +172,8 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
   }
   if (method->has_localvariable_table()) {
     local_variable_table_length = method->localvariable_table_length();
-    ++attr_count;
     if (local_variable_table_length != 0) {
+      ++attr_count;
       // Compute the size of the local variable table attribute (VM stores raw):
       // LocalVariableTable_attribute {
       //   u2 attribute_name_index;
@@ -186,6 +187,31 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
       //     u2 index;
       //   }
       attr_size += 2 + 4 + 2 + local_variable_table_length * (2 + 2 + 2 + 2 + 2);
+
+      // Local variables with generic signatures must have LVTT entries
+      LocalVariableTableElement *elem = method->localvariable_table_start();
+      for (int idx = 0; idx < local_variable_table_length; idx++) {
+        if (elem[idx].signature_cp_index != 0) {
+          local_variable_type_table_length++;
+        }
+      }
+
+      if (local_variable_type_table_length != 0) {
+        ++attr_count;
+        // Compute the size of the local variable type table attribute (VM stores raw):
+        // LocalVariableTypeTable_attribute {
+        //   u2 attribute_name_index;
+        //   u4 attribute_length;
+        //   u2 local_variable_type_table_length;
+        //   {
+        //     u2 start_pc;
+        //     u2 length;
+        //     u2 name_index;
+        //     u2 signature_index;
+        //     u2 index;
+        //   }
+        attr_size += 2 + 4 + 2 + local_variable_type_table_length * (2 + 2 + 2 + 2 + 2);
+      }
     }
   }
 
@@ -222,6 +248,9 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
   }
   if (local_variable_table_length != 0) {
     write_local_variable_table_attribute(method, local_variable_table_length);
+  }
+  if (local_variable_type_table_length != 0) {
+    write_local_variable_type_table_attribute(method, local_variable_type_table_length);
   }
 }
 
@@ -387,7 +416,7 @@ void JvmtiClassFileReconstituter::write_line_number_table_attribute(methodHandle
   }
 }
 
-// Write LineNumberTable attribute
+// Write LocalVariableTable attribute
 // JVMSpec|   LocalVariableTable_attribute {
 // JVMSpec|     u2 attribute_name_index;
 // JVMSpec|     u4 attribute_length;
@@ -415,6 +444,39 @@ void JvmtiClassFileReconstituter::write_local_variable_table_attribute(methodHan
       write_u2(elem->slot);
       elem++;
     }
+}
+
+// Write LocalVariableTypeTable attribute
+// JVMSpec|   LocalVariableTypeTable_attribute {
+// JVMSpec|     u2 attribute_name_index;
+// JVMSpec|     u4 attribute_length;
+// JVMSpec|     u2 local_variable_type_table_length;
+// JVMSpec|     { u2 start_pc;
+// JVMSpec|       u2 length;
+// JVMSpec|       u2 name_index;
+// JVMSpec|       u2 signature_index;
+// JVMSpec|       u2 index;
+// JVMSpec|     } local_variable_type_table[local_variable_type_table_length];
+// JVMSpec|   }
+void JvmtiClassFileReconstituter::write_local_variable_type_table_attribute(methodHandle method, u2 num_entries) {
+    write_attribute_name_index("LocalVariableTypeTable");
+    write_u4(2 + num_entries * (2 + 2 + 2 + 2 + 2));
+    write_u2(num_entries);
+
+    LocalVariableTableElement *elem = method->localvariable_table_start();
+    for (int j=0; j<method->localvariable_table_length(); j++) {
+      if (elem->signature_cp_index > 0) {
+        // Local variable has a generic signature - write LVTT attribute entry
+        write_u2(elem->start_bci);
+        write_u2(elem->length);
+        write_u2(elem->name_cp_index);
+        write_u2(elem->signature_cp_index);
+        write_u2(elem->slot);
+        num_entries--;
+      }
+      elem++;
+    }
+    assert(num_entries == 0, "just checking");
 }
 
 // Write stack map table attribute

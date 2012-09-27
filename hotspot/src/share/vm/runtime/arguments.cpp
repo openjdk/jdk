@@ -1991,6 +1991,11 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif // SPARC
 
+  if (PrintNMTStatistics && MemTracker::tracking_level() == MemTracker::NMT_off) {
+    warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
+    PrintNMTStatistics = false;
+  }
+
   return status;
 }
 

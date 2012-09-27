@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,8 @@ class Disassembler {
   friend class decode_env;
  private:
   // this is the type of the dll entry point:
-  typedef void* (*decode_func)(void* start, void* end,
+  typedef void* (*decode_func)(uintptr_t start_va, uintptr_t end_va,
+                               unsigned char* buffer, uintptr_t length,
                                void* (*event_callback)(void*, const char*, void*),
                                void* event_stream,
                                int (*printf_callback)(void*, const char*, ...),
