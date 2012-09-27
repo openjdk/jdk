@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,13 @@
    HotSpot PrintAssembly option.
 */
 
-#include "hsdis.h"
-
-#include <sysdep.h>
 #include <libiberty.h>
 #include <bfd.h>
 #include <dis-asm.h>
 #include <inttypes.h>
+#include <string.h>
+#include <errno.h>
+#include "hsdis.h"
 
 #ifndef bool
 #define bool int
@@ -47,11 +47,15 @@ typedef decode_instructions_printf_callback_ftype printf_callback_t;
 
 /* disassemble_info.application_data object */
 struct hsdis_app_data {
-  /* the arguments to decode_instructions */
-  uintptr_t start; uintptr_t end;
+  /* virtual address of data */
+  uintptr_t start_va, end_va;
+  /* the instructions to be decoded */
+  unsigned char* buffer;
+  uintptr_t length;
   event_callback_t  event_callback;  void* event_stream;
   printf_callback_t printf_callback; void* printf_stream;
   bool losing;
+  bool do_newline;
 
   /* the architecture being disassembled */
   const char* arch_name;
@@ -64,6 +68,8 @@ struct hsdis_app_data {
   char mach_option[64];
   char insn_options[256];
 };
+
+static void* decode(struct hsdis_app_data* app_data, const char* options);
 
 #define DECL_APP_DATA(dinfo) \
   struct hsdis_app_data* app_data = (struct hsdis_app_data*) (dinfo)->application_data
@@ -89,59 +95,91 @@ void*
 #ifdef DLL_ENTRY
   DLL_ENTRY
 #endif
-decode_instructions(void* start_pv, void* end_pv,
-                    event_callback_t  event_callback_arg,  void* event_stream_arg,
-                    printf_callback_t printf_callback_arg, void* printf_stream_arg,
-                    const char* options) {
+decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
+                            unsigned char* buffer, uintptr_t length,
+                            event_callback_t  event_callback_arg,  void* event_stream_arg,
+                            printf_callback_t printf_callback_arg, void* printf_stream_arg,
+                            const char* options) {
   struct hsdis_app_data app_data;
   memset(&app_data, 0, sizeof(app_data));
-  app_data.start = (uintptr_t) start_pv;
-  app_data.end   = (uintptr_t) end_pv;
+  app_data.start_va    = start_va;
+  app_data.end_va      = end_va;
+  app_data.buffer = buffer;
+  app_data.length = length;
   app_data.event_callback  = event_callback_arg;
   app_data.event_stream    = event_stream_arg;
   app_data.printf_callback = printf_callback_arg;
   app_data.printf_stream   = printf_stream_arg;
+  app_data.do_newline = false;
 
-  setup_app_data(&app_data, options);
+  return decode(&app_data, options);
+}
+
+/* This is the compatability interface for older version of hotspot */
+void*
+#ifdef DLL_ENTRY
+  DLL_ENTRY
+#endif
+decode_instructions(void* start_pv, void* end_pv,
+                    event_callback_t  event_callback_arg,  void* event_stream_arg,
+                    printf_callback_t printf_callback_arg, void* printf_stream_arg,
+                    const char* options) {
+  decode_instructions_virtual((uintptr_t)start_pv,
+                             (uintptr_t)end_pv,
+                             (unsigned char*)start_pv,
+                             (uintptr_t)end_pv - (uintptr_t)start_pv,
+                             event_callback_arg,
+                             event_stream_arg,
+                             printf_callback_arg,
+                             printf_stream_arg,
+                             options);
+}
+
+static void* decode(struct hsdis_app_data* app_data, const char* options) {
+  setup_app_data(app_data, options);
   char buf[128];
 
   {
     /* now reload everything from app_data: */
-    DECL_EVENT_CALLBACK(&app_data);
-    DECL_PRINTF_CALLBACK(&app_data);
-    uintptr_t start = app_data.start;
-    uintptr_t end   = app_data.end;
+    DECL_EVENT_CALLBACK(app_data);
+    DECL_PRINTF_CALLBACK(app_data);
+    uintptr_t start = app_data->start_va;
+    uintptr_t end   = app_data->end_va;
     uintptr_t p     = start;
 
     (*event_callback)(event_stream, "insns", (void*)start);
 
     (*event_callback)(event_stream, "mach name='%s'",
-                      (void*) app_data.arch_info->printable_name);
-    if (app_data.dinfo.bytes_per_line != 0) {
+                      (void*) app_data->arch_info->printable_name);
+    if (app_data->dinfo.bytes_per_line != 0) {
       (*event_callback)(event_stream, "format bytes-per-line='%p'/",
-                        (void*)(intptr_t) app_data.dinfo.bytes_per_line);
+                        (void*)(intptr_t) app_data->dinfo.bytes_per_line);
     }
 
-    while (p < end && !app_data.losing) {
+    while (p < end && !app_data->losing) {
       (*event_callback)(event_stream, "insn", (void*) p);
 
       /* reset certain state, so we can read it with confidence */
-      app_data.dinfo.insn_info_valid    = 0;
-      app_data.dinfo.branch_delay_insns = 0;
-      app_data.dinfo.data_size          = 0;
-      app_data.dinfo.insn_type          = 0;
+      app_data->dinfo.insn_info_valid    = 0;
+      app_data->dinfo.branch_delay_insns = 0;
+      app_data->dinfo.data_size          = 0;
+      app_data->dinfo.insn_type          = 0;
 
-      int size = (*app_data.dfn)((bfd_vma) p, &app_data.dinfo);
+      int size = (*app_data->dfn)((bfd_vma) p, &app_data->dinfo);
 
       if (size > 0)  p += size;
-      else           app_data.losing = true;
+      else           app_data->losing = true;
 
-      const char* insn_close = format_insn_close("/insn", &app_data.dinfo,
-                                                 buf, sizeof(buf));
-      (*event_callback)(event_stream, insn_close, (void*) p);
+      if (!app_data->losing) {
+        const char* insn_close = format_insn_close("/insn", &app_data->dinfo,
+                                                   buf, sizeof(buf));
+        (*event_callback)(event_stream, insn_close, (void*) p) != NULL;
 
-      /* follow each complete insn by a nice newline */
-      (*printf_callback)(printf_stream, "\n");
+        if (app_data->do_newline) {
+          /* follow each complete insn by a nice newline */
+          (*printf_callback)(printf_stream, "\n");
+        }
+      }
     }
 
     (*event_callback)(event_stream, "/insns", (void*) p);
@@ -150,7 +188,7 @@ decode_instructions(void* start_pv, void* end_pv,
 }
 
 /* take the address of the function, for luck, and also test the typedef: */
-const decode_instructions_ftype decode_instructions_address = &decode_instructions;
+const decode_instructions_ftype decode_instructions_address = &decode_instructions_virtual;
 
 static const char* format_insn_close(const char* close,
                                      disassemble_info* dinfo,
@@ -189,13 +227,14 @@ hsdis_read_memory_func(bfd_vma memaddr,
                        bfd_byte* myaddr,
                        unsigned int length,
                        struct disassemble_info* dinfo) {
-  uintptr_t memaddr_p = (uintptr_t) memaddr;
   DECL_APP_DATA(dinfo);
-  if (memaddr_p + length > app_data->end) {
+  /* convert the virtual address memaddr into an address within memory buffer */
+  uintptr_t offset = ((uintptr_t) memaddr) - app_data->start_va;
+  if (offset + length > app_data->length) {
     /* read is out of bounds */
     return EIO;
   } else {
-    memcpy(myaddr, (bfd_byte*) memaddr_p, length);
+    memcpy(myaddr, (bfd_byte*) (app_data->buffer + offset), length);
     return 0;
   }
 }
@@ -407,16 +446,16 @@ static const bfd_arch_info_type* find_arch_info(const char* arch_name) {
 static const char* native_arch_name() {
   const char* res = NULL;
 #ifdef LIBARCH_i386
-    res = "i386";
+  res = "i386";
 #endif
 #ifdef LIBARCH_amd64
-    res = "i386:x86-64";
+  res = "i386:x86-64";
 #endif
 #ifdef LIBARCH_sparc
-    res = "sparc:v8plusb";
+  res = "sparc:v8plusb";
 #endif
 #ifdef LIBARCH_sparcv9
-    res = "sparc:v9b";
+  res = "sparc:v9b";
 #endif
   if (res == NULL)
     res = "architecture not set in Makefile!";
@@ -468,7 +507,7 @@ static void parse_fake_insn(disassembler_ftype dfn,
   dinfo->fprintf_func     = &print_to_dev_null;
   (*dfn)(0, dinfo);
 
-  // put it back:
+  /* put it back */
   dinfo->read_memory_func = read_memory_func;
   dinfo->fprintf_func     = fprintf_func;
 }

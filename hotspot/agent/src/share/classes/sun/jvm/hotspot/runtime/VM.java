@@ -477,6 +477,11 @@ public class VM {
     return db.lookupIntConstant(name);
   }
 
+  // Convenience function for conversions
+  static public long getAddressValue(Address addr) {
+    return VM.getVM().getDebugger().getAddressValue(addr);
+  }
+
   public long getAddressSize() {
     return db.getAddressSize();
   }
