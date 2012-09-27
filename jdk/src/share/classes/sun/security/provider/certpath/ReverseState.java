@@ -32,7 +32,6 @@ import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.DSAPublicKey;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -287,8 +286,7 @@ class ReverseState implements State {
         /* check for key needing to inherit alg parameters */
         X509CertImpl icert = X509CertImpl.toImpl(cert);
         PublicKey newKey = cert.getPublicKey();
-        if (newKey instanceof DSAPublicKey &&
-            (((DSAPublicKey)newKey).getParams() == null)) {
+        if (PKIX.isDSAPublicKeyWithoutParams(newKey)) {
             newKey = BasicChecker.makeInheritedParamsKey(newKey, pubKey);
         }
 
