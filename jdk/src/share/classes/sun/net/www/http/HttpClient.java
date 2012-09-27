@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,16 +244,17 @@ public class HttpClient extends NetworkClient {
      */
     public static HttpClient New(URL url)
     throws IOException {
-        return HttpClient.New(url, Proxy.NO_PROXY, -1, true);
+        return HttpClient.New(url, Proxy.NO_PROXY, -1, true, null);
     }
 
     public static HttpClient New(URL url, boolean useCache)
         throws IOException {
-        return HttpClient.New(url, Proxy.NO_PROXY, -1, useCache);
+        return HttpClient.New(url, Proxy.NO_PROXY, -1, useCache, null);
     }
 
-    public static HttpClient New(URL url, Proxy p, int to, boolean useCache)
-        throws IOException {
+    public static HttpClient New(URL url, Proxy p, int to, boolean useCache,
+        HttpURLConnection httpuc) throws IOException
+    {
         if (p == null) {
             p = Proxy.NO_PROXY;
         }
@@ -261,6 +262,13 @@ public class HttpClient extends NetworkClient {
         /* see if one's already around */
         if (useCache) {
             ret = kac.get(url, null);
+            if (ret != null && httpuc != null &&
+                httpuc.streaming() &&
+                httpuc.getRequestMethod() == "POST") {
+                if (!ret.available())
+                    ret = null;
+            }
+
             if (ret != null) {
                 if ((ret.proxy != null && ret.proxy.equals(p)) ||
                     (ret.proxy == null && p == null)) {
@@ -302,20 +310,25 @@ public class HttpClient extends NetworkClient {
         return ret;
     }
 
-    public static HttpClient New(URL url, Proxy p, int to) throws IOException {
-        return New(url, p, to, true);
+    public static HttpClient New(URL url, Proxy p, int to,
+        HttpURLConnection httpuc) throws IOException
+    {
+        return New(url, p, to, true, httpuc);
     }
 
     public static HttpClient New(URL url, String proxyHost, int proxyPort,
                                  boolean useCache)
         throws IOException {
-        return New(url, newHttpProxy(proxyHost, proxyPort, "http"), -1, useCache);
+        return New(url, newHttpProxy(proxyHost, proxyPort, "http"),
+            -1, useCache, null);
     }
 
     public static HttpClient New(URL url, String proxyHost, int proxyPort,
-                                 boolean useCache, int to)
+                                 boolean useCache, int to,
+                                 HttpURLConnection httpuc)
         throws IOException {
-        return New(url, newHttpProxy(proxyHost, proxyPort, "http"), to, useCache);
+        return New(url, newHttpProxy(proxyHost, proxyPort, "http"),
+            to, useCache, httpuc);
     }
 
     /* return it to the cache as still usable, if:
@@ -342,6 +355,34 @@ public class HttpClient extends NetworkClient {
         } else {
             closeServer();
         }
+    }
+
+    protected synchronized boolean available() throws IOException {
+        boolean available = true;
+        int old = serverSocket.getSoTimeout();
+        serverSocket.setSoTimeout(1);
+        BufferedInputStream tmpbuf =
+            new BufferedInputStream(serverSocket.getInputStream());
+
+        PlatformLogger logger = HttpURLConnection.getHttpLogger();
+        try {
+            int r = tmpbuf.read();
+            if (r == -1) {
+                if (logger.isLoggable(PlatformLogger.FINEST)) {
+                    logger.finest("HttpClient.available(): " +
+                        "read returned -1: not available");
+                }
+                available = false;
+            }
+        } catch (SocketTimeoutException e) {
+            if (logger.isLoggable(PlatformLogger.FINEST)) {
+                logger.finest("HttpClient.available(): " +
+                    "SocketTimeout: its available");
+            }
+        } finally {
+            serverSocket.setSoTimeout(old);
+        }
+        return available;
     }
 
     protected synchronized void putInKeepAliveCache() {
