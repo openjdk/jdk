@@ -25,16 +25,14 @@
 
 package com.sun.tools.javac.jvm;
 
-import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.Type;
 
+import com.sun.tools.javac.util.ArrayUtils;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Filter;
 import com.sun.tools.javac.util.Name;
-import com.sun.tools.javac.util.Names;
 
 import java.util.*;
 
