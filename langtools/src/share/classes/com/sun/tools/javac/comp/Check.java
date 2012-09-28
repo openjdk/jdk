@@ -2491,6 +2491,7 @@ public class Check {
         validateDocumented(t.tsym, s, pos);
         validateInherited(t.tsym, s, pos);
         validateTarget(t.tsym, s, pos);
+        validateDefault(t.tsym, s, pos);
     }
 
     /**
@@ -2669,6 +2670,21 @@ public class Check {
                 return false;
         }
         return true;
+    }
+
+    private void validateDefault(Symbol container, Symbol contained, DiagnosticPosition pos) {
+        // validate that all other elements of containing type has defaults
+        Scope scope = container.members();
+        for(Symbol elm : scope.getElements()) {
+            if (elm.name != names.value &&
+                elm.kind == Kinds.MTH &&
+                ((MethodSymbol)elm).defaultValue == null) {
+                log.error(pos,
+                          "invalid.containedby.annotation.elem.nondefault",
+                          container,
+                          elm);
+            }
+        }
     }
 
     /** Is s a method symbol that overrides a method in a superclass? */
