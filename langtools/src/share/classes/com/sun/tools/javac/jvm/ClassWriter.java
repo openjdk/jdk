@@ -493,7 +493,7 @@ public class ClassWriter extends ClassFile {
                 } else {
                     //invokedynamic
                     DynamicMethodSymbol dynSym = (DynamicMethodSymbol)m;
-                    Pool.MethodHandle handle = new Pool.MethodHandle(dynSym.bsmKind, dynSym.bsm, names);
+                    Pool.MethodHandle handle = new Pool.MethodHandle(dynSym.bsmKind, dynSym.bsm);
                     bootstrapMethods.put(dynSym, handle);
                     //init cp entries
                     pool.put(names.BootstrapMethods);
