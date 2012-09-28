@@ -1315,7 +1315,13 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
 Address LIR_Assembler::as_Address(LIR_Address* addr) {
   Register reg = addr->base()->as_register();
-  return Address(reg, addr->disp());
+  LIR_Opr index = addr->index();
+  if (index->is_illegal()) {
+    return Address(reg, addr->disp());
+  } else {
+    assert (addr->disp() == 0, "unsupported address mode");
+    return Address(reg, index->as_pointer_register());
+  }
 }
 
 
@@ -3438,7 +3444,28 @@ void LIR_Assembler::peephole(LIR_List* lir) {
   }
 }
 
+void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr dest, LIR_Opr tmp) {
+  LIR_Address* addr = src->as_address_ptr();
 
+  assert(data == dest, "swap uses only 2 operands");
+  assert (code == lir_xchg, "no xadd on sparc");
 
+  if (data->type() == T_INT) {
+    __ swap(as_Address(addr), data->as_register());
+  } else if (data->is_oop()) {
+    Register obj = data->as_register();
+    Register narrow = tmp->as_register();
+#ifdef _LP64
+    assert(UseCompressedOops, "swap is 32bit only");
+    __ encode_heap_oop(obj, narrow);
+    __ swap(as_Address(addr), narrow);
+    __ decode_heap_oop(narrow, obj);
+#else
+    __ swap(as_Address(addr), obj);
+#endif
+  } else {
+    ShouldNotReachHere();
+  }
+}
 
 #undef __

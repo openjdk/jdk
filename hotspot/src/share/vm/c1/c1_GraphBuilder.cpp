@@ -3383,6 +3383,41 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
       append_unsafe_CAS(callee);
       return true;
 
+    case vmIntrinsics::_getAndAddInt:
+      if (!VM_Version::supports_atomic_getadd4()) {
+        return false;
+      }
+      return append_unsafe_get_and_set_obj(callee, true);
+    case vmIntrinsics::_getAndAddLong:
+      if (!VM_Version::supports_atomic_getadd8()) {
+        return false;
+      }
+      return append_unsafe_get_and_set_obj(callee, true);
+    case vmIntrinsics::_getAndSetInt:
+      if (!VM_Version::supports_atomic_getset4()) {
+        return false;
+      }
+      return append_unsafe_get_and_set_obj(callee, false);
+    case vmIntrinsics::_getAndSetLong:
+      if (!VM_Version::supports_atomic_getset8()) {
+        return false;
+      }
+      return append_unsafe_get_and_set_obj(callee, false);
+    case vmIntrinsics::_getAndSetObject:
+#ifdef _LP64
+      if (!UseCompressedOops && !VM_Version::supports_atomic_getset8()) {
+        return false;
+      }
+      if (UseCompressedOops && !VM_Version::supports_atomic_getset4()) {
+        return false;
+      }
+#else
+      if (!VM_Version::supports_atomic_getset4()) {
+        return false;
+      }
+#endif
+      return append_unsafe_get_and_set_obj(callee, false);
+
     case vmIntrinsics::_Reference_get:
       // Use the intrinsic version of Reference.get() so that the value in
       // the referent field can be registered by the G1 pre-barrier code.
@@ -4106,6 +4141,22 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
   }
 }
 
+bool GraphBuilder::append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add) {
+  if (InlineUnsafeOps) {
+    Values* args = state()->pop_arguments(callee->arg_size());
+    BasicType t = callee->return_type()->basic_type();
+    null_check(args->at(0));
+    Instruction* offset = args->at(2);
+#ifndef _LP64
+    offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
+#endif
+    Instruction* op = append(new UnsafeGetAndSetObject(t, args->at(1), offset, args->at(3), is_add));
+    compilation()->set_has_unsafe_access(true);
+    kill_all();
+    push(op->type(), op);
+  }
+  return InlineUnsafeOps;
+}
 
 #ifndef PRODUCT
 void GraphBuilder::print_stats() {

@@ -921,7 +921,8 @@ void ciEnv::register_method(ciMethod* target,
                             ImplicitExceptionTable* inc_table,
                             AbstractCompiler* compiler,
                             int comp_level,
-                            bool has_unsafe_access) {
+                            bool has_unsafe_access,
+                            bool has_wide_vectors) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
   {
@@ -1016,6 +1017,7 @@ void ciEnv::register_method(ciMethod* target,
       }
     } else {
       nm->set_has_unsafe_access(has_unsafe_access);
+      nm->set_has_wide_vectors(has_wide_vectors);
 
       // Record successful registration.
       // (Put nm into the task handle *before* publishing to the Java heap.)

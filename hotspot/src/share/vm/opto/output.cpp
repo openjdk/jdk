@@ -265,9 +265,9 @@ void Compile::Insert_zap_nodes() {
 Node* Compile::call_zap_node(MachSafePointNode* node_to_check, int block_no) {
   const TypeFunc *tf = OptoRuntime::zap_dead_locals_Type();
   CallStaticJavaNode* ideal_node =
-    new (this, tf->domain()->cnt()) CallStaticJavaNode( tf,
+    new (this) CallStaticJavaNode( tf,
          OptoRuntime::zap_dead_locals_stub(_method->flags().is_native()),
-                            "call zap dead locals stub", 0, TypePtr::BOTTOM);
+                       "call zap dead locals stub", 0, TypePtr::BOTTOM);
   // We need to copy the OopMap from the site we're zapping at.
   // We have to make a copy, because the zap site might not be
   // a call site, and zap_dead is a call site.
@@ -1869,7 +1869,9 @@ void Compile::ScheduleAndBundle() {
   if (!do_scheduling())
     return;
 
-  assert(MaxVectorSize <= 8, "scheduling code works only with pairs");
+  // Scheduling code works only with pairs (8 bytes) maximum.
+  if (max_vector_size() > 8)
+    return;
 
   NOT_PRODUCT( TracePhase t2("isched", &_t_instrSched, TimeCompiler); )
 
@@ -2682,7 +2684,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
     if ( _pinch_free_list.size() > 0) {
       pinch = _pinch_free_list.pop();
     } else {
-      pinch = new (_cfg->C, 1) Node(1); // Pinch point to-be
+      pinch = new (_cfg->C) Node(1); // Pinch point to-be
     }
     if (pinch->_idx >= _regalloc->node_regs_max_index()) {
       _cfg->C->record_method_not_compilable("too many D-U pinch points");
