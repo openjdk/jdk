@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,24 @@
  */
 
 /* @test
- * @bug 4460583 4470470 4840199 6419424 6710579 6596323 6824135 6395224
+ * @bug 4460583 4470470 4840199 6419424 6710579 6596323 6824135 6395224 7142919
+ * @run main/othervm AsyncCloseAndInterrupt
  * @summary Comprehensive test of asynchronous closing and interruption
  * @author Mark Reinhold
  */
 
 import java.io.*;
 import java.net.*;
-import java.nio.*;
 import java.nio.channels.*;
-import java.util.*;
-
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class AsyncCloseAndInterrupt {
 
@@ -79,44 +86,11 @@ public class AsyncCloseAndInterrupt {
     // Server socket that refuses all connections
 
     static ServerSocketChannel refuser;
-    static List refuserClients = new ArrayList();
 
     private static void initRefuser() throws IOException {
         refuser = ServerSocketChannel.open();
         refuser.socket().bind(wildcardAddress);
-        pumpRefuser("Initializing refuser...");
     }
-
-    private static void pumpRefuser(String msg) throws IOException {
-        // Can't reliably saturate connection backlog on Windows Server editions
-        assert !TestUtil.onWindows();
-
-        log.print(msg);
-        int n = refuserClients.size();
-
-        // Saturate the refuser's connection backlog so that further connection
-        // attempts will block
-        //
-        outer:
-        for (;;) {
-            SocketChannel sc = SocketChannel.open();
-            sc.configureBlocking(false);
-            if (!sc.connect(refuser.socket().getLocalSocketAddress())) {
-                for (int i = 0; i < 20; i++) {
-                    Thread.yield();
-                    if (sc.finishConnect())
-                        break;
-                    if (i >= 19)
-                        break outer;
-                }
-            }
-            // Retain so that finalizer doesn't close
-            refuserClients.add(sc);
-        }
-
-        log.println("  " + (refuserClients.size() - n) + " connections");
-    }
-
 
     // Dead pipe source and sink
 
@@ -374,8 +348,8 @@ public class AsyncCloseAndInterrupt {
         };
 
     static final Op CONNECT = new Op("connect") {
-            void setup() throws IOException {
-                pumpRefuser("Pumping refuser ...");
+            void setup() {
+                waitPump("connect wait for pumping refuser ...");
             }
             void doIO(InterruptibleChannel ich) throws IOException {
                 SocketChannel sc = (SocketChannel)ich;
@@ -386,8 +360,8 @@ public class AsyncCloseAndInterrupt {
         };
 
     static final Op FINISH_CONNECT = new Op("finishConnect") {
-            void setup() throws IOException {
-                pumpRefuser("Pumping refuser ...");
+            void setup() {
+                waitPump("finishConnect wait for pumping refuser ...");
             }
             void doIO(InterruptibleChannel ich) throws IOException {
                 SocketChannel sc = (SocketChannel)ich;
@@ -462,6 +436,7 @@ public class AsyncCloseAndInterrupt {
             this.test = test;
         }
 
+        @SuppressWarnings("fallthrough")
         private void caught(Channel ch, IOException x) {
             String xn = x.getClass().getName();
             switch (test) {
@@ -519,9 +494,63 @@ public class AsyncCloseAndInterrupt {
 
     }
 
+    private static volatile boolean pumpDone = false;
+    private static volatile boolean pumpReady = false;
 
-    // Tests
+    private static void waitPump(String msg){
+        pumpReady = false;
+        log.println(msg);
 
+        while (!pumpReady){
+            sleep(200);
+        }
+    }
+
+    // Create a pump thread dedicated to saturate refuser's connection backlog
+    private static Future<Integer> pumpRefuser(ExecutorService pumperExecutor) {
+
+        Callable<Integer> pumpTask = new Callable<Integer>() {
+
+            @Override
+            public Integer call() throws IOException {
+                // Can't reliably saturate connection backlog on Windows Server editions
+                assert !TestUtil.onWindows();
+                log.println("Start pumping refuser ...");
+                List<SocketChannel> refuserClients = new ArrayList<>();
+
+                // Saturate the refuser's connection backlog so that further connection
+                // attempts will be blocked
+                while (!pumpDone) {
+                    SocketChannel sc = SocketChannel.open();
+                    sc.configureBlocking(false);
+                    boolean connected = sc.connect(refuser.socket().getLocalSocketAddress());
+
+                    // Assume that the connection backlog is saturated if a
+                    // client cannot connect to the refuser within 50 miliseconds
+                    long start = System.currentTimeMillis();
+                    while (!connected && (System.currentTimeMillis() - start < 50)) {
+                        connected = sc.finishConnect();
+                    }
+
+                    if (connected) {
+                        // Retain so that finalizer doesn't close
+                        refuserClients.add(sc);
+                        pumpReady = false;
+                    } else {
+                        sc.close();
+                        pumpReady = true;
+                    }
+                }
+
+                log.println("Stop pumping refuser ...");
+                return refuserClients.size();
+            }
+        };
+
+        return pumperExecutor.submit(pumpTask);
+    }
+
+    // Test
     static void test(ChannelFactory cf, Op op, int test)
         throws Exception
     {
@@ -667,15 +696,40 @@ public class AsyncCloseAndInterrupt {
             log.println("WARNING Cannot reliably test connect/finishConnect"
                 + " operations on Windows");
         } else {
-            test(socketChannelFactory, CONNECT);
-            test(socketChannelFactory, FINISH_CONNECT);
+            // Only the following tests need refuser's connection backlog
+            // to be saturated
+            ExecutorService pumperExecutor =
+                    Executors.newSingleThreadExecutor(
+                    new ThreadFactory() {
+
+                        @Override
+                        public Thread newThread(Runnable r) {
+                            Thread t = new Thread(r);
+                            t.setDaemon(true);
+                            t.setName("Pumper");
+                            return t;
+                        }
+                    });
+
+            pumpDone = false;
+            try {
+                Future<Integer> pumpFuture = pumpRefuser(pumperExecutor);
+                waitPump("\nWait for initial Pump");
+
+                test(socketChannelFactory, CONNECT);
+                test(socketChannelFactory, FINISH_CONNECT);
+
+                pumpDone = true;
+                Integer newConn = pumpFuture.get(30, TimeUnit.SECONDS);
+                log.println("Pump " + newConn + " connections.");
+            } finally {
+                pumperExecutor.shutdown();
+            }
         }
 
         test(serverSocketChannelFactory, ACCEPT);
         test(datagramChannelFactory);
         test(pipeSourceChannelFactory);
         test(pipeSinkChannelFactory);
-
     }
-
 }

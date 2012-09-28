@@ -467,7 +467,6 @@ implements java.io.Serializable
      * @param action the action string
      * @return the action mask
      */
-    @SuppressWarnings("fallthrough")
     private static int getMask(String action) {
 
         if (action == null) {
@@ -480,7 +479,8 @@ implements java.io.Serializable
 
         int mask = NONE;
 
-        // Check against use of constants (used heavily within the JDK)
+        // Use object identity comparison against known-interned strings for
+        // performance benefit (these values are used heavily within the JDK).
         if (action == SecurityConstants.SOCKET_RESOLVE_ACTION) {
             return RESOLVE;
         } else if (action == SecurityConstants.SOCKET_CONNECT_ACTION) {
@@ -568,7 +568,7 @@ implements java.io.Serializable
                 switch(a[i-matchlen]) {
                 case ',':
                     seencomma = true;
-                    /*FALLTHROUGH*/
+                    break;
                 case ' ': case '\r': case '\n':
                 case '\f': case '\t':
                     break;

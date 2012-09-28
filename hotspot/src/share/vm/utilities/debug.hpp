@@ -192,6 +192,12 @@ do {                                                                         \
   BREAKPOINT;                                                                \
 } while (0)
 
+#define ShouldNotReachHere2(message)                                         \
+do {                                                                         \
+  report_should_not_reach_here2(__FILE__, __LINE__, message);                \
+  BREAKPOINT;                                                                \
+} while (0)
+
 #define Unimplemented()                                                      \
 do {                                                                         \
   report_unimplemented(__FILE__, __LINE__);                                  \
@@ -212,6 +218,7 @@ void report_vm_out_of_memory(const char* file, int line, size_t size,
                              const char* message);
 void report_should_not_call(const char* file, int line);
 void report_should_not_reach_here(const char* file, int line);
+void report_should_not_reach_here2(const char* file, int line, const char* message);
 void report_unimplemented(const char* file, int line);
 void report_untested(const char* file, int line, const char* message);
 

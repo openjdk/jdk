@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc_implementation/shared/cSpaceCounters.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 
 CSpaceCounters::CSpaceCounters(const char* name, int ordinal, size_t max_size,
@@ -44,7 +45,7 @@ CSpaceCounters::CSpaceCounters(const char* name, int ordinal, size_t max_size,
     PerfDataManager::create_string_constant(SUN_GC, cname, name, CHECK);
 
     cname = PerfDataManager::counter_name(_name_space, "maxCapacity");
-    PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_Bytes,
+    _max_capacity = PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes,
                                      (jlong)max_size, CHECK);
 
     cname = PerfDataManager::counter_name(_name_space, "capacity");

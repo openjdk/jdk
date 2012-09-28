@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,11 @@ ciMethod* ciMethodHandle::get_vmtarget() const {
   VM_ENTRY_MARK;
   oop form_oop     = java_lang_invoke_MethodHandle::form(get_oop());
   oop vmentry_oop  = java_lang_invoke_LambdaForm::vmentry(form_oop);
-  oop vmtarget_oop = java_lang_invoke_MemberName::vmtarget(vmentry_oop);
-  return CURRENT_ENV->get_object(vmtarget_oop)->as_method();
+  // FIXME: Share code with ciMemberName::get_vmtarget
+  Metadata* vmtarget = java_lang_invoke_MemberName::vmtarget(vmentry_oop);
+  if (vmtarget->is_method())
+    return CURRENT_ENV->get_method((Method*) vmtarget);
+  // FIXME: What if the vmtarget is a Klass?
+  assert(false, "");
+  return NULL;
 }

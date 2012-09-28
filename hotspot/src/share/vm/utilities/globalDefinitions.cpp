@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,7 @@ void basic_types_init() {
       case T_LONG:
       case T_OBJECT:
       case T_ADDRESS:   // random raw pointer
+      case T_METADATA:  // metadata pointer
       case T_NARROWOOP: // compressed pointer
       case T_CONFLICT:  // might as well support a bottom type
       case T_VOID:      // padding or other unaddressed word
@@ -178,7 +179,7 @@ void basic_types_init() {
 
 
 // Map BasicType to signature character
-char type2char_tab[T_CONFLICT+1]={ 0, 0, 0, 0, 'Z', 'C', 'F', 'D', 'B', 'S', 'I', 'J', 'L', '[', 'V', 0, 0, 0};
+char type2char_tab[T_CONFLICT+1]={ 0, 0, 0, 0, 'Z', 'C', 'F', 'D', 'B', 'S', 'I', 'J', 'L', '[', 'V', 0, 0, 0, 0};
 
 // Map BasicType to Java type name
 const char* type2name_tab[T_CONFLICT+1] = {
@@ -196,6 +197,7 @@ const char* type2name_tab[T_CONFLICT+1] = {
   "void",
   "*address*",
   "*narrowoop*",
+  "*metadata*",
   "*conflict*"
 };
 
@@ -211,7 +213,7 @@ BasicType name2type(const char* name) {
 
 
 // Map BasicType to size in words
-int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, 1, -1};
+int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, -1};
 
 BasicType type2field[T_CONFLICT+1] = {
   (BasicType)0,            // 0,
@@ -231,7 +233,8 @@ BasicType type2field[T_CONFLICT+1] = {
   T_VOID,                  // T_VOID     = 14,
   T_ADDRESS,               // T_ADDRESS  = 15,
   T_NARROWOOP,             // T_NARROWOOP= 16,
-  T_CONFLICT               // T_CONFLICT = 17,
+  T_METADATA,              // T_METADATA = 17,
+  T_CONFLICT               // T_CONFLICT = 18,
 };
 
 
@@ -253,7 +256,8 @@ BasicType type2wfield[T_CONFLICT+1] = {
   T_VOID,    // T_VOID     = 14,
   T_ADDRESS, // T_ADDRESS  = 15,
   T_NARROWOOP, // T_NARROWOOP  = 16,
-  T_CONFLICT // T_CONFLICT = 17,
+  T_METADATA,  // T_METADATA   = 17,
+  T_CONFLICT // T_CONFLICT = 18,
 };
 
 
@@ -275,7 +279,8 @@ int _type2aelembytes[T_CONFLICT+1] = {
   0,                      // T_VOID     = 14,
   T_OBJECT_aelem_bytes,   // T_ADDRESS  = 15,
   T_NARROWOOP_aelem_bytes,// T_NARROWOOP= 16,
-  0                       // T_CONFLICT = 17,
+  T_OBJECT_aelem_bytes,   // T_METADATA = 17,
+  0                       // T_CONFLICT = 18,
 };
 
 #ifdef ASSERT

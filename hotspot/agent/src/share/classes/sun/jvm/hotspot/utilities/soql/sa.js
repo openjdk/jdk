@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,7 @@ function main(globals, jvmarg) {
       if (typeof(name) == "string") {
          var clazz = sapkg.utilities.SystemDictionaryHelper.findInstanceKlass(name);
          if (clazz) {
-             writeln(clazz.getName().asString() + " @" + clazz.getHandle().toString());
+             writeln(clazz.getName().asString() + " @" + clazz.getAddress().toString());
          } else {
              writeln("class not found: " + name);
          } 
@@ -1096,7 +1096,6 @@ vmType2Class["DebuggerThread"] = sapkg.runtime.DebuggerThread;
 
 // gc
 vmType2Class["GenCollectedHeap"] = sapkg.memory.GenCollectedHeap;
-vmType2Class["CompactingPermGenGen"] = sapkg.memory.CompactingPermGenGen;
 vmType2Class["DefNewGeneration"] = sapkg.memory.DefNewGeneration;
 vmType2Class["TenuredGeneration"] = sapkg.memory.TenuredGeneration;
 

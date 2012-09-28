@@ -86,22 +86,22 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_const(Register reg) {
     get_method(reg);
-    movptr(reg, Address(reg, methodOopDesc::const_offset()));
+    movptr(reg, Address(reg, Method::const_offset()));
   }
 
   void get_constant_pool(Register reg) {
     get_const(reg);
-    movptr(reg, Address(reg, constMethodOopDesc::constants_offset()));
+    movptr(reg, Address(reg, ConstMethod::constants_offset()));
   }
 
   void get_constant_pool_cache(Register reg) {
     get_constant_pool(reg);
-    movptr(reg, Address(reg, constantPoolOopDesc::cache_offset_in_bytes()));
+    movptr(reg, Address(reg, ConstantPool::cache_offset_in_bytes()));
   }
 
   void get_cpool_and_tags(Register cpool, Register tags) {
     get_constant_pool(cpool);
-    movptr(tags, Address(cpool, constantPoolOopDesc::tags_offset_in_bytes()));
+    movptr(tags, Address(cpool, ConstantPool::tags_offset_in_bytes()));
   }
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
@@ -109,6 +109,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cache_and_index_and_bytecode_at_bcp(Register cache, Register index, Register bytecode, int byte_no, int bcp_offset, size_t index_size = sizeof(u2));
   void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
   void get_cache_index_at_bcp(Register index, int bcp_offset, size_t index_size = sizeof(u2));
+
+  // load cpool->resolved_references(index);
+  void load_resolved_reference_at_index(Register result, Register index);
 
   void pop_ptr(Register r = rax);
   void pop_i(Register r = rax);

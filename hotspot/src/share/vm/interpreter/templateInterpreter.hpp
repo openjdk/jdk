@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,14 +174,14 @@ class TemplateInterpreter: public AbstractInterpreter {
 
   // Deoptimization support
   // Compute the entry address for continuation after
-  static address deopt_continue_after_entry(methodOop method,
+  static address deopt_continue_after_entry(Method* method,
                                             address bcp,
                                             int callee_parameters,
                                             bool is_top_frame);
   // Deoptimization should reexecute this bytecode
   static bool    bytecode_should_reexecute(Bytecodes::Code code);
   // Compute the address for reexecution
-  static address deopt_reexecute_entry(methodOop method, address bcp);
+  static address deopt_reexecute_entry(Method* method, address bcp);
 
 #ifdef TARGET_ARCH_x86
 # include "templateInterpreter_x86.hpp"

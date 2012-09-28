@@ -116,12 +116,17 @@ class DistributionPointFetcher {
     /**
      * Download CRLs from the given distribution point, verify and return them.
      * See the top of the class for current limitations.
+     *
+     * @throws CertStoreException if there is an error retrieving the CRLs
+     *         from one of the GeneralNames and no other CRLs are retrieved from
+     *         the other GeneralNames. If more than one GeneralName throws an
+     *         exception then the one from the last GeneralName is thrown.
      */
     private static Collection<X509CRL> getCRLs(X509CRLSelector selector,
         X509CertImpl certImpl, DistributionPoint point, boolean[] reasonsMask,
         boolean signFlag, PublicKey prevKey, String provider,
         List<CertStore> certStores, Set<TrustAnchor> trustAnchors,
-        Date validity) {
+        Date validity) throws CertStoreException {
 
         // check for full name
         GeneralNames fullName = point.getFullName();
@@ -149,24 +154,33 @@ class DistributionPointFetcher {
                 return Collections.emptySet();
             }
         }
-        Collection<X509CRL> possibleCRLs = new ArrayList<X509CRL>();
-        Collection<X509CRL> crls = new ArrayList<X509CRL>(2);
+        Collection<X509CRL> possibleCRLs = new ArrayList<>();
+        CertStoreException savedCSE = null;
         for (Iterator<GeneralName> t = fullName.iterator(); t.hasNext(); ) {
-            GeneralName name = t.next();
-            if (name.getType() == GeneralNameInterface.NAME_DIRECTORY) {
-                X500Name x500Name = (X500Name) name.getName();
-                possibleCRLs.addAll(
-                    getCRLs(x500Name, certImpl.getIssuerX500Principal(),
-                            certStores));
-            } else if (name.getType() == GeneralNameInterface.NAME_URI) {
-                URIName uriName = (URIName)name.getName();
-                X509CRL crl = getCRL(uriName);
-                if (crl != null) {
-                    possibleCRLs.add(crl);
+            try {
+                GeneralName name = t.next();
+                if (name.getType() == GeneralNameInterface.NAME_DIRECTORY) {
+                    X500Name x500Name = (X500Name) name.getName();
+                    possibleCRLs.addAll(
+                        getCRLs(x500Name, certImpl.getIssuerX500Principal(),
+                                certStores));
+                } else if (name.getType() == GeneralNameInterface.NAME_URI) {
+                    URIName uriName = (URIName)name.getName();
+                    X509CRL crl = getCRL(uriName);
+                    if (crl != null) {
+                        possibleCRLs.add(crl);
+                    }
                 }
+            } catch (CertStoreException cse) {
+                savedCSE = cse;
             }
         }
+        // only throw CertStoreException if no CRLs are retrieved
+        if (possibleCRLs.isEmpty() && savedCSE != null) {
+            throw savedCSE;
+        }
 
+        Collection<X509CRL> crls = new ArrayList<>(2);
         for (X509CRL crl : possibleCRLs) {
             try {
                 // make sure issuer is not set
@@ -191,34 +205,43 @@ class DistributionPointFetcher {
     /**
      * Download CRL from given URI.
      */
-    private static X509CRL getCRL(URIName name) {
+    private static X509CRL getCRL(URIName name) throws CertStoreException {
         URI uri = name.getURI();
         if (debug != null) {
             debug.println("Trying to fetch CRL from DP " + uri);
         }
+        CertStore ucs = null;
         try {
-            CertStore ucs = URICertStore.getInstance
+            ucs = URICertStore.getInstance
                 (new URICertStore.URICertStoreParameters(uri));
-            Collection<? extends CRL> crls = ucs.getCRLs(null);
-            if (crls.isEmpty()) {
-                return null;
-            } else {
-                return (X509CRL) crls.iterator().next();
-            }
-        } catch (Exception e) {
+        } catch (InvalidAlgorithmParameterException |
+                 NoSuchAlgorithmException e) {
             if (debug != null) {
-                debug.println("Exception getting CRL from CertStore: " + e);
-                e.printStackTrace();
+                debug.println("Can't create URICertStore: " + e.getMessage());
             }
+            return null;
         }
-        return null;
+
+        Collection<? extends CRL> crls = ucs.getCRLs(null);
+        if (crls.isEmpty()) {
+            return null;
+        } else {
+            return (X509CRL) crls.iterator().next();
+        }
     }
 
     /**
      * Fetch CRLs from certStores.
+     *
+     * @throws CertStoreException if there is an error retrieving the CRLs from
+     *         one of the CertStores and no other CRLs are retrieved from
+     *         the other CertStores. If more than one CertStore throws an
+     *         exception then the one from the last CertStore is thrown.
      */
     private static Collection<X509CRL> getCRLs(X500Name name,
-        X500Principal certIssuer, List<CertStore> certStores)
+                                               X500Principal certIssuer,
+                                               List<CertStore> certStores)
+        throws CertStoreException
     {
         if (debug != null) {
             debug.println("Trying to fetch CRL from DP " + name);
@@ -227,21 +250,27 @@ class DistributionPointFetcher {
         xcs.addIssuer(name.asX500Principal());
         xcs.addIssuer(certIssuer);
         Collection<X509CRL> crls = new ArrayList<>();
+        CertStoreException savedCSE = null;
         for (CertStore store : certStores) {
             try {
                 for (CRL crl : store.getCRLs(xcs)) {
                     crls.add((X509CRL)crl);
                 }
             } catch (CertStoreException cse) {
-                // don't add the CRL
                 if (debug != null) {
-                    debug.println("Non-fatal exception while retrieving " +
+                    debug.println("Exception while retrieving " +
                         "CRLs: " + cse);
                     cse.printStackTrace();
                 }
+                savedCSE = new PKIX.CertStoreTypeException(store.getType(),cse);
             }
         }
-        return crls;
+        // only throw CertStoreException if no CRLs are retrieved
+        if (crls.isEmpty() && savedCSE != null) {
+            throw savedCSE;
+        } else {
+            return crls;
+        }
     }
 
     /**
