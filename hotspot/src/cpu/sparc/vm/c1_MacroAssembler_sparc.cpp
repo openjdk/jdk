@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     set((intx)markOopDesc::prototype(), t1);
   }
   st_ptr(t1, obj, oopDesc::mark_offset_in_bytes());
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     // Save klass
     mov(klass, t1);
     encode_heap_oop_not_null(t1);
@@ -194,8 +194,10 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   } else {
     st_ptr(klass, obj, oopDesc::klass_offset_in_bytes());
   }
-  if (len->is_valid()) st(len, obj, arrayOopDesc::length_offset_in_bytes());
-  else if (UseCompressedOops) {
+  if (len->is_valid()) {
+    st(len, obj, arrayOopDesc::length_offset_in_bytes());
+  } else if (UseCompressedKlassPointers) {
+    // otherwise length is in the class gap
     store_klass_gap(G0, obj);
   }
 }

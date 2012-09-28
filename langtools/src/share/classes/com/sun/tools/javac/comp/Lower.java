@@ -1449,7 +1449,7 @@ public class Lower extends TreeTranslator {
             return access(v, make.at(pos).Ident(v), null, false);
         }
 
-    /** Construct a tree simulating the expression <C.this>.
+    /** Construct a tree simulating the expression {@code C.this}.
      *  @param pos           The source code position to be used for the tree.
      *  @param c             The qualifier class.
      */
@@ -1623,7 +1623,7 @@ public class Lower extends TreeTranslator {
     }
 
     /** Construct a tree that represents the outer instance
-     *  <C.this>. Never pick the current `this'.
+     *  {@code C.this}. Never pick the current `this'.
      *  @param pos           The source code position to be used for the tree.
      *  @param c             The qualifier class.
      */
@@ -1661,7 +1661,7 @@ public class Lower extends TreeTranslator {
     }
 
     /** Construct a tree that represents the closest outer instance
-     *  <C.this> such that the given symbol is a member of C.
+     *  {@code C.this} such that the given symbol is a member of C.
      *  @param pos           The source code position to be used for the tree.
      *  @param sym           The accessed symbol.
      *  @param preciseMatch  should we accept a type that is a subtype of
@@ -1713,7 +1713,7 @@ public class Lower extends TreeTranslator {
         return tree;
     }
 
-    /** Return tree simulating the assignment <this.name = name>, where
+    /** Return tree simulating the assignment {@code this.name = name}, where
      *  name is the name of a free variable.
      */
     JCStatement initField(int pos, Name name) {
@@ -1730,7 +1730,7 @@ public class Lower extends TreeTranslator {
                     make.Ident(rhs)).setType(lhs.erasure(types)));
     }
 
-    /** Return tree simulating the assignment <this.this$n = this$n>.
+    /** Return tree simulating the assignment {@code this.this$n = this$n}.
      */
     JCStatement initOuterThis(int pos) {
         VarSymbol rhs = outerThisStack.head;
@@ -3194,7 +3194,7 @@ public class Lower extends TreeTranslator {
          *
          * (where arrayexpr is of an array type) gets translated to
          *
-         * <pre>
+         * <pre>{@code
          *     for ( { arraytype #arr = arrayexpr;
          *             int #len = array.length;
          *             int #i = 0; };
@@ -3202,7 +3202,7 @@ public class Lower extends TreeTranslator {
          *         T v = arr$[#i];
          *         stmt;
          *     }
-         * </pre>
+         * }</pre>
          *
          * where #arr, #len, and #i are freshly named synthetic local variables.
          */
@@ -3272,14 +3272,14 @@ public class Lower extends TreeTranslator {
          *     for ( T v : coll ) stmt ;
          * </pre>
          *
-         * (where coll implements Iterable<? extends T>) gets translated to
+         * (where coll implements {@code Iterable<? extends T>}) gets translated to
          *
-         * <pre>
+         * <pre>{@code
          *     for ( Iterator<? extends T> #i = coll.iterator(); #i.hasNext(); ) {
          *         T v = (T) #i.next();
          *         stmt;
          *     }
-         * </pre>
+         * }</pre>
          *
          * where #i is a freshly named synthetic local variable.
          */

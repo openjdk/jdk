@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 class ciEnv;
 class ciObjectFactory;
 class ciConstantPoolCache;
-class ciCPCache;
 
 class ciField;
 class ciConstant;
@@ -43,32 +42,28 @@ class ciExceptionHandlerStream;
 
 class ciTypeFlow;
 
+class ciBaseObject;
 class ciObject;
 class   ciNullObject;
 class   ciInstance;
 class     ciCallSite;
 class     ciMemberName;
 class     ciMethodHandle;
+class     ciArray;
+class       ciObjArray;
+class       ciTypeArray;
+class   ciSymbol;
+class   ciMetadata;
 class   ciMethod;
 class   ciMethodData;
 class     ciReceiverTypeData;  // part of ciMethodData
-class   ciSymbol;
-class   ciArray;
-class     ciObjArray;
-class     ciTypeArray;
 class   ciType;
 class    ciReturnAddress;
 class    ciKlass;
 class     ciInstanceKlass;
-class     ciMethodKlass;
 class     ciArrayKlass;
 class       ciObjArrayKlass;
 class       ciTypeArrayKlass;
-class     ciKlassKlass;
-class       ciInstanceKlassKlass;
-class       ciArrayKlassKlass;
-class         ciObjArrayKlassKlass;
-class         ciTypeArrayKlassKlass;
 
 // Simulate Java Language style package-private access with
 // friend declarations.
@@ -90,7 +85,6 @@ friend class ciCallSite;               \
 friend class ciConstantPoolCache;      \
 friend class ciField;                  \
 friend class ciConstant;               \
-friend class ciCPCache;                \
 friend class ciFlags;                  \
 friend class ciExceptionHandler;       \
 friend class ciCallProfile;            \
@@ -109,19 +103,14 @@ friend class ciReceiverTypeData;       \
 friend class ciSymbol;                 \
 friend class ciArray;                  \
 friend class ciObjArray;               \
+friend class ciMetadata;               \
 friend class ciTypeArray;              \
 friend class ciType;                   \
 friend class ciReturnAddress;          \
 friend class ciKlass;                  \
 friend class ciInstanceKlass;          \
-friend class ciMethodKlass;            \
 friend class ciArrayKlass;             \
 friend class ciObjArrayKlass;          \
 friend class ciTypeArrayKlass;         \
-friend class ciKlassKlass;             \
-friend class ciInstanceKlassKlass;     \
-friend class ciArrayKlassKlass;        \
-friend class ciObjArrayKlassKlass;     \
-friend class ciTypeArrayKlassKlass;
 
 #endif // SHARE_VM_CI_CICLASSLIST_HPP

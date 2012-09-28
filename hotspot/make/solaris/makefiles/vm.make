@@ -251,7 +251,7 @@ mapfile : $(MAPFILE) $(MAPFILE_DTRACE_OPT) vm.def
 	              }                                          \
 	          }' > $@
 
-mapfile_reorder : mapfile $(MAPFILE_DTRACE_OPT) $(REORDERFILE)
+mapfile_extended : mapfile $(MAPFILE_DTRACE_OPT)
 	rm -f $@
 	cat $^ > $@
 
@@ -264,7 +264,7 @@ ifeq ($(LINK_INTO),AOUT)
   LIBS_VM                  = $(LIBS)
 else
   LIBJVM.o                 = $(JVM_OBJ_FILES)
-  LIBJVM_MAPFILE$(LDNOMAP) = mapfile_reorder
+  LIBJVM_MAPFILE$(LDNOMAP) = mapfile_extended
   LFLAGS_VM$(LDNOMAP)      += $(MAPFLAG:FILENAME=$(LIBJVM_MAPFILE))
   LFLAGS_VM                += $(SONAMEFLAG:SONAME=$(LIBJVM))
 ifndef USE_GCC

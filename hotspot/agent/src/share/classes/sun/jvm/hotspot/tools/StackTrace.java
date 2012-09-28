@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import sun.jvm.hotspot.oops.*;
 /** Traverses and prints the stack traces for all Java threads in the
  * remote VM */
 public class StackTrace extends Tool {
-    // in non-verbose mode pc, sp and methodOop are not printed
+    // in non-verbose mode pc, sp and Method* are not printed
     public StackTrace(boolean v, boolean concurrentLocks) {
         this.verbose = v;
         this.concurrentLocks = concurrentLocks;
@@ -89,7 +89,7 @@ public class StackTrace extends Tool {
                                     tty.print(", pc=" + pc);
                                 }
 
-                                tty.print(", methodOop=" + method.getHandle());
+                                tty.print(", Method*=" + method.getAddress());
                             }
 
                             if (vf.isCompiledFrame()) {

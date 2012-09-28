@@ -692,7 +692,7 @@ public class Type implements PrimitiveType {
         /** A class type is raw if it misses some
          *  of its type parameter sections.
          *  After validation, this is equivalent to:
-         *  allparams.isEmpty() && tsym.type.allparams.nonEmpty();
+         *  {@code allparams.isEmpty() && tsym.type.allparams.nonEmpty(); }
          */
         public boolean isRaw() {
             return

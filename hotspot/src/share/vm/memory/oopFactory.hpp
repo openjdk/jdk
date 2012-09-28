@@ -28,7 +28,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/universe.hpp"
-#include "oops/klassOop.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -52,68 +51,20 @@ class oopFactory: AllStatic {
 
   // create java.lang.Object[]
   static objArrayOop     new_objectArray(int length, TRAPS)  {
+    assert(Universe::objectArrayKlassObj() != NULL, "Too early?");
     return objArrayKlass::
       cast(Universe::objectArrayKlassObj())->allocate(length, CHECK_NULL);
   }
 
   static typeArrayOop    new_charArray           (const char* utf8_str,  TRAPS);
-  static typeArrayOop    new_permanent_charArray (int length, TRAPS);
-  static typeArrayOop    new_permanent_byteArray (int length, TRAPS);  // used for class file structures
-  static typeArrayOop    new_permanent_shortArray(int length, TRAPS);  // used for class file structures
-  static typeArrayOop    new_permanent_intArray  (int length, TRAPS);  // used for class file structures
+  static typeArrayOop    new_tenured_charArray(int length, TRAPS);
 
   static typeArrayOop    new_typeArray(BasicType type, int length, TRAPS);
   static typeArrayOop    new_typeArray_nozero(BasicType type, int length, TRAPS);
-
-  // Constant pools
-  static constantPoolOop      new_constantPool     (int length,
-                                                    bool is_conc_safe,
-                                                    TRAPS);
-  static constantPoolCacheOop new_constantPoolCache(int length,
-                                                    TRAPS);
-
-  // Instance classes
-  static klassOop        new_instanceKlass(Symbol* name,
-                                           int vtable_len, int itable_len,
-                                           int static_field_size,
-                                           unsigned int nonstatic_oop_map_count,
-                                           AccessFlags access_flags,
-                                           ReferenceType rt,
-                                           KlassHandle host_klass, TRAPS);
-
-  // Methods
-private:
-  static constMethodOop  new_constMethod(int byte_code_size,
-                                         int compressed_line_number_size,
-                                         int localvariable_table_length,
-                                         int exception_table_length,
-                                         int checked_exceptions_length,
-                                         bool is_conc_safe,
-                                         TRAPS);
-public:
-  // Set is_conc_safe for methods which cannot safely be
-  // processed by concurrent GC even after the return of
-  // the method.
-  static methodOop       new_method(int byte_code_size,
-                                    AccessFlags access_flags,
-                                    int compressed_line_number_size,
-                                    int localvariable_table_length,
-                                    int exception_table_length,
-                                    int checked_exceptions_length,
-                                    bool is_conc_safe,
-                                    TRAPS);
-
-  // Method Data containers
-  static methodDataOop   new_methodData(methodHandle method, TRAPS);
-
-  // System object arrays
-  static objArrayOop     new_system_objArray(int length, TRAPS);
+  static typeArrayOop    new_metaDataArray(int length, TRAPS);
 
   // Regular object arrays
-  static objArrayOop     new_objArray(klassOop klass, int length, TRAPS);
-
-  // For compiled ICs
-  static compiledICHolderOop new_compiledICHolder(methodHandle method, KlassHandle klass, TRAPS);
+  static objArrayOop     new_objArray(Klass* klass, int length, TRAPS);
 };
 
 #endif // SHARE_VM_MEMORY_OOPFACTORY_HPP

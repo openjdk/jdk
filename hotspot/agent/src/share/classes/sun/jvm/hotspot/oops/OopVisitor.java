@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package sun.jvm.hotspot.oops;
 // An OopVisitor can be used to inspect all fields within an object.
 // Fields include vm fields, java fields, indexable fields.
 
-public interface OopVisitor {
+public interface OopVisitor extends FieldVisitor {
   // Called before visiting an object
   public void prologue();
 
@@ -38,17 +38,4 @@ public interface OopVisitor {
 
   // Returns the object being visited
   public Oop getObj();
-
-  // Callback methods for each field type in an object
-  public void doOop(OopField field, boolean isVMField);
-  public void doOop(NarrowOopField field, boolean isVMField);
-  public void doByte(ByteField field, boolean isVMField);
-  public void doChar(CharField field, boolean isVMField);
-  public void doBoolean(BooleanField field, boolean isVMField);
-  public void doShort(ShortField field, boolean isVMField);
-  public void doInt(IntField field, boolean isVMField);
-  public void doLong(LongField field, boolean isVMField);
-  public void doFloat(FloatField field, boolean isVMField);
-  public void doDouble(DoubleField field, boolean isVMField);
-  public void doCInt(CIntField field, boolean isVMField);
 };

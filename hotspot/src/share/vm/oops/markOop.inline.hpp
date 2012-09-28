@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_VM_OOPS_MARKOOP_INLINE_HPP
 
 #include "oops/klass.hpp"
-#include "oops/klassOop.hpp"
 #include "oops/markOop.hpp"
 #include "runtime/globals.hpp"
 
@@ -84,20 +83,20 @@ inline bool markOopDesc::must_be_preserved_for_promotion_failure(oop obj_contain
 
 
 // Same as must_be_preserved_with_bias_for_promotion_failure() except that
-// it takes a klassOop argument, instead of the object of which this is the mark word.
-inline bool markOopDesc::must_be_preserved_with_bias_for_cms_scavenge(klassOop klass_of_obj_containing_mark) const {
+// it takes a Klass* argument, instead of the object of which this is the mark word.
+inline bool markOopDesc::must_be_preserved_with_bias_for_cms_scavenge(Klass* klass_of_obj_containing_mark) const {
   assert(UseBiasedLocking, "unexpected");
   // CMS scavenges preserve mark words in similar fashion to promotion failures; see above
   if (has_bias_pattern() ||
-      klass_of_obj_containing_mark->klass_part()->prototype_header()->has_bias_pattern()) {
+      klass_of_obj_containing_mark->prototype_header()->has_bias_pattern()) {
     return true;
   }
   return (!is_unlocked() || !has_no_hash());
 }
 
 // Same as must_be_preserved_for_promotion_failure() except that
-// it takes a klassOop argument, instead of the object of which this is the mark word.
-inline bool markOopDesc::must_be_preserved_for_cms_scavenge(klassOop klass_of_obj_containing_mark) const {
+// it takes a Klass* argument, instead of the object of which this is the mark word.
+inline bool markOopDesc::must_be_preserved_for_cms_scavenge(Klass* klass_of_obj_containing_mark) const {
   if (!UseBiasedLocking)
     return (!is_unlocked() || !has_no_hash());
   return must_be_preserved_with_bias_for_cms_scavenge(klass_of_obj_containing_mark);
@@ -105,10 +104,10 @@ inline bool markOopDesc::must_be_preserved_for_cms_scavenge(klassOop klass_of_ob
 
 inline markOop markOopDesc::prototype_for_object(oop obj) {
 #ifdef ASSERT
-  markOop prototype_header = obj->klass()->klass_part()->prototype_header();
+  markOop prototype_header = obj->klass()->prototype_header();
   assert(prototype_header == prototype() || prototype_header->has_bias_pattern(), "corrupt prototype header");
 #endif
-  return obj->klass()->klass_part()->prototype_header();
+  return obj->klass()->prototype_header();
 }
 
 #endif // SHARE_VM_OOPS_MARKOOP_INLINE_HPP

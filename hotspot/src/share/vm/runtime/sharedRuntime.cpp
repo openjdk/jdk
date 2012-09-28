@@ -590,13 +590,13 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread *thread, Symbol* n
 // to modify the compilers to generate calls to this function.
 //
 JRT_LEAF(int, SharedRuntime::rc_trace_method_entry(
-    JavaThread* thread, methodOopDesc* method))
+    JavaThread* thread, Method* method))
   assert(RC_TRACE_IN_RANGE(0x00001000, 0x00002000), "wrong call");
 
   if (method->is_obsolete()) {
     // We are calling an obsolete method, but this is not necessarily
     // an error. Our method could have been redefined just after we
-    // fetched the methodOop from the constant pool.
+    // fetched the Method* from the constant pool.
 
     // RC_TRACE macro has an embedded ResourceMark
     RC_TRACE_WITH_THREAD(0x00001000, thread,
@@ -725,8 +725,8 @@ JRT_END
 JRT_ENTRY(void, SharedRuntime::throw_StackOverflowError(JavaThread* thread))
   // We avoid using the normal exception construction in this case because
   // it performs an upcall to Java, and we're already out of stack space.
-  klassOop k = SystemDictionary::StackOverflowError_klass();
-  oop exception_oop = instanceKlass::cast(k)->allocate_instance(CHECK);
+  Klass* k = SystemDictionary::StackOverflowError_klass();
+  oop exception_oop = InstanceKlass::cast(k)->allocate_instance(CHECK);
   Handle exception (thread, exception_oop);
   if (StackTraceInThrowable) {
     java_lang_Throwable::fill_in_stack_trace(exception);
@@ -909,8 +909,8 @@ JRT_END
 
 JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* thread, oopDesc* obj))
   assert(obj->is_oop(), "must be a valid oop");
-  assert(obj->klass()->klass_part()->has_finalizer(), "shouldn't be here otherwise");
-  instanceKlass::register_finalizer(instanceOop(obj), CHECK);
+  assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
+  InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
 
 
@@ -935,7 +935,7 @@ int SharedRuntime::dtrace_object_alloc(oopDesc* o) {
 
 int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o) {
   assert(DTraceAllocProbes, "wrong call");
-  Klass* klass = o->blueprint();
+  Klass* klass = o->klass();
   int size = o->size();
   Symbol* name = klass->name();
 #ifndef USDT2
@@ -950,7 +950,7 @@ int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o) {
 }
 
 JRT_LEAF(int, SharedRuntime::dtrace_method_entry(
-    JavaThread* thread, methodOopDesc* method))
+    JavaThread* thread, Method* method))
   assert(DTraceMethodProbes, "wrong call");
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
@@ -971,7 +971,7 @@ JRT_LEAF(int, SharedRuntime::dtrace_method_entry(
 JRT_END
 
 JRT_LEAF(int, SharedRuntime::dtrace_method_exit(
-    JavaThread* thread, methodOopDesc* method))
+    JavaThread* thread, Method* method))
   assert(DTraceMethodProbes, "wrong call");
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
@@ -1059,7 +1059,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
   if (bc != Bytecodes::_invokestatic && bc != Bytecodes::_invokedynamic) {
     assert(receiver.not_null(), "should have thrown exception");
     KlassHandle receiver_klass(THREAD, receiver->klass());
-    klassOop rk = constants->klass_ref_at(bytecode_index, CHECK_(nullHandle));
+    Klass* rk = constants->klass_ref_at(bytecode_index, CHECK_(nullHandle));
                             // klass is already loaded
     KlassHandle static_receiver_klass(THREAD, rk);
     // Method handle invokes might have been optimized to a direct call
@@ -1071,11 +1071,11 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
            callee->is_compiled_lambda_form(),
            "actual receiver must be subclass of static receiver klass");
     if (receiver_klass->oop_is_instance()) {
-      if (instanceKlass::cast(receiver_klass())->is_not_initialized()) {
+      if (InstanceKlass::cast(receiver_klass())->is_not_initialized()) {
         tty->print_cr("ERROR: Klass not yet initialized!!");
-        receiver_klass.print();
+        receiver_klass()->print();
       }
-      assert(!instanceKlass::cast(receiver_klass())->is_not_initialized(), "receiver_klass must be initialized");
+      assert(!InstanceKlass::cast(receiver_klass())->is_not_initialized(), "receiver_klass must be initialized");
     }
   }
 #endif
@@ -1233,7 +1233,7 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   {
     MutexLocker ml_patch(CompiledIC_lock);
 
-    // Now that we are ready to patch if the methodOop was redefined then
+    // Now that we are ready to patch if the Method* was redefined then
     // don't update call site and let the caller retry.
 
     if (!callee_method->is_old()) {
@@ -1245,7 +1245,9 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
       }
 #endif
       if (is_virtual) {
-        CompiledIC* inline_cache = CompiledIC_before(caller_frame.pc());
+        nmethod* nm = callee_nm;
+        if (nm == NULL) CodeCache::find_blob(caller_frame.pc());
+        CompiledIC* inline_cache = CompiledIC_before(caller_nm, caller_frame.pc());
         if (inline_cache->is_clean()) {
           inline_cache->set_to_monomorphic(virtual_call_info);
         }
@@ -1274,8 +1276,8 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* 
   methodHandle callee_method;
   JRT_BLOCK
     callee_method = SharedRuntime::handle_ic_miss_helper(thread, CHECK_NULL);
-    // Return methodOop through TLS
-    thread->set_vm_result(callee_method());
+    // Return Method* through TLS
+    thread->set_vm_result_2(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
   assert(callee_method->verified_code_entry() != NULL, " Jump to zero!");
@@ -1307,9 +1309,9 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* thread))
 
   if (caller_frame.is_interpreted_frame() ||
       caller_frame.is_entry_frame()) {
-    methodOop callee = thread->callee_target();
+    Method* callee = thread->callee_target();
     guarantee(callee != NULL && callee->is_method(), "bad handshake");
-    thread->set_vm_result(callee);
+    thread->set_vm_result_2(callee);
     thread->set_callee_target(NULL);
     return callee->get_c2i_entry();
   }
@@ -1319,7 +1321,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* thread))
   JRT_BLOCK
     // Force resolving of caller (if we called from compiled frame)
     callee_method = SharedRuntime::reresolve_call_site(thread, CHECK_NULL);
-    thread->set_vm_result(callee_method());
+    thread->set_vm_result_2(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
   assert(callee_method->verified_code_entry() != NULL, " Jump to zero!");
@@ -1332,7 +1334,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_static_call_C(JavaThread *thread
   methodHandle callee_method;
   JRT_BLOCK
     callee_method = SharedRuntime::resolve_helper(thread, false, false, CHECK_NULL);
-    thread->set_vm_result(callee_method());
+    thread->set_vm_result_2(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
   assert(callee_method->verified_code_entry() != NULL, " Jump to zero!");
@@ -1345,7 +1347,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_virtual_call_C(JavaThread *threa
   methodHandle callee_method;
   JRT_BLOCK
     callee_method = SharedRuntime::resolve_helper(thread, true, false, CHECK_NULL);
-    thread->set_vm_result(callee_method());
+    thread->set_vm_result_2(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
   assert(callee_method->verified_code_entry() != NULL, " Jump to zero!");
@@ -1359,7 +1361,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_opt_virtual_call_C(JavaThread *t
   methodHandle callee_method;
   JRT_BLOCK
     callee_method = SharedRuntime::resolve_helper(thread, true, true, CHECK_NULL);
-    thread->set_vm_result(callee_method());
+    thread->set_vm_result_2(callee_method());
   JRT_BLOCK_END
   // return compiled code entry point after potential safepoints
   assert(callee_method->verified_code_entry() != NULL, " Jump to zero!");
@@ -1442,7 +1444,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
     CodeBlob* cb = caller_frame.cb();
     if (cb->is_nmethod() && ((nmethod*)cb)->is_in_use()) {
       // Not a non-entrant nmethod, so find inline_cache
-      CompiledIC* inline_cache = CompiledIC_before(caller_frame.pc());
+      CompiledIC* inline_cache = CompiledIC_before(((nmethod*)cb), caller_frame.pc());
       bool should_be_mono = false;
       if (inline_cache->is_optimized()) {
         if (TraceCallFixup) {
@@ -1452,9 +1454,9 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
           tty->print_cr(" code: " INTPTR_FORMAT, callee_method->code());
         }
         should_be_mono = true;
-      } else {
-        compiledICHolderOop ic_oop = (compiledICHolderOop) inline_cache->cached_oop();
-        if ( ic_oop != NULL && ic_oop->is_compiledICHolder()) {
+      } else if (inline_cache->is_icholder_call()) {
+        CompiledICHolder* ic_oop = inline_cache->cached_icholder();
+        if ( ic_oop != NULL) {
 
           if (receiver()->klass() == ic_oop->holder_klass()) {
             // This isn't a real miss. We must have seen that compiled code
@@ -1591,7 +1593,7 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
           ssc->set_to_clean();
         } else {
           // compiled, dispatched call (which used to call an interpreted method)
-          CompiledIC* inline_cache = CompiledIC_at(call_addr);
+          CompiledIC* inline_cache = CompiledIC_at(caller_nm, call_addr);
           inline_cache->set_to_clean();
         }
       }
@@ -1622,8 +1624,8 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
 // where we went int -> i2c -> c2i and so the caller could in fact be
 // interpreted. If the caller is compiled we attempt to patch the caller
 // so he no longer calls into the interpreter.
-IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, address caller_pc))
-  methodOop moop(method);
+IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address caller_pc))
+  Method* moop(method);
 
   address entry_point = moop->from_compiled_entry();
 
@@ -1634,7 +1636,7 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, addr
   // Also it is possible that we lost a race in that from_compiled_entry
   // is now back to the i2c in that case we don't need to patch and if
   // we did we'd leap into space because the callsite needs to use
-  // "to interpreter" stub in order to load up the methodOop. Don't
+  // "to interpreter" stub in order to load up the Method*. Don't
   // ask me how I know this...
 
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
@@ -1907,7 +1909,7 @@ class MethodArityHistogram {
   static int _max_size;                       // max. arg size seen
 
   static void add_method_to_histogram(nmethod* nm) {
-    methodOop m = nm->method();
+    Method* m = nm->method();
     ArgumentCount args(m->signature());
     int arity   = args.size() + (m->is_static() ? 0 : 1);
     int argsize = m->size_of_parameters();
@@ -2800,7 +2802,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
   // QQQ we could place number of active monitors in the array so that compiled code
   // could double check it.
 
-  methodOop moop = fr.interpreter_frame_method();
+  Method* moop = fr.interpreter_frame_method();
   int max_locals = moop->max_locals();
   // Allocate temp buffer, 1 word per local & 2 per active monitor
   int buf_size_words = max_locals + active_monitor_count*2;

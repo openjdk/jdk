@@ -101,14 +101,13 @@ FormatBufferResource::FormatBufferResource(const char * format, ...)
 
 void warning(const char* format, ...) {
   if (PrintWarnings) {
-    // In case error happens before init or during shutdown
-    if (tty == NULL) ostream_init();
-
-    tty->print("%s warning: ", VM_Version::vm_name());
+    FILE* const err = defaultStream::error_stream();
+    jio_fprintf(err, "%s warning: ", VM_Version::vm_name());
     va_list ap;
     va_start(ap, format);
-    tty->vprint_cr(format, ap);
+    vfprintf(err, format, ap);
     va_end(ap);
+    fputc('\n', err);
   }
   if (BreakAtWarning) BREAKPOINT;
 }
@@ -264,6 +263,10 @@ void report_should_not_reach_here(const char* file, int line) {
   report_vm_error(file, line, "ShouldNotReachHere()");
 }
 
+void report_should_not_reach_here2(const char* file, int line, const char* message) {
+  report_vm_error(file, line, "ShouldNotReachHere()", message);
+}
+
 void report_unimplemented(const char* file, int line) {
   report_vm_error(file, line, "Unimplemented()");
 }
@@ -276,13 +279,13 @@ void report_untested(const char* file, int line, const char* message) {
 
 void report_out_of_shared_space(SharedSpaceType shared_space) {
   static const char* name[] = {
-    "permanent generation",
+    "native memory for metadata",
     "shared read only space",
     "shared read write space",
     "shared miscellaneous data space"
   };
   static const char* flag[] = {
-    "PermGen",
+    "Metaspace",
     "SharedReadOnlySize",
     "SharedReadWriteSize",
     "SharedMiscDataSize"
@@ -413,8 +416,8 @@ extern "C" void blob(CodeBlob* cb) {
 
 extern "C" void dump_vtable(address p) {
   Command c("dump_vtable");
-  klassOop k = (klassOop)p;
-  instanceKlass::cast(k)->vtable()->print();
+  Klass* k = (Klass*)p;
+  InstanceKlass::cast(k)->vtable()->print();
 }
 
 
@@ -627,10 +630,10 @@ extern "C" void pnl(intptr_t old_heap_addr) {
 }
 
 
-extern "C" methodOop findm(intptr_t pc) {
+extern "C" Method* findm(intptr_t pc) {
   Command c("findm");
   nmethod* nm = CodeCache::find_nmethod((address)pc);
-  return (nm == NULL) ? (methodOop)NULL : nm->method();
+  return (nm == NULL) ? (Method*)NULL : nm->method();
 }
 
 
@@ -650,82 +653,6 @@ static address same_page(address x, address y) {
   }
 }
 
-class LookForRefInGenClosure : public OopsInGenClosure {
-public:
-  oop target;
-  void do_oop(oop* o) {
-    if (o != NULL && *o == target) {
-      tty->print_cr(INTPTR_FORMAT, o);
-    }
-  }
-  void do_oop(narrowOop* o) { ShouldNotReachHere(); }
-};
-
-
-class LookForRefInObjectClosure : public ObjectClosure {
-private:
-  LookForRefInGenClosure look_in_object;
-public:
-  LookForRefInObjectClosure(oop target) { look_in_object.target = target; }
-  void do_object(oop obj) {
-    obj->oop_iterate(&look_in_object);
-  }
-};
-
-
-static void findref(intptr_t x) {
-  CollectedHeap *ch = Universe::heap();
-  LookForRefInGenClosure lookFor;
-  lookFor.target = (oop) x;
-  LookForRefInObjectClosure look_in_object((oop) x);
-
-  tty->print_cr("Searching heap:");
-  ch->object_iterate(&look_in_object);
-
-  tty->print_cr("Searching strong roots:");
-  Universe::oops_do(&lookFor, false);
-  JNIHandles::oops_do(&lookFor);   // Global (strong) JNI handles
-  Threads::oops_do(&lookFor, NULL);
-  ObjectSynchronizer::oops_do(&lookFor);
-  //FlatProfiler::oops_do(&lookFor);
-  SystemDictionary::oops_do(&lookFor);
-
-  tty->print_cr("Searching code cache:");
-  CodeCache::oops_do(&lookFor);
-
-  tty->print_cr("Done.");
-}
-
-class FindClassObjectClosure: public ObjectClosure {
-  private:
-    const char* _target;
-  public:
-    FindClassObjectClosure(const char name[])  { _target = name; }
-
-    virtual void do_object(oop obj) {
-      if (obj->is_klass()) {
-        Klass* k = klassOop(obj)->klass_part();
-        if (k->name() != NULL) {
-          ResourceMark rm;
-          const char* ext = k->external_name();
-          if ( strcmp(_target, ext) == 0 ) {
-            tty->print_cr("Found " INTPTR_FORMAT, obj);
-            obj->print();
-          }
-        }
-      }
-    }
-};
-
-//
-extern "C" void findclass(const char name[]) {
-  Command c("findclass");
-  if (name != NULL) {
-    tty->print_cr("Finding class %s -> ", name);
-    FindClassObjectClosure srch(name);
-    Universe::heap()->permanent_object_iterate(&srch);
-  }
-}
 
 // Another interface that isn't ambiguous in dbx.
 // Can we someday rename the other find to hsfind?
@@ -734,11 +661,6 @@ extern "C" void hsfind(intptr_t x) {
   os::print_location(tty, x, false);
 }
 
-
-extern "C" void hsfindref(intptr_t x) {
-  Command c("hsfindref");
-  findref(x);
-}
 
 extern "C" void find(intptr_t x) {
   Command c("find");
@@ -752,6 +674,17 @@ extern "C" void findpc(intptr_t x) {
 }
 
 
+// Need method pointer to find bcp, when not in permgen.
+extern "C" void findbcp(intptr_t method, intptr_t bcp) {
+  Command c("findbcp");
+  Method* mh = (Method*)method;
+  if (!mh->is_native()) {
+    tty->print_cr("bci_from(%p) = %d; print_codes():",
+                        mh, mh->bci_from(address(bcp)));
+    mh->print_codes_on(tty);
+  }
+}
+
 // int versions of all methods to avoid having to type type casts in the debugger
 
 void pp(intptr_t p)          { pp((void*)p); }
@@ -764,8 +697,8 @@ void help() {
   tty->print_cr("  pv(intptr_t p)- ((PrintableResourceObj*) p)->print()");
   tty->print_cr("  ps()          - print current thread stack");
   tty->print_cr("  pss()         - print all thread stacks");
-  tty->print_cr("  pm(int pc)    - print methodOop given compiled PC");
-  tty->print_cr("  findm(intptr_t pc) - finds methodOop");
+  tty->print_cr("  pm(int pc)    - print Method* given compiled PC");
+  tty->print_cr("  findm(intptr_t pc) - finds Method*");
   tty->print_cr("  find(intptr_t x)   - finds & prints nmethod/stub/bytecode/oop based on pointer into it");
 
   tty->print_cr("misc.");
@@ -812,7 +745,7 @@ struct CommandParser CommandList[] = {
   (char *)"ps", CMDID_PS, "    Print Current Thread Stack Trace",
   (char *)"pss", CMDID_PSS, "   Print All Thread Stack Trace",
   (char *)"psf", CMDID_PSF, "   Print All Stack Frames",
-  (char *)"findm", CMDID_FINDM, " Find a methodOop from a PC",
+  (char *)"findm", CMDID_FINDM, " Find a Method* from a PC",
   (char *)"findnm", CMDID_FINDNM, "Find an nmethod from a PC",
   (char *)"pp", CMDID_PP, "    Find out something about a pointer",
   (char *)"break", CMDID_BPT, " Execute a breakpoint",
@@ -837,7 +770,7 @@ void get_debug_command()
   intptr_t addr;
   char buffer[256];
   nmethod *nm;
-  methodOop m;
+  Method* m;
 
   tty->print_cr("You have entered the diagnostic command interpreter");
   tty->print("The supported commands are:\n");
@@ -872,7 +805,7 @@ void get_debug_command()
               case CMDID_FINDM:
                 tty->print("Please enter the hex addr to pass to findm: ");
                 scanf("%I64X", &addr);
-                m = (methodOop)findm(addr);
+                m = (Method*)findm(addr);
                 tty->print("findm(0x%I64X) returned 0x%I64X\n", addr, m);
                 break;
               case CMDID_FINDNM:

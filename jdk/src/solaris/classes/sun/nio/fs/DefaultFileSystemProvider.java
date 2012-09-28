@@ -27,7 +27,6 @@ package sun.nio.fs;
 
 import java.nio.file.spi.FileSystemProvider;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -38,24 +37,18 @@ public class DefaultFileSystemProvider {
     private DefaultFileSystemProvider() { }
 
     @SuppressWarnings("unchecked")
-    private static FileSystemProvider createProvider(final String cn) {
-        return AccessController
-            .doPrivileged(new PrivilegedAction<FileSystemProvider>() {
-                public FileSystemProvider run() {
-                    Class<FileSystemProvider> c;
-                    try {
-                        c = (Class<FileSystemProvider>)Class.forName(cn, true, null);
-                    } catch (ClassNotFoundException x) {
-                        throw new AssertionError(x);
-                    }
-                    try {
-                        return c.newInstance();
-                    } catch (IllegalAccessException x) {
-                        throw new AssertionError(x);
-                    } catch (InstantiationException x) {
-                        throw new AssertionError(x);
-                    }
-            }});
+    private static FileSystemProvider createProvider(String cn) {
+        Class<FileSystemProvider> c;
+        try {
+            c = (Class<FileSystemProvider>)Class.forName(cn);
+        } catch (ClassNotFoundException x) {
+            throw new AssertionError(x);
+        }
+        try {
+            return c.newInstance();
+        } catch (IllegalAccessException | InstantiationException x) {
+            throw new AssertionError(x);
+        }
     }
 
     /**
@@ -68,7 +61,7 @@ public class DefaultFileSystemProvider {
             return createProvider("sun.nio.fs.SolarisFileSystemProvider");
         if (osname.equals("Linux"))
             return createProvider("sun.nio.fs.LinuxFileSystemProvider");
-        if (osname.equals("Darwin") || osname.contains("OS X"))
+        if (osname.contains("OS X"))
             return createProvider("sun.nio.fs.MacOSXFileSystemProvider");
         throw new AssertionError("Platform not recognized");
     }
