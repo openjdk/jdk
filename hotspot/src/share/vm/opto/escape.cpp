@@ -282,6 +282,26 @@ bool ConnectionGraph::compute_escape() {
   return has_non_escaping_obj;
 }
 
+// Utility function for nodes that load an object
+void ConnectionGraph::add_objload_to_connection_graph(Node *n, Unique_Node_List *delayed_worklist) {
+  // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
+  // ThreadLocal has RawPtr type.
+  const Type* t = _igvn->type(n);
+  if (t->make_ptr() != NULL) {
+    Node* adr = n->in(MemNode::Address);
+#ifdef ASSERT
+    if (!adr->is_AddP()) {
+      assert(_igvn->type(adr)->isa_rawptr(), "sanity");
+    } else {
+      assert((ptnode_adr(adr->_idx) == NULL ||
+              ptnode_adr(adr->_idx)->as_Field()->is_oop()), "sanity");
+    }
+#endif
+    add_local_var_and_edge(n, PointsToNode::NoEscape,
+                           adr, delayed_worklist);
+  }
+}
+
 // Populate Connection Graph with PointsTo nodes and create simple
 // connection graph edges.
 void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *delayed_worklist) {
@@ -387,22 +407,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_LoadP:
     case Op_LoadN:
     case Op_LoadPLocked: {
-      // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
-      // ThreadLocal has RawPrt type.
-      const Type* t = igvn->type(n);
-      if (t->make_ptr() != NULL) {
-        Node* adr = n->in(MemNode::Address);
-#ifdef ASSERT
-        if (!adr->is_AddP()) {
-          assert(igvn->type(adr)->isa_rawptr(), "sanity");
-        } else {
-          assert((ptnode_adr(adr->_idx) == NULL ||
-                  ptnode_adr(adr->_idx)->as_Field()->is_oop()), "sanity");
-        }
-#endif
-        add_local_var_and_edge(n, PointsToNode::NoEscape,
-                               adr, delayed_worklist);
-      }
+      add_objload_to_connection_graph(n, delayed_worklist);
       break;
     }
     case Op_Parm: {
@@ -417,7 +422,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     }
     case Op_Phi: {
       // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
-      // ThreadLocal has RawPrt type.
+      // ThreadLocal has RawPtr type.
       const Type* t = n->as_Phi()->type();
       if (t->make_ptr() != NULL) {
         add_local_var(n, PointsToNode::NoEscape);
@@ -445,6 +450,11 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
                                n->in(TypeFunc::Parms), delayed_worklist);
       }
       break;
+    }
+    case Op_GetAndSetP:
+    case Op_GetAndSetN: {
+      add_objload_to_connection_graph(n, delayed_worklist);
+      // fallthrough
     }
     case Op_StoreP:
     case Op_StoreN:
@@ -585,7 +595,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_LoadN:
     case Op_LoadPLocked: {
       // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
-      // ThreadLocal has RawPrt type.
+      // ThreadLocal has RawPtr type.
       const Type* t = _igvn->type(n);
       if (t->make_ptr() != NULL) {
         Node* adr = n->in(MemNode::Address);
@@ -596,7 +606,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     }
     case Op_Phi: {
       // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
-      // ThreadLocal has RawPrt type.
+      // ThreadLocal has RawPtr type.
       const Type* t = n->as_Phi()->type();
       if (t->make_ptr() != NULL) {
         for (uint i = 1; i < n->req(); i++) {
@@ -638,8 +648,16 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_StoreN:
     case Op_StorePConditional:
     case Op_CompareAndSwapP:
-    case Op_CompareAndSwapN: {
+    case Op_CompareAndSwapN:
+    case Op_GetAndSetP:
+    case Op_GetAndSetN: {
       Node* adr = n->in(MemNode::Address);
+      if (opcode == Op_GetAndSetP || opcode == Op_GetAndSetN) {
+        const Type* t = _igvn->type(n);
+        if (t->make_ptr() != NULL) {
+          add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
+        }
+      }
       const Type *adr_type = _igvn->type(adr);
       adr_type = adr_type->make_ptr();
       if (adr_type->isa_oopptr() ||

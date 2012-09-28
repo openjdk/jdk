@@ -177,6 +177,7 @@ class nmethod : public CodeBlob {
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
   unsigned int _lazy_critical_native:1;      // Lazy JNI critical native
+  unsigned int _has_wide_vectors:1;          // Preserve wide vectors at safepoints
 
   // Protected by Patching_lock
   unsigned char _state;                      // {alive, not_entrant, zombie, unloaded}
@@ -442,6 +443,9 @@ class nmethod : public CodeBlob {
   bool  is_lazy_critical_native() const           { return _lazy_critical_native; }
   void  set_lazy_critical_native(bool z)          { _lazy_critical_native = z; }
 
+  bool  has_wide_vectors() const                  { return _has_wide_vectors; }
+  void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
+
   int   comp_level() const                        { return _comp_level; }
 
   // Support for oops in scopes and relocs:
@@ -647,11 +651,11 @@ public:
   void log_state_change() const;
 
   // Prints block-level comments, including nmethod specific block labels:
-  virtual void print_block_comment(outputStream* stream, address block_begin) {
+  virtual void print_block_comment(outputStream* stream, address block_begin) const {
     print_nmethod_labels(stream, block_begin);
     CodeBlob::print_block_comment(stream, block_begin);
   }
-  void print_nmethod_labels(outputStream* stream, address block_begin);
+  void print_nmethod_labels(outputStream* stream, address block_begin) const;
 
   // Prints a comment for one native instruction (reloc info, pc desc)
   void print_code_comment_on(outputStream* st, int column, address begin, address end);
