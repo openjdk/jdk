@@ -160,7 +160,7 @@ public class TestInvokeDynamic {
                 case CLASS:
                     return syms.stringType.tsym;
                 case METHOD_HANDLE:
-                    return new Pool.MethodHandle(REF_invokeVirtual, syms.arrayCloneMethod, names);
+                    return new Pool.MethodHandle(REF_invokeVirtual, syms.arrayCloneMethod);
                 case METHOD_TYPE:
                     return syms.arrayCloneMethod.type;
                 default:
