@@ -313,7 +313,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          buf.append(' ');
       }
       buf.append('@');
-      buf.append(klass.getHandle().toString());
+      buf.append(klass.getAddress().toString());
       return buf.toString();
    }
 
@@ -322,7 +322,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    }
 
    protected String genKlassHref(InstanceKlass klass) {
-      return genBaseHref() + "klass=" + klass.getHandle();
+      return genBaseHref() + "klass=" + klass.getAddress();
    }
 
    protected String genKlassLink(InstanceKlass klass) {
@@ -403,12 +403,12 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       buf.append(genMethodNameAndSignature(method));
       buf.append(' ');
       buf.append('@');
-      buf.append(method.getHandle().toString());
+      buf.append(method.getAddress().toString());
       return buf.toString();
    }
 
    protected String genMethodHref(Method m) {
-      return genBaseHref() + "method=" + m.getHandle();
+      return genBaseHref() + "method=" + m.getAddress();
    }
 
    protected String genMethodLink(Method m) {
@@ -498,7 +498,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          buf.beginTag("tr");
          buf.cell(Integer.toString(index));
 
-         int ctag = (int) cpool.getTags().getByteAt((int) index);
+         int ctag = (int) cpool.getTags().at((int) index);
          switch (ctag) {
             case JVM_CONSTANT_Integer:
                buf.cell("JVM_CONSTANT_Integer");
@@ -526,7 +526,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
             case JVM_CONSTANT_UnresolvedClass:
                buf.cell("JVM_CONSTANT_UnresolvedClass");
-               buf.cell(cpool.getSymbolAt(index).asString());
+               buf.cell(cpool.getKlassNameAt(index).asString());
                break;
 
             case JVM_CONSTANT_UnresolvedClassInError:
@@ -536,19 +536,12 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
             case JVM_CONSTANT_Class:
                buf.cell("JVM_CONSTANT_Class");
-               Klass klass = (Klass) cpool.getObjAtRaw(index);
+               Klass klass = (Klass) cpool.getKlassAt(index);
                if (klass instanceof InstanceKlass) {
                   buf.cell(genKlassLink((InstanceKlass) klass));
                } else {
                   buf.cell(klass.getName().asString().replace('/', '.'));
                }
-               break;
-
-            case JVM_CONSTANT_UnresolvedString:
-               buf.cell("JVM_CONSTANT_UnresolvedString");
-               buf.cell("\"" +
-                 escapeHTMLSpecialChars(cpool.getSymbolAt(index).asString()) +
-                 "\"");
                break;
 
             case JVM_CONSTANT_Utf8:
@@ -561,7 +554,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             case JVM_CONSTANT_String:
                buf.cell("JVM_CONSTANT_String");
                buf.cell("\"" +
-                 escapeHTMLSpecialChars(OopUtilities.stringOopToString(cpool.getObjAtRaw(index))) + "\"");
+                        escapeHTMLSpecialChars(cpool.getUnresolvedStringAt(index).asString()) + "\"");
                break;
 
             case JVM_CONSTANT_Fieldref:
@@ -637,7 +630,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    }
 
    protected String genConstantPoolHref(ConstantPool cpool) {
-      return genBaseHref() + "cpool=" + cpool.getHandle();
+      return genBaseHref() + "cpool=" + cpool.getAddress();
    }
 
    protected String genConstantPoolTitle(ConstantPool cpool) {
@@ -645,7 +638,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       buf.append("Constant Pool of [");
       buf.append(genKlassTitle((InstanceKlass) cpool.getPoolHolder()));
       buf.append("] @");
-      buf.append(cpool.getHandle().toString());
+      buf.append(cpool.getAddress().toString());
       return buf.toString();
    }
 
@@ -678,10 +671,10 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             for (int exp = 0; exp < exceptions.length; exp++) {
                short cpIndex = (short) exceptions[exp].getClassCPIndex();
                ConstantPool.CPSlot obj = cpool.getSlotAt(cpIndex);
-               if (obj.isMetaData()) {
+               if (obj.isUnresolved()) {
                  buf.li((obj.getSymbol()).asString().replace('/', '.'));
                } else {
-                 buf.li(genKlassLink((InstanceKlass)obj.getOop()));
+                 buf.li(genKlassLink((InstanceKlass)obj.getKlass()));
                }
             }
             buf.endTag("ul");
@@ -723,7 +716,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                              try {
                                  instrStr = escapeHTMLSpecialChars(instr.toString());
                              } catch (RuntimeException re) {
-                                 buf.append("exception during bytecode processing");
+                                 buf.append("exception while printing " + instr.getBytecodeName());
                                  buf.endTag("td");
                                  buf.endTag("tr");
                                  re.printStackTrace();
@@ -762,7 +755,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                                 BytecodeLoadConstant ldc = (BytecodeLoadConstant) instr;
                                 if (ldc.isKlassConstant()) {
                                    Object oop = ldc.getKlass();
-                                   if (oop instanceof Klass) {
+                                   if (oop instanceof InstanceKlass) {
                                       buf.append("<a href='");
                                       buf.append(genKlassHref((InstanceKlass) oop));
                                       buf.append("'>");
@@ -812,10 +805,10 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                   ConstantPool.CPSlot obj = cpIndex == 0? null : cpool.getSlotAt(cpIndex);
                   if (obj == null) {
                      buf.cell("Any");
-                  } else if (obj.isMetaData()) {
+                  } else if (obj.isUnresolved()) {
                      buf.cell(obj.getSymbol().asString().replace('/', '.'));
                   } else {
-                     buf.cell(genKlassLink((InstanceKlass)obj.getOop()));
+                    buf.cell(genKlassLink((InstanceKlass)obj.getKlass()));
                   }
                   buf.endTag("tr");
                }
@@ -843,7 +836,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    }
 
    // genHTML for a given address. Address may be a PC or
-   // methodOop or klassOop.
+   // Method* or Klass*.
 
    public String genHTMLForAddress(String addrStr) {
       return genHTML(parseAddress(addrStr));
@@ -878,9 +871,9 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       }
 
       // did not find nmethod.
-      // try methodOop, klassOop and constantPoolOop.
+      // try Method*, Klass* and ConstantPool*.
       try {
-         Oop obj = getOopAtAddress(pc);
+        Metadata obj = Metadata.instantiateWrapperFor(pc);
          if (obj != null) {
             if (obj instanceof Method) {
                return genHTML((Method) obj);
@@ -891,6 +884,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             }
          }
       } catch (Exception exp) {
+        exp.printStackTrace();
          // ignore
       }
 
@@ -1120,11 +1114,15 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                 Assert.that(klHandle != null, "scalar replaced object klass must be not NULL");
             }
             Oop obj = VM.getVM().getObjectHeap().newOop(klHandle);
-            if (obj instanceof InstanceKlass) {
-                InstanceKlass kls = (InstanceKlass) obj;
+            // Obj is a Java mirror
+            Klass klass = java_lang_Class.asKlass(obj);
+            if (klass instanceof InstanceKlass) {
+                InstanceKlass kls = (InstanceKlass) klass;
                 buf.append(" " + kls.getName().asString() + "={");
                 int flen = ov.fieldsSize();
-                int klen = kls.getJavaFieldsCount();
+
+                U2Array klfields = kls.getFields();
+                int klen = (int) klfields.length();
                 int findex = 0;
                 for (int index = 0; index < klen; index++) {
                     int accsFlags = kls.getFieldAccessFlags(index);
@@ -1140,11 +1138,11 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             } else {
                 buf.append(" ");
                 int flen = ov.fieldsSize();
-                if (obj instanceof TypeArrayKlass) {
-                    TypeArrayKlass kls = (TypeArrayKlass) obj;
+                if (klass instanceof TypeArrayKlass) {
+                    TypeArrayKlass kls = (TypeArrayKlass) klass;
                     buf.append(kls.getElementTypeName() + "[" + flen + "]");
-                } else if (obj instanceof ObjArrayKlass) {
-                    ObjArrayKlass kls = (ObjArrayKlass) obj;
+                } else if (klass instanceof ObjArrayKlass) {
+                    ObjArrayKlass kls = (ObjArrayKlass) klass;
                     Klass elobj = kls.getBottomKlass();
                     if (elobj instanceof InstanceKlass) {
                         buf.append(elobj.getName().asString());
@@ -1687,7 +1685,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       StringBuffer buf = new StringBuffer(genBaseHref());
       buf.append("jcore_multiple=");
       for (int k = 0; k < klasses.length; k++) {
-         buf.append(klasses[k].getHandle().toString());
+         buf.append(klasses[k].getAddress().toString());
          buf.append(',');
       }
       return buf.toString();
@@ -1743,13 +1741,13 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
    protected String genHTMLListForMethods(InstanceKlass klass) {
       Formatter buf = new Formatter(genHTML);
-      ObjArray methods = klass.getMethods();
-      int numMethods = (int) methods.getLength();
+      MethodArray methods = klass.getMethods();
+      int numMethods = methods.length();
       if (numMethods != 0) {
          buf.h3("Methods");
          buf.beginTag("ul");
          for (int m = 0; m < numMethods; m++) {
-            Method mtd = (Method) methods.getObjAt(m);
+            Method mtd = methods.at(m);
             buf.li(genMethodLink(mtd) + ";");
          }
          buf.endTag("ul");
@@ -1760,13 +1758,13 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    protected String genHTMLListForInterfaces(InstanceKlass klass) {
       try {
          Formatter buf = new Formatter(genHTML);
-         ObjArray interfaces = klass.getLocalInterfaces();
-         int numInterfaces = (int) interfaces.getLength();
+         KlassArray interfaces = klass.getLocalInterfaces();
+         int numInterfaces = interfaces.length();
          if (numInterfaces != 0) {
             buf.h3("Interfaces");
             buf.beginTag("ul");
             for (int i = 0; i < numInterfaces; i++) {
-               InstanceKlass inf = (InstanceKlass) interfaces.getObjAt(i);
+               InstanceKlass inf = (InstanceKlass) interfaces.getAt(i);
                buf.li(genKlassLink(inf));
             }
             buf.endTag("ul");
@@ -1822,7 +1820,8 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
    protected String genHTMLListForFields(InstanceKlass klass) {
       Formatter buf = new Formatter(genHTML);
-      int numFields = klass.getJavaFieldsCount();
+      U2Array fields = klass.getFields();
+      int numFields = klass.getAllFieldsCount();
       if (numFields != 0) {
          buf.h3("Fields");
          buf.beginList();
@@ -1857,7 +1856,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    }
 
    protected String genKlassHierarchyHref(InstanceKlass klass) {
-      return genBaseHref() + "hierarchy=" + klass.getHandle();
+      return genBaseHref() + "hierarchy=" + klass.getAddress();
    }
 
    protected String genKlassHierarchyTitle(InstanceKlass klass) {
@@ -1919,7 +1918,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    }
 
    protected String genDumpKlassHref(InstanceKlass klass) {
-      return genBaseHref() + "jcore=" + klass.getHandle();
+      return genBaseHref() + "jcore=" + klass.getAddress();
    }
 
    protected String genDumpKlassLink(InstanceKlass klass) {
@@ -1990,6 +1989,21 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    protected Oop getOopAtAddress(String address) {
       sun.jvm.hotspot.debugger.Address addr = parseAddress(address);
       return getOopAtAddress(addr);
+   }
+
+   protected Klass getKlassAtAddress(String address) {
+      sun.jvm.hotspot.debugger.Address addr = parseAddress(address);
+      return (Klass)Metadata.instantiateWrapperFor(addr);
+   }
+
+   protected Method getMethodAtAddress(String address) {
+      sun.jvm.hotspot.debugger.Address addr = parseAddress(address);
+      return (Method)Metadata.instantiateWrapperFor(addr);
+   }
+
+   protected ConstantPool getConstantPoolAtAddress(String address) {
+      sun.jvm.hotspot.debugger.Address addr = parseAddress(address);
+      return (ConstantPool) Metadata.instantiateWrapperFor(addr);
    }
 
    private void dumpKlass(InstanceKlass kls) throws IOException {
@@ -2082,18 +2096,18 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    public String genHTMLForHyperlink(String href) {
       if (href.startsWith("klass=")) {
          href = href.substring(href.indexOf('=') + 1);
-         Oop obj = getOopAtAddress(href);
+         Klass k = getKlassAtAddress(href);
          if (Assert.ASSERTS_ENABLED) {
-            Assert.that(obj instanceof InstanceKlass, "class= href with improper InstanceKlass!");
+            Assert.that(k instanceof InstanceKlass, "class= href with improper InstanceKlass!");
          }
-         return genHTML((InstanceKlass) obj);
+         return genHTML((InstanceKlass) k);
       } else if (href.startsWith("method=")) {
          href = href.substring(href.indexOf('=') + 1);
-         Oop obj = getOopAtAddress(href);
+         Method obj = getMethodAtAddress(href);
          if (Assert.ASSERTS_ENABLED) {
             Assert.that(obj instanceof Method, "method= href with improper Method!");
          }
-         return genHTML((Method) obj);
+         return genHTML(obj);
       } else if (href.startsWith("nmethod=")) {
          String addr = href.substring(href.indexOf('=') + 1);
          Object obj = VMObjectFactory.newObject(NMethod.class, parseAddress(addr));
@@ -2117,21 +2131,21 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          return genInterpreterCodeletLinksPage();
       } else if (href.startsWith("hierarchy=")) {
          href = href.substring(href.indexOf('=') + 1);
-         Oop obj = getOopAtAddress(href);
+         Klass obj = getKlassAtAddress(href);
          if (Assert.ASSERTS_ENABLED) {
             Assert.that(obj instanceof InstanceKlass, "class= href with improper InstanceKlass!");
          }
          return genHTMLForKlassHierarchy((InstanceKlass) obj);
       } else if (href.startsWith("cpool=")) {
          href = href.substring(href.indexOf('=') + 1);
-         Oop obj = getOopAtAddress(href);
+         ConstantPool obj = getConstantPoolAtAddress(href);
          if (Assert.ASSERTS_ENABLED) {
             Assert.that(obj instanceof ConstantPool, "cpool= href with improper ConstantPool!");
          }
-         return genHTML((ConstantPool) obj);
+         return genHTML(obj);
       } else if (href.startsWith("jcore=")) {
          href = href.substring(href.indexOf('=') + 1);
-         Oop obj = getOopAtAddress(href);
+         Klass obj = getKlassAtAddress(href);
          if (Assert.ASSERTS_ENABLED) {
             Assert.that(obj instanceof InstanceKlass, "jcore= href with improper InstanceKlass!");
          }
@@ -2142,7 +2156,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          buf.genHTMLPrologue();
          StringTokenizer st = new StringTokenizer(href, ",");
          while (st.hasMoreTokens()) {
-            Oop obj = getOopAtAddress(st.nextToken());
+            Klass obj = getKlassAtAddress(st.nextToken());
             if (Assert.ASSERTS_ENABLED) {
                Assert.that(obj instanceof InstanceKlass, "jcore_multiple= href with improper InstanceKlass!");
             }

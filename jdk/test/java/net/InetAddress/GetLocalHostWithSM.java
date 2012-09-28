@@ -41,14 +41,13 @@ public class GetLocalHostWithSM {
         public static void main(String[] args) throws Exception {
 
             // try setting the local hostname
-            try {
-                System.setProperty("host.name", InetAddress.
-                                                getLocalHost().
-                                                getHostName());
-            } catch (UnknownHostException e) {
-                System.out.println("Cannot find the local hostname, " +
-                        "no nameserver entry found");
+            InetAddress localHost = InetAddress.getLocalHost();
+            if (localHost.isLoopbackAddress()) {
+                System.err.println("Local host name is resolved into a loopback address. Quit now!");
+                return;
             }
+            System.setProperty("host.name", localHost.
+                                            getHostName());
             String policyFileName = System.getProperty("test.src", ".") +
                           "/" + "policy.file";
             System.setProperty("java.security.policy", policyFileName);
@@ -66,6 +65,7 @@ public class GetLocalHostWithSM {
                                 new MyAction(), null);
 
             if (localHost1.equals(localHost2)) {
+                System.out.println("localHost1 = " + localHost1);
                 throw new RuntimeException("InetAddress.getLocalHost() test " +
                                            " fails. localHost2 should be " +
                                            " the real address instead of " +

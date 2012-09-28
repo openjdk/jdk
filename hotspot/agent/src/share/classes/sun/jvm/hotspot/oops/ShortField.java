@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.oops;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.runtime.VMObject;
 
 // The class for a short field simply provides access to the value.
 public class ShortField extends Field {
@@ -41,6 +42,7 @@ public class ShortField extends Field {
   }
 
   public short getValue(Oop obj) { return obj.getHandle().getJShortAt(getOffset()); }
+  public short getValue(VMObject obj) { return obj.getAddress().getJShortAt(getOffset()); }
   public void setValue(Oop obj, short value) throws MutationException {
     // Fix this: setJFloatAt is missing in Address
   }

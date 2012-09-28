@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ class vframe: public ResourceObj {
 class javaVFrame: public vframe {
  public:
   // JVM state
-  virtual methodOop                    method()         const = 0;
+  virtual Method*                      method()         const = 0;
   virtual int                          bci()            const = 0;
   virtual StackValueCollection*        locals()         const = 0;
   virtual StackValueCollection*        expressions()    const = 0;
@@ -158,7 +158,7 @@ class javaVFrame: public vframe {
 class interpretedVFrame: public javaVFrame {
  public:
   // JVM state
-  methodOop                    method()         const;
+  Method*                      method()         const;
   int                          bci()            const;
   StackValueCollection*        locals()         const;
   StackValueCollection*        expressions()    const;
@@ -243,7 +243,7 @@ class MonitorInfo : public ResourceObj {
  private:
   oop        _owner; // the object owning the monitor
   BasicLock* _lock;
-  oop        _owner_klass; // klass if owner was scalar replaced
+  oop        _owner_klass; // klass (mirror) if owner was scalar replaced
   bool       _eliminated;
   bool       _owner_is_scalar_replaced;
  public:
@@ -266,9 +266,9 @@ class MonitorInfo : public ResourceObj {
     assert(!_owner_is_scalar_replaced, "should not be called for scalar replaced object");
     return _owner;
   }
-  klassOop   owner_klass() const {
+  oop   owner_klass() const {
     assert(_owner_is_scalar_replaced, "should not be called for not scalar replaced object");
-    return (klassOop)_owner_klass;
+    return _owner_klass;
   }
   BasicLock* lock()  const { return _lock;  }
   bool eliminated()  const { return _eliminated; }
@@ -286,7 +286,7 @@ class vframeStreamCommon : StackObj {
   int _sender_decode_offset;
 
   // Cached information
-  methodOop _method;
+  Method* _method;
   int       _bci;
 
   // Should VM activations be ignored or not
@@ -311,7 +311,7 @@ class vframeStreamCommon : StackObj {
   }
 
   // Accessors
-  methodOop method() const { return _method; }
+  Method* method() const { return _method; }
   int bci() const { return _bci; }
   intptr_t* frame_id() const { return _frame.id(); }
   address frame_pc() const { return _frame.pc(); }
@@ -414,7 +414,7 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
   // Decode first part of scopeDesc
   DebugInfoReadStream buffer(nm(), decode_offset);
   _sender_decode_offset = buffer.read_int();
-  _method               = methodOop(buffer.read_oop());
+  _method               = buffer.read_method();
   _bci                  = buffer.read_bci();
 
   assert(_method->is_method(), "checking type of decoded method");
@@ -509,7 +509,7 @@ inline bool vframeStreamCommon::fill_from_frame() {
 
 
 inline void vframeStreamCommon::fill_from_interpreter_frame() {
-  methodOop method = _frame.interpreter_frame_method();
+  Method* method = _frame.interpreter_frame_method();
   intptr_t  bcx    = _frame.interpreter_frame_bcx();
   int       bci    = method->validate_bci_from_bcx(bcx);
   // 6379830 AsyncGetCallTrace sometimes feeds us wild frames.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciMetadata.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciUtilities.hpp"
 #include "memory/allocation.inline.hpp"
@@ -35,8 +36,8 @@
 // ------------------------------------------------------------------
 // ciMethodData::ciMethodData
 //
-ciMethodData::ciMethodData(methodDataHandle h_md) : ciObject(h_md) {
-  assert(h_md() != NULL, "no null method data");
+ciMethodData::ciMethodData(MethodData* md) : ciMetadata(md) {
+  assert(md != NULL, "no null method data");
   Copy::zero_to_words((HeapWord*) &_orig, sizeof(_orig) / sizeof(HeapWord));
   _data = NULL;
   _data_size = 0;
@@ -56,8 +57,8 @@ ciMethodData::ciMethodData(methodDataHandle h_md) : ciObject(h_md) {
 // ------------------------------------------------------------------
 // ciMethodData::ciMethodData
 //
-// No methodDataOop.
-ciMethodData::ciMethodData() : ciObject() {
+// No MethodData*.
+ciMethodData::ciMethodData() : ciMetadata(NULL) {
   Copy::zero_to_words((HeapWord*) &_orig, sizeof(_orig) / sizeof(HeapWord));
   _data = NULL;
   _data_size = 0;
@@ -75,7 +76,7 @@ ciMethodData::ciMethodData() : ciObject() {
 }
 
 void ciMethodData::load_data() {
-  methodDataOop mdo = get_methodDataOop();
+  MethodData* mdo = get_MethodData();
   if (mdo == NULL) return;
 
   // To do: don't copy the data if it is not "ripe" -- require a minimum #
@@ -84,11 +85,9 @@ void ciMethodData::load_data() {
   // Snapshot the data -- actually, take an approximate snapshot of
   // the data.  Any concurrently executing threads may be changing the
   // data as we copy it.
-  int skip_header = oopDesc::header_size();
-  Copy::disjoint_words((HeapWord*) mdo              + skip_header,
-                       (HeapWord*) &_orig           + skip_header,
-                       sizeof(_orig) / HeapWordSize - skip_header);
-  DEBUG_ONLY(*_orig.adr_method() = NULL);  // no dangling oops, please
+  Copy::disjoint_words((HeapWord*) mdo,
+                       (HeapWord*) &_orig,
+                       sizeof(_orig) / HeapWordSize);
   Arena* arena = CURRENT_ENV->arena();
   _data_size = mdo->data_size();
   _extra_data_size = mdo->extra_data_size();
@@ -107,7 +106,7 @@ void ciMethodData::load_data() {
     data = mdo->next_data(data);
   }
   // Note:  Extra data are all BitData, and do not need translation.
-  _current_mileage = methodDataOopDesc::mileage_of(mdo->method());
+  _current_mileage = MethodData::mileage_of(mdo->method());
   _invocation_counter = mdo->invocation_count();
   _backedge_counter = mdo->backedge_count();
   _state = mdo->is_mature()? mature_state: immature_state;
@@ -120,9 +119,9 @@ void ciMethodData::load_data() {
 
 void ciReceiverTypeData::translate_receiver_data_from(ProfileData* data) {
   for (uint row = 0; row < row_limit(); row++) {
-    klassOop k = data->as_ReceiverTypeData()->receiver(row);
+    Klass* k = data->as_ReceiverTypeData()->receiver(row);
     if (k != NULL) {
-      ciKlass* klass = CURRENT_ENV->get_object(k)->as_klass();
+      ciKlass* klass = CURRENT_ENV->get_klass(k);
       set_receiver(row, klass);
     }
   }
@@ -184,7 +183,7 @@ ciProfileData* ciMethodData::bci_to_data(int bci) {
   // bci_to_extra_data(bci) ...
   DataLayout* dp  = data_layout_at(data_size());
   DataLayout* end = data_layout_at(data_size() + extra_data_size());
-  for (; dp < end; dp = methodDataOopDesc::next_extra(dp)) {
+  for (; dp < end; dp = MethodData::next_extra(dp)) {
     if (dp->tag() == DataLayout::no_tag) {
       _saw_free_extra_data = true;  // observed an empty slot (common case)
       return NULL;
@@ -236,7 +235,7 @@ int ciMethodData::trap_recompiled_at(ciProfileData* data) {
 
 void ciMethodData::clear_escape_info() {
   VM_ENTRY_MARK;
-  methodDataOop mdo = get_methodDataOop();
+  MethodData* mdo = get_MethodData();
   if (mdo != NULL) {
     mdo->clear_escape_info();
     ArgInfoData *aid = arg_info();
@@ -248,10 +247,10 @@ void ciMethodData::clear_escape_info() {
   _eflags = _arg_local = _arg_stack = _arg_returned = 0;
 }
 
-// copy our escape info to the methodDataOop if it exists
+// copy our escape info to the MethodData* if it exists
 void ciMethodData::update_escape_info() {
   VM_ENTRY_MARK;
-  methodDataOop mdo = get_methodDataOop();
+  MethodData* mdo = get_MethodData();
   if ( mdo != NULL) {
     mdo->set_eflags(_eflags);
     mdo->set_arg_local(_arg_local);
@@ -266,7 +265,7 @@ void ciMethodData::update_escape_info() {
 
 void ciMethodData::set_compilation_stats(short loops, short blocks) {
   VM_ENTRY_MARK;
-  methodDataOop mdo = get_methodDataOop();
+  MethodData* mdo = get_MethodData();
   if (mdo != NULL) {
     mdo->set_num_loops(loops);
     mdo->set_num_blocks(blocks);
@@ -275,25 +274,25 @@ void ciMethodData::set_compilation_stats(short loops, short blocks) {
 
 void ciMethodData::set_would_profile(bool p) {
   VM_ENTRY_MARK;
-  methodDataOop mdo = get_methodDataOop();
+  MethodData* mdo = get_MethodData();
   if (mdo != NULL) {
     mdo->set_would_profile(p);
   }
 }
 
 bool ciMethodData::has_escape_info() {
-  return eflag_set(methodDataOopDesc::estimated);
+  return eflag_set(MethodData::estimated);
 }
 
-void ciMethodData::set_eflag(methodDataOopDesc::EscapeFlag f) {
+void ciMethodData::set_eflag(MethodData::EscapeFlag f) {
   set_bits(_eflags, f);
 }
 
-void ciMethodData::clear_eflag(methodDataOopDesc::EscapeFlag f) {
+void ciMethodData::clear_eflag(MethodData::EscapeFlag f) {
   clear_bits(_eflags, f);
 }
 
-bool ciMethodData::eflag_set(methodDataOopDesc::EscapeFlag f) const {
+bool ciMethodData::eflag_set(MethodData::EscapeFlag f) const {
   return mask_bits(_eflags, f) != 0;
 }
 
@@ -338,8 +337,8 @@ uint ciMethodData::arg_modified(int arg) const {
 }
 
 ByteSize ciMethodData::offset_of_slot(ciProfileData* data, ByteSize slot_offset_in_data) {
-  // Get offset within methodDataOop of the data array
-  ByteSize data_offset = methodDataOopDesc::data_offset();
+  // Get offset within MethodData* of the data array
+  ByteSize data_offset = MethodData::data_offset();
 
   // Get cell offset of the ProfileData within data array
   int cell_offset = dp_to_di(data->dp());
@@ -354,7 +353,7 @@ ciArgInfoData *ciMethodData::arg_info() const {
   // Should be last, have to skip all traps.
   DataLayout* dp  = data_layout_at(data_size());
   DataLayout* end = data_layout_at(data_size() + extra_data_size());
-  for (; dp < end; dp = methodDataOopDesc::next_extra(dp)) {
+  for (; dp < end; dp = MethodData::next_extra(dp)) {
     if (dp->tag() == DataLayout::arg_info_data_tag)
       return new ciArgInfoData(dp);
   }
@@ -364,7 +363,7 @@ ciArgInfoData *ciMethodData::arg_info() const {
 
 // Implementation of the print method.
 void ciMethodData::print_impl(outputStream* st) {
-  ciObject::print_impl(st);
+  ciMetadata::print_impl(st);
 }
 
 #ifndef PRODUCT
@@ -383,7 +382,7 @@ void ciMethodData::print_data_on(outputStream* st) {
   st->print_cr("--- Extra data:");
   DataLayout* dp  = data_layout_at(data_size());
   DataLayout* end = data_layout_at(data_size() + extra_data_size());
-  for (; dp < end; dp = methodDataOopDesc::next_extra(dp)) {
+  for (; dp < end; dp = MethodData::next_extra(dp)) {
     if (dp->tag() == DataLayout::no_tag)  continue;
     if (dp->tag() == DataLayout::bit_data_tag) {
       data = new BitData(dp);

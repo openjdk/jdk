@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import com.sun.tools.javac.util.Name;
  *     classSignature         ::= [ typeparams ] supertype { interfacetype }
  *  </pre>
  *  <p>The type syntax in signatures is extended as follows:
- *  <pre>
+ *  <pre>{@literal
  *     type       ::= ... | classtype | methodtype | typevar
  *     classtype  ::= classsig { '.' classsig }
  *     classig    ::= 'L' name [typeargs] ';'
@@ -54,7 +54,7 @@ import com.sun.tools.javac.util.Name;
  *     typeargs   ::= '<' type { type } '>'
  *     typeparams ::= '<' typeparam { typeparam } '>'
  *     typeparam  ::= name ':' type
- *  </pre>
+ *  }</pre>
  *  <p>This class defines constants used in class files as well
  *  as routines to convert between internal ``.'' and external ``/''
  *  separators in class names.

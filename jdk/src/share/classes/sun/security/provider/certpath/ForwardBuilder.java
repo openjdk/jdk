@@ -369,20 +369,21 @@ class ForwardBuilder extends Builder {
         boolean add = false;
         for (AccessDescription ad : adList) {
             CertStore cs = URICertStore.getInstance(ad);
-            try {
-                if (certs.addAll((Collection<X509Certificate>)
-                    cs.getCertificates(caSelector))) {
-                    add = true;
-                    if (!searchAllCertStores) {
-                        return true;
+            if (cs != null) {
+                try {
+                    if (certs.addAll((Collection<X509Certificate>)
+                        cs.getCertificates(caSelector))) {
+                        add = true;
+                        if (!searchAllCertStores) {
+                            return true;
+                        }
+                    }
+                } catch (CertStoreException cse) {
+                    if (debug != null) {
+                        debug.println("exception getting certs from CertStore:");
+                        cse.printStackTrace();
                     }
                 }
-            } catch (CertStoreException cse) {
-                if (debug != null) {
-                    debug.println("exception getting certs from CertStore:");
-                    cse.printStackTrace();
-                }
-                continue;
             }
         }
         return add;
@@ -816,36 +817,36 @@ class ForwardBuilder extends Builder {
                 } else {
                     continue;
                 }
-            } else {
-                X500Principal principal = anchor.getCA();
-                PublicKey publicKey = anchor.getCAPublicKey();
+            }
+            X500Principal principal = anchor.getCA();
+            PublicKey publicKey = anchor.getCAPublicKey();
 
-                if (principal != null && publicKey != null &&
-                        principal.equals(cert.getSubjectX500Principal())) {
-                    if (publicKey.equals(cert.getPublicKey())) {
-                        // the cert itself is a trust anchor
-                        this.trustAnchor = anchor;
-                        return true;
-                    }
-                    // else, it is a self-issued certificate of the anchor
+            if (principal != null && publicKey != null &&
+                    principal.equals(cert.getSubjectX500Principal())) {
+                if (publicKey.equals(cert.getPublicKey())) {
+                    // the cert itself is a trust anchor
+                    this.trustAnchor = anchor;
+                    return true;
                 }
+                // else, it is a self-issued certificate of the anchor
+            }
 
-                // Check subject/issuer name chaining
-                if (principal == null ||
-                        !principal.equals(cert.getIssuerX500Principal())) {
-                    continue;
-                }
+            // Check subject/issuer name chaining
+            if (principal == null ||
+                    !principal.equals(cert.getIssuerX500Principal())) {
+                continue;
+            }
+
+            // skip anchor if it contains a DSA key with no DSA params
+            if (PKIX.isDSAPublicKeyWithoutParams(publicKey)) {
+                continue;
             }
 
             /*
              * Check signature
              */
             try {
-                // NOTE: the DSA public key in the buildParams may lack
-                // parameters, yet there is no key to inherit the parameters
-                // from.  This is probably such a rare case that it is not worth
-                // trying to detect the situation earlier.
-                cert.verify(anchor.getCAPublicKey(), buildParams.sigProvider());
+                cert.verify(publicKey, buildParams.sigProvider());
             } catch (InvalidKeyException ike) {
                 if (debug != null) {
                     debug.println("ForwardBuilder.isPathCompleted() invalid "

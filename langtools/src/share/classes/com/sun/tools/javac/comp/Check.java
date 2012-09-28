@@ -2373,9 +2373,12 @@ public class Check {
         tree.accept(new AnnotationValidator());
     }
 
-    /** Annotation types are restricted to primitives, String, an
+    /**
+     *  {@literal
+     *  Annotation types are restricted to primitives, String, an
      *  enum, an annotation, Class, Class<?>, Class<? extends
      *  Anything>, arrays of the preceding.
+     *  }
      */
     void validateAnnotationType(JCTree restype) {
         // restype may be null if an error occurred, so don't bother validating it

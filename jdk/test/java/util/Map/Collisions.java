@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 7126277
+ * @run main Collisions -shortrun
+ * @run main/othervm -Djdk.map.althashing.threshold=0 Collisions -shortrun
  * @summary Ensure Maps behave well with lots of hashCode() collisions.
  * @author Mike Duigou
  */
@@ -32,6 +34,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public class Collisions {
+
+    /**
+     * Number of elements per map.
+     */
+    private static final int TEST_SIZE = 5000;
 
     final static class HashableInteger implements Comparable<HashableInteger> {
 
@@ -64,20 +71,19 @@ public class Collisions {
             return value - o.value;
         }
 
+        @Override
         public String toString() {
             return Integer.toString(value);
         }
     }
-    private static final int ITEMS = 5000;
-    private static final Object KEYS[][];
 
-    static {
-        HashableInteger UNIQUE_OBJECTS[] = new HashableInteger[ITEMS];
-        HashableInteger COLLIDING_OBJECTS[] = new HashableInteger[ITEMS];
-        String UNIQUE_STRINGS[] = new String[ITEMS];
-        String COLLIDING_STRINGS[] = new String[ITEMS];
+    private static Object[][] makeTestData(int size) {
+        HashableInteger UNIQUE_OBJECTS[] = new HashableInteger[size];
+        HashableInteger COLLIDING_OBJECTS[] = new HashableInteger[size];
+        String UNIQUE_STRINGS[] = new String[size];
+        String COLLIDING_STRINGS[] = new String[size];
 
-        for (int i = 0; i < ITEMS; i++) {
+        for (int i = 0; i < size; i++) {
             UNIQUE_OBJECTS[i] = new HashableInteger(i, Integer.MAX_VALUE);
             COLLIDING_OBJECTS[i] = new HashableInteger(i, 10);
             UNIQUE_STRINGS[i] = unhash(i);
@@ -86,7 +92,7 @@ public class Collisions {
                     : "\u0000\u0000\u0000\u0000\u0000" + COLLIDING_STRINGS[i - 1];
         }
 
-     KEYS = new Object[][] {
+     return new Object[][] {
             new Object[]{"Unique Objects", UNIQUE_OBJECTS},
             new Object[]{"Colliding Objects", COLLIDING_OBJECTS},
             new Object[]{"Unique Strings", UNIQUE_STRINGS},
@@ -132,23 +138,29 @@ public class Collisions {
     }
 
     private static void realMain(String[] args) throws Throwable {
-        for (Object[] keys_desc : KEYS) {
-            Map<Object, Object>[] MAPS = (Map<Object, Object>[]) new Map[]{
-                        new Hashtable<>(),
+        boolean shortRun = args.length > 0 && args[0].equals("-shortrun");
+
+        Object[][] mapKeys = makeTestData(shortRun ? (TEST_SIZE / 2) : TEST_SIZE);
+
+        // loop through data sets
+        for (Object[] keys_desc : mapKeys) {
+            Map<Object, Object>[] maps = (Map<Object, Object>[]) new Map[]{
                         new HashMap<>(),
+                        new Hashtable<>(),
                         new IdentityHashMap<>(),
                         new LinkedHashMap<>(),
-                        new ConcurrentHashMap<>(),
-                        new WeakHashMap<>(),
                         new TreeMap<>(),
+                        new WeakHashMap<>(),
+                        new ConcurrentHashMap<>(),
                         new ConcurrentSkipListMap<>()
                     };
 
-            for (Map<Object, Object> map : MAPS) {
+            // for each map type.
+            for (Map<Object, Object> map : maps) {
                 String desc = (String) keys_desc[0];
                 Object[] keys = (Object[]) keys_desc[1];
                 try {
-                testMap(map, desc, keys);
+                    testMap(map, desc, keys);
                 } catch(Exception all) {
                     unexpected("Failed for " + map.getClass().getName() + " with " + desc, all);
                 }
@@ -397,7 +409,7 @@ public class Collisions {
     }
 
     public static void main(String[] args) throws Throwable {
-        Thread.currentThread().setName("Collisions");
+        Thread.currentThread().setName(Collisions.class.getName());
 //        Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
         try {
             realMain(args);

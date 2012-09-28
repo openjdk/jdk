@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ public class VM {
   /** alignment constants */
   private boolean      isLP64;
   private int          bytesPerLong;
+  private int          bytesPerWord;
   private int          objectAlignmentInBytes;
   private int          minObjAlignmentInBytes;
   private int          logMinObjAlignmentInBytes;
@@ -128,6 +129,7 @@ public class VM {
   private static CIntegerType boolType;
   private Boolean sharingEnabled;
   private Boolean compressedOopsEnabled;
+  private Boolean compressedHeadersEnabled;
 
   // command line flags supplied to VM - see struct Flag in globals.hpp
   public static final class Flag {
@@ -303,7 +305,7 @@ public class VM {
     // We infer the presence of C1 or C2 from a couple of fields we
     // already have present in the type database
     {
-      Type type = db.lookupType("methodOopDesc");
+      Type type = db.lookupType("Method");
       if (type.getField("_from_compiled_entry", false, false) == null) {
         // Neither C1 nor C2 is present
         usingClientCompiler = false;
@@ -325,6 +327,7 @@ public class VM {
       isLP64 = debugger.getMachineDescription().isLP64();
     }
     bytesPerLong = db.lookupIntConstant("BytesPerLong").intValue();
+    bytesPerWord = db.lookupIntConstant("BytesPerWord").intValue();
     heapWordSize = db.lookupIntConstant("HeapWordSize").intValue();
     oopSize  = db.lookupIntConstant("oopSize").intValue();
 
@@ -507,6 +510,10 @@ public class VM {
   /** Get bytes-per-long == long/double natural alignment. */
   public int getBytesPerLong() {
     return bytesPerLong;
+  }
+
+  public int getBytesPerWord() {
+    return bytesPerWord;
   }
 
   /** Get minimum object alignment in bytes. */
@@ -770,6 +777,15 @@ public class VM {
              (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
     }
     return compressedOopsEnabled.booleanValue();
+  }
+
+  public boolean isCompressedHeadersEnabled() {
+    if (compressedHeadersEnabled == null) {
+        Flag flag = getCommandLineFlag("UseCompressedHeaders");
+        compressedHeadersEnabled = (flag == null) ? Boolean.FALSE:
+             (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
+    }
+    return compressedHeadersEnabled.booleanValue();
   }
 
   public int getObjectAlignmentInBytes() {

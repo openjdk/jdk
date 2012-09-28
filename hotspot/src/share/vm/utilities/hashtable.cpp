@@ -94,20 +94,6 @@ template <MEMFLAGS F> bool BasicHashtable<F>::check_rehash_table(int count) {
 
 template <class T, MEMFLAGS F> jint Hashtable<T, F>::_seed = 0;
 
-template <class T, MEMFLAGS F> unsigned int Hashtable<T, F>::new_hash(Symbol* sym) {
-  ResourceMark rm;
-  // Use alternate hashing algorithm on this symbol.
-  return AltHashing::murmur3_32(seed(), (const jbyte*)sym->as_C_string(), sym->utf8_length());
-}
-
-template <class T, MEMFLAGS F> unsigned int Hashtable<T, F>::new_hash(oop string) {
-  ResourceMark rm;
-  int length;
-  jchar* chars = java_lang_String::as_unicode_string(string, length);
-  // Use alternate hashing algorithm on the string
-  return AltHashing::murmur3_32(seed(), chars, length);
-}
-
 // Create a new table and using alternate hash code, populate the new table
 // with the existing elements.   This can be used to change the hash code
 // and could in the future change the size of the table.
@@ -126,7 +112,7 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::move_to(Hashtable<T, F>* ne
       HashtableEntry<T, F>* next = p->next();
       T string = p->literal();
       // Use alternate hashing algorithm on the symbol in the first table
-      unsigned int hashValue = new_hash(string);
+      unsigned int hashValue = string->new_hash(seed());
       // Get a new index relative to the new table (can also change size)
       int index = new_table->hash_to_index(hashValue);
       p->set_hash(hashValue);
@@ -314,9 +300,9 @@ template <MEMFLAGS F> void BasicHashtable<F>::verify_lookup_length(double load) 
 
 #endif
 // Explicitly instantiate these types
-template class Hashtable<constantPoolOop, mtClass>;
+template class Hashtable<ConstantPool*, mtClass>;
 template class Hashtable<Symbol*, mtSymbol>;
-template class Hashtable<klassOop, mtClass>;
+template class Hashtable<Klass*, mtClass>;
 template class Hashtable<oop, mtClass>;
 #ifdef SOLARIS
 template class Hashtable<oop, mtSymbol>;

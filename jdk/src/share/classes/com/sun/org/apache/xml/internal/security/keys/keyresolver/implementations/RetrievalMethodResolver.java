@@ -283,7 +283,7 @@ public class RetrievalMethodResolver extends KeyResolverSpi {
            Element e=null;
            while (it.hasNext()) {
                    Node currentNode=it.next();
-                   if (currentNode instanceof Element) {
+                   if (currentNode != null && currentNode.getNodeType() == Node.ELEMENT_NODE) {
                            e=(Element)currentNode;
                            break;
                    }
@@ -292,14 +292,14 @@ public class RetrievalMethodResolver extends KeyResolverSpi {
            List<Element> parents=new ArrayList<Element>(10);
 
                 //Obtain all the parents of the elemnt
-                do {
+                while (e != null) {
                         parents.add(e);
                         Node n=e.getParentNode();
-                        if (!(n instanceof Element )) {
+                        if (n == null || n.getNodeType() != Node.ELEMENT_NODE) {
                                 break;
                         }
                         e=(Element)n;
-                } while (e!=null);
+                }
                 //Visit them in reverse order.
                 ListIterator<Element> it2=parents.listIterator(parents.size()-1);
                 Element ele=null;

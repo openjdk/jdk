@@ -25,7 +25,7 @@
  * @test
  * @bug 5049976
  * @library ../../httptest/
- * @build HttpCallback HttpServer ClosedChannelList HttpTransaction
+  @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main SetChunkedStreamingMode
  * @summary Unspecified NPE is thrown when streaming output mode is enabled
  */
@@ -60,11 +60,11 @@ public class SetChunkedStreamingMode implements HttpCallback {
         System.out.println ("finished reading");
     }
 
-    static HttpServer server;
+    static TestHttpServer server;
 
     public static void main (String[] args) throws Exception {
         try {
-            server = new HttpServer (new SetChunkedStreamingMode(), 1, 10, 0);
+            server = new TestHttpServer (new SetChunkedStreamingMode(), 1, 10, 0);
             System.out.println ("Server: listening on port: " + server.getLocalPort());
             URL url = new URL ("http://127.0.0.1:"+server.getLocalPort()+"/");
             System.out.println ("Client: connecting to " + url);

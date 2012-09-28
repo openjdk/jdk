@@ -26,12 +26,10 @@
 package sun.security.provider.certpath;
 
 import java.io.IOException;
-import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.DSAPublicKey;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -169,9 +167,7 @@ class ForwardState implements State {
         X509CertImpl icert = X509CertImpl.toImpl(cert);
 
         /* see if certificate key has null parameters */
-        PublicKey newKey = icert.getPublicKey();
-        if (newKey instanceof DSAPublicKey &&
-            ((DSAPublicKey)newKey).getParams() == null) {
+        if (PKIX.isDSAPublicKeyWithoutParams(icert.getPublicKey())) {
             keyParamsNeededFlag = true;
         }
 

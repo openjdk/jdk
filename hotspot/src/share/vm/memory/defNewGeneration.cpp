@@ -30,6 +30,7 @@
 #include "memory/gcLocker.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/genOopClosures.inline.hpp"
+#include "memory/genRemSet.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/iterator.hpp"
 #include "memory/referencePolicy.hpp"
@@ -118,7 +119,7 @@ void DefNewGeneration::FastEvacuateFollowersClosure::do_void() {
 }
 
 ScanClosure::ScanClosure(DefNewGeneration* g, bool gc_barrier) :
-  OopsInGenClosure(g), _g(g), _gc_barrier(gc_barrier)
+    OopsInKlassOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
 {
   assert(_g->level() == 0, "Optimized for youngest generation");
   _boundary = _g->reserved().end();
@@ -128,7 +129,7 @@ void ScanClosure::do_oop(oop* p)       { ScanClosure::do_oop_work(p); }
 void ScanClosure::do_oop(narrowOop* p) { ScanClosure::do_oop_work(p); }
 
 FastScanClosure::FastScanClosure(DefNewGeneration* g, bool gc_barrier) :
-  OopsInGenClosure(g), _g(g), _gc_barrier(gc_barrier)
+    OopsInKlassOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
 {
   assert(_g->level() == 0, "Optimized for youngest generation");
   _boundary = _g->reserved().end();
@@ -137,8 +138,39 @@ FastScanClosure::FastScanClosure(DefNewGeneration* g, bool gc_barrier) :
 void FastScanClosure::do_oop(oop* p)       { FastScanClosure::do_oop_work(p); }
 void FastScanClosure::do_oop(narrowOop* p) { FastScanClosure::do_oop_work(p); }
 
+void KlassScanClosure::do_klass(Klass* klass) {
+#ifndef PRODUCT
+  if (TraceScavenge) {
+    ResourceMark rm;
+    gclog_or_tty->print_cr("KlassScanClosure::do_klass %p, %s, dirty: %s",
+                           klass,
+                           klass->external_name(),
+                           klass->has_modified_oops() ? "true" : "false");
+  }
+#endif
+
+  // If the klass has not been dirtied we know that there's
+  // no references into  the young gen and we can skip it.
+  if (klass->has_modified_oops()) {
+    if (_accumulate_modified_oops) {
+      klass->accumulate_modified_oops();
+    }
+
+    // Clear this state since we're going to scavenge all the metadata.
+    klass->clear_modified_oops();
+
+    // Tell the closure which Klass is being scanned so that it can be dirtied
+    // if oops are left pointing into the young gen.
+    _scavenge_closure->set_scanned_klass(klass);
+
+    klass->oops_do(_scavenge_closure);
+
+    _scavenge_closure->set_scanned_klass(NULL);
+  }
+}
+
 ScanWeakRefClosure::ScanWeakRefClosure(DefNewGeneration* g) :
-  OopClosure(g->ref_processor()), _g(g)
+  _g(g)
 {
   assert(_g->level() == 0, "Optimized for youngest generation");
   _boundary = _g->reserved().end();
@@ -149,6 +181,12 @@ void ScanWeakRefClosure::do_oop(narrowOop* p) { ScanWeakRefClosure::do_oop_work(
 
 void FilteringClosure::do_oop(oop* p)       { FilteringClosure::do_oop_work(p); }
 void FilteringClosure::do_oop(narrowOop* p) { FilteringClosure::do_oop_work(p); }
+
+KlassScanClosure::KlassScanClosure(OopsInKlassOrGenClosure* scavenge_closure,
+                                   KlassRemSet* klass_rem_set)
+    : _scavenge_closure(scavenge_closure),
+      _accumulate_modified_oops(klass_rem_set->accumulate_modified_oops()) {}
+
 
 DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t initial_size,
@@ -572,6 +610,9 @@ void DefNewGeneration::collect(bool   full,
   FastScanClosure fsc_with_no_gc_barrier(this, false);
   FastScanClosure fsc_with_gc_barrier(this, true);
 
+  KlassScanClosure klass_scan_closure(&fsc_with_no_gc_barrier,
+                                      gch->rem_set()->klass_rem_set());
+
   set_promo_failure_scan_stack_closure(&fsc_with_no_gc_barrier);
   FastEvacuateFollowersClosure evacuate_followers(gch, _level, this,
                                                   &fsc_with_no_gc_barrier,
@@ -580,15 +621,18 @@ void DefNewGeneration::collect(bool   full,
   assert(gch->no_allocs_since_save_marks(0),
          "save marks have not been newly set.");
 
+  int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_CodeCache;
+
   gch->gen_process_strong_roots(_level,
                                 true,  // Process younger gens, if any,
                                        // as strong roots.
                                 true,  // activate StrongRootsScope
-                                false, // not collecting perm generation.
-                                SharedHeap::SO_AllClasses,
+                                true,  // is scavenging
+                                SharedHeap::ScanningOption(so),
                                 &fsc_with_no_gc_barrier,
                                 true,   // walk *all* scavengable nmethods
-                                &fsc_with_gc_barrier);
+                                &fsc_with_gc_barrier,
+                                &klass_scan_closure);
 
   // "evacuate followers".
   evacuate_followers.do_void();

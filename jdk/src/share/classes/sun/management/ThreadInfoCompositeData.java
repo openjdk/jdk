@@ -85,11 +85,18 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         }
 
         // Convert MonitorInfo[] and LockInfo[] to CompositeData[]
-        LockDataConverter converter = new LockDataConverter(threadInfo);
-        CompositeData lockInfoData = converter.toLockInfoCompositeData();
-        CompositeData[] lockedSyncsData = converter.toLockedSynchronizersCompositeData();
+        CompositeData lockInfoData =
+            LockInfoCompositeData.toCompositeData(threadInfo.getLockInfo());
 
-        // Convert MonitorInfo[] to CompositeData[]
+        // Convert LockInfo[] and MonitorInfo[] to CompositeData[]
+        LockInfo[] lockedSyncs = threadInfo.getLockedSynchronizers();
+        CompositeData[] lockedSyncsData =
+            new CompositeData[lockedSyncs.length];
+        for (int i = 0; i < lockedSyncs.length; i++) {
+            LockInfo li = lockedSyncs[i];
+            lockedSyncsData[i] = LockInfoCompositeData.toCompositeData(li);
+        }
+
         MonitorInfo[] lockedMonitors = threadInfo.getLockedMonitors();
         CompositeData[] lockedMonitorsData =
             new CompositeData[lockedMonitors.length];
@@ -97,7 +104,6 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
             MonitorInfo mi = lockedMonitors[i];
             lockedMonitorsData[i] = MonitorInfoCompositeData.toCompositeData(mi);
         }
-
 
         // CONTENTS OF THIS ARRAY MUST BE SYNCHRONIZED WITH
         // threadInfoItemNames!
@@ -216,11 +222,11 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         // with it.  So we can get the CompositeType representing LockInfo
         // from a mapped CompositeData for any LockInfo object.
         // Thus we construct a random LockInfo object and pass it
-        // to LockDataConverter to do the conversion.
+        // to LockInfoCompositeData to do the conversion.
         Object o = new Object();
         LockInfo li = new LockInfo(o.getClass().getName(),
                                    System.identityHashCode(o));
-        CompositeData cd = LockDataConverter.toLockInfoCompositeData(li);
+        CompositeData cd = LockInfoCompositeData.toCompositeData(li);
         lockInfoCompositeType = cd.getCompositeType();
     }
 
@@ -315,9 +321,8 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
 
     // 6.0 new attributes
     public LockInfo lockInfo() {
-        LockDataConverter converter = new LockDataConverter();
         CompositeData lockInfoData = (CompositeData) cdata.get(LOCK_INFO);
-        return converter.toLockInfo(lockInfoData);
+        return LockInfo.from(lockInfoData);
     }
 
     public MonitorInfo[] lockedMonitors() {
@@ -336,13 +341,17 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
     }
 
     public LockInfo[] lockedSynchronizers() {
-        LockDataConverter converter = new LockDataConverter();
         CompositeData[] lockedSyncsData =
             (CompositeData[]) cdata.get(LOCKED_SYNCS);
 
         // The LockedSynchronizers item cannot be null, but if it is we will
         // get a NullPointerException when we ask for its length.
-        return converter.toLockedSynchronizers(lockedSyncsData);
+        LockInfo[] locks = new LockInfo[lockedSyncsData.length];
+        for (int i = 0; i < lockedSyncsData.length; i++) {
+            CompositeData cdi = lockedSyncsData[i];
+            locks[i] = LockInfo.from(cdi);
+        }
+        return locks;
     }
 
     /** Validate if the input CompositeData has the expected

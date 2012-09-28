@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -48,7 +49,7 @@ void oopDesc::print_on(outputStream* st) const {
   if (this == NULL) {
     st->print_cr("NULL");
   } else {
-    blueprint()->oop_print_on(oop(this), st);
+    klass()->oop_print_on(oop(this), st);
   }
 }
 
@@ -86,19 +87,15 @@ void oopDesc::print_value_on(outputStream* st) const {
   } else if (java_lang_String::is_instance(obj)) {
     java_lang_String::print(obj, st);
     if (PrintOopAddress) print_address_on(st);
-#ifdef ASSERT
-  } else if (!Universe::heap()->is_in(obj) || !Universe::heap()->is_in(klass())) {
-    st->print("### BAD OOP %p ###", (address)obj);
-#endif //ASSERT
   } else {
-    blueprint()->oop_print_value_on(obj, st);
+    klass()->oop_print_value_on(obj, st);
   }
 }
 
 
 void oopDesc::verify_on(outputStream* st) {
   if (this != NULL) {
-    blueprint()->oop_verify_on(this, st);
+    klass()->oop_verify_on(this, st);
   }
 }
 
@@ -107,23 +104,21 @@ void oopDesc::verify() {
   verify_on(tty);
 }
 
-bool oopDesc::partially_loaded() {
-  return blueprint()->oop_partially_loaded(this);
-}
-
-
-void oopDesc::set_partially_loaded() {
-  blueprint()->oop_set_partially_loaded(this);
-}
-
-
 intptr_t oopDesc::slow_identity_hash() {
   // slow case; we have to acquire the micro lock in order to locate the header
   ResetNoHandleMark rnm; // Might be called from LEAF/QUICK ENTRY
   HandleMark hm;
-  Handle object((oop)this);
-  assert(!is_shared_readonly(), "using identity hash on readonly object?");
+  Handle object(this);
   return ObjectSynchronizer::identity_hash_value_for(object);
+}
+
+// When String table needs to rehash
+unsigned int oopDesc::new_hash(jint seed) {
+  ResourceMark rm;
+  int length;
+  jchar* chars = java_lang_String::as_unicode_string(this, length);
+  // Use alternate hashing algorithm on the string
+  return AltHashing::murmur3_32(seed, chars, length);
 }
 
 VerifyOopClosure VerifyOopClosure::verify_oop;

@@ -36,8 +36,8 @@
 
 // ciInstanceKlass
 //
-// This class represents a klassOop in the HotSpot virtual machine
-// whose Klass part in an instanceKlass.
+// This class represents a Klass* in the HotSpot virtual machine
+// whose Klass part in an InstanceKlass.
 
 // ------------------------------------------------------------------
 // ciInstanceKlass::ciInstanceKlass
@@ -48,7 +48,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
 {
   assert(get_Klass()->oop_is_instance(), "wrong type");
   assert(get_instanceKlass()->is_loaded(), "must be at least loaded");
-  instanceKlass* ik = get_instanceKlass();
+  InstanceKlass* ik = get_instanceKlass();
 
   AccessFlags access_flags = ik->access_flags();
   _flags = ciFlags(access_flags);
@@ -92,10 +92,10 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
 // Version for unloaded classes:
 ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
                                  jobject loader, jobject protection_domain)
-  : ciKlass(name, ciInstanceKlassKlass::make())
+  : ciKlass(name, T_OBJECT)
 {
   assert(name->byte_at(0) != '[', "not an instance klass");
-  _init_state = (instanceKlass::ClassState)0;
+  _init_state = (InstanceKlass::ClassState)0;
   _nonstatic_field_size = -1;
   _has_nonstatic_fields = false;
   _nonstatic_fields = NULL;
@@ -113,7 +113,7 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
 // ciInstanceKlass::compute_shared_is_initialized
 void ciInstanceKlass::compute_shared_init_state() {
   GUARDED_VM_ENTRY(
-    instanceKlass* ik = get_instanceKlass();
+    InstanceKlass* ik = get_instanceKlass();
     _init_state = ik->init_state();
   )
 }
@@ -122,7 +122,7 @@ void ciInstanceKlass::compute_shared_init_state() {
 // ciInstanceKlass::compute_shared_has_subklass
 bool ciInstanceKlass::compute_shared_has_subklass() {
   GUARDED_VM_ENTRY(
-    instanceKlass* ik = get_instanceKlass();
+    InstanceKlass* ik = get_instanceKlass();
     _has_subklass = ik->subklass() != NULL;
     return _has_subklass;
   )
@@ -205,7 +205,7 @@ ciInstanceKlass* ciInstanceKlass::get_canonical_holder(int offset) {
 // ciInstanceKlass::is_java_lang_Object
 //
 // Is this klass java.lang.Object?
-bool ciInstanceKlass::is_java_lang_Object() {
+bool ciInstanceKlass::is_java_lang_Object() const {
   return equals(CURRENT_ENV->Object_klass());
 }
 
@@ -292,8 +292,8 @@ ciInstanceKlass* ciInstanceKlass::super() {
   assert(is_loaded(), "must be loaded");
   if (_super == NULL && !is_java_lang_Object()) {
     GUARDED_VM_ENTRY(
-      klassOop super_klass = get_instanceKlass()->super();
-      _super = CURRENT_ENV->get_object(super_klass)->as_instance_klass();
+      Klass* super_klass = get_instanceKlass()->super();
+      _super = CURRENT_ENV->get_instance_klass(super_klass);
     )
   }
   return _super;
@@ -321,13 +321,13 @@ ciInstanceKlass* ciInstanceKlass::unique_concrete_subklass() {
   if (!is_abstract())   return NULL; // Only applies to abstract classes.
   if (!has_subklass())  return NULL; // Must have at least one subklass.
   VM_ENTRY_MARK;
-  instanceKlass* ik = get_instanceKlass();
+  InstanceKlass* ik = get_instanceKlass();
   Klass* up = ik->up_cast_abstract();
-  assert(up->oop_is_instance(), "must be instanceKlass");
+  assert(up->oop_is_instance(), "must be InstanceKlass");
   if (ik == up) {
     return NULL;
   }
-  return CURRENT_THREAD_ENV->get_object(up->as_klassOop())->as_instance_klass();
+  return CURRENT_THREAD_ENV->get_instance_klass(up);
 }
 
 // ------------------------------------------------------------------
@@ -354,7 +354,7 @@ ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) 
     return NULL;
   }
   VM_ENTRY_MARK;
-  instanceKlass* k = get_instanceKlass();
+  InstanceKlass* k = get_instanceKlass();
   fieldDescriptor fd;
   if (!k->find_field_from_offset(field_offset, is_static, &fd)) {
     return NULL;
@@ -367,9 +367,9 @@ ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) 
 // ciInstanceKlass::get_field_by_name
 ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature, bool is_static) {
   VM_ENTRY_MARK;
-  instanceKlass* k = get_instanceKlass();
+  InstanceKlass* k = get_instanceKlass();
   fieldDescriptor fd;
-  klassOop def = k->find_field(name->get_symbol(), signature->get_symbol(), is_static, &fd);
+  Klass* def = k->find_field(name->get_symbol(), signature->get_symbol(), is_static, &fd);
   if (def == NULL) {
     return NULL;
   }
@@ -397,7 +397,7 @@ GrowableArray<ciField*>* ciInstanceKlass::non_static_fields() {
   if (_non_static_fields == NULL) {
     VM_ENTRY_MARK;
     ciEnv* curEnv = ciEnv::current();
-    instanceKlass* ik = get_instanceKlass();
+    InstanceKlass* ik = get_instanceKlass();
     int max_n_fields = ik->java_fields_count();
 
     Arena* arena = curEnv->arena();
@@ -473,7 +473,7 @@ ciInstanceKlass::compute_nonstatic_fields_impl(GrowableArray<ciField*>*
   Arena* arena = CURRENT_ENV->arena();
   int flen = 0;
   GrowableArray<ciField*>* fields = NULL;
-  instanceKlass* k = get_instanceKlass();
+  InstanceKlass* k = get_instanceKlass();
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static())  continue;
     flen += 1;
@@ -494,7 +494,7 @@ ciInstanceKlass::compute_nonstatic_fields_impl(GrowableArray<ciField*>*
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static())  continue;
     fieldDescriptor fd;
-    fd.initialize(k->as_klassOop(), fs.index());
+    fd.initialize(k, fs.index());
     ciField* field = new (arena) ciField(&fd);
     fields->append(field);
   }
@@ -508,14 +508,14 @@ ciInstanceKlass::compute_nonstatic_fields_impl(GrowableArray<ciField*>*
 // Find a method in this klass.
 ciMethod* ciInstanceKlass::find_method(ciSymbol* name, ciSymbol* signature) {
   VM_ENTRY_MARK;
-  instanceKlass* k = get_instanceKlass();
+  InstanceKlass* k = get_instanceKlass();
   Symbol* name_sym = name->get_symbol();
   Symbol* sig_sym= signature->get_symbol();
 
-  methodOop m = k->find_method(name_sym, sig_sym);
+  Method* m = k->find_method(name_sym, sig_sym);
   if (m == NULL)  return NULL;
 
-  return CURRENT_THREAD_ENV->get_object(m)->as_method();
+  return CURRENT_THREAD_ENV->get_method(m);
 }
 
 // ------------------------------------------------------------------
@@ -535,7 +535,7 @@ bool ciInstanceKlass::is_leaf_type() {
 // Report an implementor of this interface.
 // Note that there are various races here, since my copy
 // of _nof_implementors might be out of date with respect
-// to results returned by instanceKlass::implementor.
+// to results returned by InstanceKlass::implementor.
 // This is OK, since any dependencies we decide to assert
 // will be checked later under the Compile_lock.
 ciInstanceKlass* ciInstanceKlass::implementor() {
@@ -544,13 +544,13 @@ ciInstanceKlass* ciInstanceKlass::implementor() {
     // Go into the VM to fetch the implementor.
     {
       VM_ENTRY_MARK;
-      klassOop k = get_instanceKlass()->implementor();
+      Klass* k = get_instanceKlass()->implementor();
       if (k != NULL) {
-        if (k == get_instanceKlass()->as_klassOop()) {
+        if (k == get_instanceKlass()) {
           // More than one implementors. Use 'this' in this case.
           impl = this;
         } else {
-          impl = CURRENT_THREAD_ENV->get_object(k)->as_instance_klass();
+          impl = CURRENT_THREAD_ENV->get_instance_klass(k);
         }
       }
     }
