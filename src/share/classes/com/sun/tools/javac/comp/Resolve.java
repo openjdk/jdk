@@ -27,8 +27,8 @@ package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.api.Formattable.LocalizedString;
 import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
 import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
@@ -48,6 +48,7 @@ import java.util.Collection;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -60,7 +61,6 @@ import static com.sun.tools.javac.code.Kinds.ERRONEOUS;
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
-import java.util.Iterator;
 
 /** Helper class for name resolution, used mostly by the attribution phase.
  *
@@ -1200,7 +1200,10 @@ public class Resolve {
         for (TypeSymbol s : superclasses(intype)) {
             bestSoFar = lookupMethod(env, site, name, argtypes, typeargtypes,
                     s.members(), bestSoFar, allowBoxing, useVarargs, operator, true);
-            abstractOk &= excludeAbstractsFilter.accepts(s);
+            //We should not look for abstract methods if receiver is a concrete class
+            //(as concrete classes are expected to implement all abstracts coming
+            //from superinterfaces)
+            abstractOk &= (s.flags() & (ABSTRACT | INTERFACE | ENUM)) != 0;
             if (abstractOk) {
                 for (Type itype : types.interfaces(s.type)) {
                     itypes = types.union(types.closure(itype), itypes);
@@ -1247,52 +1250,46 @@ public class Resolve {
                 return new Iterator<TypeSymbol>() {
 
                     List<TypeSymbol> seen = List.nil();
-                    TypeSymbol currentSym = getSymbol(intype);
+                    TypeSymbol currentSym = symbolFor(intype);
+                    TypeSymbol prevSym = null;
 
                     public boolean hasNext() {
+                        if (currentSym == syms.noSymbol) {
+                            currentSym = symbolFor(types.supertype(prevSym.type));
+                        }
                         return currentSym != null;
                     }
 
                     public TypeSymbol next() {
-                        TypeSymbol prevSym = currentSym;
-                        currentSym = getSymbol(types.supertype(currentSym.type));
+                        prevSym = currentSym;
+                        currentSym = syms.noSymbol;
+                        Assert.check(prevSym != null || prevSym != syms.noSymbol);
                         return prevSym;
                     }
 
                     public void remove() {
-                        throw new UnsupportedOperationException("Not supported yet.");
+                        throw new UnsupportedOperationException();
                     }
 
-                    TypeSymbol getSymbol(Type intype) {
-                        if (intype.tag != CLASS &&
-                                intype.tag != TYPEVAR) {
+                    TypeSymbol symbolFor(Type t) {
+                        if (t.tag != CLASS &&
+                                t.tag != TYPEVAR) {
                             return null;
                         }
-                        while (intype.tag == TYPEVAR)
-                            intype = intype.getUpperBound();
-                        if (seen.contains(intype.tsym)) {
+                        while (t.tag == TYPEVAR)
+                            t = t.getUpperBound();
+                        if (seen.contains(t.tsym)) {
                             //degenerate case in which we have a circular
                             //class hierarchy - because of ill-formed classfiles
                             return null;
                         }
-                        seen = seen.prepend(intype.tsym);
-                        return intype.tsym;
+                        seen = seen.prepend(t.tsym);
+                        return t.tsym;
                     }
                 };
             }
         };
     }
-
-    /**
-     * We should not look for abstract methods if receiver is a concrete class
-     * (as concrete classes are expected to implement all abstracts coming
-     * from superinterfaces)
-     */
-    Filter<Symbol> excludeAbstractsFilter = new Filter<Symbol>() {
-        public boolean accepts(Symbol s) {
-            return (s.flags() & (ABSTRACT | INTERFACE | ENUM)) != 0;
-        }
-    };
 
     /**
      * Lookup a method with given name and argument types in a given scope

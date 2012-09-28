@@ -118,6 +118,7 @@ public class Names {
     // attribute names
     public final Name Annotation;
     public final Name AnnotationDefault;
+    public final Name BootstrapMethods;
     public final Name Bridge;
     public final Name CharacterRangeTable;
     public final Name Code;
@@ -168,9 +169,6 @@ public class Names {
     public final Name deprecated;
     public final Name ex;
     public final Name package_info;
-
-    // lambda-related
-    public final Name BootstrapMethods;
 
     public final Name.Table table;
 
@@ -249,6 +247,7 @@ public class Names {
         // attribute names
         Annotation = fromString("Annotation");
         AnnotationDefault = fromString("AnnotationDefault");
+        BootstrapMethods = fromString("BootstrapMethods");
         Bridge = fromString("Bridge");
         CharacterRangeTable = fromString("CharacterRangeTable");
         Code = fromString("Code");
@@ -299,9 +298,6 @@ public class Names {
         deprecated = fromString("deprecated");
         ex = fromString("ex");
         package_info = fromString("package-info");
-
-        //lambda-related
-        BootstrapMethods = fromString("BootstrapMethods");
     }
 
     protected Name.Table createTable(Options options) {

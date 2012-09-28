@@ -27,16 +27,16 @@ package com.sun.tools.javac.jvm;
 
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
-import java.util.*;
-
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.util.ArrayUtils;
+
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Filter;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
+
+import java.util.*;
 
 /** An internal structure that corresponds to the constant pool of a classfile.
  *
@@ -177,13 +177,9 @@ public class Pool {
         /** Reference symbol */
         Symbol refSym;
 
-        /** Reference to the name table */
-        Names names;
-
-        public MethodHandle(int refKind, Symbol refSym, Names names) {
+        public MethodHandle(int refKind, Symbol refSym) {
             this.refKind = refKind;
             this.refSym = refSym;
-            this.names = names;
             checkConsistent();
         }
         public boolean equals(Object other) {
@@ -244,13 +240,13 @@ public class Pool {
         //where
                 Filter<Name> nonInitFilter = new Filter<Name>() {
                     public boolean accepts(Name n) {
-                        return n != names.init && n != names.clinit;
+                        return n != n.table.names.init && n != n.table.names.clinit;
                     }
                 };
 
                 Filter<Name> initFilter = new Filter<Name>() {
                     public boolean accepts(Name n) {
-                        return n == names.init;
+                        return n == n.table.names.init;
                     }
                 };
     }
