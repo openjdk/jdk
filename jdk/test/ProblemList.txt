@@ -134,6 +134,15 @@ java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 # 7148492
 java/lang/management/MemoryMXBean/ResetPeakMemoryUsage.java	generic-all
 
+# 7196801
+java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
+
+# Exclude until the fix for 7195557 propagates widely.
+java/lang/management/MemoryMXBean/CollectionUsageThresholdParallelGC.sh generic-all
+java/lang/management/MemoryMXBean/CollectionUsageThresholdSerialGC.sh generic-all
+java/lang/management/MemoryMXBean/MemoryTest.java		generic-all
+java/lang/management/MemoryMXBean/MemoryTestAllGC.sh		generic-all
+
 ############################################################################
 
 # jdk_management

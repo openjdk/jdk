@@ -34,7 +34,8 @@
 enum G1Barrier {
   G1BarrierNone,
   G1BarrierRS,
-  G1BarrierEvac
+  G1BarrierEvac,
+  G1BarrierKlass
 };
 
 template<bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>

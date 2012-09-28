@@ -30,7 +30,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VARIANT],
 # Check which variant of the JDK that we want to build.
 # Currently we have:
 #    normal:   standard edition   
-#    embedded: cut down to a smaller footprint
+# but the custom make system may add other variants
 #
 # Effectively the JDK variant gives a name to a specific set of
 # modules to compile into the JDK. In the future, these modules
@@ -38,22 +38,14 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VARIANT],
 #
 AC_MSG_CHECKING([which variant of the JDK to build])
 AC_ARG_WITH([jdk-variant], [AS_HELP_STRING([--with-jdk-variant],
-	[JDK variant to build (normal, embedded) @<:@normal@:>@])])
+	[JDK variant to build (normal) @<:@normal@:>@])])
 
 if test "x$with_jdk_variant" = xnormal || test "x$with_jdk_variant" = x; then
-    JAVASE_EMBEDDED=""
-    MINIMIZE_RAM_USAGE=""
     JDK_VARIANT="normal"
-elif test "x$with_jdk_variant" = xembedded; then
-    JAVASE_EMBEDDED="JAVASE_EMBEDDED:=true"
-    MINIMIZE_RAM_USAGE="MINIMIZE_RAM_USAGE:=true"
-    JDK_VARIANT="embedded"
 else
-    AC_MSG_ERROR([The available JDK variants are: normal, embedded])
+    AC_MSG_ERROR([The available JDK variants are: normal])
 fi
-                              
-AC_SUBST(JAVASE_EMBEDDED)
-AC_SUBST(MINIMIZE_RAM_USAGE)
+
 AC_SUBST(JDK_VARIANT)
 
 AC_MSG_RESULT([$JDK_VARIANT])
@@ -77,11 +69,7 @@ AC_ARG_WITH([jvm-variants], [AS_HELP_STRING([--with-jvm-variants],
 	[JVM variants (separated by commas) to build (server, client, kernel, zero, zeroshark) @<:@server@:>@])])
 
 if test "x$with_jvm_variants" = x; then
-    if test "x$JDK_VARIANT" = xembedded; then
-        with_jvm_variants="client"
-    else
-        with_jvm_variants="server"
-    fi
+     with_jvm_variants="server"
 fi
 
 JVM_VARIANTS=",$with_jvm_variants,"
@@ -125,6 +113,11 @@ AC_SUBST(JVM_VARIANT_KERNEL)
 AC_SUBST(JVM_VARIANT_ZERO)
 AC_SUBST(JVM_VARIANT_ZEROSHARK)
 
+if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+   MACOSX_UNIVERSAL="true"
+fi
+
+AC_SUBST(MACOSX_UNIVERSAL)
 
 ])
 
@@ -223,6 +216,14 @@ fi
 
 HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_EXPORT"
 
+# On Macosx universal binaries are produced, but they only contain
+# 64 bit intel. This invalidates control of which jvms are built
+# from configure, but only server is valid anyway. Fix this
+# when hotspot makefiles are rewritten.
+if test "x$MACOSX_UNIVERSAL" = xtrue; then
+    HOTSPOT_TARGET=universal_product
+fi
+
 #####
 
 AC_SUBST(DEBUG_LEVEL)
@@ -289,14 +290,12 @@ BUILD_HEADLESS="BUILD_HEADLESS:=true"
 
 if test "x$SUPPORT_HEADFUL" = xyes; then
     # We are building both headful and headless.
-    BUILD_HEADLESS_ONLY=""
     headful_msg="inlude support for both headful and headless"
 fi
 
 if test "x$SUPPORT_HEADFUL" = xno; then
     # Thus we are building headless only.
     BUILD_HEADLESS="BUILD_HEADLESS:=true"
-    BUILD_HEADLESS_ONLY="BUILD_HEADLESS_ONLY:=true"
     headful_msg="headless only"
 fi
 
@@ -305,23 +304,6 @@ AC_MSG_RESULT([$headful_msg])
 AC_SUBST(SUPPORT_HEADLESS)
 AC_SUBST(SUPPORT_HEADFUL)
 AC_SUBST(BUILD_HEADLESS)
-AC_SUBST(BUILD_HEADLESS_ONLY)
-
-###############################################################################
-#
-# Should we run the painfully slow javadoc tool?
-#
-AC_MSG_CHECKING([whether to build documentation])
-AC_ARG_ENABLE([docs], [AS_HELP_STRING([--enable-docs],
-	[enable generation of Javadoc documentation @<:@disabled@:>@])],
-	[ENABLE_DOCS="${enableval}"], [ENABLE_DOCS='no'])
-AC_MSG_RESULT([$ENABLE_DOCS])
-AC_SUBST(ENABLE_DOCS)
-GENERATE_DOCS=false
-if test "x$ENABLE_DOCS" = xyes; then
-    GENERATE_DOCS=true
-fi
-AC_SUBST(GENERATE_DOCS)
 
 ###############################################################################
 #
@@ -373,25 +355,21 @@ AC_SUBST(CACERTS_FILE)
 #
 COMPRESS_JARS=false
 
-# default for embedded is yes...
-if test "x$JDK_VARIANT" = "xembedded"; then
-   COMPRESS_JARS=true
-fi
 AC_SUBST(COMPRESS_JARS)
 
 ###############################################################################
 #
 # Should we compile JFR
-#   default no, except for on closed-jdk and !embedded
+#   default no, except for on closed-jdk
 #
 ENABLE_JFR=no
 
 # Is the JFR source present
 
 #
-# For closed && !embedded default is yes if the source is present
+# For closed default is yes
 #
-if test "x${OPENJDK}" != "xtrue" && test "x$JDK_VARIANT" != "xembedded" && test -d "$SRC_ROOT/jdk/src/closed/share/native/oracle/jfr"; then
+if test "x${OPENJDK}" != "xtrue"; then
    ENABLE_JFR=yes
 fi
 
@@ -469,7 +447,7 @@ AC_SUBST(COOKED_BUILD_NUMBER)
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_BUILD_TWEAKS],
 [
-HOTSPOT_MAKE_ARGS="ALT_OUTPUTDIR=$HOTSPOT_OUTPUTDIR ALT_EXPORT_PATH=$HOTSPOT_DIST $HOTSPOT_TARGET"
+HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
 AC_SUBST(HOTSPOT_MAKE_ARGS)
 
 # The name of the Service Agent jar.
@@ -491,11 +469,6 @@ ENABLE_DEBUG_SYMBOLS=default
 
 # default on macosx is no...
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-   ENABLE_DEBUG_SYMBOLS=no
-fi
-
-# default for embedded is no...
-if test "x$JDK_VARIANT" = "xembedded"; then
    ENABLE_DEBUG_SYMBOLS=no
 fi
 
@@ -549,3 +522,11 @@ AC_SUBST(ZIP_DEBUGINFO_FILES)
 AC_SUBST(CFLAGS_DEBUG_SYMBOLS)
 AC_SUBST(CXXFLAGS_DEBUG_SYMBOLS)
 ])
+
+# Support for customization of the build process. Some build files
+# will include counterparts from this location, if they exist. This allows
+# for a degree of customization of the build targets and the rules/recipes
+# to create them
+AC_ARG_WITH([custom-make-dir], [AS_HELP_STRING([--with-custom-make-dir],
+    [directory containing custom build/make files])], [CUSTOM_MAKE_DIR=$with_custom_make_dir])
+AC_SUBST(CUSTOM_MAKE_DIR)

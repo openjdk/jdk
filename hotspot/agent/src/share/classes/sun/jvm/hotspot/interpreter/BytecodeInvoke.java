@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,7 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
   public Symbol name() {
     ConstantPool cp = method().getConstants();
     if (isInvokedynamic()) {
-       int[] nt = cp.getNameAndTypeAt(indexForFieldOrMethod());
-       return cp.getSymbolAt(nt[0]);
+      return cp.uncachedGetNameRefAt(indexForFieldOrMethod());
     }
     return cp.getNameRefAt(index());
   }
@@ -65,18 +64,9 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
   public Symbol signature() {
     ConstantPool cp = method().getConstants();
     if (isInvokedynamic()) {
-       int[] nt = cp.getNameAndTypeAt(indexForFieldOrMethod());
-       return cp.getSymbolAt(nt[1]);
+      return cp.uncachedGetSignatureRefAt(indexForFieldOrMethod());
     }
     return cp.getSignatureRefAt(index());
-  }
-
-  public int getSecondaryIndex() {
-    if (isInvokedynamic()) {
-      // change byte-ordering of 4-byte integer
-      return VM.getVM().getBytes().swapInt(javaSignedWordAt(1));
-    }
-    return super.getSecondaryIndex();  // throw an error
   }
 
   public Method getInvokedMethod() {
@@ -123,7 +113,7 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
     buf.append(Integer.toString(indexForFieldOrMethod()));
     if (isInvokedynamic()) {
        buf.append('(');
-       buf.append(Integer.toString(getSecondaryIndex()));
+      buf.append(Integer.toString(index()));
        buf.append(')');
     }
     buf.append(" [Method ");

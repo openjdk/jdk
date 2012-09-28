@@ -887,7 +887,7 @@ void GraphBuilder::load_constant() {
           patch_state = copy_state_before();
           t = new ObjectConstant(obj);
         } else {
-          assert(!obj->is_klass(), "must be java_mirror of klass");
+          assert(obj->is_instance(), "must be java_mirror of klass");
           t = new InstanceConstant(obj->as_instance());
         }
         break;
@@ -1434,7 +1434,7 @@ void GraphBuilder::method_return(Value x) {
     if (compilation()->env()->dtrace_method_probes()) {
       // Report exit from inline methods
       Values* args = new Values(1);
-      args->push(append(new Constant(new ObjectConstant(method()))));
+      args->push(append(new Constant(new MethodConstant(method()))));
       append(new RuntimeCall(voidType, "dtrace_method_exit", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), args));
     }
 
@@ -1887,7 +1887,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     code == Bytecodes::_invokeinterface;
   Values* args = state()->pop_arguments(target->arg_size_no_receiver());
   Value recv = has_receiver ? apop() : NULL;
-  int vtable_index = methodOopDesc::invalid_vtable_index;
+  int vtable_index = Method::invalid_vtable_index;
 
 #ifdef SPARC
   // Currently only supported on Sparc.
@@ -3544,7 +3544,7 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
     // Report exit from inline methods.  We don't have a stream here
     // so pass an explicit bci of SynchronizationEntryBCI.
     Values* args = new Values(1);
-    args->push(append_with_bci(new Constant(new ObjectConstant(method())), bci));
+    args->push(append_with_bci(new Constant(new MethodConstant(method())), bci));
     append_with_bci(new RuntimeCall(voidType, "dtrace_method_exit", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), args), bci);
   }
 
@@ -3732,7 +3732,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
 
   if (compilation()->env()->dtrace_method_probes()) {
     Values* args = new Values(1);
-    args->push(append(new Constant(new ObjectConstant(method()))));
+    args->push(append(new Constant(new MethodConstant(method()))));
     append(new RuntimeCall(voidType, "dtrace_method_entry", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry), args));
   }
 

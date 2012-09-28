@@ -1,0 +1,90 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+
+# Chaining of spec files
+HOTSPOT_SPEC:=$(dir $(SPEC))hotspot-spec.gmk
+override SPEC=$(HOTSPOT_SPEC)
+# Now include the base spec.gmk file
+include $(BASE_SPEC)
+
+# Additional legacy variables defined for Hotspot
+
+@SET_OPENJDK@
+
+# Legacy defines controlled by the SUPPORT_HEADLESS and SUPPORT_HEADFUL options.
+@BUILD_HEADLESS@
+
+# Legacy setting: OPT or DBG
+VARIANT:=@VARIANT@
+# Legacy setting: true or false
+FASTDEBUG:=@FASTDEBUG@
+# Legacy setting: debugging the class files?
+DEBUG_CLASSFILES:=@DEBUG_CLASSFILES@
+
+ALT_CUPS_HEADERS_PATH:=$(patsubst -I%,%,$(filter -I%,@CUPS_CFLAGS@))
+
+# The HOSTCC/HOSTCXX is Hotspot terminology for the BUILD_CC/BUILD_CXX, i.e. the
+# compiler that produces code that can be run on the build platform.
+HOSTCC:=@UNCYGDRIVE@ @BUILD_CC@
+HOSTCXX:=@UNCYGDRIVE@ @BUILD_CXX@
+
+####################################################
+#
+# Legacy Hotspot support
+
+# If cross compiling, then define CROSS_COMPILE_ARCH:=cpu_name here.
+@DEFINE_CROSS_COMPILE_ARCH@
+
+# Old name for OPENJDK_TARGET_OS (aix,bsd,hpux,linux,macosx,solaris,windows etc)
+PLATFORM=$(OPENJDK_TARGET_OS)
+# 32 or 64 bit
+ARCH_DATA_MODEL=$(OPENJDK_TARGET_CPU_BITS)
+
+ALT_BOOTDIR=$(BOOT_JDK)
+# Can be /sparcv9 or /amd64 on Solaris
+ISA_DIR=$(OPENJDK_TARGET_CPU_ISADIR)
+# Yet another name for arch used for an extra subdir below the jvm lib.
+# Uses i386 and amd64, instead of x86 and x86_64.
+LIBARCH=$(OPENJDK_TARGET_CPU_LEGACY_LIB)
+# Old name for OPENJDK_TARGET_CPU, uses i586 and amd64, instead of x86 and x86_64.
+ARCH=$(OPENJDK_TARGET_CPU_LEGACY)
+# Legacy setting for building for a 64 bit machine.
+# If yes then this expands to _LP64:=1
+@LP64@
+
+ALT_OUTPUTDIR=$(HOTSPOT_OUTPUTDIR)
+ALT_EXPORT_PATH=$(HOTSPOT_DIST)
+
+HOTSPOT_MAKE_ARGS:=@HOTSPOT_MAKE_ARGS@
+# This is used from the libjvm build for C/C++ code.
+HOTSPOT_BUILD_JOBS:=@CONCURRENT_BUILD_JOBS@
+# Control wether Hotspot runs Queens test after building
+TEST_IN_BUILD=@TEST_IN_BUILD@
+
+
+EXTRA_CFLAGS=@LEGACY_EXTRA_CFLAGS@
+EXTRA_CXXFLAGS=@LEGACY_EXTRA_CXXFLAGS@
+EXTRA_LDFLAGS=@LEGACY_EXTRA_LDFLAGS@

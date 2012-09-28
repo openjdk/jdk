@@ -46,8 +46,9 @@ define add_properties_to_compile
 
   # Strip away prefix and suffix,
   # leaving for example: sun/util/resources/CurrencyNames_sv
-  $1_PROPPATHS:=$$(patsubst $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes/%.properties,%,\
-                $$(patsubst $(JDK_TOPDIR)/src/share/classes/%.properties,%,$2))
+  $1_PROPPATHS:=$$(patsubst $(JDK_TOPDIR)/src/windows/classes/%.properties,%,\
+		$$(patsubst $(JDK_TOPDIR)/src/macosx/classes/%.properties,%,\
+                $$(patsubst $(JDK_TOPDIR)/src/share/classes/%.properties,%,$2)))
 
   # Apply optional name transformation, example: hz_TW -> hz_HK
   $(if $4,$1_PROPPATHS:=$$(patsubst $4,$5,$$($1_PROPPATHS)))
@@ -75,7 +76,7 @@ define add_properties_to_clean
 
   # Strip away prefix and suffix,
   # leaving for example: sun/util/resources/CurrencyNames_sv
-  $1_PROPPATHS:=$$(patsubst $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes/%.properties,%,\
+  $1_PROPPATHS:=$$(patsubst $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes/%.properties,%,\
                 $$(patsubst $(JDK_TOPDIR)/src/share/classes/%.properties,%,$2))
 
   # Apply optional name transformation, example: hz_TW -> hz_HK
@@ -112,6 +113,13 @@ endef
 #    sun/util/resources
 
 # Some packages have properties that need to be converted to java source files.
+
+#com/apple/laf/resources
+ifeq ($(OPENJDK_TARGET_OS),macosx)
+    $(eval $(call add_properties_to_compile,COM_APPLE_LAF,\
+	$(shell find $(JDK_TOPDIR)/src/macosx/classes/com/apple/laf/resources -name "*.properties"),\
+		ListResourceBundle))
+endif
 
 #com/sun/accessibility/internal/resources
 $(eval $(call add_properties_to_compile,COM_SUN_ACCESSIBILITY,\
@@ -210,6 +218,16 @@ $(eval $(call add_properties_to_compile,SUN_AWT,\
 $(eval $(call add_properties_to_compile,SUN_AWT_HK,\
 	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/awt/resources -name "*.properties"),\
 		ListResourceBundle,%zh_TW,%zh_HK))
+#sun/awt/windows/
+ifeq ($(OPENJDK_TARGET_OS),windows)
+    $(eval $(call add_properties_to_compile,SUN_AWT,\
+	$(shell find $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows -name "awtLocalization*.properties"),\
+		ListResourceBundle))
+    $(eval $(call add_properties_to_compile,SUN_AWT_HK,\
+	$(shell find $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows -name "awtLocalization*.properties"),\
+		ListResourceBundle,%zh_TW,%zh_HK))
+endif
+
 #sun/launcher/resources
 $(eval $(call add_properties_to_compile,SUN_LAUNCHER,\
 	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/launcher/resources -name "*.properties"),\
@@ -286,7 +304,7 @@ $(eval $(call add_properties_to_compile,SUN_UTIL,\
 
 # Now setup the rule for the generation of the resource bundles.
 $(JDK_OUTPUTDIR)/gensrc_properties/_the.compiled_properties : $(ALL_COMPILED_PROPSOURCES) $(BUILD_TOOLS)
-	$(RM) -rf $(JDK_OUTPUTDIR)/gensrc_properties/*
+	$(RM) -r $(JDK_OUTPUTDIR)/gensrc_properties/*
 #	Generate all output directories in advance since the build tool does not do that...
 	$(MKDIR) -p $(sort $(dir $(ALL_COMPILED_PROPJAVAS)))
 	$(ECHO) Compiling $(words $(ALL_COMPILED_PROPSOURCES)) properties into resource bundles
@@ -297,7 +315,7 @@ $(JDK_OUTPUTDIR)/gensrc_properties/_the.compiled_properties : $(ALL_COMPILED_PRO
 # Now setup the rule for the generation of the cleaned properties.
 # FIXME: We currently don't handle removed properties incrementally. 
 $(JDK_OUTPUTDIR)/classes/_the.cleaned_properties : $(ALL_CLEANED_PROPSOURCES) $(BUILD_TOOLS)
-	$(RM) -f $(JDK_OUTPUTDIR)/classes/_the.cleaned_properties.cmdline
+	$(RM) $(JDK_OUTPUTDIR)/classes/_the.cleaned_properties.cmdline
 #	Generate all output directories in advance since the build tool does not do that...
 	$(MKDIR) -p $(sort $(dir $(ALL_CLEANED_PROPOUTPUT)))
 	$(ECHO) Copying and cleaning $(words $(ALL_CLEANED_PROPSOURCES)) properties 

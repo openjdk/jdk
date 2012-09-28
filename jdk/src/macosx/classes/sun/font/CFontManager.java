@@ -37,6 +37,7 @@ import java.util.Vector;
 import javax.swing.plaf.FontUIResource;
 
 import sun.awt.FontConfiguration;
+import sun.awt.HeadlessToolkit;
 import sun.lwawt.macosx.*;
 
 public class CFontManager extends SunFontManager {
@@ -342,9 +343,14 @@ public class CFontManager extends SunFontManager {
     @Override
     public String getFontPath(boolean noType1Fonts) {
         // In the case of the Cocoa toolkit, since we go through NSFont, we dont need to register /Library/Fonts
-        if (Toolkit.getDefaultToolkit() instanceof LWCToolkit) {
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        if (tk instanceof HeadlessToolkit) {
+            tk = ((HeadlessToolkit)tk).getUnderlyingToolkit();
+        }
+        if (tk instanceof LWCToolkit) {
             return "";
         }
+
         // X11 case
         return "/Library/Fonts";
     }

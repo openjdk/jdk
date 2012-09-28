@@ -1,6 +1,7 @@
 ^build/
 ^dist/
-/nbproject/private/
+nbproject/private/
 ^webrev
 ^.hgtip
+^.bridge2
 .DS_Store

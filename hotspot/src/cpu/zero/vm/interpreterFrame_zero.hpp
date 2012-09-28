@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,7 @@
 #define CPU_ZERO_VM_INTERPRETERFRAME_ZERO_HPP
 
 #include "interpreter/bytecodeInterpreter.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "runtime/thread.hpp"
 #include "stack_zero.hpp"
 
@@ -63,7 +63,7 @@ class InterpreterFrame : public ZeroFrame {
   };
 
  public:
-  static InterpreterFrame *build(const methodOop method, TRAPS);
+  static InterpreterFrame *build(Method* const method, TRAPS);
   static InterpreterFrame *build(int size, TRAPS);
 
  public:

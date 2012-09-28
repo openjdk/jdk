@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/methodDataOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/methodData.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -312,7 +312,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
 // Deoptimization support
 
 // If deoptimization happens, this function returns the point of next bytecode to continue execution
-address AbstractInterpreter::deopt_continue_after_entry(methodOop method, address bcp, int callee_parameters, bool is_top_frame) {
+address AbstractInterpreter::deopt_continue_after_entry(Method* method, address bcp, int callee_parameters, bool is_top_frame) {
   assert(method->contains(bcp), "just checkin'");
   Bytecodes::Code code   = Bytecodes::java_code_at(method, bcp);
   assert(!Interpreter::bytecode_should_reexecute(code), "should not reexecute");
@@ -350,7 +350,7 @@ address AbstractInterpreter::deopt_continue_after_entry(methodOop method, addres
       // (NOT needed for the old calling convension)
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
-        method->constants()->cache()->secondary_entry_at(index)->set_parameter_size(callee_parameters);
+        method->constants()->invokedynamic_cp_cache_entry_at(index)->set_parameter_size(callee_parameters);
       }
       break;
     }
@@ -382,7 +382,7 @@ address AbstractInterpreter::deopt_continue_after_entry(methodOop method, addres
 // the bytecode.
 // Note: Bytecodes::_athrow is a special case in that it does not return
 //       Interpreter::deopt_entry(vtos, 0) like others
-address AbstractInterpreter::deopt_reexecute_entry(methodOop method, address bcp) {
+address AbstractInterpreter::deopt_reexecute_entry(Method* method, address bcp) {
   assert(method->contains(bcp), "just checkin'");
   Bytecodes::Code code   = Bytecodes::java_code_at(method, bcp);
 #ifdef COMPILER1

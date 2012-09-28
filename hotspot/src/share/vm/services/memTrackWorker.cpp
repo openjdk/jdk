@@ -118,7 +118,10 @@ void MemTrackWorker::run() {
           _head = (_head + 1) % MAX_GENERATIONS;
         }
         // promote this generation data to snapshot
-        snapshot->promote();
+        if (!snapshot->promote()) {
+          // failed to promote, means out of memory
+          MemTracker::shutdown(MemTracker::NMT_out_of_memory);
+        }
       } else {
         snapshot->wait(1000);
         ThreadCritical tc;

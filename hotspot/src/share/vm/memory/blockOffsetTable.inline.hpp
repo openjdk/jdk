@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,6 @@
 #include "memory/blockOffsetTable.hpp"
 #include "memory/space.hpp"
 #include "runtime/safepoint.hpp"
-#ifndef SERIALGC
-#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
-#endif
 
 //////////////////////////////////////////////////////////////////////////
 // BlockOffsetTable inlines

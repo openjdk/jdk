@@ -34,7 +34,7 @@ import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 
 public class PStack extends Tool {
-    // in non-verbose mode, methodOops are not printed in java frames
+    // in non-verbose mode, Method*s are not printed in java frames
    public PStack(boolean v, boolean concurrentLocks) {
       this.verbose = v;
       this.concurrentLocks = concurrentLocks;
@@ -247,7 +247,7 @@ public class PStack extends Tool {
             }
 
             if (verbose) {
-               sb.append(" methodOop:" + method.getHandle());
+               sb.append(" Method*:" + method.getAddress());
             }
 
             if (vf.isCompiledFrame()) {

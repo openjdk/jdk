@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,68 +23,65 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciEnv.hpp"
+#include "ci/ciInstance.hpp"
+#include "ci/ciMetadata.hpp"
 #include "code/oopRecorder.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 
 #ifdef ASSERT
-int OopRecorder::_find_index_calls = 0;
-int OopRecorder::_hit_indexes      = 0;
-int OopRecorder::_missed_indexes   = 0;
+template <class T> int ValueRecorder<T>::_find_index_calls = 0;
+template <class T> int ValueRecorder<T>::_hit_indexes      = 0;
+template <class T> int ValueRecorder<T>::_missed_indexes   = 0;
 #endif //ASSERT
 
 
-OopRecorder::OopRecorder(Arena* arena) {
+template <class T> ValueRecorder<T>::ValueRecorder(Arena* arena) {
   _handles  = NULL;
   _indexes  = NULL;
   _arena    = arena;
   _complete = false;
 }
 
-OopRecorder::IndexCache::IndexCache() {
+template <class T> template <class X>  ValueRecorder<T>::IndexCache<X>::IndexCache() {
   assert(first_index > 0, "initial zero state of cache must be invalid index");
   Copy::zero_to_bytes(&_cache[0], sizeof(_cache));
 }
 
-int OopRecorder::oop_size() {
+template <class T> int ValueRecorder<T>::size() {
   _complete = true;
   if (_handles == NULL)  return 0;
-  return _handles->length() * sizeof(oop);
+  return _handles->length() * sizeof(T);
 }
 
-void OopRecorder::copy_to(nmethod* nm) {
+template <class T> void ValueRecorder<T>::copy_values_to(nmethod* nm) {
   assert(_complete, "must be frozen");
   maybe_initialize();  // get non-null handles, even if we have no oops
-  nm->copy_oops(_handles);
+  nm->copy_values(_handles);
 }
 
-void OopRecorder::maybe_initialize() {
+template <class T> void ValueRecorder<T>::maybe_initialize() {
   if (_handles == NULL) {
     if (_arena != NULL) {
-      _handles  = new(_arena) GrowableArray<jobject>(_arena, 10, 0, 0);
+      _handles  = new(_arena) GrowableArray<T>(_arena, 10, 0, 0);
       _no_finds = new(_arena) GrowableArray<int>(    _arena, 10, 0, 0);
     } else {
-      _handles  = new GrowableArray<jobject>(10, 0, 0);
+      _handles  = new GrowableArray<T>(10, 0, 0);
       _no_finds = new GrowableArray<int>(    10, 0, 0);
     }
   }
 }
 
 
-jobject OopRecorder::handle_at(int index) {
+template <class T> T ValueRecorder<T>::at(int index) {
   // there is always a NULL virtually present as first object
   if (index == null_index)  return NULL;
   return _handles->at(index - first_index);
 }
 
 
-// Local definition.  Used only in this module.
-inline bool OopRecorder::is_real_jobject(jobject h) {
-  return h != NULL && h != (jobject)Universe::non_oop_word();
-}
-
-
-int OopRecorder::add_handle(jobject h, bool make_findable) {
+template <class T> int ValueRecorder<T>::add_handle(T h, bool make_findable) {
   assert(!_complete, "cannot allocate more elements after size query");
   maybe_initialize();
   // indexing uses 1 as an origin--0 means null
@@ -92,14 +89,14 @@ int OopRecorder::add_handle(jobject h, bool make_findable) {
   _handles->append(h);
 
   // Support correct operation of find_index().
-  assert(!(make_findable && !is_real_jobject(h)), "nulls are not findable");
+  assert(!(make_findable && !is_real(h)), "nulls are not findable");
   if (make_findable) {
     // This index may be returned from find_index().
     if (_indexes != NULL) {
       int* cloc = _indexes->cache_location(h);
       _indexes->set_cache_location_index(cloc, index);
     } else if (index == index_cache_threshold && _arena != NULL) {
-      _indexes = new(_arena) IndexCache();
+      _indexes = new(_arena) IndexCache<T>();
       for (int i = 0; i < _handles->length(); i++) {
         // Load the cache with pre-existing elements.
         int index0 = i + first_index;
@@ -108,10 +105,10 @@ int OopRecorder::add_handle(jobject h, bool make_findable) {
         _indexes->set_cache_location_index(cloc, index0);
       }
     }
-  } else if (is_real_jobject(h)) {
+  } else if (is_real(h)) {
     // Remember that this index is not to be returned from find_index().
     // This case is rare, because most or all uses of allocate_index pass
-    // a jobject argument of NULL or Universe::non_oop_word.
+    // an argument of NULL or Universe::non_oop_word.
     // Thus, the expected length of _no_finds is zero.
     _no_finds->append(index);
   }
@@ -120,12 +117,12 @@ int OopRecorder::add_handle(jobject h, bool make_findable) {
 }
 
 
-int OopRecorder::maybe_find_index(jobject h) {
+template <class T> int ValueRecorder<T>::maybe_find_index(T h) {
   debug_only(_find_index_calls++);
   assert(!_complete, "cannot allocate more elements after size query");
   maybe_initialize();
   if (h == NULL)  return null_index;
-  assert(is_real_jobject(h), "must be valid jobject");
+  assert(is_real(h), "must be valid");
   int* cloc = (_indexes == NULL)? NULL: _indexes->cache_location(h);
   if (cloc != NULL) {
     int cindex = _indexes->cache_location_index(cloc);
@@ -156,3 +153,7 @@ int OopRecorder::maybe_find_index(jobject h) {
   }
   return -1;
 }
+
+// Explicitly instantiate these types
+template class ValueRecorder<Metadata*>;
+template class ValueRecorder<jobject>;
