@@ -26,7 +26,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/markOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -494,7 +494,7 @@ frame frame::sender(RegisterMap* map) const {
 
 bool frame::interpreter_frame_equals_unpacked_fp(intptr_t* fp) {
   assert(is_interpreted_frame(), "must be interpreter frame");
-  methodOop method = interpreter_frame_method();
+  Method* method = interpreter_frame_method();
   // When unpacking an optimized frame the frame pointer is
   // adjusted with:
   int diff = (method->max_locals() - method->size_of_parameters()) *
@@ -531,7 +531,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // first the method
 
-  methodOop m = *interpreter_frame_method_addr();
+  Method* m = *interpreter_frame_method_addr();
 
   // validate the method we'd find in this potential sender
   if (!Universe::heap()->is_valid_method(m)) return false;
@@ -549,13 +549,9 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
     return false;
   }
 
-  // validate constantPoolCacheOop
-
-  constantPoolCacheOop cp = *interpreter_frame_cache_addr();
-
-  if (cp == NULL ||
-      !Space::is_aligned(cp) ||
-      !Universe::heap()->is_permanent((void*)cp)) return false;
+  // validate ConstantPoolCache*
+  ConstantPoolCache* cp = *interpreter_frame_cache_addr();
+  if (cp == NULL || !cp->is_metadata()) return false;
 
   // validate locals
 
@@ -576,7 +572,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
   interpreterState istate = get_interpreterState();
 #endif // CC_INTERP
   assert(is_interpreted_frame(), "interpreted frame expected");
-  methodOop method = interpreter_frame_method();
+  Method* method = interpreter_frame_method();
   BasicType type = method->result_type();
 
   intptr_t* tos_addr;

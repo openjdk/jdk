@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 
-#ifdef ASSERT
-bool OopClosure::_must_remember_klasses = false;
-#endif
+void KlassToOopClosure::do_klass(Klass* k) {
+  k->oops_do(_oop_closure);
+}
 
 void ObjectToOopClosure::do_object(oop obj) {
   obj->oop_iterate(_cl);
@@ -37,16 +37,6 @@ void ObjectToOopClosure::do_object(oop obj) {
 void VoidClosure::do_void() {
   ShouldNotCallThis();
 }
-
-#ifdef ASSERT
-bool OopClosure::must_remember_klasses() {
-  return _must_remember_klasses;
-}
-void OopClosure::set_must_remember_klasses(bool v) {
-  _must_remember_klasses = v;
-}
-#endif
-
 
 MarkingCodeBlobClosure::MarkScope::MarkScope(bool activate)
   : _active(activate)

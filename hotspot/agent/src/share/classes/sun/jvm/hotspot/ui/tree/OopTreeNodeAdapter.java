@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,6 +124,7 @@ public class OopTreeNodeAdapter extends FieldTreeNodeAdapter {
       numFields = 0;
     }
 
+    public void doMetadata(MetadataField field, boolean isVMField) { ++numFields; }
     public void doOop(OopField field, boolean isVMField)         { ++numFields; }
     public void doByte(ByteField field, boolean isVMField)       { ++numFields; }
     public void doChar(CharField field, boolean isVMField)       { ++numFields; }
@@ -155,14 +156,27 @@ public class OopTreeNodeAdapter extends FieldTreeNodeAdapter {
       curField = 0;
     }
 
+    public void doMetadata(MetadataField field, boolean isVMField) {
+      if (curField == index) {
+        try {
+          child = new MetadataTreeNodeAdapter(field.getValue(getObj()), field.getID(), getTreeTableMode());
+        } catch (AddressException e) {
+          child = new BadAddressTreeNodeAdapter(getObj().getHandle().getAddressAt(field.getOffset()), field, getTreeTableMode());
+        } catch (UnknownOopException e) {
+          child = new BadAddressTreeNodeAdapter(getObj().getHandle().getAddressAt(field.getOffset()), field, getTreeTableMode());
+        }
+      }
+      ++curField;
+    }
+
     public void doOop(OopField field, boolean isVMField) {
       if (curField == index) {
         try {
           child = new OopTreeNodeAdapter(field.getValue(getObj()), field.getID(), getTreeTableMode());
         } catch (AddressException e) {
-          child = new BadOopTreeNodeAdapter(field.getValueAsOopHandle(getObj()), field.getID(), getTreeTableMode());
+          child = new BadAddressTreeNodeAdapter(field.getValueAsOopHandle(getObj()), field, getTreeTableMode());
         } catch (UnknownOopException e) {
-          child = new BadOopTreeNodeAdapter(field.getValueAsOopHandle(getObj()), field.getID(), getTreeTableMode());
+          child = new BadAddressTreeNodeAdapter(field.getValueAsOopHandle(getObj()), field, getTreeTableMode());
         }
       }
       ++curField;

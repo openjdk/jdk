@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "c1/c1_Compilation.hpp"
 #include "ci/ciConstant.hpp"
+#include "ci/ciMethodData.hpp"
 
 // type hierarchy
 class ValueType;
@@ -46,8 +47,13 @@ class     ArrayType;
 class       ArrayConstant;
 class     InstanceType;
 class       InstanceConstant;
+class   MetadataType;
 class     ClassType;
 class       ClassConstant;
+class     MethodType;
+class       MethodConstant;
+class     MethodDataType;
+class       MethodDataConstant;
 class   AddressType;
 class     AddressConstant;
 class   IllegalType;
@@ -82,6 +88,7 @@ enum ValueTag {
   doubleTag,
   objectTag,
   addressTag,
+  metaDataTag,
   number_of_legal_tags,
   // all other tags must follow afterwards
   voidTag = number_of_legal_tags,
@@ -123,6 +130,8 @@ class ValueType: public CompilationResourceObj {
   bool is_array()                                { return as_ArrayType()    != NULL; }
   bool is_instance()                             { return as_InstanceType() != NULL; }
   bool is_class()                                { return as_ClassType()    != NULL; }
+  bool is_method()                               { return as_MethodType()   != NULL; }
+  bool is_method_data()                          { return as_MethodDataType() != NULL; }
   bool is_address()                              { return as_AddressType()  != NULL; }
   bool is_illegal()                              { return tag() == illegalTag; }
 
@@ -143,6 +152,9 @@ class ValueType: public CompilationResourceObj {
   virtual ArrayType*        as_ArrayType()       { return NULL; }
   virtual InstanceType*     as_InstanceType()    { return NULL; }
   virtual ClassType*        as_ClassType()       { return NULL; }
+  virtual MetadataType*     as_MetadataType()    { return NULL; }
+  virtual MethodType*       as_MethodType()      { return NULL; }
+  virtual MethodDataType*   as_MethodDataType()  { return NULL; }
   virtual AddressType*      as_AddressType()     { return NULL; }
   virtual IllegalType*      as_IllegalType()     { return NULL; }
 
@@ -153,6 +165,8 @@ class ValueType: public CompilationResourceObj {
   virtual ObjectConstant*   as_ObjectConstant()  { return NULL; }
   virtual InstanceConstant* as_InstanceConstant(){ return NULL; }
   virtual ClassConstant*    as_ClassConstant()   { return NULL; }
+  virtual MethodConstant*   as_MethodConstant()  { return NULL; }
+  virtual MethodDataConstant* as_MethodDataConstant() { return NULL; }
   virtual ArrayConstant*    as_ArrayConstant()   { return NULL; }
   virtual AddressConstant*  as_AddressConstant() { return NULL; }
 
@@ -364,7 +378,20 @@ class InstanceConstant: public InstanceType {
 };
 
 
-class ClassType: public ObjectType {
+class MetadataType: public ValueType {
+ public:
+  MetadataType(): ValueType(metaDataTag, 1) {}
+  virtual ValueType* base() const                       { return objectType; }
+  virtual const char tchar() const                      { return 'a'; }
+  virtual const char* name() const                      { return "object"; }
+  virtual MetadataType* as_MetadataType()               { return this; }
+  bool is_loaded() const;
+  jobject encoding() const;
+  virtual ciMetadata* constant_value() const            { ShouldNotReachHere(); return NULL;  }
+};
+
+
+class ClassType: public MetadataType {
  public:
   virtual ClassType* as_ClassType()              { return this; }
 };
@@ -381,8 +408,52 @@ class ClassConstant: public ClassType {
 
   virtual bool is_constant() const               { return true; }
   virtual ClassConstant* as_ClassConstant()      { return this; }
-  virtual ciObject* constant_value() const;
+  virtual ciMetadata* constant_value() const            { return _value; }
   virtual ciType* exact_type() const;
+};
+
+
+class MethodType: public MetadataType {
+ public:
+  virtual MethodType* as_MethodType()                   { return this; }
+};
+
+
+class MethodConstant: public MethodType {
+ private:
+  ciMethod* _value;
+
+ public:
+  MethodConstant(ciMethod* value)                       { _value = value; }
+
+  ciMethod* value() const                               { return _value; }
+
+  virtual bool is_constant() const                      { return true; }
+
+  virtual MethodConstant* as_MethodConstant()           { return this; }
+  virtual ciMetadata* constant_value() const            { return _value; }
+};
+
+
+class MethodDataType: public MetadataType {
+ public:
+  virtual MethodDataType* as_MethodDataType()           { return this; }
+};
+
+
+class MethodDataConstant: public MethodDataType {
+ private:
+  ciMethodData* _value;
+
+ public:
+  MethodDataConstant(ciMethodData* value)               { _value = value; }
+
+  ciMethodData* value() const                           { return _value; }
+
+  virtual bool is_constant() const                      { return true; }
+
+  virtual MethodDataConstant* as_MethodDataConstant()   { return this; }
+  virtual ciMetadata* constant_value() const            { return _value; }
 };
 
 

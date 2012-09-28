@@ -266,7 +266,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     }
 
     // Get suported CipherSuiteList.
-    CipherSuiteList getSuportedCipherSuiteList() {
+    CipherSuiteList getSupportedCipherSuiteList() {
         // The maintenance of cipher suites needs to be synchronized.
         synchronized (this) {
             // Clear cache of available ciphersuites.

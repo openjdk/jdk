@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ ciType* ciInstance::java_mirror_type() {
   if (java_lang_Class::is_primitive(m)) {
     return ciType::make(java_lang_Class::primitive_type(m));
   } else {
-    klassOop k = java_lang_Class::as_klassOop(m);
+    Klass* k = java_lang_Class::as_Klass(m);
     assert(k != NULL, "");
-    return CURRENT_THREAD_ENV->get_object(k)->as_klass();
+    return CURRENT_THREAD_ENV->get_klass(k);
   }
 }
 
@@ -142,5 +142,5 @@ void ciInstance::print_impl(outputStream* st) {
 
 ciKlass* ciInstance::java_lang_Class_klass() {
   VM_ENTRY_MARK;
-  return CURRENT_ENV->get_object(java_lang_Class::as_klassOop(get_oop()))->as_klass();
+  return CURRENT_ENV->get_metadata(java_lang_Class::as_Klass(get_oop()))->as_klass();
 }

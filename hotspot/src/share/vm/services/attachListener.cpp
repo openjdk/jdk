@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ volatile bool AttachListener::_initialized;
 // Invokes sun.misc.VMSupport.serializePropertiesToByteArray to serialize
 // the system properties into a byte array.
 
-static klassOop load_and_initialize_klass(Symbol* sh, TRAPS) {
-  klassOop k = SystemDictionary::resolve_or_fail(sh, true, CHECK_NULL);
+static Klass* load_and_initialize_klass(Symbol* sh, TRAPS) {
+  Klass* k = SystemDictionary::resolve_or_fail(sh, true, CHECK_NULL);
   instanceKlassHandle ik (THREAD, k);
   if (ik->should_be_initialized()) {
     ik->initialize(CHECK_NULL);
@@ -59,7 +59,7 @@ static jint get_properties(AttachOperation* op, outputStream* out, Symbol* seria
 
   // load sun.misc.VMSupport
   Symbol* klass = vmSymbols::sun_misc_VMSupport();
-  klassOop k = load_and_initialize_klass(klass, THREAD);
+  Klass* k = load_and_initialize_klass(klass, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, out);
     CLEAR_PENDING_EXCEPTION;
@@ -456,7 +456,7 @@ static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
 // Starts the Attach Listener thread
 void AttachListener::init() {
   EXCEPTION_MARK;
-  klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
   instanceKlassHandle klass (THREAD, k);
   instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
 

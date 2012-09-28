@@ -38,43 +38,71 @@ JOBJC_DST := $(JDK_OUTPUTDIR)/gensrc_jobjc/src
 #
 $(eval $(call SetupJavaCompilation,BUILD_JOBJC_PRIMITIVE_CODER,\
 		SETUP:=GENERATE_OLDBYTECODE,\
+		DISABLE_SJAVAC:=true,\
 		INCLUDES:=core/java \
                           com/apple,\
-                HEADERS :=$(JOBJC_DST)/jni_headers/core ,\
+                HEADERS:=$(JOBJC_DST)/jni_headers/core ,\
 		SRC:=$(JOBJC_SRC)/src \
                      $(JOBJC_SRC)/src/generator/java, \
 		BIN:=$(JOBJC_TMP)/bin))
 
-GENSRC_JOBJC += $(JOBJC_TMP)/bin/_the.batch
+GENSRC_JOBJC += $(BUILD_JOBJC_PRIMITIVE_CODER)
 
 #
-# Generate bridge support
+# Generate bridge support for select frameworks
 #
 BRIDGESUPPORT := $(addprefix $(JOBJC_TMP)/bridge/,$(addsuffix Full.bridgesupport,$(JOBJC_FRAMEWORKS)))
 
-$(JOBJC_TMP)/bridge/%Full.bridgesupport : $(FRAMEWORKS_DIR)/%.framework/Headers/*.h
-	$(MKDIR) -p $(@D)
-	if [ -f $(FRAMEWORKS_DIR)/$*.framework/Resources/BridgeSupport/$(@F) ]; then \
-		cp $(FRAMEWORKS_DIR)/$*.framework/Resources/BridgeSupport/$(@F) $@ ;\
-	else \
-		$(GBM) -F complete --framework $* -o $@ ; \
-	fi
+#
+# Define macro for rules to create bridge support
+#    Not sure why, but if the system has this framework bridge support,
+#    we appear to copy that, otherwise we run GBM which can be very slow.
+#
+define CreateBridgeSupport # Framework
+$(RM) $@ $@.tmp
+$(MKDIR) -p $(@D)
+if [ -f $(FRAMEWORKS_DIR)/$1.framework/Resources/BridgeSupport/$(@F) ]; then \
+    $(CP) $(FRAMEWORKS_DIR)/$1.framework/Resources/BridgeSupport/$(@F) $@.tmp ;\
+else \
+    $(GBM) -F complete --framework $1 -o $@.tmp ; \
+fi
+$(MV) $@.tmp $@
+endef
 
 #
-# Find Xbootclasspath
+# Currently 3 frameworks, avoid pattern rule due to the names being conflicting
 #
-$(JOBJC_TMP)/_the.generator_bootclasspath : $(JOBJC_TMP)/bin/_the.batch
+$(JOBJC_TMP)/bridge/FoundationFull.bridgesupport : \
+		$(wildcard $(FRAMEWORKS_DIR)/Foundation.framework/Headers/*.h)
+	$(call CreateBridgeSupport,Foundation)
+$(JOBJC_TMP)/bridge/CoreFoundationFull.bridgesupport : \
+		$(wildcard $(FRAMEWORKS_DIR)/CoreFoundation.framework/Headers/*.h)
+	$(call CreateBridgeSupport,CoreFoundation)
+$(JOBJC_TMP)/bridge/AppKitFull.bridgesupport : \
+		$(wildcard $(FRAMEWORKS_DIR)/AppKit.framework/Headers/*.h)
+	$(call CreateBridgeSupport,AppKit)
+
+#
+# Find Xbootclasspath, for some reason, this involves firing up Java just
+#     so we can get the boot classpath, so we can remove anything in that
+#     classpath that ends with "JObjC.jar", and emit the new bootclasspath.
+#
+$(JOBJC_TMP)/_the.generator_bootclasspath : $(BUILD_JOBJC_PRIMITIVE_CODER)
+	$(RM) $@
 	$(JAVA) -cp $(JOBJC_TMP)/bin com.apple.internal.jobjc.generator.BootClassPathMinus JObjC.jar > $@.tmp
 	$(MV) $@.tmp $@
 
-
 #
 # Run generator
+#    Now we use bootclasspath to run java again, with the bridge support to
+#    generate more source.
+#    Note the use of the | (order-only) on the BRIDGESUPPORT, should serialize
+#    them just in case GBM run in parallel has issues.
 #
-TOOL_JOBJC := $(JAVA) -cp $(JOBJC_TMP)/bin -ea com.apple.internal.jobjc.generator.Generator
-
-$(JOBJC_TMP)/_the.generator : $(JOBJC_TMP)/bin/_the.batch $(JOBJC_TMP)/_the.generator_bootclasspath $(BRIDGESUPPORT)
+$(JOBJC_TMP)/_the.generator : $(JOBJC_TMP)/_the.generator_bootclasspath | $(BRIDGESUPPORT)
+	$(RM) $@
 	$(JAVA) -d64 -Xbootclasspath:`$(CAT) $(JOBJC_TMP)/_the.generator_bootclasspath` -cp $(JOBJC_TMP)/bin -ea com.apple.internal.jobjc.generator.Generator dst=$(JOBJC_DST) frameworks=$(JOBJC_TMP)/bridge
 	$(TOUCH) $@
 
 GENSRC_JOBJC += $(JOBJC_TMP)/_the.generator
+

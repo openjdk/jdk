@@ -52,7 +52,9 @@ import javax.swing.JTextField;
  * This can be used by a JAAS application to instantiate a
  * CallbackHandler
  * @see javax.security.auth.callback
+ * @deprecated This class will be removed in a future release.
  */
+@Deprecated
 public class DialogCallbackHandler implements CallbackHandler {
 
     /* -- Fields -- */

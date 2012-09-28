@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
+#include "oops/annotations.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/fieldStreams.hpp"
 #include "runtime/fieldDescriptor.hpp"
@@ -35,7 +36,7 @@
 
 
 oop fieldDescriptor::loader() const {
-  return instanceKlass::cast(_cp->pool_holder())->class_loader();
+  return InstanceKlass::cast(_cp->pool_holder())->class_loader();
 }
 
 Symbol* fieldDescriptor::generic_signature() const {
@@ -44,7 +45,7 @@ Symbol* fieldDescriptor::generic_signature() const {
   }
 
   int idx = 0;
-  instanceKlass* ik = instanceKlass::cast(field_holder());
+  InstanceKlass* ik = InstanceKlass::cast(field_holder());
   for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
     if (idx == _index) {
       return fs.generic_signature();
@@ -56,12 +57,12 @@ Symbol* fieldDescriptor::generic_signature() const {
   return NULL;
 }
 
-typeArrayOop fieldDescriptor::annotations() const {
-  instanceKlass* ik = instanceKlass::cast(field_holder());
-  objArrayOop md = ik->fields_annotations();
+AnnotationArray* fieldDescriptor::annotations() const {
+  InstanceKlass* ik = InstanceKlass::cast(field_holder());
+  Array<AnnotationArray*>* md = ik->fields_annotations();
   if (md == NULL)
     return NULL;
-  return typeArrayOop(md->obj_at(index()));
+  return md->at(index());
 }
 
 constantTag fieldDescriptor::initial_value_tag() const {
@@ -85,11 +86,10 @@ jdouble fieldDescriptor::double_initial_value() const {
 }
 
 oop fieldDescriptor::string_initial_value(TRAPS) const {
-  return constants()->string_at(initial_value_index(), CHECK_0);
+  return constants()->uncached_string_at(initial_value_index(), CHECK_0);
 }
 
-void fieldDescriptor::initialize(klassOop k, int index) {
-  instanceKlass* ik = instanceKlass::cast(k);
+void fieldDescriptor::initialize(InstanceKlass* ik, int index) {
   _cp = ik->constants();
   FieldInfo* f = ik->field(index);
   assert(!f->is_internal(), "regular Java fields only");

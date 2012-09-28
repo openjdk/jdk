@@ -54,10 +54,10 @@ public class ExceptionTableElement {
   private static long offsetOfHandlerPC;
   private static long offsetOfCatchTypeIndex;
 
-  private OopHandle handle;
+  private Address handle;
   private long      offset;
 
-  public ExceptionTableElement(OopHandle handle, long offset) {
+  public ExceptionTableElement(Address handle, long offset) {
     this.handle = handle;
     this.offset = offset;
   }
@@ -78,4 +78,3 @@ public class ExceptionTableElement {
     return (int) handle.getCIntegerAt(offset + offsetOfCatchTypeIndex, 2, true);
   }
 }
-

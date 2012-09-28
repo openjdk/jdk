@@ -2057,5 +2057,5 @@ const Type *TypeNode::Value( PhaseTransform * ) const { return _type; }
 
 //------------------------------ideal_reg--------------------------------------
 uint TypeNode::ideal_reg() const {
-  return Matcher::base2reg[_type->base()];
+  return _type->ideal_reg();
 }

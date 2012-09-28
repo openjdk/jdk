@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "memory/space.hpp"
 
 inline OopsInGenClosure::OopsInGenClosure(Generation* gen) :
-  OopClosure(gen->ref_processor()), _orig_gen(gen), _rs(NULL) {
+  ExtendedOopClosure(gen->ref_processor()), _orig_gen(gen), _rs(NULL) {
   set_generation(gen);
 }
 
@@ -72,6 +72,11 @@ template <class T> inline void OopsInGenClosure::par_do_barrier(T* p) {
   }
 }
 
+inline void OopsInKlassOrGenClosure::do_klass_barrier() {
+  assert(_scanned_klass != NULL, "Must be");
+  _scanned_klass->record_modified_oops();
+}
+
 // NOTE! Any changes made here should also be made
 // in FastScanClosure::do_oop_work()
 template <class T> inline void ScanClosure::do_oop_work(T* p) {
@@ -85,7 +90,10 @@ template <class T> inline void ScanClosure::do_oop_work(T* p) {
                                         : _g->copy_to_survivor_space(obj);
       oopDesc::encode_store_heap_oop_not_null(p, new_obj);
     }
-    if (_gc_barrier) {
+
+    if (is_scanning_a_klass()) {
+      do_klass_barrier();
+    } else if (_gc_barrier) {
       // Now call parent closure
       do_barrier(p);
     }
@@ -107,7 +115,9 @@ template <class T> inline void FastScanClosure::do_oop_work(T* p) {
       oop new_obj = obj->is_forwarded() ? obj->forwardee()
                                         : _g->copy_to_survivor_space(obj);
       oopDesc::encode_store_heap_oop_not_null(p, new_obj);
-      if (_gc_barrier) {
+      if (is_scanning_a_klass()) {
+        do_klass_barrier();
+      } else if (_gc_barrier) {
         // Now call parent closure
         do_barrier(p);
       }

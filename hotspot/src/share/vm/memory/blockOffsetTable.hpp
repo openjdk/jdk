@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@
 //
 
 class ContiguousSpace;
-class SerializeOopClosure;
 
 //////////////////////////////////////////////////////////////////////////
 // The BlockOffsetTable "interface"
@@ -258,9 +257,6 @@ public:
   // returned to the start of a region.  It is a simple
   // primitive.
   HeapWord* inc_by_region_size(HeapWord* p) const { return p + N_words; }
-
-  // Shared space support
-  void serialize(SerializeOopClosure* soc, HeapWord* start, HeapWord* end);
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -289,7 +285,7 @@ class BlockOffsetArray: public BlockOffsetTable {
   };
 
   static size_t power_to_cards_back(uint i) {
-    return (size_t)(1 << (LogBase * i));
+    return (size_t)1 << (LogBase * i);
   }
   static size_t power_to_words_back(uint i) {
     return power_to_cards_back(i) * N_words;
@@ -562,8 +558,6 @@ class BlockOffsetArrayContigSpace: public BlockOffsetArray {
   }
 
   HeapWord* block_start_unsafe(const void* addr) const;
-
-  void serialize(SerializeOopClosure* soc);
 
   // Debugging support
   virtual size_t last_active_index() const;

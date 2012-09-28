@@ -125,11 +125,11 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NUL
     return;
   }
 
-  instanceKlass* loaded_decl_holder = declared_holder->get_instanceKlass();
+  InstanceKlass* loaded_decl_holder = declared_holder->get_instanceKlass();
 
   // Perform the field lookup.
   fieldDescriptor field_desc;
-  klassOop canonical_holder =
+  Klass* canonical_holder =
     loaded_decl_holder->find_field(name, signature, &field_desc);
   if (canonical_holder == NULL) {
     // Field lookup failed.  Will be detected by will_link.
@@ -186,7 +186,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   // Get the flags, offset, and canonical holder of the field.
   _flags = ciFlags(fd->access_flags());
   _offset = fd->offset();
-  _holder = CURRENT_ENV->get_object(fd->field_holder())->as_instance_klass();
+  _holder = CURRENT_ENV->get_instance_klass(fd->field_holder());
 
   // Check to see if the field is constant.
   if (_holder->is_initialized() && this->is_final()) {
@@ -213,7 +213,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
     //    may change.  The three examples are java.lang.System.in,
     //    java.lang.System.out, and java.lang.System.err.
 
-    KlassHandle k = _holder->get_klassOop();
+    KlassHandle k = _holder->get_Klass();
     assert( SystemDictionary::System_klass() != NULL, "Check once per vm");
     if( k() == SystemDictionary::System_klass() ) {
       // Check offsets for case 2: System.in, System.out, or System.err

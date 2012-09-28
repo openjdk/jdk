@@ -760,6 +760,19 @@ inline void MacroAssembler::jump_indirect_to(Address& a, Register temp,
 }
 
 
+inline void MacroAssembler::set_metadata(Metadata* obj, Register d) {
+  set_metadata(allocate_metadata_address(obj), d);
+}
+
+inline void MacroAssembler::set_metadata_constant(Metadata* obj, Register d) {
+  set_metadata(constant_metadata_address(obj), d);
+}
+
+inline void MacroAssembler::set_metadata(const AddressLiteral& obj_addr, Register d) {
+  assert(obj_addr.rspec().type() == relocInfo::metadata_type, "must be a metadata reloc");
+  set(obj_addr, d);
+}
+
 inline void MacroAssembler::set_oop(jobject obj, Register d) {
   set_oop(allocate_oop_address(obj), d);
 }

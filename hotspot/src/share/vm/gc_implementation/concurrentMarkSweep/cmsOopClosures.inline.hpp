@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc_implementation/concurrentMarkSweep/cmsOopClosures.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
+#include "oops/oop.inline.hpp"
 
 // Trim our work_queue so its length is below max at return
 inline void Par_MarkRefsIntoAndScanClosure::trim_queue(uint max) {
@@ -43,42 +44,33 @@ inline void Par_MarkRefsIntoAndScanClosure::trim_queue(uint max) {
   }
 }
 
-#ifndef PRODUCT
-void KlassRememberingOopClosure::check_remember_klasses() const {
-  assert(_should_remember_klasses == must_remember_klasses(),
-    "Should remember klasses in this context.");
-}
-#endif
+// CMSOopClosure and CMSoopsInGenClosure are duplicated,
+// until we get rid of OopsInGenClosure.
 
-void KlassRememberingOopClosure::remember_klass(Klass* k) {
-  if (!_revisit_stack->push(oop(k))) {
-    fatal("Revisit stack overflow in PushOrMarkClosure");
-  }
-  check_remember_klasses();
-}
+inline void CMSOopClosure::do_klass(Klass* k)       { do_klass_nv(k); }
+inline void CMSOopsInGenClosure::do_klass(Klass* k) { do_klass_nv(k); }
 
-inline void PushOrMarkClosure::remember_mdo(DataLayout* v) {
-  // TBD
+inline void CMSOopClosure::do_klass_nv(Klass* k) {
+  ClassLoaderData* cld = k->class_loader_data();
+  do_class_loader_data(cld);
+}
+inline void CMSOopsInGenClosure::do_klass_nv(Klass* k) {
+  ClassLoaderData* cld = k->class_loader_data();
+  do_class_loader_data(cld);
 }
 
+inline void CMSOopClosure::do_class_loader_data(ClassLoaderData* cld) {
+  assert(_klass_closure._oop_closure == this, "Must be");
 
-void Par_KlassRememberingOopClosure::remember_klass(Klass* k) {
-  if (!_revisit_stack->par_push(oop(k))) {
-    fatal("Revisit stack overflow in Par_KlassRememberingOopClosure");
-  }
-  check_remember_klasses();
+  bool claim = true;  // Must claim the class loader data before processing.
+  cld->oops_do(_klass_closure._oop_closure, &_klass_closure, claim);
+}
+inline void CMSOopsInGenClosure::do_class_loader_data(ClassLoaderData* cld) {
+  assert(_klass_closure._oop_closure == this, "Must be");
+
+  bool claim = true;  // Must claim the class loader data before processing.
+  cld->oops_do(_klass_closure._oop_closure, &_klass_closure, claim);
 }
 
-inline void Par_PushOrMarkClosure::remember_mdo(DataLayout* v) {
-  // TBD
-}
-
-inline void PushOrMarkClosure::do_yield_check() {
-  _parent->do_yield_check();
-}
-
-inline void Par_PushOrMarkClosure::do_yield_check() {
-  _parent->do_yield_check();
-}
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSOOPCLOSURES_INLINE_HPP
