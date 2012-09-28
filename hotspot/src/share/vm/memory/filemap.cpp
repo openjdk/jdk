@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,11 +205,12 @@ void FileMapInfo::write_header() {
 
 // Dump shared spaces to file.
 
-void FileMapInfo::write_space(int i, CompactibleSpace* space, bool read_only) {
+void FileMapInfo::write_space(int i, Metaspace* space, bool read_only) {
   align_file_position();
+  size_t used = space->used_words(Metaspace::NonClassType) * BytesPerWord;
+  size_t capacity = space->capacity_words(Metaspace::NonClassType) * BytesPerWord;
   struct FileMapInfo::FileMapHeader::space_info* si = &_header._space[i];
-  write_region(i, (char*)space->bottom(), space->used(),
-               space->capacity(), read_only, false);
+  write_region(i, (char*)space->bottom(), used, capacity, read_only, false);
 }
 
 
@@ -223,8 +224,8 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   if (_file_open) {
     guarantee(si->_file_offset == _file_offset, "file offset mismatch.");
     if (PrintSharedSpaces) {
-      tty->print_cr("Shared file region %d: 0x%x bytes, addr 0x%x,"
-                    " file offset 0x%x", region, size, base, _file_offset);
+      tty->print_cr("Shared file region %d: 0x%6x bytes, addr " INTPTR_FORMAT
+                    " file offset 0x%6x", region, size, base, _file_offset);
     }
   } else {
     si->_file_offset = _file_offset;
@@ -297,26 +298,6 @@ void FileMapInfo::close() {
 }
 
 
-// Memory map a shared space from the archive file.
-
-bool FileMapInfo::map_space(int i, ReservedSpace rs, ContiguousSpace* space) {
-  struct FileMapInfo::FileMapHeader::space_info* si = &_header._space[i];
-  if (space != NULL) {
-    if (si->_base != (char*)space->bottom() ||
-        si->_capacity != space->capacity()) {
-      fail_continue("Shared space base address does not match.");
-      return false;
-    }
-  }
-  bool result = (map_region(i, rs) != NULL);
-  if (space != NULL && result) {
-    space->set_top((HeapWord*)(si->_base + si->_used));
-    space->set_saved_mark();
-  }
-  return result;
-}
-
-
 // JVM/TI RedefineClasses() support:
 // Remap the shared readonly space to shared readwrite, private.
 bool FileMapInfo::remap_shared_readonly_as_readwrite() {
@@ -346,6 +327,25 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
   return true;
 }
 
+// Map the whole region at once, assumed to be allocated contiguously.
+ReservedSpace FileMapInfo::reserve_shared_memory() {
+  struct FileMapInfo::FileMapHeader::space_info* si = &_header._space[0];
+  char* requested_addr = si->_base;
+  size_t alignment = os::vm_allocation_granularity();
+
+  size_t size = align_size_up(SharedReadOnlySize + SharedReadWriteSize +
+                              SharedMiscDataSize + SharedMiscCodeSize,
+                              alignment);
+
+  // Reserve the space first, then map otherwise map will go right over some
+  // other reserved memory (like the code cache).
+  ReservedSpace rs(size, alignment, false, requested_addr);
+  if (!rs.is_reserved()) {
+    fail_continue(err_msg("Unable to reserved shared space at required address " INTPTR_FORMAT, requested_addr));
+    return rs;
+  }
+  return rs;
+}
 
 // Memory map a region in the address space.
 
@@ -358,34 +358,27 @@ char* FileMapInfo::map_region(int i, ReservedSpace rs) {
   ReservedSpace unmapped_rs = rs.last_part(size);
   mapped_rs.release();
 
-  return map_region(i, true);
+  return map_region(i);
 }
 
 
 // Memory map a region in the address space.
+static const char* shared_region_name[] = { "ReadOnly", "ReadWrite", "MiscData", "MiscCode"};
 
-char* FileMapInfo::map_region(int i, bool address_must_match) {
+char* FileMapInfo::map_region(int i) {
   struct FileMapInfo::FileMapHeader::space_info* si = &_header._space[i];
   size_t used = si->_used;
-  size_t size = align_size_up(used, os::vm_allocation_granularity());
-  char *requested_addr = 0;
-  if (address_must_match) {
-    requested_addr = si->_base;
-  }
+  size_t alignment = os::vm_allocation_granularity();
+  size_t size = align_size_up(used, alignment);
+  char *requested_addr = si->_base;
+
+  // map the contents of the CDS archive in this memory
   char *base = os::map_memory(_fd, _full_path, si->_file_offset,
                               requested_addr, size, si->_read_only,
                               si->_allow_exec);
-  if (base == NULL) {
-    fail_continue("Unable to map shared space.");
+  if (base == NULL || base != si->_base) {
+    fail_continue(err_msg("Unable to map %s shared space at required address.", shared_region_name[i]));
     return NULL;
-  }
-  if (address_must_match) {
-    if (base != si->_base) {
-      fail_continue("Unable to map shared space at required address.");
-      return NULL;
-    }
-  } else {
-    si->_base = base;          // save mapped address for unmapping.
   }
   return base;
 }
@@ -417,8 +410,6 @@ FileMapInfo* FileMapInfo::_current_info = NULL;
 // information (version, boot classpath, etc.).  If initialization
 // fails, shared spaces are disabled and the file is closed. [See
 // fail_continue.]
-
-
 bool FileMapInfo::initialize() {
   assert(UseSharedSpaces, "UseSharedSpaces expected.");
 
@@ -518,7 +509,7 @@ bool FileMapInfo::validate() {
 // Return:
 // True if the p is within the mapped shared space, otherwise, false.
 bool FileMapInfo::is_in_shared_space(const void* p) {
-  for (int i = 0; i < CompactingPermGenGen::n_regions; i++) {
+  for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     if (p >= _header._space[i]._base &&
         p < _header._space[i]._base + _header._space[i]._used) {
       return true;

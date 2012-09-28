@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,11 @@ public class BytecodeLoadConstant extends Bytecode {
   }
 
   public int poolIndex() {
-    int i = rawIndex();
+    int index = rawIndex();
     if (hasCacheIndex()) {
-      ConstantPoolCache cpCache = method().getConstants().getCache();
-      return cpCache.getEntryAt(i).getConstantPoolIndex();
+      return method().getConstants().objectToCPIndex(index);
     } else {
-      return i;
+      return index;
     }
   }
 
@@ -72,8 +71,7 @@ public class BytecodeLoadConstant extends Bytecode {
   private Oop getCachedConstant() {
     int i = cacheIndex();
     if (i >= 0) {
-      ConstantPoolCache cpCache = method().getConstants().getCache();
-      return cpCache.getEntryAt(i).getF1();
+      throw new InternalError("invokedynamic not implemented yet");
     }
     return null;
   }
@@ -96,7 +94,7 @@ public class BytecodeLoadConstant extends Bytecode {
        return (ctag.isDouble() || ctag.isLong()) ? true: false;
     } else {
        // has to be int or float or String or Klass
-       return (ctag.isUnresolvedString() || ctag.isString()
+       return (ctag.isString()
                || ctag.isUnresolvedKlass() || ctag.isKlass()
                || ctag.isMethodHandle() || ctag.isMethodType()
                || ctag.isInt() || ctag.isFloat())? true: false;
@@ -124,9 +122,9 @@ public class BytecodeLoadConstant extends Bytecode {
     ConstantPool cpool = method().getConstants();
     int cpIndex = poolIndex();
     ConstantPool.CPSlot oop = cpool.getSlotAt(cpIndex);
-    if (oop.isOop()) {
-      return (Klass) oop.getOop();
-    } else if (oop.isMetaData()) {
+    if (oop.isResolved()) {
+      return oop.getKlass();
+    } else if (oop.isUnresolved()) {
       return oop.getSymbol();
     } else {
        throw new RuntimeException("should not reach here");
@@ -163,28 +161,21 @@ public class BytecodeLoadConstant extends Bytecode {
        return "<float " + Float.toString(cpool.getFloatAt(cpIndex)) + "F>";
     } else if (ctag.isDouble()) {
        return "<double " + Double.toString(cpool.getDoubleAt(cpIndex)) + "D>";
-    } else if (ctag.isString() || ctag.isUnresolvedString()) {
+    } else if (ctag.isString()) {
        // tag change from 'unresolved' to 'string' does not happen atomically.
        // We just look at the object at the corresponding index and
        // decide based on the oop type.
-       ConstantPool.CPSlot obj = cpool.getSlotAt(cpIndex);
-       if (obj.isMetaData()) {
-         Symbol sym = obj.getSymbol();
+       Symbol sym = cpool.getUnresolvedStringAt(cpIndex);
          return "<String \"" + sym.asString() + "\">";
-       } else if (obj.isOop()) {
-         return "<String \"" + OopUtilities.stringOopToString(obj.getOop()) + "\">";
-       } else {
-          throw new RuntimeException("should not reach here");
-       }
     } else if (ctag.isKlass() || ctag.isUnresolvedKlass()) {
        // tag change from 'unresolved' to 'klass' does not happen atomically.
        // We just look at the object at the corresponding index and
        // decide based on the oop type.
        ConstantPool.CPSlot obj = cpool.getSlotAt(cpIndex);
-       if (obj.isOop()) {
-         Klass k = (Klass) obj.getOop();
-         return "<Class " + k.getName().asString() + "@" + k.getHandle() + ">";
-       } else if (obj.isMetaData()) {
+       if (obj.isResolved()) {
+         Klass k = obj.getKlass();
+         return "<Class " + k.getName().asString() + "@" + k.getAddress() + ">";
+       } else if (obj.isUnresolved()) {
          Symbol sym = obj.getSymbol();
          return "<Class " + sym.asString() + ">";
        } else {

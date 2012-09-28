@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 // ciArrayKlass
 //
-// This class, and its subclasses represent klassOops in the
+// This class, and its subclasses represent Klass*s in the
 // HotSpot virtual machine whose Klass part is an arrayKlass.
 class ciArrayKlass : public ciKlass {
   CI_PACKAGE_ACCESS
@@ -38,7 +38,7 @@ private:
 
 protected:
   ciArrayKlass(KlassHandle h_k);
-  ciArrayKlass(ciSymbol* name, int dimension, ciKlass* klass);
+  ciArrayKlass(ciSymbol* name, int dimension, BasicType bt);
 
   arrayKlass* get_arrayKlass() {
     return (arrayKlass*)get_Klass();
@@ -58,8 +58,8 @@ public:
   }
 
   // What kind of vmObject is this?
-  bool is_array_klass() { return true; }
-  bool is_java_klass()  { return true; }
+  bool is_array_klass() const { return true; }
+  bool is_java_klass() const  { return true; }
 
   static ciArrayKlass* make(ciType* element_type);
 };

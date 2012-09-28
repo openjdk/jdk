@@ -293,21 +293,21 @@ bool Generation::block_is_obj(const HeapWord* p) const {
 
 class GenerationOopIterateClosure : public SpaceClosure {
  public:
-  OopClosure* cl;
+  ExtendedOopClosure* cl;
   MemRegion mr;
   virtual void do_space(Space* s) {
     s->oop_iterate(mr, cl);
   }
-  GenerationOopIterateClosure(OopClosure* _cl, MemRegion _mr) :
+  GenerationOopIterateClosure(ExtendedOopClosure* _cl, MemRegion _mr) :
     cl(_cl), mr(_mr) {}
 };
 
-void Generation::oop_iterate(OopClosure* cl) {
+void Generation::oop_iterate(ExtendedOopClosure* cl) {
   GenerationOopIterateClosure blk(cl, _reserved);
   space_iterate(&blk);
 }
 
-void Generation::oop_iterate(MemRegion mr, OopClosure* cl) {
+void Generation::oop_iterate(MemRegion mr, ExtendedOopClosure* cl) {
   GenerationOopIterateClosure blk(cl, mr);
   space_iterate(&blk);
 }
@@ -435,7 +435,7 @@ bool CardGeneration::expand(size_t bytes, size_t expand_bytes) {
     success = grow_to_reserved();
   }
   if (PrintGC && Verbose) {
-    if (success && GC_locker::is_active()) {
+    if (success && GC_locker::is_active_and_needs_gc()) {
       gclog_or_tty->print_cr("Garbage collection disabled, expanded heap instead");
     }
   }

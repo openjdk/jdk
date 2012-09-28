@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,9 +138,9 @@ public class BytecodeDisassembler {
             }
          }
 
-         Object bytecodeObj = null;
+         Bytecode bytecodeObj = null;
          try {
-            bytecodeObj = cstr.newInstance(new Object[] { method, new Integer(bci) });
+            bytecodeObj = (Bytecode)cstr.newInstance(new Object[] { method, new Integer(bci) });
          } catch (Exception exp) {
             if (Assert.ASSERTS_ENABLED) {
                Assert.that(false, "Bytecode instance of class "
@@ -153,11 +153,10 @@ public class BytecodeDisassembler {
          }
 
          try {
-            visitor.visit((Bytecode) bytecodeObj);
+            visitor.visit(bytecodeObj);
          } catch(ClassCastException castfail) {
-            if (Assert.ASSERTS_ENABLED) {
-               Assert.that(false, clazz.getName() + " is not derived from Bytecode!");
-            }
+             castfail.printStackTrace();
+             System.err.println(method.getAddress() + " " + bci);
          }
       }
 

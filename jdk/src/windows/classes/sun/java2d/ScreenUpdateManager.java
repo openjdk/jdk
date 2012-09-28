@@ -110,6 +110,11 @@ public class ScreenUpdateManager {
     public SurfaceData getReplacementScreenSurface(WComponentPeer peer,
                                                    SurfaceData oldsd)
     {
+        SurfaceData surfaceData = peer.getSurfaceData();
+        if (surfaceData.isValid()) {
+            return surfaceData;
+        }
+        peer.replaceSurfaceData();
         return peer.getSurfaceData();
     }
 

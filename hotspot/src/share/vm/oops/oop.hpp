@@ -28,6 +28,7 @@
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/specialized_oop_closures.hpp"
+#include "oops/metadata.hpp"
 #include "utilities/top.hpp"
 
 // oopDesc is the top baseclass for objects classes.  The {name}Desc classes describe
@@ -40,10 +41,6 @@
 // store into oop with store check
 template <class T> void oop_store(T* p, oop v);
 template <class T> void oop_store(volatile T* p, oop v);
-
-// store into oop without store check
-template <class T> void oop_store_without_check(T* p, oop v);
-template <class T> void oop_store_without_check(volatile T* p, oop v);
 
 extern bool always_do_update_barrier;
 
@@ -63,7 +60,7 @@ class oopDesc {
  private:
   volatile markOop  _mark;
   union _metadata {
-    wideKlassOop    _klass;
+    Klass*      _klass;
     narrowOop       _compressed_klass;
   } _metadata;
 
@@ -71,11 +68,6 @@ class oopDesc {
   static BarrierSet* _bs;
 
  public:
-  enum ConcSafeType {
-    IsUnsafeConc = false,
-    IsSafeConc   = true
-  };
-
   markOop  mark() const         { return _mark; }
   markOop* mark_addr() const    { return (markOop*) &_mark; }
 
@@ -88,26 +80,25 @@ class oopDesc {
   // objects during a GC) -- requires a valid klass pointer
   void init_mark();
 
-  klassOop klass() const;
-  klassOop klass_or_null() const volatile;
-  oop* klass_addr();
+  Klass* klass() const;
+  Klass* klass_or_null() const volatile;
+  Klass** klass_addr();
   narrowOop* compressed_klass_addr();
 
-  void set_klass(klassOop k);
+  void set_klass(Klass* k);
 
   // For klass field compression
   int klass_gap() const;
   void set_klass_gap(int z);
   // For when the klass pointer is being used as a linked list "next" field.
   void set_klass_to_list_ptr(oop k);
+  oop list_ptr_from_klass();
 
   // size of object header, aligned to platform wordSize
   static int header_size()          { return sizeof(oopDesc)/HeapWordSize; }
 
-  Klass* blueprint() const;
-
   // Returns whether this is an instance of k or an instance of a subclass of k
-  bool is_a(klassOop k)  const;
+  bool is_a(Klass* k)  const;
 
   // Returns the actual oop size of the object
   int size();
@@ -116,33 +107,13 @@ class oopDesc {
   // to be able to figure out the size of an object knowing its klass.
   int size_given_klass(Klass* klass);
 
-  // Some perm gen objects are not parseble immediately after
-  // installation of their klass pointer.
-  bool is_parsable();
-
-  // Some perm gen objects that have been allocated and initialized
-  // can be changed by the VM when not at a safe point (class rededfinition
-  // is an example).  Such objects should not be examined by the
-  // concurrent processing of a garbage collector if is_conc_safe()
-  // returns false.
-  bool is_conc_safe();
-
   // type test operations (inlined in oop.inline.h)
   bool is_instance()           const;
   bool is_instanceMirror()     const;
   bool is_instanceRef()        const;
   bool is_array()              const;
   bool is_objArray()           const;
-  bool is_klass()              const;
-  bool is_thread()             const;
-  bool is_method()             const;
-  bool is_constMethod()        const;
-  bool is_methodData()         const;
-  bool is_constantPool()       const;
-  bool is_constantPoolCache()  const;
   bool is_typeArray()          const;
-  bool is_javaArray()          const;
-  bool is_compiledICHolder()   const;
 
  private:
   // field addresses in oop
@@ -156,14 +127,18 @@ class oopDesc {
   jlong*    long_field_addr(int offset)   const;
   jfloat*   float_field_addr(int offset)  const;
   jdouble*  double_field_addr(int offset) const;
-  address*  address_field_addr(int offset) const;
+  Metadata** metadata_field_addr(int offset) const;
 
  public:
   // Need this as public for garbage collection.
   template <class T> T* obj_field_addr(int offset) const;
 
+  // Needed for javaClasses
+  address*  address_field_addr(int offset) const;
+
   static bool is_null(oop obj);
   static bool is_null(narrowOop obj);
+  static bool is_null(Klass* obj);
 
   // Decode an oop pointer from a narrowOop if compressed.
   // These are overloaded for oop and narrowOop as are the other functions
@@ -210,7 +185,15 @@ class oopDesc {
   static oop atomic_exchange_oop(oop exchange_value, volatile HeapWord *dest);
   static oop atomic_compare_exchange_oop(oop exchange_value,
                                          volatile HeapWord *dest,
-                                         oop compare_value);
+                                         oop compare_value,
+                                         bool prebarrier = false);
+
+  // klass encoding for klass pointer in objects.
+  static narrowOop encode_klass_not_null(Klass* v);
+  static narrowOop encode_klass(Klass* v);
+
+  static Klass* decode_klass_not_null(narrowOop v);
+  static Klass* decode_klass(narrowOop v);
 
   // Access to fields in a instanceOop through these methods.
   oop obj_field(int offset) const;
@@ -218,6 +201,9 @@ class oopDesc {
   void obj_field_put(int offset, oop value);
   void obj_field_put_raw(int offset, oop value);
   void obj_field_put_volatile(int offset, oop value);
+
+  Metadata* metadata_field(int offset) const;
+  void metadata_field_put(int offset, Metadata* value);
 
   jbyte byte_field(int offset) const;
   void byte_field_put(int offset, jbyte contents);
@@ -294,10 +280,6 @@ class oopDesc {
   void verify_on(outputStream* st);
   void verify();
 
-  // tells whether this oop is partially constructed (gc during class loading)
-  bool partially_loaded();
-  void set_partially_loaded();
-
   // locking operations
   bool is_locked()   const;
   bool is_unlocked() const;
@@ -315,7 +297,6 @@ class oopDesc {
   // Apply "MarkSweep::mark_and_push" to (the address of) every non-NULL
   // reference field in "this".
   void follow_contents(void);
-  void follow_header(void);
 
 #ifndef SERIALGC
   // Parallel Scavenge
@@ -325,15 +306,9 @@ class oopDesc {
   void update_contents(ParCompactionManager* cm);
 
   void follow_contents(ParCompactionManager* cm);
-  void follow_header(ParCompactionManager* cm);
 #endif // SERIALGC
 
-  bool is_perm() const;
-  bool is_perm_or_null() const;
   bool is_scavengable() const;
-  bool is_shared() const;
-  bool is_shared_readonly() const;
-  bool is_shared_readwrite() const;
 
   // Forward pointer operations for scavenge
   bool is_forwarded() const;
@@ -358,11 +333,10 @@ class oopDesc {
   // Adjust all pointers in this object to point at it's forwarded location and
   // return the size of this oop.  This is used by the MarkSweep collector.
   int adjust_pointers();
-  void adjust_header();
 
 #ifndef SERIALGC
   // Parallel old
-  void update_header();
+  void update_header(ParCompactionManager* cm);
 #endif // SERIALGC
 
   // mark-sweep support
@@ -389,14 +363,17 @@ class oopDesc {
   ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_BACKWARDS_DECL)
 #endif
 
-  void oop_iterate_header(OopClosure* blk);
-  void oop_iterate_header(OopClosure* blk, MemRegion mr);
+  int oop_iterate_no_header(OopClosure* bk);
+  int oop_iterate_no_header(OopClosure* bk, MemRegion mr);
 
   // identity hash; returns the identity hash key (computes it if necessary)
   // NOTE with the introduction of UseBiasedLocking that identity_hash() might reach a
   // safepoint if called on a biased object. Calling code must be aware of that.
   intptr_t identity_hash();
   intptr_t slow_identity_hash();
+
+  // Alternate hashing code if string table is rehashed
+  unsigned int new_hash(jint seed);
 
   // marks are forwarded to stack when object is locked
   bool     has_displaced_mark() const;

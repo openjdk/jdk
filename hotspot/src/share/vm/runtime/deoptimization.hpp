@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,9 +332,9 @@ class Deoptimization : AllStatic {
   static void popframe_preserve_args(JavaThread* thread, int bytes_to_save, void* start_address);
 
  private:
-  static methodDataOop get_method_data(JavaThread* thread, methodHandle m, bool create_if_missing);
+  static MethodData* get_method_data(JavaThread* thread, methodHandle m, bool create_if_missing);
   // Update the mdo's count and per-BCI reason bits, returning previous state:
-  static ProfileData* query_update_method_data(methodDataHandle trap_mdo,
+  static ProfileData* query_update_method_data(MethodData* trap_mdo,
                                                int trap_bci,
                                                DeoptReason reason,
                                                //outputs:
@@ -355,7 +355,7 @@ class Deoptimization : AllStatic {
   // Note:  Histogram array size is 1-2 Kb.
 
  public:
-  static void update_method_data_from_interpreter(methodDataHandle trap_mdo, int trap_bci, int reason);
+  static void update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason);
 };
 
 class DeoptimizationMarker : StackObj {  // for profiling

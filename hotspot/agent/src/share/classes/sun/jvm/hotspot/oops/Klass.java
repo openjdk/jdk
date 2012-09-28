@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
-public class Klass extends Oop implements ClassConstants {
+public class Klass extends Metadata implements ClassConstants {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -50,14 +50,14 @@ public class Klass extends Oop implements ClassConstants {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type    = db.lookupType("Klass");
-    javaMirror   = new OopField(type.getOopField("_java_mirror"), Oop.getHeaderSize());
-    superField   = new OopField(type.getOopField("_super"), Oop.getHeaderSize());
-    layoutHelper = new IntField(type.getJIntField("_layout_helper"), Oop.getHeaderSize());
+    javaMirror   = new OopField(type.getOopField("_java_mirror"), 0);
+    superField   = new MetadataField(type.getAddressField("_super"), 0);
+    layoutHelper = new IntField(type.getJIntField("_layout_helper"), 0);
     name         = type.getAddressField("_name");
-    accessFlags  = new CIntField(type.getCIntegerField("_access_flags"), Oop.getHeaderSize());
-    subklass     = new OopField(type.getOopField("_subklass"), Oop.getHeaderSize());
-    nextSibling  = new OopField(type.getOopField("_next_sibling"), Oop.getHeaderSize());
-    allocCount   = new CIntField(type.getCIntegerField("_alloc_count"), Oop.getHeaderSize());
+    accessFlags  = new CIntField(type.getCIntegerField("_access_flags"), 0);
+    subklass     = new MetadataField(type.getAddressField("_subklass"), 0);
+    nextSibling  = new MetadataField(type.getAddressField("_next_sibling"), 0);
+    allocCount   = new CIntField(type.getCIntegerField("_alloc_count"), 0);
 
     LH_INSTANCE_SLOW_PATH_BIT  = db.lookupIntConstant("Klass::_lh_instance_slow_path_bit").intValue();
     LH_LOG2_ELEMENT_SIZE_SHIFT = db.lookupIntConstant("Klass::_lh_log2_element_size_shift").intValue();
@@ -68,8 +68,8 @@ public class Klass extends Oop implements ClassConstants {
     LH_ARRAY_TAG_OBJ_VALUE     = db.lookupIntConstant("Klass::_lh_array_tag_obj_value").intValue();
   }
 
-  Klass(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public Klass(Address addr) {
+    super(addr);
   }
 
   // jvmdi support - see also class_status in VM code
@@ -81,20 +81,20 @@ public class Klass extends Oop implements ClassConstants {
 
   // Fields
   private static OopField  javaMirror;
-  private static OopField  superField;
+  private static MetadataField  superField;
   private static IntField layoutHelper;
   private static AddressField  name;
   private static CIntField accessFlags;
-  private static OopField  subklass;
-  private static OopField  nextSibling;
+  private static MetadataField  subklass;
+  private static MetadataField  nextSibling;
   private static CIntField allocCount;
 
   private Address getValue(AddressField field) {
-    return getHandle().getAddressAt(field.getOffset() + Oop.getHeaderSize());
+    return addr.getAddressAt(field.getOffset());
   }
 
   protected Symbol getSymbol(AddressField field) {
-    return Symbol.create(getHandle().getAddressAt(field.getOffset() + Oop.getHeaderSize()));
+    return Symbol.create(addr.getAddressAt(field.getOffset()));
   }
 
   // Accessors for declared fields
@@ -164,19 +164,16 @@ public class Klass extends Oop implements ClassConstants {
     tty.print("Klass");
   }
 
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
+  public void iterateFields(MetadataVisitor visitor) {
       visitor.doOop(javaMirror, true);
-      visitor.doOop(superField, true);
+    visitor.doMetadata(superField, true);
       visitor.doInt(layoutHelper, true);
       // visitor.doOop(name, true);
       visitor.doCInt(accessFlags, true);
-      visitor.doOop(subklass, true);
-      visitor.doOop(nextSibling, true);
+    visitor.doMetadata(subklass, true);
+    visitor.doMetadata(nextSibling, true);
       visitor.doCInt(allocCount, true);
     }
-  }
 
   public long getObjectSize() {
     throw new RuntimeException("should not reach here");
@@ -191,11 +188,11 @@ public class Klass extends Oop implements ClassConstants {
   public Klass arrayKlassOrNull()         { return arrayKlassImpl(true);        }
 
   public Klass arrayKlassImpl(boolean orNull, int rank) {
-    throw new RuntimeException("array_klass should be dispatched to instanceKlass, objArrayKlass or typeArrayKlass");
+    throw new RuntimeException("array_klass should be dispatched to InstanceKlass, objArrayKlass or typeArrayKlass");
   }
 
   public Klass arrayKlassImpl(boolean orNull) {
-    throw new RuntimeException("array_klass should be dispatched to instanceKlass, objArrayKlass or typeArrayKlass");
+    throw new RuntimeException("array_klass should be dispatched to InstanceKlass, objArrayKlass or typeArrayKlass");
   }
 
   // This returns the name in the form java/lang/String which isn't really a signature

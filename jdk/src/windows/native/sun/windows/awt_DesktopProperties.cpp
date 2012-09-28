@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ void AwtDesktopProperties::GetWindowsParameters() {
     GetNonClientParameters();
     GetIconParameters();
     GetColorParameters();
+    GetCaretParameters();
     GetOtherParameters();
     GetSoundEvents();
     GetSystemProperties();
@@ -634,6 +635,10 @@ void AwtDesktopProperties::GetSoundEvents() {
     SetSoundProperty(TEXT("win.sound.hand"), TEXT("SystemHand"));
     SetSoundProperty(TEXT("win.sound.question"), TEXT("SystemQuestion"));
     SetSoundProperty(TEXT("win.sound.start"), TEXT("SystemStart"));
+}
+
+void AwtDesktopProperties::GetCaretParameters() {
+    SetIntegerProperty(TEXT("win.caret.width"), GetIntegerParameter(SPI_GETCARETWIDTH));
 }
 
 BOOL AwtDesktopProperties::GetBooleanParameter(UINT spi) {

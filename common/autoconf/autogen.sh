@@ -23,18 +23,38 @@
 #
 
 script_dir=`dirname $0`
-closed_script_dir="$script_dir/../../jdk/make/closed/autoconf"
 
 # Create a timestamp as seconds since epoch
-TIMESTAMP=`date +%s`
+if test "x`uname -s`" = "xSunOS"; then
+  # date +%s is not available on Solaris, use this workaround
+  # from http://solarisjedi.blogspot.co.uk/2006/06/solaris-date-command-and-epoch-time.html
+  TIMESTAMP=`/usr/bin/truss /usr/bin/date 2>&1 |  nawk -F= '/^time\(\)/ {gsub(/ /,"",$2);print $2}'`
+  # On Solaris /bin/sh doesn't support test -e but /usr/bin/test does.
+  TEST=`which test`
+else
+  TIMESTAMP=`date +%s`
+  TEST="test"
+fi
 
+if $TEST "$CUSTOM_CONFIG_DIR" = ""; then
+  custom_script_dir="$script_dir/../../jdk/make/closed/autoconf"
+else
+  custom_script_dir=$CUSTOM_CONFIG_DIR
+fi
+
+custom_hook=$custom_script_dir/custom-hook.m4
+
+echo Generating generated-configure.sh
 cat $script_dir/configure.ac  | sed -e "s|@DATE_WHEN_GENERATED@|$TIMESTAMP|" | autoconf -W all -I$script_dir - > $script_dir/generated-configure.sh
 rm -rf autom4te.cache
 
-if test -e $closed_script_dir/closed-hook.m4; then
-  # We have closed sources available; also generate configure script
-  # with closed hooks compiled in.
+if $TEST -e $custom_hook; then
+  echo Generating custom generated-configure.sh
+  # We have custom sources available; also generate configure script
+  # with custom hooks compiled in.
   cat $script_dir/configure.ac | sed -e "s|@DATE_WHEN_GENERATED@|$TIMESTAMP|" | \
-    sed -e "s|AC_DEFUN_ONCE(\[CLOSED_HOOK\])|m4_include([$closed_script_dir/closed-hook.m4])|" | autoconf -W all -I$script_dir - > $closed_script_dir/generated-configure.sh
+    sed -e "s|AC_DEFUN_ONCE(\[CUSTOM_HOOK\])|m4_include([$custom_hook])|" | autoconf -W all -I$script_dir - > $custom_script_dir/generated-configure.sh
   rm -rf autom4te.cache
+else
+  echo No custom hook found:  $custom_hook
 fi

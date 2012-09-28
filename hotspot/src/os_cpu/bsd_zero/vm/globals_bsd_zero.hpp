@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,7 +42,7 @@ define_pd_global(intx,  CompilerThreadStackSize, 0);
 define_pd_global(uintx, JVMInvokeMethodSlack,    8192);
 
 define_pd_global(bool,  UseVectoredExceptions,   false);
-// Only used on 64 bit platforms
+// Used on 64 bit platforms for UseCompressedOops base address or CDS
 define_pd_global(uintx, HeapBaseMinAddress,      2*G);
 
 #endif // OS_CPU_BSD_ZERO_VM_GLOBALS_BSD_ZERO_HPP
