@@ -2353,7 +2353,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * @return an array of cipher suite names
      */
     public String[] getSupportedCipherSuites() {
-        return sslContext.getSuportedCipherSuiteList().toStringArray();
+        return sslContext.getSupportedCipherSuiteList().toStringArray();
     }
 
     /**

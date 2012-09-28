@@ -1302,9 +1302,9 @@ void BCEscapeAnalyzer::compute_escape_info() {
     // Clear all info since method's bytecode was not analysed and
     // set pessimistic escape information.
     clear_escape_info();
-    methodData()->set_eflag(methodDataOopDesc::allocated_escapes);
-    methodData()->set_eflag(methodDataOopDesc::unknown_modified);
-    methodData()->set_eflag(methodDataOopDesc::estimated);
+    methodData()->set_eflag(MethodData::allocated_escapes);
+    methodData()->set_eflag(MethodData::unknown_modified);
+    methodData()->set_eflag(MethodData::estimated);
     return;
   }
 
@@ -1332,18 +1332,18 @@ void BCEscapeAnalyzer::compute_escape_info() {
       methodData()->set_arg_modified(i, _arg_modified[i]);
     }
     if (_return_local) {
-      methodData()->set_eflag(methodDataOopDesc::return_local);
+      methodData()->set_eflag(MethodData::return_local);
     }
     if (_return_allocated) {
-      methodData()->set_eflag(methodDataOopDesc::return_allocated);
+      methodData()->set_eflag(MethodData::return_allocated);
     }
     if (_allocated_escapes) {
-      methodData()->set_eflag(methodDataOopDesc::allocated_escapes);
+      methodData()->set_eflag(MethodData::allocated_escapes);
     }
     if (_unknown_modified) {
-      methodData()->set_eflag(methodDataOopDesc::unknown_modified);
+      methodData()->set_eflag(MethodData::unknown_modified);
     }
-    methodData()->set_eflag(methodDataOopDesc::estimated);
+    methodData()->set_eflag(MethodData::estimated);
   }
 }
 
@@ -1360,10 +1360,10 @@ void BCEscapeAnalyzer::read_escape_info() {
       _arg_returned.set(i);
     _arg_modified[i] = methodData()->arg_modified(i);
   }
-  _return_local = methodData()->eflag_set(methodDataOopDesc::return_local);
-  _return_allocated = methodData()->eflag_set(methodDataOopDesc::return_allocated);
-  _allocated_escapes = methodData()->eflag_set(methodDataOopDesc::allocated_escapes);
-  _unknown_modified = methodData()->eflag_set(methodDataOopDesc::unknown_modified);
+  _return_local = methodData()->eflag_set(MethodData::return_local);
+  _return_allocated = methodData()->eflag_set(MethodData::return_allocated);
+  _allocated_escapes = methodData()->eflag_set(MethodData::allocated_escapes);
+  _unknown_modified = methodData()->eflag_set(MethodData::unknown_modified);
 
 }
 

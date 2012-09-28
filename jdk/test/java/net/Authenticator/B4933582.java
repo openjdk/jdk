@@ -119,7 +119,7 @@ public class B4933582 implements HttpCallback {
         is.close();
     }
 
-    static HttpServer server;
+    static TestHttpServer server;
 
     public static void main (String[] args) throws Exception {
         firstTime = args[0].equals ("first");
@@ -128,11 +128,11 @@ public class B4933582 implements HttpCallback {
         CacheImpl cache;
         try {
             if (firstTime) {
-                server = new HttpServer (new B4933582(), 1, 10, 0);
+                server = new TestHttpServer (new B4933582(), 1, 10, 0);
                 cache = new CacheImpl (server.getLocalPort());
             } else {
                 cache = new CacheImpl ();
-                server = new HttpServer(new B4933582(), 1, 10, cache.getPort());
+                server = new TestHttpServer(new B4933582(), 1, 10, cache.getPort());
             }
             AuthCacheValue.setAuthCache (cache);
             System.out.println ("Server: listening on port: " + server.getLocalPort());

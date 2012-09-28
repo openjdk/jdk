@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ private:
 
 public:
   PSGenerationPool(PSOldGen* pool, const char* name, PoolType type, bool support_usage_threshold);
-  PSGenerationPool(PSPermGen* pool, const char* name, PoolType type, bool support_usage_threshold);
 
   MemoryUsage get_memory_usage();
   size_t used_in_bytes()              { return _gen->used_in_bytes(); }

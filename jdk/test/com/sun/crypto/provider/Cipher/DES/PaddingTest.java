@@ -195,7 +195,7 @@ public class PaddingTest {
 
     private static void diff(String fname1, String fname2) throws Exception {
         if (!Arrays.equals(Files.readAllBytes(Paths.get(fname1)),
-                Files.readAllBytes(Paths.get(fname1)))) {
+                Files.readAllBytes(Paths.get(fname2)))) {
             throw new Exception(
                     "files " + fname1 + " and " + fname2 + " differ");
         }

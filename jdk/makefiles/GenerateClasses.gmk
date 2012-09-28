@@ -31,7 +31,7 @@ include RMICompilation.gmk
 
 # To ensure the latest stub generator files are picked up from corba repo
 # when available, we need to run with latest rmic version available. 
-ifeq ($(CROSS_COMPILE_ARCH),)
+ifneq ($(COMPILE_TYPE),cross)
     RMIC := $(UNCYGDRIVE) $(JDK_OUTPUTDIR)/bin/rmic
 endif  
 

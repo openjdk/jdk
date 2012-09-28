@@ -90,7 +90,14 @@ void ParGCAllocBuffer::flush_stats(PLABStats* stats) {
 void PLABStats::adjust_desired_plab_sz() {
   assert(ResizePLAB, "Not set");
   if (_allocated == 0) {
-    assert(_unused == 0, "Inconsistency in PLAB stats");
+    assert(_unused == 0,
+           err_msg("Inconsistency in PLAB stats: "
+                   "_allocated: "SIZE_FORMAT", "
+                   "_wasted: "SIZE_FORMAT", "
+                   "_unused: "SIZE_FORMAT", "
+                   "_used  : "SIZE_FORMAT,
+                   _allocated, _wasted, _unused, _used));
+
     _allocated = 1;
   }
   double wasted_frac    = (double)_unused/(double)_allocated;

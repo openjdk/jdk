@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -423,7 +423,7 @@ public class SPARCFrame extends Frame {
       return false;
     }
 
-    OopHandle methodHandle = addressOfInterpreterFrameMethod().getOopHandleAt(0);
+    Address methodHandle = addressOfInterpreterFrameMethod().getAddressAt(0);
 
     if (VM.getVM().getObjectHeap().isValidMethod(methodHandle) == false) {
       return false;
@@ -444,7 +444,7 @@ public class SPARCFrame extends Frame {
 
     Method method;
     try {
-       method = (Method) VM.getVM().getObjectHeap().newOop(methodHandle);
+      method = (Method)Metadata.instantiateWrapperFor(methodHandle);
     } catch (UnknownOopException ex) {
        return false;
     }
@@ -744,8 +744,8 @@ public class SPARCFrame extends Frame {
   // private:
   //
   //  // where LcpoolCache is saved:
-  //  constantPoolCacheOop* interpreter_frame_cpoolcache_addr() const {
-  //    return (constantPoolCacheOop*)sp_addr_at( LcpoolCache.sp_offset_in_saved_window());
+  //  ConstantPoolCache** interpreter_frame_cpoolcache_addr() const {
+  //    return (ConstantPoolCache**)sp_addr_at( LcpoolCache.sp_offset_in_saved_window());
   //  }
   //
   //  // where Lmonitors is saved:
@@ -787,8 +787,8 @@ public class SPARCFrame extends Frame {
     // for use in a non-debugging, or reflective, system. Need to
     // figure out how to express this.
     Address bcp = addressOfInterpreterFrameBCX().getAddressAt(0);
-    OopHandle methodHandle = addressOfInterpreterFrameMethod().getOopHandleAt(0);
-    Method method = (Method) VM.getVM().getObjectHeap().newOop(methodHandle);
+    Address methodHandle = addressOfInterpreterFrameMethod().getAddressAt(0);
+    Method method = (Method)Metadata.instantiateWrapperFor(methodHandle);
     return bcpToBci(bcp, method);
   }
 

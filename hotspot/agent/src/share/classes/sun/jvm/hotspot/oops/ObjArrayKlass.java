@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,16 @@ public class ObjArrayKlass extends ArrayKlass {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type = db.lookupType("objArrayKlass");
-    elementKlass = new OopField(type.getOopField("_element_klass"), Oop.getHeaderSize());
-    bottomKlass  = new OopField(type.getOopField("_bottom_klass"), Oop.getHeaderSize());
+    elementKlass = new MetadataField(type.getAddressField("_element_klass"), 0);
+    bottomKlass  = new MetadataField(type.getAddressField("_bottom_klass"), 0);
   }
 
-  ObjArrayKlass(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public ObjArrayKlass(Address addr) {
+    super(addr);
   }
 
-  private static OopField elementKlass;
-  private static OopField bottomKlass;
+  private static MetadataField elementKlass;
+  private static MetadataField bottomKlass;
 
   public Klass getElementKlass() { return (Klass) elementKlass.getValue(this); }
   public Klass getBottomKlass()  { return (Klass) bottomKlass.getValue(this); }
@@ -71,12 +71,10 @@ public class ObjArrayKlass extends ArrayKlass {
     return arrayFlags;
   }
 
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
-      visitor.doOop(elementKlass, true);
-      visitor.doOop(bottomKlass, true);
-    }
+  public void iterateFields(MetadataVisitor visitor) {
+    super.iterateFields(visitor);
+    visitor.doMetadata(elementKlass, true);
+    visitor.doMetadata(bottomKlass, true);
   }
 
   public Klass arrayKlassImpl(boolean orNull, int n) {

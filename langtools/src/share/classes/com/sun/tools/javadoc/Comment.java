@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,7 +386,7 @@ class Comment {
     }
 
     /**
-     * Recursively search for the string "{@" followed by
+     * Recursively search for the characters '{', '@', followed by
      * name of inline tag and white space,
      * if found
      *    return the index of the text following the white space.

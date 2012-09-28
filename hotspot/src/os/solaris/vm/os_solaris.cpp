@@ -5587,7 +5587,7 @@ extern "C" ret name params {                                    \
 // for n in $(eval whereis callcount | awk '{print $2}'); do print $n; done
 
 #define CHECK_POINTER_OK(p) \
-  (Universe::perm_gen() == NULL || !Universe::is_reserved_heap((oop)(p)))
+  (!Universe::is_fully_initialized() || !Universe::is_reserved_heap((oop)(p)))
 #define CHECK_MU \
   if (!CHECK_POINTER_OK(mu)) fatal("Mutex must be in C heap only.");
 #define CHECK_CV \

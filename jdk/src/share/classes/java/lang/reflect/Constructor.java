@@ -182,7 +182,7 @@ public final class Constructor<T> extends Executable {
      * @since 1.5
      */
     @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public TypeVariable<Constructor<T>>[] getTypeParameters() {
       if (getSignature() != null) {
         return (TypeVariable<Constructor<T>>[])getGenericInfo().getTypeParameters();

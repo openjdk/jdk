@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,14 +217,7 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
             oop.iterate(new DefaultOopVisitor() {
                     public void doOop(OopField field, boolean isVMField) {
                         try {
-                            Oop ref = field.getValue(oop);
-                            if (ref instanceof TypeArray ||
-                                ref instanceof ObjArray  ||
-                                ref instanceof Instance) {
                                 writeReferenceField(oop, field);
-                            } else {
-                                writeInternalReferenceField(oop, field);
-                            }
                         } catch (IOException exp) {
                             throw new RuntimeException(exp);
                         }
@@ -299,11 +292,88 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
         }
     }
 
-    // object field writers
-    protected void writeInternalReferenceField(Oop oop, OopField field)
-        throws IOException {
+    // write instance fields of given object
+    protected void writeObjectFields(final InstanceKlass oop) throws IOException {
+        try {
+            oop.iterateStaticFields(new DefaultOopVisitor() {
+                    public void doOop(OopField field, boolean isVMField) {
+                        try {
+                            writeReferenceField(null, field);
+                        } catch (IOException exp) {
+                            throw new RuntimeException(exp);
+                        }
     }
 
+                    public void doByte(ByteField field, boolean isVMField) {
+                        try {
+                            writeByteField(null, field);
+                        } catch (IOException exp) {
+                            throw new RuntimeException(exp);
+                        }
+                    }
+
+                    public void doChar(CharField field, boolean isVMField) {
+                        try {
+                            writeCharField(null, field);
+                        } catch (IOException exp) {
+                            throw new RuntimeException(exp);
+                        }
+                    }
+
+                    public void doBoolean(BooleanField field, boolean vField) {
+                        try {
+                            writeBooleanField(null, field);
+                        } catch (IOException exp) {
+                            throw new RuntimeException(exp);
+                        }
+                    }
+
+                    public void doShort(ShortField field, boolean isVMField) {
+                        try {
+                            writeShortField(null, field);
+                        } catch (IOException exp) {
+                            throw new RuntimeException(exp);
+                        }
+                    }
+
+                    public void doInt(IntField field, boolean isVMField) {
+                        try {
+                            writeIntField(null, field);
+                        } catch (IOException exp) {
+                            throw new RuntimeException(exp);
+                        }
+                    }
+
+                    public void doLong(LongField field, boolean isVMField) {
+                        try {
+                            writeLongField(null, field);
+                        } catch (IOException exp) {
+                            throw new RuntimeException(exp);
+                        }
+                    }
+
+                    public void doFloat(FloatField field, boolean isVMField) {
+                        try {
+                            writeFloatField(null, field);
+                        } catch (IOException exp) {
+                            throw new RuntimeException(exp);
+                        }
+                    }
+
+                    public void doDouble(DoubleField field, boolean vField) {
+                        try {
+                            writeDoubleField(null, field);
+                        } catch (IOException exp) {
+                            throw new RuntimeException(exp);
+                        }
+                    }
+                });
+        } catch (RuntimeException re) {
+            handleRuntimeException(re);
+        }
+    }
+
+    // object field writers
     protected void writeReferenceField(Oop oop, OopField field)
         throws IOException {
     }

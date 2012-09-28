@@ -25,7 +25,7 @@
  * @test
  * @bug 6262486
  * @library ../../httptest/
- * @build HttpCallback HttpServer ClosedChannelList HttpTransaction
+ * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main/othervm -Dhttp.keepAlive=false ResponseCacheStream
  * @summary COMPATIBILITY: jagex_com - Monkey Puzzle applet fails to load
  */
@@ -91,13 +91,13 @@ public class ResponseCacheStream implements HttpCallback {
         }
     }
 
-    static HttpServer server;
+    static TestHttpServer server;
 
     public static void main(String[] args) throws Exception {
         MyResponseCache cache = new MyResponseCache();
         try {
             ResponseCache.setDefault(cache);
-            server = new HttpServer (new ResponseCacheStream());
+            server = new TestHttpServer (new ResponseCacheStream());
             System.out.println ("Server: listening on port: " + server.getLocalPort());
             URL url = new URL ("http://127.0.0.1:"+server.getLocalPort()+"/");
             System.out.println ("Client: connecting to " + url);
