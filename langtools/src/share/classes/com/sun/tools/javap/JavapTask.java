@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,8 +374,8 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         task_locale = locale;
     }
 
-    public void setLog(PrintWriter log) {
-        this.log = log;
+    public void setLog(Writer log) {
+        this.log = getPrintWriterForWriter(log);
     }
 
     public void setLog(OutputStream s) {
@@ -383,7 +383,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
     }
 
     private static PrintWriter getPrintWriterForStream(OutputStream s) {
-        return new PrintWriter(s, true);
+        return new PrintWriter(s == null ? System.err : s, true);
     }
 
     private static PrintWriter getPrintWriterForWriter(Writer w) {

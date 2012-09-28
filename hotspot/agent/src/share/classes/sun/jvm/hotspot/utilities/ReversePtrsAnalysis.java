@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,20 +112,22 @@ public class ReversePtrsAnalysis {
     doJNIHandleBlock(handles.weakGlobalHandles(),
                      new RootVisitor("Weak global JNI handle root"));
 
-    // Do Java-level static fields in perm gen
-    heap.iteratePerm(new DefaultHeapVisitor() {
-        public boolean doObj(Oop obj) {
-          if (obj instanceof InstanceKlass) {
-            final InstanceKlass ik = (InstanceKlass) obj;
+    // Do Java-level static fields
+    SystemDictionary sysDict = VM.getVM().getSystemDictionary();
+    sysDict.allClassesDo(new SystemDictionary.ClassVisitor() {
+
+            public void visit(Klass k) {
+                if (k instanceof InstanceKlass) {
+                    final InstanceKlass ik = (InstanceKlass)k;
             ik.iterateStaticFields(
                new DefaultOopVisitor() {
                    public void doOop(OopField field, boolean isVMField) {
                      Oop next = field.getValue(getObj());
-                     LivenessPathElement lp = new LivenessPathElement(null,
-                             new NamedFieldIdentifier("Static field \"" +
+                                                   NamedFieldIdentifier nfi = new NamedFieldIdentifier("Static field \"" +
                                                 field.getID().getName() +
                                                 "\" in class \"" +
-                                                ik.getName().asString() + "\""));
+                                                                                                       ik.getName().asString() + "\"");
+                                                   LivenessPathElement lp = new LivenessPathElement(null, nfi);
                      rp.put(lp, next);
                      try {
                        markAndTraverse(next);
@@ -144,7 +146,6 @@ public class ReversePtrsAnalysis {
                    }
                  });
           }
-                  return false;
         }
       });
 

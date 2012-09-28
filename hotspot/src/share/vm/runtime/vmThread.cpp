@@ -26,7 +26,7 @@
 #include "compiler/compileBroker.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/mutexLocker.hpp"

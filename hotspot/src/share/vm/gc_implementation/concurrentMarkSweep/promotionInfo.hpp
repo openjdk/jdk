@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ class PromotionInfo VALUE_OBJ_CLASS_SPEC {
   void track(PromotedObject* trackOop);      // keep track of a promoted oop
   // The following variant must be used when trackOop is not fully
   // initialized and has a NULL klass:
-  void track(PromotedObject* trackOop, klassOop klassOfOop); // keep track of a promoted oop
+  void track(PromotedObject* trackOop, Klass* klassOfOop); // keep track of a promoted oop
   void setSpace(CompactibleFreeListSpace* sp) { _space = sp; }
   CompactibleFreeListSpace* space() const     { return _space; }
   markOop nextDisplacedHeader(); // get next header & forward spool pointer

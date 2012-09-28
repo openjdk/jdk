@@ -30,25 +30,17 @@ AC_DEFUN([BPERF_CHECK_CORES],
     FOUND_CORES=no
     
     if test -f /proc/cpuinfo; then
-        # Looks like a Linux system
+        # Looks like a Linux (or cygwin) system
         NUM_CORES=`cat /proc/cpuinfo  | grep -c processor`
         FOUND_CORES=yes
-    fi
-
-    if test -x /usr/sbin/psrinfo; then
+    elif test -x /usr/sbin/psrinfo; then
         # Looks like a Solaris system
         NUM_CORES=`LC_MESSAGES=C /usr/sbin/psrinfo -v | grep -c on-line`
         FOUND_CORES=yes
-    fi
-
-    if test -x /usr/sbin/system_profiler; then
+    elif test -x /usr/sbin/system_profiler; then
         # Looks like a MacOSX system
         NUM_CORES=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Cores' | awk  '{print [$]5}'`
         FOUND_CORES=yes
-    fi
-
-    if test "x$build_os" = xwindows; then
-        NUM_CORES=4
     fi
 
     # For c/c++ code we run twice as many concurrent build
@@ -66,31 +58,26 @@ AC_DEFUN([BPERF_CHECK_CORES],
 AC_DEFUN([BPERF_CHECK_MEMORY_SIZE],
 [
     AC_MSG_CHECKING([for memory size])
-    # Default to 1024MB
+    # Default to 1024 MB
     MEMORY_SIZE=1024
     FOUND_MEM=no
     
-    if test -f /proc/cpuinfo; then
-        # Looks like a Linux system
+    if test -f /proc/meminfo; then
+        # Looks like a Linux (or cygwin) system
         MEMORY_SIZE=`cat /proc/meminfo | grep MemTotal | awk '{print [$]2}'`
         MEMORY_SIZE=`expr $MEMORY_SIZE / 1024`
         FOUND_MEM=yes
-    fi
-
-    if test -x /usr/sbin/prtconf; then
+    elif test -x /usr/sbin/prtconf; then
         # Looks like a Solaris system
         MEMORY_SIZE=`/usr/sbin/prtconf | grep "Memory size" | awk '{ print [$]3 }'`
         FOUND_MEM=yes
-    fi
-
-    if test -x /usr/sbin/system_profiler; then
+    elif test -x /usr/sbin/system_profiler; then
         # Looks like a MacOSX system
         MEMORY_SIZE=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Memory' | awk  '{print [$]2}'`
         MEMORY_SIZE=`expr $MEMORY_SIZE \* 1024`
         FOUND_MEM=yes
-    fi
-
-    if test "x$build_os" = xwindows; then
+    elif test "x$build_os" = xwindows; then
+        # Windows, but without cygwin
         MEMORY_SIZE=`systeminfo | grep 'Total Physical Memory:' | awk '{ print [$]4 }' | sed 's/,//'`
         FOUND_MEM=yes    
     fi
@@ -98,7 +85,7 @@ AC_DEFUN([BPERF_CHECK_MEMORY_SIZE],
     if test "x$FOUND_MEM" = xyes; then
         AC_MSG_RESULT([$MEMORY_SIZE MB])
     else
-        AC_MSG_RESULT([could not detect memory size defaulting to 1024MB!])
+        AC_MSG_RESULT([could not detect memory size defaulting to 1024 MB!])
     fi 
 ])
 
@@ -240,46 +227,30 @@ AC_SUBST(USE_PRECOMPILED_HEADER)
 
 AC_DEFUN_ONCE([BPERF_SETUP_SMART_JAVAC],
 [
-AC_ARG_WITH(server-java, [AS_HELP_STRING([--with-server-java],
-	[use this java binary for running the javac background server and other long running java tasks in the build process,
-     e.g. ---with-server-java="/opt/jrockit/bin/java -server"])])
+AC_ARG_WITH(sjavac-server-java, [AS_HELP_STRING([--with-sjavac-server-java],
+	[use this java binary for running the sjavac background server and other long running java tasks in the build process,
+     e.g. ---with-sjavac-server-java="/opt/jrockit/bin/java -server"])])
 
-if test "x$with_server_java" != x; then
-    SERVER_JAVA="$with_server_java"
-    FOUND_VERSION=`$SERVER_JAVA -version 2>&1 | grep " version \""`
+if test "x$with_sjavac_server_java" != x; then
+    SJAVAC_SERVER_JAVA="$with_sjavac_server_java"
+    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" = x; then
-        AC_MSG_ERROR([Could not execute server java: $SERVER_JAVA])
+        AC_MSG_ERROR([Could not execute server java: $SJAVAC_SERVER_JAVA])
     fi
 else
-    SERVER_JAVA=""
+    SJAVAC_SERVER_JAVA=""
     # Hotspot specific options.
-    ADD_JVM_ARG_IF_OK([-XX:+UseParallelOldGC],SERVER_JAVA,[$JAVA])
-    ADD_JVM_ARG_IF_OK([-verbosegc],SERVER_JAVA,[$JAVA])
+    ADD_JVM_ARG_IF_OK([-verbosegc],SJAVAC_SERVER_JAVA,[$JAVA])
     # JRockit specific options.
-    ADD_JVM_ARG_IF_OK([-Xverbose:gc],SERVER_JAVA,[$JAVA])
-    SERVER_JAVA="$JAVA $SERVER_JAVA"
+    ADD_JVM_ARG_IF_OK([-Xverbose:gc],SJAVAC_SERVER_JAVA,[$JAVA])
+    SJAVAC_SERVER_JAVA="$JAVA $SJAVAC_SERVER_JAVA"
 fi                    
-AC_SUBST(SERVER_JAVA)
+AC_SUBST(SJAVAC_SERVER_JAVA)
 
-AC_MSG_CHECKING([whether to use shared server for javac])
-AC_ARG_ENABLE([javac-server], [AS_HELP_STRING([--enable-javac-server],
-	[enable the shared javac server during the build process @<:@disabled@:>@])],
-	[ENABLE_JAVAC_SERVER="${enableval}"], [ENABLE_JAVAC_SERVER='no'])
-AC_MSG_RESULT([$ENABLE_JAVAC_SERVER])
-if test "x$ENABLE_JAVAC_SERVER" = xyes; then
-    JAVAC_USE_REMOTE=true
-    JAVAC_SERVERS="$OUTPUT_ROOT/javacservers"
-else
-    JAVAC_USE_REMOTE=false
-    JAVAC_SERVERS=
-fi
-AC_SUBST(JAVAC_USE_REMOTE)
-AC_SUBST(JAVAC_SERVERS)
-
-AC_ARG_WITH(javac-server-cores, [AS_HELP_STRING([--with-javac-server-cores],
-	[use at most this number of concurrent threads on the javac server @<:@probed@:>@])])
-if test "x$with_javac_server_cores" != x; then
-    JAVAC_SERVER_CORES="$with_javac_server_cores"
+AC_ARG_WITH(sjavac-server-cores, [AS_HELP_STRING([--with-sjavac-server-cores],
+	[use at most this number of concurrent threads on the sjavac server @<:@probed@:>@])])
+if test "x$with_sjavac_server_cores" != x; then
+    SJAVAC_SERVER_CORES="$with_sjavac_server_cores"
 else
     if test "$NUM_CORES" -gt 16; then
         # We set this arbitrary limit because we want to limit the heap
@@ -287,86 +258,49 @@ else
         # In the future we will make the javac compilers in the server
         # share more and more state, thus enabling us to use more and
         # more concurrent threads in the server.
-        JAVAC_SERVER_CORES="16"
+        SJAVAC_SERVER_CORES="16"
     else
-        JAVAC_SERVER_CORES="$NUM_CORES"
+        SJAVAC_SERVER_CORES="$NUM_CORES"
     fi
 
     if test "$MEMORY_SIZE" -gt "17000"; then
         MAX_HEAP_MEM=10000
-        ADD_JVM_ARG_IF_OK([-d64],SERVER_JAVA,[$SERVER_JAVA])
-        ADD_JVM_ARG_IF_OK([-Xms10G -Xmx10G],SERVER_JAVA,[$SERVER_JAVA])
-        ADD_JVM_ARG_IF_OK([-Xmn2G],SERVER_JAVA,[$SERVER_JAVA])
+        ADD_JVM_ARG_IF_OK([-d64],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+        ADD_JVM_ARG_IF_OK([-Xms10G -Xmx10G],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
     elif test "$MEMORY_SIZE" -gt "10000"; then
         MAX_HEAP_MEM=6000
-        ADD_JVM_ARG_IF_OK([-d64],SERVER_JAVA,[$SERVER_JAVA])
-        ADD_JVM_ARG_IF_OK([-Xms6G -Xmx6G],SERVER_JAVA,[$SERVER_JAVA])
-        ADD_JVM_ARG_IF_OK([-Xmn1G],SERVER_JAVA,[$SERVER_JAVA])
+        ADD_JVM_ARG_IF_OK([-d64],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+        ADD_JVM_ARG_IF_OK([-Xms6G -Xmx6G],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
     elif test "$MEMORY_SIZE" -gt "5000"; then
         MAX_HEAP_MEM=3000
-        ADD_JVM_ARG_IF_OK([-d64],SERVER_JAVA,[$SERVER_JAVA])
-        ADD_JVM_ARG_IF_OK([-Xms1G -Xmx3G],SERVER_JAVA,[$SERVER_JAVA])
-        ADD_JVM_ARG_IF_OK([-Xmn256M],SERVER_JAVA,[$SERVER_JAVA])
+        ADD_JVM_ARG_IF_OK([-d64],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+        ADD_JVM_ARG_IF_OK([-Xms1G -Xmx3G],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
     elif test "$MEMORY_SIZE" -gt "3800"; then
         MAX_HEAP_MEM=2500
-        ADD_JVM_ARG_IF_OK([-Xms1G -Xmx2500M],SERVER_JAVA,[$SERVER_JAVA])
-        ADD_JVM_ARG_IF_OK([-Xmn256M],SERVER_JAVA,[$SERVER_JAVA])
+        ADD_JVM_ARG_IF_OK([-Xms1G -Xmx2500M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
     elif test "$MEMORY_SIZE" -gt "1900"; then
         MAX_HEAP_MEM=1200
-        ADD_JVM_ARG_IF_OK([-Xms700M -Xmx1200M],SERVER_JAVA,[$SERVER_JAVA])
-        ADD_JVM_ARG_IF_OK([-Xmn256M],SERVER_JAVA,[$SERVER_JAVA])
+        ADD_JVM_ARG_IF_OK([-Xms700M -Xmx1400M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
     elif test "$MEMORY_SIZE" -gt "1000"; then
         MAX_HEAP_MEM=900
-        ADD_JVM_ARG_IF_OK([-Xms400M -Xmx900M],SERVER_JAVA,[$SERVER_JAVA])
-        ADD_JVM_ARG_IF_OK([-Xmn128M],SERVER_JAVA,[$SERVER_JAVA])
+        ADD_JVM_ARG_IF_OK([-Xms400M -Xmx1100M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
     else
         MAX_HEAP_MEM=512
-        ADD_JVM_ARG_IF_OK([-Xms256M -Xmx512M],SERVER_JAVA,[$SERVER_JAVA])
-        ADD_JVM_ARG_IF_OK([-Xmn128M],SERVER_JAVA,[$SERVER_JAVA])
+        ADD_JVM_ARG_IF_OK([-Xms256M -Xmx512M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
     fi
+
+    ADD_JVM_ARG_IF_OK([-XX:PermSize=32m],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+    ADD_JVM_ARG_IF_OK([-XX:MaxPermSize=160m],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+    ADD_JVM_ARG_IF_OK([-XX:ThreadStackSize=$STACK_SIZE],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
 
     MAX_COMPILERS_IN_HEAP=`expr $MAX_HEAP_MEM / 501`
-    if test "$JAVAC_SERVER_CORES" -gt "$MAX_COMPILERS_IN_HEAP"; then
+    if test "$SJAVAC_SERVER_CORES" -gt "$MAX_COMPILERS_IN_HEAP"; then
         AC_MSG_CHECKING([if number of server cores must be reduced])
-        JAVAC_SERVER_CORES="$MAX_COMPILERS_IN_HEAP"
-        AC_MSG_RESULT([yes, to $JAVAC_SERVER_CORES with max heap size $MAX_HEAP_MEM MB])
+        SJAVAC_SERVER_CORES="$MAX_COMPILERS_IN_HEAP"
+        AC_MSG_RESULT([yes, to $SJAVAC_SERVER_CORES with max heap size $MAX_HEAP_MEM MB])
     fi
 fi                    
-AC_SUBST(JAVAC_SERVER_CORES)
-
-AC_MSG_CHECKING([whether to track dependencies between Java packages])
-AC_ARG_ENABLE([javac-deps], [AS_HELP_STRING([--enable-javac-deps],
-	[enable the dependency tracking between Java packages @<:@disabled@:>@])],
-	[ENABLE_JAVAC_DEPS="${enableval}"], [ENABLE_JAVAC_DEPS='no'])
-AC_MSG_RESULT([$ENABLE_JAVAC_DEPS])
-if test "x$ENABLE_JAVAC_DEPS" = xyes; then
-    JAVAC_USE_DEPS=true
-else
-    JAVAC_USE_DEPS=false
-fi
-AC_SUBST(JAVAC_USE_DEPS)
-
-AC_MSG_CHECKING([whether to use multiple cores for javac compilation])
-AC_ARG_ENABLE([javac-multi-core], [AS_HELP_STRING([--enable-javac-multi-core],
-	[compile Java packages concurrently @<:@disabled@:>@])],
-	[ENABLE_JAVAC_MULTICORE="${enableval}"], [ENABLE_JAVAC_MULTICORE='no'])
-AC_MSG_RESULT([$ENABLE_JAVAC_MULTICORE])
-if test "x$ENABLE_JAVAC_MULTICORE" = xyes; then
-    JAVAC_USE_MODE=MULTI_CORE_CONCURRENT
-else
-    JAVAC_USE_MODE=SINGLE_THREADED_BATCH
-    if test "x$ENABLE_JAVAC_DEPS" = xyes; then
-        AC_MSG_WARN([Dependency tracking is not supported with single threaded batch compiles of Java source roots. Please add --disable-javac-deps to your configure options.])
-        AC_MSG_WARN([Disabling dependency tracking for you now.])
-        JAVAC_USE_DEPS=false
-    fi
-    if test "x$ENABLE_JAVAC_SERVER" = xyes; then
-        AC_MSG_WARN([The javac server will not be used since single threaded batch compiles are run within their own JVM. Please add --disable-javac-server to your configure options.])
-        AC_MSG_WARN([Disabling javac server for you now.])
-        JAVAC_USE_REMOTE=false
-    fi
-fi
-AC_SUBST(JAVAC_USE_MODE)
+AC_SUBST(SJAVAC_SERVER_CORES)
 
 AC_MSG_CHECKING([whether to use sjavac])
 AC_ARG_ENABLE([sjavac], [AS_HELP_STRING([--enable-sjavac],
@@ -374,5 +308,12 @@ AC_ARG_ENABLE([sjavac], [AS_HELP_STRING([--enable-sjavac],
 	[ENABLE_SJAVAC="${enableval}"], [ENABLE_SJAVAC='no'])
 AC_MSG_RESULT([$ENABLE_SJAVAC])
 AC_SUBST(ENABLE_SJAVAC)
+
+if test "x$ENABLE_SJAVAC" = xyes; then
+    SJAVAC_SERVER_DIR="$OUTPUT_ROOT/javacservers"
+else
+    SJAVAC_SERVER_DIR=
+fi
+AC_SUBST(SJAVAC_SERVER_DIR)
 
 ])

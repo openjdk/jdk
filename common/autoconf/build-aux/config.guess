@@ -22,17 +22,39 @@
 # questions.
 #
 
-# This is a wrapper for the config.guess from autoconf. The latter does not properly
-# detect amd64 systems, since that require isainfo instead of uname. Instead of patching
-# the autoconf system (which might easily get lost in a future update), we wrap it and
-# fix the broken property, if needed.
+# This is a wrapper for the config.guess from autoconf. The latter does not
+# properly detect 64 bit systems on all platforms. Instead of patching the
+# autoconf system (which might easily get lost in a future update), we wrap it
+# and fix the broken property, if needed.
 
 DIR=`dirname $0`
 OUT=`. $DIR/autoconf-config.guess`
+
+# Test and fix solaris on x86_64
 echo $OUT | grep i386-pc-solaris > /dev/null 2> /dev/null
 if test $? = 0; then
-  # isainfo -n returns either i386 or amd64 on Intel systems
+  # isainfo -n returns either i386 or amd64
   REAL_CPU=`isainfo -n`
   OUT=$REAL_CPU`echo $OUT | sed -e 's/[^-]*//'`
 fi
+
+# Test and fix solaris on sparcv9
+echo $OUT | grep sparc-sun-solaris > /dev/null 2> /dev/null
+if test $? = 0; then
+  # isainfo -n returns either sparc or sparcv9
+  REAL_CPU=`isainfo -n`
+  OUT=$REAL_CPU`echo $OUT | sed -e 's/[^-]*//'`
+fi
+
+# Test and fix cygwin on x86_64
+echo $OUT | grep 86-pc-cygwin > /dev/null 2> /dev/null
+if test $? = 0; then
+  case `echo $PROCESSOR_IDENTIFIER | cut -f1 -d' '` in
+    intel64|Intel64|INTEL64|em64t|EM64T|amd64|AMD64|8664|x86_64)
+      REAL_CPU=x86_64
+      OUT=$REAL_CPU`echo $OUT | sed -e 's/[^-]*//'`
+      ;;
+  esac
+fi  
+
 echo $OUT

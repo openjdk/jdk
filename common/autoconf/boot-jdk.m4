@@ -23,22 +23,186 @@
 # questions.
 #
 
-# Fixes paths on windows to be mixed mode short.
-AC_DEFUN([BOOTJDK_WIN_FIX_PATH],
+# Execute the check given as argument, and verify the result
+# If the Boot JDK was previously found, do nothing
+# $1 A command line (typically autoconf macro) to execute
+AC_DEFUN([BOOTJDK_DO_CHECK],
 [
-    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-        AC_PATH_PROG(CYGPATH, cygpath)
-        tmp="[$]$1"
-        # Convert to C:/ mixed style path without spaces.
-        tmp=`$CYGPATH -s -m "$tmp"`
-        $1="$tmp"
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+    $1
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring])
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring])
+          AC_MSG_NOTICE([(This might be an JRE instead of an JDK)])
+          BOOT_JDK_FOUND=no
+        else 
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring])
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            [FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`]
+            if test "x$FOUND_VERSION_78" = x; then
+              AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring])
+              AC_MSG_NOTICE([(Your Boot JDK must be version 7 or 8)])
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+              SPACESAFE(BOOT_JDK,[the path to the Boot JDK])
+              AC_MSG_CHECKING([for Boot JDK])
+              AC_MSG_RESULT([$BOOT_JDK ($BOOT_JDK_VERSION)])
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+])
+
+# Test: Is bootjdk explicitely set by command line arguments?
+AC_DEFUN([BOOTJDK_CHECK_ARGUMENTS],
+[
+if test "x$with_boot_jdk" != x; then
+    BOOT_JDK=$with_boot_jdk
+    BOOT_JDK_FOUND=maybe
+    AC_MSG_NOTICE([Found potential Boot JDK using configure arguments])
+fi
+])
+
+# Test: Is bootjdk available from builddeps?
+AC_DEFUN([BOOTJDK_CHECK_BUILDDEPS],
+[
+    BDEPS_CHECK_MODULE(BOOT_JDK, bootjdk, xxx, [BOOT_JDK_FOUND=maybe], [BOOT_JDK_FOUND=no])
+])
+
+# Test: Is $JAVA_HOME set?
+AC_DEFUN([BOOTJDK_CHECK_JAVA_HOME],
+[
+    if test "x$JAVA_HOME" != x; then
+        if test "x$OPENJDK_TARGET_OS" = xwindows; then
+          # On Windows, JAVA_HOME is likely in DOS-style
+          JAVA_HOME_PROCESSED="`$CYGPATH -u "$JAVA_HOME"`"
+        else
+          JAVA_HOME_PROCESSED="$JAVA_HOME"
+        fi
+        if test ! -d "$JAVA_HOME_PROCESSED"; then
+            AC_MSG_NOTICE([Your JAVA_HOME points to a non-existing directory!])
+        else
+          # Aha, the user has set a JAVA_HOME
+          # let us use that as the Boot JDK.
+          BOOT_JDK="$JAVA_HOME_PROCESSED"
+          BOOT_JDK_FOUND=maybe
+          AC_MSG_NOTICE([Found potential Boot JDK using JAVA_HOME])
+        fi
     fi
 ])
 
-AC_DEFUN([BOOTJDK_MISSING_ERROR],
+# Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
+AC_DEFUN([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK],
 [
-    AC_MSG_NOTICE([This might be fixed by explicitely setting --with-boot-jdk])
-    AC_MSG_ERROR([Cannot continue])
+    AC_PATH_PROG(JAVAC_CHECK, javac)
+    AC_PATH_PROG(JAVA_CHECK, java)
+    BINARY="$JAVAC_CHECK"
+    if test "x$JAVAC_CHECK" = x; then
+        BINARY="$JAVA_CHECK"
+    fi
+    if test "x$BINARY" != x; then
+        # So there is a java(c) binary, it might be part of a JDK.
+        # Lets find the JDK/JRE directory by following symbolic links.
+        # Linux/GNU systems often have links from /usr/bin/java to 
+        # /etc/alternatives/java to the real JDK binary.
+        SET_FULL_PATH_SPACESAFE(BINARY)
+        REMOVE_SYMBOLIC_LINKS(BINARY)
+        BOOT_JDK=`dirname "$BINARY"`
+        BOOT_JDK=`cd "$BOOT_JDK/.."; pwd`
+        if test -x "$BOOT_JDK/bin/javac" && test -x "$BOOT_JDK/bin/java"; then
+            # Looks like we found ourselves an JDK
+            BOOT_JDK_FOUND=maybe
+            AC_MSG_NOTICE([Found potential Boot JDK using java(c) in PATH])
+        fi
+    fi
+])
+
+# Test: Is there a /usr/libexec/java_home? (Typically on MacOSX)
+AC_DEFUN([BOOTJDK_CHECK_LIBEXEC_JAVA_HOME],
+[
+    if test -x /usr/libexec/java_home; then
+        BOOT_JDK=`/usr/libexec/java_home`
+        BOOT_JDK_FOUND=maybe
+        AC_MSG_NOTICE([Found potential Boot JDK using /usr/libexec/java_home])
+    fi
+])
+
+# Look for a jdk in the given path. If there are multiple, try to select the newest.
+# If found, set BOOT_JDK and BOOT_JDK_FOUND.
+# $1 = Path to directory containing jdk installations.
+# $2 = String to append to the found JDK directory to get the proper JDK home
+AC_DEFUN([BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY],
+[
+  BOOT_JDK_PREFIX="$1"
+  BOOT_JDK_SUFFIX="$2"
+  BEST_JDK_FOUND=`$LS "$BOOT_JDK_PREFIX" 2> /dev/null | $GREP jdk | $SORT -r | $HEAD -n 1 `
+  if test "x$BEST_JDK_FOUND" != x; then
+    BOOT_JDK="${BOOT_JDK_PREFIX}/${BEST_JDK_FOUND}${BOOT_JDK_SUFFIX}"
+    if test -d "$BOOT_JDK"; then
+      BOOT_JDK_FOUND=maybe
+      AC_MSG_NOTICE([Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)])
+    fi
+  fi
+])
+
+# Call BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY, but use the given
+# environmental variable as base for where to look.
+# $1 Name of an environmal variable, assumed to point to the Program Files directory.
+AC_DEFUN([BOOTJDK_FIND_BEST_JDK_IN_WINDOWS_VIRTUAL_DIRECTORY],
+[
+  if test "x[$]$1" != x; then
+    BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY([`$CYGPATH -u "[$]$1"`/Java])
+  fi
+])
+
+# Test: Is there a JDK installed in default, well-known locations?
+AC_DEFUN([BOOTJDK_CHECK_WELL_KNOWN_LOCATIONS],
+[
+  if test "x$OPENJDK_TARGET_OS" = xwindows; then
+    BOOTJDK_DO_CHECK([BOOTJDK_FIND_BEST_JDK_IN_WINDOWS_VIRTUAL_DIRECTORY([ProgramW6432])])
+    BOOTJDK_DO_CHECK([BOOTJDK_FIND_BEST_JDK_IN_WINDOWS_VIRTUAL_DIRECTORY([PROGRAMW6432])])
+    BOOTJDK_DO_CHECK([BOOTJDK_FIND_BEST_JDK_IN_WINDOWS_VIRTUAL_DIRECTORY([PROGRAMFILES])])
+    BOOTJDK_DO_CHECK([BOOTJDK_FIND_BEST_JDK_IN_WINDOWS_VIRTUAL_DIRECTORY([ProgramFiles])])
+    BOOTJDK_DO_CHECK([BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY([/cygdrive/c/Program Files/Java])])
+  elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    BOOTJDK_DO_CHECK([BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY([/Library/Java/JavaVirtualMachines],[/Contents/Home])])
+    BOOTJDK_DO_CHECK([BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY([/System/Library/Java/JavaVirtualMachines],[/Contents/Home])])
+  fi
+])
+
+# Check that a command-line tool in the Boot JDK is correct
+# $1 = name of variable to assign
+# $2 = name of binary
+AC_DEFUN([BOOTJDK_CHECK_TOOL_IN_BOOTJDK],
+[
+  AC_MSG_CHECKING([for $2 in Boot JDK])
+  $1=$BOOT_JDK/bin/$2
+  if test ! -x [$]$1; then
+      AC_MSG_RESULT(not found)
+      AC_MSG_NOTICE([Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk])
+      AC_MSG_ERROR([Could not find $2 in the Boot JDK])
+  fi
+  AC_MSG_RESULT(ok)
 ])
 
 ###############################################################################
@@ -51,204 +215,74 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
 BOOT_JDK_FOUND=no
 AC_ARG_WITH(boot-jdk, [AS_HELP_STRING([--with-boot-jdk],
     [path to Boot JDK (used to bootstrap build) @<:@probed@:>@])])
-                    
-if test "x$with_boot_jdk" != x; then
-    BOOT_JDK=$with_boot_jdk
-    BOOT_JDK_FOUND=yes
+
+# We look for the Boot JDK through various means, going from more certain to
+# more of a guess-work. After each test, BOOT_JDK_FOUND is set to "yes" if
+# we detected something (if so, the path to the jdk is in BOOT_JDK). But we 
+# must check if this is indeed valid; otherwise we'll continue looking.
+
+# Test: Is bootjdk explicitely set by command line arguments?
+BOOTJDK_DO_CHECK([BOOTJDK_CHECK_ARGUMENTS])
+if test "x$with_boot_jdk" != x && test "x$BOOT_JDK_FOUND" = xno; then
+  # Having specified an argument which is incorrect will produce an instant failure;
+  # we should not go on looking
+  AC_MSG_ERROR([The path given by --with-boot-jdk does not contain a valid Boot JDK])
 fi
+
+# Test: Is bootjdk available from builddeps?
+BOOTJDK_DO_CHECK([BOOTJDK_CHECK_BUILDDEPS])
+
+# Test: Is $JAVA_HOME set?
+BOOTJDK_DO_CHECK([BOOTJDK_CHECK_JAVA_HOME])
+
+# Test: Is there a /usr/libexec/java_home? (Typically on MacOSX)
+BOOTJDK_DO_CHECK([BOOTJDK_CHECK_LIBEXEC_JAVA_HOME])
+
+# Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
+BOOTJDK_DO_CHECK([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK])
+
+# Test: Is there a JDK installed in default, well-known locations?
+BOOTJDK_DO_CHECK([BOOTJDK_CHECK_WELL_KNOWN_LOCATIONS])
+
+# If we haven't found anything yet, we've truly lost. Give up.
 if test "x$BOOT_JDK_FOUND" = xno; then
-    BDEPS_CHECK_MODULE(BOOT_JDK, boot-jdk, xxx, [BOOT_JDK_FOUND=yes], [BOOT_JDK_FOUND=no])
+  HELP_MSG_MISSING_DEPENDENCY([openjdk])
+  AC_MSG_NOTICE([Could not find a valid Boot JDK. $HELP_MSG])
+  AC_MSG_NOTICE([This might be fixed by explicitely setting --with-boot-jdk])
+  AC_MSG_ERROR([Cannot continue])
 fi
 
-if test "x$BOOT_JDK_FOUND" = xno; then
-    if test "x$JAVA_HOME" != x; then
-        if test ! -d "$JAVA_HOME"; then
-            AC_MSG_NOTICE([Your JAVA_HOME points to a non-existing directory!])
-            BOOTJDK_MISSING_ERROR
-        fi
-        # Aha, the user has set a JAVA_HOME
-        # let us use that as the Boot JDK.
-        BOOT_JDK="$JAVA_HOME"
-        BOOT_JDK_FOUND=yes
-        # To be on the safe side, lets check that it is a JDK.
-        if test -x "$BOOT_JDK/bin/javac" && test -x "$BOOT_JDK/bin/java"; then
-            JAVAC="$BOOT_JDK/bin/javac"
-            JAVA="$BOOT_JDK/bin/java"
-            BOOT_JDK_FOUND=yes
-        else
-            AC_MSG_NOTICE([Your JAVA_HOME points to a JRE! The build needs a JDK! Please point JAVA_HOME to a JDK. JAVA_HOME=[$]JAVA_HOME])
-            BOOTJDK_MISSING_ERROR
-        fi            
-    fi
-fi
-
-if test "x$BOOT_JDK_FOUND" = xno; then
-    AC_PATH_PROG(JAVAC_CHECK, javac)
-    AC_PATH_PROG(JAVA_CHECK, java)
-    BINARY="$JAVAC_CHECK"
-    if test "x$JAVAC_CHECK" = x; then
-        BINARY="$JAVA_CHECK"
-    fi
-    if test "x$BINARY" != x; then
-        # So there is a java(c) binary, it might be part of a JDK.
-        # Lets find the JDK/JRE directory by following symbolic links.
-        # Linux/GNU systems often have links from /usr/bin/java to 
-        # /etc/alternatives/java to the real JDK binary.
-	WHICHCMD_SPACESAFE(BINARY,[path to javac])
-        REMOVE_SYMBOLIC_LINKS(BINARY)
-        BOOT_JDK=`dirname $BINARY`
-        BOOT_JDK=`cd $BOOT_JDK/..; pwd`
-        if test -x $BOOT_JDK/bin/javac && test -x $BOOT_JDK/bin/java; then
-            JAVAC=$BOOT_JDK/bin/javac
-            JAVA=$BOOT_JDK/bin/java
-            BOOT_JDK_FOUND=yes
-        fi
-    fi
-fi
-
-if test "x$BOOT_JDK_FOUND" = xno; then
-    # Try the MacOSX way.
-    if test -x /usr/libexec/java_home; then
-        BOOT_JDK=`/usr/libexec/java_home`
-        if test -x $BOOT_JDK/bin/javac && test -x $BOOT_JDK/bin/java; then
-            JAVAC=$BOOT_JDK/bin/javac
-            JAVA=$BOOT_JDK/bin/java
-            BOOT_JDK_FOUND=yes
-        fi
-    fi
-fi
-
-if test "x$BOOT_JDK_FOUND" = xno; then
-    AC_PATH_PROG(JAVA_CHECK, java)
-    if test "x$JAVA_CHECK" != x; then
-        # There is a java in the path. But apparently we have not found a javac 
-        # in the path, since that would have been tested earlier.
-        if test "x$OPENJDK_TARGET_OS" = xwindows; then
-            # Now if this is a windows platform. The default installation of a JDK
-            # actually puts the JRE in the path and keeps the JDK out of the path!
-            # Go look in the default installation location.
-            BOOT_JDK=/cygdrive/c/Program\ Files/Java/`ls /cygdrive/c/Program\ Files/Java | grep jdk | sort -r | head --lines 1`
-            if test -d "$BOOT_JDK"; then
-                BOOT_JDK_FOUND=yes
-            fi
-        fi
-        if test "x$BOOT_JDK_FOUND" = xno; then
-            HELP_MSG_MISSING_DEPENDENCY([openjdk])
-            AC_MSG_NOTICE([Found a JRE, not not a JDK! Please remove the JRE from your path and put a JDK there instead. $HELP_MSG])
-            BOOTJDK_MISSING_ERROR
-        fi
-    else
-        HELP_MSG_MISSING_DEPENDENCY([openjdk])
-        AC_MSG_NOTICE([Could not find a JDK. $HELP_MSG])
-        BOOTJDK_MISSING_ERROR
-    fi
-fi
-
-BOOTJDK_WIN_FIX_PATH(BOOT_JDK)
-
-# Now see if we can find the rt.jar, or its nearest equivalent.
+# Setup proper paths for what we found
 BOOT_RTJAR="$BOOT_JDK/jre/lib/rt.jar"
-SPACESAFE(BOOT_RTJAR,[the path to the Boot JDK rt.jar (or nearest equivalent)])
-
-BOOT_TOOLSJAR="$BOOT_JDK/lib/tools.jar"
-SPACESAFE(BOOT_TOOLSJAR,[the path to the Boot JDK tools.jar (or nearest equivalent)])
-
-if test ! -f $BOOT_RTJAR; then
+if test ! -f "$BOOT_RTJAR"; then
     # On MacOSX it is called classes.jar
-    BOOT_RTJAR=$BOOT_JDK/../Classes/classes.jar
-    if test ! -f $BOOT_RTJAR; then
-        AC_MSG_NOTICE([Cannot find the rt.jar or its equivalent!])
-        AC_MSG_NOTICE([This typically means that configure failed to automatically find a suitable Boot JDK])
-        BOOTJDK_MISSING_ERROR
+    BOOT_RTJAR="$BOOT_JDK/../Classes/classes.jar"
+    if test -f "$BOOT_RTJAR"; then
+      # Remove the .. 
+      BOOT_RTJAR="`cd ${BOOT_RTJAR%/*} && pwd`/${BOOT_RTJAR##*/}"
     fi
-    # Remove the .. 
-    BOOT_RTJAR="`cd ${BOOT_RTJAR%/*} && pwd`/${BOOT_RTJAR##*/}"
-    # The tools.jar is part of classes.jar
-    BOOT_TOOLSJAR="$BOOT_RTJAR"
 fi
-
-AC_SUBST(BOOT_JDK)
+BOOT_TOOLSJAR="$BOOT_JDK/lib/tools.jar"
+BOOT_JDK="$BOOT_JDK"
 AC_SUBST(BOOT_RTJAR)
 AC_SUBST(BOOT_TOOLSJAR)
-AC_MSG_CHECKING([for Boot JDK])
-AC_MSG_RESULT([$BOOT_JDK])
-AC_MSG_CHECKING([for Boot rt.jar])
-AC_MSG_RESULT([$BOOT_RTJAR])
-AC_MSG_CHECKING([for Boot tools.jar])
-AC_MSG_RESULT([$BOOT_TOOLSJAR])
+AC_SUBST(BOOT_JDK)
 
-# Use the java tool from the Boot JDK.
-AC_MSG_CHECKING([for java in Boot JDK])
-JAVA=$BOOT_JDK/bin/java
-if test ! -x $JAVA; then
-    AC_MSG_NOTICE([Could not find a working java])
-    BOOTJDK_MISSING_ERROR
-fi
-BOOT_JDK_VERSION=`$JAVA -version 2>&1 | head -n 1`
-AC_MSG_RESULT([yes $BOOT_JDK_VERSION])
-AC_SUBST(JAVA)
+# Setup tools from the Boot JDK.
+BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVA,java)
+BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAC,javac)
+BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAH,javah)
+BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAP,javap)
+BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR,jar)
+BOOTJDK_CHECK_TOOL_IN_BOOTJDK(RMIC,rmic)
+BOOTJDK_CHECK_TOOL_IN_BOOTJDK(NATIVE2ASCII,native2ascii)
 
-# Extra M4 quote needed to protect [] in grep expression.
-[FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`]
-if test "x$FOUND_VERSION_78" = x; then
-    HELP_MSG_MISSING_DEPENDENCY([openjdk])
-    AC_MSG_NOTICE([Your boot-jdk must be version 7 or 8. $HELP_MSG])
-    BOOTJDK_MISSING_ERROR
-fi
+# Finally, set some other options...
 
 # When compiling code to be executed by the Boot JDK, force jdk7 compatibility.
 BOOT_JDK_SOURCETARGET="-source 7 -target 7"
 AC_SUBST(BOOT_JDK_SOURCETARGET)
-
-# Use the javac tool from the Boot JDK.
-AC_MSG_CHECKING([for javac in Boot JDK])
-JAVAC=$BOOT_JDK/bin/javac
-if test ! -x $JAVAC; then
-    AC_MSG_ERROR([Could not find a working javac])
-fi
-AC_MSG_RESULT(yes)
-AC_SUBST(JAVAC)
 AC_SUBST(JAVAC_FLAGS)
-
-# Use the javah tool from the Boot JDK.
-AC_MSG_CHECKING([for javah in Boot JDK])
-JAVAH=$BOOT_JDK/bin/javah
-if test ! -x $JAVAH; then
-    AC_MSG_NOTICE([Could not find a working javah])
-    BOOTJDK_MISSING_ERROR
-fi
-AC_MSG_RESULT(yes)
-AC_SUBST(JAVAH)
-
-# Use the jar tool from the Boot JDK.
-AC_MSG_CHECKING([for jar in Boot JDK])
-JAR=$BOOT_JDK/bin/jar
-if test ! -x $JAR; then
-    AC_MSG_NOTICE([Could not find a working jar])
-    BOOTJDK_MISSING_ERROR
-fi
-AC_SUBST(JAR)
-AC_MSG_RESULT(yes)
-
-# Use the rmic tool from the Boot JDK.
-AC_MSG_CHECKING([for rmic in Boot JDK])
-RMIC=$BOOT_JDK/bin/rmic
-if test ! -x $RMIC; then
-    AC_MSG_NOTICE([Could not find a working rmic])
-    BOOTJDK_MISSING_ERROR
-fi
-AC_SUBST(RMIC)
-AC_MSG_RESULT(yes)
-
-# Use the native2ascii tool from the Boot JDK.
-AC_MSG_CHECKING([for native2ascii in Boot JDK])
-NATIVE2ASCII=$BOOT_JDK/bin/native2ascii
-if test ! -x $NATIVE2ASCII; then
-    AC_MSG_NOTICE([Could not find a working native2ascii])
-    BOOTJDK_MISSING_ERROR
-fi
-AC_MSG_RESULT(yes)
-AC_SUBST(NATIVE2ASCII)
 ])
 
 AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],

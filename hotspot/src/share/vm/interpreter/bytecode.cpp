@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "oops/constantPoolOop.hpp"
+#include "oops/constantPool.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldType.hpp"
 #include "runtime/handles.inline.hpp"
@@ -159,7 +159,7 @@ methodHandle Bytecode_invoke::static_target(TRAPS) {
 Handle Bytecode_invoke::appendix(TRAPS) {
   ConstantPoolCacheEntry* cpce = cpcache_entry();
   if (cpce->has_appendix())
-    return Handle(THREAD, cpce->f1_appendix());
+    return Handle(THREAD, cpce->appendix_if_resolved(constants()));
   return Handle();  // usual case
 }
 
@@ -179,11 +179,7 @@ int Bytecode_member_ref::pool_index() const {
 
 ConstantPoolCacheEntry* Bytecode_member_ref::cpcache_entry() const {
   int index = this->index();
-  DEBUG_ONLY({
-      if (!has_index_u4(code()))
-        index = constantPoolOopDesc::get_cpcache_index(index);
-    });
-  return cpcache()->entry_at(index);
+  return cpcache()->entry_at(ConstantPool::decode_cpcache_index(index, true));
 }
 
 // Implementation of Bytecode_field
@@ -207,7 +203,7 @@ int Bytecode_loadconstant::raw_index() const {
 int Bytecode_loadconstant::pool_index() const {
   int index = raw_index();
   if (has_cache_index()) {
-    return _method->constants()->cache()->entry_at(index)->constant_pool_index();
+    return _method->constants()->object_to_cp_index(index);
   }
   return index;
 }
@@ -221,7 +217,7 @@ BasicType Bytecode_loadconstant::result_type() const {
 oop Bytecode_loadconstant::resolve_constant(TRAPS) const {
   assert(_method.not_null(), "must supply method to resolve constant");
   int index = raw_index();
-  constantPoolOop constants = _method->constants();
+  ConstantPool* constants = _method->constants();
   if (has_cache_index()) {
     return constants->resolve_cached_constant_at(index, THREAD);
   } else {

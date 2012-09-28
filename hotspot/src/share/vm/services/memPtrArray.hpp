@@ -84,11 +84,7 @@ class MemPointerArrayIterator VALUE_OBJ_CLASS_SPEC {
 
 // implementation class
 class MemPointerArrayIteratorImpl : public MemPointerArrayIterator {
-#ifdef ASSERT
  protected:
-#else
- private:
-#endif
   MemPointerArray*  _array;
   int               _pos;
 

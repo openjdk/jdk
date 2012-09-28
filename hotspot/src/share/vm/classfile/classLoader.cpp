@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@
 #include "memory/generation.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
-#include "oops/constantPoolKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -904,7 +903,7 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
     }
   }
 
-  instanceKlassHandle h(THREAD, klassOop(NULL));
+  instanceKlassHandle h;
   if (stream != NULL) {
 
     // class file found, parse it
@@ -1192,10 +1191,7 @@ void ClassPathZipEntry::compile_the_world(Handle loader, TRAPS) {
     if (PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())) {
       CLEAR_PENDING_EXCEPTION;
       tty->print_cr("\nCompileTheWorld : Ran out of memory\n");
-      size_t used = Universe::heap()->permanent_used();
-      size_t capacity = Universe::heap()->permanent_capacity();
-      tty->print_cr("Permanent generation used %dK of %dK", used/K, capacity/K);
-      tty->print_cr("Increase size by setting e.g. -XX:MaxPermSize=%dK\n", capacity*2/K);
+      tty->print_cr("Increase class metadata storage if a limit was set");
     } else {
       tty->print_cr("\nCompileTheWorld : Unexpected exception occurred\n");
     }
@@ -1318,7 +1314,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
       // Construct name without extension
       TempNewSymbol sym = SymbolTable::new_symbol(buffer, CHECK);
       // Use loader to load and initialize class
-      klassOop ik = SystemDictionary::resolve_or_null(sym, loader, Handle(), THREAD);
+      Klass* ik = SystemDictionary::resolve_or_null(sym, loader, Handle(), THREAD);
       instanceKlassHandle k (THREAD, ik);
       if (k.not_null() && !HAS_PENDING_EXCEPTION) {
         k->initialize(THREAD);
@@ -1326,7 +1322,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
       bool exception_occurred = HAS_PENDING_EXCEPTION;
       clear_pending_exception_if_not_oom(CHECK);
       if (CompileTheWorldPreloadClasses && k.not_null()) {
-        constantPoolKlass::preload_and_initialize_all_classes(k->constants(), THREAD);
+        ConstantPool::preload_and_initialize_all_classes(k->constants(), THREAD);
         if (HAS_PENDING_EXCEPTION) {
           // If something went wrong in preloading we just ignore it
           clear_pending_exception_if_not_oom(CHECK);
@@ -1343,7 +1339,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
           // Preload all classes to get around uncommon traps
           // Iterate over all methods in class
           for (int n = 0; n < k->methods()->length(); n++) {
-            methodHandle m (THREAD, methodOop(k->methods()->obj_at(n)));
+            methodHandle m (THREAD, k->methods()->at(n));
             if (CompilationPolicy::can_be_compiled(m)) {
 
               if (++_codecache_sweep_counter == CompileTheWorldSafepointInterval) {

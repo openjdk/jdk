@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
@@ -60,7 +62,14 @@ import sun.util.logging.PlatformLogger;
  * and the ISO 4217 currency data respectively.  The value part consists of
  * three ISO 4217 values of a currency, i.e., an alphabetic code, a numeric
  * code, and a minor unit.  Those three ISO 4217 values are separated by commas.
- * The lines which start with '#'s are considered comment lines.  For example,
+ * The lines which start with '#'s are considered comment lines. An optional UTC
+ * timestamp may be specified per currency entry if users need to specify a
+ * cutover date indicating when the new data comes into effect. The timestamp is
+ * appended to the end of the currency properties and uses a comma as a separator.
+ * If a UTC datestamp is present and valid, the JRE will only use the new currency
+ * properties if the current UTC date is later than the date specified at class
+ * loading time. The format of the timestamp must be of ISO 8601 format :
+ * {@code 'yyyy-MM-dd'T'HH:mm:ss'}. For example,
  * <p>
  * <code>
  * #Sample currency properties<br>
@@ -68,6 +77,20 @@ import sun.util.logging.PlatformLogger;
  * </code>
  * <p>
  * will supersede the currency data for Japan.
+ *
+ * <p>
+ * <code>
+ * #Sample currency properties with cutover date<br>
+ * JP=JPZ,999,0,2014-01-01T00:00:00
+ * </code>
+ * <p>
+ * will supersede the currency data for Japan if {@code Currency} class is loaded after
+ * 1st January 2014 00:00:00 GMT.
+ * <p>
+ * Where syntactically malformed entries are encountered, the entry is ignored
+ * and the remainder of entries in file are processed. For instances where duplicate
+ * country code entries exist, the behavior of the Currency information for that
+ * {@code Currency} is undefined and the remainder of entries in file are processed.
  *
  * @since 1.4
  */
@@ -99,7 +122,6 @@ public final class Currency implements Serializable {
 
     private static ConcurrentMap<String, Currency> instances = new ConcurrentHashMap<>(7);
     private static HashSet<Currency> available;
-
 
     // Class data: currency data obtained from currency.data file.
     // Purpose:
@@ -235,7 +257,9 @@ public final class Currency implements Serializable {
                         }
                         Set<String> keys = props.stringPropertyNames();
                         Pattern propertiesPattern =
-                            Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*([0-3])");
+                            Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*" +
+                                "([0-3])\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
+                                "\\d{2}:\\d{2})?");
                         for (String key : keys) {
                            replaceCurrencyData(propertiesPattern,
                                key.toUpperCase(Locale.ROOT),
@@ -645,29 +669,38 @@ public final class Currency implements Serializable {
      *    consists of "three-letter alphabet code", "three-digit numeric code",
      *    and "one-digit (0,1,2, or 3) default fraction digit".
      *    For example, "JPZ,392,0".
-     * @throws
+     *    An optional UTC date can be appended to the string (comma separated)
+     *    to allow a currency change take effect after date specified.
+     *    For example, "JP=JPZ,999,0,2014-01-01T00:00:00" has no effect unless
+     *    UTC time is past 1st January 2014 00:00:00 GMT.
      */
     private static void replaceCurrencyData(Pattern pattern, String ctry, String curdata) {
 
         if (ctry.length() != 2) {
             // ignore invalid country code
-            String message = new StringBuilder()
-                .append("The entry in currency.properties for ")
-                .append(ctry).append(" is ignored because of the invalid country code.")
-                .toString();
-            info(message, null);
+            info("currency.properties entry for " + ctry +
+                    " is ignored because of the invalid country code.", null);
             return;
         }
 
         Matcher m = pattern.matcher(curdata);
-        if (!m.find()) {
+        if (!m.find() || (m.group(4) == null && countOccurrences(curdata, ',') >= 3)) {
             // format is not recognized.  ignore the data
-            String message = new StringBuilder()
-                .append("The entry in currency.properties for ")
-                .append(ctry)
-                .append(" is ignored because the value format is not recognized.")
-                .toString();
-            info(message, null);
+            // if group(4) date string is null and we've 4 values, bad date value
+            info("currency.properties entry for " + ctry +
+                    " ignored because the value format is not recognized.", null);
+            return;
+        }
+
+        try {
+            if (m.group(4) != null && !isPastCutoverDate(m.group(4))) {
+                info("currency.properties entry for " + ctry +
+                        " ignored since cutover date has not passed :" + curdata, null);
+                return;
+            }
+        } catch (IndexOutOfBoundsException | NullPointerException | ParseException ex) {
+            info("currency.properties entry for " + ctry +
+                        " ignored since exception encountered :" + ex.getMessage(), null);
             return;
         }
 
@@ -693,6 +726,26 @@ public final class Currency implements Serializable {
                      (index + SPECIAL_CASE_COUNTRY_INDEX_DELTA);
         }
         setMainTableEntry(ctry.charAt(0), ctry.charAt(1), entry);
+    }
+
+    private static boolean isPastCutoverDate(String s)
+            throws IndexOutOfBoundsException, NullPointerException, ParseException {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        format.setLenient(false);
+        long time = format.parse(s.trim()).getTime();
+        return System.currentTimeMillis() > time;
+
+    }
+
+    private static int countOccurrences(String value, char match) {
+        int count = 0;
+        for (char c : value.toCharArray()) {
+            if (c == match) {
+               ++count;
+            }
+        }
+        return count;
     }
 
     private static void info(String message, Throwable t) {

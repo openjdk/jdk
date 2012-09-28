@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@
 //         NB: nodes from create_scope_values and create_locations
 //             can be reused for simple sharing.
 //         - mark the end of the scopes (end_safepoint or end_non_safepoint)
-//   2) Use oop_size, data_size, pcs_size to create the nmethod and
-//      finally migrate the debugging information into the nmethod
+//   2) Use oop_size, metadata_size, data_size, pcs_size to create the nmethod
+//      and finally migrate the debugging information into the nmethod
 //      by calling copy_to.
 
 class DebugToken; // Opaque datatype for stored:
@@ -123,6 +123,7 @@ class DebugInformationRecorder: public ResourceObj {
   int data_size();
   int pcs_size();
   int oop_size() { return oop_recorder()->oop_size(); }
+  int metadata_size() { return oop_recorder()->metadata_size(); }
 
   // copy the generated debugging information to nmethod
   void copy_to(nmethod* nm);
@@ -192,6 +193,11 @@ class DebugInformationRecorder: public ResourceObj {
   int  serialize_monitor_values(GrowableArray<MonitorValue*>* monitors);
   int  serialize_scope_values(GrowableArray<ScopeValue*>* values);
   int  find_sharable_decode_offset(int stream_offset);
+
+#ifndef PRODUCT
+  bool recorders_frozen();
+  void mark_recorders_frozen();
+#endif // PRODUCT
 
  public:
   enum { serialized_null = 0 };

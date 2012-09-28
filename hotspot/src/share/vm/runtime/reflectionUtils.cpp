@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 KlassStream::KlassStream(instanceKlassHandle klass, bool local_only, bool classes_only) {
   _klass = klass;
   if (classes_only) {
-    _interfaces = Universe::the_empty_system_obj_array();
+    _interfaces = Universe::the_empty_klass_array();
   } else {
     _interfaces = klass->transitive_interfaces();
   }
@@ -47,7 +47,7 @@ bool KlassStream::eos() {
     _klass = _klass->super();
   } else {
     if (_interface_index > 0) {
-      _klass = klassOop(_interfaces->obj_at(--_interface_index));
+      _klass = _interfaces->at(--_interface_index);
     } else {
       return true;
     }
@@ -70,7 +70,7 @@ void FilteredFieldsMap::initialize() {
   if (JDK_Version::is_gte_jdk16x_version()) {
     // The following class fields do not exist in
     // previous version of jdk.
-    offset = sun_reflect_ConstantPool::cp_oop_offset();
+    offset = sun_reflect_ConstantPool::oop_offset();
     _filtered_fields->append(new FilteredField(SystemDictionary::reflect_ConstantPool_klass(), offset));
     offset = sun_reflect_UnsafeStaticFieldAccessorImpl::base_offset();
     _filtered_fields->append(new FilteredField(SystemDictionary::reflect_UnsafeStaticFieldAccessorImpl_klass(), offset));

@@ -1445,7 +1445,7 @@ public class XMLCipher {
                 // The de-serialiser returns a fragment whose children we need to
                 // take on.
 
-                if (sourceParent instanceof Document) {
+                if (sourceParent != null && sourceParent.getNodeType() == Node.DOCUMENT_NODE) {
 
                     // If this is a content decryption, this may have problems
 

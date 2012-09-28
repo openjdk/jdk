@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,7 +41,7 @@
   inline void set_locals(intptr_t* new_locals) {
     _locals = new_locals;
   }
-  inline void set_method(methodOop new_method) {
+  inline void set_method(Method* new_method) {
     _method = new_method;
   }
   inline interpreterState self_link() {
@@ -68,7 +68,7 @@
   inline void set_thread(JavaThread* new_thread) {
     _thread = new_thread;
   }
-  inline void set_constants(constantPoolCacheOop new_constants) {
+  inline void set_constants(ConstantPoolCache* new_constants) {
     _constants = new_constants;
   }
   inline oop oop_temp() {
