@@ -36,6 +36,7 @@ import sun.net.www.MeteredStream;
 import sun.net.www.ParseUtil;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.util.logging.PlatformLogger;
+import static sun.net.www.protocol.http.HttpURLConnection.TunnelState.*;
 
 /**
  * @author Herb Jellinek
@@ -276,6 +277,8 @@ public class HttpClient extends NetworkClient {
                         ret.cachedHttpClient = true;
                         assert ret.inCache;
                         ret.inCache = false;
+                        if (httpuc != null && ret.needsTunneling())
+                            httpuc.setTunnelState(TUNNELING);
                         PlatformLogger logger = HttpURLConnection.getHttpLogger();
                         if (logger.isLoggable(PlatformLogger.FINEST)) {
                             logger.finest("KeepAlive stream retrieved from the cache, " + ret);
