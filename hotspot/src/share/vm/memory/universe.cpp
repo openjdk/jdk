@@ -265,14 +265,14 @@ void Universe::genesis(TRAPS) {
       compute_base_vtable_size();
 
       if (!UseSharedSpaces) {
-        _boolArrayKlassObj      = typeArrayKlass::create_klass(T_BOOLEAN, sizeof(jboolean), CHECK);
-        _charArrayKlassObj      = typeArrayKlass::create_klass(T_CHAR,    sizeof(jchar),    CHECK);
-        _singleArrayKlassObj    = typeArrayKlass::create_klass(T_FLOAT,   sizeof(jfloat),   CHECK);
-        _doubleArrayKlassObj    = typeArrayKlass::create_klass(T_DOUBLE,  sizeof(jdouble),  CHECK);
-        _byteArrayKlassObj      = typeArrayKlass::create_klass(T_BYTE,    sizeof(jbyte),    CHECK);
-        _shortArrayKlassObj     = typeArrayKlass::create_klass(T_SHORT,   sizeof(jshort),   CHECK);
-        _intArrayKlassObj       = typeArrayKlass::create_klass(T_INT,     sizeof(jint),     CHECK);
-        _longArrayKlassObj      = typeArrayKlass::create_klass(T_LONG,    sizeof(jlong),    CHECK);
+        _boolArrayKlassObj      = TypeArrayKlass::create_klass(T_BOOLEAN, sizeof(jboolean), CHECK);
+        _charArrayKlassObj      = TypeArrayKlass::create_klass(T_CHAR,    sizeof(jchar),    CHECK);
+        _singleArrayKlassObj    = TypeArrayKlass::create_klass(T_FLOAT,   sizeof(jfloat),   CHECK);
+        _doubleArrayKlassObj    = TypeArrayKlass::create_klass(T_DOUBLE,  sizeof(jdouble),  CHECK);
+        _byteArrayKlassObj      = TypeArrayKlass::create_klass(T_BYTE,    sizeof(jbyte),    CHECK);
+        _shortArrayKlassObj     = TypeArrayKlass::create_klass(T_SHORT,   sizeof(jshort),   CHECK);
+        _intArrayKlassObj       = TypeArrayKlass::create_klass(T_INT,     sizeof(jint),     CHECK);
+        _longArrayKlassObj      = TypeArrayKlass::create_klass(T_LONG,    sizeof(jlong),    CHECK);
 
         _typeArrayKlassObjs[T_BOOLEAN] = _boolArrayKlassObj;
         _typeArrayKlassObjs[T_CHAR]    = _charArrayKlassObj;
@@ -440,8 +440,8 @@ void Universe::init_self_patching_vtbl_list(void** list, int count) {
   { InstanceClassLoaderKlass o; add_vtable(list, &n, &o, count); }
   { InstanceMirrorKlass o;    add_vtable(list, &n, &o, count); }
   { InstanceRefKlass o;       add_vtable(list, &n, &o, count); }
-  { typeArrayKlass o;         add_vtable(list, &n, &o, count); }
-  { objArrayKlass o;          add_vtable(list, &n, &o, count); }
+  { TypeArrayKlass o;         add_vtable(list, &n, &o, count); }
+  { ObjArrayKlass o;          add_vtable(list, &n, &o, count); }
   { Method o;                 add_vtable(list, &n, &o, count); }
   { ConstantPool o;           add_vtable(list, &n, &o, count); }
 }

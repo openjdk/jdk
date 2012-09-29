@@ -2290,7 +2290,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         __ mov(length, len);
         __ load_klass(dst, tmp);
 
-        int ek_offset = in_bytes(objArrayKlass::element_klass_offset());
+        int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
         __ ld_ptr(tmp, ek_offset, super_k);
 
         int sco_offset = in_bytes(Klass::super_check_offset_offset());
@@ -2781,7 +2781,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ load_klass(value, klass_RInfo);
 
     // get instance klass
-    __ ld_ptr(Address(k_RInfo, objArrayKlass::element_klass_offset()), k_RInfo);
+    __ ld_ptr(Address(k_RInfo, ObjArrayKlass::element_klass_offset()), k_RInfo);
     // perform the fast part of the checking logic
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, O7, success_target, failure_target, NULL);
 

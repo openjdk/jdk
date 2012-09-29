@@ -426,7 +426,7 @@ static void validate_thread_id_array(typeArrayHandle ids_ah, TRAPS) {
 static void validate_thread_info_array(objArrayHandle infoArray_h, TRAPS) {
   // check if the element of infoArray is of type ThreadInfo class
   Klass* threadinfo_klass = Management::java_lang_management_ThreadInfo_klass(CHECK);
-  Klass* element_klass = objArrayKlass::cast(infoArray_h->klass())->element_klass();
+  Klass* element_klass = ObjArrayKlass::cast(infoArray_h->klass())->element_klass();
   if (element_klass != threadinfo_klass) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "infoArray element type is not ThreadInfo class");
@@ -1715,7 +1715,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
     objArrayOop ta = objArrayOop(JNIHandles::resolve_non_null(names));
     objArrayHandle names_ah(THREAD, ta);
     // Make sure we have a String array
-    Klass* element_klass = objArrayKlass::cast(names_ah->klass())->element_klass();
+    Klass* element_klass = ObjArrayKlass::cast(names_ah->klass())->element_klass();
     if (element_klass != SystemDictionary::String_klass()) {
       THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                  "Array element type is not String class", 0);
@@ -1891,7 +1891,7 @@ JVM_ENTRY(jint, jmm_GetInternalThreadTimes(JNIEnv *env,
   objArrayHandle names_ah(THREAD, na);
 
   // Make sure we have a String array
-  Klass* element_klass = objArrayKlass::cast(names_ah->klass())->element_klass();
+  Klass* element_klass = ObjArrayKlass::cast(names_ah->klass())->element_klass();
   if (element_klass != SystemDictionary::String_klass()) {
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                "Array element type is not String class", 0);
@@ -2008,7 +2008,7 @@ static objArrayOop get_memory_usage_objArray(jobjectArray array, int length, TRA
 
   // check if the element of array is of type MemoryUsage class
   Klass* usage_klass = Management::java_lang_management_MemoryUsage_klass(CHECK_0);
-  Klass* element_klass = objArrayKlass::cast(array_h->klass())->element_klass();
+  Klass* element_klass = ObjArrayKlass::cast(array_h->klass())->element_klass();
   if (element_klass != usage_klass) {
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                "The element type is not MemoryUsage class", 0);
@@ -2156,7 +2156,7 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
   objArrayHandle cmds_ah(THREAD, ca);
 
   // Make sure we have a String array
-  Klass* element_klass = objArrayKlass::cast(cmds_ah->klass())->element_klass();
+  Klass* element_klass = ObjArrayKlass::cast(cmds_ah->klass())->element_klass();
   if (element_klass != SystemDictionary::String_klass()) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                "Array element type is not String class");

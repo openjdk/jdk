@@ -755,12 +755,12 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, GrowableArra
       InstanceKlass* ik = InstanceKlass::cast(k());
       obj = ik->allocate_instance(CHECK_(false));
     } else if (k->oop_is_typeArray()) {
-      typeArrayKlass* ak = typeArrayKlass::cast(k());
+      TypeArrayKlass* ak = TypeArrayKlass::cast(k());
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
       obj = ak->allocate(len, CHECK_(false));
     } else if (k->oop_is_objArray()) {
-      objArrayKlass* ak = objArrayKlass::cast(k());
+      ObjArrayKlass* ak = ObjArrayKlass::cast(k());
       obj = ak->allocate(sv->field_size(), CHECK_(false));
     }
 
@@ -923,7 +923,7 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       FieldReassigner reassign(fr, reg_map, sv, obj());
       ik->do_nonstatic_fields(&reassign);
     } else if (k->oop_is_typeArray()) {
-      typeArrayKlass* ak = typeArrayKlass::cast(k());
+      TypeArrayKlass* ak = TypeArrayKlass::cast(k());
       reassign_type_array_elements(fr, reg_map, sv, (typeArrayOop) obj(), ak->element_type());
     } else if (k->oop_is_objArray()) {
       reassign_object_array_elements(fr, reg_map, sv, (objArrayOop) obj());

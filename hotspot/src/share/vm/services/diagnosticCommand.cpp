@@ -204,7 +204,7 @@ void PrintSystemPropertiesDCmd::execute(TRAPS) {
   // The result should be a [B
   oop res = (oop)result.get_jobject();
   assert(res->is_typeArray(), "just checking");
-  assert(typeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
+  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
 
   // copy the bytes to the output stream
   typeArrayOop ba = typeArrayOop(res);

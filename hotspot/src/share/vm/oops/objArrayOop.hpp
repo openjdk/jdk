@@ -31,7 +31,7 @@
 // Evaluating "String arg[10]" will create an objArrayOop.
 
 class objArrayOopDesc : public arrayOopDesc {
-  friend class objArrayKlass;
+  friend class ObjArrayKlass;
   friend class Runtime1;
   friend class psPromotionManager;
   friend class CSetMarkOopClosure;

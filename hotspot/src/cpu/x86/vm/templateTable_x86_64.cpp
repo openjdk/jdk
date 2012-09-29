@@ -970,7 +970,7 @@ void TemplateTable::aastore() {
   // Move superklass into rax
   __ load_klass(rax, rdx);
   __ movptr(rax, Address(rax,
-                         objArrayKlass::element_klass_offset()));
+                         ObjArrayKlass::element_klass_offset()));
   // Compress array + index*oopSize + 12 into a single register.  Frees rcx.
   __ lea(rdx, element_address);
 
