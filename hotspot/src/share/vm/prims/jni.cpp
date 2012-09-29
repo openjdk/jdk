@@ -3442,8 +3442,8 @@ JNI_ENTRY(jobjectArray, jni_NewObjectArray(JNIEnv *env, jsize length, jclass ele
   KlassHandle ek(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(elementClass)));
   Klass* ako = Klass::cast(ek())->array_klass(CHECK_NULL);
   KlassHandle ak = KlassHandle(THREAD, ako);
-  objArrayKlass::cast(ak())->initialize(CHECK_NULL);
-  objArrayOop result = objArrayKlass::cast(ak())->allocate(length, CHECK_NULL);
+  ObjArrayKlass::cast(ak())->initialize(CHECK_NULL);
+  objArrayOop result = ObjArrayKlass::cast(ak())->allocate(length, CHECK_NULL);
   oop initial_value = JNIHandles::resolve(initialElement);
   if (initial_value != NULL) {  // array already initialized with NULL
     for (int index = 0; index < length; index++) {
@@ -3502,7 +3502,7 @@ JNI_ENTRY(void, jni_SetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize
   objArrayOop a = objArrayOop(JNIHandles::resolve_non_null(array));
   oop v = JNIHandles::resolve(value);
   if (a->is_within_bounds(index)) {
-    if (v == NULL || v->is_a(objArrayKlass::cast(a->klass())->element_klass())) {
+    if (v == NULL || v->is_a(ObjArrayKlass::cast(a->klass())->element_klass())) {
       a->obj_at_put(index, v);
     } else {
       THROW(vmSymbols::java_lang_ArrayStoreException());
@@ -3787,7 +3787,7 @@ jni_Get##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
   } else { \
     if (len > 0) { \
-      int sc = typeArrayKlass::cast(src->klass())->log2_element_size(); \
+      int sc = TypeArrayKlass::cast(src->klass())->log2_element_size(); \
       memcpy((u_char*) buf, \
              (u_char*) src->Tag##_at_addr(start), \
              len << sc);                          \
@@ -3822,7 +3822,7 @@ jni_Get##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
   } else { \
     if (len > 0) { \
-      int sc = typeArrayKlass::cast(src->klass())->log2_element_size(); \
+      int sc = TypeArrayKlass::cast(src->klass())->log2_element_size(); \
       memcpy((u_char*) buf, \
              (u_char*) src->Tag##_at_addr(start), \
              len << sc);                          \
@@ -3871,7 +3871,7 @@ jni_Set##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
   } else { \
     if (len > 0) { \
-      int sc = typeArrayKlass::cast(dst->klass())->log2_element_size(); \
+      int sc = TypeArrayKlass::cast(dst->klass())->log2_element_size(); \
       memcpy((u_char*) dst->Tag##_at_addr(start), \
              (u_char*) buf, \
              len << sc);    \
@@ -3906,7 +3906,7 @@ jni_Set##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
   } else { \
     if (len > 0) { \
-      int sc = typeArrayKlass::cast(dst->klass())->log2_element_size(); \
+      int sc = TypeArrayKlass::cast(dst->klass())->log2_element_size(); \
       memcpy((u_char*) dst->Tag##_at_addr(start), \
              (u_char*) buf, \
              len << sc);    \
@@ -4251,7 +4251,7 @@ JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboole
   if (a->is_objArray()) {
     type = T_OBJECT;
   } else {
-    type = typeArrayKlass::cast(a->klass())->element_type();
+    type = TypeArrayKlass::cast(a->klass())->element_type();
   }
   void* ret = arrayOop(a)->base(type);
 #ifndef USDT2

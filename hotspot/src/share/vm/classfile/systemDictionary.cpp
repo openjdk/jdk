@@ -244,7 +244,7 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
     }
   } else {
     k = Universe::typeArrayKlassObj(t);
-    k = typeArrayKlass::cast(k)->array_klass(fd.dimension(), CHECK_NULL);
+    k = TypeArrayKlass::cast(k)->array_klass(fd.dimension(), CHECK_NULL);
   }
   return k;
 }
@@ -920,9 +920,9 @@ Klass* SystemDictionary::find(Symbol* class_name,
 // Look for a loaded instance or array klass by name.  Do not do any loading.
 // return NULL in case of error.
 Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
-                                                        Handle class_loader,
-                                                        Handle protection_domain,
-                                                        TRAPS) {
+                                                      Handle class_loader,
+                                                      Handle protection_domain,
+                                                      TRAPS) {
   Klass* k = NULL;
   assert(class_name != NULL, "class name must be non NULL");
 
@@ -990,12 +990,12 @@ Klass* SystemDictionary::find_well_known_klass(Symbol* class_name) {
 // updates no supplemental data structures.
 // TODO consolidate the two methods with a helper routine?
 Klass* SystemDictionary::parse_stream(Symbol* class_name,
-                                        Handle class_loader,
-                                        Handle protection_domain,
-                                        ClassFileStream* st,
-                                        KlassHandle host_klass,
-                                        GrowableArray<Handle>* cp_patches,
-                                        TRAPS) {
+                                      Handle class_loader,
+                                      Handle protection_domain,
+                                      ClassFileStream* st,
+                                      KlassHandle host_klass,
+                                      GrowableArray<Handle>* cp_patches,
+                                      TRAPS) {
   TempNewSymbol parsed_name = NULL;
 
   // Parse the stream. Note that we do this even though this klass might
@@ -1076,11 +1076,11 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
 // the class until we have parsed the stream.
 
 Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
-                                               Handle class_loader,
-                                               Handle protection_domain,
-                                               ClassFileStream* st,
-                                               bool verify,
-                                               TRAPS) {
+                                             Handle class_loader,
+                                             Handle protection_domain,
+                                             ClassFileStream* st,
+                                             bool verify,
+                                             TRAPS) {
 
   // Classloaders that support parallelism, e.g. bootstrap classloader,
   // or all classloaders with UnsyncloadClass do not acquire lock here
@@ -2187,7 +2187,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
   // Force the protection domain to be null.  (This removes protection checks.)
   Handle no_protection_domain;
   Klass* klass = find_instance_or_array_klass(class_name, class_loader,
-                                                no_protection_domain, CHECK_NULL);
+                                              no_protection_domain, CHECK_NULL);
   if (klass != NULL)
     return klass;
 
@@ -2523,7 +2523,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
       mirror = NULL;  // safety
       // Emulate ConstantPool::verify_constant_pool_resolve.
       if (Klass::cast(sel_klass)->oop_is_objArray())
-        sel_klass = objArrayKlass::cast(sel_klass)->bottom_klass();
+        sel_klass = ObjArrayKlass::cast(sel_klass)->bottom_klass();
       if (Klass::cast(sel_klass)->oop_is_instance()) {
         KlassHandle sel_kh(THREAD, sel_klass);
         LinkResolver::check_klass_accessability(accessing_klass, sel_kh, CHECK_(empty));

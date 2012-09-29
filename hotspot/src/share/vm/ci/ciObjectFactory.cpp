@@ -173,7 +173,7 @@ void ciObjectFactory::init_shared_objects() {
   }
 
   ciEnv::_unloaded_cisymbol = ciObjectFactory::get_symbol(vmSymbols::dummy_symbol());
-  // Create dummy InstanceKlass and objArrayKlass object and assign them idents
+  // Create dummy InstanceKlass and ObjArrayKlass object and assign them idents
   ciEnv::_unloaded_ciinstance_klass = new (_arena) ciInstanceKlass(ciEnv::_unloaded_cisymbol, NULL, NULL);
   init_ident_of(ciEnv::_unloaded_ciinstance_klass);
   ciEnv::_unloaded_ciobjarrayklass = new (_arena) ciObjArrayKlass(ciEnv::_unloaded_cisymbol, ciEnv::_unloaded_ciinstance_klass, 1);
@@ -451,7 +451,7 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
   // the cache.
   ciKlass* new_klass = NULL;
 
-  // Two cases: this is an unloaded objArrayKlass or an
+  // Two cases: this is an unloaded ObjArrayKlass or an
   // unloaded InstanceKlass.  Deal with both.
   if (name->byte_at(0) == '[') {
     // Decompose the name.'
@@ -477,7 +477,7 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
       // The type array itself takes care of one of the dimensions.
       dimension--;
 
-      // The element klass is a typeArrayKlass.
+      // The element klass is a TypeArrayKlass.
       element_klass = ciTypeArrayKlass::make(element_type);
     }
     new_klass = new (arena()) ciObjArrayKlass(name, element_klass, dimension);

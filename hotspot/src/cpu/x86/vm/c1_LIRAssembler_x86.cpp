@@ -1881,7 +1881,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ load_klass(klass_RInfo, value);
 
     // get instance klass (it's already uncompressed)
-    __ movptr(k_RInfo, Address(k_RInfo, objArrayKlass::element_klass_offset()));
+    __ movptr(k_RInfo, Address(k_RInfo, ObjArrayKlass::element_klass_offset()));
     // perform the fast part of the checking logic
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, NULL);
     // call out-of-line instance of __ check_klass_subtype_slow_path(...):
@@ -3349,7 +3349,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
 #ifndef _LP64
         __ movptr(tmp, dst_klass_addr);
-        __ movptr(tmp, Address(tmp, objArrayKlass::element_klass_offset()));
+        __ movptr(tmp, Address(tmp, ObjArrayKlass::element_klass_offset()));
         __ push(tmp);
         __ movl(tmp, Address(tmp, Klass::super_check_offset_offset()));
         __ push(tmp);
@@ -3375,14 +3375,14 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         // Allocate abi space for args but be sure to keep stack aligned
         __ subptr(rsp, 6*wordSize);
         __ load_klass(c_rarg3, dst);
-        __ movptr(c_rarg3, Address(c_rarg3, objArrayKlass::element_klass_offset()));
+        __ movptr(c_rarg3, Address(c_rarg3, ObjArrayKlass::element_klass_offset()));
         store_parameter(c_rarg3, 4);
         __ movl(c_rarg3, Address(c_rarg3, Klass::super_check_offset_offset()));
         __ call(RuntimeAddress(copyfunc_addr));
         __ addptr(rsp, 6*wordSize);
 #else
         __ load_klass(c_rarg4, dst);
-        __ movptr(c_rarg4, Address(c_rarg4, objArrayKlass::element_klass_offset()));
+        __ movptr(c_rarg4, Address(c_rarg4, ObjArrayKlass::element_klass_offset()));
         __ movl(c_rarg3, Address(c_rarg4, Klass::super_check_offset_offset()));
         __ call(RuntimeAddress(copyfunc_addr));
 #endif

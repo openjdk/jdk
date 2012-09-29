@@ -10616,7 +10616,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
         // Array header size is 12 bytes in 32-bit VM
         // + 6 bytes for 3 chars == 18 bytes,
         // enough space to load vec and shift.
-        assert(HeapWordSize*typeArrayKlass::header_size() >= 12,"sanity");
+        assert(HeapWordSize*TypeArrayKlass::header_size() >= 12,"sanity");
         movdqu(vec, Address(str2, (int_cnt2*2)-16));
         psrldq(vec, 16-(int_cnt2*2));
       }
