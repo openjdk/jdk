@@ -2165,27 +2165,10 @@ public class JavacParser implements Parser {
         while (true) {
             int pos = token.pos;
             switch (token.kind) {
-            case CASE: {
-                nextToken();
-                JCExpression pat = parseExpression();
-                accept(COLON);
-                List<JCStatement> stats = blockStatements();
-                JCCase c = F.at(pos).Case(pat, stats);
-                if (stats.isEmpty())
-                    storeEnd(c, S.prevToken().endPos);
-                cases.append(c);
+            case CASE:
+            case DEFAULT:
+                cases.append(switchBlockStatementGroup());
                 break;
-            }
-            case DEFAULT: {
-                nextToken();
-                accept(COLON);
-                List<JCStatement> stats = blockStatements();
-                JCCase c = F.at(pos).Case(null, stats);
-                if (stats.isEmpty())
-                    storeEnd(c, S.prevToken().endPos);
-                cases.append(c);
-                break;
-            }
             case RBRACE: case EOF:
                 return cases.toList();
             default:
@@ -2194,6 +2177,32 @@ public class JavacParser implements Parser {
                     CASE, DEFAULT, RBRACE);
             }
         }
+    }
+
+    protected JCCase switchBlockStatementGroup() {
+        int pos = token.pos;
+        List<JCStatement> stats;
+        JCCase c;
+        switch (token.kind) {
+        case CASE:
+            nextToken();
+            JCExpression pat = parseExpression();
+            accept(COLON);
+            stats = blockStatements();
+            c = F.at(pos).Case(pat, stats);
+            if (stats.isEmpty())
+                storeEnd(c, S.prevToken().endPos);
+            return c;
+        case DEFAULT:
+            nextToken();
+            accept(COLON);
+            stats = blockStatements();
+            c = F.at(pos).Case(null, stats);
+            if (stats.isEmpty())
+                storeEnd(c, S.prevToken().endPos);
+            return c;
+        }
+        throw new AssertionError("should not reach here");
     }
 
     /** MoreStatementExpressions = { COMMA StatementExpression }
