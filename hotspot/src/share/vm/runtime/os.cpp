@@ -878,6 +878,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
         st->print(" for ");
         nm->method()->print_value_on(st);
       }
+      st->cr();
       nm->print_nmethod(verbose);
       return;
     }
