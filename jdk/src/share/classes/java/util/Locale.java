@@ -1492,7 +1492,7 @@ public final class Locale implements Cloneable, Serializable {
      *    // returns "ja-JP-u-ca-japanese-x-lvariant-JP"
      *    Locale.forLanguageTag("th-TH-x-lvariant-TH").toLanguageTag();
      *    // returns "th-TH-u-nu-thai-x-lvariant-TH"
-     * <pre></ul>
+     * </pre></ul>
      *
      * <p>This implements the 'Language-Tag' production of BCP47, and
      * so supports grandfathered (regular and irregular) as well as
@@ -2143,7 +2143,7 @@ public final class Locale implements Cloneable, Serializable {
      * @param in the <code>ObjectInputStream</code> to read
      * @throws IOException
      * @throws ClassNotFoundException
-     * @throws IllformdLocaleException
+     * @throws IllformedLocaleException
      * @since 1.7
      */
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {

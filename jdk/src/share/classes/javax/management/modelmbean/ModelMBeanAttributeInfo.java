@@ -189,7 +189,7 @@ public class ModelMBeanAttributeInfo
          *          May be null if the property is write-only.
          * @param setter The method used for writing the attribute value.
          *          May be null if the attribute is read-only.
-         * @exception IntrospectionException There is a consistency
+         * @exception javax.management.IntrospectionException There is a consistency
          * problem in the definition of this attribute.
          *
          */
@@ -233,7 +233,7 @@ public class ModelMBeanAttributeInfo
          * it is null, then a default descriptor will be created.  If
          * the descriptor does not contain the field "displayName" this field is added
          * in the descriptor with its default value.
-         * @exception IntrospectionException There is a consistency
+         * @exception javax.management.IntrospectionException There is a consistency
          * problem in the definition of this attribute.
          * @exception RuntimeOperationsException Wraps an
          * IllegalArgumentException. The descriptor is invalid, or descriptor
