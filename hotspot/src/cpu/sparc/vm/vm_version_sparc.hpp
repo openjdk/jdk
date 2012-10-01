@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,6 +124,8 @@ public:
   // Returns true if the platform is in the niagara line (T series)
   // and newer than the niagara1.
   static bool is_niagara_plus()         { return is_T_family(_features) && !is_T1_model(_features); }
+
+  static bool is_M_series()             { return is_M_family(_features); }
   static bool is_T4()                   { return is_T_family(_features) && has_cbcond(); }
 
   // Fujitsu SPARC64

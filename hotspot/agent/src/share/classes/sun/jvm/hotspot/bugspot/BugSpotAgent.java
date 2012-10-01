@@ -58,10 +58,6 @@ import sun.jvm.hotspot.utilities.*;
  * <P> The BugSpot debugger requires that the underlying Debugger
  * support C/C++ debugging via the CDebugger interface. </P>
  *
- * <P> FIXME: need to add a way to configure the paths to dbx and the
- * DSO from the outside. However, this should work for now for
- * internal use. </P>
- *
  * <P> FIXME: especially with the addition of remote debugging, this
  * has turned into a mess; needs rethinking. </P> */
 

@@ -863,6 +863,9 @@ class CommandLineFlags {
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
                                                                             \
+  diagnostic(bool, PrintNMTStatistics, false,                               \
+          "Print native memory tracking summary data if it is on")          \
+                                                                            \
   diagnostic(bool, LogCompilation, false,                                   \
           "Log compilation activity in detail to hotspot.log or LogFile")   \
                                                                             \

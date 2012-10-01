@@ -252,6 +252,8 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void verify_oop_map(CodeEmitInfo* info);
 
+  void atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr dest, LIR_Opr tmp);
+
 #ifdef TARGET_ARCH_x86
 # include "c1_LIRAssembler_x86.hpp"
 #endif

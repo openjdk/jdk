@@ -7762,6 +7762,7 @@ instruct storeLConditional( memory mem, eADXRegL oldval, eBCXRegL newval, eFlags
 // No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 
 instruct compareAndSwapL( rRegI res, eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
+  predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
   format %{ "CMPXCHG8 [$mem_ptr],$newval\t# If EDX:EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t"
@@ -7795,6 +7796,47 @@ instruct compareAndSwapI( rRegI res, pRegP mem_ptr, eAXRegI oldval, eCXRegI newv
             "MOV    $res,1\n"
           "fail:" %}
   ins_encode( enc_cmpxchg(mem_ptr), enc_flags_ne_to_boolean(res) );
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddI_no_res( memory mem, Universe dummy, immI add, eFlagsReg cr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddI mem add));
+  effect(KILL cr);
+  format %{ "ADDL  [$mem],$add" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ addl($mem$$Address, $add$$constant);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddI( memory mem, rRegI newval, eFlagsReg cr) %{
+  match(Set newval (GetAndAddI mem newval));
+  effect(KILL cr);
+  format %{ "XADDL  [$mem],$newval" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ xaddl($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgI( memory mem, rRegI newval) %{
+  match(Set newval (GetAndSetI mem newval));
+  format %{ "XCHGL  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgl($newval$$Register, $mem$$Address);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgP( memory mem, pRegP newval) %{
+  match(Set newval (GetAndSetP mem newval));
+  format %{ "XCHGL  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgl($newval$$Register, $mem$$Address);
+  %}
   ins_pipe( pipe_cmpxchg );
 %}
 

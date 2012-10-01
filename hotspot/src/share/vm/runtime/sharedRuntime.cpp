@@ -88,6 +88,7 @@ RuntimeStub*        SharedRuntime::_resolve_virtual_call_blob;
 RuntimeStub*        SharedRuntime::_resolve_static_call_blob;
 
 DeoptimizationBlob* SharedRuntime::_deopt_blob;
+SafepointBlob*      SharedRuntime::_polling_page_vectors_safepoint_handler_blob;
 SafepointBlob*      SharedRuntime::_polling_page_safepoint_handler_blob;
 SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
 
@@ -104,8 +105,14 @@ void SharedRuntime::generate_stubs() {
   _resolve_virtual_call_blob           = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_virtual_call_C),      "resolve_virtual_call");
   _resolve_static_call_blob            = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_static_call_C),       "resolve_static_call");
 
-  _polling_page_safepoint_handler_blob = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), false);
-  _polling_page_return_handler_blob    = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), true);
+#ifdef COMPILER2
+  // Vectors are generated only by C2.
+  if (is_wide_vector(MaxVectorSize)) {
+    _polling_page_vectors_safepoint_handler_blob = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), POLL_AT_VECTOR_LOOP);
+  }
+#endif // COMPILER2
+  _polling_page_safepoint_handler_blob = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), POLL_AT_LOOP);
+  _polling_page_return_handler_blob    = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), POLL_AT_RETURN);
 
   generate_deopt_blob();
 
@@ -535,10 +542,15 @@ address SharedRuntime::get_poll_stub(address pc) {
     "Only polling locations are used for safepoint");
 
   bool at_poll_return = ((nmethod*)cb)->is_at_poll_return(pc);
+  bool has_wide_vectors = ((nmethod*)cb)->has_wide_vectors();
   if (at_poll_return) {
     assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
            "polling page return stub not created yet");
     stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+  } else if (has_wide_vectors) {
+    assert(SharedRuntime::polling_page_vectors_safepoint_handler_blob() != NULL,
+           "polling page vectors safepoint stub not created yet");
+    stub = SharedRuntime::polling_page_vectors_safepoint_handler_blob()->entry_point();
   } else {
     assert(SharedRuntime::polling_page_safepoint_handler_blob() != NULL,
            "polling page safepoint stub not created yet");
@@ -1618,6 +1630,31 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
   return callee_method;
 }
 
+#ifdef ASSERT
+void SharedRuntime::check_member_name_argument_is_last_argument(methodHandle method,
+                                                                const BasicType* sig_bt,
+                                                                const VMRegPair* regs) {
+  ResourceMark rm;
+  const int total_args_passed = method->size_of_parameters();
+  const VMRegPair*    regs_with_member_name = regs;
+        VMRegPair* regs_without_member_name = NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed - 1);
+
+  const int member_arg_pos = total_args_passed - 1;
+  assert(member_arg_pos >= 0 && member_arg_pos < total_args_passed, "oob");
+  assert(sig_bt[member_arg_pos] == T_OBJECT, "dispatch argument must be an object");
+
+  const bool is_outgoing = method->is_method_handle_intrinsic();
+  int comp_args_on_stack = java_calling_convention(sig_bt, regs_without_member_name, total_args_passed - 1, is_outgoing);
+
+  for (int i = 0; i < member_arg_pos; i++) {
+    VMReg a =    regs_with_member_name[i].first();
+    VMReg b = regs_without_member_name[i].first();
+    assert(a->value() == b->value(), err_msg_res("register allocation mismatch: a=%d, b=%d", a->value(), b->value()));
+  }
+  assert(regs_with_member_name[member_arg_pos].first()->is_valid(), "bad member arg");
+}
+#endif
+
 // ---------------------------------------------------------------------------
 // We are calling the interpreter via a c2i. Normally this would mean that
 // we were called by a compiled method. However we could have lost a race
@@ -2423,6 +2460,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
 #ifndef PRODUCT
     // debugging suppport
     if (PrintAdapterHandlers || PrintStubCode) {
+      ttyLocker ttyl;
       entry->print_adapter_on(tty);
       tty->print_cr("i2c argument handler #%d for: %s %s (%d bytes generated)",
                     _adapters->number_of_entries(), (method->is_static() ? "static" : "receiver"),
@@ -2430,8 +2468,10 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
       tty->print_cr("c2i argument handler starts at %p",entry->get_c2i_entry());
       if (Verbose || PrintStubCode) {
         address first_pc = entry->base_address();
-        if (first_pc != NULL)
+        if (first_pc != NULL) {
           Disassembler::decode(first_pc, first_pc + insts_size);
+          tty->cr();
+        }
       }
     }
 #endif
@@ -2546,10 +2586,10 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method, int c
       MacroAssembler _masm(&buffer);
 
       // Fill in the signature array, for the calling-convention call.
-      int total_args_passed = method->size_of_parameters();
+      const int total_args_passed = method->size_of_parameters();
 
-      BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType,total_args_passed);
-      VMRegPair*   regs = NEW_RESOURCE_ARRAY(VMRegPair,total_args_passed);
+      BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
+      VMRegPair*   regs = NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
       int i=0;
       if( !method->is_static() )  // Pass in receiver first
         sig_bt[i++] = T_OBJECT;
@@ -2559,7 +2599,7 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method, int c
         if( ss.type() == T_LONG || ss.type() == T_DOUBLE )
           sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
       }
-      assert( i==total_args_passed, "" );
+      assert(i == total_args_passed, "");
       BasicType ret_type = ss.type();
 
       // Now get the compiled-Java layout as input (or output) arguments.
@@ -2572,9 +2612,8 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method, int c
       nm = SharedRuntime::generate_native_wrapper(&_masm,
                                                   method,
                                                   compile_id,
-                                                  total_args_passed,
-                                                  comp_args_on_stack,
-                                                  sig_bt,regs,
+                                                  sig_bt,
+                                                  regs,
                                                   ret_type);
     }
   }
