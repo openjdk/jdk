@@ -497,6 +497,7 @@ public:
                                                  Symbol* signature,
                                                  KlassHandle accessing_klass,
                                                  Handle *appendix_result,
+                                                 Handle *method_type_result,
                                                  TRAPS);
   // for a given signature, find the internal MethodHandle method (linkTo* or invokeBasic)
   // (does not ask Java, since this is a low-level intrinsic defined by the JVM)
@@ -523,6 +524,7 @@ public:
                                                      Symbol* name,
                                                      Symbol* type,
                                                      Handle *appendix_result,
+                                                     Handle *method_type_result,
                                                      TRAPS);
 
   // Utility for printing loader "name" as part of tracing constraints
