@@ -197,9 +197,9 @@ class CompilationLog : public StringEventLog {
 
   void log_compile(JavaThread* thread, CompileTask* task) {
     StringLogMessage lm;
-    stringStream msg = lm.stream();
+    stringStream sstr = lm.stream();
     // msg.time_stamp().update_to(tty->time_stamp().ticks());
-    task->print_compilation(&msg, true);
+    task->print_compilation(&sstr, NULL, true);
     log(thread, "%s", (const char*)lm);
   }
 
@@ -491,9 +491,9 @@ void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
 
 // ------------------------------------------------------------------
 // CompileTask::print_compilation
-void CompileTask::print_compilation(outputStream* st, bool short_form) {
+void CompileTask::print_compilation(outputStream* st, const char* msg, bool short_form) {
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_compilation_impl(st, method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), NULL, short_form);
+  print_compilation_impl(st, method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form);
 }
 
 // ------------------------------------------------------------------
@@ -1249,7 +1249,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
     // We accept a higher level osr method
     nmethod* nm = method->lookup_osr_nmethod_for(osr_bci, comp_level, false);
     if (nm != NULL) return nm;
-    if (method->is_not_osr_compilable()) return NULL;
+    if (method->is_not_osr_compilable(comp_level)) return NULL;
   }
 
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
@@ -1330,7 +1330,7 @@ bool CompileBroker::compilation_is_complete(methodHandle method,
                                             int          comp_level) {
   bool is_osr = (osr_bci != standard_entry_bci);
   if (is_osr) {
-    if (method->is_not_osr_compilable()) {
+    if (method->is_not_osr_compilable(comp_level)) {
       return true;
     } else {
       nmethod* result = method->lookup_osr_nmethod_for(osr_bci, comp_level, true);
@@ -1381,7 +1381,7 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
   // Some compilers may not support on stack replacement.
   if (is_osr &&
       (!CICompileOSR || !compiler(comp_level)->supports_osr())) {
-    method->set_not_osr_compilable();
+    method->set_not_osr_compilable(comp_level);
     return true;
   }
 
@@ -1807,11 +1807,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
         _compilation_log->log_failure(thread, task, ci_env.failure_reason(), retry_message);
       }
       if (PrintCompilation) {
-        tty->print("%4d   COMPILE SKIPPED: %s", compile_id, ci_env.failure_reason());
-        if (retry_message != NULL) {
-          tty->print(" (%s)", retry_message);
-        }
-        tty->cr();
+        FormatBufferResource msg = retry_message != NULL ?
+            err_msg_res("COMPILE SKIPPED: %s (%s)", ci_env.failure_reason(), retry_message) :
+            err_msg_res("COMPILE SKIPPED: %s",      ci_env.failure_reason());
+        task->print_compilation(tty, msg);
       }
     } else {
       task->mark_success();
@@ -1840,14 +1839,20 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     tty->print_cr("size: %d time: %d inlined: %d bytes", code_size, (int)time.milliseconds(), task->num_inlined_bytecodes());
   }
 
-  if (compilable == ciEnv::MethodCompilable_never) {
-    if (is_osr) {
-      method->set_not_osr_compilable();
-    } else {
+  // Disable compilation, if required.
+  switch (compilable) {
+  case ciEnv::MethodCompilable_never:
+    if (is_osr)
+      method->set_not_osr_compilable_quietly();
+    else
       method->set_not_compilable_quietly();
-    }
-  } else if (compilable == ciEnv::MethodCompilable_not_at_tier) {
-    method->set_not_compilable_quietly(task->comp_level());
+    break;
+  case ciEnv::MethodCompilable_not_at_tier:
+    if (is_osr)
+      method->set_not_osr_compilable_quietly(task->comp_level());
+    else
+      method->set_not_compilable_quietly(task->comp_level());
+    break;
   }
 
   // Note that the queued_for_compilation bits are cleared without

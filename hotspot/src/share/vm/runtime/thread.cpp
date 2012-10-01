@@ -308,19 +308,25 @@ void Thread::initialize_thread_local_storage() {
 
   // initialize structure dependent on thread local storage
   ThreadLocalStorage::set_thread(this);
-
-  // set up any platform-specific state.
-  os::initialize_thread();
 }
 
 void Thread::record_stack_base_and_size() {
   set_stack_base(os::current_stack_base());
   set_stack_size(os::current_stack_size());
+  // CR 7190089: on Solaris, primordial thread's stack is adjusted
+  // in initialize_thread(). Without the adjustment, stack size is
+  // incorrect if stack is set to unlimited (ulimit -s unlimited).
+  // So far, only Solaris has real implementation of initialize_thread().
+  //
+  // set up any platform-specific state.
+  os::initialize_thread(this);
 
-  // record thread's native stack, stack grows downward
-  address low_stack_addr = stack_base() - stack_size();
-  MemTracker::record_thread_stack(low_stack_addr, stack_size(), this,
-             CURRENT_PC);
+   // record thread's native stack, stack grows downward
+  if (MemTracker::is_on()) {
+    address stack_low_addr = stack_base() - stack_size();
+    MemTracker::record_thread_stack(stack_low_addr, stack_size(), this,
+      CURRENT_PC);
+  }
 }
 
 
@@ -836,7 +842,11 @@ void Thread::metadata_do(void f(Metadata*)) {
 void Thread::print_on(outputStream* st) const {
   // get_priority assumes osthread initialized
   if (osthread() != NULL) {
-    st->print("prio=%d tid=" INTPTR_FORMAT " ", get_priority(this), this);
+    int os_prio;
+    if (os::get_native_priority(this, &os_prio) == OS_OK) {
+      st->print("os_prio=%d ", os_prio);
+    }
+    st->print("tid=" INTPTR_FORMAT " ", this);
     osthread()->print_on(st);
   }
   debug_only(if (WizardMode) print_owned_locks_on(st);)
@@ -2743,7 +2753,11 @@ void JavaThread::print_thread_state() const {
 void JavaThread::print_on(outputStream *st) const {
   st->print("\"%s\" ", get_thread_name());
   oop thread_oop = threadObj();
-  if (thread_oop != NULL && java_lang_Thread::is_daemon(thread_oop))  st->print("daemon ");
+  if (thread_oop != NULL) {
+    st->print("#" INT64_FORMAT " ", java_lang_Thread::thread_id(thread_oop));
+    if (java_lang_Thread::is_daemon(thread_oop))  st->print("daemon ");
+    st->print("prio=%d ", java_lang_Thread::priority(thread_oop));
+  }
   Thread::print_on(st);
   // print guess for valid stack memory region (assume 4K pages); helps lock debugging
   st->print_cr("[" INTPTR_FORMAT "]", (intptr_t)last_Java_sp() & ~right_n_bits(12));
@@ -4270,8 +4284,10 @@ void Threads::print_on(outputStream* st, bool print_stacks, bool internal_format
   st->cr();
   Universe::heap()->print_gc_threads_on(st);
   WatcherThread* wt = WatcherThread::watcher_thread();
-  if (wt != NULL) wt->print_on(st);
-  st->cr();
+  if (wt != NULL) {
+    wt->print_on(st);
+    st->cr();
+  }
   CompileBroker::print_compiler_threads_on(st);
   st->flush();
 }

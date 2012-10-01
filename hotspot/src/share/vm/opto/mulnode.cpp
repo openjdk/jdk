@@ -198,22 +198,22 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *res = NULL;
   jint bit1 = con & -con;       // Extract low bit
   if( bit1 == con ) {           // Found a power of 2?
-    res = new (phase->C, 3) LShiftINode( in(1), phase->intcon(log2_intptr(bit1)) );
+    res = new (phase->C) LShiftINode( in(1), phase->intcon(log2_intptr(bit1)) );
   } else {
 
     // Check for constant with 2 bits set
     jint bit2 = con-bit1;
     bit2 = bit2 & -bit2;          // Extract 2nd bit
     if( bit2 + bit1 == con ) {    // Found all bits in con?
-      Node *n1 = phase->transform( new (phase->C, 3) LShiftINode( in(1), phase->intcon(log2_intptr(bit1)) ) );
-      Node *n2 = phase->transform( new (phase->C, 3) LShiftINode( in(1), phase->intcon(log2_intptr(bit2)) ) );
-      res = new (phase->C, 3) AddINode( n2, n1 );
+      Node *n1 = phase->transform( new (phase->C) LShiftINode( in(1), phase->intcon(log2_intptr(bit1)) ) );
+      Node *n2 = phase->transform( new (phase->C) LShiftINode( in(1), phase->intcon(log2_intptr(bit2)) ) );
+      res = new (phase->C) AddINode( n2, n1 );
 
     } else if (is_power_of_2(con+1)) {
       // Sleezy: power-of-2 -1.  Next time be generic.
       jint temp = (jint) (con + 1);
-      Node *n1 = phase->transform( new (phase->C, 3) LShiftINode( in(1), phase->intcon(log2_intptr(temp)) ) );
-      res = new (phase->C, 3) SubINode( n1, in(1) );
+      Node *n1 = phase->transform( new (phase->C) LShiftINode( in(1), phase->intcon(log2_intptr(temp)) ) );
+      res = new (phase->C) SubINode( n1, in(1) );
     } else {
       return MulNode::Ideal(phase, can_reshape);
     }
@@ -221,7 +221,7 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   if( sign_flip ) {             // Need to negate result?
     res = phase->transform(res);// Transform, before making the zero con
-    res = new (phase->C, 3) SubINode(phase->intcon(0),res);
+    res = new (phase->C) SubINode(phase->intcon(0),res);
   }
 
   return res;                   // Return final result
@@ -294,22 +294,22 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *res = NULL;
   jlong bit1 = con & -con;      // Extract low bit
   if( bit1 == con ) {           // Found a power of 2?
-    res = new (phase->C, 3) LShiftLNode( in(1), phase->intcon(log2_long(bit1)) );
+    res = new (phase->C) LShiftLNode( in(1), phase->intcon(log2_long(bit1)) );
   } else {
 
     // Check for constant with 2 bits set
     jlong bit2 = con-bit1;
     bit2 = bit2 & -bit2;          // Extract 2nd bit
     if( bit2 + bit1 == con ) {    // Found all bits in con?
-      Node *n1 = phase->transform( new (phase->C, 3) LShiftLNode( in(1), phase->intcon(log2_long(bit1)) ) );
-      Node *n2 = phase->transform( new (phase->C, 3) LShiftLNode( in(1), phase->intcon(log2_long(bit2)) ) );
-      res = new (phase->C, 3) AddLNode( n2, n1 );
+      Node *n1 = phase->transform( new (phase->C) LShiftLNode( in(1), phase->intcon(log2_long(bit1)) ) );
+      Node *n2 = phase->transform( new (phase->C) LShiftLNode( in(1), phase->intcon(log2_long(bit2)) ) );
+      res = new (phase->C) AddLNode( n2, n1 );
 
     } else if (is_power_of_2_long(con+1)) {
       // Sleezy: power-of-2 -1.  Next time be generic.
       jlong temp = (jlong) (con + 1);
-      Node *n1 = phase->transform( new (phase->C, 3) LShiftLNode( in(1), phase->intcon(log2_long(temp)) ) );
-      res = new (phase->C, 3) SubLNode( n1, in(1) );
+      Node *n1 = phase->transform( new (phase->C) LShiftLNode( in(1), phase->intcon(log2_long(temp)) ) );
+      res = new (phase->C) SubLNode( n1, in(1) );
     } else {
       return MulNode::Ideal(phase, can_reshape);
     }
@@ -317,7 +317,7 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   if( sign_flip ) {             // Need to negate result?
     res = phase->transform(res);// Transform, before making the zero con
-    res = new (phase->C, 3) SubLNode(phase->longcon(0),res);
+    res = new (phase->C) SubLNode(phase->longcon(0),res);
   }
 
   return res;                   // Return final result
@@ -476,27 +476,27 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Masking bits off of a Character?  Hi bits are already zero.
   if( lop == Op_LoadUS &&
       (mask & 0xFFFF0000) )     // Can we make a smaller mask?
-    return new (phase->C, 3) AndINode(load,phase->intcon(mask&0xFFFF));
+    return new (phase->C) AndINode(load,phase->intcon(mask&0xFFFF));
 
   // Masking bits off of a Short?  Loading a Character does some masking
   if (lop == Op_LoadS && (mask & 0xFFFF0000) == 0 ) {
-    Node *ldus = new (phase->C, 3) LoadUSNode(load->in(MemNode::Control),
+    Node *ldus = new (phase->C) LoadUSNode(load->in(MemNode::Control),
                                               load->in(MemNode::Memory),
                                               load->in(MemNode::Address),
                                               load->adr_type());
     ldus = phase->transform(ldus);
-    return new (phase->C, 3) AndINode(ldus, phase->intcon(mask & 0xFFFF));
+    return new (phase->C) AndINode(ldus, phase->intcon(mask & 0xFFFF));
   }
 
   // Masking sign bits off of a Byte?  Do an unsigned byte load plus
   // an and.
   if (lop == Op_LoadB && (mask & 0xFFFFFF00) == 0) {
-    Node* ldub = new (phase->C, 3) LoadUBNode(load->in(MemNode::Control),
+    Node* ldub = new (phase->C) LoadUBNode(load->in(MemNode::Control),
                                               load->in(MemNode::Memory),
                                               load->in(MemNode::Address),
                                               load->adr_type());
     ldub = phase->transform(ldub);
-    return new (phase->C, 3) AndINode(ldub, phase->intcon(mask));
+    return new (phase->C) AndINode(ldub, phase->intcon(mask));
   }
 
   // Masking off sign bits?  Dont make them!
@@ -510,8 +510,8 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // bits survive.  NO sign-extension bits survive the maskings.
       if( (sign_bits_mask & mask) == 0 ) {
         // Use zero-fill shift instead
-        Node *zshift = phase->transform(new (phase->C, 3) URShiftINode(load->in(1),load->in(2)));
-        return new (phase->C, 3) AndINode( zshift, in(2) );
+        Node *zshift = phase->transform(new (phase->C) URShiftINode(load->in(1),load->in(2)));
+        return new (phase->C) AndINode( zshift, in(2) );
       }
     }
   }
@@ -521,7 +521,7 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // plus 1) and the mask is of the low order bit.  Skip the negate.
   if( lop == Op_SubI && mask == 1 && load->in(1) &&
       phase->type(load->in(1)) == TypeInt::ZERO )
-    return new (phase->C, 3) AndINode( load->in(2), in(2) );
+    return new (phase->C) AndINode( load->in(2), in(2) );
 
   return MulNode::Ideal(phase, can_reshape);
 }
@@ -607,7 +607,7 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // which is wrong.
   if (op == Op_ConvI2L && in1->in(1)->Opcode() == Op_LoadI && mask == CONST64(0x00000000FFFFFFFF)) {
     Node* load = in1->in(1);
-    return new (phase->C, 3) LoadUI2LNode(load->in(MemNode::Control),
+    return new (phase->C) LoadUI2LNode(load->in(MemNode::Control),
                                           load->in(MemNode::Memory),
                                           load->in(MemNode::Address),
                                           load->adr_type());
@@ -619,9 +619,9 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // value.  This check includes UI2L masks (0x00000000FFFFFFFF) which
   // would be optimized away later in Identity.
   if (op == Op_ConvI2L && (mask & CONST64(0xFFFFFFFF80000000)) == 0) {
-    Node* andi = new (phase->C, 3) AndINode(in1->in(1), phase->intcon(mask));
+    Node* andi = new (phase->C) AndINode(in1->in(1), phase->intcon(mask));
     andi = phase->transform(andi);
-    return new (phase->C, 2) ConvI2LNode(andi);
+    return new (phase->C) ConvI2LNode(andi);
   }
 
   // Masking off sign bits?  Dont make them!
@@ -635,8 +635,8 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // bits survive.  NO sign-extension bits survive the maskings.
       if( (sign_bits_mask & mask) == 0 ) {
         // Use zero-fill shift instead
-        Node *zshift = phase->transform(new (phase->C, 3) URShiftLNode(in1->in(1), in1->in(2)));
-        return new (phase->C, 3) AndLNode(zshift, in(2));
+        Node *zshift = phase->transform(new (phase->C) URShiftLNode(in1->in(1), in1->in(2)));
+        return new (phase->C) AndLNode(zshift, in(2));
       }
     }
   }
@@ -674,9 +674,9 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // and 'i2b' patterns which typically fold into 'StoreC/StoreB'.
       if( con < 16 ) {
         // Compute X << con0
-        Node *lsh = phase->transform( new (phase->C, 3) LShiftINode( add1->in(1), in(2) ) );
+        Node *lsh = phase->transform( new (phase->C) LShiftINode( add1->in(1), in(2) ) );
         // Compute X<<con0 + (con1<<con0)
-        return new (phase->C, 3) AddINode( lsh, phase->intcon(t12->get_con() << con));
+        return new (phase->C) AddINode( lsh, phase->intcon(t12->get_con() << con));
       }
     }
   }
@@ -685,7 +685,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( (add1_op == Op_RShiftI || add1_op == Op_URShiftI ) &&
       add1->in(2) == in(2) )
     // Convert to "(x & -(1<<c0))"
-    return new (phase->C, 3) AndINode(add1->in(1),phase->intcon( -(1<<con)));
+    return new (phase->C) AndINode(add1->in(1),phase->intcon( -(1<<con)));
 
   // Check for "((x>>c0) & Y)<<c0" which just masks off more low bits
   if( add1_op == Op_AndI ) {
@@ -694,8 +694,8 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( (add2_op == Op_RShiftI || add2_op == Op_URShiftI ) &&
         add2->in(2) == in(2) ) {
       // Convert to "(x & (Y<<c0))"
-      Node *y_sh = phase->transform( new (phase->C, 3) LShiftINode( add1->in(2), in(2) ) );
-      return new (phase->C, 3) AndINode( add2->in(1), y_sh );
+      Node *y_sh = phase->transform( new (phase->C) LShiftINode( add1->in(2), in(2) ) );
+      return new (phase->C) AndINode( add2->in(1), y_sh );
     }
   }
 
@@ -704,7 +704,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const jint bits_mask = right_n_bits(BitsPerJavaInteger-con);
   if( add1_op == Op_AndI &&
       phase->type(add1->in(2)) == TypeInt::make( bits_mask ) )
-    return new (phase->C, 3) LShiftINode( add1->in(1), in(2) );
+    return new (phase->C) LShiftINode( add1->in(1), in(2) );
 
   return NULL;
 }
@@ -784,9 +784,9 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     const TypeLong *t12 = phase->type(add1->in(2))->isa_long();
     if( t12 && t12->is_con() ){ // Left input is an add of a con?
       // Compute X << con0
-      Node *lsh = phase->transform( new (phase->C, 3) LShiftLNode( add1->in(1), in(2) ) );
+      Node *lsh = phase->transform( new (phase->C) LShiftLNode( add1->in(1), in(2) ) );
       // Compute X<<con0 + (con1<<con0)
-      return new (phase->C, 3) AddLNode( lsh, phase->longcon(t12->get_con() << con));
+      return new (phase->C) AddLNode( lsh, phase->longcon(t12->get_con() << con));
     }
   }
 
@@ -794,7 +794,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( (add1_op == Op_RShiftL || add1_op == Op_URShiftL ) &&
       add1->in(2) == in(2) )
     // Convert to "(x & -(1<<c0))"
-    return new (phase->C, 3) AndLNode(add1->in(1),phase->longcon( -(CONST64(1)<<con)));
+    return new (phase->C) AndLNode(add1->in(1),phase->longcon( -(CONST64(1)<<con)));
 
   // Check for "((x>>c0) & Y)<<c0" which just masks off more low bits
   if( add1_op == Op_AndL ) {
@@ -803,8 +803,8 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( (add2_op == Op_RShiftL || add2_op == Op_URShiftL ) &&
         add2->in(2) == in(2) ) {
       // Convert to "(x & (Y<<c0))"
-      Node *y_sh = phase->transform( new (phase->C, 3) LShiftLNode( add1->in(2), in(2) ) );
-      return new (phase->C, 3) AndLNode( add2->in(1), y_sh );
+      Node *y_sh = phase->transform( new (phase->C) LShiftLNode( add1->in(2), in(2) ) );
+      return new (phase->C) AndLNode( add2->in(1), y_sh );
     }
   }
 
@@ -813,7 +813,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const jlong bits_mask = ((jlong)CONST64(1) << (jlong)(BitsPerJavaLong - con)) - CONST64(1);
   if( add1_op == Op_AndL &&
       phase->type(add1->in(2)) == TypeLong::make( bits_mask ) )
-    return new (phase->C, 3) LShiftLNode( add1->in(1), in(2) );
+    return new (phase->C) LShiftLNode( add1->in(1), in(2) );
 
   return NULL;
 }
@@ -915,8 +915,8 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *x = mask->in(1);
     jint maskbits = t3->get_con();
     // Convert to "(x >> shift) & (mask >> shift)"
-    Node *shr_nomask = phase->transform( new (phase->C, 3) RShiftINode(mask->in(1), in(2)) );
-    return new (phase->C, 3) AndINode(shr_nomask, phase->intcon( maskbits >> shift));
+    Node *shr_nomask = phase->transform( new (phase->C) RShiftINode(mask->in(1), in(2)) );
+    return new (phase->C) AndINode(shr_nomask, phase->intcon( maskbits >> shift));
   }
 
   // Check for "(short[i] <<16)>>16" which simply sign-extends
@@ -939,7 +939,7 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
     else if( ld->Opcode() == Op_LoadUS )
       // Replace zero-extension-load with sign-extension-load
-      return new (phase->C, 3) LoadSNode( ld->in(MemNode::Control),
+      return new (phase->C) LoadSNode( ld->in(MemNode::Control),
                                 ld->in(MemNode::Memory),
                                 ld->in(MemNode::Address),
                                 ld->adr_type());
@@ -1124,7 +1124,7 @@ Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       const int con2 = t12->get_con() & 31; // Shift count is always masked
       const int con3 = con+con2;
       if( con3 < 32 )           // Only merge shifts if total is < 32
-        return new (phase->C, 3) URShiftINode( in(1)->in(1), phase->intcon(con3) );
+        return new (phase->C) URShiftINode( in(1)->in(1), phase->intcon(con3) );
     }
   }
 
@@ -1137,9 +1137,9 @@ Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *lshl = add->in(1);
     if( lshl->Opcode() == Op_LShiftI &&
         phase->type(lshl->in(2)) == t2 ) {
-      Node *y_z = phase->transform( new (phase->C, 3) URShiftINode(add->in(2),in(2)) );
-      Node *sum = phase->transform( new (phase->C, 3) AddINode( lshl->in(1), y_z ) );
-      return new (phase->C, 3) AndINode( sum, phase->intcon(mask) );
+      Node *y_z = phase->transform( new (phase->C) URShiftINode(add->in(2),in(2)) );
+      Node *sum = phase->transform( new (phase->C) AddINode( lshl->in(1), y_z ) );
+      return new (phase->C) AndINode( sum, phase->intcon(mask) );
     }
   }
 
@@ -1152,8 +1152,8 @@ Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( t3 && t3->is_con() ) { // Right input is a constant
       jint mask2 = t3->get_con();
       mask2 >>= con;  // *signed* shift downward (high-order zeroes do not help)
-      Node *newshr = phase->transform( new (phase->C, 3) URShiftINode(andi->in(1), in(2)) );
-      return new (phase->C, 3) AndINode(newshr, phase->intcon(mask2));
+      Node *newshr = phase->transform( new (phase->C) URShiftINode(andi->in(1), in(2)) );
+      return new (phase->C) AndINode(newshr, phase->intcon(mask2));
       // The negative values are easier to materialize than positive ones.
       // A typical case from address arithmetic is ((x & ~15) >> 4).
       // It's better to change that to ((x >> 4) & ~0) versus
@@ -1165,7 +1165,7 @@ Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *shl = in(1);
   if( in1_op == Op_LShiftI &&
       phase->type(shl->in(2)) == t2 )
-    return new (phase->C, 3) AndINode( shl->in(1), phase->intcon(mask) );
+    return new (phase->C) AndINode( shl->in(1), phase->intcon(mask) );
 
   return NULL;
 }
@@ -1270,9 +1270,9 @@ Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *lshl = add->in(1);
     if( lshl->Opcode() == Op_LShiftL &&
         phase->type(lshl->in(2)) == t2 ) {
-      Node *y_z = phase->transform( new (phase->C, 3) URShiftLNode(add->in(2),in(2)) );
-      Node *sum = phase->transform( new (phase->C, 3) AddLNode( lshl->in(1), y_z ) );
-      return new (phase->C, 3) AndLNode( sum, phase->longcon(mask) );
+      Node *y_z = phase->transform( new (phase->C) URShiftLNode(add->in(2),in(2)) );
+      Node *sum = phase->transform( new (phase->C) AddLNode( lshl->in(1), y_z ) );
+      return new (phase->C) AndLNode( sum, phase->longcon(mask) );
     }
   }
 
@@ -1285,8 +1285,8 @@ Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( t3 && t3->is_con() ) { // Right input is a constant
       jlong mask2 = t3->get_con();
       mask2 >>= con;  // *signed* shift downward (high-order zeroes do not help)
-      Node *newshr = phase->transform( new (phase->C, 3) URShiftLNode(andi->in(1), in(2)) );
-      return new (phase->C, 3) AndLNode(newshr, phase->longcon(mask2));
+      Node *newshr = phase->transform( new (phase->C) URShiftLNode(andi->in(1), in(2)) );
+      return new (phase->C) AndLNode(newshr, phase->longcon(mask2));
     }
   }
 
@@ -1294,7 +1294,7 @@ Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *shl = in(1);
   if( shl->Opcode() == Op_LShiftL &&
       phase->type(shl->in(2)) == t2 )
-    return new (phase->C, 3) AndLNode( shl->in(1), phase->longcon(mask) );
+    return new (phase->C) AndLNode( shl->in(1), phase->longcon(mask) );
 
   return NULL;
 }
