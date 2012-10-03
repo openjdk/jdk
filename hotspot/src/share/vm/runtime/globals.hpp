@@ -3065,6 +3065,9 @@ class CommandLineFlags {
   develop(uintx, GCExpandToAllocateDelayMillis, 0,                          \
           "Delay in ms between expansion and allocation")                   \
                                                                             \
+  develop(uintx, GCWorkerDelayMillis, 0,                                    \
+          "Delay in ms in scheduling GC workers")                           \
+                                                                            \
   product(intx, DeferThrSuspendLoopCount,     4000,                         \
           "(Unstable) Number of times to iterate in safepoint loop "        \
           " before blocking VM threads ")                                   \
