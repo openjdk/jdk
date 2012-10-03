@@ -225,7 +225,7 @@ char* os::non_memory_address_word() {
   return (char*) 0;
 }
 
-void os::initialize_thread() {}
+void os::initialize_thread(Thread* thr) {}
 
 void os::print_context(outputStream *st, void *context) {
   if (context == NULL) return;

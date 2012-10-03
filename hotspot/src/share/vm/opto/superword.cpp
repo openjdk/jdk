@@ -179,6 +179,7 @@ void SuperWord::find_adjacent_refs() {
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     if (n->is_Mem() && !n->is_LoadStore() && in_bb(n) &&
+        n->Opcode() != Op_LoadUI2L &&
         is_java_primitive(n->as_Mem()->memory_type())) {
       int align = memory_alignment(n->as_Mem(), 0);
       if (align != bottom_align) {
@@ -481,12 +482,19 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
   int vw       = vector_width_in_bytes(mem_ref);
   assert(vw > 1, "sanity");
   int stride_sign   = (scale * iv_stride()) > 0 ? 1 : -1;
-  int iv_adjustment = (stride_sign * vw - (offset % vw)) % vw;
+  // At least one iteration is executed in pre-loop by default. As result
+  // several iterations are needed to align memory operations in main-loop even
+  // if offset is 0.
+  int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
+  int elt_size = align_to_ref_p.memory_size();
+  assert(((ABS(iv_adjustment_in_bytes) % elt_size) == 0),
+         err_msg_res("(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size));
+  int iv_adjustment = iv_adjustment_in_bytes/elt_size;
 
 #ifndef PRODUCT
   if (TraceSuperWord)
     tty->print_cr("\noffset = %d iv_adjust = %d elt_size = %d scale = %d iv_stride = %d vect_size %d",
-                  offset, iv_adjustment, align_to_ref_p.memory_size(), scale, iv_stride(), vw);
+                  offset, iv_adjustment, elt_size, scale, iv_stride(), vw);
 #endif
   return iv_adjustment;
 }
@@ -1080,23 +1088,22 @@ bool SuperWord::profitable(Node_List* p) {
   uint start, end;
   VectorNode::vector_operands(p0, &start, &end);
 
-  // Return false if some input is not vector and inside block
+  // Return false if some inputs are not vectors or vectors with different
+  // size or alignment.
+  // Also, for now, return false if not scalar promotion case when inputs are
+  // the same. Later, implement PackNode and allow differing, non-vector inputs
+  // (maybe just the ones from outside the block.)
   for (uint i = start; i < end; i++) {
-    if (!is_vector_use(p0, i)) {
-      // For now, return false if not scalar promotion case (inputs are the same.)
-      // Later, implement PackNode and allow differing, non-vector inputs
-      // (maybe just the ones from outside the block.)
-      if (!same_inputs(p, i)) {
-        return false;
-      }
-    }
+    if (!is_vector_use(p0, i))
+      return false;
   }
   if (VectorNode::is_shift(p0)) {
-    // For now, return false if shift count is vector because
-    // hw does not support it.
-    if (is_vector_use(p0, 2))
+    // For now, return false if shift count is vector or not scalar promotion
+    // case (different shift counts) because it is not supported yet.
+    Node* cnt = p0->in(2);
+    Node_List* cnt_pk = my_pack(cnt);
+    if (cnt_pk != NULL)
       return false;
-    // For the same reason return false if different shift counts.
     if (!same_inputs(p, 2))
       return false;
   }
@@ -1350,11 +1357,14 @@ void SuperWord::output() {
     insert_extracts(_packset.at(i));
   }
 
+  Compile* C = _phase->C;
+  uint max_vlen_in_bytes = 0;
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
     if (p && n == executed_last(p)) {
       uint vlen = p->size();
+      uint vlen_in_bytes = 0;
       Node* vn = NULL;
       Node* low_adr = p->at(0);
       Node* first   = executed_first(p);
@@ -1364,7 +1374,8 @@ void SuperWord::output() {
         Node* mem = first->in(MemNode::Memory);
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        vn = LoadVectorNode::make(_phase->C, opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n));
+        vn = LoadVectorNode::make(C, opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_LoadVector()->memory_size();
       } else if (n->is_Store()) {
         // Promote value to be stored to vector
         Node* val = vector_opd(p, MemNode::ValueIn);
@@ -1372,7 +1383,8 @@ void SuperWord::output() {
         Node* mem = first->in(MemNode::Memory);
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        vn = StoreVectorNode::make(_phase->C, opc, ctl, mem, adr, atyp, val, vlen);
+        vn = StoreVectorNode::make(C, opc, ctl, mem, adr, atyp, val, vlen);
+        vlen_in_bytes = vn->as_StoreVector()->memory_size();
       } else if (n->req() == 3) {
         // Promote operands to vector
         Node* in1 = vector_opd(p, 1);
@@ -1383,18 +1395,23 @@ void SuperWord::output() {
           in1 = in2;
           in2 = tmp;
         }
-        vn = VectorNode::make(_phase->C, opc, in1, in2, vlen, velt_basic_type(n));
+        vn = VectorNode::make(C, opc, in1, in2, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else {
         ShouldNotReachHere();
       }
       assert(vn != NULL, "sanity");
-      _phase->_igvn.register_new_node_with_optimizer(vn);
+      _igvn.register_new_node_with_optimizer(vn);
       _phase->set_ctrl(vn, _phase->get_ctrl(p->at(0)));
       for (uint j = 0; j < p->size(); j++) {
         Node* pm = p->at(j);
         _igvn.replace_node(pm, vn);
       }
       _igvn._worklist.push(vn);
+
+      if (vlen_in_bytes > max_vlen_in_bytes) {
+        max_vlen_in_bytes = vlen_in_bytes;
+      }
 #ifdef ASSERT
       if (TraceNewVectors) {
         tty->print("new Vector node: ");
@@ -1403,6 +1420,7 @@ void SuperWord::output() {
 #endif
     }
   }
+  C->set_max_vector_size(max_vlen_in_bytes);
 }
 
 //------------------------------vector_opd---------------------------
@@ -1432,17 +1450,17 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       } else {
         if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
           cnt = ConNode::make(C, TypeInt::make(mask));
-          _phase->_igvn.register_new_node_with_optimizer(cnt);
-          cnt = new (C, 3) AndINode(opd, cnt);
-          _phase->_igvn.register_new_node_with_optimizer(cnt);
+          _igvn.register_new_node_with_optimizer(cnt);
+          cnt = new (C) AndINode(opd, cnt);
+          _igvn.register_new_node_with_optimizer(cnt);
           _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
         }
         assert(opd->bottom_type()->isa_int(), "int type only");
         // Move non constant shift count into XMM register.
-        cnt = new (_phase->C, 2) MoveI2FNode(cnt);
+        cnt = new (C) MoveI2FNode(cnt);
       }
       if (cnt != opd) {
-        _phase->_igvn.register_new_node_with_optimizer(cnt);
+        _igvn.register_new_node_with_optimizer(cnt);
         _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
       }
       return cnt;
@@ -1454,7 +1472,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     const Type* p0_t = velt_type(p0);
     VectorNode* vn = VectorNode::scalar2vector(_phase->C, opd, vlen, p0_t);
 
-    _phase->_igvn.register_new_node_with_optimizer(vn);
+    _igvn.register_new_node_with_optimizer(vn);
     _phase->set_ctrl(vn, _phase->get_ctrl(opd));
 #ifdef ASSERT
     if (TraceNewVectors) {
@@ -1477,13 +1495,13 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     assert(opd_bt == in->bottom_type()->basic_type(), "all same type");
     pk->add_opd(in);
   }
-  _phase->_igvn.register_new_node_with_optimizer(pk);
+  _igvn.register_new_node_with_optimizer(pk);
   _phase->set_ctrl(pk, _phase->get_ctrl(opd));
 #ifdef ASSERT
-    if (TraceNewVectors) {
-      tty->print("new Vector node: ");
-      pk->dump();
-    }
+  if (TraceNewVectors) {
+    tty->print("new Vector node: ");
+    pk->dump();
+  }
 #endif
   return pk;
 }
@@ -1524,7 +1542,7 @@ void SuperWord::insert_extracts(Node_List* p) {
     int def_pos = alignment(def) / data_size(def);
 
     Node* ex = ExtractNode::make(_phase->C, def, def_pos, velt_basic_type(def));
-    _phase->_igvn.register_new_node_with_optimizer(ex);
+    _igvn.register_new_node_with_optimizer(ex);
     _phase->set_ctrl(ex, _phase->get_ctrl(def));
     _igvn.replace_input_of(use, idx, ex);
     _igvn._worklist.push(def);
@@ -1805,7 +1823,7 @@ void SuperWord::compute_vector_element_type() {
 
 //------------------------------memory_alignment---------------------------
 // Alignment within a vector memory reference
-int SuperWord::memory_alignment(MemNode* s, int iv_adjust_in_bytes) {
+int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
   SWPointer p(s, this);
   if (!p.valid()) {
     return bottom_align;
@@ -1815,7 +1833,7 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust_in_bytes) {
     return bottom_align; // No vectors for this type
   }
   int offset  = p.offset_in_bytes();
-  offset     += iv_adjust_in_bytes;
+  offset     += iv_adjust*p.memory_size();
   int off_rem = offset % vw;
   int off_mod = off_rem >= 0 ? off_rem : off_rem + vw;
   return off_mod;
@@ -1838,7 +1856,7 @@ const Type* SuperWord::container_type(Node* n) {
 
 bool SuperWord::same_velt_type(Node* n1, Node* n2) {
   const Type* vt1 = velt_type(n1);
-  const Type* vt2 = velt_type(n1);
+  const Type* vt2 = velt_type(n2);
   if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
     // Compare vectors element sizes for integer types.
     return data_size(n1) == data_size(n2);
@@ -2003,73 +2021,73 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   if (align_to_ref_p.invar() != NULL) {
     // incorporate any extra invariant piece producing (offset +/- invar) >>> log2(elt)
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
-    Node* aref     = new (_phase->C, 3) URShiftINode(align_to_ref_p.invar(), log2_elt);
-    _phase->_igvn.register_new_node_with_optimizer(aref);
+    Node* aref     = new (_phase->C) URShiftINode(align_to_ref_p.invar(), log2_elt);
+    _igvn.register_new_node_with_optimizer(aref);
     _phase->set_ctrl(aref, pre_ctrl);
     if (align_to_ref_p.negate_invar()) {
-      e = new (_phase->C, 3) SubINode(e, aref);
+      e = new (_phase->C) SubINode(e, aref);
     } else {
-      e = new (_phase->C, 3) AddINode(e, aref);
+      e = new (_phase->C) AddINode(e, aref);
     }
-    _phase->_igvn.register_new_node_with_optimizer(e);
+    _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
   if (vw > ObjectAlignmentInBytes) {
     // incorporate base e +/- base && Mask >>> log2(elt)
-    Node* xbase = new(_phase->C, 2) CastP2XNode(NULL, align_to_ref_p.base());
-    _phase->_igvn.register_new_node_with_optimizer(xbase);
+    Node* xbase = new(_phase->C) CastP2XNode(NULL, align_to_ref_p.base());
+    _igvn.register_new_node_with_optimizer(xbase);
 #ifdef _LP64
-    xbase  = new (_phase->C, 2) ConvL2INode(xbase);
-    _phase->_igvn.register_new_node_with_optimizer(xbase);
+    xbase  = new (_phase->C) ConvL2INode(xbase);
+    _igvn.register_new_node_with_optimizer(xbase);
 #endif
     Node* mask = _igvn.intcon(vw-1);
-    Node* masked_xbase  = new (_phase->C, 3) AndINode(xbase, mask);
-    _phase->_igvn.register_new_node_with_optimizer(masked_xbase);
+    Node* masked_xbase  = new (_phase->C) AndINode(xbase, mask);
+    _igvn.register_new_node_with_optimizer(masked_xbase);
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
-    Node* bref     = new (_phase->C, 3) URShiftINode(masked_xbase, log2_elt);
-    _phase->_igvn.register_new_node_with_optimizer(bref);
+    Node* bref     = new (_phase->C) URShiftINode(masked_xbase, log2_elt);
+    _igvn.register_new_node_with_optimizer(bref);
     _phase->set_ctrl(bref, pre_ctrl);
-    e = new (_phase->C, 3) AddINode(e, bref);
-    _phase->_igvn.register_new_node_with_optimizer(e);
+    e = new (_phase->C) AddINode(e, bref);
+    _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
 
   // compute e +/- lim0
   if (scale < 0) {
-    e = new (_phase->C, 3) SubINode(e, lim0);
+    e = new (_phase->C) SubINode(e, lim0);
   } else {
-    e = new (_phase->C, 3) AddINode(e, lim0);
+    e = new (_phase->C) AddINode(e, lim0);
   }
-  _phase->_igvn.register_new_node_with_optimizer(e);
+  _igvn.register_new_node_with_optimizer(e);
   _phase->set_ctrl(e, pre_ctrl);
 
   if (stride * scale > 0) {
     // compute V - (e +/- lim0)
     Node* va  = _igvn.intcon(v_align);
-    e = new (_phase->C, 3) SubINode(va, e);
-    _phase->_igvn.register_new_node_with_optimizer(e);
+    e = new (_phase->C) SubINode(va, e);
+    _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
   // compute N = (exp) % V
   Node* va_msk = _igvn.intcon(v_align - 1);
-  Node* N = new (_phase->C, 3) AndINode(e, va_msk);
-  _phase->_igvn.register_new_node_with_optimizer(N);
+  Node* N = new (_phase->C) AndINode(e, va_msk);
+  _igvn.register_new_node_with_optimizer(N);
   _phase->set_ctrl(N, pre_ctrl);
 
   //   substitute back into (1), so that new limit
   //     lim = lim0 + N
   Node* lim;
   if (stride < 0) {
-    lim = new (_phase->C, 3) SubINode(lim0, N);
+    lim = new (_phase->C) SubINode(lim0, N);
   } else {
-    lim = new (_phase->C, 3) AddINode(lim0, N);
+    lim = new (_phase->C) AddINode(lim0, N);
   }
-  _phase->_igvn.register_new_node_with_optimizer(lim);
+  _igvn.register_new_node_with_optimizer(lim);
   _phase->set_ctrl(lim, pre_ctrl);
   Node* constrained =
-    (stride > 0) ? (Node*) new (_phase->C,3) MinINode(lim, orig_limit)
-                 : (Node*) new (_phase->C,3) MaxINode(lim, orig_limit);
-  _phase->_igvn.register_new_node_with_optimizer(constrained);
+    (stride > 0) ? (Node*) new (_phase->C) MinINode(lim, orig_limit)
+                 : (Node*) new (_phase->C) MaxINode(lim, orig_limit);
+  _igvn.register_new_node_with_optimizer(constrained);
   _phase->set_ctrl(constrained, pre_ctrl);
   _igvn.hash_delete(pre_opaq);
   pre_opaq->set_req(1, constrained);
