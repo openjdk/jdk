@@ -59,7 +59,7 @@ int                        PSScavenge::_consecutive_skipped_scavenges = 0;
 ReferenceProcessor*        PSScavenge::_ref_processor = NULL;
 CardTableExtension*        PSScavenge::_card_table = NULL;
 bool                       PSScavenge::_survivor_overflow = false;
-int                        PSScavenge::_tenuring_threshold = 0;
+uint                       PSScavenge::_tenuring_threshold = 0;
 HeapWord*                  PSScavenge::_young_generation_boundary = NULL;
 elapsedTimer               PSScavenge::_accumulated_time;
 Stack<markOop, mtGC>       PSScavenge::_preserved_mark_stack;
@@ -529,7 +529,7 @@ bool PSScavenge::invoke_no_policy() {
 
        if (PrintTenuringDistribution) {
          gclog_or_tty->cr();
-         gclog_or_tty->print_cr("Desired survivor size %ld bytes, new threshold %d (max %d)",
+         gclog_or_tty->print_cr("Desired survivor size %ld bytes, new threshold %u (max %u)",
                                 size_policy->calculated_survivor_size_in_bytes(),
                                 _tenuring_threshold, MaxTenuringThreshold);
        }

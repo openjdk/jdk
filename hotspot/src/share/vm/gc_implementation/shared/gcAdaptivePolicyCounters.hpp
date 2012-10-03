@@ -188,7 +188,7 @@ class GCAdaptivePolicyCounters : public GCPolicyCounters {
   inline void update_survivor_overflowed(bool survivor_overflowed) {
     _survivor_overflowed_counter->set_value(survivor_overflowed);
   }
-  inline void update_tenuring_threshold(int threshold) {
+  inline void update_tenuring_threshold(uint threshold) {
     tenuring_threshold()->set_value(threshold);
   }
   inline void update_increment_tenuring_threshold_for_gc_cost() {
