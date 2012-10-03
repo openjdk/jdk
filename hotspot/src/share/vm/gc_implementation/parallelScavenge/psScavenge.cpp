@@ -395,9 +395,13 @@ bool PSScavenge::invoke_no_policy() {
 
       GCTaskQueue* q = GCTaskQueue::create();
 
-      uint stripe_total = active_workers;
-      for(uint i=0; i < stripe_total; i++) {
-        q->enqueue(new OldToYoungRootsTask(old_gen, old_top, i, stripe_total));
+      if (!old_gen->object_space()->is_empty()) {
+        // There are only old-to-young pointers if there are objects
+        // in the old gen.
+        uint stripe_total = active_workers;
+        for(uint i=0; i < stripe_total; i++) {
+          q->enqueue(new OldToYoungRootsTask(old_gen, old_top, i, stripe_total));
+        }
       }
 
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::universe));
