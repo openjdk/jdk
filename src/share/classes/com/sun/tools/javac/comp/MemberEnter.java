@@ -604,6 +604,10 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             env.dup(tree, env.info.dup(env.info.scope.dupUnshared()));
         localEnv.enclMethod = tree;
         localEnv.info.scope.owner = tree.sym;
+        if (tree.sym.type != null) {
+            //when this is called in the enter stage, there's no type to be set
+            localEnv.info.returnResult = attr.new ResultInfo(VAL, tree.sym.type.getReturnType());
+        }
         if ((tree.mods.flags & STATIC) != 0) localEnv.info.staticLevel++;
         return localEnv;
     }

@@ -3154,6 +3154,14 @@ public class Types {
         }
         return Type.noType;
     }
+
+    /**
+     * Return the unboxed type if 't' is a boxed class, otherwise return 't' itself.
+     */
+    public Type unboxedTypeOrType(Type t) {
+        Type unboxedType = unboxedType(t);
+        return unboxedType.tag == NONE ? t : unboxedType;
+    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Capture conversion">

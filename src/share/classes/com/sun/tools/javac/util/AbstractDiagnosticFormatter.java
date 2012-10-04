@@ -489,7 +489,8 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
      * type referred by a given captured type C contains C itself) which might
      * lead to infinite loops.
      */
-    protected Printer printer = new Printer() {
+    protected Printer printer = new Printer(isRaw()) {
+
         @Override
         protected String localize(Locale locale, String key, Object... args) {
             return AbstractDiagnosticFormatter.this.localize(locale, key, args);

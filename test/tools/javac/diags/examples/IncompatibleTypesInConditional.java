@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,15 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 5077054
- * @summary Conditional operator applies assignment conversion
- * @author Tim Hanson, BEA
- *
- * @compile -XDallowPoly Conditional.java
- * @compile/fail Conditional.java
- */
+// key: compiler.err.prob.found.req
+// key: compiler.misc.incompatible.type.in.conditional
+// key: compiler.misc.inconvertible.types
+// options: -XDallowPoly
 
-import java.util.*;
+class IncompatibleTypesInConditional {
 
-class Conditional {
-    void test() {
-        String[] sa = null;
-        List<String> ls = sa == null ? Arrays.asList(sa) :
-            Collections.emptyList();
-    }
+    interface A { }
+    interface B { }
+
+    B b = true ? (A)null : (B)null;
 }

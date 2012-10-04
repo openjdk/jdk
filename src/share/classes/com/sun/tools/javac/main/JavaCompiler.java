@@ -1041,7 +1041,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 genEndPos = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-                log.deferDiagnostics = true;
+                log.deferAll();
             } else { // free resources
                 procEnvImpl.close();
             }
@@ -1151,7 +1151,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 if (c != this)
                     annotationProcessingOccurred = c.annotationProcessingOccurred = true;
                 // doProcessing will have handled deferred diagnostics
-                Assert.check(c.log.deferDiagnostics == false
+                Assert.check(c.log.deferredDiagFilter == null
                         && c.log.deferredDiagnostics.size() == 0);
                 return c;
             } finally {
