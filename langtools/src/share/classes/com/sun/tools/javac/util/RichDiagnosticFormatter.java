@@ -325,6 +325,10 @@ public class RichDiagnosticFormatter extends
      */
     protected class RichPrinter extends Printer {
 
+        public RichPrinter() {
+            super(formatter.isRaw());
+        }
+
         @Override
         public String localize(Locale locale, String key, Object... args) {
             return formatter.localize(locale, key, args);
@@ -390,11 +394,6 @@ public class RichDiagnosticFormatter extends
                         "compiler.misc.type.var",
                         t.toString(), indexOf(t, WhereClauseKind.TYPEVAR));
             }
-        }
-
-        @Override
-        protected String printMethodArgs(List<Type> args, boolean varArgs, Locale locale) {
-            return super.printMethodArgs(args, varArgs, locale);
         }
 
         @Override

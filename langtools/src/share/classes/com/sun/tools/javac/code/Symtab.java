@@ -183,6 +183,10 @@ public class Symtab {
      */
     public final Name[] boxedName = new Name[TypeTags.TypeTagCount];
 
+    /** A set containing all operator names.
+     */
+    public final Set<Name> operatorNames = new HashSet<Name>();
+
     /** A hashtable containing the encountered top-level and member classes,
      *  indexed by flat names. The table does not contain local classes.
      *  It should be updated from the outside to reflect classes defined
@@ -244,7 +248,7 @@ public class Symtab {
                             int opcode) {
         predefClass.members().enter(
             new OperatorSymbol(
-                names.fromString(name),
+                makeOperatorName(name),
                 new MethodType(List.of(left, right), res,
                                List.<Type>nil(), methodClass),
                 opcode,
@@ -275,7 +279,7 @@ public class Symtab {
                                      Type res,
                                      int opcode) {
         OperatorSymbol sym =
-            new OperatorSymbol(names.fromString(name),
+            new OperatorSymbol(makeOperatorName(name),
                                new MethodType(List.of(arg),
                                               res,
                                               List.<Type>nil(),
@@ -284,6 +288,16 @@ public class Symtab {
                                predefClass);
         predefClass.members().enter(sym);
         return sym;
+    }
+
+    /**
+     * Create a new operator name from corresponding String representation
+     * and add the name to the set of known operator names.
+     */
+    private Name makeOperatorName(String name) {
+        Name opName = names.fromString(name);
+        operatorNames.add(opName);
+        return opName;
     }
 
     /** Enter a class into symbol table.

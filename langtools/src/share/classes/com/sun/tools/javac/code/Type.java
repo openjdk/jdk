@@ -75,6 +75,9 @@ public class Type implements PrimitiveType {
     /** Constant type: no type at all. */
     public static final JCNoType noType = new JCNoType(NONE);
 
+    /** Constant type: special type to be used during recovery of deferred expressions. */
+    public static final JCNoType recoveryType = new JCNoType(NONE);
+
     /** If this switch is turned on, the names of type variables
      *  and anonymous classes are printed with hashcodes appended.
      */

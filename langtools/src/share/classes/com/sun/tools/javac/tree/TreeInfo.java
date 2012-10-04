@@ -245,6 +245,23 @@ public class TreeInfo {
         }
     }
 
+    /** Return true if a a tree corresponds to a poly expression. */
+    public static boolean isPoly(JCTree tree, JCTree origin) {
+        switch (tree.getTag()) {
+            case APPLY:
+            case NEWCLASS:
+            case CONDEXPR:
+                return !origin.hasTag(TYPECAST);
+            case LAMBDA:
+            case REFERENCE:
+                return true;
+            case PARENS:
+                return isPoly(((JCParens)tree).expr, origin);
+            default:
+                return false;
+        }
+    }
+
     /**
      * Return true if the AST corresponds to a static select of the kind A.B
      */

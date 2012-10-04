@@ -30,6 +30,10 @@ import java.util.Locale;
 import com.sun.tools.javac.api.Messages;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.DeferredAttr.DeferredType;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.Pretty;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
@@ -50,6 +54,11 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     List<Type> seenCaptured = List.nil();
     static final int PRIME = 997;  // largest prime less than 1000
+    boolean raw;
+
+    protected Printer(boolean raw) {
+        this.raw = raw;
+    }
 
     /**
      * This method should be overriden in order to provide proper i18n support.
@@ -78,7 +87,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
      * @return printer visitor instance
      */
     public static Printer createStandardPrinter(final Messages messages) {
-        return new Printer() {
+        return new Printer(false) {
             @Override
             protected String localize(Locale locale, String key, Object... args) {
                 return messages.getLocalizedString(locale, key, args);
@@ -165,6 +174,34 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
         return "<" + visitTypes(t.tvars, locale) + ">" + visit(t.qtype, locale);
     }
 
+    public String visitDeferredType(DeferredType t, Locale locale) {
+        return raw ? localize(locale, getDeferredKey(t.tree)) :
+            deferredTypeTree2String(t.tree);
+    }
+    //where
+        private String deferredTypeTree2String(JCTree tree) {
+            switch(tree.getTag()) {
+                case PARENS:
+                    return deferredTypeTree2String(((JCTree.JCParens)tree).expr);
+                case CONDEXPR:
+                    return Pretty.toSimpleString(tree, 15);
+                default:
+                    Assert.error("unexpected tree kind " + tree.getKind());
+                    return null;
+            }
+        }
+        private String getDeferredKey (JCTree tree) {
+            switch (tree.getTag()) {
+                case PARENS:
+                    return getDeferredKey(((JCTree.JCParens)tree).expr);
+                case CONDEXPR:
+                     return "compiler.misc.type.conditional";
+                default:
+                    Assert.error("unexpected tree kind " + tree.getKind());
+                    return null;
+            }
+        }
+
     @Override
     public String visitUndetVar(UndetVar t, Locale locale) {
         if (t.inst != null) {
@@ -228,10 +265,14 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     }
 
     public String visitType(Type t, Locale locale) {
-        String s = (t.tsym == null || t.tsym.name == null)
-                ? localize(locale, "compiler.misc.type.none")
-                : t.tsym.name.toString();
-        return s;
+        if (t.tag == DEFERRED) {
+            return visitDeferredType((DeferredType)t, locale);
+        } else {
+            String s = (t.tsym == null || t.tsym.name == null)
+                    ? localize(locale, "compiler.misc.type.none")
+                    : t.tsym.name.toString();
+            return s;
+        }
     }
 
     /**

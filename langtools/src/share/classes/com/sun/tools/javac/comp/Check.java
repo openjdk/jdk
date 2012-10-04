@@ -40,6 +40,7 @@ import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Infer.InferenceContext.FreeTypeListener;
 
@@ -68,6 +69,7 @@ public class Check {
     private final Resolve rs;
     private final Symtab syms;
     private final Enter enter;
+    private final DeferredAttr deferredAttr;
     private final Infer infer;
     private final Types types;
     private final JCDiagnostic.Factory diags;
@@ -100,6 +102,7 @@ public class Check {
         rs = Resolve.instance(context);
         syms = Symtab.instance(context);
         enter = Enter.instance(context);
+        deferredAttr = DeferredAttr.instance(context);
         infer = Infer.instance(context);
         this.types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
@@ -433,6 +436,8 @@ public class Check {
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req);
 
         public Infer.InferenceContext inferenceContext();
+
+        public DeferredAttr.DeferredAttrContext deferredAttrContext();
     }
 
     /**
@@ -463,6 +468,10 @@ public class Check {
         public Infer.InferenceContext inferenceContext() {
             return enclosingContext.inferenceContext();
         }
+
+        public DeferredAttrContext deferredAttrContext() {
+            return enclosingContext.deferredAttrContext();
+        }
     }
 
     /**
@@ -482,6 +491,10 @@ public class Check {
 
         public InferenceContext inferenceContext() {
             return infer.emptyContext;
+        }
+
+        public DeferredAttrContext deferredAttrContext() {
+            return deferredAttr.emptyDeferredAttrContext;
         }
     };
 
@@ -817,6 +830,8 @@ public class Check {
                 sym.owner == syms.enumSym)
                 formals = formals.tail.tail;
         List<JCExpression> args = argtrees;
+        DeferredAttr.DeferredTypeMap checkDeferredMap =
+                deferredAttr.new DeferredTypeMap(DeferredAttr.AttrMode.CHECK, sym, env.info.pendingResolutionPhase);
         while (formals.head != last) {
             JCTree arg = args.head;
             Warner warn = convertWarner(arg.pos(), arg.type, formals.head);
@@ -835,7 +850,7 @@ public class Check {
         } else if ((sym.flags() & VARARGS) != 0 && allowVarargs) {
             // non-varargs call to varargs method
             Type varParam = owntype.getParameterTypes().last();
-            Type lastArg = argtypes.last();
+            Type lastArg = checkDeferredMap.apply(argtypes.last());
             if (types.isSubtypeUnchecked(lastArg, types.elemtype(varParam)) &&
                     !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
                 log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
@@ -847,7 +862,7 @@ public class Check {
                     kindName(sym),
                     sym.name,
                     rs.methodArguments(sym.type.getParameterTypes()),
-                    rs.methodArguments(argtypes),
+                    rs.methodArguments(Type.map(argtypes, checkDeferredMap)),
                     kindName(sym.location()),
                     sym.location());
            owntype = new MethodType(owntype.getParameterTypes(),

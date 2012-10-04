@@ -29,6 +29,7 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
+import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
 import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
 import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
 import com.sun.tools.javac.tree.JCTree;
@@ -62,6 +63,7 @@ public class Infer {
     Types types;
     Check chk;
     Resolve rs;
+    DeferredAttr deferredAttr;
     Log log;
     JCDiagnostic.Factory diags;
 
@@ -77,6 +79,7 @@ public class Infer {
         syms = Symtab.instance(context);
         types = Types.instance(context);
         rs = Resolve.instance(context);
+        deferredAttr = DeferredAttr.instance(context);
         log = Log.instance(context);
         chk = Check.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
@@ -187,7 +190,7 @@ public class Infer {
             Attr.ResultInfo resultInfo,
             Warner warn) throws InferenceException {
         Type to = resultInfo.pt;
-        if (to.tag == NONE) {
+        if (to.tag == NONE || resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
             to = mtype.getReturnType().tag <= VOID ?
                     mtype.getReturnType() : syms.objectType;
         }
@@ -268,14 +271,16 @@ public class Infer {
                                   List<Type> argtypes,
                                   boolean allowBoxing,
                                   boolean useVarargs,
+                                  Resolve.MethodResolutionContext resolveContext,
                                   Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
         final InferenceContext inferenceContext = new InferenceContext(tvars, this);
         inferenceException.clear();
 
         try {
-            rs.checkRawArgumentsAcceptable(env, inferenceContext, argtypes, mt.getParameterTypes(),
-                    allowBoxing, useVarargs, warn, new InferenceCheckHandler(inferenceContext));
+            rs.checkRawArgumentsAcceptable(env, msym, resolveContext.attrMode(), inferenceContext,
+                    argtypes, mt.getParameterTypes(), allowBoxing, useVarargs, warn,
+                    new InferenceCheckHandler(inferenceContext));
 
             // minimize as yet undetermined type variables
             for (Type t : inferenceContext.undetvars) {
@@ -469,6 +474,7 @@ public class Infer {
      */
     Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env,
                                             MethodSymbol spMethod,  // sig. poly. method or null if none
+                                            Resolve.MethodResolutionContext resolveContext,
                                             List<Type> argtypes) {
         final Type restype;
 
@@ -498,7 +504,7 @@ public class Infer {
                 restype = syms.objectType;
         }
 
-        List<Type> paramtypes = Type.map(argtypes, implicitArgType);
+        List<Type> paramtypes = Type.map(argtypes, new ImplicitArgType(spMethod, resolveContext.step));
         List<Type> exType = spMethod != null ?
             spMethod.getThrownTypes() :
             List.of(syms.throwableType); // make it throw all exceptions
@@ -510,16 +516,21 @@ public class Infer {
         return mtype;
     }
     //where
-        Mapping implicitArgType = new Mapping ("implicitArgType") {
-                public Type apply(Type t) {
-                    t = types.erasure(t);
-                    if (t.tag == BOT)
-                        // nulls type as the marker type Null (which has no instances)
-                        // infer as java.lang.Void for now
-                        t = types.boxedClass(syms.voidType).type;
-                    return t;
-                }
-        };
+        class ImplicitArgType extends DeferredAttr.DeferredTypeMap {
+
+            public ImplicitArgType(Symbol msym, Resolve.MethodResolutionPhase phase) {
+                deferredAttr.super(AttrMode.SPECULATIVE, msym, phase);
+            }
+
+            public Type apply(Type t) {
+                t = types.erasure(super.apply(t));
+                if (t.tag == BOT)
+                    // nulls type as the marker type Null (which has no instances)
+                    // infer as java.lang.Void for now
+                    t = types.boxedClass(syms.voidType).type;
+                return t;
+            }
+        }
 
     /**
      * Mapping that turns inference variables into undet vars
@@ -706,6 +717,22 @@ public class Infer {
             //thrown when processing listeners as a single one
             if (thrownEx != null) {
                 throw thrownEx;
+            }
+        }
+
+        void solveAny(List<Type> varsToSolve, Types types, Infer infer) {
+            boolean progress = false;
+            for (Type t : varsToSolve) {
+                UndetVar uv = (UndetVar)asFree(t, types);
+                if (uv.inst == null) {
+                    infer.minimizeInst(uv, Warner.noWarnings);
+                    if (uv.inst != null) {
+                        progress = true;
+                    }
+                }
+            }
+            if (!progress) {
+                throw infer.inferenceException.setMessage("cyclic.inference", varsToSolve);
             }
         }
     }

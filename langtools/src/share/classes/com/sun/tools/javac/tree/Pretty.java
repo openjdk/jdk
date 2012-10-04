@@ -81,6 +81,12 @@ public class Pretty extends JCTree.Visitor {
      */
     DocCommentTable docComments = null;
 
+    /**
+     * A string sequence to be used when Pretty output should be constrained
+     * to fit into a given size
+     */
+    private final static String trimSequence = "[...]";
+
     /** Align code to be indented to left margin.
      */
     void align() throws IOException {
@@ -127,6 +133,27 @@ public class Pretty extends JCTree.Visitor {
      */
     public void println() throws IOException {
         out.write(lineSep);
+    }
+
+    public static String toSimpleString(JCTree tree, int maxLength) {
+        StringWriter s = new StringWriter();
+        try {
+            new Pretty(s, false).printExpr(tree);
+        }
+        catch (IOException e) {
+            // should never happen, because StringWriter is defined
+            // never to throw any IOExceptions
+            throw new AssertionError(e);
+        }
+        //we need to (i) replace all line terminators with a space and (ii) remove
+        //occurrences of 'missing' in the Pretty output (generated when types are missing)
+        String res = s.toString().replaceAll("\\s+", " ").replaceAll("/\\*missing\\*/", "");
+        if (res.length() < maxLength) {
+            return res;
+        } else {
+            int split = (maxLength - trimSequence.length()) * 2 / 3;
+            return res.substring(0, split) + trimSequence + res.substring(split);
+        }
     }
 
     String lineSep = System.getProperty("line.separator");
