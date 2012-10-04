@@ -3694,7 +3694,10 @@ public class DecimalFormat extends NumberFormat {
 
         if (serialVersionOnStream < 4) {
             setRoundingMode(RoundingMode.HALF_EVEN);
+        } else {
+            setRoundingMode(getRoundingMode());
         }
+
         // We only need to check the maximum counts because NumberFormat
         // .readObject has already ensured that the maximum is greater than the
         // minimum count.
