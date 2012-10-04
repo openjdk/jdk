@@ -58,12 +58,6 @@
 #include "thread_bsd.inline.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 
 address os::current_stack_pointer() {
   address dummy = (address) &dummy;
