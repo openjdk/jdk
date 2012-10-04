@@ -23,7 +23,7 @@
 #!/bin/sh
 #
 # @test
-# @bug 6336885
+# @bug 6336885 7196799 7197573
 # @summary tests for "java.locale.providers" system property
 # @compile -XDignore.symbol.file LocaleProviders.java
 # @run shell/timeout=600 LocaleProviders.sh
@@ -65,9 +65,16 @@ case "$OS" in
     ;;
 esac
 
+# get the platform default locale
+PLATDEF=`${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} LocaleProviders`
+DEFLANG=`echo ${PLATDEF} | sed -e "s/,.*//"`
+DEFCTRY=`echo ${PLATDEF} | sed -e "s/.*,//"`
+echo "DEFLANG=${DEFLANG}"
+echo "DEFCTRY=${DEFCTRY}"
+
 runTest()
 {
-    RUNCMD="${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} -Duser.language=$DEFLANG -Duser.country=$DEFCTRY -Djava.locale.providers=$PREFLIST LocaleProviders $EXPECTED $TESTLANG $TESTCTRY"
+    RUNCMD="${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} -Djava.locale.providers=$PREFLIST LocaleProviders $EXPECTED $TESTLANG $TESTCTRY"
     echo ${RUNCMD}
     ${RUNCMD}
     result=$?
@@ -81,9 +88,7 @@ runTest()
 }
 
 # testing HOST is selected for the default locale, if specified on Windows or MacOSX
-DEFLANG=en
-DEFCTRY=US
-PREFLIST=HOST
+PREFLIST=HOST,JRE
 case "$OS" in
   Windows_NT* )
     WINVER=`uname -r`
@@ -101,28 +106,32 @@ case "$OS" in
     EXPECTED=JRE
     ;;
 esac
-TESTLANG=en
-TESTCTRY=US
+TESTLANG=${DEFLANG}
+TESTCTRY=${DEFCTRY}
 runTest
 
 # testing HOST is NOT selected for the non-default locale, if specified
-DEFLANG=en
-DEFCTRY=US
-PREFLIST=HOST
+PREFLIST=HOST,JRE
 EXPECTED=JRE
-TESTLANG=en
-TESTCTRY=GB
+if [ "${DEFLANG}" = "en" ]
+then
+  TESTLANG=ja
+  TESTCTRY=JP
+else
+  TESTLANG=en
+  TESTCTRY=US
+fi
 runTest
 
 # testing SPI is NOT selected, as there is none.
-PREFLIST=SPI
+PREFLIST=SPI,JRE
 EXPECTED=JRE
 TESTLANG=en
 TESTCTRY=US
 runTest
 
 # testing the order, variaton #1. This assumes en_GB DateFormat data are available both in JRE & CLDR
-PREFLIST=CLDR
+PREFLIST=CLDR,JRE
 EXPECTED=CLDR
 TESTLANG=en
 TESTCTRY=GB
@@ -140,6 +149,30 @@ PREFLIST=JRE,CLDR
 EXPECTED=CLDR
 TESTLANG=haw
 TESTCTRY=GB
+runTest
+
+# testing the order, variaton #4 for the bug 7196799. CLDR's "zh" data should be used in "zh_CN"
+PREFLIST=CLDR
+EXPECTED=CLDR
+TESTLANG=zh
+TESTCTRY=CN
+runTest
+
+# testing FALLBACK provider. SPI and invalid one cases.
+PREFLIST=SPI
+EXPECTED=FALLBACK
+TESTLANG=en
+TESTCTRY=US
+runTest
+PREFLIST=FOO
+EXPECTED=JRE
+TESTLANG=en
+TESTCTRY=US
+runTest
+PREFLIST=BAR,SPI
+EXPECTED=FALLBACK
+TESTLANG=en
+TESTCTRY=US
 runTest
 
 exit $result

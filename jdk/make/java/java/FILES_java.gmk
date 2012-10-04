@@ -213,6 +213,7 @@ JAVA_JAVA_java = \
             sun/util/locale/provider/DateFormatSymbolsProviderImpl.java \
             sun/util/locale/provider/DecimalFormatSymbolsProviderImpl.java \
             sun/util/locale/provider/DictionaryBasedBreakIterator.java \
+            sun/util/locale/provider/FallbackLocaleProviderAdapter.java \
             sun/util/locale/provider/HostLocaleProviderAdapter.java \
             sun/util/locale/provider/HostLocaleProviderAdapterImpl.java \
             sun/util/locale/provider/JRELocaleConstants.java \

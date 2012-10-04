@@ -27,14 +27,20 @@ import sun.util.locale.provider.LocaleProviderAdapter;
 public class LocaleProviders {
 
     public static void main(String[] args) {
-        String expected = args[0];
-        Locale testLocale = new Locale(args[1], args[2]);
-        String preference = System.getProperty("java.locale.providers", "");
-        LocaleProviderAdapter lda = LocaleProviderAdapter.getAdapter(DateFormatProvider.class, testLocale);
-        LocaleProviderAdapter.Type type = lda.getAdapterType();
-        System.out.printf("testLocale: %s, got: %s, expected: %s\n", testLocale, type, expected);
-        if (!type.toString().equals(expected)) {
-            throw new RuntimeException("Returned locale data adapter is not correct.");
+        if (args.length == 0) {
+            // no args indicates that the caller is asking the platform default locale.
+            Locale defloc = Locale.getDefault();
+            System.out.printf("%s,%s\n", defloc.getLanguage(), defloc.getCountry());
+        } else {
+            String expected = args[0];
+            Locale testLocale = new Locale(args[1], (args.length >= 3 ? args[2] : ""));
+            String preference = System.getProperty("java.locale.providers", "");
+            LocaleProviderAdapter lda = LocaleProviderAdapter.getAdapter(DateFormatProvider.class, testLocale);
+            LocaleProviderAdapter.Type type = lda.getAdapterType();
+            System.out.printf("testLocale: %s, got: %s, expected: %s\n", testLocale, type, expected);
+            if (!type.toString().equals(expected)) {
+                throw new RuntimeException("Returned locale data adapter is not correct.");
+            }
         }
     }
 }
