@@ -71,7 +71,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
      */
     @Override
     public LocaleProviderAdapter.Type getAdapterType() {
-        return LocaleProviderAdapter.Type.JRE;
+        return Type.JRE;
     }
 
     /**
