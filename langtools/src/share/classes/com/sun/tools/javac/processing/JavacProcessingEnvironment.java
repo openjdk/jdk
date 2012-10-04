@@ -806,7 +806,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             log = Log.instance(context);
             log.nerrors = priorErrors;
             log.nwarnings += priorWarnings;
-            log.deferDiagnostics = true;
+            log.deferAll();
 
             // the following is for the benefit of JavacProcessingEnvironment.getContext()
             JavacProcessingEnvironment.this.context = context;
