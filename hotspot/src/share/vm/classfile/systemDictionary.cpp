@@ -2429,7 +2429,8 @@ static methodHandle unpack_method_and_appendix(Handle mname,
 methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
                                                           Symbol* signature,
                                                           KlassHandle accessing_klass,
-                                                          Handle* appendix_result,
+                                                          Handle *appendix_result,
+                                                          Handle *method_type_result,
                                                           TRAPS) {
   methodHandle empty;
   assert(EnableInvokeDynamic, "");
@@ -2461,6 +2462,7 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
                          vmSymbols::linkMethod_signature(),
                          &args, CHECK_(empty));
   Handle mname(THREAD, (oop) result.get_jobject());
+  (*method_type_result) = method_type;
   return unpack_method_and_appendix(mname, appendix_box, appendix_result, THREAD);
 }
 
@@ -2607,7 +2609,8 @@ methodHandle SystemDictionary::find_dynamic_call_site_invoker(KlassHandle caller
                                                               Handle bootstrap_specifier,
                                                               Symbol* name,
                                                               Symbol* type,
-                                                              Handle* appendix_result,
+                                                              Handle *appendix_result,
+                                                              Handle *method_type_result,
                                                               TRAPS) {
   methodHandle empty;
   Handle bsm, info;
@@ -2650,6 +2653,7 @@ methodHandle SystemDictionary::find_dynamic_call_site_invoker(KlassHandle caller
                          vmSymbols::linkCallSite_signature(),
                          &args, CHECK_(empty));
   Handle mname(THREAD, (oop) result.get_jobject());
+  (*method_type_result) = method_type;
   return unpack_method_and_appendix(mname, appendix_box, appendix_result, THREAD);
 }
 

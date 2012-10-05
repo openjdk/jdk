@@ -123,6 +123,7 @@ public:
   virtual bool is_instance()                { return false; }
   virtual bool is_member_name()       const { return false; }
   virtual bool is_method_handle()     const { return false; }
+  virtual bool is_method_type()       const { return false; }
   virtual bool is_array()                   { return false; }
   virtual bool is_obj_array()               { return false; }
   virtual bool is_type_array()              { return false; }
@@ -142,35 +143,39 @@ public:
   }
 
   // Subclass casting with assertions.
-  ciNullObject*            as_null_object() {
+  ciNullObject* as_null_object() {
     assert(is_null_object(), "bad cast");
     return (ciNullObject*)this;
   }
-  ciCallSite*              as_call_site() {
+  ciCallSite* as_call_site() {
     assert(is_call_site(), "bad cast");
-    return (ciCallSite*) this;
+    return (ciCallSite*)this;
   }
-  ciInstance*              as_instance() {
+  ciInstance* as_instance() {
     assert(is_instance(), "bad cast");
     return (ciInstance*)this;
   }
-  ciMemberName*            as_member_name() {
+  ciMemberName* as_member_name() {
     assert(is_member_name(), "bad cast");
     return (ciMemberName*)this;
   }
-  ciMethodHandle*          as_method_handle() {
+  ciMethodHandle* as_method_handle() {
     assert(is_method_handle(), "bad cast");
-    return (ciMethodHandle*) this;
+    return (ciMethodHandle*)this;
   }
-  ciArray*                 as_array() {
+  ciMethodType* as_method_type() {
+    assert(is_method_type(), "bad cast");
+    return (ciMethodType*)this;
+  }
+  ciArray* as_array() {
     assert(is_array(), "bad cast");
     return (ciArray*)this;
   }
-  ciObjArray*              as_obj_array() {
+  ciObjArray* as_obj_array() {
     assert(is_obj_array(), "bad cast");
     return (ciObjArray*)this;
   }
-  ciTypeArray*             as_type_array() {
+  ciTypeArray* as_type_array() {
     assert(is_type_array(), "bad cast");
     return (ciTypeArray*)this;
   }

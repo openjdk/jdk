@@ -372,7 +372,8 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     // in the CFG, which typeflow had previously ignored.
     // E.g., Object x = coldAtFirst() && notReached()? "str": new Integer(123).
     // This x will be typed as Integer if notReached is not yet linked.
-    uncommon_trap(Deoptimization::Reason_unreached,
+    // It could also happen due to a problem in ciTypeFlow analysis.
+    uncommon_trap(Deoptimization::Reason_constraint,
                   Deoptimization::Action_reinterpret);
     set_map(types_are_good);
   }

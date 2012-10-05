@@ -204,7 +204,8 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
     return _desired_plab_sz;
   }
 
-  void adjust_desired_plab_sz(); // filter computation, latches output to
+  void adjust_desired_plab_sz(uint no_of_gc_workers);
+                                 // filter computation, latches output to
                                  // _desired_plab_sz, clears sensor accumulators
 
   void add_allocated(size_t v) {

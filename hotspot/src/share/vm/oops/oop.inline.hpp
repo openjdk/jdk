@@ -693,7 +693,7 @@ inline void oopDesc::set_displaced_mark(markOop m) {
 }
 
 // The following method needs to be MT safe.
-inline int oopDesc::age() const {
+inline uint oopDesc::age() const {
   assert(!is_forwarded(), "Attempt to read age from forwarded mark");
   if (has_displaced_mark()) {
     return displaced_mark()->age();

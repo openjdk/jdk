@@ -87,7 +87,7 @@ void ParGCAllocBuffer::flush_stats(PLABStats* stats) {
 // Compute desired plab size and latch result for later
 // use. This should be called once at the end of parallel
 // scavenge; it clears the sensor accumulators.
-void PLABStats::adjust_desired_plab_sz() {
+void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
   assert(ResizePLAB, "Not set");
   if (_allocated == 0) {
     assert(_unused == 0,
@@ -107,7 +107,7 @@ void PLABStats::adjust_desired_plab_sz() {
     target_refills = 1;
   }
   _used = _allocated - _wasted - _unused;
-  size_t plab_sz = _used/(target_refills*ParallelGCThreads);
+  size_t plab_sz = _used/(target_refills*no_of_gc_workers);
   if (PrintPLAB) gclog_or_tty->print(" (plab_sz = %d ", plab_sz);
   // Take historical weighted average
   _filter.sample(plab_sz);
