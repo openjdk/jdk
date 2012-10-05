@@ -381,7 +381,7 @@ void typeArrayKlass::oop_print_on(oop obj, outputStream* st) {
   }
   int remaining = ta->length() - print_len;
   if (remaining > 0) {
-    tty->print_cr(" - <%d more elements, increase MaxElementPrintSize to print>", remaining);
+    st->print_cr(" - <%d more elements, increase MaxElementPrintSize to print>", remaining);
   }
 }
 
