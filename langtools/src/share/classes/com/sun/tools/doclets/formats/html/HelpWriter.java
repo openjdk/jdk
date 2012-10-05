@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,7 +302,9 @@ public class HelpWriter extends HtmlDocletWriter {
         Content constHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
                 getResource("doclet.Constants_Summary"));
         Content liConst = HtmlTree.LI(HtmlStyle.blockList, constHead);
-        Content line29 = getResource("doclet.Help_line_29");
+        Content line29 = getResource("doclet.Help_line_29",
+                getHyperLinkString("constant-values.html",
+                configuration.getText("doclet.Constants_Summary")));
         Content constPara = HtmlTree.P(line29);
         liConst.addContent(constPara);
         ul.addContent(liConst);
