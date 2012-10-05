@@ -694,13 +694,15 @@ class ConstantPool : public Metadata {
   friend class SystemDictionary;
 
   // Used by compiler to prevent classloading.
-  static Method*         method_at_if_loaded      (constantPoolHandle this_oop, int which);
-  static bool      has_appendix_at_if_loaded      (constantPoolHandle this_oop, int which);
-  static oop           appendix_at_if_loaded      (constantPoolHandle this_oop, int which);
-  static Klass*           klass_at_if_loaded      (constantPoolHandle this_oop, int which);
-  static Klass*       klass_ref_at_if_loaded      (constantPoolHandle this_oop, int which);
+  static Method*          method_at_if_loaded      (constantPoolHandle this_oop, int which);
+  static bool       has_appendix_at_if_loaded      (constantPoolHandle this_oop, int which);
+  static oop            appendix_at_if_loaded      (constantPoolHandle this_oop, int which);
+  static bool    has_method_type_at_if_loaded      (constantPoolHandle this_oop, int which);
+  static oop         method_type_at_if_loaded      (constantPoolHandle this_oop, int which);
+  static Klass*            klass_at_if_loaded      (constantPoolHandle this_oop, int which);
+  static Klass*        klass_ref_at_if_loaded      (constantPoolHandle this_oop, int which);
   // Same as above - but does LinkResolving.
-  static Klass*       klass_ref_at_if_loaded_check(constantPoolHandle this_oop, int which, TRAPS);
+  static Klass*        klass_ref_at_if_loaded_check(constantPoolHandle this_oop, int which, TRAPS);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
   // future by other Java code. These take constant pool indices rather than

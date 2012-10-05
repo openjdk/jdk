@@ -52,13 +52,6 @@
 #include "thread_solaris.inline.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
-
 
 # include <signal.h>        // needed first to avoid name collision for "std" with SC 5.0
 
