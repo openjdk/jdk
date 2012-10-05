@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4496290 4985072 7006178
+ * @bug 4496290 4985072 7006178 7068595
  * @summary A simple test to determine if -use works.
  * @author jamieh
  * @library ../lib/
@@ -34,7 +34,7 @@
 
 public class TestUseOption extends JavadocTester {
 
-    private static final String BUG_ID = "4496290-4985072-7006178";
+    private static final String BUG_ID = "4496290-4985072-7006178-7068595";
 
     //Input for string search tests.
     private static final String[] TEST2 = {
@@ -64,6 +64,13 @@ public class TestUseOption extends JavadocTester {
         }
     };
 
+    private static final String[][] TEST4 = {
+        {BUG_ID + "-4" + FS + "pkg2" + FS + "class-use" + FS + "C3.html", "<a href=" +
+                 "\"../../index.html?pkg2/class-use/C3.html\" target=\"_top\">" +
+                 "Frames</a></li>"
+        }
+    };
+
     private static final String[] ARGS = new String[] {
         "-d", BUG_ID, "-sourcepath", SRC_DIR, "-use", "pkg1", "pkg2"
     };
@@ -74,6 +81,10 @@ public class TestUseOption extends JavadocTester {
 
     private static final String[] ARGS3 = new String[] {
         "-d", BUG_ID + "-3", "-sourcepath", SRC_DIR, "-use", SRC_DIR + FS + "C.java", SRC_DIR + FS + "UsedInC.java"
+    };
+
+    private static final String[] ARGS4 = new String[] {
+        "-d", BUG_ID + "-4", "-sourcepath", SRC_DIR, "-use", "pkg1", "pkg2"
     };
 
     /**
@@ -108,6 +119,7 @@ public class TestUseOption extends JavadocTester {
         }
         tester.printSummary();
         run(tester, ARGS3, TEST3, NO_TEST);
+        run(tester, ARGS4, TEST4, NO_TEST);
         tester.printSummary();
     }
 
