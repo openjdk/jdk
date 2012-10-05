@@ -23,7 +23,7 @@
 #!/bin/sh
 #
 # @test
-# @bug 6336885 7196799 7197573
+# @bug 6336885 7196799 7197573 7198834
 # @summary tests for "java.locale.providers" system property
 # @compile -XDignore.symbol.file LocaleProviders.java
 # @run shell/timeout=600 LocaleProviders.sh
@@ -65,16 +65,21 @@ case "$OS" in
     ;;
 esac
 
-# get the platform default locale
-PLATDEF=`${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} LocaleProviders`
+# get the platform default locales
+PLATDEF=`${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} LocaleProviders getPlatformLocale display`
 DEFLANG=`echo ${PLATDEF} | sed -e "s/,.*//"`
 DEFCTRY=`echo ${PLATDEF} | sed -e "s/.*,//"`
 echo "DEFLANG=${DEFLANG}"
 echo "DEFCTRY=${DEFCTRY}"
+PLATDEF=`${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} LocaleProviders getPlatformLocale format`
+DEFFMTLANG=`echo ${PLATDEF} | sed -e "s/,.*//"`
+DEFFMTCTRY=`echo ${PLATDEF} | sed -e "s/.*,//"`
+echo "DEFFMTLANG=${DEFFMTLANG}"
+echo "DEFFMTCTRY=${DEFFMTCTRY}"
 
 runTest()
 {
-    RUNCMD="${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} -Djava.locale.providers=$PREFLIST LocaleProviders $EXPECTED $TESTLANG $TESTCTRY"
+    RUNCMD="${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} -Djava.locale.providers=$PREFLIST LocaleProviders $METHODNAME $PARAM1 $PARAM2 $PARAM3"
     echo ${RUNCMD}
     ${RUNCMD}
     result=$?
@@ -88,91 +93,110 @@ runTest()
 }
 
 # testing HOST is selected for the default locale, if specified on Windows or MacOSX
+METHODNAME=adapterTest
 PREFLIST=HOST,JRE
 case "$OS" in
   Windows_NT* )
     WINVER=`uname -r`
     if [ "${WINVER}" = "5" ]
     then
-      EXPECTED=JRE
+      PARAM1=JRE
     else
-      EXPECTED=HOST
+      PARAM1=HOST
     fi
     ;;
   CYGWIN_NT-6* | Darwin )
-    EXPECTED=HOST
+    PARAM1=HOST
     ;;
   * )
-    EXPECTED=JRE
+    PARAM1=JRE
     ;;
 esac
-TESTLANG=${DEFLANG}
-TESTCTRY=${DEFCTRY}
+PARAM2=${DEFLANG}
+PARAM3=${DEFCTRY}
 runTest
 
 # testing HOST is NOT selected for the non-default locale, if specified
+METHODNAME=adapterTest
 PREFLIST=HOST,JRE
-EXPECTED=JRE
-if [ "${DEFLANG}" = "en" ]
-then
-  TESTLANG=ja
-  TESTCTRY=JP
+PARAM1=JRE
+# Try to find the locale JRE supports which is not the platform default (HOST supports that one)
+if [ "${DEFLANG}" != "en" ] && [ "${DEFFMTLANG}" != "en" ]; then
+  PARAM2=en
+  PARAM3=US
+elif [ "${DEFLANG}" != "ja" ] && [ "${DEFFMTLANG}" != "ja" ]; then 
+  PARAM2=ja
+  PARAM3=JP
 else
-  TESTLANG=en
-  TESTCTRY=US
+  PARAM2=zh
+  PARAM3=CN
 fi
 runTest
 
 # testing SPI is NOT selected, as there is none.
+METHODNAME=adapterTest
 PREFLIST=SPI,JRE
-EXPECTED=JRE
-TESTLANG=en
-TESTCTRY=US
+PARAM1=JRE
+PARAM2=en
+PARAM3=US
 runTest
 
 # testing the order, variaton #1. This assumes en_GB DateFormat data are available both in JRE & CLDR
+METHODNAME=adapterTest
 PREFLIST=CLDR,JRE
-EXPECTED=CLDR
-TESTLANG=en
-TESTCTRY=GB
+PARAM1=CLDR
+PARAM2=en
+PARAM3=GB
 runTest
 
 # testing the order, variaton #2. This assumes en_GB DateFormat data are available both in JRE & CLDR
+METHODNAME=adapterTest
 PREFLIST=JRE,CLDR
-EXPECTED=JRE
-TESTLANG=en
-TESTCTRY=GB
+PARAM1=JRE
+PARAM2=en
+PARAM3=GB
 runTest
 
 # testing the order, variaton #3 for non-existent locale in JRE assuming "haw" is not in JRE.
+METHODNAME=adapterTest
 PREFLIST=JRE,CLDR
-EXPECTED=CLDR
-TESTLANG=haw
-TESTCTRY=GB
+PARAM1=CLDR
+PARAM2=haw
+PARAM3=GB
 runTest
 
 # testing the order, variaton #4 for the bug 7196799. CLDR's "zh" data should be used in "zh_CN"
+METHODNAME=adapterTest
 PREFLIST=CLDR
-EXPECTED=CLDR
-TESTLANG=zh
-TESTCTRY=CN
+PARAM1=CLDR
+PARAM2=zh
+PARAM3=CN
 runTest
 
 # testing FALLBACK provider. SPI and invalid one cases.
+METHODNAME=adapterTest
 PREFLIST=SPI
-EXPECTED=FALLBACK
-TESTLANG=en
-TESTCTRY=US
+PARAM1=FALLBACK
+PARAM2=en
+PARAM3=US
 runTest
 PREFLIST=FOO
-EXPECTED=JRE
-TESTLANG=en
-TESTCTRY=US
+PARAM1=JRE
+PARAM2=en
+PARAM3=US
 runTest
 PREFLIST=BAR,SPI
-EXPECTED=FALLBACK
-TESTLANG=en
-TESTCTRY=US
+PARAM1=FALLBACK
+PARAM2=en
+PARAM3=US
+runTest
+
+# testing 7198834 fix. Only works on Windows Vista or upper.
+METHODNAME=bug7198834Test
+PREFLIST=HOST
+PARAM1=
+PARAM2=
+PARAM3=
 runTest
 
 exit $result
