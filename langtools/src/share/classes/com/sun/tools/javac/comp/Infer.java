@@ -274,7 +274,7 @@ public class Infer {
                                   Resolve.MethodResolutionContext resolveContext,
                                   Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
-        final InferenceContext inferenceContext = new InferenceContext(tvars, this);
+        final InferenceContext inferenceContext = new InferenceContext(tvars, this, true);
         inferenceException.clear();
 
         try {
@@ -467,6 +467,75 @@ public class Infer {
         throw bk.setMessage(inferenceException, uv);
     }
 
+    // <editor-fold desc="functional interface instantiation">
+    /**
+     * This method is used to infer a suitable target functional interface in case
+     * the original parameterized interface contains wildcards. An inference process
+     * is applied so that wildcard bounds, as well as explicit lambda/method ref parameters
+     * (where applicable) are used to constraint the solution.
+     */
+    public Type instantiateFunctionalInterface(DiagnosticPosition pos, Type funcInterface,
+            List<Type> paramTypes, Check.CheckContext checkContext) {
+        if (types.capture(funcInterface) == funcInterface) {
+            //if capture doesn't change the type then return the target unchanged
+            //(this means the target contains no wildcards!)
+            return funcInterface;
+        } else {
+            Type formalInterface = funcInterface.tsym.type;
+            InferenceContext funcInterfaceContext =
+                    new InferenceContext(funcInterface.tsym.type.getTypeArguments(), this, false);
+            if (paramTypes != null) {
+                //get constraints from explicit params (this is done by
+                //checking that explicit param types are equal to the ones
+                //in the functional interface descriptors)
+                List<Type> descParameterTypes = types.findDescriptorType(formalInterface).getParameterTypes();
+                if (descParameterTypes.size() != paramTypes.size()) {
+                    checkContext.report(pos, diags.fragment("incompatible.arg.types.in.lambda"));
+                    return types.createErrorType(funcInterface);
+                }
+                for (Type p : descParameterTypes) {
+                    if (!types.isSameType(funcInterfaceContext.asFree(p, types), paramTypes.head)) {
+                        checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
+                        return types.createErrorType(funcInterface);
+                    }
+                    paramTypes = paramTypes.tail;
+                }
+                for (Type t : funcInterfaceContext.undetvars) {
+                    UndetVar uv = (UndetVar)t;
+                    minimizeInst(uv, Warner.noWarnings);
+                    if (uv.inst == null &&
+                            Type.filter(uv.getBounds(InferenceBound.UPPER), boundFilter).nonEmpty()) {
+                        maximizeInst(uv, Warner.noWarnings);
+                    }
+                }
+
+                formalInterface = funcInterfaceContext.asInstType(formalInterface, types);
+            }
+            ListBuffer<Type> typeargs = ListBuffer.lb();
+            List<Type> actualTypeargs = funcInterface.getTypeArguments();
+            //for remaining uninferred type-vars in the functional interface type,
+            //simply replace the wildcards with its bound
+            for (Type t : formalInterface.getTypeArguments()) {
+                if (actualTypeargs.head.tag == WILDCARD) {
+                    WildcardType wt = (WildcardType)actualTypeargs.head;
+                    typeargs.append(wt.type);
+                } else {
+                    typeargs.append(actualTypeargs.head);
+                }
+                actualTypeargs = actualTypeargs.tail;
+            }
+            Type owntype = types.subst(formalInterface, funcInterfaceContext.inferenceVars(), typeargs.toList());
+            if (!chk.checkValidGenericType(owntype)) {
+                //if the inferred functional interface type is not well-formed,
+                //or if it's not a subtype of the original target, issue an error
+                checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
+                return types.createErrorType(funcInterface);
+            }
+            return owntype;
+        }
+    }
+    // </editor-fold>
+
     /**
      * Compute a synthetic method type corresponding to the requested polymorphic
      * method signature. The target return type is computed from the immediately
@@ -536,9 +605,17 @@ public class Infer {
      * Mapping that turns inference variables into undet vars
      * (used by inference context)
      */
-    Mapping fromTypeVarFun = new Mapping("fromTypeVarFun") {
+    class FromTypeVarFun extends Mapping {
+
+        boolean includeBounds;
+
+        FromTypeVarFun(boolean includeBounds) {
+            super("fromTypeVarFunWithBounds");
+            this.includeBounds = includeBounds;
+        }
+
         public Type apply(Type t) {
-            if (t.tag == TYPEVAR) return new UndetVar((TypeVar)t, types);
+            if (t.tag == TYPEVAR) return new UndetVar((TypeVar)t, types, includeBounds);
             else return t.map(this);
         }
     };
@@ -573,8 +650,8 @@ public class Infer {
 
         List<FreeTypeListener> freetypeListeners = List.nil();
 
-        public InferenceContext(List<Type> inferencevars, Infer infer) {
-            this.undetvars = Type.map(inferencevars, infer.fromTypeVarFun);
+        public InferenceContext(List<Type> inferencevars, Infer infer, boolean includeBounds) {
+            this.undetvars = Type.map(inferencevars, infer.new FromTypeVarFun(includeBounds));
             this.inferencevars = inferencevars;
         }
 
@@ -737,5 +814,5 @@ public class Infer {
         }
     }
 
-    final InferenceContext emptyContext = new InferenceContext(List.<Type>nil(), this);
+    final InferenceContext emptyContext = new InferenceContext(List.<Type>nil(), this, false);
 }

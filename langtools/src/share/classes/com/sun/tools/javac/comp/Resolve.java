@@ -753,6 +753,10 @@ public class Resolve {
         public boolean compatible(Type found, Type req, Warner warn) {
             return types.isSubtypeUnchecked(found, inferenceContext.asFree(req, types), warn);
         }
+
+        public boolean allowBoxing() {
+            return false;
+        }
     }
 
     /**
@@ -768,6 +772,10 @@ public class Resolve {
 
         public boolean compatible(Type found, Type req, Warner warn) {
             return types.isConvertible(found, inferenceContext.asFree(req, types), warn);
+        }
+
+        public boolean allowBoxing() {
+            return true;
         }
     }
 
@@ -1036,7 +1044,7 @@ public class Resolve {
         }
         return (bestSoFar.kind > AMBIGUOUS)
             ? sym
-            : mostSpecific(sym, bestSoFar, env, site,
+            : mostSpecific(argtypes, sym, bestSoFar, env, site,
                            allowBoxing && operator, useVarargs);
     }
 
@@ -1050,7 +1058,7 @@ public class Resolve {
      *  @param allowBoxing Allow boxing conversions of arguments.
      *  @param useVarargs Box trailing arguments into an array for varargs.
      */
-    Symbol mostSpecific(Symbol m1,
+    Symbol mostSpecific(List<Type> argtypes, Symbol m1,
                         Symbol m2,
                         Env<AttrContext> env,
                         final Type site,
@@ -1059,8 +1067,10 @@ public class Resolve {
         switch (m2.kind) {
         case MTH:
             if (m1 == m2) return m1;
-            boolean m1SignatureMoreSpecific = signatureMoreSpecific(env, site, m1, m2, allowBoxing, useVarargs);
-            boolean m2SignatureMoreSpecific = signatureMoreSpecific(env, site, m2, m1, allowBoxing, useVarargs);
+            boolean m1SignatureMoreSpecific =
+                    signatureMoreSpecific(argtypes, env, site, m1, m2, allowBoxing, useVarargs);
+            boolean m2SignatureMoreSpecific =
+                    signatureMoreSpecific(argtypes, env, site, m2, m1, allowBoxing, useVarargs);
             if (m1SignatureMoreSpecific && m2SignatureMoreSpecific) {
                 Type mt1 = types.memberType(site, m1);
                 Type mt2 = types.memberType(site, m2);
@@ -1127,8 +1137,8 @@ public class Resolve {
             return ambiguityError(m1, m2);
         case AMBIGUOUS:
             AmbiguityError e = (AmbiguityError)m2;
-            Symbol err1 = mostSpecific(m1, e.sym, env, site, allowBoxing, useVarargs);
-            Symbol err2 = mostSpecific(m1, e.sym2, env, site, allowBoxing, useVarargs);
+            Symbol err1 = mostSpecific(argtypes, m1, e.sym, env, site, allowBoxing, useVarargs);
+            Symbol err2 = mostSpecific(argtypes, m1, e.sym2, env, site, allowBoxing, useVarargs);
             if (err1 == err2) return err1;
             if (err1 == e.sym && err2 == e.sym2) return m2;
             if (err1 instanceof AmbiguityError &&
@@ -1142,13 +1152,82 @@ public class Resolve {
         }
     }
     //where
-    private boolean signatureMoreSpecific(Env<AttrContext> env, Type site, Symbol m1, Symbol m2, boolean allowBoxing, boolean useVarargs) {
+    private boolean signatureMoreSpecific(List<Type> actuals, Env<AttrContext> env, Type site, Symbol m1, Symbol m2, boolean allowBoxing, boolean useVarargs) {
+        Symbol m12 = adjustVarargs(m1, m2, useVarargs);
+        Symbol m22 = adjustVarargs(m2, m1, useVarargs);
+        Type mtype1 = types.memberType(site, m12);
+        Type mtype2 = types.memberType(site, m22);
+
+        //check if invocation is more specific
+        if (invocationMoreSpecific(env, site, m22, mtype1.getParameterTypes(), allowBoxing, useVarargs)) {
+            return true;
+        }
+
+        //perform structural check
+
+        List<Type> formals1 = mtype1.getParameterTypes();
+        Type lastFormal1 = formals1.last();
+        List<Type> formals2 = mtype2.getParameterTypes();
+        Type lastFormal2 = formals2.last();
+        ListBuffer<Type> newFormals = ListBuffer.lb();
+
+        boolean hasStructuralPoly = false;
+        for (Type actual : actuals) {
+            //perform formal argument adaptation in case actuals > formals (varargs)
+            Type f1 = formals1.isEmpty() ?
+                    lastFormal1 : formals1.head;
+            Type f2 = formals2.isEmpty() ?
+                    lastFormal2 : formals2.head;
+
+            //is this a structural actual argument?
+            boolean isStructuralPoly = actual.tag == DEFERRED &&
+                    ((DeferredType)actual).tree.hasTag(LAMBDA);
+
+            Type newFormal = f1;
+
+            if (isStructuralPoly) {
+                //for structural arguments only - check that corresponding formals
+                //are related - if so replace formal with <null>
+                hasStructuralPoly = true;
+                DeferredType dt = (DeferredType)actual;
+                Type t1 = deferredAttr.new DeferredTypeMap(AttrMode.SPECULATIVE, m1, currentResolutionContext.step).apply(dt);
+                Type t2 = deferredAttr.new DeferredTypeMap(AttrMode.SPECULATIVE, m2, currentResolutionContext.step).apply(dt);
+                if (t1.isErroneous() || t2.isErroneous() || !isStructuralSubtype(t1, t2)) {
+                    //not structural subtypes - simply fail
+                    return false;
+                } else {
+                    newFormal = syms.botType;
+                }
+            }
+
+            newFormals.append(newFormal);
+            if (newFormals.length() > mtype2.getParameterTypes().length()) {
+                //expand m2's type so as to fit the new formal arity (varargs)
+                m22.type = types.createMethodTypeWithParameters(m22.type, m22.type.getParameterTypes().append(f2));
+            }
+
+            formals1 = formals1.isEmpty() ? formals1 : formals1.tail;
+            formals2 = formals2.isEmpty() ? formals2 : formals2.tail;
+        }
+
+        if (!hasStructuralPoly) {
+            //if no structural actual was found, we're done
+            return false;
+        }
+        //perform additional adaptation if actuals < formals (varargs)
+        for (Type t : formals1) {
+            newFormals.append(t);
+        }
+        //check if invocation (with tweaked args) is more specific
+        return invocationMoreSpecific(env, site, m22, newFormals.toList(), allowBoxing, useVarargs);
+    }
+    //where
+    private boolean invocationMoreSpecific(Env<AttrContext> env, Type site, Symbol m2, List<Type> argtypes1, boolean allowBoxing, boolean useVarargs) {
         noteWarner.clear();
-        Type mtype1 = types.memberType(site, adjustVarargs(m1, m2, useVarargs));
-        Type mtype2 = instantiate(env, site, adjustVarargs(m2, m1, useVarargs), null,
-                types.lowerBoundArgtypes(mtype1), null,
+        Type mst = instantiate(env, site, m2, null,
+                types.lowerBounds(argtypes1), null,
                 allowBoxing, false, noteWarner);
-        return mtype2 != null &&
+        return mst != null &&
                 !noteWarner.hasLint(Lint.LintCategory.UNCHECKED);
     }
     //where
@@ -1185,6 +1264,32 @@ public class Resolve {
         } else {
             return to;
         }
+    }
+    //where
+    boolean isStructuralSubtype(Type s, Type t) {
+
+        Type ret_s = types.findDescriptorType(s).getReturnType();
+        Type ret_t = types.findDescriptorType(t).getReturnType();
+
+        //covariant most specific check for function descriptor return type
+        if (!types.isSubtype(ret_s, ret_t)) {
+            return false;
+        }
+
+        List<Type> args_s = types.findDescriptorType(s).getParameterTypes();
+        List<Type> args_t = types.findDescriptorType(t).getParameterTypes();
+
+        //arity must be identical
+        if (args_s.length() != args_t.length()) {
+            return false;
+        }
+
+        //invariant most specific check for function descriptor parameter types
+        if (!types.isSameTypes(args_t, args_s)) {
+            return false;
+        }
+
+        return true;
     }
     //where
     Type mostSpecificReturnType(Type mt1, Type mt2) {
@@ -2388,7 +2493,19 @@ public class Resolve {
     private final LocalizedString noArgs = new LocalizedString("compiler.misc.no.args");
 
     public Object methodArguments(List<Type> argtypes) {
-        return argtypes == null || argtypes.isEmpty() ? noArgs : argtypes;
+        if (argtypes == null || argtypes.isEmpty()) {
+            return noArgs;
+        } else {
+            ListBuffer<Object> diagArgs = ListBuffer.lb();
+            for (Type t : argtypes) {
+                if (t.tag == DEFERRED) {
+                    diagArgs.append(((DeferredAttr.DeferredType)t).tree);
+                } else {
+                    diagArgs.append(t);
+                }
+            }
+            return diagArgs;
+        }
     }
 
     /**

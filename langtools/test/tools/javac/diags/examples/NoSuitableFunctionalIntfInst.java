@@ -21,25 +21,15 @@
  * questions.
  */
 
-// key: compiler.err.cant.ref.non.effectively.final.var
-// key: compiler.misc.inner.cls
-// key: compiler.misc.lambda
-// options: -XDallowLambda -XDallowEffectivelyFinalInInnerClasses
+// key: compiler.err.prob.found.req
+// key: compiler.misc.no.suitable.functional.intf.inst
+// options: -XDallowLambda
 
-class CantRefNonEffectivelyFinalVar {
-    void test() {
-        int i = 0;
-        new Object() { int j = i; };
-        i = 2;
+class NoSuitableFunctionalIntfInst {
+
+    interface SAM<X extends Number> {
+        void m(X x);
     }
 
-    interface SAM {
-        void m();
-    }
-
-    void test2() {
-        int i = 0;
-        SAM s = ()-> { int j = i; };
-        i++;
-    }
+    SAM<?> ss = (String s)-> { };
 }

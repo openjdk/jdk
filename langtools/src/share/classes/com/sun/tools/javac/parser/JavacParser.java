@@ -950,12 +950,13 @@ public class JavacParser implements Parser {
             break;
         case LPAREN:
             if (typeArgs == null && (mode & EXPR) != 0) {
-                if (peekToken(FINAL) ||
+                if (peekToken(MONKEYS_AT) ||
+                        peekToken(FINAL) ||
                         peekToken(RPAREN) ||
                         peekToken(IDENTIFIER, COMMA) ||
                         peekToken(IDENTIFIER, RPAREN, ARROW)) {
                     //implicit n-ary lambda
-                    t = lambdaExpressionOrStatement(true, peekToken(FINAL), pos);
+                    t = lambdaExpressionOrStatement(true, peekToken(MONKEYS_AT) || peekToken(FINAL), pos);
                     break;
                 } else {
                     nextToken();
@@ -1343,11 +1344,6 @@ public class JavacParser implements Parser {
     }
 
     JCExpression lambdaExpressionOrStatementRest(List<JCVariableDecl> args, int pos) {
-        if (token.kind != ARROW) {
-            //better error recovery
-            return F.at(pos).Erroneous(args);
-        }
-
         checkLambda();
         accept(ARROW);
 

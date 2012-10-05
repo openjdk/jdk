@@ -262,6 +262,10 @@ public class TreeInfo {
         }
     }
 
+    public static boolean isExplicitLambda(JCLambda lambda) {
+        return lambda.params.isEmpty() ||
+                lambda.params.head.vartype != null;
+    }
     /**
      * Return true if the AST corresponds to a static select of the kind A.B
      */
@@ -400,6 +404,10 @@ public class TreeInfo {
                 JCVariableDecl node = (JCVariableDecl)tree;
                 if (node.mods.pos != Position.NOPOS) {
                     return node.mods.pos;
+                } else if (node.vartype == null) {
+                    //if there's no type (partially typed lambda parameter)
+                    //simply return node position
+                    return node.pos;
                 } else {
                     return getStartPos(node.vartype);
                 }

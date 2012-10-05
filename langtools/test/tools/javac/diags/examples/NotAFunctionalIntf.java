@@ -21,18 +21,15 @@
  * questions.
  */
 
-// key: compiler.err.cant.apply.symbol.1
-// key: compiler.misc.type.conditional
-// key: compiler.misc.no.args
-// key: compiler.misc.arg.length.mismatch
-// options: -XDallowPoly
-// run: simple
+// key: compiler.err.prob.found.req
+// key: compiler.misc.not.a.functional.intf
+// options: -XDallowLambda
 
-class TypeConditional {
+class NotAFunctionalIntf {
 
-    void m() { }
-
-    void test() {
-        m(true ? 1 : 2);
+    abstract class SAM {
+        abstract <Z> void m();
     }
+
+    SAM s = x-> { };
 }

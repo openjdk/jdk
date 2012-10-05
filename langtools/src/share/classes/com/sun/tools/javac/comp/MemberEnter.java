@@ -646,7 +646,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         tree.sym = v;
         if (tree.init != null) {
             v.flags_field |= HASINIT;
-            if ((v.flags_field & FINAL) != 0 && !tree.init.hasTag(NEWCLASS)) {
+            if ((v.flags_field & FINAL) != 0 &&
+                    !tree.init.hasTag(NEWCLASS) &&
+                    !tree.init.hasTag(LAMBDA)) {
                 Env<AttrContext> initEnv = getInitEnv(tree, env);
                 initEnv.info.enclVar = v;
                 v.setLazyConstValue(initEnv(tree, initEnv), attr, tree.init);
@@ -671,7 +673,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     Env<AttrContext> initEnv(JCVariableDecl tree, Env<AttrContext> env) {
         Env<AttrContext> localEnv = env.dupto(new AttrContextEnv(tree, env.info.dup()));
         if (tree.sym.owner.kind == TYP) {
-            localEnv.info.scope = new Scope.DelegatedScope(env.info.scope);
+            localEnv.info.scope = env.info.scope.dupUnshared();
             localEnv.info.scope.owner = tree.sym;
         }
         if ((tree.mods.flags & STATIC) != 0 ||

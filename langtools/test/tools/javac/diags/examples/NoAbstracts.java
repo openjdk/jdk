@@ -21,25 +21,14 @@
  * questions.
  */
 
-// key: compiler.err.cant.ref.non.effectively.final.var
-// key: compiler.misc.inner.cls
-// key: compiler.misc.lambda
-// options: -XDallowLambda -XDallowEffectivelyFinalInInnerClasses
+// key: compiler.err.prob.found.req
+// key: compiler.misc.not.a.functional.intf.1
+// key: compiler.misc.no.abstracts
+// options: -XDallowLambda
 
-class CantRefNonEffectivelyFinalVar {
-    void test() {
-        int i = 0;
-        new Object() { int j = i; };
-        i = 2;
-    }
+class NoAbstracts {
 
-    interface SAM {
-        void m();
-    }
+    interface SAM { }
 
-    void test2() {
-        int i = 0;
-        SAM s = ()-> { int j = i; };
-        i++;
-    }
+    SAM s = x-> { };
 }

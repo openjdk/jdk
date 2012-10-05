@@ -58,7 +58,6 @@ compiler.misc.fatal.err.cant.locate.meth                # Resolve, from Lower
 compiler.misc.fatal.err.cant.close	                # JavaCompiler
 compiler.misc.file.does.not.contain.package
 compiler.misc.illegal.start.of.class.file
-compiler.misc.cyclic.inference                          # Cannot happen w/o lambdas
 compiler.misc.kindname.annotation
 compiler.misc.kindname.enum
 compiler.misc.kindname.package

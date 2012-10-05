@@ -21,25 +21,23 @@
  * questions.
  */
 
-// key: compiler.err.cant.ref.non.effectively.final.var
-// key: compiler.misc.inner.cls
-// key: compiler.misc.lambda
-// options: -XDallowLambda -XDallowEffectivelyFinalInInnerClasses
+// key: compiler.err.types.incompatible.diff.ret
+// key: compiler.err.prob.found.req
+// key: compiler.misc.incompatible.descs.in.functional.intf
+// key: compiler.misc.descriptor
+// key: compiler.misc.descriptor.throws
+// options: -XDallowLambda
 
-class CantRefNonEffectivelyFinalVar {
-    void test() {
-        int i = 0;
-        new Object() { int j = i; };
-        i = 2;
+class IncompatibleDescsInFunctionalIntf {
+    interface A {
+        Integer m(String i) throws Exception;
     }
 
-    interface SAM {
-        void m();
+    interface B {
+        String m(String i);
     }
 
-    void test2() {
-        int i = 0;
-        SAM s = ()-> { int j = i; };
-        i++;
-    }
+    interface SAM extends A,B { }
+
+    SAM s = x-> { };
 }

@@ -87,6 +87,11 @@ public class Pretty extends JCTree.Visitor {
      */
     private final static String trimSequence = "[...]";
 
+    /**
+     * Max number of chars to be generated when output should fit into a single line
+     */
+    private final static int PREFERRED_LENGTH = 20;
+
     /** Align code to be indented to left margin.
      */
     void align() throws IOException {
@@ -133,6 +138,10 @@ public class Pretty extends JCTree.Visitor {
      */
     public void println() throws IOException {
         out.write(lineSep);
+    }
+
+    public static String toSimpleString(JCTree tree) {
+        return toSimpleString(tree, PREFERRED_LENGTH);
     }
 
     public static String toSimpleString(JCTree tree, int maxLength) {
@@ -938,7 +947,16 @@ public class Pretty extends JCTree.Visitor {
     public void visitLambda(JCLambda tree) {
         try {
             print("(");
-            printExprs(tree.params);
+            if (TreeInfo.isExplicitLambda(tree)) {
+                printExprs(tree.params);
+            } else {
+                String sep = "";
+                for (JCVariableDecl param : tree.params) {
+                    print(sep);
+                    print(param.name);
+                    sep = ",";
+                }
+            }
             print(")->");
             printExpr(tree.body);
         } catch (IOException e) {

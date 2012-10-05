@@ -21,25 +21,17 @@
  * questions.
  */
 
-// key: compiler.err.cant.ref.non.effectively.final.var
-// key: compiler.misc.inner.cls
-// key: compiler.misc.lambda
-// options: -XDallowLambda -XDallowEffectivelyFinalInInnerClasses
+// key: compiler.err.prob.found.req
+// key: compiler.misc.incompatible.ret.type.in.lambda
+// key: compiler.misc.missing.ret.val
+// options: -XDallowLambda
 
-class CantRefNonEffectivelyFinalVar {
-    void test() {
-        int i = 0;
-        new Object() { int j = i; };
-        i = 2;
-    }
-
+class MissingReturnValueFragment {
     interface SAM {
-        void m();
+        String m();
     }
 
-    void test2() {
-        int i = 0;
-        SAM s = ()-> { int j = i; };
-        i++;
+    void test() {
+        SAM s = ()->{};
     }
 }
