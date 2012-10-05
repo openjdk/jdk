@@ -21,25 +21,18 @@
  * questions.
  */
 
-// key: compiler.err.cant.ref.non.effectively.final.var
-// key: compiler.misc.inner.cls
-// key: compiler.misc.lambda
-// options: -XDallowLambda -XDallowEffectivelyFinalInInnerClasses
+// key: compiler.err.cant.apply.symbol.1
+// key: compiler.misc.cyclic.inference
+// options: -XDallowLambda -XDallowPoly
 
-class CantRefNonEffectivelyFinalVar {
+class CyclicInference {
+    interface SAM<X> {
+        void m(X x);
+    }
+
+    <Z> void g(SAM<Z> sz) { }
+
     void test() {
-        int i = 0;
-        new Object() { int j = i; };
-        i = 2;
-    }
-
-    interface SAM {
-        void m();
-    }
-
-    void test2() {
-        int i = 0;
-        SAM s = ()-> { int j = i; };
-        i++;
+        g(x-> {});
     }
 }

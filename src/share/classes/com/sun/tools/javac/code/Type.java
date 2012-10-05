@@ -1220,9 +1220,13 @@ public class Type implements PrimitiveType {
         }
 
         public UndetVar(TypeVar origin, Types types) {
+            this(origin, types, true);
+        }
+
+        public UndetVar(TypeVar origin, Types types, boolean includeBounds) {
             super(UNDETVAR, origin);
             bounds = new EnumMap<InferenceBound, List<Type>>(InferenceBound.class);
-            bounds.put(InferenceBound.UPPER, types.getBounds(origin));
+            bounds.put(InferenceBound.UPPER, includeBounds ? types.getBounds(origin) : List.<Type>nil());
             bounds.put(InferenceBound.LOWER, List.<Type>nil());
             bounds.put(InferenceBound.EQ, List.<Type>nil());
         }

@@ -43,6 +43,7 @@ import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Check.CheckContext;
 
 import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.TreeVisitor;
 import com.sun.source.util.SimpleTreeVisitor;
@@ -85,6 +86,7 @@ public class Attr extends JCTree.Visitor {
     final Infer infer;
     final DeferredAttr deferredAttr;
     final Check chk;
+    final Flow flow;
     final MemberEnter memberEnter;
     final TreeMaker make;
     final ConstFold cfolder;
@@ -110,6 +112,7 @@ public class Attr extends JCTree.Visitor {
         syms = Symtab.instance(context);
         rs = Resolve.instance(context);
         chk = Check.instance(context);
+        flow = Flow.instance(context);
         memberEnter = MemberEnter.instance(context);
         make = TreeMaker.instance(context);
         enter = Enter.instance(context);
@@ -133,17 +136,20 @@ public class Attr extends JCTree.Visitor {
         allowAnonOuterThis = source.allowAnonOuterThis();
         allowStringsInSwitch = source.allowStringsInSwitch();
         allowPoly = source.allowPoly() && options.isSet("allowPoly");
+        allowLambda = source.allowLambda();
         sourceName = source.name;
         relax = (options.isSet("-retrofit") ||
                  options.isSet("-relax"));
         findDiamonds = options.get("findDiamond") != null &&
                  source.allowDiamond();
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
+        identifyLambdaCandidate = options.getBoolean("identifyLambdaCandidate", false);
 
         statInfo = new ResultInfo(NIL, Type.noType);
         varInfo = new ResultInfo(VAR, Type.noType);
         unknownExprInfo = new ResultInfo(VAL, Type.noType);
         unknownTypeInfo = new ResultInfo(TYP, Type.noType);
+        recoveryInfo = new RecoveryInfo(deferredAttr.emptyDeferredAttrContext);
     }
 
     /** Switch: relax some constraints for retrofit mode.
@@ -174,6 +180,10 @@ public class Attr extends JCTree.Visitor {
      */
     boolean allowCovariantReturns;
 
+    /** Switch: support lambda expressions ?
+     */
+    boolean allowLambda;
+
     /** Switch: allow references to surrounding object from anonymous
      * objects during constructor call?
      */
@@ -194,6 +204,12 @@ public class Attr extends JCTree.Visitor {
      * RFE: 6425594
      */
     boolean useBeforeDeclarationWarning;
+
+    /**
+     * Switch: generate warnings whenever an anonymous inner class that is convertible
+     * to a lambda expression is found
+     */
+    boolean identifyLambdaCandidate;
 
     /**
      * Switch: allow strings in switch?
@@ -286,6 +302,9 @@ public class Attr extends JCTree.Visitor {
                 case CLASSDEF:
                     //class def is always an owner
                     return ((JCClassDecl)env.tree).sym;
+                case LAMBDA:
+                    //a lambda is an owner - return a fresh synthetic method symbol
+                    return new MethodSymbol(0, names.empty, null, syms.methodClass);
                 case BLOCK:
                     //static/instance init blocks are owner
                     Symbol blockSym = env.info.scope.owner;
@@ -505,10 +524,36 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
+    class RecoveryInfo extends ResultInfo {
+
+        public RecoveryInfo(final DeferredAttr.DeferredAttrContext deferredAttrContext) {
+            super(Kinds.VAL, Type.recoveryType, new Check.NestedCheckContext(chk.basicHandler) {
+                @Override
+                public DeferredAttr.DeferredAttrContext deferredAttrContext() {
+                    return deferredAttrContext;
+                }
+                @Override
+                public boolean compatible(Type found, Type req, Warner warn) {
+                    return true;
+                }
+                @Override
+                public void report(DiagnosticPosition pos, JCDiagnostic details) {
+                    //do nothing
+                }
+            });
+        }
+
+        @Override
+        protected Type check(DiagnosticPosition pos, Type found) {
+            return chk.checkNonVoid(pos, super.check(pos, found));
+        }
+    }
+
     final ResultInfo statInfo;
     final ResultInfo varInfo;
     final ResultInfo unknownExprInfo;
     final ResultInfo unknownTypeInfo;
+    final ResultInfo recoveryInfo;
 
     Type pt() {
         return resultInfo.pt;
@@ -987,7 +1032,9 @@ public class Attr extends JCTree.Visitor {
             chk.checkDeprecatedAnnotation(tree.pos(), v);
 
             if (tree.init != null) {
-                if ((v.flags_field & FINAL) != 0 && !tree.init.hasTag(NEWCLASS)) {
+                if ((v.flags_field & FINAL) != 0 &&
+                        !tree.init.hasTag(NEWCLASS) &&
+                        !tree.init.hasTag(LAMBDA)) {
                     // In this case, `v' is final.  Ensure that it's initializer is
                     // evaluated.
                     v.getConstValue(); // ensure initializer is evaluated
@@ -1501,37 +1548,38 @@ public class Attr extends JCTree.Visitor {
             LOOP:
             while (env1 != null) {
                 switch (env1.tree.getTag()) {
-                case LABELLED:
-                    JCLabeledStatement labelled = (JCLabeledStatement)env1.tree;
-                    if (label == labelled.label) {
-                        // If jump is a continue, check that target is a loop.
-                        if (tag == CONTINUE) {
-                            if (!labelled.body.hasTag(DOLOOP) &&
-                                !labelled.body.hasTag(WHILELOOP) &&
-                                !labelled.body.hasTag(FORLOOP) &&
-                                !labelled.body.hasTag(FOREACHLOOP))
-                                log.error(pos, "not.loop.label", label);
-                            // Found labelled statement target, now go inwards
-                            // to next non-labelled tree.
-                            return TreeInfo.referencedStatement(labelled);
-                        } else {
-                            return labelled;
+                    case LABELLED:
+                        JCLabeledStatement labelled = (JCLabeledStatement)env1.tree;
+                        if (label == labelled.label) {
+                            // If jump is a continue, check that target is a loop.
+                            if (tag == CONTINUE) {
+                                if (!labelled.body.hasTag(DOLOOP) &&
+                                        !labelled.body.hasTag(WHILELOOP) &&
+                                        !labelled.body.hasTag(FORLOOP) &&
+                                        !labelled.body.hasTag(FOREACHLOOP))
+                                    log.error(pos, "not.loop.label", label);
+                                // Found labelled statement target, now go inwards
+                                // to next non-labelled tree.
+                                return TreeInfo.referencedStatement(labelled);
+                            } else {
+                                return labelled;
+                            }
                         }
-                    }
-                    break;
-                case DOLOOP:
-                case WHILELOOP:
-                case FORLOOP:
-                case FOREACHLOOP:
-                    if (label == null) return env1.tree;
-                    break;
-                case SWITCH:
-                    if (label == null && tag == BREAK) return env1.tree;
-                    break;
-                case METHODDEF:
-                case CLASSDEF:
-                    break LOOP;
-                default:
+                        break;
+                    case DOLOOP:
+                    case WHILELOOP:
+                    case FORLOOP:
+                    case FOREACHLOOP:
+                        if (label == null) return env1.tree;
+                        break;
+                    case SWITCH:
+                        if (label == null && tag == BREAK) return env1.tree;
+                        break;
+                    case LAMBDA:
+                    case METHODDEF:
+                    case CLASSDEF:
+                        break LOOP;
+                    default:
                 }
                 env1 = env1.next;
             }
@@ -1961,6 +2009,8 @@ public class Attr extends JCTree.Visitor {
 
                 attribStat(cdef, localEnv);
 
+                checkLambdaCandidate(tree, cdef.sym, clazztype);
+
                 // If an outer instance is given,
                 // prefix it to the constructor arguments
                 // and delete it from the new expression
@@ -2016,6 +2066,32 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
+            private void checkLambdaCandidate(JCNewClass tree, ClassSymbol csym, Type clazztype) {
+                if (allowLambda &&
+                        identifyLambdaCandidate &&
+                        clazztype.tag == CLASS &&
+                        pt().tag != NONE &&
+                        types.isFunctionalInterface(clazztype.tsym)) {
+                    Symbol descriptor = types.findDescriptorSymbol(clazztype.tsym);
+                    int count = 0;
+                    boolean found = false;
+                    for (Symbol sym : csym.members().getElements()) {
+                        if ((sym.flags() & SYNTHETIC) != 0 ||
+                                sym.isConstructor()) continue;
+                        count++;
+                        if (sym.kind != MTH ||
+                                !sym.name.equals(descriptor.name)) continue;
+                        Type mtype = types.memberType(clazztype, sym);
+                        if (types.overrideEquivalent(mtype, types.memberType(clazztype, descriptor))) {
+                            found = true;
+                        }
+                    }
+                    if (found && count == 1) {
+                        log.note(tree.def, "potential.lambda.found");
+                    }
+                }
+            }
+
     /** Make an attributed null check tree.
      */
     public JCExpression makeNullCheck(JCExpression arg) {
@@ -2064,15 +2140,222 @@ public class Attr extends JCTree.Visitor {
         result = check(tree, owntype, VAL, resultInfo);
     }
 
+    /*
+     * A lambda expression can only be attributed when a target-type is available.
+     * In addition, if the target-type is that of a functional interface whose
+     * descriptor contains inference variables in argument position the lambda expression
+     * is 'stuck' (see DeferredAttr).
+     */
     @Override
-    public void visitLambda(JCLambda that) {
-        throw new UnsupportedOperationException("Lambda expression not supported yet");
-    }
+    public void visitLambda(final JCLambda that) {
+        if (pt().isErroneous() || (pt().tag == NONE && pt() != Type.recoveryType)) {
+            if (pt().tag == NONE) {
+                //lambda only allowed in assignment or method invocation/cast context
+                log.error(that.pos(), "unexpected.lambda");
+            }
+            result = that.type = types.createErrorType(pt());
+            return;
+        }
+        //create an environment for attribution of the lambda expression
+        final Env<AttrContext> localEnv = lambdaEnv(that, env);
+        boolean needsRecovery = resultInfo.checkContext.deferredAttrContext() == deferredAttr.emptyDeferredAttrContext ||
+                resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK;
+        try {
+            List<Type> explicitParamTypes = null;
+            if (TreeInfo.isExplicitLambda(that)) {
+                //attribute lambda parameters
+                attribStats(that.params, localEnv);
+                explicitParamTypes = TreeInfo.types(that.params);
+            }
 
-    @Override
-    public void visitReference(JCMemberReference that) {
-        throw new UnsupportedOperationException("Member references not supported yet");
+            Type target = infer.instantiateFunctionalInterface(that, pt(), explicitParamTypes, resultInfo.checkContext);
+            Type lambdaType = (target == Type.recoveryType) ?
+                    fallbackDescriptorType(that) :
+                    types.findDescriptorType(target);
+
+            if (!TreeInfo.isExplicitLambda(that)) {
+                //add param type info in the AST
+                List<Type> actuals = lambdaType.getParameterTypes();
+                List<JCVariableDecl> params = that.params;
+
+                boolean arityMismatch = false;
+
+                while (params.nonEmpty()) {
+                    if (actuals.isEmpty()) {
+                        //not enough actuals to perform lambda parameter inference
+                        arityMismatch = true;
+                    }
+                    //reset previously set info
+                    Type argType = arityMismatch ?
+                            syms.errType :
+                            actuals.head;
+                    params.head.vartype = make.Type(argType);
+                    params.head.sym = null;
+                    actuals = actuals.isEmpty() ?
+                            actuals :
+                            actuals.tail;
+                    params = params.tail;
+                }
+
+                //attribute lambda parameters
+                attribStats(that.params, localEnv);
+
+                if (arityMismatch) {
+                    resultInfo.checkContext.report(that, diags.fragment("incompatible.arg.types.in.lambda"));
+                        result = that.type = types.createErrorType(target);
+                        return;
+                }
+            }
+
+            //from this point on, no recovery is needed; if we are in assignment context
+            //we will be able to attribute the whole lambda body, regardless of errors;
+            //if we are in a 'check' method context, and the lambda is not compatible
+            //with the target-type, it will be recovered anyway in Attr.checkId
+            needsRecovery = false;
+
+            ResultInfo bodyResultInfo = lambdaType.getReturnType() == Type.recoveryType ?
+                recoveryInfo :
+                new ResultInfo(VAL, lambdaType.getReturnType(), new LambdaReturnContext(resultInfo.checkContext));
+            localEnv.info.returnResult = bodyResultInfo;
+
+            if (that.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
+                attribTree(that.getBody(), localEnv, bodyResultInfo);
+            } else {
+                JCBlock body = (JCBlock)that.body;
+                attribStats(body.stats, localEnv);
+            }
+
+            result = check(that, target, VAL, resultInfo);
+
+            boolean isSpeculativeRound =
+                    resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.SPECULATIVE;
+
+            postAttr(that);
+            flow.analyzeLambda(env, that, make, isSpeculativeRound);
+
+            checkLambdaCompatible(that, lambdaType, resultInfo.checkContext, isSpeculativeRound);
+
+            if (!isSpeculativeRound) {
+                checkAccessibleFunctionalDescriptor(that, localEnv, resultInfo.checkContext.inferenceContext(), lambdaType);
+            }
+            result = check(that, target, VAL, resultInfo);
+        } catch (Types.FunctionDescriptorLookupError ex) {
+            JCDiagnostic cause = ex.getDiagnostic();
+            resultInfo.checkContext.report(that, cause);
+            result = that.type = types.createErrorType(pt());
+            return;
+        } finally {
+            localEnv.info.scope.leave();
+            if (needsRecovery) {
+                attribTree(that, env, recoveryInfo);
+            }
+        }
     }
+    //where
+        private Type fallbackDescriptorType(JCExpression tree) {
+            switch (tree.getTag()) {
+                case LAMBDA:
+                    JCLambda lambda = (JCLambda)tree;
+                    List<Type> argtypes = List.nil();
+                    for (JCVariableDecl param : lambda.params) {
+                        argtypes = param.vartype != null ?
+                                argtypes.append(param.vartype.type) :
+                                argtypes.append(syms.errType);
+                    }
+                    return new MethodType(argtypes, Type.recoveryType, List.<Type>nil(), syms.methodClass);
+                case REFERENCE:
+                    return new MethodType(List.<Type>nil(), Type.recoveryType, List.<Type>nil(), syms.methodClass);
+                default:
+                    Assert.error("Cannot get here!");
+            }
+            return null;
+        }
+
+        private void checkAccessibleFunctionalDescriptor(final DiagnosticPosition pos,
+                final Env<AttrContext> env, final InferenceContext inferenceContext, final Type desc) {
+            if (inferenceContext.free(desc)) {
+                inferenceContext.addFreeTypeListener(List.of(desc), new FreeTypeListener() {
+                    @Override
+                    public void typesInferred(InferenceContext inferenceContext) {
+                        checkAccessibleFunctionalDescriptor(pos, env, inferenceContext, inferenceContext.asInstType(desc, types));
+                    }
+                });
+            } else {
+                chk.checkAccessibleFunctionalDescriptor(pos, env, desc);
+            }
+        }
+
+        /**
+         * Lambda/method reference have a special check context that ensures
+         * that i.e. a lambda return type is compatible with the expected
+         * type according to both the inherited context and the assignment
+         * context.
+         */
+        class LambdaReturnContext extends Check.NestedCheckContext {
+            public LambdaReturnContext(CheckContext enclosingContext) {
+                super(enclosingContext);
+            }
+
+            @Override
+            public boolean compatible(Type found, Type req, Warner warn) {
+                //return type must be compatible in both current context and assignment context
+                return types.isAssignable(found, inferenceContext().asFree(req, types), warn) &&
+                        super.compatible(found, req, warn);
+            }
+            @Override
+            public void report(DiagnosticPosition pos, JCDiagnostic details) {
+                enclosingContext.report(pos, diags.fragment("incompatible.ret.type.in.lambda", details));
+            }
+        }
+
+        /**
+        * Lambda compatibility. Check that given return types, thrown types, parameter types
+        * are compatible with the expected functional interface descriptor. This means that:
+        * (i) parameter types must be identical to those of the target descriptor; (ii) return
+        * types must be compatible with the return type of the expected descriptor;
+        * (iii) thrown types must be 'included' in the thrown types list of the expected
+        * descriptor.
+        */
+        private void checkLambdaCompatible(JCLambda tree, Type descriptor, CheckContext checkContext, boolean speculativeAttr) {
+            Type returnType = checkContext.inferenceContext().asFree(descriptor.getReturnType(), types);
+
+            //return values have already been checked - but if lambda has no return
+            //values, we must ensure that void/value compatibility is correct;
+            //this amounts at checking that, if a lambda body can complete normally,
+            //the descriptor's return type must be void
+            if (tree.getBodyKind() == JCLambda.BodyKind.STATEMENT && tree.canCompleteNormally &&
+                    returnType.tag != VOID && returnType != Type.recoveryType) {
+                checkContext.report(tree, diags.fragment("incompatible.ret.type.in.lambda",
+                        diags.fragment("missing.ret.val", returnType)));
+            }
+
+            List<Type> argTypes = checkContext.inferenceContext().asFree(descriptor.getParameterTypes(), types);
+            if (!types.isSameTypes(argTypes, TreeInfo.types(tree.params))) {
+                checkContext.report(tree, diags.fragment("incompatible.arg.types.in.lambda"));
+            }
+
+            if (!speculativeAttr) {
+                List<Type> thrownTypes = checkContext.inferenceContext().asFree(descriptor.getThrownTypes(), types);
+                if (chk.unhandled(tree.inferredThrownTypes == null ? List.<Type>nil() : tree.inferredThrownTypes, thrownTypes).nonEmpty()) {
+                    log.error(tree, "incompatible.thrown.types.in.lambda", tree.inferredThrownTypes);
+                }
+            }
+        }
+
+        private Env<AttrContext> lambdaEnv(JCLambda that, Env<AttrContext> env) {
+            Env<AttrContext> lambdaEnv;
+            Symbol owner = env.info.scope.owner;
+            if (owner.kind == VAR && owner.owner.kind == TYP) {
+                //field initializer
+                lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dupUnshared()));
+                lambdaEnv.info.scope.owner =
+                    new MethodSymbol(0, names.empty, null,
+                                     env.info.scope.owner);
+            } else {
+                lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dup()));
+            }
+            return lambdaEnv;
+        }
 
     public void visitParens(JCParens tree) {
         Type owntype = attribTree(tree.expr, env, resultInfo);
@@ -3355,8 +3638,8 @@ public class Attr extends JCTree.Visitor {
      * mode (e.g. by an IDE) and the AST contains semantic errors, this routine
      * prevents NPE to be progagated during subsequent compilation steps.
      */
-    public void postAttr(Env<AttrContext> env) {
-        new PostAttrAnalyzer().scan(env.tree);
+    public void postAttr(JCTree tree) {
+        new PostAttrAnalyzer().scan(tree);
     }
 
     class PostAttrAnalyzer extends TreeScanner {

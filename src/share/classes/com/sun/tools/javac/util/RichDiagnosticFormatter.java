@@ -325,10 +325,6 @@ public class RichDiagnosticFormatter extends
      */
     protected class RichPrinter extends Printer {
 
-        public RichPrinter() {
-            super(formatter.isRaw());
-        }
-
         @Override
         public String localize(Locale locale, String key, Object... args) {
             return formatter.localize(locale, key, args);

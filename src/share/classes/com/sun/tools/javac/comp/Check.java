@@ -421,7 +421,7 @@ public class Check {
      * checks - depending on the check context, meaning of 'compatibility' might
      * vary significantly.
      */
-    interface CheckContext {
+    public interface CheckContext {
         /**
          * Is type 'found' compatible with type 'req' in given context
          */
@@ -438,6 +438,8 @@ public class Check {
         public Infer.InferenceContext inferenceContext();
 
         public DeferredAttr.DeferredAttrContext deferredAttrContext();
+
+        public boolean allowBoxing();
     }
 
     /**
@@ -472,6 +474,10 @@ public class Check {
         public DeferredAttrContext deferredAttrContext() {
             return enclosingContext.deferredAttrContext();
         }
+
+        public boolean allowBoxing() {
+            return enclosingContext.allowBoxing();
+        }
     }
 
     /**
@@ -495,6 +501,10 @@ public class Check {
 
         public DeferredAttrContext deferredAttrContext() {
             return deferredAttr.emptyDeferredAttrContext;
+        }
+
+        public boolean allowBoxing() {
+            return true;
         }
     };
 
@@ -557,9 +567,9 @@ public class Check {
      */
     public void checkRedundantCast(Env<AttrContext> env, JCTypeCast tree) {
         if (!tree.type.isErroneous() &&
-            (env.info.lint == null || env.info.lint.isEnabled(Lint.LintCategory.CAST))
-            && types.isSameType(tree.expr.type, tree.clazz.type)
-            && !is292targetTypeCast(tree)) {
+                (env.info.lint == null || env.info.lint.isEnabled(Lint.LintCategory.CAST))
+                && types.isSameType(tree.expr.type, tree.clazz.type)
+                && !is292targetTypeCast(tree)) {
             log.warning(Lint.LintCategory.CAST,
                     tree.pos(), "redundant.cast", tree.expr.type);
         }
@@ -906,6 +916,65 @@ public class Check {
                 return;
         }
 
+        void checkAccessibleFunctionalDescriptor(DiagnosticPosition pos, Env<AttrContext> env, Type desc) {
+            AccessChecker accessChecker = new AccessChecker(env);
+            //check args accessibility (only if implicit parameter types)
+            for (Type arg : desc.getParameterTypes()) {
+                if (!accessChecker.visit(arg)) {
+                    log.error(pos, "cant.access.arg.type.in.functional.desc", arg);
+                    return;
+                }
+            }
+            //check return type accessibility
+            if (!accessChecker.visit(desc.getReturnType())) {
+                log.error(pos, "cant.access.return.in.functional.desc", desc.getReturnType());
+                return;
+            }
+            //check thrown types accessibility
+            for (Type thrown : desc.getThrownTypes()) {
+                if (!accessChecker.visit(thrown)) {
+                    log.error(pos, "cant.access.thrown.in.functional.desc", thrown);
+                    return;
+                }
+            }
+        }
+
+        class AccessChecker extends Types.UnaryVisitor<Boolean> {
+
+            Env<AttrContext> env;
+
+            AccessChecker(Env<AttrContext> env) {
+                this.env = env;
+            }
+
+            Boolean visit(List<Type> ts) {
+                for (Type t : ts) {
+                    if (!visit(t))
+                        return false;
+                }
+                return true;
+            }
+
+            public Boolean visitType(Type t, Void s) {
+                return true;
+            }
+
+            @Override
+            public Boolean visitArrayType(ArrayType t, Void s) {
+                return visit(t.elemtype);
+            }
+
+            @Override
+            public Boolean visitClassType(ClassType t, Void s) {
+                return rs.isAccessible(env, t, true) &&
+                        visit(t.getTypeArguments());
+            }
+
+            @Override
+            public Boolean visitWildcardType(WildcardType t, Void s) {
+                return visit(t.type);
+            }
+        };
     /**
      * Check that type 't' is a valid instantiation of a generic class
      * (see JLS 4.5)

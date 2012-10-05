@@ -21,25 +21,13 @@
  * questions.
  */
 
-// key: compiler.err.cant.ref.non.effectively.final.var
-// key: compiler.misc.inner.cls
-// key: compiler.misc.lambda
-// options: -XDallowLambda -XDallowEffectivelyFinalInInnerClasses
+// key: compiler.err.incompatible.thrown.types.in.lambda
+// options: -XDallowLambda
 
-class CantRefNonEffectivelyFinalVar {
-    void test() {
-        int i = 0;
-        new Object() { int j = i; };
-        i = 2;
-    }
-
+class IncompatibleThrownTypesInLambda {
     interface SAM {
         void m();
     }
 
-    void test2() {
-        int i = 0;
-        SAM s = ()-> { int j = i; };
-        i++;
-    }
+    SAM s = ()-> { throw new Exception(); };
 }

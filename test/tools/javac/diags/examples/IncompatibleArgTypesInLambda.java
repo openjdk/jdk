@@ -21,25 +21,14 @@
  * questions.
  */
 
-// key: compiler.err.cant.ref.non.effectively.final.var
-// key: compiler.misc.inner.cls
-// key: compiler.misc.lambda
-// options: -XDallowLambda -XDallowEffectivelyFinalInInnerClasses
+// key: compiler.err.prob.found.req
+// key: compiler.misc.incompatible.arg.types.in.lambda
+// options: -XDallowLambda -XDallowPoly
 
-class CantRefNonEffectivelyFinalVar {
-    void test() {
-        int i = 0;
-        new Object() { int j = i; };
-        i = 2;
-    }
-
+class IncompatibleArgTypesInLambda {
     interface SAM {
-        void m();
+        void m(Integer x);
     }
 
-    void test2() {
-        int i = 0;
-        SAM s = ()-> { int j = i; };
-        i++;
-    }
+    SAM s = (String x)-> {};
 }

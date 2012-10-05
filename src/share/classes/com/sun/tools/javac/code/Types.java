@@ -79,8 +79,10 @@ public class Types {
     final boolean allowObjectToPrimitiveCast;
     final ClassReader reader;
     final Check chk;
+    JCDiagnostic.Factory diags;
     List<Warner> warnStack = List.nil();
     final Name capturedName;
+    private final FunctionDescriptorLookupError functionDescriptorLookupError;
 
     // <editor-fold defaultstate="collapsed" desc="Instantiating">
     public static Types instance(Context context) {
@@ -102,6 +104,8 @@ public class Types {
         chk = Check.instance(context);
         capturedName = names.fromString("<captured wildcard>");
         messages = JavacMessages.instance(context);
+        diags = JCDiagnostic.Factory.instance(context);
+        functionDescriptorLookupError = new FunctionDescriptorLookupError();
     }
     // </editor-fold>
 
@@ -293,6 +297,294 @@ public class Types {
      */
     public boolean isConvertible(Type t, Type s) {
         return isConvertible(t, s, Warner.noWarnings);
+    }
+    // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="findSam">
+
+    /**
+     * Exception used to report a function descriptor lookup failure. The exception
+     * wraps a diagnostic that can be used to generate more details error
+     * messages.
+     */
+    public static class FunctionDescriptorLookupError extends RuntimeException {
+        private static final long serialVersionUID = 0;
+
+        JCDiagnostic diagnostic;
+
+        FunctionDescriptorLookupError() {
+            this.diagnostic = null;
+        }
+
+        FunctionDescriptorLookupError setMessage(JCDiagnostic diag) {
+            this.diagnostic = diag;
+            return this;
+        }
+
+        public JCDiagnostic getDiagnostic() {
+            return diagnostic;
+        }
+    }
+
+    /**
+     * A cache that keeps track of function descriptors associated with given
+     * functional interfaces.
+     */
+    class DescriptorCache {
+
+        private WeakHashMap<TypeSymbol, Entry> _map = new WeakHashMap<TypeSymbol, Entry>();
+
+        class FunctionDescriptor {
+            Symbol descSym;
+
+            FunctionDescriptor(Symbol descSym) {
+                this.descSym = descSym;
+            }
+
+            public Symbol getSymbol() {
+                return descSym;
+            }
+
+            public Type getType(Type origin) {
+                return memberType(origin, descSym);
+            }
+        }
+
+        class Entry {
+            final FunctionDescriptor cachedDescRes;
+            final int prevMark;
+
+            public Entry(FunctionDescriptor cachedDescRes,
+                    int prevMark) {
+                this.cachedDescRes = cachedDescRes;
+                this.prevMark = prevMark;
+            }
+
+            boolean matches(int mark) {
+                return  this.prevMark == mark;
+            }
+        }
+
+        FunctionDescriptor get(TypeSymbol origin) throws FunctionDescriptorLookupError {
+            Entry e = _map.get(origin);
+            CompoundScope members = membersClosure(origin.type, false);
+            if (e == null ||
+                    !e.matches(members.getMark())) {
+                FunctionDescriptor descRes = findDescriptorInternal(origin, members);
+                _map.put(origin, new Entry(descRes, members.getMark()));
+                return descRes;
+            }
+            else {
+                return e.cachedDescRes;
+            }
+        }
+
+        /**
+         * Scope filter used to skip methods that should be ignored during
+         * function interface conversion (such as methods overridden by
+         * j.l.Object)
+         */
+        class DescriptorFilter implements Filter<Symbol> {
+
+            TypeSymbol origin;
+
+            DescriptorFilter(TypeSymbol origin) {
+                this.origin = origin;
+            }
+
+            @Override
+            public boolean accepts(Symbol sym) {
+                    return sym.kind == Kinds.MTH &&
+                            (sym.flags() & ABSTRACT) != 0 &&
+                            !overridesObjectMethod(origin, sym) &&
+                            notOverridden(sym);
+            }
+
+            private boolean notOverridden(Symbol msym) {
+                Symbol impl = ((MethodSymbol)msym).implementation(origin, Types.this, false);
+                return impl == null || (impl.flags() & ABSTRACT) != 0;
+            }
+        };
+
+        /**
+         * Compute the function descriptor associated with a given functional interface
+         */
+        public FunctionDescriptor findDescriptorInternal(TypeSymbol origin, CompoundScope membersCache) throws FunctionDescriptorLookupError {
+            if (!origin.isInterface()) {
+                //t must be an interface
+                throw failure("not.a.functional.intf");
+            }
+
+            final ListBuffer<Symbol> abstracts = ListBuffer.lb();
+            for (Symbol sym : membersCache.getElements(new DescriptorFilter(origin))) {
+                Type mtype = memberType(origin.type, sym);
+                if (abstracts.isEmpty() ||
+                        (sym.name == abstracts.first().name &&
+                        overrideEquivalent(mtype, memberType(origin.type, abstracts.first())))) {
+                    abstracts.append(sym);
+                } else {
+                    //the target method(s) should be the only abstract members of t
+                    throw failure("not.a.functional.intf.1",
+                            diags.fragment("incompatible.abstracts", Kinds.kindName(origin), origin));
+                }
+            }
+            if (abstracts.isEmpty()) {
+                //t must define a suitable non-generic method
+                throw failure("not.a.functional.intf.1",
+                            diags.fragment("no.abstracts", Kinds.kindName(origin), origin));
+            } else if (abstracts.size() == 1) {
+                if (abstracts.first().type.tag == FORALL) {
+                    throw failure("invalid.generic.desc.in.functional.intf",
+                            abstracts.first(),
+                            Kinds.kindName(origin),
+                            origin);
+                } else {
+                    return new FunctionDescriptor(abstracts.first());
+                }
+            } else { // size > 1
+                for (Symbol msym : abstracts) {
+                    if (msym.type.tag == FORALL) {
+                        throw failure("invalid.generic.desc.in.functional.intf",
+                                abstracts.first(),
+                                Kinds.kindName(origin),
+                                origin);
+                    }
+                }
+                FunctionDescriptor descRes = mergeDescriptors(origin, abstracts.toList());
+                if (descRes == null) {
+                    //we can get here if the functional interface is ill-formed
+                    ListBuffer<JCDiagnostic> descriptors = ListBuffer.lb();
+                    for (Symbol desc : abstracts) {
+                        String key = desc.type.getThrownTypes().nonEmpty() ?
+                                "descriptor.throws" : "descriptor";
+                        descriptors.append(diags.fragment(key, desc.name,
+                                desc.type.getParameterTypes(),
+                                desc.type.getReturnType(),
+                                desc.type.getThrownTypes()));
+                    }
+                    JCDiagnostic.MultilineDiagnostic incompatibleDescriptors =
+                            new JCDiagnostic.MultilineDiagnostic(diags.fragment("incompatible.descs.in.functional.intf",
+                            Kinds.kindName(origin), origin), descriptors.toList());
+                    throw failure(incompatibleDescriptors);
+                }
+                return descRes;
+            }
+        }
+
+        /**
+         * Compute a synthetic type for the target descriptor given a list
+         * of override-equivalent methods in the functional interface type.
+         * The resulting method type is a method type that is override-equivalent
+         * and return-type substitutable with each method in the original list.
+         */
+        private FunctionDescriptor mergeDescriptors(TypeSymbol origin, List<Symbol> methodSyms) {
+            //pick argument types - simply take the signature that is a
+            //subsignature of all other signatures in the list (as per JLS 8.4.2)
+            List<Symbol> mostSpecific = List.nil();
+            outer: for (Symbol msym1 : methodSyms) {
+                Type mt1 = memberType(origin.type, msym1);
+                for (Symbol msym2 : methodSyms) {
+                    Type mt2 = memberType(origin.type, msym2);
+                    if (!isSubSignature(mt1, mt2)) {
+                        continue outer;
+                    }
+                }
+                mostSpecific = mostSpecific.prepend(msym1);
+            }
+            if (mostSpecific.isEmpty()) {
+                return null;
+            }
+
+
+            //pick return types - this is done in two phases: (i) first, the most
+            //specific return type is chosen using strict subtyping; if this fails,
+            //a second attempt is made using return type substitutability (see JLS 8.4.5)
+            boolean phase2 = false;
+            Symbol bestSoFar = null;
+            while (bestSoFar == null) {
+                outer: for (Symbol msym1 : mostSpecific) {
+                    Type mt1 = memberType(origin.type, msym1);
+                    for (Symbol msym2 : methodSyms) {
+                        Type mt2 = memberType(origin.type, msym2);
+                        if (phase2 ?
+                                !returnTypeSubstitutable(mt1, mt2) :
+                                !isSubtypeInternal(mt1.getReturnType(), mt2.getReturnType())) {
+                            continue outer;
+                        }
+                    }
+                    bestSoFar = msym1;
+                }
+                if (phase2) {
+                    break;
+                } else {
+                    phase2 = true;
+                }
+            }
+            if (bestSoFar == null) return null;
+
+            //merge thrown types - form the intersection of all the thrown types in
+            //all the signatures in the list
+            List<Type> thrown = null;
+            for (Symbol msym1 : methodSyms) {
+                Type mt1 = memberType(origin.type, msym1);
+                thrown = (thrown == null) ?
+                    mt1.getThrownTypes() :
+                    chk.intersect(mt1.getThrownTypes(), thrown);
+            }
+
+            final List<Type> thrown1 = thrown;
+            return new FunctionDescriptor(bestSoFar) {
+                @Override
+                public Type getType(Type origin) {
+                    Type mt = memberType(origin, getSymbol());
+                    return new MethodType(mt.getParameterTypes(), mt.getReturnType(), thrown1, syms.methodClass);
+                }
+            };
+        }
+
+        boolean isSubtypeInternal(Type s, Type t) {
+            return (s.isPrimitive() && t.isPrimitive()) ?
+                    isSameType(t, s) :
+                    isSubtype(s, t);
+        }
+
+        FunctionDescriptorLookupError failure(String msg, Object... args) {
+            return failure(diags.fragment(msg, args));
+        }
+
+        FunctionDescriptorLookupError failure(JCDiagnostic diag) {
+            return functionDescriptorLookupError.setMessage(diag);
+        }
+    }
+
+    private DescriptorCache descCache = new DescriptorCache();
+
+    /**
+     * Find the method descriptor associated to this class symbol - if the
+     * symbol 'origin' is not a functional interface, an exception is thrown.
+     */
+    public Symbol findDescriptorSymbol(TypeSymbol origin) throws FunctionDescriptorLookupError {
+        return descCache.get(origin).getSymbol();
+    }
+
+    /**
+     * Find the type of the method descriptor associated to this class symbol -
+     * if the symbol 'origin' is not a functional interface, an exception is thrown.
+     */
+    public Type findDescriptorType(Type origin) throws FunctionDescriptorLookupError {
+        return descCache.get(origin.tsym).getType(origin);
+    }
+
+    /**
+     * Is given type a functional interface?
+     */
+    public boolean isFunctionalInterface(TypeSymbol tsym) {
+        try {
+            findDescriptorSymbol(tsym);
+            return true;
+        } catch (FunctionDescriptorLookupError ex) {
+            return false;
+        }
     }
     // </editor-fold>
 
@@ -1215,7 +1507,10 @@ public class Types {
      * Returns the lower bounds of the formals of a method.
      */
     public List<Type> lowerBoundArgtypes(Type t) {
-        return map(t.getParameterTypes(), lowerBoundMapping);
+        return lowerBounds(t.getParameterTypes());
+    }
+    public List<Type> lowerBounds(List<Type> ts) {
+        return map(ts, lowerBoundMapping);
     }
     private final Mapping lowerBoundMapping = new Mapping("lowerBound") {
             public Type apply(Type t) {
@@ -2005,6 +2300,15 @@ public class Types {
     public boolean overrideEquivalent(Type t, Type s) {
         return hasSameArgs(t, s) ||
             hasSameArgs(t, erasure(s)) || hasSameArgs(erasure(t), s);
+    }
+
+    public boolean overridesObjectMethod(TypeSymbol origin, Symbol msym) {
+        for (Scope.Entry e = syms.objectType.tsym.members().lookup(msym.name) ; e.scope != null ; e = e.next()) {
+            if (msym.overrides(e.sym, origin, Types.this, true)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // <editor-fold defaultstate="collapsed" desc="Determining method implementation in given site">
