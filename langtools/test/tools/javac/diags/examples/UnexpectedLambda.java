@@ -21,25 +21,9 @@
  * questions.
  */
 
-// key: compiler.err.cant.ref.non.effectively.final.var
-// key: compiler.misc.inner.cls
-// key: compiler.misc.lambda
-// options: -XDallowLambda -XDallowEffectivelyFinalInInnerClasses
+// key: compiler.err.unexpected.lambda
+// options: -XDallowLambda
 
-class CantRefNonEffectivelyFinalVar {
-    void test() {
-        int i = 0;
-        new Object() { int j = i; };
-        i = 2;
-    }
-
-    interface SAM {
-        void m();
-    }
-
-    void test2() {
-        int i = 0;
-        SAM s = ()-> { int j = i; };
-        i++;
-    }
+class UnexpectedLambda {
+    { (()-> { })++; }
 }

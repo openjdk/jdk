@@ -497,7 +497,7 @@ public class DeferredAttr extends JCTree.Visitor {
          * a default expected type (j.l.Object).
          */
         private Type recover(DeferredType dt) {
-            dt.check(new RecoveryInfo());
+            dt.check(attr.new RecoveryInfo(deferredAttrContext));
             switch (TreeInfo.skipParens(dt.tree).getTag()) {
                 case LAMBDA:
                 case REFERENCE:
@@ -509,31 +509,6 @@ public class DeferredAttr extends JCTree.Visitor {
                     return super.apply(dt);
             }
         }
-
-        class RecoveryInfo extends ResultInfo {
-
-            public RecoveryInfo() {
-                attr.super(Kinds.VAL, Type.recoveryType, new Check.NestedCheckContext(chk.basicHandler) {
-                    @Override
-                    public DeferredAttrContext deferredAttrContext() {
-                        return deferredAttrContext;
-                    }
-                    @Override
-                    public boolean compatible(Type found, Type req, Warner warn) {
-                        return true;
-                    }
-                    @Override
-                    public void report(DiagnosticPosition pos, JCDiagnostic details) {
-                        //do nothing
-                    }
-                });
-            }
-
-            @Override
-            protected Type check(DiagnosticPosition pos, Type found) {
-                return chk.checkNonVoid(pos, super.check(pos, found));
-            }
-        }
     }
 
     /**
@@ -541,13 +516,125 @@ public class DeferredAttr extends JCTree.Visitor {
      * an AST node can be type-checked
      */
     @SuppressWarnings("fallthrough")
-    List<Type> stuckVars(JCExpression tree, ResultInfo resultInfo) {
-        switch (tree.getTag()) {
-            case LAMBDA:
-            case REFERENCE:
-                Assert.error("not supported yet");
-            default:
-                return List.nil();
+    List<Type> stuckVars(JCTree tree, ResultInfo resultInfo) {
+        if (resultInfo.pt.tag == NONE || resultInfo.pt.isErroneous()) {
+            return List.nil();
+        } else {
+            StuckChecker sc = new StuckChecker(resultInfo);
+            sc.scan(tree);
+            return List.from(sc.stuckVars);
+        }
+    }
+
+    /**
+     * This visitor is used to check that structural expressions conform
+     * to their target - this step is required as inference could end up
+     * inferring types that make some of the nested expressions incompatible
+     * with their corresponding instantiated target
+     */
+    class StuckChecker extends TreeScanner {
+
+        Type pt;
+        Filter<JCTree> treeFilter;
+        Infer.InferenceContext inferenceContext;
+        Set<Type> stuckVars = new HashSet<Type>();
+
+        final Filter<JCTree> argsFilter = new Filter<JCTree>() {
+            public boolean accepts(JCTree t) {
+                switch (t.getTag()) {
+                    case CONDEXPR:
+                    case LAMBDA:
+                    case PARENS:
+                    case REFERENCE:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        };
+
+        final Filter<JCTree> lambdaBodyFilter = new Filter<JCTree>() {
+            public boolean accepts(JCTree t) {
+                switch (t.getTag()) {
+                    case BLOCK: case CASE: case CATCH: case DOLOOP:
+                    case FOREACHLOOP: case FORLOOP: case RETURN:
+                    case SYNCHRONIZED: case SWITCH: case TRY: case WHILELOOP:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        };
+
+        StuckChecker(ResultInfo resultInfo) {
+            this.pt = resultInfo.pt;
+            this.inferenceContext = resultInfo.checkContext.inferenceContext();
+            this.treeFilter = argsFilter;
+        }
+
+        @Override
+        public void scan(JCTree tree) {
+            if (tree != null && treeFilter.accepts(tree)) {
+                super.scan(tree);
+            }
+        }
+
+        @Override
+        public void visitLambda(JCLambda tree) {
+            Type prevPt = pt;
+            Filter<JCTree> prevFilter = treeFilter;
+            try {
+                if (inferenceContext.inferenceVars().contains(pt)) {
+                    stuckVars.add(pt);
+                }
+                if (!types.isFunctionalInterface(pt.tsym)) {
+                    return;
+                }
+                Type descType = types.findDescriptorType(pt);
+                List<Type> freeArgVars = inferenceContext.freeVarsIn(descType.getParameterTypes());
+                if (!TreeInfo.isExplicitLambda(tree) &&
+                        freeArgVars.nonEmpty()) {
+                    stuckVars.addAll(freeArgVars);
+                }
+                pt = descType.getReturnType();
+                if (tree.getBodyKind() == JCTree.JCLambda.BodyKind.EXPRESSION) {
+                    scan(tree.getBody());
+                } else {
+                    treeFilter = lambdaBodyFilter;
+                    super.visitLambda(tree);
+                }
+            } finally {
+                pt = prevPt;
+                treeFilter = prevFilter;
+            }
+        }
+
+        @Override
+        public void visitReference(JCMemberReference tree) {
+            scan(tree.expr);
+            if (inferenceContext.inferenceVars().contains(pt)) {
+                stuckVars.add(pt);
+                return;
+            }
+            if (!types.isFunctionalInterface(pt.tsym)) {
+                return;
+            }
+            Type descType = types.findDescriptorType(pt);
+            List<Type> freeArgVars = inferenceContext.freeVarsIn(descType.getParameterTypes());
+            stuckVars.addAll(freeArgVars);
+        }
+
+        @Override
+        public void visitReturn(JCReturn tree) {
+            Filter<JCTree> prevFilter = treeFilter;
+            try {
+                treeFilter = argsFilter;
+                if (tree.expr != null) {
+                    scan(tree.expr);
+                }
+            } finally {
+                treeFilter = prevFilter;
+            }
         }
     }
 }
