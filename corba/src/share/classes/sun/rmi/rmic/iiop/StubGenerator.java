@@ -1631,7 +1631,7 @@ public class StubGenerator extends sun.rmi.rmic.iiop.Generator {
 
         // Write data members...
         p.pln();
-        p.pln("private " + getName(theType) + " target = null;");
+        p.pln("volatile private " + getName(theType) + " target = null;");
         p.pln();
 
         // Write the ids...
@@ -1695,6 +1695,10 @@ public class StubGenerator extends sun.rmi.rmic.iiop.Generator {
 
         if (remoteMethods.length > 0) {
             p.plnI("try {");
+            p.pln(getName(theType) + " target = this.target;");
+            p.plnI("if (target == null) {");
+            p.pln("throw new java.io.IOException();");
+            p.pOln("}");
             p.plnI(idExtInputStream + " "+in+" = ");
             p.pln("(" + idExtInputStream + ") "+_in+";");
             p.pO();
