@@ -2332,7 +2332,7 @@ class CommandLineFlags {
   develop(bool, CITimeEach, false,                                          \
           "display timing information after each successful compilation")   \
                                                                             \
-  develop(bool, CICountOSR, true,                                           \
+  develop(bool, CICountOSR, false,                                          \
           "use a separate counter when assigning ids to osr compilations")  \
                                                                             \
   develop(bool, CICompileNatives, true,                                     \
