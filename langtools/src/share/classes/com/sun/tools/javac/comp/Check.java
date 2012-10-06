@@ -648,6 +648,22 @@ public class Check {
             return t;
     }
 
+    /** Check that type is a valid qualifier for a constructor reference expression
+     */
+    Type checkConstructorRefType(DiagnosticPosition pos, Type t) {
+        t = checkClassType(pos, t);
+        if (t.tag == CLASS) {
+            if ((t.tsym.flags() & (ABSTRACT | INTERFACE)) != 0) {
+                log.error(pos, "abstract.cant.be.instantiated");
+                t = types.createErrorType(t);
+            } else if ((t.tsym.flags() & ENUM) != 0) {
+                log.error(pos, "enum.cant.be.instantiated");
+                t = types.createErrorType(t);
+            }
+        }
+        return t;
+    }
+
     /** Check that type is a class or interface type.
      *  @param pos           Position to be used for error reporting.
      *  @param t             The type to be checked.
@@ -842,29 +858,32 @@ public class Check {
         List<JCExpression> args = argtrees;
         DeferredAttr.DeferredTypeMap checkDeferredMap =
                 deferredAttr.new DeferredTypeMap(DeferredAttr.AttrMode.CHECK, sym, env.info.pendingResolutionPhase);
-        while (formals.head != last) {
-            JCTree arg = args.head;
-            Warner warn = convertWarner(arg.pos(), arg.type, formals.head);
-            assertConvertible(arg, arg.type, formals.head, warn);
-            args = args.tail;
-            formals = formals.tail;
-        }
-        if (useVarargs) {
-            Type varArg = types.elemtype(last);
-            while (args.tail != null) {
+        if (args != null) {
+            //this is null when type-checking a method reference
+            while (formals.head != last) {
                 JCTree arg = args.head;
-                Warner warn = convertWarner(arg.pos(), arg.type, varArg);
-                assertConvertible(arg, arg.type, varArg, warn);
+                Warner warn = convertWarner(arg.pos(), arg.type, formals.head);
+                assertConvertible(arg, arg.type, formals.head, warn);
                 args = args.tail;
+                formals = formals.tail;
             }
-        } else if ((sym.flags() & VARARGS) != 0 && allowVarargs) {
-            // non-varargs call to varargs method
-            Type varParam = owntype.getParameterTypes().last();
-            Type lastArg = checkDeferredMap.apply(argtypes.last());
-            if (types.isSubtypeUnchecked(lastArg, types.elemtype(varParam)) &&
-                    !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
-                log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
-                        types.elemtype(varParam), varParam);
+            if (useVarargs) {
+                Type varArg = types.elemtype(last);
+                while (args.tail != null) {
+                    JCTree arg = args.head;
+                    Warner warn = convertWarner(arg.pos(), arg.type, varArg);
+                    assertConvertible(arg, arg.type, varArg, warn);
+                    args = args.tail;
+                }
+            } else if ((sym.flags() & VARARGS) != 0 && allowVarargs) {
+                // non-varargs call to varargs method
+                Type varParam = owntype.getParameterTypes().last();
+                Type lastArg = checkDeferredMap.apply(argtypes.last());
+                if (types.isSubtypeUnchecked(lastArg, types.elemtype(varParam)) &&
+                        !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
+                    log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
+                            types.elemtype(varParam), varParam);
+            }
         }
         if (unchecked) {
             warnUnchecked(env.tree.pos(),
@@ -898,6 +917,9 @@ public class Check {
                     break;
                 case NEWCLASS:
                     ((JCNewClass) tree).varargsElement = elemtype;
+                    break;
+                case REFERENCE:
+                    ((JCMemberReference) tree).varargsElement = elemtype;
                     break;
                 default:
                     throw new AssertionError(""+tree);

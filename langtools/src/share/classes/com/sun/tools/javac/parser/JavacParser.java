@@ -1160,7 +1160,7 @@ public class JavacParser implements Parser {
                     case LT:
                         if ((mode & TYPE) == 0 && isUnboundMemberRef()) {
                             //this is an unbound method reference whose qualifier
-                            //is a generic type i.e. A<S>#m
+                            //is a generic type i.e. A<S>::m
                             int pos1 = token.pos;
                             accept(LT);
                             ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
@@ -1178,7 +1178,8 @@ public class JavacParser implements Parser {
                                 t = toP(F.at(token.pos).Select(t, ident()));
                                 t = typeArgumentsOpt(t);
                             }
-                            if (token.kind != HASH) {
+                            t = bracketsOpt(t);
+                            if (token.kind != COLCOL) {
                                 //method reference expected here
                                 t = illegal();
                             }
@@ -1238,6 +1239,10 @@ public class JavacParser implements Parser {
                         nextToken();
                         t = bracketsOpt(t);
                         t = toP(F.at(pos1).TypeArray(t));
+                        if (token.kind == COLCOL) {
+                            mode = EXPR;
+                            continue;
+                        }
                         return t;
                     }
                     mode = oldmode;
@@ -1270,10 +1275,10 @@ public class JavacParser implements Parser {
                     t = argumentsOpt(typeArgs, typeArgumentsOpt(t));
                     typeArgs = null;
                 }
-            } else if ((mode & EXPR) != 0 && token.kind == HASH) {
+            } else if ((mode & EXPR) != 0 && token.kind == COLCOL) {
                 mode = EXPR;
                 if (typeArgs != null) return illegal();
-                accept(HASH);
+                accept(COLCOL);
                 t = memberReferenceSuffix(pos1, t);
             } else {
                 break;
@@ -1312,9 +1317,11 @@ public class JavacParser implements Parser {
                 case GT:
                     depth--;
                     if (depth == 0) {
+                        TokenKind nextKind = S.token(pos + 1).kind;
                         return
-                            S.token(pos + 1).kind == TokenKind.DOT ||
-                            S.token(pos + 1).kind == TokenKind.HASH;
+                            nextKind == TokenKind.DOT ||
+                            nextKind == TokenKind.LBRACKET ||
+                            nextKind == TokenKind.COLCOL;
                     }
                     break;
                 default:
@@ -1368,7 +1375,7 @@ public class JavacParser implements Parser {
         nextToken();
         if (token.kind == LPAREN || typeArgs != null) {
             t = arguments(typeArgs, t);
-        } else if (token.kind == HASH) {
+        } else if (token.kind == COLCOL) {
             if (typeArgs != null) return illegal();
             t = memberReferenceSuffix(t);
         } else {
@@ -1579,20 +1586,22 @@ public class JavacParser implements Parser {
                 t = toP(F.at(pos).Select(t, names._class));
             }
         } else if ((mode & TYPE) != 0) {
-            mode = TYPE;
-        } else {
+            if (token.kind != COLCOL) {
+                mode = TYPE;
+            }
+        } else if (token.kind != COLCOL) {
             syntaxError(token.pos, "dot.class.expected");
         }
         return t;
     }
 
     /**
-     * MemberReferenceSuffix = "#" [TypeArguments] Ident
-     *                       | "#" [TypeArguments] "new"
+     * MemberReferenceSuffix = "::" [TypeArguments] Ident
+     *                       | "::" [TypeArguments] "new"
      */
     JCExpression memberReferenceSuffix(JCExpression t) {
         int pos1 = token.pos;
-        accept(HASH);
+        accept(COLCOL);
         return memberReferenceSuffix(pos1, t);
     }
 

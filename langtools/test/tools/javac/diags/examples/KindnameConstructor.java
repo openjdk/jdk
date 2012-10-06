@@ -23,7 +23,7 @@
 
 // key: compiler.misc.kindname.constructor
 // key: compiler.misc.kindname.class
-// key: compiler.err.cant.apply.symbol.1
+// key: compiler.err.cant.apply.symbol
 // key: compiler.misc.no.conforming.assignment.exists
 // key: compiler.misc.inconvertible.types
 // key: compiler.misc.count.error

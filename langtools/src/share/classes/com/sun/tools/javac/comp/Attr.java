@@ -43,7 +43,7 @@ import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Check.CheckContext;
 
 import com.sun.source.tree.IdentifierTree;
-import com.sun.source.tree.LambdaExpressionTree;
+import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.TreeVisitor;
 import com.sun.source.util.SimpleTreeVisitor;
@@ -1034,7 +1034,8 @@ public class Attr extends JCTree.Visitor {
             if (tree.init != null) {
                 if ((v.flags_field & FINAL) != 0 &&
                         !tree.init.hasTag(NEWCLASS) &&
-                        !tree.init.hasTag(LAMBDA)) {
+                        !tree.init.hasTag(LAMBDA) &&
+                        !tree.init.hasTag(REFERENCE)) {
                     // In this case, `v' is final.  Ensure that it's initializer is
                     // evaluated.
                     v.getConstValue(); // ensure initializer is evaluated
@@ -1743,27 +1744,10 @@ public class Attr extends JCTree.Visitor {
             if (restype.tag == WILDCARD)
                 throw new AssertionError(mtype);
 
-            // as a special case, array.clone() has a result that is
-            // the same as static type of the array being cloned
-            if (tree.meth.hasTag(SELECT) &&
-                allowCovariantReturns &&
-                methName == names.clone &&
-                types.isArray(((JCFieldAccess) tree.meth).selected.type))
-                restype = ((JCFieldAccess) tree.meth).selected.type;
-
-            // as a special case, x.getClass() has type Class<? extends |X|>
-            if (allowGenerics &&
-                methName == names.getClass && tree.args.isEmpty()) {
-                Type qualifier = (tree.meth.hasTag(SELECT))
+            Type qualifier = (tree.meth.hasTag(SELECT))
                     ? ((JCFieldAccess) tree.meth).selected.type
                     : env.enclClass.sym.type;
-                restype = new
-                    ClassType(restype.getEnclosingType(),
-                              List.<Type>of(new WildcardType(types.erasure(qualifier),
-                                                               BoundKind.EXTENDS,
-                                                               syms.boundClass)),
-                              restype.tsym);
-            }
+            restype = adjustMethodReturnType(qualifier, methName, argtypes, restype);
 
             chk.checkRefTypes(tree.typeargs, typeargtypes);
 
@@ -1777,6 +1761,27 @@ public class Attr extends JCTree.Visitor {
         chk.validate(tree.typeargs, localEnv);
     }
     //where
+        Type adjustMethodReturnType(Type qualifierType, Name methodName, List<Type> argtypes, Type restype) {
+            if (allowCovariantReturns &&
+                    methodName == names.clone &&
+                types.isArray(qualifierType)) {
+                // as a special case, array.clone() has a result that is
+                // the same as static type of the array being cloned
+                return qualifierType;
+            } else if (allowGenerics &&
+                    methodName == names.getClass &&
+                    argtypes.isEmpty()) {
+                // as a special case, x.getClass() has type Class<? extends |X|>
+                return new ClassType(restype.getEnclosingType(),
+                              List.<Type>of(new WildcardType(types.erasure(qualifierType),
+                                                               BoundKind.EXTENDS,
+                                                               syms.boundClass)),
+                              restype.tsym);
+            } else {
+                return restype;
+            }
+        }
+
         /** Check that given application node appears as first statement
          *  in a constructor call.
          *  @param tree   The application node
@@ -2357,6 +2362,179 @@ public class Attr extends JCTree.Visitor {
             return lambdaEnv;
         }
 
+    @Override
+    public void visitReference(final JCMemberReference that) {
+        if (pt().isErroneous() || (pt().tag == NONE && pt() != Type.recoveryType)) {
+            if (pt().tag == NONE) {
+                //method reference only allowed in assignment or method invocation/cast context
+                log.error(that.pos(), "unexpected.mref");
+            }
+            result = that.type = types.createErrorType(pt());
+            return;
+        }
+        final Env<AttrContext> localEnv = env.dup(that);
+        try {
+            //attribute member reference qualifier - if this is a constructor
+            //reference, the expected kind must be a type
+            Type exprType = attribTree(that.expr,
+                    env, new ResultInfo(that.getMode() == ReferenceMode.INVOKE ? VAL | TYP : TYP, Type.noType));
+
+            if (that.getMode() == JCMemberReference.ReferenceMode.NEW) {
+                exprType = chk.checkConstructorRefType(that.expr, exprType);
+            }
+
+            if (exprType.isErroneous()) {
+                //if the qualifier expression contains problems,
+                //give up atttribution of method reference
+                result = that.type = exprType;
+                return;
+            }
+
+            if (TreeInfo.isStaticSelector(that.expr, names) &&
+                    (that.getMode() != ReferenceMode.NEW || !that.expr.type.isRaw())) {
+                //if the qualifier is a type, validate it
+                chk.validate(that.expr, env);
+            }
+
+            //attrib type-arguments
+            List<Type> typeargtypes = null;
+            if (that.typeargs != null) {
+                typeargtypes = attribTypes(that.typeargs, localEnv);
+            }
+
+            Type target = infer.instantiateFunctionalInterface(that, pt(), null, resultInfo.checkContext);
+            Type desc = (target == Type.recoveryType) ?
+                    fallbackDescriptorType(that) :
+                    types.findDescriptorType(target);
+
+            List<Type> argtypes = desc.getParameterTypes();
+
+            boolean allowBoxing =
+                    resultInfo.checkContext.deferredAttrContext() == deferredAttr.emptyDeferredAttrContext ||
+                    resultInfo.checkContext.deferredAttrContext().phase.isBoxingRequired();
+            Pair<Symbol, Resolve.ReferenceLookupHelper> refResult = rs.resolveMemberReference(that.pos(), localEnv, that,
+                    that.expr.type, that.name, argtypes, typeargtypes, allowBoxing);
+
+            Symbol refSym = refResult.fst;
+            Resolve.ReferenceLookupHelper lookupHelper = refResult.snd;
+
+            if (refSym.kind != MTH) {
+                boolean targetError;
+                switch (refSym.kind) {
+                    case ABSENT_MTH:
+                        targetError = false;
+                        break;
+                    case WRONG_MTH:
+                    case WRONG_MTHS:
+                    case AMBIGUOUS:
+                    case HIDDEN:
+                    case STATICERR:
+                    case MISSING_ENCL:
+                        targetError = true;
+                        break;
+                    default:
+                        Assert.error("unexpected result kind " + refSym.kind);
+                        targetError = false;
+                }
+
+                JCDiagnostic detailsDiag = ((Resolve.ResolveError)refSym).getDiagnostic(JCDiagnostic.DiagnosticType.FRAGMENT,
+                                that, exprType.tsym, exprType, that.name, argtypes, typeargtypes);
+
+                JCDiagnostic.DiagnosticType diagKind = targetError ?
+                        JCDiagnostic.DiagnosticType.FRAGMENT : JCDiagnostic.DiagnosticType.ERROR;
+
+                JCDiagnostic diag = diags.create(diagKind, log.currentSource(), that,
+                        "invalid.mref", Kinds.kindName(that.getMode()), detailsDiag);
+
+                if (targetError) {
+                    resultInfo.checkContext.report(that, diag);
+                } else {
+                    log.report(diag);
+                }
+                result = that.type = types.createErrorType(target);
+                return;
+            }
+
+            if (desc.getReturnType() == Type.recoveryType) {
+                // stop here
+                result = that.type = types.createErrorType(target);
+                return;
+            }
+
+            that.sym = refSym.baseSymbol();
+            that.kind = lookupHelper.referenceKind(that.sym);
+
+            ResultInfo checkInfo =
+                    resultInfo.dup(newMethodTemplate(
+                        desc.getReturnType().tag == VOID ? Type.noType : desc.getReturnType(),
+                        lookupHelper.argtypes,
+                        typeargtypes));
+
+            Type refType = checkId(that, lookupHelper.site, refSym, localEnv, checkInfo);
+
+            if (!refType.isErroneous()) {
+                refType = types.createMethodTypeWithReturn(refType,
+                        adjustMethodReturnType(lookupHelper.site, that.name, checkInfo.pt.getParameterTypes(), refType.getReturnType()));
+            }
+
+            //go ahead with standard method reference compatibility check - note that param check
+            //is a no-op (as this has been taken care during method applicability)
+            boolean isSpeculativeRound =
+                    resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.SPECULATIVE;
+            checkReferenceCompatible(that, desc, refType, resultInfo.checkContext, isSpeculativeRound);
+            if (!isSpeculativeRound) {
+                checkAccessibleFunctionalDescriptor(that, localEnv, resultInfo.checkContext.inferenceContext(), desc);
+            }
+            result = check(that, target, VAL, resultInfo);
+        } catch (Types.FunctionDescriptorLookupError ex) {
+            JCDiagnostic cause = ex.getDiagnostic();
+            resultInfo.checkContext.report(that, cause);
+            result = that.type = types.createErrorType(pt());
+            return;
+        }
+    }
+
+    @SuppressWarnings("fallthrough")
+    void checkReferenceCompatible(JCMemberReference tree, Type descriptor, Type refType, CheckContext checkContext, boolean speculativeAttr) {
+        Type returnType = checkContext.inferenceContext().asFree(descriptor.getReturnType(), types);
+
+        Type resType;
+        switch (tree.getMode()) {
+            case NEW:
+                if (!tree.expr.type.isRaw()) {
+                    resType = tree.expr.type;
+                    break;
+                }
+            default:
+                resType = refType.getReturnType();
+        }
+
+        Type incompatibleReturnType = resType;
+
+        if (returnType.tag == VOID) {
+            incompatibleReturnType = null;
+        }
+
+        if (returnType.tag != VOID && resType.tag != VOID) {
+            if (resType.isErroneous() ||
+                    new LambdaReturnContext(checkContext).compatible(resType, returnType, Warner.noWarnings)) {
+                incompatibleReturnType = null;
+            }
+        }
+
+        if (incompatibleReturnType != null) {
+            checkContext.report(tree, diags.fragment("incompatible.ret.type.in.mref",
+                    diags.fragment("inconvertible.types", resType, descriptor.getReturnType())));
+        }
+
+        if (!speculativeAttr) {
+            List<Type> thrownTypes = checkContext.inferenceContext().asFree(descriptor.getThrownTypes(), types);
+            if (chk.unhandled(refType.getThrownTypes(), thrownTypes).nonEmpty()) {
+                log.error(tree, "incompatible.thrown.types.in.mref", refType.getThrownTypes());
+            }
+        }
+    }
+
     public void visitParens(JCParens tree) {
         Type owntype = attribTree(tree.expr, env, resultInfo);
         result = check(tree, owntype, pkind(), resultInfo);
@@ -2708,6 +2886,7 @@ public class Attr extends JCTree.Visitor {
             } else {
                 // Check if type-qualified fields or methods are static (JLS)
                 if ((sym.flags() & STATIC) == 0 &&
+                    !env.next.tree.hasTag(REFERENCE) &&
                     sym.name != names._super &&
                     (sym.kind == VAR || sym.kind == MTH)) {
                     rs.accessBase(rs.new StaticError(sym),
@@ -3732,6 +3911,14 @@ public class Attr extends JCTree.Visitor {
             if (that.operator == null)
                 that.operator = new OperatorSymbol(names.empty, syms.unknownType, -1, syms.noSymbol);
             super.visitUnary(that);
+        }
+
+        @Override
+        public void visitReference(JCMemberReference that) {
+            super.visitReference(that);
+            if (that.sym == null) {
+                that.sym = new MethodSymbol(0, names.empty, syms.unknownType, syms.noSymbol);
+            }
         }
     }
     // </editor-fold>

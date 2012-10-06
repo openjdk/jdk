@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,17 @@
  * questions.
  */
 
-// key: compiler.err.method.references.not.supported.in.source
-// options: -source 7 -Xlint:-options
+// key: compiler.err.prob.found.req
+// key: compiler.misc.inconvertible.types
+// key: compiler.misc.incompatible.ret.type.in.mref
+// options: -XDallowMethodReferences -XDallowPoly
 
-class MethodReferencesNotSupported {
-    S s = A::foo;
+class IncompatibleRetTypeInMref {
+    interface SAM {
+        Integer m();
+    }
+
+    static String f() { }
+
+    SAM s = IncompatibleRetTypeInMref::f;
 }
