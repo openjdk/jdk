@@ -2583,6 +2583,12 @@ void JavaThread::deoptimized_wrt_marked_nmethods() {
   StackFrameStream fst(this, UseBiasedLocking);
   for(; !fst.is_done(); fst.next()) {
     if (fst.current()->should_be_deoptimized()) {
+      if (LogCompilation && xtty != NULL) {
+        nmethod* nm = fst.current()->cb()->as_nmethod_or_null();
+        xtty->elem("deoptimized thread='" UINTX_FORMAT "' compile_id='%d'",
+                   this->name(), nm != NULL ? nm->compile_id() : -1);
+      }
+
       Deoptimization::deoptimize(this, *fst.current(), fst.register_map());
     }
   }

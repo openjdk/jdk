@@ -1126,7 +1126,8 @@ void ciEnv::record_method_not_compilable(const char* reason, bool all_tiers) {
       if (all_tiers) {
         log()->elem("method_not_compilable");
       } else {
-        log()->elem("method_not_compilable_at_tier");
+        log()->elem("method_not_compilable_at_tier level='%d'",
+                    current()->task()->comp_level());
       }
     }
     _compilable = new_compilable;

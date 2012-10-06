@@ -828,6 +828,9 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                            has_unsafe_access(),
                            SharedRuntime::is_wide_vector(max_vector_size())
                            );
+
+    if (log() != NULL) // Print code cache state into compiler log
+      log()->code_cache_state();
   }
 }
 
