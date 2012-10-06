@@ -282,6 +282,7 @@ public class TreeInfo {
                 return isStaticSym(base) &&
                     isStaticSelector(((JCFieldAccess)base).selected, names);
             case TYPEAPPLY:
+            case TYPEARRAY:
                 return true;
             default:
                 return false;

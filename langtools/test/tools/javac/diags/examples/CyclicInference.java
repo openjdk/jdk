@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.cant.apply.symbol.1
+// key: compiler.err.cant.apply.symbol
 // key: compiler.misc.cyclic.inference
 // options: -XDallowLambda -XDallowPoly
 

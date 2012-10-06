@@ -40,6 +40,7 @@ import com.sun.tools.javac.comp.Resolve.MethodResolutionContext.Candidate;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -98,10 +99,6 @@ public class Resolve {
 
         varNotFound = new
             SymbolNotFoundError(ABSENT_VAR);
-        wrongMethod = new
-            InapplicableSymbolError();
-        wrongMethods = new
-            InapplicableSymbolsError();
         methodNotFound = new
             SymbolNotFoundError(ABSENT_MTH);
         typeNotFound = new
@@ -133,8 +130,6 @@ public class Resolve {
     /** error symbols, which are returned when resolution fails
      */
     private final SymbolNotFoundError varNotFound;
-    private final InapplicableSymbolError wrongMethod;
-    private final InapplicableSymbolsError wrongMethods;
     private final SymbolNotFoundError methodNotFound;
     private final SymbolNotFoundError typeNotFound;
 
@@ -454,8 +449,18 @@ public class Resolve {
                         boolean useVarargs,
                         Warner warn)
         throws Infer.InferenceException {
-        if (useVarargs && (m.flags() & VARARGS) == 0)
-            throw inapplicableMethodException.setMessage();
+        if (useVarargs && (m.flags() & VARARGS) == 0) {
+            //better error recovery - if we stumbled upon a non-varargs method
+            //during varargs applicability phase, the method should be treated as
+            //not applicable; the reason for inapplicability can be found in the
+            //candidate for 'm' that was created during the BOX phase.
+            Candidate prevCandidate = currentResolutionContext.getCandidate(m, BOX);
+            JCDiagnostic details = null;
+            if (prevCandidate != null && !prevCandidate.isApplicable()) {
+                details = prevCandidate.details;
+            }
+            throw inapplicableMethodException.setMessage(details);
+        }
         Type mt = types.memberType(site, m);
 
         // tvars is the list of formal type variables for which type arguments
@@ -1028,11 +1033,10 @@ public class Resolve {
                 currentResolutionContext.addInapplicableCandidate(sym, ex.getDiagnostic());
             switch (bestSoFar.kind) {
             case ABSENT_MTH:
-                return wrongMethod;
+                return new InapplicableSymbolError(currentResolutionContext);
             case WRONG_MTH:
                 if (operator) return bestSoFar;
-            case WRONG_MTHS:
-                return wrongMethods;
+                bestSoFar = new InapplicableSymbolsError(currentResolutionContext);
             default:
                 return bestSoFar;
             }
@@ -1181,7 +1185,8 @@ public class Resolve {
 
             //is this a structural actual argument?
             boolean isStructuralPoly = actual.tag == DEFERRED &&
-                    ((DeferredType)actual).tree.hasTag(LAMBDA);
+                    (((DeferredType)actual).tree.hasTag(LAMBDA) ||
+                    ((DeferredType)actual).tree.hasTag(REFERENCE));
 
             Type newFormal = f1;
 
@@ -2210,7 +2215,7 @@ public class Resolve {
                 final JCDiagnostic details = errSym.kind == WRONG_MTH ?
                                 ((InapplicableSymbolError)errSym).errCandidate().details :
                                 null;
-                errSym = new InapplicableSymbolError(errSym.kind, "diamondError") {
+                errSym = new InapplicableSymbolError(errSym.kind, "diamondError", currentResolutionContext) {
                     @Override
                     JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
                             Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
@@ -2274,6 +2279,335 @@ public class Resolve {
             }
         }
         return bestSoFar;
+    }
+
+    /**
+     * Resolution of member references is typically done as a single
+     * overload resolution step, where the argument types A are inferred from
+     * the target functional descriptor.
+     *
+     * If the member reference is a method reference with a type qualifier,
+     * a two-step lookup process is performed. The first step uses the
+     * expected argument list A, while the second step discards the first
+     * type from A (which is treated as a receiver type).
+     *
+     * There are two cases in which inference is performed: (i) if the member
+     * reference is a constructor reference and the qualifier type is raw - in
+     * which case diamond inference is used to infer a parameterization for the
+     * type qualifier; (ii) if the member reference is an unbound reference
+     * where the type qualifier is raw - in that case, during the unbound lookup
+     * the receiver argument type is used to infer an instantiation for the raw
+     * qualifier type.
+     *
+     * When a multi-step resolution process is exploited, it is an error
+     * if two candidates are found (ambiguity).
+     *
+     * This routine returns a pair (T,S), where S is the member reference symbol,
+     * and T is the type of the class in which S is defined. This is necessary as
+     * the type T might be dynamically inferred (i.e. if constructor reference
+     * has a raw qualifier).
+     */
+    Pair<Symbol, ReferenceLookupHelper> resolveMemberReference(DiagnosticPosition pos,
+                                  Env<AttrContext> env,
+                                  JCMemberReference referenceTree,
+                                  Type site,
+                                  Name name, List<Type> argtypes,
+                                  List<Type> typeargtypes,
+                                  boolean boxingAllowed) {
+        //step 1 - bound lookup
+        ReferenceLookupHelper boundLookupHelper = name.equals(names.init) ?
+                new ConstructorReferenceLookupHelper(referenceTree, site, argtypes, typeargtypes, boxingAllowed) :
+                new MethodReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, boxingAllowed);
+        Env<AttrContext> boundEnv = env.dup(env.tree, env.info.dup());
+        Symbol boundSym = findMemberReference(boundEnv, boundLookupHelper);
+
+        //step 2 - unbound lookup
+        ReferenceLookupHelper unboundLookupHelper = boundLookupHelper.unboundLookup();
+        Env<AttrContext> unboundEnv = env.dup(env.tree, env.info.dup());
+        Symbol unboundSym = findMemberReference(unboundEnv, unboundLookupHelper);
+
+        //merge results
+        Pair<Symbol, ReferenceLookupHelper> res;
+        if (unboundSym.kind != MTH) {
+            res = new Pair<Symbol, ReferenceLookupHelper>(boundSym, boundLookupHelper);
+            env.info.pendingResolutionPhase = boundEnv.info.pendingResolutionPhase;
+        } else if (boundSym.kind == MTH) {
+            res = new Pair<Symbol, ReferenceLookupHelper>(ambiguityError(boundSym, unboundSym), boundLookupHelper);
+            env.info.pendingResolutionPhase = boundEnv.info.pendingResolutionPhase;
+        } else {
+            res = new Pair<Symbol, ReferenceLookupHelper>(unboundSym, unboundLookupHelper);
+            env.info.pendingResolutionPhase = unboundEnv.info.pendingResolutionPhase;
+        }
+
+        return res;
+    }
+
+    /**
+     * Helper for defining custom method-like lookup logic; a lookup helper
+     * provides hooks for (i) the actual lookup logic and (ii) accessing the
+     * lookup result (this step might result in compiler diagnostics to be generated)
+     */
+    abstract class LookupHelper {
+
+        /** name of the symbol to lookup */
+        Name name;
+
+        /** location in which the lookup takes place */
+        Type site;
+
+        /** actual types used during the lookup */
+        List<Type> argtypes;
+
+        /** type arguments used during the lookup */
+        List<Type> typeargtypes;
+
+        LookupHelper(Name name, Type site, List<Type> argtypes, List<Type> typeargtypes) {
+            this.name = name;
+            this.site = site;
+            this.argtypes = argtypes;
+            this.typeargtypes = typeargtypes;
+        }
+
+        /**
+         * Search for a symbol under a given overload resolution phase - this method
+         * is usually called several times, once per each overload resolution phase
+         */
+        abstract Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase);
+
+        /**
+         * Validate the result of the lookup
+         */
+        abstract Symbol access(Env<AttrContext> env, Symbol symbol);
+    }
+
+    /**
+     * Helper class for member reference lookup. A reference lookup helper
+     * defines the basic logic for member reference lookup; a method gives
+     * access to an 'unbound' helper used to perform an unbound member
+     * reference lookup.
+     */
+    abstract class ReferenceLookupHelper extends LookupHelper {
+
+        /** The member reference tree */
+        JCMemberReference referenceTree;
+
+        /** Max overload resolution phase handled by this helper */
+        MethodResolutionPhase maxPhase;
+
+        ReferenceLookupHelper(JCMemberReference referenceTree, Name name, Type site,
+                List<Type> argtypes, List<Type> typeargtypes, boolean boxingAllowed) {
+            super(name, site, argtypes, typeargtypes);
+            this.referenceTree = referenceTree;
+            this.maxPhase = boxingAllowed ? VARARITY : BASIC;
+        }
+
+        /**
+         * Returns an unbound version of this lookup helper. By default, this
+         * method returns an dummy lookup helper.
+         */
+        ReferenceLookupHelper unboundLookup() {
+            //dummy loopkup helper that always return 'methodNotFound'
+            return new ReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, maxPhase.isBoxingRequired()) {
+                @Override
+                ReferenceLookupHelper unboundLookup() {
+                    return this;
+                }
+                @Override
+                Symbol lookupReference(Env<AttrContext> env, MethodResolutionPhase phase) {
+                    return methodNotFound;
+                }
+                @Override
+                ReferenceKind referenceKind(Symbol sym) {
+                    Assert.error();
+                    return null;
+                }
+            };
+        }
+
+        /**
+         * Get the kind of the member reference
+         */
+        abstract JCMemberReference.ReferenceKind referenceKind(Symbol sym);
+
+        @Override
+        Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+            return (env.info.pendingResolutionPhase.ordinal() > maxPhase.ordinal()) ?
+                    methodNotFound : lookupReference(env, phase);
+        }
+
+        abstract Symbol lookupReference(Env<AttrContext> env, MethodResolutionPhase phase);
+
+        Symbol access(Env<AttrContext> env, Symbol sym) {
+            if (sym.kind >= AMBIGUOUS) {
+                MethodResolutionPhase errPhase = currentResolutionContext.firstErroneousResolutionPhase();
+                if (errPhase.ordinal() > maxPhase.ordinal()) {
+                    errPhase = maxPhase;
+                }
+                env.info.pendingResolutionPhase = errPhase;
+                sym = currentResolutionContext.resolutionCache.get(errPhase);
+            }
+            return sym;
+        }
+    }
+
+    /**
+     * Helper class for method reference lookup. The lookup logic is based
+     * upon Resolve.findMethod; in certain cases, this helper class has a
+     * corresponding unbound helper class (see UnboundMethodReferenceLookupHelper).
+     * In such cases, non-static lookup results are thrown away.
+     */
+    class MethodReferenceLookupHelper extends ReferenceLookupHelper {
+
+        MethodReferenceLookupHelper(JCMemberReference referenceTree, Name name, Type site,
+                List<Type> argtypes, List<Type> typeargtypes, boolean boxingAllowed) {
+            super(referenceTree, name, site, argtypes, typeargtypes, boxingAllowed);
+        }
+
+        protected Symbol lookupReferenceInternal(Env<AttrContext> env, MethodResolutionPhase phase) {
+            return findMethod(env, site, name, argtypes, typeargtypes,
+                    phase.isBoxingRequired(), phase.isVarargsRequired(), syms.operatorNames.contains(name));
+        }
+
+        protected Symbol adjustLookupResult(Env<AttrContext> env, Symbol sym) {
+            return !TreeInfo.isStaticSelector(referenceTree.expr, names) ||
+                        sym.kind != MTH ||
+                        sym.isStatic() ? sym : new StaticError(sym);
+        }
+
+        @Override
+        final Symbol lookupReference(Env<AttrContext> env, MethodResolutionPhase phase) {
+            return adjustLookupResult(env, lookupReferenceInternal(env, phase));
+        }
+
+        @Override
+        ReferenceLookupHelper unboundLookup() {
+            if (TreeInfo.isStaticSelector(referenceTree.expr, names) &&
+                    argtypes.nonEmpty() &&
+                    types.isSubtypeUnchecked(argtypes.head, site)) {
+                return new UnboundMethodReferenceLookupHelper(referenceTree, name,
+                        site, argtypes, typeargtypes, maxPhase.isBoxingRequired());
+            } else {
+                return super.unboundLookup();
+            }
+        }
+
+        @Override
+        ReferenceKind referenceKind(Symbol sym) {
+            if (sym.isStatic()) {
+                return TreeInfo.isStaticSelector(referenceTree.expr, names) ?
+                        ReferenceKind.STATIC : ReferenceKind.STATIC_EVAL;
+            } else {
+                Name selName = TreeInfo.name(referenceTree.getQualifierExpression());
+                return selName != null && selName == names._super ?
+                        ReferenceKind.SUPER :
+                        ReferenceKind.BOUND;
+            }
+        }
+    }
+
+    /**
+     * Helper class for unbound method reference lookup. Essentially the same
+     * as the basic method reference lookup helper; main difference is that static
+     * lookup results are thrown away. If qualifier type is raw, an attempt to
+     * infer a parameterized type is made using the first actual argument (that
+     * would otherwise be ignored during the lookup).
+     */
+    class UnboundMethodReferenceLookupHelper extends MethodReferenceLookupHelper {
+
+        UnboundMethodReferenceLookupHelper(JCMemberReference referenceTree, Name name, Type site,
+                List<Type> argtypes, List<Type> typeargtypes, boolean boxingAllowed) {
+            super(referenceTree, name,
+                    site.isRaw() ? types.asSuper(argtypes.head, site.tsym) : site,
+                    argtypes.tail, typeargtypes, boxingAllowed);
+        }
+
+        @Override
+        protected Symbol adjustLookupResult(Env<AttrContext> env, Symbol sym) {
+            return sym.kind != MTH || !sym.isStatic() ? sym : new StaticError(sym);
+        }
+
+        @Override
+        ReferenceLookupHelper unboundLookup() {
+            return this;
+        }
+
+        @Override
+        ReferenceKind referenceKind(Symbol sym) {
+            return ReferenceKind.UNBOUND;
+        }
+    }
+
+    /**
+     * Helper class for constructor reference lookup. The lookup logic is based
+     * upon either Resolve.findMethod or Resolve.findDiamond - depending on
+     * whether the constructor reference needs diamond inference (this is the case
+     * if the qualifier type is raw). A special erroneous symbol is returned
+     * if the lookup returns the constructor of an inner class and there's no
+     * enclosing instance in scope.
+     */
+    class ConstructorReferenceLookupHelper extends ReferenceLookupHelper {
+
+        boolean needsInference;
+
+        ConstructorReferenceLookupHelper(JCMemberReference referenceTree, Type site, List<Type> argtypes,
+                List<Type> typeargtypes, boolean boxingAllowed) {
+            super(referenceTree, names.init, site, argtypes, typeargtypes, boxingAllowed);
+            if (site.isRaw()) {
+                this.site = new ClassType(site.getEnclosingType(), site.tsym.type.getTypeArguments(), site.tsym);
+                needsInference = true;
+            }
+        }
+
+        @Override
+        protected Symbol lookupReference(Env<AttrContext> env, MethodResolutionPhase phase) {
+            Symbol sym = needsInference ?
+                findDiamond(env, site, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired()) :
+                findMethod(env, site, name, argtypes, typeargtypes,
+                        phase.isBoxingRequired(), phase.isVarargsRequired(), syms.operatorNames.contains(name));
+            return sym.kind != MTH ||
+                          site.getEnclosingType().tag == NONE ||
+                          hasEnclosingInstance(env, site) ?
+                          sym : new InvalidSymbolError(Kinds.MISSING_ENCL, sym, null) {
+                    @Override
+                    JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+                       return diags.create(dkind, log.currentSource(), pos,
+                            "cant.access.inner.cls.constr", site.tsym.name, argtypes, site.getEnclosingType());
+                    }
+                };
+        }
+
+        @Override
+        ReferenceKind referenceKind(Symbol sym) {
+            return site.getEnclosingType().tag == NONE ?
+                    ReferenceKind.TOPLEVEL : ReferenceKind.IMPLICIT_INNER;
+        }
+    }
+
+    /**
+     * Resolution step for member reference. This generalizes a standard
+     * method/constructor lookup - on each overload resolution step, a
+     * lookup helper class is used to perform the reference lookup; at the end
+     * of the lookup, the helper is used to validate the results.
+     */
+    Symbol findMemberReference(Env<AttrContext> env, LookupHelper lookupHelper) {
+        MethodResolutionContext prevResolutionContext = currentResolutionContext;
+        try {
+            currentResolutionContext = new MethodResolutionContext();
+            Symbol sym = methodNotFound;
+            List<MethodResolutionPhase> steps = methodResolutionSteps;
+            while (steps.nonEmpty() &&
+                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
+                   sym.kind >= ERRONEOUS) {
+                currentResolutionContext.step = env.info.pendingResolutionPhase = steps.head;
+                sym = lookupHelper.lookup(env, steps.head);
+                currentResolutionContext.resolutionCache.put(steps.head, sym);
+                steps = steps.tail;
+            }
+            return lookupHelper.access(env, sym);
+        }
+        finally {
+            currentResolutionContext = prevResolutionContext;
+        }
     }
 
     /** Resolve constructor.
@@ -2425,6 +2759,23 @@ public class Resolve {
                                  Env<AttrContext> env,
                                  Symbol member,
                                  boolean isSuperCall) {
+        Symbol sym = resolveSelfContainingInternal(env, member, isSuperCall);
+        if (sym == null) {
+            log.error(pos, "encl.class.required", member);
+            return syms.errSymbol;
+        } else {
+            return accessBase(sym, pos, env.enclClass.sym.type, sym.name, true);
+        }
+    }
+
+    boolean hasEnclosingInstance(Env<AttrContext> env, Type type) {
+        Symbol encl = resolveSelfContainingInternal(env, type.tsym, false);
+        return encl != null && encl.kind < ERRONEOUS;
+    }
+
+    private Symbol resolveSelfContainingInternal(Env<AttrContext> env,
+                                 Symbol member,
+                                 boolean isSuperCall) {
         Name name = names._this;
         Env<AttrContext> env1 = isSuperCall ? env.outer : env;
         boolean staticOnly = false;
@@ -2435,8 +2786,7 @@ public class Resolve {
                     Symbol sym = env1.info.scope.lookup(name).sym;
                     if (sym != null) {
                         if (staticOnly) sym = new StaticError(sym);
-                        return accessBase(sym, pos, env.enclClass.sym.type,
-                                      name, true);
+                        return sym;
                     }
                 }
                 if ((env1.enclClass.sym.flags() & STATIC) != 0)
@@ -2444,8 +2794,7 @@ public class Resolve {
                 env1 = env1.outer;
             }
         }
-        log.error(pos, "encl.class.required", member);
-        return syms.errSymbol;
+        return null;
     }
 
     /**
@@ -2513,7 +2862,7 @@ public class Resolve {
      * represent a different kinds of resolution error - as such they must
      * specify how they map into concrete compiler diagnostics.
      */
-    private abstract class ResolveError extends Symbol {
+    abstract class ResolveError extends Symbol {
 
         /** The name of the kind of error, for debugging only. */
         final String debugName;
@@ -2703,12 +3052,15 @@ public class Resolve {
      */
     class InapplicableSymbolError extends ResolveError {
 
-        InapplicableSymbolError() {
-            super(WRONG_MTH, "inapplicable symbol error");
+        protected MethodResolutionContext resolveContext;
+
+        InapplicableSymbolError(MethodResolutionContext context) {
+            this(WRONG_MTH, "inapplicable symbol error", context);
         }
 
-        protected InapplicableSymbolError(int kind, String debugName) {
+        protected InapplicableSymbolError(int kind, String debugName, MethodResolutionContext context) {
             super(kind, debugName);
+            this.resolveContext = context;
         }
 
         @Override
@@ -2746,7 +3098,7 @@ public class Resolve {
                 Candidate c = errCandidate();
                 Symbol ws = c.sym.asMemberOf(site, types);
                 return diags.create(dkind, log.currentSource(), pos,
-                          "cant.apply.symbol" + (c.details != null ? ".1" : ""),
+                          "cant.apply.symbol",
                           kindName(ws),
                           ws.name == names.init ? ws.owner.name : ws.name,
                           methodArguments(ws.type.getParameterTypes()),
@@ -2763,13 +3115,13 @@ public class Resolve {
         }
 
         protected boolean shouldReport(Candidate c) {
+            MethodResolutionPhase errPhase = resolveContext.firstErroneousResolutionPhase();
             return !c.isApplicable() &&
-                    (((c.sym.flags() & VARARGS) != 0 && c.step == VARARITY) ||
-                      (c.sym.flags() & VARARGS) == 0 && c.step == (boxingEnabled ? BOX : BASIC));
+                    c.step == errPhase;
         }
 
         private Candidate errCandidate() {
-            for (Candidate c : currentResolutionContext.candidates) {
+            for (Candidate c : resolveContext.candidates) {
                 if (shouldReport(c)) {
                     return c;
                 }
@@ -2786,8 +3138,8 @@ public class Resolve {
      */
     class InapplicableSymbolsError extends InapplicableSymbolError {
 
-        InapplicableSymbolsError() {
-            super(WRONG_MTHS, "inapplicable symbols");
+        InapplicableSymbolsError(MethodResolutionContext context) {
+            super(WRONG_MTHS, "inapplicable symbols", context);
         }
 
         @Override
@@ -2798,7 +3150,7 @@ public class Resolve {
                 Name name,
                 List<Type> argtypes,
                 List<Type> typeargtypes) {
-            if (currentResolutionContext.candidates.nonEmpty()) {
+            if (!resolveContext.candidates.isEmpty()) {
                 JCDiagnostic err = diags.create(dkind,
                         log.currentSource(),
                         pos,
@@ -2816,7 +3168,7 @@ public class Resolve {
         //where
         List<JCDiagnostic> candidateDetails(Type site) {
             List<JCDiagnostic> details = List.nil();
-            for (Candidate c : currentResolutionContext.candidates) {
+            for (Candidate c : resolveContext.candidates) {
                 if (!shouldReport(c)) continue;
                 JCDiagnostic detailDiag = diags.fragment("inapplicable.method",
                         Kinds.kindName(c.sym),
@@ -2829,7 +3181,7 @@ public class Resolve {
         }
 
         private Name getName() {
-            Symbol sym = currentResolutionContext.candidates.head.sym;
+            Symbol sym = resolveContext.candidates.head.sym;
             return sym.name == names.init ?
                 sym.owner.name :
                 sym.name;
@@ -3023,6 +3375,7 @@ public class Resolve {
                    steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
                    sym.kind >= WRONG_MTHS) {
                 sym = resolutionCache.get(steps.head);
+                if (sym.kind == ABSENT_MTH) break; //ignore spurious empty entries
                 bestSoFar = steps.head;
                 steps = steps.tail;
             }
@@ -3031,13 +3384,22 @@ public class Resolve {
 
         void addInapplicableCandidate(Symbol sym, JCDiagnostic details) {
             Candidate c = new Candidate(currentResolutionContext.step, sym, details, null);
-            if (!candidates.contains(c))
-                candidates = candidates.append(c);
+            candidates = candidates.append(c);
         }
 
         void addApplicableCandidate(Symbol sym, Type mtype) {
             Candidate c = new Candidate(currentResolutionContext.step, sym, null, mtype);
             candidates = candidates.append(c);
+        }
+
+        Candidate getCandidate(Symbol sym, MethodResolutionPhase phase) {
+            for (Candidate c : currentResolutionContext.candidates) {
+                if (c.step == phase &&
+                        c.sym.baseSymbol() == sym.baseSymbol()) {
+                    return c;
+                }
+            }
+            return null;
         }
 
         /**
@@ -3067,9 +3429,9 @@ public class Resolve {
                     Symbol s1 = this.sym;
                     Symbol s2 = ((Candidate)o).sym;
                     if  ((s1 != s2 &&
-                        (s1.overrides(s2, s1.owner.type.tsym, types, false) ||
-                        (s2.overrides(s1, s2.owner.type.tsym, types, false)))) ||
-                        ((s1.isConstructor() || s2.isConstructor()) && s1.owner != s2.owner))
+                            (s1.overrides(s2, s1.owner.type.tsym, types, false) ||
+                            (s2.overrides(s1, s2.owner.type.tsym, types, false)))) ||
+                            ((s1.isConstructor() || s2.isConstructor()) && s1.owner != s2.owner))
                         return true;
                 }
                 return false;

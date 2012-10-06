@@ -922,7 +922,12 @@ public abstract class Symbol implements Element {
         /** Clone this symbol with new owner.
          */
         public VarSymbol clone(Symbol newOwner) {
-            VarSymbol v = new VarSymbol(flags_field, name, type, newOwner);
+            VarSymbol v = new VarSymbol(flags_field, name, type, newOwner) {
+                @Override
+                public Symbol baseSymbol() {
+                    return VarSymbol.this;
+                }
+            };
             v.pos = pos;
             v.adr = adr;
             v.data = data;
@@ -1049,7 +1054,12 @@ public abstract class Symbol implements Element {
         /** Clone this symbol with new owner.
          */
         public MethodSymbol clone(Symbol newOwner) {
-            MethodSymbol m = new MethodSymbol(flags_field, name, type, newOwner);
+            MethodSymbol m = new MethodSymbol(flags_field, name, type, newOwner) {
+                @Override
+                public Symbol baseSymbol() {
+                    return MethodSymbol.this;
+                }
+            };
             m.code = code;
             return m;
         }
