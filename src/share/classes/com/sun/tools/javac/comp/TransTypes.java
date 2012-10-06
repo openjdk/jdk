@@ -632,6 +632,11 @@ public class TransTypes extends TreeTranslator {
         Assert.error("Translation of lambda expression not supported yet");
     }
 
+    @Override
+    public void visitReference(JCMemberReference tree) {
+        Assert.error("Translation of method reference not supported yet");
+    }
+
     public void visitParens(JCParens tree) {
         tree.expr = translate(tree.expr, pt);
         tree.type = erasure(tree.type);

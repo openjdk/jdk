@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,21 @@
  * questions.
  */
 
-// key: compiler.err.method.references.not.supported.in.source
-// options: -source 7 -Xlint:-options
+// key: compiler.err.prob.found.req
+// key: compiler.misc.ref.ambiguous
+// key: compiler.misc.invalid.mref
+// options: -XDallowMethodReferences
 
-class MethodReferencesNotSupported {
-    S s = A::foo;
+class RefAmbiguousFragment {
+
+    interface SAM {
+        void m(Integer i1, Integer i2);
+    }
+
+    void f(Number n, Integer i) { }
+    void f(Integer i, Number n) { }
+
+    void test() {
+        SAM s = RefAmbiguousFragment::f;
+    }
 }

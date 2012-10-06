@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
-// key: compiler.err.method.references.not.supported.in.source
-// options: -source 7 -Xlint:-options
+// key: compiler.err.unexpected.mref
+// options: -XDallowMethodReferences
 
-class MethodReferencesNotSupported {
-    S s = A::foo;
+class UnexpectedLambda {
+    { (Foo::bar)++; }
 }

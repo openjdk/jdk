@@ -210,6 +210,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
                     case PARENS:
                         return expr2String(((JCParens)tree).expr);
                     case LAMBDA:
+                    case REFERENCE:
                     case CONDEXPR:
                         return Pretty.toSimpleString(tree);
                     default:
