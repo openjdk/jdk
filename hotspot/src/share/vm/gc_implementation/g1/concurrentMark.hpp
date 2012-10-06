@@ -399,9 +399,9 @@ protected:
                                     // last claimed region
 
   // marking tasks
-  uint                    _max_task_num; // maximum task number
+  uint                    _max_worker_id;// maximum worker id
   uint                    _active_tasks; // task num currently active
-  CMTask**                _tasks;        // task queue array (max_task_num len)
+  CMTask**                _tasks;        // task queue array (max_worker_id len)
   CMTaskQueueSet*         _task_queues;  // task queue set
   ParallelTaskTerminator  _terminator;   // for termination
 
@@ -492,10 +492,10 @@ protected:
   ParallelTaskTerminator* terminator()    { return &_terminator; }
 
   // It claims the next available region to be scanned by a marking
-  // task. It might return NULL if the next region is empty or we have
-  // run out of regions. In the latter case, out_of_regions()
+  // task/thread. It might return NULL if the next region is empty or
+  // we have run out of regions. In the latter case, out_of_regions()
   // determines whether we've really run out of regions or the task
-  // should call claim_region() again.  This might seem a bit
+  // should call claim_region() again. This might seem a bit
   // awkward. Originally, the code was written so that claim_region()
   // either successfully returned with a non-empty region or there
   // were no more regions to be claimed. The problem with this was
@@ -505,7 +505,7 @@ protected:
   // method. So, this way, each task will spend very little time in
   // claim_region() and is allowed to call the regular clock method
   // frequently.
-  HeapRegion* claim_region(int task);
+  HeapRegion* claim_region(uint worker_id);
 
   // It determines whether we've run out of regions to scan.
   bool        out_of_regions() { return _finger == _heap_end; }
@@ -537,8 +537,8 @@ protected:
   bool has_aborted()             { return _has_aborted; }
 
   // Methods to enter the two overflow sync barriers
-  void enter_first_sync_barrier(int task_num);
-  void enter_second_sync_barrier(int task_num);
+  void enter_first_sync_barrier(uint worker_id);
+  void enter_second_sync_barrier(uint worker_id);
 
   ForceOverflowSettings* force_overflow_conc() {
     return &_force_overflow_conc;
@@ -626,14 +626,14 @@ public:
 
   double all_task_accum_vtime() {
     double ret = 0.0;
-    for (int i = 0; i < (int)_max_task_num; ++i)
+    for (uint i = 0; i < _max_worker_id; ++i)
       ret += _accum_task_vtime[i];
     return ret;
   }
 
   // Attempts to steal an object from the task queues of other tasks
-  bool try_stealing(int task_num, int* hash_seed, oop& obj) {
-    return _task_queues->steal(task_num, hash_seed, obj);
+  bool try_stealing(uint worker_id, int* hash_seed, oop& obj) {
+    return _task_queues->steal(worker_id, hash_seed, obj);
   }
 
   ConcurrentMark(ReservedSpace rs, uint max_regions);
@@ -823,7 +823,7 @@ public:
 
   // Returns the card bitmap for a given task or worker id.
   BitMap* count_card_bitmap_for(uint worker_id) {
-    assert(0 <= worker_id && worker_id < _max_task_num, "oob");
+    assert(0 <= worker_id && worker_id < _max_worker_id, "oob");
     assert(_count_card_bitmaps != NULL, "uninitialized");
     BitMap* task_card_bm = &_count_card_bitmaps[worker_id];
     assert(task_card_bm->size() == _card_bm.size(), "size mismatch");
@@ -833,7 +833,7 @@ public:
   // Returns the array containing the marked bytes for each region,
   // for the given worker or task id.
   size_t* count_marked_bytes_array_for(uint worker_id) {
-    assert(0 <= worker_id && worker_id < _max_task_num, "oob");
+    assert(0 <= worker_id && worker_id < _max_worker_id, "oob");
     assert(_count_marked_bytes != NULL, "uninitialized");
     size_t* marked_bytes_array = _count_marked_bytes[worker_id];
     assert(marked_bytes_array != NULL, "uninitialized");
@@ -939,7 +939,7 @@ private:
     global_stack_transfer_size    = 16
   };
 
-  int                         _task_id;
+  uint                        _worker_id;
   G1CollectedHeap*            _g1h;
   ConcurrentMark*             _cm;
   CMBitMap*                   _nextMarkBitMap;
@@ -1115,8 +1115,8 @@ public:
     _elapsed_time_ms = os::elapsedTime() * 1000.0 - _elapsed_time_ms;
   }
 
-  // returns the task ID
-  int task_id() { return _task_id; }
+  // returns the worker ID associated with this task.
+  uint worker_id() { return _worker_id; }
 
   // From TerminatorTerminator. It determines whether this task should
   // exit the termination protocol after it's entered it.
@@ -1170,7 +1170,7 @@ public:
     _finger = new_finger;
   }
 
-  CMTask(int task_num, ConcurrentMark *cm,
+  CMTask(uint worker_id, ConcurrentMark *cm,
          size_t* marked_bytes, BitMap* card_bm,
          CMTaskQueue* task_queue, CMTaskQueueSet* task_queues);
 
