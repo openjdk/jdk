@@ -1066,9 +1066,6 @@ class CommandLineFlags {
                                                                             \
   product(bool, MonitorInUseLists, false, "Track Monitors for Deflation")   \
                                                                             \
-  product(intx, Atomics, 0,                                                 \
-          "(Unsafe,Unstable) Diagnostic - Controls emission of atomics")    \
-                                                                            \
   product(intx, SyncFlags, 0, "(Unsafe,Unstable) Experimental Sync flags" ) \
                                                                             \
   product(intx, SyncVerbose, 0, "(Unstable)" )                              \
