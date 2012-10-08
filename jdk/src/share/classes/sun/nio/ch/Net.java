@@ -409,6 +409,9 @@ public class Net {
                                              int level, int opt, int arg)
         throws IOException;
 
+    static native int poll(FileDescriptor fd, int events, long timeout)
+        throws IOException;
+
     // -- Multicast support --
 
 

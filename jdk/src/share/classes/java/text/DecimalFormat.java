@@ -529,9 +529,25 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer result,
                                FieldPosition fieldPosition) {
-        fieldPosition.setBeginIndex(0);
-        fieldPosition.setEndIndex(0);
+        // If fieldPosition is a DontCareFieldPosition instance we can
+        // try to go to fast-path code.
+        boolean tryFastPath = false;
+        if (fieldPosition == DontCareFieldPosition.INSTANCE)
+            tryFastPath = true;
+        else {
+            fieldPosition.setBeginIndex(0);
+            fieldPosition.setEndIndex(0);
+        }
 
+        if (tryFastPath) {
+            String tempResult = fastFormat(number);
+            if (tempResult != null) {
+                result.append(tempResult);
+                return result;
+            }
+        }
+
+        // if fast-path could not work, we fallback to standard code.
         return format(number, result, fieldPosition.getFieldDelegate());
     }
 
@@ -869,6 +885,720 @@ public class DecimalFormat extends NumberFormat {
         return delegate.getIterator(sb.toString());
     }
 
+    // ==== Begin fast-path formating logic for double =========================
+
+    /* Fast-path formatting will be used for format(double ...) methods iff a
+     * number of conditions are met (see checkAndSetFastPathStatus()):
+     * - Only if instance properties meet the right predefined conditions.
+     * - The abs value of the double to format is <= Integer.MAX_VALUE.
+     *
+     * The basic approach is to split the binary to decimal conversion of a
+     * double value into two phases:
+     * * The conversion of the integer portion of the double.
+     * * The conversion of the fractional portion of the double
+     *   (limited to two or three digits).
+     *
+     * The isolation and conversion of the integer portion of the double is
+     * straightforward. The conversion of the fraction is more subtle and relies
+     * on some rounding properties of double to the decimal precisions in
+     * question.  Using the terminology of BigDecimal, this fast-path algorithm
+     * is applied when a double value has a magnitude less than Integer.MAX_VALUE
+     * and rounding is to nearest even and the destination format has two or
+     * three digits of *scale* (digits after the decimal point).
+     *
+     * Under a rounding to nearest even policy, the returned result is a digit
+     * string of a number in the (in this case decimal) destination format
+     * closest to the exact numerical value of the (in this case binary) input
+     * value.  If two destination format numbers are equally distant, the one
+     * with the last digit even is returned.  To compute such a correctly rounded
+     * value, some information about digits beyond the smallest returned digit
+     * position needs to be consulted.
+     *
+     * In general, a guard digit, a round digit, and a sticky *bit* are needed
+     * beyond the returned digit position.  If the discarded portion of the input
+     * is sufficiently large, the returned digit string is incremented.  In round
+     * to nearest even, this threshold to increment occurs near the half-way
+     * point between digits.  The sticky bit records if there are any remaining
+     * trailing digits of the exact input value in the new format; the sticky bit
+     * is consulted only in close to half-way rounding cases.
+     *
+     * Given the computation of the digit and bit values, rounding is then
+     * reduced to a table lookup problem.  For decimal, the even/odd cases look
+     * like this:
+     *
+     * Last   Round   Sticky
+     * 6      5       0      => 6   // exactly halfway, return even digit.
+     * 6      5       1      => 7   // a little bit more than halfway, round up.
+     * 7      5       0      => 8   // exactly halfway, round up to even.
+     * 7      5       1      => 8   // a little bit more than halfway, round up.
+     * With analogous entries for other even and odd last-returned digits.
+     *
+     * However, decimal negative powers of 5 smaller than 0.5 are *not* exactly
+     * representable as binary fraction.  In particular, 0.005 (the round limit
+     * for a two-digit scale) and 0.0005 (the round limit for a three-digit
+     * scale) are not representable. Therefore, for input values near these cases
+     * the sticky bit is known to be set which reduces the rounding logic to:
+     *
+     * Last   Round   Sticky
+     * 6      5       1      => 7   // a little bit more than halfway, round up.
+     * 7      5       1      => 8   // a little bit more than halfway, round up.
+     *
+     * In other words, if the round digit is 5, the sticky bit is known to be
+     * set.  If the round digit is something other than 5, the sticky bit is not
+     * relevant.  Therefore, some of the logic about whether or not to increment
+     * the destination *decimal* value can occur based on tests of *binary*
+     * computations of the binary input number.
+     */
+
+    /**
+     * Check validity of using fast-path for this instance. If fast-path is valid
+     * for this instance, sets fast-path state as true and initializes fast-path
+     * utility fields as needed.
+     *
+     * This method is supposed to be called rarely, otherwise that will break the
+     * fast-path performance. That means avoiding frequent changes of the
+     * properties of the instance, since for most properties, each time a change
+     * happens, a call to this method is needed at the next format call.
+     *
+     * FAST-PATH RULES:
+     *  Similar to the default DecimalFormat instantiation case.
+     *  More precisely:
+     *  - HALF_EVEN rounding mode,
+     *  - isGroupingUsed() is true,
+     *  - groupingSize of 3,
+     *  - multiplier is 1,
+     *  - Decimal separator not mandatory,
+     *  - No use of exponential notation,
+     *  - minimumIntegerDigits is exactly 1 and maximumIntegerDigits at least 10
+     *  - For number of fractional digits, the exact values found in the default case:
+     *     Currency : min = max = 2.
+     *     Decimal  : min = 0. max = 3.
+     *
+     */
+    private void checkAndSetFastPathStatus() {
+
+        boolean fastPathWasOn = isFastPath;
+
+        if ((roundingMode == RoundingMode.HALF_EVEN) &&
+            (isGroupingUsed()) &&
+            (groupingSize == 3) &&
+            (multiplier == 1) &&
+            (!decimalSeparatorAlwaysShown) &&
+            (!useExponentialNotation)) {
+
+            // The fast-path algorithm is semi-hardcoded against
+            //  minimumIntegerDigits and maximumIntegerDigits.
+            isFastPath = ((minimumIntegerDigits == 1) &&
+                          (maximumIntegerDigits >= 10));
+
+            // The fast-path algorithm is hardcoded against
+            //  minimumFractionDigits and maximumFractionDigits.
+            if (isFastPath) {
+                if (isCurrencyFormat) {
+                    if ((minimumFractionDigits != 2) ||
+                        (maximumFractionDigits != 2))
+                        isFastPath = false;
+                } else if ((minimumFractionDigits != 0) ||
+                           (maximumFractionDigits != 3))
+                    isFastPath = false;
+            }
+        } else
+            isFastPath = false;
+
+        // Since some instance properties may have changed while still falling
+        // in the fast-path case, we need to reinitialize fastPathData anyway.
+        if (isFastPath) {
+            // We need to instantiate fastPathData if not already done.
+            if (fastPathData == null)
+                fastPathData = new FastPathData();
+
+            // Sets up the locale specific constants used when formatting.
+            // '0' is our default representation of zero.
+            fastPathData.zeroDelta = symbols.getZeroDigit() - '0';
+            fastPathData.groupingChar = symbols.getGroupingSeparator();
+
+            // Sets up fractional constants related to currency/decimal pattern.
+            fastPathData.fractionalMaxIntBound = (isCurrencyFormat) ? 99 : 999;
+            fastPathData.fractionalScaleFactor = (isCurrencyFormat) ? 100.0d : 1000.0d;
+
+            // Records the need for adding prefix or suffix
+            fastPathData.positiveAffixesRequired =
+                (positivePrefix.length() != 0) || (positiveSuffix.length() != 0);
+            fastPathData.negativeAffixesRequired =
+                (negativePrefix.length() != 0) || (negativeSuffix.length() != 0);
+
+            // Creates a cached char container for result, with max possible size.
+            int maxNbIntegralDigits = 10;
+            int maxNbGroups = 3;
+            int containerSize =
+                Math.max(positivePrefix.length(), negativePrefix.length()) +
+                maxNbIntegralDigits + maxNbGroups + 1 + maximumFractionDigits +
+                Math.max(positiveSuffix.length(), negativeSuffix.length());
+
+            fastPathData.fastPathContainer = new char[containerSize];
+
+            // Sets up prefix and suffix char arrays constants.
+            fastPathData.charsPositiveSuffix = positiveSuffix.toCharArray();
+            fastPathData.charsNegativeSuffix = negativeSuffix.toCharArray();
+            fastPathData.charsPositivePrefix = positivePrefix.toCharArray();
+            fastPathData.charsNegativePrefix = negativePrefix.toCharArray();
+
+            // Sets up fixed index positions for integral and fractional digits.
+            // Sets up decimal point in cached result container.
+            int longestPrefixLength =
+                Math.max(positivePrefix.length(), negativePrefix.length());
+            int decimalPointIndex =
+                maxNbIntegralDigits + maxNbGroups + longestPrefixLength;
+
+            fastPathData.integralLastIndex    = decimalPointIndex - 1;
+            fastPathData.fractionalFirstIndex = decimalPointIndex + 1;
+            fastPathData.fastPathContainer[decimalPointIndex] =
+                isCurrencyFormat ?
+                symbols.getMonetaryDecimalSeparator() :
+                symbols.getDecimalSeparator();
+
+        } else if (fastPathWasOn) {
+            // Previous state was fast-path and is no more.
+            // Resets cached array constants.
+            fastPathData.fastPathContainer = null;
+            fastPathData.charsPositiveSuffix = null;
+            fastPathData.charsNegativeSuffix = null;
+            fastPathData.charsPositivePrefix = null;
+            fastPathData.charsNegativePrefix = null;
+        }
+
+        fastPathCheckNeeded = false;
+    }
+
+    /**
+     * Returns true if rounding-up must be done on {@code scaledFractionalPartAsInt},
+     * false otherwise.
+     *
+     * This is a utility method that takes correct half-even rounding decision on
+     * passed fractional value at the scaled decimal point (2 digits for currency
+     * case and 3 for decimal case), when the approximated fractional part after
+     * scaled decimal point is exactly 0.5d.  This is done by means of exact
+     * calculations on the {@code fractionalPart} floating-point value.
+     *
+     * This method is supposed to be called by private {@code fastDoubleFormat}
+     * method only.
+     *
+     * The algorithms used for the exact calculations are :
+     *
+     * The <b><i>FastTwoSum</i></b> algorithm, from T.J.Dekker, described in the
+     * papers  "<i>A  Floating-Point   Technique  for  Extending  the  Available
+     * Precision</i>"  by Dekker, and  in "<i>Adaptive  Precision Floating-Point
+     * Arithmetic and Fast Robust Geometric Predicates</i>" from J.Shewchuk.
+     *
+     * A modified version of <b><i>Sum2S</i></b> cascaded summation described in
+     * "<i>Accurate Sum and Dot Product</i>" from Takeshi Ogita and All.  As
+     * Ogita says in this paper this is an equivalent of the Kahan-Babuska's
+     * summation algorithm because we order the terms by magnitude before summing
+     * them. For this reason we can use the <i>FastTwoSum</i> algorithm rather
+     * than the more expensive Knuth's <i>TwoSum</i>.
+     *
+     * We do this to avoid a more expensive exact "<i>TwoProduct</i>" algorithm,
+     * like those described in Shewchuk's paper above. See comments in the code
+     * below.
+     *
+     * @param  fractionalPart The  fractional value  on which  we  take rounding
+     * decision.
+     * @param scaledFractionalPartAsInt The integral part of the scaled
+     * fractional value.
+     *
+     * @return the decision that must be taken regarding half-even rounding.
+     */
+    private boolean exactRoundUp(double fractionalPart,
+                                 int scaledFractionalPartAsInt) {
+
+        /* exactRoundUp() method is called by fastDoubleFormat() only.
+         * The precondition expected to be verified by the passed parameters is :
+         * scaledFractionalPartAsInt ==
+         *     (int) (fractionalPart * fastPathData.fractionalScaleFactor).
+         * This is ensured by fastDoubleFormat() code.
+         */
+
+        /* We first calculate roundoff error made by fastDoubleFormat() on
+         * the scaled fractional part. We do this with exact calculation on the
+         * passed fractionalPart. Rounding decision will then be taken from roundoff.
+         */
+
+        /* ---- TwoProduct(fractionalPart, scale factor (i.e. 1000.0d or 100.0d)).
+         *
+         * The below is an optimized exact "TwoProduct" calculation of passed
+         * fractional part with scale factor, using Ogita's Sum2S cascaded
+         * summation adapted as Kahan-Babuska equivalent by using FastTwoSum
+         * (much faster) rather than Knuth's TwoSum.
+         *
+         * We can do this because we order the summation from smallest to
+         * greatest, so that FastTwoSum can be used without any additional error.
+         *
+         * The "TwoProduct" exact calculation needs 17 flops. We replace this by
+         * a cascaded summation of FastTwoSum calculations, each involving an
+         * exact multiply by a power of 2.
+         *
+         * Doing so saves overall 4 multiplications and 1 addition compared to
+         * using traditional "TwoProduct".
+         *
+         * The scale factor is either 100 (currency case) or 1000 (decimal case).
+         * - when 1000, we replace it by (1024 - 16 - 8) = 1000.
+         * - when 100,  we replace it by (128  - 32 + 4) =  100.
+         * Every multiplication by a power of 2 (1024, 128, 32, 16, 8, 4) is exact.
+         *
+         */
+        double approxMax;    // Will always be positive.
+        double approxMedium; // Will always be negative.
+        double approxMin;
+
+        double fastTwoSumApproximation = 0.0d;
+        double fastTwoSumRoundOff = 0.0d;
+        double bVirtual = 0.0d;
+
+        if (isCurrencyFormat) {
+            // Scale is 100 = 128 - 32 + 4.
+            // Multiply by 2**n is a shift. No roundoff. No error.
+            approxMax    = fractionalPart * 128.00d;
+            approxMedium = - (fractionalPart * 32.00d);
+            approxMin    = fractionalPart * 4.00d;
+        } else {
+            // Scale is 1000 = 1024 - 16 - 8.
+            // Multiply by 2**n is a shift. No roundoff. No error.
+            approxMax    = fractionalPart * 1024.00d;
+            approxMedium = - (fractionalPart * 16.00d);
+            approxMin    = - (fractionalPart * 8.00d);
+        }
+
+        // Shewchuk/Dekker's FastTwoSum(approxMedium, approxMin).
+        assert(-approxMedium >= Math.abs(approxMin));
+        fastTwoSumApproximation = approxMedium + approxMin;
+        bVirtual = fastTwoSumApproximation - approxMedium;
+        fastTwoSumRoundOff = approxMin - bVirtual;
+        double approxS1 = fastTwoSumApproximation;
+        double roundoffS1 = fastTwoSumRoundOff;
+
+        // Shewchuk/Dekker's FastTwoSum(approxMax, approxS1);
+        assert(approxMax >= Math.abs(approxS1));
+        fastTwoSumApproximation = approxMax + approxS1;
+        bVirtual = fastTwoSumApproximation - approxMax;
+        fastTwoSumRoundOff = approxS1 - bVirtual;
+        double roundoff1000 = fastTwoSumRoundOff;
+        double approx1000 = fastTwoSumApproximation;
+        double roundoffTotal = roundoffS1 + roundoff1000;
+
+        // Shewchuk/Dekker's FastTwoSum(approx1000, roundoffTotal);
+        assert(approx1000 >= Math.abs(roundoffTotal));
+        fastTwoSumApproximation = approx1000 + roundoffTotal;
+        bVirtual = fastTwoSumApproximation - approx1000;
+
+        // Now we have got the roundoff for the scaled fractional
+        double scaledFractionalRoundoff = roundoffTotal - bVirtual;
+
+        // ---- TwoProduct(fractionalPart, scale (i.e. 1000.0d or 100.0d)) end.
+
+        /* ---- Taking the rounding decision
+         *
+         * We take rounding decision based on roundoff and half-even rounding
+         * rule.
+         *
+         * The above TwoProduct gives us the exact roundoff on the approximated
+         * scaled fractional, and we know that this approximation is exactly
+         * 0.5d, since that has already been tested by the caller
+         * (fastDoubleFormat).
+         *
+         * Decision comes first from the sign of the calculated exact roundoff.
+         * - Since being exact roundoff, it cannot be positive with a scaled
+         *   fractional less than 0.5d, as well as negative with a scaled
+         *   fractional greater than 0.5d. That leaves us with following 3 cases.
+         * - positive, thus scaled fractional == 0.500....0fff ==> round-up.
+         * - negative, thus scaled fractional == 0.499....9fff ==> don't round-up.
+         * - is zero,  thus scaled fractioanl == 0.5 ==> half-even rounding applies :
+         *    we round-up only if the integral part of the scaled fractional is odd.
+         *
+         */
+        if (scaledFractionalRoundoff > 0.0) {
+            return true;
+        } else if (scaledFractionalRoundoff < 0.0) {
+            return false;
+        } else if ((scaledFractionalPartAsInt & 1) != 0) {
+            return true;
+        }
+
+        return false;
+
+        // ---- Taking the rounding decision end
+    }
+
+    /**
+     * Collects integral digits from passed {@code number}, while setting
+     * grouping chars as needed. Updates {@code firstUsedIndex} accordingly.
+     *
+     * Loops downward starting from {@code backwardIndex} position (inclusive).
+     *
+     * @param number  The int value from which we collect digits.
+     * @param digitsBuffer The char array container where digits and grouping chars
+     *  are stored.
+     * @param backwardIndex the position from which we start storing digits in
+     *  digitsBuffer.
+     *
+     */
+    private void collectIntegralDigits(int number,
+                                       char[] digitsBuffer,
+                                       int backwardIndex) {
+        int index = backwardIndex;
+        int q;
+        int r;
+        while (number > 999) {
+            // Generates 3 digits per iteration.
+            q = number / 1000;
+            r = number - (q << 10) + (q << 4) + (q << 3); // -1024 +16 +8 = 1000.
+            number = q;
+
+            digitsBuffer[index--] = DigitArrays.DigitOnes1000[r];
+            digitsBuffer[index--] = DigitArrays.DigitTens1000[r];
+            digitsBuffer[index--] = DigitArrays.DigitHundreds1000[r];
+            digitsBuffer[index--] = fastPathData.groupingChar;
+        }
+
+        // Collects last 3 or less digits.
+        digitsBuffer[index] = DigitArrays.DigitOnes1000[number];
+        if (number > 9) {
+            digitsBuffer[--index]  = DigitArrays.DigitTens1000[number];
+            if (number > 99)
+                digitsBuffer[--index]   = DigitArrays.DigitHundreds1000[number];
+        }
+
+        fastPathData.firstUsedIndex = index;
+    }
+
+    /**
+     * Collects the 2 (currency) or 3 (decimal) fractional digits from passed
+     * {@code number}, starting at {@code startIndex} position
+     * inclusive.  There is no punctuation to set here (no grouping chars).
+     * Updates {@code fastPathData.lastFreeIndex} accordingly.
+     *
+     *
+     * @param number  The int value from which we collect digits.
+     * @param digitsBuffer The char array container where digits are stored.
+     * @param startIndex the position from which we start storing digits in
+     *  digitsBuffer.
+     *
+     */
+    private void collectFractionalDigits(int number,
+                                         char[] digitsBuffer,
+                                         int startIndex) {
+        int index = startIndex;
+
+        char digitOnes = DigitArrays.DigitOnes1000[number];
+        char digitTens = DigitArrays.DigitTens1000[number];
+
+        if (isCurrencyFormat) {
+            // Currency case. Always collects fractional digits.
+            digitsBuffer[index++] = digitTens;
+            digitsBuffer[index++] = digitOnes;
+        } else if (number != 0) {
+            // Decimal case. Hundreds will always be collected
+            digitsBuffer[index++] = DigitArrays.DigitHundreds1000[number];
+
+            // Ending zeros won't be collected.
+            if (digitOnes != '0') {
+                digitsBuffer[index++] = digitTens;
+                digitsBuffer[index++] = digitOnes;
+            } else if (digitTens != '0')
+                digitsBuffer[index++] = digitTens;
+
+        } else
+            // This is decimal pattern and fractional part is zero.
+            // We must remove decimal point from result.
+            index--;
+
+        fastPathData.lastFreeIndex = index;
+    }
+
+    /**
+     * Internal utility.
+     * Adds the passed {@code prefix} and {@code suffix} to {@code container}.
+     *
+     * @param container  Char array container which to prepend/append the
+     *  prefix/suffix.
+     * @param prefix     Char sequence to prepend as a prefix.
+     * @param suffix     Char sequence to append as a suffix.
+     *
+     */
+    //    private void addAffixes(boolean isNegative, char[] container) {
+    private void addAffixes(char[] container, char[] prefix, char[] suffix) {
+
+        // We add affixes only if needed (affix length > 0).
+        int pl = prefix.length;
+        int sl = suffix.length;
+        if (pl != 0) prependPrefix(prefix, pl, container);
+        if (sl != 0) appendSuffix(suffix, sl, container);
+
+    }
+
+    /**
+     * Prepends the passed {@code prefix} chars to given result
+     * {@code container}.  Updates {@code fastPathData.firstUsedIndex}
+     * accordingly.
+     *
+     * @param prefix The prefix characters to prepend to result.
+     * @param len The number of chars to prepend.
+     * @param container Char array container which to prepend the prefix
+     */
+    private void prependPrefix(char[] prefix,
+                               int len,
+                               char[] container) {
+
+        fastPathData.firstUsedIndex -= len;
+        int startIndex = fastPathData.firstUsedIndex;
+
+        // If prefix to prepend is only 1 char long, just assigns this char.
+        // If prefix is less or equal 4, we use a dedicated algorithm that
+        //  has shown to run faster than System.arraycopy.
+        // If more than 4, we use System.arraycopy.
+        if (len == 1)
+            container[startIndex] = prefix[0];
+        else if (len <= 4) {
+            int dstLower = startIndex;
+            int dstUpper = dstLower + len - 1;
+            int srcUpper = len - 1;
+            container[dstLower] = prefix[0];
+            container[dstUpper] = prefix[srcUpper];
+
+            if (len > 2)
+                container[++dstLower] = prefix[1];
+            if (len == 4)
+                container[--dstUpper] = prefix[2];
+        } else
+            System.arraycopy(prefix, 0, container, startIndex, len);
+    }
+
+    /**
+     * Appends the passed {@code suffix} chars to given result
+     * {@code container}.  Updates {@code fastPathData.lastFreeIndex}
+     * accordingly.
+     *
+     * @param suffix The suffix characters to append to result.
+     * @param len The number of chars to append.
+     * @param container Char array container which to append the suffix
+     */
+    private void appendSuffix(char[] suffix,
+                              int len,
+                              char[] container) {
+
+        int startIndex = fastPathData.lastFreeIndex;
+
+        // If suffix to append is only 1 char long, just assigns this char.
+        // If suffix is less or equal 4, we use a dedicated algorithm that
+        //  has shown to run faster than System.arraycopy.
+        // If more than 4, we use System.arraycopy.
+        if (len == 1)
+            container[startIndex] = suffix[0];
+        else if (len <= 4) {
+            int dstLower = startIndex;
+            int dstUpper = dstLower + len - 1;
+            int srcUpper = len - 1;
+            container[dstLower] = suffix[0];
+            container[dstUpper] = suffix[srcUpper];
+
+            if (len > 2)
+                container[++dstLower] = suffix[1];
+            if (len == 4)
+                container[--dstUpper] = suffix[2];
+        } else
+            System.arraycopy(suffix, 0, container, startIndex, len);
+
+        fastPathData.lastFreeIndex += len;
+    }
+
+    /**
+     * Converts digit chars from {@code digitsBuffer} to current locale.
+     *
+     * Must be called before adding affixes since we refer to
+     * {@code fastPathData.firstUsedIndex} and {@code fastPathData.lastFreeIndex},
+     * and do not support affixes (for speed reason).
+     *
+     * We loop backward starting from last used index in {@code fastPathData}.
+     *
+     * @param digitsBuffer The char array container where the digits are stored.
+     */
+    private void localizeDigits(char[] digitsBuffer) {
+
+        // We will localize only the digits, using the groupingSize,
+        // and taking into account fractional part.
+
+        // First take into account fractional part.
+        int digitsCounter =
+            fastPathData.lastFreeIndex - fastPathData.fractionalFirstIndex;
+
+        // The case when there is no fractional digits.
+        if (digitsCounter < 0)
+            digitsCounter = groupingSize;
+
+        // Only the digits remains to localize.
+        for (int cursor = fastPathData.lastFreeIndex - 1;
+             cursor >= fastPathData.firstUsedIndex;
+             cursor--) {
+            if (digitsCounter != 0) {
+                // This is a digit char, we must localize it.
+                digitsBuffer[cursor] += fastPathData.zeroDelta;
+                digitsCounter--;
+            } else {
+                // Decimal separator or grouping char. Reinit counter only.
+                digitsCounter = groupingSize;
+            }
+        }
+    }
+
+    /**
+     * This is the main entry point for the fast-path format algorithm.
+     *
+     * At this point we are sure to be in the expected conditions to run it.
+     * This algorithm builds the formatted result and puts it in the dedicated
+     * {@code fastPathData.fastPathContainer}.
+     *
+     * @param d the double value to be formatted.
+     * @param negative Flag precising if {@code d} is negative.
+     */
+    private void fastDoubleFormat(double d,
+                                  boolean negative) {
+
+        char[] container = fastPathData.fastPathContainer;
+
+        /*
+         * The principle of the algorithm is to :
+         * - Break the passed double into its integral and fractional parts
+         *    converted into integers.
+         * - Then decide if rounding up must be applied or not by following
+         *    the half-even rounding rule, first using approximated scaled
+         *    fractional part.
+         * - For the difficult cases (approximated scaled fractional part
+         *    being exactly 0.5d), we refine the rounding decision by calling
+         *    exactRoundUp utility method that both calculates the exact roundoff
+         *    on the approximation and takes correct rounding decision.
+         * - We round-up the fractional part if needed, possibly propagating the
+         *    rounding to integral part if we meet a "all-nine" case for the
+         *    scaled fractional part.
+         * - We then collect digits from the resulting integral and fractional
+         *   parts, also setting the required grouping chars on the fly.
+         * - Then we localize the collected digits if needed, and
+         * - Finally prepend/append prefix/suffix if any is needed.
+         */
+
+        // Exact integral part of d.
+        int integralPartAsInt = (int) d;
+
+        // Exact fractional part of d (since we subtract it's integral part).
+        double exactFractionalPart = d - (double) integralPartAsInt;
+
+        // Approximated scaled fractional part of d (due to multiplication).
+        double scaledFractional =
+            exactFractionalPart * fastPathData.fractionalScaleFactor;
+
+        // Exact integral part of scaled fractional above.
+        int fractionalPartAsInt = (int) scaledFractional;
+
+        // Exact fractional part of scaled fractional above.
+        scaledFractional = scaledFractional - (double) fractionalPartAsInt;
+
+        // Only when scaledFractional is exactly 0.5d do we have to do exact
+        // calculations and take fine-grained rounding decision, since
+        // approximated results above may lead to incorrect decision.
+        // Otherwise comparing against 0.5d (strictly greater or less) is ok.
+        boolean roundItUp = false;
+        if (scaledFractional >= 0.5d) {
+            if (scaledFractional == 0.5d)
+                // Rounding need fine-grained decision.
+                roundItUp = exactRoundUp(exactFractionalPart, fractionalPartAsInt);
+            else
+                roundItUp = true;
+
+            if (roundItUp) {
+                // Rounds up both fractional part (and also integral if needed).
+                if (fractionalPartAsInt < fastPathData.fractionalMaxIntBound) {
+                    fractionalPartAsInt++;
+                } else {
+                    // Propagates rounding to integral part since "all nines" case.
+                    fractionalPartAsInt = 0;
+                    integralPartAsInt++;
+                }
+            }
+        }
+
+        // Collecting digits.
+        collectFractionalDigits(fractionalPartAsInt, container,
+                                fastPathData.fractionalFirstIndex);
+        collectIntegralDigits(integralPartAsInt, container,
+                              fastPathData.integralLastIndex);
+
+        // Localizing digits.
+        if (fastPathData.zeroDelta != 0)
+            localizeDigits(container);
+
+        // Adding prefix and suffix.
+        if (negative) {
+            if (fastPathData.negativeAffixesRequired)
+                addAffixes(container,
+                           fastPathData.charsNegativePrefix,
+                           fastPathData.charsNegativeSuffix);
+        } else if (fastPathData.positiveAffixesRequired)
+            addAffixes(container,
+                       fastPathData.charsPositivePrefix,
+                       fastPathData.charsPositiveSuffix);
+    }
+
+    /**
+     * A fast-path shortcut of format(double) to be called by NumberFormat, or by
+     * format(double, ...) public methods.
+     *
+     * If instance can be applied fast-path and passed double is not NaN or
+     * Infinity, is in the integer range, we call {@code fastDoubleFormat}
+     * after changing {@code d} to its positive value if necessary.
+     *
+     * Otherwise returns null by convention since fast-path can't be exercized.
+     *
+     * @param d The double value to be formatted
+     *
+     * @return the formatted result for {@code d} as a string.
+     */
+    String fastFormat(double d) {
+        // (Re-)Evaluates fast-path status if needed.
+        if (fastPathCheckNeeded)
+            checkAndSetFastPathStatus();
+
+        if (!isFastPath )
+            // DecimalFormat instance is not in a fast-path state.
+            return null;
+
+        if (!Double.isFinite(d))
+            // Should not use fast-path for Infinity and NaN.
+            return null;
+
+        // Extracts and records sign of double value, possibly changing it
+        // to a positive one, before calling fastDoubleFormat().
+        boolean negative = false;
+        if (d < 0.0d) {
+            negative = true;
+            d = -d;
+        } else if (d == 0.0d) {
+            negative = (Math.copySign(1.0d, d) == -1.0d);
+            d = +0.0d;
+        }
+
+        if (d > MAX_INT_AS_DOUBLE)
+            // Filters out values that are outside expected fast-path range
+            return null;
+        else
+            fastDoubleFormat(d, negative);
+
+        // Returns a new string from updated fastPathContainer.
+        return new String(fastPathData.fastPathContainer,
+                          fastPathData.firstUsedIndex,
+                          fastPathData.lastFreeIndex - fastPathData.firstUsedIndex);
+
+    }
+
+    // ======== End fast-path formating logic for double =========================
+
     /**
      * Complete the formatting of a finite number.  On entry, the digitList must
      * be filled in with the correct digits.
@@ -1168,8 +1898,7 @@ public class DecimalFormat extends NumberFormat {
         if (isNegative) {
             append(result, negativeSuffix, delegate,
                    getNegativeSuffixFieldPositions(), Field.SIGN);
-        }
-        else {
+        } else {
             append(result, positiveSuffix, delegate,
                    getPositiveSuffixFieldPositions(), Field.SIGN);
         }
@@ -1557,8 +2286,7 @@ public class DecimalFormat extends NumberFormat {
                         sawExponent = true;
                     }
                     break; // Whether we fail or succeed, we exit this loop
-                }
-                else {
+                } else {
                     break;
                 }
             }
@@ -1653,6 +2381,7 @@ public class DecimalFormat extends NumberFormat {
             // don't allow multiple references
             symbols = (DecimalFormatSymbols) newSymbols.clone();
             expandAffixes();
+            fastPathCheckNeeded = true;
         } catch (Exception foo) {
             // should never happen
         }
@@ -1674,6 +2403,7 @@ public class DecimalFormat extends NumberFormat {
         positivePrefix = newValue;
         posPrefixPattern = null;
         positivePrefixFieldPositions = null;
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -1688,8 +2418,7 @@ public class DecimalFormat extends NumberFormat {
         if (positivePrefixFieldPositions == null) {
             if (posPrefixPattern != null) {
                 positivePrefixFieldPositions = expandAffix(posPrefixPattern);
-            }
-            else {
+            } else {
                 positivePrefixFieldPositions = EmptyFieldPositionArray;
             }
         }
@@ -1711,6 +2440,7 @@ public class DecimalFormat extends NumberFormat {
     public void setNegativePrefix (String newValue) {
         negativePrefix = newValue;
         negPrefixPattern = null;
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -1725,8 +2455,7 @@ public class DecimalFormat extends NumberFormat {
         if (negativePrefixFieldPositions == null) {
             if (negPrefixPattern != null) {
                 negativePrefixFieldPositions = expandAffix(negPrefixPattern);
-            }
-            else {
+            } else {
                 negativePrefixFieldPositions = EmptyFieldPositionArray;
             }
         }
@@ -1748,6 +2477,7 @@ public class DecimalFormat extends NumberFormat {
     public void setPositiveSuffix (String newValue) {
         positiveSuffix = newValue;
         posSuffixPattern = null;
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -1762,8 +2492,7 @@ public class DecimalFormat extends NumberFormat {
         if (positiveSuffixFieldPositions == null) {
             if (posSuffixPattern != null) {
                 positiveSuffixFieldPositions = expandAffix(posSuffixPattern);
-            }
-            else {
+            } else {
                 positiveSuffixFieldPositions = EmptyFieldPositionArray;
             }
         }
@@ -1785,6 +2514,7 @@ public class DecimalFormat extends NumberFormat {
     public void setNegativeSuffix (String newValue) {
         negativeSuffix = newValue;
         negSuffixPattern = null;
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -1799,8 +2529,7 @@ public class DecimalFormat extends NumberFormat {
         if (negativeSuffixFieldPositions == null) {
             if (negSuffixPattern != null) {
                 negativeSuffixFieldPositions = expandAffix(negSuffixPattern);
-            }
-            else {
+            } else {
                 negativeSuffixFieldPositions = EmptyFieldPositionArray;
             }
         }
@@ -1834,6 +2563,16 @@ public class DecimalFormat extends NumberFormat {
         multiplier = newValue;
         bigDecimalMultiplier = null;
         bigIntegerMultiplier = null;
+        fastPathCheckNeeded = true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setGroupingUsed(boolean newValue) {
+        super.setGroupingUsed(newValue);
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -1860,6 +2599,7 @@ public class DecimalFormat extends NumberFormat {
      */
     public void setGroupingSize (int newValue) {
         groupingSize = (byte)newValue;
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -1878,6 +2618,7 @@ public class DecimalFormat extends NumberFormat {
      */
     public void setDecimalSeparatorAlwaysShown(boolean newValue) {
         decimalSeparatorAlwaysShown = newValue;
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -1908,6 +2649,20 @@ public class DecimalFormat extends NumberFormat {
         DecimalFormat other = (DecimalFormat) super.clone();
         other.symbols = (DecimalFormatSymbols) symbols.clone();
         other.digitList = (DigitList) digitList.clone();
+
+        // Fast-path is almost stateless algorithm. The only logical state is the
+        // isFastPath flag. In addition fastPathCheckNeeded is a sentinel flag
+        // that forces recalculation of all fast-path fields when set to true.
+        //
+        // There is thus no need to clone all the fast-path fields.
+        // We just only need to set fastPathCheckNeeded to true when cloning,
+        // and init fastPathData to null as if it were a truly new instance.
+        // Every fast-path field will be recalculated (only once) at next usage of
+        // fast-path algorithm.
+        other.fastPathCheckNeeded = true;
+        other.isFastPath = false;
+        other.fastPathData = null;
+
         return other;
     }
 
@@ -1917,8 +2672,10 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public boolean equals(Object obj)
     {
-        if (obj == null) return false;
-        if (!super.equals(obj)) return false; // super does class check
+        if (obj == null)
+            return false;
+        if (!super.equals(obj))
+            return false; // super does class check
         DecimalFormat other = (DecimalFormat) obj;
         return ((posPrefixPattern == other.posPrefixPattern &&
                  positivePrefix.equals(other.positivePrefix))
@@ -2206,8 +2963,7 @@ public class DecimalFormat extends NumberFormat {
                 || affix.indexOf(symbols.getPatternSeparator()) >= 0
                 || affix.indexOf(symbols.getMinusSign()) >= 0
                 || affix.indexOf(CURRENCY_SIGN) >= 0;
-        }
-        else {
+        } else {
             needQuote = affix.indexOf(PATTERN_ZERO_DIGIT) >= 0
                 || affix.indexOf(PATTERN_GROUPING_SEPARATOR) >= 0
                 || affix.indexOf(PATTERN_DECIMAL_SEPARATOR) >= 0
@@ -2694,6 +3450,7 @@ public class DecimalFormat extends NumberFormat {
             super.setMinimumIntegerDigits((minimumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
                 DOUBLE_INTEGER_DIGITS : minimumIntegerDigits);
         }
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -2714,6 +3471,7 @@ public class DecimalFormat extends NumberFormat {
             super.setMaximumIntegerDigits((maximumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
                 DOUBLE_INTEGER_DIGITS : maximumIntegerDigits);
         }
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -2734,6 +3492,7 @@ public class DecimalFormat extends NumberFormat {
             super.setMinimumFractionDigits((minimumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
                 DOUBLE_FRACTION_DIGITS : minimumFractionDigits);
         }
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -2754,6 +3513,7 @@ public class DecimalFormat extends NumberFormat {
             super.setMaximumFractionDigits((maximumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
                 DOUBLE_FRACTION_DIGITS : maximumFractionDigits);
         }
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -2843,6 +3603,7 @@ public class DecimalFormat extends NumberFormat {
                 expandAffixes();
             }
         }
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -2873,6 +3634,7 @@ public class DecimalFormat extends NumberFormat {
 
         this.roundingMode = roundingMode;
         digitList.setRoundingMode(roundingMode);
+        fastPathCheckNeeded = true;
     }
 
     /**
@@ -2924,9 +3686,18 @@ public class DecimalFormat extends NumberFormat {
         stream.defaultReadObject();
         digitList = new DigitList();
 
+        // We force complete fast-path reinitialization when the instance is
+        // deserialized. See clone() comment on fastPathCheckNeeded.
+        fastPathCheckNeeded = true;
+        isFastPath = false;
+        fastPathData = null;
+
         if (serialVersionOnStream < 4) {
             setRoundingMode(RoundingMode.HALF_EVEN);
+        } else {
+            setRoundingMode(getRoundingMode());
         }
+
         // We only need to check the maximum counts because NumberFormat
         // .readObject has already ensured that the maximum is greater than the
         // minimum count.
@@ -3195,6 +3966,77 @@ public class DecimalFormat extends NumberFormat {
      */
     private RoundingMode roundingMode = RoundingMode.HALF_EVEN;
 
+    // ------ DecimalFormat fields for fast-path for double algorithm  ------
+
+    /**
+     * Helper inner utility class for storing the data used in the fast-path
+     * algorithm. Almost all fields related to fast-path are encapsulated in
+     * this class.
+     *
+     * Any {@code DecimalFormat} instance has a {@code fastPathData}
+     * reference field that is null unless both the properties of the instance
+     * are such that the instance is in the "fast-path" state, and a format call
+     * has been done at least once while in this state.
+     *
+     * Almost all fields are related to the "fast-path" state only and don't
+     * change until one of the instance properties is changed.
+     *
+     * {@code firstUsedIndex} and {@code lastFreeIndex} are the only
+     * two fields that are used and modified while inside a call to
+     * {@code fastDoubleFormat}.
+     *
+     */
+    private static class FastPathData {
+        // --- Temporary fields used in fast-path, shared by several methods.
+
+        /** The first unused index at the end of the formatted result. */
+        int lastFreeIndex;
+
+        /** The first used index at the beginning of the formatted result */
+        int firstUsedIndex;
+
+        // --- State fields related to fast-path status. Changes due to a
+        //     property change only. Set by checkAndSetFastPathStatus() only.
+
+        /** Difference between locale zero and default zero representation. */
+        int  zeroDelta;
+
+        /** Locale char for grouping separator. */
+        char groupingChar;
+
+        /**  Fixed index position of last integral digit of formatted result */
+        int integralLastIndex;
+
+        /**  Fixed index position of first fractional digit of formatted result */
+        int fractionalFirstIndex;
+
+        /** Fractional constants depending on decimal|currency state */
+        double fractionalScaleFactor;
+        int fractionalMaxIntBound;
+
+
+        /** The char array buffer that will contain the formatted result */
+        char[] fastPathContainer;
+
+        /** Suffixes recorded as char array for efficiency. */
+        char[] charsPositivePrefix;
+        char[] charsNegativePrefix;
+        char[] charsPositiveSuffix;
+        char[] charsNegativeSuffix;
+        boolean positiveAffixesRequired = true;
+        boolean negativeAffixesRequired = true;
+    }
+
+    /** The format fast-path status of the instance. Logical state. */
+    private transient boolean isFastPath = false;
+
+    /** Flag stating need of check and reinit fast-path status on next format call. */
+    private transient boolean fastPathCheckNeeded = true;
+
+    /** DecimalFormat reference to its FastPathData */
+    private transient FastPathData fastPathData;
+
+
     //----------------------------------------------------------------------
 
     static final int currentSerialVersion = 4;
@@ -3227,6 +4069,54 @@ public class DecimalFormat extends NumberFormat {
     //----------------------------------------------------------------------
     // CONSTANTS
     //----------------------------------------------------------------------
+
+    // ------ Fast-Path for double Constants ------
+
+    /** Maximum valid integer value for applying fast-path algorithm */
+    private static final double MAX_INT_AS_DOUBLE = (double) Integer.MAX_VALUE;
+
+    /**
+     * The digit arrays used in the fast-path methods for collecting digits.
+     * Using 3 constants arrays of chars ensures a very fast collection of digits
+     */
+    private static class DigitArrays {
+        static final char[] DigitOnes1000 = new char[1000];
+        static final char[] DigitTens1000 = new char[1000];
+        static final char[] DigitHundreds1000 = new char[1000];
+
+        // initialize on demand holder class idiom for arrays of digits
+        static {
+            int tenIndex = 0;
+            int hundredIndex = 0;
+            char digitOne = '0';
+            char digitTen = '0';
+            char digitHundred = '0';
+            for (int i = 0;  i < 1000; i++ ) {
+
+                DigitOnes1000[i] = digitOne;
+                if (digitOne == '9')
+                    digitOne = '0';
+                else
+                    digitOne++;
+
+                DigitTens1000[i] = digitTen;
+                if (i == (tenIndex + 9)) {
+                    tenIndex += 10;
+                    if (digitTen == '9')
+                        digitTen = '0';
+                    else
+                        digitTen++;
+                }
+
+                DigitHundreds1000[i] = digitHundred;
+                if (i == (hundredIndex + 99)) {
+                    digitHundred++;
+                    hundredIndex += 100;
+                }
+            }
+        }
+    }
+    // ------ Fast-Path for double Constants end ------
 
     // Constants for characters used in programmatic (unlocalized) patterns.
     private static final char       PATTERN_ZERO_DIGIT         = '0';

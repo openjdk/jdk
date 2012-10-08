@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,7 +337,6 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeKeyRef = ptr_to_jlong(privateKeyRef);
             JNFCallVoidMethod(env, keyStore, jm_createKeyEntry, alias, creationDate, nativeKeyRef, certRefArray, javaCertArray);
-            break;
         }
     } while (searchResult == noErr);
 

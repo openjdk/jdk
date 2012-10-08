@@ -665,7 +665,7 @@ public final class Currency implements Serializable {
      *
      * @param pattern regex pattern for the properties
      * @param ctry country code
-     * @param data currency data.  This is a comma separated string that
+     * @param curdata currency data.  This is a comma separated string that
      *    consists of "three-letter alphabet code", "three-digit numeric code",
      *    and "one-digit (0,1,2, or 3) default fraction digit".
      *    For example, "JPZ,392,0".
