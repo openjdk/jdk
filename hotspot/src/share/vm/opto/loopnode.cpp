@@ -328,12 +328,12 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   const TypeInt* limit_t = gvn->type(limit)->is_int();
 
   if (stride_con > 0) {
-    long init_p = (long)init_t->_lo + stride_con;
-    if (init_p > (long)max_jint || init_p > (long)limit_t->_hi)
+    jlong init_p = (jlong)init_t->_lo + stride_con;
+    if (init_p > (jlong)max_jint || init_p > (jlong)limit_t->_hi)
       return false; // cyclic loop or this loop trips only once
   } else {
-    long init_p = (long)init_t->_hi + stride_con;
-    if (init_p < (long)min_jint || init_p < (long)limit_t->_lo)
+    jlong init_p = (jlong)init_t->_hi + stride_con;
+    if (init_p < (jlong)min_jint || init_p < (jlong)limit_t->_lo)
       return false; // cyclic loop or this loop trips only once
   }
 
@@ -716,16 +716,16 @@ Node* PhaseIdealLoop::exact_limit( IdealLoopTree *loop ) {
 #endif
   if (cl->has_exact_trip_count()) {
     // Simple case: loop has constant boundaries.
-    // Use longs to avoid integer overflow.
+    // Use jlongs to avoid integer overflow.
     int stride_con = cl->stride_con();
-    long  init_con = cl->init_trip()->get_int();
-    long limit_con = cl->limit()->get_int();
+    jlong  init_con = cl->init_trip()->get_int();
+    jlong limit_con = cl->limit()->get_int();
     julong trip_cnt = cl->trip_count();
-    long final_con = init_con + trip_cnt*stride_con;
+    jlong final_con = init_con + trip_cnt*stride_con;
     int final_int = (int)final_con;
     // The final value should be in integer range since the loop
     // is counted and the limit was checked for overflow.
-    assert(final_con == (long)final_int, "final value should be integer");
+    assert(final_con == (jlong)final_int, "final value should be integer");
     limit = _igvn.intcon(final_int);
   } else {
     // Create new LoopLimit node to get exact limit (final iv value).
@@ -790,16 +790,16 @@ const Type *LoopLimitNode::Value( PhaseTransform *phase ) const {
     return NULL;  // Identity
 
   if (init_t->is_int()->is_con() && limit_t->is_int()->is_con()) {
-    // Use longs to avoid integer overflow.
-    long init_con   =  init_t->is_int()->get_con();
-    long limit_con  = limit_t->is_int()->get_con();
+    // Use jlongs to avoid integer overflow.
+    jlong init_con   =  init_t->is_int()->get_con();
+    jlong limit_con  = limit_t->is_int()->get_con();
     int  stride_m   = stride_con - (stride_con > 0 ? 1 : -1);
-    long trip_count = (limit_con - init_con + stride_m)/stride_con;
-    long final_con  = init_con + stride_con*trip_count;
+    jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
+    jlong final_con  = init_con + stride_con*trip_count;
     int final_int = (int)final_con;
     // The final value should be in integer range since the loop
     // is counted and the limit was checked for overflow.
-    assert(final_con == (long)final_int, "final value should be integer");
+    assert(final_con == (jlong)final_int, "final value should be integer");
     return TypeInt::make(final_int);
   }
 
@@ -829,7 +829,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const TypeInt* init_t  = phase->type(in(Init) )->is_int();
   const TypeInt* limit_t = phase->type(in(Limit))->is_int();
   int stride_p;
-  long lim, ini;
+  jlong lim, ini;
   julong max;
   if (stride_con > 0) {
     stride_p = stride_con;
