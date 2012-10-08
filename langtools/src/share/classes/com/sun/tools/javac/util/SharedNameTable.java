@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,13 +93,7 @@ public class SharedNameTable extends Name.Table {
     @Override
     public Name fromChars(char[] cs, int start, int len) {
         int nc = this.nc;
-        byte[] bytes = this.bytes;
-        while (nc + len * 3 >= bytes.length) {
-            //          System.err.println("doubling name buffer of length " + names.length + " to fit " + len + " chars");//DEBUG
-            byte[] newnames = new byte[bytes.length * 2];
-            System.arraycopy(bytes, 0, newnames, 0, bytes.length);
-            bytes = this.bytes = newnames;
-        }
+        byte[] bytes = this.bytes = ArrayUtils.ensureCapacity(this.bytes, nc + len * 3);
         int nbytes = Convert.chars2utf(cs, start, bytes, nc, len) - nc;
         int h = hashValue(bytes, nc, nbytes) & hashMask;
         NameImpl n = hashes[h];
@@ -133,12 +127,7 @@ public class SharedNameTable extends Name.Table {
         }
         if (n == null) {
             int nc = this.nc;
-            while (nc + len > names.length) {
-                //              System.err.println("doubling name buffer of length + " + names.length + " to fit " + len + " bytes");//DEBUG
-                byte[] newnames = new byte[names.length * 2];
-                System.arraycopy(names, 0, newnames, 0, names.length);
-                names = this.bytes = newnames;
-            }
+            names = this.bytes = ArrayUtils.ensureCapacity(names, nc + len);
             System.arraycopy(cs, start, names, nc, len);
             n = new NameImpl(this);
             n.index = nc;

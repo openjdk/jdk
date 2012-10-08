@@ -83,6 +83,19 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         }
     };
 
+    /** Returns the list obtained from 'l' after removing all elements 'elem'
+     */
+    public static <A> List<A> filter(List<A> l, A elem) {
+        Assert.checkNonNull(elem);
+        List<A> res = List.nil();
+        for (A a : l) {
+            if (a != null && !a.equals(elem)) {
+                res = res.prepend(a);
+            }
+        }
+        return res.reverse();
+    }
+
     /** Construct a list consisting of given element.
      */
     public static <A> List<A> of(A x1) {
@@ -117,6 +130,14 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         if (array != null)
             for (int i = array.length - 1; i >= 0; i--)
                 xs = new List<A>(array[i], xs);
+        return xs;
+    }
+
+    public static <A> List<A> from(Iterable<? extends A> coll) {
+        List<A> xs = nil();
+        for (A a : coll) {
+            xs = new List<A>(a, xs);
+        }
         return xs;
     }
 

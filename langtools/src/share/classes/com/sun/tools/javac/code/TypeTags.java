@@ -102,9 +102,13 @@ public class TypeTags {
      */
     public static final int FORALL = WILDCARD+1;
 
+    /** The tag of deferred expression types in method context
+     */
+    public static final int DEFERRED = FORALL+1;
+
     /** The tag of the bottom type <null>.
      */
-    public static final int BOT = FORALL+1;
+    public static final int BOT = DEFERRED+1;
 
     /** The tag of a missing type.
      */
