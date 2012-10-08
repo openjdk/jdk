@@ -20,21 +20,65 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.text.spi.DateFormatProvider;
-import java.util.Locale;
+import java.text.*;
+import java.text.spi.*;
+import java.util.*;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
 public class LocaleProviders {
 
     public static void main(String[] args) {
-        String expected = args[0];
-        Locale testLocale = new Locale(args[1], args[2]);
+        String methodName = args[0];
+
+        switch (methodName) {
+            case "getPlatformLocale":
+                if (args[1].equals("format")) {
+                    getPlatformLocale(Locale.Category.FORMAT);
+                } else {
+                    getPlatformLocale(Locale.Category.DISPLAY);
+                }
+                break;
+
+            case "adapterTest":
+                adapterTest(args[1], args[2], (args.length >= 4 ? args[3] : ""));
+                break;
+
+            case "bug7198834Test":
+                bug7198834Test();
+                break;
+
+            default:
+                throw new RuntimeException("Test method '"+methodName+"' not found.");
+        }
+    }
+
+    static void getPlatformLocale(Locale.Category cat) {
+        Locale defloc = Locale.getDefault(cat);
+        System.out.printf("%s,%s\n", defloc.getLanguage(), defloc.getCountry());
+    }
+
+    static void adapterTest(String expected, String lang, String ctry) {
+        Locale testLocale = new Locale(lang, ctry);
         String preference = System.getProperty("java.locale.providers", "");
         LocaleProviderAdapter lda = LocaleProviderAdapter.getAdapter(DateFormatProvider.class, testLocale);
         LocaleProviderAdapter.Type type = lda.getAdapterType();
         System.out.printf("testLocale: %s, got: %s, expected: %s\n", testLocale, type, expected);
         if (!type.toString().equals(expected)) {
             throw new RuntimeException("Returned locale data adapter is not correct.");
+        }
+    }
+
+    static void bug7198834Test() {
+        LocaleProviderAdapter lda = LocaleProviderAdapter.getAdapter(DateFormatProvider.class, Locale.US);
+        LocaleProviderAdapter.Type type = lda.getAdapterType();
+        if (type == LocaleProviderAdapter.Type.HOST && System.getProperty("os.name").startsWith("Windows")) {
+            DateFormat df = DateFormat.getDateInstance(DateFormat.FULL, Locale.US);
+            String date = df.format(new Date());
+            if (date.charAt(date.length()-1) == ' ') {
+                throw new RuntimeException("Windows Host Locale Provider returns a trailing space.");
+            }
+        } else {
+            System.out.println("Windows HOST locale adapter not found. Ignoring this test.");
         }
     }
 }
