@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2820,10 +2821,9 @@ JNI_END
 JNI_QUICK_ENTRY(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfieldID fieldID, Argument value)) \
   JNIWrapper("Set" XSTR(Result) "Field"); \
 \
-  HS_DTRACE_PROBE_CDECL_N(hotspot_jni, Set##Result##Field__entry, \
-    ( JNIEnv*, jobject, jfieldID FP_SELECT_##Result(COMMA Argument,/*empty*/) ) ); \
-  HS_DTRACE_PROBE_N(hotspot_jni, Set##Result##Field__entry, \
-    ( env, obj, fieldID FP_SELECT_##Result(COMMA value,/*empty*/) ) ); \
+  FP_SELECT_##Result( \
+    DTRACE_PROBE4(hotspot_jni, Set##Result##Field__entry, env, obj, fieldID, value), \
+    DTRACE_PROBE3(hotspot_jni, Set##Result##Field__entry, env, obj, fieldID)); \
 \
   oop o = JNIHandles::resolve_non_null(obj); \
   Klass* k = o->klass(); \
@@ -3130,10 +3130,9 @@ JNI_END
 \
 JNI_ENTRY(void, jni_SetStatic##Result##Field(JNIEnv *env, jclass clazz, jfieldID fieldID, Argument value)) \
   JNIWrapper("SetStatic" XSTR(Result) "Field"); \
-  HS_DTRACE_PROBE_CDECL_N(hotspot_jni, SetStatic##Result##Field__entry,\
-    ( JNIEnv*, jclass, jfieldID FP_SELECT_##Result(COMMA Argument,/*empty*/) ) ); \
-  HS_DTRACE_PROBE_N(hotspot_jni, SetStatic##Result##Field__entry, \
-    ( env, clazz, fieldID FP_SELECT_##Result(COMMA value,/*empty*/) ) ); \
+  FP_SELECT_##Result( \
+     DTRACE_PROBE4(hotspot_jni, SetStatic##Result##Field__entry, env, clazz, fieldID, value), \
+     DTRACE_PROBE3(hotspot_jni, SetStatic##Result##Field__entry, env, clazz, fieldID)); \
 \
   JNIid* id = jfieldIDWorkaround::from_static_jfieldID(fieldID); \
   assert(id->is_static_field_id(), "invalid static field id"); \
