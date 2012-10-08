@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 
 package com.sun.tools.javac.parser;
 
+import java.nio.CharBuffer;
+import java.util.Arrays;
+
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.util.ArrayUtils;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
-
-import java.nio.CharBuffer;
 
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 
@@ -91,9 +93,7 @@ public class UnicodeReader {
             if (input.length > 0 && Character.isWhitespace(input[input.length - 1])) {
                 inputLength--;
             } else {
-                char[] newInput = new char[inputLength + 1];
-                System.arraycopy(input, 0, newInput, 0, input.length);
-                input = newInput;
+                input = Arrays.copyOf(input, inputLength + 1);
             }
         }
         buf = input;
@@ -130,11 +130,7 @@ public class UnicodeReader {
     /** Append a character to sbuf.
      */
     protected void putChar(char ch, boolean scan) {
-        if (sp == sbuf.length) {
-            char[] newsbuf = new char[sbuf.length * 2];
-            System.arraycopy(sbuf, 0, newsbuf, 0, sbuf.length);
-            sbuf = newsbuf;
-        }
+        sbuf = ArrayUtils.ensureCapacity(sbuf, sp);
         sbuf[sp++] = ch;
         if (scan)
             scanChar();

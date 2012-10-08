@@ -950,12 +950,13 @@ public class JavacParser implements Parser {
             break;
         case LPAREN:
             if (typeArgs == null && (mode & EXPR) != 0) {
-                if (peekToken(FINAL) ||
+                if (peekToken(MONKEYS_AT) ||
+                        peekToken(FINAL) ||
                         peekToken(RPAREN) ||
                         peekToken(IDENTIFIER, COMMA) ||
                         peekToken(IDENTIFIER, RPAREN, ARROW)) {
                     //implicit n-ary lambda
-                    t = lambdaExpressionOrStatement(true, peekToken(FINAL), pos);
+                    t = lambdaExpressionOrStatement(true, peekToken(MONKEYS_AT) || peekToken(FINAL), pos);
                     break;
                 } else {
                     nextToken();
@@ -1159,7 +1160,7 @@ public class JavacParser implements Parser {
                     case LT:
                         if ((mode & TYPE) == 0 && isUnboundMemberRef()) {
                             //this is an unbound method reference whose qualifier
-                            //is a generic type i.e. A<S>#m
+                            //is a generic type i.e. A<S>::m
                             int pos1 = token.pos;
                             accept(LT);
                             ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
@@ -1177,7 +1178,8 @@ public class JavacParser implements Parser {
                                 t = toP(F.at(token.pos).Select(t, ident()));
                                 t = typeArgumentsOpt(t);
                             }
-                            if (token.kind != HASH) {
+                            t = bracketsOpt(t);
+                            if (token.kind != COLCOL) {
                                 //method reference expected here
                                 t = illegal();
                             }
@@ -1237,6 +1239,10 @@ public class JavacParser implements Parser {
                         nextToken();
                         t = bracketsOpt(t);
                         t = toP(F.at(pos1).TypeArray(t));
+                        if (token.kind == COLCOL) {
+                            mode = EXPR;
+                            continue;
+                        }
                         return t;
                     }
                     mode = oldmode;
@@ -1269,10 +1275,10 @@ public class JavacParser implements Parser {
                     t = argumentsOpt(typeArgs, typeArgumentsOpt(t));
                     typeArgs = null;
                 }
-            } else if ((mode & EXPR) != 0 && token.kind == HASH) {
+            } else if ((mode & EXPR) != 0 && token.kind == COLCOL) {
                 mode = EXPR;
                 if (typeArgs != null) return illegal();
-                accept(HASH);
+                accept(COLCOL);
                 t = memberReferenceSuffix(pos1, t);
             } else {
                 break;
@@ -1311,9 +1317,11 @@ public class JavacParser implements Parser {
                 case GT:
                     depth--;
                     if (depth == 0) {
+                        TokenKind nextKind = S.token(pos + 1).kind;
                         return
-                            S.token(pos + 1).kind == TokenKind.DOT ||
-                            S.token(pos + 1).kind == TokenKind.HASH;
+                            nextKind == TokenKind.DOT ||
+                            nextKind == TokenKind.LBRACKET ||
+                            nextKind == TokenKind.COLCOL;
                     }
                     break;
                 default:
@@ -1343,11 +1351,6 @@ public class JavacParser implements Parser {
     }
 
     JCExpression lambdaExpressionOrStatementRest(List<JCVariableDecl> args, int pos) {
-        if (token.kind != ARROW) {
-            //better error recovery
-            return F.at(pos).Erroneous(args);
-        }
-
         checkLambda();
         accept(ARROW);
 
@@ -1372,7 +1375,7 @@ public class JavacParser implements Parser {
         nextToken();
         if (token.kind == LPAREN || typeArgs != null) {
             t = arguments(typeArgs, t);
-        } else if (token.kind == HASH) {
+        } else if (token.kind == COLCOL) {
             if (typeArgs != null) return illegal();
             t = memberReferenceSuffix(t);
         } else {
@@ -1583,20 +1586,22 @@ public class JavacParser implements Parser {
                 t = toP(F.at(pos).Select(t, names._class));
             }
         } else if ((mode & TYPE) != 0) {
-            mode = TYPE;
-        } else {
+            if (token.kind != COLCOL) {
+                mode = TYPE;
+            }
+        } else if (token.kind != COLCOL) {
             syntaxError(token.pos, "dot.class.expected");
         }
         return t;
     }
 
     /**
-     * MemberReferenceSuffix = "#" [TypeArguments] Ident
-     *                       | "#" [TypeArguments] "new"
+     * MemberReferenceSuffix = "::" [TypeArguments] Ident
+     *                       | "::" [TypeArguments] "new"
      */
     JCExpression memberReferenceSuffix(JCExpression t) {
         int pos1 = token.pos;
-        accept(HASH);
+        accept(COLCOL);
         return memberReferenceSuffix(pos1, t);
     }
 
@@ -2165,27 +2170,10 @@ public class JavacParser implements Parser {
         while (true) {
             int pos = token.pos;
             switch (token.kind) {
-            case CASE: {
-                nextToken();
-                JCExpression pat = parseExpression();
-                accept(COLON);
-                List<JCStatement> stats = blockStatements();
-                JCCase c = F.at(pos).Case(pat, stats);
-                if (stats.isEmpty())
-                    storeEnd(c, S.prevToken().endPos);
-                cases.append(c);
+            case CASE:
+            case DEFAULT:
+                cases.append(switchBlockStatementGroup());
                 break;
-            }
-            case DEFAULT: {
-                nextToken();
-                accept(COLON);
-                List<JCStatement> stats = blockStatements();
-                JCCase c = F.at(pos).Case(null, stats);
-                if (stats.isEmpty())
-                    storeEnd(c, S.prevToken().endPos);
-                cases.append(c);
-                break;
-            }
             case RBRACE: case EOF:
                 return cases.toList();
             default:
@@ -2194,6 +2182,32 @@ public class JavacParser implements Parser {
                     CASE, DEFAULT, RBRACE);
             }
         }
+    }
+
+    protected JCCase switchBlockStatementGroup() {
+        int pos = token.pos;
+        List<JCStatement> stats;
+        JCCase c;
+        switch (token.kind) {
+        case CASE:
+            nextToken();
+            JCExpression pat = parseExpression();
+            accept(COLON);
+            stats = blockStatements();
+            c = F.at(pos).Case(pat, stats);
+            if (stats.isEmpty())
+                storeEnd(c, S.prevToken().endPos);
+            return c;
+        case DEFAULT:
+            nextToken();
+            accept(COLON);
+            stats = blockStatements();
+            c = F.at(pos).Case(null, stats);
+            if (stats.isEmpty())
+                storeEnd(c, S.prevToken().endPos);
+            return c;
+        }
+        throw new AssertionError("should not reach here");
     }
 
     /** MoreStatementExpressions = { COMMA StatementExpression }

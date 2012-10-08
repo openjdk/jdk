@@ -488,17 +488,18 @@ public abstract class Configuration {
     }
 
     /**
-     * Add a traliling file separator, if not found or strip off extra trailing
-     * file separators if any.
+     * Add a trailing file separator, if not found. Remove superfluous
+     * file separators if any. Preserve the front double file separator for
+     * UNC paths.
      *
      * @param path Path under consideration.
      * @return String Properly constructed path string.
      */
-    String addTrailingFileSep(String path) {
+    public static String addTrailingFileSep(String path) {
         String fs = System.getProperty("file.separator");
         String dblfs = fs + fs;
         int indexDblfs;
-        while ((indexDblfs = path.indexOf(dblfs)) >= 0) {
+        while ((indexDblfs = path.indexOf(dblfs, 1)) >= 0) {
             path = path.substring(0, indexDblfs) +
                 path.substring(indexDblfs + fs.length());
         }
