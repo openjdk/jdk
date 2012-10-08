@@ -92,10 +92,10 @@ void IdealLoopTree::compute_exact_trip_count( PhaseIdealLoop *phase ) {
       limit_n != NULL && limit_n->is_Con()) {
     // Use longs to avoid integer overflow.
     int stride_con  = cl->stride_con();
-    long init_con   = cl->init_trip()->get_int();
-    long limit_con  = cl->limit()->get_int();
+    jlong init_con   = cl->init_trip()->get_int();
+    jlong limit_con  = cl->limit()->get_int();
     int stride_m    = stride_con - (stride_con > 0 ? 1 : -1);
-    long trip_count = (limit_con - init_con + stride_m)/stride_con;
+    jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
     if (trip_count > 0 && (julong)trip_count < (julong)max_juint) {
       // Set exact trip count.
       cl->set_exact_trip_count((uint)trip_count);
@@ -1212,16 +1212,16 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
     } else if (loop_head->has_exact_trip_count() && init->is_Con()) {
       // Loop's limit is constant. Loop's init could be constant when pre-loop
       // become peeled iteration.
-      long init_con = init->get_int();
+      jlong init_con = init->get_int();
       // We can keep old loop limit if iterations count stays the same:
       //   old_trip_count == new_trip_count * 2
       // Note: since old_trip_count >= 2 then new_trip_count >= 1
       // so we also don't need to adjust zero trip test.
-      long limit_con  = limit->get_int();
+      jlong limit_con  = limit->get_int();
       // (stride_con*2) not overflow since stride_con <= 8.
       int new_stride_con = stride_con * 2;
       int stride_m    = new_stride_con - (stride_con > 0 ? 1 : -1);
-      long trip_count = (limit_con - init_con + stride_m)/new_stride_con;
+      jlong trip_count = (limit_con - init_con + stride_m)/new_stride_con;
       // New trip count should satisfy next conditions.
       assert(trip_count > 0 && (julong)trip_count < (julong)max_juint/2, "sanity");
       uint new_trip_count = (uint)trip_count;
