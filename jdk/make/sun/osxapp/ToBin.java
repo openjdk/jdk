@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,28 @@
  * questions.
  */
 
+package sun.osxapp;
 
-package sun.lwawt;
+import java.io.*;
 
-import java.awt.Panel;
-import java.awt.peer.PanelPeer;
+public class ToBin {
+    public static void main(String[] args) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int nRead;
+        byte[] data = new byte[4096];
 
-import javax.swing.JPanel;
+        while ((nRead = System.in.read(data, 0, data.length)) != -1) {
+            baos.write(data, 0, nRead);
+        }
 
-final class LWPanelPeer extends LWContainerPeer<Panel, JPanel>
-        implements PanelPeer {
+        baos.flush();
 
-    LWPanelPeer(final Panel target, final PlatformComponent platformComponent) {
-        super(target, platformComponent);
-    }
-
-    @Override
-    public JPanel createDelegate() {
-        return new JPanel();
+        byte[] buf = baos.toByteArray();
+        for (int i = 0; i < buf.length; i++) {
+            System.out.print(String.format("0x%1$02X", buf[i]) + ", ");
+            if (i % 20 == 0) {
+                System.out.println();
+            }
+        }
     }
 }
