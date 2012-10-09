@@ -31,7 +31,7 @@
 #include "utilities/growableArray.hpp"
 
 // A klassVtable abstracts the variable-length vtable that is embedded in InstanceKlass
-// and arrayKlass.  klassVtable objects are used just as convenient transient accessors to the vtable,
+// and ArrayKlass.  klassVtable objects are used just as convenient transient accessors to the vtable,
 // not to actually hold the vtable data.
 // Note: the klassVtable should not be accessed before the class has been verified
 // (until that point, the vtable is uninitialized).

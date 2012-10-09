@@ -12145,8 +12145,8 @@ instruct partialSubtypeCheck( eDIRegP result, eSIRegP sub, eAXRegP super, eCXReg
 
   ins_cost(1100);  // slightly larger than the next version
   format %{ "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
-            "MOV    ECX,[EDI+arrayKlass::length]\t# length to scan\n\t"
-            "ADD    EDI,arrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
+            "MOV    ECX,[EDI+ArrayKlass::length]\t# length to scan\n\t"
+            "ADD    EDI,ArrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
             "REPNE SCASD\t# Scan *EDI++ for a match with EAX while CX-- != 0\n\t"
             "JNE,s  miss\t\t# Missed: EDI not-zero\n\t"
             "MOV    [$sub+Klass::secondary_super_cache],$super\t# Hit: update cache\n\t"
@@ -12164,8 +12164,8 @@ instruct partialSubtypeCheck_vs_Zero( eFlagsReg cr, eSIRegP sub, eAXRegP super, 
 
   ins_cost(1000);
   format %{ "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
-            "MOV    ECX,[EDI+arrayKlass::length]\t# length to scan\n\t"
-            "ADD    EDI,arrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
+            "MOV    ECX,[EDI+ArrayKlass::length]\t# length to scan\n\t"
+            "ADD    EDI,ArrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
             "REPNE SCASD\t# Scan *EDI++ for a match with EAX while CX-- != 0\n\t"
             "JNE,s  miss\t\t# Missed: flags NZ\n\t"
             "MOV    [$sub+Klass::secondary_super_cache],$super\t# Hit: update cache, flags Z\n\t"

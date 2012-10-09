@@ -1671,9 +1671,9 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
       }
       const Type* aift = load_array_final_field(tkls, klass);
       if (aift != NULL)  return aift;
-      if (tkls->offset() == in_bytes(arrayKlass::component_mirror_offset())
+      if (tkls->offset() == in_bytes(ArrayKlass::component_mirror_offset())
           && klass->is_array_klass()) {
-        // The field is arrayKlass::_component_mirror.  Return its (constant) value.
+        // The field is ArrayKlass::_component_mirror.  Return its (constant) value.
         // (Folds up aClassConstant.getComponentType, common in Arrays.copyOf.)
         assert(Opcode() == Op_LoadP, "must load an oop from _component_mirror");
         return TypeInstPtr::make(klass->as_array_klass()->component_mirror());
@@ -2014,7 +2014,7 @@ const Type *LoadNode::klass_value_common( PhaseTransform *phase ) const {
     if( !klass->is_loaded() )
       return _type;             // Bail out if not loaded
     if( klass->is_obj_array_klass() &&
-        tkls->offset() == in_bytes(objArrayKlass::element_klass_offset())) {
+        tkls->offset() == in_bytes(ObjArrayKlass::element_klass_offset())) {
       ciKlass* elem = klass->as_obj_array_klass()->element_klass();
       // // Always returning precise element type is incorrect,
       // // e.g., element type could be object and array may contain strings
@@ -2067,7 +2067,7 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
   }
 
   // Simplify k.java_mirror.as_klass to plain k, where k is a Klass*.
-  // Simplify ak.component_mirror.array_klass to plain ak, ak an arrayKlass.
+  // Simplify ak.component_mirror.array_klass to plain ak, ak an ArrayKlass.
   // See inline_native_Class_query for occurrences of these patterns.
   // Java Example:  x.getClass().isAssignableFrom(y)
   // Java Example:  Array.newInstance(x.getClass().getComponentType(), n)
@@ -2080,7 +2080,7 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
       && (offset == java_lang_Class::klass_offset_in_bytes() ||
           offset == java_lang_Class::array_klass_offset_in_bytes())) {
     // We are loading a special hidden field from a Class mirror,
-    // the field which points to its Klass or arrayKlass metaobject.
+    // the field which points to its Klass or ArrayKlass metaobject.
     if (base->is_Load()) {
       Node* adr2 = base->in(MemNode::Address);
       const TypeKlassPtr* tkls = phase->type(adr2)->isa_klassptr();
@@ -2091,7 +2091,7 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
           ) {
         int mirror_field = in_bytes(Klass::java_mirror_offset());
         if (offset == java_lang_Class::array_klass_offset_in_bytes()) {
-          mirror_field = in_bytes(arrayKlass::component_mirror_offset());
+          mirror_field = in_bytes(ArrayKlass::component_mirror_offset());
         }
         if (tkls->offset() == mirror_field) {
           return adr2->in(AddPNode::Base);

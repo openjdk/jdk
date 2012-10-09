@@ -156,7 +156,7 @@ bool AdvancedThresholdPolicy::is_method_profiled(Method* method) {
 // Called with the queue locked and with at least one element
 CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
   CompileTask *max_task = NULL;
-  Method* max_method;
+  Method* max_method = NULL;
   jlong t = os::javaTimeMillis();
   // Iterate through the queue and find a method with a maximum rate.
   for (CompileTask* task = compile_queue->first(); task != NULL;) {

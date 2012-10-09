@@ -782,7 +782,7 @@ bool put_after_lookup(Symbol* name, Symbol* sig, NameSigHash** table) {
 
 Array<Klass*>* ClassFileParser::parse_interfaces(constantPoolHandle cp,
                                                  int length,
-                                                   ClassLoaderData* loader_data,
+                                                 ClassLoaderData* loader_data,
                                                  Handle protection_domain,
                                                  Symbol* class_name,
                                                  TRAPS) {
@@ -1072,10 +1072,11 @@ class FieldAllocationCount: public ResourceObj {
 
 Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
                                          Symbol* class_name,
-                                              constantPoolHandle cp, bool is_interface,
-                                              FieldAllocationCount *fac,
+                                         constantPoolHandle cp,
+                                         bool is_interface,
+                                         FieldAllocationCount *fac,
                                          Array<AnnotationArray*>** fields_annotations,
-                                              u2* java_fields_count_ptr, TRAPS) {
+                                         u2* java_fields_count_ptr, TRAPS) {
   ClassFileStream* cfs = stream();
   cfs->guarantee_more(2, CHECK_NULL);  // length
   u2 length = cfs->get_u2_fast();
@@ -2169,14 +2170,12 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   }
 
   // All sizing information for a Method* is finally available, now create it
-  Method* m = Method::allocate(loader_data,
-                                        code_length,
-                                        access_flags,
-                                            linenumber_table_length,
-                                            total_lvt_length,
-                                            exception_table_length,
-                                            checked_exceptions_length,
-                                            CHECK_(nullHandle));
+  Method* m = Method::allocate(loader_data, code_length, access_flags,
+                               linenumber_table_length,
+                               total_lvt_length,
+                               exception_table_length,
+                               checked_exceptions_length,
+                               CHECK_(nullHandle));
 
   ClassLoadingService::add_class_method_size(m->size()*HeapWordSize);
 
@@ -2351,14 +2350,14 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
 // are added to klass's access_flags.
 
 Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
-                                                 constantPoolHandle cp,
-                                                 bool is_interface,
-                                              AccessFlags* promoted_flags,
-                                              bool* has_final_method,
-                                                 Array<AnnotationArray*>** methods_annotations,
-                                                 Array<AnnotationArray*>** methods_parameter_annotations,
-                                                 Array<AnnotationArray*>** methods_default_annotations,
-                                              TRAPS) {
+                                               constantPoolHandle cp,
+                                               bool is_interface,
+                                               AccessFlags* promoted_flags,
+                                               bool* has_final_method,
+                                               Array<AnnotationArray*>** methods_annotations,
+                                               Array<AnnotationArray*>** methods_parameter_annotations,
+                                               Array<AnnotationArray*>** methods_default_annotations,
+                                               TRAPS) {
   ClassFileStream* cfs = stream();
   AnnotationArray* method_annotations = NULL;
   AnnotationArray* method_parameter_annotations = NULL;
@@ -2450,10 +2449,9 @@ Array<int>* ClassFileParser::sort_methods(ClassLoaderData* loader_data,
   }
   // Sort method array by ascending method name (for faster lookups & vtable construction)
   // Note that the ordering is not alphabetical, see Symbol::fast_compare
-  Method::sort_methods(methods,
-                              methods_annotations,
-                              methods_parameter_annotations,
-                              methods_default_annotations);
+  Method::sort_methods(methods, methods_annotations,
+                       methods_parameter_annotations,
+                       methods_default_annotations);
 
   // If JVMTI original method ordering or sharing is enabled construct int
   // array remembering the original ordering
@@ -2835,10 +2833,10 @@ void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
   }
   AnnotationArray* annotations = assemble_annotations(loader_data,
                                                       runtime_visible_annotations,
-                                                     runtime_visible_annotations_length,
-                                                     runtime_invisible_annotations,
-                                                     runtime_invisible_annotations_length,
-                                                     CHECK);
+                                                      runtime_visible_annotations_length,
+                                                      runtime_invisible_annotations,
+                                                      runtime_invisible_annotations_length,
+                                                      CHECK);
   set_class_annotations(annotations);
 
   if (parsed_innerclasses_attribute || parsed_enclosingmethod_attribute) {
@@ -2884,9 +2882,9 @@ void ClassFileParser::apply_parsed_class_attributes(instanceKlassHandle k) {
 
 AnnotationArray* ClassFileParser::assemble_annotations(ClassLoaderData* loader_data,
                                                        u1* runtime_visible_annotations,
-                                                      int runtime_visible_annotations_length,
-                                                      u1* runtime_invisible_annotations,
-                                                      int runtime_invisible_annotations_length, TRAPS) {
+                                                       int runtime_visible_annotations_length,
+                                                       u1* runtime_invisible_annotations,
+                                                       int runtime_invisible_annotations_length, TRAPS) {
   AnnotationArray* annotations = NULL;
   if (runtime_visible_annotations != NULL ||
       runtime_invisible_annotations != NULL) {
@@ -3161,13 +3159,13 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     Array<AnnotationArray*>* methods_parameter_annotations = NULL;
     Array<AnnotationArray*>* methods_default_annotations = NULL;
     Array<Method*>* methods = parse_methods(loader_data,
-                                              cp, access_flags.is_interface(),
-                                           &promoted_flags,
-                                           &has_final_method,
-                                              &methods_annotations,
-                                              &methods_parameter_annotations,
-                                              &methods_default_annotations,
-                                           CHECK_(nullHandle));
+                                            cp, access_flags.is_interface(),
+                                            &promoted_flags,
+                                            &has_final_method,
+                                            &methods_annotations,
+                                            &methods_parameter_annotations,
+                                            &methods_default_annotations,
+                                            CHECK_(nullHandle));
 
     // Additional attributes
     ClassAnnotationCollector parsed_annotations;
@@ -3186,12 +3184,11 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                            "Interfaces must have java.lang.Object as superclass in class file %s",
                            CHECK_(nullHandle));
       }
-      Klass* k = SystemDictionary::resolve_super_or_fail(class_name,
-                                                           sk,
-                                                           class_loader,
-                                                           protection_domain,
-                                                           true,
-                                                           CHECK_(nullHandle));
+      Klass* k = SystemDictionary::resolve_super_or_fail(class_name, sk,
+                                                         class_loader,
+                                                         protection_domain,
+                                                         true,
+                                                         CHECK_(nullHandle));
 
       KlassHandle kh (THREAD, k);
       super_klass = instanceKlassHandle(THREAD, kh());
@@ -3222,10 +3219,10 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     // sort methods
     Array<int>* method_ordering = sort_methods(loader_data,
                                                methods,
-                                                   methods_annotations,
-                                                   methods_parameter_annotations,
-                                                   methods_default_annotations,
-                                                   CHECK_(nullHandle));
+                                               methods_annotations,
+                                               methods_parameter_annotations,
+                                               methods_default_annotations,
+                                               CHECK_(nullHandle));
 
     // promote flags from parse_methods() to the klass' flags
     access_flags.add_promoted_flags(promoted_flags.as_int());
@@ -3591,16 +3588,16 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       InstanceKlass::nonstatic_oop_map_size(total_oop_map_count);
 
     Klass* ik = InstanceKlass::allocate_instance_klass(loader_data,
-                                                         vtable_size,
-                                                         itable_size,
-                                                static_field_size,
-                                                         total_oop_map_size2,
-                                                         rt,
-                                                access_flags,
-                                                         name,
-                                                         super_klass(),
-                                                         host_klass,
-                                                CHECK_(nullHandle));
+                                                       vtable_size,
+                                                       itable_size,
+                                                       static_field_size,
+                                                       total_oop_map_size2,
+                                                       rt,
+                                                       access_flags,
+                                                       name,
+                                                       super_klass(),
+                                                       host_klass,
+                                                       CHECK_(nullHandle));
 
     // Add all classes to our internal class loader list here,
     // including classes in the bootstrap (NULL) class loader.

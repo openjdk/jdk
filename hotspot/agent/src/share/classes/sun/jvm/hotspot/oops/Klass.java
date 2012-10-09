@@ -188,11 +188,11 @@ public class Klass extends Metadata implements ClassConstants {
   public Klass arrayKlassOrNull()         { return arrayKlassImpl(true);        }
 
   public Klass arrayKlassImpl(boolean orNull, int rank) {
-    throw new RuntimeException("array_klass should be dispatched to InstanceKlass, objArrayKlass or typeArrayKlass");
+    throw new RuntimeException("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
   }
 
   public Klass arrayKlassImpl(boolean orNull) {
-    throw new RuntimeException("array_klass should be dispatched to InstanceKlass, objArrayKlass or typeArrayKlass");
+    throw new RuntimeException("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
   }
 
   // This returns the name in the form java/lang/String which isn't really a signature

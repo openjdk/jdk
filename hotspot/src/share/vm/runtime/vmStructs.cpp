@@ -268,12 +268,12 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
   volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowOop)                             \
      static_field(oopDesc,                     _bs,                                           BarrierSet*)                           \
-  nonstatic_field(arrayKlass,                  _dimension,                                    int)                                   \
-  volatile_nonstatic_field(arrayKlass,         _higher_dimension,                             Klass*)                                \
-  volatile_nonstatic_field(arrayKlass,         _lower_dimension,                              Klass*)                                \
-  nonstatic_field(arrayKlass,                  _vtable_len,                                   int)                                   \
-  nonstatic_field(arrayKlass,                  _alloc_size,                                   juint)                                 \
-  nonstatic_field(arrayKlass,                  _component_mirror,                             oop)                                   \
+  nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
+  volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             Klass*)                                \
+  volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              Klass*)                                \
+  nonstatic_field(ArrayKlass,                  _vtable_len,                                   int)                                   \
+  nonstatic_field(ArrayKlass,                  _alloc_size,                                   juint)                                 \
+  nonstatic_field(ArrayKlass,                  _component_mirror,                             oop)                                   \
   nonstatic_field(CompiledICHolder,     _holder_method,                                Method*)                        \
   nonstatic_field(CompiledICHolder,     _holder_klass,                                 Klass*)                                \
   nonstatic_field(ConstantPool,         _tags,                                         Array<u1>*)                            \
@@ -379,13 +379,13 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(ConstMethod,          _signature_index,                              u2)                                    \
   nonstatic_field(ConstMethod,          _method_idnum,                                 u2)                                    \
   nonstatic_field(ConstMethod,          _generic_signature_index,                      u2)                                    \
-  nonstatic_field(objArrayKlass,               _element_klass,                                Klass*)                                \
-  nonstatic_field(objArrayKlass,               _bottom_klass,                                 Klass*)                                \
+  nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
+  nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
   volatile_nonstatic_field(Symbol,             _refcount,                                     int)                                   \
   nonstatic_field(Symbol,                      _identity_hash,                                int)                                   \
   nonstatic_field(Symbol,                      _length,                                       unsigned short)                        \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(jbyte)) /* NOTE: no type */     \
-  nonstatic_field(typeArrayKlass,              _max_length,                                   int)                                   \
+  nonstatic_field(TypeArrayKlass,              _max_length,                                   int)                                   \
                                                                                                                                      \
   /***********************/                                                                                                          \
   /* Constant Pool Cache */                                                                                                          \
@@ -1370,9 +1370,9 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_toplevel_type(MetaspaceObj)                                     \
     declare_type(Metadata, MetaspaceObj)                                  \
     declare_type(Klass, Metadata)                                         \
-           declare_type(arrayKlass, Klass)                                \
-           declare_type(objArrayKlass, arrayKlass)                        \
-           declare_type(typeArrayKlass, arrayKlass)                       \
+           declare_type(ArrayKlass, Klass)                                \
+           declare_type(ObjArrayKlass, ArrayKlass)                        \
+           declare_type(TypeArrayKlass, ArrayKlass)                       \
       declare_type(InstanceKlass, Klass)                                  \
         declare_type(InstanceClassLoaderKlass, InstanceKlass)             \
         declare_type(InstanceMirrorKlass, InstanceKlass)                  \
