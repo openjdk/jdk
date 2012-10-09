@@ -5200,9 +5200,9 @@ instruct loadI2L_immI(rRegL dst, memory mem, immI mask, rFlagsReg cr) %{
 %}
 
 // Load Unsigned Integer into Long Register
-instruct loadUI2L(rRegL dst, memory mem)
+instruct loadUI2L(rRegL dst, memory mem, immL_32bits mask) 
 %{
-  match(Set dst (LoadUI2L mem));
+  match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
 
   ins_cost(125);
   format %{ "movl    $dst, $mem\t# uint -> long" %}
