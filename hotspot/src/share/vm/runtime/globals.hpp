@@ -1000,7 +1000,7 @@ class CommandLineFlags {
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
-  diagnostic(bool, LinkWellKnownClasses, false,                             \
+  diagnostic(bool, LinkWellKnownClasses, true,                              \
           "Resolve a well known class as soon as its name is seen")         \
                                                                             \
   develop(bool, DisableStartThread, false,                                  \

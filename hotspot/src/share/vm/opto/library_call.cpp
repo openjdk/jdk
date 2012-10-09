@@ -2378,13 +2378,15 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
     }
   }
 
-  if (sharpened_klass != NULL) {
+  // The sharpened class might be unloaded if there is no class loader
+  // contraint in place.
+  if (sharpened_klass != NULL && sharpened_klass->is_loaded()) {
     const TypeOopPtr* tjp = TypeOopPtr::make_from_klass(sharpened_klass);
 
 #ifndef PRODUCT
     if (PrintIntrinsics || PrintInlining || PrintOptoInlining) {
-      tty->print("  from base type:  ");   adr_type->dump();
-      tty->print("  sharpened value: ");   tjp->dump();
+      tty->print("  from base type: ");  adr_type->dump();
+      tty->print("  sharpened value: ");  tjp->dump();
     }
 #endif
     // Sharpen the value type.
