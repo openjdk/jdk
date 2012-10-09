@@ -449,11 +449,11 @@ public:
   // Return number of USEs + number of DEFs
   int        num_operands();
   // Return zero-based position in list;  -1 if not in list.
-  int        operand_position(const char *name, int usedef);
+  int        operand_position(const char *name, int usedef, Form *fm);
   // Find position for this name, regardless of use/def information
   int        operand_position(const char *name);
   // Find position for this name when looked up for output via "format"
-  int        operand_position_format(const char *name);
+  int        operand_position_format(const char *name, Form *fm);
   // Find position for the Label when looked up for output via "format"
   int        label_position();
   // Find position for the Method when looked up for output via "format"
