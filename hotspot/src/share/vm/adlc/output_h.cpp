@@ -207,6 +207,10 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
       if (i > 0) fprintf(fp,", ");
       fprintf(fp,"  const TypeNarrowOop *_c%d;\n", i);
     }
+    else if (!strcmp(type, "ConNKlass")) {
+      if (i > 0) fprintf(fp,", ");
+      fprintf(fp,"  const TypeNarrowKlass *_c%d;\n", i);
+    }
     else if (!strcmp(type, "ConL")) {
       if (i > 0) fprintf(fp,", ");
       fprintf(fp,"  jlong          _c%d;\n", i);
@@ -240,6 +244,10 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
         i++;
       }
       else if (!strcmp(comp->base_type(globals), "ConN")) {
+        fprintf(fp,"  const TypePtr *_c%d;\n", i);
+        i++;
+      }
+      else if (!strcmp(comp->base_type(globals), "ConNKlass")) {
         fprintf(fp,"  const TypePtr *_c%d;\n", i);
         i++;
       }
@@ -288,11 +296,12 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
       fprintf(fp,is_ideal_bool ? "BoolTest::mask c%d" : "int32 c%d", i);
       break;
     }
-    case Form::idealN : { fprintf(fp,"const TypeNarrowOop *c%d", i); break; }
-    case Form::idealP : { fprintf(fp,"const TypePtr *c%d", i); break; }
-    case Form::idealL : { fprintf(fp,"jlong c%d", i);   break;        }
-    case Form::idealF : { fprintf(fp,"jfloat c%d", i);  break;        }
-    case Form::idealD : { fprintf(fp,"jdouble c%d", i); break;        }
+    case Form::idealN :      { fprintf(fp,"const TypeNarrowOop *c%d", i); break; }
+    case Form::idealNKlass : { fprintf(fp,"const TypeNarrowKlass *c%d", i); break; }
+    case Form::idealP :      { fprintf(fp,"const TypePtr *c%d", i); break; }
+    case Form::idealL :      { fprintf(fp,"jlong c%d", i);   break;        }
+    case Form::idealF :      { fprintf(fp,"jfloat c%d", i);  break;        }
+    case Form::idealD :      { fprintf(fp,"jdouble c%d", i); break;        }
     default:
       assert(!is_ideal_bool, "Non-constant operand lacks component list.");
       break;
@@ -312,6 +321,11 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
         i++;
       }
       else if (!strcmp(comp->base_type(globals), "ConN")) {
+        if (i > 0) fprintf(fp,", ");
+        fprintf(fp,"const TypePtr *c%d", i);
+        i++;
+      }
+      else if (!strcmp(comp->base_type(globals), "ConNKlass")) {
         if (i > 0) fprintf(fp,", ");
         fprintf(fp,"const TypePtr *c%d", i);
         i++;
@@ -377,6 +391,10 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, Operand
     ++i;
   }
   else if (!strcmp(ideal_type, "ConN")) {
+    fprintf(fp,"    _c%d->dump_on(st);\n", i);
+    ++i;
+  }
+  else if (!strcmp(ideal_type, "ConNKlass")) {
     fprintf(fp,"    _c%d->dump_on(st);\n", i);
     ++i;
   }
@@ -1239,7 +1257,7 @@ void ArchDesc::declareClasses(FILE *fp) {
       if( type != NULL ) {
         Form::DataType data_type = oper->is_base_constant(_globalNames);
         // Check if we are an ideal pointer type
-        if( data_type == Form::idealP || data_type == Form::idealN ) {
+        if( data_type == Form::idealP || data_type == Form::idealN || data_type == Form::idealNKlass ) {
           // Return the ideal type we already have: <TypePtr *>
           fprintf(fp," return _c0;");
         } else {
@@ -1368,6 +1386,16 @@ void ArchDesc::declareClasses(FILE *fp) {
           fprintf(fp, " }\n");
         }
         else if (!strcmp(oper->ideal_type(_globalNames), "ConN")) {
+          // Access the locally stored constant
+          fprintf(fp,"  virtual intptr_t       constant() const {");
+          fprintf(fp,   " return _c0->get_ptrtype()->get_con();");
+          fprintf(fp, " }\n");
+          // Generate query to determine if this pointer is an oop
+          fprintf(fp,"  virtual relocInfo::relocType           constant_reloc() const {");
+          fprintf(fp,   " return _c0->get_ptrtype()->reloc();");
+          fprintf(fp, " }\n");
+        }
+        else if (!strcmp(oper->ideal_type(_globalNames), "ConNKlass")) {
           // Access the locally stored constant
           fprintf(fp,"  virtual intptr_t       constant() const {");
           fprintf(fp,   " return _c0->get_ptrtype()->get_con();");
@@ -1810,6 +1838,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         break;
       case Form::idealP:
       case Form::idealN:
+      case Form::idealNKlass:
         fprintf(fp,"    return  opnd_array(1)->type();\n");
         break;
       case Form::idealD:

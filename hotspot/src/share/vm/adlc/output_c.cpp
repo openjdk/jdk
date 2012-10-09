@@ -3644,6 +3644,8 @@ static void path_to_constant(FILE *fp, FormDict &globals,
       fprintf(fp, "_leaf->bottom_type()->is_ptr()");
     } else if ( (strcmp(optype,"ConN") == 0) ) {
       fprintf(fp, "_leaf->bottom_type()->is_narrowoop()");
+    } else if ( (strcmp(optype,"ConNKlass") == 0) ) {
+      fprintf(fp, "_leaf->bottom_type()->is_narrowklass()");
     } else if ( (strcmp(optype,"ConF") == 0) ) {
       fprintf(fp, "_leaf->getf()");
     } else if ( (strcmp(optype,"ConD") == 0) ) {

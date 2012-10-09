@@ -2239,6 +2239,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
           nop != Op_CreateEx &&
           nop != Op_CheckCastPP &&
           nop != Op_DecodeN &&
+          nop != Op_DecodeNKlass &&
           !n->is_Mem() ) {
         Node *x = n->clone();
         call->set_req( TypeFunc::Parms, x );
@@ -2287,6 +2288,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   case Op_GetAndSetN:
   case Op_StoreP:
   case Op_StoreN:
+  case Op_StoreNKlass:
   case Op_LoadB:
   case Op_LoadUB:
   case Op_LoadUS:
@@ -2321,7 +2323,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
             addp->in(AddPNode::Base) == n->in(AddPNode::Base),
             "Base pointers must match" );
 #ifdef _LP64
-    if (UseCompressedOops &&
+    if ((UseCompressedOops || UseCompressedKlassPointers) &&
         addp->Opcode() == Op_ConP &&
         addp == n->in(AddPNode::Base) &&
         n->in(AddPNode::Offset)->is_Con()) {
@@ -2330,8 +2332,10 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
       // instructions (4) then load 64-bits constant (7).
       // Do this transformation here since IGVN will convert ConN back to ConP.
       const Type* t = addp->bottom_type();
-      if (t->isa_oopptr()) {
+      if (t->isa_oopptr() || t->isa_klassptr()) {
         Node* nn = NULL;
+
+        int op = t->isa_oopptr() ? Op_ConN : Op_ConNKlass;
 
         // Look for existing ConN node of the same exact type.
         Compile* C = Compile::current();
@@ -2339,7 +2343,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
         uint cnt = r->outcnt();
         for (uint i = 0; i < cnt; i++) {
           Node* m = r->raw_out(i);
-          if (m!= NULL && m->Opcode() == Op_ConN &&
+          if (m!= NULL && m->Opcode() == op &&
               m->bottom_type()->make_ptr() == t) {
             nn = m;
             break;
@@ -2348,7 +2352,11 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
         if (nn != NULL) {
           // Decode a narrow oop to match address
           // [R12 + narrow_oop_reg<<3 + offset]
-          nn = new (C) DecodeNNode(nn, t);
+          if (t->isa_oopptr()) {
+            nn = new (C) DecodeNNode(nn, t);
+          } else {
+            nn = new (C) DecodeNKlassNode(nn, t);
+          }
           n->set_req(AddPNode::Base, nn);
           n->set_req(AddPNode::Address, nn);
           if (addp->outcnt() == 0) {
@@ -2403,22 +2411,24 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   case Op_CmpP:
     // Do this transformation here to preserve CmpPNode::sub() and
     // other TypePtr related Ideal optimizations (for example, ptr nullness).
-    if (n->in(1)->is_DecodeN() || n->in(2)->is_DecodeN()) {
+    if (n->in(1)->is_DecodeNarrowPtr() || n->in(2)->is_DecodeNarrowPtr()) {
       Node* in1 = n->in(1);
       Node* in2 = n->in(2);
-      if (!in1->is_DecodeN()) {
+      if (!in1->is_DecodeNarrowPtr()) {
         in2 = in1;
         in1 = n->in(2);
       }
-      assert(in1->is_DecodeN(), "sanity");
+      assert(in1->is_DecodeNarrowPtr(), "sanity");
 
       Compile* C = Compile::current();
       Node* new_in2 = NULL;
-      if (in2->is_DecodeN()) {
+      if (in2->is_DecodeNarrowPtr()) {
+        assert(in2->Opcode() == in1->Opcode(), "must be same node type");
         new_in2 = in2->in(1);
       } else if (in2->Opcode() == Op_ConP) {
         const Type* t = in2->bottom_type();
         if (t == TypePtr::NULL_PTR) {
+          assert(in1->is_DecodeN(), "compare klass to null?");
           // Don't convert CmpP null check into CmpN if compressed
           // oops implicit null check is not generated.
           // This will allow to generate normal oop implicit null check.
@@ -2463,6 +2473,8 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
           //
         } else if (t->isa_oopptr()) {
           new_in2 = ConNode::make(C, t->make_narrowoop());
+        } else if (t->isa_klassptr()) {
+          new_in2 = ConNode::make(C, t->make_narrowklass());
         }
       }
       if (new_in2 != NULL) {
@@ -2479,23 +2491,28 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     break;
 
   case Op_DecodeN:
-    assert(!n->in(1)->is_EncodeP(), "should be optimized out");
+  case Op_DecodeNKlass:
+    assert(!n->in(1)->is_EncodeNarrowPtr(), "should be optimized out");
     // DecodeN could be pinned when it can't be fold into
     // an address expression, see the code for Op_CastPP above.
-    assert(n->in(0) == NULL || !Matcher::narrow_oop_use_complex_address(), "no control");
+    assert(n->in(0) == NULL || (UseCompressedOops && !Matcher::narrow_oop_use_complex_address()), "no control");
     break;
 
-  case Op_EncodeP: {
+  case Op_EncodeP:
+  case Op_EncodePKlass: {
     Node* in1 = n->in(1);
-    if (in1->is_DecodeN()) {
+    if (in1->is_DecodeNarrowPtr()) {
       n->subsume_by(in1->in(1));
     } else if (in1->Opcode() == Op_ConP) {
       Compile* C = Compile::current();
       const Type* t = in1->bottom_type();
       if (t == TypePtr::NULL_PTR) {
+        assert(t->isa_oopptr(), "null klass?");
         n->subsume_by(ConNode::make(C, TypeNarrowOop::NULL_PTR));
       } else if (t->isa_oopptr()) {
         n->subsume_by(ConNode::make(C, t->make_narrowoop()));
+      } else if (t->isa_klassptr()) {
+        n->subsume_by(ConNode::make(C, t->make_narrowklass()));
       }
     }
     if (in1->outcnt() == 0) {
@@ -2529,7 +2546,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   }
 
   case Op_Phi:
-    if (n->as_Phi()->bottom_type()->isa_narrowoop()) {
+    if (n->as_Phi()->bottom_type()->isa_narrowoop() || n->as_Phi()->bottom_type()->isa_narrowklass()) {
       // The EncodeP optimization may create Phi with the same edges
       // for all paths. It is not handled well by Register Allocator.
       Node* unique_in = n->in(1);
@@ -2692,12 +2709,13 @@ static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Re
   }
 
   // Skip next transformation if compressed oops are not used.
-  if (!UseCompressedOops || !Matcher::gen_narrow_oop_implicit_null_checks())
+  if ((UseCompressedOops && !Matcher::gen_narrow_oop_implicit_null_checks()) ||
+      (!UseCompressedOops && !UseCompressedKlassPointers))
     return;
 
-  // Go over safepoints nodes to skip DecodeN nodes for debug edges.
+  // Go over safepoints nodes to skip DecodeN/DecodeNKlass nodes for debug edges.
   // It could be done for an uncommon traps or any safepoints/calls
-  // if the DecodeN node is referenced only in a debug info.
+  // if the DecodeN/DecodeNKlass node is referenced only in a debug info.
   while (sfpt.size() > 0) {
     n = sfpt.pop();
     JVMState *jvms = n->as_SafePoint()->jvms();
@@ -2708,7 +2726,7 @@ static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Re
                         n->as_CallStaticJava()->uncommon_trap_request() != 0);
     for (int j = start; j < end; j++) {
       Node* in = n->in(j);
-      if (in->is_DecodeN()) {
+      if (in->is_DecodeNarrowPtr()) {
         bool safe_to_skip = true;
         if (!is_uncommon ) {
           // Is it safe to skip?
