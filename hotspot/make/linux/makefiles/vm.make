@@ -387,7 +387,7 @@ include $(MAKEFILES_DIR)/wb.make
 
 #----------------------------------------------------------------------
 
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC) $(WB_JAR)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC) dtraceCheck $(WB_JAR)
 
 install: install_jvm install_jsig install_saproc
 

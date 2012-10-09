@@ -1075,7 +1075,7 @@ static jint invoke_array_primitive_value_callback(jvmtiArrayPrimitiveValueCallba
 
   // get base address of first element
   typeArrayOop array = typeArrayOop(obj);
-  BasicType type = typeArrayKlass::cast(array->klass())->element_type();
+  BasicType type = TypeArrayKlass::cast(array->klass())->element_type();
   void* elements = array->base(type);
 
   // jvmtiPrimitiveType is defined so this mapping is always correct
@@ -2750,7 +2750,7 @@ inline bool VM_HeapWalkOperation::iterate_over_array(oop o) {
   objArrayOop array = objArrayOop(o);
 
   // array reference to its class
-  oop mirror = objArrayKlass::cast(array->klass())->java_mirror();
+  oop mirror = ObjArrayKlass::cast(array->klass())->java_mirror();
   if (!CallbackInvoker::report_class_reference(o, mirror)) {
     return false;
   }

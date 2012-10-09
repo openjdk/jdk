@@ -115,7 +115,7 @@ void MarkSweep::follow_stack() {
     // Process ObjArrays one at a time to avoid marking stack bloat.
     if (!_objarray_stack.is_empty()) {
       ObjArrayTask task = _objarray_stack.pop();
-      objArrayKlass* const k = (objArrayKlass*)task.obj()->klass();
+      ObjArrayKlass* const k = (ObjArrayKlass*)task.obj()->klass();
       k->oop_follow_contents(task.obj(), task.index());
     }
   } while (!_marking_stack.is_empty() || !_objarray_stack.is_empty());

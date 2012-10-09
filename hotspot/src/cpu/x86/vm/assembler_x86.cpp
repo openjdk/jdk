@@ -1170,26 +1170,11 @@ void Assembler::cmpw(Address dst, int imm16) {
 // and stores reg into adr if so; otherwise, the value at adr is loaded into rax,.
 // The ZF is set if the compared values were equal, and cleared otherwise.
 void Assembler::cmpxchgl(Register reg, Address adr) { // cmpxchg
-  if (Atomics & 2) {
-     // caveat: no instructionmark, so this isn't relocatable.
-     // Emit a synthetic, non-atomic, CAS equivalent.
-     // Beware.  The synthetic form sets all ICCs, not just ZF.
-     // cmpxchg r,[m] is equivalent to rax, = CAS (m, rax, r)
-     cmpl(rax, adr);
-     movl(rax, adr);
-     if (reg != rax) {
-        Label L ;
-        jcc(Assembler::notEqual, L);
-        movl(adr, reg);
-        bind(L);
-     }
-  } else {
-     InstructionMark im(this);
-     prefix(adr, reg);
-     emit_byte(0x0F);
-     emit_byte(0xB1);
-     emit_operand(reg, adr);
-  }
+  InstructionMark im(this);
+  prefix(adr, reg);
+  emit_byte(0x0F);
+  emit_byte(0xB1);
+  emit_operand(reg, adr);
 }
 
 void Assembler::comisd(XMMRegister dst, Address src) {
@@ -1513,12 +1498,7 @@ void Assembler::leal(Register dst, Address src) {
 }
 
 void Assembler::lock() {
-  if (Atomics & 1) {
-     // Emit either nothing, a NOP, or a NOP: prefix
-     emit_byte(0x90) ;
-  } else {
-     emit_byte(0xF0);
-  }
+  emit_byte(0xF0);
 }
 
 void Assembler::lzcntl(Register dst, Register src) {
@@ -10616,7 +10596,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
         // Array header size is 12 bytes in 32-bit VM
         // + 6 bytes for 3 chars == 18 bytes,
         // enough space to load vec and shift.
-        assert(HeapWordSize*typeArrayKlass::header_size() >= 12,"sanity");
+        assert(HeapWordSize*TypeArrayKlass::header_size() >= 12,"sanity");
         movdqu(vec, Address(str2, (int_cnt2*2)-16));
         psrldq(vec, 16-(int_cnt2*2));
       }

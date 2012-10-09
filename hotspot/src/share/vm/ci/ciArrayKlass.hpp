@@ -30,7 +30,7 @@
 // ciArrayKlass
 //
 // This class, and its subclasses represent Klass*s in the
-// HotSpot virtual machine whose Klass part is an arrayKlass.
+// HotSpot virtual machine whose Klass part is an ArrayKlass.
 class ciArrayKlass : public ciKlass {
   CI_PACKAGE_ACCESS
 private:
@@ -40,8 +40,8 @@ protected:
   ciArrayKlass(KlassHandle h_k);
   ciArrayKlass(ciSymbol* name, int dimension, BasicType bt);
 
-  arrayKlass* get_arrayKlass() {
-    return (arrayKlass*)get_Klass();
+  ArrayKlass* get_ArrayKlass() {
+    return (ArrayKlass*)get_Klass();
   }
 
   const char* type_string() { return "ciArrayKlass"; }
@@ -53,7 +53,7 @@ public:
   bool is_leaf_type();          // No subtypes of this array type.
 
   ciInstance* component_mirror() {
-    // This is a real field in arrayKlass, but we derive it from element_type.
+    // This is a real field in ArrayKlass, but we derive it from element_type.
     return element_type()->java_mirror();
   }
 
