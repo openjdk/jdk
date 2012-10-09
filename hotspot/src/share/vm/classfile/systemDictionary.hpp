@@ -92,93 +92,93 @@ class SymbolPropertyTable;
 // The order of these definitions is significant; it is the order in which
 // preloading is actually performed by initialize_preloaded_classes.
 
-#define WK_KLASSES_DO(template)                                               \
-  /* well-known classes */                                                    \
-  template(Object_klass,                 java_lang_Object,               Pre) \
-  template(String_klass,                 java_lang_String,               Pre) \
-  template(Class_klass,                  java_lang_Class,                Pre) \
-  template(Cloneable_klass,              java_lang_Cloneable,            Pre) \
-  template(ClassLoader_klass,            java_lang_ClassLoader,          Pre) \
-  template(Serializable_klass,           java_io_Serializable,           Pre) \
-  template(System_klass,                 java_lang_System,               Pre) \
-  template(Throwable_klass,              java_lang_Throwable,            Pre) \
-  template(Error_klass,                  java_lang_Error,                Pre) \
-  template(ThreadDeath_klass,            java_lang_ThreadDeath,          Pre) \
-  template(Exception_klass,              java_lang_Exception,            Pre) \
-  template(RuntimeException_klass,       java_lang_RuntimeException,     Pre) \
-  template(ProtectionDomain_klass,       java_security_ProtectionDomain, Pre) \
-  template(AccessControlContext_klass,   java_security_AccessControlContext, Pre) \
-  template(ClassNotFoundException_klass, java_lang_ClassNotFoundException, Pre) \
-  template(NoClassDefFoundError_klass,   java_lang_NoClassDefFoundError, Pre) \
-  template(LinkageError_klass,           java_lang_LinkageError,         Pre) \
-  template(ClassCastException_klass,     java_lang_ClassCastException,   Pre) \
-  template(ArrayStoreException_klass,    java_lang_ArrayStoreException,  Pre) \
-  template(VirtualMachineError_klass,    java_lang_VirtualMachineError,  Pre) \
-  template(OutOfMemoryError_klass,       java_lang_OutOfMemoryError,     Pre) \
-  template(StackOverflowError_klass,     java_lang_StackOverflowError,   Pre) \
-  template(IllegalMonitorStateException_klass, java_lang_IllegalMonitorStateException, Pre) \
-  template(Reference_klass,              java_lang_ref_Reference,        Pre) \
-                                                                              \
-  /* Preload ref klasses and set reference types */                           \
-  template(SoftReference_klass,          java_lang_ref_SoftReference,    Pre) \
-  template(WeakReference_klass,          java_lang_ref_WeakReference,    Pre) \
-  template(FinalReference_klass,         java_lang_ref_FinalReference,   Pre) \
-  template(PhantomReference_klass,       java_lang_ref_PhantomReference, Pre) \
-  template(Finalizer_klass,              java_lang_ref_Finalizer,        Pre) \
-                                                                              \
-  template(Thread_klass,                 java_lang_Thread,               Pre) \
-  template(ThreadGroup_klass,            java_lang_ThreadGroup,          Pre) \
-  template(Properties_klass,             java_util_Properties,           Pre) \
-  template(reflect_AccessibleObject_klass, java_lang_reflect_AccessibleObject, Pre) \
-  template(reflect_Field_klass,          java_lang_reflect_Field,        Pre) \
-  template(reflect_Method_klass,         java_lang_reflect_Method,       Pre) \
-  template(reflect_Constructor_klass,    java_lang_reflect_Constructor,  Pre) \
-                                                                              \
+#define WK_KLASSES_DO(do_klass)                                                                                          \
+  /* well-known classes */                                                                                               \
+  do_klass(Object_klass,                                java_lang_Object,                          Pre_Link            ) \
+  do_klass(String_klass,                                java_lang_String,                          Pre_Link            ) \
+  do_klass(Class_klass,                                 java_lang_Class,                           Pre_Link            ) \
+  do_klass(Cloneable_klass,                             java_lang_Cloneable,                       Pre_Link            ) \
+  do_klass(ClassLoader_klass,                           java_lang_ClassLoader,                     Pre_Link            ) \
+  do_klass(Serializable_klass,                          java_io_Serializable,                      Pre_Link            ) \
+  do_klass(System_klass,                                java_lang_System,                          Pre_Link            ) \
+  do_klass(Throwable_klass,                             java_lang_Throwable,                       Pre_Link            ) \
+  do_klass(Error_klass,                                 java_lang_Error,                           Pre_Link            ) \
+  do_klass(ThreadDeath_klass,                           java_lang_ThreadDeath,                     Pre_Link            ) \
+  do_klass(Exception_klass,                             java_lang_Exception,                       Pre_Link            ) \
+  do_klass(RuntimeException_klass,                      java_lang_RuntimeException,                Pre_Link            ) \
+  do_klass(ProtectionDomain_klass,                      java_security_ProtectionDomain,            Pre_Link            ) \
+  do_klass(AccessControlContext_klass,                  java_security_AccessControlContext,        Pre_Link            ) \
+  do_klass(ClassNotFoundException_klass,                java_lang_ClassNotFoundException,          Pre_Link            ) \
+  do_klass(NoClassDefFoundError_klass,                  java_lang_NoClassDefFoundError,            Pre_Link            ) \
+  do_klass(LinkageError_klass,                          java_lang_LinkageError,                    Pre_Link            ) \
+  do_klass(ClassCastException_klass,                    java_lang_ClassCastException,              Pre_Link            ) \
+  do_klass(ArrayStoreException_klass,                   java_lang_ArrayStoreException,             Pre_Link            ) \
+  do_klass(VirtualMachineError_klass,                   java_lang_VirtualMachineError,             Pre_Link            ) \
+  do_klass(OutOfMemoryError_klass,                      java_lang_OutOfMemoryError,                Pre_Link            ) \
+  do_klass(StackOverflowError_klass,                    java_lang_StackOverflowError,              Pre_Link            ) \
+  do_klass(IllegalMonitorStateException_klass,          java_lang_IllegalMonitorStateException,    Pre_Link            ) \
+  do_klass(Reference_klass,                             java_lang_ref_Reference,                   Pre_Link            ) \
+                                                                                                                         \
+  /* Preload ref klasses and set reference types */                                                                      \
+  do_klass(SoftReference_klass,                         java_lang_ref_SoftReference,               Pre_Link            ) \
+  do_klass(WeakReference_klass,                         java_lang_ref_WeakReference,               Pre_Link            ) \
+  do_klass(FinalReference_klass,                        java_lang_ref_FinalReference,              Pre                 ) \
+  do_klass(PhantomReference_klass,                      java_lang_ref_PhantomReference,            Pre_Link            ) \
+  do_klass(Finalizer_klass,                             java_lang_ref_Finalizer,                   Pre                 ) \
+                                                                                                                         \
+  do_klass(Thread_klass,                                java_lang_Thread,                          Pre_Link            ) \
+  do_klass(ThreadGroup_klass,                           java_lang_ThreadGroup,                     Pre_Link            ) \
+  do_klass(Properties_klass,                            java_util_Properties,                      Pre_Link            ) \
+  do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject,        Pre_Link            ) \
+  do_klass(reflect_Field_klass,                         java_lang_reflect_Field,                   Pre_Link            ) \
+  do_klass(reflect_Method_klass,                        java_lang_reflect_Method,                  Pre_Link            ) \
+  do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor,             Pre_Link            ) \
+                                                                                                                         \
   /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                              \
   /* Universe::is_gte_jdk14x_version() is not set up by this point. */                                                   \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                          \
-  template(reflect_MagicAccessorImpl_klass,             sun_reflect_MagicAccessorImpl,             Opt)                  \
-  template(reflect_MethodAccessorImpl_klass,            sun_reflect_MethodAccessorImpl,            Opt_Only_JDK14NewRef) \
-  template(reflect_ConstructorAccessorImpl_klass,       sun_reflect_ConstructorAccessorImpl,       Opt_Only_JDK14NewRef) \
-  template(reflect_DelegatingClassLoader_klass,         sun_reflect_DelegatingClassLoader,         Opt)                  \
-  template(reflect_ConstantPool_klass,                  sun_reflect_ConstantPool,                  Opt_Only_JDK15)       \
-  template(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15)       \
-                                                                              \
-  /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */ \
-  template(MethodHandle_klass,             java_lang_invoke_MethodHandle,             Pre_JSR292) \
-  template(MemberName_klass,               java_lang_invoke_MemberName,               Pre_JSR292) \
-  template(MethodHandleNatives_klass,      java_lang_invoke_MethodHandleNatives,      Pre_JSR292) \
-  template(LambdaForm_klass,               java_lang_invoke_LambdaForm,               Opt)        \
-  template(MethodType_klass,               java_lang_invoke_MethodType,               Pre_JSR292) \
-  template(BootstrapMethodError_klass,     java_lang_BootstrapMethodError,            Pre_JSR292) \
-  template(CallSite_klass,                 java_lang_invoke_CallSite,                 Pre_JSR292) \
-  template(ConstantCallSite_klass,         java_lang_invoke_ConstantCallSite,         Pre_JSR292) \
-  template(MutableCallSite_klass,          java_lang_invoke_MutableCallSite,          Pre_JSR292) \
-  template(VolatileCallSite_klass,         java_lang_invoke_VolatileCallSite,         Pre_JSR292) \
-  /* Note: MethodHandle must be first, and VolatileCallSite last in group */  \
-                                                                              \
-  template(StringBuffer_klass,           java_lang_StringBuffer,         Pre) \
-  template(StringBuilder_klass,          java_lang_StringBuilder,        Pre) \
-                                                                              \
-  /* It's NULL in non-1.4 JDKs. */                                            \
-  template(StackTraceElement_klass,      java_lang_StackTraceElement,    Opt) \
-  /* Universe::is_gte_jdk14x_version() is not set up by this point. */        \
-  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */               \
-  template(nio_Buffer_klass,             java_nio_Buffer,                Opt) \
-                                                                              \
-  template(DownloadManager_klass,        sun_jkernel_DownloadManager, Opt_Kernel) \
-                                                                              \
-  template(PostVMInitHook_klass,         sun_misc_PostVMInitHook, Opt)        \
-                                                                              \
-  /* Preload boxing klasses */                                                \
-  template(Boolean_klass,                java_lang_Boolean,              Pre) \
-  template(Character_klass,              java_lang_Character,            Pre) \
-  template(Float_klass,                  java_lang_Float,                Pre) \
-  template(Double_klass,                 java_lang_Double,               Pre) \
-  template(Byte_klass,                   java_lang_Byte,                 Pre) \
-  template(Short_klass,                  java_lang_Short,                Pre) \
-  template(Integer_klass,                java_lang_Integer,              Pre) \
-  template(Long_klass,                   java_lang_Long,                 Pre) \
+  do_klass(reflect_MagicAccessorImpl_klass,             sun_reflect_MagicAccessorImpl,             Opt                 ) \
+  do_klass(reflect_MethodAccessorImpl_klass,            sun_reflect_MethodAccessorImpl,            Opt_Only_JDK14NewRef) \
+  do_klass(reflect_ConstructorAccessorImpl_klass,       sun_reflect_ConstructorAccessorImpl,       Opt_Only_JDK14NewRef) \
+  do_klass(reflect_DelegatingClassLoader_klass,         sun_reflect_DelegatingClassLoader,         Opt                 ) \
+  do_klass(reflect_ConstantPool_klass,                  sun_reflect_ConstantPool,                  Opt_Only_JDK15      ) \
+  do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15      ) \
+                                                                                                                         \
+  /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */                                            \
+  do_klass(MethodHandle_klass,                          java_lang_invoke_MethodHandle,             Pre_Link            ) \
+  do_klass(MemberName_klass,                            java_lang_invoke_MemberName,               Pre                 ) \
+  do_klass(MethodHandleNatives_klass,                   java_lang_invoke_MethodHandleNatives,      Pre                 ) \
+  do_klass(LambdaForm_klass,                            java_lang_invoke_LambdaForm,               Opt                 ) \
+  do_klass(MethodType_klass,                            java_lang_invoke_MethodType,               Pre_Link            ) \
+  do_klass(BootstrapMethodError_klass,                  java_lang_BootstrapMethodError,            Pre_Link            ) \
+  do_klass(CallSite_klass,                              java_lang_invoke_CallSite,                 Pre_Link            ) \
+  do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite,         Pre_Link            ) \
+  do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite,          Pre_Link            ) \
+  do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite,         Pre_Link            ) \
+  /* Note: MethodHandle must be first, and VolatileCallSite last in group */                                             \
+                                                                                                                         \
+  do_klass(StringBuffer_klass,                          java_lang_StringBuffer,                    Pre_Link            ) \
+  do_klass(StringBuilder_klass,                         java_lang_StringBuilder,                   Pre_Link            ) \
+                                                                                                                         \
+  /* It's NULL in non-1.4 JDKs. */                                                                                       \
+  do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement,               Opt                 ) \
+  /* Universe::is_gte_jdk14x_version() is not set up by this point. */                                                   \
+  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                          \
+  do_klass(nio_Buffer_klass,                            java_nio_Buffer,                           Opt                 ) \
+                                                                                                                         \
+  do_klass(DownloadManager_klass,                       sun_jkernel_DownloadManager,               Opt_Kernel          ) \
+                                                                                                                         \
+  do_klass(PostVMInitHook_klass,                        sun_misc_PostVMInitHook,                   Opt                 ) \
+                                                                                                                         \
+  /* Preload boxing klasses */                                                                                           \
+  do_klass(Boolean_klass,                               java_lang_Boolean,                         Pre_Link            ) \
+  do_klass(Character_klass,                             java_lang_Character,                       Pre_Link            ) \
+  do_klass(Float_klass,                                 java_lang_Float,                           Pre_Link            ) \
+  do_klass(Double_klass,                                java_lang_Double,                          Pre_Link            ) \
+  do_klass(Byte_klass,                                  java_lang_Byte,                            Pre_Link            ) \
+  do_klass(Short_klass,                                 java_lang_Short,                           Pre_Link            ) \
+  do_klass(Integer_klass,                               java_lang_Integer,                         Pre_Link            ) \
+  do_klass(Long_klass,                                  java_lang_Long,                            Pre_Link            ) \
   /*end*/
 
 
@@ -201,7 +201,7 @@ class SystemDictionary : AllStatic {
 
   enum InitOption {
     Pre,                        // preloaded; error if not present
-    Pre_JSR292,                 // preloaded if EnableInvokeDynamic
+    Pre_Link,                   // preloaded; error if not present; link as well-known
 
     // Order is significant.  Options before this point require resolve_or_fail.
     // Options after this point will use resolve_or_null instead.
@@ -392,9 +392,9 @@ public:
     return k;
   }
 
-  static Klass* check_klass_Pre(Klass* k) { return check_klass(k); }
-  static Klass* check_klass_Pre_JSR292(Klass* k) { return EnableInvokeDynamic ? check_klass(k) : k; }
-  static Klass* check_klass_Opt(Klass* k) { return k; }
+  static Klass* check_klass_Pre(       Klass* k) { return check_klass(k); }
+  static Klass* check_klass_Pre_Link(  Klass* k) { return check_klass(k); }
+  static Klass* check_klass_Opt(       Klass* k) { return k; }
   static Klass* check_klass_Opt_Kernel(Klass* k) { return k; } //== Opt
   static Klass* check_klass_Opt_Only_JDK15(Klass* k) {
     assert(JDK_Version::is_gte_jdk15x_version(), "JDK 1.5 only");
@@ -412,6 +412,8 @@ public:
     int limit = (int)end_id + 1;
     initialize_wk_klasses_until((WKID) limit, start_id, THREAD);
   }
+
+  static void check_wk_pre_link_klasses() NOT_DEBUG_RETURN;
 
 public:
   #define WK_KLASS_DECLARE(name, symbol, option) \

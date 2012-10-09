@@ -973,9 +973,12 @@ Klass* SystemDictionary::find_well_known_klass(Symbol* class_name) {
     if (sid != vmSymbols::NO_SID) {
       Klass* k = NULL;
       switch (sid) {
-        #define WK_KLASS_CASE(name, symbol, ignore_option) \
+        #define WK_KLASS_CASE(name, symbol, option) \
         case vmSymbols::VM_SYMBOL_ENUM_NAME(symbol): \
-          k = WK_KLASS(name); break;
+          if (option == Pre_Link) { \
+            k = WK_KLASS(name); \
+          } \
+          break;
         WK_KLASSES_DO(WK_KLASS_CASE)
         #undef WK_KLASS_CASE
       }
@@ -1955,6 +1958,16 @@ void SystemDictionary::initialize_wk_klasses_until(WKID limit_id, WKID &start_id
   start_id = limit_id;
 }
 
+#ifdef ASSERT
+void SystemDictionary::check_wk_pre_link_klasses() {
+  #define WK_KLASS_CHECK(name, symbol, option) \
+    if (option == Pre_Link) { \
+      assert(name()->is_public(), ""); \
+    }
+  WK_KLASSES_DO(WK_KLASS_CHECK);
+  #undef WK_KLASS_CHECK
+}
+#endif
 
 void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   assert(WK_KLASS(Object_klass) == NULL, "preloaded classes should only be initialized once");
@@ -2009,6 +2022,8 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   }
 
   initialize_wk_klasses_until(WKID_LIMIT, scan, CHECK);
+
+  check_wk_pre_link_klasses();
 
   _box_klasses[T_BOOLEAN] = WK_KLASS(Boolean_klass);
   _box_klasses[T_CHAR]    = WK_KLASS(Character_klass);
