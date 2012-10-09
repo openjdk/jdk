@@ -147,6 +147,10 @@ java/lang/management/MemoryMXBean/MemoryTestAllGC.sh		generic-all
 
 # jdk_management
 
+############################################################################
+
+# jdk_jmx
+
 # 6959636
 javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
 
@@ -162,7 +166,7 @@ javax/management/remote/mandatory/notif/DiffHBTest.java 	generic-all
 
 ############################################################################
 
-# jdk_misc
+# jdk_other
 
 # 6988950
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
@@ -324,12 +328,31 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 
 # 7196199
 java/text/Bidi/Bug6665028.java                                  generic-all
+
 ############################################################################
 
 # jdk_tools
 
 # 6461635
 com/sun/tools/attach/BasicTests.sh                              generic-all
+
+# 7172176
+sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
+sun/tools/jconsole/ImmutableResourceTest.sh                     generic-all
+
+# 7132203
+sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
+
+# Tests take too long, see 7143279
+tools/pack200/CommandLineTests.java                             generic-all
+tools/pack200/Pack200Test.java                                  generic-all
+
+# 7150569
+tools/launcher/UnicodeTest.java                                 macosx-all
+
+############################################################################
+
+# jdk_jdi
 
 # Filed 6952105
 com/sun/jdi/SuspendThreadTest.java                              generic-all
@@ -345,20 +368,6 @@ com/sun/jdi/FieldWatchpoints.java                               generic-all
 
 # Filed 6402201
 com/sun/jdi/ProcessAttachTest.sh                                generic-all
-
-# Filed 7172176
-sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
-sun/tools/jconsole/ImmutableResourceTest.sh			generic-all
-
-# 7132203
-sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
-
-# Tests take too long, see 7143279
-tools/pack200/CommandLineTests.java                         	generic-all
-tools/pack200/Pack200Test.java                              	generic-all
-
-# 7150569
-tools/launcher/UnicodeTest.java                                 macosx-all
 
 ############################################################################
 
