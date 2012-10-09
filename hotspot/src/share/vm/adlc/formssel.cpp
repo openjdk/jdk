@@ -3395,7 +3395,7 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
   static const char *needs_ideal_memory_list[] = {
     "StoreI","StoreL","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
-    "LoadI", "LoadUI2L", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
+    "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
     "StoreVector", "LoadVector",
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",

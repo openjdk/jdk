@@ -2293,7 +2293,6 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   case Op_LoadUB:
   case Op_LoadUS:
   case Op_LoadI:
-  case Op_LoadUI2L:
   case Op_LoadKlass:
   case Op_LoadNKlass:
   case Op_LoadL:

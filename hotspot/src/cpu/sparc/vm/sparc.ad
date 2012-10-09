@@ -5885,8 +5885,8 @@ instruct loadI2L_immI(iRegL dst, memory mem, immI mask, iRegL tmp) %{
 %}
 
 // Load Unsigned Integer into a Long Register
-instruct loadUI2L(iRegL dst, memory mem) %{
-  match(Set dst (LoadUI2L mem));
+instruct loadUI2L(iRegL dst, memory mem, immL_32bits mask) %{
+  match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
   ins_cost(MEMORY_REF_COST);
 
   size(4);

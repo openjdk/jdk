@@ -274,18 +274,6 @@ public:
   virtual BasicType memory_type() const { return T_INT; }
 };
 
-//------------------------------LoadUI2LNode-----------------------------------
-// Load an unsigned integer into long from memory
-class LoadUI2LNode : public LoadNode {
-public:
-  LoadUI2LNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeLong* t = TypeLong::UINT)
-    : LoadNode(c, mem, adr, at, t) {}
-  virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Op_RegL; }
-  virtual int store_Opcode() const { return Op_StoreL; }
-  virtual BasicType memory_type() const { return T_LONG; }
-};
-
 //------------------------------LoadRangeNode----------------------------------
 // Load an array length from the array
 class LoadRangeNode : public LoadINode {
