@@ -6936,7 +6936,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 #ifdef ASSERT
   // TraceBytecodes does not use r12 but saves it over the call, so don't verify
   // r12 is the heapbase.
-  LP64_ONLY(if (UseCompressedOops && !TraceBytecodes) verify_heapbase("call_VM_base");)
+  LP64_ONLY(if ((UseCompressedOops || UseCompressedKlassPointers) && !TraceBytecodes) verify_heapbase("call_VM_base: heap base corrupted?");)
 #endif // ASSERT
 
   assert(java_thread != oop_result  , "cannot use the same register for java_thread & oop_result");
@@ -10036,7 +10036,7 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 #ifdef _LP64
   if (UseCompressedKlassPointers) {
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    decode_heap_oop_not_null(dst);
+    decode_klass_not_null(dst);
   } else
 #endif
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
@@ -10047,15 +10047,10 @@ void MacroAssembler::load_prototype_header(Register dst, Register src) {
   if (UseCompressedKlassPointers) {
     assert (Universe::heap() != NULL, "java heap should be initialized");
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    if (Universe::narrow_oop_shift() != 0) {
-      assert(LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
-      if (LogMinObjAlignmentInBytes == Address::times_8) {
-        movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset()));
-      } else {
-        // OK to use shift since we don't need to preserve flags.
-        shlq(dst, LogMinObjAlignmentInBytes);
-        movq(dst, Address(r12_heapbase, dst, Address::times_1, Klass::prototype_header_offset()));
-      }
+    if (Universe::narrow_klass_shift() != 0) {
+      assert(LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+      assert(LogKlassAlignmentInBytes == Address::times_8, "klass not aligned on 64bits?");
+      movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset()));
     } else {
       movq(dst, Address(dst, Klass::prototype_header_offset()));
     }
@@ -10070,7 +10065,7 @@ void MacroAssembler::load_prototype_header(Register dst, Register src) {
 void MacroAssembler::store_klass(Register dst, Register src) {
 #ifdef _LP64
   if (UseCompressedKlassPointers) {
-    encode_heap_oop_not_null(src);
+    encode_klass_not_null(src);
     movl(Address(dst, oopDesc::klass_offset_in_bytes()), src);
   } else
 #endif
@@ -10152,12 +10147,12 @@ void MacroAssembler::store_klass_gap(Register dst, Register src) {
 
 #ifdef ASSERT
 void MacroAssembler::verify_heapbase(const char* msg) {
-  assert (UseCompressedOops, "should be compressed");
+  assert (UseCompressedOops || UseCompressedKlassPointers, "should be compressed");
   assert (Universe::heap() != NULL, "java heap should be initialized");
   if (CheckCompressedOops) {
     Label ok;
     push(rscratch1); // cmpptr trashes rscratch1
-    cmpptr(r12_heapbase, ExternalAddress((address)Universe::narrow_oop_base_addr()));
+    cmpptr(r12_heapbase, ExternalAddress((address)Universe::narrow_ptrs_base_addr()));
     jcc(Assembler::equal, ok);
     STOP(msg);
     bind(ok);
@@ -10295,6 +10290,74 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
   }
 }
 
+void MacroAssembler::encode_klass_not_null(Register r) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+#ifdef ASSERT
+  verify_heapbase("MacroAssembler::encode_klass_not_null: heap base corrupted?");
+#endif
+  if (Universe::narrow_klass_base() != NULL) {
+    subq(r, r12_heapbase);
+  }
+  if (Universe::narrow_klass_shift() != 0) {
+    assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+    shrq(r, LogKlassAlignmentInBytes);
+  }
+}
+
+void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+#ifdef ASSERT
+  verify_heapbase("MacroAssembler::encode_klass_not_null2: heap base corrupted?");
+#endif
+  if (dst != src) {
+    movq(dst, src);
+  }
+  if (Universe::narrow_klass_base() != NULL) {
+    subq(dst, r12_heapbase);
+  }
+  if (Universe::narrow_klass_shift() != 0) {
+    assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+    shrq(dst, LogKlassAlignmentInBytes);
+  }
+}
+
+void  MacroAssembler::decode_klass_not_null(Register r) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+  // Note: it will change flags
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  // Cannot assert, unverified entry point counts instructions (see .ad file)
+  // vtableStubs also counts instructions in pd_code_size_limit.
+  // Also do not verify_oop as this is called by verify_oop.
+  if (Universe::narrow_klass_shift() != 0) {
+    assert(LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+    shlq(r, LogKlassAlignmentInBytes);
+    if (Universe::narrow_klass_base() != NULL) {
+      addq(r, r12_heapbase);
+    }
+  } else {
+    assert (Universe::narrow_klass_base() == NULL, "sanity");
+  }
+}
+
+void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+  // Note: it will change flags
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  // Cannot assert, unverified entry point counts instructions (see .ad file)
+  // vtableStubs also counts instructions in pd_code_size_limit.
+  // Also do not verify_oop as this is called by verify_oop.
+  if (Universe::narrow_klass_shift() != 0) {
+    assert(LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+    assert(LogKlassAlignmentInBytes == Address::times_8, "klass not aligned on 64bits?");
+    leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
+  } else {
+    assert (Universe::narrow_klass_base() == NULL, "sanity");
+    if (dst != src) {
+      movq(dst, src);
+    }
+  }
+}
+
 void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
   assert (UseCompressedOops, "should only be used for compressed headers");
   assert (Universe::heap() != NULL, "java heap should be initialized");
@@ -10311,6 +10374,22 @@ void  MacroAssembler::set_narrow_oop(Address dst, jobject obj) {
   int oop_index = oop_recorder()->find_index(obj);
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
   mov_narrow_oop(dst, oop_index, rspec);
+}
+
+void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int klass_index = oop_recorder()->find_index(k);
+  RelocationHolder rspec = metadata_Relocation::spec(klass_index);
+  mov_narrow_oop(dst, oopDesc::encode_klass(k), rspec);
+}
+
+void  MacroAssembler::set_narrow_klass(Address dst, Klass* k) {
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int klass_index = oop_recorder()->find_index(k);
+  RelocationHolder rspec = metadata_Relocation::spec(klass_index);
+  mov_narrow_oop(dst, oopDesc::encode_klass(k), rspec);
 }
 
 void  MacroAssembler::cmp_narrow_oop(Register dst, jobject obj) {
@@ -10331,9 +10410,25 @@ void  MacroAssembler::cmp_narrow_oop(Address dst, jobject obj) {
   Assembler::cmp_narrow_oop(dst, oop_index, rspec);
 }
 
+void  MacroAssembler::cmp_narrow_klass(Register dst, Klass* k) {
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int klass_index = oop_recorder()->find_index(k);
+  RelocationHolder rspec = metadata_Relocation::spec(klass_index);
+  Assembler::cmp_narrow_oop(dst, oopDesc::encode_klass(k), rspec);
+}
+
+void  MacroAssembler::cmp_narrow_klass(Address dst, Klass* k) {
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int klass_index = oop_recorder()->find_index(k);
+  RelocationHolder rspec = metadata_Relocation::spec(klass_index);
+  Assembler::cmp_narrow_oop(dst, oopDesc::encode_klass(k), rspec);
+}
+
 void MacroAssembler::reinit_heapbase() {
-  if (UseCompressedOops) {
-    movptr(r12_heapbase, ExternalAddress((address)Universe::narrow_oop_base_addr()));
+  if (UseCompressedOops || UseCompressedKlassPointers) {
+    movptr(r12_heapbase, ExternalAddress((address)Universe::narrow_ptrs_base_addr()));
   }
 }
 #endif // _LP64

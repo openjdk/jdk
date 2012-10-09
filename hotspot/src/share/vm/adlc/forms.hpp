@@ -173,7 +173,8 @@ public:
     idealC      =  7,  // Char    type
     idealS      =  8,  // String  type
     idealN      =  9,  // Narrow oop types
-    idealV      = 10   // Vector  type
+    idealNKlass = 10,  // Narrow klass types
+    idealV      = 11   // Vector  type
   };
   // Convert ideal name to a DataType, return DataType::none if not a 'ConX'
   Form::DataType  ideal_to_const_type(const char *ideal_type_name) const;

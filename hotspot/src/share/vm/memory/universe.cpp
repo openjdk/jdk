@@ -151,7 +151,9 @@ size_t          Universe::_heap_used_at_last_gc = 0;
 
 CollectedHeap*  Universe::_collectedHeap = NULL;
 
-NarrowOopStruct Universe::_narrow_oop = { NULL, 0, true };
+NarrowPtrStruct Universe::_narrow_oop = { NULL, 0, true };
+NarrowPtrStruct Universe::_narrow_klass = { NULL, 0, true };
+address Universe::_narrow_ptrs_base;
 
 
 void Universe::basic_type_classes_do(void f(Klass*)) {
@@ -807,7 +809,7 @@ jint Universe::initialize_heap() {
     }
     if ((uint64_t)Universe::heap()->reserved_region().end() > OopEncodingHeapMax) {
       // Can't reserve heap below 32Gb.
-      Universe::set_narrow_oop_base(Universe::heap()->base() - os::vm_page_size());
+      // keep the Universe::narrow_oop_base() set in Universe::reserve_heap()
       Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
       if (verbose) {
         tty->print(", Compressed Oops with base: "PTR_FORMAT, Universe::narrow_oop_base());
@@ -838,8 +840,16 @@ jint Universe::initialize_heap() {
       tty->cr();
       tty->cr();
     }
+    if (UseCompressedKlassPointers) {
+      Universe::set_narrow_klass_base(Universe::narrow_oop_base());
+      Universe::set_narrow_klass_shift(MIN2(Universe::narrow_oop_shift(), LogKlassAlignmentInBytes));
+    }
+    Universe::set_narrow_ptrs_base(Universe::narrow_oop_base());
   }
-  assert(Universe::narrow_oop_base() == (Universe::heap()->base() - os::vm_page_size()) ||
+  // Universe::narrow_oop_base() is one page below the metaspace
+  // base. The actual metaspace base depends on alignment constraints
+  // so we don't know its exact location here.
+  assert((intptr_t)Universe::narrow_oop_base() <= (intptr_t)(Universe::heap()->base() - os::vm_page_size() - ClassMetaspaceSize) ||
          Universe::narrow_oop_base() == NULL, "invalid value");
   assert(Universe::narrow_oop_shift() == LogMinObjAlignmentInBytes ||
          Universe::narrow_oop_shift() == 0, "invalid value");
@@ -861,7 +871,10 @@ jint Universe::initialize_heap() {
 ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   // Add in the class metaspace area so the classes in the headers can
   // be compressed the same as instances.
-  size_t total_reserved = align_size_up(heap_size + ClassMetaspaceSize, alignment);
+  // Need to round class space size up because it's below the heap and
+  // the actual alignment depends on its size.
+  size_t metaspace_size = align_size_up(ClassMetaspaceSize, alignment);
+  size_t total_reserved = align_size_up(heap_size + metaspace_size, alignment);
   char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
 
   ReservedHeapSpace total_rs(total_reserved, alignment, UseLargePages, addr);
@@ -895,11 +908,23 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
     return total_rs;
   }
 
-  // Split the reserved space into main Java heap and a space for classes
-  // so that they can be compressed using the same algorithm as compressed oops
-  ReservedSpace heap_rs = total_rs.first_part(heap_size);
-  ReservedSpace class_rs = total_rs.last_part(heap_size, alignment);
+  // Split the reserved space into main Java heap and a space for
+  // classes so that they can be compressed using the same algorithm
+  // as compressed oops. If compress oops and compress klass ptrs are
+  // used we need the meta space first: if the alignment used for
+  // compressed oops is greater than the one used for compressed klass
+  // ptrs, a metadata space on top of the heap could become
+  // unreachable.
+  ReservedSpace class_rs = total_rs.first_part(metaspace_size);
+  ReservedSpace heap_rs = total_rs.last_part(metaspace_size, alignment);
   Metaspace::initialize_class_space(class_rs);
+
+  if (UseCompressedOops) {
+    // Universe::initialize_heap() will reset this to NULL if unscaled
+    // or zero-based narrow oops are actually used.
+    address base = (address)(total_rs.base() - os::vm_page_size());
+    Universe::set_narrow_oop_base(base);
+  }
   return heap_rs;
 }
 

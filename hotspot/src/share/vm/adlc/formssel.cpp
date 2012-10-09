@@ -746,14 +746,16 @@ int InstructForm::memory_operand(FormDict &globals) const {
 // Expected use is for pointer vs oop determination for LoadP
 bool InstructForm::captures_bottom_type(FormDict &globals) const {
   if( _matrule && _matrule->_rChild &&
-       (!strcmp(_matrule->_rChild->_opType,"CastPP")     ||  // new result type
-        !strcmp(_matrule->_rChild->_opType,"CastX2P")    ||  // new result type
-        !strcmp(_matrule->_rChild->_opType,"DecodeN")    ||
-        !strcmp(_matrule->_rChild->_opType,"EncodeP")    ||
-        !strcmp(_matrule->_rChild->_opType,"LoadN")      ||
-        !strcmp(_matrule->_rChild->_opType,"GetAndSetN") ||
-        !strcmp(_matrule->_rChild->_opType,"LoadNKlass") ||
-        !strcmp(_matrule->_rChild->_opType,"CreateEx")   ||  // type of exception
+       (!strcmp(_matrule->_rChild->_opType,"CastPP")       ||  // new result type
+        !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
+        !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
+        !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
+        !strcmp(_matrule->_rChild->_opType,"DecodeNKlass") ||
+        !strcmp(_matrule->_rChild->_opType,"EncodePKlass") ||
+        !strcmp(_matrule->_rChild->_opType,"LoadN")        ||
+        !strcmp(_matrule->_rChild->_opType,"GetAndSetN")   ||
+        !strcmp(_matrule->_rChild->_opType,"LoadNKlass")   ||
+        !strcmp(_matrule->_rChild->_opType,"CreateEx")     ||  // type of exception
         !strcmp(_matrule->_rChild->_opType,"CheckCastPP")) ) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
   else if ( is_ideal_store() != Form::none  )                return true;
@@ -2452,6 +2454,7 @@ void OperandForm::format_constant(FILE *fp, uint const_index, uint const_type) {
   switch(const_type) {
   case Form::idealI:  fprintf(fp,"st->print(\"#%%d\", _c%d);\n", const_index); break;
   case Form::idealP:  fprintf(fp,"_c%d->dump_on(st);\n",         const_index); break;
+  case Form::idealNKlass:
   case Form::idealN:  fprintf(fp,"_c%d->dump_on(st);\n",         const_index); break;
   case Form::idealL:  fprintf(fp,"st->print(\"#%%lld\", _c%d);\n", const_index); break;
   case Form::idealF:  fprintf(fp,"st->print(\"#%%f\", _c%d);\n", const_index); break;
@@ -3390,7 +3393,7 @@ void MatchNode::output(FILE *fp) {
 
 int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
   static const char *needs_ideal_memory_list[] = {
-    "StoreI","StoreL","StoreP","StoreN","StoreD","StoreF" ,
+    "StoreI","StoreL","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadUI2L", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
@@ -3947,6 +3950,8 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ConvL2I")==0 ||
         strcmp(opType,"DecodeN")==0 ||
         strcmp(opType,"EncodeP")==0 ||
+        strcmp(opType,"EncodePKlass")==0 ||
+        strcmp(opType,"DecodeNKlass")==0 ||
         strcmp(opType,"RoundDouble")==0 ||
         strcmp(opType,"RoundFloat")==0 ||
         strcmp(opType,"ReverseBytesI")==0 ||

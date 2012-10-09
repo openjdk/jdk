@@ -968,7 +968,8 @@ void ArchDesc::initBaseOpTypes() {
   // Create InstructForm and assign type for each ideal instruction.
   for ( int j = _last_machine_leaf+1; j < _last_opcode; ++j) {
     char         *ident    = (char *)NodeClassNames[j];
-    if(!strcmp(ident, "ConI") || !strcmp(ident, "ConP") || !strcmp(ident, "ConN") ||
+    if(!strcmp(ident, "ConI") || !strcmp(ident, "ConP") ||
+       !strcmp(ident, "ConN") || !strcmp(ident, "ConNKlass") ||
        !strcmp(ident, "ConF") || !strcmp(ident, "ConD") ||
        !strcmp(ident, "ConL") || !strcmp(ident, "Con" ) ||
        !strcmp(ident, "Bool") ) {
