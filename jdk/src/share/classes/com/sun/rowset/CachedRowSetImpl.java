@@ -2039,6 +2039,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      *            the cursor is not on a valid row, or this method fails
      * @deprecated
      */
+    @Deprecated
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
         Object value;
         BigDecimal bDecimal, retVal;
@@ -2374,6 +2375,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * @throws SQLException if an error occurs
      * @deprecated
      */
+    @Deprecated
     public java.io.InputStream getUnicodeStream(int columnIndex) throws SQLException {
         // always free an old stream
         unicodeStream = null;
@@ -2643,6 +2645,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * @deprecated Use the <code>getBigDecimal(String columnName)</code>
      *             method instead
      */
+    @Deprecated
     public BigDecimal getBigDecimal(String columnName, int scale) throws SQLException {
         return getBigDecimal(getColIdxByName(columnName), scale);
     }
@@ -2774,6 +2777,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      *            this rowset's rows or its insert row
      * @deprecated use the method <code>getCharacterStream</code> instead
      */
+    @Deprecated
     public java.io.InputStream getUnicodeStream(String columnName) throws SQLException {
         return getUnicodeStream(getColIdxByName(columnName));
     }
