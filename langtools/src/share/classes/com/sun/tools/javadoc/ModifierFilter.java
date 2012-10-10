@@ -32,6 +32,12 @@ import static com.sun.tools.javac.code.Flags.*;
  *   Filtering is done by returning boolean values.
  *   Classes, methods and fields can be filtered, or filtering
  *   can be done directly on modifier bits.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  *   @see com.sun.tools.javac.code.Flags
  *   @author Robert Field
  */

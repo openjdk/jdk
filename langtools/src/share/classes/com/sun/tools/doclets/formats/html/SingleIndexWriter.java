@@ -36,6 +36,11 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * Unicode Order. The name of the generated file is "index-all.html" and it is
  * generated in current or the destination directory.
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @see java.lang.Character
  * @author Atul M Dambalkar
  * @author Bhavesh Patel (Modified)
