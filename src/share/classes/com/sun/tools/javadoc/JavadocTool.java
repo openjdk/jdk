@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,7 +386,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     /**
      * Return true if given file name is a valid class name
      * (including "package-info").
-     * @param clazzname the name of the class to check.
+     * @param s the name of the class to check.
      * @return true if given class name is a valid class name
      * and false otherwise.
      */

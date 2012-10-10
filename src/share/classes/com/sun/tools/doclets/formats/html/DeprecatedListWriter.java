@@ -208,7 +208,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      *
      * @param builder the deprecated list builder
      * @param type the type of list being documented
-     * @param contentTree the content tree to which the anchor will be added
+     * @param htmlTree the content tree to which the anchor will be added
      */
     private void addAnchor(DeprecatedAPIListBuilder builder, int type, Content htmlTree) {
         if (builder.hasDocumentation(type)) {

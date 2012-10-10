@@ -108,7 +108,7 @@ public class ValueTaglet extends BaseInlineTaglet {
      * @param config the current configuration of the doclet.
      * @param tag the value tag.
      * @param name the name of the field to search for.  The name should be in
-     * <qualified class name>#<field name> format. If the class name is omitted,
+     * {@code <qualified class name>#<field name>} format. If the class name is omitted,
      * it is assumed that the field is in the current class.
      *
      * @return the corresponding FieldDoc. If the name is null or empty string,

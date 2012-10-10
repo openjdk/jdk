@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,8 @@ class ParamTagImpl extends TagImpl implements ParamTag {
      * TagImpls consisting of SeeTagImpl(s) and text containing TagImpl(s).
      *
      * @return TagImpl[] Array of tags with inline SeeTagImpls.
-     * @see TagImpl#inlineTagImpls()
-     * @see ThrowsTagImpl#inlineTagImpls()
+     * @see TagImpl#inlineTags()
+     * @see ThrowsTagImpl#inlineTags()
      */
     @Override
     public Tag[] inlineTags() {

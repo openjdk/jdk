@@ -740,7 +740,7 @@ public class Attr extends JCTree.Visitor {
      *  @param env         The env for the const value
      *  @param initializer The initializer for the const value
      *  @param type        The expected type, or null
-     *  @see VarSymbol#setlazyConstValue
+     *  @see VarSymbol#setLazyConstValue
      */
     public Object attribLazyConstantValue(Env<AttrContext> env,
                                       JCTree.JCExpression initializer,

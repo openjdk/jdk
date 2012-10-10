@@ -121,10 +121,10 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     /**
      * Add the member header.
      *
-     * @param fieldsType the class document to be listed
-     * @param fieldTypeStr the string for the filed type to be documented
+     * @param fieldType the class document to be listed
+     * @param fieldTypeStr the string for the field type to be documented
      * @param fieldDimensions the dimensions of the field string to be added
-     * @param firldName name of the field to be added
+     * @param fieldName name of the field to be added
      * @param contentTree the content tree to which the member header will be added
      */
     public void addMemberHeader(ClassDoc fieldType, String fieldTypeStr,

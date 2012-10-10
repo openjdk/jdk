@@ -844,7 +844,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * Note that this is not necessarily what the compiler would do!
      *
      * @param methodName the unqualified name to search for.
-     * @param paramTypeArray the array of Strings for method parameter types.
+     * @param paramTypes the array of Strings for method parameter types.
      * @return the first MethodDocImpl which matches, null if not found.
      */
     public MethodDocImpl findMethod(String methodName, String[] paramTypes) {
@@ -971,7 +971,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * Find constructor in this class.
      *
      * @param constrName the unqualified name to search for.
-     * @param paramTypeArray the array of Strings for constructor parameters.
+     * @param paramTypes the array of Strings for constructor parameters.
      * @return the first ConstructorDocImpl which matches, null if not found.
      */
     public ConstructorDoc findConstructor(String constrName,

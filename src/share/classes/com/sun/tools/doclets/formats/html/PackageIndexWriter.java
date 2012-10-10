@@ -229,7 +229,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * Adds the lower navigation bar and the bottom text
      * (from the -bottom option) at the bottom of page.
      *
-     * @param the documentation tree to which the navigation bar footer will be added
+     * @param body the documentation tree to which the navigation bar footer will be added
      */
     protected void addNavigationBarFooter(Content body) {
         addNavLinks(false, body);

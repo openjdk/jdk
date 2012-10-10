@@ -1407,7 +1407,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * Returns a package name label.
      *
-     * @param parsedName the package name
+     * @param packageName the package name
      * @return the package name content
      */
     public Content getPackageLabel(String packageName) {
@@ -2635,7 +2635,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * Adds the annotatation types for the given doc.
      *
-     * @param packageDoc the package to write annotations for
+     * @param doc the package to write annotations for
      * @param htmltree the content tree to which the annotation types will be added
      */
     public void addAnnotationInfo(ProgramElementDoc doc, Content htmltree) {

@@ -80,11 +80,11 @@ public class Position {
 
     /** Encode line and column numbers in an integer as:
      *  {@code line-number << LINESHIFT + column-number }.
-     *  {@link Position.NOPOS} represents an undefined position.
+     *  {@link Position#NOPOS} represents an undefined position.
      *
      * @param  line  number of line (first is 1)
      * @param  col   number of character on line (first is 1)
-     * @return       an encoded position or {@link Position.NOPOS}
+     * @return       an encoded position or {@link Position#NOPOS}
      *               if the line or column number is too big to
      *               represent in the encoded format
      * @throws IllegalArgumentException if line or col is less than 1
