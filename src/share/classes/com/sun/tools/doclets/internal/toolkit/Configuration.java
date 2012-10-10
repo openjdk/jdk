@@ -25,12 +25,13 @@
 
 package com.sun.tools.doclets.internal.toolkit;
 
+import java.io.*;
+import java.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
-import com.sun.javadoc.*;
-import java.util.*;
-import java.io.*;
 
 /**
  * Configure the output based on the options. Doclets should sub-class

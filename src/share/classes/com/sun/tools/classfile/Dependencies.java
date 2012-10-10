@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import com.sun.tools.classfile.Dependency.Finder;
 import com.sun.tools.classfile.Dependency.Filter;
+import com.sun.tools.classfile.Dependency.Finder;
 import com.sun.tools.classfile.Dependency.Location;
 import com.sun.tools.classfile.Type.ArrayType;
 import com.sun.tools.classfile.Type.ClassSigType;
@@ -43,7 +43,6 @@ import com.sun.tools.classfile.Type.MethodType;
 import com.sun.tools.classfile.Type.SimpleType;
 import com.sun.tools.classfile.Type.TypeParamType;
 import com.sun.tools.classfile.Type.WildcardType;
-
 import static com.sun.tools.classfile.ConstantPool.*;
 
 /**

@@ -25,7 +25,6 @@
 
 package com.sun.tools.javadoc;
 
-
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Kinds;

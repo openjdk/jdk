@@ -25,7 +25,6 @@
 
 package com.sun.tools.javadoc;
 
-
 import com.sun.javadoc.*;
 
 import com.sun.tools.javac.code.Attribute;
