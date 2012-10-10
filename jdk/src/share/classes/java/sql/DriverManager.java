@@ -412,7 +412,7 @@ public class DriverManager {
      * method throws a <code>java.lang.SecurityException</code>.
      *
      * @param out the new logging/tracing PrintStream; to disable, set to <code>null</code>
-     * @deprecated Use {@code setLogWriter)
+     * @deprecated Use {@code setLogWriter}
      * @throws SecurityException if a security manager exists and its
      *    <code>checkPermission</code> method denies setting the log stream
      *
@@ -439,7 +439,7 @@ public class DriverManager {
      * and all drivers.
      *
      * @return the logging/tracing PrintStream; if disabled, is <code>null</code>
-     * @deprecated  Use {@code getLogWriter)
+     * @deprecated  Use {@code getLogWriter}
      * @see #setLogStream
      */
     @Deprecated
