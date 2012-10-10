@@ -33,6 +33,11 @@ import com.sun.javadoc.*;
  * The exception name my be the name of a type variable.
  * Note: @exception is a backwards compatible synonymy for @throws.
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @author Robert Field
  * @author Atul M Dambalkar
  * @see ExecutableMemberDocImpl#throwsTags()
