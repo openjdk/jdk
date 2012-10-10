@@ -26,12 +26,10 @@
 package com.sun.tools.javac.tree;
 
 import java.io.*;
-import java.util.*;
 
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;

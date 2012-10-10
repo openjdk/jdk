@@ -26,9 +26,10 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.*;
+
 import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Generate the Help File for the generated API documentation. The help file

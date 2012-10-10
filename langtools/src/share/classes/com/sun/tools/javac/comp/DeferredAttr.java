@@ -46,7 +46,6 @@ import java.util.WeakHashMap;
 
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /**
  * This is an helper class that is used to perform deferred type-analysis.

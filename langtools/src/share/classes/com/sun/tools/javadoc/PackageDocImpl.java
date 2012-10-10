@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
 
 package com.sun.tools.javadoc;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
+
 import javax.tools.FileObject;
 
 import com.sun.javadoc.*;
-
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;

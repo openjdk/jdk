@@ -28,21 +28,19 @@ package com.sun.tools.javac.code;
 import java.lang.ref.SoftReference;
 import java.util.*;
 
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.List;
-
-import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.comp.Check;
-
+import com.sun.tools.javac.jvm.ClassReader;
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.List;
+import static com.sun.tools.javac.code.BoundKind.*;
+import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Scope.*;
+import static com.sun.tools.javac.code.Symbol.*;
 import static com.sun.tools.javac.code.Type.*;
 import static com.sun.tools.javac.code.TypeTags.*;
-import static com.sun.tools.javac.code.Symbol.*;
-import static com.sun.tools.javac.code.Flags.*;
-import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.util.ListBuffer.lb;
 
 /**

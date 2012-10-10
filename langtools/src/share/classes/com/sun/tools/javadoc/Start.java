@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,19 @@
 
 package com.sun.tools.javadoc;
 
-import com.sun.javadoc.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.StringTokenizer;
 
+import com.sun.javadoc.*;
 import com.sun.tools.javac.main.CommandLine;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
-
-import java.io.IOException;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-
-import java.util.StringTokenizer;
-
 import static com.sun.tools.javac.code.Flags.*;
 
 /**

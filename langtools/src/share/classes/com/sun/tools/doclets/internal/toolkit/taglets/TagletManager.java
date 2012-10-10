@@ -25,13 +25,13 @@
 
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
-import com.sun.javadoc.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-
 import java.io.*;
 import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Manages the<code>Taglet</code>s used by doclets.

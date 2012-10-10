@@ -26,17 +26,17 @@
 package com.sun.tools.javac.code;
 
 import java.util.*;
-import javax.lang.model.type.TypeVisitor;
-import javax.lang.model.element.ElementVisitor;
 
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.List;
+import javax.lang.model.element.ElementVisitor;
+import javax.lang.model.type.TypeVisitor;
+
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.*;
-
-import static com.sun.tools.javac.jvm.ByteCodes.*;
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.List;
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.jvm.ByteCodes.*;
 
 /** A class that defines all predefined constants and operators
  *  as well as special classes such as java.lang.Object, which need

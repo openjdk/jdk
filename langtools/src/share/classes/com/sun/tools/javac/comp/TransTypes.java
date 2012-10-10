@@ -27,8 +27,6 @@ package com.sun.tools.javac.comp;
 
 import java.util.*;
 
-import javax.lang.model.element.ElementKind;
-
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.*;

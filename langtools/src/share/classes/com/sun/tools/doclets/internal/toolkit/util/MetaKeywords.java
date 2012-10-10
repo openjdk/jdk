@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.javadoc.*;
 import java.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Provides methods for creating an array of class, method and
