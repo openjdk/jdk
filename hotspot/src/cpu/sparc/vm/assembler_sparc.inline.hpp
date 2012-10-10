@@ -347,7 +347,11 @@ inline void Assembler::sub(Register s1, RegisterOrConstant s2, Register d, int o
 inline void Assembler::swap(    Register s1, Register s2, Register d) { v9_dep();  emit_long( op(ldst_op) | rd(d) | op3(swap_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::swap(    Register s1, int simm13a, Register d) { v9_dep();  emit_data( op(ldst_op) | rd(d) | op3(swap_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::swap(    Address& a, Register d, int offset ) { relocate(a.rspec(offset)); swap(  a.base(), a.disp() + offset, d ); }
+inline void Assembler::swap(    Address& a, Register d, int offset ) {
+  relocate(a.rspec(offset));
+  if (a.has_index()) { assert(offset == 0, ""); swap( a.base(), a.index(), d         ); }
+  else               {                          swap( a.base(), a.disp() + offset, d ); }
+}
 
 
 // Use the right loads/stores for the platform
@@ -759,6 +763,19 @@ inline void MacroAssembler::jump_indirect_to(Address& a, Register temp,
   jmp(temp, jmp_offset);
 }
 
+
+inline void MacroAssembler::set_metadata(Metadata* obj, Register d) {
+  set_metadata(allocate_metadata_address(obj), d);
+}
+
+inline void MacroAssembler::set_metadata_constant(Metadata* obj, Register d) {
+  set_metadata(constant_metadata_address(obj), d);
+}
+
+inline void MacroAssembler::set_metadata(const AddressLiteral& obj_addr, Register d) {
+  assert(obj_addr.rspec().type() == relocInfo::metadata_type, "must be a metadata reloc");
+  set(obj_addr, d);
+}
 
 inline void MacroAssembler::set_oop(jobject obj, Register d) {
   set_oop(allocate_oop_address(obj), d);

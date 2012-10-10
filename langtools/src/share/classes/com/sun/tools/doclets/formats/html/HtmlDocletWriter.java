@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1260,7 +1260,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * Print the Html table tag for the index summary tables. The table tag
      * printed is
-     * &lt;TABLE BORDER="1" CELLPADDING="3" CELLSPACING="0" WIDTH="100%">
+     * {@code <TABLE BORDER="1" CELLPADDING="3" CELLSPACING="0" WIDTH="100%"> }
      */
     public void tableIndexSummary() {
         table(1, "100%", 3, 0);
@@ -1548,7 +1548,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Print the heading in Html &lt;H2> format.
+     * Print the heading in Html {@literal <H2>} format.
      *
      * @param str The Header string.
      */
@@ -2416,15 +2416,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * <p>
      * Here is the algorithm used to fix the link:
      * <p>
-     * &lt;relative link&gt; => docRoot + &lt;relative path to file&gt; + &lt;relative link&gt;
+     * {@literal <relative link> => docRoot + <relative path to file> + <relative link> }
      * <p>
      * For example, suppose com.sun.javadoc.RootDoc has this link:
-     * &lt;a href="package-summary.html"&gt;The package Page&lt;/a&gt;
+     * {@literal <a href="package-summary.html">The package Page</a> }
      * <p>
      * If this link appeared in the index, we would redirect
      * the link like this:
      *
-     * &lt;a href="./com/sun/javadoc/package-summary.html"&gt;The package Page&lt;/a&gt;
+     * {@literal <a href="./com/sun/javadoc/package-summary.html">The package Page</a>}
      *
      * @param doc the Doc object whose documentation is being written.
      * @param text the text being written.

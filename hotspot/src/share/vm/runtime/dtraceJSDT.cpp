@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ jlong DTraceJSDT::activate(
       assert(probe->name != NULL, "valid probe name");
       assert(probe->function != NULL, "valid probe function spec");
       methodHandle h_method =
-        methodHandle(THREAD, JNIHandles::resolve_jmethod_id(probe->method));
+        methodHandle(THREAD, Method::resolve_jmethod_id(probe->method));
       nmethod* nm = AdapterHandlerLibrary::create_dtrace_nmethod(h_method);
       if (nm == NULL) {
         delete probes;
@@ -92,7 +92,7 @@ jlong DTraceJSDT::activate(
 }
 
 jboolean DTraceJSDT::is_probe_enabled(jmethodID method) {
-  methodOop m = JNIHandles::resolve_jmethod_id(method);
+  Method* m = Method::resolve_jmethod_id(method);
   return nativeInstruction_at(m->code()->trap_address())->is_dtrace_trap();
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,9 +149,9 @@ public abstract class JSJavaScriptEngine extends MapScriptObject {
                 // treat it as address
                 VM vm = VM.getVM();
                 Address addr = vm.getDebugger().parseAddress(name);
-                Oop oop = vm.getObjectHeap().newOop(addr.addOffsetToAsOopHandle(0));
-                if (oop instanceof InstanceKlass) {
-                    ik = (InstanceKlass) oop;
+                Metadata metadata = Metadata.instantiateWrapperFor(addr.addOffsetTo(0));
+                if (metadata instanceof InstanceKlass) {
+                    ik = (InstanceKlass) metadata;
                 } else {
                     return Boolean.FALSE;
                 }
@@ -264,22 +264,27 @@ public abstract class JSJavaScriptEngine extends MapScriptObject {
     */
     public Object mirror(Object[] args) {
         Object o = args[0];
-        if (o != null && o instanceof JSJavaObject) {
+        Object res = UNDEFINED;
+        if (o != null) {
+            if (o instanceof JSJavaObject) {
             Oop oop = ((JSJavaObject)o).getOop();
-            Object res = null;
             try {
-                if (oop instanceof InstanceKlass) {
-                    res = getObjectReader().readClass((InstanceKlass) oop);
-                } else {
                     res = getObjectReader().readObject(oop);
+                } catch (Exception e) {
+                    if (debug) e.printStackTrace(getErrorStream());
+                }
+            } else if (o instanceof JSMetadata) {
+                Metadata metadata = ((JSMetadata)o).getMetadata();
+                try {
+                    if (metadata instanceof InstanceKlass) {
+                        res = getObjectReader().readClass((InstanceKlass) metadata);
                 }
             } catch (Exception e) {
                 if (debug) e.printStackTrace(getErrorStream());
             }
-            return (res != null)? res : UNDEFINED;
-        } else {
-            return UNDEFINED;
         }
+    }
+        return res;
     }
 
     /**

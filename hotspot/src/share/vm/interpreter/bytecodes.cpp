@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #ifdef TARGET_ARCH_x86
 # include "bytes_x86.hpp"
 #endif
@@ -61,7 +61,7 @@ Bytecodes::Code Bytecodes::_java_code     [Bytecodes::number_of_codes];
 u_short         Bytecodes::_flags         [(1<<BitsPerByte)*2];
 
 #ifdef ASSERT
-bool Bytecodes::check_method(const methodOopDesc* method, address bcp) {
+bool Bytecodes::check_method(const Method* method, address bcp) {
   return method->contains(bcp);
 }
 #endif
@@ -89,11 +89,11 @@ bool Bytecodes::check_must_rewrite(Bytecodes::Code code) {
   return true;
 }
 
-Bytecodes::Code Bytecodes::code_at(methodOop method, int bci) {
+Bytecodes::Code Bytecodes::code_at(Method* method, int bci) {
   return code_at(method, method->bcp_from(bci));
 }
 
-Bytecodes::Code Bytecodes::non_breakpoint_code_at(const methodOopDesc* method, address bcp) {
+Bytecodes::Code Bytecodes::non_breakpoint_code_at(const Method* method, address bcp) {
   assert(method != NULL, "must have the method for breakpoint conversion");
   assert(method->contains(bcp), "must be valid bcp in method");
   return method->orig_bytecode_at(method->bci_from(bcp));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -884,7 +884,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   LIR_Opr tmp2 = FrameMap::G3_oop_opr;
   LIR_Opr tmp3 = FrameMap::G4_oop_opr;
   LIR_Opr tmp4 = FrameMap::O1_oop_opr;
-  LIR_Opr klass_reg = FrameMap::G5_oop_opr;
+  LIR_Opr klass_reg = FrameMap::G5_metadata_opr;
   new_instance(reg, x->klass(), tmp1, tmp2, tmp3, tmp4, klass_reg, info);
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);
@@ -903,11 +903,11 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   LIR_Opr tmp2 = FrameMap::G3_oop_opr;
   LIR_Opr tmp3 = FrameMap::G4_oop_opr;
   LIR_Opr tmp4 = FrameMap::O1_oop_opr;
-  LIR_Opr klass_reg = FrameMap::G5_oop_opr;
+  LIR_Opr klass_reg = FrameMap::G5_metadata_opr;
   LIR_Opr len = length.result();
   BasicType elem_type = x->elt_type();
 
-  __ oop2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
+  __ metadata2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
 
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len, reg, info);
   __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path);
@@ -935,15 +935,15 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr tmp2 = FrameMap::G3_oop_opr;
   LIR_Opr tmp3 = FrameMap::G4_oop_opr;
   LIR_Opr tmp4 = FrameMap::O1_oop_opr;
-  LIR_Opr klass_reg = FrameMap::G5_oop_opr;
+  LIR_Opr klass_reg = FrameMap::G5_metadata_opr;
   LIR_Opr len = length.result();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info);
-  ciObject* obj = (ciObject*) ciObjArrayKlass::make(x->klass());
+  ciMetadata* obj = ciObjArrayKlass::make(x->klass());
   if (obj == ciEnv::unloaded_ciobjarrayklass()) {
     BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
   }
-  jobject2reg_with_patching(klass_reg, obj, patching_info);
+  klass2reg_with_patching(klass_reg, obj, patching_info);
   __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path);
 
   LIR_Opr result = rlock_result(x);
@@ -985,8 +985,8 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
 
   // This instruction can be deoptimized in the slow path : use
   // O0 as result register.
-  const LIR_Opr reg = result_register_for(x->type());
-  jobject2reg_with_patching(reg, x->klass(), patching_info);
+  const LIR_Opr klass_reg = FrameMap::O0_metadata_opr;
+  klass2reg_with_patching(klass_reg, x->klass(), patching_info);
   LIR_Opr rank = FrameMap::O1_opr;
   __ move(LIR_OprFact::intConst(x->rank()), rank);
   LIR_Opr varargs = FrameMap::as_pointer_opr(O2);
@@ -995,9 +995,10 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
          LIR_OprFact::intptrConst(offset_from_sp),
          varargs);
   LIR_OprList* args = new LIR_OprList(3);
-  args->append(reg);
+  args->append(klass_reg);
   args->append(rank);
   args->append(varargs);
+  const LIR_Opr reg = result_register_for(x->type());
   __ call_runtime(Runtime1::entry_for(Runtime1::new_multi_array_id),
                   LIR_OprFact::illegalOpr,
                   reg, args, info);
@@ -1201,5 +1202,60 @@ void LIRGenerator::get_Object_unsafe(LIR_Opr dst, LIR_Opr src, LIR_Opr offset,
     {
     LIR_Address* addr = new LIR_Address(src, offset, type);
     __ load(addr, dst);
+  }
+}
+
+void LIRGenerator::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {
+  BasicType type = x->basic_type();
+  LIRItem src(x->object(), this);
+  LIRItem off(x->offset(), this);
+  LIRItem value(x->value(), this);
+
+  src.load_item();
+  value.load_item();
+  off.load_nonconstant();
+
+  LIR_Opr dst = rlock_result(x, type);
+  LIR_Opr data = value.result();
+  bool is_obj = (type == T_ARRAY || type == T_OBJECT);
+  LIR_Opr offset = off.result();
+
+  if (data != dst) {
+    __ move(data, dst);
+    data = dst;
+  }
+
+  assert (!x->is_add() && (type == T_INT || (is_obj LP64_ONLY(&& UseCompressedOops))), "unexpected type");
+  LIR_Address* addr;
+  if (offset->is_constant()) {
+
+#ifdef _LP64
+    jlong l = offset->as_jlong();
+    assert((jlong)((jint)l) == l, "offset too large for constant");
+    jint c = (jint)l;
+#else
+    jint c = offset->as_jint();
+#endif
+    addr = new LIR_Address(src.result(), c, type);
+  } else {
+    addr = new LIR_Address(src.result(), offset, type);
+  }
+
+  LIR_Opr tmp = LIR_OprFact::illegalOpr;
+  LIR_Opr ptr = LIR_OprFact::illegalOpr;
+
+  if (is_obj) {
+    // Do the pre-write barrier, if any.
+    // barriers on sparc don't work with a base + index address
+    tmp = FrameMap::G3_opr;
+    ptr = new_pointer_register();
+    __ add(src.result(), off.result(), ptr);
+    pre_barrier(ptr, LIR_OprFact::illegalOpr /* pre_val */,
+                true /* do_load */, false /* patch */, NULL);
+  }
+  __ xchg(LIR_OprFact::address(addr), data, dst, tmp);
+  if (is_obj) {
+    // Seems to be a precise address
+    post_barrier(ptr, data);
   }
 }

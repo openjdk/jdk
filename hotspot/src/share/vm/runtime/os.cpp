@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,14 +201,21 @@ OSReturn os::set_priority(Thread* thread, ThreadPriority p) {
   }
 }
 
-
+// The mapping from OS priority back to Java priority may be inexact because
+// Java priorities can map M:1 with native priorities. If you want the definite
+// Java priority then use JavaThread::java_priority()
 OSReturn os::get_priority(const Thread* const thread, ThreadPriority& priority) {
   int p;
   int os_prio;
   OSReturn ret = get_native_priority(thread, &os_prio);
   if (ret != OS_OK) return ret;
 
-  for (p = MaxPriority; p > MinPriority && java_to_os_priority[p] > os_prio; p--) ;
+  if (java_to_os_priority[MaxPriority] > java_to_os_priority[MinPriority]) {
+    for (p = MaxPriority; p > MinPriority && java_to_os_priority[p] > os_prio; p--) ;
+  } else {
+    // niceness values are in reverse order
+    for (p = MaxPriority; p > MinPriority && java_to_os_priority[p] < os_prio; p--) ;
+  }
   priority = (ThreadPriority)p;
   return OS_OK;
 }
@@ -271,7 +278,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
       default: {
         // Dispatch the signal to java
         HandleMark hm(THREAD);
-        klassOop k = SystemDictionary::resolve_or_null(vmSymbols::sun_misc_Signal(), THREAD);
+        Klass* k = SystemDictionary::resolve_or_null(vmSymbols::sun_misc_Signal(), THREAD);
         KlassHandle klass (THREAD, k);
         if (klass.not_null()) {
           JavaValue result(T_VOID);
@@ -294,7 +301,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
             char klass_name[256];
             char tmp_sig_name[16];
             const char* sig_name = "UNKNOWN";
-            instanceKlass::cast(PENDING_EXCEPTION->klass())->
+            InstanceKlass::cast(PENDING_EXCEPTION->klass())->
               name()->as_klass_external_name(klass_name, 256);
             if (os::exception_name(sig, tmp_sig_name, 16) != NULL)
               sig_name = tmp_sig_name;
@@ -314,7 +321,7 @@ void os::signal_init() {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
     EXCEPTION_MARK;
-    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
     instanceKlassHandle klass (THREAD, k);
     instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
 
@@ -871,6 +878,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
         st->print(" for ");
         nm->method()->print_value_on(st);
       }
+      st->cr();
       nm->print_nmethod(verbose);
       return;
     }
@@ -891,19 +899,12 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       print = true;
     }
     if (print) {
-      st->print_cr(INTPTR_FORMAT " is an oop", addr);
-      oop(p)->print_on(st);
-      if (p != (HeapWord*)x && oop(p)->is_constMethod() &&
-          constMethodOop(p)->contains(addr)) {
-        Thread *thread = Thread::current();
-        HandleMark hm(thread);
-        methodHandle mh (thread, constMethodOop(p)->method());
-        if (!mh->is_native()) {
-          st->print_cr("bci_from(%p) = %d; print_codes():",
-                        addr, mh->bci_from(address(x)));
-          mh->print_codes_on(st);
-        }
+      if (p == (HeapWord*) addr) {
+        st->print_cr(INTPTR_FORMAT " is an oop", addr);
+      } else {
+        st->print_cr(INTPTR_FORMAT " is pointing into object: " INTPTR_FORMAT, addr, p);
       }
+      oop(p)->print_on(st);
       return;
     }
   } else {
@@ -958,6 +959,17 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     }
 
   }
+
+#ifndef PRODUCT
+  // Check if in metaspace.
+  if (ClassLoaderDataGraph::contains((address)addr)) {
+    // Use addr->print() from the debugger instead (not here)
+    st->print_cr(INTPTR_FORMAT
+                 " is pointing into metadata", addr);
+    return;
+  }
+#endif
+
   // Try an OS specific find
   if (os::find(addr, st)) {
     return;

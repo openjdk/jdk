@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class DataLayout {
   private boolean handlized;
 
   public DataLayout(MethodData d, int o) {
-    data = d.getHandle();
+    data = d.getAddress();
     offset = o;
   }
 
@@ -87,15 +87,6 @@ public class DataLayout {
   int cellAt(int index) {
     // Cells are intptr_t sized but only contain ints as raw values
     return (int)data.getCIntegerAt(offset + cellOffset(index), MethodData.cellSize, false);
-  }
-
-  Oop oopAt(int index) {
-    OopHandle handle;
-    if (handlized) {
-      throw new InternalError("unsupported");
-    }
-    handle = data.getOopHandleAt(offset + cellOffset(index));
-    return VM.getVM().getObjectHeap().newOop(handle);
   }
 
   public Address addressAt(int index) {

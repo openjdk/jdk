@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class instanceOopDesc : public oopDesc {
 
   // If compressed, the offset of the fields of the instance may not be aligned.
   static int base_offset_in_bytes() {
-    return UseCompressedOops ?
+    return UseCompressedKlassPointers ?
              klass_gap_offset_in_bytes() :
              sizeof(instanceOopDesc);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -82,8 +82,8 @@ class SharkType : public AllStatic {
   static const llvm::PointerType* klass_type() {
     return context().klass_type();
   }
-  static const llvm::PointerType* methodOop_type() {
-    return context().methodOop_type();
+  static const llvm::PointerType* Method*_type() {
+    return context().Method*_type();
   }
   static const llvm::ArrayType* monitor_type() {
     return context().monitor_type();

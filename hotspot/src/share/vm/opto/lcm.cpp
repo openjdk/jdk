@@ -369,7 +369,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     Node *tmp2 = _nodes[end_idx()+2];
     _nodes.map(end_idx()+1, tmp2);
     _nodes.map(end_idx()+2, tmp1);
-    Node *tmp = new (C, 1) Node(C->top()); // Use not NULL input
+    Node *tmp = new (C) Node(C->top()); // Use not NULL input
     tmp1->replace_by(tmp);
     tmp2->replace_by(tmp1);
     tmp->replace_by(tmp2);
@@ -612,7 +612,7 @@ uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_
   // Set all registers killed and not already defined by the call.
   uint r_cnt = mcall->tf()->range()->cnt();
   int op = mcall->ideal_Opcode();
-  MachProjNode *proj = new (matcher.C, 1) MachProjNode( mcall, r_cnt+1, RegMask::Empty, MachProjNode::fat_proj );
+  MachProjNode *proj = new (matcher.C) MachProjNode( mcall, r_cnt+1, RegMask::Empty, MachProjNode::fat_proj );
   bbs.map(proj->_idx,this);
   _nodes.insert(node_cnt++, proj);
 
@@ -839,7 +839,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
       regs.Insert(matcher.c_frame_pointer());
       regs.OR(n->out_RegMask());
 
-      MachProjNode *proj = new (matcher.C, 1) MachProjNode( n, 1, RegMask::Empty, MachProjNode::fat_proj );
+      MachProjNode *proj = new (matcher.C) MachProjNode( n, 1, RegMask::Empty, MachProjNode::fat_proj );
       cfg->_bbs.map(proj->_idx,this);
       _nodes.insert(phi_cnt++, proj);
 

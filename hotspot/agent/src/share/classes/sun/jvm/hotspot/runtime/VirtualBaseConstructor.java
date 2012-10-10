@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class VirtualBaseConstructor<T> extends InstanceConstructor {
     map     = new HashMap();
     this.baseType = baseType;
     this.unknownTypeHandler = unknownTypeHandler;
+    if (packageName != null) {
     // Try to find mirror types for each of the types.  If there isn't
     // a direct mirror then try to find an instantiable superclass and
     // treat it as that.
@@ -73,22 +74,36 @@ public class VirtualBaseConstructor<T> extends InstanceConstructor {
       }
     }
   }
+  }
+
+  /** Adds a mapping from the given C++ type name to the given Java
+      class. The latter must be a subclass of
+      sun.jvm.hotspot.runtime.VMObject. Returns false if there was
+      already a class for this type name in the map. */
+  public boolean addMapping(String cTypeName, Class clazz) {
+    if (map.get(cTypeName) != null) {
+      return false;
+    }
+
+    map.put(cTypeName, clazz);
+    return true;
+  }
 
   /** Instantiate the most-precisely typed wrapper object available
       for the type of the given Address. If no type in the mapping
       matched the type of the Address, throws a WrongTypeException.
       Returns null for a null address (similar behavior to
       VMObjectFactory). */
-  public VMObject instantiateWrapperFor(Address addr) throws WrongTypeException {
+  public T instantiateWrapperFor(Address addr) throws WrongTypeException {
     if (addr == null) {
       return null;
     }
 
     Type type = db.findDynamicTypeForAddress(addr, baseType);
     if (type != null) {
-        return (VMObject) VMObjectFactory.newObject((Class) map.get(type.getName()), addr);
+      return (T) VMObjectFactory.newObject((Class) map.get(type.getName()), addr);
     } else if (unknownTypeHandler != null) {
-        return (VMObject) VMObjectFactory.newObject(unknownTypeHandler, addr);
+      return (T) VMObjectFactory.newObject(unknownTypeHandler, addr);
     }
 
     throw newWrongTypeException(addr);

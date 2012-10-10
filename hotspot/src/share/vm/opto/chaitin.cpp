@@ -1588,7 +1588,7 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
 
   // Now we see we need a base-Phi here to merge the bases
   const Type *t = base->bottom_type();
-  base = new (C, derived->req()) PhiNode( derived->in(0), t );
+  base = new (C) PhiNode( derived->in(0), t );
   for( i = 1; i < derived->req(); i++ ) {
     base->init_req(i, find_base_for_derived(derived_base_map, derived->in(i), maxlrg));
     t = t->meet(base->in(i)->bottom_type());

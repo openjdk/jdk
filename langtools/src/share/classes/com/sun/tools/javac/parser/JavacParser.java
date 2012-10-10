@@ -670,6 +670,7 @@ public class JavacParser implements Parser {
     }
 
     /**
+     *  {@literal
      *  Expression = Expression1 [ExpressionRest]
      *  ExpressionRest = [AssignmentOperator Expression1]
      *  AssignmentOperator = "=" | "+=" | "-=" | "*=" | "/=" |
@@ -679,6 +680,7 @@ public class JavacParser implements Parser {
      *  TypeNoParams = TypeNoParams1
      *  StatementExpression = Expression
      *  ConstantExpression = Expression
+     *  }
      */
     JCExpression term() {
         JCExpression t = term1();
@@ -884,9 +886,12 @@ public class JavacParser implements Parser {
             return opStack;
         }
 
-    /** Expression3    = PrefixOp Expression3
+    /**
+     *  Expression3    = PrefixOp Expression3
      *                 | "(" Expr | TypeNoParams ")" Expression3
      *                 | Primary {Selector} {PostfixOp}
+     *
+     *  {@literal
      *  Primary        = "(" Expression ")"
      *                 | Literal
      *                 | [TypeArguments] THIS [Arguments]
@@ -901,6 +906,8 @@ public class JavacParser implements Parser {
      *                   | "." ( CLASS | THIS | [TypeArguments] SUPER Arguments | NEW [TypeArguments] InnerCreator )
      *                   ]
      *                 | BasicType BracketsOpt "." CLASS
+     *  }
+     *
      *  PrefixOp       = "++" | "--" | "!" | "~" | "+" | "-"
      *  PostfixOp      = "++" | "--"
      *  Type3          = Ident { "." Ident } [TypeArguments] {TypeSelector} BracketsOpt
@@ -1453,7 +1460,10 @@ public class JavacParser implements Parser {
         return null;
     }
 
-    /**  TypeArguments  = "<" TypeArgument {"," TypeArgument} ">"
+    /**
+     *  {@literal
+     *  TypeArguments  = "<" TypeArgument {"," TypeArgument} ">"
+     *  }
      */
     List<JCExpression> typeArguments(boolean diamondAllowed) {
         if (token.kind == LT) {
@@ -1490,10 +1500,13 @@ public class JavacParser implements Parser {
         }
     }
 
-    /** TypeArgument = Type
+    /**
+     *  {@literal
+     *  TypeArgument = Type
      *               | "?"
      *               | "?" EXTENDS Type {"&" Type}
      *               | "?" SUPER Type
+     *  }
      */
     JCExpression typeArgument() {
         if (token.kind != QUES) return parseType();
@@ -2991,7 +3004,10 @@ public class JavacParser implements Parser {
         return ts.toList();
     }
 
-    /** TypeParametersOpt = ["<" TypeParameter {"," TypeParameter} ">"]
+    /**
+     *  {@literal
+     *  TypeParametersOpt = ["<" TypeParameter {"," TypeParameter} ">"]
+     *  }
      */
     List<JCTypeParameter> typeParametersOpt() {
         if (token.kind == LT) {
@@ -3010,9 +3026,12 @@ public class JavacParser implements Parser {
         }
     }
 
-    /** TypeParameter = TypeVariable [TypeParameterBound]
+    /**
+     *  {@literal
+     *  TypeParameter = TypeVariable [TypeParameterBound]
      *  TypeParameterBound = EXTENDS Type {"&" Type}
      *  TypeVariable = Ident
+     *  }
      */
     JCTypeParameter typeParameter() {
         int pos = token.pos;

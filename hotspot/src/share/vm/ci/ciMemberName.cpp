@@ -34,6 +34,11 @@
 // Return: MN.vmtarget
 ciMethod* ciMemberName::get_vmtarget() const {
   VM_ENTRY_MARK;
-  oop vmtarget_oop = java_lang_invoke_MemberName::vmtarget(get_oop());
-  return CURRENT_ENV->get_object(vmtarget_oop)->as_method();
+  // FIXME: Share code with ciMethodHandle::get_vmtarget
+  Metadata* vmtarget = java_lang_invoke_MemberName::vmtarget(get_oop());
+  if (vmtarget->is_method())
+    return CURRENT_ENV->get_method((Method*) vmtarget);
+  // FIXME: What if the vmtarget is a Klass?
+  assert(false, "");
+  return NULL;
 }

@@ -2010,7 +2010,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
-     * A parameterized type, T<...>
+     * A parameterized type, {@literal T<...>}
      */
     public static class JCTypeApply extends JCExpression implements ParameterizedTypeTree {
         public JCExpression clazz;

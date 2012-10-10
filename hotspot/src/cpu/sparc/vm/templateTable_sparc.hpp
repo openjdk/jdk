@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
                              );
   // helper function
   static void invokevfinal_helper(Register Rcache, Register Rret);
-  static void invokeinterface_object_method(Register RklassOop, Register Rcall,
+  static void invokeinterface_object_method(Register RKlass, Register Rcall,
                                             Register Rret,
                                             Register Rflags);
   static void generate_vtable_call(Register Rrecv, Register Rindex, Register Rret);

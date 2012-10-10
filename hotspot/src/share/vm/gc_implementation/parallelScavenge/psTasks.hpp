@@ -113,25 +113,6 @@ class StealTask : public GCTask {
 };
 
 //
-// SerialOldToYoungRootsTask
-//
-// This task is used to scan for roots in the perm gen
-
-class SerialOldToYoungRootsTask : public GCTask {
- private:
-  PSOldGen* _gen;
-  HeapWord* _gen_top;
-
- public:
-  SerialOldToYoungRootsTask(PSOldGen *gen, HeapWord* gen_top) :
-    _gen(gen), _gen_top(gen_top) { }
-
-  char* name() { return (char *)"serial-old-to-young-roots-task"; }
-
-  virtual void do_it(GCTaskManager* manager, uint which);
-};
-
-//
 // OldToYoungRootsTask
 //
 // This task is used to scan old to young roots in parallel

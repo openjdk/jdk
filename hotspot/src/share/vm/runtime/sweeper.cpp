@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
+#include "code/compiledIC.hpp"
+#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -324,13 +326,32 @@ class NMethodMarker: public StackObj {
  public:
   NMethodMarker(nmethod* nm) {
     _thread = CompilerThread::current();
+    if (!nm->is_zombie() && !nm->is_unloaded()) {
+      // Only expose live nmethods for scanning
     _thread->set_scanned_nmethod(nm);
+  }
   }
   ~NMethodMarker() {
     _thread->set_scanned_nmethod(NULL);
   }
 };
 
+void NMethodSweeper::release_nmethod(nmethod *nm) {
+  // Clean up any CompiledICHolders
+  {
+    ResourceMark rm;
+    MutexLocker ml_patch(CompiledIC_lock);
+    RelocIterator iter(nm);
+    while (iter.next()) {
+      if (iter.type() == relocInfo::virtual_call_type) {
+        CompiledIC::cleanup_call_site(iter.virtual_call_reloc());
+      }
+    }
+  }
+
+  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  nm->flush();
+}
 
 void NMethodSweeper::process_nmethod(nmethod *nm) {
   assert(!CodeCache_lock->owned_by_self(), "just checking");
@@ -365,8 +386,7 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
       if (PrintMethodFlushing && Verbose) {
         tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (marked for reclamation) being flushed", nm->compile_id(), nm);
       }
-      MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      nm->flush();
+      release_nmethod(nm);
     } else {
       if (PrintMethodFlushing && Verbose) {
         tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (zombie) being marked for reclamation", nm->compile_id(), nm);
@@ -400,10 +420,9 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
     if (PrintMethodFlushing && Verbose)
       tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (unloaded) being made zombie", nm->compile_id(), nm);
     if (nm->is_osr_method()) {
-      // No inline caches will ever point to osr methods, so we can just remove it
-      MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       SWEEP(nm);
-      nm->flush();
+      // No inline caches will ever point to osr methods, so we can just remove it
+      release_nmethod(nm);
     } else {
       nm->make_zombie();
       _rescan = true;
@@ -434,8 +453,8 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
 // saving the old code in a list in the CodeCache. Then
 // execution resumes. If a method so marked is not called by the second sweeper
 // stack traversal after the current one, the nmethod will be marked non-entrant and
-// got rid of by normal sweeping. If the method is called, the methodOop's
-// _code field is restored and the methodOop/nmethod
+// got rid of by normal sweeping. If the method is called, the Method*'s
+// _code field is restored and the Method*/nmethod
 // go back to their normal state.
 void NMethodSweeper::handle_full_code_cache(bool is_full) {
   // Only the first one to notice can advise us to start early cleaning

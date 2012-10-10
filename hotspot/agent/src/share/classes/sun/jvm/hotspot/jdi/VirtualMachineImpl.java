@@ -263,6 +263,13 @@ public class VirtualMachineImpl extends MirrorImpl implements PathSearchingVirtu
                                             this.hashCode() + "]");
 
         ((com.sun.tools.jdi.VirtualMachineManagerImpl)mgr).addVirtualMachine(this);
+
+        // By default SA agent classes prefer Windows process debugger
+        // to windbg debugger. SA expects special properties to be set
+        // to choose other debuggers. We will set those here before
+        // attaching to SA agent.
+
+        System.setProperty("sun.jvm.hotspot.debugger.useWindbgDebugger", "true");
     }
 
     // we reflectively use newly spec'ed class because our ALT_BOOTDIR
@@ -447,7 +454,7 @@ public class VirtualMachineImpl extends MirrorImpl implements PathSearchingVirtu
                 newRefType = new ClassTypeImpl(this, (InstanceKlass)kk);
             }
         } else {
-            throw new RuntimeException("should not reach here");
+            throw new RuntimeException("should not reach here:" + kk);
         }
 
         typesByID.put(kk, newRefType);
