@@ -333,11 +333,12 @@ public abstract class VolatileSurfaceManager
             // using a SurfaceData that was created in a different
             // display mode.
             sdBackup = null;
-            sdCurrent = getBackupSurface();
             // Now, invalidate the old hardware-based SurfaceData
+            // Note that getBackupSurface may set sdAccel to null so we have to invalidate it before
             SurfaceData oldData = sdAccel;
             sdAccel = null;
             oldData.invalidate();
+            sdCurrent = getBackupSurface();
         }
         // Update graphicsConfig for the vImg in case it changed due to
         // this display change event

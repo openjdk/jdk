@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,6 @@ JavaCallWrapper::JavaCallWrapper(methodHandle callee_method, Handle receiver, Ja
   _receiver = receiver();
 
 #ifdef CHECK_UNHANDLED_OOPS
-  THREAD->allow_unhandled_oop(&_callee_method);
   THREAD->allow_unhandled_oop(&_receiver);
 #endif // CHECK_UNHANDLED_OOPS
 
@@ -154,7 +153,6 @@ JavaCallWrapper::~JavaCallWrapper() {
 
 
 void JavaCallWrapper::oops_do(OopClosure* f) {
-  f->do_oop((oop*)&_callee_method);
   f->do_oop((oop*)&_receiver);
   handles()->oops_do(f);
 }
@@ -191,7 +189,7 @@ void JavaCalls::call_default_constructor(JavaThread* thread, methodHandle method
   assert(method->name() == vmSymbols::object_initializer_name(),    "Should only be called for default constructor");
   assert(method->signature() == vmSymbols::void_method_signature(), "Should only be called for default constructor");
 
-  instanceKlass* ik = instanceKlass::cast(method->method_holder());
+  InstanceKlass* ik = InstanceKlass::cast(method->method_holder());
   if (ik->is_initialized() && ik->has_vanilla_constructor()) {
     // safe to skip constructor call
   } else {
@@ -206,7 +204,7 @@ void JavaCalls::call_default_constructor(JavaThread* thread, methodHandle method
 void JavaCalls::call_virtual(JavaValue* result, KlassHandle spec_klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
   CallInfo callinfo;
   Handle receiver = args->receiver();
-  KlassHandle recvrKlass(THREAD, receiver.is_null() ? (klassOop)NULL : receiver->klass());
+  KlassHandle recvrKlass(THREAD, receiver.is_null() ? (Klass*)NULL : receiver->klass());
   LinkResolver::resolve_virtual_call(
           callinfo, receiver, recvrKlass, spec_klass, name, signature,
           KlassHandle(), false, true, CHECK);
@@ -346,11 +344,11 @@ void JavaCalls::call_helper(JavaValue* result, methodHandle* m, JavaCallArgument
 
 
 #ifdef ASSERT
-  { klassOop holder = method->method_holder();
+  { Klass* holder = method->method_holder();
     // A klass might not be initialized since JavaCall's might be used during the executing of
     // the <clinit>. For example, a Thread.start might start executing on an object that is
     // not fully initialized! (bad Java programming style)
-    assert(instanceKlass::cast(holder)->is_linked(), "rewritting must have taken place");
+    assert(InstanceKlass::cast(holder)->is_linked(), "rewritting must have taken place");
   }
 #endif
 

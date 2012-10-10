@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,16 @@ int InlineCacheBuffer::ic_stub_code_size() {
 
 
 
-void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, oop cached_oop, address entry_point) {
+void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, void* cached_value, address entry_point) {
   ResourceMark rm;
   CodeBuffer      code(code_begin, ic_stub_code_size());
   MacroAssembler* masm            = new MacroAssembler(&code);
-  // note: even though the code contains an embedded oop, we do not need reloc info
+  // note: even though the code contains an embedded value, we do not need reloc info
   // because
-  // (1) the oop is old (i.e., doesn't matter for scavenges)
+  // (1) the value is old (i.e., doesn't matter for scavenges)
   // (2) these ICStubs are removed *before* a GC happens, so the roots disappear
-  assert(cached_oop == NULL || cached_oop->is_perm(), "must be perm oop");
-  masm->lea(rax, OopAddress((address) cached_oop));
+  // assert(cached_value == NULL || cached_oop->is_perm(), "must be perm oop");
+  masm->lea(rax, AddressLiteral((address) cached_value, relocInfo::metadata_type));
   masm->jump(ExternalAddress(entry_point));
 }
 
@@ -65,10 +65,11 @@ address InlineCacheBuffer::ic_buffer_entry_point(address code_begin) {
 }
 
 
-oop InlineCacheBuffer::ic_buffer_cached_oop(address code_begin) {
+void* InlineCacheBuffer::ic_buffer_cached_value(address code_begin) {
   // creation also verifies the object
   NativeMovConstReg* move = nativeMovConstReg_at(code_begin);
   // Verifies the jump
   NativeJump*        jump = nativeJump_at(move->next_instruction_address());
-  return (oop)move->data();
+  void* o = (void*)move->data();
+  return o;
 }

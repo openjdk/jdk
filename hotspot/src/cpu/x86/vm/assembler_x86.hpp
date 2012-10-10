@@ -299,7 +299,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
   // Convert the raw encoding form into the form expected by the constructor for
   // Address.  An index of 4 (rsp) corresponds to having no index, so convert
   // that to noreg for the Address constructor.
-  static Address make_raw(int base, int index, int scale, int disp, bool disp_is_oop);
+  static Address make_raw(int base, int index, int scale, int disp, relocInfo::relocType disp_reloc);
 
   static Address make_array(ArrayAddress);
 
@@ -387,14 +387,6 @@ class RuntimeAddress: public AddressLiteral {
   public:
 
   RuntimeAddress(address target) : AddressLiteral(target, relocInfo::runtime_call_type) {}
-
-};
-
-class OopAddress: public AddressLiteral {
-
-  public:
-
-  OopAddress(address target) : AddressLiteral(target, relocInfo::oop_type){}
 
 };
 
@@ -668,8 +660,6 @@ private:
   void emit_arith(int op1, int op2, Register dst, int32_t imm32);
   // Force generation of a 4 byte immediate value even if it fits into 8bit
   void emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32);
-  // only 32bit??
-  void emit_arith(int op1, int op2, Register dst, jobject obj);
   void emit_arith(int op1, int op2, Register dst, Register src);
 
   void emit_simd_arith(int opcode, XMMRegister dst, Address src, VexSimdPrefix pre);
@@ -1753,6 +1743,12 @@ private:
   void vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
+  // Load/store high 128bit of YMM registers which does not destroy other half.
+  void vinsertf128h(XMMRegister dst, Address src);
+  void vinserti128h(XMMRegister dst, Address src);
+  void vextractf128h(Address dst, XMMRegister src);
+  void vextracti128h(Address dst, XMMRegister src);
+
   // AVX instruction which is used to clear upper 128 bits of YMM registers and
   // to avoid transaction penalty between AVX and SSE states. There is no
   // penalty if legacy SSE instructions are encoded using VEX prefix because
@@ -1971,6 +1967,9 @@ class MacroAssembler: public Assembler {
                address entry_point,
                Register arg_1, Register arg_2, Register arg_3,
                bool check_exceptions = true);
+
+  void get_vm_result  (Register oop_result, Register thread);
+  void get_vm_result_2(Register metadata_result, Register thread);
 
   // These always tightly bind to MacroAssembler::call_VM_base
   // bypassing the virtual implementation
@@ -2281,8 +2280,16 @@ class MacroAssembler: public Assembler {
   // Debugging
 
   // only if +VerifyOops
+  // TODO: Make these macros with file and line like sparc version!
   void verify_oop(Register reg, const char* s = "broken oop");
   void verify_oop_addr(Address addr, const char * s = "broken oop addr");
+
+  // TODO: verify method and klass metadata (compare against vptr?)
+  void _verify_method_ptr(Register reg, const char * msg, const char * file, int line) {}
+  void _verify_klass_ptr(Register reg, const char * msg, const char * file, int line){}
+
+#define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
+#define verify_klass_ptr(reg) _verify_klass_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)
 
   // only if +VerifyFPU
   void verify_FPU(int stack_depth, const char* s = "illegal FPU state");
@@ -2387,6 +2394,8 @@ class MacroAssembler: public Assembler {
   void cmp32(Register src1, Address src2);
 
 #ifndef _LP64
+  void cmpklass(Address dst, Metadata* obj);
+  void cmpklass(Register dst, Metadata* obj);
   void cmpoop(Address dst, jobject obj);
   void cmpoop(Register dst, jobject obj);
 #endif // _LP64
@@ -2485,6 +2494,9 @@ class MacroAssembler: public Assembler {
   // the address contained by entry. This is because this is more natural
   // for jumps/calls.
   void call(AddressLiteral entry);
+
+  // Emit the CompiledIC call idiom
+  void ic_call(address entry);
 
   // Jumps
 
@@ -2723,6 +2735,9 @@ public:
   void movoop(Register dst, jobject obj);
   void movoop(Address dst, jobject obj);
 
+  void mov_metadata(Register dst, Metadata* obj);
+  void mov_metadata(Address dst, Metadata* obj);
+
   void movptr(ArrayAddress dst, Register src);
   // can this do an lea?
   void movptr(Register dst, ArrayAddress src);
@@ -2775,6 +2790,7 @@ public:
   void popptr(Address src) { LP64_ONLY(popq(src)) NOT_LP64(popl(src)); }
 
   void pushoop(jobject obj);
+  void pushklass(Metadata* obj);
 
   // sign extend as need a l to ptr sized element
   void movl2ptr(Register dst, Address src) { LP64_ONLY(movslq(dst, src)) NOT_LP64(movl(dst, src)); }

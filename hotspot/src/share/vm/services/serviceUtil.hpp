@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,6 @@ class ServiceUtil : public AllStatic {
       return false;
     }
 
-    // ignore KlassKlass
-    if (o->is_klass()) {
-      return false;
-    }
-
     // instance
     if (o->is_instance()) {
       // instance objects are visible
@@ -58,11 +53,11 @@ class ServiceUtil : public AllStatic {
         return true;
       }
       // java.lang.Classes are visible
-      o = java_lang_Class::as_klassOop(o);
-      if (o->is_klass()) {
+      Klass* k = java_lang_Class::as_Klass(o);
+      if (k->is_klass()) {
         // if it's a class for an object, an object array, or
         // primitive (type) array then it's visible.
-        klassOop klass = (klassOop)o;
+        Klass* klass = k;
         if (Klass::cast(klass)->oop_is_instance()) {
           return true;
         }
@@ -77,18 +72,13 @@ class ServiceUtil : public AllStatic {
     }
     // object arrays are visible if they aren't system object arrays
     if (o->is_objArray()) {
-      objArrayOop array = (objArrayOop)o;
-      if (array->klass() != Universe::systemObjArrayKlassObj()) {
         return true;
-      } else {
-        return false;
-      }
     }
     // type arrays are visible
     if (o->is_typeArray()) {
       return true;
     }
-    // everything else (methodOops, ...) aren't visible
+    // everything else (Method*s, ...) aren't visible
     return false;
   };   // end of visible_oop()
 

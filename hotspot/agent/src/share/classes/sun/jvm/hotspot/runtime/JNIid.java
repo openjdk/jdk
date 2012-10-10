@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@ import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
 
 public class JNIid extends VMObject {
-  private static sun.jvm.hotspot.types.OopField holder;
+  private static MetadataField holder;
   private static AddressField next;
   private static CIntegerField offset;
-  private static sun.jvm.hotspot.types.OopField resolvedMethod;
-  private static sun.jvm.hotspot.types.OopField resolvedReceiver;
+  private static MetadataField resolvedMethod;
+  private static MetadataField resolvedReceiver;
 
   private ObjectHeap heap;
 
@@ -77,11 +77,11 @@ public class JNIid extends VMObject {
     return new JNIid(nextAddr, heap);
   }
 
-  public Klass     holder()           { return (Klass) heap.newOop(holder.getValue(addr)); }
+  public Klass     holder()           { return (Klass) holder.getValue(addr); }
   public int       offset()           { return (int) offset.getValue(addr); }
   public Method    method() {
-    return (Method) ((InstanceKlass) holder()).getMethods().getObjAt(offset());
+    return ((InstanceKlass) holder()).getMethods().at(offset());
   }
-  public Method    resolvedMethod()   { return (Method) heap.newOop(resolvedMethod.getValue(addr)); }
-  public Klass     resolvedReceiver() { return (Klass) heap.newOop(resolvedReceiver.getValue(addr)); }
+  public Method    resolvedMethod()   { return (Method)resolvedMethod.getValue(addr); }
+  public Klass     resolvedReceiver() { return (Klass) resolvedReceiver.getValue(addr); }
 }

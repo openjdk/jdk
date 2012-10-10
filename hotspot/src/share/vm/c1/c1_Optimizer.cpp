@@ -505,6 +505,7 @@ public:
   void do_UnsafePutRaw   (UnsafePutRaw*    x);
   void do_UnsafeGetObject(UnsafeGetObject* x);
   void do_UnsafePutObject(UnsafePutObject* x);
+  void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);
   void do_UnsafePrefetchRead (UnsafePrefetchRead*  x);
   void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x);
   void do_ProfileCall    (ProfileCall*     x);
@@ -676,6 +677,7 @@ void NullCheckVisitor::do_UnsafeGetRaw   (UnsafeGetRaw*    x) {}
 void NullCheckVisitor::do_UnsafePutRaw   (UnsafePutRaw*    x) {}
 void NullCheckVisitor::do_UnsafeGetObject(UnsafeGetObject* x) {}
 void NullCheckVisitor::do_UnsafePutObject(UnsafePutObject* x) {}
+void NullCheckVisitor::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {}
 void NullCheckVisitor::do_UnsafePrefetchRead (UnsafePrefetchRead*  x) {}
 void NullCheckVisitor::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {}
 void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_last_explicit_null_check(); }

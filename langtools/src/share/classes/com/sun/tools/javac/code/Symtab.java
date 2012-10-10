@@ -251,7 +251,8 @@ public class Symtab {
     }
 
     /** Enter a binary operation, as above but with two opcodes,
-     *  which get encoded as (opcode1 << ByteCodeTags.preShift) + opcode2.
+     *  which get encoded as
+     *  {@code (opcode1 << ByteCodeTags.preShift) + opcode2 }.
      *  @param opcode1     First opcode.
      *  @param opcode2     Second opcode.
      */

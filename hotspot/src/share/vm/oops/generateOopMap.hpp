@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,11 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/signature.hpp"
 
 // Forward definition
-class MethodOopMap;
 class GenerateOopMap;
 class BasicBlock;
 class CellTypeState;
@@ -286,7 +285,7 @@ class BasicBlock: ResourceObj {
 //
 //  GenerateOopMap
 //
-// Main class used to compute the pointer-maps in a MethodOop
+// Main class used to compute the pointer-maps in a Method
 //
 class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
  protected:
@@ -471,7 +470,7 @@ class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
 
   // Query
   int max_locals() const                           { return _max_locals; }
-  methodOop method() const                         { return _method(); }
+  Method* method() const                           { return _method(); }
   methodHandle method_as_handle() const            { return _method; }
 
   bool did_rewriting()                             { return _did_rewriting; }

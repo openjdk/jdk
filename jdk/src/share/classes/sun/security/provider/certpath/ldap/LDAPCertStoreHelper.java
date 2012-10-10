@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,18 @@
 
 package sun.security.provider.certpath.ldap;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.cert.CertStore;
+import java.security.cert.CertStoreException;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509CRLSelector;
+import javax.naming.CommunicationException;
+import javax.naming.ServiceUnavailableException;
 import javax.security.auth.x500.X500Principal;
-import java.io.IOException;
 
 import sun.security.provider.certpath.CertStoreHelper;
 
@@ -67,5 +70,12 @@ public final class LDAPCertStoreHelper
         throws IOException
     {
         return new LDAPCertStore.LDAPCRLSelector(selector, certIssuers, ldapDN);
+    }
+
+    @Override
+    public boolean isCausedByNetworkIssue(CertStoreException e) {
+        Throwable t = e.getCause();
+        return (t != null && (t instanceof ServiceUnavailableException ||
+                              t instanceof CommunicationException));
     }
 }
