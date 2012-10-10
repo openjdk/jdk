@@ -118,8 +118,21 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
 };
 
+// Add back base class for metadata
+class G1ParCopyHelper : public G1ParClosureSuper {
+  Klass* _scanned_klass;
+
+ public:
+  G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state) :
+      _scanned_klass(NULL),
+      G1ParClosureSuper(g1, par_scan_state) {}
+
+  void set_scanned_klass(Klass* k) { _scanned_klass = k; }
+  template <class T> void do_klass_barrier(T* p, oop new_obj);
+};
+
 template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
-class G1ParCopyClosure : public G1ParClosureSuper {
+class G1ParCopyClosure : public G1ParCopyHelper {
   G1ParScanClosure _scanner;
   template <class T> void do_oop_work(T* p);
 
@@ -140,7 +153,7 @@ public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
                    ReferenceProcessor* rp) :
       _scanner(g1, par_scan_state, rp),
-      G1ParClosureSuper(g1, par_scan_state) {
+      G1ParCopyHelper(g1, par_scan_state) {
     assert(_ref_processor == NULL, "sanity");
   }
 
@@ -154,10 +167,12 @@ public:
 };
 
 typedef G1ParCopyClosure<false, G1BarrierNone, false> G1ParScanExtRootClosure;
-typedef G1ParCopyClosure<true,  G1BarrierNone, false> G1ParScanPermClosure;
+typedef G1ParCopyClosure<false, G1BarrierKlass, false> G1ParScanMetadataClosure;
+
 
 typedef G1ParCopyClosure<false, G1BarrierNone, true> G1ParScanAndMarkExtRootClosure;
-typedef G1ParCopyClosure<true,  G1BarrierNone, true> G1ParScanAndMarkPermClosure;
+typedef G1ParCopyClosure<true,  G1BarrierNone, true> G1ParScanAndMarkClosure;
+typedef G1ParCopyClosure<false, G1BarrierKlass, true> G1ParScanAndMarkMetadataClosure;
 
 // The following closure types are no longer used but are retained
 // for historical reasons:
@@ -176,7 +191,7 @@ typedef G1ParCopyClosure<true,  G1BarrierNone, true> G1ParScanAndMarkPermClosure
 
 typedef G1ParCopyClosure<false, G1BarrierEvac, false> G1ParScanHeapEvacFailureClosure;
 
-class FilterIntoCSClosure: public OopClosure {
+class FilterIntoCSClosure: public ExtendedOopClosure {
   G1CollectedHeap* _g1;
   OopClosure* _oc;
   DirtyCardToOopClosure* _dcto_cl;
@@ -190,10 +205,9 @@ public:
   virtual void do_oop(oop* p)        { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
   bool apply_to_weak_ref_discovered_field() { return true; }
-  bool do_header() { return false; }
 };
 
-class FilterOutOfRegionClosure: public OopClosure {
+class FilterOutOfRegionClosure: public ExtendedOopClosure {
   HeapWord* _r_bottom;
   HeapWord* _r_end;
   OopClosure* _oc;
@@ -203,11 +217,10 @@ public:
   virtual void do_oop(oop* p) { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
   bool apply_to_weak_ref_discovered_field() { return true; }
-  bool do_header() { return false; }
 };
 
 // Closure for iterating over object fields during concurrent marking
-class G1CMOopClosure : public OopClosure {
+class G1CMOopClosure : public ExtendedOopClosure {
 private:
   G1CollectedHeap*   _g1h;
   ConcurrentMark*    _cm;
@@ -220,7 +233,7 @@ public:
 };
 
 // Closure to scan the root regions during concurrent marking
-class G1RootRegionScanClosure : public OopClosure {
+class G1RootRegionScanClosure : public ExtendedOopClosure {
 private:
   G1CollectedHeap* _g1h;
   ConcurrentMark*  _cm;
@@ -239,7 +252,7 @@ public:
 // during an evacuation pause) to record cards containing
 // pointers into the collection set.
 
-class G1Mux2Closure : public OopClosure {
+class G1Mux2Closure : public ExtendedOopClosure {
   OopClosure* _c1;
   OopClosure* _c2;
 public:
@@ -252,7 +265,7 @@ public:
 // A closure that returns true if it is actually applied
 // to a reference
 
-class G1TriggerClosure : public OopClosure {
+class G1TriggerClosure : public ExtendedOopClosure {
   bool _triggered;
 public:
   G1TriggerClosure();
@@ -265,7 +278,7 @@ public:
 // A closure which uses a triggering closure to determine
 // whether to apply an oop closure.
 
-class G1InvokeIfNotTriggeredClosure: public OopClosure {
+class G1InvokeIfNotTriggeredClosure: public ExtendedOopClosure {
   G1TriggerClosure* _trigger_cl;
   OopClosure* _oop_cl;
 public:
@@ -275,7 +288,7 @@ public:
   virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
 };
 
-class G1UpdateRSOrPushRefOopClosure: public OopClosure {
+class G1UpdateRSOrPushRefOopClosure: public ExtendedOopClosure {
   G1CollectedHeap* _g1;
   G1RemSet* _g1_rem_set;
   HeapRegion* _from;

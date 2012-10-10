@@ -646,7 +646,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           // create a new phi node and insert it into the block
           // type is taken from left over pointer to a predecessor
           assert(n3,"No non-NULL reaching DEF for a Phi");
-          phi = new (C, b->num_preds()) PhiNode(b->head(), n3->bottom_type());
+          phi = new (C) PhiNode(b->head(), n3->bottom_type());
           // initialize the Reaches entry for this LRG
           Reachblock[slidx] = phi;
 
@@ -1196,7 +1196,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           if( OptoReg::is_stack(uselrg.reg()) &&
               uselrg.reg() < LRG::SPILL_REG && // USE is from stack
               deflrg.reg() != uselrg.reg() ) { // Not trivially removed
-            uint def_ideal_reg = Matcher::base2reg[n->bottom_type()->base()];
+            uint def_ideal_reg = n->bottom_type()->ideal_reg();
             const RegMask &def_rm = *Matcher::idealreg2regmask[def_ideal_reg];
             const RegMask &use_rm = n->in_RegMask(copyidx);
             if( def_rm.overlap(use_rm) && n->is_SpillCopy() ) {  // Bug 4707800, 'n' may be a storeSSL

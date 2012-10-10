@@ -59,8 +59,7 @@ class java_lang_String : AllStatic {
 
   static bool initialized;
 
-  static Handle basic_create(int length, bool tenured, TRAPS);
-  static Handle basic_create_from_unicode(jchar* unicode, int length, bool tenured, TRAPS);
+  static Handle basic_create(int length, TRAPS);
 
   static void set_value( oop string, typeArrayOop buffer) {
     assert(initialized, "Must be initialized");
@@ -84,7 +83,6 @@ class java_lang_String : AllStatic {
 
   // Instance creation
   static Handle create_from_unicode(jchar* unicode, int len, TRAPS);
-  static Handle create_tenured_from_unicode(jchar* unicode, int len, TRAPS);
   static oop    create_oop_from_unicode(jchar* unicode, int len, TRAPS);
   static Handle create_from_str(const char* utf8_str, TRAPS);
   static oop    create_oop_from_str(const char* utf8_str, TRAPS);
@@ -205,9 +203,9 @@ class java_lang_String : AllStatic {
 // Interface to java.lang.Class objects
 
 #define CLASS_INJECTED_FIELDS(macro)                                       \
-  macro(java_lang_Class, klass,                  object_signature,  false) \
-  macro(java_lang_Class, resolved_constructor,   object_signature,  false) \
-  macro(java_lang_Class, array_klass,            object_signature,  false) \
+  macro(java_lang_Class, klass,                  intptr_signature,  false) \
+  macro(java_lang_Class, resolved_constructor,   intptr_signature,  false) \
+  macro(java_lang_Class, array_klass,            intptr_signature,  false) \
   macro(java_lang_Class, oop_size,               int_signature,     false) \
   macro(java_lang_Class, static_oop_field_count, int_signature,     false)
 
@@ -226,6 +224,7 @@ class java_lang_Class : AllStatic {
 
   static bool offsets_computed;
   static int classRedefinedCount_offset;
+  static GrowableArray<Klass*>* _fixup_mirror_list;
 
  public:
   static void compute_offsets();
@@ -235,11 +234,11 @@ class java_lang_Class : AllStatic {
   static void fixup_mirror(KlassHandle k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
   // Conversion
-  static klassOop as_klassOop(oop java_class);
-  static void set_klass(oop java_class, klassOop klass);
-  static BasicType as_BasicType(oop java_class, klassOop* reference_klass = NULL);
+  static Klass* as_Klass(oop java_class);
+  static void set_klass(oop java_class, Klass* klass);
+  static BasicType as_BasicType(oop java_class, Klass** reference_klass = NULL);
   static BasicType as_BasicType(oop java_class, KlassHandle* reference_klass) {
-    klassOop refk_oop = NULL;
+    Klass* refk_oop = NULL;
     BasicType result = as_BasicType(java_class, &refk_oop);
     (*reference_klass) = KlassHandle(refk_oop);
     return result;
@@ -254,11 +253,11 @@ class java_lang_Class : AllStatic {
   static BasicType primitive_type(oop java_class);
   static oop primitive_mirror(BasicType t);
   // JVM_NewInstance support
-  static methodOop resolved_constructor(oop java_class);
-  static void set_resolved_constructor(oop java_class, methodOop constructor);
+  static Method* resolved_constructor(oop java_class);
+  static void set_resolved_constructor(oop java_class, Method* constructor);
   // JVM_NewArray support
-  static klassOop array_klass(oop java_class);
-  static void set_array_klass(oop java_class, klassOop klass);
+  static Klass* array_klass(oop java_class);
+  static void set_array_klass(oop java_class, Klass* klass);
   // compiler support for class operations
   static int klass_offset_in_bytes()                { return _klass_offset; }
   static int resolved_constructor_offset_in_bytes() { return _resolved_constructor_offset; }
@@ -272,9 +271,15 @@ class java_lang_Class : AllStatic {
   static int static_oop_field_count(oop java_class);
   static void set_static_oop_field_count(oop java_class, int size);
 
+  static GrowableArray<Klass*>* fixup_mirror_list() {
+    return _fixup_mirror_list;
+  }
+  static void set_fixup_mirror_list(GrowableArray<Klass*>* v) {
+    _fixup_mirror_list = v;
+  }
   // Debugging
   friend class JavaClasses;
-  friend class instanceKlass;   // verification code accesses offsets
+  friend class InstanceKlass;   // verification code accesses offsets
   friend class ClassFileParser; // access to number_of_fake_fields
 };
 
@@ -449,8 +454,9 @@ class java_lang_Throwable: AllStatic {
   enum {
     trace_methods_offset = 0,
     trace_bcis_offset    = 1,
-    trace_next_offset    = 2,
-    trace_size           = 3,
+    trace_mirrors_offset = 2,
+    trace_next_offset    = 3,
+    trace_size           = 4,
     trace_chunk_size     = 32
   };
 
@@ -461,7 +467,7 @@ class java_lang_Throwable: AllStatic {
   static int static_unassigned_stacktrace_offset;
 
   // Printing
-  static char* print_stack_element_to_buffer(methodOop method, int bci);
+  static char* print_stack_element_to_buffer(Method* method, int bci);
   static void print_to_stream(Handle stream, const char* str);
   // StackTrace (programmatic access, new since 1.4)
   static void clear_stacktrace(oop throwable);
@@ -486,8 +492,8 @@ class java_lang_Throwable: AllStatic {
   // Note: this is no longer used in Merlin, but we still suppport
   // it for compatibility.
   static void print_stack_trace(oop throwable, oop print_stream);
-  static void print_stack_element(Handle stream, methodOop method, int bci);
-  static void print_stack_element(outputStream *st, methodOop method, int bci);
+  static void print_stack_element(Handle stream, Method* method, int bci);
+  static void print_stack_element(outputStream *st, Method* method, int bci);
   static void print_stack_usage(Handle stream);
 
   // Allocate space for backtrace (created but stack trace not filled in)
@@ -711,7 +717,7 @@ class sun_reflect_ConstantPool {
  private:
   // Note that to reduce dependencies on the JDK we compute these
   // offsets at run-time.
-  static int _cp_oop_offset;
+  static int _oop_offset;
 
   static void compute_offsets();
 
@@ -720,11 +726,12 @@ class sun_reflect_ConstantPool {
   static Handle create(TRAPS);
 
   // Accessors
-  static oop cp_oop(oop reflect);
-  static void set_cp_oop(oop reflect, oop value);
-  static int cp_oop_offset() {
-    return _cp_oop_offset;
+  static void set_cp(oop reflect, ConstantPool* value);
+  static int oop_offset() {
+    return _oop_offset;
   }
+
+  static ConstantPool* get_cp(oop reflect);
 
   // Debugging
   friend class JavaClasses;
@@ -853,6 +860,7 @@ class java_lang_ref_Reference: AllStatic {
   static oop  pending_list_lock();
   static oop  pending_list();
 
+  static HeapWord*  pending_list_lock_addr();
   static HeapWord*  pending_list_addr();
 };
 
@@ -903,7 +911,7 @@ class java_lang_invoke_MethodHandle: AllStatic {
   static void       set_form(oop mh, oop lform);
 
   // Testers
-  static bool is_subclass(klassOop klass) {
+  static bool is_subclass(Klass* klass) {
     return Klass::cast(klass)->is_subclass_of(SystemDictionary::MethodHandle_klass());
   }
   static bool is_instance(oop obj) {
@@ -932,7 +940,7 @@ class java_lang_invoke_LambdaForm: AllStatic {
   static void       set_vmentry(oop lform, oop invoker);
 
   // Testers
-  static bool is_subclass(klassOop klass) {
+  static bool is_subclass(Klass* klass) {
     return SystemDictionary::LambdaForm_klass() != NULL &&
       Klass::cast(klass)->is_subclass_of(SystemDictionary::LambdaForm_klass());
   }
@@ -949,8 +957,9 @@ class java_lang_invoke_LambdaForm: AllStatic {
 // (These are a private interface for Java code to query the class hierarchy.)
 
 #define MEMBERNAME_INJECTED_FIELDS(macro)                               \
+  macro(java_lang_invoke_MemberName, vmloader, object_signature, false) \
   macro(java_lang_invoke_MemberName, vmindex,  intptr_signature, false) \
-  macro(java_lang_invoke_MemberName, vmtarget, object_signature, false)
+  macro(java_lang_invoke_MemberName, vmtarget, intptr_signature, false)
 
 class java_lang_invoke_MemberName: AllStatic {
   friend class JavaClasses;
@@ -961,13 +970,14 @@ class java_lang_invoke_MemberName: AllStatic {
   //    private String     name;        // may be null if not yet materialized
   //    private Object     type;        // may be null if not yet materialized
   //    private int        flags;       // modifier bits; see reflect.Modifier
-  //    private Object     vmtarget;    // VM-specific target value
+  //    private intptr     vmtarget;    // VM-specific target value
   //    private intptr_t   vmindex;     // member index within class or interface
   static int _clazz_offset;
   static int _name_offset;
   static int _type_offset;
   static int _flags_offset;
   static int _vmtarget_offset;
+  static int _vmloader_offset;
   static int _vmindex_offset;
 
   static void compute_offsets();
@@ -986,14 +996,14 @@ class java_lang_invoke_MemberName: AllStatic {
   static int            flags(oop mname);
   static void       set_flags(oop mname, int flags);
 
-  static oop            vmtarget(oop mname);
-  static void       set_vmtarget(oop mname, oop target);
+  static Metadata*      vmtarget(oop mname);
+  static void       set_vmtarget(oop mname, Metadata* target);
 
   static intptr_t       vmindex(oop mname);
   static void       set_vmindex(oop mname, intptr_t index);
 
   // Testers
-  static bool is_subclass(klassOop klass) {
+  static bool is_subclass(Klass* klass) {
     return Klass::cast(klass)->is_subclass_of(SystemDictionary::MemberName_klass());
   }
   static bool is_instance(oop obj) {
@@ -1079,7 +1089,7 @@ public:
   static void         set_target_volatile(oop site, oop target) {        site->obj_field_put_volatile(_target_offset, target); }
 
   // Testers
-  static bool is_subclass(klassOop klass) {
+  static bool is_subclass(Klass* klass) {
     return Klass::cast(klass)->is_subclass_of(SystemDictionary::CallSite_klass());
   }
   static bool is_instance(oop obj) {
@@ -1112,19 +1122,31 @@ class java_security_AccessControlContext: AllStatic {
 
 // Interface to java.lang.ClassLoader objects
 
+#define CLASSLOADER_INJECTED_FIELDS(macro)                            \
+  macro(java_lang_ClassLoader, loader_data,  intptr_signature, false) \
+  macro(java_lang_ClassLoader, dependencies, object_signature, false)
+
 class java_lang_ClassLoader : AllStatic {
  private:
+  // The fake offsets are added by the class loader when java.lang.Class is loaded
   enum {
    hc_parent_offset = 0
   };
-
+  static int _loader_data_offset;
+  static int _dependencies_offset;
   static bool offsets_computed;
   static int parent_offset;
   static int parallelCapable_offset;
 
+ public:
   static void compute_offsets();
 
- public:
+  static ClassLoaderData** loader_data_addr(oop loader);
+  static ClassLoaderData* loader_data(oop loader);
+
+  static oop  dependencies(oop loader);
+  static HeapWord* dependencies_addr(oop loader);
+
   static oop parent(oop loader);
   static bool isAncestor(oop loader, oop cl);
 
@@ -1137,7 +1159,7 @@ class java_lang_ClassLoader : AllStatic {
   static oop  non_reflection_class_loader(oop loader);
 
   // Testers
-  static bool is_subclass(klassOop klass) {
+  static bool is_subclass(Klass* klass) {
     return Klass::cast(klass)->is_subclass_of(SystemDictionary::ClassLoader_klass());
   }
   static bool is_instance(oop obj) {
@@ -1146,6 +1168,7 @@ class java_lang_ClassLoader : AllStatic {
 
   // Debugging
   friend class JavaClasses;
+  friend class ClassFileParser; // access to number_of_fake_fields
 };
 
 
@@ -1268,7 +1291,7 @@ class InjectedField {
   const bool           may_be_java;
 
 
-  klassOop klass() const    { return SystemDictionary::well_known_klass(klass_id); }
+  Klass* klass() const    { return SystemDictionary::well_known_klass(klass_id); }
   Symbol* name() const      { return lookup_symbol(name_index); }
   Symbol* signature() const { return lookup_symbol(signature_index); }
 
@@ -1285,6 +1308,7 @@ class InjectedField {
 
 #define ALL_INJECTED_FIELDS(macro)          \
   CLASS_INJECTED_FIELDS(macro)              \
+  CLASSLOADER_INJECTED_FIELDS(macro)        \
   MEMBERNAME_INJECTED_FIELDS(macro)
 
 // Interface to hard-coded offset checking

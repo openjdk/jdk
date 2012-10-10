@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ bool        Disassembler::_tried_to_load_library = false;
 Disassembler::decode_func Disassembler::_decode_instructions = NULL;
 
 static const char hsdis_library_name[] = "hsdis-"HOTSPOT_LIB_ARCH;
-static const char decode_instructions_name[] = "decode_instructions";
+static const char decode_instructions_name[] = "decode_instructions_virtual";
 
 #define COMMENT_COLUMN  40 LP64_ONLY(+8) /*could be an option*/
 #define BYTES_COMMENT   ";..."  /* funky byte display comment */
@@ -148,6 +148,7 @@ class decode_env {
  private:
   nmethod*      _nm;
   CodeBlob*     _code;
+  CodeComments  _comments;
   outputStream* _output;
   address       _start, _end;
 
@@ -187,7 +188,7 @@ class decode_env {
   void print_address(address value);
 
  public:
-  decode_env(CodeBlob* code, outputStream* output);
+  decode_env(CodeBlob* code, outputStream* output, CodeComments c = CodeComments());
 
   address decode_instructions(address start, address end);
 
@@ -218,6 +219,8 @@ class decode_env {
         }
       }
     }
+    // follow each complete insn by a nice newline
+    st->cr();
   }
 
   address handle_event(const char* event, address arg);
@@ -229,12 +232,13 @@ class decode_env {
   const char* options() { return _option_buf; }
 };
 
-decode_env::decode_env(CodeBlob* code, outputStream* output) {
+decode_env::decode_env(CodeBlob* code, outputStream* output, CodeComments c) {
   memset(this, 0, sizeof(*this));
   _output = output ? output : tty;
   _code = code;
   if (code != NULL && code->is_nmethod())
     _nm = (nmethod*) code;
+  _comments.assign(c);
 
   // by default, output pc but not bytes:
   _print_pc       = true;
@@ -356,6 +360,7 @@ void decode_env::print_insn_labels() {
   if (cb != NULL) {
     cb->print_block_comment(st, p);
   }
+  _comments.print_block_comment(st, (intptr_t)(p - _start));
   if (_print_pc) {
     st->print("  " PTR_FORMAT ": ", p);
   }
@@ -446,14 +451,16 @@ address decode_env::decode_instructions(address start, address end) {
     FILE* out = stdout;
     FILE* xmlout = (_print_raw > 1 ? out : NULL);
     return (address)
-      (*Disassembler::_decode_instructions)(start, end,
+      (*Disassembler::_decode_instructions)((uintptr_t)start, (uintptr_t)end,
+                                            start, end - start,
                                             NULL, (void*) xmlout,
                                             NULL, (void*) out,
                                             options());
   }
 
   return (address)
-    (*Disassembler::_decode_instructions)(start, end,
+    (*Disassembler::_decode_instructions)((uintptr_t)start, (uintptr_t)end,
+                                          start, end - start,
                                           &event_to_env,  (void*) this,
                                           &printf_to_env, (void*) this,
                                           options());
@@ -467,10 +474,9 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
   env.decode_instructions(cb->code_begin(), cb->code_end());
 }
 
-
-void Disassembler::decode(address start, address end, outputStream* st) {
+void Disassembler::decode(address start, address end, outputStream* st, CodeComments c) {
   if (!load_library())  return;
-  decode_env env(CodeCache::find_blob_unsafe(start), st);
+  decode_env env(CodeCache::find_blob_unsafe(start), st, c);
   env.decode_instructions(start, end);
 }
 

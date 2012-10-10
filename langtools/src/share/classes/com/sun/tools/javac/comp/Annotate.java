@@ -26,7 +26,6 @@
 package com.sun.tools.javac.comp;
 
 import java.util.Map;
-import java.util.Objects;
 
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -151,10 +150,10 @@ public class Annotate {
                                        Map<Symbol.TypeSymbol, ListBuffer<Attribute.Compound>> annotated,
                                        Map<Attribute.Compound, JCDiagnostic.DiagnosticPosition> pos,
                                        Log log) {
-            Objects.requireNonNull(env);
-            Objects.requireNonNull(annotated);
-            Objects.requireNonNull(pos);
-            Objects.requireNonNull(log);
+            Assert.checkNonNull(env);
+            Assert.checkNonNull(annotated);
+            Assert.checkNonNull(pos);
+            Assert.checkNonNull(log);
 
             this.env = env;
             this.annotated = annotated;

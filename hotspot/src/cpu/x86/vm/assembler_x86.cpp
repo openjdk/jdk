@@ -57,6 +57,7 @@ AddressLiteral::AddressLiteral(address target, relocInfo::relocType rtype) {
   _target = target;
   switch (rtype) {
   case relocInfo::oop_type:
+  case relocInfo::metadata_type:
     // Oops are a special case. Normally they would be their own section
     // but in cases like icBuffer they are literals in the code stream that
     // we don't have a section for. We use none so that we get a literal address
@@ -154,10 +155,10 @@ Address::Address(address loc, RelocationHolder spec) {
 // Convert the raw encoding form into the form expected by the constructor for
 // Address.  An index of 4 (rsp) corresponds to having no index, so convert
 // that to noreg for the Address constructor.
-Address Address::make_raw(int base, int index, int scale, int disp, bool disp_is_oop) {
+Address Address::make_raw(int base, int index, int scale, int disp, relocInfo::relocType disp_reloc) {
   RelocationHolder rspec;
-  if (disp_is_oop) {
-    rspec = Relocation::spec_simple(relocInfo::oop_type);
+  if (disp_reloc != relocInfo::none) {
+    rspec = Relocation::spec_simple(disp_reloc);
   }
   bool valid_index = index != rsp->encoding();
   if (valid_index) {
@@ -268,17 +269,6 @@ void Assembler::emit_arith_operand(int op1, Register rm, Address adr, int32_t im
     emit_operand(rm, adr, 4);
     emit_long(imm32);
   }
-}
-
-void Assembler::emit_arith(int op1, int op2, Register dst, jobject obj) {
-  LP64_ONLY(ShouldNotReachHere());
-  assert(isByte(op1) && isByte(op2), "wrong opcode");
-  assert((op1 & 0x01) == 1, "should be 32bit operation");
-  assert((op1 & 0x02) == 0, "sign-extension bit should not be set");
-  InstructionMark im(this);
-  emit_byte(op1);
-  emit_byte(op2 | encode(dst));
-  emit_data((intptr_t)obj, relocInfo::oop_type, 0);
 }
 
 
@@ -3506,6 +3496,33 @@ void Assembler::vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src) 
   emit_byte(0x01);
 }
 
+void Assembler::vinsertf128h(XMMRegister dst, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x18);
+  emit_operand(dst, src);
+  // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vextractf128h(Address dst, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(src != xnoreg, "sanity");
+  int src_enc = src->encoding();
+  vex_prefix(dst, 0, src_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x19);
+  emit_operand(src, dst);
+  // 0x01 - extract from upper 128 bits
+  emit_byte(0x01);
+}
+
 void Assembler::vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx2(), "");
   bool vector256 = true;
@@ -3514,6 +3531,33 @@ void Assembler::vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) 
   emit_byte(0xC0 | encode);
   // 0x00 - insert into lower 128 bits
   // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vinserti128h(XMMRegister dst, Address src) {
+  assert(VM_Version::supports_avx2(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x38);
+  emit_operand(dst, src);
+  // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vextracti128h(Address dst, XMMRegister src) {
+  assert(VM_Version::supports_avx2(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(src != xnoreg, "sanity");
+  int src_enc = src->encoding();
+  vex_prefix(dst, 0, src_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x39);
+  emit_operand(src, dst);
+  // 0x01 - extract from upper 128 bits
   emit_byte(0x01);
 }
 
@@ -5572,6 +5616,14 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
   increment(rsp, number_of_arguments * wordSize);
 }
 
+void MacroAssembler::cmpklass(Address src1, Metadata* obj) {
+  cmp_literal32(src1, (int32_t)obj, metadata_Relocation::spec_for_immediate());
+}
+
+void MacroAssembler::cmpklass(Register src1, Metadata* obj) {
+  cmp_literal32(src1, (int32_t)obj, metadata_Relocation::spec_for_immediate());
+}
+
 void MacroAssembler::cmpoop(Address src1, jobject obj) {
   cmp_literal32(src1, (int32_t)obj, oop_Relocation::spec_for_immediate());
 }
@@ -5753,6 +5805,14 @@ void MacroAssembler::movoop(Address dst, jobject obj) {
   mov_literal32(dst, (int32_t)obj, oop_Relocation::spec_for_immediate());
 }
 
+void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
+  mov_literal32(dst, (int32_t)obj, metadata_Relocation::spec_for_immediate());
+}
+
+void MacroAssembler::mov_metadata(Address dst, Metadata* obj) {
+  mov_literal32(dst, (int32_t)obj, metadata_Relocation::spec_for_immediate());
+}
+
 void MacroAssembler::movptr(Register dst, AddressLiteral src) {
   if (src.is_lval()) {
     mov_literal32(dst, (intptr_t)src.target(), src.rspec());
@@ -5804,6 +5864,9 @@ void MacroAssembler::pushoop(jobject obj) {
   push_literal32((int32_t)obj, oop_Relocation::spec_for_immediate());
 }
 
+void MacroAssembler::pushklass(Metadata* obj) {
+  push_literal32((int32_t)obj, metadata_Relocation::spec_for_immediate());
+}
 
 void MacroAssembler::pushptr(AddressLiteral src) {
   if (src.is_lval()) {
@@ -5856,13 +5919,13 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
     if (os::message_box(msg, "Execution stopped, print registers?")) {
       print_state32(rdi, rsi, rbp, rsp, rbx, rdx, rcx, rax, eip);
       BREAKPOINT;
-      assert(false, "start up GDB");
     }
   } else {
     ttyLocker ttyl;
     ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n", msg);
-    assert(false, err_msg("DEBUG MESSAGE: %s", msg));
   }
+  // Don't assert holding the ttyLock
+    assert(false, err_msg("DEBUG MESSAGE: %s", msg));
   ThreadStateTransition::transition(thread, _thread_in_vm, saved_state);
 }
 
@@ -6280,6 +6343,15 @@ void MacroAssembler::movoop(Address dst, jobject obj) {
   movq(dst, rscratch1);
 }
 
+void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
+  mov_literal64(dst, (intptr_t)obj, metadata_Relocation::spec_for_immediate());
+}
+
+void MacroAssembler::mov_metadata(Address dst, Metadata* obj) {
+  mov_literal64(rscratch1, (intptr_t)obj, metadata_Relocation::spec_for_immediate());
+  movq(dst, rscratch1);
+}
+
 void MacroAssembler::movptr(Register dst, AddressLiteral src) {
   if (src.is_lval()) {
     mov_literal64(dst, (intptr_t)src.target(), src.rspec());
@@ -6318,6 +6390,11 @@ void MacroAssembler::movptr(Register dst, int32_t src) {
 
 void MacroAssembler::pushoop(jobject obj) {
   movoop(rscratch1, obj);
+  push(rscratch1);
+}
+
+void MacroAssembler::pushklass(Metadata* obj) {
+  mov_metadata(rscratch1, obj);
   push(rscratch1);
 }
 
@@ -6655,6 +6732,12 @@ void MacroAssembler::call(AddressLiteral entry) {
   }
 }
 
+void MacroAssembler::ic_call(address entry) {
+  RelocationHolder rh = virtual_call_Relocation::spec(pc());
+  movptr(rax, (intptr_t)Universe::non_oop_word());
+  call(AddressLiteral(entry, rh));
+}
+
 // Implementation of call_VM versions
 
 void MacroAssembler::call_VM(Register oop_result,
@@ -6923,9 +7006,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
-    movptr(oop_result, Address(java_thread, JavaThread::vm_result_offset()));
-    movptr(Address(java_thread, JavaThread::vm_result_offset()), NULL_WORD);
-    verify_oop(oop_result, "broken oop in call_VM_base");
+    get_vm_result(oop_result, java_thread);
   }
 }
 
@@ -7014,6 +7095,17 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
   pass_arg1(this, arg_1);
   pass_arg0(this, arg_0);
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
+}
+
+void MacroAssembler::get_vm_result(Register oop_result, Register java_thread) {
+  movptr(oop_result, Address(java_thread, JavaThread::vm_result_offset()));
+  movptr(Address(java_thread, JavaThread::vm_result_offset()), NULL_WORD);
+  verify_oop(oop_result, "broken oop in call_VM_base");
+}
+
+void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thread) {
+  movptr(metadata_result, Address(java_thread, JavaThread::vm_result_2_offset()));
+  movptr(Address(java_thread, JavaThread::vm_result_2_offset()), NULL_WORD);
 }
 
 void MacroAssembler::check_and_handle_earlyret(Register java_thread) {
@@ -8869,11 +8961,9 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
   pusha();
 
   // if we are coming from c1, xmm registers may be live
-  if (UseSSE >= 1) {
-    subptr(rsp, sizeof(jdouble)* LP64_ONLY(16) NOT_LP64(8));
-  }
   int off = 0;
   if (UseSSE == 1)  {
+    subptr(rsp, sizeof(jdouble)*8);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm0);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm1);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm2);
@@ -8883,23 +8973,50 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm6);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm7);
   } else if (UseSSE >= 2)  {
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm0);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm1);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm2);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm3);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm4);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm5);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm6);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm7);
+#ifdef COMPILER2
+    if (MaxVectorSize > 16) {
+      assert(UseAVX > 0, "256bit vectors are supported only with AVX");
+      // Save upper half of YMM registes
+      subptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+      vextractf128h(Address(rsp,  0),xmm0);
+      vextractf128h(Address(rsp, 16),xmm1);
+      vextractf128h(Address(rsp, 32),xmm2);
+      vextractf128h(Address(rsp, 48),xmm3);
+      vextractf128h(Address(rsp, 64),xmm4);
+      vextractf128h(Address(rsp, 80),xmm5);
+      vextractf128h(Address(rsp, 96),xmm6);
+      vextractf128h(Address(rsp,112),xmm7);
 #ifdef _LP64
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm8);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm9);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm10);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm11);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm12);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm13);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm14);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm15);
+      vextractf128h(Address(rsp,128),xmm8);
+      vextractf128h(Address(rsp,144),xmm9);
+      vextractf128h(Address(rsp,160),xmm10);
+      vextractf128h(Address(rsp,176),xmm11);
+      vextractf128h(Address(rsp,192),xmm12);
+      vextractf128h(Address(rsp,208),xmm13);
+      vextractf128h(Address(rsp,224),xmm14);
+      vextractf128h(Address(rsp,240),xmm15);
+#endif
+    }
+#endif
+    // Save whole 128bit (16 bytes) XMM regiters
+    subptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+    movdqu(Address(rsp,off++*16),xmm0);
+    movdqu(Address(rsp,off++*16),xmm1);
+    movdqu(Address(rsp,off++*16),xmm2);
+    movdqu(Address(rsp,off++*16),xmm3);
+    movdqu(Address(rsp,off++*16),xmm4);
+    movdqu(Address(rsp,off++*16),xmm5);
+    movdqu(Address(rsp,off++*16),xmm6);
+    movdqu(Address(rsp,off++*16),xmm7);
+#ifdef _LP64
+    movdqu(Address(rsp,off++*16),xmm8);
+    movdqu(Address(rsp,off++*16),xmm9);
+    movdqu(Address(rsp,off++*16),xmm10);
+    movdqu(Address(rsp,off++*16),xmm11);
+    movdqu(Address(rsp,off++*16),xmm12);
+    movdqu(Address(rsp,off++*16),xmm13);
+    movdqu(Address(rsp,off++*16),xmm14);
+    movdqu(Address(rsp,off++*16),xmm15);
 #endif
   }
 
@@ -8977,28 +9094,52 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
     movflt(xmm5, Address(rsp,off++*sizeof(jdouble)));
     movflt(xmm6, Address(rsp,off++*sizeof(jdouble)));
     movflt(xmm7, Address(rsp,off++*sizeof(jdouble)));
+    addptr(rsp, sizeof(jdouble)*8);
   } else if (UseSSE >= 2)  {
-    movdbl(xmm0, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm1, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm2, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm3, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm4, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm5, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm6, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm7, Address(rsp,off++*sizeof(jdouble)));
+    // Restore whole 128bit (16 bytes) XMM regiters
+    movdqu(xmm0, Address(rsp,off++*16));
+    movdqu(xmm1, Address(rsp,off++*16));
+    movdqu(xmm2, Address(rsp,off++*16));
+    movdqu(xmm3, Address(rsp,off++*16));
+    movdqu(xmm4, Address(rsp,off++*16));
+    movdqu(xmm5, Address(rsp,off++*16));
+    movdqu(xmm6, Address(rsp,off++*16));
+    movdqu(xmm7, Address(rsp,off++*16));
 #ifdef _LP64
-    movdbl(xmm8, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm9, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm10, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm11, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm12, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm13, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm14, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm15, Address(rsp,off++*sizeof(jdouble)));
+    movdqu(xmm8, Address(rsp,off++*16));
+    movdqu(xmm9, Address(rsp,off++*16));
+    movdqu(xmm10, Address(rsp,off++*16));
+    movdqu(xmm11, Address(rsp,off++*16));
+    movdqu(xmm12, Address(rsp,off++*16));
+    movdqu(xmm13, Address(rsp,off++*16));
+    movdqu(xmm14, Address(rsp,off++*16));
+    movdqu(xmm15, Address(rsp,off++*16));
 #endif
-  }
-  if (UseSSE >= 1) {
-    addptr(rsp, sizeof(jdouble)* LP64_ONLY(16) NOT_LP64(8));
+    addptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+#ifdef COMPILER2
+    if (MaxVectorSize > 16) {
+      // Restore upper half of YMM registes.
+      vinsertf128h(xmm0, Address(rsp,  0));
+      vinsertf128h(xmm1, Address(rsp, 16));
+      vinsertf128h(xmm2, Address(rsp, 32));
+      vinsertf128h(xmm3, Address(rsp, 48));
+      vinsertf128h(xmm4, Address(rsp, 64));
+      vinsertf128h(xmm5, Address(rsp, 80));
+      vinsertf128h(xmm6, Address(rsp, 96));
+      vinsertf128h(xmm7, Address(rsp,112));
+#ifdef _LP64
+      vinsertf128h(xmm8, Address(rsp,128));
+      vinsertf128h(xmm9, Address(rsp,144));
+      vinsertf128h(xmm10, Address(rsp,160));
+      vinsertf128h(xmm11, Address(rsp,176));
+      vinsertf128h(xmm12, Address(rsp,192));
+      vinsertf128h(xmm13, Address(rsp,208));
+      vinsertf128h(xmm14, Address(rsp,224));
+      vinsertf128h(xmm15, Address(rsp,240));
+#endif
+      addptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+    }
+#endif
   }
   popa();
 }
@@ -9097,20 +9238,20 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
          "caller must use same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
-  int vtable_base = instanceKlass::vtable_start_offset() * wordSize;
+  int vtable_base = InstanceKlass::vtable_start_offset() * wordSize;
   int itentry_off = itableMethodEntry::method_offset_in_bytes();
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int vte_size    = vtableEntry::size() * wordSize;
   Address::ScaleFactor times_vte_scale = Address::times_ptr;
   assert(vte_size == wordSize, "else adjust times_vte_scale");
 
-  movl(scan_temp, Address(recv_klass, instanceKlass::vtable_length_offset() * wordSize));
+  movl(scan_temp, Address(recv_klass, InstanceKlass::vtable_length_offset() * wordSize));
 
   // %%% Could store the aligned, prescaled offset in the klassoop.
   lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
   if (HeapWordsPerLong > 1) {
     // Round up to align_object_offset boundary
-    // see code for instanceKlass::start_of_itable!
+    // see code for InstanceKlass::start_of_itable!
     round_to(scan_temp, BytesPerLong);
   }
 
@@ -9160,7 +9301,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = instanceKlass::vtable_start_offset() * wordSize;
+  const int base = InstanceKlass::vtable_start_offset() * wordSize;
   assert(vtableEntry::size() * wordSize == wordSize, "else adjust the scaling in the code below");
   Address vtable_entry_addr(recv_klass,
                             vtable_index, Address::times_ptr,
@@ -9335,33 +9476,19 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   // We will consult the secondary-super array.
   movptr(rdi, secondary_supers_addr);
   // Load the array length.  (Positive movl does right thing on LP64.)
-  movl(rcx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));
+  movl(rcx, Address(rdi, Array<Klass*>::length_offset_in_bytes()));
   // Skip to start of data.
-  addptr(rdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+  addptr(rdi, Array<Klass*>::base_offset_in_bytes());
 
   // Scan RCX words at [RDI] for an occurrence of RAX.
   // Set NZ/Z based on last compare.
   // Z flag value will not be set by 'repne' if RCX == 0 since 'repne' does
   // not change flags (only scas instruction which is repeated sets flags).
   // Set Z = 0 (not equal) before 'repne' to indicate that class was not found.
-#ifdef _LP64
-  // This part is tricky, as values in supers array could be 32 or 64 bit wide
-  // and we store values in objArrays always encoded, thus we need to encode
-  // the value of rax before repne.  Note that rax is dead after the repne.
-  if (UseCompressedOops) {
-    encode_heap_oop_not_null(rax); // Changes flags.
-    // The superclass is never null; it would be a basic system error if a null
-    // pointer were to sneak in here.  Note that we have already loaded the
-    // Klass::super_check_offset from the super_klass in the fast path,
-    // so if there is a null in that register, we are already in the afterlife.
-    testl(rax,rax); // Set Z = 0
-    repne_scanl();
-  } else
-#endif // _LP64
-  {
+
     testptr(rax,rax); // Set Z = 0
     repne_scan();
-  }
+
   // Unspill the temp. registers:
   if (pushed_rdi)  pop(rdi);
   if (pushed_rcx)  pop(rcx);
@@ -9907,7 +10034,7 @@ void MacroAssembler::verify_FPU(int stack_depth, const char* s) {
 
 void MacroAssembler::load_klass(Register dst, Register src) {
 #ifdef _LP64
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_heap_oop_not_null(dst);
   } else
@@ -9917,7 +10044,7 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 
 void MacroAssembler::load_prototype_header(Register dst, Register src) {
 #ifdef _LP64
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     assert (Universe::heap() != NULL, "java heap should be initialized");
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     if (Universe::narrow_oop_shift() != 0) {
@@ -9942,7 +10069,7 @@ void MacroAssembler::load_prototype_header(Register dst, Register src) {
 
 void MacroAssembler::store_klass(Register dst, Register src) {
 #ifdef _LP64
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     encode_heap_oop_not_null(src);
     movl(Address(dst, oopDesc::klass_offset_in_bytes()), src);
   } else
@@ -9952,6 +10079,7 @@ void MacroAssembler::store_klass(Register dst, Register src) {
 
 void MacroAssembler::load_heap_oop(Register dst, Address src) {
 #ifdef _LP64
+  // FIXME: Must change all places where we try to load the klass.
   if (UseCompressedOops) {
     movl(dst, src);
     decode_heap_oop(dst);
@@ -10016,7 +10144,7 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
 
 #ifdef _LP64
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     // Store to klass gap in destination
     movl(Address(dst, oopDesc::klass_gap_offset_in_bytes()), src);
   }

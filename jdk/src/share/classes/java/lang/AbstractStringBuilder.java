@@ -96,6 +96,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * </ul>
      * If the {@code minimumCapacity} argument is nonpositive, this
      * method takes no action and simply returns.
+     * Note that subsequent operations on this object can reduce the
+     * actual capacity below that requested here.
      *
      * @param   minimumCapacity   the minimum desired capacity.
      */

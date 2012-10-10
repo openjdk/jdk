@@ -806,7 +806,14 @@ public:
     return _MARKING_VERBOSE_ && _verbose_level >= high_verbose;
   }
 
-  // Counting data structure accessors
+  // Liveness counting
+
+  // Utility routine to set an exclusive range of cards on the given
+  // card liveness bitmap
+  inline void set_card_bitmap_range(BitMap* card_bm,
+                                    BitMap::idx_t start_idx,
+                                    BitMap::idx_t end_idx,
+                                    bool is_par);
 
   // Returns the card number of the bottom of the G1 heap.
   // Used in biasing indices into accounting card bitmaps.

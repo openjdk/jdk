@@ -332,6 +332,9 @@ EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jni.h
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/$(JDK_INCLUDE_SUBDIR)/jni_md.h
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jmm.h
 
+# By default, run Queens test after building
+TEST_IN_BUILD ?= true
+
 ifndef JAVASE_EMBEDDED
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jfr.h
 endif

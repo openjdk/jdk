@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "c1/c1_CodeStubs.hpp"
 #include "ci/ciMethodData.hpp"
-#include "oops/methodDataOop.hpp"
+#include "oops/methodData.hpp"
 #include "utilities/top.hpp"
 
 class Compilation;
@@ -83,6 +83,9 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void jobject2reg(jobject o, Register reg);
   void jobject2reg_with_patching(Register reg, CodeEmitInfo* info);
+
+  void metadata2reg(Metadata* o, Register reg);
+  void klass2reg_with_patching(Register reg, CodeEmitInfo* info);
 
   void emit_stubs(CodeStubList* stub_list);
 
@@ -248,6 +251,8 @@ class LIR_Assembler: public CompilationResourceObj {
   void get_thread(LIR_Opr result);
 
   void verify_oop_map(CodeEmitInfo* info);
+
+  void atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr dest, LIR_Opr tmp);
 
 #ifdef TARGET_ARCH_x86
 # include "c1_LIRAssembler_x86.hpp"

@@ -87,7 +87,7 @@ public class TreeMaker implements JCTree.Factory {
 
     /** Create a tree maker with a given toplevel and FIRSTPOS as initial position.
      */
-    TreeMaker(JCCompilationUnit toplevel, Names names, Types types, Symtab syms) {
+    protected TreeMaker(JCCompilationUnit toplevel, Names names, Types types, Symtab syms) {
         this.pos = Position.FIRSTPOS;
         this.toplevel = toplevel;
         this.names = names;

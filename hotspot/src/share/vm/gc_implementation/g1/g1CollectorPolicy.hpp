@@ -170,7 +170,6 @@ private:
   void initialize_all() {
     initialize_flags();
     initialize_size_info();
-    initialize_perm_generation(PermGen::MarkSweepCompact);
   }
 
   CollectionSetChooser* _collectionSetChooser;
@@ -841,8 +840,8 @@ private:
   //
 
   // Current tenuring threshold, set to 0 if the collector reaches the
-  // maximum amount of suvivors regions.
-  int _tenuring_threshold;
+  // maximum amount of survivors regions.
+  uint _tenuring_threshold;
 
   // The limit on the number of regions allocated for survivors.
   uint _max_survivor_regions;
@@ -852,7 +851,7 @@ private:
   size_t _survivor_bytes_before_gc;
   size_t _capacity_before_gc;
 
-  // The amount of survor regions after a collection.
+  // The amount of survivor regions after a collection.
   uint _recorded_survivor_regions;
   // List of survivor regions.
   HeapRegion* _recorded_survivor_head;
@@ -863,7 +862,7 @@ private:
 public:
 
   inline GCAllocPurpose
-    evacuation_destination(HeapRegion* src_region, int age, size_t word_sz) {
+    evacuation_destination(HeapRegion* src_region, uint age, size_t word_sz) {
       if (age < _tenuring_threshold && src_region->is_young()) {
         return GCAllocForSurvived;
       } else {

@@ -256,7 +256,8 @@ public class Pretty extends JCTree.Visitor {
         return pos;
     }
 
-    /** If type parameter list is non-empty, print it enclosed in "<...>" brackets.
+    /** If type parameter list is non-empty, print it enclosed in
+     *  {@literal "<...>"} brackets.
      */
     public void printTypeParameters(List<JCTypeParameter> trees) throws IOException {
         if (trees.nonEmpty()) {

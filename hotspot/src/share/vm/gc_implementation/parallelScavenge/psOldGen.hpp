@@ -107,10 +107,11 @@ class PSOldGen : public CHeapObj<mtGC> {
   PSOldGen(size_t initial_size, size_t min_size, size_t max_size,
            const char* perf_data_name, int level);
 
-  void initialize(ReservedSpace rs, size_t alignment,
+  virtual void initialize(ReservedSpace rs, size_t alignment,
                   const char* perf_data_name, int level);
   void initialize_virtual_space(ReservedSpace rs, size_t alignment);
   void initialize_work(const char* perf_data_name, int level);
+  virtual void initialize_performance_counters(const char* perf_data_name, int level);
 
   MemRegion reserved() const                { return _reserved; }
   virtual size_t max_gen_size()             { return _max_gen_size; }
@@ -166,7 +167,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   HeapWord* allocate(size_t word_size);
 
   // Iteration.
-  void oop_iterate(OopClosure* cl) { object_space()->oop_iterate(cl); }
+  void oop_iterate_no_header(OopClosure* cl) { object_space()->oop_iterate_no_header(cl); }
   void object_iterate(ObjectClosure* cl) { object_space()->object_iterate(cl); }
 
   // Debugging - do not use for time critical operations

@@ -96,6 +96,13 @@ LIR_Opr FrameMap::rax_oop_opr;
 LIR_Opr FrameMap::rdx_oop_opr;
 LIR_Opr FrameMap::rcx_oop_opr;
 
+LIR_Opr FrameMap::rsi_metadata_opr;
+LIR_Opr FrameMap::rdi_metadata_opr;
+LIR_Opr FrameMap::rbx_metadata_opr;
+LIR_Opr FrameMap::rax_metadata_opr;
+LIR_Opr FrameMap::rdx_metadata_opr;
+LIR_Opr FrameMap::rcx_metadata_opr;
+
 LIR_Opr FrameMap::long0_opr;
 LIR_Opr FrameMap::long1_opr;
 LIR_Opr FrameMap::fpu0_float_opr;
@@ -122,6 +129,13 @@ LIR_Opr FrameMap::r11_oop_opr;
 LIR_Opr FrameMap::r12_oop_opr;
 LIR_Opr FrameMap::r13_oop_opr;
 LIR_Opr FrameMap::r14_oop_opr;
+
+LIR_Opr  FrameMap::r8_metadata_opr;
+LIR_Opr  FrameMap::r9_metadata_opr;
+LIR_Opr FrameMap::r11_metadata_opr;
+LIR_Opr FrameMap::r12_metadata_opr;
+LIR_Opr FrameMap::r13_metadata_opr;
+LIR_Opr FrameMap::r14_metadata_opr;
 #endif // _LP64
 
 LIR_Opr FrameMap::_caller_save_cpu_regs[] = { 0, };
@@ -236,6 +250,13 @@ void FrameMap::initialize() {
   rdx_oop_opr = as_oop_opr(rdx);
   rcx_oop_opr = as_oop_opr(rcx);
 
+  rsi_metadata_opr = as_metadata_opr(rsi);
+  rdi_metadata_opr = as_metadata_opr(rdi);
+  rbx_metadata_opr = as_metadata_opr(rbx);
+  rax_metadata_opr = as_metadata_opr(rax);
+  rdx_metadata_opr = as_metadata_opr(rdx);
+  rcx_metadata_opr = as_metadata_opr(rcx);
+
   rsp_opr = as_pointer_opr(rsp);
   rbp_opr = as_pointer_opr(rbp);
 
@@ -246,6 +267,13 @@ void FrameMap::initialize() {
   r12_oop_opr = as_oop_opr(r12);
   r13_oop_opr = as_oop_opr(r13);
   r14_oop_opr = as_oop_opr(r14);
+
+  r8_metadata_opr = as_metadata_opr(r8);
+  r9_metadata_opr = as_metadata_opr(r9);
+  r11_metadata_opr = as_metadata_opr(r11);
+  r12_metadata_opr = as_metadata_opr(r12);
+  r13_metadata_opr = as_metadata_opr(r13);
+  r14_metadata_opr = as_metadata_opr(r14);
 #endif // _LP64
 
   VMRegPair regs;

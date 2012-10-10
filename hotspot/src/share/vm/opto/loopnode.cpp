@@ -343,7 +343,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   assert(x->Opcode() == Op_Loop, "regular loops only");
   C->print_method("Before CountedLoop", 3);
 
-  Node *hook = new (C, 6) Node(6);
+  Node *hook = new (C) Node(6);
 
   if (LoopLimitCheck) {
 
@@ -406,11 +406,11 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
     Node* bol;
 
     if (stride_con > 0) {
-      cmp_limit = new (C, 3) CmpINode(limit, _igvn.intcon(max_jint - stride_m));
-      bol = new (C, 2) BoolNode(cmp_limit, BoolTest::le);
+      cmp_limit = new (C) CmpINode(limit, _igvn.intcon(max_jint - stride_m));
+      bol = new (C) BoolNode(cmp_limit, BoolTest::le);
     } else {
-      cmp_limit = new (C, 3) CmpINode(limit, _igvn.intcon(min_jint - stride_m));
-      bol = new (C, 2) BoolNode(cmp_limit, BoolTest::ge);
+      cmp_limit = new (C) CmpINode(limit, _igvn.intcon(min_jint - stride_m));
+      bol = new (C) BoolNode(cmp_limit, BoolTest::ge);
     }
     cmp_limit = _igvn.register_new_node_with_optimizer(cmp_limit);
     bol = _igvn.register_new_node_with_optimizer(bol);
@@ -447,7 +447,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
     // is converted to
     //   i = init; do {} while(++i < limit+1);
     //
-    limit = gvn->transform(new (C, 3) AddINode(limit, stride));
+    limit = gvn->transform(new (C) AddINode(limit, stride));
   }
 
   // Now we need to canonicalize loop condition.
@@ -466,7 +466,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
     // we can convert 'i <= limit' to 'i < limit+1' since stride != 0.
     //
     Node* one = (stride_con > 0) ? gvn->intcon( 1) : gvn->intcon(-1);
-    limit = gvn->transform(new (C, 3) AddINode(limit, one));
+    limit = gvn->transform(new (C) AddINode(limit, one));
     if (bt == BoolTest::le)
       bt = BoolTest::lt;
     else if (bt == BoolTest::ge)
@@ -482,7 +482,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   // can directly point to the phi; in this case adjust the compare so that
   // it points to the incr by adjusting the limit.
   if (cmp->in(1) == phi || cmp->in(2) == phi)
-    limit = gvn->transform(new (C, 3) AddINode(limit,stride));
+    limit = gvn->transform(new (C) AddINode(limit,stride));
 
   // trip-count for +-tive stride should be: (limit - init_trip + stride - 1)/stride.
   // Final value for iterator should be: trip_count * stride + init_trip.
@@ -495,16 +495,16 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
     ShouldNotReachHere();
   case BoolTest::ne:            // Ahh, the case we desire
     if (stride_con == 1)
-      trip_count = gvn->transform(new (C, 3) SubINode(limit,init_trip));
+      trip_count = gvn->transform(new (C) SubINode(limit,init_trip));
     else if (stride_con == -1)
-      trip_count = gvn->transform(new (C, 3) SubINode(init_trip,limit));
+      trip_count = gvn->transform(new (C) SubINode(init_trip,limit));
     else
       ShouldNotReachHere();
     set_subtree_ctrl(trip_count);
     //_loop.map(trip_count->_idx,loop(limit));
     break;
   case BoolTest::le:            // Maybe convert to '<' case
-    limit = gvn->transform(new (C, 3) AddINode(limit,one_p));
+    limit = gvn->transform(new (C) AddINode(limit,one_p));
     set_subtree_ctrl( limit );
     hook->init_req(4, limit);
 
@@ -515,26 +515,26 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   case BoolTest::lt: {          // Maybe convert to '!=' case
     if (stride_con < 0) // Count down loop rolls through MAXINT
       ShouldNotReachHere();
-    Node *range = gvn->transform(new (C, 3) SubINode(limit,init_trip));
+    Node *range = gvn->transform(new (C) SubINode(limit,init_trip));
     set_subtree_ctrl( range );
     hook->init_req(0, range);
 
-    Node *bias  = gvn->transform(new (C, 3) AddINode(range,stride));
+    Node *bias  = gvn->transform(new (C) AddINode(range,stride));
     set_subtree_ctrl( bias );
     hook->init_req(1, bias);
 
-    Node *bias1 = gvn->transform(new (C, 3) AddINode(bias,one_m));
+    Node *bias1 = gvn->transform(new (C) AddINode(bias,one_m));
     set_subtree_ctrl( bias1 );
     hook->init_req(2, bias1);
 
-    trip_count  = gvn->transform(new (C, 3) DivINode(0,bias1,stride));
+    trip_count  = gvn->transform(new (C) DivINode(0,bias1,stride));
     set_subtree_ctrl( trip_count );
     hook->init_req(3, trip_count);
     break;
   }
 
   case BoolTest::ge:            // Maybe convert to '>' case
-    limit = gvn->transform(new (C, 3) AddINode(limit,one_m));
+    limit = gvn->transform(new (C) AddINode(limit,one_m));
     set_subtree_ctrl( limit );
     hook->init_req(4 ,limit);
 
@@ -545,30 +545,30 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   case BoolTest::gt: {          // Maybe convert to '!=' case
     if (stride_con > 0) // count up loop rolls through MININT
       ShouldNotReachHere();
-    Node *range = gvn->transform(new (C, 3) SubINode(limit,init_trip));
+    Node *range = gvn->transform(new (C) SubINode(limit,init_trip));
     set_subtree_ctrl( range );
     hook->init_req(0, range);
 
-    Node *bias  = gvn->transform(new (C, 3) AddINode(range,stride));
+    Node *bias  = gvn->transform(new (C) AddINode(range,stride));
     set_subtree_ctrl( bias );
     hook->init_req(1, bias);
 
-    Node *bias1 = gvn->transform(new (C, 3) AddINode(bias,one_p));
+    Node *bias1 = gvn->transform(new (C) AddINode(bias,one_p));
     set_subtree_ctrl( bias1 );
     hook->init_req(2, bias1);
 
-    trip_count  = gvn->transform(new (C, 3) DivINode(0,bias1,stride));
+    trip_count  = gvn->transform(new (C) DivINode(0,bias1,stride));
     set_subtree_ctrl( trip_count );
     hook->init_req(3, trip_count);
     break;
   }
   } // switch( bt )
 
-  Node *span = gvn->transform(new (C, 3) MulINode(trip_count,stride));
+  Node *span = gvn->transform(new (C) MulINode(trip_count,stride));
   set_subtree_ctrl( span );
   hook->init_req(5, span);
 
-  limit = gvn->transform(new (C, 3) AddINode(span,init_trip));
+  limit = gvn->transform(new (C) AddINode(span,init_trip));
   set_subtree_ctrl( limit );
 
   } // LoopLimitCheck
@@ -617,7 +617,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   set_ctrl(test, iff->in(0));
 
   // Replace the old IfNode with a new LoopEndNode
-  Node *lex = _igvn.register_new_node_with_optimizer(new (C, 2) CountedLoopEndNode( iff->in(0), test, cl_prob, iff->as_If()->_fcnt ));
+  Node *lex = _igvn.register_new_node_with_optimizer(new (C) CountedLoopEndNode( iff->in(0), test, cl_prob, iff->as_If()->_fcnt ));
   IfNode *le = lex->as_If();
   uint dd = dom_depth(iff);
   set_idom(le, le->in(0), dd); // Update dominance for loop exit
@@ -628,8 +628,8 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
 
   // Need to swap loop-exit and loop-back control?
   if (iftrue_op == Op_IfFalse) {
-    Node *ift2=_igvn.register_new_node_with_optimizer(new (C, 1) IfTrueNode (le));
-    Node *iff2=_igvn.register_new_node_with_optimizer(new (C, 1) IfFalseNode(le));
+    Node *ift2=_igvn.register_new_node_with_optimizer(new (C) IfTrueNode (le));
+    Node *iff2=_igvn.register_new_node_with_optimizer(new (C) IfFalseNode(le));
 
     loop->_tail = back_control = ift2;
     set_loop(ift2, loop);
@@ -655,7 +655,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   lazy_replace( iff, le ); // fix 'get_ctrl'
 
   // Now setup a new CountedLoopNode to replace the existing LoopNode
-  CountedLoopNode *l = new (C, 3) CountedLoopNode(init_control, back_control);
+  CountedLoopNode *l = new (C) CountedLoopNode(init_control, back_control);
   l->set_unswitch_count(x->as_Loop()->unswitch_count()); // Preserve
   // The following assert is approximately true, and defines the intention
   // of can_be_counted_loop.  It fails, however, because phase->type
@@ -729,7 +729,7 @@ Node* PhaseIdealLoop::exact_limit( IdealLoopTree *loop ) {
     limit = _igvn.intcon(final_int);
   } else {
     // Create new LoopLimit node to get exact limit (final iv value).
-    limit = new (C, 4) LoopLimitNode(C, cl->init_trip(), cl->limit(), cl->stride());
+    limit = new (C) LoopLimitNode(C, cl->init_trip(), cl->limit(), cl->stride());
     register_new_node(limit, cl->in(LoopNode::EntryControl));
   }
   assert(limit != NULL, "sanity");
@@ -846,11 +846,11 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (range <= max) {
     // Convert to integer expression if it is not overflow.
     Node* stride_m = phase->intcon(stride_con - (stride_con > 0 ? 1 : -1));
-    Node *range = phase->transform(new (phase->C, 3) SubINode(in(Limit), in(Init)));
-    Node *bias  = phase->transform(new (phase->C, 3) AddINode(range, stride_m));
-    Node *trip  = phase->transform(new (phase->C, 3) DivINode(0, bias, in(Stride)));
-    Node *span  = phase->transform(new (phase->C, 3) MulINode(trip, in(Stride)));
-    return new (phase->C, 3) AddINode(span, in(Init)); // exact limit
+    Node *range = phase->transform(new (phase->C) SubINode(in(Limit), in(Init)));
+    Node *bias  = phase->transform(new (phase->C) AddINode(range, stride_m));
+    Node *trip  = phase->transform(new (phase->C) DivINode(0, bias, in(Stride)));
+    Node *span  = phase->transform(new (phase->C) MulINode(trip, in(Stride)));
+    return new (phase->C) AddINode(span, in(Init)); // exact limit
   }
 
   if (is_power_of_2(stride_p) ||                // divisor is 2^n
@@ -858,13 +858,13 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Convert to long expression to avoid integer overflow
     // and let igvn optimizer convert this division.
     //
-    Node*   init   = phase->transform( new (phase->C, 2) ConvI2LNode(in(Init)));
-    Node*  limit   = phase->transform( new (phase->C, 2) ConvI2LNode(in(Limit)));
+    Node*   init   = phase->transform( new (phase->C) ConvI2LNode(in(Init)));
+    Node*  limit   = phase->transform( new (phase->C) ConvI2LNode(in(Limit)));
     Node* stride   = phase->longcon(stride_con);
     Node* stride_m = phase->longcon(stride_con - (stride_con > 0 ? 1 : -1));
 
-    Node *range = phase->transform(new (phase->C, 3) SubLNode(limit, init));
-    Node *bias  = phase->transform(new (phase->C, 3) AddLNode(range, stride_m));
+    Node *range = phase->transform(new (phase->C) SubLNode(limit, init));
+    Node *bias  = phase->transform(new (phase->C) AddLNode(range, stride_m));
     Node *span;
     if (stride_con > 0 && is_power_of_2(stride_p)) {
       // bias >= 0 if stride >0, so if stride is 2^n we can use &(-stride)
@@ -875,14 +875,14 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // only RCE predicate where exact limit is used and the predicate
       // will simply fail forcing recompilation.
       Node* neg_stride   = phase->longcon(-stride_con);
-      span = phase->transform(new (phase->C, 3) AndLNode(bias, neg_stride));
+      span = phase->transform(new (phase->C) AndLNode(bias, neg_stride));
     } else {
-      Node *trip  = phase->transform(new (phase->C, 3) DivLNode(0, bias, stride));
-      span = phase->transform(new (phase->C, 3) MulLNode(trip, stride));
+      Node *trip  = phase->transform(new (phase->C) DivLNode(0, bias, stride));
+      span = phase->transform(new (phase->C) MulLNode(trip, stride));
     }
     // Convert back to int
-    Node *span_int = phase->transform(new (phase->C, 2) ConvL2INode(span));
-    return new (phase->C, 3) AddINode(span_int, in(Init)); // exact limit
+    Node *span_int = phase->transform(new (phase->C) ConvL2INode(span));
+    return new (phase->C) AddINode(span_int, in(Init)); // exact limit
   }
 
   return NULL;    // No progress
@@ -1088,7 +1088,7 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
   uint i;
 
   // Make a new RegionNode to be the landing pad.
-  Node *landing_pad = new (phase->C, fall_in_cnt+1) RegionNode( fall_in_cnt+1 );
+  Node *landing_pad = new (phase->C) RegionNode( fall_in_cnt+1 );
   phase->set_loop(landing_pad,_parent);
   // Gather all the fall-in control paths into the landing pad
   uint icnt = fall_in_cnt;
@@ -1174,7 +1174,7 @@ void IdealLoopTree::split_outer_loop( PhaseIdealLoop *phase ) {
 
   // Make a LoopNode for the outermost loop.
   Node *ctl = _head->in(LoopNode::EntryControl);
-  Node *outer = new (phase->C, 3) LoopNode( ctl, _head->in(outer_idx) );
+  Node *outer = new (phase->C) LoopNode( ctl, _head->in(outer_idx) );
   outer = igvn.register_new_node_with_optimizer(outer, _head);
   phase->set_created_loop_node();
 
@@ -1288,7 +1288,7 @@ void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
 
   Node *hot_tail = NULL;
   // Make a Region for the merge point
-  Node *r = new (phase->C, 1) RegionNode(1);
+  Node *r = new (phase->C) RegionNode(1);
   for( i = 2; i < _head->req(); i++ ) {
     if( i != hot_idx )
       r->add_req( _head->in(i) );
@@ -1307,7 +1307,7 @@ void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
       PhiNode* n = out->as_Phi();
       igvn.hash_delete(n);      // Delete from hash before hacking edges
       Node *hot_phi = NULL;
-      Node *phi = new (phase->C, r->req()) PhiNode(r, n->type(), n->adr_type());
+      Node *phi = new (phase->C) PhiNode(r, n->type(), n->adr_type());
       // Check all inputs for the ones to peel out
       uint j = 1;
       for( uint i = 2; i < n->req(); i++ ) {
@@ -1429,7 +1429,7 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
 
   } else if( !_head->is_Loop() && !_irreducible ) {
     // Make a new LoopNode to replace the old loop head
-    Node *l = new (phase->C, 3) LoopNode( _head->in(1), _head->in(2) );
+    Node *l = new (phase->C) LoopNode( _head->in(1), _head->in(2) );
     l = igvn.register_new_node_with_optimizer(l, _head);
     phase->set_created_loop_node();
     // Go ahead and replace _head
@@ -1671,16 +1671,16 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
       // It is scaled by the 'ratio_con'.
       Node* ratio = _igvn.intcon(ratio_con);
       set_ctrl(ratio, C->root());
-      Node* ratio_init = new (C, 3) MulINode(init, ratio);
+      Node* ratio_init = new (C) MulINode(init, ratio);
       _igvn.register_new_node_with_optimizer(ratio_init, init);
       set_early_ctrl(ratio_init);
-      Node* diff = new (C, 3) SubINode(init2, ratio_init);
+      Node* diff = new (C) SubINode(init2, ratio_init);
       _igvn.register_new_node_with_optimizer(diff, init2);
       set_early_ctrl(diff);
-      Node* ratio_idx = new (C, 3) MulINode(phi, ratio);
+      Node* ratio_idx = new (C) MulINode(phi, ratio);
       _igvn.register_new_node_with_optimizer(ratio_idx, phi);
       set_ctrl(ratio_idx, cl);
-      Node* add = new (C, 3) AddINode(ratio_idx, diff);
+      Node* add = new (C) AddINode(ratio_idx, diff);
       _igvn.register_new_node_with_optimizer(add);
       set_ctrl(add, cl);
       _igvn.replace_node( phi2, add );
@@ -2677,10 +2677,10 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
 
         if (!_verify_only) {
           // Insert the NeverBranch between 'm' and it's control user.
-          NeverBranchNode *iff = new (C, 1) NeverBranchNode( m );
+          NeverBranchNode *iff = new (C) NeverBranchNode( m );
           _igvn.register_new_node_with_optimizer(iff);
           set_loop(iff, l);
-          Node *if_t = new (C, 1) CProjNode( iff, 0 );
+          Node *if_t = new (C) CProjNode( iff, 0 );
           _igvn.register_new_node_with_optimizer(if_t);
           set_loop(if_t, l);
 
@@ -2696,16 +2696,16 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           cfg->set_req( k, if_t ); // Now point to NeverBranch
 
           // Now create the never-taken loop exit
-          Node *if_f = new (C, 1) CProjNode( iff, 1 );
+          Node *if_f = new (C) CProjNode( iff, 1 );
           _igvn.register_new_node_with_optimizer(if_f);
           set_loop(if_f, l);
           // Find frame ptr for Halt.  Relies on the optimizer
           // V-N'ing.  Easier and quicker than searching through
           // the program structure.
-          Node *frame = new (C, 1) ParmNode( C->start(), TypeFunc::FramePtr );
+          Node *frame = new (C) ParmNode( C->start(), TypeFunc::FramePtr );
           _igvn.register_new_node_with_optimizer(frame);
           // Halt & Catch Fire
-          Node *halt = new (C, TypeFunc::Parms) HaltNode( if_f, frame );
+          Node *halt = new (C) HaltNode( if_f, frame );
           _igvn.register_new_node_with_optimizer(halt);
           set_loop(halt, l);
           C->root()->add_req(halt);

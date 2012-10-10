@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.Collections;
-import java.io.ObjectStreamField;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.io.IOException;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -424,7 +420,7 @@ public final class FilePermission extends Permission implements Serializable {
     /**
      * Converts an actions String to an actions mask.
      *
-     * @param action the action string.
+     * @param actions the action string.
      * @return the actions mask.
      */
     private static int getMask(String actions) {
@@ -435,7 +431,9 @@ public final class FilePermission extends Permission implements Serializable {
         if (actions == null) {
             return mask;
         }
-        // Check against use of constants (used heavily within the JDK)
+
+        // Use object identity comparison against known-interned strings for
+        // performance benefit (these values are used heavily within the JDK).
         if (actions == SecurityConstants.FILE_READ_ACTION) {
             return READ;
         } else if (actions == SecurityConstants.FILE_WRITE_ACTION) {
@@ -531,7 +529,7 @@ public final class FilePermission extends Permission implements Serializable {
                 switch(a[i-matchlen]) {
                 case ',':
                     seencomma = true;
-                    /*FALLTHROUGH*/
+                    break;
                 case ' ': case '\r': case '\n':
                 case '\f': case '\t':
                     break;
@@ -798,7 +796,7 @@ implements Serializable {
      * @return an enumeration of all the FilePermission objects.
      */
 
-    public Enumeration elements() {
+    public Enumeration<Permission> elements() {
         // Convert Iterator into Enumeration
         synchronized (this) {
             return Collections.enumeration(perms);
@@ -843,7 +841,6 @@ implements Serializable {
     /*
      * Reads in a Vector of FilePermissions and saves them in the perms field.
      */
-    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream in) throws IOException,
     ClassNotFoundException {
         // Don't call defaultReadObject()
@@ -852,6 +849,7 @@ implements Serializable {
         ObjectInputStream.GetField gfields = in.readFields();
 
         // Get the one we want
+        @SuppressWarnings("unchecked")
         Vector<Permission> permissions = (Vector<Permission>)gfields.get("permissions", null);
         perms = new ArrayList<>(permissions.size());
         perms.addAll(permissions);
