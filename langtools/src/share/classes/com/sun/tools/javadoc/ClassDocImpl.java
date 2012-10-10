@@ -74,6 +74,11 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * referred to using Type (which can be converted to ClassDocImpl,
  * if possible).
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @see Type
  *
  * @since 1.2

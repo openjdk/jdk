@@ -41,6 +41,11 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * right-hand frame will have overview or package summary or class file. Also
  * take care of browsers which do not support Html frames.
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @author Atul M Dambalkar
  */
 public class FrameOutputWriter extends HtmlDocletWriter {

@@ -37,9 +37,10 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * or method) and the leaf of the class tree.  The data structure will map
  * all visible members in the leaf and classes above the leaf in the tree.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  * @author Jamie Ho (rewrite)

@@ -35,6 +35,11 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * Initilizes PrintWriter with FileWriter, to enable print
  * related methods to generate the code to the named File through FileWriter.
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @since 1.2
  * @author Atul M Dambalkar
  * @author Bhavesh Patel (Modified)

@@ -33,6 +33,11 @@ import com.sun.tools.javac.util.ListBuffer;
  *      It allows users to get first sentence of this comment, get
  *      comment for different tags...
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @author Kaiyang Liu (original)
  * @author Robert Field (rewrite)
  * @author Atul M Dambalkar
