@@ -91,7 +91,7 @@ public class Extern {
          * If the same package name is found in the map, then the first mapped
          * Item object or offline location will be retained.
          *
-         * @param packagename Package name found in the "package-list" file.
+         * @param packageName Package name found in the "package-list" file.
          * @param path        URL or Directory path from where the "package-list"
          * file is picked.
          * @param relative    True if path is URL, false if directory path.
@@ -179,7 +179,7 @@ public class Extern {
     /**
      * Get the Extern Item object associated with this package name.
      *
-     * @param pkgname Package name.
+     * @param pkgName Package name.
      */
     private Item findPackageItem(String pkgName) {
         if (packageToItemMap == null) {

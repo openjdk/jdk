@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -805,8 +805,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     /**
-     * Enforces the specification of a "relative" URI as used in
-     * {@linkplain #getFileForInput(Location,String,URI)
+     * Enforces the specification of a "relative" name as used in
+     * {@linkplain #getFileForInput(Location,String,String)
      * getFileForInput}.  This method must follow the rules defined in
      * that method, do not make any changes without consulting the
      * specification.

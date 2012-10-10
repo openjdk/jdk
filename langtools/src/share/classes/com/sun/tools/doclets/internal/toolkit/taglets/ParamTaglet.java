@@ -183,7 +183,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      * Given an array of <code>ParamTag</code>s,return its string representation.
      * Try to inherit the param tags that are missing.
      *
-     * @param doc               the doc that holds the param tags.
+     * @param holder            the doc that holds the param tags.
      * @param writer            the TagletWriter that will write this tag.
      * @param formalParameters  The array of parmeters (from type or executable
      *                          member) to check.
@@ -256,7 +256,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      *        been documented.
      * @param rankMap a {@link java.util.Map} which holds ordering
      *                    information about the parameters.
-     * @param nameMap a {@link java.util.Map} which holds a mapping
+     * @param rankMap a {@link java.util.Map} which holds a mapping
      *                of a rank of a parameter to its name.  This is
      *                used to ensure that the right name is used
      *                when parameter documentation is inherited.

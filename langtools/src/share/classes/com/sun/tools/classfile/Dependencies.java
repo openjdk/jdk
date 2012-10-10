@@ -98,7 +98,7 @@ public class Dependencies {
          * Get the ClassFile object for a specified class.
          * @param className the name of the class to be returned.
          * @return the ClassFile for the given class
-         * @throws Dependencies#ClassFileNotFoundException if the classfile cannot be
+         * @throws Dependencies.ClassFileNotFoundException if the classfile cannot be
          *   found
          */
         public ClassFile getClassFile(String className)

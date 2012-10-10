@@ -124,7 +124,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     /**
      * Get a localized string represenation for a given type.
      *
-     * @param ts type to be displayed
+     * @param t type to be displayed
      * @param locale the locale in which the string is to be rendered
      * @return localized string representation
      */
@@ -135,7 +135,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     /**
      * Get a localized string represenation for a given symbol.
      *
-     * @param ts symbol to be displayed
+     * @param s symbol to be displayed
      * @param locale the locale in which the string is to be rendered
      * @return localized string representation
      */

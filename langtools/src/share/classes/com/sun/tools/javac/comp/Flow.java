@@ -148,7 +148,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  exception to this [no pun intended] is that checked exceptions that
  *  are known to be caught or declared to be caught in the enclosing
  *  method are not recorded in the queue, but instead are recorded in a
- *  global variable "Set<Type> thrown" that records the type of all
+ *  global variable "{@code Set<Type> thrown}" that records the type of all
  *  exceptions that can be thrown.
  *
  *  <p>Other minor issues the treatment of members of other classes

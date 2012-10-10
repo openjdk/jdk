@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
       /**
        * Return all of the classes specified on the command-line that
        * belong to the given package.
-       * @param packageDoc the package to return the classes for.
+       * @param pkgDoc the package to return the classes for.
        */
       public ClassDoc[] allClasses(PackageDoc pkgDoc) {
           return pkgDoc.isIncluded() ?

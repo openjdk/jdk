@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -423,9 +423,9 @@ public class HtmlTree extends Content {
     /**
      * Generates a META tag with the http-equiv, content and charset attributes.
      *
-     * @param http-equiv http equiv attribute for the META tag
+     * @param httpEquiv http equiv attribute for the META tag
      * @param content type of content
-     * @param charset character set used
+     * @param charSet character set used
      * @return an HtmlTree object for the META tag
      */
     public static HtmlTree META(String httpEquiv, String content, String charSet) {

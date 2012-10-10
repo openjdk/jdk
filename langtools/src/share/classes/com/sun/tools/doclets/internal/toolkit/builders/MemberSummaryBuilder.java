@@ -166,7 +166,6 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      * This information can be used for doclet specific documentation
      * generation.
      *
-     * @param classDoc the {@link ClassDoc} we want to check.
      * @param type the type of members to return.
      * @return a list of methods that will be documented.
      * @see VisibleMemberMap

@@ -188,8 +188,8 @@ public class ConfigurationImpl extends Configuration {
     // ClassWriter.
 
     /**
-     * Constructor. Initialises resource for the
-     * {@link com.sun.tools.doclets.MessageRetriever}.
+     * Constructor. Initializes resource for the
+     * {@link com.sun.tools.doclets.internal.toolkit.util.MessageRetriever MessageRetriever}.
      */
     private ConfigurationImpl() {
         standardmessage = new MessageRetriever(this,

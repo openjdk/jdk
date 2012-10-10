@@ -126,7 +126,7 @@ public class VisibleMemberMap {
      * Return the package private members inherited by the class.  Only return
      * if parent is package private and not documented.
      *
-     * @param configuation the current configuration of the doclet.
+     * @param configuration the current configuration of the doclet.
      * @return the package private members inherited by the class.
      */
     private List<ProgramElementDoc> getInheritedPackagePrivateMethods(Configuration configuration) {
@@ -149,7 +149,7 @@ public class VisibleMemberMap {
      * end of the list members that are inherited by inaccessible parents. We
      * document these members in the child because the parent is not documented.
      *
-     * @param configuation the current configuration of the doclet.
+     * @param configuration the current configuration of the doclet.
      */
     public List<ProgramElementDoc> getLeafClassMembers(Configuration configuration) {
         List<ProgramElementDoc> result = getMembersFor(classdoc);

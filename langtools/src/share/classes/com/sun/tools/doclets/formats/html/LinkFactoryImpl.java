@@ -155,7 +155,6 @@ public class LinkFactoryImpl extends LinkFactory {
      * "../../java/lang/Object.html"
      *
      * @param linkInfo the information about the link.
-     * @param fileName the file name, to which path string is.
      */
     private String pathString(LinkInfoImpl linkInfo) {
         if (linkInfo.context == LinkInfoImpl.PACKAGE_FRAME) {

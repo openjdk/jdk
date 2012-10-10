@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import static com.sun.tools.javac.code.Flags.*;
  *   Filtering is done by returning boolean values.
  *   Classes, methods and fields can be filtered, or filtering
  *   can be done directly on modifier bits.
- *   @see com.sun.tools.javac.code.Flags;
+ *   @see com.sun.tools.javac.code.Flags
  *   @author Robert Field
  */
 
