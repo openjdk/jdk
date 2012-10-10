@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * Add the summary link for the member.
      *
      * @param context the id of the context where the link will be printed
-     * @param classDoc the classDoc that we should link to
+     * @param cd the classDoc that we should link to
      * @param member the member being linked to
      * @param tdSummary the content tree to which the link will be added
      */
@@ -101,7 +101,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     /**
      * Add the inherited summary link for the member.
      *
-     * @param classDoc the classDoc that we should link to
+     * @param cd the classDoc that we should link to
      * @param member the member being linked to
      * @param linksTree the content tree to which the link will be added
      */
@@ -138,7 +138,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * Add all the parameters for the executable member.
      *
      * @param member the member to write parameters for.
-     * @param tree the content tree to which the parameters information will be added.
+     * @param htmltree the content tree to which the parameters information will be added.
      */
     protected void addParameters(ExecutableMemberDoc member, Content htmltree) {
         addParameters(member, true, htmltree);
@@ -149,7 +149,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      *
      * @param member the member to write parameters for.
      * @param includeAnnotations true if annotation information needs to be added.
-     * @param tree the content tree to which the parameters information will be added.
+     * @param htmltree the content tree to which the parameters information will be added.
      */
     protected void addParameters(ExecutableMemberDoc member,
             boolean includeAnnotations, Content htmltree) {

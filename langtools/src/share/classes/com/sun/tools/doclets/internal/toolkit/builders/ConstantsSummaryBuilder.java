@@ -346,7 +346,6 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
 
         /**
          * Return the list of visible constant fields for the given classdoc.
-         * @param cd the classdoc to examine.
          * @return the list of visible constant fields for the given classdoc.
          */
         protected List<FieldDoc> members() {

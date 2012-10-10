@@ -365,7 +365,7 @@ public abstract class AbstractMemberWriter {
      * Add the comment for the given member.
      *
      * @param member the member being documented.
-     * @param contentTree the content tree to which the comment will be added.
+     * @param htmltree the content tree to which the comment will be added.
      */
     protected void addComment(ProgramElementDoc member, Content htmltree) {
         if (member.inlineTags().length > 0) {

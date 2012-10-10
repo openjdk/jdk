@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
     /**
      * Create a basic formatter based on the supplied options.
      *
-     * @param opts list of command-line options
+     * @param options list of command-line options
      * @param msgs JavacMessages object used for i18n
      */
     public BasicDiagnosticFormatter(Options options, JavacMessages msgs) {
@@ -329,7 +329,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
          * Set the indentation level for various element of a given diagnostic -
          * this might lead to more readable diagnostics
          *
-         * @param indentationKind kind of indentation to be set
+         * @param diagPart
          * @param nSpaces amount of spaces for the specified diagnostic part
          */
         public void setIndentation(DiagnosticPart diagPart, int nSpaces) {
@@ -384,7 +384,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
         /**
          * Get a metachar string for a specific format
          *
-         * @param sourcePos a positioning value for source line
+         * @param kind the format kind for which to get the metachar string
          */
         public String getFormat(BasicFormatKind kind) {
             return availableFormats.get(kind);

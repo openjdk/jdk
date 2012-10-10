@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ public class HtmlWriter extends PrintWriter {
      * @param docencoding Encoding to be used for this file.
      * @exception IOException Exception raised by the FileWriter is passed on
      * to next level.
-     * @exception UnSupportedEncodingException Exception raised by the
+     * @exception UnsupportedEncodingException Exception raised by the
      * OutputStreamWriter is passed on to next level.
      */
     public HtmlWriter(Configuration configuration,

@@ -301,7 +301,7 @@ public class Symtab {
     }
 
     /** Enter a class into symbol table.
-     *  @param    The name of the class.
+     *  @param s The name of the class.
      */
     private Type enterClass(String s) {
         return reader.enterClass(names.fromString(s)).type;

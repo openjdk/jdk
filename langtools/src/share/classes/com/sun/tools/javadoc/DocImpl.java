@@ -262,7 +262,7 @@ public abstract class DocImpl implements Doc, Comparable<Object> {
      * <p>
      * Included so that Doc item are java.lang.Comparable.
      *
-     * @param   o the <code>Object</code> to be compared.
+     * @param   obj the {@code Object} to be compared.
      * @return  a negative integer, zero, or a positive integer as this Object
      *          is less than, equal to, or greater than the given Object.
      * @exception ClassCastException the specified Object's type prevents it
