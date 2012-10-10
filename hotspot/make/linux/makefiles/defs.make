@@ -254,6 +254,7 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 endif
 EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
 EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
+EXPORT_MINIMAL_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/minimal
 
 EXPORT_LIST += $(EXPORT_JRE_LIB_DIR)/wb.jar
 
@@ -277,6 +278,19 @@ ifeq ($(JVM_VARIANT_CLIENT),true)
       EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.diz
     else
       EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.debuginfo
+    endif
+  endif 
+endif
+
+ifeq ($(JVM_VARIANT_MINIMAL1),true)
+  EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/Xusage.txt
+  EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.$(LIBRARY_SUFFIX)
+
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.diz
+    else
+	EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.debuginfo
     endif
   endif 
 endif

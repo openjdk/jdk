@@ -60,6 +60,7 @@ OS_VENDOR:=$(shell uname -s)
 
 -include $(SPEC)
 include $(GAMMADIR)/make/scm.make
+include $(GAMMADIR)/make/defs.make
 include $(GAMMADIR)/make/altsrc.make
 
 
@@ -195,6 +196,8 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	sed -n '/=/s/^ */Platform_/p' < $(PLATFORM_FILE); \
 	echo; \
 	echo "GAMMADIR = $(GAMMADIR)"; \
+	echo "HS_ALT_MAKE = $(HS_ALT_MAKE)"; \
+	echo "OSNAME = $(OSNAME)"; \
 	echo "SYSDEFS = \$$(Platform_sysdefs)"; \
 	echo "SRCARCH = $(SRCARCH)"; \
 	echo "BUILDARCH = $(BUILDARCH)"; \
@@ -251,6 +254,7 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	[ -n "$(SPEC)" ] && \
 	    echo "include $(SPEC)"; \
 	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/$(VARIANT).make"; \
+	echo "include \$$(GAMMADIR)/make/excludeSrc.make"; \
 	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/$(COMPILER).make"; \
 	) > $@
 

@@ -114,9 +114,9 @@ jint init_globals() {
   universe2_init();  // dependent on codeCache_init and stubRoutines_init1
   referenceProcessor_init();
   jni_handles_init();
-#ifndef VM_STRUCTS_KERNEL
+#if INCLUDE_VM_STRUCTS
   vmStructs_init();
-#endif // VM_STRUCTS_KERNEL
+#endif // INCLUDE_VM_STRUCTS
 
   vtableStubs_init();
   InlineCacheBuffer_init();

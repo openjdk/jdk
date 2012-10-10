@@ -752,7 +752,7 @@ jint Universe::initialize_heap() {
 #ifndef SERIALGC
     Universe::_collectedHeap = new ParallelScavengeHeap();
 #else  // SERIALGC
-    fatal("UseParallelGC not supported in java kernel vm.");
+    fatal("UseParallelGC not supported in this VM.");
 #endif // SERIALGC
 
   } else if (UseG1GC) {
@@ -777,7 +777,7 @@ jint Universe::initialize_heap() {
         gc_policy = new ConcurrentMarkSweepPolicy();
       }
 #else   // SERIALGC
-    fatal("UseConcMarkSweepGC not supported in java kernel vm.");
+    fatal("UseConcMarkSweepGC not supported in this VM.");
 #endif // SERIALGC
     } else { // default old generation
       gc_policy = new MarkSweepPolicy();

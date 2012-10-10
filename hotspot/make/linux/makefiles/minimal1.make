@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,25 @@
 #  
 #
 
-#
-# IA64 only uses c++ based interpreter
-CFLAGS += -DCC_INTERP -D_LP64=1 -DVM_LITTLE_ENDIAN
-ifeq ($(VERSION),debug)
-ASM_FLAGS= -DDEBUG
-else
-ASM_FLAGS=
-endif
-# workaround gcc bug in compiling varargs
-OPT_CFLAGS/jni.o = -O0
+TYPE=MINIMAL1
 
-# gcc/ia64 has a bug that internal gcc functions linked with libjvm.so
-# are made public. Hiding those symbols will cause undefined symbol error
-# when VM is dropped into older JDK. We probably will need an IA64
-# mapfile to include those symbols as a workaround. Disable linker mapfile 
-# for now.
-LDNOMAP=true
+INCLUDE_JVMTI ?= false
+INCLUDE_FPROF ?= false
+INCLUDE_VM_STRUCTS ?= false
+INCLUDE_JNI_CHECK ?= false
+INCLUDE_SERVICES ?= false
+INCLUDE_MANAGEMENT ?= false
+INCLUDE_ALTERNATE_GCS ?= false
+INCLUDE_NMT ?= false
+INCLUDE_CDS ?= false
+
+CXXFLAGS += -DMINIMAL_JVM -DCOMPILER1 -DVMTYPE=\"Minimal\"
+CFLAGS += -DMINIMAL_JVM -DCOMPILER1 -DVMTYPE=\"Minimal\"
+
+Src_Dirs/MINIMAL1 = $(CORE_PATHS) $(COMPILER1_PATHS)
+
+Src_Files_EXCLUDE/MINIMAL1 += $(COMPILER2_SPECIFIC_FILES) $(ZERO_SPECIFIC_FILES) $(SHARK_SPECIFIC_FILES) ciTypeFlow.cpp
+
+-include $(HS_ALT_MAKE)/$(OSNAME)/makefiles/minimal1.make
+
+.PHONY: $(HS_ALT_MAKE)/$(OSNAME)/makefiles/minimal1.make
