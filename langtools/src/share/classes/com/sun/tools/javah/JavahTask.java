@@ -79,7 +79,7 @@ import com.sun.tools.javac.main.CommandLine;
 
 /**
  * Javah generates support files for native methods.
- * Parse commandline options & Invokes javadoc to execute those commands.
+ * Parse commandline options and invokes javadoc to execute those commands.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own

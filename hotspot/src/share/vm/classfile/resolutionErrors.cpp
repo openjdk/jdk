@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,10 @@ void ResolutionErrorEntry::set_error(Symbol* e) {
 }
 
 // create new error entry
-ResolutionErrorEntry* ResolutionErrorTable::new_entry(int hash, constantPoolOop pool,
+ResolutionErrorEntry* ResolutionErrorTable::new_entry(int hash, ConstantPool* pool,
                                                       int cp_index, Symbol* error)
 {
-  ResolutionErrorEntry* entry = (ResolutionErrorEntry*)Hashtable<constantPoolOop, mtClass>::new_entry(hash, pool);
+  ResolutionErrorEntry* entry = (ResolutionErrorEntry*)Hashtable<ConstantPool*, mtClass>::new_entry(hash, pool);
   entry->set_cp_index(cp_index);
   NOT_PRODUCT(entry->set_error(NULL);)
   entry->set_error(error);
@@ -79,42 +79,46 @@ void ResolutionErrorTable::free_entry(ResolutionErrorEntry *entry) {
   // decrement error refcount
   assert(entry->error() != NULL, "error should be set");
   entry->error()->decrement_refcount();
-  Hashtable<constantPoolOop, mtClass>::free_entry(entry);
+  Hashtable<ConstantPool*, mtClass>::free_entry(entry);
 }
 
 
 // create resolution error table
 ResolutionErrorTable::ResolutionErrorTable(int table_size)
-    : Hashtable<constantPoolOop, mtClass>(table_size, sizeof(ResolutionErrorEntry)) {
+    : Hashtable<ConstantPool*, mtClass>(table_size, sizeof(ResolutionErrorEntry)) {
 }
 
-// GC support
-void ResolutionErrorTable::oops_do(OopClosure* f) {
-  for (int i = 0; i < table_size(); i++) {
-    for (ResolutionErrorEntry* probe = bucket(i);
-                           probe != NULL;
-                           probe = probe->next()) {
-      assert(probe->pool() != (constantPoolOop)NULL, "resolution error table is corrupt");
-      assert(probe->error() != (Symbol*)NULL, "resolution error table is corrupt");
-      probe->oops_do(f);
-    }
-  }
-}
-
-// GC support
-void ResolutionErrorEntry::oops_do(OopClosure* blk) {
-  blk->do_oop((oop*)pool_addr());
-}
-
-// Remove unloaded entries from the table
-void ResolutionErrorTable::purge_resolution_errors(BoolObjectClosure* is_alive) {
+// RedefineClasses support - remove matching entry of a
+// constant pool that is going away
+void ResolutionErrorTable::delete_entry(ConstantPool* c) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   for (int i = 0; i < table_size(); i++) {
     for (ResolutionErrorEntry** p = bucket_addr(i); *p != NULL; ) {
       ResolutionErrorEntry* entry = *p;
-      assert(entry->pool() != (constantPoolOop)NULL, "resolution error table is corrupt");
-      constantPoolOop pool = entry->pool();
-      if (is_alive->do_object_b(pool)) {
+      assert(entry->pool() != NULL, "resolution error table is corrupt");
+      if (entry->pool() == c) {
+        *p = entry->next();
+        free_entry(entry);
+      } else {
+        p = entry->next_addr();
+      }
+    }
+  }
+}
+
+
+// Remove unloaded entries from the table
+void ResolutionErrorTable::purge_resolution_errors() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  for (int i = 0; i < table_size(); i++) {
+    for (ResolutionErrorEntry** p = bucket_addr(i); *p != NULL; ) {
+      ResolutionErrorEntry* entry = *p;
+      assert(entry->pool() != (ConstantPool*)NULL, "resolution error table is corrupt");
+      ConstantPool* pool = entry->pool();
+      assert(pool->pool_holder() != NULL, "Constant pool without a class?");
+      ClassLoaderData* loader_data =
+              pool->pool_holder()->class_loader_data();
+      if (!loader_data->is_unloading()) {
         p = entry->next_addr();
       } else {
         *p = entry->next();

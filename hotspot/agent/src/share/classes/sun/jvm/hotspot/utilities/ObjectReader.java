@@ -654,6 +654,14 @@ public class ObjectReader {
       return oopToObjMap.get(oop);
    }
 
+   protected void putIntoObjTable(Metadata oop, Object obj) {
+      oopToObjMap.put(oop, obj);
+   }
+
+   protected Object getFromObjTable(Metadata oop) {
+      return oopToObjMap.get(oop);
+   }
+
    protected class SignatureParser extends SignatureIterator {
       protected Vector tmp = new Vector(); // Vector<Class>
 

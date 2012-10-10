@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,9 @@ class RFrame : public ResourceObj {
   RFrame* parent() const;                 // rframe containing lexical scope (if any)
   virtual void print()                    = 0;
 
-  static int computeSends(methodOop m);
+  static int computeSends(Method* m);
   static int computeSends(nmethod* nm);
-  static int computeCumulSends(methodOop m);
+  static int computeCumulSends(Method* m);
   static int computeCumulSends(nmethod* nm);
 };
 

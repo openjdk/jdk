@@ -45,7 +45,7 @@
  *
  * As usual with timing-sensitive tests, we could potentially get
  * sporadic failures.  We fail if the ratio of the time with many
- * MBeans to the time with just one MBean is more than 100.  With the
+ * MBeans to the time with just one MBean is more than 500.  With the
  * fix in place, it is usually less than 1, presumably because some
  * code was being interpreted during the first measurement but had
  * been compiled by the second.
@@ -176,7 +176,7 @@ public class ListenerScaleTest {
         long manyMBeansTime = timeNotif(mbs);
         System.out.println("Time with many MBeans: " + manyMBeansTime + "ns");
         double ratio = (double) manyMBeansTime / singleMBeanTime;
-        if (ratio > 100.0)
+        if (ratio > 500.0)
             throw new Exception("Failed: ratio=" + ratio);
         System.out.println("Test passed: ratio=" + ratio);
     }

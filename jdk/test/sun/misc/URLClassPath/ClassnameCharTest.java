@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,75 +21,97 @@
  * questions.
  */
 
-/**
- * See ClassnameCharTest.sh for details.
+/* @test
+ * @bug 4957669 5017871
+ * @compile -XDignore.symbol.file=true ClassnameCharTest.java
+ * @run main ClassnameCharTest
+ * @summary cannot load class names containing some JSR 202 characters;
+ *          plugin does not escape unicode character in http request
  */
 
 import java.io.*;
 import java.net.*;
-import java.security.*;
+import java.util.jar.*;
+import com.sun.net.httpserver.*;
 import sun.applet.AppletClassLoader;
 
-public class ClassnameCharTest implements HttpCallback {
-    private static String FNPrefix;
-    private String[] respBody = new String[52];
-    private byte[][] bufs = new byte[52][8*1024];
-    private static MessageDigest md5;
-    private static byte[] file1Mac, file2Mac;
-    public void request (HttpTransaction req) {
-        try {
-            String filename = req.getRequestURI().getPath();
-            System.out.println("getRequestURI = "+req.getRequestURI());
-            System.out.println("filename = "+filename);
-            FileInputStream fis = new FileInputStream(FNPrefix+filename);
-            req.setResponseEntityBody(fis);
-            req.sendResponse(200, "OK");
-            req.orderlyClose();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+public class ClassnameCharTest {
+    static String FNPrefix = System.getProperty("test.src", ".") + File.separator;
+    static File classesJar = new File(FNPrefix + "testclasses.jar");
     static HttpServer server;
 
-    public static void test () throws Exception {
+    public static void realMain(String[] args) throws Exception {
+        server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) {
+                try {
+                    String filename = exchange.getRequestURI().getPath();
+                    System.out.println("getRequestURI = " + exchange.getRequestURI());
+                    System.out.println("filename = " + filename);
+                    try (FileInputStream fis = new FileInputStream(classesJar);
+                         JarInputStream jis = new JarInputStream(fis)) {
+                        JarEntry entry;
+                        while ((entry = jis.getNextJarEntry()) != null) {
+                            if (filename.endsWith(entry.getName())) {
+                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                byte[] buf = new byte[8092];
+                                int count = 0;
+                                while ((count = jis.read(buf)) != -1)
+                                    baos.write(buf, 0, count);
+                                exchange.sendResponseHeaders(200, baos.size());
+                                try (OutputStream os = exchange.getResponseBody()) {
+                                    baos.writeTo(os);
+                                }
+                                return;
+                            }
+                        }
+                        fail("Failed to find " + filename);
+                    }
+                } catch (IOException e) {
+                    unexpected(e);
+                }
+            }
+        });
+        server.start();
         try {
-
-            FNPrefix = System.getProperty("test.classes", ".")+"/";
-            server = new HttpServer (new ClassnameCharTest(), 1, 10, 0);
-            System.out.println ("Server: listening on port: " + server.getLocalPort());
-            URL base = new URL("http://localhost:"+server.getLocalPort());
+            URL base = new URL("http://localhost:" + server.getAddress().getPort());
+            System.out.println ("Server: listening on " + base);
             MyAppletClassLoader acl = new MyAppletClassLoader(base);
-            Class class1 = acl.findClass("fo o");
-            System.out.println("class1 = "+class1);
+            Class<?> class1 = acl.findClass("fo o");
+            System.out.println("class1 = " + class1);
+            pass();
             // can't test the following class unless platform in unicode locale
             // Class class2 = acl.findClass("\u624b\u518c");
             // System.out.println("class2 = "+class2);
-        } catch (Exception e) {
-            if (server != null) {
-                server.terminate();
-            }
-            throw e;
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    static class MyAppletClassLoader extends AppletClassLoader {
+        MyAppletClassLoader(URL base) {
+            super(base);
         }
 
-        server.terminate();
+        @Override
+        public Class<?> findClass(String name) throws ClassNotFoundException {
+            return super.findClass(name);
+        }
     }
 
-    public static void main(String[] args) throws Exception {
-        test();
-    }
-
-    public static void except (String s) {
-        server.terminate();
-        throw new RuntimeException (s);
-    }
-}
-
-class MyAppletClassLoader extends AppletClassLoader {
-    MyAppletClassLoader(URL base) {
-        super(base);
-    }
-
-    public Class findClass(String name) throws ClassNotFoundException {
-        return super.findClass(name);
-    }
+    //--------------------- Infrastructure ---------------------------
+    static volatile int passed = 0, failed = 0;
+    static boolean pass() {passed++; return true;}
+    static boolean fail() {failed++; server.stop(0); Thread.dumpStack(); return false;}
+    static boolean fail(String msg) {System.out.println(msg); return fail();}
+    static void unexpected(Throwable t) {failed++; server.stop(0); t.printStackTrace();}
+    static boolean check(boolean cond) {if (cond) pass(); else fail(); return cond;}
+    static boolean equal(Object x, Object y) {
+        if (x == null ? y == null : x.equals(y)) return pass();
+        else return fail(x + " not equal to " + y);}
+    public static void main(String[] args) throws Throwable {
+        try {realMain(args);} catch (Throwable t) {unexpected(t);}
+        System.out.println("\nPassed = " + passed + " failed = " + failed);
+        if (failed > 0) throw new AssertionError("Some tests failed");}
 }

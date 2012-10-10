@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public class ClassBuilder extends AbstractBuilder {
     }
 
      /**
-      * Handles the &lt;ClassDoc> tag.
+      * Handles the {@literal <ClassDoc>} tag.
       *
       * @param node the XML element that specifies which components to document
       * @param contentTree the content tree to which the documentation will be added

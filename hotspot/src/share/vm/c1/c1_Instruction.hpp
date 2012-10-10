@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,7 @@ class       UnsafePutRaw;
 class     UnsafeObjectOp;
 class       UnsafeGetObject;
 class       UnsafePutObject;
+class         UnsafeGetAndSetObject;
 class       UnsafePrefetch;
 class         UnsafePrefetchRead;
 class         UnsafePrefetchWrite;
@@ -202,6 +203,7 @@ class InstructionVisitor: public StackObj {
   virtual void do_UnsafePutRaw   (UnsafePutRaw*    x) = 0;
   virtual void do_UnsafeGetObject(UnsafeGetObject* x) = 0;
   virtual void do_UnsafePutObject(UnsafePutObject* x) = 0;
+  virtual void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) = 0;
   virtual void do_UnsafePrefetchRead (UnsafePrefetchRead*  x) = 0;
   virtual void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) = 0;
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
@@ -913,7 +915,7 @@ LEAF(StoreIndexed, AccessIndexed)
   Value value() const                            { return _value; }
   bool needs_write_barrier() const               { return check_flag(NeedsWriteBarrierFlag); }
   bool needs_store_check() const                 { return check_flag(NeedsStoreCheckFlag); }
-  // Helpers for methodDataOop profiling
+  // Helpers for MethodData* profiling
   void set_should_profile(bool value)                { set_flag(ProfileMDOFlag, value); }
   void set_profiled_method(ciMethod* method)         { _profiled_method = method;   }
   void set_profiled_bci(int bci)                     { _profiled_bci = bci;         }
@@ -1349,7 +1351,7 @@ BASE(TypeCheck, StateSplit)
   virtual bool can_trap() const                  { return true; }
   virtual void input_values_do(ValueVisitor* f)   { StateSplit::input_values_do(f); f->visit(&_obj); }
 
-  // Helpers for methodDataOop profiling
+  // Helpers for MethodData* profiling
   void set_should_profile(bool value)                { set_flag(ProfileMDOFlag, value); }
   void set_profiled_method(ciMethod* method)         { _profiled_method = method;   }
   void set_profiled_bci(int bci)                     { _profiled_bci = bci;         }
@@ -2273,6 +2275,27 @@ LEAF(UnsafePutObject, UnsafeObjectOp)
                                                    f->visit(&_value); }
 };
 
+LEAF(UnsafeGetAndSetObject, UnsafeObjectOp)
+ private:
+  Value _value;                                  // Value to be stored
+  bool  _is_add;
+ public:
+  UnsafeGetAndSetObject(BasicType basic_type, Value object, Value offset, Value value, bool is_add)
+  : UnsafeObjectOp(basic_type, object, offset, false, false)
+    , _value(value)
+    , _is_add(is_add)
+  {
+    ASSERT_VALUES
+  }
+
+  // accessors
+  bool is_add() const                            { return _is_add; }
+  Value value()                                  { return _value; }
+
+  // generic
+  virtual void input_values_do(ValueVisitor* f)   { UnsafeObjectOp::input_values_do(f);
+                                                   f->visit(&_value); }
+};
 
 BASE(UnsafePrefetch, UnsafeObjectOp)
  public:

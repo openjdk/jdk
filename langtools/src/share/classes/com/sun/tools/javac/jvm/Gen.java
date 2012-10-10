@@ -247,10 +247,10 @@ public class Gen extends JCTree.Visitor {
     /** Construct a symbol to reflect the qualifying type that should
      *  appear in the byte code as per JLS 13.1.
      *
-     *  For target >= 1.2: Clone a method with the qualifier as owner (except
+     *  For {@literal target >= 1.2}: Clone a method with the qualifier as owner (except
      *  for those cases where we need to work around VM bugs).
      *
-     *  For target <= 1.1: If qualified variable or method is defined in a
+     *  For {@literal target <= 1.1}: If qualified variable or method is defined in a
      *  non-accessible class, clone it with the qualifier class as owner.
      *
      *  @param sym    The accessed symbol

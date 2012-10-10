@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_RUNTIME_JAVACALLS_HPP
 
 #include "memory/allocation.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/vmThread.hpp"
@@ -67,7 +67,7 @@ class JavaCallWrapper: StackObj {
  private:
   JavaThread*      _thread;                 // the thread to which this call belongs
   JNIHandleBlock*  _handles;                // the saved handle block
-  methodOop        _callee_method;          // to be able to collect arguments if entry frame is top frame
+  Method*          _callee_method;          // to be able to collect arguments if entry frame is top frame
   oop              _receiver;               // the receiver of the call (if a non-static call)
 
   JavaFrameAnchor  _anchor;                 // last thread anchor state that we must restore
@@ -87,7 +87,7 @@ class JavaCallWrapper: StackObj {
 
   JavaValue*       result() const           { return _result; }
   // GC support
-  methodOop        callee_method()          { return _callee_method; }
+  Method*          callee_method()          { return _callee_method; }
   oop              receiver()               { return _receiver; }
   void             oops_do(OopClosure* f);
 

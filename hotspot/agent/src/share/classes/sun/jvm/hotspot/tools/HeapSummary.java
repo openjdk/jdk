@@ -65,8 +65,8 @@ public class HeapSummary extends Tool {
       printValMB("OldSize          = ", getFlagValue("OldSize", flagMap));
       printValue("NewRatio         = ", getFlagValue("NewRatio", flagMap));
       printValue("SurvivorRatio    = ", getFlagValue("SurvivorRatio", flagMap));
-      printValMB("PermSize         = ", getFlagValue("PermSize", flagMap));
-      printValMB("MaxPermSize      = ", getFlagValue("MaxPermSize", flagMap));
+      printValMB("MetaspaceSize    = ", getFlagValue("MetaspaceSize", flagMap));
+      printValMB("MaxMetaspaceSize = ", getFlagValue("MaxMetaspaceSize", flagMap));
       printValMB("G1HeapRegionSize = ", HeapRegion.grainBytes());
 
       System.out.println();
@@ -118,10 +118,6 @@ public class HeapSummary extends Tool {
          } else {
              throw new RuntimeException("unknown SharedHeap type : " + heap.getClass());
          }
-         // Perm generation shared by the above
-         Generation permGen = sharedHeap.permGen();
-         System.out.println("Perm Generation:");
-         printGen(permGen);
       } else if (heap instanceof ParallelScavengeHeap) {
          ParallelScavengeHeap psh = (ParallelScavengeHeap) heap;
          PSYoungGen youngGen = psh.youngGen();
@@ -134,14 +130,6 @@ public class HeapSummary extends Tool {
          printValMB("used     = ", oldGen.used());
          printValMB("free     = ", oldFree);
          System.out.println(alignment + (double)oldGen.used() * 100.0 / oldGen.capacity() + "% used");
-
-         PSPermGen permGen = psh.permGen();
-         long permFree = permGen.capacity() - permGen.used();
-         System.out.println("PS Perm Generation");
-         printValMB("capacity = ", permGen.capacity());
-         printValMB("used     = ", permGen.used());
-         printValMB("free     = ", permFree);
-         System.out.println(alignment + (double)permGen.used() * 100.0 / permGen.capacity() + "% used");
       } else {
          throw new RuntimeException("unknown CollectedHeap type : " + heap.getClass());
       }

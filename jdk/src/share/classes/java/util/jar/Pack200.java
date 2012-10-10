@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003,2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003,2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -726,13 +726,13 @@ public abstract class Pack200 {
     private static final String PACK_PROVIDER = "java.util.jar.Pack200.Packer";
     private static final String UNPACK_PROVIDER = "java.util.jar.Pack200.Unpacker";
 
-    private static Class packerImpl;
-    private static Class unpackerImpl;
+    private static Class<?> packerImpl;
+    private static Class<?> unpackerImpl;
 
     private synchronized static Object newInstance(String prop) {
         String implName = "(unknown)";
         try {
-            Class impl = (PACK_PROVIDER.equals(prop))? packerImpl: unpackerImpl;
+            Class<?> impl = (PACK_PROVIDER.equals(prop))? packerImpl: unpackerImpl;
             if (impl == null) {
                 // The first time, we must decide which class to use.
                 implName = java.security.AccessController.doPrivileged(

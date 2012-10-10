@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #ifdef TARGET_ARCH_x86
 # include "bytes_x86.hpp"
 #endif
@@ -68,8 +68,8 @@ class Bytecode: public StackObj {
   int     get_native_u4_at   (int offset)        const     { return Bytes::get_native_u4(addr_at(offset)); }
 
  public:
-  Bytecode(methodOop method, address bcp): _bcp(bcp), _code(Bytecodes::code_at(method, addr_at(0))) {
-    assert(method != NULL, "this form requires a valid methodOop");
+  Bytecode(Method* method, address bcp): _bcp(bcp), _code(Bytecodes::code_at(method, addr_at(0))) {
+    assert(method != NULL, "this form requires a valid Method*");
   }
   // Defined in ciStreams.hpp
   inline Bytecode(const ciBytecodeStream* stream, address bcp = NULL);
@@ -96,11 +96,11 @@ class Bytecode: public StackObj {
   }
   int get_index_u1_cpcache(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(1, bc);
-    return *(jubyte*)addr_at(1) + constantPoolOopDesc::CPCACHE_INDEX_TAG;
+    return *(jubyte*)addr_at(1) + ConstantPool::CPCACHE_INDEX_TAG;
   }
   int get_index_u2_cpcache(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(2, bc); assert_native_index(bc);
-    return Bytes::get_native_u2(addr_at(1)) + constantPoolOopDesc::CPCACHE_INDEX_TAG;
+    return Bytes::get_native_u2(addr_at(1)) + ConstantPool::CPCACHE_INDEX_TAG;
   }
   int get_index_u4(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(4, bc);
@@ -158,7 +158,7 @@ class LookupswitchPair VALUE_OBJ_CLASS_SPEC {
 
 class Bytecode_lookupswitch: public Bytecode {
  public:
-  Bytecode_lookupswitch(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
+  Bytecode_lookupswitch(Method* method, address bcp): Bytecode(method, bcp) { verify(); }
   // Defined in ciStreams.hpp
   inline Bytecode_lookupswitch(const ciBytecodeStream* stream);
   void verify() const PRODUCT_RETURN;
@@ -174,7 +174,7 @@ class Bytecode_lookupswitch: public Bytecode {
 
 class Bytecode_tableswitch: public Bytecode {
  public:
-  Bytecode_tableswitch(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
+  Bytecode_tableswitch(Method* method, address bcp): Bytecode(method, bcp) { verify(); }
   // Defined in ciStreams.hpp
   inline Bytecode_tableswitch(const ciBytecodeStream* stream);
   void verify() const PRODUCT_RETURN;
@@ -196,8 +196,8 @@ class Bytecode_member_ref: public Bytecode {
   Bytecode_member_ref(methodHandle method, int bci)  : Bytecode(method(), method()->bcp_from(bci)), _method(method) {}
 
   methodHandle method() const                    { return _method; }
-  constantPoolOop constants() const              { return _method->constants(); }
-  constantPoolCacheOop cpcache() const           { return _method->constants()->cache(); }
+  ConstantPool* constants() const              { return _method->constants(); }
+  ConstantPoolCache* cpcache() const           { return _method->constants()->cache(); }
   ConstantPoolCacheEntry* cpcache_entry() const;
 
  public:
@@ -278,7 +278,7 @@ class Bytecode_field: public Bytecode_member_ref {
 // Abstraction for checkcast
 class Bytecode_checkcast: public Bytecode {
  public:
-  Bytecode_checkcast(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
+  Bytecode_checkcast(Method* method, address bcp): Bytecode(method, bcp) { verify(); }
   void verify() const { assert(Bytecodes::java_code(code()) == Bytecodes::_checkcast, "check checkcast"); }
 
   // Returns index
@@ -288,7 +288,7 @@ class Bytecode_checkcast: public Bytecode {
 // Abstraction for instanceof
 class Bytecode_instanceof: public Bytecode {
  public:
-  Bytecode_instanceof(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
+  Bytecode_instanceof(Method* method, address bcp): Bytecode(method, bcp) { verify(); }
   void verify() const { assert(code() == Bytecodes::_instanceof, "check instanceof"); }
 
   // Returns index
@@ -297,7 +297,7 @@ class Bytecode_instanceof: public Bytecode {
 
 class Bytecode_new: public Bytecode {
  public:
-  Bytecode_new(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
+  Bytecode_new(Method* method, address bcp): Bytecode(method, bcp) { verify(); }
   void verify() const { assert(java_code() == Bytecodes::_new, "check new"); }
 
   // Returns index
@@ -306,7 +306,7 @@ class Bytecode_new: public Bytecode {
 
 class Bytecode_multianewarray: public Bytecode {
  public:
-  Bytecode_multianewarray(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
+  Bytecode_multianewarray(Method* method, address bcp): Bytecode(method, bcp) { verify(); }
   void verify() const { assert(java_code() == Bytecodes::_multianewarray, "check new"); }
 
   // Returns index
@@ -315,7 +315,7 @@ class Bytecode_multianewarray: public Bytecode {
 
 class Bytecode_anewarray: public Bytecode {
  public:
-  Bytecode_anewarray(methodOop method, address bcp): Bytecode(method, bcp) { verify(); }
+  Bytecode_anewarray(Method* method, address bcp): Bytecode(method, bcp) { verify(); }
   void verify() const { assert(java_code() == Bytecodes::_anewarray, "check anewarray"); }
 
   // Returns index
@@ -340,11 +340,11 @@ class Bytecode_loadconstant: public Bytecode {
            stdc == Bytecodes::_ldc2_w, "load constant");
   }
 
-  // Only non-standard bytecodes (fast_aldc) have CP cache indexes.
+  // Only non-standard bytecodes (fast_aldc) have reference cache indexes.
   bool has_cache_index() const { return code() >= Bytecodes::number_of_java_codes; }
 
   int pool_index() const;               // index into constant pool
-  int cache_index() const {             // index into CP cache (or -1 if none)
+  int cache_index() const {             // index into reference cache (or -1 if none)
     return has_cache_index() ? raw_index() : -1;
   }
 

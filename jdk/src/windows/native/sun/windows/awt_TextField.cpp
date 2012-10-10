@@ -75,6 +75,7 @@ MsgRouting
 AwtTextField::HandleEvent(MSG *msg, BOOL synthetic)
 {
     MsgRouting returnVal;
+    BOOL systemBeeperEnabled = FALSE;
     /*
      * RichEdit 1.0 control starts internal message loop if the
      * left mouse button is pressed while the cursor is not over
@@ -217,7 +218,34 @@ AwtTextField::HandleEvent(MSG *msg, BOOL synthetic)
         }
         delete msg;
         return mrConsume;
+    } else if (msg->message == WM_KEYDOWN) {
+        UINT virtualKey = (UINT) msg->wParam;
+
+        switch(virtualKey){
+          case VK_RETURN:
+          case VK_UP:
+          case VK_DOWN:
+          case VK_LEFT:
+          case VK_RIGHT:
+          case VK_DELETE:
+          case VK_BACK:
+              SystemParametersInfo(SPI_GETBEEP, 0, &systemBeeperEnabled, 0);
+              if(systemBeeperEnabled){
+                  // disable system beeper for the RICHEDIT control to be compatible
+                  // with the EDIT control behaviour
+                  SystemParametersInfo(SPI_SETBEEP, 0, NULL, 0);
+              }
+              break;
+          }
+    } else if (msg->message == WM_SETTINGCHANGE) {
+        if (msg->wParam == SPI_SETBEEP) {
+            SystemParametersInfo(SPI_GETBEEP, 0, &systemBeeperEnabled, 0);
+            if(systemBeeperEnabled){
+                SystemParametersInfo(SPI_SETBEEP, 1, NULL, 0);
+            }
+        }
     }
+
     /*
      * Store the 'synthetic' parameter so that the WM_PASTE security check
      * happens only for synthetic events.
@@ -225,6 +253,10 @@ AwtTextField::HandleEvent(MSG *msg, BOOL synthetic)
     m_synthetic = synthetic;
     returnVal = AwtComponent::HandleEvent(msg, synthetic);
     m_synthetic = FALSE;
+
+    if(systemBeeperEnabled){
+        SystemParametersInfo(SPI_SETBEEP, 1, NULL, 0);
+    }
 
     return returnVal;
 }

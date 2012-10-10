@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1363,8 +1363,8 @@ void ArchDesc::declareClasses(FILE *fp) {
           fprintf(fp,   " return _c0->get_con();");
           fprintf(fp, " }\n");
           // Generate query to determine if this pointer is an oop
-          fprintf(fp,"  virtual bool           constant_is_oop() const {");
-          fprintf(fp,   " return _c0->isa_oop_ptr();");
+          fprintf(fp,"  virtual relocInfo::relocType           constant_reloc() const {");
+          fprintf(fp,   " return _c0->reloc();");
           fprintf(fp, " }\n");
         }
         else if (!strcmp(oper->ideal_type(_globalNames), "ConN")) {
@@ -1373,8 +1373,8 @@ void ArchDesc::declareClasses(FILE *fp) {
           fprintf(fp,   " return _c0->get_ptrtype()->get_con();");
           fprintf(fp, " }\n");
           // Generate query to determine if this pointer is an oop
-          fprintf(fp,"  virtual bool           constant_is_oop() const {");
-          fprintf(fp,   " return _c0->get_ptrtype()->isa_oop_ptr();");
+          fprintf(fp,"  virtual relocInfo::relocType           constant_reloc() const {");
+          fprintf(fp,   " return _c0->get_ptrtype()->reloc();");
           fprintf(fp, " }\n");
         }
         else if (!strcmp(oper->ideal_type(_globalNames), "ConL")) {

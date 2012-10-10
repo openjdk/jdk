@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,46 +227,44 @@ public class ConfigurationImpl extends Configuration {
             String[] os = options[oi];
             String opt = os[0].toLowerCase();
             if (opt.equals("-footer")) {
-                footer =  os[1];
-            } else  if (opt.equals("-header")) {
-                header =  os[1];
-            } else  if (opt.equals("-packagesheader")) {
-                packagesheader =  os[1];
-            } else  if (opt.equals("-doctitle")) {
-                doctitle =  os[1];
-            } else  if (opt.equals("-windowtitle")) {
-                windowtitle =  os[1];
-            } else  if (opt.equals("-top")) {
-                top =  os[1];
-            } else  if (opt.equals("-bottom")) {
-                bottom =  os[1];
-            } else  if (opt.equals("-helpfile")) {
-                helpfile =  os[1];
-            } else  if (opt.equals("-stylesheetfile")) {
-                stylesheetfile =  os[1];
-            } else  if (opt.equals("-charset")) {
-                charset =  os[1];
+                footer = os[1];
+            } else if (opt.equals("-header")) {
+                header = os[1];
+            } else if (opt.equals("-packagesheader")) {
+                packagesheader = os[1];
+            } else if (opt.equals("-doctitle")) {
+                doctitle = os[1];
+            } else if (opt.equals("-windowtitle")) {
+                windowtitle = os[1];
+            } else if (opt.equals("-top")) {
+                top = os[1];
+            } else if (opt.equals("-bottom")) {
+                bottom = os[1];
+            } else if (opt.equals("-helpfile")) {
+                helpfile = os[1];
+            } else if (opt.equals("-stylesheetfile")) {
+                stylesheetfile = os[1];
+            } else if (opt.equals("-charset")) {
+                charset = os[1];
             } else if (opt.equals("-xdocrootparent")) {
                 docrootparent = os[1];
-            } else  if (opt.equals("-nohelp")) {
+            } else if (opt.equals("-nohelp")) {
                 nohelp = true;
-            } else  if (opt.equals("-splitindex")) {
+            } else if (opt.equals("-splitindex")) {
                 splitindex = true;
-            } else  if (opt.equals("-noindex")) {
+            } else if (opt.equals("-noindex")) {
                 createindex = false;
-            } else  if (opt.equals("-use")) {
+            } else if (opt.equals("-use")) {
                 classuse = true;
-            } else  if (opt.equals("-notree")) {
+            } else if (opt.equals("-notree")) {
                 createtree = false;
-            } else  if (opt.equals("-nodeprecatedlist")) {
+            } else if (opt.equals("-nodeprecatedlist")) {
                 nodeprecatedlist = true;
-            } else  if (opt.equals("-nosince")) {
-                nosince = true;
-            } else  if (opt.equals("-nonavbar")) {
+            } else if (opt.equals("-nonavbar")) {
                 nonavbar = true;
-            } else  if (opt.equals("-nooverview")) {
+            } else if (opt.equals("-nooverview")) {
                 nooverview = true;
-            } else  if (opt.equals("-overview")) {
+            } else if (opt.equals("-overview")) {
                 overview = true;
             }
         }

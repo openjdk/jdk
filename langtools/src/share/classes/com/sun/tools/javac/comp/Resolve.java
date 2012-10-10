@@ -1516,7 +1516,7 @@ public class Resolve {
     /** If `sym' is a bad symbol: report error and return errSymbol
      *  else pass through unchanged,
      *  additional arguments duplicate what has been used in trying to find the
-     *  symbol (--> flyweight pattern). This improves performance since we
+     *  symbol {@literal (--> flyweight pattern)}. This improves performance since we
      *  expect misses to happen frequently.
      *
      *  @param sym       The symbol that was found, or a ResolveError.
@@ -1903,9 +1903,9 @@ public class Resolve {
 
     /** This method scans all the constructor symbol in a given class scope -
      *  assuming that the original scope contains a constructor of the kind:
-     *  Foo(X x, Y y), where X,Y are class type-variables declared in Foo,
+     *  {@code Foo(X x, Y y)}, where X,Y are class type-variables declared in Foo,
      *  a method check is executed against the modified constructor type:
-     *  <X,Y>Foo<X,Y>(X x, Y y). This is crucial in order to enable diamond
+     *  {@code <X,Y>Foo<X,Y>(X x, Y y)}. This is crucial in order to enable diamond
      *  inference. The inferred return type of the synthetic constructor IS
      *  the inferred type for the diamond operator.
      */
@@ -2223,7 +2223,7 @@ public class Resolve {
 
         /**
          * A name designates an operator if it consists
-         * of a non-empty sequence of operator symbols +-~!/*%&|^<>=
+         * of a non-empty sequence of operator symbols {@literal +-~!/*%&|^<>= }
          */
         boolean isOperator(Name name) {
             int i = 0;

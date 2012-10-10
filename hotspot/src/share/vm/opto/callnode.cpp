@@ -72,20 +72,20 @@ Node *StartNode::match( const ProjNode *proj, const Matcher *match ) {
   case TypeFunc::Control:
   case TypeFunc::I_O:
   case TypeFunc::Memory:
-    return new (match->C, 1) MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
+    return new (match->C) MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
   case TypeFunc::FramePtr:
-    return new (match->C, 1) MachProjNode(this,proj->_con,Matcher::c_frame_ptr_mask, Op_RegP);
+    return new (match->C) MachProjNode(this,proj->_con,Matcher::c_frame_ptr_mask, Op_RegP);
   case TypeFunc::ReturnAdr:
-    return new (match->C, 1) MachProjNode(this,proj->_con,match->_return_addr_mask,Op_RegP);
+    return new (match->C) MachProjNode(this,proj->_con,match->_return_addr_mask,Op_RegP);
   case TypeFunc::Parms:
   default: {
       uint parm_num = proj->_con - TypeFunc::Parms;
       const Type *t = _domain->field_at(proj->_con);
       if (t->base() == Type::Half)  // 2nd half of Longs and Doubles
-        return new (match->C, 1) ConNode(Type::TOP);
-      uint ideal_reg = Matcher::base2reg[t->base()];
+        return new (match->C) ConNode(Type::TOP);
+      uint ideal_reg = t->ideal_reg();
       RegMask &rm = match->_calling_convention_mask[parm_num];
-      return new (match->C, 1) MachProjNode(this,proj->_con,rm,ideal_reg);
+      return new (match->C) MachProjNode(this,proj->_con,rm,ideal_reg);
     }
   }
   return NULL;
@@ -131,7 +131,7 @@ uint ParmNode::ideal_reg() const {
   case TypeFunc::Parms    : {
     // Type of argument being passed
     const Type *t = in(0)->as_Start()->_domain->field_at(_con);
-    return Matcher::base2reg[t->base()];
+    return t->ideal_reg();
   }
   }
   ShouldNotReachHere();
@@ -344,9 +344,14 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
       st->print(" %s%d]=#NULL",msg,i);
       break;
     case Type::AryPtr:
-    case Type::KlassPtr:
     case Type::InstPtr:
       st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,t->isa_oopptr()->const_oop());
+      break;
+    case Type::KlassPtr:
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,t->make_ptr()->isa_klassptr()->klass());
+      break;
+    case Type::MetadataPtr:
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,t->make_ptr()->isa_metadataptr()->metadata());
       break;
     case Type::NarrowOop:
       st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,t->make_ptr()->isa_oopptr()->const_oop());
@@ -620,22 +625,22 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
   case TypeFunc::Control:
   case TypeFunc::I_O:
   case TypeFunc::Memory:
-    return new (match->C, 1) MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
+    return new (match->C) MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
 
   case TypeFunc::Parms+1:       // For LONG & DOUBLE returns
     assert(tf()->_range->field_at(TypeFunc::Parms+1) == Type::HALF, "");
     // 2nd half of doubles and longs
-    return new (match->C, 1) MachProjNode(this,proj->_con, RegMask::Empty, (uint)OptoReg::Bad);
+    return new (match->C) MachProjNode(this,proj->_con, RegMask::Empty, (uint)OptoReg::Bad);
 
   case TypeFunc::Parms: {       // Normal returns
-    uint ideal_reg = Matcher::base2reg[tf()->range()->field_at(TypeFunc::Parms)->base()];
+    uint ideal_reg = tf()->range()->field_at(TypeFunc::Parms)->ideal_reg();
     OptoRegPair regs = is_CallRuntime()
       ? match->c_return_value(ideal_reg,true)  // Calls into C runtime
       : match->  return_value(ideal_reg,true); // Calls into compiled Java code
     RegMask rm = RegMask(regs.first());
     if( OptoReg::is_valid(regs.second()) )
       rm.Insert( regs.second() );
-    return new (match->C, 1) MachProjNode(this,proj->_con,rm,ideal_reg);
+    return new (match->C) MachProjNode(this,proj->_con,rm,ideal_reg);
   }
 
   case TypeFunc::ReturnAdr:
@@ -1170,10 +1175,10 @@ Node* AllocateArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         Node* nproj = catchproj->clone();
         igvn->register_new_node_with_optimizer(nproj);
 
-        Node *frame = new (phase->C, 1) ParmNode( phase->C->start(), TypeFunc::FramePtr );
+        Node *frame = new (phase->C) ParmNode( phase->C->start(), TypeFunc::FramePtr );
         frame = phase->transform(frame);
         // Halt & Catch Fire
-        Node *halt = new (phase->C, TypeFunc::Parms) HaltNode( nproj, frame );
+        Node *halt = new (phase->C) HaltNode( nproj, frame );
         phase->C->root()->add_req(halt);
         phase->transform(halt);
 
@@ -1213,7 +1218,7 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
       if (!allow_new_nodes) return NULL;
       // Create a cast which is control dependent on the initialization to
       // propagate the fact that the array length must be positive.
-      length = new (phase->C, 2) CastIINode(length, narrow_length_type);
+      length = new (phase->C) CastIINode(length, narrow_length_type);
       length->set_req(0, initialization()->proj_out(0));
     }
   }
