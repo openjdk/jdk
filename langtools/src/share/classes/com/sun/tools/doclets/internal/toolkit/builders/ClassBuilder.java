@@ -27,9 +27,10 @@ package com.sun.tools.doclets.internal.toolkit.builders;
 
 import java.io.*;
 import java.util.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.*;
+
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Builds the summary for a given class.

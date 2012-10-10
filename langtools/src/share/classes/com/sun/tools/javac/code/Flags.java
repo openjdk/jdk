@@ -25,10 +25,11 @@
 
 package com.sun.tools.javac.code;
 
-import java.util.EnumSet;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+
 import javax.lang.model.element.Modifier;
 
 /** Access flags and other modifiers for Java classes and members.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,16 @@
  */
 package com.sun.tools.doclets.internal.toolkit.builders;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
 import java.io.*;
 import java.util.*;
+
+import javax.xml.parsers.*;
+
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
-import javax.xml.parsers.*;
+
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Parse the XML that specified the order of operation for the builders.  This

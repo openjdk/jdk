@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,13 @@ package com.sun.tools.javac.code;
 import java.util.Locale;
 
 import com.sun.tools.javac.api.Messages;
-import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.comp.DeferredAttr.DeferredType;
-import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.Pretty;
-import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-
-import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.TypeTags.*;
 
 /**
  * A combined type/symbol visitor for generating non-trivial localized string

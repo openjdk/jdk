@@ -29,8 +29,6 @@ import java.lang.reflect.Modifier;
 
 import com.sun.javadoc.*;
 
-import static com.sun.javadoc.LanguageVersion.*;
-
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;

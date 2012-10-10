@@ -27,11 +27,10 @@ package com.sun.tools.javac.code;
 
 import java.util.Set;
 import java.util.concurrent.Callable;
+
 import javax.lang.model.element.*;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
@@ -39,7 +38,8 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.model.*;
 import com.sun.tools.javac.tree.JCTree;
-
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Name;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;

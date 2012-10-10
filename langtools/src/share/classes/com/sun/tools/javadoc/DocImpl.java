@@ -26,16 +26,16 @@
 package com.sun.tools.javadoc;
 
 import java.io.DataInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.CollationKey;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.tools.FileObject;
 
 import com.sun.javadoc.*;
-
 import com.sun.tools.javac.util.Position;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * abstract base class of all Doc classes.  Doc item's are representations

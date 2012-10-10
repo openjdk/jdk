@@ -25,34 +25,32 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
-import com.sun.tools.javac.comp.Infer.InferenceContext;
-import com.sun.tools.javac.comp.Infer.InferenceContext.FreeTypeListener;
-import com.sun.tools.javac.jvm.*;
-import com.sun.tools.javac.tree.*;
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
-import com.sun.tools.javac.util.List;
+import java.util.*;
+import java.util.Set;
 
-import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.comp.Check.CheckContext;
+import javax.lang.model.element.ElementKind;
+import javax.tools.JavaFileObject;
 
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.TreeVisitor;
 import com.sun.source.util.SimpleTreeVisitor;
-
-import java.util.*;
-import java.util.Set;
-import javax.lang.model.element.ElementKind;
-import javax.tools.JavaFileObject;
-
+import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.comp.Check.CheckContext;
+import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
+import com.sun.tools.javac.comp.Infer.InferenceContext;
+import com.sun.tools.javac.comp.Infer.InferenceContext.FreeTypeListener;
+import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.tree.*;
+import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.List;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
 import static com.sun.tools.javac.code.Flags.BLOCK;

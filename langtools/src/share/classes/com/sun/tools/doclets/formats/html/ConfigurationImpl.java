@@ -25,13 +25,13 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-
-import com.sun.javadoc.*;
-import java.util.*;
 import java.io.*;
 import java.net.*;
+import java.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Configure the output based on the command line options.
