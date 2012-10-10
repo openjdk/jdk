@@ -72,11 +72,21 @@ jmmOptionalSupport Management::_optional_support = {0};
 TimeStamp Management::_stamp;
 
 void management_init() {
+#if INCLUDE_MANAGEMENT
   Management::init();
   ThreadService::init();
   RuntimeService::init();
   ClassLoadingService::init();
+#else
+  ThreadService::init();
+  // Make sure the VM version is initialized
+  // This is normally called by RuntimeService::init().
+  // Since that is conditionalized out, we need to call it here.
+  Abstract_VM_Version::initialize();
+#endif // INCLUDE_MANAGEMENT
 }
+
+#if INCLUDE_MANAGEMENT
 
 void Management::init() {
   EXCEPTION_MARK;
@@ -112,10 +122,10 @@ void Management::init() {
 
   _optional_support.isBootClassPathSupported = 1;
   _optional_support.isObjectMonitorUsageSupported = 1;
-#ifndef SERVICES_KERNEL
+#if INCLUDE_SERVICES
   // This depends on the heap inspector
   _optional_support.isSynchronizerUsageSupported = 1;
-#endif // SERVICES_KERNEL
+#endif // INCLUDE_SERVICES
   _optional_support.isThreadAllocatedMemorySupported = 1;
 
   // Registration of the diagnostic commands
@@ -2108,7 +2118,7 @@ JVM_END
 
 // Dump heap - Returns 0 if succeeds.
 JVM_ENTRY(jint, jmm_DumpHeap0(JNIEnv *env, jstring outputfile, jboolean live))
-#ifndef SERVICES_KERNEL
+#if INCLUDE_SERVICES
   ResourceMark rm(THREAD);
   oop on = JNIHandles::resolve_external_guard(outputfile);
   if (on == NULL) {
@@ -2126,9 +2136,9 @@ JVM_ENTRY(jint, jmm_DumpHeap0(JNIEnv *env, jstring outputfile, jboolean live))
     THROW_MSG_(vmSymbols::java_io_IOException(), errmsg, -1);
   }
   return 0;
-#else  // SERVICES_KERNEL
+#else  // INCLUDE_SERVICES
   return -1;
-#endif // SERVICES_KERNEL
+#endif // INCLUDE_SERVICES
 JVM_END
 
 JVM_ENTRY(jobjectArray, jmm_GetDiagnosticCommands(JNIEnv *env))
@@ -2295,10 +2305,13 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_GetDiagnosticCommandArgumentsInfo,
   jmm_ExecuteDiagnosticCommand
 };
+#endif // INCLUDE_MANAGEMENT
 
 void* Management::get_jmm_interface(int version) {
+#if INCLUDE_MANAGEMENT
   if (version == JMM_VERSION_1_0) {
     return (void*) &jmm_interface;
   }
+#endif // INCLUDE_MANAGEMENT
   return NULL;
 }

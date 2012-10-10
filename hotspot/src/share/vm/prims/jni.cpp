@@ -3003,9 +3003,9 @@ JNI_ENTRY(jobject, jni_GetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID 
   HOTSPOT_JNI_GETSTATICOBJECTFIELD_ENTRY(
                                          env, clazz, (uintptr_t) fieldID);
 #endif /* USDT2 */
-#ifndef JNICHECK_KERNEL
+#if INCLUDE_JNI_CHECK
   DEBUG_ONLY(Klass* param_k = jniCheck::validate_class(thread, clazz);)
-#endif // JNICHECK_KERNEL
+#endif // INCLUDE_JNI_CHECK
   JNIid* id = jfieldIDWorkaround::from_static_jfieldID(fieldID);
   assert(id->is_static_field_id(), "invalid static field id");
   // Keep JVMTI addition small and only check enabled flag here.
@@ -3951,6 +3951,7 @@ DEFINE_SETSCALARARRAYREGION(T_DOUBLE,  jdouble,  Double,  double
 // SetNativeMethodPrefix(es) functions in the JVM TI Spec for details.
 static Method* find_prefixed_native(KlassHandle k,
                                       Symbol* name, Symbol* signature, TRAPS) {
+#if INCLUDE_JVMTI
   ResourceMark rm(THREAD);
   Method* method;
   int name_len = name->utf8_length();
@@ -3982,6 +3983,7 @@ static Method* find_prefixed_native(KlassHandle k,
     name_len = trial_len;
     name_str = trial_name_str;
   }
+#endif // INCLUDE_JVMTI
   return NULL; // not found
 }
 
@@ -4975,11 +4977,9 @@ void quicken_jni_functions() {
 
 // Returns the function structure
 struct JNINativeInterface_* jni_functions() {
-#ifndef JNICHECK_KERNEL
+#if INCLUDE_JNI_CHECK
   if (CheckJNICalls) return jni_functions_check();
-#else  // JNICHECK_KERNEL
-  if (CheckJNICalls) warning("-Xcheck:jni is not supported in kernel vm.");
-#endif // JNICHECK_KERNEL
+#endif // INCLUDE_JNI_CHECK
   return &jni_NativeInterface;
 }
 

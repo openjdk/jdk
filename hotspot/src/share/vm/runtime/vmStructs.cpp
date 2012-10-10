@@ -230,6 +230,15 @@ static inline uint64_t cast_uint64_t(size_t x)
   return x;
 }
 
+#if INCLUDE_JVMTI
+  #define JVMTI_STRUCTS(static_field) \
+    static_field(JvmtiExport,                     _can_access_local_variables,                  bool)                                  \
+    static_field(JvmtiExport,                     _can_hotswap_or_post_breakpoint,              bool)                                  \
+    static_field(JvmtiExport,                     _can_post_on_exceptions,                      bool)                                  \
+    static_field(JvmtiExport,                     _can_walk_any_space,                          bool)
+#else
+  #define JVMTI_STRUCTS(static_field)
+#endif // INCLUDE_JVMTI
 
 typedef HashtableEntry<intptr_t, mtInternal>  IntptrHashtableEntry;
 typedef Hashtable<intptr_t, mtInternal>       IntptrHashtable;
@@ -1170,10 +1179,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /* JVMTI */                                                                                                                        \
   /*************************/                                                                                                        \
                                                                                                                                      \
-  static_field(JvmtiExport,                     _can_access_local_variables,                  bool)                                  \
-  static_field(JvmtiExport,                     _can_hotswap_or_post_breakpoint,              bool)                                  \
-  static_field(JvmtiExport,                     _can_post_on_exceptions,                      bool)                                  \
-  static_field(JvmtiExport,                     _can_walk_any_space,                          bool)                                  \
+  JVMTI_STRUCTS(static_field)                                                                                                        \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* Arguments */                                                                                                                    \

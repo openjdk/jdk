@@ -25,6 +25,80 @@
 #ifndef SHARE_VM_SERVICES_MEM_TRACKER_HPP
 #define SHARE_VM_SERVICES_MEM_TRACKER_HPP
 
+#include "utilities/macros.hpp"
+
+#if !INCLUDE_NMT
+
+#include "utilities/ostream.hpp"
+
+class BaselineOutputer : public StackObj {
+
+};
+
+class BaselineTTYOutputer : public BaselineOutputer {
+  public:
+    BaselineTTYOutputer(outputStream* st) { }
+};
+
+class MemTracker : AllStatic {
+  public:
+   enum ShutdownReason {
+      NMT_shutdown_none,     // no shutdown requested
+      NMT_shutdown_user,     // user requested shutdown
+      NMT_normal,            // normal shutdown, process exit
+      NMT_out_of_memory,     // shutdown due to out of memory
+      NMT_initialization,    // shutdown due to initialization failure
+      NMT_use_malloc_only,   // can not combine NMT with UseMallocOnly flag
+      NMT_error_reporting,   // shutdown by vmError::report_and_die()
+      NMT_out_of_generation, // running out of generation queue
+      NMT_sequence_overflow  // overflow the sequence number
+   };
+
+
+  public:
+   static inline void init_tracking_options(const char* option_line) { }
+   static inline bool is_on()   { return false; }
+   static const char* reason()  { return "Native memory tracking is not implemented"; }
+   static inline bool can_walk_stack() { return false; }
+
+   static inline void bootstrap_single_thread() { }
+   static inline void bootstrap_multi_thread() { }
+   static inline void start() { }
+
+   static inline void record_malloc(address addr, size_t size, MEMFLAGS flags,
+        address pc = 0, Thread* thread = NULL) { }
+   static inline void record_free(address addr, MEMFLAGS flags, Thread* thread = NULL) { }
+   static inline void record_realloc(address old_addr, address new_addr, size_t size,
+        MEMFLAGS flags, address pc = 0, Thread* thread = NULL) { }
+   static inline void record_arena_size(address addr, size_t size) { }
+   static inline void record_virtual_memory_reserve(address addr, size_t size,
+        address pc = 0, Thread* thread = NULL) { }
+   static inline void record_virtual_memory_commit(address addr, size_t size,
+        address pc = 0, Thread* thread = NULL) { }
+   static inline void record_virtual_memory_uncommit(address addr, size_t size,
+        Thread* thread = NULL) { }
+   static inline void record_virtual_memory_release(address addr, size_t size,
+        Thread* thread = NULL) { }
+   static inline void record_virtual_memory_type(address base, MEMFLAGS flags,
+        Thread* thread = NULL) { }
+   static inline bool baseline() { return false; }
+   static inline bool has_baseline() { return false; }
+
+   static void shutdown(ShutdownReason reason) { }
+   static inline bool shutdown_in_progress() {  }
+   static bool print_memory_usage(BaselineOutputer& out, size_t unit,
+            bool summary_only = true) { }
+   static bool compare_memory_usage(BaselineOutputer& out, size_t unit,
+            bool summary_only = true) { }
+
+   static inline void sync() { }
+   static inline void thread_exiting(JavaThread* thread) { }
+
+};
+
+
+#else // !INCLUDE_NMT
+
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutex.hpp"
@@ -410,5 +484,7 @@ class MemTracker : AllStatic {
   // the reason for shutting down nmt
   static enum ShutdownReason       _reason;
 };
+
+#endif // !INCLUDE_NMT
 
 #endif // SHARE_VM_SERVICES_MEM_TRACKER_HPP
