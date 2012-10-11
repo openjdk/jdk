@@ -36,6 +36,7 @@ import java.lang.ProcessBuilder.Redirect;
 import static java.lang.ProcessBuilder.Redirect.*;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -1938,24 +1939,52 @@ public class Basic {
                 final byte[] bytes = new byte[10];
                 final Process p = new ProcessBuilder(childArgs).start();
                 final CountDownLatch latch = new CountDownLatch(1);
+                final InputStream s;
+                switch (action & 0x1) {
+                    case 0: s = p.getInputStream(); break;
+                    case 1: s = p.getErrorStream(); break;
+                    default: throw new Error();
+                }
                 final Thread thread = new Thread() {
                     public void run() {
                         try {
-                            latch.countDown();
                             int r;
-                            switch (action) {
-                            case 0: r = p.getInputStream().read(); break;
-                            case 1: r = p.getErrorStream().read(); break;
-                            case 2: r = p.getInputStream().read(bytes); break;
-                            case 3: r = p.getErrorStream().read(bytes); break;
-                            default: throw new Error();
+                            latch.countDown();
+                            switch (action & 0x2) {
+                                case 0: r = s.read(); break;
+                                case 2: r = s.read(bytes); break;
+                                default: throw new Error();
                             }
                             equal(-1, r);
                         } catch (Throwable t) { unexpected(t); }}};
 
                 thread.start();
                 latch.await();
-                Thread.sleep(10);
+
+                String os = System.getProperty("os.name");
+                if (os.equalsIgnoreCase("Solaris") ||
+                    os.equalsIgnoreCase("SunOS"))
+                {
+                    final Object deferred;
+                    Class<?> c = s.getClass();
+                    if (c.getName().equals(
+                        "java.lang.UNIXProcess$DeferredCloseInputStream"))
+                    {
+                        deferred = s;
+                    } else {
+                        Field deferredField = p.getClass().
+                            getDeclaredField("stdout_inner_stream");
+                        deferredField.setAccessible(true);
+                        deferred = deferredField.get(p);
+                    }
+                    Field useCountField = deferred.getClass().
+                        getDeclaredField("useCount");
+                    useCountField.setAccessible(true);
+
+                    while (useCountField.getInt(deferred) <= 0) {
+                        Thread.yield();
+                    }
+                }
                 p.destroy();
                 thread.join();
             }
