@@ -55,23 +55,6 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     }
 
     /**
-     * Writes the given header.
-     *
-     * @param header the header to write.
-     */
-    public void writeHeader(String header) {
-        printHtmlHeader(header, null, true);
-        printTop();
-        navLinks(true);
-        hr();
-        center();
-        h1();
-        print(header);
-        h1End();
-        centerEnd();
-    }
-
-    /**
      * Get the given header.
      *
      * @param header the header to write
