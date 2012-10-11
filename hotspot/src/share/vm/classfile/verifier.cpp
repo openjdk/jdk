@@ -555,9 +555,10 @@ void ClassVerifier::verify_class(TRAPS) {
     if (was_recursively_verified())  return;
 
     Method* m = methods->at(index);
-    if (m->is_native() || m->is_abstract()) {
+    if (m->is_native() || m->is_abstract() || m->is_overpass()) {
       // If m is native or abstract, skip it.  It is checked in class file
-      // parser that methods do not override a final method.
+      // parser that methods do not override a final method.  Overpass methods
+      // are trusted since the VM generates them.
       continue;
     }
     verify_method(methodHandle(THREAD, m), CHECK_VERIFY(this));
@@ -2304,11 +2305,21 @@ void ClassVerifier::verify_invoke_instructions(
   // Make sure the constant pool item is the right type
   u2 index = bcs->get_index_u2();
   Bytecodes::Code opcode = bcs->raw_code();
-  unsigned int types = (opcode == Bytecodes::_invokeinterface
-                                ? 1 << JVM_CONSTANT_InterfaceMethodref
-                      : opcode == Bytecodes::_invokedynamic
-                                ? 1 << JVM_CONSTANT_InvokeDynamic
-                                : 1 << JVM_CONSTANT_Methodref);
+  unsigned int types;
+  switch (opcode) {
+    case Bytecodes::_invokeinterface:
+      types = 1 << JVM_CONSTANT_InterfaceMethodref;
+      break;
+    case Bytecodes::_invokedynamic:
+      types = 1 << JVM_CONSTANT_InvokeDynamic;
+      break;
+    case Bytecodes::_invokespecial:
+      types = (1 << JVM_CONSTANT_InterfaceMethodref) |
+              (1 << JVM_CONSTANT_Methodref);
+      break;
+    default:
+      types = 1 << JVM_CONSTANT_Methodref;
+  }
   verify_cp_type(bcs->bci(), index, cp, types, CHECK_VERIFY(this));
 
   // Get method name and signature

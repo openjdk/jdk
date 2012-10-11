@@ -54,22 +54,16 @@ inline InstanceKlass* klassVtable::ik() const {
 // the same name and signature as m), then m is a Miranda method which is
 // entered as a public abstract method in C's vtable.  From then on it should
 // treated as any other public method in C for method over-ride purposes.
-void klassVtable::compute_vtable_size_and_num_mirandas(int &vtable_length,
-                                                       int &num_miranda_methods,
-                                                       Klass* super,
-                                                       Array<Method*>* methods,
-                                                       AccessFlags class_flags,
-                                                       Handle classloader,
-                                                       Symbol* classname,
-                                                       Array<Klass*>* local_interfaces,
-                                                       TRAPS
-                                                       ) {
-
+void klassVtable::compute_vtable_size_and_num_mirandas(
+    int* vtable_length_ret, int* num_new_mirandas,
+    GrowableArray<Method*>* all_mirandas, Klass* super,
+    Array<Method*>* methods, AccessFlags class_flags,
+    Handle classloader, Symbol* classname, Array<Klass*>* local_interfaces,
+    TRAPS) {
   No_Safepoint_Verifier nsv;
 
   // set up default result values
-  vtable_length = 0;
-  num_miranda_methods = 0;
+  int vtable_length = 0;
 
   // start off with super's vtable length
   InstanceKlass* sk = (InstanceKlass*)super;
@@ -86,9 +80,12 @@ void klassVtable::compute_vtable_size_and_num_mirandas(int &vtable_length,
     }
   }
 
+  GrowableArray<Method*> new_mirandas(20);
   // compute the number of mirandas methods that must be added to the end
-  num_miranda_methods = get_num_mirandas(super, methods, local_interfaces);
-  vtable_length += (num_miranda_methods * vtableEntry::size());
+  get_mirandas(&new_mirandas, all_mirandas, super, methods, local_interfaces);
+  *num_new_mirandas = new_mirandas.length();
+
+  vtable_length += *num_new_mirandas * vtableEntry::size();
 
   if (Universe::is_bootstrapping() && vtable_length == 0) {
     // array classes don't have their superclass set correctly during
@@ -109,6 +106,8 @@ void klassVtable::compute_vtable_size_and_num_mirandas(int &vtable_length,
          "bad vtable size for class Object");
   assert(vtable_length % vtableEntry::size() == 0, "bad vtable length");
   assert(vtable_length >= Universe::base_vtable_size(), "vtable too small");
+
+  *vtable_length_ret = vtable_length;
 }
 
 int klassVtable::index_of(Method* m, int len) const {
@@ -191,7 +190,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
     }
 
     // add miranda methods; it will also update the value of initialized
-    fill_in_mirandas(initialized);
+    fill_in_mirandas(&initialized);
 
     // In class hierarchies where the accessibility is not increasing (i.e., going from private ->
     // package_private -> publicprotected), the vtable might actually be smaller than our initial
@@ -249,6 +248,11 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
   return superk;
 }
 
+// Methods that are "effectively" final don't need vtable entries.
+bool method_is_effectively_final(
+    AccessFlags klass_flags, methodHandle target) {
+  return target->is_final() || klass_flags.is_final() && !target->is_overpass();
+}
 
 // Update child's copy of super vtable for overrides
 // OR return true if a new vtable entry is required
@@ -269,7 +273,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
     return false;
   }
 
-  if (klass->is_final() || target_method()->is_final()) {
+  if (method_is_effectively_final(klass->access_flags(), target_method)) {
     // a final method never needs a new entry; final methods can be statically
     // resolved and they have to be present in the vtable only if they override
     // a super's method, in which case they re-use its entry
@@ -406,7 +410,8 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
                                          Symbol* classname,
                                          AccessFlags class_flags,
                                          TRAPS) {
-  if ((class_flags.is_final() || target_method()->is_final()) ||
+
+  if (method_is_effectively_final(class_flags, target_method) ||
       // a final method never needs a new entry; final methods can be statically
       // resolved and they have to be present in the vtable only if they override
       // a super's method, in which case they re-use its entry
@@ -502,7 +507,7 @@ bool klassVtable::is_miranda_entry_at(int i) {
 
   // miranda methods are interface methods in a class's vtable
   if (mhk->is_interface()) {
-    assert(m->is_public() && m->is_abstract(), "should be public and abstract");
+    assert(m->is_public(), "should be public");
     assert(ik()->implements_interface(method_holder) , "this class should implement the interface");
     assert(is_miranda(m, ik()->methods(), ik()->super()), "should be a miranda_method");
     return true;
@@ -532,19 +537,19 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods, Klass* su
   return false;
 }
 
-void klassVtable::add_new_mirandas_to_list(GrowableArray<Method*>* list_of_current_mirandas,
-                                           Array<Method*>* current_interface_methods,
-                                           Array<Method*>* class_methods,
-                                           Klass* super) {
+void klassVtable::add_new_mirandas_to_lists(
+    GrowableArray<Method*>* new_mirandas, GrowableArray<Method*>* all_mirandas,
+    Array<Method*>* current_interface_methods, Array<Method*>* class_methods,
+    Klass* super) {
   // iterate thru the current interface's method to see if it a miranda
   int num_methods = current_interface_methods->length();
   for (int i = 0; i < num_methods; i++) {
     Method* im = current_interface_methods->at(i);
     bool is_duplicate = false;
-    int num_of_current_mirandas = list_of_current_mirandas->length();
+    int num_of_current_mirandas = new_mirandas->length();
     // check for duplicate mirandas in different interfaces we implement
     for (int j = 0; j < num_of_current_mirandas; j++) {
-      Method* miranda = list_of_current_mirandas->at(j);
+      Method* miranda = new_mirandas->at(j);
       if ((im->name() == miranda->name()) &&
           (im->signature() == miranda->signature())) {
         is_duplicate = true;
@@ -557,51 +562,47 @@ void klassVtable::add_new_mirandas_to_list(GrowableArray<Method*>* list_of_curre
         InstanceKlass *sk = InstanceKlass::cast(super);
         // check if it is a duplicate of a super's miranda
         if (sk->lookup_method_in_all_interfaces(im->name(), im->signature()) == NULL) {
-          list_of_current_mirandas->append(im);
+          new_mirandas->append(im);
+        }
+        if (all_mirandas != NULL) {
+          all_mirandas->append(im);
         }
       }
     }
   }
 }
 
-void klassVtable::get_mirandas(GrowableArray<Method*>* mirandas,
+void klassVtable::get_mirandas(GrowableArray<Method*>* new_mirandas,
+                               GrowableArray<Method*>* all_mirandas,
                                Klass* super, Array<Method*>* class_methods,
                                Array<Klass*>* local_interfaces) {
-  assert((mirandas->length() == 0) , "current mirandas must be 0");
+  assert((new_mirandas->length() == 0) , "current mirandas must be 0");
 
   // iterate thru the local interfaces looking for a miranda
   int num_local_ifs = local_interfaces->length();
   for (int i = 0; i < num_local_ifs; i++) {
     InstanceKlass *ik = InstanceKlass::cast(local_interfaces->at(i));
-    add_new_mirandas_to_list(mirandas, ik->methods(), class_methods, super);
+    add_new_mirandas_to_lists(new_mirandas, all_mirandas,
+                              ik->methods(), class_methods, super);
     // iterate thru each local's super interfaces
     Array<Klass*>* super_ifs = ik->transitive_interfaces();
     int num_super_ifs = super_ifs->length();
     for (int j = 0; j < num_super_ifs; j++) {
       InstanceKlass *sik = InstanceKlass::cast(super_ifs->at(j));
-      add_new_mirandas_to_list(mirandas, sik->methods(), class_methods, super);
+      add_new_mirandas_to_lists(new_mirandas, all_mirandas,
+                                sik->methods(), class_methods, super);
     }
   }
 }
 
-// get number of mirandas
-int klassVtable::get_num_mirandas(Klass* super, Array<Method*>* class_methods, Array<Klass*>* local_interfaces) {
-  ResourceMark rm;
-  GrowableArray<Method*>* mirandas = new GrowableArray<Method*>(20);
-  get_mirandas(mirandas, super, class_methods, local_interfaces);
-  return mirandas->length();
-}
-
 // fill in mirandas
-void klassVtable::fill_in_mirandas(int& initialized) {
-  ResourceMark rm;
-  GrowableArray<Method*>* mirandas = new GrowableArray<Method*>(20);
-  InstanceKlass *this_ik = ik();
-  get_mirandas(mirandas, this_ik->super(), this_ik->methods(), this_ik->local_interfaces());
-  int num_mirandas = mirandas->length();
-  for (int i = 0; i < num_mirandas; i++) {
-    put_method_at(mirandas->at(i), initialized);
-    initialized++;
+void klassVtable::fill_in_mirandas(int* initialized) {
+  GrowableArray<Method*> mirandas(20);
+  get_mirandas(&mirandas, NULL, ik()->super(), ik()->methods(),
+               ik()->local_interfaces());
+  for (int i = 0; i < mirandas.length(); i++) {
+    put_method_at(mirandas.at(i), *initialized);
+    ++(*initialized);
   }
 }
 
