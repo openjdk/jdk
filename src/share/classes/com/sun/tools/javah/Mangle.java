@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class Mangle {
     }
 
     public final String mangle(CharSequence name, int mtype) {
-        StringBuffer result = new StringBuffer(100);
+        StringBuilder result = new StringBuilder(100);
         int length = name.length();
 
         for (int i = 0; i < length; i++) {
@@ -115,7 +115,7 @@ public class Mangle {
 
     public String mangleMethod(ExecutableElement method, TypeElement clazz,
                                       int mtype) throws TypeSignature.SignatureException {
-        StringBuffer result = new StringBuffer(100);
+        StringBuilder result = new StringBuilder(100);
         result.append("Java_");
 
         if (mtype == Mangle.Type.METHOD_JDK_1) {
@@ -164,7 +164,7 @@ public class Mangle {
 
     // Warning: duplicated in Gen
     private String signature(ExecutableElement e) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String sep = "(";
         for (VariableElement p: e.getParameters()) {
             sb.append(sep);

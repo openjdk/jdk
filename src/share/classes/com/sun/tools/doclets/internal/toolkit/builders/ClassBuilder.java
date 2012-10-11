@@ -282,18 +282,18 @@ public class ClassBuilder extends AbstractBuilder {
      * @param classInfoTree the content tree to which the documentation will be added
      */
     public void buildClassSignature(XMLNode node, Content classInfoTree) {
-        StringBuffer modifiers = new StringBuffer(classDoc.modifiers() + " ");
+        StringBuilder modifiers = new StringBuilder(classDoc.modifiers() + " ");
         if (isEnum) {
             modifiers.append("enum ");
             int index;
             if ((index = modifiers.indexOf("abstract")) >= 0) {
-                modifiers.delete(index, index + (new String("abstract")).length());
-                modifiers = new StringBuffer(
+                modifiers.delete(index, index + "abstract".length());
+                modifiers = new StringBuilder(
                         Util.replaceText(modifiers.toString(), "  ", " "));
             }
             if ((index = modifiers.indexOf("final")) >= 0) {
-                modifiers.delete(index, index + (new String("final")).length());
-                modifiers = new StringBuffer(
+                modifiers.delete(index, index + "final".length());
+                modifiers = new StringBuilder(
                         Util.replaceText(modifiers.toString(), "  ", " "));
             }
         //} else if (classDoc.isAnnotationType()) {

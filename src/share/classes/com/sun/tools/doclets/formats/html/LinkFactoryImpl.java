@@ -71,7 +71,7 @@ public class LinkFactoryImpl extends LinkFactory {
                     classLinkInfo.type != null &&
                     !classDoc.qualifiedTypeName().equals(classLinkInfo.type.qualifiedTypeName())) :
             "";
-        StringBuffer label = new StringBuffer(
+        StringBuilder label = new StringBuilder(
             classLinkInfo.getClassLinkLabel(m_writer.configuration));
         classLinkInfo.displayLength += label.length();
         Configuration configuration = ConfigurationImpl.getInstance();
@@ -167,7 +167,7 @@ public class LinkFactoryImpl extends LinkFactory {
             //with 1.4.2 output.
             return linkInfo.classDoc.name() + ".html";
         }
-        StringBuffer buf = new StringBuffer(m_writer.relativePath);
+        StringBuilder buf = new StringBuilder(m_writer.relativePath);
         buf.append(DirectoryManager.getPathToPackage(
             linkInfo.classDoc.containingPackage(),
             linkInfo.classDoc.name() + ".html"));

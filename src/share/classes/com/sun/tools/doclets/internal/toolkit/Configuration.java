@@ -465,7 +465,7 @@ public abstract class Configuration {
                     tagletManager.addNewSimpleCustomTag(tagName, null, "");
                 } else {
                     //Create a simple tag with the heading that has the same name as the tag.
-                    StringBuffer heading = new StringBuffer(tagName + ":");
+                    StringBuilder heading = new StringBuilder(tagName + ":");
                     heading.setCharAt(0, Character.toUpperCase(tagName.charAt(0)));
                     tagletManager.addNewSimpleCustomTag(tagName, heading.toString(), "a");
                 }

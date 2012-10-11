@@ -182,7 +182,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     @Override
     public String visitClassType(ClassType t, Locale locale) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         if (t.getEnclosingType().tag == CLASS && t.tsym.owner.kind == Kinds.TYP) {
             buf.append(visit(t.getEnclosingType(), locale));
             buf.append(".");
@@ -210,7 +210,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     @Override
     public String visitWildcardType(WildcardType t, Locale locale) {
-        StringBuffer s = new StringBuffer();
+        StringBuilder s = new StringBuilder();
         s.append(t.kind);
         if (t.kind != UNBOUND) {
             s.append(visit(t.type, locale));
@@ -248,7 +248,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     protected String className(ClassType t, boolean longform, Locale locale) {
         Symbol sym = t.tsym;
         if (sym.name.length() == 0 && (sym.flags() & COMPOUND) != 0) {
-            StringBuffer s = new StringBuffer(visit(t.supertype_field, locale));
+            StringBuilder s = new StringBuilder(visit(t.supertype_field, locale));
             for (List<Type> is = t.interfaces_field; is.nonEmpty(); is = is.tail) {
                 s.append("&");
                 s.append(visit(is.head, locale));
@@ -287,7 +287,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
         if (!varArgs) {
             return visitTypes(args, locale);
         } else {
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             while (args.tail.nonEmpty()) {
                 buf.append(visit(args.head, locale));
                 args = args.tail;
