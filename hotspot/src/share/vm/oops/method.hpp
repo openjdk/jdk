@@ -30,7 +30,6 @@
 #include "compiler/oopMap.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "oops/annotations.hpp"
-#include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
@@ -104,6 +103,7 @@ class CheckedExceptionElement;
 class LocalVariableTableElement;
 class AdapterHandlerEntry;
 class MethodData;
+class ConstMethod;
 
 class Method : public Metadata {
  friend class VMStructs;
@@ -158,14 +158,16 @@ class Method : public Metadata {
   // Constructor
   Method(ConstMethod* xconst, AccessFlags access_flags, int size);
  public:
+
   static Method* allocate(ClassLoaderData* loader_data,
-                            int byte_code_size,
-                            AccessFlags access_flags,
-                            int compressed_line_number_size,
-                            int localvariable_table_length,
-                            int exception_table_length,
-                            int checked_exceptions_length,
-                            TRAPS);
+                          int byte_code_size,
+                          AccessFlags access_flags,
+                          int compressed_line_number_size,
+                          int localvariable_table_length,
+                          int exception_table_length,
+                          int checked_exceptions_length,
+                          ConstMethod::MethodType method_type,
+                          TRAPS);
 
   Method() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
 
@@ -725,6 +727,10 @@ class Method : public Metadata {
   void set_dont_inline(bool x)  {        _dont_inline = x;  }
   bool  is_hidden()             { return _hidden;           }
   void set_hidden(bool x)       {        _hidden = x;       }
+  ConstMethod::MethodType method_type() const {
+      return _constMethod->method_type();
+  }
+  bool is_overpass() const { return method_type() == ConstMethod::OVERPASS; }
 
   // On-stack replacement support
   bool has_osr_nmethod(int level, bool match_level) {
