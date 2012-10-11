@@ -367,7 +367,13 @@ public class Util {
                     while((n = in.read(buf))>0) out.write(buf,0,n);
                 } else {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+                    BufferedWriter writer;
+                    if (configuration.docencoding == null) {
+                        writer = new BufferedWriter(new OutputStreamWriter(out));
+                    } else {
+                        writer = new BufferedWriter(new OutputStreamWriter(out,
+                            configuration.docencoding));
+                    }
                     try {
                         String line;
                         while ((line = reader.readLine()) != null) {
