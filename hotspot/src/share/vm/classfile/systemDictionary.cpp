@@ -291,16 +291,6 @@ Klass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
                                                  Handle protection_domain,
                                                  bool is_superclass,
                                                  TRAPS) {
-
-  // Try to get one of the well-known klasses.
-  // They are trusted, and do not participate in circularities.
-  if (LinkWellKnownClasses) {
-    Klass* k = find_well_known_klass(class_name);
-    if (k != NULL) {
-      return k;
-    }
-  }
-
   // Double-check, if child class is already loaded, just return super-class,interface
   // Don't add a placedholder if already loaded, i.e. already in system dictionary
   // Make sure there's a placeholder for the *child* before resolving.
@@ -926,14 +916,6 @@ Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
   Klass* k = NULL;
   assert(class_name != NULL, "class name must be non NULL");
 
-  // Try to get one of the well-known klasses.
-  if (LinkWellKnownClasses) {
-    k = find_well_known_klass(class_name);
-    if (k != NULL) {
-      return k;
-    }
-  }
-
   if (FieldType::is_array(class_name)) {
     // The name refers to an array.  Parse the name.
     // dimension and object_key in FieldArrayInfo are assigned as a
@@ -952,41 +934,6 @@ Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
     k = find(class_name, class_loader, protection_domain, THREAD);
   }
   return k;
-}
-
-// Quick range check for names of well-known classes:
-static Symbol* wk_klass_name_limits[2] = {NULL, NULL};
-
-#ifndef PRODUCT
-static int find_wkk_calls, find_wkk_probes, find_wkk_wins;
-// counts for "hello world": 3983, 1616, 1075
-//  => 60% hit after limit guard, 25% total win rate
-#endif
-
-Klass* SystemDictionary::find_well_known_klass(Symbol* class_name) {
-  // A bounds-check on class_name will quickly get a negative result.
-  NOT_PRODUCT(find_wkk_calls++);
-  if (class_name >= wk_klass_name_limits[0] &&
-      class_name <= wk_klass_name_limits[1]) {
-    NOT_PRODUCT(find_wkk_probes++);
-    vmSymbols::SID sid = vmSymbols::find_sid(class_name);
-    if (sid != vmSymbols::NO_SID) {
-      Klass* k = NULL;
-      switch (sid) {
-        #define WK_KLASS_CASE(name, symbol, option) \
-        case vmSymbols::VM_SYMBOL_ENUM_NAME(symbol): \
-          if (option == Pre_Link) { \
-            k = WK_KLASS(name); \
-          } \
-          break;
-        WK_KLASSES_DO(WK_KLASS_CASE)
-        #undef WK_KLASS_CASE
-      }
-      NOT_PRODUCT(if (k != NULL)  find_wkk_wins++);
-      return k;
-    }
-  }
-  return NULL;
 }
 
 // Note: this method is much like resolve_from_stream, but
@@ -1942,32 +1889,11 @@ void SystemDictionary::initialize_wk_klasses_until(WKID limit_id, WKID &start_id
     int opt  = (info & right_n_bits(CEIL_LG_OPTION_LIMIT));
 
     initialize_wk_klass((WKID)id, opt, CHECK);
-
-    // Update limits, so find_well_known_klass can be very fast:
-    Symbol* s = vmSymbols::symbol_at((vmSymbols::SID)sid);
-    if (wk_klass_name_limits[1] == NULL) {
-      wk_klass_name_limits[0] = wk_klass_name_limits[1] = s;
-    } else if (wk_klass_name_limits[1] < s) {
-      wk_klass_name_limits[1] = s;
-    } else if (wk_klass_name_limits[0] > s) {
-      wk_klass_name_limits[0] = s;
-    }
   }
 
   // move the starting value forward to the limit:
   start_id = limit_id;
 }
-
-#ifdef ASSERT
-void SystemDictionary::check_wk_pre_link_klasses() {
-  #define WK_KLASS_CHECK(name, symbol, option) \
-    if (option == Pre_Link) { \
-      assert(name()->is_public(), ""); \
-    }
-  WK_KLASSES_DO(WK_KLASS_CHECK);
-  #undef WK_KLASS_CHECK
-}
-#endif
 
 void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   assert(WK_KLASS(Object_klass) == NULL, "preloaded classes should only be initialized once");
@@ -2022,8 +1948,6 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   }
 
   initialize_wk_klasses_until(WKID_LIMIT, scan, CHECK);
-
-  check_wk_pre_link_klasses();
 
   _box_klasses[T_BOOLEAN] = WK_KLASS(Boolean_klass);
   _box_klasses[T_CHAR]    = WK_KLASS(Character_klass);
