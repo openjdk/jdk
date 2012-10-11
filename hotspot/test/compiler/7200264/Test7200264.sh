@@ -77,6 +77,16 @@ then
     exit 0
 fi
 
+# grep for support integer multiply vectors (cpu with SSE4.1)
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -XX:+PrintMiscellaneous -XX:+Verbose -version | grep "cores per cpu" | grep "sse4.1"
+
+if [ $? != 0 ]
+then
+    SSE=2
+else
+    SSE=4
+fi
+
 cp ${TESTSRC}${FS}TestIntVect.java .
 ${TESTJAVA}${FS}bin${FS}javac -d . TestIntVect.java
 
@@ -97,12 +107,16 @@ then
     exit 1
 fi
 
+# MulVI is only supported with SSE4.1.
+if [ $SSE -gt 3 ]
+then
 # LShiftVI+SubVI is generated for test_mulc
 COUNT=`grep MulVI test.out | wc -l | awk '{print $1}'`
 if [ $COUNT -lt 2 ]
 then
     echo "Test Failed: MulVI $COUNT < 2"
     exit 1
+fi
 fi
 
 COUNT=`grep AndV test.out | wc -l | awk '{print $1}'`
@@ -126,6 +140,7 @@ then
     exit 1
 fi
 
+# LShiftVI+SubVI is generated for test_mulc
 COUNT=`grep LShiftVI test.out | wc -l | awk '{print $1}'`
 if [ $COUNT -lt 5 ]
 then
@@ -133,11 +148,10 @@ then
     exit 1
 fi
 
-# RShiftVI + URShiftVI
-COUNT=`grep RShiftVI test.out | wc -l | awk '{print $1}'`
-if [ $COUNT -lt 6 ]
+COUNT=`grep RShiftVI test.out | sed '/URShiftVI/d' | wc -l | awk '{print $1}'`
+if [ $COUNT -lt 3 ]
 then
-    echo "Test Failed: RShiftVI $COUNT < 6"
+    echo "Test Failed: RShiftVI $COUNT < 3"
     exit 1
 fi
 

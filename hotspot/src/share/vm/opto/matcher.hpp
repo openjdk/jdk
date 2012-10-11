@@ -261,6 +261,7 @@ public:
 
   // Vector ideal reg
   static const int vector_ideal_reg(int len);
+  static const int vector_shift_count_ideal_reg(int len);
 
   // CPU supports misaligned vectors store/load.
   static const bool misaligned_vectors_ok();

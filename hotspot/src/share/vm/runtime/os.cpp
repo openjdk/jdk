@@ -878,6 +878,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
         st->print(" for ");
         nm->method()->print_value_on(st);
       }
+      st->cr();
       nm->print_nmethod(verbose);
       return;
     }
@@ -898,7 +899,11 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       print = true;
     }
     if (print) {
-      st->print_cr(INTPTR_FORMAT " is an oop", addr);
+      if (p == (HeapWord*) addr) {
+        st->print_cr(INTPTR_FORMAT " is an oop", addr);
+      } else {
+        st->print_cr(INTPTR_FORMAT " is pointing into object: " INTPTR_FORMAT, addr, p);
+      }
       oop(p)->print_on(st);
       return;
     }

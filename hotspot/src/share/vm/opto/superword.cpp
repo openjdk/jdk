@@ -1436,10 +1436,9 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       return opd; // input is matching vector
     }
     if ((opd_idx == 2) && VectorNode::is_shift(p0)) {
-      // No vector is needed for shift count.
-      // Vector instructions do not mask shift count, do it here.
       Compile* C = _phase->C;
       Node* cnt = opd;
+      // Vector instructions do not mask shift count, do it here.
       juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
       const TypeInt* t = opd->find_int_type();
       if (t != NULL && t->is_con()) {
@@ -1456,8 +1455,8 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
           _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
         }
         assert(opd->bottom_type()->isa_int(), "int type only");
-        // Move non constant shift count into XMM register.
-        cnt = new (C) MoveI2FNode(cnt);
+        // Move non constant shift count into vector register.
+        cnt = VectorNode::shift_count(C, p0, cnt, vlen, velt_basic_type(p0));
       }
       if (cnt != opd) {
         _igvn.register_new_node_with_optimizer(cnt);

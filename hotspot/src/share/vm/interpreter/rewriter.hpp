@@ -113,27 +113,25 @@ class Rewriter: public StackObj {
     return ref_index;
   }
 
-  // add a new entry to the resolved_references map (for invokedynamic only)
-  int add_invokedynamic_resolved_references_entry(int cp_index, int cache_index) {
+  // add a new entries to the resolved_references map (for invokedynamic and invokehandle only)
+  int add_invokedynamic_resolved_references_entries(int cp_index, int cache_index) {
     assert(_resolved_reference_limit >= 0, "must add indy refs after first iteration");
-    int ref_index = _resolved_references_map.append(cp_index);  // many-to-one
-    assert(ref_index >= _resolved_reference_limit, "");
-    _invokedynamic_references_map.at_put_grow(ref_index, cache_index, -1);
+    int ref_index = -1;
+    for (int entry = 0; entry < ConstantPoolCacheEntry::_indy_resolved_references_entries; entry++) {
+      const int index = _resolved_references_map.append(cp_index);  // many-to-one
+      assert(index >= _resolved_reference_limit, "");
+      if (entry == 0) {
+        ref_index = index;
+      }
+      assert((index - entry) == ref_index, "entries must be consecutive");
+      _invokedynamic_references_map.at_put_grow(index, cache_index, -1);
+    }
     return ref_index;
   }
 
   int resolved_references_entry_to_pool_index(int ref_index) {
     int cp_index = _resolved_references_map[ref_index];
     return cp_index;
-  }
-
-  // invokedynamic support - append the cpCache entry (encoded) in object map.
-  // The resolved_references_map should still be in ascending order
-  // The resolved_references has the invokedynamic call site objects appended after
-  // the objects that are resolved in the constant pool.
-  int add_callsite_entry(int main_cpc_entry) {
-    int ref_index = _resolved_references_map.append(main_cpc_entry);
-    return ref_index;
   }
 
   // Access the contents of _cp_cache_map to determine CP cache layout.

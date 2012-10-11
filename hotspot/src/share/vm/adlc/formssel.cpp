@@ -4049,6 +4049,7 @@ bool MatchRule::is_vector() const {
     "MulVS","MulVI","MulVF","MulVD",
     "DivVF","DivVD",
     "AndV" ,"XorV" ,"OrV",
+    "LShiftCntV","RShiftCntV",
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
     "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
