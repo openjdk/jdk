@@ -976,14 +976,13 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
         break;
       case T_METADATA:  __ ld_ptr(base, offset, to_reg->as_register()); break;
       case T_ADDRESS:
-        if (offset == oopDesc::klass_offset_in_bytes()) {
-          __ lduw(base, offset, to_reg->as_register());
 #ifdef _LP64
-          if (UseCompressedKlassPointers) {
-            __ decode_klass_not_null(to_reg->as_register());
-          }
+        if (offset == oopDesc::klass_offset_in_bytes() && UseCompressedKlassPointers) {
+          __ lduw(base, offset, to_reg->as_register());
+          __ decode_klass_not_null(to_reg->as_register());
+        } else
 #endif
-        } else {
+        {
           __ ld_ptr(base, offset, to_reg->as_register());
         }
         break;
