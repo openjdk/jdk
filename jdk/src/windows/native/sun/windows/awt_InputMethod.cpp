@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -517,10 +517,10 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WInputMethod_getNativeIMMDescript
     jstring infojStr = NULL;
 
     if ((buffSize = ::ImmGetDescription(hkl, szImmDescription, 0)) > 0) {
-        szImmDescription = (LPTSTR) safe_Malloc(buffSize * sizeof(TCHAR));
+        szImmDescription = (LPTSTR) safe_Malloc((buffSize+1) * sizeof(TCHAR));
 
         if (szImmDescription != NULL) {
-            ImmGetDescription(hkl, szImmDescription, buffSize);
+            ImmGetDescription(hkl, szImmDescription, (buffSize+1));
 
             infojStr = JNU_NewStringPlatform(env, szImmDescription);
 
