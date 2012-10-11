@@ -94,45 +94,45 @@ class SymbolPropertyTable;
 
 #define WK_KLASSES_DO(do_klass)                                                                                          \
   /* well-known classes */                                                                                               \
-  do_klass(Object_klass,                                java_lang_Object,                          Pre_Link            ) \
-  do_klass(String_klass,                                java_lang_String,                          Pre_Link            ) \
-  do_klass(Class_klass,                                 java_lang_Class,                           Pre_Link            ) \
-  do_klass(Cloneable_klass,                             java_lang_Cloneable,                       Pre_Link            ) \
-  do_klass(ClassLoader_klass,                           java_lang_ClassLoader,                     Pre_Link            ) \
-  do_klass(Serializable_klass,                          java_io_Serializable,                      Pre_Link            ) \
-  do_klass(System_klass,                                java_lang_System,                          Pre_Link            ) \
-  do_klass(Throwable_klass,                             java_lang_Throwable,                       Pre_Link            ) \
-  do_klass(Error_klass,                                 java_lang_Error,                           Pre_Link            ) \
-  do_klass(ThreadDeath_klass,                           java_lang_ThreadDeath,                     Pre_Link            ) \
-  do_klass(Exception_klass,                             java_lang_Exception,                       Pre_Link            ) \
-  do_klass(RuntimeException_klass,                      java_lang_RuntimeException,                Pre_Link            ) \
-  do_klass(ProtectionDomain_klass,                      java_security_ProtectionDomain,            Pre_Link            ) \
-  do_klass(AccessControlContext_klass,                  java_security_AccessControlContext,        Pre_Link            ) \
-  do_klass(ClassNotFoundException_klass,                java_lang_ClassNotFoundException,          Pre_Link            ) \
-  do_klass(NoClassDefFoundError_klass,                  java_lang_NoClassDefFoundError,            Pre_Link            ) \
-  do_klass(LinkageError_klass,                          java_lang_LinkageError,                    Pre_Link            ) \
-  do_klass(ClassCastException_klass,                    java_lang_ClassCastException,              Pre_Link            ) \
-  do_klass(ArrayStoreException_klass,                   java_lang_ArrayStoreException,             Pre_Link            ) \
-  do_klass(VirtualMachineError_klass,                   java_lang_VirtualMachineError,             Pre_Link            ) \
-  do_klass(OutOfMemoryError_klass,                      java_lang_OutOfMemoryError,                Pre_Link            ) \
-  do_klass(StackOverflowError_klass,                    java_lang_StackOverflowError,              Pre_Link            ) \
-  do_klass(IllegalMonitorStateException_klass,          java_lang_IllegalMonitorStateException,    Pre_Link            ) \
-  do_klass(Reference_klass,                             java_lang_ref_Reference,                   Pre_Link            ) \
+  do_klass(Object_klass,                                java_lang_Object,                          Pre                 ) \
+  do_klass(String_klass,                                java_lang_String,                          Pre                 ) \
+  do_klass(Class_klass,                                 java_lang_Class,                           Pre                 ) \
+  do_klass(Cloneable_klass,                             java_lang_Cloneable,                       Pre                 ) \
+  do_klass(ClassLoader_klass,                           java_lang_ClassLoader,                     Pre                 ) \
+  do_klass(Serializable_klass,                          java_io_Serializable,                      Pre                 ) \
+  do_klass(System_klass,                                java_lang_System,                          Pre                 ) \
+  do_klass(Throwable_klass,                             java_lang_Throwable,                       Pre                 ) \
+  do_klass(Error_klass,                                 java_lang_Error,                           Pre                 ) \
+  do_klass(ThreadDeath_klass,                           java_lang_ThreadDeath,                     Pre                 ) \
+  do_klass(Exception_klass,                             java_lang_Exception,                       Pre                 ) \
+  do_klass(RuntimeException_klass,                      java_lang_RuntimeException,                Pre                 ) \
+  do_klass(ProtectionDomain_klass,                      java_security_ProtectionDomain,            Pre                 ) \
+  do_klass(AccessControlContext_klass,                  java_security_AccessControlContext,        Pre                 ) \
+  do_klass(ClassNotFoundException_klass,                java_lang_ClassNotFoundException,          Pre                 ) \
+  do_klass(NoClassDefFoundError_klass,                  java_lang_NoClassDefFoundError,            Pre                 ) \
+  do_klass(LinkageError_klass,                          java_lang_LinkageError,                    Pre                 ) \
+  do_klass(ClassCastException_klass,                    java_lang_ClassCastException,              Pre                 ) \
+  do_klass(ArrayStoreException_klass,                   java_lang_ArrayStoreException,             Pre                 ) \
+  do_klass(VirtualMachineError_klass,                   java_lang_VirtualMachineError,             Pre                 ) \
+  do_klass(OutOfMemoryError_klass,                      java_lang_OutOfMemoryError,                Pre                 ) \
+  do_klass(StackOverflowError_klass,                    java_lang_StackOverflowError,              Pre                 ) \
+  do_klass(IllegalMonitorStateException_klass,          java_lang_IllegalMonitorStateException,    Pre                 ) \
+  do_klass(Reference_klass,                             java_lang_ref_Reference,                   Pre                 ) \
                                                                                                                          \
   /* Preload ref klasses and set reference types */                                                                      \
-  do_klass(SoftReference_klass,                         java_lang_ref_SoftReference,               Pre_Link            ) \
-  do_klass(WeakReference_klass,                         java_lang_ref_WeakReference,               Pre_Link            ) \
+  do_klass(SoftReference_klass,                         java_lang_ref_SoftReference,               Pre                 ) \
+  do_klass(WeakReference_klass,                         java_lang_ref_WeakReference,               Pre                 ) \
   do_klass(FinalReference_klass,                        java_lang_ref_FinalReference,              Pre                 ) \
-  do_klass(PhantomReference_klass,                      java_lang_ref_PhantomReference,            Pre_Link            ) \
+  do_klass(PhantomReference_klass,                      java_lang_ref_PhantomReference,            Pre                 ) \
   do_klass(Finalizer_klass,                             java_lang_ref_Finalizer,                   Pre                 ) \
                                                                                                                          \
-  do_klass(Thread_klass,                                java_lang_Thread,                          Pre_Link            ) \
-  do_klass(ThreadGroup_klass,                           java_lang_ThreadGroup,                     Pre_Link            ) \
-  do_klass(Properties_klass,                            java_util_Properties,                      Pre_Link            ) \
-  do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject,        Pre_Link            ) \
-  do_klass(reflect_Field_klass,                         java_lang_reflect_Field,                   Pre_Link            ) \
-  do_klass(reflect_Method_klass,                        java_lang_reflect_Method,                  Pre_Link            ) \
-  do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor,             Pre_Link            ) \
+  do_klass(Thread_klass,                                java_lang_Thread,                          Pre                 ) \
+  do_klass(ThreadGroup_klass,                           java_lang_ThreadGroup,                     Pre                 ) \
+  do_klass(Properties_klass,                            java_util_Properties,                      Pre                 ) \
+  do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject,        Pre                 ) \
+  do_klass(reflect_Field_klass,                         java_lang_reflect_Field,                   Pre                 ) \
+  do_klass(reflect_Method_klass,                        java_lang_reflect_Method,                  Pre                 ) \
+  do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor,             Pre                 ) \
                                                                                                                          \
   /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                              \
   /* Universe::is_gte_jdk14x_version() is not set up by this point. */                                                   \
@@ -145,20 +145,20 @@ class SymbolPropertyTable;
   do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15      ) \
                                                                                                                          \
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */                                            \
-  do_klass(MethodHandle_klass,                          java_lang_invoke_MethodHandle,             Pre_Link            ) \
-  do_klass(MemberName_klass,                            java_lang_invoke_MemberName,               Pre                 ) \
-  do_klass(MethodHandleNatives_klass,                   java_lang_invoke_MethodHandleNatives,      Pre                 ) \
+  do_klass(MethodHandle_klass,                          java_lang_invoke_MethodHandle,             Pre_JSR292          ) \
+  do_klass(MemberName_klass,                            java_lang_invoke_MemberName,               Pre_JSR292          ) \
+  do_klass(MethodHandleNatives_klass,                   java_lang_invoke_MethodHandleNatives,      Pre_JSR292          ) \
   do_klass(LambdaForm_klass,                            java_lang_invoke_LambdaForm,               Opt                 ) \
-  do_klass(MethodType_klass,                            java_lang_invoke_MethodType,               Pre_Link            ) \
-  do_klass(BootstrapMethodError_klass,                  java_lang_BootstrapMethodError,            Pre_Link            ) \
-  do_klass(CallSite_klass,                              java_lang_invoke_CallSite,                 Pre_Link            ) \
-  do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite,         Pre_Link            ) \
-  do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite,          Pre_Link            ) \
-  do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite,         Pre_Link            ) \
+  do_klass(MethodType_klass,                            java_lang_invoke_MethodType,               Pre_JSR292          ) \
+  do_klass(BootstrapMethodError_klass,                  java_lang_BootstrapMethodError,            Pre_JSR292          ) \
+  do_klass(CallSite_klass,                              java_lang_invoke_CallSite,                 Pre_JSR292          ) \
+  do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite,         Pre_JSR292          ) \
+  do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite,          Pre_JSR292          ) \
+  do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite,         Pre_JSR292          ) \
   /* Note: MethodHandle must be first, and VolatileCallSite last in group */                                             \
                                                                                                                          \
-  do_klass(StringBuffer_klass,                          java_lang_StringBuffer,                    Pre_Link            ) \
-  do_klass(StringBuilder_klass,                         java_lang_StringBuilder,                   Pre_Link            ) \
+  do_klass(StringBuffer_klass,                          java_lang_StringBuffer,                    Pre                 ) \
+  do_klass(StringBuilder_klass,                         java_lang_StringBuilder,                   Pre                 ) \
                                                                                                                          \
   /* It's NULL in non-1.4 JDKs. */                                                                                       \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement,               Opt                 ) \
@@ -171,14 +171,14 @@ class SymbolPropertyTable;
   do_klass(PostVMInitHook_klass,                        sun_misc_PostVMInitHook,                   Opt                 ) \
                                                                                                                          \
   /* Preload boxing klasses */                                                                                           \
-  do_klass(Boolean_klass,                               java_lang_Boolean,                         Pre_Link            ) \
-  do_klass(Character_klass,                             java_lang_Character,                       Pre_Link            ) \
-  do_klass(Float_klass,                                 java_lang_Float,                           Pre_Link            ) \
-  do_klass(Double_klass,                                java_lang_Double,                          Pre_Link            ) \
-  do_klass(Byte_klass,                                  java_lang_Byte,                            Pre_Link            ) \
-  do_klass(Short_klass,                                 java_lang_Short,                           Pre_Link            ) \
-  do_klass(Integer_klass,                               java_lang_Integer,                         Pre_Link            ) \
-  do_klass(Long_klass,                                  java_lang_Long,                            Pre_Link            ) \
+  do_klass(Boolean_klass,                               java_lang_Boolean,                         Pre                 ) \
+  do_klass(Character_klass,                             java_lang_Character,                       Pre                 ) \
+  do_klass(Float_klass,                                 java_lang_Float,                           Pre                 ) \
+  do_klass(Double_klass,                                java_lang_Double,                          Pre                 ) \
+  do_klass(Byte_klass,                                  java_lang_Byte,                            Pre                 ) \
+  do_klass(Short_klass,                                 java_lang_Short,                           Pre                 ) \
+  do_klass(Integer_klass,                               java_lang_Integer,                         Pre                 ) \
+  do_klass(Long_klass,                                  java_lang_Long,                            Pre                 ) \
   /*end*/
 
 
@@ -201,7 +201,7 @@ class SystemDictionary : AllStatic {
 
   enum InitOption {
     Pre,                        // preloaded; error if not present
-    Pre_Link,                   // preloaded; error if not present; link as well-known
+    Pre_JSR292,                 // preloaded if EnableInvokeDynamic
 
     // Order is significant.  Options before this point require resolve_or_fail.
     // Options after this point will use resolve_or_null instead.
@@ -279,9 +279,6 @@ public:
                                                Handle class_loader,
                                                Handle protection_domain,
                                                TRAPS);
-
-  // If the given name is known to vmSymbols, return the well-know klass:
-  static Klass* find_well_known_klass(Symbol* class_name);
 
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
@@ -393,7 +390,7 @@ public:
   }
 
   static Klass* check_klass_Pre(       Klass* k) { return check_klass(k); }
-  static Klass* check_klass_Pre_Link(  Klass* k) { return check_klass(k); }
+  static Klass* check_klass_Pre_JSR292(Klass* k) { return EnableInvokeDynamic ? check_klass(k) : k; }
   static Klass* check_klass_Opt(       Klass* k) { return k; }
   static Klass* check_klass_Opt_Kernel(Klass* k) { return k; } //== Opt
   static Klass* check_klass_Opt_Only_JDK15(Klass* k) {
@@ -412,8 +409,6 @@ public:
     int limit = (int)end_id + 1;
     initialize_wk_klasses_until((WKID) limit, start_id, THREAD);
   }
-
-  static void check_wk_pre_link_klasses() NOT_DEBUG_RETURN;
 
 public:
   #define WK_KLASS_DECLARE(name, symbol, option) \
