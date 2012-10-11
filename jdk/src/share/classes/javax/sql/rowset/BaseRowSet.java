@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1850,7 +1850,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
         if(params == null){
              throw new SQLException("Set initParams() before setFloat");
         }
-        params.put(Integer.valueOf(parameterIndex - 1), new Float(x));
+        params.put(Integer.valueOf(parameterIndex - 1), Float.valueOf(x));
     }
 
     /**
@@ -1882,7 +1882,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
         if(params == null){
              throw new SQLException("Set initParams() before setDouble");
         }
-        params.put(Integer.valueOf(parameterIndex - 1), new Double(x));
+        params.put(Integer.valueOf(parameterIndex - 1), Double.valueOf(x));
     }
 
     /**
