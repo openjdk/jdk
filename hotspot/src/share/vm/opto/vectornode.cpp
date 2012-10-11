@@ -243,6 +243,8 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
 VectorNode* VectorNode::make(Compile* C, int opc, Node* n1, Node* n2, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
   int vopc = VectorNode::opcode(opc, bt);
+  // This method should not be called for unimplemented vectors.
+  guarantee(vopc > 0, err_msg_res("Vector for '%s' is not implemented", NodeClassNames[opc]));
 
   switch (vopc) {
   case Op_AddVB: return new (C) AddVBNode(n1, n2, vt);
@@ -286,7 +288,7 @@ VectorNode* VectorNode::make(Compile* C, int opc, Node* n1, Node* n2, uint vlen,
   case Op_OrV:  return new (C) OrVNode (n1, n2, vt);
   case Op_XorV: return new (C) XorVNode(n1, n2, vt);
   }
-  ShouldNotReachHere();
+  fatal(err_msg_res("Missed vector creation for '%s'", NodeClassNames[vopc]));
   return NULL;
 
 }
@@ -312,7 +314,25 @@ VectorNode* VectorNode::scalar2vector(Compile* C, Node* s, uint vlen, const Type
   case T_DOUBLE:
     return new (C) ReplicateDNode(s, vt);
   }
-  ShouldNotReachHere();
+  fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
+  return NULL;
+}
+
+VectorNode* VectorNode::shift_count(Compile* C, Node* shift, Node* cnt, uint vlen, BasicType bt) {
+  assert(VectorNode::is_shift(shift) && !cnt->is_Con(), "only variable shift count");
+  // Match shift count type with shift vector type.
+  const TypeVect* vt = TypeVect::make(bt, vlen);
+  switch (shift->Opcode()) {
+  case Op_LShiftI:
+  case Op_LShiftL:
+    return new (C) LShiftCntVNode(cnt, vt);
+  case Op_RShiftI:
+  case Op_RShiftL:
+  case Op_URShiftI:
+  case Op_URShiftL:
+    return new (C) RShiftCntVNode(cnt, vt);
+  }
+  fatal(err_msg_res("Missed vector creation for '%s'", NodeClassNames[shift->Opcode()]));
   return NULL;
 }
 
@@ -335,7 +355,7 @@ PackNode* PackNode::make(Compile* C, Node* s, uint vlen, BasicType bt) {
   case T_DOUBLE:
     return new (C) PackDNode(s, vt);
   }
-  ShouldNotReachHere();
+  fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
   return NULL;
 }
 
@@ -371,7 +391,7 @@ PackNode* PackNode::binary_tree_pack(Compile* C, int lo, int hi) {
     case T_DOUBLE:
       return new (C) Pack2DNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
     }
-    ShouldNotReachHere();
+    fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
   }
   return NULL;
 }
@@ -381,7 +401,6 @@ LoadVectorNode* LoadVectorNode::make(Compile* C, int opc, Node* ctl, Node* mem,
                                      Node* adr, const TypePtr* atyp, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
   return new (C) LoadVectorNode(ctl, mem, adr, atyp, vt);
-  return NULL;
 }
 
 // Return the vector version of a scalar store node.
@@ -413,7 +432,7 @@ Node* ExtractNode::make(Compile* C, Node* v, uint position, BasicType bt) {
   case T_DOUBLE:
     return new (C) ExtractDNode(v, pos);
   }
-  ShouldNotReachHere();
+  fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
   return NULL;
 }
 

@@ -445,12 +445,26 @@ bool ConstantPool::has_appendix_at_if_loaded(constantPoolHandle cpool, int which
   return e->has_appendix();
 }
 
-
 oop ConstantPool::appendix_at_if_loaded(constantPoolHandle cpool, int which) {
   if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
   return e->appendix_if_resolved(cpool);
+}
+
+
+bool ConstantPool::has_method_type_at_if_loaded(constantPoolHandle cpool, int which) {
+  if (cpool->cache() == NULL)  return false;  // nothing to load yet
+  int cache_index = decode_cpcache_index(which, true);
+  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+  return e->has_method_type();
+}
+
+oop ConstantPool::method_type_at_if_loaded(constantPoolHandle cpool, int which) {
+  if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
+  int cache_index = decode_cpcache_index(which, true);
+  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+  return e->method_type_if_resolved(cpool);
 }
 
 

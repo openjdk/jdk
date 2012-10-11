@@ -70,12 +70,6 @@
 # include "assembler_sparc.inline.hpp"
 # include "nativeInst_sparc.hpp"
 #endif
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 
 // put OS-includes here
 # include <dlfcn.h>

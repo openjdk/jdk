@@ -43,7 +43,7 @@ class DefNewGeneration: public Generation {
 
 protected:
   Generation* _next_gen;
-  int         _tenuring_threshold;   // Tenuring threshold for next collection.
+  uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   ageTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes
   size_t        _pretenure_size_threshold_words;
@@ -325,7 +325,7 @@ protected:
                                 bool parallel = false);
 
   oop copy_to_survivor_space(oop old);
-  int tenuring_threshold() { return _tenuring_threshold; }
+  uint tenuring_threshold() { return _tenuring_threshold; }
 
   // Performance Counter support
   void update_counters();

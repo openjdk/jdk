@@ -179,7 +179,7 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
             MethodHandles::is_signature_polymorphic_name(SystemDictionary::MethodHandle_klass(),
                                                          _pool->name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
-          add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+          add_invokedynamic_resolved_references_entries(cp_index, cache_index);
           status = +1;
         } else {
           status = -1;
@@ -211,7 +211,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
   if (!reverse) {
     int cp_index = Bytes::get_Java_u2(p);
     int cache_index = add_invokedynamic_cp_cache_entry(cp_index);
-    add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+    add_invokedynamic_resolved_references_entries(cp_index, cache_index);
     // Replace the trailing four bytes with a CPC index for the dynamic
     // call site.  Unlike other CPC entries, there is one per bytecode,
     // not just one per distinct CP entry.  In other words, the
