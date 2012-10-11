@@ -179,7 +179,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
      * @param annotationInfoTree the content tree to which the documentation will be added
      */
     public void buildAnnotationTypeSignature(XMLNode node, Content annotationInfoTree) {
-        StringBuffer modifiers = new StringBuffer(
+        StringBuilder modifiers = new StringBuilder(
                 annotationTypeDoc.modifiers() + " ");
         writer.addAnnotationTypeSignature(Util.replaceText(
                 modifiers.toString(), "interface", "@interface"), annotationInfoTree);

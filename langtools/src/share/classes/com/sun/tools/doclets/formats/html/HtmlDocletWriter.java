@@ -1567,7 +1567,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param name File name, to which path string is.
      */
     protected String pathString(PackageDoc pd, String name) {
-        StringBuffer buf = new StringBuffer(relativePath);
+        StringBuilder buf = new StringBuilder(relativePath);
         buf.append(DirectoryManager.getPathToPackage(pd, name));
         return buf.toString();
     }
@@ -2030,7 +2030,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (! (tagName.startsWith("@link") || tagName.equals("@see"))) {
             return "";
         }
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         boolean isplaintext = tagName.toLowerCase().equals("@linkplain");
         String label = see.label();
         label = (label.length() > 0)?
@@ -2329,7 +2329,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     text = removeNonInlineHtmlTags(text);
                 }
                 StringTokenizer lines = new StringTokenizer(text, "\r\n", true);
-                StringBuffer textBuff = new StringBuffer();
+                StringBuilder textBuff = new StringBuilder();
                 while (lines.hasMoreTokens()) {
                     StringBuilder line = new StringBuilder(lines.nextToken());
                     Util.replaceTabs(configuration.sourcetab, line);
@@ -2398,7 +2398,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         //Redirect all relative links.
         int end, begin = text.toLowerCase().indexOf("<a");
         if(begin >= 0){
-            StringBuffer textBuff = new StringBuffer(text);
+            StringBuilder textBuff = new StringBuilder(text);
 
             while(begin >=0){
                 if (textBuff.length() > begin + 2 && ! Character.isWhitespace(textBuff.charAt(begin+2))) {
@@ -2688,13 +2688,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     private List<String> getAnnotations(int indent, AnnotationDesc[] descList, boolean linkBreak) {
         List<String> results = new ArrayList<String>();
-        StringBuffer annotation;
+        StringBuilder annotation;
         for (int i = 0; i < descList.length; i++) {
             AnnotationTypeDoc annotationDoc = descList[i].annotationType();
             if (! Util.isDocumentedAnnotation(annotationDoc)){
                 continue;
             }
-            annotation = new StringBuffer();
+            annotation = new StringBuilder();
             LinkInfoImpl linkInfo = new LinkInfoImpl(
                 LinkInfoImpl.CONTEXT_ANNOTATION, annotationDoc);
             linkInfo.label = "@" + annotationDoc.name();
@@ -2759,9 +2759,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             List<String> list = getAnnotations(0,
                 new AnnotationDesc[]{(AnnotationDesc) annotationValue.value()},
                     false);
-            StringBuffer buf = new StringBuffer();
-            for (Iterator<String> iter = list.iterator(); iter.hasNext(); ) {
-                buf.append(iter.next());
+            StringBuilder buf = new StringBuilder();
+            for (String s: list) {
+                buf.append(s);
             }
             return buf.toString();
         } else if (annotationValue.value() instanceof MemberDoc) {

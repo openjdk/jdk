@@ -263,7 +263,7 @@ public abstract class AbstractMemberWriter {
         if (len <= 0) {
             return "";
         }
-        StringBuffer sb = new StringBuffer(len);
+        StringBuilder sb = new StringBuilder(len);
         for(int i = 0; i < len; i++) {
             sb.append(' ');
     }

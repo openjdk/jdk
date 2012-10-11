@@ -1945,7 +1945,7 @@ public class Lower extends TreeTranslator {
      *  @param sig      The signature of type T.
      */
     private Name cacheName(String sig) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         if (sig.startsWith("[")) {
             buf = buf.append("array");
             while (sig.startsWith("[")) {

@@ -74,7 +74,7 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public TagletOutput deprecatedTagOutput(Doc doc) {
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
         Tag[] deprs = doc.tags("deprecated");
         if (doc instanceof ClassDoc) {
             if (Util.isDeprecated((ProgramElementDoc) doc)) {
@@ -125,9 +125,9 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public TagletOutput getParamHeader(String header) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append("<dt>");
-        result.append("<span class=\"strong\">" +  header + "</span></dt>");
+        result.append("<span class=\"strong\">").append(header).append("</span></dt>");
         return new TagletOutputImpl(result.toString());
     }
 

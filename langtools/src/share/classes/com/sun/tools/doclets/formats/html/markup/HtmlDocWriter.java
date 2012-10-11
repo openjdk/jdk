@@ -186,7 +186,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     public String getHyperLinkString(String link, String where,
                                String label, boolean strong,
                                String stylename, String title, String target) {
-        StringBuffer retlink = new StringBuffer();
+        StringBuilder retlink = new StringBuilder();
         retlink.append("<a href=\"");
         retlink.append(link);
         if (where != null && where.length() != 0) {
@@ -195,10 +195,10 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         }
         retlink.append("\"");
         if (title != null && title.length() != 0) {
-            retlink.append(" title=\"" + title + "\"");
+            retlink.append(" title=\"").append(title).append("\"");
         }
         if (target != null && target.length() != 0) {
-            retlink.append(" target=\"" + target + "\"");
+            retlink.append(" target=\"").append(target).append("\"");
         }
         retlink.append(">");
         if (stylename != null && stylename.length() != 0) {

@@ -281,7 +281,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @return the 1.4.x style anchor for the ExecutableMemberDoc.
      */
     protected String getErasureAnchor(ExecutableMemberDoc emd) {
-        StringBuffer buf = new StringBuffer(emd.name() + "(");
+        StringBuilder buf = new StringBuilder(emd.name() + "(");
         Parameter[] params = emd.parameters();
         boolean foundTypeVariable = false;
         for (int i = 0; i < params.length; i++) {
