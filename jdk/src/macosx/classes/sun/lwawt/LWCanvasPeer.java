@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,26 +26,27 @@
 
 package sun.lwawt;
 
+import java.awt.AWTException;
 import java.awt.BufferCapabilities;
-import java.awt.Canvas;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.peer.CanvasPeer;
 
 import javax.swing.JComponent;
 
-final class LWCanvasPeer extends LWComponentPeer<Component, JComponent>
-        implements CanvasPeer {
+class LWCanvasPeer<T extends Component, D extends JComponent>
+        extends LWComponentPeer<T, D> implements CanvasPeer {
 
-    LWCanvasPeer(final Canvas target, PlatformComponent platformComponent) {
+    LWCanvasPeer(final T target, final PlatformComponent platformComponent) {
         super(target, platformComponent);
     }
-
     // ---- PEER METHODS ---- //
 
     @Override
-    public void createBuffers(int numBuffers, BufferCapabilities caps) {
+    public void createBuffers(int numBuffers, BufferCapabilities caps)
+            throws AWTException {
         // TODO
     }
 
@@ -67,10 +68,20 @@ final class LWCanvasPeer extends LWComponentPeer<Component, JComponent>
     }
 
     @Override
-    public GraphicsConfiguration getAppropriateGraphicsConfiguration(
+    public final GraphicsConfiguration getAppropriateGraphicsConfiguration(
             GraphicsConfiguration gc)
     {
         // TODO
         return gc;
+    }
+
+    @Override
+    public final Dimension getPreferredSize() {
+        return getMinimumSize();
+    }
+
+    @Override
+    public final Dimension getMinimumSize() {
+        return getBounds().getSize();
     }
 }

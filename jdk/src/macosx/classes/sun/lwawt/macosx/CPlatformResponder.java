@@ -160,6 +160,9 @@ final class CPlatformResponder {
 
             if(isDeadChar){
                 testChar = (char) out[2];
+                if(testChar == 0){
+                    return;
+                }
             }
 
             jkeyCode = out[0];

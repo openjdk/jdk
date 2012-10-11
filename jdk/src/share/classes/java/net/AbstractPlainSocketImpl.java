@@ -368,7 +368,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     /**
      * Binds the socket to the specified address of the specified local port.
      * @param address the address
-     * @param port the port
+     * @param lport the port
      */
     protected synchronized void bind(InetAddress address, int lport)
         throws IOException

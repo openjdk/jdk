@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ public abstract class HandshakeMessage {
      */
     final void write(HandshakeOutStream s) throws IOException {
         int len = messageLength();
-        if (len > (1 << 24)) {
+        if (len >= Record.OVERFLOW_OF_INT24) {
             throw new SSLException("Handshake message too big"
                 + ", type = " + messageType() + ", len = " + len);
         }

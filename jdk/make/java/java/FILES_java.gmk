@@ -213,6 +213,7 @@ JAVA_JAVA_java = \
             sun/util/locale/provider/DateFormatSymbolsProviderImpl.java \
             sun/util/locale/provider/DecimalFormatSymbolsProviderImpl.java \
             sun/util/locale/provider/DictionaryBasedBreakIterator.java \
+            sun/util/locale/provider/FallbackLocaleProviderAdapter.java \
             sun/util/locale/provider/HostLocaleProviderAdapter.java \
             sun/util/locale/provider/HostLocaleProviderAdapterImpl.java \
             sun/util/locale/provider/JRELocaleConstants.java \
@@ -235,6 +236,7 @@ JAVA_JAVA_java = \
     java/util/Observer.java \
     java/util/Properties.java \
         java/util/InvalidPropertiesFormatException.java \
+	sun/util/spi/XmlPropertiesProvider.java \
     java/util/PropertyPermission.java \
     java/util/PropertyResourceBundle.java \
     java/util/Random.java \
