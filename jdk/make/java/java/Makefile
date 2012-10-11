@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -64,13 +64,11 @@ include FILES_java.gmk
 include Exportedfiles.gmk
 
 ifeq ($(PLATFORM),windows)
-FILES_java += 	java/io/Win32FileSystem.java \
-		java/io/WinNTFileSystem.java \
+FILES_java += 	java/io/WinNTFileSystem.java \
 		java/util/prefs/WindowsPreferences.java \
                 java/util/prefs/WindowsPreferencesFactory.java
 
 FILES_c    +=   ProcessImpl_md.c \
-		Win32FileSystem_md.c \
 		WinNTFileSystem_md.c \
 		canonicalize_md.c \
 		dirent_md.c \
