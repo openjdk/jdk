@@ -84,7 +84,7 @@ public class LiteralTaglet implements Taglet {
      * Replace occurrences of the following characters:  < > &
      */
     protected static String textToString(String text) {
-           StringBuffer buf = new StringBuffer();
+           StringBuilder buf = new StringBuilder();
            for (int i = 0; i < text.length(); i++) {
                char c = text.charAt(i);
                switch (c) {

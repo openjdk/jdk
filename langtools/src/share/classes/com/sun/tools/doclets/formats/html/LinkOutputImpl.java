@@ -43,13 +43,13 @@ public class LinkOutputImpl implements LinkOutput {
     /**
      * The output of the link.
      */
-    public StringBuffer output;
+    public StringBuilder output;
 
     /**
      * Construct a new LinkOutputImpl.
      */
     public LinkOutputImpl() {
-        output = new StringBuffer();
+        output = new StringBuilder();
     }
 
     /**

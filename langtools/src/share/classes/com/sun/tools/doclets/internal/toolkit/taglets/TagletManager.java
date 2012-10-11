@@ -449,7 +449,7 @@ public class TagletManager {
             //This known tag is excluded.
             return;
         }
-        StringBuffer combined_locations = new StringBuffer();
+        StringBuilder combined_locations = new StringBuilder();
         for (int i = 0; i < locations.length; i++) {
             if (i > 0) {
                 combined_locations.append(", ");

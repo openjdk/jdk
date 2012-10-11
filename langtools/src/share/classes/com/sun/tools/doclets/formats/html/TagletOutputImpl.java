@@ -41,7 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.taglets.*;
 
 public class TagletOutputImpl implements TagletOutput {
 
-    private StringBuffer output;
+    private StringBuilder output;
 
     public TagletOutputImpl(String o) {
         setOutput(o);
@@ -51,7 +51,7 @@ public class TagletOutputImpl implements TagletOutput {
      * {@inheritDoc}
      */
     public void setOutput (Object o) {
-        output = new StringBuffer(o == null ? "" : (String) o);
+        output = new StringBuilder(o == null ? "" : (String) o);
     }
 
     /**

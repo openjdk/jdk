@@ -806,7 +806,7 @@ public class JavacParser implements Parser {
         t = odStack[0];
 
         if (t.hasTag(JCTree.Tag.PLUS)) {
-            StringBuffer buf = foldStrings(t);
+            StringBuilder buf = foldStrings(t);
             if (buf != null) {
                 t = toP(F.at(startPos).Literal(TypeTags.CLASS, buf.toString()));
             }
@@ -833,7 +833,7 @@ public class JavacParser implements Parser {
         /** If tree is a concatenation of string literals, replace it
          *  by a single literal representing the concatenated string.
          */
-        protected StringBuffer foldStrings(JCTree tree) {
+        protected StringBuilder foldStrings(JCTree tree) {
             if (!allowStringFolding)
                 return null;
             List<String> buf = List.nil();
@@ -841,8 +841,8 @@ public class JavacParser implements Parser {
                 if (tree.hasTag(LITERAL)) {
                     JCLiteral lit = (JCLiteral) tree;
                     if (lit.typetag == TypeTags.CLASS) {
-                        StringBuffer sbuf =
-                            new StringBuffer((String)lit.value);
+                        StringBuilder sbuf =
+                            new StringBuilder((String)lit.value);
                         while (buf.nonEmpty()) {
                             sbuf.append(buf.head);
                             buf = buf.tail;

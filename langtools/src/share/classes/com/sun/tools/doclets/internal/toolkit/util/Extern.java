@@ -277,7 +277,7 @@ public class Extern {
                                 boolean relative)
                          throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(input));
-        StringBuffer strbuf = new StringBuffer();
+        StringBuilder strbuf = new StringBuilder();
         try {
             int c;
             while ((c = in.read()) >= 0) {
