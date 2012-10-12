@@ -326,7 +326,7 @@ bool ciEnv::check_klass_accessibility(ciKlass* accessing_klass,
 
   if (resolved_klass->oop_is_objArray()) {
     // Find the element klass, if this is an array.
-    resolved_klass = objArrayKlass::cast(resolved_klass)->bottom_klass();
+    resolved_klass = ObjArrayKlass::cast(resolved_klass)->bottom_klass();
   }
   if (resolved_klass->oop_is_instance()) {
     return Reflection::verify_class_access(accessing_klass->get_Klass(),
@@ -921,7 +921,8 @@ void ciEnv::register_method(ciMethod* target,
                             ImplicitExceptionTable* inc_table,
                             AbstractCompiler* compiler,
                             int comp_level,
-                            bool has_unsafe_access) {
+                            bool has_unsafe_access,
+                            bool has_wide_vectors) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
   {
@@ -1016,6 +1017,7 @@ void ciEnv::register_method(ciMethod* target,
       }
     } else {
       nm->set_has_unsafe_access(has_unsafe_access);
+      nm->set_has_wide_vectors(has_wide_vectors);
 
       // Record successful registration.
       // (Put nm into the task handle *before* publishing to the Java heap.)
@@ -1124,7 +1126,8 @@ void ciEnv::record_method_not_compilable(const char* reason, bool all_tiers) {
       if (all_tiers) {
         log()->elem("method_not_compilable");
       } else {
-        log()->elem("method_not_compilable_at_tier");
+        log()->elem("method_not_compilable_at_tier level='%d'",
+                    current()->task()->comp_level());
       }
     }
     _compilable = new_compilable;

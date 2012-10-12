@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 
 package com.sun.tools.javap;
 
-import com.sun.tools.classfile.AccessFlags;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.sun.tools.classfile.AccessFlags;
 import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.ConstantPool;
@@ -233,8 +234,7 @@ public class StackMapWriter extends InstructionDetailWriter {
             StackMap prev = map.get(pc);
             assert (prev != null);
             int k = 251 - frame.frame_type;
-            verification_type_info[] new_locals = new verification_type_info[prev.locals.length - k];
-            System.arraycopy(prev.locals, 0, new_locals, 0, new_locals.length);
+            verification_type_info[] new_locals = Arrays.copyOf(prev.locals, prev.locals.length - k);
             StackMap m = new StackMap(new_locals, empty);
             map.put(new_pc, m);
             return new_pc;

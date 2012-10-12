@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -489,8 +489,8 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
 
   // Printing support
   virtual bool print_adaptive_size_policy_on(outputStream* st) const;
-  bool print_adaptive_size_policy_on(outputStream* st, int
-                                  tenuring_threshold) const;
+  bool print_adaptive_size_policy_on(outputStream* st,
+                                     uint tenuring_threshold) const;
 };
 
 // Class that can be used to print information about the

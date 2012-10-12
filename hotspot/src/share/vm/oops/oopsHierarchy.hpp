@@ -128,7 +128,7 @@ public:
 #endif
 
   // from parNewGeneration and other things that want to get to the end of
-  // an oop for stuff (like objArrayKlass.cpp)
+  // an oop for stuff (like ObjArrayKlass.cpp)
   operator oop* () const              { return (oop *)obj(); }
 };
 
@@ -172,8 +172,8 @@ class   InstanceKlass;
 class     InstanceMirrorKlass;
 class     InstanceClassLoaderKlass;
 class     InstanceRefKlass;
-class   arrayKlass;
-class     objArrayKlass;
-class     typeArrayKlass;
+class   ArrayKlass;
+class     ObjArrayKlass;
+class     TypeArrayKlass;
 
 #endif // SHARE_VM_OOPS_OOPSHIERARCHY_HPP

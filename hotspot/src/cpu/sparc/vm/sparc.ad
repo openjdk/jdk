@@ -557,9 +557,9 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     int entry_offset = InstanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
     int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
     int klass_load_size;
-    if (UseCompressedOops && UseCompressedKlassPointers) {
+    if (UseCompressedKlassPointers) {
       assert(Universe::heap() != NULL, "java heap should be initialized");
-      if (Universe::narrow_oop_base() == NULL)
+      if (Universe::narrow_klass_base() == NULL)
         klass_load_size = 2*BytesPerInstWord; // see MacroAssembler::load_klass()
       else
         klass_load_size = 3*BytesPerInstWord;
@@ -1707,11 +1707,11 @@ uint reloc_java_to_interp() {
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
 #ifdef    _LP64
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     assert(Universe::heap() != NULL, "java heap should be initialized");
     st->print_cr("\tLDUW   [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check - compressed klass");
     st->print_cr("\tSLL    R_G5,3,R_G5");
-    if (Universe::narrow_oop_base() != NULL)
+    if (Universe::narrow_klass_base() != NULL)
       st->print_cr("\tADD    R_G5,R_G6_heap_base,R_G5");
   } else {
     st->print_cr("\tLDX    [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check");
@@ -1838,6 +1838,12 @@ const bool Matcher::match_rule_supported(int opcode) {
   case Op_PopCountL:
     if (!UsePopCountInstruction)
       return false;
+  case Op_CompareAndSwapL:
+#ifdef _LP64
+  case Op_CompareAndSwapP:
+#endif
+    if (!VM_Version::supports_cx8())
+      return false;
     break;
   }
 
@@ -1862,6 +1868,11 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 const int Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize == 8, "");
   return Op_RegD;
+}
+
+const int Matcher::vector_shift_count_ideal_reg(int size) {
+  fatal("vector shift is not supported");
+  return Node::NotAMachineReg;
 }
 
 // Limits on vector size (number of elements) loaded into vector.
@@ -1928,6 +1939,12 @@ const bool Matcher::need_masked_shift_count = false;
 bool Matcher::narrow_oop_use_complex_address() {
   NOT_LP64(ShouldNotCallThis());
   assert(UseCompressedOops, "only for compressed oops code");
+  return false;
+}
+
+bool Matcher::narrow_klass_use_complex_address() {
+  NOT_LP64(ShouldNotCallThis());
+  assert(UseCompressedKlassPointers, "only for compressed klass code");
   return false;
 }
 
@@ -2591,9 +2608,9 @@ encode %{
       int off = __ offset();
       __ load_klass(O0, G3_scratch);
       int klass_load_size;
-      if (UseCompressedOops && UseCompressedKlassPointers) {
+      if (UseCompressedKlassPointers) {
         assert(Universe::heap() != NULL, "java heap should be initialized");
-        if (Universe::narrow_oop_base() == NULL)
+        if (Universe::narrow_klass_base() == NULL)
           klass_load_size = 2*BytesPerInstWord;
         else
           klass_load_size = 3*BytesPerInstWord;
@@ -3593,6 +3610,15 @@ operand immP_poll() %{
 operand immN()
 %{
   match(ConN);
+
+  op_cost(10);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immNKlass()
+%{
+  match(ConNKlass);
 
   op_cost(10);
   format %{ %}
@@ -5859,8 +5885,8 @@ instruct loadI2L_immI(iRegL dst, memory mem, immI mask, iRegL tmp) %{
 %}
 
 // Load Unsigned Integer into a Long Register
-instruct loadUI2L(iRegL dst, memory mem) %{
-  match(Set dst (LoadUI2L mem));
+instruct loadUI2L(iRegL dst, memory mem, immL_32bits mask) %{
+  match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
@@ -6144,6 +6170,17 @@ instruct loadConN(iRegN dst, immN src) %{
   ins_encode %{
     Register dst = $dst$$Register;
     __ set_narrow_oop((jobject)$src$$constant, dst);
+  %}
+  ins_pipe(ialu_hi_lo_reg);
+%}
+
+instruct loadConNKlass(iRegN dst, immNKlass src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST * 3/2);
+  format %{ "SET    $src,$dst\t! compressed klass ptr" %}
+  ins_encode %{
+    Register dst = $dst$$Register;
+    __ set_narrow_klass((Klass*)$src$$constant, dst);
   %}
   ins_pipe(ialu_hi_lo_reg);
 %}
@@ -6464,6 +6501,25 @@ instruct storeN(memory dst, iRegN src) %{
    ins_pipe(istore_mem_spORreg);
 %}
 
+instruct storeNKlass(memory dst, iRegN src) %{
+   match(Set dst (StoreNKlass dst src));
+   ins_cost(MEMORY_REF_COST);
+   size(4);
+
+   format %{ "STW    $src,$dst\t! compressed klass ptr" %}
+   ins_encode %{
+     Register base = as_Register($dst$$base);
+     Register index = as_Register($dst$$index);
+     Register src = $src$$Register;
+     if (index != G0) {
+       __ stw(src, base, index);
+     } else {
+       __ stw(src, base, $dst$$disp);
+     }
+   %}
+   ins_pipe(istore_mem_spORreg);
+%}
+
 instruct storeN0(memory dst, immN0 src) %{
    match(Set dst (StoreN dst src));
    ins_cost(MEMORY_REF_COST);
@@ -6571,6 +6627,23 @@ instruct decodeHeapOop_not_null(iRegP dst, iRegN src) %{
   ins_pipe(ialu_reg);
 %}
 
+instruct encodeKlass_not_null(iRegN dst, iRegP src) %{
+  match(Set dst (EncodePKlass src));
+  format %{ "encode_klass_not_null $src, $dst" %}
+  ins_encode %{
+    __ encode_klass_not_null($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct decodeKlass_not_null(iRegP dst, iRegN src) %{
+  match(Set dst (DecodeNKlass src));
+  format %{ "decode_klass_not_null $src, $dst" %}
+  ins_encode %{
+    __ decode_klass_not_null($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
 
 //----------MemBar Instructions-----------------------------------------------
 // Memory barrier flavors
@@ -7199,6 +7272,7 @@ instruct storeLConditional( iRegP mem_ptr, iRegL oldval, g3RegL newval, flagsReg
 // No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 
 instruct compareAndSwapL_bool(iRegP mem_ptr, iRegL oldval, iRegL newval, iRegI res, o7RegI tmp1, flagsReg ccr ) %{
+  predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
   effect( USE mem_ptr, KILL ccr, KILL tmp1);
   format %{
@@ -7230,6 +7304,9 @@ instruct compareAndSwapI_bool(iRegP mem_ptr, iRegI oldval, iRegI newval, iRegI r
 %}
 
 instruct compareAndSwapP_bool(iRegP mem_ptr, iRegP oldval, iRegP newval, iRegI res, o7RegI tmp1, flagsReg ccr ) %{
+#ifdef _LP64
+  predicate(VM_Version::supports_cx8());
+#endif
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
   effect( USE mem_ptr, KILL ccr, KILL tmp1);
   format %{
@@ -7261,6 +7338,38 @@ instruct compareAndSwapN_bool(iRegP mem_ptr, iRegN oldval, iRegN newval, iRegI r
   %}
   ins_encode( enc_casi(mem_ptr, oldval, newval),
               enc_iflags_ne_to_boolean(res) );
+  ins_pipe( long_memory_op );
+%}
+
+instruct xchgI( memory mem, iRegI newval) %{
+  match(Set newval (GetAndSetI mem newval));
+  format %{ "SWAP  [$mem],$newval" %}
+  size(4);
+  ins_encode %{
+    __ swap($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( long_memory_op );
+%}
+
+#ifndef _LP64
+instruct xchgP( memory mem, iRegP newval) %{
+  match(Set newval (GetAndSetP mem newval));
+  format %{ "SWAP  [$mem],$newval" %}
+  size(4);
+  ins_encode %{
+    __ swap($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( long_memory_op );
+%}
+#endif
+
+instruct xchgN( memory mem, iRegN newval) %{
+  match(Set newval (GetAndSetN mem newval));
+  format %{ "SWAP  [$mem],$newval" %}
+  size(4);
+  ins_encode %{
+    __ swap($mem$$Address, $newval$$Register);
+  %}
   ins_pipe( long_memory_op );
 %}
 

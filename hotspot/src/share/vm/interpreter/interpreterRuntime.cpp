@@ -211,7 +211,7 @@ IRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* thread, jint* fir
     int n = Interpreter::local_offset_in_bytes(index)/jintSize;
     dims[index] = first_size_address[n];
   }
-  oop obj = arrayKlass::cast(klass)->multi_allocate(nof_dims, dims, CHECK);
+  oop obj = ArrayKlass::cast(klass)->multi_allocate(nof_dims, dims, CHECK);
   thread->set_vm_result(obj);
 IRT_END
 
@@ -737,6 +737,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokehandle(JavaThread* thread)) {
       pool,
       info.resolved_method(),
       info.resolved_appendix(),
+      info.resolved_method_type(),
       pool->resolved_references());
 }
 IRT_END
@@ -765,6 +766,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
       pool,
       info.resolved_method(),
       info.resolved_appendix(),
+      info.resolved_method_type(),
       pool->resolved_references());
 }
 IRT_END

@@ -431,6 +431,12 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
         return (value == 0 ? null : new BsdAddress(this, value));
     }
 
+    public BsdAddress readCompKlassAddress(long address)
+            throws UnmappedAddressException, UnalignedAddressException {
+        long value = readCompKlassAddressValue(address);
+        return (value == 0 ? null : new BsdAddress(this, value));
+    }
+
     /** From the BsdDebugger interface */
     public BsdOopHandle readOopHandle(long address)
             throws UnmappedAddressException, UnalignedAddressException,

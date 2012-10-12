@@ -495,9 +495,9 @@ class VM_RedefineClasses: public VM_Operation {
 class MetadataOnStackMark : public StackObj {
   NOT_PRODUCT(static bool _is_active;)
  public:
-  MetadataOnStackMark();
-  ~MetadataOnStackMark();
-  static void record(Metadata* m);
+  MetadataOnStackMark() NOT_JVMTI_RETURN;
+  ~MetadataOnStackMark() NOT_JVMTI_RETURN;
+  static void record(Metadata* m) NOT_JVMTI_RETURN;
 };
 
 #endif // SHARE_VM_PRIMS_JVMTIREDEFINECLASSES_HPP

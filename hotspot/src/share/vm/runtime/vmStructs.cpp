@@ -230,6 +230,15 @@ static inline uint64_t cast_uint64_t(size_t x)
   return x;
 }
 
+#if INCLUDE_JVMTI
+  #define JVMTI_STRUCTS(static_field) \
+    static_field(JvmtiExport,                     _can_access_local_variables,                  bool)                                  \
+    static_field(JvmtiExport,                     _can_hotswap_or_post_breakpoint,              bool)                                  \
+    static_field(JvmtiExport,                     _can_post_on_exceptions,                      bool)                                  \
+    static_field(JvmtiExport,                     _can_walk_any_space,                          bool)
+#else
+  #define JVMTI_STRUCTS(static_field)
+#endif // INCLUDE_JVMTI
 
 typedef HashtableEntry<intptr_t, mtInternal>  IntptrHashtableEntry;
 typedef Hashtable<intptr_t, mtInternal>       IntptrHashtable;
@@ -268,12 +277,12 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
   volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowOop)                             \
      static_field(oopDesc,                     _bs,                                           BarrierSet*)                           \
-  nonstatic_field(arrayKlass,                  _dimension,                                    int)                                   \
-  volatile_nonstatic_field(arrayKlass,         _higher_dimension,                             Klass*)                                \
-  volatile_nonstatic_field(arrayKlass,         _lower_dimension,                              Klass*)                                \
-  nonstatic_field(arrayKlass,                  _vtable_len,                                   int)                                   \
-  nonstatic_field(arrayKlass,                  _alloc_size,                                   juint)                                 \
-  nonstatic_field(arrayKlass,                  _component_mirror,                             oop)                                   \
+  nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
+  volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             Klass*)                                \
+  volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              Klass*)                                \
+  nonstatic_field(ArrayKlass,                  _vtable_len,                                   int)                                   \
+  nonstatic_field(ArrayKlass,                  _alloc_size,                                   juint)                                 \
+  nonstatic_field(ArrayKlass,                  _component_mirror,                             oop)                                   \
   nonstatic_field(CompiledICHolder,     _holder_method,                                Method*)                        \
   nonstatic_field(CompiledICHolder,     _holder_klass,                                 Klass*)                                \
   nonstatic_field(ConstantPool,         _tags,                                         Array<u1>*)                            \
@@ -379,13 +388,13 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(ConstMethod,          _signature_index,                              u2)                                    \
   nonstatic_field(ConstMethod,          _method_idnum,                                 u2)                                    \
   nonstatic_field(ConstMethod,          _generic_signature_index,                      u2)                                    \
-  nonstatic_field(objArrayKlass,               _element_klass,                                Klass*)                                \
-  nonstatic_field(objArrayKlass,               _bottom_klass,                                 Klass*)                                \
+  nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
+  nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
   volatile_nonstatic_field(Symbol,             _refcount,                                     int)                                   \
   nonstatic_field(Symbol,                      _identity_hash,                                int)                                   \
   nonstatic_field(Symbol,                      _length,                                       unsigned short)                        \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(jbyte)) /* NOTE: no type */     \
-  nonstatic_field(typeArrayKlass,              _max_length,                                   int)                                   \
+  nonstatic_field(TypeArrayKlass,              _max_length,                                   int)                                   \
                                                                                                                                      \
   /***********************/                                                                                                          \
   /* Constant Pool Cache */                                                                                                          \
@@ -454,6 +463,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
      static_field(Universe,                    _narrow_oop._base,                             address)                               \
      static_field(Universe,                    _narrow_oop._shift,                            int)                                   \
      static_field(Universe,                    _narrow_oop._use_implicit_null_checks,         bool)                                  \
+     static_field(Universe,                    _narrow_klass._base,                           address)                               \
+     static_field(Universe,                    _narrow_klass._shift,                          int)                                   \
                                                                                                                                      \
   /**********************************************************************************/                                               \
   /* Generation and Space hierarchies                                               */                                               \
@@ -508,7 +519,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(DefNewGeneration,            _next_gen,                                     Generation*)                           \
-  nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           int)                                   \
+  nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                   \
   nonstatic_field(DefNewGeneration,            _age_table,                                    ageTable)                              \
   nonstatic_field(DefNewGeneration,            _eden_space,                                   EdenSpace*)                            \
   nonstatic_field(DefNewGeneration,            _from_space,                                   ContiguousSpace*)                      \
@@ -1170,10 +1181,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /* JVMTI */                                                                                                                        \
   /*************************/                                                                                                        \
                                                                                                                                      \
-  static_field(JvmtiExport,                     _can_access_local_variables,                  bool)                                  \
-  static_field(JvmtiExport,                     _can_hotswap_or_post_breakpoint,              bool)                                  \
-  static_field(JvmtiExport,                     _can_post_on_exceptions,                      bool)                                  \
-  static_field(JvmtiExport,                     _can_walk_any_space,                          bool)                                  \
+  JVMTI_STRUCTS(static_field)                                                                                                        \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* Arguments */                                                                                                                    \
@@ -1370,9 +1378,9 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_toplevel_type(MetaspaceObj)                                     \
     declare_type(Metadata, MetaspaceObj)                                  \
     declare_type(Klass, Metadata)                                         \
-           declare_type(arrayKlass, Klass)                                \
-           declare_type(objArrayKlass, arrayKlass)                        \
-           declare_type(typeArrayKlass, arrayKlass)                       \
+           declare_type(ArrayKlass, Klass)                                \
+           declare_type(ObjArrayKlass, ArrayKlass)                        \
+           declare_type(TypeArrayKlass, ArrayKlass)                       \
       declare_type(InstanceKlass, Klass)                                  \
         declare_type(InstanceClassLoaderKlass, InstanceKlass)             \
         declare_type(InstanceMirrorKlass, InstanceKlass)                  \
@@ -1727,6 +1735,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(CMoveNNode, CMoveNode)                                  \
   declare_c2_type(EncodePNode, TypeNode)                                  \
   declare_c2_type(DecodeNNode, TypeNode)                                  \
+  declare_c2_type(EncodePKlassNode, TypeNode)                             \
+  declare_c2_type(DecodeNKlassNode, TypeNode)                             \
   declare_c2_type(ConstraintCastNode, TypeNode)                           \
   declare_c2_type(CastIINode, ConstraintCastNode)                         \
   declare_c2_type(CastPPNode, ConstraintCastNode)                         \
@@ -1823,6 +1833,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(StoreDNode, StoreNode)                                  \
   declare_c2_type(StorePNode, StoreNode)                                  \
   declare_c2_type(StoreNNode, StoreNode)                                  \
+  declare_c2_type(StoreNKlassNode, StoreNode)                             \
   declare_c2_type(StoreCMNode, StoreNode)                                 \
   declare_c2_type(LoadPLockedNode, LoadPNode)                             \
   declare_c2_type(SCMemProjNode, ProjNode)                                \
@@ -1905,6 +1916,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(SubVLNode, VectorNode)                                  \
   declare_c2_type(SubVFNode, VectorNode)                                  \
   declare_c2_type(SubVDNode, VectorNode)                                  \
+  declare_c2_type(MulVSNode, VectorNode)                                  \
+  declare_c2_type(MulVINode, VectorNode)                                  \
   declare_c2_type(MulVFNode, VectorNode)                                  \
   declare_c2_type(MulVDNode, VectorNode)                                  \
   declare_c2_type(DivVFNode, VectorNode)                                  \
@@ -1912,9 +1925,15 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(LShiftVBNode, VectorNode)                               \
   declare_c2_type(LShiftVSNode, VectorNode)                               \
   declare_c2_type(LShiftVINode, VectorNode)                               \
+  declare_c2_type(LShiftVLNode, VectorNode)                               \
   declare_c2_type(RShiftVBNode, VectorNode)                               \
   declare_c2_type(RShiftVSNode, VectorNode)                               \
   declare_c2_type(RShiftVINode, VectorNode)                               \
+  declare_c2_type(RShiftVLNode, VectorNode)                               \
+  declare_c2_type(URShiftVBNode, VectorNode)                              \
+  declare_c2_type(URShiftVSNode, VectorNode)                              \
+  declare_c2_type(URShiftVINode, VectorNode)                              \
+  declare_c2_type(URShiftVLNode, VectorNode)                              \
   declare_c2_type(AndVNode, VectorNode)                                   \
   declare_c2_type(OrVNode, VectorNode)                                    \
   declare_c2_type(XorVNode, VectorNode)                                   \
@@ -1937,6 +1956,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(Pack2DNode, PackNode)                                   \
   declare_c2_type(ExtractNode, Node)                                      \
   declare_c2_type(ExtractBNode, ExtractNode)                              \
+  declare_c2_type(ExtractUBNode, ExtractNode)                             \
+  declare_c2_type(ExtractCNode, ExtractNode)                              \
   declare_c2_type(ExtractSNode, ExtractNode)                              \
   declare_c2_type(ExtractINode, ExtractNode)                              \
   declare_c2_type(ExtractLNode, ExtractNode)                              \
@@ -2182,7 +2203,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_constant(JVM_ACC_HAS_LOOPS)                                     \
   declare_constant(JVM_ACC_LOOPS_FLAG_INIT)                               \
   declare_constant(JVM_ACC_QUEUED)                                        \
-  declare_constant(JVM_ACC_NOT_OSR_COMPILABLE)                            \
+  declare_constant(JVM_ACC_NOT_C2_OSR_COMPILABLE)                         \
   declare_constant(JVM_ACC_HAS_LINE_NUMBER_TABLE)                         \
   declare_constant(JVM_ACC_HAS_CHECKED_EXCEPTIONS)                        \
   declare_constant(JVM_ACC_HAS_JSRS)                                      \
