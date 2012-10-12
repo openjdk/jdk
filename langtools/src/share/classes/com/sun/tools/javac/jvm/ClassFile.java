@@ -84,6 +84,16 @@ public class ClassFile {
     public final static int CONSTANT_MethodType = 16;
     public final static int CONSTANT_InvokeDynamic = 18;
 
+    public final static int REF_getField = 1;
+    public final static int REF_getStatic = 2;
+    public final static int REF_putField = 3;
+    public final static int REF_putStatic = 4;
+    public final static int REF_invokeVirtual = 5;
+    public final static int REF_invokeStatic = 6;
+    public final static int REF_invokeSpecial = 7;
+    public final static int REF_newInvokeSpecial = 8;
+    public final static int REF_invokeInterface = 9;
+
     public final static int MAX_PARAMETERS = 0xff;
     public final static int MAX_DIMENSIONS = 0xff;
     public final static int MAX_CODE = 0xffff;

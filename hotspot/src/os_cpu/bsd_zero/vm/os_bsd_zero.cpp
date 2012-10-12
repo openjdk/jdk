@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,12 +58,6 @@
 #include "thread_bsd.inline.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 
 address os::current_stack_pointer() {
   address dummy = (address) &dummy;
@@ -103,7 +97,7 @@ char* os::non_memory_address_word() {
 #endif // SPARC
 }
 
-void os::initialize_thread() {
+void os::initialize_thread(Thread* thr) {
   // Nothing to do.
 }
 

@@ -1998,7 +1998,7 @@ public class Lower extends TreeTranslator {
             // replace with <BoxedClass>.TYPE
             ClassSymbol c = types.boxedClass(type);
             Symbol typeSym =
-                rs.access(
+                rs.accessBase(
                     rs.findIdentInType(attrEnv, c.type, names.TYPE, VAR),
                     pos, c.type, names.TYPE, true);
             if (typeSym.kind == VAR)

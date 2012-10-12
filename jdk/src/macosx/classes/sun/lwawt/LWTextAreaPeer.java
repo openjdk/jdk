@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package sun.lwawt;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.TextArea;
 import java.awt.event.TextEvent;
@@ -41,11 +42,22 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 
+/**
+ * Lightweight implementation of {@link TextAreaPeer}. Delegates most of the
+ * work to the {@link JTextArea} inside JScrollPane.
+ */
 final class LWTextAreaPeer
         extends LWTextComponentPeer<TextArea, LWTextAreaPeer.ScrollableJTextArea>
         implements TextAreaPeer {
 
+    /**
+     * The default number of visible columns.
+     */
     private static final int DEFAULT_COLUMNS = 60;
+
+    /**
+     * The default number of visible rows.
+     */
     private static final int DEFAULT_ROWS = 10;
 
     LWTextAreaPeer(final TextArea target,
@@ -87,26 +99,41 @@ final class LWTextAreaPeer
     }
 
     @Override
+    public Dimension getPreferredSize() {
+        return getMinimumSize();
+    }
+
+    @Override
     public Dimension getMinimumSize() {
         return getMinimumSize(DEFAULT_ROWS, DEFAULT_COLUMNS);
     }
 
     @Override
-    public Dimension getMinimumSize(final int rows, final int columns) {
-        return getPreferredSize(rows, columns);
+    public Dimension getPreferredSize(final int rows, final int columns) {
+        return getMinimumSize(rows, columns);
     }
 
     @Override
-    public Dimension getPreferredSize(final int rows, final int columns) {
-        final Dimension size = super.getPreferredSize(rows, columns);
+    public Dimension getMinimumSize(final int rows, final int columns) {
+        final Dimension size = super.getMinimumSize(rows, columns);
         synchronized (getDelegateLock()) {
-            final JScrollBar vbar = getDelegate().getVerticalScrollBar();
-            final JScrollBar hbar = getDelegate().getHorizontalScrollBar();
-            final int scrollbarW = vbar != null ? vbar.getWidth() : 0;
-            final int scrollbarH = hbar != null ? hbar.getHeight() : 0;
-            return new Dimension(size.width + scrollbarW,
-                                 size.height + scrollbarH);
+            // JScrollPane insets
+            final Insets pi = getDelegate().getInsets();
+            size.width += pi.left + pi.right;
+            size.height += pi.top + pi.bottom;
+            // Take scrollbars into account.
+            final int vsbPolicy = getDelegate().getVerticalScrollBarPolicy();
+            if (vsbPolicy == ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS) {
+                final JScrollBar vbar = getDelegate().getVerticalScrollBar();
+                size.width += vbar != null ? vbar.getMinimumSize().width : 0;
+            }
+            final int hsbPolicy = getDelegate().getHorizontalScrollBarPolicy();
+            if (hsbPolicy == ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS) {
+                final JScrollBar hbar = getDelegate().getHorizontalScrollBar();
+                size.height += hbar != null ? hbar.getMinimumSize().height : 0;
+            }
         }
+        return size;
     }
 
     @Override

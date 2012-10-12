@@ -759,7 +759,7 @@ intx defaultStream::hold(intx writer_id) {
     if (has_log) {
       _log_file->bol();
       // output a hint where this output is coming from:
-      _log_file->print_cr("<writer thread='"INTX_FORMAT"'/>", writer_id);
+      _log_file->print_cr("<writer thread='" UINTX_FORMAT "'/>", writer_id);
     }
     _last_writer = writer_id;
   }

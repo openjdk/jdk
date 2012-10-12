@@ -28,6 +28,7 @@ package com.sun.tools.javac.code;
 import java.util.EnumSet;
 import java.util.Locale;
 
+import com.sun.source.tree.MemberReferenceTree;
 import com.sun.tools.javac.api.Formattable;
 import com.sun.tools.javac.api.Messages;
 
@@ -85,11 +86,12 @@ public class Kinds {
     public static final int AMBIGUOUS    = ERRONEOUS+1; // ambiguous reference
     public static final int HIDDEN       = ERRONEOUS+2; // hidden method or field
     public static final int STATICERR    = ERRONEOUS+3; // nonstatic member from static context
-    public static final int ABSENT_VAR   = ERRONEOUS+4; // missing variable
-    public static final int WRONG_MTHS   = ERRONEOUS+5; // methods with wrong arguments
-    public static final int WRONG_MTH    = ERRONEOUS+6; // one method with wrong arguments
-    public static final int ABSENT_MTH   = ERRONEOUS+7; // missing method
-    public static final int ABSENT_TYP   = ERRONEOUS+8; // missing type
+    public static final int MISSING_ENCL = ERRONEOUS+4; // missing enclosing class
+    public static final int ABSENT_VAR   = ERRONEOUS+5; // missing variable
+    public static final int WRONG_MTHS   = ERRONEOUS+6; // methods with wrong arguments
+    public static final int WRONG_MTH    = ERRONEOUS+7; // one method with wrong arguments
+    public static final int ABSENT_MTH   = ERRONEOUS+8; // missing method
+    public static final int ABSENT_TYP   = ERRONEOUS+9; // missing type
 
     public enum KindName implements Formattable {
         ANNOTATION("kindname.annotation"),
@@ -137,6 +139,14 @@ public class Kinds {
         case VAL: return KindName.VAL;
         case MTH: return KindName.METHOD;
             default : throw new AssertionError("Unexpected kind: "+kind);
+        }
+    }
+
+    public static KindName kindName(MemberReferenceTree.ReferenceMode mode) {
+        switch (mode) {
+            case INVOKE: return KindName.METHOD;
+            case NEW: return KindName.CONSTRUCTOR;
+            default : throw new AssertionError("Unexpected mode: "+ mode);
         }
     }
 
