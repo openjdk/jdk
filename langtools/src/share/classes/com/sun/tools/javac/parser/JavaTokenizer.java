@@ -638,10 +638,6 @@ public class JavaTokenizer {
                         lexError(pos, "unclosed.str.lit");
                     }
                     break loop;
-                case '#':
-                    reader.scanChar();
-                    tk = TokenKind.HASH;
-                    break loop;
                 default:
                     if (isSpecial(reader.ch)) {
                         scanOperator();
