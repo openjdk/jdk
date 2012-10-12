@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,9 +439,7 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
   WarmCallInfo wci = *(initial_wci);
   failure_msg = try_to_inline(callee_method, caller_method, caller_bci, profile, &wci);
   if (failure_msg != NULL && C->log() != NULL) {
-    C->log()->begin_elem("inline_fail reason='");
-    C->log()->text("%s", failure_msg);
-    C->log()->end_elem("'");
+    C->log()->inline_fail(failure_msg);
   }
 
 #ifndef PRODUCT

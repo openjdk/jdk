@@ -532,13 +532,13 @@ Klass* Klass::array_klass_or_null() {
 
 
 Klass* Klass::array_klass_impl(bool or_null, int rank, TRAPS) {
-  fatal("array_klass should be dispatched to InstanceKlass, objArrayKlass or typeArrayKlass");
+  fatal("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
   return NULL;
 }
 
 
 Klass* Klass::array_klass_impl(bool or_null, TRAPS) {
-  fatal("array_klass should be dispatched to InstanceKlass, objArrayKlass or typeArrayKlass");
+  fatal("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
   return NULL;
 }
 
@@ -674,7 +674,7 @@ void Klass::verify_vtable_index(int i) {
     assert(i>=0 && i<((InstanceKlass*)this)->vtable_length()/vtableEntry::size(), "index out of bounds");
   } else {
     assert(oop_is_array(), "Must be");
-    assert(i>=0 && i<((arrayKlass*)this)->vtable_length()/vtableEntry::size(), "index out of bounds");
+    assert(i>=0 && i<((ArrayKlass*)this)->vtable_length()/vtableEntry::size(), "index out of bounds");
   }
 }
 

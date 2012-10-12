@@ -533,7 +533,7 @@ int ConstantPool::remap_instruction_operand_from_cache(int operand) {
 void ConstantPool::verify_constant_pool_resolve(constantPoolHandle this_oop, KlassHandle k, TRAPS) {
  if (k->oop_is_instance() || k->oop_is_objArray()) {
     instanceKlassHandle holder (THREAD, this_oop->pool_holder());
-    Klass* elem_oop = k->oop_is_instance() ? k() : objArrayKlass::cast(k())->bottom_klass();
+    Klass* elem_oop = k->oop_is_instance() ? k() : ObjArrayKlass::cast(k())->bottom_klass();
     KlassHandle element (THREAD, elem_oop);
 
     // The element type could be a typeArray - we only need the access check if it is
