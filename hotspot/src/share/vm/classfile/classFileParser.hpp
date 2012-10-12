@@ -344,7 +344,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   // constant pool construction, but in later versions they can.
   // %%% Let's phase out the old is_klass_reference.
   bool is_klass_reference(constantPoolHandle cp, int index) {
-    return ((LinkWellKnownClasses || EnableInvokeDynamic)
+    return (EnableInvokeDynamic
             ? cp->tag_at(index).is_klass_or_reference()
             : cp->tag_at(index).is_klass_reference());
   }

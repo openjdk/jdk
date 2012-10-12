@@ -340,7 +340,7 @@ int LIR_Assembler::check_icache() {
   Register receiver = FrameMap::receiver_opr->as_register();
   Register ic_klass = IC_Klass;
   const int ic_cmp_size = LP64_ONLY(10) NOT_LP64(9);
-  const bool do_post_padding = VerifyOops || UseCompressedOops;
+  const bool do_post_padding = VerifyOops || UseCompressedKlassPointers;
   if (!do_post_padding) {
     // insert some nops so that the verified entry point is aligned on CodeEntryAlignment
     while ((__ offset() + ic_cmp_size) % CodeEntryAlignment != 0) {
@@ -1262,7 +1262,11 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       break;
 
     case T_ADDRESS:
-      __ movptr(dest->as_register(), from_addr);
+      if (UseCompressedKlassPointers && addr->disp() == oopDesc::klass_offset_in_bytes()) {
+        __ movl(dest->as_register(), from_addr);
+      } else {
+        __ movptr(dest->as_register(), from_addr);
+      }
       break;
     case T_INT:
       __ movl(dest->as_register(), from_addr);
@@ -1364,6 +1368,12 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     }
 #endif
     __ verify_oop(dest->as_register());
+  } else if (type == T_ADDRESS && addr->disp() == oopDesc::klass_offset_in_bytes()) {
+#ifdef _LP64
+    if (UseCompressedKlassPointers) {
+      __ decode_klass_not_null(dest->as_register());
+    }
+#endif
   }
 }
 
@@ -1705,7 +1715,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   } else if (obj == klass_RInfo) {
     klass_RInfo = dst;
   }
-  if (k->is_loaded() && !UseCompressedOops) {
+  if (k->is_loaded() && !UseCompressedKlassPointers) {
     select_different_registers(obj, dst, k_RInfo, klass_RInfo);
   } else {
     Rtmp1 = op->tmp3()->as_register();
@@ -3446,7 +3456,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ mov_metadata(tmp, default_type->constant_encoding());
 #ifdef _LP64
     if (UseCompressedKlassPointers) {
-      __ encode_heap_oop(tmp);
+      __ encode_klass_not_null(tmp);
     }
 #endif
 

@@ -220,13 +220,13 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
       const int basic = 5*BytesPerInstWord +
                         // shift;add for load_klass (only shift with zero heap based)
                         (UseCompressedKlassPointers ?
-                         ((Universe::narrow_oop_base() == NULL) ? BytesPerInstWord : 2*BytesPerInstWord) : 0);
+                         ((Universe::narrow_klass_base() == NULL) ? BytesPerInstWord : 2*BytesPerInstWord) : 0);
       return basic + slop;
     } else {
       const int basic = (28 LP64_ONLY(+ 6)) * BytesPerInstWord +
                         // shift;add for load_klass (only shift with zero heap based)
                         (UseCompressedKlassPointers ?
-                         ((Universe::narrow_oop_base() == NULL) ? BytesPerInstWord : 2*BytesPerInstWord) : 0);
+                         ((Universe::narrow_klass_base() == NULL) ? BytesPerInstWord : 2*BytesPerInstWord) : 0);
       return (basic + slop);
     }
   }

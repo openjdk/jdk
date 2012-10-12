@@ -33,7 +33,7 @@
 // String hash tables
 #define MAXID 20
 static char initflag = 0;       // True after 1st initialization
-static char shft[MAXID] = {1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2,3,4,5,6};
+static char shft[MAXID + 1] = {1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2,3,4,5,6,7};
 static short xsum[MAXID];
 
 //------------------------------bucket---------------------------------------
