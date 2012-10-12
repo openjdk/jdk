@@ -32,6 +32,7 @@
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/debugInfoRec.hpp"
+#include "compiler/compileLog.hpp"
 
 
 typedef enum {
@@ -67,10 +68,25 @@ static int totalInstructionNodes = 0;
 class PhaseTraceTime: public TraceTime {
  private:
   JavaThread* _thread;
+  CompileLog* _log;
 
  public:
-  PhaseTraceTime(TimerName timer):
-    TraceTime("", &timers[timer], CITime || CITimeEach, Verbose) {
+  PhaseTraceTime(TimerName timer)
+  : TraceTime("", &timers[timer], CITime || CITimeEach, Verbose), _log(NULL) {
+    if (Compilation::current() != NULL) {
+      _log = Compilation::current()->log();
+    }
+
+    if (_log != NULL) {
+      _log->begin_head("phase name='%s'", timer_name[timer]);
+      _log->stamp();
+      _log->end_head();
+    }
+  }
+
+  ~PhaseTraceTime() {
+    if (_log != NULL)
+      _log->done("phase");
   }
 };
 
@@ -390,6 +406,10 @@ void Compilation::compile_method() {
     PhaseTraceTime timeit(_t_codeinstall);
     install_code(frame_size);
   }
+
+  if (log() != NULL) // Print code cache state into compiler log
+    log()->code_cache_state();
+
   totalInstructionNodes += Instruction::number_of_instructions();
 }
 
@@ -456,6 +476,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
                          int osr_bci, BufferBlob* buffer_blob)
 : _compiler(compiler)
 , _env(env)
+, _log(env->log())
 , _method(method)
 , _osr_bci(osr_bci)
 , _hir(NULL)

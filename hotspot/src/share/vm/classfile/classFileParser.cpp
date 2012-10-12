@@ -816,9 +816,6 @@ Array<Klass*>* ClassFileParser::parse_interfaces(constantPoolHandle cp,
                     unresolved_klass, class_loader, protection_domain,
                     false, CHECK_NULL);
       interf = KlassHandle(THREAD, k);
-
-      if (LinkWellKnownClasses)  // my super type is well known to me
-        cp->klass_at_put(interface_index, interf()); // eagerly resolve
     }
 
     if (!Klass::cast(interf())->is_interface()) {
@@ -1008,40 +1005,42 @@ static FieldAllocationType _basic_type_to_atype[2 * (T_CONFLICT + 1)] = {
   BAD_ALLOCATION_TYPE, // 1
   BAD_ALLOCATION_TYPE, // 2
   BAD_ALLOCATION_TYPE, // 3
-  NONSTATIC_BYTE ,     // T_BOOLEAN  =  4,
-  NONSTATIC_SHORT,     // T_CHAR     =  5,
-  NONSTATIC_WORD,      // T_FLOAT    =  6,
-  NONSTATIC_DOUBLE,    // T_DOUBLE   =  7,
-  NONSTATIC_BYTE,      // T_BYTE     =  8,
-  NONSTATIC_SHORT,     // T_SHORT    =  9,
-  NONSTATIC_WORD,      // T_INT      = 10,
-  NONSTATIC_DOUBLE,    // T_LONG     = 11,
-  NONSTATIC_OOP,       // T_OBJECT   = 12,
-  NONSTATIC_OOP,       // T_ARRAY    = 13,
-  BAD_ALLOCATION_TYPE, // T_VOID     = 14,
-  BAD_ALLOCATION_TYPE, // T_ADDRESS  = 15,
-  BAD_ALLOCATION_TYPE, // T_NARROWOOP= 16,
-  BAD_ALLOCATION_TYPE, // T_METADATA = 17,
-  BAD_ALLOCATION_TYPE, // T_CONFLICT = 18,
+  NONSTATIC_BYTE ,     // T_BOOLEAN     =  4,
+  NONSTATIC_SHORT,     // T_CHAR        =  5,
+  NONSTATIC_WORD,      // T_FLOAT       =  6,
+  NONSTATIC_DOUBLE,    // T_DOUBLE      =  7,
+  NONSTATIC_BYTE,      // T_BYTE        =  8,
+  NONSTATIC_SHORT,     // T_SHORT       =  9,
+  NONSTATIC_WORD,      // T_INT         = 10,
+  NONSTATIC_DOUBLE,    // T_LONG        = 11,
+  NONSTATIC_OOP,       // T_OBJECT      = 12,
+  NONSTATIC_OOP,       // T_ARRAY       = 13,
+  BAD_ALLOCATION_TYPE, // T_VOID        = 14,
+  BAD_ALLOCATION_TYPE, // T_ADDRESS     = 15,
+  BAD_ALLOCATION_TYPE, // T_NARROWOOP   = 16,
+  BAD_ALLOCATION_TYPE, // T_METADATA    = 17,
+  BAD_ALLOCATION_TYPE, // T_NARROWKLASS = 18,
+  BAD_ALLOCATION_TYPE, // T_CONFLICT    = 19,
   BAD_ALLOCATION_TYPE, // 0
   BAD_ALLOCATION_TYPE, // 1
   BAD_ALLOCATION_TYPE, // 2
   BAD_ALLOCATION_TYPE, // 3
-  STATIC_BYTE ,        // T_BOOLEAN  =  4,
-  STATIC_SHORT,        // T_CHAR     =  5,
-  STATIC_WORD,          // T_FLOAT    =  6,
-  STATIC_DOUBLE,       // T_DOUBLE   =  7,
-  STATIC_BYTE,         // T_BYTE     =  8,
-  STATIC_SHORT,        // T_SHORT    =  9,
-  STATIC_WORD,         // T_INT      = 10,
-  STATIC_DOUBLE,       // T_LONG     = 11,
-  STATIC_OOP,          // T_OBJECT   = 12,
-  STATIC_OOP,          // T_ARRAY    = 13,
-  BAD_ALLOCATION_TYPE, // T_VOID     = 14,
-  BAD_ALLOCATION_TYPE, // T_ADDRESS  = 15,
-  BAD_ALLOCATION_TYPE, // T_NARROWOOP= 16,
-  BAD_ALLOCATION_TYPE, // T_METADATA = 17,
-  BAD_ALLOCATION_TYPE, // T_CONFLICT = 18,
+  STATIC_BYTE ,        // T_BOOLEAN     =  4,
+  STATIC_SHORT,        // T_CHAR        =  5,
+  STATIC_WORD,         // T_FLOAT       =  6,
+  STATIC_DOUBLE,       // T_DOUBLE      =  7,
+  STATIC_BYTE,         // T_BYTE        =  8,
+  STATIC_SHORT,        // T_SHORT       =  9,
+  STATIC_WORD,         // T_INT         = 10,
+  STATIC_DOUBLE,       // T_LONG        = 11,
+  STATIC_OOP,          // T_OBJECT      = 12,
+  STATIC_OOP,          // T_ARRAY       = 13,
+  BAD_ALLOCATION_TYPE, // T_VOID        = 14,
+  BAD_ALLOCATION_TYPE, // T_ADDRESS     = 15,
+  BAD_ALLOCATION_TYPE, // T_NARROWOOP   = 16,
+  BAD_ALLOCATION_TYPE, // T_METADATA    = 17,
+  BAD_ALLOCATION_TYPE, // T_NARROWKLASS = 18,
+  BAD_ALLOCATION_TYPE, // T_CONFLICT    = 19,
 };
 
 static FieldAllocationType basic_type_to_atype(bool is_static, BasicType type) {
@@ -3192,8 +3191,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
       KlassHandle kh (THREAD, k);
       super_klass = instanceKlassHandle(THREAD, kh());
-      if (LinkWellKnownClasses)  // my super class is well known to me
-        cp->klass_at_put(super_class_index, super_klass()); // eagerly resolve
     }
     if (super_klass.not_null()) {
       if (super_klass->is_interface()) {
@@ -3639,7 +3636,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     // has to be changed accordingly.
     this_klass->set_initial_method_idnum(methods->length());
     this_klass->set_name(cp->klass_name_at(this_class_index));
-    if (LinkWellKnownClasses || is_anonymous())  // I am well known to myself
+    if (is_anonymous())  // I am well known to myself
       cp->klass_at_put(this_class_index, this_klass()); // eagerly resolve
 
     if (fields_annotations != NULL ||

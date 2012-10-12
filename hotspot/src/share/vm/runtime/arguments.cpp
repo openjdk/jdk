@@ -1423,10 +1423,9 @@ void Arguments::set_ergonomics_flags() {
     FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
   } else {
     // Turn on UseCompressedKlassPointers too
-    // The compiler is broken for this so turn it on when the compiler is fixed.
-    // if (FLAG_IS_DEFAULT(UseCompressedKlassPointers)) {
-    //   FLAG_SET_ERGO(bool, UseCompressedKlassPointers, true);
-    // }
+    if (FLAG_IS_DEFAULT(UseCompressedKlassPointers)) {
+      FLAG_SET_ERGO(bool, UseCompressedKlassPointers, true);
+    }
     // Set the ClassMetaspaceSize to something that will not need to be
     // expanded, since it cannot be expanded.
     if (UseCompressedKlassPointers && FLAG_IS_DEFAULT(ClassMetaspaceSize)) {

@@ -1570,7 +1570,8 @@ void CompileBroker::compiler_thread_loop() {
   }
   CompileLog* log = thread->log();
   if (log != NULL) {
-    log->begin_elem("start_compile_thread thread='" UINTX_FORMAT "' process='%d'",
+    log->begin_elem("start_compile_thread name='%s' thread='" UINTX_FORMAT "' process='%d'",
+                    thread->name(),
                     os::current_thread_id(),
                     os::current_process_id());
     log->stamp();
