@@ -47,7 +47,7 @@ enum {
   JVM_ACC_QUEUED                  = 0x01000000,     // Queued for compilation
   JVM_ACC_NOT_C2_COMPILABLE       = 0x02000000,
   JVM_ACC_NOT_C1_COMPILABLE       = 0x04000000,
-  JVM_ACC_NOT_OSR_COMPILABLE      = 0x08000000,
+  JVM_ACC_NOT_C2_OSR_COMPILABLE   = 0x08000000,
   JVM_ACC_HAS_LINE_NUMBER_TABLE   = 0x00100000,
   JVM_ACC_HAS_CHECKED_EXCEPTIONS  = 0x00400000,
   JVM_ACC_HAS_JSRS                = 0x00800000,
@@ -121,9 +121,9 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   bool has_loops               () const { return (_flags & JVM_ACC_HAS_LOOPS              ) != 0; }
   bool loops_flag_init         () const { return (_flags & JVM_ACC_LOOPS_FLAG_INIT        ) != 0; }
   bool queued_for_compilation  () const { return (_flags & JVM_ACC_QUEUED                 ) != 0; }
-  bool is_not_c1_compilable () const    { return (_flags & JVM_ACC_NOT_C1_COMPILABLE      ) != 0; }
-  bool is_not_c2_compilable () const    { return (_flags & JVM_ACC_NOT_C2_COMPILABLE      ) != 0; }
-  bool is_not_osr_compilable   () const { return (_flags & JVM_ACC_NOT_OSR_COMPILABLE     ) != 0; }
+  bool is_not_c1_compilable    () const { return (_flags & JVM_ACC_NOT_C1_COMPILABLE      ) != 0; }
+  bool is_not_c2_compilable    () const { return (_flags & JVM_ACC_NOT_C2_COMPILABLE      ) != 0; }
+  bool is_not_c2_osr_compilable() const { return (_flags & JVM_ACC_NOT_C2_OSR_COMPILABLE  ) != 0; }
   bool has_linenumber_table    () const { return (_flags & JVM_ACC_HAS_LINE_NUMBER_TABLE  ) != 0; }
   bool has_checked_exceptions  () const { return (_flags & JVM_ACC_HAS_CHECKED_EXCEPTIONS ) != 0; }
   bool has_jsrs                () const { return (_flags & JVM_ACC_HAS_JSRS               ) != 0; }
@@ -186,7 +186,7 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   void set_loops_flag_init()           { atomic_set_bits(JVM_ACC_LOOPS_FLAG_INIT);         }
   void set_not_c1_compilable()         { atomic_set_bits(JVM_ACC_NOT_C1_COMPILABLE);       }
   void set_not_c2_compilable()         { atomic_set_bits(JVM_ACC_NOT_C2_COMPILABLE);       }
-  void set_not_osr_compilable()        { atomic_set_bits(JVM_ACC_NOT_OSR_COMPILABLE);      }
+  void set_not_c2_osr_compilable()     { atomic_set_bits(JVM_ACC_NOT_C2_OSR_COMPILABLE);   }
   void set_has_linenumber_table()      { atomic_set_bits(JVM_ACC_HAS_LINE_NUMBER_TABLE);   }
   void set_has_checked_exceptions()    { atomic_set_bits(JVM_ACC_HAS_CHECKED_EXCEPTIONS);  }
   void set_has_jsrs()                  { atomic_set_bits(JVM_ACC_HAS_JSRS);                }

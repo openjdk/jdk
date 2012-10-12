@@ -54,7 +54,7 @@ import java.lang.reflect.*;
  * @author Sharon Liu
  *
  * @see java.security.Permissions
- * @see java.security.spec.AlgrithomParameterSpec
+ * @see java.security.spec.AlgorithmParameterSpec
  * @see javax.crypto.CryptoPermission
  * @see javax.crypto.CryptoAllPermission
  * @see javax.crypto.CryptoPermissions

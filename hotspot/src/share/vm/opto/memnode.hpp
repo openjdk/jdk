@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,18 +274,6 @@ public:
   virtual BasicType memory_type() const { return T_INT; }
 };
 
-//------------------------------LoadUI2LNode-----------------------------------
-// Load an unsigned integer into long from memory
-class LoadUI2LNode : public LoadNode {
-public:
-  LoadUI2LNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeLong* t = TypeLong::UINT)
-    : LoadNode(c, mem, adr, at, t) {}
-  virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Op_RegL; }
-  virtual int store_Opcode() const { return Op_StoreL; }
-  virtual BasicType memory_type() const { return T_LONG; }
-};
-
 //------------------------------LoadRangeNode----------------------------------
 // Load an array length from the array
 class LoadRangeNode : public LoadINode {
@@ -437,12 +425,12 @@ public:
 // Load a narrow Klass from an object.
 class LoadNKlassNode : public LoadNNode {
 public:
-  LoadNKlassNode( Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeNarrowOop *tk )
+  LoadNKlassNode( Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeNarrowKlass *tk )
     : LoadNNode(c,mem,adr,at,tk) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegN; }
-  virtual int store_Opcode() const { return Op_StoreN; }
-  virtual BasicType memory_type() const { return T_NARROWOOP; }
+  virtual int store_Opcode() const { return Op_StoreNKlass; }
+  virtual BasicType memory_type() const { return T_NARROWKLASS; }
 
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual Node *Identity( PhaseTransform *phase );
@@ -593,6 +581,15 @@ public:
   virtual BasicType memory_type() const { return T_NARROWOOP; }
 };
 
+//------------------------------StoreNKlassNode--------------------------------------
+// Store narrow klass to memory
+class StoreNKlassNode : public StoreNNode {
+public:
+  StoreNKlassNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val ) : StoreNNode(c,mem,adr,at,val) {}
+  virtual int Opcode() const;
+  virtual BasicType memory_type() const { return T_NARROWKLASS; }
+};
+
 //------------------------------StoreCMNode-----------------------------------
 // Store card-mark byte to memory for CM
 // The last StoreCM before a SafePoint must be preserved and occur after its "oop" store
@@ -657,23 +654,36 @@ public:
 //------------------------------LoadStoreNode---------------------------
 // Note: is_Mem() method returns 'true' for this class.
 class LoadStoreNode : public Node {
+private:
+  const Type* const _type;      // What kind of value is loaded?
+  const TypePtr* _adr_type;     // What kind of memory is being addressed?
+  virtual uint size_of() const; // Size is bigger
+public:
+  LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required );
+  virtual bool depends_only_on_test() const { return false; }
+  virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
+
+  virtual const Type *bottom_type() const { return _type; }
+  virtual uint ideal_reg() const;
+  virtual const class TypePtr *adr_type() const { return _adr_type; }  // returns bottom_type of address
+
+  bool result_not_used() const;
+};
+
+class LoadStoreConditionalNode : public LoadStoreNode {
 public:
   enum {
     ExpectedIn = MemNode::ValueIn+1 // One more input than MemNode
   };
-  LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex);
-  virtual bool depends_only_on_test() const { return false; }
-  virtual const Type *bottom_type() const { return TypeInt::BOOL; }
-  virtual uint ideal_reg() const { return Op_RegI; }
-  virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
+  LoadStoreConditionalNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex);
 };
 
 //------------------------------StorePConditionalNode---------------------------
 // Conditionally store pointer to memory, if no change since prior
 // load-locked.  Sets flags for success or failure of the store.
-class StorePConditionalNode : public LoadStoreNode {
+class StorePConditionalNode : public LoadStoreConditionalNode {
 public:
-  StorePConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ll ) : LoadStoreNode(c, mem, adr, val, ll) { }
+  StorePConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ll ) : LoadStoreConditionalNode(c, mem, adr, val, ll) { }
   virtual int Opcode() const;
   // Produces flags
   virtual uint ideal_reg() const { return Op_RegFlags; }
@@ -682,9 +692,9 @@ public:
 //------------------------------StoreIConditionalNode---------------------------
 // Conditionally store int to memory, if no change since prior
 // load-locked.  Sets flags for success or failure of the store.
-class StoreIConditionalNode : public LoadStoreNode {
+class StoreIConditionalNode : public LoadStoreConditionalNode {
 public:
-  StoreIConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ii ) : LoadStoreNode(c, mem, adr, val, ii) { }
+  StoreIConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ii ) : LoadStoreConditionalNode(c, mem, adr, val, ii) { }
   virtual int Opcode() const;
   // Produces flags
   virtual uint ideal_reg() const { return Op_RegFlags; }
@@ -693,9 +703,9 @@ public:
 //------------------------------StoreLConditionalNode---------------------------
 // Conditionally store long to memory, if no change since prior
 // load-locked.  Sets flags for success or failure of the store.
-class StoreLConditionalNode : public LoadStoreNode {
+class StoreLConditionalNode : public LoadStoreConditionalNode {
 public:
-  StoreLConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ll ) : LoadStoreNode(c, mem, adr, val, ll) { }
+  StoreLConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ll ) : LoadStoreConditionalNode(c, mem, adr, val, ll) { }
   virtual int Opcode() const;
   // Produces flags
   virtual uint ideal_reg() const { return Op_RegFlags; }
@@ -703,32 +713,75 @@ public:
 
 
 //------------------------------CompareAndSwapLNode---------------------------
-class CompareAndSwapLNode : public LoadStoreNode {
+class CompareAndSwapLNode : public LoadStoreConditionalNode {
 public:
-  CompareAndSwapLNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex) : LoadStoreNode(c, mem, adr, val, ex) { }
+  CompareAndSwapLNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex) : LoadStoreConditionalNode(c, mem, adr, val, ex) { }
   virtual int Opcode() const;
 };
 
 
 //------------------------------CompareAndSwapINode---------------------------
-class CompareAndSwapINode : public LoadStoreNode {
+class CompareAndSwapINode : public LoadStoreConditionalNode {
 public:
-  CompareAndSwapINode( Node *c, Node *mem, Node *adr, Node *val, Node *ex) : LoadStoreNode(c, mem, adr, val, ex) { }
+  CompareAndSwapINode( Node *c, Node *mem, Node *adr, Node *val, Node *ex) : LoadStoreConditionalNode(c, mem, adr, val, ex) { }
   virtual int Opcode() const;
 };
 
 
 //------------------------------CompareAndSwapPNode---------------------------
-class CompareAndSwapPNode : public LoadStoreNode {
+class CompareAndSwapPNode : public LoadStoreConditionalNode {
 public:
-  CompareAndSwapPNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex) : LoadStoreNode(c, mem, adr, val, ex) { }
+  CompareAndSwapPNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex) : LoadStoreConditionalNode(c, mem, adr, val, ex) { }
   virtual int Opcode() const;
 };
 
 //------------------------------CompareAndSwapNNode---------------------------
-class CompareAndSwapNNode : public LoadStoreNode {
+class CompareAndSwapNNode : public LoadStoreConditionalNode {
 public:
-  CompareAndSwapNNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex) : LoadStoreNode(c, mem, adr, val, ex) { }
+  CompareAndSwapNNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex) : LoadStoreConditionalNode(c, mem, adr, val, ex) { }
+  virtual int Opcode() const;
+};
+
+//------------------------------GetAndAddINode---------------------------
+class GetAndAddINode : public LoadStoreNode {
+public:
+  GetAndAddINode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::INT, 4) { }
+  virtual int Opcode() const;
+};
+
+//------------------------------GetAndAddLNode---------------------------
+class GetAndAddLNode : public LoadStoreNode {
+public:
+  GetAndAddLNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeLong::LONG, 4) { }
+  virtual int Opcode() const;
+};
+
+
+//------------------------------GetAndSetINode---------------------------
+class GetAndSetINode : public LoadStoreNode {
+public:
+  GetAndSetINode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::INT, 4) { }
+  virtual int Opcode() const;
+};
+
+//------------------------------GetAndSetINode---------------------------
+class GetAndSetLNode : public LoadStoreNode {
+public:
+  GetAndSetLNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeLong::LONG, 4) { }
+  virtual int Opcode() const;
+};
+
+//------------------------------GetAndSetPNode---------------------------
+class GetAndSetPNode : public LoadStoreNode {
+public:
+  GetAndSetPNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* t ) : LoadStoreNode(c, mem, adr, val, at, t, 4) { }
+  virtual int Opcode() const;
+};
+
+//------------------------------GetAndSetNNode---------------------------
+class GetAndSetNNode : public LoadStoreNode {
+public:
+  GetAndSetNNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* t ) : LoadStoreNode(c, mem, adr, val, at, t, 4) { }
   virtual int Opcode() const;
 };
 

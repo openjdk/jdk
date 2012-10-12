@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,13 @@
 #import <mach/mach.h>
 #import <mach/mach_types.h>
 #import <sys/sysctl.h>
+#import <stdio.h>
+#import <stdarg.h>
 #import <stdlib.h>
+#import <strings.h>
+#import <dlfcn.h>
+#import <limits.h>
+#import <errno.h>
 
 jboolean debug = JNI_FALSE;
 
@@ -60,6 +66,9 @@ static task_t getTask(JNIEnv *env, jobject this_obj) {
 #define CHECK_EXCEPTION if ((*env)->ExceptionOccurred(env)) { return;}
 #define THROW_NEW_DEBUGGER_EXCEPTION_(str, value) { throw_new_debugger_exception(env, str); return value; }
 #define THROW_NEW_DEBUGGER_EXCEPTION(str) { throw_new_debugger_exception(env, str); return;}
+#define CHECK_EXCEPTION_CLEAR if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); } 
+#define CHECK_EXCEPTION_CLEAR_VOID if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return; } 
+#define CHECK_EXCEPTION_CLEAR_(value) if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return value; } 
 
 static void throw_new_debugger_exception(JNIEnv* env, const char* errMsg) {
   (*env)->ThrowNew(env, (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException"), errMsg);
@@ -403,4 +412,165 @@ JNF_COCOA_ENTER(env);
     CFRelease(symbolicator);
   }
 JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_jvm_hotspot_asm_Disassembler
+ * Method:    load_library
+ * Signature: (Ljava/lang/String;)L
+ */
+JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIEnv * env,
+                                                                           jclass disclass,
+                                                                           jstring jrepath_s,
+                                                                           jstring libname_s) {
+  uintptr_t func = 0;
+  const char* error_message = NULL;
+  const char* java_home;
+  jboolean isCopy;
+  uintptr_t *handle = NULL;
+
+  const char * jrepath = (*env)->GetStringUTFChars(env, jrepath_s, &isCopy); // like $JAVA_HOME/jre/lib/sparc/
+  const char * libname = (*env)->GetStringUTFChars(env, libname_s, &isCopy);
+  char buffer[128];
+
+  /* Load the hsdis library */
+  void* hsdis_handle;
+  hsdis_handle = dlopen(libname, RTLD_LAZY | RTLD_GLOBAL);
+  if (hsdis_handle == NULL) {
+    snprintf(buffer, sizeof(buffer), "%s%s", jrepath, libname);
+    hsdis_handle = dlopen(buffer, RTLD_LAZY | RTLD_GLOBAL);
+  }
+  if (hsdis_handle != NULL) {
+    func = (uintptr_t)dlsym(hsdis_handle, "decode_instructions_virtual");
+  }
+  if (func == 0) {
+    error_message = dlerror();
+    fprintf(stderr, "%s\n", error_message);
+  }
+
+  (*env)->ReleaseStringUTFChars(env, libname_s, libname);
+  (*env)->ReleaseStringUTFChars(env, jrepath_s, jrepath);
+
+  if (func == 0) {
+    /* Couldn't find entry point.  error_message should contain some
+     * platform dependent error message.
+     */
+    THROW_NEW_DEBUGGER_EXCEPTION(error_message);
+  }
+  return (jlong)func;
+}
+
+/* signature of decode_instructions_virtual from hsdis.h */
+typedef void* (*decode_func)(uintptr_t start_va, uintptr_t end_va,
+                             unsigned char* start, uintptr_t length,
+                             void* (*event_callback)(void*, const char*, void*),
+                             void* event_stream,
+                             int (*printf_callback)(void*, const char*, ...),
+                             void* printf_stream,
+                             const char* options);
+
+/* container for call back state when decoding instructions */
+typedef struct {
+  JNIEnv* env;
+  jobject dis;
+  jobject visitor;
+  jmethodID handle_event;
+  jmethodID raw_print;
+  char buffer[4096];
+} decode_env;
+
+
+/* event callback binding to Disassembler.handleEvent */
+static void* event_to_env(void* env_pv, const char* event, void* arg) {
+  decode_env* denv = (decode_env*)env_pv;
+  JNIEnv* env = denv->env;
+  jstring event_string = (*env)->NewStringUTF(env, event);
+  jlong result = (*env)->CallLongMethod(env, denv->dis, denv->handle_event, denv->visitor,
+                                        event_string, (jlong) (uintptr_t)arg);
+  /* ignore exceptions for now */
+  CHECK_EXCEPTION_CLEAR_((void *)0);
+  return (void*)(uintptr_t)result;
+}
+
+/* printing callback binding to Disassembler.rawPrint */
+static int printf_to_env(void* env_pv, const char* format, ...) {
+  jstring output;
+  va_list ap;
+  int cnt;
+  decode_env* denv = (decode_env*)env_pv;
+  JNIEnv* env = denv->env;
+  size_t flen = strlen(format);
+  const char* raw = NULL;
+
+  if (flen == 0)  return 0;
+  if (flen < 2 ||
+      strchr(format, '%') == NULL) {
+    raw = format;
+  } else if (format[0] == '%' && format[1] == '%' &&
+             strchr(format+2, '%') == NULL) {
+    // happens a lot on machines with names like %foo
+    flen--;
+    raw = format+1;
+  }
+  if (raw != NULL) {
+    jstring output = (*env)->NewStringUTF(env, raw);
+    (*env)->CallVoidMethod(env, denv->dis, denv->raw_print, denv->visitor, output);
+    CHECK_EXCEPTION_CLEAR;
+    return (int) flen;
+  }
+  va_start(ap, format);
+  cnt = vsnprintf(denv->buffer, sizeof(denv->buffer), format, ap);
+  va_end(ap);
+
+  output = (*env)->NewStringUTF(env, denv->buffer);
+  (*env)->CallVoidMethod(env, denv->dis, denv->raw_print, denv->visitor, output);
+  CHECK_EXCEPTION_CLEAR;
+  return cnt;
+}
+
+/*
+ * Class:     sun_jvm_hotspot_asm_Disassembler
+ * Method:    decode
+ * Signature: (Lsun/jvm/hotspot/asm/InstructionVisitor;J[BLjava/lang/String;J)V
+ */
+JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env,
+                                                                    jobject dis,
+                                                                    jobject visitor,
+                                                                    jlong startPc,
+                                                                    jbyteArray code,
+                                                                    jstring options_s,
+                                                                    jlong decode_instructions_virtual) {
+  jboolean isCopy;
+  jbyte* start = (*env)->GetByteArrayElements(env, code, &isCopy);
+  jbyte* end = start + (*env)->GetArrayLength(env, code);
+  const char * options = (*env)->GetStringUTFChars(env, options_s, &isCopy);
+  jclass disclass = (*env)->GetObjectClass(env, dis);
+
+  decode_env denv;
+  denv.env = env;
+  denv.dis = dis;
+  denv.visitor = visitor;
+
+  /* find Disassembler.handleEvent callback */
+  denv.handle_event = (*env)->GetMethodID(env, disclass, "handleEvent",
+                                          "(Lsun/jvm/hotspot/asm/InstructionVisitor;Ljava/lang/String;J)J");
+  CHECK_EXCEPTION_CLEAR_VOID
+
+  /* find Disassembler.rawPrint callback */
+  denv.raw_print = (*env)->GetMethodID(env, disclass, "rawPrint",
+                                       "(Lsun/jvm/hotspot/asm/InstructionVisitor;Ljava/lang/String;)V");
+  CHECK_EXCEPTION_CLEAR_VOID
+
+  /* decode the buffer */
+  (*(decode_func)(uintptr_t)decode_instructions_virtual)(startPc,
+                                                         startPc + end - start,
+                                                         (unsigned char*)start,
+                                                         end - start,
+                                                         &event_to_env,  (void*) &denv,
+                                                         &printf_to_env, (void*) &denv,
+                                                         options);
+
+  /* cleanup */
+  (*env)->ReleaseByteArrayElements(env, code, start, JNI_ABORT);
+  (*env)->ReleaseStringUTFChars(env, options_s, options);
 }

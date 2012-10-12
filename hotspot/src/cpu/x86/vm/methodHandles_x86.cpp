@@ -209,8 +209,6 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   Register rcx_mh     = rcx;   // MH receiver; dies quickly and is recycled
   Register rbx_method = rbx;   // eventual target of this invocation
 
-  address code_start = __ pc();
-
   // here's where control starts out:
   __ align(CodeEntryAlignment);
   address entry_point = __ pc();
@@ -251,23 +249,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
   // rdx_first_arg_addr is live!
 
-  if (TraceMethodHandles) {
-    const char* name = vmIntrinsics::name_at(iid);
-    if (*name == '_')  name += 1;
-    const size_t len = strlen(name) + 50;
-    char* qname = NEW_C_HEAP_ARRAY(char, len, mtInternal);
-    const char* suffix = "";
-    if (vmIntrinsics::method_for(iid) == NULL ||
-        !vmIntrinsics::method_for(iid)->access_flags().is_public()) {
-      if (is_signature_polymorphic_static(iid))
-        suffix = "/static";
-      else
-        suffix = "/private";
-    }
-    jio_snprintf(qname, len, "MethodHandle::interpreter_entry::%s%s", name, suffix);
-    // note: stub look for mh in rcx
-    trace_method_handle(_masm, qname);
-  }
+  trace_method_handle_interpreter_entry(_masm, iid);
 
   if (iid == vmIntrinsics::_invokeBasic) {
     generate_method_handle_dispatch(_masm, iid, rcx_mh, noreg, not_for_compiler_entry);
@@ -285,14 +267,6 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     __ pop(rbx_member);         // extract last argument
     __ push(rax_temp);          // re-push return address
     generate_method_handle_dispatch(_masm, iid, rcx_recv, rbx_member, not_for_compiler_entry);
-  }
-
-  if (PrintMethodHandleStubs) {
-    address code_end = __ pc();
-    tty->print_cr("--------");
-    tty->print_cr("method handle interpreter entry for %s", vmIntrinsics::name_at(iid));
-    Disassembler::decode(code_start, code_end);
-    tty->cr();
   }
 
   return entry_point;
@@ -327,10 +301,11 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     assert_different_registers(temp3,        rcx, rdx);
   }
 #endif
+  else {
+    assert_different_registers(temp1, temp2, temp3, saved_last_sp_register());  // don't trash lastSP
+  }
   assert_different_registers(temp1, temp2, temp3, receiver_reg);
   assert_different_registers(temp1, temp2, temp3, member_reg);
-  if (!for_compiler_entry)
-    assert_different_registers(temp1, temp2, temp3, saved_last_sp_register());  // don't trash lastSP
 
   if (iid == vmIntrinsics::_invokeBasic) {
     // indirect through MH.form.vmentry.vmtarget
@@ -392,14 +367,13 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     //  rsi/r13 - interpreter linkage (if interpreted)
     //  rcx, rdx, rsi, rdi, r8, r8 - compiler arguments (if compiled)
 
-    bool method_is_live = false;
+    Label L_incompatible_class_change_error;
     switch (iid) {
     case vmIntrinsics::_linkToSpecial:
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
       }
       __ movptr(rbx_method, member_vmtarget);
-      method_is_live = true;
       break;
 
     case vmIntrinsics::_linkToStatic:
@@ -407,7 +381,6 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
       }
       __ movptr(rbx_method, member_vmtarget);
-      method_is_live = true;
       break;
 
     case vmIntrinsics::_linkToVirtual:
@@ -436,7 +409,6 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
       // get target Method* & entry point
       __ lookup_virtual_method(temp1_recv_klass, temp2_index, rbx_method);
-      method_is_live = true;
       break;
     }
 
@@ -464,35 +436,32 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       }
 
       // given intf, index, and recv klass, dispatch to the implementation method
-      Label L_no_such_interface;
       __ lookup_interface_method(temp1_recv_klass, temp3_intf,
                                  // note: next two args must be the same:
                                  rbx_index, rbx_method,
                                  temp2,
-                                 L_no_such_interface);
-
-      __ verify_method_ptr(rbx_method);
-      jump_from_method_handle(_masm, rbx_method, temp2, for_compiler_entry);
-      __ hlt();
-
-      __ bind(L_no_such_interface);
-      __ jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
+                                 L_incompatible_class_change_error);
       break;
     }
 
     default:
-      fatal(err_msg("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
+      fatal(err_msg_res("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
       break;
     }
 
-    if (method_is_live) {
-      // live at this point:  rbx_method, rsi/r13 (if interpreted)
+    // Live at this point:
+    //   rbx_method
+    //   rsi/r13 (if interpreted)
 
-      // After figuring out which concrete method to call, jump into it.
-      // Note that this works in the interpreter with no data motion.
-      // But the compiled version will require that rcx_recv be shifted out.
-      __ verify_method_ptr(rbx_method);
-      jump_from_method_handle(_masm, rbx_method, temp1, for_compiler_entry);
+    // After figuring out which concrete method to call, jump into it.
+    // Note that this works in the interpreter with no data motion.
+    // But the compiled version will require that rcx_recv be shifted out.
+    __ verify_method_ptr(rbx_method);
+    jump_from_method_handle(_masm, rbx_method, temp1, for_compiler_entry);
+
+    if (iid == vmIntrinsics::_linkToInterface) {
+      __ bind(L_incompatible_class_change_error);
+      __ jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
     }
   }
 }

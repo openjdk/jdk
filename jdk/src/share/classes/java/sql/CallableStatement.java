@@ -1562,7 +1562,7 @@ public interface CallableStatement extends PreparedStatement {
      * @param parameterName the name of the parameter
      * @return the parameter value in full precision.  If the value is
      * SQL <code>NULL</code>, the result is <code>null</code>.
-     * @exception SQLExceptionif parameterName does not correspond to a named
+     * @exception SQLException if parameterName does not correspond to a named
      * parameter;  if a database access error occurs or
      * this method is called on a closed <code>CallableStatement</code>
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support

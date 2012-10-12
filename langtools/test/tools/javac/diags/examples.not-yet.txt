@@ -1,7 +1,6 @@
 compiler.err.already.annotated                          # internal compiler error?
 compiler.err.already.defined.this.unit                  # seems to be masked by compiler.err.duplicate.class
 compiler.err.annotation.value.not.allowable.type        # cannot happen: precluded by complete type-specific tests
-compiler.err.cant.apply.symbol
 compiler.err.cant.read.file                             # (apt.JavaCompiler?)
 compiler.err.cant.select.static.class.from.param.type
 compiler.err.illegal.char.for.encoding
@@ -65,6 +64,7 @@ compiler.misc.kindname.static
 compiler.misc.kindname.type.variable
 compiler.misc.kindname.type.variable.bound
 compiler.misc.kindname.value
+compiler.misc.incompatible.eq.lower.bounds              # cannot happen?
 compiler.misc.no.unique.minimal.instance.exists
 compiler.misc.resume.abort                              # prompt for a response
 compiler.misc.source.unavailable                        # DiagnosticSource

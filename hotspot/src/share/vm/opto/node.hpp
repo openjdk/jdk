@@ -62,8 +62,12 @@ class ConstraintCastNode;
 class ConNode;
 class CountedLoopNode;
 class CountedLoopEndNode;
+class DecodeNarrowPtrNode;
 class DecodeNNode;
+class DecodeNKlassNode;
+class EncodeNarrowPtrNode;
 class EncodePNode;
+class EncodePKlassNode;
 class FastLockNode;
 class FastUnlockNode;
 class IfNode;
@@ -212,18 +216,6 @@ public:
     Node* n = (Node*)C->node_arena()->Amalloc_D(x);
 #ifdef ASSERT
     n->_in = (Node**)n; // magic cookie for assertion check
-#endif
-    n->_out = (Node**)C;
-    return (void*)n;
-  }
-
-  // New Operator that takes a Compile pointer, this will eventually
-  // be the "new" New operator.
-  inline void* operator new( size_t x, Compile* C, int y) {
-    Node* n = (Node*)C->node_arena()->Amalloc_D(x + y*sizeof(void*));
-    n->_in = (Node**)(((char*)n) + x);
-#ifdef ASSERT
-    n->_in[y-1] = n; // magic cookie for assertion check
 #endif
     n->_out = (Node**)C;
     return (void*)n;
@@ -597,8 +589,12 @@ public:
       DEFINE_CLASS_ID(CheckCastPP, Type, 2)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
-      DEFINE_CLASS_ID(DecodeN, Type, 5)
-      DEFINE_CLASS_ID(EncodeP, Type, 6)
+      DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
+        DEFINE_CLASS_ID(DecodeN, DecodeNarrowPtr, 0)
+        DEFINE_CLASS_ID(DecodeNKlass, DecodeNarrowPtr, 1)
+      DEFINE_CLASS_ID(EncodeNarrowPtr, Type, 6)
+        DEFINE_CLASS_ID(EncodeP, EncodeNarrowPtr, 0)
+        DEFINE_CLASS_ID(EncodePKlass, EncodeNarrowPtr, 1)
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -718,8 +714,12 @@ public:
   DEFINE_CLASS_QUERY(Cmp)
   DEFINE_CLASS_QUERY(CountedLoop)
   DEFINE_CLASS_QUERY(CountedLoopEnd)
+  DEFINE_CLASS_QUERY(DecodeNarrowPtr)
   DEFINE_CLASS_QUERY(DecodeN)
+  DEFINE_CLASS_QUERY(DecodeNKlass)
+  DEFINE_CLASS_QUERY(EncodeNarrowPtr)
   DEFINE_CLASS_QUERY(EncodeP)
+  DEFINE_CLASS_QUERY(EncodePKlass)
   DEFINE_CLASS_QUERY(FastLock)
   DEFINE_CLASS_QUERY(FastUnlock)
   DEFINE_CLASS_QUERY(If)

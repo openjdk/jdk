@@ -33,7 +33,7 @@
 // HotSpot virtual machine.  In the vm, each Klass* contains an
 // embedded Klass object.  ciKlass is subclassed to explicitly
 // represent the kind of Klass embedded in the Klass*.  For
-// example, a Klass* with an embedded objArrayKlass object is
+// example, a Klass* with an embedded ObjArrayKlass object is
 // represented in the ciObject hierarchy by the class
 // ciObjArrayKlass.
 class ciKlass : public ciType {
