@@ -125,7 +125,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
                                    jlong** tag_result_ptr);
 
   static void weak_oops_do(
-      BoolObjectClosure* is_alive, OopClosure* f) KERNEL_RETURN;
+      BoolObjectClosure* is_alive, OopClosure* f) NOT_JVMTI_RETURN;
 };
 
 #endif // SHARE_VM_PRIMS_JVMTITAGMAP_HPP

@@ -58,16 +58,17 @@ public:
   static void init();
   static void initialize(TRAPS);
 
-  static jlong ticks_to_ms(jlong ticks);
-  static jlong timestamp();
+  static jlong ticks_to_ms(jlong ticks) NOT_MANAGEMENT_RETURN_(0L);
+  static jlong timestamp() NOT_MANAGEMENT_RETURN_(0L);
 
-  static void  oops_do(OopClosure* f);
+  static void  oops_do(OopClosure* f) NOT_MANAGEMENT_RETURN;
   static void* get_jmm_interface(int version);
   static void  get_optional_support(jmmOptionalSupport* support);
 
   static void get_loaded_classes(JavaThread* cur_thread, GrowableArray<KlassHandle>* klass_handle_array);
 
-  static void  record_vm_startup_time(jlong begin, jlong duration);
+  static void  record_vm_startup_time(jlong begin, jlong duration)
+      NOT_MANAGEMENT_RETURN;
   static void  record_vm_init_completed() {
     // Initialize the timestamp to get the current time
     _vm_init_done_time->set_value(os::javaTimeMillis());
@@ -85,14 +86,19 @@ public:
 
   // methods to return a Klass*.
   static Klass* java_lang_management_ThreadInfo_klass(TRAPS);
-  static Klass* java_lang_management_MemoryUsage_klass(TRAPS);
+  static Klass* java_lang_management_MemoryUsage_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
   static Klass* java_lang_management_MemoryPoolMXBean_klass(TRAPS);
   static Klass* java_lang_management_MemoryManagerMXBean_klass(TRAPS);
   static Klass* java_lang_management_GarbageCollectorMXBean_klass(TRAPS);
-  static Klass* sun_management_Sensor_klass(TRAPS);
-  static Klass* sun_management_ManagementFactory_klass(TRAPS);
-  static Klass* sun_management_GarbageCollectorImpl_klass(TRAPS);
-  static Klass* com_sun_management_GcInfo_klass(TRAPS);
+  static Klass* sun_management_Sensor_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
+  static Klass* sun_management_ManagementFactory_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
+  static Klass* sun_management_GarbageCollectorImpl_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
+  static Klass* com_sun_management_GcInfo_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
 
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, TRAPS);
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, objArrayHandle monitors_array, typeArrayHandle depths_array, objArrayHandle synchronizers_array, TRAPS);

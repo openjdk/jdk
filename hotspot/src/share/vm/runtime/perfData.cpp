@@ -588,6 +588,10 @@ bool PerfDataList::by_name(void* name, PerfData* pd) {
 
 PerfData* PerfDataList::find_by_name(const char* name) {
 
+  // if add_item hasn't been called the list won't be initialized
+  if (this == NULL)
+    return NULL;
+
   int i = _set->find((void*)name, PerfDataList::by_name);
 
   if (i >= 0 && i <= _set->length())
