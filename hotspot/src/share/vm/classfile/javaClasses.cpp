@@ -540,18 +540,18 @@ oop java_lang_Class::create_mirror(KlassHandle k, TRAPS) {
     if (k->oop_is_array()) {
       Handle comp_mirror;
       if (k->oop_is_typeArray()) {
-        BasicType type = typeArrayKlass::cast(k())->element_type();
+        BasicType type = TypeArrayKlass::cast(k())->element_type();
         comp_mirror = Universe::java_mirror(type);
       } else {
         assert(k->oop_is_objArray(), "Must be");
-        Klass* element_klass = objArrayKlass::cast(k())->element_klass();
+        Klass* element_klass = ObjArrayKlass::cast(k())->element_klass();
         assert(element_klass != NULL, "Must have an element klass");
           comp_mirror = Klass::cast(element_klass)->java_mirror();
       }
       assert(comp_mirror.not_null(), "must have a mirror");
 
         // Two-way link between the array klass and its component mirror:
-      arrayKlass::cast(k())->set_component_mirror(comp_mirror());
+      ArrayKlass::cast(k())->set_component_mirror(comp_mirror());
       set_array_klass(comp_mirror(), k());
     } else {
       assert(k->oop_is_instance(), "Must be");
@@ -704,7 +704,7 @@ bool java_lang_Class::is_primitive(oop java_class) {
 #ifdef ASSERT
   if (is_primitive) {
     Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
-    assert(k == NULL || is_java_primitive(arrayKlass::cast(k)->element_type()),
+    assert(k == NULL || is_java_primitive(ArrayKlass::cast(k)->element_type()),
         "Should be either the T_VOID primitive or a java primitive");
   }
 #endif
@@ -719,7 +719,7 @@ BasicType java_lang_Class::primitive_type(oop java_class) {
   BasicType type = T_VOID;
   if (ak != NULL) {
     // Note: create_basic_type_mirror above initializes ak to a non-null value.
-    type = arrayKlass::cast(ak)->element_type();
+    type = ArrayKlass::cast(ak)->element_type();
   } else {
     assert(java_class == Universe::void_mirror(), "only valid non-array primitive");
   }
@@ -846,7 +846,7 @@ void java_lang_Thread::set_thread(oop java_thread, JavaThread* thread) {
 
 typeArrayOop java_lang_Thread::name(oop java_thread) {
   oop name = java_thread->obj_field(_name_offset);
-  assert(name == NULL || (name->is_typeArray() && typeArrayKlass::cast(name->klass())->element_type() == T_CHAR), "just checking");
+  assert(name == NULL || (name->is_typeArray() && TypeArrayKlass::cast(name->klass())->element_type() == T_CHAR), "just checking");
   return typeArrayOop(name);
 }
 

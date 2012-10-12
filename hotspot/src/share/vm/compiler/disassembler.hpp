@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_COMPILER_DISASSEMBLER_HPP
 #define SHARE_VM_COMPILER_DISASSEMBLER_HPP
 
+#include "asm/codeBuffer.hpp"
 #include "runtime/globals.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
@@ -48,7 +49,8 @@ class Disassembler {
   friend class decode_env;
  private:
   // this is the type of the dll entry point:
-  typedef void* (*decode_func)(void* start, void* end,
+  typedef void* (*decode_func)(uintptr_t start_va, uintptr_t end_va,
+                               unsigned char* buffer, uintptr_t length,
                                void* (*event_callback)(void*, const char*, void*),
                                void* event_stream,
                                int (*printf_callback)(void*, const char*, ...),
@@ -87,7 +89,7 @@ class Disassembler {
   }
   static void decode(CodeBlob *cb,               outputStream* st = NULL);
   static void decode(nmethod* nm,                outputStream* st = NULL);
-  static void decode(address begin, address end, outputStream* st = NULL);
+  static void decode(address begin, address end, outputStream* st = NULL, CodeComments c = CodeComments());
 };
 
 #endif // SHARE_VM_COMPILER_DISASSEMBLER_HPP

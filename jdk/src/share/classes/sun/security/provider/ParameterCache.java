@@ -146,9 +146,14 @@ public final class ParameterCache {
                    InvalidAlgorithmParameterException {
         AlgorithmParameterGenerator gen =
                 AlgorithmParameterGenerator.getInstance("DSA");
-        DSAGenParameterSpec genParams =
-            new DSAGenParameterSpec(primeLen, subprimeLen);
-        gen.init(genParams, random);
+        // Use init(int size, SecureRandom random) for legacy DSA key sizes
+        if (primeLen < 1024) {
+            gen.init(primeLen, random);
+        } else {
+            DSAGenParameterSpec genParams =
+                new DSAGenParameterSpec(primeLen, subprimeLen);
+            gen.init(genParams, random);
+        }
         AlgorithmParameters params = gen.generateParameters();
         DSAParameterSpec spec = params.getParameterSpec(DSAParameterSpec.class);
         return spec;
@@ -159,8 +164,9 @@ public final class ParameterCache {
         dsaCache = new ConcurrentHashMap<Integer,DSAParameterSpec>();
 
         /*
-         * We support precomputed parameter for 512, 768 and 1024 bit
-         * moduli. In this file we provide both the seed and counter
+         * We support precomputed parameter for legacy 512, 768 bit moduli,
+         * and (L, N) combinations of (1024, 160), (2048, 224), (2048, 256).
+         * In this file we provide both the seed and counter
          * value of the generation process for each of these seeds,
          * for validation purposes. We also include the test vectors
          * from the DSA specification, FIPS 186, and the FIPS 186

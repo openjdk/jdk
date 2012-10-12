@@ -154,7 +154,7 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
     return BiasedLocking::NOT_BIASED;
   }
 
-  int age = mark->age();
+  uint age = mark->age();
   markOop   biased_prototype = markOopDesc::biased_locking_prototype()->set_age(age);
   markOop unbiased_prototype = markOopDesc::prototype()->set_age(age);
 

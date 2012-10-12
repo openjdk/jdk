@@ -85,7 +85,7 @@ import java.io.IOException;
  *         .build();
  *
  *     // read ACL, insert ACE, re-write ACL
- *     List&lt;AclEntry&gt acl = view.getAcl();
+ *     List&lt;AclEntry&gt; acl = view.getAcl();
  *     acl.add(0, entry);   // insert before any DENY entries
  *     view.setAcl(acl);
  * </pre>

@@ -308,19 +308,27 @@ void Thread::initialize_thread_local_storage() {
 
   // initialize structure dependent on thread local storage
   ThreadLocalStorage::set_thread(this);
-
-  // set up any platform-specific state.
-  os::initialize_thread();
 }
 
 void Thread::record_stack_base_and_size() {
   set_stack_base(os::current_stack_base());
   set_stack_size(os::current_stack_size());
+  // CR 7190089: on Solaris, primordial thread's stack is adjusted
+  // in initialize_thread(). Without the adjustment, stack size is
+  // incorrect if stack is set to unlimited (ulimit -s unlimited).
+  // So far, only Solaris has real implementation of initialize_thread().
+  //
+  // set up any platform-specific state.
+  os::initialize_thread(this);
 
-  // record thread's native stack, stack grows downward
-  address low_stack_addr = stack_base() - stack_size();
-  MemTracker::record_thread_stack(low_stack_addr, stack_size(), this,
-             CURRENT_PC);
+#if INCLUDE_NMT
+   // record thread's native stack, stack grows downward
+  if (MemTracker::is_on()) {
+    address stack_low_addr = stack_base() - stack_size();
+    MemTracker::record_thread_stack(stack_low_addr, stack_size(), this,
+      CURRENT_PC);
+  }
+#endif // INCLUDE_NMT
 }
 
 
@@ -332,10 +340,12 @@ Thread::~Thread() {
   // record_stack_base_and_size called. Although, we would like to ensure
   // that all started threads do call record_stack_base_and_size(), there is
   // not proper way to enforce that.
+#if INCLUDE_NMT
   if (_stack_base != NULL) {
     address low_stack_addr = stack_base() - stack_size();
     MemTracker::release_thread_stack(low_stack_addr, stack_size(), this);
   }
+#endif // INCLUDE_NMT
 
   // deallocate data structures
   delete resource_area();
@@ -836,7 +846,11 @@ void Thread::metadata_do(void f(Metadata*)) {
 void Thread::print_on(outputStream* st) const {
   // get_priority assumes osthread initialized
   if (osthread() != NULL) {
-    st->print("prio=%d tid=" INTPTR_FORMAT " ", get_priority(this), this);
+    int os_prio;
+    if (os::get_native_priority(this, &os_prio) == OS_OK) {
+      st->print("os_prio=%d ", os_prio);
+    }
+    st->print("tid=" INTPTR_FORMAT " ", this);
     osthread()->print_on(st);
   }
   debug_only(if (WizardMode) print_owned_locks_on(st);)
@@ -1347,7 +1361,9 @@ void JavaThread::initialize() {
   set_monitor_chunks(NULL);
   set_next(NULL);
   set_thread_state(_thread_new);
+#if INCLUDE_NMT
   set_recorder(NULL);
+#endif
   _terminated = _not_terminated;
   _privileged_stack_top = NULL;
   _array_for_gc = NULL;
@@ -2573,6 +2589,12 @@ void JavaThread::deoptimized_wrt_marked_nmethods() {
   StackFrameStream fst(this, UseBiasedLocking);
   for(; !fst.is_done(); fst.next()) {
     if (fst.current()->should_be_deoptimized()) {
+      if (LogCompilation && xtty != NULL) {
+        nmethod* nm = fst.current()->cb()->as_nmethod_or_null();
+        xtty->elem("deoptimized thread='" UINTX_FORMAT "' compile_id='%d'",
+                   this->name(), nm != NULL ? nm->compile_id() : -1);
+      }
+
       Deoptimization::deoptimize(this, *fst.current(), fst.register_map());
     }
   }
@@ -2743,7 +2765,11 @@ void JavaThread::print_thread_state() const {
 void JavaThread::print_on(outputStream *st) const {
   st->print("\"%s\" ", get_thread_name());
   oop thread_oop = threadObj();
-  if (thread_oop != NULL && java_lang_Thread::is_daemon(thread_oop))  st->print("daemon ");
+  if (thread_oop != NULL) {
+    st->print("#" INT64_FORMAT " ", java_lang_Thread::thread_id(thread_oop));
+    if (java_lang_Thread::is_daemon(thread_oop))  st->print("daemon ");
+    st->print("prio=%d ", java_lang_Thread::priority(thread_oop));
+  }
   Thread::print_on(st);
   // print guess for valid stack memory region (assume 4K pages); helps lock debugging
   st->print_cr("[" INTPTR_FORMAT "]", (intptr_t)last_Java_sp() & ~right_n_bits(12));
@@ -3509,7 +3535,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif /* USDT2 */
 
   // record VM initialization completion time
+#if INCLUDE_MANAGEMENT
   Management::record_vm_init_completed();
+#endif // INCLUDE_MANAGEMENT
 
   // Compute system loader. Note that this has to occur after set_init_completed, since
   // valid exceptions may be thrown in the process.
@@ -3570,9 +3598,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // initialize compiler(s)
+#if defined(COMPILER1) || defined(COMPILER2)
   CompileBroker::compilation_init();
+#endif
 
+#if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);
+#endif // INCLUDE_MANAGEMENT
+
   if (HAS_PENDING_EXCEPTION) {
     // management agent fails to start possibly due to
     // configuration problem and is responsible for printing
@@ -3742,6 +3775,7 @@ void Threads::create_vm_init_agents() {
   AgentLibrary* agent;
 
   JvmtiExport::enter_onload_phase();
+
   for (agent = Arguments::agents(); agent != NULL; agent = agent->next()) {
     OnLoadEntry_t  on_load_entry = lookup_agent_on_load(agent);
 
@@ -4270,8 +4304,10 @@ void Threads::print_on(outputStream* st, bool print_stacks, bool internal_format
   st->cr();
   Universe::heap()->print_gc_threads_on(st);
   WatcherThread* wt = WatcherThread::watcher_thread();
-  if (wt != NULL) wt->print_on(st);
-  st->cr();
+  if (wt != NULL) {
+    wt->print_on(st);
+    st->cr();
+  }
   CompileBroker::print_compiler_threads_on(st);
   st->flush();
 }

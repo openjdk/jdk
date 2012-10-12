@@ -37,8 +37,8 @@ class ciTypeArrayKlass : public ciArrayKlass {
 protected:
   ciTypeArrayKlass(KlassHandle h_k);
 
-  typeArrayKlass* get_typeArrayKlass() {
-    return (typeArrayKlass*)get_Klass();
+  TypeArrayKlass* get_TypeArrayKlass() {
+    return (TypeArrayKlass*)get_Klass();
   }
 
   const char* type_string() { return "ciTypeArrayKlass"; }

@@ -335,7 +335,7 @@ public class BasicFloat
         fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
     }
 
-    private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
+    private static void tryCatch(Buffer b, Class<?> ex, Runnable thunk) {
         boolean caught = false;
         try {
             thunk.run();
@@ -350,7 +350,7 @@ public class BasicFloat
             fail(ex.getName() + " not thrown", b);
     }
 
-    private static void tryCatch(float [] t, Class ex, Runnable thunk) {
+    private static void tryCatch(float [] t, Class<?> ex, Runnable thunk) {
         tryCatch(FloatBuffer.wrap(t), ex, thunk);
     }
 
@@ -681,10 +681,34 @@ public class BasicFloat
                     bulkPutBuffer(rb);
                 }});
 
+        // put(FloatBuffer) should not change source position
+        final FloatBuffer src = FloatBuffer.allocate(1);
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.put(src);
+                 }});
+        ck(src, src.position(), 0);
+
         tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
                 public void run() {
                     rb.compact();
                 }});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
