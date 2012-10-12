@@ -2518,7 +2518,7 @@ void SpaceManager::dump(outputStream* const out) const {
                 " waste " SIZE_FORMAT, curr_total, used, free, capacity, waste);
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 void SpaceManager::mangle_freed_chunks() {
   for (ChunkIndex index = SmallIndex;
        index < NumberOfFreeLists;
@@ -2536,7 +2536,7 @@ void SpaceManager::mangle_freed_chunks() {
     }
   }
 }
-#endif // PRODUCT
+#endif // ASSERT
 
 
 // MetaspaceAux

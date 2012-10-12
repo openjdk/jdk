@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "compiler/compileLog.hpp"
 
 define_array(ValueSetArray, ValueSet*);
 define_stack(ValueSetList, ValueSetArray);
@@ -54,7 +55,18 @@ class CE_Eliminator: public BlockClosure {
       // substituted some ifops/phis, so resolve the substitution
       SubstitutionResolver sr(_hir);
     }
+
+    CompileLog* log = _hir->compilation()->log();
+    if (log != NULL)
+      log->set_context("optimize name='cee'");
   }
+
+  ~CE_Eliminator() {
+    CompileLog* log = _hir->compilation()->log();
+    if (log != NULL)
+      log->clear_context(); // skip marker if nothing was printed
+  }
+
   int cee_count() const                          { return _cee_count; }
   int ifop_count() const                         { return _ifop_count; }
 
@@ -306,6 +318,15 @@ class BlockMerger: public BlockClosure {
   , _merge_count(0)
   {
     _hir->iterate_preorder(this);
+    CompileLog* log = _hir->compilation()->log();
+    if (log != NULL)
+      log->set_context("optimize name='eliminate_blocks'");
+  }
+
+  ~BlockMerger() {
+    CompileLog* log = _hir->compilation()->log();
+    if (log != NULL)
+      log->clear_context(); // skip marker if nothing was printed
   }
 
   bool try_merge(BlockBegin* block) {
@@ -505,6 +526,7 @@ public:
   void do_UnsafePutRaw   (UnsafePutRaw*    x);
   void do_UnsafeGetObject(UnsafeGetObject* x);
   void do_UnsafePutObject(UnsafePutObject* x);
+  void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);
   void do_UnsafePrefetchRead (UnsafePrefetchRead*  x);
   void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x);
   void do_ProfileCall    (ProfileCall*     x);
@@ -573,6 +595,15 @@ class NullCheckEliminator: public ValueVisitor {
     , _work_list(new BlockList()) {
     _visitable_instructions = new ValueSet();
     _visitor.set_eliminator(this);
+    CompileLog* log = _opt->ir()->compilation()->log();
+    if (log != NULL)
+      log->set_context("optimize name='null_check_elimination'");
+  }
+
+  ~NullCheckEliminator() {
+    CompileLog* log = _opt->ir()->compilation()->log();
+    if (log != NULL)
+      log->clear_context(); // skip marker if nothing was printed
   }
 
   Optimizer*  opt()                               { return _opt; }
@@ -676,6 +707,7 @@ void NullCheckVisitor::do_UnsafeGetRaw   (UnsafeGetRaw*    x) {}
 void NullCheckVisitor::do_UnsafePutRaw   (UnsafePutRaw*    x) {}
 void NullCheckVisitor::do_UnsafeGetObject(UnsafeGetObject* x) {}
 void NullCheckVisitor::do_UnsafePutObject(UnsafePutObject* x) {}
+void NullCheckVisitor::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {}
 void NullCheckVisitor::do_UnsafePrefetchRead (UnsafePrefetchRead*  x) {}
 void NullCheckVisitor::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {}
 void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_last_explicit_null_check(); }

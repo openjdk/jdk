@@ -364,12 +364,15 @@ ciMethod* ciBytecodeStream::get_method(bool& will_link, ciSignature* *declared_s
   constantPoolHandle cpool(_method->get_Method()->constants());
   ciMethod* m = env->get_method_by_index(cpool, get_method_index(), cur_bc(), _holder);
   will_link = m->is_loaded();
-  // Get declared method signature and return it.
-  if (has_optional_appendix()) {
-    const int sig_index = get_method_signature_index();
-    Symbol* sig_sym = cpool->symbol_at(sig_index);
-    ciKlass* pool_holder = env->get_klass(cpool->pool_holder());
-    (*declared_signature_result) = new (env->arena()) ciSignature(pool_holder, cpool, env->get_symbol(sig_sym));
+
+  // Use the MethodType stored in the CP cache to create a signature
+  // with correct types (in respect to class loaders).
+  if (has_method_type()) {
+    ciSymbol*     sig_sym     = env->get_symbol(cpool->symbol_at(get_method_signature_index()));
+    ciKlass*      pool_holder = env->get_klass(cpool->pool_holder());
+    ciMethodType* method_type = get_method_type();
+    ciSignature* declared_signature = new (env->arena()) ciSignature(pool_holder, sig_sym, method_type);
+    (*declared_signature_result) = declared_signature;
   } else {
     (*declared_signature_result) = m->signature();
   }
@@ -397,6 +400,31 @@ ciObject* ciBytecodeStream::get_appendix() {
   constantPoolHandle cpool(_method->get_Method()->constants());
   oop appendix_oop = ConstantPool::appendix_at_if_loaded(cpool, get_method_index());
   return CURRENT_ENV->get_object(appendix_oop);
+}
+
+// ------------------------------------------------------------------
+// ciBytecodeStream::has_method_type
+//
+// Returns true if there is a MethodType argument stored in the
+// constant pool cache at the current bci.
+bool ciBytecodeStream::has_method_type() {
+  GUARDED_VM_ENTRY(
+    constantPoolHandle cpool(_method->get_Method()->constants());
+    return ConstantPool::has_method_type_at_if_loaded(cpool, get_method_index());
+  )
+}
+
+// ------------------------------------------------------------------
+// ciBytecodeStream::get_method_type
+//
+// Return the MethodType stored in the constant pool cache at
+// the current bci.
+ciMethodType* ciBytecodeStream::get_method_type() {
+  GUARDED_VM_ENTRY(
+    constantPoolHandle cpool(_method->get_Method()->constants());
+    oop method_type_oop = ConstantPool::method_type_at_if_loaded(cpool, get_method_index());
+    return CURRENT_ENV->get_object(method_type_oop)->as_method_type();
+  )
 }
 
 // ------------------------------------------------------------------

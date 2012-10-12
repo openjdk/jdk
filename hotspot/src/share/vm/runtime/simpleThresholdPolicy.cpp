@@ -43,11 +43,11 @@ void SimpleThresholdPolicy::print_counters(const char* prefix, methodHandle mh) 
     mdo_invocations_start = mdh->invocation_count_start();
     mdo_backedges_start = mdh->backedge_count_start();
   }
-  tty->print(" %stotal: %d,%d %smdo: %d(%d),%d(%d)", prefix,
+  tty->print(" %stotal=%d,%d %smdo=%d(%d),%d(%d)", prefix,
       invocation_count, backedge_count, prefix,
       mdo_invocations, mdo_invocations_start,
       mdo_backedges, mdo_backedges_start);
-  tty->print(" %smax levels: %d,%d", prefix,
+  tty->print(" %smax levels=%d,%d", prefix,
       mh->highest_comp_level(), mh->highest_osr_comp_level());
 }
 
@@ -85,7 +85,7 @@ void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodH
     tty->print("unknown");
   }
 
-  tty->print(" level: %d ", level);
+  tty->print(" level=%d ", level);
 
   ResourceMark rm;
   char *method_name = mh->name_and_sig_as_C_string();
@@ -95,8 +95,8 @@ void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodH
     tty->print(" [%s]] ", inlinee_name);
   }
   else tty->print("] ");
-  tty->print("@%d queues: %d,%d", bci, CompileBroker::queue_size(CompLevel_full_profile),
-                                       CompileBroker::queue_size(CompLevel_full_optimization));
+  tty->print("@%d queues=%d,%d", bci, CompileBroker::queue_size(CompLevel_full_profile),
+                                      CompileBroker::queue_size(CompLevel_full_optimization));
 
   print_specific(type, mh, imh, bci, level);
 
@@ -105,25 +105,30 @@ void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodH
     if (inlinee_event) {
       print_counters("inlinee ", imh);
     }
-    tty->print(" compilable: ");
+    tty->print(" compilable=");
     bool need_comma = false;
     if (!mh->is_not_compilable(CompLevel_full_profile)) {
       tty->print("c1");
       need_comma = true;
     }
+    if (!mh->is_not_osr_compilable(CompLevel_full_profile)) {
+      if (need_comma) tty->print(",");
+      tty->print("c1-osr");
+      need_comma = true;
+    }
     if (!mh->is_not_compilable(CompLevel_full_optimization)) {
-      if (need_comma) tty->print(", ");
+      if (need_comma) tty->print(",");
       tty->print("c2");
       need_comma = true;
     }
-    if (!mh->is_not_osr_compilable()) {
-      if (need_comma) tty->print(", ");
-      tty->print("osr");
+    if (!mh->is_not_osr_compilable(CompLevel_full_optimization)) {
+      if (need_comma) tty->print(",");
+      tty->print("c2-osr");
     }
-    tty->print(" status:");
+    tty->print(" status=");
     if (mh->queued_for_compilation()) {
-      tty->print(" in queue");
-    } else tty->print(" idle");
+      tty->print("in-queue");
+    } else tty->print("idle");
   }
   tty->print_cr("]");
 }
@@ -223,7 +228,7 @@ void SimpleThresholdPolicy::compile(methodHandle mh, int bci, CompLevel level, J
     }
     return;
   }
-  if (bci != InvocationEntryBci && mh->is_not_osr_compilable()) {
+  if (bci != InvocationEntryBci && mh->is_not_osr_compilable(level)) {
     return;
   }
   if (!CompileBroker::compilation_is_in_queue(mh, bci)) {

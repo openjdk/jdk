@@ -353,9 +353,9 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   // Calculates new survivor space size;  returns a new tenuring threshold
   // value. Stores new survivor size in _survivor_size.
-  int compute_survivor_space_size_and_threshold(bool   is_survivor_overflow,
-                                                int    tenuring_threshold,
-                                                size_t survivor_limit);
+  uint compute_survivor_space_size_and_threshold(bool   is_survivor_overflow,
+                                                 uint    tenuring_threshold,
+                                                 size_t survivor_limit);
 
   // Return the maximum size of a survivor space if the young generation were of
   // size gen_size.

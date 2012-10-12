@@ -176,40 +176,31 @@ public class DatagramSocketAdaptor
             return dc.receive(bb);
         }
 
-        // Implement timeout with a selector
-        SelectionKey sk = null;
-        Selector sel = null;
         dc.configureBlocking(false);
         try {
             int n;
             SocketAddress sender;
             if ((sender = dc.receive(bb)) != null)
                 return sender;
-            sel = Util.getTemporarySelector(dc);
-            sk = dc.register(sel, SelectionKey.OP_READ);
             long to = timeout;
             for (;;) {
                 if (!dc.isOpen())
                      throw new ClosedChannelException();
                 long st = System.currentTimeMillis();
-                int ns = sel.select(to);
-                if (ns > 0 && sk.isReadable()) {
+                int result = dc.poll(PollArrayWrapper.POLLIN, to);
+                if (result > 0 &&
+                        ((result & PollArrayWrapper.POLLIN) != 0)) {
                     if ((sender = dc.receive(bb)) != null)
                         return sender;
                 }
-                sel.selectedKeys().remove(sk);
                 to -= System.currentTimeMillis() - st;
                 if (to <= 0)
                     throw new SocketTimeoutException();
 
             }
         } finally {
-            if (sk != null)
-                sk.cancel();
             if (dc.isOpen())
                 dc.configureBlocking(true);
-            if (sel != null)
-                Util.releaseTemporarySelector(sel);
         }
     }
 

@@ -30,6 +30,7 @@
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciMethodHandle.hpp"
+#include "ci/ciMethodType.hpp"
 #include "ci/ciNullObject.hpp"
 #include "ci/ciObjArray.hpp"
 #include "ci/ciObjArrayKlass.hpp"
@@ -145,7 +146,7 @@ void ciObjectFactory::init_shared_objects() {
 
   for (int i = T_BOOLEAN; i <= T_CONFLICT; i++) {
     BasicType t = (BasicType)i;
-    if (type2name(t) != NULL && t != T_OBJECT && t != T_ARRAY && t != T_NARROWOOP) {
+    if (type2name(t) != NULL && t != T_OBJECT && t != T_ARRAY && t != T_NARROWOOP && t != T_NARROWKLASS) {
       ciType::_basic_types[t] = new (_arena) ciType(t);
       init_ident_of(ciType::_basic_types[t]);
     }
@@ -173,7 +174,7 @@ void ciObjectFactory::init_shared_objects() {
   }
 
   ciEnv::_unloaded_cisymbol = ciObjectFactory::get_symbol(vmSymbols::dummy_symbol());
-  // Create dummy InstanceKlass and objArrayKlass object and assign them idents
+  // Create dummy InstanceKlass and ObjArrayKlass object and assign them idents
   ciEnv::_unloaded_ciinstance_klass = new (_arena) ciInstanceKlass(ciEnv::_unloaded_cisymbol, NULL, NULL);
   init_ident_of(ciEnv::_unloaded_ciinstance_klass);
   ciEnv::_unloaded_ciobjarrayklass = new (_arena) ciObjArrayKlass(ciEnv::_unloaded_cisymbol, ciEnv::_unloaded_ciinstance_klass, 1);
@@ -237,23 +238,23 @@ ciObject* ciObjectFactory::get(oop key) {
 
   assert(key == NULL || Universe::heap()->is_in_reserved(key), "must be");
 
-    NonPermObject* &bucket = find_non_perm(key);
-    if (bucket != NULL) {
-      return bucket->object();
-    }
+  NonPermObject* &bucket = find_non_perm(key);
+  if (bucket != NULL) {
+    return bucket->object();
+  }
 
-    // The ciObject does not yet exist.  Create it and insert it
-    // into the cache.
-    Handle keyHandle(key);
-    ciObject* new_object = create_new_object(keyHandle());
-    assert(keyHandle() == new_object->get_oop(), "must be properly recorded");
-    init_ident_of(new_object);
+  // The ciObject does not yet exist.  Create it and insert it
+  // into the cache.
+  Handle keyHandle(key);
+  ciObject* new_object = create_new_object(keyHandle());
+  assert(keyHandle() == new_object->get_oop(), "must be properly recorded");
+  init_ident_of(new_object);
   assert(Universe::heap()->is_in_reserved(new_object->get_oop()), "must be");
 
-      // Not a perm-space object.
-      insert_non_perm(bucket, keyHandle(), new_object);
-      return new_object;
-    }
+  // Not a perm-space object.
+  insert_non_perm(bucket, keyHandle(), new_object);
+  return new_object;
+}
 
 // ------------------------------------------------------------------
 // ciObjectFactory::get
@@ -324,6 +325,8 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
       return new (arena()) ciMemberName(h_i);
     else if (java_lang_invoke_MethodHandle::is_instance(o))
       return new (arena()) ciMethodHandle(h_i);
+    else if (java_lang_invoke_MethodType::is_instance(o))
+      return new (arena()) ciMethodType(h_i);
     else
       return new (arena()) ciInstance(h_i);
   } else if (o->is_objArray()) {
@@ -451,7 +454,7 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
   // the cache.
   ciKlass* new_klass = NULL;
 
-  // Two cases: this is an unloaded objArrayKlass or an
+  // Two cases: this is an unloaded ObjArrayKlass or an
   // unloaded InstanceKlass.  Deal with both.
   if (name->byte_at(0) == '[') {
     // Decompose the name.'
@@ -477,7 +480,7 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
       // The type array itself takes care of one of the dimensions.
       dimension--;
 
-      // The element klass is a typeArrayKlass.
+      // The element klass is a TypeArrayKlass.
       element_klass = ciTypeArrayKlass::make(element_type);
     }
     new_klass = new (arena()) ciObjArrayKlass(name, element_klass, dimension);

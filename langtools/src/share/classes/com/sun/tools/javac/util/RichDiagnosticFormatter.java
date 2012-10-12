@@ -393,11 +393,6 @@ public class RichDiagnosticFormatter extends
         }
 
         @Override
-        protected String printMethodArgs(List<Type> args, boolean varArgs, Locale locale) {
-            return super.printMethodArgs(args, varArgs, locale);
-        }
-
-        @Override
         public String visitClassSymbol(ClassSymbol s, Locale locale) {
             String name = nameSimplifier.simplify(s);
             if (name.length() == 0 ||

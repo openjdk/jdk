@@ -245,6 +245,27 @@ public class TreeInfo {
         }
     }
 
+    /** Return true if a a tree corresponds to a poly expression. */
+    public static boolean isPoly(JCTree tree, JCTree origin) {
+        switch (tree.getTag()) {
+            case APPLY:
+            case NEWCLASS:
+            case CONDEXPR:
+                return !origin.hasTag(TYPECAST);
+            case LAMBDA:
+            case REFERENCE:
+                return true;
+            case PARENS:
+                return isPoly(((JCParens)tree).expr, origin);
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isExplicitLambda(JCLambda lambda) {
+        return lambda.params.isEmpty() ||
+                lambda.params.head.vartype != null;
+    }
     /**
      * Return true if the AST corresponds to a static select of the kind A.B
      */
@@ -261,6 +282,7 @@ public class TreeInfo {
                 return isStaticSym(base) &&
                     isStaticSelector(((JCFieldAccess)base).selected, names);
             case TYPEAPPLY:
+            case TYPEARRAY:
                 return true;
             default:
                 return false;
@@ -383,6 +405,10 @@ public class TreeInfo {
                 JCVariableDecl node = (JCVariableDecl)tree;
                 if (node.mods.pos != Position.NOPOS) {
                     return node.mods.pos;
+                } else if (node.vartype == null) {
+                    //if there's no type (partially typed lambda parameter)
+                    //simply return node position
+                    return node.pos;
                 } else {
                     return getStartPos(node.vartype);
                 }

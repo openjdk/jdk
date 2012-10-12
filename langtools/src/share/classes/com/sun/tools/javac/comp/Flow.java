@@ -50,8 +50,8 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  (see AssignAnalyzer) ensures that each variable is assigned when used.  Definite
  *  unassignment analysis (see AssignAnalyzer) in ensures that no final variable
  *  is assigned more than once. Finally, local variable capture analysis (see CaptureAnalyzer)
- *  determines that local variables accessed within the scope of an inner class are
- *  either final or effectively-final.
+ *  determines that local variables accessed within the scope of an inner class/lambda
+ *  are either final or effectively-final.
  *
  *  <p>The JLS has a number of problems in the
  *  specification of these flow analysis problems. This implementation
@@ -209,6 +209,29 @@ public class Flow {
         new AssignAnalyzer().analyzeTree(env, make);
         new FlowAnalyzer().analyzeTree(env, make);
         new CaptureAnalyzer().analyzeTree(env, make);
+    }
+
+    public void analyzeLambda(Env<AttrContext> env, JCLambda that, TreeMaker make, boolean speculative) {
+        java.util.Queue<JCDiagnostic> prevDeferredDiagnostics = log.deferredDiagnostics;
+        Filter<JCDiagnostic> prevDeferDiagsFilter = log.deferredDiagFilter;
+        //we need to disable diagnostics temporarily; the problem is that if
+        //a lambda expression contains e.g. an unreachable statement, an error
+        //message will be reported and will cause compilation to skip the flow analyis
+        //step - if we suppress diagnostics, we won't stop at Attr for flow-analysis
+        //related errors, which will allow for more errors to be detected
+        if (!speculative) {
+            log.deferAll();
+            log.deferredDiagnostics = ListBuffer.lb();
+        }
+        try {
+            new AliveAnalyzer().analyzeTree(env, that, make);
+            new FlowAnalyzer().analyzeTree(env, that, make);
+        } finally {
+            if (!speculative) {
+                log.deferredDiagFilter = prevDeferDiagsFilter;
+                log.deferredDiagnostics = prevDeferredDiagnostics;
+            }
+        }
     }
 
     /**
@@ -659,6 +682,27 @@ public class Flow {
             }
         }
 
+        @Override
+        public void visitLambda(JCLambda tree) {
+            if (tree.type != null &&
+                    tree.type.isErroneous()) {
+                return;
+            }
+
+            ListBuffer<PendingExit> prevPending = pendingExits;
+            boolean prevAlive = alive;
+            try {
+                pendingExits = ListBuffer.lb();
+                alive = true;
+                scanStat(tree.body);
+                tree.canCompleteNormally = alive;
+            }
+            finally {
+                pendingExits = prevPending;
+                alive = prevAlive;
+            }
+        }
+
         public void visitTopLevel(JCCompilationUnit tree) {
             // Do nothing for TopLevel since each class is visited individually
         }
@@ -670,6 +714,9 @@ public class Flow {
         /** Perform definite assignment/unassignment analysis on a tree.
          */
         public void analyzeTree(Env<AttrContext> env, TreeMaker make) {
+            analyzeTree(env, env.tree, make);
+        }
+        public void analyzeTree(Env<AttrContext> env, JCTree tree, TreeMaker make) {
             try {
                 attrEnv = env;
                 Flow.this.make = make;
@@ -1185,6 +1232,29 @@ public class Flow {
             }
         }
 
+        @Override
+        public void visitLambda(JCLambda tree) {
+            if (tree.type != null &&
+                    tree.type.isErroneous()) {
+                return;
+            }
+            List<Type> prevCaught = caught;
+            List<Type> prevThrown = thrown;
+            ListBuffer<FlowPendingExit> prevPending = pendingExits;
+            try {
+                pendingExits = ListBuffer.lb();
+                caught = List.of(syms.throwableType); //inhibit exception checking
+                thrown = List.nil();
+                scan(tree.body);
+                tree.inferredThrownTypes = thrown;
+            }
+            finally {
+                pendingExits = prevPending;
+                caught = prevCaught;
+                thrown = prevThrown;
+            }
+        }
+
         public void visitTopLevel(JCCompilationUnit tree) {
             // Do nothing for TopLevel since each class is visited individually
         }
@@ -1267,6 +1337,10 @@ public class Flow {
          */
         int nextadr;
 
+        /** The first variable sequence number in a block that can return.
+         */
+        int returnadr;
+
         /** The list of unreferenced automatic resources.
          */
         Scope unrefdResources;
@@ -1296,8 +1370,8 @@ public class Flow {
 
         @Override
         void markDead() {
-            inits.inclRange(firstadr, nextadr);
-            uninits.inclRange(firstadr, nextadr);
+            inits.inclRange(returnadr, nextadr);
+            uninits.inclRange(returnadr, nextadr);
         }
 
         /*-------------- Processing variables ----------------------*/
@@ -1318,11 +1392,7 @@ public class Flow {
          *  index into the vars array.
          */
         void newVar(VarSymbol sym) {
-            if (nextadr == vars.length) {
-                VarSymbol[] newvars = new VarSymbol[nextadr * 2];
-                System.arraycopy(vars, 0, newvars, 0, nextadr);
-                vars = newvars;
-            }
+            vars = ArrayUtils.ensureCapacity(vars, nextadr);
             if ((sym.flags() & FINAL) == 0) {
                 sym.flags_field |= EFFECTIVELY_FINAL;
             }
@@ -1556,6 +1626,7 @@ public class Flow {
             Bits uninitsPrev = uninits.dup();
             int nextadrPrev = nextadr;
             int firstadrPrev = firstadr;
+            int returnadrPrev = returnadr;
             Lint lintPrev = lint;
 
             lint = lint.augment(tree.sym.annotations);
@@ -1600,6 +1671,7 @@ public class Flow {
                 uninits = uninitsPrev;
                 nextadr = nextadrPrev;
                 firstadr = firstadrPrev;
+                returnadr = returnadrPrev;
                 lint = lintPrev;
             }
         }
@@ -1982,6 +2054,35 @@ public class Flow {
             scanExpr(tree.encl);
             scanExprs(tree.args);
             scan(tree.def);
+        }
+
+        @Override
+        public void visitLambda(JCLambda tree) {
+            Bits prevUninits = uninits;
+            Bits prevInits = inits;
+            int returnadrPrev = returnadr;
+            ListBuffer<AssignPendingExit> prevPending = pendingExits;
+            try {
+                returnadr = nextadr;
+                pendingExits = new ListBuffer<AssignPendingExit>();
+                for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
+                    JCVariableDecl def = l.head;
+                    scan(def);
+                    inits.incl(def.sym.adr);
+                    uninits.excl(def.sym.adr);
+                }
+                if (tree.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
+                    scanExpr(tree.body);
+                } else {
+                    scan(tree.body);
+                }
+            }
+            finally {
+                returnadr = returnadrPrev;
+                uninits = prevUninits;
+                inits = prevInits;
+                pendingExits = prevPending;
+            }
         }
 
         public void visitNewArray(JCNewArray tree) {

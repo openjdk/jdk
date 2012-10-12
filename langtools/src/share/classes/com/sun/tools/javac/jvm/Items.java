@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,13 @@ public class Items {
      */
     Item makeStackItem(Type type) {
         return stackItem[Code.typecode(type)];
+    }
+
+    /** Make an item representing a dynamically invoked method.
+     *  @param member   The represented symbol.
+     */
+    Item makeDynamicItem(Symbol member) {
+        return new DynamicItem(member);
     }
 
     /** Make an item representing an indexed expression.
@@ -454,6 +461,35 @@ public class Items {
 
         public String toString() {
             return "static(" + member + ")";
+        }
+    }
+
+    /** An item representing a dynamic call site.
+     */
+    class DynamicItem extends StaticItem {
+        DynamicItem(Symbol member) {
+            super(member);
+        }
+
+        Item load() {
+            assert false;
+            return null;
+        }
+
+        void store() {
+            assert false;
+        }
+
+        Item invoke() {
+            // assert target.hasNativeInvokeDynamic();
+            MethodType mtype = (MethodType)member.erasure(types);
+            int rescode = Code.typecode(mtype.restype);
+            code.emitInvokedynamic(pool.put(member), mtype);
+            return stackItem[rescode];
+        }
+
+        public String toString() {
+            return "dynamic(" + member + ")";
         }
     }
 

@@ -563,15 +563,6 @@ static oop field_signature_type_or_null(Symbol* s) {
       return Klass::cast(SystemDictionary::Class_klass())->java_mirror();
     } else if (s == vmSymbols::string_signature()) {
       return Klass::cast(SystemDictionary::String_klass())->java_mirror();
-    } else {
-      int len = s->utf8_length();
-      if (s->byte_at(0) == 'L' && s->byte_at(len-1) == ';') {
-        TempNewSymbol cname = SymbolTable::probe((const char*)&s->bytes()[1], len-2);
-        if (cname == NULL)  return NULL;
-        Klass* wkk = SystemDictionary::find_well_known_klass(cname);
-        if (wkk == NULL)  return NULL;
-        return Klass::cast(wkk)->java_mirror();
-      }
     }
   }
   return NULL;

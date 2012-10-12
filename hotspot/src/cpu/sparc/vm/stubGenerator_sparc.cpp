@@ -3091,7 +3091,7 @@ class StubGenerator: public StubCodeGenerator {
     arraycopy_range_checks(src, src_pos, dst, dst_pos, length,
                            O5_temp, G4_dst_klass, L_failed);
 
-    // typeArrayKlass
+    // TypeArrayKlass
     //
     // src_addr = (src + array_header_in_bytes()) + (src_pos << log2elemsize);
     // dst_addr = (dst + array_header_in_bytes()) + (dst_pos << log2elemsize);
@@ -3142,7 +3142,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::always, false, Assembler::pt, entry_jlong_arraycopy);
     __ delayed()->signx(length, count); // length
 
-    // objArrayKlass
+    // ObjArrayKlass
   __ BIND(L_objArray);
     // live at this point:  G3_src_klass, G4_dst_klass, src[_pos], dst[_pos], length
 
@@ -3198,8 +3198,8 @@ class StubGenerator: public StubCodeGenerator {
       generate_type_check(G3_src_klass, sco_temp, G4_dst_klass,
                           O5_temp, L_plain_copy);
 
-      // Fetch destination element klass from the objArrayKlass header.
-      int ek_offset = in_bytes(objArrayKlass::element_klass_offset());
+      // Fetch destination element klass from the ObjArrayKlass header.
+      int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
 
       // the checkcast_copy loop needs two extra arguments:
       __ ld_ptr(G4_dst_klass, ek_offset, O4);   // dest elem klass

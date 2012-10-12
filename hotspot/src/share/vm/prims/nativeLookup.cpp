@@ -328,6 +328,7 @@ address NativeLookup::lookup_critical_entry(methodHandle method) {
 // native implementation again.
 // See SetNativeMethodPrefix in the JVM TI Spec for more details.
 address NativeLookup::lookup_entry_prefixed(methodHandle method, bool& in_base_library, TRAPS) {
+#if INCLUDE_JVMTI
   ResourceMark rm(THREAD);
 
   int prefix_count;
@@ -358,6 +359,7 @@ address NativeLookup::lookup_entry_prefixed(methodHandle method, bool& in_base_l
       }
     }
   }
+#endif // INCLUDE_JVMTI
   return NULL;
 }
 
