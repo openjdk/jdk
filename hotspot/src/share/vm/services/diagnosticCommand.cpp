@@ -43,9 +43,9 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(true, false));
-#ifndef SERVICES_KERNEL   // Heap dumping not supported
+#if INCLUDE_SERVICES // Heap dumping supported
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(true, false));
-#endif // SERVICES_KERNEL
+#endif // INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(true, false));
 
@@ -252,7 +252,7 @@ void RunFinalizationDCmd::execute(TRAPS) {
                          vmSymbols::void_method_signature(), CHECK);
 }
 
-#ifndef SERVICES_KERNEL   // Heap dumping not supported
+#if INCLUDE_SERVICES // Heap dumping supported
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
   _filename("filename","Name of the dump file", "STRING",true),
@@ -292,7 +292,7 @@ int HeapDumpDCmd::num_arguments() {
     return 0;
   }
 }
-#endif // SERVICES_KERNEL
+#endif // INCLUDE_SERVICES
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),

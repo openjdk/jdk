@@ -56,18 +56,33 @@ class MetaspaceShared : AllStatic {
     n_regions = 4
   };
 
-  static void set_max_alignment(int alignment) KERNEL_RETURN;
-  static int max_alignment()                   KERNEL_RETURN_(0);
+  // Accessor functions to save shared space created for metadata, which has
+  // extra space allocated at the end for miscellaneous data and code.
+  static void set_max_alignment(int alignment) {
+    CDS_ONLY(_max_alignment = alignment);
+  }
 
-  static void preload_and_dump(TRAPS) KERNEL_RETURN;
-  static ReservedSpace* shared_rs();
-  static void set_shared_rs(ReservedSpace* rs) KERNEL_RETURN;
+  static int max_alignment() {
+    CDS_ONLY(return _max_alignment);
+    NOT_CDS(return 0);
+  }
 
-  static bool map_shared_spaces(FileMapInfo* mapinfo) KERNEL_RETURN_(false);
-  static void initialize_shared_spaces() KERNEL_RETURN;
+  static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
+
+  static ReservedSpace* shared_rs() {
+    CDS_ONLY(return _shared_rs);
+    NOT_CDS(return NULL);
+  }
+
+  static void set_shared_rs(ReservedSpace* rs) {
+    CDS_ONLY(_shared_rs = rs;)
+  }
+
+  static bool map_shared_spaces(FileMapInfo* mapinfo) NOT_CDS_RETURN_(false);
+  static void initialize_shared_spaces() NOT_CDS_RETURN;
 
   // Return true if given address is in the mapped shared space.
-  static bool is_in_shared_space(const void* p) KERNEL_RETURN_(false);
+  static bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
 
   static void generate_vtable_methods(void** vtbl_list,
                                       void** vtable,
@@ -79,7 +94,7 @@ class MetaspaceShared : AllStatic {
   // Remap the shared readonly space to shared readwrite, private if
   // sharing is enabled. Simply returns true if sharing is not enabled
   // or if the remapping has already been done by a prior call.
-  static bool remap_shared_readonly_as_readwrite() KERNEL_RETURN_(true);
+  static bool remap_shared_readonly_as_readwrite() NOT_CDS_RETURN_(true);
 
   static void print_shared_spaces();
 };

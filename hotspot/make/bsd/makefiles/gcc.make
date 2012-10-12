@@ -151,11 +151,6 @@ ifdef CC_INTERP
   CFLAGS += -DCC_INTERP
 endif
 
-# Build for embedded targets
-ifdef JAVASE_EMBEDDED
-  CFLAGS += -DJAVASE_EMBEDDED
-endif
-
 # Keep temporary files (.ii, .s)
 ifdef NEED_ASM
   CFLAGS += -save-temps
@@ -186,20 +181,32 @@ ifeq ($(OS_VENDOR), Darwin)
   CFLAGS_WARN/os_bsd.o = $(CFLAGS_WARN/DEFAULT) -Wno-deprecated-declarations
 endif
 
+OPT_CFLAGS/SIZE=-Os
+OPT_CFLAGS/SPEED=-O3
+
+# Hotspot uses very unstrict aliasing turn this optimization off
+# This option is added to CFLAGS rather than OPT_CFLAGS
+# so that OPT_CFLAGS overrides get this option too.
+CFLAGS += -fno-strict-aliasing
 
 # The flags to use for an Optimized g++ build
 ifeq ($(OS_VENDOR), Darwin)
   # use -Os by default, unless -O3 can be proved to be worth the cost, as per policy
   # <http://wikis.sun.com/display/OpenJDK/Mac+OS+X+Port+Compilers>
-  OPT_CFLAGS += -Os
+  OPT_CFLAGS_DEFAULT ?= SIZE
 else
-  OPT_CFLAGS += -O3
+  OPT_CFLAGS_DEFAULT ?= SPEED
 endif
 
-# Hotspot uses very unstrict aliasing turn this optimization off
-OPT_CFLAGS += -fno-strict-aliasing
+ifdef OPT_CFLAGS
+  ifneq ("$(origin OPT_CFLAGS)", "command line")
+    $(error " Use OPT_EXTRAS instead of OPT_CFLAGS to add extra flags to OPT_CFLAGS.")
+  endif
+endif
 
-# The gcc compiler segv's on ia64 when compiling bytecodeInterpreter.cpp 
+OPT_CFLAGS = $(OPT_CFLAGS/$(OPT_CFLAGS_DEFAULT)) $(OPT_EXTRAS)
+
+# The gcc compiler segv's on ia64 when compiling bytecodeInterpreter.cpp
 # if we use expensive-optimizations
 ifeq ($(BUILDARCH), ia64)
 OPT_CFLAGS += -fno-expensive-optimizations

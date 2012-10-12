@@ -155,7 +155,7 @@ public:
     virtual void execute(TRAPS);
 };
 
-#ifndef SERVICES_KERNEL   // Heap dumping not supported
+#if INCLUDE_SERVICES   // Heap dumping supported
 // See also: dump_heap in attachListener.cpp
 class HeapDumpDCmd : public DCmdWithParser {
 protected:
@@ -176,7 +176,7 @@ public:
   static int num_arguments();
   virtual void execute(TRAPS);
 };
-#endif // SERVICES_KERNEL
+#endif // INCLUDE_SERVICES
 
 // See also: inspeactheap in attachListener.cpp
 class ClassHistogramDCmd : public DCmdWithParser {
