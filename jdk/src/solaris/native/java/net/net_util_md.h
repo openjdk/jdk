@@ -144,7 +144,6 @@ extern jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
  *  Utilities
  */
 #ifdef __linux__
-extern int kernelIsV22();
 extern int kernelIsV24();
 #endif
 

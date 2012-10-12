@@ -1170,26 +1170,11 @@ void Assembler::cmpw(Address dst, int imm16) {
 // and stores reg into adr if so; otherwise, the value at adr is loaded into rax,.
 // The ZF is set if the compared values were equal, and cleared otherwise.
 void Assembler::cmpxchgl(Register reg, Address adr) { // cmpxchg
-  if (Atomics & 2) {
-     // caveat: no instructionmark, so this isn't relocatable.
-     // Emit a synthetic, non-atomic, CAS equivalent.
-     // Beware.  The synthetic form sets all ICCs, not just ZF.
-     // cmpxchg r,[m] is equivalent to rax, = CAS (m, rax, r)
-     cmpl(rax, adr);
-     movl(rax, adr);
-     if (reg != rax) {
-        Label L ;
-        jcc(Assembler::notEqual, L);
-        movl(adr, reg);
-        bind(L);
-     }
-  } else {
-     InstructionMark im(this);
-     prefix(adr, reg);
-     emit_byte(0x0F);
-     emit_byte(0xB1);
-     emit_operand(reg, adr);
-  }
+  InstructionMark im(this);
+  prefix(adr, reg);
+  emit_byte(0x0F);
+  emit_byte(0xB1);
+  emit_operand(reg, adr);
 }
 
 void Assembler::comisd(XMMRegister dst, Address src) {
@@ -1513,12 +1498,7 @@ void Assembler::leal(Register dst, Address src) {
 }
 
 void Assembler::lock() {
-  if (Atomics & 1) {
-     // Emit either nothing, a NOP, or a NOP: prefix
-     emit_byte(0x90) ;
-  } else {
-     emit_byte(0xF0);
-  }
+  emit_byte(0xF0);
 }
 
 void Assembler::lzcntl(Register dst, Register src) {
@@ -3496,6 +3476,33 @@ void Assembler::vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src) 
   emit_byte(0x01);
 }
 
+void Assembler::vinsertf128h(XMMRegister dst, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x18);
+  emit_operand(dst, src);
+  // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vextractf128h(Address dst, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(src != xnoreg, "sanity");
+  int src_enc = src->encoding();
+  vex_prefix(dst, 0, src_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x19);
+  emit_operand(src, dst);
+  // 0x01 - extract from upper 128 bits
+  emit_byte(0x01);
+}
+
 void Assembler::vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx2(), "");
   bool vector256 = true;
@@ -3504,6 +3511,33 @@ void Assembler::vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) 
   emit_byte(0xC0 | encode);
   // 0x00 - insert into lower 128 bits
   // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vinserti128h(XMMRegister dst, Address src) {
+  assert(VM_Version::supports_avx2(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x38);
+  emit_operand(dst, src);
+  // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vextracti128h(Address dst, XMMRegister src) {
+  assert(VM_Version::supports_avx2(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(src != xnoreg, "sanity");
+  int src_enc = src->encoding();
+  vex_prefix(dst, 0, src_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x39);
+  emit_operand(src, dst);
+  // 0x01 - extract from upper 128 bits
   emit_byte(0x01);
 }
 
@@ -6882,7 +6916,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 #ifdef ASSERT
   // TraceBytecodes does not use r12 but saves it over the call, so don't verify
   // r12 is the heapbase.
-  LP64_ONLY(if (UseCompressedOops && !TraceBytecodes) verify_heapbase("call_VM_base");)
+  LP64_ONLY(if ((UseCompressedOops || UseCompressedKlassPointers) && !TraceBytecodes) verify_heapbase("call_VM_base: heap base corrupted?");)
 #endif // ASSERT
 
   assert(java_thread != oop_result  , "cannot use the same register for java_thread & oop_result");
@@ -8907,11 +8941,9 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
   pusha();
 
   // if we are coming from c1, xmm registers may be live
-  if (UseSSE >= 1) {
-    subptr(rsp, sizeof(jdouble)* LP64_ONLY(16) NOT_LP64(8));
-  }
   int off = 0;
   if (UseSSE == 1)  {
+    subptr(rsp, sizeof(jdouble)*8);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm0);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm1);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm2);
@@ -8921,23 +8953,50 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm6);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm7);
   } else if (UseSSE >= 2)  {
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm0);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm1);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm2);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm3);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm4);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm5);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm6);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm7);
+#ifdef COMPILER2
+    if (MaxVectorSize > 16) {
+      assert(UseAVX > 0, "256bit vectors are supported only with AVX");
+      // Save upper half of YMM registes
+      subptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+      vextractf128h(Address(rsp,  0),xmm0);
+      vextractf128h(Address(rsp, 16),xmm1);
+      vextractf128h(Address(rsp, 32),xmm2);
+      vextractf128h(Address(rsp, 48),xmm3);
+      vextractf128h(Address(rsp, 64),xmm4);
+      vextractf128h(Address(rsp, 80),xmm5);
+      vextractf128h(Address(rsp, 96),xmm6);
+      vextractf128h(Address(rsp,112),xmm7);
 #ifdef _LP64
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm8);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm9);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm10);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm11);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm12);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm13);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm14);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm15);
+      vextractf128h(Address(rsp,128),xmm8);
+      vextractf128h(Address(rsp,144),xmm9);
+      vextractf128h(Address(rsp,160),xmm10);
+      vextractf128h(Address(rsp,176),xmm11);
+      vextractf128h(Address(rsp,192),xmm12);
+      vextractf128h(Address(rsp,208),xmm13);
+      vextractf128h(Address(rsp,224),xmm14);
+      vextractf128h(Address(rsp,240),xmm15);
+#endif
+    }
+#endif
+    // Save whole 128bit (16 bytes) XMM regiters
+    subptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+    movdqu(Address(rsp,off++*16),xmm0);
+    movdqu(Address(rsp,off++*16),xmm1);
+    movdqu(Address(rsp,off++*16),xmm2);
+    movdqu(Address(rsp,off++*16),xmm3);
+    movdqu(Address(rsp,off++*16),xmm4);
+    movdqu(Address(rsp,off++*16),xmm5);
+    movdqu(Address(rsp,off++*16),xmm6);
+    movdqu(Address(rsp,off++*16),xmm7);
+#ifdef _LP64
+    movdqu(Address(rsp,off++*16),xmm8);
+    movdqu(Address(rsp,off++*16),xmm9);
+    movdqu(Address(rsp,off++*16),xmm10);
+    movdqu(Address(rsp,off++*16),xmm11);
+    movdqu(Address(rsp,off++*16),xmm12);
+    movdqu(Address(rsp,off++*16),xmm13);
+    movdqu(Address(rsp,off++*16),xmm14);
+    movdqu(Address(rsp,off++*16),xmm15);
 #endif
   }
 
@@ -9015,28 +9074,52 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
     movflt(xmm5, Address(rsp,off++*sizeof(jdouble)));
     movflt(xmm6, Address(rsp,off++*sizeof(jdouble)));
     movflt(xmm7, Address(rsp,off++*sizeof(jdouble)));
+    addptr(rsp, sizeof(jdouble)*8);
   } else if (UseSSE >= 2)  {
-    movdbl(xmm0, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm1, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm2, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm3, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm4, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm5, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm6, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm7, Address(rsp,off++*sizeof(jdouble)));
+    // Restore whole 128bit (16 bytes) XMM regiters
+    movdqu(xmm0, Address(rsp,off++*16));
+    movdqu(xmm1, Address(rsp,off++*16));
+    movdqu(xmm2, Address(rsp,off++*16));
+    movdqu(xmm3, Address(rsp,off++*16));
+    movdqu(xmm4, Address(rsp,off++*16));
+    movdqu(xmm5, Address(rsp,off++*16));
+    movdqu(xmm6, Address(rsp,off++*16));
+    movdqu(xmm7, Address(rsp,off++*16));
 #ifdef _LP64
-    movdbl(xmm8, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm9, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm10, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm11, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm12, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm13, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm14, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm15, Address(rsp,off++*sizeof(jdouble)));
+    movdqu(xmm8, Address(rsp,off++*16));
+    movdqu(xmm9, Address(rsp,off++*16));
+    movdqu(xmm10, Address(rsp,off++*16));
+    movdqu(xmm11, Address(rsp,off++*16));
+    movdqu(xmm12, Address(rsp,off++*16));
+    movdqu(xmm13, Address(rsp,off++*16));
+    movdqu(xmm14, Address(rsp,off++*16));
+    movdqu(xmm15, Address(rsp,off++*16));
 #endif
-  }
-  if (UseSSE >= 1) {
-    addptr(rsp, sizeof(jdouble)* LP64_ONLY(16) NOT_LP64(8));
+    addptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+#ifdef COMPILER2
+    if (MaxVectorSize > 16) {
+      // Restore upper half of YMM registes.
+      vinsertf128h(xmm0, Address(rsp,  0));
+      vinsertf128h(xmm1, Address(rsp, 16));
+      vinsertf128h(xmm2, Address(rsp, 32));
+      vinsertf128h(xmm3, Address(rsp, 48));
+      vinsertf128h(xmm4, Address(rsp, 64));
+      vinsertf128h(xmm5, Address(rsp, 80));
+      vinsertf128h(xmm6, Address(rsp, 96));
+      vinsertf128h(xmm7, Address(rsp,112));
+#ifdef _LP64
+      vinsertf128h(xmm8, Address(rsp,128));
+      vinsertf128h(xmm9, Address(rsp,144));
+      vinsertf128h(xmm10, Address(rsp,160));
+      vinsertf128h(xmm11, Address(rsp,176));
+      vinsertf128h(xmm12, Address(rsp,192));
+      vinsertf128h(xmm13, Address(rsp,208));
+      vinsertf128h(xmm14, Address(rsp,224));
+      vinsertf128h(xmm15, Address(rsp,240));
+#endif
+      addptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+    }
+#endif
   }
   popa();
 }
@@ -9933,7 +10016,7 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 #ifdef _LP64
   if (UseCompressedKlassPointers) {
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    decode_heap_oop_not_null(dst);
+    decode_klass_not_null(dst);
   } else
 #endif
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
@@ -9944,15 +10027,10 @@ void MacroAssembler::load_prototype_header(Register dst, Register src) {
   if (UseCompressedKlassPointers) {
     assert (Universe::heap() != NULL, "java heap should be initialized");
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    if (Universe::narrow_oop_shift() != 0) {
-      assert(LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
-      if (LogMinObjAlignmentInBytes == Address::times_8) {
-        movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset()));
-      } else {
-        // OK to use shift since we don't need to preserve flags.
-        shlq(dst, LogMinObjAlignmentInBytes);
-        movq(dst, Address(r12_heapbase, dst, Address::times_1, Klass::prototype_header_offset()));
-      }
+    if (Universe::narrow_klass_shift() != 0) {
+      assert(LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+      assert(LogKlassAlignmentInBytes == Address::times_8, "klass not aligned on 64bits?");
+      movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset()));
     } else {
       movq(dst, Address(dst, Klass::prototype_header_offset()));
     }
@@ -9967,7 +10045,7 @@ void MacroAssembler::load_prototype_header(Register dst, Register src) {
 void MacroAssembler::store_klass(Register dst, Register src) {
 #ifdef _LP64
   if (UseCompressedKlassPointers) {
-    encode_heap_oop_not_null(src);
+    encode_klass_not_null(src);
     movl(Address(dst, oopDesc::klass_offset_in_bytes()), src);
   } else
 #endif
@@ -10049,12 +10127,12 @@ void MacroAssembler::store_klass_gap(Register dst, Register src) {
 
 #ifdef ASSERT
 void MacroAssembler::verify_heapbase(const char* msg) {
-  assert (UseCompressedOops, "should be compressed");
+  assert (UseCompressedOops || UseCompressedKlassPointers, "should be compressed");
   assert (Universe::heap() != NULL, "java heap should be initialized");
   if (CheckCompressedOops) {
     Label ok;
     push(rscratch1); // cmpptr trashes rscratch1
-    cmpptr(r12_heapbase, ExternalAddress((address)Universe::narrow_oop_base_addr()));
+    cmpptr(r12_heapbase, ExternalAddress((address)Universe::narrow_ptrs_base_addr()));
     jcc(Assembler::equal, ok);
     STOP(msg);
     bind(ok);
@@ -10192,6 +10270,74 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
   }
 }
 
+void MacroAssembler::encode_klass_not_null(Register r) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+#ifdef ASSERT
+  verify_heapbase("MacroAssembler::encode_klass_not_null: heap base corrupted?");
+#endif
+  if (Universe::narrow_klass_base() != NULL) {
+    subq(r, r12_heapbase);
+  }
+  if (Universe::narrow_klass_shift() != 0) {
+    assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+    shrq(r, LogKlassAlignmentInBytes);
+  }
+}
+
+void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+#ifdef ASSERT
+  verify_heapbase("MacroAssembler::encode_klass_not_null2: heap base corrupted?");
+#endif
+  if (dst != src) {
+    movq(dst, src);
+  }
+  if (Universe::narrow_klass_base() != NULL) {
+    subq(dst, r12_heapbase);
+  }
+  if (Universe::narrow_klass_shift() != 0) {
+    assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+    shrq(dst, LogKlassAlignmentInBytes);
+  }
+}
+
+void  MacroAssembler::decode_klass_not_null(Register r) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+  // Note: it will change flags
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  // Cannot assert, unverified entry point counts instructions (see .ad file)
+  // vtableStubs also counts instructions in pd_code_size_limit.
+  // Also do not verify_oop as this is called by verify_oop.
+  if (Universe::narrow_klass_shift() != 0) {
+    assert(LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+    shlq(r, LogKlassAlignmentInBytes);
+    if (Universe::narrow_klass_base() != NULL) {
+      addq(r, r12_heapbase);
+    }
+  } else {
+    assert (Universe::narrow_klass_base() == NULL, "sanity");
+  }
+}
+
+void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+  // Note: it will change flags
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  // Cannot assert, unverified entry point counts instructions (see .ad file)
+  // vtableStubs also counts instructions in pd_code_size_limit.
+  // Also do not verify_oop as this is called by verify_oop.
+  if (Universe::narrow_klass_shift() != 0) {
+    assert(LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+    assert(LogKlassAlignmentInBytes == Address::times_8, "klass not aligned on 64bits?");
+    leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
+  } else {
+    assert (Universe::narrow_klass_base() == NULL, "sanity");
+    if (dst != src) {
+      movq(dst, src);
+    }
+  }
+}
+
 void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
   assert (UseCompressedOops, "should only be used for compressed headers");
   assert (Universe::heap() != NULL, "java heap should be initialized");
@@ -10208,6 +10354,22 @@ void  MacroAssembler::set_narrow_oop(Address dst, jobject obj) {
   int oop_index = oop_recorder()->find_index(obj);
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
   mov_narrow_oop(dst, oop_index, rspec);
+}
+
+void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int klass_index = oop_recorder()->find_index(k);
+  RelocationHolder rspec = metadata_Relocation::spec(klass_index);
+  mov_narrow_oop(dst, oopDesc::encode_klass(k), rspec);
+}
+
+void  MacroAssembler::set_narrow_klass(Address dst, Klass* k) {
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int klass_index = oop_recorder()->find_index(k);
+  RelocationHolder rspec = metadata_Relocation::spec(klass_index);
+  mov_narrow_oop(dst, oopDesc::encode_klass(k), rspec);
 }
 
 void  MacroAssembler::cmp_narrow_oop(Register dst, jobject obj) {
@@ -10228,9 +10390,25 @@ void  MacroAssembler::cmp_narrow_oop(Address dst, jobject obj) {
   Assembler::cmp_narrow_oop(dst, oop_index, rspec);
 }
 
+void  MacroAssembler::cmp_narrow_klass(Register dst, Klass* k) {
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int klass_index = oop_recorder()->find_index(k);
+  RelocationHolder rspec = metadata_Relocation::spec(klass_index);
+  Assembler::cmp_narrow_oop(dst, oopDesc::encode_klass(k), rspec);
+}
+
+void  MacroAssembler::cmp_narrow_klass(Address dst, Klass* k) {
+  assert (UseCompressedKlassPointers, "should only be used for compressed headers");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int klass_index = oop_recorder()->find_index(k);
+  RelocationHolder rspec = metadata_Relocation::spec(klass_index);
+  Assembler::cmp_narrow_oop(dst, oopDesc::encode_klass(k), rspec);
+}
+
 void MacroAssembler::reinit_heapbase() {
-  if (UseCompressedOops) {
-    movptr(r12_heapbase, ExternalAddress((address)Universe::narrow_oop_base_addr()));
+  if (UseCompressedOops || UseCompressedKlassPointers) {
+    movptr(r12_heapbase, ExternalAddress((address)Universe::narrow_ptrs_base_addr()));
   }
 }
 #endif // _LP64
@@ -10513,7 +10691,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
         // Array header size is 12 bytes in 32-bit VM
         // + 6 bytes for 3 chars == 18 bytes,
         // enough space to load vec and shift.
-        assert(HeapWordSize*typeArrayKlass::header_size() >= 12,"sanity");
+        assert(HeapWordSize*TypeArrayKlass::header_size() >= 12,"sanity");
         movdqu(vec, Address(str2, (int_cnt2*2)-16));
         psrldq(vec, 16-(int_cnt2*2));
       }

@@ -2375,8 +2375,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
 
   // Follow code cache roots.
-  CodeCache::do_unloading(is_alive_closure(), &mark_and_push_closure,
-                          purged_class);
+  CodeCache::do_unloading(is_alive_closure(), purged_class);
   cm->follow_marking_stacks(); // Flush marking stack.
 
   // Update subklass/sibling/implementor links of live klasses

@@ -445,12 +445,26 @@ bool ConstantPool::has_appendix_at_if_loaded(constantPoolHandle cpool, int which
   return e->has_appendix();
 }
 
-
 oop ConstantPool::appendix_at_if_loaded(constantPoolHandle cpool, int which) {
   if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
   return e->appendix_if_resolved(cpool);
+}
+
+
+bool ConstantPool::has_method_type_at_if_loaded(constantPoolHandle cpool, int which) {
+  if (cpool->cache() == NULL)  return false;  // nothing to load yet
+  int cache_index = decode_cpcache_index(which, true);
+  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+  return e->has_method_type();
+}
+
+oop ConstantPool::method_type_at_if_loaded(constantPoolHandle cpool, int which) {
+  if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
+  int cache_index = decode_cpcache_index(which, true);
+  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+  return e->method_type_if_resolved(cpool);
 }
 
 
@@ -519,7 +533,7 @@ int ConstantPool::remap_instruction_operand_from_cache(int operand) {
 void ConstantPool::verify_constant_pool_resolve(constantPoolHandle this_oop, KlassHandle k, TRAPS) {
  if (k->oop_is_instance() || k->oop_is_objArray()) {
     instanceKlassHandle holder (THREAD, this_oop->pool_holder());
-    Klass* elem_oop = k->oop_is_instance() ? k() : objArrayKlass::cast(k())->bottom_klass();
+    Klass* elem_oop = k->oop_is_instance() ? k() : ObjArrayKlass::cast(k())->bottom_klass();
     KlassHandle element (THREAD, elem_oop);
 
     // The element type could be a typeArray - we only need the access check if it is

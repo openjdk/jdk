@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,21 @@ import java.awt.event.*;
 import java.awt.peer.ListPeer;
 import java.util.Arrays;
 
-final class LWListPeer
-        extends LWComponentPeer<List, LWListPeer.ScrollableJList>
+/**
+ * Lightweight implementation of {@link ListPeer}.
+ */
+final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
         implements ListPeer {
+
+    /**
+     * The default number of visible rows.
+     */
+    private static final int DEFAULT_VISIBLE_ROWS = 4; // From java.awt.List,
+
+    /**
+     * This text is used for cell bounds calculation.
+     */
+    private static final String TEXT = "0123456789abcde";
 
     LWListPeer(final List target, final PlatformComponent platformComponent) {
         super(target, platformComponent);
@@ -135,6 +147,16 @@ final class LWListPeer
     }
 
     @Override
+    public Dimension getPreferredSize() {
+        return getMinimumSize();
+    }
+
+    @Override
+    public Dimension getMinimumSize() {
+        return getMinimumSize(DEFAULT_VISIBLE_ROWS);
+    }
+
+    @Override
     public Dimension getPreferredSize(final int rows) {
         return getMinimumSize(rows);
     }
@@ -142,16 +164,26 @@ final class LWListPeer
     @Override
     public Dimension getMinimumSize(final int rows) {
         synchronized (getDelegateLock()) {
-            final int margin = 2;
-            final int space = 1;
-
-            // TODO: count ScrollPane's scrolling elements if any.
-            final FontMetrics fm = getFontMetrics(getFont());
-            final int itemHeight = (fm.getHeight() - fm.getLeading()) + (2 * space);
-
-            return new Dimension(20 + (fm == null ? 10 * 15 : fm.stringWidth("0123456789abcde")),
-                    (fm == null ? 10 : itemHeight) * rows + (2 * margin));
+            final Dimension size = getCellSize();
+            size.height *= rows;
+            // Always take vertical scrollbar into account.
+            final JScrollBar vbar = getDelegate().getVerticalScrollBar();
+            size.width += vbar != null ? vbar.getMinimumSize().width : 0;
+            // JScrollPane and JList insets
+            final Insets pi = getDelegate().getInsets();
+            final Insets vi = getDelegate().getView().getInsets();
+            size.width += pi.left + pi.right + vi.left + vi.right;
+            size.height += pi.top + pi.bottom + vi.top + vi.bottom;
+            return size;
         }
+    }
+
+    private Dimension getCellSize() {
+        final JList<String> jList = getDelegate().getView();
+        final ListCellRenderer<? super String> cr = jList.getCellRenderer();
+        final Component cell = cr.getListCellRendererComponent(jList, TEXT, 0,
+                                                               false, false);
+        return cell.getPreferredSize();
     }
 
     private void revalidate() {
@@ -165,10 +197,10 @@ final class LWListPeer
 
         private boolean skipStateChangedEvent;
 
-        private DefaultListModel<Object> model =
-                new DefaultListModel<Object>() {
+        private final DefaultListModel<String> model =
+                new DefaultListModel<String>() {
                     @Override
-                    public void add(final int index, final Object element) {
+                    public void add(final int index, final String element) {
                         if (index == -1) {
                             addElement(element);
                         } else {
@@ -181,7 +213,7 @@ final class LWListPeer
 
         ScrollableJList() {
             getViewport().setScrollMode(JViewport.SIMPLE_SCROLL_MODE);
-            final JList<Object> list = new JListDelegate();
+            final JList<String> list = new JListDelegate();
             list.addListSelectionListener(this);
 
             getViewport().setView(list);
@@ -223,11 +255,11 @@ final class LWListPeer
             }
         }
 
-        public JList getView() {
-            return (JList) getViewport().getView();
+        public JList<String> getView() {
+            return (JList<String>) getViewport().getView();
         }
 
-        public DefaultListModel<Object> getModel() {
+        public DefaultListModel<String> getModel() {
             return model;
         }
 
@@ -254,7 +286,7 @@ final class LWListPeer
             }
         }
 
-        private final class JListDelegate extends JList<Object> {
+        private final class JListDelegate extends JList<String> {
 
             JListDelegate() {
                 super(ScrollableJList.this.model);
@@ -272,7 +304,7 @@ final class LWListPeer
                     final int index = locationToIndex(e.getPoint());
                     if (0 <= index && index < getModel().getSize()) {
                         LWListPeer.this.postEvent(new ActionEvent(getTarget(), ActionEvent.ACTION_PERFORMED,
-                            getModel().getElementAt(index).toString(), e.getWhen(), e.getModifiers()));
+                            getModel().getElementAt(index), e.getWhen(), e.getModifiers()));
                     }
                 }
             }
@@ -281,10 +313,10 @@ final class LWListPeer
             protected void processKeyEvent(final KeyEvent e) {
                 super.processKeyEvent(e);
                 if (e.getID() == KeyEvent.KEY_PRESSED && e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    final Object selectedValue = getSelectedValue();
+                    final String selectedValue = getSelectedValue();
                     if(selectedValue != null){
                         LWListPeer.this.postEvent(new ActionEvent(getTarget(), ActionEvent.ACTION_PERFORMED,
-                            selectedValue.toString(), e.getWhen(), e.getModifiers()));
+                            selectedValue, e.getWhen(), e.getModifiers()));
                     }
                 }
             }

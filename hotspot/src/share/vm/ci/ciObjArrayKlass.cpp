@@ -32,7 +32,7 @@
 // ciObjArrayKlass
 //
 // This class represents a Klass* in the HotSpot virtual machine
-// whose Klass part is an objArrayKlass.
+// whose Klass part is an ObjArrayKlass.
 
 // ------------------------------------------------------------------
 // ciObjArrayKlass::ciObjArrayKlass
@@ -40,7 +40,7 @@
 // Constructor for loaded object array klasses.
 ciObjArrayKlass::ciObjArrayKlass(KlassHandle h_k) : ciArrayKlass(h_k) {
   assert(get_Klass()->oop_is_objArray(), "wrong type");
-  Klass* element_Klass = get_objArrayKlass()->bottom_klass();
+  Klass* element_Klass = get_ObjArrayKlass()->bottom_klass();
   _base_element_klass = CURRENT_ENV->get_klass(element_Klass);
   assert(_base_element_klass->is_instance_klass() ||
          _base_element_klass->is_type_array_klass(), "bad base klass");
@@ -83,7 +83,7 @@ ciKlass* ciObjArrayKlass::element_klass() {
     // Produce the element klass.
     if (is_loaded()) {
       VM_ENTRY_MARK;
-      Klass* element_Klass = get_objArrayKlass()->element_klass();
+      Klass* element_Klass = get_ObjArrayKlass()->element_klass();
       _element_klass = CURRENT_THREAD_ENV->get_klass(element_Klass);
     } else {
       VM_ENTRY_MARK;

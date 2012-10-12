@@ -128,7 +128,7 @@ static int getFD(JNIEnv *env, jobject this) {
 
 /*
  * The initroto function is called whenever PlainSocketImpl is
- * loaded, to cache fieldIds for efficiency. This is called everytime
+ * loaded, to cache field IDs for efficiency. This is called every time
  * the Java class is loaded.
  *
  * Class:     java_net_PlainSocketImpl
@@ -589,7 +589,7 @@ Java_java_net_PlainSocketImpl_socketBind(JNIEnv *env, jobject this,
     /* set the address */
     (*env)->SetObjectField(env, this, psi_addressID, iaObj);
 
-    /* intialize the local port */
+    /* initialize the local port */
     if (localport == 0) {
         /* Now that we're a connected socket, let's extract the port number
          * that the system chose for us and store it in the Socket object.
@@ -909,7 +909,7 @@ Java_java_net_PlainSocketImpl_socketSetOption(JNIEnv *env, jobject this,
     }
 
     /*
-     * SO_TIMEOUT is a no-op on Solaris/Linux
+     * SO_TIMEOUT is a NOOP on Solaris/Linux
      */
     if (cmd == java_net_SocketOptions_SO_TIMEOUT) {
         return;

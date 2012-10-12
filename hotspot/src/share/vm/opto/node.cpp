@@ -296,6 +296,14 @@ inline int Node::Init(int req, Compile* C) {
   assert(Compile::current() == C, "must use operator new(Compile*)");
   int idx = C->next_unique();
 
+  // Allocate memory for the necessary number of edges.
+  if (req > 0) {
+    // Allocate space for _in array to have double alignment.
+    _in = (Node **) ((char *) (C->node_arena()->Amalloc_D(req * sizeof(void*))));
+#ifdef ASSERT
+    _in[req-1] = this; // magic cookie for assertion check
+#endif
+  }
   // If there are default notes floating around, capture them:
   Node_Notes* nn = C->default_node_notes();
   if (nn != NULL)  init_node_notes(C, idx, nn);
@@ -1004,15 +1012,15 @@ const Type *Node::Value( PhaseTransform * ) const {
 //    set_req(2, phase->intcon(7));
 //    return this;
 // Example: reshape "X*4" into "X<<2"
-//    return new (C,3) LShiftINode(in(1), phase->intcon(2));
+//    return new (C) LShiftINode(in(1), phase->intcon(2));
 //
 // You must call 'phase->transform(X)' on any new Nodes X you make, except
 // for the returned root node.  Example: reshape "X*31" with "(X<<5)-X".
-//    Node *shift=phase->transform(new(C,3)LShiftINode(in(1),phase->intcon(5)));
-//    return new (C,3) AddINode(shift, in(1));
+//    Node *shift=phase->transform(new(C)LShiftINode(in(1),phase->intcon(5)));
+//    return new (C) AddINode(shift, in(1));
 //
 // When making a Node for a constant use 'phase->makecon' or 'phase->intcon'.
-// These forms are faster than 'phase->transform(new (C,1) ConNode())' and Do
+// These forms are faster than 'phase->transform(new (C) ConNode())' and Do
 // The Right Thing with def-use info.
 //
 // You cannot bury the 'this' Node inside of a graph reshape.  If the reshaped
