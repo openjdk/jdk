@@ -5870,15 +5870,6 @@ extern "C" {
   }
 }
 
-// Just to get the Kernel build to link on solaris for testing.
-
-extern "C" {
-class ASGCT_CallTrace;
-void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext)
-  KERNEL_RETURN;
-}
-
-
 // ObjectMonitor park-unpark infrastructure ...
 //
 // We implement Solaris and Linux PlatformEvents with the

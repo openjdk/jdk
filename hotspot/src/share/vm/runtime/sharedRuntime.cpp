@@ -2705,7 +2705,7 @@ void SharedRuntime::get_utf(oopDesc* src, address dst) {
   int          jlsLen    = java_lang_String::length(src);
   jchar*       jlsPos    = (jlsLen == 0) ? NULL :
                                            jlsValue->char_at_addr(jlsOffset);
-  assert(typeArrayKlass::cast(jlsValue->klass())->element_type() == T_CHAR, "compressed string");
+  assert(TypeArrayKlass::cast(jlsValue->klass())->element_type() == T_CHAR, "compressed string");
   (void) UNICODE::as_utf8(jlsPos, jlsLen, (char *)dst, max_dtrace_string_size);
 }
 #endif // ndef HAVE_DTRACE_H

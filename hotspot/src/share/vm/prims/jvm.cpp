@@ -1048,7 +1048,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassSigners(JNIEnv *env, jclass cls))
   if (signers == NULL) return NULL;
 
   // copy of the signers array
-  Klass* element = objArrayKlass::cast(signers->klass())->element_klass();
+  Klass* element = ObjArrayKlass::cast(signers->klass())->element_klass();
   objArrayOop signers_copy = oopFactory::new_objArray(element, signers->length(), CHECK_NULL);
   for (int index = 0; index < signers->length(); index++) {
     signers_copy->obj_at_put(index, signers->obj_at(index));
@@ -3302,10 +3302,10 @@ JVM_ENTRY(jobject, JVM_AllocateNewArray(JNIEnv *env, jobject obj, jclass currCla
 
   if (k->oop_is_typeArray()) {
     // typeArray
-    result = typeArrayKlass::cast(k)->allocate(length, CHECK_NULL);
+    result = TypeArrayKlass::cast(k)->allocate(length, CHECK_NULL);
   } else if (k->oop_is_objArray()) {
     // objArray
-    objArrayKlass* oak = objArrayKlass::cast(k);
+    ObjArrayKlass* oak = ObjArrayKlass::cast(k);
     oak->initialize(CHECK_NULL); // make sure class is initialized (matches Classic VM behavior)
     result = oak->allocate(length, CHECK_NULL);
   } else {
@@ -4193,7 +4193,7 @@ JVM_ENTRY(jobjectArray, JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobject
   }
 
   // check if threads is not an array of objects of Thread class
-  Klass* k = objArrayKlass::cast(ah->klass())->element_klass();
+  Klass* k = ObjArrayKlass::cast(ah->klass())->element_klass();
   if (k != SystemDictionary::Thread_klass()) {
     THROW_(vmSymbols::java_lang_IllegalArgumentException(), 0);
   }

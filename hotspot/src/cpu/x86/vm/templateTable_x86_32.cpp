@@ -949,7 +949,7 @@ void TemplateTable::aastore() {
   __ load_klass(rbx, rax);
   // Move superklass into EAX
   __ load_klass(rax, rdx);
-  __ movptr(rax, Address(rax, objArrayKlass::element_klass_offset()));
+  __ movptr(rax, Address(rax, ObjArrayKlass::element_klass_offset()));
   // Compress array+index*wordSize+12 into a single register.  Frees ECX.
   __ lea(rdx, element_address);
 
