@@ -47,12 +47,12 @@ typeArrayOop oopFactory::new_charArray(const char* utf8_str, TRAPS) {
 }
 
 typeArrayOop oopFactory::new_tenured_charArray(int length, TRAPS) {
-  return typeArrayKlass::cast(Universe::charArrayKlassObj())->allocate(length, THREAD);
+  return TypeArrayKlass::cast(Universe::charArrayKlassObj())->allocate(length, THREAD);
 }
 
 typeArrayOop oopFactory::new_typeArray(BasicType type, int length, TRAPS) {
   Klass* type_asKlassOop = Universe::typeArrayKlassObj(type);
-  typeArrayKlass* type_asArrayKlass = typeArrayKlass::cast(type_asKlassOop);
+  TypeArrayKlass* type_asArrayKlass = TypeArrayKlass::cast(type_asKlassOop);
   typeArrayOop result = type_asArrayKlass->allocate(length, THREAD);
   return result;
 }
@@ -66,14 +66,14 @@ typeArrayOop oopFactory::new_typeArray(BasicType type, int length, TRAPS) {
 typeArrayOop oopFactory::new_metaDataArray(int length, TRAPS) {
   BasicType type = LP64_ONLY(T_LONG) NOT_LP64(T_INT);
   Klass* type_asKlassOop = Universe::typeArrayKlassObj(type);
-  typeArrayKlass* type_asArrayKlass = typeArrayKlass::cast(type_asKlassOop);
+  TypeArrayKlass* type_asArrayKlass = TypeArrayKlass::cast(type_asKlassOop);
   typeArrayOop result = type_asArrayKlass->allocate_common(length, true, THREAD);
   return result;
 }
 
 typeArrayOop oopFactory::new_typeArray_nozero(BasicType type, int length, TRAPS) {
   Klass* type_asKlassOop = Universe::typeArrayKlassObj(type);
-  typeArrayKlass* type_asArrayKlass = typeArrayKlass::cast(type_asKlassOop);
+  TypeArrayKlass* type_asArrayKlass = TypeArrayKlass::cast(type_asKlassOop);
   typeArrayOop result = type_asArrayKlass->allocate_common(length, false, THREAD);
   return result;
 }
@@ -82,7 +82,7 @@ typeArrayOop oopFactory::new_typeArray_nozero(BasicType type, int length, TRAPS)
 objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
   assert(klass->is_klass(), "must be instance class");
   if (klass->oop_is_array()) {
-    return ((arrayKlass*)klass)->allocate_arrayArray(1, length, THREAD);
+    return ((ArrayKlass*)klass)->allocate_arrayArray(1, length, THREAD);
   } else {
     assert (klass->oop_is_instance(), "new object array with klass not an InstanceKlass");
     return ((InstanceKlass*)klass)->allocate_objArray(1, length, THREAD);

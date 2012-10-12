@@ -1195,9 +1195,9 @@ void CMSAdaptiveSizePolicy::compute_tenured_generation_free_space(
   set_promo_size(desired_promo_size);
 }
 
-int CMSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
+uint CMSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
                                              bool is_survivor_overflow,
-                                             int tenuring_threshold,
+                                             uint tenuring_threshold,
                                              size_t survivor_limit) {
   assert(survivor_limit >= generation_alignment(),
          "survivor_limit too small");
@@ -1315,7 +1315,7 @@ int CMSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
 
     gclog_or_tty->print( "  avg_promoted_padded_avg: %f"
                 "  avg_pretenured_padded_avg: %f"
-                "  tenuring_thresh: %d"
+                "  tenuring_thresh: %u"
                 "  target_size: " SIZE_FORMAT
                 "  survivor_limit: " SIZE_FORMAT,
                 gch->gc_stats(1)->avg_promoted()->padded_average(),

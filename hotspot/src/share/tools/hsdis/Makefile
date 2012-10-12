@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -66,14 +66,18 @@ ARCH=i386
 endif
 CC 		= $(MINGW)-gcc
 CONFIGURE_ARGS= --host=$(MINGW) --target=$(MINGW)
-else
+else   #linux 
 CPU             = $(shell uname -m)
 ARCH1=$(CPU:x86_64=amd64)
 ARCH=$(ARCH1:i686=i386)
-CFLAGS/i386	+= -m32
-CFLAGS/sparc	+= -m32
+ifdef LP64
 CFLAGS/sparcv9	+= -m64
 CFLAGS/amd64	+= -m64
+else
+ARCH=$(ARCH1:amd64=i386)
+CFLAGS/i386	+= -m32
+CFLAGS/sparc	+= -m32
+endif
 CFLAGS		+= $(CFLAGS/$(ARCH))
 CFLAGS		+= -fPIC
 OS		= linux
@@ -85,16 +89,41 @@ DLDFLAGS	+= -shared
 LDFLAGS         += -ldl
 OUTFLAGS	+= -o $@
 ## OS = Windows ##
-else   # !SunOS, !Linux => Windows
+else   # !SunOS, !Linux => Darwin or Windows
+ifeq ($(OS),Darwin)
+CPU             = $(shell uname -m)
+ARCH1=$(CPU:x86_64=amd64)
+ARCH=$(ARCH1:i686=i386)
+ifdef LP64
+CFLAGS/sparcv9  += -m64
+CFLAGS/amd64    += -m64
+else
+ARCH=$(ARCH1:amd64=i386)
+CFLAGS/i386     += -m32
+CFLAGS/sparc    += -m32
+endif # LP64
+CFLAGS          += $(CFLAGS/$(ARCH))
+CFLAGS          += -fPIC
+OS              = macosx
+LIB_EXT         = .dylib
+CC              = gcc
+CFLAGS          += -O
+# CFLAGS        += -DZ_PREFIX
+DLDFLAGS        += -shared
+DLDFLAGS        += -lz
+LDFLAGS         += -ldl
+OUTFLAGS        += -o $@
+else #Windows
 OS		= windows
 CC		= gcc
 #CPPFLAGS	+= /D"WIN32" /D"_WINDOWS" /D"DEBUG" /D"NDEBUG"
 CFLAGS		+=  /nologo /MD /W3 /WX /O2 /Fo$(@:.dll=.obj) /Gi-
-CFLAGS		+= LIBARCH=\"$(LIBARCH)\""
+CFLAGS		+= LIBARCH=\"$(LIBARCH)\"
 DLDFLAGS	+= /dll /subsystem:windows /incremental:no \
 			/export:decode_instruction
 OUTFLAGS	+= /link /out:$@
 LIB_EXT		= .dll
+endif   # Darwin
 endif	# Linux
 endif	# SunOS
 
@@ -118,7 +147,7 @@ else
 BINUTILSDIR	= $(shell cd $(BINUTILS);pwd)
 endif
 
-CPPFLAGS	+= -I$(BINUTILSDIR)/include -I$(BINUTILS)/bfd -I$(TARGET_DIR)/bfd
+CPPFLAGS	+= -I$(BINUTILSDIR)/include -I$(BINUTILSDIR)/bfd -I$(TARGET_DIR)/bfd
 CPPFLAGS	+= -DLIBARCH_$(LIBARCH) -DLIBARCH=\"$(LIBARCH)\" -DLIB_EXT=\"$(LIB_EXT)\"
 
 TARGET_DIR	= build/$(OS)-$(JDKARCH)

@@ -89,6 +89,12 @@ Java_java_awt_CheckboxMenuItem_initIDs
 }
 
 JNIEXPORT void JNICALL
+Java_java_awt_Choice_initIDs
+  (JNIEnv *env, jclass clazz)
+{
+}
+
+JNIEXPORT void JNICALL
 Java_java_awt_Dimension_initIDs
   (JNIEnv *env, jclass clazz)
 {

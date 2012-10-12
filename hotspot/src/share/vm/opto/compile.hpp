@@ -279,6 +279,7 @@ class Compile : public Phase {
   bool                  _has_split_ifs;         // True if the method _may_ have some split-if
   bool                  _has_unsafe_access;     // True if the method _may_ produce faults in unsafe loads or stores.
   bool                  _has_stringbuilder;     // True StringBuffers or StringBuilders are allocated
+  int                   _max_vector_size;       // Maximum size of generated vectors
   uint                  _trap_hist[trapHistLength];  // Cumulative traps
   bool                  _trap_can_recompile;    // Have we emitted a recompiling trap?
   uint                  _decompile_count;       // Cumulative decompilation counts.
@@ -443,6 +444,8 @@ class Compile : public Phase {
   void          set_has_unsafe_access(bool z)   { _has_unsafe_access = z; }
   bool              has_stringbuilder() const   { return _has_stringbuilder; }
   void          set_has_stringbuilder(bool z)   { _has_stringbuilder = z; }
+  int               max_vector_size() const     { return _max_vector_size; }
+  void          set_max_vector_size(int s)      { _max_vector_size = s; }
   void          set_trap_count(uint r, uint c)  { assert(r < trapHistLength, "oob");        _trap_hist[r] = c; }
   uint              trap_count(uint r) const    { assert(r < trapHistLength, "oob"); return _trap_hist[r]; }
   bool              trap_can_recompile() const  { return _trap_can_recompile; }

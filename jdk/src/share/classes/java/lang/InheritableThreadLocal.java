@@ -76,7 +76,6 @@ public class InheritableThreadLocal<T> extends ThreadLocal<T> {
      *
      * @param t the current thread
      * @param firstValue value for the initial entry of the table.
-     * @param map the map to store.
      */
     void createMap(Thread t, T firstValue) {
         t.inheritableThreadLocals = new ThreadLocalMap(this, firstValue);

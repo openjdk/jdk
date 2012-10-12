@@ -33,6 +33,7 @@
 #import "ThreadUtilities.h"
 #import "AWT_debug.h"
 #import "CSystemColors.h"
+#import  "NSApplicationAWT.h"
 
 #import "sun_lwawt_macosx_LWCToolkit.h"
 
@@ -47,7 +48,7 @@ static long eventCount;
     return eventCount;
 }
 
-+ (void) eventCountPlusPlus{
++ (void) eventCountPlusPlus{    
     eventCount++;
 }
 
@@ -79,7 +80,6 @@ static long eventCount;
 
 @end
 
-
 /*
  * Class:     sun_lwawt_macosx_LWCToolkit
  * Method:    nativeSyncQueue
@@ -90,12 +90,22 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_LWCToolkit_nativeSyncQueue
 {
     int currentEventNum = [AWTToolkit getEventCount];
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){}];
-
+    NSApplication* sharedApp = [NSApplication sharedApplication];
+    if ([sharedApp isKindOfClass:[NSApplicationAWT class]]) {
+        NSApplicationAWT* theApp = (NSApplicationAWT*)sharedApp;
+        [theApp postDummyEvent];
+        [theApp waitForDummyEvent];
+    } else {
+        // could happen if we are embedded inside SWT application,
+        // in this case just spin a single empty block through 
+        // the event loop to give it a chance to process pending events
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){}];
+    }
+    
     if (([AWTToolkit getEventCount] - currentEventNum) != 0) {
         return JNI_TRUE;
     }
-
+        
     return JNI_FALSE;
 }
 

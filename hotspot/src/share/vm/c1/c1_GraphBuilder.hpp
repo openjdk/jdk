@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciStreams.hpp"
+#include "compiler/compileLog.hpp"
 
 class MemoryBuffer;
 
@@ -367,8 +368,9 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   bool append_unsafe_put_raw(ciMethod* callee, BasicType t);
   bool append_unsafe_prefetch(ciMethod* callee, bool is_store, bool is_static);
   void append_unsafe_CAS(ciMethod* callee);
+  bool append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add);
 
-  void print_inlining(ciMethod* callee, const char* msg, bool success = true);
+  void print_inlining(ciMethod* callee, const char* msg = NULL, bool success = true);
 
   void profile_call(ciMethod* callee, Value recv, ciKlass* predicted_holder);
   void profile_invocation(ciMethod* inlinee, ValueStack* state);

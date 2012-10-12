@@ -1,7 +1,5 @@
 #
-
-#
-# Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,7 +20,6 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #  
-#
 
 # Define public interface.
 
@@ -40,6 +37,10 @@ SUNWprivate_1.1 {
 		Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_readBytesFromProcess0;
 		Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_getThreadIntegerRegisterSet0;
 	
+                # Disassembler interface
+                Java_sun_jvm_hotspot_asm_Disassembler_decode;
+                Java_sun_jvm_hotspot_asm_Disassembler_load_1library;
+
 		# proc_service.h functions - to be used by libthread_db
 		ps_getpid;
 		ps_pglobal_lookup;

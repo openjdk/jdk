@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -510,7 +510,7 @@ void Parse::do_multianewarray() {
                           dims);
   }
 
-  Node* res = _gvn.transform(new (C, 1) ProjNode(c, TypeFunc::Parms));
+  Node* res = _gvn.transform(new (C) ProjNode(c, TypeFunc::Parms));
 
   const Type* type = TypeOopPtr::make_from_klass_raw(array_klass);
 
@@ -524,7 +524,7 @@ void Parse::do_multianewarray() {
 
     // We cannot sharpen the nested sub-arrays, since the top level is mutable.
 
-  Node* cast = _gvn.transform( new (C, 2) CheckCastPPNode(control(), res, type) );
+  Node* cast = _gvn.transform( new (C) CheckCastPPNode(control(), res, type) );
   push(cast);
 
   // Possible improvements:
