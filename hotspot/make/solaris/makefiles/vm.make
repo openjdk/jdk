@@ -288,7 +288,7 @@ $(LIBJVM): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(LIBJVM.o) $(LIBJVM_
 ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	@echo Linking vm...
 	$(QUIETLY) $(LINK_LIB.CXX/PRE_HOOK)
-	$(QUIETLY) $(LINK_VM) $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM)
+	$(QUIETLY) $(LINK_VM) $(LFLAGS_VM) -o $@ $(sort $(LIBJVM.o)) $(LIBS_VM)
 	$(QUIETLY) $(LINK_LIB.CXX/POST_HOOK)
 	$(QUIETLY) rm -f $@.1 && ln -s $@ $@.1
 	$(QUIETLY) [ -f $(LIBJVM_G) ] || ln -s $@ $(LIBJVM_G)

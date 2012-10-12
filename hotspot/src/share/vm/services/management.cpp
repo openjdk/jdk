@@ -72,11 +72,21 @@ jmmOptionalSupport Management::_optional_support = {0};
 TimeStamp Management::_stamp;
 
 void management_init() {
+#if INCLUDE_MANAGEMENT
   Management::init();
   ThreadService::init();
   RuntimeService::init();
   ClassLoadingService::init();
+#else
+  ThreadService::init();
+  // Make sure the VM version is initialized
+  // This is normally called by RuntimeService::init().
+  // Since that is conditionalized out, we need to call it here.
+  Abstract_VM_Version::initialize();
+#endif // INCLUDE_MANAGEMENT
 }
+
+#if INCLUDE_MANAGEMENT
 
 void Management::init() {
   EXCEPTION_MARK;
@@ -112,10 +122,10 @@ void Management::init() {
 
   _optional_support.isBootClassPathSupported = 1;
   _optional_support.isObjectMonitorUsageSupported = 1;
-#ifndef SERVICES_KERNEL
+#if INCLUDE_SERVICES
   // This depends on the heap inspector
   _optional_support.isSynchronizerUsageSupported = 1;
-#endif // SERVICES_KERNEL
+#endif // INCLUDE_SERVICES
   _optional_support.isThreadAllocatedMemorySupported = 1;
 
   // Registration of the diagnostic commands
@@ -426,7 +436,7 @@ static void validate_thread_id_array(typeArrayHandle ids_ah, TRAPS) {
 static void validate_thread_info_array(objArrayHandle infoArray_h, TRAPS) {
   // check if the element of infoArray is of type ThreadInfo class
   Klass* threadinfo_klass = Management::java_lang_management_ThreadInfo_klass(CHECK);
-  Klass* element_klass = objArrayKlass::cast(infoArray_h->klass())->element_klass();
+  Klass* element_klass = ObjArrayKlass::cast(infoArray_h->klass())->element_klass();
   if (element_klass != threadinfo_klass) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "infoArray element type is not ThreadInfo class");
@@ -1715,7 +1725,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
     objArrayOop ta = objArrayOop(JNIHandles::resolve_non_null(names));
     objArrayHandle names_ah(THREAD, ta);
     // Make sure we have a String array
-    Klass* element_klass = objArrayKlass::cast(names_ah->klass())->element_klass();
+    Klass* element_klass = ObjArrayKlass::cast(names_ah->klass())->element_klass();
     if (element_klass != SystemDictionary::String_klass()) {
       THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                  "Array element type is not String class", 0);
@@ -1804,31 +1814,37 @@ JVM_END
 
 class ThreadTimesClosure: public ThreadClosure {
  private:
-  objArrayOop _names;
+  objArrayHandle _names_strings;
+  char **_names_chars;
   typeArrayOop _times;
   int _names_len;
   int _times_len;
   int _count;
 
  public:
-  ThreadTimesClosure(objArrayOop names, typeArrayOop times);
+  ThreadTimesClosure(objArrayHandle names, typeArrayOop times);
+  ~ThreadTimesClosure();
   virtual void do_thread(Thread* thread);
+  void do_unlocked();
   int count() { return _count; }
 };
 
-ThreadTimesClosure::ThreadTimesClosure(objArrayOop names,
+ThreadTimesClosure::ThreadTimesClosure(objArrayHandle names,
                                        typeArrayOop times) {
-  assert(names != NULL, "names was NULL");
+  assert(names() != NULL, "names was NULL");
   assert(times != NULL, "times was NULL");
-  _names = names;
+  _names_strings = names;
   _names_len = names->length();
+  _names_chars = NEW_C_HEAP_ARRAY(char*, _names_len, mtInternal);
   _times = times;
   _times_len = times->length();
   _count = 0;
 }
 
+//
+// Called with Threads_lock held
+//
 void ThreadTimesClosure::do_thread(Thread* thread) {
-  Handle s;
   assert(thread != NULL, "thread was NULL");
 
   // exclude externally visible JavaThreads
@@ -1842,14 +1858,30 @@ void ThreadTimesClosure::do_thread(Thread* thread) {
   }
 
   EXCEPTION_MARK;
+  ResourceMark rm(THREAD); // thread->name() uses ResourceArea
 
   assert(thread->name() != NULL, "All threads should have a name");
-  s = java_lang_String::create_from_str(thread->name(), CHECK);
-  _names->obj_at_put(_count, s());
-
+  _names_chars[_count] = strdup(thread->name());
   _times->long_at_put(_count, os::is_thread_cpu_time_supported() ?
                         os::thread_cpu_time(thread) : -1);
   _count++;
+}
+
+// Called without Threads_lock, we can allocate String objects.
+void ThreadTimesClosure::do_unlocked() {
+
+  EXCEPTION_MARK;
+  for (int i = 0; i < _count; i++) {
+    Handle s = java_lang_String::create_from_str(_names_chars[i],  CHECK);
+    _names_strings->obj_at_put(i, s());
+  }
+}
+
+ThreadTimesClosure::~ThreadTimesClosure() {
+  for (int i = 0; i < _count; i++) {
+    free(_names_chars[i]);
+  }
+  FREE_C_HEAP_ARRAY(char *, _names_chars, mtInternal);
 }
 
 // Fills names with VM internal thread names and times with the corresponding
@@ -1869,7 +1901,7 @@ JVM_ENTRY(jint, jmm_GetInternalThreadTimes(JNIEnv *env,
   objArrayHandle names_ah(THREAD, na);
 
   // Make sure we have a String array
-  Klass* element_klass = objArrayKlass::cast(names_ah->klass())->element_klass();
+  Klass* element_klass = ObjArrayKlass::cast(names_ah->klass())->element_klass();
   if (element_klass != SystemDictionary::String_klass()) {
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                "Array element type is not String class", 0);
@@ -1878,12 +1910,12 @@ JVM_ENTRY(jint, jmm_GetInternalThreadTimes(JNIEnv *env,
   typeArrayOop ta = typeArrayOop(JNIHandles::resolve_non_null(times));
   typeArrayHandle times_ah(THREAD, ta);
 
-  ThreadTimesClosure ttc(names_ah(), times_ah());
+  ThreadTimesClosure ttc(names_ah, times_ah());
   {
     MutexLockerEx ml(Threads_lock);
     Threads::threads_do(&ttc);
   }
-
+  ttc.do_unlocked();
   return ttc.count();
 JVM_END
 
@@ -1986,7 +2018,7 @@ static objArrayOop get_memory_usage_objArray(jobjectArray array, int length, TRA
 
   // check if the element of array is of type MemoryUsage class
   Klass* usage_klass = Management::java_lang_management_MemoryUsage_klass(CHECK_0);
-  Klass* element_klass = objArrayKlass::cast(array_h->klass())->element_klass();
+  Klass* element_klass = ObjArrayKlass::cast(array_h->klass())->element_klass();
   if (element_klass != usage_klass) {
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                "The element type is not MemoryUsage class", 0);
@@ -2086,7 +2118,7 @@ JVM_END
 
 // Dump heap - Returns 0 if succeeds.
 JVM_ENTRY(jint, jmm_DumpHeap0(JNIEnv *env, jstring outputfile, jboolean live))
-#ifndef SERVICES_KERNEL
+#if INCLUDE_SERVICES
   ResourceMark rm(THREAD);
   oop on = JNIHandles::resolve_external_guard(outputfile);
   if (on == NULL) {
@@ -2104,9 +2136,9 @@ JVM_ENTRY(jint, jmm_DumpHeap0(JNIEnv *env, jstring outputfile, jboolean live))
     THROW_MSG_(vmSymbols::java_io_IOException(), errmsg, -1);
   }
   return 0;
-#else  // SERVICES_KERNEL
+#else  // INCLUDE_SERVICES
   return -1;
-#endif // SERVICES_KERNEL
+#endif // INCLUDE_SERVICES
 JVM_END
 
 JVM_ENTRY(jobjectArray, jmm_GetDiagnosticCommands(JNIEnv *env))
@@ -2134,7 +2166,7 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
   objArrayHandle cmds_ah(THREAD, ca);
 
   // Make sure we have a String array
-  Klass* element_klass = objArrayKlass::cast(cmds_ah->klass())->element_klass();
+  Klass* element_klass = ObjArrayKlass::cast(cmds_ah->klass())->element_klass();
   if (element_klass != SystemDictionary::String_klass()) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                "Array element type is not String class");
@@ -2273,10 +2305,13 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_GetDiagnosticCommandArgumentsInfo,
   jmm_ExecuteDiagnosticCommand
 };
+#endif // INCLUDE_MANAGEMENT
 
 void* Management::get_jmm_interface(int version) {
+#if INCLUDE_MANAGEMENT
   if (version == JMM_VERSION_1_0) {
     return (void*) &jmm_interface;
   }
+#endif // INCLUDE_MANAGEMENT
   return NULL;
 }

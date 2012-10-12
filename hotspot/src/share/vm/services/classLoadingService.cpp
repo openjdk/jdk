@@ -78,6 +78,7 @@ HS_DTRACE_PROBE_DECL4(hotspot, class__unloaded, char*, int, oop, bool);
 
 #endif
 
+#if INCLUDE_MANAGEMENT
 // counters for classes loaded from class files
 PerfCounter*    ClassLoadingService::_classes_loaded_count = NULL;
 PerfCounter*    ClassLoadingService::_classes_unloaded_count = NULL;
@@ -239,3 +240,5 @@ LoadedClassesEnumerator::LoadedClassesEnumerator(Thread* cur_thread) {
   // FIXME: Exclude array klasses for now
   // Universe::basic_type_classes_do(&add_loaded_class);
 }
+
+#endif // INCLUDE_MANAGEMENT

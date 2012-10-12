@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciMethodType.hpp"
 #include "ci/ciSignature.hpp"
 #include "ci/ciUtilities.hpp"
 #include "memory/allocation.inline.hpp"
@@ -77,6 +78,24 @@ ciSignature::ciSignature(ciKlass* accessing_klass, constantPoolHandle cpool, ciS
   }
   _size = size;
   _count = count;
+}
+
+// ------------------------------------------------------------------
+// ciSignature::ciSignature
+ciSignature::ciSignature(ciKlass* accessing_klass, ciSymbol* symbol, ciMethodType* method_type) :
+  _symbol(symbol),
+  _accessing_klass(accessing_klass),
+  _size( method_type->ptype_slot_count()),
+  _count(method_type->ptype_count())
+{
+  ASSERT_IN_VM;
+  EXCEPTION_CONTEXT;
+  Arena* arena = CURRENT_ENV->arena();
+  _types = new (arena) GrowableArray<ciType*>(arena, _count + 1, 0, NULL);
+  for (int i = 0; i < _count; i++) {
+    _types->append(method_type->ptype_at(i));
+  }
+  _types->append(method_type->rtype());
 }
 
 // ------------------------------------------------------------------

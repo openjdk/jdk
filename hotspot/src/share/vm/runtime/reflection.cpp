@@ -212,7 +212,7 @@ BasicType Reflection::array_get(jvalue* value, arrayOop a, int index, TRAPS) {
     return T_OBJECT;
   } else {
     assert(a->is_typeArray(), "just checking");
-    BasicType type = typeArrayKlass::cast(a->klass())->element_type();
+    BasicType type = TypeArrayKlass::cast(a->klass())->element_type();
     switch (type) {
       case T_BOOLEAN:
         value->z = typeArrayOop(a)->bool_at(index);
@@ -254,7 +254,7 @@ void Reflection::array_set(jvalue* value, arrayOop a, int index, BasicType value
     if (value_type == T_OBJECT) {
       oop obj = (oop) value->l;
       if (obj != NULL) {
-        Klass* element_klass = objArrayKlass::cast(a->klass())->element_klass();
+        Klass* element_klass = ObjArrayKlass::cast(a->klass())->element_klass();
         if (!obj->is_a(element_klass)) {
           THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "array element type mismatch");
         }
@@ -263,7 +263,7 @@ void Reflection::array_set(jvalue* value, arrayOop a, int index, BasicType value
     }
   } else {
     assert(a->is_typeArray(), "just checking");
-    BasicType array_type = typeArrayKlass::cast(a->klass())->element_type();
+    BasicType array_type = TypeArrayKlass::cast(a->klass())->element_type();
     if (array_type != value_type) {
       // The widen operation can potentially throw an exception, but cannot block,
       // so typeArrayOop a is safe if the call succeeds.
@@ -313,7 +313,7 @@ Klass* Reflection::basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS)
 
 
 oop Reflection:: basic_type_arrayklass_to_mirror(Klass* basic_type_arrayklass, TRAPS) {
-  BasicType type = typeArrayKlass::cast(basic_type_arrayklass)->element_type();
+  BasicType type = TypeArrayKlass::cast(basic_type_arrayklass)->element_type();
   return Universe::java_mirror(type);
 }
 
@@ -327,10 +327,10 @@ arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
   }
   if (java_lang_Class::is_primitive(element_mirror)) {
     Klass* tak = basic_type_mirror_to_arrayklass(element_mirror, CHECK_NULL);
-    return typeArrayKlass::cast(tak)->allocate(length, THREAD);
+    return TypeArrayKlass::cast(tak)->allocate(length, THREAD);
   } else {
     Klass* k = java_lang_Class::as_Klass(element_mirror);
-    if (Klass::cast(k)->oop_is_array() && arrayKlass::cast(k)->dimension() >= MAX_DIM) {
+    if (Klass::cast(k)->oop_is_array() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
       THROW_0(vmSymbols::java_lang_IllegalArgumentException());
     }
     return oopFactory::new_objArray(k, length, THREAD);
@@ -340,7 +340,7 @@ arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
 
 arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop dim_array, TRAPS) {
   assert(dim_array->is_typeArray(), "just checking");
-  assert(typeArrayKlass::cast(dim_array->klass())->element_type() == T_INT, "just checking");
+  assert(TypeArrayKlass::cast(dim_array->klass())->element_type() == T_INT, "just checking");
 
   if (element_mirror == NULL) {
     THROW_0(vmSymbols::java_lang_NullPointerException());
@@ -367,7 +367,7 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
   } else {
     klass = java_lang_Class::as_Klass(element_mirror);
     if (Klass::cast(klass)->oop_is_array()) {
-      int k_dim = arrayKlass::cast(klass)->dimension();
+      int k_dim = ArrayKlass::cast(klass)->dimension();
       if (k_dim + len > MAX_DIM) {
         THROW_0(vmSymbols::java_lang_IllegalArgumentException());
       }
@@ -375,7 +375,7 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
     }
   }
   klass = Klass::cast(klass)->array_klass(dim, CHECK_NULL);
-  oop obj = arrayKlass::cast(klass)->multi_allocate(len, dimensions, THREAD);
+  oop obj = ArrayKlass::cast(klass)->multi_allocate(len, dimensions, THREAD);
   assert(obj->is_array(), "just checking");
   return arrayOop(obj);
 }
@@ -391,17 +391,17 @@ oop Reflection::array_component_type(oop mirror, TRAPS) {
     return NULL;
   }
 
-  oop result = arrayKlass::cast(klass)->component_mirror();
+  oop result = ArrayKlass::cast(klass)->component_mirror();
 #ifdef ASSERT
   oop result2 = NULL;
-  if (arrayKlass::cast(klass)->dimension() == 1) {
+  if (ArrayKlass::cast(klass)->dimension() == 1) {
     if (Klass::cast(klass)->oop_is_typeArray()) {
       result2 = basic_type_arrayklass_to_mirror(klass, CHECK_NULL);
     } else {
-      result2 = Klass::cast(objArrayKlass::cast(klass)->element_klass())->java_mirror();
+      result2 = Klass::cast(ObjArrayKlass::cast(klass)->element_klass())->java_mirror();
     }
   } else {
-    Klass* lower_dim = arrayKlass::cast(klass)->lower_dimension();
+    Klass* lower_dim = ArrayKlass::cast(klass)->lower_dimension();
     assert(Klass::cast(lower_dim)->oop_is_array(), "just checking");
     result2 = Klass::cast(lower_dim)->java_mirror();
   }

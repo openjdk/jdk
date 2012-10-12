@@ -193,9 +193,9 @@ final class P11Cipher extends CipherSpi {
             } else { // DES, DESede, Blowfish
                 blockSize = 8;
             }
-            this.blockMode =
-                (algoParts.length > 1 ? parseMode(algoParts[1]) : MODE_ECB);
         }
+        this.blockMode =
+            (algoParts.length > 1 ? parseMode(algoParts[1]) : MODE_ECB);
         String defPadding = (blockSize == 0 ? "NoPadding" : "PKCS5Padding");
         String paddingStr =
                 (algoParts.length > 2 ? algoParts[2] : defPadding);
