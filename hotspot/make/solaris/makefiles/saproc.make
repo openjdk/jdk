@@ -27,7 +27,9 @@
 # libsaproc[_g].so: serviceability agent
 
 SAPROC = saproc
+SADIS = sadis
 LIBSAPROC = lib$(SAPROC).so
+SADISOBJ = $(SADIS).o
 
 SAPROC_G = $(SAPROC)$(G_SUFFIX)
 LIBSAPROC_G = lib$(SAPROC_G).so
@@ -42,6 +44,8 @@ AGENT_DIR = $(GAMMADIR)/agent
 SASRCDIR = $(AGENT_DIR)/src/os/$(Platform_os_family)/proc
 
 SASRCFILES = $(SASRCDIR)/saproc.cpp
+
+SADISSRCFILES = $(AGENT_DIR)/src/share/native/sadis.c
 
 SAMAPFILE = $(SASRCDIR)/mapfile
 
@@ -90,13 +94,14 @@ $(shell uname -r -v \
 # when actually building on Nevada-B158 or earlier:
 #SOLARIS_11_B159_OR_LATER=-DSOLARIS_11_B159_OR_LATER
 
-$(LIBSAPROC): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(SASRCFILES) $(SAMAPFILE)
+
+$(LIBSAPROC): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(SASRCFILES) $(SADISOBJ) $(SAMAPFILE)
 	$(QUIETLY) if [ "$(BOOT_JAVA_HOME)" = "" ]; then \
 	  echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
 	  exit 1; \
 	fi
 	@echo Making SA debugger back-end...
-	$(QUIETLY) $(CXX)                                               \
+	           $(QUIETLY) $(CXX)                                    \
                    $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG)     \
 	           -I$(SASRCDIR)                                        \
 	           -I$(GENERATED)                                       \
@@ -104,10 +109,23 @@ $(LIBSAPROC): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(SASRCFILES) $(SA
 	           -I$(BOOT_JAVA_HOME)/include/$(Platform_os_family)    \
 	           $(SOLARIS_11_B159_OR_LATER)                          \
 	           $(SASRCFILES)                                        \
+	           $(SADISOBJ)                                          \
 	           $(SA_LFLAGS)                                         \
 	           -o $@                                                \
 	           -ldl -ldemangle -lthread -lc
 	[ -f $(LIBSAPROC_G) ] || { ln -s $@ $(LIBSAPROC_G); }
+
+$(SADISOBJ): $(SADISSRCFILES)
+	           $(QUIETLY) $(CC)                                     \
+	           $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG)     \
+	           -I$(SASRCDIR)                                        \
+	           -I$(GENERATED)                                       \
+	           -I$(BOOT_JAVA_HOME)/include                          \
+	           -I$(BOOT_JAVA_HOME)/include/$(Platform_os_family)    \
+	           $(SOLARIS_11_B159_OR_LATER)                          \
+	           $(SADISSRCFILES)                                     \
+	           -c -o $(SADISOBJ)
+	
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
 # Clear the SHF_ALLOC flag (if set) from empty section headers.

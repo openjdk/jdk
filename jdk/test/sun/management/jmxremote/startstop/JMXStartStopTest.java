@@ -167,14 +167,14 @@ public class JMXStartStopTest {
             }
         } catch (RuntimeException r) {
             dbg_print("No connection: ", r);
-            System.out.println("NO_CONN");
+            System.out.print("NO_CONN");
             System.exit(1);
         } catch (Throwable t) {
             dbg_print("No connection: ", t);
-            System.out.println("NO_CONN");
+            System.out.print("NO_CONN");
             System.exit(2);
         }
-        System.out.println("OK_CONN");
+        System.out.print("OK_CONN");
         System.exit(0);
     }
 

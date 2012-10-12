@@ -933,7 +933,7 @@ void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
   k = klass->array_klass_or_null();
   while (k != NULL) {
     Klass* klass = Klass::cast(k);
-    assert(klass->oop_is_objArray(), "not an objArrayKlass");
+    assert(klass->oop_is_objArray(), "not an ObjArrayKlass");
 
     writer->write_u1(HPROF_GC_CLASS_DUMP);
     writer->write_classID(klass);
@@ -1016,7 +1016,7 @@ void DumperSupport::dump_object_array(DumpWriter* writer, objArrayOop array) {
 
 // creates HPROF_GC_PRIM_ARRAY_DUMP record for the given type array
 void DumperSupport::dump_prim_array(DumpWriter* writer, typeArrayOop array) {
-  BasicType type = typeArrayKlass::cast(array->klass())->element_type();
+  BasicType type = TypeArrayKlass::cast(array->klass())->element_type();
 
   writer->write_u1(HPROF_GC_PRIM_ARRAY_DUMP);
   writer->write_objectID(array);

@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.util;
 
+import java.util.Arrays;
+
 /** A class for extensible, mutable bit sets.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -62,9 +64,7 @@ public class Bits {
 
     private void sizeTo(int len) {
         if (bits.length < len) {
-            int[] newbits = new int[len];
-            System.arraycopy(bits, 0, newbits, 0, bits.length);
-            bits = newbits;
+            bits = Arrays.copyOf(bits, len);
         }
     }
 

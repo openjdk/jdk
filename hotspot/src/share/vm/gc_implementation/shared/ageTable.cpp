@@ -78,10 +78,10 @@ void ageTable::merge_par(ageTable* subTable) {
   }
 }
 
-int ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
+uint ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
   size_t desired_survivor_size = (size_t)((((double) survivor_capacity)*TargetSurvivorRatio)/100);
   size_t total = 0;
-  int age = 1;
+  uint age = 1;
   assert(sizes[0] == 0, "no objects with age zero should be recorded");
   while (age < table_size) {
     total += sizes[age];
@@ -90,13 +90,13 @@ int ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
     if (total > desired_survivor_size) break;
     age++;
   }
-  int result = age < MaxTenuringThreshold ? age : MaxTenuringThreshold;
+  uint result = age < MaxTenuringThreshold ? age : MaxTenuringThreshold;
 
   if (PrintTenuringDistribution || UsePerfData) {
 
     if (PrintTenuringDistribution) {
       gclog_or_tty->cr();
-      gclog_or_tty->print_cr("Desired survivor size %ld bytes, new threshold %d (max %d)",
+      gclog_or_tty->print_cr("Desired survivor size %ld bytes, new threshold %u (max %u)",
         desired_survivor_size*oopSize, result, MaxTenuringThreshold);
     }
 
@@ -106,7 +106,7 @@ int ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
       total += sizes[age];
       if (sizes[age] > 0) {
         if (PrintTenuringDistribution) {
-          gclog_or_tty->print_cr("- age %3d: %10ld bytes, %10ld total",
+          gclog_or_tty->print_cr("- age %3u: %10ld bytes, %10ld total",
             age, sizes[age]*oopSize, total*oopSize);
         }
       }

@@ -136,8 +136,7 @@ final class CryptoAllPermissionCollection extends PermissionCollection
      * @exception SecurityException - if this CryptoAllPermissionCollection
      * object has been marked readonly
      */
-    public void add(Permission permission)
-    {
+    public void add(Permission permission) {
         if (isReadOnly())
             throw new SecurityException("attempt to add a Permission to " +
                                         "a readonly PermissionCollection");
@@ -152,13 +151,12 @@ final class CryptoAllPermissionCollection extends PermissionCollection
      * Check and see if this set of permissions implies the permissions
      * expressed in "permission".
      *
-     * @param p the Permission object to compare
+     * @param permission the Permission object to compare
      *
      * @return true if the given permission is implied by this
      * CryptoAllPermissionCollection.
      */
-    public boolean implies(Permission permission)
-    {
+    public boolean implies(Permission permission) {
         if (!(permission instanceof CryptoPermission)) {
             return false;
         }

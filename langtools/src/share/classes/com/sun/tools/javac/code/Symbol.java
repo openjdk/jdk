@@ -168,6 +168,10 @@ public abstract class Symbol implements Element {
         return owner;
     }
 
+    public Symbol baseSymbol() {
+        return this;
+    }
+
     /** The symbol's erased type.
      */
     public Type erasure(Types types) {
@@ -918,7 +922,12 @@ public abstract class Symbol implements Element {
         /** Clone this symbol with new owner.
          */
         public VarSymbol clone(Symbol newOwner) {
-            VarSymbol v = new VarSymbol(flags_field, name, type, newOwner);
+            VarSymbol v = new VarSymbol(flags_field, name, type, newOwner) {
+                @Override
+                public Symbol baseSymbol() {
+                    return VarSymbol.this;
+                }
+            };
             v.pos = pos;
             v.adr = adr;
             v.data = data;
@@ -1045,7 +1054,12 @@ public abstract class Symbol implements Element {
         /** Clone this symbol with new owner.
          */
         public MethodSymbol clone(Symbol newOwner) {
-            MethodSymbol m = new MethodSymbol(flags_field, name, type, newOwner);
+            MethodSymbol m = new MethodSymbol(flags_field, name, type, newOwner) {
+                @Override
+                public Symbol baseSymbol() {
+                    return MethodSymbol.this;
+                }
+            };
             m.code = code;
             return m;
         }
@@ -1066,6 +1080,10 @@ public abstract class Symbol implements Element {
                 }
                 return s;
             }
+        }
+
+        public boolean isDynamic() {
+            return false;
         }
 
         /** find a symbol that this (proxy method) symbol implements.
@@ -1353,6 +1371,27 @@ public abstract class Symbol implements Element {
 
         public List<Type> getThrownTypes() {
             return asType().getThrownTypes();
+        }
+    }
+
+    /** A class for invokedynamic method calls.
+     */
+    public static class DynamicMethodSymbol extends MethodSymbol {
+
+        public Object[] staticArgs;
+        public Symbol bsm;
+        public int bsmKind;
+
+        public DynamicMethodSymbol(Name name, Symbol owner, int bsmKind, MethodSymbol bsm, Type type, Object[] staticArgs) {
+            super(0, name, type, owner);
+            this.bsm = bsm;
+            this.bsmKind = bsmKind;
+            this.staticArgs = staticArgs;
+        }
+
+        @Override
+        public boolean isDynamic() {
+            return true;
         }
     }
 

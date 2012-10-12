@@ -262,8 +262,8 @@ int generateJvmOffsets(GEN_variant gen_variant) {
 
   printf("\n");
 
-  GEN_OFFS(NarrowOopStruct, _base);
-  GEN_OFFS(NarrowOopStruct, _shift);
+  GEN_OFFS(NarrowPtrStruct, _base);
+  GEN_OFFS(NarrowPtrStruct, _shift);
   printf("\n");
 
   GEN_VALUE(SIZE_HeapBlockHeader, sizeof(HeapBlock::Header));

@@ -365,13 +365,14 @@ protected:
 // A derived class defines the appropriate output for a specific mapping.
 class OutputMap {
 protected:
-  FILE     *_hpp;
-  FILE     *_cpp;
-  FormDict &_globals;
-  ArchDesc &_AD;
+  FILE       *_hpp;
+  FILE       *_cpp;
+  FormDict   &_globals;
+  ArchDesc   &_AD;
+  const char *_name;
 public:
-  OutputMap (FILE *decl_file, FILE *def_file, FormDict &globals, ArchDesc &AD)
-    : _hpp(decl_file), _cpp(def_file), _globals(globals), _AD(AD) {};
+  OutputMap (FILE *decl_file, FILE *def_file, FormDict &globals, ArchDesc &AD, const char *name)
+    : _hpp(decl_file), _cpp(def_file), _globals(globals), _AD(AD), _name(name) {};
   // Access files used by this routine
   FILE        *decl_file() { return _hpp; }
   FILE        *def_file()  { return _cpp; }
