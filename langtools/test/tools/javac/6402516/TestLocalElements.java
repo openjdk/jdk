@@ -43,9 +43,9 @@ class Test {
 
     boolean b = new Object() {
             public boolean equals(Object other) {
-                String p = "p, other, super, this; super, this; List, Test2, Test; java.io.*, java.lang.*";
-                String q = "q, p, other, super, this; super, this; List, Test2, Test; java.io.*, java.lang.*";
-                String r = "r, q, p, other, super, this; super, this; List, Test2, Test; java.io.*, java.lang.*";
+                String p = "p, other, super, this; -, super, this; List, Test2, Test; java.io.*, java.lang.*";
+                String q = "q, p, other, super, this; -, super, this; List, Test2, Test; java.io.*, java.lang.*";
+                String r = "r, q, p, other, super, this; -, super, this; List, Test2, Test; java.io.*, java.lang.*";
                 return (this == other);
             }
 

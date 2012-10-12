@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private HttpClient reuseClient = null;
 
     /* Tunnel states */
-    enum TunnelState {
+    public enum TunnelState {
         /* No tunnel */
         NONE,
 
@@ -662,7 +662,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      */
     protected void setNewClient (URL url, boolean useCache)
         throws IOException {
-        http = HttpClient.New(url, null, -1, useCache, connectTimeout);
+        http = HttpClient.New(url, null, -1, useCache, connectTimeout, this);
         http.setReadTimeout(readTimeout);
     }
 
@@ -703,7 +703,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                            String proxyHost, int proxyPort,
                                            boolean useCache)
         throws IOException {
-        http = HttpClient.New (url, proxyHost, proxyPort, useCache, connectTimeout);
+        http = HttpClient.New (url, proxyHost, proxyPort, useCache,
+            connectTimeout, this);
         http.setReadTimeout(readTimeout);
     }
 
@@ -994,14 +995,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     // subclass HttpsClient will overwrite & return an instance of HttpsClient
     protected HttpClient getNewHttpClient(URL url, Proxy p, int connectTimeout)
         throws IOException {
-        return HttpClient.New(url, p, connectTimeout);
+        return HttpClient.New(url, p, connectTimeout, this);
     }
 
     // subclass HttpsClient will overwrite & return an instance of HttpsClient
     protected HttpClient getNewHttpClient(URL url, Proxy p,
                                           int connectTimeout, boolean useCache)
         throws IOException {
-        return HttpClient.New(url, p, connectTimeout, useCache);
+        return HttpClient.New(url, p, connectTimeout, useCache, this);
     }
 
     private void expect100Continue() throws IOException {
@@ -1144,7 +1145,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         }
     }
 
-    private boolean streaming () {
+    public boolean streaming () {
         return (fixedContentLength != -1) || (fixedContentLengthLong != -1) ||
                (chunkLength != -1);
     }
@@ -1739,7 +1740,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      *
      * @param  the state
      */
-    void setTunnelState(TunnelState tunnelState) {
+    public void setTunnelState(TunnelState tunnelState) {
         this.tunnelState = tunnelState;
     }
 

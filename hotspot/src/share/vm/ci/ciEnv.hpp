@@ -362,7 +362,8 @@ public:
                        ImplicitExceptionTable*   inc_table,
                        AbstractCompiler*         compiler,
                        int                       comp_level,
-                       bool                      has_unsafe_access);
+                       bool                      has_unsafe_access,
+                       bool                      has_wide_vectors);
 
 
   // Access to certain well known ciObjects.

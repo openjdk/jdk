@@ -1788,7 +1788,6 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @return a bit mask of selected fields
      * @see #isExternallySet(int)
-     * @see #setInternallySetState(int)
      */
     final int selectFields() {
         // This implementation has been taken from the GregorianCalendar class.

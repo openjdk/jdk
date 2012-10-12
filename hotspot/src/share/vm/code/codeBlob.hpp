@@ -184,7 +184,7 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   static void trace_new_stub(CodeBlob* blob, const char* name1, const char* name2 = "");
 
   // Print the comment associated with offset on stream, if there is one
-  virtual void print_block_comment(outputStream* stream, address block_begin) {
+  virtual void print_block_comment(outputStream* stream, address block_begin) const {
     intptr_t offset = (intptr_t)(block_begin - code_begin());
     _comments.print_block_comment(stream, offset);
   }

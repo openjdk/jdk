@@ -129,7 +129,7 @@ JRT_ENTRY(void, SharkRuntime::multianewarray(JavaThread* thread,
                                              int         ndims,
                                              int*        dims))
   Klass* klass = method(thread)->constants()->klass_at(index, CHECK);
-  oop obj = arrayKlass::cast(klass)->multi_allocate(ndims, dims, CHECK);
+  oop obj = ArrayKlass::cast(klass)->multi_allocate(ndims, dims, CHECK);
   thread->set_vm_result(obj);
 JRT_END
 

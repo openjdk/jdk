@@ -335,7 +335,7 @@ public class BasicChar
         fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
     }
 
-    private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
+    private static void tryCatch(Buffer b, Class<?> ex, Runnable thunk) {
         boolean caught = false;
         try {
             thunk.run();
@@ -350,7 +350,7 @@ public class BasicChar
             fail(ex.getName() + " not thrown", b);
     }
 
-    private static void tryCatch(char [] t, Class ex, Runnable thunk) {
+    private static void tryCatch(char [] t, Class<?> ex, Runnable thunk) {
         tryCatch(CharBuffer.wrap(t), ex, thunk);
     }
 
@@ -681,6 +681,14 @@ public class BasicChar
                     bulkPutBuffer(rb);
                 }});
 
+        // put(CharBuffer) should not change source position
+        final CharBuffer src = CharBuffer.allocate(1);
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.put(src);
+                 }});
+        ck(src, src.position(), 0);
+
         tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
                 public void run() {
                     rb.compact();
@@ -741,6 +749,22 @@ public class BasicChar
 
 
 
+
+
+
+
+
+        // 7199551
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+            public void run() {
+                String s = new String(new char[rb.remaining() + 1]);
+                rb.put(s);
+            }});
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+            public void run() {
+                String s = new String(new char[rb.remaining() + 1]);
+                rb.append(s);
+            }});
 
 
 

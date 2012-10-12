@@ -440,9 +440,9 @@ class CMSAdaptiveSizePolicy : public AdaptiveSizePolicy {
                                                    size_t max_eden_size);
   // Calculates new survivor space size;  returns a new tenuring threshold
   // value. Stores new survivor size in _survivor_size.
-  virtual int compute_survivor_space_size_and_threshold(
+  virtual uint compute_survivor_space_size_and_threshold(
                                                 bool   is_survivor_overflow,
-                                                int    tenuring_threshold,
+                                                uint   tenuring_threshold,
                                                 size_t survivor_limit);
 
   virtual void compute_tenured_generation_free_space(size_t cur_tenured_free,

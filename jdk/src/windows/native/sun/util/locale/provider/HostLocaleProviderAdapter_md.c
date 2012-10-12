@@ -209,31 +209,26 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
  */
 JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getDateTimePattern
   (JNIEnv *env, jclass cls, jint dateStyle, jint timeStyle, jstring jlangtag) {
-    WCHAR datePattern[BUFLEN];
-    WCHAR timePattern[BUFLEN];
+    WCHAR pattern[BUFLEN];
     const jchar *langtag = (*env)->GetStringChars(env, jlangtag, JNI_FALSE);
 
-    datePattern[0] = L'\0';
-    timePattern[0] = L'\0';
+    pattern[0] = L'\0';
 
     if (dateStyle == 0 || dateStyle == 1) {
-        getLocaleInfoWrapper(langtag, LOCALE_SLONGDATE, datePattern, BUFLEN);
+        getLocaleInfoWrapper(langtag, LOCALE_SLONGDATE, pattern, BUFLEN);
     } else if (dateStyle == 2 || dateStyle == 3) {
-        getLocaleInfoWrapper(langtag, LOCALE_SSHORTDATE, datePattern, BUFLEN);
+        getLocaleInfoWrapper(langtag, LOCALE_SSHORTDATE, pattern, BUFLEN);
     }
 
     if (timeStyle == 0 || timeStyle == 1) {
-        getLocaleInfoWrapper(langtag, LOCALE_STIMEFORMAT, timePattern, BUFLEN);
+        getLocaleInfoWrapper(langtag, LOCALE_STIMEFORMAT, pattern, BUFLEN);
     } else if (timeStyle == 2 || timeStyle == 3) {
-        getLocaleInfoWrapper(langtag, LOCALE_SSHORTTIME, timePattern, BUFLEN);
+        getLocaleInfoWrapper(langtag, LOCALE_SSHORTTIME, pattern, BUFLEN);
     }
-
-    wcscat(datePattern, L" ");
-    wcscat(datePattern, timePattern);
 
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
 
-    return (*env)->NewString(env, datePattern, wcslen(datePattern));
+    return (*env)->NewString(env, pattern, wcslen(pattern));
 }
 
 /*

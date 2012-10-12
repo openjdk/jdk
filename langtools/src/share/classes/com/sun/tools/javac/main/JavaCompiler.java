@@ -406,10 +406,17 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             ? names.fromString(options.get("failcomplete"))
             : null;
 
-        shouldStopPolicy =
-            options.isSet("shouldStopPolicy")
+        shouldStopPolicyIfError =
+            options.isSet("shouldStopPolicy") // backwards compatible
             ? CompileState.valueOf(options.get("shouldStopPolicy"))
-            : null;
+            : options.isSet("shouldStopPolicyIfError")
+            ? CompileState.valueOf(options.get("shouldStopPolicyIfError"))
+            : CompileState.INIT;
+        shouldStopPolicyIfNoError =
+            options.isSet("shouldStopPolicyIfNoError")
+            ? CompileState.valueOf(options.get("shouldStopPolicyIfNoError"))
+            : CompileState.GENERATE;
+
         if (options.isUnset("oldDiags"))
             log.setDiagnosticFormatter(RichDiagnosticFormatter.instance(context));
     }
@@ -486,12 +493,20 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     public boolean verboseCompilePolicy;
 
     /**
-     * Policy of how far to continue processing. null means until first
-     * error.
+     * Policy of how far to continue compilation after errors have occurred.
+     * Set this to minimum CompileState (INIT) to stop as soon as possible
+     * after errors.
      */
-    public CompileState shouldStopPolicy;
+    public CompileState shouldStopPolicyIfError;
 
-    /** A queue of all as yet unattributed classes.
+    /**
+     * Policy of how far to continue compilation when no errors have occurred.
+     * Set this to maximum CompileState (GENERATE) to perform full compilation.
+     * Set this lower to perform partial compilation, such as -proc:only.
+     */
+    public CompileState shouldStopPolicyIfNoError;
+
+    /** A queue of all as yet unattributed classes.oLo
      */
     public Todo todo;
 
@@ -501,6 +516,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     /** Ordered list of compiler phases for each compilation unit. */
     public enum CompileState {
+        INIT(0),
         PARSE(1),
         ENTER(2),
         PROCESS(3),
@@ -512,8 +528,11 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         CompileState(int value) {
             this.value = value;
         }
-        boolean isDone(CompileState other) {
-            return value >= other.value;
+        boolean isAfter(CompileState other) {
+            return value > other.value;
+        }
+        public static CompileState max(CompileState a, CompileState b) {
+            return a.value > b.value ? a : b;
         }
         private int value;
     };
@@ -524,7 +543,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         private static final long serialVersionUID = 1812267524140424433L;
         boolean isDone(Env<AttrContext> env, CompileState cs) {
             CompileState ecs = get(env);
-            return ecs != null && ecs.isDone(cs);
+            return (ecs != null) && !cs.isAfter(ecs);
         }
     }
     private CompileStates compileStates = new CompileStates();
@@ -536,10 +555,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     protected Set<JavaFileObject> inputFiles = new HashSet<JavaFileObject>();
 
     protected boolean shouldStop(CompileState cs) {
-        if (shouldStopPolicy == null)
-            return (errorCount() > 0 || unrecoverableError());
-        else
-            return cs.ordinal() > shouldStopPolicy.ordinal();
+        CompileState shouldStopPolicy = (errorCount() > 0 || unrecoverableError())
+            ? shouldStopPolicyIfError
+            : shouldStopPolicyIfNoError;
+        return cs.isAfter(shouldStopPolicy);
     }
 
     /** The number of errors reported so far.
@@ -924,6 +943,18 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     /**
+     * Enter the symbols found in a list of parse trees if the compilation
+     * is expected to proceed beyond anno processing into attr.
+     * As a side-effect, this puts elements on the "todo" list.
+     * Also stores a list of all top level classes in rootClasses.
+     */
+    public List<JCCompilationUnit> enterTreesIfNeeded(List<JCCompilationUnit> roots) {
+       if (shouldStop(CompileState.ATTR))
+           return List.nil();
+        return enterTrees(roots);
+    }
+
+    /**
      * Enter the symbols found in a list of parse trees.
      * As a side-effect, this puts elements on the "todo" list.
      * Also stores a list of all top level classes in rootClasses.
@@ -1010,7 +1041,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 genEndPos = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-                log.deferDiagnostics = true;
+                log.deferAll();
             } else { // free resources
                 procEnvImpl.close();
             }
@@ -1120,7 +1151,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 if (c != this)
                     annotationProcessingOccurred = c.annotationProcessingOccurred = true;
                 // doProcessing will have handled deferred diagnostics
-                Assert.check(c.log.deferDiagnostics == false
+                Assert.check(c.log.deferredDiagFilter == null
                         && c.log.deferredDiagnostics.size() == 0);
                 return c;
             } finally {
@@ -1196,7 +1227,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             if (errorCount() > 0 && !shouldStop(CompileState.ATTR)) {
                 //if in fail-over mode, ensure that AST expression nodes
                 //are correctly initialized (e.g. they have a type/symbol)
-                attr.postAttr(env);
+                attr.postAttr(env.tree);
             }
             compileStates.put(env, CompileState.ATTR);
         }
@@ -1648,6 +1679,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         hasBeenUsed = true;
         closeables = prev.closeables;
         prev.closeables = List.nil();
+        shouldStopPolicyIfError = prev.shouldStopPolicyIfError;
+        shouldStopPolicyIfNoError = prev.shouldStopPolicyIfNoError;
     }
 
     public static void enableLogging() {

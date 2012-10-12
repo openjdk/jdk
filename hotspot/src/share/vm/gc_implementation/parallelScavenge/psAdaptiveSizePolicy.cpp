@@ -941,9 +941,9 @@ size_t PSAdaptiveSizePolicy::promo_decrement(size_t cur_promo) {
   return promo_heap_delta;
 }
 
-int PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
+uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
                                              bool is_survivor_overflow,
-                                             int tenuring_threshold,
+                                             uint tenuring_threshold,
                                              size_t survivor_limit) {
   assert(survivor_limit >= _intra_generation_alignment,
          "survivor_limit too small");

@@ -243,50 +243,52 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
 VectorNode* VectorNode::make(Compile* C, int opc, Node* n1, Node* n2, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
   int vopc = VectorNode::opcode(opc, bt);
+  // This method should not be called for unimplemented vectors.
+  guarantee(vopc > 0, err_msg_res("Vector for '%s' is not implemented", NodeClassNames[opc]));
 
   switch (vopc) {
-  case Op_AddVB: return new (C, 3) AddVBNode(n1, n2, vt);
-  case Op_AddVS: return new (C, 3) AddVSNode(n1, n2, vt);
-  case Op_AddVI: return new (C, 3) AddVINode(n1, n2, vt);
-  case Op_AddVL: return new (C, 3) AddVLNode(n1, n2, vt);
-  case Op_AddVF: return new (C, 3) AddVFNode(n1, n2, vt);
-  case Op_AddVD: return new (C, 3) AddVDNode(n1, n2, vt);
+  case Op_AddVB: return new (C) AddVBNode(n1, n2, vt);
+  case Op_AddVS: return new (C) AddVSNode(n1, n2, vt);
+  case Op_AddVI: return new (C) AddVINode(n1, n2, vt);
+  case Op_AddVL: return new (C) AddVLNode(n1, n2, vt);
+  case Op_AddVF: return new (C) AddVFNode(n1, n2, vt);
+  case Op_AddVD: return new (C) AddVDNode(n1, n2, vt);
 
-  case Op_SubVB: return new (C, 3) SubVBNode(n1, n2, vt);
-  case Op_SubVS: return new (C, 3) SubVSNode(n1, n2, vt);
-  case Op_SubVI: return new (C, 3) SubVINode(n1, n2, vt);
-  case Op_SubVL: return new (C, 3) SubVLNode(n1, n2, vt);
-  case Op_SubVF: return new (C, 3) SubVFNode(n1, n2, vt);
-  case Op_SubVD: return new (C, 3) SubVDNode(n1, n2, vt);
+  case Op_SubVB: return new (C) SubVBNode(n1, n2, vt);
+  case Op_SubVS: return new (C) SubVSNode(n1, n2, vt);
+  case Op_SubVI: return new (C) SubVINode(n1, n2, vt);
+  case Op_SubVL: return new (C) SubVLNode(n1, n2, vt);
+  case Op_SubVF: return new (C) SubVFNode(n1, n2, vt);
+  case Op_SubVD: return new (C) SubVDNode(n1, n2, vt);
 
-  case Op_MulVS: return new (C, 3) MulVSNode(n1, n2, vt);
-  case Op_MulVI: return new (C, 3) MulVINode(n1, n2, vt);
-  case Op_MulVF: return new (C, 3) MulVFNode(n1, n2, vt);
-  case Op_MulVD: return new (C, 3) MulVDNode(n1, n2, vt);
+  case Op_MulVS: return new (C) MulVSNode(n1, n2, vt);
+  case Op_MulVI: return new (C) MulVINode(n1, n2, vt);
+  case Op_MulVF: return new (C) MulVFNode(n1, n2, vt);
+  case Op_MulVD: return new (C) MulVDNode(n1, n2, vt);
 
-  case Op_DivVF: return new (C, 3) DivVFNode(n1, n2, vt);
-  case Op_DivVD: return new (C, 3) DivVDNode(n1, n2, vt);
+  case Op_DivVF: return new (C) DivVFNode(n1, n2, vt);
+  case Op_DivVD: return new (C) DivVDNode(n1, n2, vt);
 
-  case Op_LShiftVB: return new (C, 3) LShiftVBNode(n1, n2, vt);
-  case Op_LShiftVS: return new (C, 3) LShiftVSNode(n1, n2, vt);
-  case Op_LShiftVI: return new (C, 3) LShiftVINode(n1, n2, vt);
-  case Op_LShiftVL: return new (C, 3) LShiftVLNode(n1, n2, vt);
+  case Op_LShiftVB: return new (C) LShiftVBNode(n1, n2, vt);
+  case Op_LShiftVS: return new (C) LShiftVSNode(n1, n2, vt);
+  case Op_LShiftVI: return new (C) LShiftVINode(n1, n2, vt);
+  case Op_LShiftVL: return new (C) LShiftVLNode(n1, n2, vt);
 
-  case Op_RShiftVB: return new (C, 3) RShiftVBNode(n1, n2, vt);
-  case Op_RShiftVS: return new (C, 3) RShiftVSNode(n1, n2, vt);
-  case Op_RShiftVI: return new (C, 3) RShiftVINode(n1, n2, vt);
-  case Op_RShiftVL: return new (C, 3) RShiftVLNode(n1, n2, vt);
+  case Op_RShiftVB: return new (C) RShiftVBNode(n1, n2, vt);
+  case Op_RShiftVS: return new (C) RShiftVSNode(n1, n2, vt);
+  case Op_RShiftVI: return new (C) RShiftVINode(n1, n2, vt);
+  case Op_RShiftVL: return new (C) RShiftVLNode(n1, n2, vt);
 
-  case Op_URShiftVB: return new (C, 3) URShiftVBNode(n1, n2, vt);
-  case Op_URShiftVS: return new (C, 3) URShiftVSNode(n1, n2, vt);
-  case Op_URShiftVI: return new (C, 3) URShiftVINode(n1, n2, vt);
-  case Op_URShiftVL: return new (C, 3) URShiftVLNode(n1, n2, vt);
+  case Op_URShiftVB: return new (C) URShiftVBNode(n1, n2, vt);
+  case Op_URShiftVS: return new (C) URShiftVSNode(n1, n2, vt);
+  case Op_URShiftVI: return new (C) URShiftVINode(n1, n2, vt);
+  case Op_URShiftVL: return new (C) URShiftVLNode(n1, n2, vt);
 
-  case Op_AndV: return new (C, 3) AndVNode(n1, n2, vt);
-  case Op_OrV:  return new (C, 3) OrVNode (n1, n2, vt);
-  case Op_XorV: return new (C, 3) XorVNode(n1, n2, vt);
+  case Op_AndV: return new (C) AndVNode(n1, n2, vt);
+  case Op_OrV:  return new (C) OrVNode (n1, n2, vt);
+  case Op_XorV: return new (C) XorVNode(n1, n2, vt);
   }
-  ShouldNotReachHere();
+  fatal(err_msg_res("Missed vector creation for '%s'", NodeClassNames[vopc]));
   return NULL;
 
 }
@@ -299,20 +301,38 @@ VectorNode* VectorNode::scalar2vector(Compile* C, Node* s, uint vlen, const Type
   switch (bt) {
   case T_BOOLEAN:
   case T_BYTE:
-    return new (C, 2) ReplicateBNode(s, vt);
+    return new (C) ReplicateBNode(s, vt);
   case T_CHAR:
   case T_SHORT:
-    return new (C, 2) ReplicateSNode(s, vt);
+    return new (C) ReplicateSNode(s, vt);
   case T_INT:
-    return new (C, 2) ReplicateINode(s, vt);
+    return new (C) ReplicateINode(s, vt);
   case T_LONG:
-    return new (C, 2) ReplicateLNode(s, vt);
+    return new (C) ReplicateLNode(s, vt);
   case T_FLOAT:
-    return new (C, 2) ReplicateFNode(s, vt);
+    return new (C) ReplicateFNode(s, vt);
   case T_DOUBLE:
-    return new (C, 2) ReplicateDNode(s, vt);
+    return new (C) ReplicateDNode(s, vt);
   }
-  ShouldNotReachHere();
+  fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
+  return NULL;
+}
+
+VectorNode* VectorNode::shift_count(Compile* C, Node* shift, Node* cnt, uint vlen, BasicType bt) {
+  assert(VectorNode::is_shift(shift) && !cnt->is_Con(), "only variable shift count");
+  // Match shift count type with shift vector type.
+  const TypeVect* vt = TypeVect::make(bt, vlen);
+  switch (shift->Opcode()) {
+  case Op_LShiftI:
+  case Op_LShiftL:
+    return new (C) LShiftCntVNode(cnt, vt);
+  case Op_RShiftI:
+  case Op_RShiftL:
+  case Op_URShiftI:
+  case Op_URShiftL:
+    return new (C) RShiftCntVNode(cnt, vt);
+  }
+  fatal(err_msg_res("Missed vector creation for '%s'", NodeClassNames[shift->Opcode()]));
   return NULL;
 }
 
@@ -322,20 +342,20 @@ PackNode* PackNode::make(Compile* C, Node* s, uint vlen, BasicType bt) {
   switch (bt) {
   case T_BOOLEAN:
   case T_BYTE:
-    return new (C, 2) PackBNode(s, vt);
+    return new (C) PackBNode(s, vt);
   case T_CHAR:
   case T_SHORT:
-    return new (C, 2) PackSNode(s, vt);
+    return new (C) PackSNode(s, vt);
   case T_INT:
-    return new (C, 2) PackINode(s, vt);
+    return new (C) PackINode(s, vt);
   case T_LONG:
-    return new (C, 2) PackLNode(s, vt);
+    return new (C) PackLNode(s, vt);
   case T_FLOAT:
-    return new (C, 2) PackFNode(s, vt);
+    return new (C) PackFNode(s, vt);
   case T_DOUBLE:
-    return new (C, 2) PackDNode(s, vt);
+    return new (C) PackDNode(s, vt);
   }
-  ShouldNotReachHere();
+  fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
   return NULL;
 }
 
@@ -358,20 +378,20 @@ PackNode* PackNode::binary_tree_pack(Compile* C, int lo, int hi) {
     switch (bt) {
     case T_BOOLEAN:
     case T_BYTE:
-      return new (C, 3) PackSNode(n1, n2, TypeVect::make(T_SHORT, 2));
+      return new (C) PackSNode(n1, n2, TypeVect::make(T_SHORT, 2));
     case T_CHAR:
     case T_SHORT:
-      return new (C, 3) PackINode(n1, n2, TypeVect::make(T_INT, 2));
+      return new (C) PackINode(n1, n2, TypeVect::make(T_INT, 2));
     case T_INT:
-      return new (C, 3) PackLNode(n1, n2, TypeVect::make(T_LONG, 2));
+      return new (C) PackLNode(n1, n2, TypeVect::make(T_LONG, 2));
     case T_LONG:
-      return new (C, 3) Pack2LNode(n1, n2, TypeVect::make(T_LONG, 2));
+      return new (C) Pack2LNode(n1, n2, TypeVect::make(T_LONG, 2));
     case T_FLOAT:
-      return new (C, 3) PackDNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
+      return new (C) PackDNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
     case T_DOUBLE:
-      return new (C, 3) Pack2DNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
+      return new (C) Pack2DNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
     }
-    ShouldNotReachHere();
+    fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
   }
   return NULL;
 }
@@ -380,15 +400,14 @@ PackNode* PackNode::binary_tree_pack(Compile* C, int lo, int hi) {
 LoadVectorNode* LoadVectorNode::make(Compile* C, int opc, Node* ctl, Node* mem,
                                      Node* adr, const TypePtr* atyp, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
-  return new (C, 3) LoadVectorNode(ctl, mem, adr, atyp, vt);
-  return NULL;
+  return new (C) LoadVectorNode(ctl, mem, adr, atyp, vt);
 }
 
 // Return the vector version of a scalar store node.
 StoreVectorNode* StoreVectorNode::make(Compile* C, int opc, Node* ctl, Node* mem,
                                        Node* adr, const TypePtr* atyp, Node* val,
                                        uint vlen) {
-  return new (C, 4) StoreVectorNode(ctl, mem, adr, atyp, val);
+  return new (C) StoreVectorNode(ctl, mem, adr, atyp, val);
 }
 
 // Extract a scalar element of vector.
@@ -397,23 +416,23 @@ Node* ExtractNode::make(Compile* C, Node* v, uint position, BasicType bt) {
   ConINode* pos = ConINode::make(C, (int)position);
   switch (bt) {
   case T_BOOLEAN:
-    return new (C, 3) ExtractUBNode(v, pos);
+    return new (C) ExtractUBNode(v, pos);
   case T_BYTE:
-    return new (C, 3) ExtractBNode(v, pos);
+    return new (C) ExtractBNode(v, pos);
   case T_CHAR:
-    return new (C, 3) ExtractCNode(v, pos);
+    return new (C) ExtractCNode(v, pos);
   case T_SHORT:
-    return new (C, 3) ExtractSNode(v, pos);
+    return new (C) ExtractSNode(v, pos);
   case T_INT:
-    return new (C, 3) ExtractINode(v, pos);
+    return new (C) ExtractINode(v, pos);
   case T_LONG:
-    return new (C, 3) ExtractLNode(v, pos);
+    return new (C) ExtractLNode(v, pos);
   case T_FLOAT:
-    return new (C, 3) ExtractFNode(v, pos);
+    return new (C) ExtractFNode(v, pos);
   case T_DOUBLE:
-    return new (C, 3) ExtractDNode(v, pos);
+    return new (C) ExtractDNode(v, pos);
   }
-  ShouldNotReachHere();
+  fatal(err_msg_res("Type '%s' is not supported for vectors", type2name(bt)));
   return NULL;
 }
 

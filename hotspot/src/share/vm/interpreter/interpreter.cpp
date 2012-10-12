@@ -60,6 +60,8 @@ void InterpreterCodelet::verify() {
 
 
 void InterpreterCodelet::print_on(outputStream* st) const {
+  ttyLocker ttyl;
+
   if (PrintInterpreter) {
     st->cr();
     st->print_cr("----------------------------------------------------------------------");
@@ -72,7 +74,7 @@ void InterpreterCodelet::print_on(outputStream* st) const {
 
   if (PrintInterpreter) {
     st->cr();
-    Disassembler::decode(code_begin(), code_end(), st);
+    Disassembler::decode(code_begin(), code_end(), st, DEBUG_ONLY(_comments) NOT_DEBUG(CodeComments()));
   }
 }
 

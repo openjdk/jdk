@@ -1424,6 +1424,11 @@ bool Matcher::narrow_oop_use_complex_address() {
   return true;
 }
 
+bool Matcher::narrow_klass_use_complex_address() {
+  ShouldNotCallThis();
+  return true;
+}
+
 
 // Is it better to copy float constants, or load them directly from memory?
 // Intel can load a float constant from a direct address, requiring no
@@ -1553,9 +1558,6 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
 // Returns true if the high 32 bits of the value is known to be zero.
 bool is_operand_hi32_zero(Node* n) {
   int opc = n->Opcode();
-  if (opc == Op_LoadUI2L) {
-    return true;
-  }
   if (opc == Op_AndL) {
     Node* o2 = n->in(2);
     if (o2->is_Con() && (o2->get_long() & 0xFFFFFFFF00000000LL) == 0LL) {
@@ -6147,8 +6149,8 @@ instruct loadI2L_immI(eRegL dst, memory mem, immI mask, eFlagsReg cr) %{
 %}
 
 // Load Unsigned Integer into Long Register
-instruct loadUI2L(eRegL dst, memory mem, eFlagsReg cr) %{
-  match(Set dst (LoadUI2L mem));
+instruct loadUI2L(eRegL dst, memory mem, immL_32bits mask, eFlagsReg cr) %{
+  match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
   effect(KILL cr);
 
   ins_cost(250);
@@ -7762,6 +7764,7 @@ instruct storeLConditional( memory mem, eADXRegL oldval, eBCXRegL newval, eFlags
 // No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 
 instruct compareAndSwapL( rRegI res, eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
+  predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
   format %{ "CMPXCHG8 [$mem_ptr],$newval\t# If EDX:EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t"
@@ -7795,6 +7798,47 @@ instruct compareAndSwapI( rRegI res, pRegP mem_ptr, eAXRegI oldval, eCXRegI newv
             "MOV    $res,1\n"
           "fail:" %}
   ins_encode( enc_cmpxchg(mem_ptr), enc_flags_ne_to_boolean(res) );
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddI_no_res( memory mem, Universe dummy, immI add, eFlagsReg cr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddI mem add));
+  effect(KILL cr);
+  format %{ "ADDL  [$mem],$add" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ addl($mem$$Address, $add$$constant);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddI( memory mem, rRegI newval, eFlagsReg cr) %{
+  match(Set newval (GetAndAddI mem newval));
+  effect(KILL cr);
+  format %{ "XADDL  [$mem],$newval" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ xaddl($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgI( memory mem, rRegI newval) %{
+  match(Set newval (GetAndSetI mem newval));
+  format %{ "XCHGL  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgl($newval$$Register, $mem$$Address);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgP( memory mem, pRegP newval) %{
+  match(Set newval (GetAndSetP mem newval));
+  format %{ "XCHGL  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgl($newval$$Register, $mem$$Address);
+  %}
   ins_pipe( pipe_cmpxchg );
 %}
 
@@ -12103,8 +12147,8 @@ instruct partialSubtypeCheck( eDIRegP result, eSIRegP sub, eAXRegP super, eCXReg
 
   ins_cost(1100);  // slightly larger than the next version
   format %{ "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
-            "MOV    ECX,[EDI+arrayKlass::length]\t# length to scan\n\t"
-            "ADD    EDI,arrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
+            "MOV    ECX,[EDI+ArrayKlass::length]\t# length to scan\n\t"
+            "ADD    EDI,ArrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
             "REPNE SCASD\t# Scan *EDI++ for a match with EAX while CX-- != 0\n\t"
             "JNE,s  miss\t\t# Missed: EDI not-zero\n\t"
             "MOV    [$sub+Klass::secondary_super_cache],$super\t# Hit: update cache\n\t"
@@ -12122,8 +12166,8 @@ instruct partialSubtypeCheck_vs_Zero( eFlagsReg cr, eSIRegP sub, eAXRegP super, 
 
   ins_cost(1000);
   format %{ "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
-            "MOV    ECX,[EDI+arrayKlass::length]\t# length to scan\n\t"
-            "ADD    EDI,arrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
+            "MOV    ECX,[EDI+ArrayKlass::length]\t# length to scan\n\t"
+            "ADD    EDI,ArrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
             "REPNE SCASD\t# Scan *EDI++ for a match with EAX while CX-- != 0\n\t"
             "JNE,s  miss\t\t# Missed: flags NZ\n\t"
             "MOV    [$sub+Klass::secondary_super_cache],$super\t# Hit: update cache, flags Z\n\t"

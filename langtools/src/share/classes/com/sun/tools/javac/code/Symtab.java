@@ -126,6 +126,7 @@ public class Symtab {
     public final Type cloneableType;
     public final Type serializableType;
     public final Type methodHandleType;
+    public final Type methodTypeType;
     public final Type nativeHeaderType;
     public final Type throwableType;
     public final Type errorType;
@@ -181,6 +182,10 @@ public class Symtab {
     /** The name of the class that belongs to a basix type tag.
      */
     public final Name[] boxedName = new Name[TypeTags.TypeTagCount];
+
+    /** A set containing all operator names.
+     */
+    public final Set<Name> operatorNames = new HashSet<Name>();
 
     /** A hashtable containing the encountered top-level and member classes,
      *  indexed by flat names. The table does not contain local classes.
@@ -243,7 +248,7 @@ public class Symtab {
                             int opcode) {
         predefClass.members().enter(
             new OperatorSymbol(
-                names.fromString(name),
+                makeOperatorName(name),
                 new MethodType(List.of(left, right), res,
                                List.<Type>nil(), methodClass),
                 opcode,
@@ -274,7 +279,7 @@ public class Symtab {
                                      Type res,
                                      int opcode) {
         OperatorSymbol sym =
-            new OperatorSymbol(names.fromString(name),
+            new OperatorSymbol(makeOperatorName(name),
                                new MethodType(List.of(arg),
                                               res,
                                               List.<Type>nil(),
@@ -283,6 +288,16 @@ public class Symtab {
                                predefClass);
         predefClass.members().enter(sym);
         return sym;
+    }
+
+    /**
+     * Create a new operator name from corresponding String representation
+     * and add the name to the set of known operator names.
+     */
+    private Name makeOperatorName(String name) {
+        Name opName = names.fromString(name);
+        operatorNames.add(opName);
+        return opName;
     }
 
     /** Enter a class into symbol table.
@@ -440,6 +455,7 @@ public class Symtab {
         throwableType = enterClass("java.lang.Throwable");
         serializableType = enterClass("java.io.Serializable");
         methodHandleType = enterClass("java.lang.invoke.MethodHandle");
+        methodTypeType = enterClass("java.lang.invoke.MethodType");
         errorType = enterClass("java.lang.Error");
         illegalArgumentExceptionType = enterClass("java.lang.IllegalArgumentException");
         interruptedExceptionType = enterClass("java.lang.InterruptedException");
