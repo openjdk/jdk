@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,16 +60,10 @@ public class ByteBuffer {
         length = 0;
     }
 
-    private void copy(int size) {
-        byte[] newelems = new byte[size];
-        System.arraycopy(elems, 0, newelems, 0, elems.length);
-        elems = newelems;
-    }
-
     /** Append byte to this buffer.
      */
     public void appendByte(int b) {
-        if (length >= elems.length) copy(elems.length * 2);
+        elems = ArrayUtils.ensureCapacity(elems, length);
         elems[length++] = (byte)b;
     }
 
@@ -77,7 +71,7 @@ public class ByteBuffer {
      *  starting at given `start' offset.
      */
     public void appendBytes(byte[] bs, int start, int len) {
-        while (length + len > elems.length) copy(elems.length * 2);
+        elems = ArrayUtils.ensureCapacity(elems, length + len);
         System.arraycopy(bs, start, elems, length, len);
         length += len;
     }
@@ -91,7 +85,7 @@ public class ByteBuffer {
     /** Append a character as a two byte number.
      */
     public void appendChar(int x) {
-        while (length + 1 >= elems.length) copy(elems.length * 2);
+        elems = ArrayUtils.ensureCapacity(elems, length + 1);
         elems[length  ] = (byte)((x >>  8) & 0xFF);
         elems[length+1] = (byte)((x      ) & 0xFF);
         length = length + 2;
@@ -100,7 +94,7 @@ public class ByteBuffer {
     /** Append an integer as a four byte number.
      */
     public void appendInt(int x) {
-        while (length + 3 >= elems.length) copy(elems.length * 2);
+        elems = ArrayUtils.ensureCapacity(elems, length + 3);
         elems[length  ] = (byte)((x >> 24) & 0xFF);
         elems[length+1] = (byte)((x >> 16) & 0xFF);
         elems[length+2] = (byte)((x >>  8) & 0xFF);

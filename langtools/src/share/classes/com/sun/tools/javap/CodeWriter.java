@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ import com.sun.tools.classfile.Method;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-class CodeWriter extends BasicWriter {
-    static CodeWriter instance(Context context) {
+public class CodeWriter extends BasicWriter {
+    public static CodeWriter instance(Context context) {
         CodeWriter instance = context.get(CodeWriter.class);
         if (instance == null)
             instance = new CodeWriter(context);

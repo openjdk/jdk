@@ -136,4 +136,11 @@ public class BasicJavacTask extends JavacTask {
         throw new IllegalStateException();
     }
 
+    /**
+     * For internal use only.  This method will be
+     * removed without warning.
+     */
+    public void updateContext(Context newContext) {
+        context = newContext;
+    }
 }

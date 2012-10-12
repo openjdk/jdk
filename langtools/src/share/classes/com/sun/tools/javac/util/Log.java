@@ -130,7 +130,7 @@ public class Log extends AbstractLog {
     /**
      * Deferred diagnostics
      */
-    public boolean deferDiagnostics;
+    public Filter<JCDiagnostic> deferredDiagFilter;
     public Queue<JCDiagnostic> deferredDiagnostics = new ListBuffer<JCDiagnostic>();
 
     /** Construct a log with given I/O redirections.
@@ -450,7 +450,7 @@ public class Log extends AbstractLog {
 
     /** Report selected deferred diagnostics, and clear the deferDiagnostics flag. */
     public void reportDeferredDiagnostics(Set<JCDiagnostic.Kind> kinds) {
-        deferDiagnostics = false;
+        deferredDiagFilter = null;
         JCDiagnostic d;
         while ((d = deferredDiagnostics.poll()) != null) {
             if (kinds.contains(d.getKind()))
@@ -464,7 +464,7 @@ public class Log extends AbstractLog {
      * reported so far, the diagnostic may be handed off to writeDiagnostic.
      */
     public void report(JCDiagnostic diagnostic) {
-        if (deferDiagnostics) {
+        if (deferredDiagFilter != null && deferredDiagFilter.accepts(diagnostic)) {
             deferredDiagnostics.add(diagnostic);
             return;
         }
@@ -549,6 +549,18 @@ public class Log extends AbstractLog {
         default:
             throw new Error();
         }
+    }
+
+    public void deferAll() {
+        deferredDiagFilter = new Filter<JCDiagnostic>() {
+            public boolean accepts(JCDiagnostic t) {
+                return true;
+            }
+        };
+    }
+
+    public void deferNone() {
+        deferredDiagFilter = null;
     }
 
     /** Find a localized string in the resource bundle.
