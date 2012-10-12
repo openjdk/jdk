@@ -29,6 +29,7 @@
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "compiler/compileLog.hpp"
 
 define_array(ValueSetArray, ValueSet*);
 define_stack(ValueSetList, ValueSetArray);
@@ -54,7 +55,18 @@ class CE_Eliminator: public BlockClosure {
       // substituted some ifops/phis, so resolve the substitution
       SubstitutionResolver sr(_hir);
     }
+
+    CompileLog* log = _hir->compilation()->log();
+    if (log != NULL)
+      log->set_context("optimize name='cee'");
   }
+
+  ~CE_Eliminator() {
+    CompileLog* log = _hir->compilation()->log();
+    if (log != NULL)
+      log->clear_context(); // skip marker if nothing was printed
+  }
+
   int cee_count() const                          { return _cee_count; }
   int ifop_count() const                         { return _ifop_count; }
 
@@ -306,6 +318,15 @@ class BlockMerger: public BlockClosure {
   , _merge_count(0)
   {
     _hir->iterate_preorder(this);
+    CompileLog* log = _hir->compilation()->log();
+    if (log != NULL)
+      log->set_context("optimize name='eliminate_blocks'");
+  }
+
+  ~BlockMerger() {
+    CompileLog* log = _hir->compilation()->log();
+    if (log != NULL)
+      log->clear_context(); // skip marker if nothing was printed
   }
 
   bool try_merge(BlockBegin* block) {
@@ -574,6 +595,15 @@ class NullCheckEliminator: public ValueVisitor {
     , _work_list(new BlockList()) {
     _visitable_instructions = new ValueSet();
     _visitor.set_eliminator(this);
+    CompileLog* log = _opt->ir()->compilation()->log();
+    if (log != NULL)
+      log->set_context("optimize name='null_check_elimination'");
+  }
+
+  ~NullCheckEliminator() {
+    CompileLog* log = _opt->ir()->compilation()->log();
+    if (log != NULL)
+      log->clear_context(); // skip marker if nothing was printed
   }
 
   Optimizer*  opt()                               { return _opt; }

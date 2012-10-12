@@ -274,18 +274,6 @@ public:
   virtual BasicType memory_type() const { return T_INT; }
 };
 
-//------------------------------LoadUI2LNode-----------------------------------
-// Load an unsigned integer into long from memory
-class LoadUI2LNode : public LoadNode {
-public:
-  LoadUI2LNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeLong* t = TypeLong::UINT)
-    : LoadNode(c, mem, adr, at, t) {}
-  virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Op_RegL; }
-  virtual int store_Opcode() const { return Op_StoreL; }
-  virtual BasicType memory_type() const { return T_LONG; }
-};
-
 //------------------------------LoadRangeNode----------------------------------
 // Load an array length from the array
 class LoadRangeNode : public LoadINode {
@@ -437,12 +425,12 @@ public:
 // Load a narrow Klass from an object.
 class LoadNKlassNode : public LoadNNode {
 public:
-  LoadNKlassNode( Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeNarrowOop *tk )
+  LoadNKlassNode( Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeNarrowKlass *tk )
     : LoadNNode(c,mem,adr,at,tk) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegN; }
-  virtual int store_Opcode() const { return Op_StoreN; }
-  virtual BasicType memory_type() const { return T_NARROWOOP; }
+  virtual int store_Opcode() const { return Op_StoreNKlass; }
+  virtual BasicType memory_type() const { return T_NARROWKLASS; }
 
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual Node *Identity( PhaseTransform *phase );
@@ -591,6 +579,15 @@ public:
   StoreNNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val ) : StoreNode(c,mem,adr,at,val) {}
   virtual int Opcode() const;
   virtual BasicType memory_type() const { return T_NARROWOOP; }
+};
+
+//------------------------------StoreNKlassNode--------------------------------------
+// Store narrow klass to memory
+class StoreNKlassNode : public StoreNNode {
+public:
+  StoreNKlassNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val ) : StoreNNode(c,mem,adr,at,val) {}
+  virtual int Opcode() const;
+  virtual BasicType memory_type() const { return T_NARROWKLASS; }
 };
 
 //------------------------------StoreCMNode-----------------------------------

@@ -45,10 +45,6 @@ extern pointer __JvmOffsets;
 
 extern pointer __1cJCodeCacheF_heap_;
 extern pointer __1cIUniverseO_collectedHeap_;
-extern pointer __1cIUniverseL_narrow_oop_;
-#ifdef _LP64
-extern pointer UseCompressedOops;
-#endif
 
 extern pointer __1cHnmethodG__vtbl_;
 extern pointer __1cGMethodG__vtbl_;
@@ -136,8 +132,8 @@ dtrace:helper:ustack:
   copyin_offset(SIZE_oopDesc);
   copyin_offset(SIZE_ConstantPool);
 
-  copyin_offset(OFFSET_NarrowOopStruct_base);
-  copyin_offset(OFFSET_NarrowOopStruct_shift);
+  copyin_offset(OFFSET_NarrowPtrStruct_base);
+  copyin_offset(OFFSET_NarrowPtrStruct_shift);
 
   /*
    * The PC to translate is in arg0.
@@ -157,18 +153,6 @@ dtrace:helper:ustack:
 #endif
 
   this->CodeCache_heap_address = copyin_ptr(&``__1cJCodeCacheF_heap_);
-
-  /* Reading volatile values */
-#ifdef _LP64
-  this->Use_Compressed_Oops  = copyin_uint8(&``UseCompressedOops);
-#else
-  this->Use_Compressed_Oops  = 0;
-#endif
-
-  this->Universe_narrow_oop_base  = copyin_ptr(&``__1cIUniverseL_narrow_oop_ +
-                                               OFFSET_NarrowOopStruct_base);
-  this->Universe_narrow_oop_shift = copyin_int32(&``__1cIUniverseL_narrow_oop_ +
-                                                 OFFSET_NarrowOopStruct_shift);
 
   this->CodeCache_low = copyin_ptr(this->CodeCache_heap_address + 
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);

@@ -66,6 +66,7 @@ class Compilation: public StackObj {
   int _next_block_id;
   AbstractCompiler*  _compiler;
   ciEnv*             _env;
+  CompileLog*        _log;
   ciMethod*          _method;
   int                _osr_bci;
   IR*                _hir;
@@ -123,6 +124,7 @@ class Compilation: public StackObj {
 
   // accessors
   ciEnv* env() const                             { return _env; }
+  CompileLog* log() const                        { return _log; }
   AbstractCompiler* compiler() const             { return _compiler; }
   bool has_exception_handlers() const            { return _has_exception_handlers; }
   bool has_fpu_code() const                      { return _has_fpu_code; }

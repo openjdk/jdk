@@ -1424,6 +1424,11 @@ bool Matcher::narrow_oop_use_complex_address() {
   return true;
 }
 
+bool Matcher::narrow_klass_use_complex_address() {
+  ShouldNotCallThis();
+  return true;
+}
+
 
 // Is it better to copy float constants, or load them directly from memory?
 // Intel can load a float constant from a direct address, requiring no
@@ -1553,9 +1558,6 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
 // Returns true if the high 32 bits of the value is known to be zero.
 bool is_operand_hi32_zero(Node* n) {
   int opc = n->Opcode();
-  if (opc == Op_LoadUI2L) {
-    return true;
-  }
   if (opc == Op_AndL) {
     Node* o2 = n->in(2);
     if (o2->is_Con() && (o2->get_long() & 0xFFFFFFFF00000000LL) == 0LL) {
@@ -6147,8 +6149,8 @@ instruct loadI2L_immI(eRegL dst, memory mem, immI mask, eFlagsReg cr) %{
 %}
 
 // Load Unsigned Integer into Long Register
-instruct loadUI2L(eRegL dst, memory mem, eFlagsReg cr) %{
-  match(Set dst (LoadUI2L mem));
+instruct loadUI2L(eRegL dst, memory mem, immL_32bits mask, eFlagsReg cr) %{
+  match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
   effect(KILL cr);
 
   ins_cost(250);

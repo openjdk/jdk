@@ -550,7 +550,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     // This will likely Split-If, a higher-payoff operation.
     for (DUIterator_Fast kmax, k = phi->fast_outs(kmax); k < kmax; k++) {
       Node* use = phi->fast_out(k);
-      if (use->is_Cmp() || use->is_DecodeN() || use->is_EncodeP())
+      if (use->is_Cmp() || use->is_DecodeNarrowPtr() || use->is_EncodeNarrowPtr())
         cost += ConditionalMoveLimit;
       // Is there a use inside the loop?
       // Note: check only basic types since CMoveP is pinned.
@@ -1006,7 +1006,7 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
             // to fold a StoreP and an AddP together (as part of an
             // address expression) and the AddP and StoreP have
             // different controls.
-            if( !x->is_Load() && !x->is_DecodeN() ) _igvn._worklist.yank(x);
+            if (!x->is_Load() && !x->is_DecodeNarrowPtr()) _igvn._worklist.yank(x);
           }
           _igvn.remove_dead_node(n);
         }
