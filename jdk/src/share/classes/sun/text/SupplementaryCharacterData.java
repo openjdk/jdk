@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,11 @@ package sun.text;
  * RuleBasedBreakIterator and BreakDictionary.
  */
 public final class SupplementaryCharacterData implements Cloneable {
+
+    /**
+     * A token used as a character-category value to identify ignore characters
+     */
+    private static final byte IGNORE = -1;
 
     /**
      * An array for supplementary characters and values.
@@ -78,7 +83,8 @@ public final class SupplementaryCharacterData implements Cloneable {
             } else if (index > (end-1)) {
                 i = k;
             } else {
-                return dataTable[k] & 0xFF;
+                int v = dataTable[k] & 0xFF;
+                return (v == 0xFF) ? IGNORE : v;
             }
         }
     }

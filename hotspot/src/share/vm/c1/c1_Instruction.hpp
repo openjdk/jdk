@@ -102,6 +102,7 @@ class       UnsafePutRaw;
 class     UnsafeObjectOp;
 class       UnsafeGetObject;
 class       UnsafePutObject;
+class         UnsafeGetAndSetObject;
 class       UnsafePrefetch;
 class         UnsafePrefetchRead;
 class         UnsafePrefetchWrite;
@@ -202,6 +203,7 @@ class InstructionVisitor: public StackObj {
   virtual void do_UnsafePutRaw   (UnsafePutRaw*    x) = 0;
   virtual void do_UnsafeGetObject(UnsafeGetObject* x) = 0;
   virtual void do_UnsafePutObject(UnsafePutObject* x) = 0;
+  virtual void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) = 0;
   virtual void do_UnsafePrefetchRead (UnsafePrefetchRead*  x) = 0;
   virtual void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) = 0;
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
@@ -2273,6 +2275,27 @@ LEAF(UnsafePutObject, UnsafeObjectOp)
                                                    f->visit(&_value); }
 };
 
+LEAF(UnsafeGetAndSetObject, UnsafeObjectOp)
+ private:
+  Value _value;                                  // Value to be stored
+  bool  _is_add;
+ public:
+  UnsafeGetAndSetObject(BasicType basic_type, Value object, Value offset, Value value, bool is_add)
+  : UnsafeObjectOp(basic_type, object, offset, false, false)
+    , _value(value)
+    , _is_add(is_add)
+  {
+    ASSERT_VALUES
+  }
+
+  // accessors
+  bool is_add() const                            { return _is_add; }
+  Value value()                                  { return _value; }
+
+  // generic
+  virtual void input_values_do(ValueVisitor* f)   { UnsafeObjectOp::input_values_do(f);
+                                                   f->visit(&_value); }
+};
 
 BASE(UnsafePrefetch, UnsafeObjectOp)
  public:

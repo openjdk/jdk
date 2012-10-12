@@ -918,9 +918,6 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @param  t
      *         the Thread whose start method was invoked
-     *
-     * @param  failed
-     *         true if the thread could not be started successfully
      */
     void threadStartFailed(Thread t) {
         synchronized(this) {

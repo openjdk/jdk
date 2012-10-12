@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,25 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
         return exitTimer.getInitialDelay();
     }
 
+    // Returns GraphicsConfiguration instance that toFind belongs to or null
+    // if drawing point is set to a point beyond visible screen area (e.g.
+    // Point(20000, 20000))
+    private GraphicsConfiguration getDrawingGC(Point toFind) {
+        GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice devices[] = env.getScreenDevices();
+        for (GraphicsDevice device : devices) {
+            GraphicsConfiguration configs[] = device.getConfigurations();
+            for (GraphicsConfiguration config : configs) {
+                Rectangle rect = config.getBounds();
+                if (rect.contains(toFind)) {
+                    return config;
+                }
+            }
+        }
+
+        return null;
+    }
+
     void showTipWindow() {
         if(insideComponent == null || !insideComponent.isShowing())
             return;
@@ -231,9 +250,25 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
         if (enabled) {
             Dimension size;
             Point screenLocation = insideComponent.getLocationOnScreen();
-            Point location = new Point();
-            GraphicsConfiguration gc;
-            gc = insideComponent.getGraphicsConfiguration();
+            Point location;
+
+            Point toFind;
+            if (preferredLocation != null) {
+                toFind = new Point(screenLocation.x + preferredLocation.x,
+                        screenLocation.y + preferredLocation.y);
+            } else {
+                toFind = mouseEvent.getLocationOnScreen();
+            }
+
+            GraphicsConfiguration gc = getDrawingGC(toFind);
+            if (gc == null) {
+                toFind = mouseEvent.getLocationOnScreen();
+                gc = getDrawingGC(toFind);
+                if (gc == null) {
+                    gc = insideComponent.getGraphicsConfiguration();
+                }
+            }
+
             Rectangle sBounds = gc.getBounds();
             Insets screenInsets = Toolkit.getDefaultToolkit()
                                              .getScreenInsets(gc);
@@ -253,14 +288,13 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
             size = tip.getPreferredSize();
 
             if(preferredLocation != null) {
-                location.x = screenLocation.x + preferredLocation.x;
-                location.y = screenLocation.y + preferredLocation.y;
+                location = toFind;
         if (!leftToRight) {
             location.x -= size.width;
         }
             } else {
-                location.x = screenLocation.x + mouseEvent.getX();
-                location.y = screenLocation.y + mouseEvent.getY() + 20;
+                location = new Point(screenLocation.x + mouseEvent.getX(),
+                        screenLocation.y + mouseEvent.getY() + 20);
         if (!leftToRight) {
             if(location.x - size.width>=0) {
                 location.x -= size.width;

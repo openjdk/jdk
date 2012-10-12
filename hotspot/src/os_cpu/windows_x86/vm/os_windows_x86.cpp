@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,6 @@
 #include "thread_windows.inline.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 
 # include "unwind_windows_x86.hpp"
 #undef REG_SP
@@ -219,7 +213,7 @@ bool os::register_code_area(char *low, char *high) {
   return true;
 }
 
-void os::initialize_thread() {
+void os::initialize_thread(Thread* thr) {
 // Nothing to do.
 }
 

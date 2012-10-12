@@ -773,6 +773,11 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
       throw_op(op->in_opr1(), op->in_opr2(), op->info());
       break;
 
+    case lir_xadd:
+    case lir_xchg:
+      atomic_op(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr());
+      break;
+
     default:
       Unimplemented();
       break;

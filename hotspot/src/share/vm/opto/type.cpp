@@ -57,6 +57,7 @@ Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_LONG,       "long:",         false, Op_RegL,              relocInfo::none          },  // Long
   { Half,            T_VOID,       "half",          false, 0,                    relocInfo::none          },  // Half
   { Bad,             T_NARROWOOP,  "narrowoop:",    false, Op_RegN,              relocInfo::none          },  // NarrowOop
+  { Bad,             T_NARROWKLASS,"narrowklass:",  false, Op_RegN,              relocInfo::none          },  // NarrowKlass
   { Bad,             T_ILLEGAL,    "tuple:",        false, Node::NotAMachineReg, relocInfo::none          },  // Tuple
   { Bad,             T_ARRAY,      "array:",        false, Node::NotAMachineReg, relocInfo::none          },  // Array
 
@@ -332,6 +333,8 @@ void Type::Initialize_shared(Compile* current) {
   TypeNarrowOop::NULL_PTR = TypeNarrowOop::make( TypePtr::NULL_PTR );
   TypeNarrowOop::BOTTOM   = TypeNarrowOop::make( TypeInstPtr::BOTTOM );
 
+  TypeNarrowKlass::NULL_PTR = TypeNarrowKlass::make( TypePtr::NULL_PTR );
+
   mreg2type[Op_Node] = Type::BOTTOM;
   mreg2type[Op_Set ] = 0;
   mreg2type[Op_RegN] = TypeNarrowOop::BOTTOM;
@@ -395,34 +398,36 @@ void Type::Initialize_shared(Compile* current) {
   longpair[1] = TypeLong::LONG;
   TypeTuple::LONG_PAIR = TypeTuple::make(2, longpair);
 
-  _const_basic_type[T_NARROWOOP] = TypeNarrowOop::BOTTOM;
-  _const_basic_type[T_BOOLEAN] = TypeInt::BOOL;
-  _const_basic_type[T_CHAR]    = TypeInt::CHAR;
-  _const_basic_type[T_BYTE]    = TypeInt::BYTE;
-  _const_basic_type[T_SHORT]   = TypeInt::SHORT;
-  _const_basic_type[T_INT]     = TypeInt::INT;
-  _const_basic_type[T_LONG]    = TypeLong::LONG;
-  _const_basic_type[T_FLOAT]   = Type::FLOAT;
-  _const_basic_type[T_DOUBLE]  = Type::DOUBLE;
-  _const_basic_type[T_OBJECT]  = TypeInstPtr::BOTTOM;
-  _const_basic_type[T_ARRAY]   = TypeInstPtr::BOTTOM; // there is no separate bottom for arrays
-  _const_basic_type[T_VOID]    = TypePtr::NULL_PTR;   // reflection represents void this way
-  _const_basic_type[T_ADDRESS] = TypeRawPtr::BOTTOM;  // both interpreter return addresses & random raw ptrs
-  _const_basic_type[T_CONFLICT]= Type::BOTTOM;        // why not?
+  _const_basic_type[T_NARROWOOP]   = TypeNarrowOop::BOTTOM;
+  _const_basic_type[T_NARROWKLASS] = Type::BOTTOM;
+  _const_basic_type[T_BOOLEAN]     = TypeInt::BOOL;
+  _const_basic_type[T_CHAR]        = TypeInt::CHAR;
+  _const_basic_type[T_BYTE]        = TypeInt::BYTE;
+  _const_basic_type[T_SHORT]       = TypeInt::SHORT;
+  _const_basic_type[T_INT]         = TypeInt::INT;
+  _const_basic_type[T_LONG]        = TypeLong::LONG;
+  _const_basic_type[T_FLOAT]       = Type::FLOAT;
+  _const_basic_type[T_DOUBLE]      = Type::DOUBLE;
+  _const_basic_type[T_OBJECT]      = TypeInstPtr::BOTTOM;
+  _const_basic_type[T_ARRAY]       = TypeInstPtr::BOTTOM; // there is no separate bottom for arrays
+  _const_basic_type[T_VOID]        = TypePtr::NULL_PTR;   // reflection represents void this way
+  _const_basic_type[T_ADDRESS]     = TypeRawPtr::BOTTOM;  // both interpreter return addresses & random raw ptrs
+  _const_basic_type[T_CONFLICT]    = Type::BOTTOM;        // why not?
 
-  _zero_type[T_NARROWOOP] = TypeNarrowOop::NULL_PTR;
-  _zero_type[T_BOOLEAN] = TypeInt::ZERO;     // false == 0
-  _zero_type[T_CHAR]    = TypeInt::ZERO;     // '\0' == 0
-  _zero_type[T_BYTE]    = TypeInt::ZERO;     // 0x00 == 0
-  _zero_type[T_SHORT]   = TypeInt::ZERO;     // 0x0000 == 0
-  _zero_type[T_INT]     = TypeInt::ZERO;
-  _zero_type[T_LONG]    = TypeLong::ZERO;
-  _zero_type[T_FLOAT]   = TypeF::ZERO;
-  _zero_type[T_DOUBLE]  = TypeD::ZERO;
-  _zero_type[T_OBJECT]  = TypePtr::NULL_PTR;
-  _zero_type[T_ARRAY]   = TypePtr::NULL_PTR; // null array is null oop
-  _zero_type[T_ADDRESS] = TypePtr::NULL_PTR; // raw pointers use the same null
-  _zero_type[T_VOID]    = Type::TOP;         // the only void value is no value at all
+  _zero_type[T_NARROWOOP]   = TypeNarrowOop::NULL_PTR;
+  _zero_type[T_NARROWKLASS] = TypeNarrowKlass::NULL_PTR;
+  _zero_type[T_BOOLEAN]     = TypeInt::ZERO;     // false == 0
+  _zero_type[T_CHAR]        = TypeInt::ZERO;     // '\0' == 0
+  _zero_type[T_BYTE]        = TypeInt::ZERO;     // 0x00 == 0
+  _zero_type[T_SHORT]       = TypeInt::ZERO;     // 0x0000 == 0
+  _zero_type[T_INT]         = TypeInt::ZERO;
+  _zero_type[T_LONG]        = TypeLong::ZERO;
+  _zero_type[T_FLOAT]       = TypeF::ZERO;
+  _zero_type[T_DOUBLE]      = TypeD::ZERO;
+  _zero_type[T_OBJECT]      = TypePtr::NULL_PTR;
+  _zero_type[T_ARRAY]       = TypePtr::NULL_PTR; // null array is null oop
+  _zero_type[T_ADDRESS]     = TypePtr::NULL_PTR; // raw pointers use the same null
+  _zero_type[T_VOID]        = Type::TOP;         // the only void value is no value at all
 
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= NULL;
@@ -563,9 +568,14 @@ const Type *Type::meet( const Type *t ) const {
     const Type* result = make_ptr()->meet(t->make_ptr());
     return result->make_narrowoop();
   }
+  if (isa_narrowklass() && t->isa_narrowklass()) {
+    const Type* result = make_ptr()->meet(t->make_ptr());
+    return result->make_narrowklass();
+  }
 
   const Type *mt = xmeet(t);
   if (isa_narrowoop() || t->isa_narrowoop()) return mt;
+  if (isa_narrowklass() || t->isa_narrowklass()) return mt;
 #ifdef ASSERT
   assert( mt == t->xmeet(this), "meet not commutative" );
   const Type* dual_join = mt->_dual;
@@ -635,6 +645,9 @@ const Type *Type::xmeet( const Type *t ) const {
   case NarrowOop:
     return t->xmeet(this);
 
+  case NarrowKlass:
+    return t->xmeet(this);
+
   case Bad:                     // Type check
   default:                      // Bogus type not in lattice
     typerr(t);
@@ -693,6 +706,7 @@ const Type::TYPES Type::dual_type[Type::lastype] = {
   Bad,          // Long - handled in v-call
   Half,         // Half
   Bad,          // NarrowOop - handled in v-call
+  Bad,          // NarrowKlass - handled in v-call
 
   Bad,          // Tuple - handled in v-call
   Bad,          // Array - handled in v-call
@@ -756,6 +770,8 @@ void Type::dump_on(outputStream *st) const {
   dump2(d,1, st);
   if (is_ptr_to_narrowoop()) {
     st->print(" [narrow]");
+  } else if (is_ptr_to_narrowklass()) {
+    st->print(" [narrowklass]");
   }
 }
 #endif
@@ -838,6 +854,7 @@ const Type *TypeF::xmeet( const Type *t ) const {
   case MetadataPtr:
   case KlassPtr:
   case NarrowOop:
+  case NarrowKlass:
   case Int:
   case Long:
   case DoubleTop:
@@ -955,6 +972,7 @@ const Type *TypeD::xmeet( const Type *t ) const {
   case MetadataPtr:
   case KlassPtr:
   case NarrowOop:
+  case NarrowKlass:
   case Int:
   case Long:
   case FloatTop:
@@ -1109,6 +1127,7 @@ const Type *TypeInt::xmeet( const Type *t ) const {
   case MetadataPtr:
   case KlassPtr:
   case NarrowOop:
+  case NarrowKlass:
   case Long:
   case FloatTop:
   case FloatCon:
@@ -1366,6 +1385,7 @@ const Type *TypeLong::xmeet( const Type *t ) const {
   case MetadataPtr:
   case KlassPtr:
   case NarrowOop:
+  case NarrowKlass:
   case Int:
   case FloatTop:
   case FloatCon:
@@ -2096,6 +2116,7 @@ const Type *TypePtr::xmeet( const Type *t ) const {
   case DoubleCon:
   case DoubleBot:
   case NarrowOop:
+  case NarrowKlass:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:
@@ -2350,17 +2371,18 @@ TypeOopPtr::TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int 
     _const_oop(o), _klass(k),
     _klass_is_exact(xk),
     _is_ptr_to_narrowoop(false),
+    _is_ptr_to_narrowklass(false),
     _instance_id(instance_id) {
 #ifdef _LP64
-  if (UseCompressedOops && _offset != 0) {
+  if (_offset != 0) {
     if (_offset == oopDesc::klass_offset_in_bytes()) {
-      _is_ptr_to_narrowoop = UseCompressedKlassPointers;
+      _is_ptr_to_narrowklass = UseCompressedKlassPointers;
     } else if (klass() == NULL) {
       // Array with unknown body type
       assert(this->isa_aryptr(), "only arrays without klass");
-      _is_ptr_to_narrowoop = true;
+      _is_ptr_to_narrowoop = UseCompressedOops;
     } else if (this->isa_aryptr()) {
-      _is_ptr_to_narrowoop = (klass()->is_obj_array_klass() &&
+      _is_ptr_to_narrowoop = (UseCompressedOops && klass()->is_obj_array_klass() &&
                              _offset != arrayOopDesc::length_offset_in_bytes());
     } else if (klass()->is_instance_klass()) {
       ciInstanceKlass* ik = klass()->as_instance_klass();
@@ -2369,7 +2391,7 @@ TypeOopPtr::TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int 
         // Perm objects don't use compressed references
       } else if (_offset == OffsetBot || _offset == OffsetTop) {
         // unsafe access
-        _is_ptr_to_narrowoop = true;
+        _is_ptr_to_narrowoop = UseCompressedOops;
       } else { // exclude unsafe ops
         assert(this->isa_instptr(), "must be an instance ptr.");
 
@@ -2387,22 +2409,22 @@ TypeOopPtr::TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int 
           ciField* field = k->get_field_by_offset(_offset, true);
           assert(field != NULL, "missing field");
           BasicType basic_elem_type = field->layout_type();
-          _is_ptr_to_narrowoop = (basic_elem_type == T_OBJECT ||
-                                  basic_elem_type == T_ARRAY);
+          _is_ptr_to_narrowoop = UseCompressedOops && (basic_elem_type == T_OBJECT ||
+                                                       basic_elem_type == T_ARRAY);
         } else {
           // Instance fields which contains a compressed oop references.
           field = ik->get_field_by_offset(_offset, false);
           if (field != NULL) {
             BasicType basic_elem_type = field->layout_type();
-            _is_ptr_to_narrowoop = (basic_elem_type == T_OBJECT ||
-                                    basic_elem_type == T_ARRAY);
+            _is_ptr_to_narrowoop = UseCompressedOops && (basic_elem_type == T_OBJECT ||
+                                                         basic_elem_type == T_ARRAY);
           } else if (klass()->equals(ciEnv::current()->Object_klass())) {
             // Compile::find_alias_type() cast exactness on all types to verify
             // that it does not affect alias type.
-            _is_ptr_to_narrowoop = true;
+            _is_ptr_to_narrowoop = UseCompressedOops;
           } else {
             // Type for the copy start in LibraryCallKit::inline_native_clone().
-            _is_ptr_to_narrowoop = true;
+            _is_ptr_to_narrowoop = UseCompressedOops;
           }
         }
       }
@@ -2475,6 +2497,7 @@ const Type *TypeOopPtr::xmeet( const Type *t ) const {
   case DoubleCon:
   case DoubleBot:
   case NarrowOop:
+  case NarrowKlass:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:
@@ -2925,6 +2948,7 @@ const Type *TypeInstPtr::xmeet( const Type *t ) const {
   case DoubleCon:
   case DoubleBot:
   case NarrowOop:
+  case NarrowKlass:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:
@@ -3353,6 +3377,7 @@ static jint max_array_length(BasicType etype) {
     case T_NARROWOOP:
       etype = T_OBJECT;
       break;
+    case T_NARROWKLASS:
     case T_CONFLICT:
     case T_ILLEGAL:
     case T_VOID:
@@ -3425,6 +3450,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
   case DoubleCon:
   case DoubleBot:
   case NarrowOop:
+  case NarrowKlass:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:
@@ -3671,23 +3697,27 @@ const TypePtr *TypeAryPtr::add_offset( intptr_t offset ) const {
 
 
 //=============================================================================
-const TypeNarrowOop *TypeNarrowOop::BOTTOM;
-const TypeNarrowOop *TypeNarrowOop::NULL_PTR;
-
-
-const TypeNarrowOop* TypeNarrowOop::make(const TypePtr* type) {
-  return (const TypeNarrowOop*)(new TypeNarrowOop(type))->hashcons();
-}
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeNarrowOop::hash(void) const {
+int TypeNarrowPtr::hash(void) const {
   return _ptrtype->hash() + 7;
 }
 
+bool TypeNarrowPtr::singleton(void) const {    // TRUE if type is a singleton
+  return _ptrtype->singleton();
+}
 
-bool TypeNarrowOop::eq( const Type *t ) const {
-  const TypeNarrowOop* tc = t->isa_narrowoop();
+bool TypeNarrowPtr::empty(void) const {
+  return _ptrtype->empty();
+}
+
+intptr_t TypeNarrowPtr::get_con() const {
+  return _ptrtype->get_con();
+}
+
+bool TypeNarrowPtr::eq( const Type *t ) const {
+  const TypeNarrowPtr* tc = isa_same_narrowptr(t);
   if (tc != NULL) {
     if (_ptrtype->base() != tc->_ptrtype->base()) {
       return false;
@@ -3697,22 +3727,46 @@ bool TypeNarrowOop::eq( const Type *t ) const {
   return false;
 }
 
-bool TypeNarrowOop::singleton(void) const {    // TRUE if type is a singleton
-  return _ptrtype->singleton();
+const Type *TypeNarrowPtr::xdual() const {    // Compute dual right now.
+  const TypePtr* odual = _ptrtype->dual()->is_ptr();
+  return make_same_narrowptr(odual);
 }
 
-bool TypeNarrowOop::empty(void) const {
-  return _ptrtype->empty();
+
+const Type *TypeNarrowPtr::filter( const Type *kills ) const {
+  if (isa_same_narrowptr(kills)) {
+    const Type* ft =_ptrtype->filter(is_same_narrowptr(kills)->_ptrtype);
+    if (ft->empty())
+      return Type::TOP;           // Canonical empty value
+    if (ft->isa_ptr()) {
+      return make_hash_same_narrowptr(ft->isa_ptr());
+    }
+    return ft;
+  } else if (kills->isa_ptr()) {
+    const Type* ft = _ptrtype->join(kills);
+    if (ft->empty())
+      return Type::TOP;           // Canonical empty value
+    return ft;
+  } else {
+    return Type::TOP;
+  }
 }
 
 //------------------------------xmeet------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeNarrowOop::xmeet( const Type *t ) const {
+const Type *TypeNarrowPtr::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
   if( this == t ) return this;  // Meeting same type-rep?
 
+  if (t->base() == base()) {
+    const Type* result = _ptrtype->xmeet(t->make_ptr());
+    if (result->isa_ptr()) {
+      return make_hash_same_narrowptr(result->is_ptr());
+    }
+    return result;
+  }
 
-  // Current "this->_base" is OopPtr
+  // Current "this->_base" is NarrowKlass or NarrowOop
   switch (t->base()) {          // switch on original type
 
   case Int:                     // Mixing ints & oops happens when javac
@@ -3730,19 +3784,13 @@ const Type *TypeNarrowOop::xmeet( const Type *t ) const {
   case AryPtr:
   case MetadataPtr:
   case KlassPtr:
+  case NarrowOop:
+  case NarrowKlass:
 
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:
     return this;
-
-  case NarrowOop: {
-    const Type* result = _ptrtype->xmeet(t->make_ptr());
-    if (result->isa_ptr()) {
-      return TypeNarrowOop::make(result->is_ptr());
-    }
-    return result;
-  }
 
   default:                      // All else is a mistake
     typerr(t);
@@ -3752,42 +3800,40 @@ const Type *TypeNarrowOop::xmeet( const Type *t ) const {
   return this;
 }
 
-const Type *TypeNarrowOop::xdual() const {    // Compute dual right now.
-  const TypePtr* odual = _ptrtype->dual()->is_ptr();
-  return new TypeNarrowOop(odual);
-}
-
-const Type *TypeNarrowOop::filter( const Type *kills ) const {
-  if (kills->isa_narrowoop()) {
-    const Type* ft =_ptrtype->filter(kills->is_narrowoop()->_ptrtype);
-    if (ft->empty())
-      return Type::TOP;           // Canonical empty value
-    if (ft->isa_ptr()) {
-      return make(ft->isa_ptr());
-    }
-    return ft;
-  } else if (kills->isa_ptr()) {
-    const Type* ft = _ptrtype->join(kills);
-    if (ft->empty())
-      return Type::TOP;           // Canonical empty value
-    return ft;
-  } else {
-    return Type::TOP;
-  }
-}
-
-
-intptr_t TypeNarrowOop::get_con() const {
-  return _ptrtype->get_con();
-}
-
 #ifndef PRODUCT
-void TypeNarrowOop::dump2( Dict & d, uint depth, outputStream *st ) const {
-  st->print("narrowoop: ");
+void TypeNarrowPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
   _ptrtype->dump2(d, depth, st);
 }
 #endif
 
+const TypeNarrowOop *TypeNarrowOop::BOTTOM;
+const TypeNarrowOop *TypeNarrowOop::NULL_PTR;
+
+
+const TypeNarrowOop* TypeNarrowOop::make(const TypePtr* type) {
+  return (const TypeNarrowOop*)(new TypeNarrowOop(type))->hashcons();
+}
+
+
+#ifndef PRODUCT
+void TypeNarrowOop::dump2( Dict & d, uint depth, outputStream *st ) const {
+  st->print("narrowoop: ");
+  TypeNarrowPtr::dump2(d, depth, st);
+}
+#endif
+
+const TypeNarrowKlass *TypeNarrowKlass::NULL_PTR;
+
+const TypeNarrowKlass* TypeNarrowKlass::make(const TypePtr* type) {
+  return (const TypeNarrowKlass*)(new TypeNarrowKlass(type))->hashcons();
+}
+
+#ifndef PRODUCT
+void TypeNarrowKlass::dump2( Dict & d, uint depth, outputStream *st ) const {
+  st->print("narrowklass: ");
+  TypeNarrowPtr::dump2(d, depth, st);
+}
+#endif
 
 
 //------------------------------eq---------------------------------------------
@@ -3878,6 +3924,7 @@ const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
   case DoubleCon:
   case DoubleBot:
   case NarrowOop:
+  case NarrowKlass:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:
@@ -4169,6 +4216,7 @@ const Type    *TypeKlassPtr::xmeet( const Type *t ) const {
   case DoubleCon:
   case DoubleBot:
   case NarrowOop:
+  case NarrowKlass:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   case Top:

@@ -769,14 +769,14 @@ static netif *enumInterfaces(JNIEnv *env) {
         return NULL;
     }
 
-    /* return partial list if exception occure in the middle of process ???*/
+    /* return partial list if an exception occurs in the middle of process ???*/
 
     /*
      * If IPv6 is available then enumerate IPv6 addresses.
      */
 #ifdef AF_INET6
 
-        /* User can disable ipv6 expicitly by -Djava.net.preferIPv4Stack=true,
+        /* User can disable ipv6 explicitly by -Djava.net.preferIPv4Stack=true,
          * so we have to call ipv6_available()
          */
         if (ipv6_available()) {
@@ -887,7 +887,7 @@ netif *addif(JNIEnv *env, int sock, const char * if_name, netif *ifs, struct soc
     addrP->next = 0;
     if (family == AF_INET) {
       /*
-       * Deal with brodcast addr & subnet mask
+       * Deal with broadcast addr & subnet mask
        */
        struct sockaddr * brdcast_to = (struct sockaddr *) ((char *) addrP + sizeof(netaddr) + addr_size);
        addrP->brdcast = getBroadcast(env, sock, name,  brdcast_to );
@@ -898,7 +898,7 @@ netif *addif(JNIEnv *env, int sock, const char * if_name, netif *ifs, struct soc
      }
 
     /**
-     * Deal with virtual interface with colon notaion e.g. eth0:1
+     * Deal with virtual interface with colon notation e.g. eth0:1
      */
     name_colonP = strchr(name, ':');
     if (name_colonP != NULL) {
@@ -1327,13 +1327,13 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname){
    }
 
      /**
-      * Solaris requires that we have IPv6 socket to query an
-      * interface without IPv4 address - check it here
-      * POSIX 1 require the kernell to return ENOTTY if the call is
-      * unappropriate for device e.g. NETMASK for device having IPv6
-      * only address but not all devices follows the standart so
-      * fallback on any error.  It's not an ecology friendly but more
-      * reliable.
+      * Solaris requires that we have an IPv6 socket to query an
+      * interface without an IPv4 address - check it here.
+      * POSIX 1 require the kernel to return ENOTTY if the call is
+      * inappropriate for a device e.g. the NETMASK for a device having IPv6
+      * only address but not all devices follow the standard so
+      * fall back on any error. It's not an ecologically friendly gesture
+      * but more reliable.
       */
 
     if (! alreadyV6 ){
@@ -1359,7 +1359,7 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname){
 
 /*
  * Enumerates and returns all IPv4 interfaces
- * (linux verison)
+ * (linux verision)
  */
 
 static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
