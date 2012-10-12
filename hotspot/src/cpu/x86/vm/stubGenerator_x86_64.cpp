@@ -2604,7 +2604,7 @@ class StubGenerator: public StubCodeGenerator {
     arraycopy_range_checks(src, src_pos, dst, dst_pos, r11_length,
                            r10, L_failed);
 
-    // typeArrayKlass
+    // TypeArrayKlass
     //
     // src_addr = (src + array_header_in_bytes()) + (src_pos << log2elemsize);
     // dst_addr = (dst + array_header_in_bytes()) + (dst_pos << log2elemsize);
@@ -2670,7 +2670,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movl2ptr(count, r11_length); // length
     __ jump(RuntimeAddress(long_copy_entry));
 
-    // objArrayKlass
+    // ObjArrayKlass
   __ BIND(L_objArray);
     // live at this point:  r10_src_klass, r11_length, src[_pos], dst[_pos]
 
@@ -2723,8 +2723,8 @@ class StubGenerator: public StubCodeGenerator {
       assert_clean_int(sco_temp, rax);
       generate_type_check(r10_src_klass, sco_temp, r11_dst_klass, L_plain_copy);
 
-      // Fetch destination element klass from the objArrayKlass header.
-      int ek_offset = in_bytes(objArrayKlass::element_klass_offset());
+      // Fetch destination element klass from the ObjArrayKlass header.
+      int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
       __ movptr(r11_dst_klass, Address(r11_dst_klass, ek_offset));
       __ movl(  sco_temp,      Address(r11_dst_klass, sco_offset));
       assert_clean_int(sco_temp, rax);

@@ -96,6 +96,7 @@ void VM_Version::initialize() {
   UseSSE = 0; // Only on x86 and x64
 
   _supports_cx8 = has_v9();
+  _supports_atomic_getset4 = true; // swap instruction
 
   if (is_niagara()) {
     // Indirect branch is the same cost as direct
@@ -116,6 +117,7 @@ void VM_Version::initialize() {
     // 32-bit oops don't make sense for the 64-bit VM on sparc
     // since the 32-bit VM has the same registers and smaller objects.
     Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
+    Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
 #endif // _LP64
 #ifdef COMPILER2
     // Indirect branch is the same cost as direct
@@ -338,7 +340,11 @@ void VM_Version::revert() {
 
 unsigned int VM_Version::calc_parallel_worker_threads() {
   unsigned int result;
-  if (is_niagara_plus()) {
+  if (is_M_series()) {
+    // for now, use same gc thread calculation for M-series as for niagara-plus
+    // in future, we may want to tweak parameters for nof_parallel_worker_thread
+    result = nof_parallel_worker_threads(5, 16, 8);
+  } else if (is_niagara_plus()) {
     result = nof_parallel_worker_threads(5, 16, 8);
   } else {
     result = nof_parallel_worker_threads(5, 8, 8);

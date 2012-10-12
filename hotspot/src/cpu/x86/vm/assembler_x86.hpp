@@ -1743,6 +1743,12 @@ private:
   void vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
+  // Load/store high 128bit of YMM registers which does not destroy other half.
+  void vinsertf128h(XMMRegister dst, Address src);
+  void vinserti128h(XMMRegister dst, Address src);
+  void vextractf128h(Address dst, XMMRegister src);
+  void vextracti128h(Address dst, XMMRegister src);
+
   // AVX instruction which is used to clear upper 128 bits of YMM registers and
   // to avoid transaction penalty between AVX and SSE states. There is no
   // penalty if legacy SSE instructions are encoded using VEX prefix because
@@ -2076,6 +2082,15 @@ class MacroAssembler: public Assembler {
   void set_narrow_oop(Address dst, jobject obj);
   void cmp_narrow_oop(Register dst, jobject obj);
   void cmp_narrow_oop(Address dst, jobject obj);
+
+  void encode_klass_not_null(Register r);
+  void decode_klass_not_null(Register r);
+  void encode_klass_not_null(Register dst, Register src);
+  void decode_klass_not_null(Register dst, Register src);
+  void set_narrow_klass(Register dst, Klass* k);
+  void set_narrow_klass(Address dst, Klass* k);
+  void cmp_narrow_klass(Register dst, Klass* k);
+  void cmp_narrow_klass(Address dst, Klass* k);
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();

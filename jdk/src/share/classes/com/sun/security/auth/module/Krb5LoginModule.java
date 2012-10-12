@@ -1064,12 +1064,17 @@ public class Krb5LoginModule implements LoginModule {
 
             if (storeKey) {
                 if (encKeys == null) {
-                    if (!privCredSet.contains(ktab)) {
-                        privCredSet.add(ktab);
-                        // Compatibility; also add keys to privCredSet
-                        for (KerberosKey key: ktab.getKeys(kerbClientPrinc)) {
-                            privCredSet.add(new Krb5Util.KeysFromKeyTab(key));
+                    if (ktab != null) {
+                        if (!privCredSet.contains(ktab)) {
+                            privCredSet.add(ktab);
+                            // Compatibility; also add keys to privCredSet
+                            for (KerberosKey key: ktab.getKeys(kerbClientPrinc)) {
+                                privCredSet.add(new Krb5Util.KeysFromKeyTab(key));
+                            }
                         }
+                    } else {
+                        succeeded = false;
+                        throw new LoginException("No key to store");
                     }
                 } else {
                     for (int i = 0; i < kerbKeys.length; i ++) {

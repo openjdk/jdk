@@ -741,6 +741,8 @@ public abstract class $Type$Buffer
     public $Type$Buffer put($Type$Buffer src) {
         if (src == this)
             throw new IllegalArgumentException();
+        if (isReadOnly())
+            throw new ReadOnlyBufferException();
         int n = src.remaining();
         if (n > remaining())
             throw new BufferOverflowException();
@@ -888,6 +890,8 @@ public abstract class $Type$Buffer
      */
     public $Type$Buffer put(String src, int start, int end) {
         checkBounds(start, end - start, src.length());
+        if (isReadOnly())
+            throw new ReadOnlyBufferException();
         if (end - start > remaining())
             throw new BufferOverflowException();
         for (int i = start; i < end; i++)

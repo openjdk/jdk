@@ -221,7 +221,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * @param date the milliseconds (since January 1, 1970,
      * 00:00:00.000 GMT) at which the time zone offset and daylight
      * saving amount are found
-     * @param offset an array of int where the raw GMT offset
+     * @param offsets an array of int where the raw GMT offset
      * (offset[0]) and daylight saving amount (offset[1]) are stored,
      * or null if those values are not needed. The method assumes that
      * the length of the given array is two or larger.

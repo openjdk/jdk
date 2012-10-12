@@ -22,7 +22,7 @@
  */
 
 // key: compiler.misc.inaccessible.varargs.type
-// key: compiler.err.cant.apply.symbol.1
+// key: compiler.err.cant.apply.symbol
 
 import p1.B;
 

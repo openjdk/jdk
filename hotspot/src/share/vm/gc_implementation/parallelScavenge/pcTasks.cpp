@@ -204,7 +204,7 @@ void StealMarkingTask::do_it(GCTaskManager* manager, uint which) {
   int random_seed = 17;
   do {
     while (ParCompactionManager::steal_objarray(which, &random_seed, task)) {
-      objArrayKlass* const k = (objArrayKlass*)task.obj()->klass();
+      ObjArrayKlass* const k = (ObjArrayKlass*)task.obj()->klass();
       k->oop_follow_contents(cm, task.obj(), task.index());
       cm->follow_marking_stacks();
     }

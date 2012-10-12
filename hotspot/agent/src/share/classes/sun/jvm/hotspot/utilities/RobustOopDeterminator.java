@@ -53,9 +53,8 @@ public class RobustOopDeterminator {
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("oopDesc");
 
-    if (VM.getVM().isCompressedHeadersEnabled()) {
-      // klassField = type.getNarrowOopField("_metadata._compressed_klass");
-      throw new InternalError("unimplemented");
+    if (VM.getVM().isCompressedKlassPointersEnabled()) {
+      klassField = type.getAddressField("_metadata._compressed_klass");
     } else {
       klassField = type.getAddressField("_metadata._klass");
     }
@@ -70,7 +69,11 @@ public class RobustOopDeterminator {
     }
     try {
       // Try to instantiate the Klass
-      Metadata.instantiateWrapperFor(klassField.getValue(oop));
+      if (VM.getVM().isCompressedKlassPointersEnabled()) {
+        Metadata.instantiateWrapperFor(oop.getCompKlassAddressAt(klassField.getOffset()));
+      } else {
+        Metadata.instantiateWrapperFor(klassField.getValue(oop));
+      }
           return true;
         }
     catch (AddressException e) {
