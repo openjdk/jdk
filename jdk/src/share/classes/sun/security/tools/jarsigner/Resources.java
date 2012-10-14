@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
  * questions.
  */
 
-package sun.security.tools;
+package sun.security.tools.jarsigner;
 
 /**
  * <p> This class represents the <code>ResourceBundle</code>
  * for JarSigner.
  *
  */
-public class JarSignerResources extends java.util.ListResourceBundle {
+public class Resources extends java.util.ListResourceBundle {
 
     private static final Object[][] contents = {
 
@@ -227,6 +227,10 @@ public class JarSignerResources extends java.util.ListResourceBundle {
                 "The signer's certificate chain is not validated."},
         {"This.jar.contains.entries.whose.certificate.chain.is.not.validated.",
                  "This jar contains entries whose certificate chain is not validated."},
+        {"Unknown.password.type.", "Unknown password type: "},
+        {"Cannot.find.environment.variable.",
+                "Cannot find environment variable: "},
+        {"Cannot.find.file.", "Cannot find file: "},
     };
 
     /**
@@ -236,6 +240,7 @@ public class JarSignerResources extends java.util.ListResourceBundle {
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */
+    @Override
     public Object[][] getContents() {
         return contents;
     }

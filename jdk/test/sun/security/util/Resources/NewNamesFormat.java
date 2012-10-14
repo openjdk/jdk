@@ -40,7 +40,9 @@ public class NewNamesFormat {
     public static void main(String[] args) throws Exception {
         checkRes("sun.security.util.Resources");
         checkRes("sun.security.util.AuthResources");
-        checkRes("sun.security.tools.JarSignerResources");
+        checkRes("sun.security.tools.jarsigner.Resources");
+        checkRes("sun.security.tools.keytool.Resources");
+        checkRes("sun.security.tools.policytool.Resources");
     }
 
     private static void checkRes(String resName) throws Exception {
