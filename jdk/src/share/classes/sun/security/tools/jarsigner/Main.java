@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.security.tools;
+package sun.security.tools.jarsigner;
 
 import java.io.*;
 import java.util.*;
@@ -53,6 +53,8 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.util.Map.Entry;
+import sun.security.tools.KeyStoreUtil;
+import sun.security.tools.PathList;
 import sun.security.x509.*;
 import sun.security.util.*;
 import sun.misc.BASE64Encoder;
@@ -74,12 +76,12 @@ import sun.misc.BASE64Encoder;
  * @author Jan Luehe
  */
 
-public class JarSigner {
+public class Main {
 
     // for i18n
     private static final java.util.ResourceBundle rb =
         java.util.ResourceBundle.getBundle
-        ("sun.security.tools.JarSignerResources");
+        ("sun.security.tools.jarsigner.Resources");
     private static final Collator collator = Collator.getInstance();
     static {
         // this is for case insensitive string comparisions
@@ -101,7 +103,7 @@ public class JarSigner {
     // Attention:
     // This is the entry that get launched by the security tool jarsigner.
     public static void main(String args[]) throws Exception {
-        JarSigner js = new JarSigner();
+        Main js = new Main();
         js.run(args);
     }
 
@@ -461,7 +463,7 @@ public class JarSigner {
     }
 
     static char[] getPass(String modifier, String arg) {
-        char[] output = KeyTool.getPassWithModifier(modifier, arg);
+        char[] output = KeyStoreUtil.getPassWithModifier(modifier, arg, rb);
         if (output != null) return output;
         usage();
         return null;    // Useless, usage() already exit
@@ -1579,7 +1581,7 @@ public class JarSigner {
             validator = CertPathValidator.getInstance("PKIX");
             Set<TrustAnchor> tas = new HashSet<>();
             try {
-                KeyStore caks = KeyTool.getCacertsKeyStore();
+                KeyStore caks = KeyStoreUtil.getCacertsKeyStore();
                 if (caks != null) {
                     Enumeration<String> aliases = caks.aliases();
                     while (aliases.hasMoreElements()) {

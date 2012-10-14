@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.security.tools;
+package sun.security.tools.keytool;
 
 import java.io.*;
 import java.security.CodeSigner;
@@ -75,12 +75,14 @@ import javax.crypto.SecretKey;
 
 import sun.misc.BASE64Decoder;
 import sun.security.pkcs.PKCS9Attribute;
+import sun.security.tools.KeyStoreUtil;
+import sun.security.tools.PathList;
 import sun.security.util.DerValue;
 import sun.security.x509.*;
 
 import static java.security.KeyStore.*;
-import static sun.security.tools.KeyTool.Command.*;
-import static sun.security.tools.KeyTool.Option.*;
+import static sun.security.tools.keytool.Main.Command.*;
+import static sun.security.tools.keytool.Main.Option.*;
 
 /**
  * This tool manages keystores.
@@ -94,7 +96,7 @@ import static sun.security.tools.KeyTool.Option.*;
  *
  * @since 1.2
  */
-public final class KeyTool {
+public final class Main {
 
     private boolean debug = false;
     private Command command = null;
@@ -304,7 +306,6 @@ public final class KeyTool {
 
     private static final Class[] PARAM_STRING = { String.class };
 
-    private static final String JKS = "jks";
     private static final String NONE = "NONE";
     private static final String P11KEYSTORE = "PKCS11";
     private static final String P12KEYSTORE = "PKCS12";
@@ -312,17 +313,18 @@ public final class KeyTool {
 
     // for i18n
     private static final java.util.ResourceBundle rb =
-        java.util.ResourceBundle.getBundle("sun.security.util.Resources");
+        java.util.ResourceBundle.getBundle(
+            "sun.security.tools.keytool.Resources");
     private static final Collator collator = Collator.getInstance();
     static {
         // this is for case insensitive string comparisons
         collator.setStrength(Collator.PRIMARY);
     };
 
-    private KeyTool() { }
+    private Main() { }
 
     public static void main(String[] args) throws Exception {
-        KeyTool kt = new KeyTool();
+        Main kt = new Main();
         kt.run(args, System.out);
     }
 
@@ -907,7 +909,7 @@ public final class KeyTool {
         }
 
         if (trustcacerts) {
-            caks = getCacertsKeyStore();
+            caks = KeyStoreUtil.getCacertsKeyStore();
         }
 
         // Perform the specified command
@@ -2076,7 +2078,7 @@ public final class KeyTool {
                 for (GeneralName name: names.names()) {
                     if (name.getType() == GeneralNameInterface.NAME_URI) {
                         URIName uriName = (URIName)name.getName();
-                        for (CRL crl: KeyTool.loadCRLs(uriName.getName())) {
+                        for (CRL crl: loadCRLs(uriName.getName())) {
                             if (crl instanceof X509CRL) {
                                 crls.add((X509CRL)crl);
                             }
@@ -3371,27 +3373,6 @@ public final class KeyTool {
     }
 
     /**
-     * Returns the keystore with the configured CA certificates.
-     */
-    public static KeyStore getCacertsKeyStore()
-        throws Exception
-    {
-        String sep = File.separator;
-        File file = new File(System.getProperty("java.home") + sep
-                             + "lib" + sep + "security" + sep
-                             + "cacerts");
-        if (!file.exists()) {
-            return null;
-        }
-        KeyStore caks = null;
-        try (FileInputStream fis = new FileInputStream(file)) {
-            caks = KeyStore.getInstance(JKS);
-            caks.load(fis, null);
-        }
-        return caks;
-    }
-
-    /**
      * Stores the (leaf) certificates of a keystore in a hashtable.
      * All certs belonging to the same CA are stored in a vector that
      * in turn is stored in the hashtable, keyed by the CA's subject DN
@@ -4056,58 +4037,10 @@ public final class KeyTool {
     }
 
     private char[] getPass(String modifier, String arg) {
-        char[] output = getPassWithModifier(modifier, arg);
+        char[] output = KeyStoreUtil.getPassWithModifier(modifier, arg, rb);
         if (output != null) return output;
         tinyHelp();
         return null;    // Useless, tinyHelp() already exits.
-    }
-
-    // This method also used by JarSigner
-    public static char[] getPassWithModifier(String modifier, String arg) {
-        if (modifier == null) {
-            return arg.toCharArray();
-        } else if (collator.compare(modifier, "env") == 0) {
-            String value = System.getenv(arg);
-            if (value == null) {
-                System.err.println(rb.getString(
-                        "Cannot.find.environment.variable.") + arg);
-                return null;
-            } else {
-                return value.toCharArray();
-            }
-        } else if (collator.compare(modifier, "file") == 0) {
-            try {
-                URL url = null;
-                try {
-                    url = new URL(arg);
-                } catch (java.net.MalformedURLException mue) {
-                    File f = new File(arg);
-                    if (f.exists()) {
-                        url = f.toURI().toURL();
-                    } else {
-                        System.err.println(rb.getString(
-                                "Cannot.find.file.") + arg);
-                        return null;
-                    }
-                }
-                BufferedReader br = new BufferedReader(new InputStreamReader(
-                            url.openStream()));
-                String value = br.readLine();
-                br.close();
-                if (value == null) {
-                    return new char[0];
-                } else {
-                    return value.toCharArray();
-                }
-            } catch (IOException ioe) {
-                System.err.println(ioe);
-                return null;
-            }
-        } else {
-            System.err.println(rb.getString("Unknown.password.type.") +
-                    modifier);
-            return null;
-        }
     }
 }
 

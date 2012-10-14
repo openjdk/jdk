@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,9 @@ class NewResourcesNames {
     static int MAXLEN = 127;
 
     static String[] resources = {
-        "sun/security/tools/JarSignerResources.java",
+        "sun/security/tools/jarsigner/Resources.java",
+        "sun/security/tools/keytool/Resources.java",
+        "sun/security/tools/policytool/Resources.java",
         "sun/security/util/Resources.java",
         "sun/security/util/AuthResources.java",
     };
@@ -94,7 +96,7 @@ class NewResourcesNames {
         //
         // This means a " exists right after getString(. Sometimes you see
         //
-        //      Working on sun/security/tools/KeyTool.java
+        //      Working on sun/security/tools/keytool/Main.java
         //          BAD!! pmatch != match: 212 != 209
         //      Working on sun/security/provider/PolicyFile.java
         //          BAD!! pmatch != match: 14 != 10
@@ -165,7 +167,7 @@ class NewResourcesNames {
 
         Set<String> names = new HashSet<String>();
 
-        String file = "sun/security/tools/KeyTool.java";
+        String file = "sun/security/tools/keytool/Main.java";
         System.err.println("Working on " + file);
         File origFile = new File(file);
         File tmpFile = new File(file + ".tmp");
