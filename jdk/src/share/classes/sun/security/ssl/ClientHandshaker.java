@@ -128,9 +128,8 @@ final class ClientHandshaker extends Handshaker {
      * in the constructor.
      */
     void processMessage(byte type, int messageLen) throws IOException {
-        if (state > type
-                && (type != HandshakeMessage.ht_hello_request
-                    && state != HandshakeMessage.ht_client_hello)) {
+        if (state >= type
+                && (type != HandshakeMessage.ht_hello_request)) {
             throw new SSLProtocolException(
                     "Handshake message sequence violation, " + type);
         }
