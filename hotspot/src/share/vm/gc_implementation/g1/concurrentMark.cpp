@@ -1120,8 +1120,8 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(before)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(/* silent      */ false,
-                     /* option      */ VerifyOption_G1UsePrevMarking);
+    Universe::verify(/* silent */ false,
+                     /* option */ VerifyOption_G1UsePrevMarking);
   }
 
   G1CollectorPolicy* g1p = g1h->g1_policy();
@@ -1159,8 +1159,8 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
       HandleMark hm;  // handle scope
       gclog_or_tty->print(" VerifyDuringGC:(after)");
       Universe::heap()->prepare_for_verify();
-      Universe::verify(/* silent      */ false,
-                       /* option      */ VerifyOption_G1UseNextMarking);
+      Universe::verify(/* silent */ false,
+                       /* option */ VerifyOption_G1UseNextMarking);
     }
     assert(!restart_for_overflow(), "sanity");
   }
@@ -1811,8 +1811,8 @@ void ConcurrentMark::cleanup() {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(before)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(/* silent      */ false,
-                     /* option      */ VerifyOption_G1UsePrevMarking);
+    Universe::verify(/* silent */ false,
+                     /* option */ VerifyOption_G1UsePrevMarking);
   }
 
   G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
@@ -1966,8 +1966,8 @@ void ConcurrentMark::cleanup() {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(after)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(/* silent      */ false,
-                     /* option      */ VerifyOption_G1UsePrevMarking);
+    Universe::verify(/* silent */ false,
+                     /* option */ VerifyOption_G1UsePrevMarking);
   }
 
   g1h->verify_region_sets_optional();

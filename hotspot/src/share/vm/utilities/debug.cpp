@@ -477,7 +477,7 @@ extern "C" void verify() {
   }
   // Ensure Eden top is correct before verification
   Universe::heap()->prepare_for_verify();
-  Universe::verify(true);
+  Universe::verify();
   if (!safe) SafepointSynchronize::set_is_not_at_safepoint();
 }
 
