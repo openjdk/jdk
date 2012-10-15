@@ -150,7 +150,7 @@ final class ServerHandshaker extends Handshaker {
         // In SSLv3 and TLS, messages follow strictly increasing
         // numerical order _except_ for one annoying special case.
         //
-        if ((state > type)
+        if ((state >= type)
                 && (state != HandshakeMessage.ht_client_key_exchange
                     && type != HandshakeMessage.ht_certificate_verify)) {
             throw new SSLProtocolException(
@@ -250,13 +250,15 @@ final class ServerHandshaker extends Handshaker {
         }
 
         //
-        // Move the state machine forward except for that annoying
-        // special case.  This means that clients could send extra
-        // cert verify messages; not a problem so long as all of
-        // them actually check out.
+        // Move state machine forward if the message handling
+        // code didn't already do so
         //
-        if (state < type && type != HandshakeMessage.ht_certificate_verify) {
-            state = type;
+        if (state < type) {
+            if(type == HandshakeMessage.ht_certificate_verify) {
+                state = type + 2;    // an annoying special case
+            } else {
+                state = type;
+            }
         }
     }
 
