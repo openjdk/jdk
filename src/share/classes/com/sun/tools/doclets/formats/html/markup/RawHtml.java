@@ -25,6 +25,9 @@
 
 package com.sun.tools.doclets.formats.html.markup;
 
+import java.io.IOException;
+import java.io.Writer;
+
 import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -87,7 +90,16 @@ public class RawHtml extends Content{
     /**
      * {@inheritDoc}
      */
-    public void write(StringBuilder contentBuilder) {
-        contentBuilder.append(rawHtmlContent);
+    public String toString() {
+        return rawHtmlContent;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean write(Writer out, boolean atNewline) throws IOException {
+        out.write(rawHtmlContent);
+        return rawHtmlContent.endsWith(DocletConstants.NL);
     }
 }

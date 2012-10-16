@@ -25,6 +25,9 @@
 
 package com.sun.tools.doclets.formats.html.markup;
 
+import java.io.IOException;
+import java.io.Writer;
+
 import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -98,7 +101,10 @@ public class StringContent extends Content{
     /**
      * {@inheritDoc}
      */
-    public void write(StringBuilder contentBuilder) {
-        contentBuilder.append(stringContent);
+    @Override
+    public boolean write(Writer out, boolean atNewline) throws IOException {
+        String s = stringContent.toString();
+        out.write(s);
+        return s.endsWith(DocletConstants.NL);
     }
 }

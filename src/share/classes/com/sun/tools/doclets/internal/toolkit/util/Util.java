@@ -650,9 +650,9 @@ public class Util {
             fos = new FileOutputStream(filename);
         }
         if (docencoding == null) {
-            return new OutputStreamWriter(fos);
+            return new BufferedWriter(new OutputStreamWriter(fos));
         } else {
-            return new OutputStreamWriter(fos, docencoding);
+            return new BufferedWriter(new OutputStreamWriter(fos, docencoding));
         }
     }
 

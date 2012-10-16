@@ -153,7 +153,7 @@ public interface AnnotationTypeWriter {
      *
      * @param contentTree content tree that will be printed as a document
      */
-    public void printDocument(Content contentTree);
+    public void printDocument(Content contentTree) throws IOException ;
 
     /**
      * Close the writer.

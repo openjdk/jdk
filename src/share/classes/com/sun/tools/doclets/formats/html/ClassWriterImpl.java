@@ -25,6 +25,7 @@
 
 package com.sun.tools.doclets.formats.html;
 
+import java.io.IOException;
 import java.util.*;
 
 import com.sun.javadoc.*;
@@ -202,7 +203,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
     /**
      * {@inheritDoc}
      */
-    public void printDocument(Content contentTree) {
+    public void printDocument(Content contentTree) throws IOException {
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(classDoc),
                 true, contentTree);
     }

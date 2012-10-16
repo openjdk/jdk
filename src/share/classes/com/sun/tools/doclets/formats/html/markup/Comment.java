@@ -25,6 +25,9 @@
 
 package com.sun.tools.doclets.formats.html.markup;
 
+import java.io.IOException;
+import java.io.Writer;
+
 import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -38,7 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Bhavesh Patel
  */
-public class Comment extends Content{
+public class Comment extends Content {
 
     private String commentText;
 
@@ -85,11 +88,13 @@ public class Comment extends Content{
     /**
      * {@inheritDoc}
      */
-    public void write(StringBuilder contentBuilder) {
-        if (!endsWithNewLine(contentBuilder))
-            contentBuilder.append(DocletConstants.NL);
-        contentBuilder.append("<!-- ");
-        contentBuilder.append(commentText);
-        contentBuilder.append(" -->" + DocletConstants.NL);
+    @Override
+    public boolean write(Writer out, boolean atNewline) throws IOException {
+        if (!atNewline)
+            out.write(DocletConstants.NL);
+        out.write("<!-- ");
+        out.write(commentText);
+        out.write(" -->" + DocletConstants.NL);
+        return true;
     }
 }
