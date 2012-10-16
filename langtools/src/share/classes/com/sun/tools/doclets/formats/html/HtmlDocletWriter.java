@@ -361,7 +361,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param body the body htmltree to be included in the document
      */
     public void printHtmlDocument(String[] metakeywords, boolean includeScript,
-            Content body) {
+            Content body) throws IOException {
         Content htmlDocType = DocType.Transitional();
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
@@ -391,7 +391,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 head, body);
         Content htmlDocument = new HtmlDocument(htmlDocType,
                 htmlComment, htmlTree);
-        print(htmlDocument.toString());
+        htmlDocument.write(this, true);
     }
 
     /**

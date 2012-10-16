@@ -95,7 +95,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * Generate the contants in the "index.html" file. Print the frame details
      * as well as warning if browser is not supporting the Html frames.
      */
-    protected void generateFrameFile() {
+    protected void generateFrameFile() throws IOException {
         Content frameset = getFrameDetails();
         if (configuration.windowtitle.length() > 0) {
             printFramesetDocument(configuration.windowtitle, configuration.notimestamp,

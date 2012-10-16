@@ -266,7 +266,7 @@ public class HtmlWriter extends PrintWriter {
     }
 
     /**
-     * Print the script code to be embeded before the  &lt;/HEAD&gt; tag.
+     * Print the script code to be embedded before the  &lt;/HEAD&gt; tag.
      */
     protected void printWinTitleScript(String winTitle){
         if(winTitle != null && winTitle.length() > 0) {

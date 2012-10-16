@@ -79,7 +79,7 @@ public class HelpWriter extends HtmlDocletWriter {
     /**
      * Generate the help file contents.
      */
-    protected void generateHelpFile() {
+    protected void generateHelpFile() throws IOException {
         String title = configuration.getText("doclet.Window_Help_title");
         Content body = getBody(true, getWindowTitle(title));
         addTop(body);

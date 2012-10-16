@@ -151,7 +151,7 @@ public interface SerializedFormWriter {
      *
      * @param serializedTree the content tree that will be printed
      */
-    public abstract void printDocument(Content serializedTree);
+    public abstract void printDocument(Content serializedTree) throws IOException;
 
     /**
      * Write the serialized form for a given field.

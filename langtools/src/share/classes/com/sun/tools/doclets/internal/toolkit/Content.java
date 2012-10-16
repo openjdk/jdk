@@ -25,6 +25,10 @@
 
 package com.sun.tools.doclets.internal.toolkit;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
@@ -44,10 +48,16 @@ public abstract class Content {
      *
      * @return string representation of the content
      */
+    @Override
     public String toString() {
-        StringBuilder contentBuilder = new StringBuilder();
-        write(contentBuilder);
-        return contentBuilder.toString();
+        StringWriter out = new StringWriter();
+        try {
+            write(out, true);
+        } catch (IOException e) {
+            // cannot happen from StringWriter
+            throw new DocletAbortException();
+        }
+        return out.toString();
     }
 
     /**
@@ -65,10 +75,10 @@ public abstract class Content {
     public abstract void addContent(String stringContent);
 
     /**
-     * Writes content to a StringBuilder.
+     * Writes content to a writer.
      *
      */
-    public abstract void write(StringBuilder contentBuilder);
+    public abstract boolean write(Writer writer, boolean atNewline) throws IOException ;
 
     /**
      * Returns true if the content is empty.
