@@ -3117,7 +3117,7 @@ void unpacker::read_bcs() {
 
 void unpacker::read_bands() {
   byte* rp0 = rp;
-
+  CHECK;
   read_file_header();
   CHECK;
 
@@ -3879,10 +3879,12 @@ void unpacker::dump_options() {
 // packed file and len is the length of the buffer.
 // If null, the callback is used to fill an internal buffer.
 void unpacker::start(void* packptr, size_t len) {
+  CHECK;
   NOT_PRODUCT(debug_u = this);
   if (packptr != null && len != 0) {
     inbytes.set((byte*) packptr, len);
   }
+  CHECK;
   read_bands();
 }
 
