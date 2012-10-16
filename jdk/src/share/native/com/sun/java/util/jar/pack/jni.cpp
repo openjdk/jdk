@@ -127,8 +127,10 @@ static jlong read_input_via_jni(unpacker* self,
 
 JNIEXPORT void JNICALL
 Java_com_sun_java_util_jar_pack_NativeUnpack_initIDs(JNIEnv *env, jclass clazz) {
+#ifndef PRODUCT
   dbg = getenv("DEBUG_ATTACH");
   while( dbg != null) { sleep(10); }
+#endif
   NIclazz = (jclass) env->NewGlobalRef(clazz);
   unpackerPtrFID = env->GetFieldID(clazz, "unpackerPtr", "J");
   currentInstMID = env->GetStaticMethodID(clazz, "currentInstance",
@@ -230,11 +232,14 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getUnusedInput(JNIEnv *env, jobject
 
   // We have fetched all the files.
   // Now swallow up any remaining input.
-  if (uPtr->input_remaining() == 0)
+  if (uPtr->input_remaining() == 0) {
     return null;
-  else
-    return env->NewDirectByteBuffer(uPtr->input_scan(),
-                                    uPtr->input_remaining());
+  } else {
+    bytes remaining_bytes;
+    remaining_bytes.malloc(uPtr->input_remaining());
+    remaining_bytes.copyFrom(uPtr->input_scan(), uPtr->input_remaining());
+    return env->NewDirectByteBuffer(remaining_bytes.ptr, remaining_bytes.len);
+  }
 }
 
 JNIEXPORT jlong JNICALL
