@@ -139,6 +139,6 @@ public interface ConstantsSummaryWriter {
      *
      * @param contentTree content tree which should be printed
      */
-    public abstract void printDocument(Content contentTree);
+    public abstract void printDocument(Content contentTree) throws IOException;
 
 }

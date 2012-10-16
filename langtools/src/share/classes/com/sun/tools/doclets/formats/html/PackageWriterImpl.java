@@ -254,7 +254,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
-    public void printDocument(Content contentTree) {
+    public void printDocument(Content contentTree) throws IOException {
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(packageDoc),
                 true, contentTree);
     }

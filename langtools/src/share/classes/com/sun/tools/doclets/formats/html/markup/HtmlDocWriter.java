@@ -325,7 +325,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param frameset the frameset to be added to the HTML document
      */
     public void printFramesetDocument(String title, boolean noTimeStamp,
-            Content frameset) {
+            Content frameset) throws IOException {
         Content htmlDocType = DocType.Frameset();
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
@@ -345,7 +345,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
                 head, frameset);
         Content htmlDocument = new HtmlDocument(htmlDocType,
                 htmlComment, htmlTree);
-        print(htmlDocument.toString());
+        htmlDocument.write(this, true);
     }
 
     /**

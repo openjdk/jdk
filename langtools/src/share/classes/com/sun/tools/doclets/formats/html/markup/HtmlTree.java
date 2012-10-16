@@ -25,7 +25,10 @@
 
 package com.sun.tools.doclets.formats.html.markup;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
+
 import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -756,35 +759,41 @@ public class HtmlTree extends Content {
     /**
      * {@inheritDoc}
      */
-    public void write(StringBuilder contentBuilder) {
-        if (!isInline() && !endsWithNewLine(contentBuilder))
-            contentBuilder.append(DocletConstants.NL);
+    @Override
+    public boolean write(Writer out, boolean atNewline) throws IOException {
+        if (!isInline() && !atNewline)
+            out.write(DocletConstants.NL);
         String tagString = htmlTag.toString();
-        contentBuilder.append("<");
-        contentBuilder.append(tagString);
+        out.write("<");
+        out.write(tagString);
         Iterator<HtmlAttr> iterator = attrs.keySet().iterator();
         HtmlAttr key;
         String value = "";
         while (iterator.hasNext()) {
             key = iterator.next();
             value = attrs.get(key);
-            contentBuilder.append(" ");
-            contentBuilder.append(key.toString());
+            out.write(" ");
+            out.write(key.toString());
             if (!value.isEmpty()) {
-                contentBuilder.append("=\"");
-                contentBuilder.append(value);
-                contentBuilder.append("\"");
+                out.write("=\"");
+                out.write(value);
+                out.write("\"");
             }
         }
-        contentBuilder.append(">");
+        out.write(">");
+        boolean nl = false;
         for (Content c : content)
-            c.write(contentBuilder);
+            nl = c.write(out, nl);
         if (htmlTag.endTagRequired()) {
-            contentBuilder.append("</");
-            contentBuilder.append(tagString);
-            contentBuilder.append(">");
+            out.write("</");
+            out.write(tagString);
+            out.write(">");
         }
-        if (!isInline())
-            contentBuilder.append(DocletConstants.NL);
+        if (!isInline()) {
+            out.write(DocletConstants.NL);
+            return true;
+        } else {
+            return false;
+        }
     }
 }

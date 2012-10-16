@@ -25,7 +25,10 @@
 
 package com.sun.tools.doclets.formats.html.markup;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
+
 import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -74,7 +77,7 @@ public class HtmlDocument extends Content {
      *
      * @param htmlContent html content to be added
      */
-    public void addContent(Content htmlContent) {
+    public final void addContent(Content htmlContent) {
         if (htmlContent.isValid())
             docContent.add(htmlContent);
     }
@@ -101,8 +104,9 @@ public class HtmlDocument extends Content {
     /**
      * {@inheritDoc}
      */
-    public void write(StringBuilder contentBuilder) {
+    public boolean write(Writer out,  boolean atNewline) throws IOException {
         for (Content c : docContent)
-            c.write(contentBuilder);
+            atNewline = c.write(out, atNewline);
+        return atNewline;
     }
 }
