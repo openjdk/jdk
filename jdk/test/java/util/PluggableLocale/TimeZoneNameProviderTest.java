@@ -45,13 +45,14 @@ public class TimeZoneNameProviderTest extends ProviderTest {
 
     void test1() {
         Locale[] available = Locale.getAvailableLocales();
+        List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getTimeZoneNameProvider().getAvailableLocales());
         List<Locale> providerLocales = Arrays.asList(tznp.getAvailableLocales());
         String[] ids = TimeZone.getAvailableIDs();
 
         for (Locale target: available) {
             // pure JRE implementation
             OpenListResourceBundle rb = LocaleProviderAdapter.forJRE().getLocaleData().getTimeZoneNames(target);
-            boolean jreHasBundle = rb.getLocale().equals(target);
+            boolean jreSupportsTarget = jreimplloc.contains(target);
 
             for (String id: ids) {
                 // the time zone
@@ -59,7 +60,7 @@ public class TimeZoneNameProviderTest extends ProviderTest {
 
                 // JRE string array for the id
                 String[] jrearray = null;
-                if (jreHasBundle) {
+                if (jreSupportsTarget) {
                     try {
                         jrearray = rb.getStringArray(id);
                     } catch (MissingResourceException mre) {}
@@ -75,14 +76,14 @@ public class TimeZoneNameProviderTest extends ProviderTest {
                         providersname = tznp.getDisplayName(id, i>=3, i%2, target);
                     }
 
-                    // JRE's name (if any)
+                    // JRE's name
                     String jresname = null;
                     if (jrearray != null) {
                         jresname = jrearray[i];
                     }
 
                     checkValidity(target, jresname, providersname, name,
-                        jreHasBundle && rb.handleGetKeys().contains(id));
+                        jreSupportsTarget && jresname != null);
                 }
             }
         }

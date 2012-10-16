@@ -50,12 +50,13 @@ public class CurrencyNameProviderTest extends ProviderTest {
         com.bar.CurrencyNameProviderImpl cnp = new com.bar.CurrencyNameProviderImpl();
         Locale[] availloc = Locale.getAvailableLocales();
         Locale[] testloc = availloc.clone();
+        List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getCurrencyNameProvider().getAvailableLocales());
         List<Locale> providerloc = Arrays.asList(cnp.getAvailableLocales());
 
         for (Locale target: availloc) {
             // pure JRE implementation
             OpenListResourceBundle rb = (OpenListResourceBundle)LocaleProviderAdapter.forJRE().getLocaleData().getCurrencyNames(target);
-            boolean jreHasBundle = rb.getLocale().equals(target);
+            boolean jreSupportsTarget = jreimplloc.contains(target);
 
             for (Locale test: testloc) {
                 // get a Currency instance
@@ -82,27 +83,24 @@ public class CurrencyNameProviderTest extends ProviderTest {
                     providersname = cnp.getDisplayName(c.getCurrencyCode(), target);
                 }
 
-                // JRE's name (if any)
+                // JRE's name
                 String jrescurrency = null;
                 String jresname = null;
                 String key = c.getCurrencyCode();
                 String nameKey = key.toLowerCase(Locale.ROOT);
-                if (jreHasBundle) {
+                if (jreSupportsTarget) {
                     try {
                         jrescurrency = rb.getString(key);
-                    } catch (MissingResourceException mre) {
-                        // JRE does not have any resource, "jrescurrency" should remain null
-                    }
+                    } catch (MissingResourceException mre) {}
                     try {
                         jresname = rb.getString(nameKey);
-                    } catch (MissingResourceException mre) {
-                        // JRE does not have any resource, "jresname" should remain null
-                    }
+                    } catch (MissingResourceException mre) {}
                 }
 
-                checkValidity(target, jrescurrency, providerscurrency, currencyresult, jrescurrency!=null);
+                checkValidity(target, jrescurrency, providerscurrency, currencyresult,
+                              jreSupportsTarget && jrescurrency != null);
                 checkValidity(target, jresname, providersname, nameresult,
-                              jreHasBundle && rb.handleGetKeys().contains(nameKey));
+                              jreSupportsTarget && jresname != null);
             }
         }
     }
