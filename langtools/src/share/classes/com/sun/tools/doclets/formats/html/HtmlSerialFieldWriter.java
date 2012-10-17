@@ -60,18 +60,6 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         return Arrays.asList(cd.serializableFields());
     }
 
-    protected void printTypeLinkNoDimension(Type type) {
-        ClassDoc cd = type.asClassDoc();
-        //Linking to package private classes in serialized for causes
-        //broken links.  Don't link to them.
-        if (type.isPrimitive() || cd.isPackagePrivate()) {
-            print(type.typeName());
-        } else {
-            writer.printLink(new LinkInfoImpl(
-                LinkInfoImpl.CONTEXT_SERIAL_MEMBER, type));
-        }
-    }
-
     /**
      * Return the header for serializable fields section.
      *

@@ -187,23 +187,6 @@ public abstract class AbstractMemberWriter {
      */
     protected abstract void addNavDetailLink(boolean link, Content liNav);
 
-    /***  ***/
-
-    protected void print(String str) {
-        writer.print(str);
-        writer.displayLength += str.length();
-    }
-
-    protected void print(char ch) {
-        writer.print(ch);
-        writer.displayLength++;
-    }
-
-    protected void strong(String str) {
-        writer.strong(str);
-        writer.displayLength += str.length();
-    }
-
     /**
      * Add the member name to the content tree and modifies the display length.
      *
@@ -308,23 +291,6 @@ public abstract class AbstractMemberWriter {
 
         }
         tdSummaryType.addContent(code);
-    }
-
-    private void printModifier(ProgramElementDoc member) {
-        if (member.isProtected()) {
-            print("protected ");
-        } else if (member.isPrivate()) {
-            print("private ");
-        } else if (!member.isPublic()) { // Package private
-            writer.printText("doclet.Package_private");
-            print(" ");
-        }
-        if (member.isMethod() && ((MethodDoc)member).isAbstract()) {
-            print("abstract ");
-        }
-        if (member.isStatic()) {
-            print("static");
-        }
     }
 
     /**
