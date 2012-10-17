@@ -67,6 +67,7 @@ public class Flags {
         if ((mask&NATIVE) != 0) flags.add(Flag.NATIVE);
         if ((mask&INTERFACE) != 0) flags.add(Flag.INTERFACE);
         if ((mask&ABSTRACT) != 0) flags.add(Flag.ABSTRACT);
+        if ((mask&DEFAULT) != 0) flags.add(Flag.DEFAULT);
         if ((mask&STRICTFP) != 0) flags.add(Flag.STRICTFP);
         if ((mask&BRIDGE) != 0) flags.add(Flag.BRIDGE);
         if ((mask&SYNTHETIC) != 0) flags.add(Flag.SYNTHETIC);
@@ -252,6 +253,11 @@ public class Flags {
      */
     public static final long CLASH = 1L<<42;
 
+    /**
+     * Flag that marks either a default method or an interface containing default methods
+     */
+    public static final long DEFAULT = 1L<<43;
+
     /** Modifier masks.
      */
     public static final int
@@ -267,7 +273,10 @@ public class Flags {
         MethodFlags           = AccessFlags | ABSTRACT | STATIC | NATIVE |
                                 SYNCHRONIZED | FINAL | STRICTFP;
     public static final long
-        LocalVarFlags         = FINAL | PARAMETER;
+        ExtendedStandardFlags       = (long)StandardFlags | DEFAULT,
+        InterfaceDefaultMethodMask  = ABSTRACT | PUBLIC | STRICTFP | SYNCHRONIZED | DEFAULT,
+        LocalVarFlags               = FINAL | PARAMETER;
+
 
     public static Set<Modifier> asModifierSet(long flags) {
         Set<Modifier> modifiers = modifierSets.get(flags);
@@ -320,6 +329,7 @@ public class Flags {
         NATIVE("native"),
         INTERFACE("interface"),
         ABSTRACT("abstract"),
+        DEFAULT("default"),
         STRICTFP("strictfp"),
         BRIDGE("bridge"),
         SYNTHETIC("synthetic"),

@@ -203,6 +203,9 @@ public enum Source {
     public boolean allowMethodReferences() {
         return compareTo(JDK1_8) >= 0;
     }
+    public boolean allowDefaultMethods() {
+        return compareTo(JDK1_8) >= 0;
+    }
     public boolean allowEffectivelyFinalInInnerClasses() {
         return compareTo(JDK1_8) >= 0;
     }
