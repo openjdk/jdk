@@ -3830,7 +3830,7 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
                      vtable_index*vtableEntry::size()) * wordSize +
                      vtableEntry::method_offset_in_bytes();
   Node* entry_addr  = basic_plus_adr(obj_klass, entry_offset);
-  Node* target_call = make_load(NULL, entry_addr, TypeInstPtr::NOTNULL, T_OBJECT);
+  Node* target_call = make_load(NULL, entry_addr, TypePtr::NOTNULL, T_ADDRESS);
 
   // Compare the target method with the expected method (e.g., Object.hashCode).
   const TypePtr* native_call_addr = TypeMetadataPtr::make(method);
