@@ -28,8 +28,7 @@ package javax.management.timer;
 import static com.sun.jmx.defaults.JmxProperties.TIMER_LOGGER;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -128,8 +127,8 @@ public class Timer extends NotificationBroadcasterSupport
      * Table containing all the timer notifications of this timer,
      * with the associated date, period and number of occurrences.
      */
-    private Map<Integer,Object[]> timerTable =
-        new Hashtable<Integer,Object[]>();
+    final private Map<Integer,Object[]> timerTable =
+        new HashMap<>();
 
     /**
      * Past notifications sending on/off flag value.
@@ -163,7 +162,7 @@ public class Timer extends NotificationBroadcasterSupport
      * The notification counter ID.
      * Used to keep the max key value inserted into the timer table.
      */
-    private int counterID = 0;
+    volatile private int counterID = 0;
 
     private java.util.Timer timer;
 
@@ -776,7 +775,7 @@ public class Timer extends NotificationBroadcasterSupport
      *
      * @return The number of timer notifications.
      */
-    public int getNbNotifications() {
+    public synchronized int getNbNotifications() {
         return timerTable.size();
     }
 
@@ -824,7 +823,7 @@ public class Timer extends NotificationBroadcasterSupport
      * @return The timer notification type or null if the identifier is not mapped to any
      * timer notification registered for this timer MBean.
      */
-    public String getNotificationType(Integer id) {
+    public synchronized String getNotificationType(Integer id) {
 
         Object[] obj = timerTable.get(id);
         if (obj != null) {
@@ -841,7 +840,7 @@ public class Timer extends NotificationBroadcasterSupport
      * @return The timer notification detailed message or null if the identifier is not mapped to any
      * timer notification registered for this timer MBean.
      */
-    public String getNotificationMessage(Integer id) {
+    public synchronized String getNotificationMessage(Integer id) {
 
         Object[] obj = timerTable.get(id);
         if (obj != null) {
@@ -862,7 +861,7 @@ public class Timer extends NotificationBroadcasterSupport
     //public Serializable getNotificationUserData(Integer id) {
     // end of NPCTE fix for bugId 4464388
 
-    public Object getNotificationUserData(Integer id) {
+    public synchronized Object getNotificationUserData(Integer id) {
         Object[] obj = timerTable.get(id);
         if (obj != null) {
             return ( ((TimerNotification)obj[TIMER_NOTIF_INDEX]).getUserData() );
@@ -878,7 +877,7 @@ public class Timer extends NotificationBroadcasterSupport
      * @return A copy of the date or null if the identifier is not mapped to any
      * timer notification registered for this timer MBean.
      */
-    public Date getDate(Integer id) {
+    public synchronized Date getDate(Integer id) {
 
         Object[] obj = timerTable.get(id);
         if (obj != null) {
@@ -896,7 +895,7 @@ public class Timer extends NotificationBroadcasterSupport
      * @return A copy of the period or null if the identifier is not mapped to any
      * timer notification registered for this timer MBean.
      */
-    public Long getPeriod(Integer id) {
+    public synchronized Long getPeriod(Integer id) {
 
         Object[] obj = timerTable.get(id);
         if (obj != null) {
@@ -913,7 +912,7 @@ public class Timer extends NotificationBroadcasterSupport
      * @return A copy of the remaining number of occurrences or null if the identifier is not mapped to any
      * timer notification registered for this timer MBean.
      */
-    public Long getNbOccurences(Integer id) {
+    public synchronized Long getNbOccurences(Integer id) {
 
         Object[] obj = timerTable.get(id);
         if (obj != null) {
@@ -931,7 +930,7 @@ public class Timer extends NotificationBroadcasterSupport
      * @return A copy of the flag indicating whether a periodic notification is
      *         executed at <i>fixed-delay</i> or at <i>fixed-rate</i>.
      */
-    public Boolean getFixedRate(Integer id) {
+    public synchronized Boolean getFixedRate(Integer id) {
 
       Object[] obj = timerTable.get(id);
       if (obj != null) {
@@ -982,7 +981,7 @@ public class Timer extends NotificationBroadcasterSupport
      *
      * @return <CODE>true</CODE> if the list of timer notifications is empty, <CODE>false</CODE> otherwise.
      */
-    public boolean isEmpty() {
+    public synchronized boolean isEmpty() {
         return (timerTable.isEmpty());
     }
 
@@ -1184,11 +1183,13 @@ public class Timer extends NotificationBroadcasterSupport
         //
         TimerAlarmClock alarmClock = (TimerAlarmClock)notification.getSource();
 
-        for (Object[] obj : timerTable.values()) {
-            if (obj[ALARM_CLOCK_INDEX] == alarmClock) {
-                timerNotification = (TimerNotification)obj[TIMER_NOTIF_INDEX];
-                timerDate = (Date)obj[TIMER_DATE_INDEX];
-                break;
+        synchronized(Timer.this) {
+            for (Object[] obj : timerTable.values()) {
+                if (obj[ALARM_CLOCK_INDEX] == alarmClock) {
+                    timerNotification = (TimerNotification)obj[TIMER_NOTIF_INDEX];
+                    timerDate = (Date)obj[TIMER_DATE_INDEX];
+                    break;
+                }
             }
         }
 
