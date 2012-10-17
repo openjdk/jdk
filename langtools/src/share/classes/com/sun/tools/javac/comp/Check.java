@@ -1121,8 +1121,14 @@ public class Check {
                     mask = PRIVATE;
                 } else
                     mask = ConstructorFlags;
-            }  else if ((sym.owner.flags_field & INTERFACE) != 0)
-                mask = implicit = InterfaceMethodFlags;
+            }  else if ((sym.owner.flags_field & INTERFACE) != 0) {
+                if ((flags & DEFAULT) != 0) {
+                    mask = InterfaceDefaultMethodMask;
+                    implicit = PUBLIC;
+                } else {
+                    mask = implicit = InterfaceMethodFlags;
+                }
+            }
             else {
                 mask = MethodFlags;
             }
@@ -1169,7 +1175,7 @@ public class Check {
         default:
             throw new AssertionError();
         }
-        long illegal = flags & StandardFlags & ~mask;
+        long illegal = flags & ExtendedStandardFlags & ~mask;
         if (illegal != 0) {
             if ((illegal & INTERFACE) != 0) {
                 log.error(pos, "intf.not.allowed.here");
@@ -1185,7 +1191,7 @@ public class Check {
                   // in the presence of inner classes. Should it be deleted here?
                   checkDisjoint(pos, flags,
                                 ABSTRACT,
-                                PRIVATE | STATIC))
+                                PRIVATE | STATIC | DEFAULT))
                  &&
                  checkDisjoint(pos, flags,
                                ABSTRACT | INTERFACE,
@@ -1209,7 +1215,7 @@ public class Check {
                                 STRICTFP))) {
             // skip
         }
-        return flags & (mask | ~StandardFlags) | implicit;
+        return flags & (mask | ~ExtendedStandardFlags) | implicit;
     }
 
 

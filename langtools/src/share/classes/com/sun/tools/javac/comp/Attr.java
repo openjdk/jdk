@@ -873,6 +873,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitMethodDef(JCMethodDecl tree) {
         MethodSymbol m = tree.sym;
+        boolean isDefaultMethod = (m.flags() & DEFAULT) != 0;
 
         Lint lint = env.info.lint.augment(m.annotations, m.flags());
         Lint prevLint = chk.setLint(lint);
@@ -952,8 +953,8 @@ public class Attr extends JCTree.Visitor {
                 // Empty bodies are only allowed for
                 // abstract, native, or interface methods, or for methods
                 // in a retrofit signature class.
-                if ((owner.flags() & INTERFACE) == 0 &&
-                    (tree.mods.flags & (ABSTRACT | NATIVE)) == 0 &&
+                if (isDefaultMethod || ((owner.flags() & INTERFACE) == 0 &&
+                    (tree.mods.flags & (ABSTRACT | NATIVE)) == 0) &&
                     !relax)
                     log.error(tree.pos(), "missing.meth.body.or.decl.abstract");
                 if (tree.defaultValue != null) {
@@ -961,7 +962,7 @@ public class Attr extends JCTree.Visitor {
                         log.error(tree.pos(),
                                   "default.allowed.in.intf.annotation.member");
                 }
-            } else if ((owner.flags() & INTERFACE) != 0) {
+            } else if ((owner.flags() & INTERFACE) != 0 && !isDefaultMethod) {
                 log.error(tree.body.pos(), "intf.meth.cant.have.body");
             } else if ((tree.mods.flags & ABSTRACT) != 0) {
                 log.error(tree.pos(), "abstract.meth.cant.have.body");
