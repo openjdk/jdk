@@ -166,14 +166,4 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
                 method.containingClass().qualifiedName(), method.name());
         }
     }
-
-    protected void printTypeLinkNoDimension(Type type) {
-        ClassDoc cd = type.asClassDoc();
-        if (type.isPrimitive() || cd.isPackagePrivate()) {
-            print(type.typeName());
-        } else {
-            writer.printLink(new LinkInfoImpl(
-                LinkInfoImpl.CONTEXT_SERIAL_MEMBER,type));
-        }
-    }
 }

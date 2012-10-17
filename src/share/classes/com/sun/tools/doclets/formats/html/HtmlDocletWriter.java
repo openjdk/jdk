@@ -206,33 +206,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Print Html Hyper Link, with target frame.  This
-     * link will only appear if page is not in a frame.
-     *
-     * @param link String name of the file.
-     * @param where Position in the file
-     * @param target Name of the target frame.
-     * @param label Tag for the link.
-     * @param strong Whether the label should be strong or not?
-     */
-    public void printNoFramesTargetHyperLink(String link, String where,
-                                               String target, String label,
-                                               boolean strong) {
-        script();
-        println("  <!--");
-        println("  if(window==top) {");
-        println("    document.writeln('"
-            + getHyperLinkString(link, where, label, strong, "", "", target) + "');");
-        println("  }");
-        println("  //-->");
-        scriptEnd();
-        noScript();
-        println("  " + getHyperLinkString(link, where, label, strong, "", "", target));
-        noScriptEnd();
-        println(DocletConstants.NL);
-    }
-
-    /**
      * Get the script to show or hide the All classes link.
      *
      * @param id id of the element to show or hide
@@ -329,14 +302,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return new TagletWriterImpl(this, isFirstSentence);
     }
 
-    protected void printTagsInfoHeader() {
-        dl();
-    }
-
-    protected void printTagsInfoFooter() {
-        dlEnd();
-    }
-
     /**
      * Get Package link, with target frame.
      *
@@ -391,7 +356,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 head, body);
         Content htmlDocument = new HtmlDocument(htmlDocType,
                 htmlComment, htmlTree);
-        htmlDocument.write(this, true);
+        write(htmlDocument);
     }
 
     /**
@@ -405,26 +370,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             title += " (" + configuration.windowtitle  + ")";
         }
         return title;
-    }
-
-    /**
-     * Print user specified header and the footer.
-     *
-     * @param header if true print the user provided header else print the
-     * user provided footer.
-     */
-    public void printUserHeaderFooter(boolean header) {
-        em();
-        if (header) {
-            print(replaceDocRootDir(configuration.header));
-        } else {
-            if (configuration.footer.length() != 0) {
-                print(replaceDocRootDir(configuration.footer));
-            } else {
-                print(replaceDocRootDir(configuration.header));
-            }
-        }
-        emEnd();
     }
 
     /**
@@ -450,14 +395,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Print the user specified top.
-     */
-    public void printTop() {
-        print(replaceDocRootDir(configuration.top));
-        hr();
-    }
-
-    /**
      * Adds the user specified top.
      *
      * @param body the content tree to which user specified top will be added
@@ -465,14 +402,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public void addTop(Content body) {
         Content top = new RawHtml(replaceDocRootDir(configuration.top));
         body.addContent(top);
-    }
-
-    /**
-     * Print the user specified bottom.
-     */
-    public void printBottom() {
-        hr();
-        print(replaceDocRootDir(configuration.bottom));
     }
 
     /**
@@ -485,128 +414,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content small = HtmlTree.SMALL(bottom);
         Content p = HtmlTree.P(HtmlStyle.legalCopy, small);
         body.addContent(p);
-    }
-
-    /**
-     * Print the navigation bar for the Html page at the top and and the bottom.
-     *
-     * @param header If true print navigation bar at the top of the page else
-     * print the nevigation bar at the bottom.
-     */
-    protected void navLinks(boolean header) {
-        println("");
-        if (!configuration.nonavbar) {
-            if (header) {
-                println(DocletConstants.NL + "<!-- ========= START OF TOP NAVBAR ======= -->");
-                anchor("navbar_top");
-                println();
-                print(getHyperLinkString("", "skip-navbar_top", "", false, "",
-                    configuration.getText("doclet.Skip_navigation_links"), ""));
-            } else {
-                println(DocletConstants.NL + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
-                anchor("navbar_bottom");
-                println();
-                print(getHyperLinkString("", "skip-navbar_bottom", "", false, "",
-                    configuration.getText("doclet.Skip_navigation_links"), ""));
-            }
-            table(0, "100%", 1, 0);
-            tr();
-            tdColspanBgcolorStyle(2, "#EEEEFF", "NavBarCell1");
-            println("");
-            if (header) {
-                anchor("navbar_top_firstrow");
-            } else {
-                anchor("navbar_bottom_firstrow");
-            }
-            table(0, 0, 3);
-            print("  ");
-            trAlignVAlign("center", "top");
-
-            if (configuration.createoverview) {
-                navLinkContents();
-            }
-
-            if (configuration.packages.length == 1) {
-                navLinkPackage(configuration.packages[0]);
-            } else if (configuration.packages.length > 1) {
-                navLinkPackage();
-            }
-
-            navLinkClass();
-
-            if(configuration.classuse) {
-                navLinkClassUse();
-            }
-            if(configuration.createtree) {
-                navLinkTree();
-            }
-            if(!(configuration.nodeprecated ||
-                     configuration.nodeprecatedlist)) {
-                navLinkDeprecated();
-            }
-            if(configuration.createindex) {
-                navLinkIndex();
-            }
-            if (!configuration.nohelp) {
-                navLinkHelp();
-            }
-            print("  ");
-            trEnd();
-            tableEnd();
-            tdEnd();
-
-            tdAlignVAlignRowspan("right", "top", 3);
-
-            printUserHeaderFooter(header);
-            tdEnd();
-            trEnd();
-            println("");
-
-            tr();
-            tdBgcolorStyle("white", "NavBarCell2");
-            font("-2");
-            space();
-            navLinkPrevious();
-            space();
-            println("");
-            space();
-            navLinkNext();
-            fontEnd();
-            tdEnd();
-
-            tdBgcolorStyle("white", "NavBarCell2");
-            font("-2");
-            print("  ");
-            navShowLists();
-            print("  ");
-            space();
-            println("");
-            space();
-            navHideLists(filename);
-            print("  ");
-            space();
-            println("");
-            space();
-            navLinkClassIndex();
-            fontEnd();
-            tdEnd();
-
-            trEnd();
-
-            printSummaryDetailLinks();
-
-            tableEnd();
-            if (header) {
-                aName("skip-navbar_top");
-                aEnd();
-                println(DocletConstants.NL + "<!-- ========= END OF TOP NAVBAR ========= -->");
-            } else {
-                aName("skip-navbar_bottom");
-                aEnd();
-                println(DocletConstants.NL + "<!-- ======== END OF BOTTOM NAVBAR ======= -->");
-            }
-            println("");
-        }
     }
 
     /**
@@ -701,14 +508,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Print the word "NEXT" to indicate that no link is available.  Override
-     * this method to customize next link.
-     */
-    protected void navLinkNext() {
-        navLinkNext(null);
-    }
-
-    /**
      * Get the word "NEXT" to indicate that no link is available.  Override
      * this method to customize next link.
      *
@@ -716,14 +515,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     protected Content getNavLinkNext() {
         return getNavLinkNext(null);
-    }
-
-    /**
-     * Print the word "PREV" to indicate that no link is available.  Override
-     * this method to customize prev link.
-     */
-    protected void navLinkPrevious() {
-        navLinkPrevious(null);
     }
 
     /**
@@ -739,23 +530,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * Do nothing. This is the default method.
      */
-    protected void printSummaryDetailLinks() {
-    }
-
-    /**
-     * Do nothing. This is the default method.
-     */
     protected void addSummaryDetailLinks(Content navDiv) {
-    }
-
-    /**
-     * Print link to the "overview-summary.html" page.
-     */
-    protected void navLinkContents() {
-        navCellStart();
-        printHyperLink(relativePath + "overview-summary.html", "",
-                       configuration.getText("doclet.Overview"), true, "NavBarFont1");
-        navCellEnd();
     }
 
     /**
@@ -768,46 +543,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 "overview-summary.html", "", overviewLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
-    }
-
-    /**
-     * Description for a cell in the navigation bar.
-     */
-    protected void navCellStart() {
-        print("  ");
-        tdBgcolorStyle("#EEEEFF", "NavBarCell1");
-        print("    ");
-    }
-
-    /**
-     * Description for a cell in the navigation bar, but with reverse
-     * high-light effect.
-     */
-    protected void navCellRevStart() {
-        print("  ");
-        tdBgcolorStyle("#FFFFFF", "NavBarCell1Rev");
-        print(" ");
-        space();
-    }
-
-    /**
-     * Closing tag for navigation bar cell.
-     */
-    protected void navCellEnd() {
-        space();
-        tdEnd();
-    }
-
-    /**
-     * Print link to the "package-summary.html" page for the package passed.
-     *
-     * @param pkg Package to which link will be generated.
-     */
-    protected void navLinkPackage(PackageDoc pkg) {
-        navCellStart();
-        printPackageLink(pkg, configuration.getText("doclet.Package"), true,
-            "NavBarFont1");
-        navCellEnd();
     }
 
     /**
@@ -824,18 +559,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Print the word "Package" in the navigation bar cell, to indicate that
-     * link is not available here.
-     */
-    protected void navLinkPackage() {
-        navCellStart();
-        fontStyle("NavBarFont1");
-        printText("doclet.Package");
-        fontEnd();
-        navCellEnd();
-    }
-
-    /**
      * Get the word "Package" , to indicate that link is not available here.
      *
      * @return a content tree for the link
@@ -846,18 +569,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Print the word "Use" in the navigation bar cell, to indicate that link
-     * is not available.
-     */
-    protected void navLinkClassUse() {
-        navCellStart();
-        fontStyle("NavBarFont1");
-        printText("doclet.navClassUse");
-        fontEnd();
-        navCellEnd();
-    }
-
-    /**
      * Get the word "Use", to indicate that link is not available.
      *
      * @return a content tree for the link
@@ -865,20 +576,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     protected Content getNavLinkClassUse() {
         Content li = HtmlTree.LI(useLabel);
         return li;
-    }
-
-    /**
-     * Print link for previous file.
-     *
-     * @param prev File name for the prev link.
-     */
-    public void navLinkPrevious(String prev) {
-        String tag = configuration.getText("doclet.Prev");
-        if (prev != null) {
-            printHyperLink(prev, "", tag, true) ;
-        } else {
-            print(tag);
-        }
     }
 
     /**
@@ -895,21 +592,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         else
             li = HtmlTree.LI(prevLabel);
         return li;
-    }
-
-    /**
-     * Print link for next file.  If next is null, just print the label
-     * without linking it anywhere.
-     *
-     * @param next File name for the next link.
-     */
-    public void navLinkNext(String next) {
-        String tag = configuration.getText("doclet.Next");
-        if (next != null) {
-            printHyperLink(next, "", tag, true);
-        } else {
-            print(tag);
-        }
     }
 
     /**
@@ -930,16 +612,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Print "FRAMES" link, to switch to the frame version of the output.
-     *
-     * @param link File to be linked, "index.html".
-     */
-    protected void navShowLists(String link) {
-        print(getHyperLinkString(link + "?" + path + filename, "",
-            configuration.getText("doclet.FRAMES"), true, "", "", "_top"));
-    }
-
-    /**
      * Get "FRAMES" link, to switch to the frame version of the output.
      *
      * @param link File to be linked, "index.html"
@@ -953,29 +625,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Print "FRAMES" link, to switch to the frame version of the output.
-     */
-    protected void navShowLists() {
-        navShowLists(relativePath + "index.html");
-    }
-
-    /**
      * Get "FRAMES" link, to switch to the frame version of the output.
      *
      * @return a content tree for the link
      */
     protected Content getNavShowLists() {
         return getNavShowLists(relativePath + "index.html");
-    }
-
-    /**
-     * Print "NO FRAMES" link, to switch to the non-frame version of the output.
-     *
-     * @param link File to be linked.
-     */
-    protected void navHideLists(String link) {
-        print(getHyperLinkString(link, "", configuration.getText("doclet.NO_FRAMES"),
-            true, "", "", "_top"));
     }
 
     /**
@@ -988,25 +643,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content noFramesContent = getHyperLink(link, "", noframesLabel, "", "_top");
         Content li = HtmlTree.LI(noFramesContent);
         return li;
-    }
-
-    /**
-     * Print "Tree" link in the navigation bar. If there is only one package
-     * specified on the command line, then the "Tree" link will be to the
-     * only "package-tree.html" file otherwise it will be to the
-     * "overview-tree.html" file.
-     */
-    protected void navLinkTree() {
-        navCellStart();
-        PackageDoc[] packages = configuration.root.specifiedPackages();
-        if (packages.length == 1 && configuration.root.specifiedClasses().length == 0) {
-            printHyperLink(pathString(packages[0], "package-tree.html"), "",
-                           configuration.getText("doclet.Tree"), true, "NavBarFont1");
-        } else {
-            printHyperLink(relativePath + "overview-tree.html", "",
-                           configuration.getText("doclet.Tree"), true, "NavBarFont1");
-        }
-        navCellEnd();
     }
 
     /**
@@ -1046,18 +682,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Print the word "Class" in the navigation bar cell, to indicate that
-     * class link is not available.
-     */
-    protected void navLinkClass() {
-        navCellStart();
-        fontStyle("NavBarFont1");
-        printText("doclet.Class");
-        fontEnd();
-        navCellEnd();
-    }
-
-    /**
      * Get the word "Class", to indicate that class link is not available.
      *
      * @return a content tree for the link
@@ -1065,16 +689,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     protected Content getNavLinkClass() {
         Content li = HtmlTree.LI(classLabel);
         return li;
-    }
-
-    /**
-     * Print "Deprecated" API link in the navigation bar.
-     */
-    protected void navLinkDeprecated() {
-        navCellStart();
-        printHyperLink(relativePath + "deprecated-list.html", "",
-                       configuration.getText("doclet.navDeprecated"), true, "NavBarFont1");
-        navCellEnd();
     }
 
     /**
@@ -1087,17 +701,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 "deprecated-list.html", "", deprecatedLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
-    }
-
-    /**
-     * Print link for generated index. If the user has used "-splitindex"
-     * command line option, then link to file "index-files/index-1.html" is
-     * generated otherwise link to file "index-all.html" is generated.
-     */
-    protected void navLinkClassIndex() {
-        printNoFramesTargetHyperLink(relativePath +
-                AllClassesFrameWriter.OUTPUT_FILE_NAME_NOFRAMES,
-            "", "", configuration.getText("doclet.All_Classes"), true);
     }
 
     /**
@@ -1114,20 +717,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content li = HtmlTree.LI(allClassesContent);
         return li;
     }
-    /**
-     * Print link for generated class index.
-     */
-    protected void navLinkIndex() {
-        navCellStart();
-        printHyperLink(relativePath +
-                           (configuration.splitindex?
-                                DirectoryManager.getPath("index-files") +
-                                fileseparator: "") +
-                           (configuration.splitindex?
-                                "index-1.html" : "index-all.html"), "",
-                       configuration.getText("doclet.Index"), true, "NavBarFont1");
-        navCellEnd();
-    }
 
     /**
      * Get link for generated class index.
@@ -1141,27 +730,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             indexLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
-    }
-
-    /**
-     * Print help file link. If user has provided a help file, then generate a
-     * link to the user given file, which is already copied to current or
-     * destination directory.
-     */
-    protected void navLinkHelp() {
-        String helpfilenm = configuration.helpfile;
-        if (helpfilenm.equals("")) {
-            helpfilenm = "help-doc.html";
-        } else {
-            int lastsep;
-            if ((lastsep = helpfilenm.lastIndexOf(File.separatorChar)) != -1) {
-                helpfilenm = helpfilenm.substring(lastsep + 1);
-            }
-        }
-        navCellStart();
-        printHyperLink(relativePath + helpfilenm, "",
-                       configuration.getText("doclet.Help"), true, "NavBarFont1");
-        navCellEnd();
     }
 
     /**
@@ -1185,87 +753,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 helpLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
-    }
-
-    /**
-     * Print the word "Detail" in the navigation bar. No link is available.
-     */
-    protected void navDetail() {
-        printText("doclet.Detail");
-    }
-
-    /**
-     * Print the word "Summary" in the navigation bar. No link is available.
-     */
-    protected void navSummary() {
-        printText("doclet.Summary");
-    }
-
-    /**
-     * Print the Html table tag for the index summary tables. The table tag
-     * printed is
-     * {@code <TABLE BORDER="1" CELLPADDING="3" CELLSPACING="0" WIDTH="100%"> }
-     */
-    public void tableIndexSummary() {
-        table(1, "100%", 3, 0);
-    }
-
-    /**
-     * Print the Html table tag for the index summary tables.
-     *
-     * @param summary the summary for the table tag summary attribute.
-     */
-    public void tableIndexSummary(String summary) {
-        table(1, "100%", 3, 0, summary);
-    }
-
-    /**
-     * Same as {@link #tableIndexSummary()}.
-     */
-    public void tableIndexDetail() {
-        table(1, "100%", 3, 0);
-    }
-
-    /**
-     * Print Html tag for table elements. The tag printed is
-     * &lt;TD ALIGN="right" VALIGN="top" WIDTH="1%"&gt;.
-     */
-    public void tdIndex() {
-        print("<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\">");
-    }
-
-    /**
-     * Print table caption.
-     */
-    public void tableCaptionStart() {
-        captionStyle("TableCaption");
-    }
-
-    /**
-     * Print table sub-caption.
-     */
-    public void tableSubCaptionStart() {
-        captionStyle("TableSubCaption");
-    }
-
-    /**
-     * Print table caption end tags.
-     */
-    public void tableCaptionEnd() {
-        captionEnd();
-    }
-
-    /**
-     * Print summary table header.
-     */
-    public void summaryTableHeader(String[] header, String scope) {
-        tr();
-        for ( int i=0; i < header.length; i++ ) {
-            thScopeNoWrap("TableHeader", scope);
-            print(header[i]);
-            thEnd();
-        }
-        trEnd();
     }
 
     /**
@@ -1397,144 +884,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Prine table header information about color, column span and the font.
-     *
-     * @param color Background color.
-     * @param span  Column span.
-     */
-    public void tableHeaderStart(String color, int span) {
-        trBgcolorStyle(color, "TableHeadingColor");
-        thAlignColspan("left", span);
-        font("+2");
-    }
-
-    /**
-     * Print table header for the inherited members summary tables. Print the
-     * background color information.
-     *
-     * @param color Background color.
-     */
-    public void tableInheritedHeaderStart(String color) {
-        trBgcolorStyle(color, "TableSubHeadingColor");
-        thAlign("left");
-    }
-
-    /**
-     * Print "Use" table header. Print the background color and the column span.
-     *
-     * @param color Background color.
-     */
-    public void tableUseInfoHeaderStart(String color) {
-        trBgcolorStyle(color, "TableSubHeadingColor");
-        thAlignColspan("left", 2);
-    }
-
-    /**
-     * Print table header with the background color with default column span 2.
-     *
-     * @param color Background color.
-     */
-    public void tableHeaderStart(String color) {
-        tableHeaderStart(color, 2);
-    }
-
-    /**
-     * Print table header with the column span, with the default color #CCCCFF.
-     *
-     * @param span Column span.
-     */
-    public void tableHeaderStart(int span) {
-        tableHeaderStart("#CCCCFF", span);
-    }
-
-    /**
-     * Print table header with default column span 2 and default color #CCCCFF.
-     */
-    public void tableHeaderStart() {
-        tableHeaderStart(2);
-    }
-
-    /**
-     * Print table header end tags for font, column and row.
-     */
-    public void tableHeaderEnd() {
-        fontEnd();
-        thEnd();
-        trEnd();
-    }
-
-    /**
-     * Print table header end tags in inherited tables for column and row.
-     */
-    public void tableInheritedHeaderEnd() {
-        thEnd();
-        trEnd();
-    }
-
-    /**
-     * Print the summary table row cell attribute width.
-     *
-     * @param width Width of the table cell.
-     */
-    public void summaryRow(int width) {
-        if (width != 0) {
-            tdWidth(width + "%");
-        } else {
-            td();
-        }
-    }
-
-    /**
-     * Print the summary table row cell end tag.
-     */
-    public void summaryRowEnd() {
-        tdEnd();
-    }
-
-    /**
-     * Print the heading in Html {@literal <H2>} format.
-     *
-     * @param str The Header string.
-     */
-    public void printIndexHeading(String str) {
-        h2();
-        print(str);
-        h2End();
-    }
-
-    /**
-     * Print Html tag &lt;FRAMESET=arg&gt;.
-     *
-     * @param arg Argument for the tag.
-     */
-    public void frameSet(String arg) {
-        println("<FRAMESET " + arg + ">");
-    }
-
-    /**
-     * Print Html closing tag &lt;/FRAMESET&gt;.
-     */
-    public void frameSetEnd() {
-        println("</FRAMESET>");
-    }
-
-    /**
-     * Print Html tag &lt;FRAME=arg&gt;.
-     *
-     * @param arg Argument for the tag.
-     */
-    public void frame(String arg) {
-        println("<FRAME " + arg + ">");
-    }
-
-    /**
-     * Print Html closing tag &lt;/FRAME&gt;.
-     */
-    public void frameEnd() {
-        println("</FRAME>");
-    }
-
-    /**
      * Return path to the class page for a classdoc. For example, the class
      * name is "java.lang.Object" and if the current file getting generated is
      * "java/io/File.html", then the path string to the class, returned is
@@ -1570,30 +919,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         StringBuilder buf = new StringBuilder(relativePath);
         buf.append(DirectoryManager.getPathToPackage(pd, name));
         return buf.toString();
-    }
-
-    /**
-     * Print the link to the given package.
-     *
-     * @param pkg the package to link to.
-     * @param label the label for the link.
-     * @param isStrong true if the label should be strong.
-     */
-    public void printPackageLink(PackageDoc pkg, String label, boolean isStrong) {
-        print(getPackageLinkString(pkg, label, isStrong));
-    }
-
-    /**
-     * Print the link to the given package.
-     *
-     * @param pkg the package to link to.
-     * @param label the label for the link.
-     * @param isStrong true if the label should be strong.
-     * @param style  the font of the package link label.
-     */
-    public void printPackageLink(PackageDoc pkg, String label, boolean isStrong,
-            String style) {
-        print(getPackageLinkString(pkg, label, isStrong, style));
     }
 
     /**
@@ -1679,21 +1004,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return (cd.isInterface())?  italicsText(name): name;
     }
 
-    public void printSrcLink(ProgramElementDoc d, String label) {
-        if (d == null) {
-            return;
-        }
-        ClassDoc cd = d.containingClass();
-        if (cd == null) {
-            //d must be a class doc since in has no containing class.
-            cd = (ClassDoc) d;
-        }
-        String href = relativePath + DocletConstants.SOURCE_OUTPUT_DIR_NAME
-            + DirectoryManager.getDirectoryPath(cd.containingPackage())
-            + cd.name() + ".html#" + SourceToHTMLConverter.getAnchorName(d);
-        printHyperLink(href, "", label, true);
-    }
-
     /**
      * Add the link to the content tree.
      *
@@ -1743,13 +1053,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             factory.getTypeParameterLinks(linkInfo, false)).toString();
     }
 
-    /**
-     * Print the link to the given class.
-     */
-    public void printLink(LinkInfoImpl linkInfo) {
-        print(getLink(linkInfo));
-    }
-
     /*************************************************************
      * Return a class cross link to external class documentation.
      * The name must be fully qualified to determine which package
@@ -1773,7 +1076,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         while((periodIndex = packageName.lastIndexOf('.')) != -1) {
             className = packageName.substring(periodIndex + 1, packageName.length()) +
                 (className.length() > 0 ? "." + className : "");
-            String defaultLabel = code ? getCode() + className + getCodeEnd() : className;
+            String defaultLabel = code ? codeText(className) : className;
             packageName = packageName.substring(0, periodIndex);
             if (getCrossPackageLink(packageName) != null) {
                 //The package exists in external documentation, so link to the external
@@ -1881,30 +1184,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         addPreQualifiedClassLink(context, cd, true, contentTree);
     }
 
-    public void printText(String key) {
-        print(configuration.getText(key));
-    }
-
-    public void printText(String key, String a1) {
-        print(configuration.getText(key, a1));
-    }
-
-    public void printText(String key, String a1, String a2) {
-        print(configuration.getText(key, a1, a2));
-    }
-
-    public void strongText(String key) {
-        strong(configuration.getText(key));
-    }
-
-    public void strongText(String key, String a1) {
-        strong(configuration.getText(key, a1));
-    }
-
-    public void strongText(String key, String a1, String a2) {
-        strong(configuration.getText(key, a1, a2));
-    }
-
     /**
      * Get the link for the given member.
      *
@@ -1915,22 +1194,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public Content getDocLink(int context, MemberDoc doc, String label) {
         return getDocLink(context, doc.containingClass(), doc, label);
-    }
-
-    /**
-     * Print the link for the given member.
-     *
-     * @param context the id of the context where the link will be printed.
-     * @param classDoc the classDoc that we should link to.  This is not
-     *                 necessarily equal to doc.containingClass().  We may be
-     *                 inheriting comments.
-     * @param doc the member being linked to.
-     * @param label the label for the link.
-     * @param strong true if the link should be strong.
-     */
-    public void printDocLink(int context, ClassDoc classDoc, MemberDoc doc,
-            String label, boolean strong) {
-        print(getDocLink(context, classDoc, doc, label, strong));
     }
 
     /**
@@ -2004,10 +1267,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
     }
 
-    public void anchor(ExecutableMemberDoc emd) {
-        anchor(getAnchor(emd));
-    }
-
     public String getAnchor(ExecutableMemberDoc emd) {
         StringBuilder signature = new StringBuilder(emd.signature());
         StringBuilder signatureParsed = new StringBuilder();
@@ -2030,66 +1289,61 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (! (tagName.startsWith("@link") || tagName.equals("@see"))) {
             return "";
         }
-        StringBuilder result = new StringBuilder();
-        boolean isplaintext = tagName.toLowerCase().equals("@linkplain");
-        String label = see.label();
-        label = (label.length() > 0)?
-            ((isplaintext) ? label :
-                 getCode() + label + getCodeEnd()):"";
+
         String seetext = replaceDocRootDir(see.text());
 
         //Check if @see is an href or "string"
         if (seetext.startsWith("<") || seetext.startsWith("\"")) {
-            result.append(seetext);
-            return result.toString();
+            return seetext;
         }
 
+        boolean plain = tagName.equalsIgnoreCase("@linkplain");
+        String label = plainOrCodeText(plain, see.label());
+
         //The text from the @see tag.  We will output this text when a label is not specified.
-        String text = (isplaintext) ? seetext : getCode() + seetext + getCodeEnd();
+        String text = plainOrCodeText(plain, seetext);
 
         ClassDoc refClass = see.referencedClass();
         String refClassName = see.referencedClassName();
         MemberDoc refMem = see.referencedMember();
         String refMemName = see.referencedMemberName();
+
         if (refClass == null) {
             //@see is not referencing an included class
             PackageDoc refPackage = see.referencedPackage();
             if (refPackage != null && refPackage.isIncluded()) {
                 //@see is referencing an included package
-                String packageName = isplaintext ? refPackage.name() :
-                    getCode() + refPackage.name() + getCodeEnd();
-                result.append(getPackageLinkString(refPackage,
-                    label.length() == 0 ? packageName : label, false));
+                if (label.isEmpty())
+                    label = plainOrCodeText(plain, refPackage.name());
+                return getPackageLinkString(refPackage, label, false);
             } else {
                 //@see is not referencing an included class or package.  Check for cross links.
                 String classCrossLink, packageCrossLink = getCrossPackageLink(refClassName);
                 if (packageCrossLink != null) {
                     //Package cross link found
-                    result.append(getHyperLinkString(packageCrossLink, "",
-                        (label.length() == 0)? text : label, false));
+                    return getHyperLinkString(packageCrossLink, "",
+                        (label.isEmpty() ? text : label), false);
                 } else if ((classCrossLink = getCrossClassLink(refClassName,
-                        refMemName, label, false, "", ! isplaintext)) != null) {
-                    //Class cross link found (possiblly to a member in the class)
-                    result.append(classCrossLink);
+                        refMemName, label, false, "", !plain)) != null) {
+                    //Class cross link found (possibly to a member in the class)
+                    return classCrossLink;
                 } else {
                     //No cross link found so print warning
                     configuration.getDocletSpecificMsg().warning(see.position(), "doclet.see.class_or_package_not_found",
                             tagName, seetext);
-                    result.append((label.length() == 0)? text: label);
+                    return (label.isEmpty() ? text: label);
                 }
             }
         } else if (refMemName == null) {
             // Must be a class reference since refClass is not null and refMemName is null.
-            if (label.length() == 0) {
-                label = (isplaintext) ? refClass.name() : getCode() + refClass.name() + getCodeEnd();
-                result.append(getLink(new LinkInfoImpl(refClass, label)));
-            } else {
-                result.append(getLink(new LinkInfoImpl(refClass, label)));
+            if (label.isEmpty()) {
+                label = plainOrCodeText(plain, refClass.name());
             }
+            return getLink(new LinkInfoImpl(refClass, label));
         } else if (refMem == null) {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // However, refMem is null, so this referenced member does not exist.
-            result.append((label.length() == 0)? text: label);
+            return (label.isEmpty() ? text: label);
         } else {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // refMem is not null, so this @see tag must be referencing a valid member.
@@ -2121,17 +1375,16 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     refMemName += ((ExecutableMemberDoc)refMem).signature();
                 }
             }
-            text = (isplaintext) ?
-                refMemName : getCode() + Util.escapeHtmlChars(refMemName) + getCodeEnd();
 
-            result.append(getDocLink(LinkInfoImpl.CONTEXT_SEE_TAG, containing,
-                refMem, (label.length() == 0)? text: label, false));
+            text = plainOrCodeText(plain, Util.escapeHtmlChars(refMemName));
+
+            return getDocLink(LinkInfoImpl.CONTEXT_SEE_TAG, containing,
+                refMem, (label.isEmpty() ? text: label), false);
         }
-        return result.toString();
     }
 
-    public void printInlineComment(Doc doc, Tag tag) {
-        printCommentTags(doc, tag.inlineTags(), false, false);
+    private String plainOrCodeText(boolean plain, String text) {
+        return (plain || text.isEmpty()) ? text : codeText(text);
     }
 
     /**
@@ -2145,10 +1398,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         addCommentTags(doc, tag.inlineTags(), false, false, htmltree);
     }
 
-    public void printInlineDeprecatedComment(Doc doc, Tag tag) {
-        printCommentTags(doc, tag.inlineTags(), true, false);
-    }
-
     /**
      * Add the inline deprecated comment.
      *
@@ -2160,10 +1409,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         addCommentTags(doc, tag.inlineTags(), true, false, htmltree);
     }
 
-    public void printSummaryComment(Doc doc) {
-        printSummaryComment(doc, doc.firstSentenceTags());
-    }
-
     /**
      * Adds the summary content.
      *
@@ -2172,10 +1417,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public void addSummaryComment(Doc doc, Content htmltree) {
         addSummaryComment(doc, doc.firstSentenceTags(), htmltree);
-    }
-
-    public void printSummaryComment(Doc doc, Tag[] firstSentenceTags) {
-        printCommentTags(doc, firstSentenceTags, false, true);
     }
 
     /**
@@ -2189,21 +1430,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         addCommentTags(doc, firstSentenceTags, false, true, htmltree);
     }
 
-    public void printSummaryDeprecatedComment(Doc doc) {
-        printCommentTags(doc, doc.firstSentenceTags(), true, true);
-    }
-
-    public void printSummaryDeprecatedComment(Doc doc, Tag tag) {
-        printCommentTags(doc, tag.firstSentenceTags(), true, true);
-    }
-
     public void addSummaryDeprecatedComment(Doc doc, Tag tag, Content htmltree) {
         addCommentTags(doc, tag.firstSentenceTags(), true, true, htmltree);
-    }
-
-    public void printInlineComment(Doc doc) {
-        printCommentTags(doc, doc.inlineTags(), false, false);
-        p();
     }
 
     /**
@@ -2214,27 +1442,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public void addInlineComment(Doc doc, Content htmltree) {
         addCommentTags(doc, doc.inlineTags(), false, false, htmltree);
-    }
-
-    public void printInlineDeprecatedComment(Doc doc) {
-        printCommentTags(doc, doc.inlineTags(), true, false);
-    }
-
-    private void printCommentTags(Doc doc, Tag[] tags, boolean depr, boolean first) {
-        if(configuration.nocomment){
-            return;
-        }
-        if (depr) {
-            italic();
-        }
-        String result = commentTagsToString(null, doc, tags, first);
-        print(result);
-        if (depr) {
-            italicEnd();
-        }
-        if (tags.length == 0) {
-            space();
-        }
     }
 
     /**
@@ -2501,22 +1708,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
     }
 
-    public void printStyleSheetProperties() {
-        String filename = configuration.stylesheetfile;
-        if (filename.length() > 0) {
-            File stylefile = new File(filename);
-            String parent = stylefile.getParent();
-            filename = (parent == null)?
-                filename:
-                filename.substring(parent.length() + 1);
-        } else {
-            filename = "stylesheet.css";
-        }
-        filename = relativePath + filename;
-        link("REL =\"stylesheet\" TYPE=\"text/css\" HREF=\"" +
-                 filename + "\" " + "TITLE=\"Style\"");
-    }
-
     /**
      * Returns a link to the stylesheet file.
      *
@@ -2548,15 +1739,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Write the annotatation types for the given packageDoc.
-     *
-     * @param packageDoc the package to write annotations for.
-     */
-    public void writeAnnotationInfo(PackageDoc packageDoc) {
-        writeAnnotationInfo(packageDoc, packageDoc.annotations());
-    }
-
-    /**
      * Adds the annotatation types for the given packageDoc.
      *
      * @param packageDoc the package to write annotations for.
@@ -2568,15 +1750,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Write the annotatation types for the given doc.
-     *
-     * @param doc the doc to write annotations for.
-     */
-    public void writeAnnotationInfo(ProgramElementDoc doc) {
-        writeAnnotationInfo(doc, doc.annotations());
-    }
-
-    /**
      * Adds the annotatation types for the given doc.
      *
      * @param doc the package to write annotations for
@@ -2584,17 +1757,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public void addAnnotationInfo(ProgramElementDoc doc, Content htmltree) {
         addAnnotationInfo(doc, doc.annotations(), htmltree);
-    }
-
-    /**
-     * Write the annotatation types for the given doc and parameter.
-     *
-     * @param indent the number of spaced to indent the parameters.
-     * @param doc the doc to write annotations for.
-     * @param param the parameter to write annotations for.
-     */
-    public boolean writeAnnotationInfo(int indent, Doc doc, Parameter param) {
-        return writeAnnotationInfo(indent, doc, param.annotations(), false);
     }
 
     /**
@@ -2611,16 +1773,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Write the annotatation types for the given doc.
-     *
-     * @param doc the doc to write annotations for.
-     * @param descList the array of {@link AnnotationDesc}.
-     */
-    private void writeAnnotationInfo(Doc doc, AnnotationDesc[] descList) {
-        writeAnnotationInfo(0, doc, descList, true);
-    }
-
-    /**
      * Adds the annotatation types for the given doc.
      *
      * @param doc the doc to write annotations for.
@@ -2631,26 +1783,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     private void addAnnotationInfo(Doc doc, AnnotationDesc[] descList,
             Content htmltree) {
         addAnnotationInfo(0, doc, descList, true, htmltree);
-    }
-
-    /**
-     * Write the annotatation types for the given doc.
-     *
-     * @param indent the number of extra spaces to indent the annotations.
-     * @param doc the doc to write annotations for.
-     * @param descList the array of {@link AnnotationDesc}.
-     */
-    private boolean writeAnnotationInfo(int indent, Doc doc, AnnotationDesc[] descList, boolean lineBreak) {
-        List<String> annotations = getAnnotations(indent, descList, lineBreak);
-        if (annotations.size() == 0) {
-            return false;
-        }
-        fontNoNewLine("-1");
-        for (Iterator<String> iter = annotations.iterator(); iter.hasNext();) {
-            print(iter.next());
-        }
-        fontEnd();
-        return true;
     }
 
     /**
