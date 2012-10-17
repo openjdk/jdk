@@ -66,18 +66,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         super(configuration, path, filename, relpath);
     }
 
-    public void printTypeSummaryHeader() {
-        tdIndex();
-        font("-1");
-        code();
-    }
-
-    public void printTypeSummaryFooter() {
-        codeEnd();
-        fontEnd();
-        tdEnd();
-    }
-
     /**
      * Add the summary header.
      *
@@ -105,14 +93,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         return table;
     }
 
-    public void printTableHeadingBackground(String str) {
-        tableIndexDetail();
-        tableHeaderStart("#CCCCFF", 1);
-        strong(str);
-        tableHeaderEnd();
-        tableEnd();
-    }
-
     /**
      * Add the inherited summary header.
      *
@@ -126,19 +106,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         mw.addInheritedSummaryLabel(cd, inheritedTree);
     }
 
-    public void printSummaryFooter(AbstractMemberWriter mw, ClassDoc cd) {
-        tableEnd();
-        space();
-    }
-
-    public void printInheritedSummaryFooter(AbstractMemberWriter mw, ClassDoc cd) {
-        codeEnd();
-        summaryRowEnd();
-        trEnd();
-        tableEnd();
-        space();
-    }
-
     /**
      * Add the index comment.
      *
@@ -147,24 +114,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     protected void addIndexComment(Doc member, Content contentTree) {
         addIndexComment(member, member.firstSentenceTags(), contentTree);
-    }
-
-    protected void printIndexComment(Doc member, Tag[] firstSentenceTags) {
-        Tag[] deprs = member.tags("deprecated");
-        if (Util.isDeprecated((ProgramElementDoc) member)) {
-            strongText("doclet.Deprecated");
-            space();
-            if (deprs.length > 0) {
-                printInlineDeprecatedComment(member, deprs[0]);
-            }
-            return;
-        } else {
-            ClassDoc cd = ((ProgramElementDoc)member).containingClass();
-            if (cd != null && Util.isDeprecated(cd)) {
-                strongText("doclet.Deprecated"); space();
-            }
-        }
-        printSummaryComment(member, firstSentenceTags);
     }
 
     /**
@@ -223,18 +172,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         addSummaryLinkComment(mw, member, member.firstSentenceTags(), contentTree);
     }
 
-    public void printSummaryLinkComment(AbstractMemberWriter mw,
-                                        ProgramElementDoc member,
-                                        Tag[] firstSentenceTags) {
-        codeEnd();
-        println();
-        br();
-        printNbsps();
-        printIndexComment(member, firstSentenceTags);
-        summaryRowEnd();
-        trEnd();
-    }
-
     /**
      * Add the summary link comment.
      *
@@ -263,13 +200,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
             linksTree.addContent(", ");
         }
         mw.addInheritedSummaryLink(cd, member, linksTree);
-    }
-
-    public void printMemberHeader() {
-        hr();
-    }
-
-    public void printMemberFooter() {
     }
 
     /**

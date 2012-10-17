@@ -218,16 +218,6 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         printHtmlDocument(null, true, serializedTree);
     }
 
-    private void tableHeader() {
-        tableIndexSummary();
-        trBgcolorStyle("#CCCCFF", "TableSubHeadingColor");
-    }
-
-    private void tableFooter() {
-        fontEnd();
-        thEnd(); trEnd(); tableEnd();
-    }
-
     /**
      * Return an instance of a SerialFieldWriter.
      *

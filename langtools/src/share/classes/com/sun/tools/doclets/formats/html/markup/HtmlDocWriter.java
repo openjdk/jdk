@@ -83,48 +83,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     public abstract Configuration configuration();
 
     /**
-     * Print Html Hyper Link.
-     *
-     * @param link String name of the file.
-     * @param where Position of the link in the file. Character '#' is not
-     * needed.
-     * @param label Tag for the link.
-     * @param strong  Boolean that sets label to strong.
-     */
-    public void printHyperLink(String link, String where,
-                               String label, boolean strong) {
-        print(getHyperLinkString(link, where, label, strong, "", "", ""));
-    }
-
-    /**
-     * Print Html Hyper Link.
-     *
-     * @param link String name of the file.
-     * @param where Position of the link in the file. Character '#' is not
-     * needed.
-     * @param label Tag for the link.
-     */
-    public void printHyperLink(String link, String where, String label) {
-        printHyperLink(link, where, label, false);
-    }
-
-    /**
-     * Print Html Hyper Link.
-     *
-     * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     * needed.
-     * @param label      Tag for the link.
-     * @param strong       Boolean that sets label to strong.
-     * @param stylename  String style of text defined in style sheet.
-     */
-    public void printHyperLink(String link, String where,
-                               String label, boolean strong,
-                               String stylename) {
-        print(getHyperLinkString(link, where, label, strong, stylename, "", ""));
-    }
-
-    /**
      * Return Html Hyper Link string.
      *
      * @param link       String name of the file.
@@ -269,15 +227,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     }
 
     /**
-     * Print the name of the package, this class is in.
-     *
-     * @param cd    ClassDoc.
-     */
-    public void printPkgName(ClassDoc cd) {
-        print(getPkgName(cd));
-    }
-
-    /**
      * Get the name of the package, this class is in.
      *
      * @param cd    ClassDoc.
@@ -289,27 +238,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
             return pkgName;
         }
         return "";
-    }
-
-    /**
-     * Keep track of member details list. Print the definition list start tag
-     * if it is not printed yet.
-     */
-    public void printMemberDetailsListStartTag () {
-        if (!getMemberDetailsListPrinted()) {
-            dl();
-            memberDetailsListPrinted = true;
-        }
-    }
-
-    /**
-     * Print the definition list end tag if the list start tag was printed.
-     */
-    public void printMemberDetailsListEndTag () {
-        if (getMemberDetailsListPrinted()) {
-            dlEnd();
-            memberDetailsListPrinted = false;
-        }
     }
 
     public boolean getMemberDetailsListPrinted() {
@@ -345,7 +273,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
                 head, frameset);
         Content htmlDocument = new HtmlDocument(htmlDocType,
                 htmlComment, htmlTree);
-        htmlDocument.write(this, true);
+        write(htmlDocument);
     }
 
     /**
@@ -360,36 +288,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
             space += " ";
         }
         return space;
-    }
-
-    /**
-     * Print the closing &lt;/body&gt; and &lt;/html&gt; tags.
-     */
-    public void printBodyHtmlEnd() {
-        println();
-        bodyEnd();
-        htmlEnd();
-    }
-
-    /**
-     * Calls {@link #printBodyHtmlEnd()} method.
-     */
-    public void printFooter() {
-        printBodyHtmlEnd();
-    }
-
-    /**
-     * Print closing &lt;/html&gt; tag.
-     */
-    public void printFrameFooter() {
-        htmlEnd();
-    }
-
-    /**
-     * Print ten non-breaking spaces("&#38;nbsp;").
-     */
-    public void printNbsps() {
-        print("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
     }
 
     protected String getGeneratedByString() {
