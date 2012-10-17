@@ -116,6 +116,8 @@ public class JavacParser implements Parser {
                 fac.options.isSet("allowLambda"); //pre-lambda guard
         this.allowMethodReferences = source.allowMethodReferences() &&
                 fac.options.isSet("allowMethodReferences"); //pre-lambda guard
+        this.allowDefaultMethods = source.allowDefaultMethods() &&
+                fac.options.isSet("allowDefaultMethods"); //pre-lambda guard
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments);
         this.keepLineMap = keepLineMap;
@@ -184,6 +186,10 @@ public class JavacParser implements Parser {
     /** Switch: should we allow method/constructor references?
      */
     boolean allowMethodReferences;
+
+    /** Switch: should we allow default methods in interfaces?
+     */
+    boolean allowDefaultMethods;
 
     /** Switch: should we keep docComments?
      */
@@ -2311,6 +2317,7 @@ public class JavacParser implements Parser {
             case SYNCHRONIZED: flag = Flags.SYNCHRONIZED; break;
             case STRICTFP    : flag = Flags.STRICTFP; break;
             case MONKEYS_AT  : flag = Flags.ANNOTATION; break;
+            case DEFAULT     : checkDefaultMethods(); flag = Flags.DEFAULT; break;
             case ERROR       : flag = 0; nextToken(); break;
             default: break loop;
             }
@@ -3359,6 +3366,12 @@ public class JavacParser implements Parser {
         if (!allowMethodReferences) {
             log.error(token.pos, "method.references.not.supported.in.source", source.name);
             allowMethodReferences = true;
+        }
+    }
+    void checkDefaultMethods() {
+        if (!allowDefaultMethods) {
+            log.error(token.pos, "default.methods.not.supported.in.source", source.name);
+            allowDefaultMethods = true;
         }
     }
 
