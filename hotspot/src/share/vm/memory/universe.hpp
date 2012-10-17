@@ -435,8 +435,14 @@ class Universe: AllStatic {
 
   // Debugging
   static bool verify_in_progress() { return _verify_in_progress; }
-  static void verify(bool silent = false,
-                     VerifyOption option = VerifyOption_Default );
+  static void verify(bool silent, VerifyOption option);
+  static void verify(bool silent) {
+    verify(silent, VerifyOption_Default /* option */);
+  }
+  static void verify() {
+    verify(false /* silent */);
+  }
+
   static int  verify_count()       { return _verify_count; }
   // The default behavior is to call print_on() on gclog_or_tty.
   static void print();
