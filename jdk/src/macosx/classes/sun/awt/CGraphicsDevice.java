@@ -194,6 +194,9 @@ public class CGraphicsDevice extends GraphicsDevice {
 
     @Override
     public void setDisplayMode(DisplayMode dm) {
+        if (dm == null) {
+            throw new IllegalArgumentException("Invalid display mode");
+        }
         nativeSetDisplayMode(displayID, dm.getWidth(), dm.getHeight(), dm.getBitDepth(), dm.getRefreshRate());
         if (isFullScreenSupported() && getFullScreenWindow() != null) {
             getFullScreenWindow().setSize(dm.getWidth(), dm.getHeight());
