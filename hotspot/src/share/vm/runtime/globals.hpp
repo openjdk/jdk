@@ -3539,10 +3539,6 @@ class CommandLineFlags {
   product(uintx, SharedDummyBlockSize, 0,                                   \
           "Size of dummy block used to shift heap addresses (in bytes)")    \
                                                                             \
-  diagnostic(bool, SharedSkipVerify, false,                                 \
-          "Skip assert() and verify() which page-in unwanted shared "       \
-          "objects. ")                                                      \
-                                                                            \
   diagnostic(bool, EnableInvokeDynamic, true,                               \
           "support JSR 292 (method handles, invokedynamic, "                \
           "anonymous classes")                                              \
