@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,20 @@
 
 /*
  * @test
- *
- * @bug 6388456
- * @summary Need adjustable TLS max record size for interoperability
- *      with non-compliant
- * @run main/othervm LargePacket
- *
- * @author Xuelei Fan
+ * @bug 7068321
+ * @summary Support TLS Server Name Indication (SNI) Extension in JSSE Server
+ * @library ../NewAPIs/SSLEngine ../../../../templates
+ * @build SSLEngineService SSLCapabilities SSLExplorer
+ * @run main/othervm SSLEngineExplorerWithCli
  */
 
 import javax.net.ssl.*;
-import java.nio.channels.*;
+import java.nio.*;
 import java.net.*;
+import java.util.*;
+import java.nio.channels.*;
 
-public class LargePacket extends SSLEngineService {
+public class SSLEngineExplorerWithCli extends SSLEngineService {
 
     /*
      * =============================================================
@@ -71,6 +71,7 @@ public class LargePacket extends SSLEngineService {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
+
         // create SSLEngine.
         SSLEngine ssle = createSSLEngine(false);
 
@@ -89,17 +90,62 @@ public class LargePacket extends SSLEngineService {
 
         // Complete connection.
         while (!sc.finishConnect()) {
+            Thread.sleep(50);
             // waiting for the connection completed.
         }
 
+        ByteBuffer buffer = ByteBuffer.allocate(0xFF);
+        int position = 0;
+        SSLCapabilities capabilities = null;
+
+        // Read the header of TLS record
+        buffer.limit(SSLExplorer.RECORD_HEADER_SIZE);
+        while (position < SSLExplorer.RECORD_HEADER_SIZE) {
+            int n = sc.read(buffer);
+            if (n < 0) {
+                throw new Exception("unexpected end of stream!");
+            }
+            position += n;
+        }
+        buffer.flip();
+
+        int recordLength = SSLExplorer.getRequiredSize(buffer);
+        if (buffer.capacity() < recordLength) {
+            ByteBuffer oldBuffer = buffer;
+            buffer = ByteBuffer.allocate(recordLength);
+            buffer.put(oldBuffer);
+        }
+
+        buffer.position(SSLExplorer.RECORD_HEADER_SIZE);
+        buffer.limit(buffer.capacity());
+        while (position < recordLength) {
+            int n = sc.read(buffer);
+            if (n < 0) {
+                throw new Exception("unexpected end of stream!");
+            }
+            position += n;
+        }
+        buffer.flip();
+
+        capabilities = SSLExplorer.explore(buffer);
+        if (capabilities != null) {
+            System.out.println("Record version: " +
+                    capabilities.getRecordVersion());
+            System.out.println("Hello version: " +
+                    capabilities.getHelloVersion());
+        }
+
         // handshaking
-        handshaking(ssle, sc, null);
+        handshaking(ssle, sc, buffer);
 
         // receive application data
         receive(ssle, sc);
 
         // send out application data
         deliver(ssle, sc);
+
+        ExtendedSSLSession session = (ExtendedSSLSession)ssle.getSession();
+        checkCapabilities(capabilities, session);
 
         // close the socket channel.
         sc.close();
@@ -132,8 +178,16 @@ public class LargePacket extends SSLEngineService {
 
         // Complete connection.
         while (!sc.finishConnect() ) {
+            Thread.sleep(50);
             // waiting for the connection completed.
         }
+
+        SNIHostName serverName = new SNIHostName(clientRequestedHostname);
+        List<SNIServerName> serverNames = new ArrayList<>(1);
+        serverNames.add(serverName);
+        SSLParameters params = ssle.getSSLParameters();
+        params.setServerNames(serverNames);
+        ssle.setSSLParameters(params);
 
         // handshaking
         handshaking(ssle, sc, null);
@@ -144,8 +198,61 @@ public class LargePacket extends SSLEngineService {
         // receive application data
         receive(ssle, sc);
 
+        // check server name indication
+        ExtendedSSLSession session = (ExtendedSSLSession)ssle.getSession();
+        checkSNIInSession(session);
+
         // close the socket channel.
         sc.close();
+    }
+
+    private static String clientRequestedHostname = "www.example.com";
+    private static String serverAcceptableHostname =
+                                                "www\\.example\\.(com|org)";
+
+    void checkCapabilities(SSLCapabilities capabilities,
+            ExtendedSSLSession session) throws Exception {
+        List<SNIServerName> sessionSNI = session.getRequestedServerNames();
+        if (!sessionSNI.equals(capabilities.getServerNames())) {
+            for (SNIServerName sni : sessionSNI) {
+                System.out.println("SNI in session is " + sni);
+            }
+
+            List<SNIServerName> capaSNI = capabilities.getServerNames();
+            for (SNIServerName sni : capaSNI) {
+                System.out.println("SNI in session is " + sni);
+            }
+
+            throw new Exception(
+                    "server name indication does not match capabilities");
+        }
+
+        checkSNIInSession(session);
+    }
+
+    void checkSNIInSession(ExtendedSSLSession session) throws Exception {
+        List<SNIServerName> sessionSNI = session.getRequestedServerNames();
+        if (sessionSNI.isEmpty()) {
+            throw new Exception(
+                    "unexpected empty request server name indication");
+        }
+
+        if (sessionSNI.size() != 1) {
+            throw new Exception(
+                    "unexpected request server name indication");
+        }
+
+        SNIServerName serverName = sessionSNI.get(0);
+        if (!(serverName instanceof SNIHostName)) {
+            throw new Exception(
+                    "unexpected instance of request server name indication");
+        }
+
+        String hostname = ((SNIHostName)serverName).getAsciiName();
+        if (!clientRequestedHostname.equalsIgnoreCase(hostname)) {
+            throw new Exception(
+                    "unexpected request server name indication value");
+        }
     }
 
     /*
@@ -162,7 +269,7 @@ public class LargePacket extends SSLEngineService {
         if (debug)
             System.setProperty("javax.net.debug", "all");
 
-        new LargePacket();
+        new SSLEngineExplorerWithCli();
     }
 
     Thread clientThread = null;
@@ -173,8 +280,8 @@ public class LargePacket extends SSLEngineService {
      *
      * Fork off the other side, then do your work.
      */
-    LargePacket() throws Exception {
-        super("../../../../../etc");
+    SSLEngineExplorerWithCli() throws Exception {
+        super("../../../../etc");
 
         if (separateServerThread) {
             startServer(true);
