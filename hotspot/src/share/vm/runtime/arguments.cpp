@@ -791,6 +791,10 @@ void Arguments::print_on(outputStream* st) {
     st->print("jvm_args: "); print_jvm_args_on(st);
   }
   st->print_cr("java_command: %s", java_command() ? java_command() : "<unknown>");
+  if (_java_class_path != NULL) {
+    char* path = _java_class_path->value();
+    st->print_cr("java_class_path (initial): %s", strlen(path) == 0 ? "<not set>" : path );
+  }
   st->print_cr("Launcher Type: %s", _sun_java_launcher);
 }
 
