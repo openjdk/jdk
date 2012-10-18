@@ -2771,6 +2771,11 @@ SOLARIS_ONLY(
         return JNI_EINVAL;
       }
       FLAG_SET_CMDLINE(uintx, MaxDirectMemorySize, max_direct_memory_size);
+    } else if (match_option(option, "-XX:+UseVMInterruptibleIO", &tail)) {
+      // NOTE! In JDK 9, the UseVMInterruptibleIO flag will completely go
+      //       away and will cause VM initialization failures!
+      warning("-XX:+UseVMInterruptibleIO is obsolete and will be removed in a future release.");
+      FLAG_SET_CMDLINE(bool, UseVMInterruptibleIO, true);
     } else if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
       // Skip -XX:Flags= since that case has already been handled
       if (strncmp(tail, "Flags=", strlen("Flags=")) != 0) {
@@ -2786,10 +2791,6 @@ SOLARIS_ONLY(
 
   // Change the default value for flags  which have different default values
   // when working with older JDKs.
-  if (JDK_Version::current().compare_major(6) <= 0 &&
-      FLAG_IS_DEFAULT(UseVMInterruptibleIO)) {
-    FLAG_SET_DEFAULT(UseVMInterruptibleIO, true);
-  }
 #ifdef LINUX
  if (JDK_Version::current().compare_major(6) <= 0 &&
       FLAG_IS_DEFAULT(UseLinuxPosixThreadCPUClocks)) {
