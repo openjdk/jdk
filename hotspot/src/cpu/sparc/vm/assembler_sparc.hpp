@@ -2280,6 +2280,11 @@ public:
   void encode_heap_oop_not_null(Register src, Register dst);
   void decode_heap_oop_not_null(Register src, Register dst);
 
+  void encode_klass_not_null(Register r);
+  void decode_klass_not_null(Register r);
+  void encode_klass_not_null(Register src, Register dst);
+  void decode_klass_not_null(Register src, Register dst);
+
   // Support for managing the JavaThread pointer (i.e.; the reference to
   // thread-local information).
   void get_thread();                                // load G2_thread
@@ -2409,6 +2414,7 @@ public:
   inline void    set_metadata             (const AddressLiteral& obj_addr, Register d); // same as load_address
 
   void set_narrow_oop( jobject obj, Register d );
+  void set_narrow_klass( Klass* k, Register d );
 
   // nop padding
   void align(int modulus);

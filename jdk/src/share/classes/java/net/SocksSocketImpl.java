@@ -644,7 +644,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
      * means "accept incoming connection from", so the SocketAddress is the
      * the one of the host we do accept connection from.
      *
-     * @param      addr   the Socket address of the remote host.
+     * @param      saddr   the Socket address of the remote host.
      * @exception  IOException  if an I/O error occurs when binding this socket.
      */
     protected synchronized void socksBind(InetSocketAddress saddr) throws IOException {

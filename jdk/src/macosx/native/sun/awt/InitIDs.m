@@ -47,7 +47,10 @@ JNIEXPORT void JNICALL Java_java_awt_CheckboxMenuItem_initIDs
 {
 }
 
-
+JNIEXPORT void JNICALL Java_java_awt_Choice_initIDs
+(JNIEnv *env, jclass cls)
+{
+}
 
 JNIEXPORT void JNICALL Java_java_awt_Color_initIDs
 (JNIEnv *env, jclass cls)

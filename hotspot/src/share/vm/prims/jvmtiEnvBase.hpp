@@ -56,7 +56,9 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
 
  private:
 
+#if INCLUDE_JVMTI
   static JvmtiEnvBase*     _head_environment;  // head of environment list
+#endif // INCLUDE_JVMTI
 
   static bool              _globally_initialized;
   static jvmtiPhase        _phase;
@@ -129,7 +131,10 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   friend class JvmtiEnvIterator;
   JvmtiEnv* next_environment()                     { return (JvmtiEnv*)_next; }
   void set_next_environment(JvmtiEnvBase* env)     { _next = env; }
-  static JvmtiEnv* head_environment()              { return (JvmtiEnv*)_head_environment; }
+  static JvmtiEnv* head_environment()              {
+    JVMTI_ONLY(return (JvmtiEnv*)_head_environment);
+    NOT_JVMTI(return NULL);
+  }
 
  public:
 

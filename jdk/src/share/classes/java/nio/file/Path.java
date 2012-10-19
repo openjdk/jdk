@@ -522,7 +522,7 @@ public interface Path
      *
      * @return  a {@code Path} object representing the absolute path
      *
-     * @throws  IOError
+     * @throws  java.io.IOError
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, a security manager

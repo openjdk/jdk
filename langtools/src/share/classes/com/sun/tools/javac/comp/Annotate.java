@@ -514,22 +514,6 @@ public class Annotate {
                       expectedType);
             fatalError = true;
         }
-
-        // validate that all other elements of containing type has defaults
-        scope = targetContainerType.tsym.members();
-        error = false;
-        for(Symbol elm : scope.getElements()) {
-            if (elm.name != names.value &&
-                elm.kind == Kinds.MTH &&
-                ((MethodSymbol)elm).defaultValue == null) {
-                log.error(pos,
-                          "invalid.containedby.annotation.elem.nondefault",
-                          targetContainerType,
-                          elm);
-                containerValueSymbol = null;
-                error = true;
-            }
-        }
         if (error) {
             fatalError = true;
         }
