@@ -29,8 +29,7 @@
 //------------------------------VectorNode--------------------------------------
 
 // Return the vector operator for the specified scalar operation
-// and vector length.  Also used to check if the code generator
-// supports the vector operation.
+// and vector length.
 int VectorNode::opcode(int sopc, BasicType bt) {
   switch (sopc) {
   case Op_AddI:
@@ -75,7 +74,7 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     case T_BYTE:   return 0;   // Unimplemented
     case T_CHAR:
     case T_SHORT:  return Op_MulVS;
-    case T_INT:    return Matcher::match_rule_supported(Op_MulVI) ? Op_MulVI : 0; // SSE4_1
+    case T_INT:    return Op_MulVI;
     }
     ShouldNotReachHere();
   case Op_MulF:
@@ -157,12 +156,14 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   return 0; // Unimplemented
 }
 
+// Also used to check if the code generator
+// supports the vector operation.
 bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
       Matcher::vector_size_supported(bt, vlen)) {
     int vopc = VectorNode::opcode(opc, bt);
-    return vopc > 0 && Matcher::has_match_rule(vopc);
+    return vopc > 0 && Matcher::match_rule_supported(vopc);
   }
   return false;
 }
