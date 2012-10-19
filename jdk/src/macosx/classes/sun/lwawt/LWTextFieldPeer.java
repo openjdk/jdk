@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,15 +37,9 @@ import java.awt.peer.TextFieldPeer;
 import javax.swing.JPasswordField;
 import javax.swing.text.JTextComponent;
 
-import javax.tools.annotation.GenerateNativeHeader;
-
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 final class LWTextFieldPeer
         extends LWTextComponentPeer<TextField, JPasswordField>
         implements TextFieldPeer, ActionListener {
-
-    private static final int DEFAULT_COLUMNS = 1;
 
     LWTextFieldPeer(final TextField target,
                     final PlatformComponent platformComponent) {
@@ -83,17 +77,12 @@ final class LWTextFieldPeer
 
     @Override
     public Dimension getPreferredSize(final int columns) {
-        return getPreferredSize(1, columns);
+        return getMinimumSize(columns);
     }
 
     @Override
     public Dimension getMinimumSize(final int columns) {
-        return getPreferredSize(columns);
-    }
-
-    @Override
-    public Dimension getMinimumSize() {
-        return getMinimumSize(DEFAULT_COLUMNS);
+        return getMinimumSize(1, columns);
     }
 
     @Override

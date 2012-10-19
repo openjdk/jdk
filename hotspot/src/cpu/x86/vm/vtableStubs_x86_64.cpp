@@ -212,11 +212,11 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   if (is_vtable_stub) {
     // Vtable stub size
     return (DebugVtables ? 512 : 24) + (CountCompiledCalls ? 13 : 0) +
-           (UseCompressedOops ? 16 : 0);  // 1 leaq can be 3 bytes + 1 long
+           (UseCompressedKlassPointers ? 16 : 0);  // 1 leaq can be 3 bytes + 1 long
   } else {
     // Itable stub size
     return (DebugVtables ? 512 : 74) + (CountCompiledCalls ? 13 : 0) +
-           (UseCompressedOops ? 32 : 0);  // 2 leaqs
+           (UseCompressedKlassPointers ? 32 : 0);  // 2 leaqs
   }
   // In order to tune these parameters, run the JVM with VM options
   // +PrintMiscellaneous and +WizardMode to see information about

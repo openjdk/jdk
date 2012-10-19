@@ -1000,9 +1000,6 @@ class CommandLineFlags {
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
-  diagnostic(bool, LinkWellKnownClasses, false,                             \
-          "Resolve a well known class as soon as its name is seen")         \
-                                                                            \
   develop(bool, DisableStartThread, false,                                  \
           "Disable starting of additional Java threads "                    \
           "(for debugging only)")                                           \
@@ -1065,9 +1062,6 @@ class CommandLineFlags {
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
                                                                             \
   product(bool, MonitorInUseLists, false, "Track Monitors for Deflation")   \
-                                                                            \
-  product(intx, Atomics, 0,                                                 \
-          "(Unsafe,Unstable) Diagnostic - Controls emission of atomics")    \
                                                                             \
   product(intx, SyncFlags, 0, "(Unsafe,Unstable) Experimental Sync flags" ) \
                                                                             \
@@ -2332,7 +2326,7 @@ class CommandLineFlags {
   develop(bool, CITimeEach, false,                                          \
           "display timing information after each successful compilation")   \
                                                                             \
-  develop(bool, CICountOSR, true,                                           \
+  develop(bool, CICountOSR, false,                                          \
           "use a separate counter when assigning ids to osr compilations")  \
                                                                             \
   develop(bool, CICompileNatives, true,                                     \

@@ -9,13 +9,9 @@ BasicTest.java:47:84: compiler.err.expected: token.identifier
 BasicTest.java:52:22: compiler.err.illegal.start.of.expr
 BasicTest.java:52:31: compiler.err.expected: ';'
 BasicTest.java:52:37: compiler.err.expected: token.identifier
-BasicTest.java:53:21: compiler.err.illegal.start.of.expr
-BasicTest.java:53:23: compiler.err.expected: ';'
 BasicTest.java:53:30: compiler.err.expected: token.identifier
-BasicTest.java:53:32: compiler.err.illegal.start.of.type
-BasicTest.java:53:37: compiler.err.expected: token.identifier
-BasicTest.java:53:38: compiler.err.expected: ';'
-BasicTest.java:56:17: compiler.err.expected: token.identifier
+BasicTest.java:53:32: compiler.err.lambda.not.supported.in.source: 1.8
+BasicTest.java:53:31: compiler.err.expected: ->
 BasicTest.java:56:23: compiler.err.expected: token.identifier
 BasicTest.java:56:24: compiler.err.expected2: '(', '['
 BasicTest.java:56:25: compiler.err.expected: ';'
@@ -63,4 +59,4 @@ BasicTest.java:74:24: compiler.err.expected: ';'
 BasicTest.java:74:25: compiler.err.illegal.start.of.type
 BasicTest.java:74:33: compiler.err.expected: ';'
 BasicTest.java:77:2: compiler.err.premature.eof
-65 errors
+61 errors

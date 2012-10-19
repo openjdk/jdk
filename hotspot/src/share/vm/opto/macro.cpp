@@ -2125,7 +2125,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
       Node* k_adr = basic_plus_adr(obj, oopDesc::klass_offset_in_bytes());
       klass_node = transform_later( LoadKlassNode::make(_igvn, mem, k_adr, _igvn.type(k_adr)->is_ptr()) );
 #ifdef _LP64
-      if (UseCompressedOops && klass_node->is_DecodeN()) {
+      if (UseCompressedKlassPointers && klass_node->is_DecodeNKlass()) {
         assert(klass_node->in(1)->Opcode() == Op_LoadNKlass, "sanity");
         klass_node->in(1)->init_req(0, ctrl);
       } else
