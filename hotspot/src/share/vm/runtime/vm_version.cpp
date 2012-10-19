@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,24 +110,26 @@ void Abstract_VM_Version::initialize() {
   #define VMLP ""
 #endif
 
-#ifdef KERNEL
-  #define VMTYPE "Kernel"
-#else // KERNEL
-#ifdef TIERED
-  #define VMTYPE "Server"
-#else // TIERED
-#ifdef ZERO
-#ifdef SHARK
-  #define VMTYPE "Shark"
-#else // SHARK
-  #define VMTYPE "Zero"
-#endif // SHARK
-#else // ZERO
-   #define VMTYPE COMPILER1_PRESENT("Client")   \
-                  COMPILER2_PRESENT("Server")
-#endif // ZERO
-#endif // TIERED
-#endif // KERNEL
+#ifndef VMTYPE
+  #ifdef KERNEL
+    #define VMTYPE "Kernel"
+  #else // KERNEL
+  #ifdef TIERED
+    #define VMTYPE "Server"
+  #else // TIERED
+  #ifdef ZERO
+  #ifdef SHARK
+    #define VMTYPE "Shark"
+  #else // SHARK
+    #define VMTYPE "Zero"
+  #endif // SHARK
+  #else // ZERO
+     #define VMTYPE COMPILER1_PRESENT("Client")   \
+                    COMPILER2_PRESENT("Server")
+  #endif // ZERO
+  #endif // TIERED
+  #endif // KERNEL
+#endif
 
 #ifndef HOTSPOT_VM_DISTRO
   #error HOTSPOT_VM_DISTRO must be defined

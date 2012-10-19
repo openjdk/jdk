@@ -326,7 +326,7 @@ bool ciEnv::check_klass_accessibility(ciKlass* accessing_klass,
 
   if (resolved_klass->oop_is_objArray()) {
     // Find the element klass, if this is an array.
-    resolved_klass = objArrayKlass::cast(resolved_klass)->bottom_klass();
+    resolved_klass = ObjArrayKlass::cast(resolved_klass)->bottom_klass();
   }
   if (resolved_klass->oop_is_instance()) {
     return Reflection::verify_class_access(accessing_klass->get_Klass(),
@@ -1126,7 +1126,8 @@ void ciEnv::record_method_not_compilable(const char* reason, bool all_tiers) {
       if (all_tiers) {
         log()->elem("method_not_compilable");
       } else {
-        log()->elem("method_not_compilable_at_tier");
+        log()->elem("method_not_compilable_at_tier level='%d'",
+                    current()->task()->comp_level());
       }
     }
     _compilable = new_compilable;

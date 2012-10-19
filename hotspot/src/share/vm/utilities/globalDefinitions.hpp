@@ -347,6 +347,14 @@ extern int MinObjAlignmentInBytesMask;
 extern int LogMinObjAlignment;
 extern int LogMinObjAlignmentInBytes;
 
+const int LogKlassAlignmentInBytes = 3;
+const int LogKlassAlignment        = LogKlassAlignmentInBytes - LogHeapWordSize;
+const int KlassAlignmentInBytes    = 1 << LogKlassAlignmentInBytes;
+const int KlassAlignment           = KlassAlignmentInBytes / HeapWordSize;
+
+// Klass encoding metaspace max size
+const uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlassAlignmentInBytes;
+
 // Machine dependent stuff
 
 #ifdef TARGET_ARCH_x86
@@ -481,22 +489,23 @@ void basic_types_init(); // cannot define here; uses assert
 
 // NOTE: replicated in SA in vm/agent/sun/jvm/hotspot/runtime/BasicType.java
 enum BasicType {
-  T_BOOLEAN  =  4,
-  T_CHAR     =  5,
-  T_FLOAT    =  6,
-  T_DOUBLE   =  7,
-  T_BYTE     =  8,
-  T_SHORT    =  9,
-  T_INT      = 10,
-  T_LONG     = 11,
-  T_OBJECT   = 12,
-  T_ARRAY    = 13,
-  T_VOID     = 14,
-  T_ADDRESS  = 15,
-  T_NARROWOOP= 16,
-  T_METADATA = 17,
-  T_CONFLICT = 18, // for stack value type with conflicting contents
-  T_ILLEGAL  = 99
+  T_BOOLEAN     =  4,
+  T_CHAR        =  5,
+  T_FLOAT       =  6,
+  T_DOUBLE      =  7,
+  T_BYTE        =  8,
+  T_SHORT       =  9,
+  T_INT         = 10,
+  T_LONG        = 11,
+  T_OBJECT      = 12,
+  T_ARRAY       = 13,
+  T_VOID        = 14,
+  T_ADDRESS     = 15,
+  T_NARROWOOP   = 16,
+  T_METADATA    = 17,
+  T_NARROWKLASS = 18,
+  T_CONFLICT    = 19, // for stack value type with conflicting contents
+  T_ILLEGAL     = 99
 };
 
 inline bool is_java_primitive(BasicType t) {
@@ -544,18 +553,19 @@ extern size_t lcm(size_t a, size_t b);
 
 // NOTE: replicated in SA in vm/agent/sun/jvm/hotspot/runtime/BasicType.java
 enum BasicTypeSize {
-  T_BOOLEAN_size = 1,
-  T_CHAR_size    = 1,
-  T_FLOAT_size   = 1,
-  T_DOUBLE_size  = 2,
-  T_BYTE_size    = 1,
-  T_SHORT_size   = 1,
-  T_INT_size     = 1,
-  T_LONG_size    = 2,
-  T_OBJECT_size  = 1,
-  T_ARRAY_size   = 1,
-  T_NARROWOOP_size = 1,
-  T_VOID_size    = 0
+  T_BOOLEAN_size     = 1,
+  T_CHAR_size        = 1,
+  T_FLOAT_size       = 1,
+  T_DOUBLE_size      = 2,
+  T_BYTE_size        = 1,
+  T_SHORT_size       = 1,
+  T_INT_size         = 1,
+  T_LONG_size        = 2,
+  T_OBJECT_size      = 1,
+  T_ARRAY_size       = 1,
+  T_NARROWOOP_size   = 1,
+  T_NARROWKLASS_size = 1,
+  T_VOID_size        = 0
 };
 
 
@@ -567,23 +577,24 @@ extern BasicType type2wfield[T_CONFLICT+1];
 
 // size in bytes
 enum ArrayElementSize {
-  T_BOOLEAN_aelem_bytes = 1,
-  T_CHAR_aelem_bytes    = 2,
-  T_FLOAT_aelem_bytes   = 4,
-  T_DOUBLE_aelem_bytes  = 8,
-  T_BYTE_aelem_bytes    = 1,
-  T_SHORT_aelem_bytes   = 2,
-  T_INT_aelem_bytes     = 4,
-  T_LONG_aelem_bytes    = 8,
+  T_BOOLEAN_aelem_bytes     = 1,
+  T_CHAR_aelem_bytes        = 2,
+  T_FLOAT_aelem_bytes       = 4,
+  T_DOUBLE_aelem_bytes      = 8,
+  T_BYTE_aelem_bytes        = 1,
+  T_SHORT_aelem_bytes       = 2,
+  T_INT_aelem_bytes         = 4,
+  T_LONG_aelem_bytes        = 8,
 #ifdef _LP64
-  T_OBJECT_aelem_bytes  = 8,
-  T_ARRAY_aelem_bytes   = 8,
+  T_OBJECT_aelem_bytes      = 8,
+  T_ARRAY_aelem_bytes       = 8,
 #else
-  T_OBJECT_aelem_bytes  = 4,
-  T_ARRAY_aelem_bytes   = 4,
+  T_OBJECT_aelem_bytes      = 4,
+  T_ARRAY_aelem_bytes       = 4,
 #endif
-  T_NARROWOOP_aelem_bytes = 4,
-  T_VOID_aelem_bytes    = 0
+  T_NARROWOOP_aelem_bytes   = 4,
+  T_NARROWKLASS_aelem_bytes = 4,
+  T_VOID_aelem_bytes        = 0
 };
 
 extern int _type2aelembytes[T_CONFLICT+1]; // maps a BasicType to nof bytes used by its array element

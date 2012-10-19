@@ -1115,7 +1115,7 @@ Node* GraphKit::ConvI2L(Node* offset) {
   // short-circuit a common case
   jint offset_con = find_int_con(offset, Type::OffsetBot);
   if (offset_con != Type::OffsetBot) {
-    return longcon((long) offset_con);
+    return longcon((jlong) offset_con);
   }
   return _gvn.transform( new (C) ConvI2LNode(offset));
 }

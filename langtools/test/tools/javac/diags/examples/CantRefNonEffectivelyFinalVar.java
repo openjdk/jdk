@@ -23,12 +23,23 @@
 
 // key: compiler.err.cant.ref.non.effectively.final.var
 // key: compiler.misc.inner.cls
-// options: -XDallowEffectivelyFinalInInnerClasses
+// key: compiler.misc.lambda
+// options: -XDallowLambda -XDallowEffectivelyFinalInInnerClasses
 
 class CantRefNonEffectivelyFinalVar {
     void test() {
         int i = 0;
         new Object() { int j = i; };
         i = 2;
+    }
+
+    interface SAM {
+        void m();
+    }
+
+    void test2() {
+        int i = 0;
+        SAM s = ()-> { int j = i; };
+        i++;
     }
 }

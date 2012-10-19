@@ -335,7 +335,7 @@ public class BasicLong
         fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
     }
 
-    private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
+    private static void tryCatch(Buffer b, Class<?> ex, Runnable thunk) {
         boolean caught = false;
         try {
             thunk.run();
@@ -350,7 +350,7 @@ public class BasicLong
             fail(ex.getName() + " not thrown", b);
     }
 
-    private static void tryCatch(long [] t, Class ex, Runnable thunk) {
+    private static void tryCatch(long [] t, Class<?> ex, Runnable thunk) {
         tryCatch(LongBuffer.wrap(t), ex, thunk);
     }
 
@@ -681,10 +681,34 @@ public class BasicLong
                     bulkPutBuffer(rb);
                 }});
 
+        // put(LongBuffer) should not change source position
+        final LongBuffer src = LongBuffer.allocate(1);
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.put(src);
+                 }});
+        ck(src, src.position(), 0);
+
         tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
                 public void run() {
                     rb.compact();
                 }});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

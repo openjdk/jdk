@@ -44,7 +44,7 @@ inline void oopDesc::update_contents(ParCompactionManager* cm) {
     // It might contain oops beyond the header, so take the virtual call.
     new_klass->oop_update_pointers(cm, this);
   }
-  // Else skip it.  The typeArrayKlass in the header never needs scavenging.
+  // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
 }
 
 inline void oopDesc::follow_contents(ParCompactionManager* cm) {

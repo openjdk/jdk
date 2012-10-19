@@ -31,7 +31,7 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-// TypeArrayKlass is a proxy for typeArrayKlass in the JVM
+// TypeArrayKlass is a proxy for TypeArrayKlass in the JVM
 
 public class TypeArrayKlass extends ArrayKlass {
   static {
@@ -43,7 +43,7 @@ public class TypeArrayKlass extends ArrayKlass {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type t             = db.lookupType("typeArrayKlass");
+    Type t             = db.lookupType("TypeArrayKlass");
     maxLength          = new CIntField(t.getCIntegerField("_max_length"), 0);
   }
 

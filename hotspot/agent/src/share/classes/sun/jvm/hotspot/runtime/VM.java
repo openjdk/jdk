@@ -103,6 +103,7 @@ public class VM {
   private int          logMinObjAlignmentInBytes;
   private int          heapWordSize;
   private int          heapOopSize;
+  private int          klassPtrSize;
   private int          oopSize;
   /** This is only present in a non-core build */
   private CodeCache    codeCache;
@@ -129,7 +130,7 @@ public class VM {
   private static CIntegerType boolType;
   private Boolean sharingEnabled;
   private Boolean compressedOopsEnabled;
-  private Boolean compressedHeadersEnabled;
+  private Boolean compressedKlassPointersEnabled;
 
   // command line flags supplied to VM - see struct Flag in globals.hpp
   public static final class Flag {
@@ -350,6 +351,12 @@ public class VM {
     } else {
       heapOopSize = (int)getOopSize();
     }
+
+    if (isCompressedKlassPointersEnabled()) {
+      klassPtrSize = (int)getIntSize();
+    } else {
+      klassPtrSize = (int)getOopSize(); // same as an oop
+    }
   }
 
   /** This could be used by a reflective runtime system */
@@ -374,8 +381,9 @@ public class VM {
       ((Observer) iter.next()).update(null, null);
     }
 
-    debugger.putHeapConst(soleInstance.getHeapOopSize(), Universe.getNarrowOopBase(),
-                          Universe.getNarrowOopShift());
+    debugger.putHeapConst(soleInstance.getHeapOopSize(), soleInstance.getKlassPtrSize(),
+                          Universe.getNarrowOopBase(), Universe.getNarrowOopShift(),
+                          Universe.getNarrowKlassBase(), Universe.getNarrowKlassShift());
   }
 
   /** This is used by the debugging system */
@@ -535,6 +543,10 @@ public class VM {
 
   public int getHeapOopSize() {
     return heapOopSize;
+  }
+
+  public int getKlassPtrSize() {
+    return klassPtrSize;
   }
   /** Utility routine for getting data structure alignment correct */
   public long alignUp(long size, long alignment) {
@@ -784,13 +796,13 @@ public class VM {
     return compressedOopsEnabled.booleanValue();
   }
 
-  public boolean isCompressedHeadersEnabled() {
-    if (compressedHeadersEnabled == null) {
-        Flag flag = getCommandLineFlag("UseCompressedHeaders");
-        compressedHeadersEnabled = (flag == null) ? Boolean.FALSE:
+  public boolean isCompressedKlassPointersEnabled() {
+    if (compressedKlassPointersEnabled == null) {
+        Flag flag = getCommandLineFlag("UseCompressedKlassPointers");
+        compressedKlassPointersEnabled = (flag == null) ? Boolean.FALSE:
              (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
     }
-    return compressedHeadersEnabled.booleanValue();
+    return compressedKlassPointersEnabled.booleanValue();
   }
 
   public int getObjectAlignmentInBytes() {
