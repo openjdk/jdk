@@ -714,10 +714,12 @@ Node *MemNode::Ideal_common_DU_postCCP( PhaseCCP *ccp, Node* n, Node* adr ) {
         continue;
 
       case Op_DecodeN:         // No change to NULL-ness, so peek thru
+      case Op_DecodeNKlass:
         adr = adr->in(1);
         continue;
 
       case Op_EncodeP:
+      case Op_EncodePKlass:
         // EncodeP node's control edge could be set by this method
         // when EncodeP node depends on CastPP node.
         //
@@ -794,6 +796,7 @@ Node *MemNode::Ideal_common_DU_postCCP( PhaseCCP *ccp, Node* n, Node* adr ) {
       case Op_LoadNKlass:       // Loading from within a klass
       case Op_ConP:             // Loading from a klass
       case Op_ConN:             // Loading from a klass
+      case Op_ConNKlass:        // Loading from a klass
       case Op_CreateEx:         // Sucking up the guts of an exception oop
       case Op_Con:              // Reading from TLS
       case Op_CMoveP:           // CMoveP is pinned
@@ -900,7 +903,7 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
     } else
 #endif
     {
-      assert(!adr->bottom_type()->is_ptr_to_narrowoop(), "should have got back a narrow oop");
+      assert(!adr->bottom_type()->is_ptr_to_narrowoop() && !adr->bottom_type()->is_ptr_to_narrowklass(), "should have got back a narrow oop");
       return new (C) LoadPNode(ctl, mem, adr, adr_type, rt->is_oopptr());
     }
   }
@@ -1671,9 +1674,9 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
       }
       const Type* aift = load_array_final_field(tkls, klass);
       if (aift != NULL)  return aift;
-      if (tkls->offset() == in_bytes(arrayKlass::component_mirror_offset())
+      if (tkls->offset() == in_bytes(ArrayKlass::component_mirror_offset())
           && klass->is_array_klass()) {
-        // The field is arrayKlass::_component_mirror.  Return its (constant) value.
+        // The field is ArrayKlass::_component_mirror.  Return its (constant) value.
         // (Folds up aClassConstant.getComponentType, common in Arrays.copyOf.)
         assert(Opcode() == Op_LoadP, "must load an oop from _component_mirror");
         return TypeInstPtr::make(klass->as_array_klass()->component_mirror());
@@ -1894,13 +1897,13 @@ Node *LoadKlassNode::make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* a
   const TypePtr *adr_type = adr->bottom_type()->isa_ptr();
   assert(adr_type != NULL, "expecting TypeKlassPtr");
 #ifdef _LP64
-  if (adr_type->is_ptr_to_narrowoop()) {
+  if (adr_type->is_ptr_to_narrowklass()) {
     assert(UseCompressedKlassPointers, "no compressed klasses");
-    Node* load_klass = gvn.transform(new (C) LoadNKlassNode(ctl, mem, adr, at, tk->make_narrowoop()));
-    return new (C) DecodeNNode(load_klass, load_klass->bottom_type()->make_ptr());
+    Node* load_klass = gvn.transform(new (C) LoadNKlassNode(ctl, mem, adr, at, tk->make_narrowklass()));
+    return new (C) DecodeNKlassNode(load_klass, load_klass->bottom_type()->make_ptr());
   }
 #endif
-  assert(!adr_type->is_ptr_to_narrowoop(), "should have got back a narrow oop");
+  assert(!adr_type->is_ptr_to_narrowklass() && !adr_type->is_ptr_to_narrowoop(), "should have got back a narrow oop");
   return new (C) LoadKlassNode(ctl, mem, adr, at, tk);
 }
 
@@ -2014,7 +2017,7 @@ const Type *LoadNode::klass_value_common( PhaseTransform *phase ) const {
     if( !klass->is_loaded() )
       return _type;             // Bail out if not loaded
     if( klass->is_obj_array_klass() &&
-        tkls->offset() == in_bytes(objArrayKlass::element_klass_offset())) {
+        tkls->offset() == in_bytes(ObjArrayKlass::element_klass_offset())) {
       ciKlass* elem = klass->as_obj_array_klass()->element_klass();
       // // Always returning precise element type is incorrect,
       // // e.g., element type could be object and array may contain strings
@@ -2067,7 +2070,7 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
   }
 
   // Simplify k.java_mirror.as_klass to plain k, where k is a Klass*.
-  // Simplify ak.component_mirror.array_klass to plain ak, ak an arrayKlass.
+  // Simplify ak.component_mirror.array_klass to plain ak, ak an ArrayKlass.
   // See inline_native_Class_query for occurrences of these patterns.
   // Java Example:  x.getClass().isAssignableFrom(y)
   // Java Example:  Array.newInstance(x.getClass().getComponentType(), n)
@@ -2080,7 +2083,7 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
       && (offset == java_lang_Class::klass_offset_in_bytes() ||
           offset == java_lang_Class::array_klass_offset_in_bytes())) {
     // We are loading a special hidden field from a Class mirror,
-    // the field which points to its Klass or arrayKlass metaobject.
+    // the field which points to its Klass or ArrayKlass metaobject.
     if (base->is_Load()) {
       Node* adr2 = base->in(MemNode::Address);
       const TypeKlassPtr* tkls = phase->type(adr2)->isa_klassptr();
@@ -2091,7 +2094,7 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
           ) {
         int mirror_field = in_bytes(Klass::java_mirror_offset());
         if (offset == java_lang_Class::array_klass_offset_in_bytes()) {
-          mirror_field = in_bytes(arrayKlass::component_mirror_offset());
+          mirror_field = in_bytes(ArrayKlass::component_mirror_offset());
         }
         if (tkls->offset() == mirror_field) {
           return adr2->in(AddPNode::Base);
@@ -2110,7 +2113,7 @@ const Type *LoadNKlassNode::Value( PhaseTransform *phase ) const {
   if (t == Type::TOP)
     return t;
 
-  return t->make_narrowoop();
+  return t->make_narrowklass();
 }
 
 //------------------------------Identity---------------------------------------
@@ -2121,9 +2124,10 @@ Node* LoadNKlassNode::Identity( PhaseTransform *phase ) {
 
   const Type *t = phase->type( x );
   if( t == Type::TOP ) return x;
-  if( t->isa_narrowoop()) return x;
+  if( t->isa_narrowklass()) return x;
+  assert (!t->isa_narrowoop(), "no narrow oop here");
 
-  return phase->transform(new (phase->C) EncodePNode(x, t->make_narrowoop()));
+  return phase->transform(new (phase->C) EncodePKlassNode(x, t->make_narrowklass()));
 }
 
 //------------------------------Value-----------------------------------------
@@ -2228,12 +2232,15 @@ StoreNode* StoreNode::make( PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, cons
   case T_ADDRESS:
   case T_OBJECT:
 #ifdef _LP64
-    if (adr->bottom_type()->is_ptr_to_narrowoop() ||
-        (UseCompressedKlassPointers && val->bottom_type()->isa_klassptr() &&
-         adr->bottom_type()->isa_rawptr())) {
+    if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       val = gvn.transform(new (C) EncodePNode(val, val->bottom_type()->make_narrowoop()));
       return new (C) StoreNNode(ctl, mem, adr, adr_type, val);
-    } else
+    } else if (adr->bottom_type()->is_ptr_to_narrowklass() ||
+               (UseCompressedKlassPointers && val->bottom_type()->isa_klassptr() &&
+                adr->bottom_type()->isa_rawptr())) {
+      val = gvn.transform(new (C) EncodePKlassNode(val, val->bottom_type()->make_narrowklass()));
+      return new (C) StoreNKlassNode(ctl, mem, adr, adr_type, val);
+    }
 #endif
     {
       return new (C) StorePNode(ctl, mem, adr, adr_type, val);

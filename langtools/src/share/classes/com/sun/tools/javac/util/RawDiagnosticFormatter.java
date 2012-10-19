@@ -32,6 +32,7 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.*;
 import com.sun.tools.javac.api.Formattable;
 import com.sun.tools.javac.file.BaseFileObject;
+import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.AbstractDiagnosticFormatter.SimpleConfiguration;
 
 import static com.sun.tools.javac.api.DiagnosticFormatter.PositionKind.*;
@@ -117,16 +118,17 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
     @Override
     protected String formatArgument(JCDiagnostic diag, Object arg, Locale l) {
         String s;
-        if (arg instanceof Formattable)
+        if (arg instanceof Formattable) {
             s = arg.toString();
-        else if (arg instanceof BaseFileObject)
+        } else if (arg instanceof JCExpression) {
+            JCExpression tree = (JCExpression)arg;
+            s = "@" + tree.getStartPosition();
+        } else if (arg instanceof BaseFileObject) {
             s = ((BaseFileObject) arg).getShortName();
-        else
+        } else {
             s = super.formatArgument(diag, arg, null);
-        if (arg instanceof JCDiagnostic)
-            return "(" + s + ")";
-        else
-            return s;
+        }
+        return (arg instanceof JCDiagnostic) ? "(" + s + ")" : s;
     }
 
     @Override

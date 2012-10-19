@@ -2083,6 +2083,15 @@ class MacroAssembler: public Assembler {
   void cmp_narrow_oop(Register dst, jobject obj);
   void cmp_narrow_oop(Address dst, jobject obj);
 
+  void encode_klass_not_null(Register r);
+  void decode_klass_not_null(Register r);
+  void encode_klass_not_null(Register dst, Register src);
+  void decode_klass_not_null(Register dst, Register src);
+  void set_narrow_klass(Register dst, Klass* k);
+  void set_narrow_klass(Address dst, Klass* k);
+  void cmp_narrow_klass(Register dst, Klass* k);
+  void cmp_narrow_klass(Address dst, Klass* k);
+
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
 

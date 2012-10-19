@@ -2378,13 +2378,15 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
     }
   }
 
-  if (sharpened_klass != NULL) {
+  // The sharpened class might be unloaded if there is no class loader
+  // contraint in place.
+  if (sharpened_klass != NULL && sharpened_klass->is_loaded()) {
     const TypeOopPtr* tjp = TypeOopPtr::make_from_klass(sharpened_klass);
 
 #ifndef PRODUCT
     if (PrintIntrinsics || PrintInlining || PrintOptoInlining) {
-      tty->print("  from base type:  ");   adr_type->dump();
-      tty->print("  sharpened value: ");   tjp->dump();
+      tty->print("  from base type: ");  adr_type->dump();
+      tty->print("  sharpened value: ");  tjp->dump();
     }
 #endif
     // Sharpen the value type.
@@ -3435,7 +3437,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     if (generate_array_guard(kls, region) != NULL) {
       // Be sure to pin the oop load to the guard edge just created:
       Node* is_array_ctrl = region->in(region->req()-1);
-      Node* cma = basic_plus_adr(kls, in_bytes(arrayKlass::component_mirror_offset()));
+      Node* cma = basic_plus_adr(kls, in_bytes(ArrayKlass::component_mirror_offset()));
       Node* cmo = make_load(is_array_ctrl, cma, TypeInstPtr::MIRROR, T_OBJECT);
       phi->add_req(cmo);
     }
@@ -4381,7 +4383,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   // 12 - 64-bit VM, compressed klass
   // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
-    assert(UseCompressedOops, "");
+    assert(UseCompressedKlassPointers, "");
     if (is_array) {
       // Exclude length to copy by 8 bytes words.
       base_off += sizeof(int);
@@ -5032,7 +5034,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       PreserveJVMState pjvms(this);
       set_control(not_subtype_ctrl);
       // (At this point we can assume disjoint_bases, since types differ.)
-      int ek_offset = in_bytes(objArrayKlass::element_klass_offset());
+      int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
       Node* p1 = basic_plus_adr(dest_klass, ek_offset);
       Node* n1 = LoadKlassNode::make(_gvn, immutable_memory(), p1, TypeRawPtr::BOTTOM);
       Node* dest_elem_klass = _gvn.transform(n1);

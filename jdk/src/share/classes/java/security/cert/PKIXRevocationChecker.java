@@ -50,7 +50,7 @@ import java.util.Set;
  * status of certificates with OCSP and CRLs. By default, OCSP is the
  * preferred mechanism for checking revocation status, with CRLs as the
  * fallback mechanism. However, this preference can be switched to CRLs with
- * the {@link Option.PREFER_CRLS} option.
+ * the {@link Option#PREFER_CRLS PREFER_CRLS} option.
  *
  * <p>A {@code PKIXRevocationChecker} is obtained by calling the
  * {@link CertPathValidator#getRevocationChecker getRevocationChecker} method

@@ -185,8 +185,8 @@ inline bool oopDesc::is_null(narrowOop obj) { return obj == 0; }
 inline bool check_obj_alignment(oop obj) {
   return (intptr_t)obj % MinObjAlignmentInBytes == 0;
 }
-inline bool check_obj_alignment(Klass* obj) {
-  return (intptr_t)obj % MinObjAlignmentInBytes == 0;
+inline bool check_klass_alignment(Klass* obj) {
+  return (intptr_t)obj % KlassAlignmentInBytes == 0;
 }
 
 inline narrowOop oopDesc::encode_heap_oop_not_null(oop v) {
@@ -228,9 +228,9 @@ inline oop oopDesc::decode_heap_oop(oop v)  { return v; }
 
 inline narrowOop oopDesc::encode_klass_not_null(Klass* v) {
   assert(!is_null(v), "oop value can never be zero");
-  assert(check_obj_alignment(v), "Address not aligned");
-  address base = Universe::narrow_oop_base();
-  int    shift = Universe::narrow_oop_shift();
+  assert(check_klass_alignment(v), "Address not aligned");
+  address base = Universe::narrow_klass_base();
+  int    shift = Universe::narrow_klass_shift();
   uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base, 1));
   assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
   uint64_t result = pd >> shift;
@@ -245,10 +245,10 @@ inline narrowOop oopDesc::encode_klass(Klass* v) {
 
 inline Klass* oopDesc::decode_klass_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
-  address base = Universe::narrow_oop_base();
-  int    shift = Universe::narrow_oop_shift();
+  address base = Universe::narrow_klass_base();
+  int    shift = Universe::narrow_klass_shift();
   Klass* result = (Klass*)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
-  assert(check_obj_alignment(result), err_msg("address not aligned: " PTR_FORMAT, (void*) result));
+  assert(check_klass_alignment(result), err_msg("address not aligned: " PTR_FORMAT, (void*) result));
   return result;
 }
 

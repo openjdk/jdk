@@ -42,14 +42,8 @@
 
 
 int MetaspaceShared::_max_alignment = 0;
-int MetaspaceShared::max_alignment()                   { return _max_alignment; }
-void MetaspaceShared::set_max_alignment(int alignment) { _max_alignment = alignment; }
 
-// Accessor functions to save shared space created for metadata, which has
-// extra space allocated at the end for miscellaneous data and code.
 ReservedSpace* MetaspaceShared::_shared_rs = NULL;
-ReservedSpace* MetaspaceShared::shared_rs()            { return _shared_rs; }
-void MetaspaceShared::set_shared_rs(ReservedSpace* rs) { _shared_rs = rs; }
 
 // Read/write a data stream for restoring/preserving metadata pointers and
 // miscellaneous data from/to the shared archive file.

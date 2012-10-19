@@ -154,10 +154,9 @@ MAKE_ARGS += ZIPEXE=$(ZIPEXE)
 # On 32 bit windows we build server, client and kernel, on 64 bit just server.
 ifeq ($(JVM_VARIANTS),)
   ifeq ($(ARCH_DATA_MODEL), 32)
-    JVM_VARIANTS:=client,server,kernel
+    JVM_VARIANTS:=client,server
     JVM_VARIANT_CLIENT:=true
     JVM_VARIANT_SERVER:=true
-    JVM_VARIANT_KERNEL:=true
   else
     JVM_VARIANTS:=server
     JVM_VARIANT_SERVER:=true

@@ -429,6 +429,12 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
         return (value == 0 ? null : new LinuxAddress(this, value));
     }
 
+    public LinuxAddress readCompKlassAddress(long address)
+            throws UnmappedAddressException, UnalignedAddressException {
+        long value = readCompKlassAddressValue(address);
+        return (value == 0 ? null : new LinuxAddress(this, value));
+    }
+
     /** From the LinuxDebugger interface */
     public LinuxOopHandle readOopHandle(long address)
             throws UnmappedAddressException, UnalignedAddressException,

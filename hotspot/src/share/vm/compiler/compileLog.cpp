@@ -302,3 +302,48 @@ void CompileLog::finish_log(outputStream* file) {
   char buf[4 * K];
   finish_log_on_error(file, buf, sizeof(buf));
 }
+
+// ------------------------------------------------------------------
+// CompileLog::inline_success
+//
+// Print about successful method inlining.
+void CompileLog::inline_success(const char* reason) {
+  begin_elem("inline_success reason='");
+  text(reason);
+  end_elem("'");
+}
+
+// ------------------------------------------------------------------
+// CompileLog::inline_fail
+//
+// Print about failed method inlining.
+void CompileLog::inline_fail(const char* reason) {
+  begin_elem("inline_fail reason='");
+  text(reason);
+  end_elem("'");
+}
+
+// ------------------------------------------------------------------
+// CompileLog::set_context
+//
+// Set XML tag as an optional marker - it is printed only if
+// there are other entries after until it is reset.
+void CompileLog::set_context(const char* format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  clear_context();
+  _context.print("<");
+  _context.vprint(format, ap);
+  _context.print_cr("/>");
+  va_end(ap);
+}
+
+// ------------------------------------------------------------------
+// CompileLog::code_cache_state
+//
+// Print code cache state.
+void CompileLog::code_cache_state() {
+  begin_elem("code_cache");
+  CodeCache::log_state(this);
+  end_elem("");
+}

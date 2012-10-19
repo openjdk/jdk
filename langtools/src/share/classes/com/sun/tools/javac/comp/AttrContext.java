@@ -56,7 +56,7 @@ public class AttrContext {
 
     /** Are arguments to current function applications boxed into an array for varargs?
      */
-    boolean varArgs = false;
+    Resolve.MethodResolutionPhase pendingResolutionPhase = null;
 
     /** A record of the lint/SuppressWarnings currently in effect
      */
@@ -67,6 +67,11 @@ public class AttrContext {
      */
     Symbol enclVar = null;
 
+    /** ResultInfo to be used for attributing 'return' statement expressions
+     * (set by Attr.visitMethod and Attr.visitLambda)
+     */
+    Attr.ResultInfo returnResult = null;
+
     /** Duplicate this context, replacing scope field and copying all others.
      */
     AttrContext dup(Scope scope) {
@@ -75,9 +80,10 @@ public class AttrContext {
         info.staticLevel = staticLevel;
         info.isSelfCall = isSelfCall;
         info.selectSuper = selectSuper;
-        info.varArgs = varArgs;
+        info.pendingResolutionPhase = pendingResolutionPhase;
         info.lint = lint;
         info.enclVar = enclVar;
+        info.returnResult = returnResult;
         return info;
     }
 
@@ -91,6 +97,11 @@ public class AttrContext {
         if (scope == null)
             return List.nil();
         return scope.getElements();
+    }
+
+    boolean lastResolveVarargs() {
+        return pendingResolutionPhase != null &&
+                pendingResolutionPhase.isVarargsRequired();
     }
 
     public String toString() {

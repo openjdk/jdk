@@ -1381,8 +1381,7 @@ void Parse::do_one_block() {
       // that occur during parsing of this BC.  If there is no log
       // output until the next context string, this context string
       // will be silently ignored.
-      log->context()->reset();
-      log->context()->print_cr("<bc code='%d' bci='%d'/>", (int)bc(), bci());
+      log->set_context("bc code='%d' bci='%d'", (int)bc(), bci());
     }
 
     if (block()->has_trap_at(bci())) {
@@ -1411,7 +1410,8 @@ void Parse::do_one_block() {
 
     NOT_PRODUCT( parse_histogram()->record_change(); );
 
-    if (log != NULL)  log->context()->reset();  // done w/ this one
+    if (log != NULL)
+      log->clear_context();  // skip marker if nothing was printed
 
     // Fall into next bytecode.  Each bytecode normally has 1 sequential
     // successor which is typically made ready by visiting this bytecode.

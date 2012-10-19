@@ -185,6 +185,8 @@ public class CheckResourceKeys {
         "compiler.err.cant.resolve.args.params",
         "compiler.err.cant.resolve.location.args",
         "compiler.err.cant.resolve.location.args.params",
+        "compiler.misc.cant.resolve.location.args",
+        "compiler.misc.cant.resolve.location.args.params",
         // JavaCompiler, reports #errors and #warnings
         "compiler.misc.count.error",
         "compiler.misc.count.error.plural",
