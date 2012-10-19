@@ -139,7 +139,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   if (VerifyBeforeGC && heap->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
     gclog_or_tty->print(" VerifyBeforeGC:");
-    Universe::verify(true);
+    Universe::verify();
   }
 
   // Verify object start arrays
@@ -341,7 +341,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
     gclog_or_tty->print(" VerifyAfterGC:");
-    Universe::verify(false);
+    Universe::verify();
   }
 
   // Re-verify object start arrays
