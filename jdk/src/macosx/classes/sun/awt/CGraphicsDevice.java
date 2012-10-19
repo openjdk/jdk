@@ -33,9 +33,7 @@ import java.awt.DisplayMode;
 
 import sun.java2d.opengl.CGLGraphicsConfig;
 
-import sun.awt.FullScreenCapable;
-
-public class CGraphicsDevice extends GraphicsDevice {
+public final class CGraphicsDevice extends GraphicsDevice {
 
     // CoreGraphics display ID
     private final int displayID;
@@ -106,11 +104,6 @@ public class CGraphicsDevice extends GraphicsDevice {
 
     public double getYResolution() {
         return nativeGetYResolution(displayID);
-    }
-
-    public int getScreenResolution() {
-        // TODO: report non-72 value when HiDPI is turned on
-        return 72;
     }
 
     private static native double nativeGetXResolution(int displayID);
