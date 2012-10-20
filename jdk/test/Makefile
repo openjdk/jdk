@@ -508,6 +508,7 @@ jdk_other: $(call TestDirs, \
 	  javax/sql \
           javax/smartcardio \
 	  javax/xml/ws com/sun/internal/ws \
+	  jdk/asm \
 	  com/sun/org/apache/xerces \
           com/sun/corba \
 	  com/sun/servicetag \
