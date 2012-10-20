@@ -600,9 +600,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, address caller) {
   if (PrintMalloc && tty != NULL) tty->print_cr("os::malloc " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, memblock);
 
   // we do not track MallocCushion memory
-  if (MemTracker::is_on()) {
     MemTracker::record_malloc((address)memblock, size, memflags, caller == 0 ? CALLER_PC : caller);
-  }
 
   return memblock;
 }
@@ -613,7 +611,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, address caller
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
   void* ptr = ::realloc(memblock, size);
-  if (ptr != NULL && MemTracker::is_on()) {
+  if (ptr != NULL) {
     MemTracker::record_realloc((address)memblock, (address)ptr, size, memflags,
      caller == 0 ? CALLER_PC : caller);
   }
@@ -1401,7 +1399,7 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
 
 char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   char* result = pd_reserve_memory(bytes, addr, alignment_hint);
-  if (result != NULL && MemTracker::is_on()) {
+  if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   }
 
@@ -1409,7 +1407,7 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
 }
 char* os::attempt_reserve_memory_at(size_t bytes, char* addr) {
   char* result = pd_attempt_reserve_memory_at(bytes, addr);
-  if (result != NULL && MemTracker::is_on()) {
+  if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   }
   return result;
@@ -1422,7 +1420,7 @@ void os::split_reserved_memory(char *base, size_t size,
 
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   bool res = pd_commit_memory(addr, bytes, executable);
-  if (res && MemTracker::is_on()) {
+  if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
   }
   return res;
@@ -1431,7 +1429,7 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
 bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
                               bool executable) {
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
-  if (res && MemTracker::is_on()) {
+  if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
   }
   return res;
@@ -1458,8 +1456,9 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only,
                            bool allow_exec) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
-  if (result != NULL && MemTracker::is_on()) {
+  if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_commit((address)result, bytes, CALLER_PC);
   }
   return result;
 }
@@ -1474,6 +1473,7 @@ char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result = pd_unmap_memory(addr, bytes);
   if (result) {
+    MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
     MemTracker::record_virtual_memory_release((address)addr, bytes);
   }
   return result;
