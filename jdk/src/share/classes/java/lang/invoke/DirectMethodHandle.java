@@ -218,7 +218,7 @@ class DirectMethodHandle extends MethodHandle {
         try {
             linker = IMPL_NAMES.resolveOrFail(REF_invokeStatic, linker, null, NoSuchMethodException.class);
         } catch (ReflectiveOperationException ex) {
-            throw new InternalError(ex);
+            throw newInternalError(ex);
         }
         final int DMH_THIS    = 0;
         final int ARG_BASE    = 1;
@@ -554,7 +554,7 @@ class DirectMethodHandle extends MethodHandle {
         try {
             linker = IMPL_NAMES.resolveOrFail(REF_invokeVirtual, linker, null, NoSuchMethodException.class);
         } catch (ReflectiveOperationException ex) {
-            throw new InternalError(ex);
+            throw newInternalError(ex);
         }
 
         // What is the external type of the lambda form?
@@ -653,7 +653,7 @@ class DirectMethodHandle extends MethodHandle {
                 nf.resolve();
             }
         } catch (ReflectiveOperationException ex) {
-            throw new InternalError(ex);
+            throw newInternalError(ex);
         }
     }
 }

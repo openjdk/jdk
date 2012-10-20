@@ -70,7 +70,7 @@ public class BigArityTest {
                 MethodHandles.lookup().unreflect(
                     BigArityTest.class.getDeclaredMethod("hashArguments", Object[].class));
         } catch (ReflectiveOperationException ex) {
-            throw new InternalError(ex);
+            throw new Error(ex);
         }
     }
     static MethodHandle MH_hashArguments(int arity) {
