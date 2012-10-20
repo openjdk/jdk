@@ -291,7 +291,7 @@ public class SSLParameters {
      *
      * @since 1.8
      */
-    public void setServerNames(List<SNIServerName> serverNames) {
+    public final void setServerNames(List<SNIServerName> serverNames) {
         if (serverNames != null) {
             if (!serverNames.isEmpty()) {
                 sniNames = new LinkedHashMap<>(serverNames.size());
@@ -349,7 +349,7 @@ public class SSLParameters {
      *
      * @since 1.8
      */
-    public List<SNIServerName> getServerNames() {
+    public final List<SNIServerName> getServerNames() {
         if (sniNames != null) {
             if (!sniNames.isEmpty()) {
                 return Collections.<SNIServerName>unmodifiableList(
@@ -386,7 +386,7 @@ public class SSLParameters {
      *
      * @since 1.8
      */
-    public void setSNIMatchers(Collection<SNIMatcher> matchers) {
+    public final void setSNIMatchers(Collection<SNIMatcher> matchers) {
         if (matchers != null) {
             if (!matchers.isEmpty()) {
                 sniMatchers = new HashMap<>(matchers.size());
@@ -424,7 +424,7 @@ public class SSLParameters {
      *
      * @since 1.8
      */
-    public Collection<SNIMatcher> getSNIMatchers() {
+    public final Collection<SNIMatcher> getSNIMatchers() {
         if (sniMatchers != null) {
             if (!sniMatchers.isEmpty()) {
                 return Collections.<SNIMatcher>unmodifiableList(
