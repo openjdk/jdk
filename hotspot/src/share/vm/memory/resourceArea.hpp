@@ -127,15 +127,21 @@ protected:
   void reset_to_mark() {
     if (UseMallocOnly) free_malloced_objects();
 
-    if( _chunk->next() )        // Delete later chunks
+    if( _chunk->next() ) {       // Delete later chunks
+      // reset arena size before delete chunks. Otherwise, the total
+      // arena size could exceed total chunk size
+      assert(_area->size_in_bytes() > size_in_bytes(), "Sanity check");
+      _area->set_size_in_bytes(size_in_bytes());
       _chunk->next_chop();
+    } else {
+      assert(_area->size_in_bytes() == size_in_bytes(), "Sanity check");
+    }
     _area->_chunk = _chunk;     // Roll back arena to saved chunk
     _area->_hwm = _hwm;
     _area->_max = _max;
 
     // clear out this chunk (to detect allocation bugs)
     if (ZapResourceArea) memset(_hwm, badResourceValue, _max - _hwm);
-    _area->set_size_in_bytes(size_in_bytes());
   }
 
   ~ResourceMark() {
@@ -219,15 +225,21 @@ protected:
   void reset_to_mark() {
     if (UseMallocOnly) free_malloced_objects();
 
-    if( _chunk->next() )        // Delete later chunks
+    if( _chunk->next() ) {        // Delete later chunks
+      // reset arena size before delete chunks. Otherwise, the total
+      // arena size could exceed total chunk size
+      assert(_area->size_in_bytes() > size_in_bytes(), "Sanity check");
+      _area->set_size_in_bytes(size_in_bytes());
       _chunk->next_chop();
+    } else {
+      assert(_area->size_in_bytes() == size_in_bytes(), "Sanity check");
+    }
     _area->_chunk = _chunk;     // Roll back arena to saved chunk
     _area->_hwm = _hwm;
     _area->_max = _max;
 
     // clear out this chunk (to detect allocation bugs)
     if (ZapResourceArea) memset(_hwm, badResourceValue, _max - _hwm);
-    _area->set_size_in_bytes(size_in_bytes());
   }
 
   ~DeoptResourceMark() {
