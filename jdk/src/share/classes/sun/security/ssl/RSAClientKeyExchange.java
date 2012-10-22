@@ -36,7 +36,7 @@ import javax.crypto.spec.*;
 import javax.net.ssl.*;
 
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
-import sun.security.util.KeyLength;
+import sun.security.util.KeyUtil;
 
 /**
  * This is the client key exchange message (CLIENT --> SERVER) used with
@@ -193,7 +193,7 @@ final class RSAClientKeyExchange extends HandshakeMessage {
                         "unable to get the plaintext of the premaster secret");
                 }
 
-                int keySize = KeyLength.getKeySize(secretKey);
+                int keySize = KeyUtil.getKeySize(secretKey);
                 if (keySize > 0 && keySize != 384) {       // 384 = 48 * 8
                     if (debug != null && Debug.isOn("handshake")) {
                         System.out.println(

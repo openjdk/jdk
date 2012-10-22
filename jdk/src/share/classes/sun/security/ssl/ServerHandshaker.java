@@ -1365,7 +1365,7 @@ final class ServerHandshaker extends Handshaker {
         if (debug != null && Debug.isOn("handshake")) {
             mesg.print(System.out);
         }
-        return dh.getAgreedSecret(mesg.getClientPublicKey());
+        return dh.getAgreedSecret(mesg.getClientPublicKey(), false);
     }
 
     private SecretKey clientKeyExchange(ECDHClientKeyExchange mesg)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
-
+import javax.net.ssl.SSLHandshakeException;
 
 /*
  * Message used by clients to send their Diffie-Hellman public
@@ -50,7 +50,7 @@ final class DHClientKeyExchange extends HandshakeMessage {
     private byte dh_Yc[];               // 1 to 2^16 -1 bytes
 
     BigInteger getClientPublicKey() {
-        return new BigInteger(1, dh_Yc);
+        return dh_Yc == null ? null : new BigInteger(1, dh_Yc);
     }
 
     /*
@@ -72,7 +72,14 @@ final class DHClientKeyExchange extends HandshakeMessage {
      * but that's what the protocol spec requires.)
      */
     DHClientKeyExchange(HandshakeInStream input) throws IOException {
-        dh_Yc = input.getBytes16();
+        if (input.available() >= 2) {
+            dh_Yc = input.getBytes16();
+        } else {
+            // currently, we don't support cipher suites that requires
+            // implicit public key of client.
+            throw new SSLHandshakeException(
+                    "Unsupported implicit client DiffieHellman public key");
+        }
     }
 
     int messageLength() {
@@ -84,7 +91,9 @@ final class DHClientKeyExchange extends HandshakeMessage {
     }
 
     void send(HandshakeOutStream s) throws IOException {
-        s.putBytes16(dh_Yc);
+        if (dh_Yc != null && dh_Yc.length != 0) {
+            s.putBytes16(dh_Yc);
+        }
     }
 
     void print(PrintStream s) throws IOException {
