@@ -29,6 +29,11 @@ import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.AccessControlContext;
+import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedActionException;
 
 public class ByteCodeRewriter
 {
@@ -38,8 +43,20 @@ public class ByteCodeRewriter
     private byte[] code;
     private Bytes  bytes;
 
-    public static final boolean DEBUG = false;
     private static final int jintSize = 4;
+    public static final boolean DEBUG;
+
+    static {
+        String debug =  (String) AccessController.doPrivileged(
+            new PrivilegedAction() {
+                public Object run() {
+                    return System.getProperty("sun.jvm.hotspot.tools.jcore.ByteCodeRewriter.DEBUG");
+                }
+            }
+        );
+        DEBUG = (debug != null ? debug.equalsIgnoreCase("true") : false);
+    }
+
 
     protected void debugMessage(String message) {
         System.out.println(message);
@@ -53,6 +70,18 @@ public class ByteCodeRewriter
         this.bytes = VM.getVM().getBytes();
 
     }
+
+    protected short getConstantPoolIndexFromRefMap(int rawcode, int bci) {
+        int refIndex;
+        String fmt = Bytecodes.format(rawcode);
+        switch (fmt.length()) {
+            case 2: refIndex = 0xFF & method.getBytecodeByteArg(bci); break;
+            case 3: refIndex = 0xFFFF & bytes.swapShort(method.getBytecodeShortArg(bci)); break;
+            default: throw new IllegalArgumentException();
+        }
+
+        return (short)cpool.objectToCPIndex(refIndex);
+     }
 
     protected short getConstantPoolIndex(int rawcode, int bci) {
        // get ConstantPool index from ConstantPoolCacheIndex at given bci
@@ -95,6 +124,12 @@ public class ByteCodeRewriter
         int hotspotcode = Bytecodes._illegal;
         int len = 0;
 
+        if (DEBUG) {
+            String msg = method.getMethodHolder().getName().asString() + "." +
+                         method.getName().asString() +
+                         method.getSignature().asString();
+            debugMessage(msg);
+        }
         for (int bci = 0; bci < code.length;) {
             hotspotcode = Bytecodes.codeAt(method, bci);
             bytecode = Bytecodes.javaCode(hotspotcode);
@@ -133,15 +168,15 @@ public class ByteCodeRewriter
 
                 case Bytecodes._ldc_w:
                     if (hotspotcode != bytecode) {
-                        // fast_aldc_w puts constant in CP cache
-                        cpoolIndex = getConstantPoolIndex(hotspotcode, bci + 1);
+                        // fast_aldc_w puts constant in reference map
+                        cpoolIndex = getConstantPoolIndexFromRefMap(hotspotcode, bci + 1);
                         writeShort(code, bci + 1, cpoolIndex);
                     }
                     break;
                 case Bytecodes._ldc:
                     if (hotspotcode != bytecode) {
-                        // fast_aldc puts constant in CP cache
-                        cpoolIndex = getConstantPoolIndex(hotspotcode, bci + 1);
+                        // fast_aldc puts constant in reference map
+                        cpoolIndex = getConstantPoolIndexFromRefMap(hotspotcode, bci + 1);
                         code[bci + 1] = (byte)(cpoolIndex);
                     }
                     break;
