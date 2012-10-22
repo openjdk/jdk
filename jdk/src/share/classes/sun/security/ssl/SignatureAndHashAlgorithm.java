@@ -38,7 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.ArrayList;
 
-import sun.security.util.KeyLength;
+import sun.security.util.KeyUtil;
 
 /**
  * Signature and hash algorithm.
@@ -279,7 +279,7 @@ final class SignatureAndHashAlgorithm {
              * If key size is less than 512, the  digest length should be
              * less than or equal to 20 bytes.
              */
-            int keySize = KeyLength.getKeySize(signingKey);
+            int keySize = KeyUtil.getKeySize(signingKey);
             if (keySize >= 768) {
                 maxDigestLength = HashAlgorithm.SHA512.length;
             } else if ((keySize >= 512) && (keySize < 768)) {
