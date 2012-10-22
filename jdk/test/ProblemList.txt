@@ -314,6 +314,9 @@ sun/security/tools/keytool/readjar.sh                           solaris-all
 sun/security/tools/keytool/selfissued.sh                        solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
 
+# 8000439: NPG: REGRESSION : sun/security/krb5/auto/MaxRetries.java fails with timeout
+sun/security/krb5/auto/MaxRetries.java                          solaris-sparcv9
+
 ############################################################################
 
 # jdk_sound
