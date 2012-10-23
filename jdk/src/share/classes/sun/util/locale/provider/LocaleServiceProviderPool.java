@@ -302,7 +302,7 @@ public final class LocaleServiceProviderPool {
 
                 for (LocaleProviderAdapter.Type type: findProviders(current)) {
                     LocaleServiceProvider lsp = providers.get(type);
-                    providersObj = getter.getObject((P)lsp, current, key, params);
+                    providersObj = getter.getObject((P)lsp, locale, key, params);
                     if (providersObj != null) {
                         return providersObj;
                     } else if (isObjectProvider) {

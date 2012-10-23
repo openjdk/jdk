@@ -311,7 +311,14 @@ public class LogManager {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
      * @exception NullPointerException if the PropertyChangeListener is null.
+     * @deprecated The dependency on {@code PropertyChangeListener} creates a
+     *             significant impediment to future modularization of the Java
+     *             platform. This method will be removed in a future release.
+     *             The global {@code LogManager} can detect changes to the
+     *             logging configuration by overridding the {@link
+     *             #readConfiguration readConfiguration} method.
      */
+    @Deprecated
     public void addPropertyChangeListener(PropertyChangeListener l) throws SecurityException {
         PropertyChangeListener listener = Objects.requireNonNull(l);
         checkAccess();
@@ -336,7 +343,14 @@ public class LogManager {
      * @param l  event listener (can be null)
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
+     * @deprecated The dependency on {@code PropertyChangeListener} creates a
+     *             significant impediment to future modularization of the Java
+     *             platform. This method will be removed in a future release.
+     *             The global {@code LogManager} can detect changes to the
+     *             logging configuration by overridding the {@link
+     *             #readConfiguration readConfiguration} method.
      */
+    @Deprecated
     public void removePropertyChangeListener(PropertyChangeListener l) throws SecurityException {
         checkAccess();
         if (l != null) {

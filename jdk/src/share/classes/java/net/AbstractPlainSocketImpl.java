@@ -52,6 +52,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     private boolean shut_wr = false;
 
     private SocketInputStream socketInputStream = null;
+    private SocketOutputStream socketOutputStream = null;
 
     /* number of threads using the FileDescriptor */
     protected int fdUseCount = 0;
@@ -436,7 +437,10 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         if (shut_wr) {
             throw new IOException("Socket output is shutdown");
         }
-        return new SocketOutputStream(this);
+        if (socketOutputStream == null) {
+            socketOutputStream = new SocketOutputStream(this);
+        }
+        return socketOutputStream;
     }
 
     void setFileDescriptor(FileDescriptor fd) {

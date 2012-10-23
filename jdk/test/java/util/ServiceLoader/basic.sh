@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 4640520 6354623
+# @bug 4640520 6354623 7198496
 # @summary Unit test for java.util.ServiceLoader
 #
 # @build Basic Load FooService FooProvider1 FooProvider2 FooProvider3
