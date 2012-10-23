@@ -158,7 +158,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             return HtmlTree.LI(prevletterLabel);
         }
         else {
-            Content prevLink = getHyperLink(DocPaths.indexN(prev), "",
+            Content prevLink = getHyperLink(DocPaths.indexN(prev),
                     prevletterLabel);
             return HtmlTree.LI(prevLink);
         }
@@ -175,7 +175,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             return HtmlTree.LI(nextletterLabel);
         }
         else {
-            Content nextLink = getHyperLink(DocPaths.indexN(next), "",
+            Content nextLink = getHyperLink(DocPaths.indexN(next),
                     nextletterLabel);
             return HtmlTree.LI(nextLink);
         }

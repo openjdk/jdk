@@ -287,7 +287,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public Content getTargetPackageLink(PackageDoc pd, String target,
             Content label) {
-        return getHyperLink(pathString(pd, DocPaths.PACKAGE_SUMMARY), "", label, "", target);
+        return getHyperLink(pathString(pd, DocPaths.PACKAGE_SUMMARY), label, "", target);
     }
 
     /**
@@ -407,9 +407,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 allClassesId += "navbar_top";
                 Content a = getMarkerAnchor("navbar_top");
                 navDiv.addContent(a);
-                Content skipLinkContent = getHyperLink("",
-                        "skip-navbar_top", HtmlTree.EMPTY, configuration.getText(
-                        "doclet.Skip_navigation_links"), "");
+                Content skipLinkContent = getHyperLink(DocLink.fragment("skip-navbar_top"),
+                        HtmlTree.EMPTY,
+                        configuration.getText("doclet.Skip_navigation_links"),
+                        "");
                 navDiv.addContent(skipLinkContent);
             } else {
                 body.addContent(HtmlConstants.START_OF_BOTTOM_NAVBAR);
@@ -417,9 +418,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 allClassesId += "navbar_bottom";
                 Content a = getMarkerAnchor("navbar_bottom");
                 navDiv.addContent(a);
-                Content skipLinkContent = getHyperLink("",
-                        "skip-navbar_bottom", HtmlTree.EMPTY, configuration.getText(
-                        "doclet.Skip_navigation_links"), "");
+                Content skipLinkContent = getHyperLink(DocLink.fragment("skip-navbar_bottom"),
+                        HtmlTree.EMPTY,
+                        configuration.getText("doclet.Skip_navigation_links"),
+                        "");
                 navDiv.addContent(skipLinkContent);
             }
             if (header) {
@@ -515,7 +517,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     protected Content getNavLinkContents() {
         Content linkContent = getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_SUMMARY),
-                "", overviewLabel, "", "");
+                overviewLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -562,7 +564,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getNavLinkPrevious(DocPath prev) {
         Content li;
         if (prev != null) {
-            li = HtmlTree.LI(getHyperLink(prev, "", prevLabel, "", ""));
+            li = HtmlTree.LI(getHyperLink(prev, prevLabel, "", ""));
         }
         else
             li = HtmlTree.LI(prevLabel);
@@ -579,7 +581,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getNavLinkNext(DocPath next) {
         Content li;
         if (next != null) {
-            li = HtmlTree.LI(getHyperLink(next, "", nextLabel, "", ""));
+            li = HtmlTree.LI(getHyperLink(next, nextLabel, "", ""));
         }
         else
             li = HtmlTree.LI(nextLabel);
@@ -593,8 +595,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavShowLists(DocPath link) {
-        Content framesContent = getHyperLink(link.getPath() + "?" + path.getPath(),
-                "", framesLabel, "", "_top");
+        DocLink dl = new DocLink(link, path.getPath(), null);
+        Content framesContent = getHyperLink(dl, framesLabel, "", "_top");
         Content li = HtmlTree.LI(framesContent);
         return li;
     }
@@ -615,7 +617,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavHideLists(DocPath link) {
-        Content noFramesContent = getHyperLink(link, "", noframesLabel, "", "_top");
+        Content noFramesContent = getHyperLink(link, noframesLabel, "", "_top");
         Content li = HtmlTree.LI(noFramesContent);
         return li;
     }
@@ -633,11 +635,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         PackageDoc[] packages = configuration.root.specifiedPackages();
         if (packages.length == 1 && configuration.root.specifiedClasses().length == 0) {
             treeLinkContent = getHyperLink(pathString(packages[0],
-                    DocPaths.PACKAGE_TREE), "", treeLabel,
+                    DocPaths.PACKAGE_TREE), treeLabel,
                     "", "");
         } else {
             treeLinkContent = getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE),
-                    "", treeLabel, "", "");
+                    treeLabel, "", "");
         }
         Content li = HtmlTree.LI(treeLinkContent);
         return li;
@@ -673,7 +675,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     protected Content getNavLinkDeprecated() {
         Content linkContent = getHyperLink(pathToRoot.resolve(DocPaths.DEPRECATED_LIST),
-                "", deprecatedLabel, "", "");
+                deprecatedLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -687,7 +689,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     protected Content getNavLinkClassIndex() {
         Content allClassesContent = getHyperLink(pathToRoot.resolve(
-                DocPaths.ALLCLASSES_NOFRAME), "",
+                DocPaths.ALLCLASSES_NOFRAME),
                 allclassesLabel, "", "");
         Content li = HtmlTree.LI(allClassesContent);
         return li;
@@ -702,7 +704,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content linkContent = getHyperLink(pathToRoot.resolve(
                 (configuration.splitindex
                     ? DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1))
-                    : DocPaths.INDEX_ALL)), "",
+                    : DocPaths.INDEX_ALL)),
             indexLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -723,7 +725,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         } else {
             helpfilenm = DocPath.create(new File(helpfile).getName());
         }
-        Content linkContent = getHyperLink(pathToRoot.resolve(helpfilenm), "",
+        Content linkContent = getHyperLink(pathToRoot.resolve(helpfilenm),
                 helpLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -917,11 +919,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
         if (included || pkg == null) {
             return getHyperLinkString(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
-                                "", label, isStrong, style);
+                                label, isStrong, style);
         } else {
-            String crossPkgLink = getCrossPackageLink(Util.getPackageName(pkg));
+            DocLink crossPkgLink = getCrossPackageLink(Util.getPackageName(pkg));
             if (crossPkgLink != null) {
-                return getHyperLinkString(/*TEMP*/ DocPath.create(crossPkgLink), "", label, isStrong, style);
+                return getHyperLinkString(crossPkgLink, label, isStrong, style);
             } else {
                 return label;
             }
@@ -948,11 +950,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
         if (included || pkg == null) {
             return getHyperLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
-                                "", label);
+                    label);
         } else {
-            String crossPkgLink = getCrossPackageLink(Util.getPackageName(pkg));
+            DocLink crossPkgLink = getCrossPackageLink(Util.getPackageName(pkg));
             if (crossPkgLink != null) {
-                return getHyperLink(/*TEMP*/ DocPath.create(crossPkgLink), "", label);
+                return getHyperLink(crossPkgLink, label);
             } else {
                 return label;
             }
@@ -983,7 +985,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         DocPath href = pathToRoot
                 .resolve(DocPaths.SOURCE_OUTPUT)
                 .resolve(DocPath.forClass(cd));
-        Content linkContent = getHyperLink(href, SourceToHTMLConverter.getAnchorName(doc), label, "", "");
+        Content linkContent = getHyperLink(href.fragment(SourceToHTMLConverter.getAnchorName(doc)), label, "", "");
         htmltree.addContent(linkContent);
     }
 
@@ -996,7 +998,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public String getLink(LinkInfoImpl linkInfo) {
         LinkFactoryImpl factory = new LinkFactoryImpl(this);
-        String link = ((LinkOutputImpl) factory.getLinkOutput(linkInfo)).toString();
+        String link = factory.getLinkOutput(linkInfo).toString();
         displayLength += linkInfo.displayLength;
         return link;
     }
@@ -1009,8 +1011,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public String getTypeParameterLinks(LinkInfoImpl linkInfo) {
         LinkFactoryImpl factory = new LinkFactoryImpl(this);
-        return ((LinkOutputImpl)
-            factory.getTypeParameterLinks(linkInfo, false)).toString();
+        return factory.getTypeParameterLinks(linkInfo, false).toString();
     }
 
     /*************************************************************
@@ -1030,10 +1031,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public String getCrossClassLink(String qualifiedClassName, String refMemName,
                                     String label, boolean strong, String style,
                                     boolean code) {
-        String className = "",
-            packageName = qualifiedClassName == null ? "" : qualifiedClassName;
+        String className = "";
+        String packageName = qualifiedClassName == null ? "" : qualifiedClassName;
         int periodIndex;
-        while((periodIndex = packageName.lastIndexOf('.')) != -1) {
+        while ((periodIndex = packageName.lastIndexOf('.')) != -1) {
             className = packageName.substring(periodIndex + 1, packageName.length()) +
                 (className.length() > 0 ? "." + className : "");
             String defaultLabel = code ? codeText(className) : className;
@@ -1044,11 +1045,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 //the -link option.  There are ways to determine if an external package
                 //exists, but no way to determine if the external class exists.  We just
                 //have to assume that it does.
-                return getHyperLinkString(
-                    configuration.extern.getExternalLink(packageName, pathToRoot,
-                                className + ".html?is-external=true"),
-                    refMemName == null ? "" : refMemName,
-                    label == null || label.length() == 0 ? defaultLabel : label,
+                DocLink link = configuration.extern.getExternalLink(packageName, pathToRoot,
+                                className + ".html", refMemName);
+                return getHyperLinkString(link,
+                    (label == null) || label.length() == 0 ? defaultLabel : label,
+
+
                     strong, style,
                     configuration.getText("doclet.Href_Class_Or_Interface_Title", packageName),
                     "");
@@ -1064,9 +1066,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return configuration.extern.isExternal(cd);
     }
 
-    public String getCrossPackageLink(String pkgName) {
+    public DocLink getCrossPackageLink(String pkgName) {
         return configuration.extern.getExternalLink(pkgName, pathToRoot,
-            "package-summary.html?is-external=true");
+            DocPaths.PACKAGE_SUMMARY.getPath());
     }
 
     /**
@@ -1094,7 +1096,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
 
     /**
      * Retrieve the class link with the package portion of the label in
-     * plain text.  If the qualifier is excluded, it willnot be included in the
+     * plain text.  If the qualifier is excluded, it will not be included in the
      * link label.
      *
      * @param cd the class to link to.
@@ -1278,10 +1280,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 return getPackageLinkString(refPackage, label, false);
             } else {
                 //@see is not referencing an included class or package.  Check for cross links.
-                String classCrossLink, packageCrossLink = getCrossPackageLink(refClassName);
+                String classCrossLink;
+                DocLink packageCrossLink = getCrossPackageLink(refClassName);
                 if (packageCrossLink != null) {
                     //Package cross link found
-                    return getHyperLinkString(/*TEMP*/ DocPath.create(packageCrossLink), "",
+                    return getHyperLinkString(packageCrossLink,
                         (label.isEmpty() ? text : label), false);
                 } else if ((classCrossLink = getCrossClassLink(refClassName,
                         refMemName, label, false, "", !plain)) != null) {
