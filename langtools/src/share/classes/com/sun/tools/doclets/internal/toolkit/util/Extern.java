@@ -142,12 +142,15 @@ public class Extern {
      * @return if external return converted link else return null
      */
     public String getExternalLink(String pkgName,
-                                  String relativepath, String link) {
+                                  DocPath relativepath, String link) {
         Item fnd = findPackageItem(pkgName);
         if (fnd != null) {
             String externlink = fnd.path + link;
             if (fnd.relative) {  // it's a relative path.
-                return relativepath + externlink;
+                if (relativepath.isEmpty())
+                    return externlink;
+                else
+                    return relativepath.getPath() + "/" + externlink;
             } else {
                 return externlink;
             }

@@ -52,11 +52,6 @@ public class Util {
     {{"&", "&amp;"}, {"<", "&lt;"}, {">", "&gt;"}};
 
     /**
-     * Name of the resource directory.
-     */
-    public static final String RESOURCESDIR = "resources";
-
-    /**
      * Return array of class members whose documentation is to be generated.
      * If the member is deprecated do not include such a member in the
      * returned array.
@@ -236,26 +231,20 @@ public class Util {
      * @param overwrite Overwrite files if true.
      */
     public static void copyDocFiles(Configuration configuration,
-            String path, String dir, boolean overwrite) {
+            File path, DocPath dir, boolean overwrite) {
         if (checkCopyDocFilesErrors(configuration, path, dir)) {
             return;
         }
-        String destname = configuration.docFileDestDirName;
-        File srcdir = new File(path + dir);
-        if (destname.length() > 0 && !destname.endsWith(
-               DirectoryManager.URL_FILE_SEPARATOR)) {
-            destname += DirectoryManager.URL_FILE_SEPARATOR;
-        }
-        String dest = destname + dir;
+        File srcdir = new File(path, dir.getPath());
+        File destdir = new File(configuration.docFileDestDirName, dir.getPath());
         try {
-            File destdir = new File(dest);
-            DirectoryManager.createDirectory(configuration, dest);
+            createDirectory(configuration, destdir);
             String[] files = srcdir.list();
             for (int i = 0; i < files.length; i++) {
                 File srcfile = new File(srcdir, files[i]);
                 File destfile = new File(destdir, files[i]);
                 if (srcfile.isFile()) {
-                    if(destfile.exists() && ! overwrite) {
+                    if (destfile.exists() && ! overwrite) {
                         configuration.message.warning((SourcePosition) null,
                                 "doclet.Copy_Overwrite_warning",
                                 srcfile.toString(), destdir.toString());
@@ -265,12 +254,11 @@ public class Util {
                             srcfile.toString(), destdir.toString());
                         Util.copyFile(destfile, srcfile);
                     }
-                } else if(srcfile.isDirectory()) {
-                    if(configuration.copydocfilesubdirs
+                } else if (srcfile.isDirectory()) {
+                    if (configuration.copydocfilesubdirs
                         && ! configuration.shouldExcludeDocFileDir(
                           srcfile.getName())){
-                        copyDocFiles(configuration, path, dir +
-                                    DirectoryManager.URL_FILE_SEPARATOR + srcfile.getName(),
+                        copyDocFiles(configuration, path, dir.resolve(files[i]),
                                 overwrite);
                     }
                 }
@@ -290,7 +278,7 @@ public class Util {
      * @param dirName The original directory name to copy from.
      */
     private static boolean checkCopyDocFilesErrors (Configuration configuration,
-            String path, String dirName) {
+            File path, DocPath dirName) {
         if ((configuration.sourcepath == null || configuration.sourcepath.length() == 0) &&
                (configuration.destDirName == null || configuration.destDirName.length() == 0)) {
             //The destination path and source path are definitely equal.
@@ -309,7 +297,7 @@ public class Util {
             }
         }
         //Make sure the doc-file being copied exists.
-        File srcdir = new File(path + dirName);
+        File srcdir = new File(path, dirName.getPath());
         if (! srcdir.exists()) {
             return true;
         }
@@ -330,8 +318,7 @@ public class Util {
      */
     public static void copyResourceFile(Configuration configuration,
             String resourcefile, boolean overwrite) {
-        String destresourcesdir = configuration.destDirName + RESOURCESDIR;
-        copyFile(configuration, resourcefile, RESOURCESDIR, destresourcesdir,
+        copyFile(configuration, resourcefile, DocPaths.RESOURCES, DocPaths.RESOURCES,
                 overwrite, false);
     }
 
@@ -350,15 +337,24 @@ public class Util {
      * @param replaceNewLine true if the newline needs to be replaced with platform-
      *                  specific newline.
      */
+    public static void copyFile(Configuration configuration, String file, DocPath source,
+            DocPath destination, boolean overwrite, boolean replaceNewLine) {
+        copyFile(configuration, file, source.getPath(), destination.getPath(),
+                overwrite, replaceNewLine);
+    }
+
     public static void copyFile(Configuration configuration, String file, String source,
             String destination, boolean overwrite, boolean replaceNewLine) {
-        DirectoryManager.createDirectory(configuration, destination);
-        File destfile = new File(destination, file);
-        if(destfile.exists() && (! overwrite)) return;
+        File destdir = configuration.destDirName.isEmpty() ?
+                (destination.isEmpty() ? null : new File(destination)) :
+                new File(configuration.destDirName, destination);
+        File destfile = (destdir == null) ? new File(file) : new File(destdir, file);
+        createDirectory(configuration, destfile.getParentFile());
+        if (destfile.exists() && (! overwrite)) return;
         try {
             InputStream in = Configuration.class.getResourceAsStream(
-                    source + DirectoryManager.URL_FILE_SEPARATOR + file);
-            if(in==null) return;
+                    source + '/' + file);
+            if (in == null) return;
             OutputStream out = new FileOutputStream(destfile);
             try {
                 if (!replaceNewLine) {
@@ -396,26 +392,46 @@ public class Util {
     }
 
     /**
+     * Given a path string create all the directories in the path. For example,
+     * if the path string is "java/applet", the method will create directory
+     * "java" and then "java/applet" if they don't exist. The file separator
+     * string "/" is platform dependent system property.
+     *
+     * @param path Directory path string.
+     */
+    public static void createDirectory(Configuration configuration, File dir) {
+        if (dir == null) {
+            return;
+        }
+        if (dir.exists()) {
+            return;
+        } else {
+            if (dir.mkdirs()) {
+                return;
+            } else {
+                configuration.message.error(
+                       "doclet.Unable_to_create_directory_0", dir.getPath());
+                throw new DocletAbortException();
+            }
+        }
+    }
+
+    /**
      * Given a PackageDoc, return the source path for that package.
      * @param configuration The Configuration for the current Doclet.
-     * @param pkgDoc The package to seach the path for.
+     * @param pkgDoc The package to search the path for.
      * @return A string representing the path to the given package.
      */
-    public static String getPackageSourcePath(Configuration configuration,
-            PackageDoc pkgDoc){
-        try{
-            String pkgPath = DirectoryManager.getDirectoryPath(pkgDoc);
-            String completePath = new SourcePath(configuration.sourcepath).
-                getDirectory(pkgPath) + DirectoryManager.URL_FILE_SEPARATOR;
-            //Make sure that both paths are using the same separators.
-            completePath = Util.replaceText(completePath, File.separator,
-                    DirectoryManager.URL_FILE_SEPARATOR);
-            pkgPath = Util.replaceText(pkgPath, File.separator,
-                    DirectoryManager.URL_FILE_SEPARATOR);
-            return completePath.substring(0, completePath.lastIndexOf(pkgPath));
-        } catch (Exception e){
-            return "";
-        }
+    public static File getPackageSourcePath(Configuration configuration,
+            PackageDoc pkgDoc) {
+        DocPath pkgPath = DocPath.forPackage(pkgDoc);
+        File pkgDir = new SourcePath(configuration.sourcepath).getDirectory(pkgPath);
+        if (pkgDir == null)
+            return null;
+        //Make sure that both paths are using the same separators.
+        String completePath = Util.replaceText(pkgDir.getPath(), File.separator, "/");
+        String pathForPkg = completePath.substring(0, completePath.lastIndexOf(pkgPath.getPath()));
+        return new File(pathForPkg);
     }
 
     /**
@@ -552,7 +568,7 @@ public class Util {
     }
 
     /**
-     * Given a package, return it's name.
+     * Given a package, return its name.
      * @param packageDoc the package to check.
      * @return the name of the given package.
      */
@@ -562,7 +578,7 @@ public class Util {
     }
 
     /**
-     * Given a package, return it's file name without the extension.
+     * Given a package, return its file name without the extension.
      * @param packageDoc the package to check.
      * @return the file name of the given package.
      */
@@ -572,7 +588,7 @@ public class Util {
     }
 
     /**
-     * Given a string, replace all occurraces of 'newStr' with 'oldStr'.
+     * Given a string, replace all occurrences of 'newStr' with 'oldStr'.
      * @param originalStr the string to modify.
      * @param oldStr the string to replace.
      * @param newStr the string to insert in place of the old string.
@@ -637,22 +653,15 @@ public class Util {
      * @see java.io.FileOutputStream
      * @see java.io.OutputStreamWriter
      */
-    public static Writer genWriter(Configuration configuration,
-            String path, String filename,
-            String docencoding)
-        throws IOException, UnsupportedEncodingException {
-        FileOutputStream fos;
-        if (path != null) {
-            DirectoryManager.createDirectory(configuration, path);
-            fos = new FileOutputStream(((path.length() > 0)?
-                                                  path + File.separator: "") + filename);
-        } else {
-            fos = new FileOutputStream(filename);
-        }
-        if (docencoding == null) {
+    public static Writer genWriter(Configuration configuration, DocPath path)
+            throws IOException, UnsupportedEncodingException {
+        File file = path.resolveAgainst(configuration.destDirName);
+        createDirectory(configuration, file.getParentFile());
+        FileOutputStream fos = new FileOutputStream(file);
+        if (configuration.docencoding == null) {
             return new BufferedWriter(new OutputStreamWriter(fos));
         } else {
-            return new BufferedWriter(new OutputStreamWriter(fos, docencoding));
+            return new BufferedWriter(new OutputStreamWriter(fos, configuration.docencoding));
         }
     }
 

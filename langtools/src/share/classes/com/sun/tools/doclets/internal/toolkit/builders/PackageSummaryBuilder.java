@@ -122,9 +122,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         Util.copyDocFiles(
                 configuration,
                 Util.getPackageSourcePath(configuration, packageDoc),
-                DirectoryManager.getDirectoryPath(packageDoc)
-                        + File.separator
-                        + DocletConstants.DOC_FILES_DIR_NAME,
+                DocPath.forPackage(packageDoc).resolve(DocPaths.DOC_FILES),
                 true);
     }
 

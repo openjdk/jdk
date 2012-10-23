@@ -400,7 +400,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            return writer.getHyperLink("", (cd == null)?
+            return writer.getHyperLink((cd == null)?
                 "method_summary":
                 "methods_inherited_from_class_" +
                 configuration().getClassName(cd),
@@ -415,7 +415,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(writer.getHyperLink("", "method_detail",
+            liNav.addContent(writer.getHyperLink("method_detail",
                     writer.getResource("doclet.navMethod")));
         } else {
             liNav.addContent(writer.getResource("doclet.navMethod"));

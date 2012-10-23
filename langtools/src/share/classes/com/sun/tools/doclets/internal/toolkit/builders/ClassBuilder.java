@@ -267,10 +267,9 @@ public class ClassBuilder extends AbstractBuilder {
             //documented AND if we have not documented a class from the same
             //package already. Otherwise, we are making duplicate copies.
             Util.copyDocFiles(configuration,
-                    Util.getPackageSourcePath(configuration,
-                    classDoc.containingPackage()) +
-                    DirectoryManager.getDirectoryPath(classDoc.containingPackage())
-                    + File.separator, DocletConstants.DOC_FILES_DIR_NAME, true);
+                new File(Util.getPackageSourcePath(configuration, containingPackage),
+                    DocPath.forPackage(classDoc).getPath()),
+                DocPaths.DOC_FILES, true);
             containingPackagesSeen.add(containingPackage.name());
         }
      }

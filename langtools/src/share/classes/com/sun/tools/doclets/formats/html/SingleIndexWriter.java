@@ -55,11 +55,9 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      */
     public SingleIndexWriter(ConfigurationImpl configuration,
-                             String filename,
+                             DocPath filename,
                              IndexBuilder indexbuilder) throws IOException {
         super(configuration, filename, indexbuilder);
-        relativepathNoSlash = ".";
-        relativePath = "./";
     }
 
     /**
@@ -71,7 +69,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
     public static void generate(ConfigurationImpl configuration,
                                 IndexBuilder indexbuilder) {
         SingleIndexWriter indexgen;
-        String filename = "index-all.html";
+        DocPath filename = DocPaths.INDEX_ALL;
         try {
             indexgen = new SingleIndexWriter(configuration,
                                              filename, indexbuilder);
@@ -117,7 +115,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         for (int i = 0; i < indexbuilder.elements().length; i++) {
             String unicode = (indexbuilder.elements())[i].toString();
             contentTree.addContent(
-                    getHyperLink("#_" + unicode + "_", new StringContent(unicode)));
+                    getHyperLink("_" + unicode + "_", new StringContent(unicode)));
             contentTree.addContent(getSpace());
         }
     }
