@@ -28,21 +28,19 @@ package com.sun.tools.javac.code;
 import java.lang.ref.SoftReference;
 import java.util.*;
 
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.List;
-
-import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.comp.Check;
-
+import com.sun.tools.javac.jvm.ClassReader;
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.List;
+import static com.sun.tools.javac.code.BoundKind.*;
+import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Scope.*;
+import static com.sun.tools.javac.code.Symbol.*;
 import static com.sun.tools.javac.code.Type.*;
 import static com.sun.tools.javac.code.TypeTags.*;
-import static com.sun.tools.javac.code.Symbol.*;
-import static com.sun.tools.javac.code.Flags.*;
-import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.util.ListBuffer.lb;
 
 /**
@@ -1429,8 +1427,8 @@ public class Types {
      * conservative in that it is allowed to say that two types are
      * not disjoint, even though they actually are.
      *
-     * The type C<X> is castable to C<Y> exactly if X and Y are not
-     * disjoint.
+     * The type {@code C<X>} is castable to {@code C<Y>} exactly if
+     * {@code X} and {@code Y} are not disjoint.
      */
     public boolean disjointType(Type t, Type s) {
         return disjointType.visit(t, s);
@@ -1525,7 +1523,7 @@ public class Types {
      * something of type `t' can be a subtype of `s'? This is
      * different from the question "is `t' not a subtype of `s'?"
      * when type variables are involved: Integer is not a subtype of T
-     * where <T extends Number> but it is not true that Integer cannot
+     * where {@code <T extends Number>} but it is not true that Integer cannot
      * possibly be a subtype of T.
      */
     public boolean notSoftSubtype(Type t, Type s) {

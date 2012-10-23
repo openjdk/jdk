@@ -38,7 +38,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,7 +59,7 @@ import com.sun.tools.javac.file.RelativePath.RelativeFile;
  * the command line.)
  *
  * Location where to look for/generate optimized zip index files can be
- * provided using "-XDcachezipindexdir=<directory>". If this flag is not
+ * provided using "{@code -XDcachezipindexdir=<directory>}". If this flag is not
  * provided, the default location is the value of the "java.io.tmpdir" system
  * property.
  *

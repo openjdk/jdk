@@ -26,13 +26,19 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.*;
+
 import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Generate the Help File for the generated API documentation. The help file
  * contents are helpful for browsing the generated documentation.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  */
@@ -73,7 +79,7 @@ public class HelpWriter extends HtmlDocletWriter {
     /**
      * Generate the help file contents.
      */
-    protected void generateHelpFile() {
+    protected void generateHelpFile() throws IOException {
         String title = configuration.getText("doclet.Window_Help_title");
         Content body = getBody(true, getWindowTitle(title));
         addTop(body);

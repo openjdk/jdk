@@ -25,13 +25,13 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-
-import com.sun.javadoc.*;
-import java.util.*;
 import java.io.*;
 import java.net.*;
+import java.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Configure the output based on the command line options.
@@ -188,8 +188,8 @@ public class ConfigurationImpl extends Configuration {
     // ClassWriter.
 
     /**
-     * Constructor. Initialises resource for the
-     * {@link com.sun.tools.doclets.MessageRetriever}.
+     * Constructor. Initializes resource for the
+     * {@link com.sun.tools.doclets.internal.toolkit.util.MessageRetriever MessageRetriever}.
      */
     private ConfigurationImpl() {
         standardmessage = new MessageRetriever(this,
