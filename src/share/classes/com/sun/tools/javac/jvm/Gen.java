@@ -446,7 +446,7 @@ public class Gen extends JCTree.Visitor {
  * Normalizing class-members.
  *************************************************************************/
 
-    /** Distribute member initializer code into constructors and <clinit>
+    /** Distribute member initializer code into constructors and {@code <clinit>}
      *  method.
      *  @param defs         The list of class member declarations.
      *  @param c            The enclosing class.
@@ -689,7 +689,7 @@ public class Gen extends JCTree.Visitor {
      *  should be emitted, if so, put a new entry into CRTable
      *  and call method to generate bytecode.
      *  If not, just call method to generate bytecode.
-     *  @see    #genStat(Tree, Env)
+     *  @see    #genStat(JCTree, Env)
      *
      *  @param  tree     The tree to be visited.
      *  @param  env      The environment to use.
@@ -756,7 +756,7 @@ public class Gen extends JCTree.Visitor {
      *  should be emitted, if so, put a new entry into CRTable
      *  and call method to generate bytecode.
      *  If not, just call method to generate bytecode.
-     *  @see    #genCond(Tree,boolean)
+     *  @see    #genCond(JCTree,boolean)
      *
      *  @param  tree     The tree to be visited.
      *  @param  crtFlags The CharacterRangeTable flags

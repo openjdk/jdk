@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,10 @@ import com.sun.tools.doclets.internal.toolkit.*;
 /**
  * Utilities Class for Doclets.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  * @author Jamie Ho
@@ -366,7 +367,13 @@ public class Util {
                     while((n = in.read(buf))>0) out.write(buf,0,n);
                 } else {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+                    BufferedWriter writer;
+                    if (configuration.docencoding == null) {
+                        writer = new BufferedWriter(new OutputStreamWriter(out));
+                    } else {
+                        writer = new BufferedWriter(new OutputStreamWriter(out,
+                            configuration.docencoding));
+                    }
                     try {
                         String line;
                         while ((line = reader.readLine()) != null) {
@@ -643,9 +650,9 @@ public class Util {
             fos = new FileOutputStream(filename);
         }
         if (docencoding == null) {
-            return new OutputStreamWriter(fos);
+            return new BufferedWriter(new OutputStreamWriter(fos));
         } else {
-            return new OutputStreamWriter(fos, docencoding);
+            return new BufferedWriter(new OutputStreamWriter(fos, docencoding));
         }
     }
 

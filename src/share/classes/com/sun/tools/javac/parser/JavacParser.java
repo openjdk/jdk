@@ -116,6 +116,8 @@ public class JavacParser implements Parser {
                 fac.options.isSet("allowLambda"); //pre-lambda guard
         this.allowMethodReferences = source.allowMethodReferences() &&
                 fac.options.isSet("allowMethodReferences"); //pre-lambda guard
+        this.allowDefaultMethods = source.allowDefaultMethods() &&
+                fac.options.isSet("allowDefaultMethods"); //pre-lambda guard
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments);
         this.keepLineMap = keepLineMap;
@@ -184,6 +186,10 @@ public class JavacParser implements Parser {
     /** Switch: should we allow method/constructor references?
      */
     boolean allowMethodReferences;
+
+    /** Switch: should we allow default methods in interfaces?
+     */
+    boolean allowDefaultMethods;
 
     /** Switch: should we keep docComments?
      */
@@ -806,7 +812,7 @@ public class JavacParser implements Parser {
         t = odStack[0];
 
         if (t.hasTag(JCTree.Tag.PLUS)) {
-            StringBuffer buf = foldStrings(t);
+            StringBuilder buf = foldStrings(t);
             if (buf != null) {
                 t = toP(F.at(startPos).Literal(TypeTags.CLASS, buf.toString()));
             }
@@ -833,7 +839,7 @@ public class JavacParser implements Parser {
         /** If tree is a concatenation of string literals, replace it
          *  by a single literal representing the concatenated string.
          */
-        protected StringBuffer foldStrings(JCTree tree) {
+        protected StringBuilder foldStrings(JCTree tree) {
             if (!allowStringFolding)
                 return null;
             List<String> buf = List.nil();
@@ -841,8 +847,8 @@ public class JavacParser implements Parser {
                 if (tree.hasTag(LITERAL)) {
                     JCLiteral lit = (JCLiteral) tree;
                     if (lit.typetag == TypeTags.CLASS) {
-                        StringBuffer sbuf =
-                            new StringBuffer((String)lit.value);
+                        StringBuilder sbuf =
+                            new StringBuilder((String)lit.value);
                         while (buf.nonEmpty()) {
                             sbuf.append(buf.head);
                             buf = buf.tail;
@@ -2311,6 +2317,7 @@ public class JavacParser implements Parser {
             case SYNCHRONIZED: flag = Flags.SYNCHRONIZED; break;
             case STRICTFP    : flag = Flags.STRICTFP; break;
             case MONKEYS_AT  : flag = Flags.ANNOTATION; break;
+            case DEFAULT     : checkDefaultMethods(); flag = Flags.DEFAULT; break;
             case ERROR       : flag = 0; nextToken(); break;
             default: break loop;
             }
@@ -3359,6 +3366,12 @@ public class JavacParser implements Parser {
         if (!allowMethodReferences) {
             log.error(token.pos, "method.references.not.supported.in.source", source.name);
             allowMethodReferences = true;
+        }
+    }
+    void checkDefaultMethods() {
+        if (!allowDefaultMethods) {
+            log.error(token.pos, "default.methods.not.supported.in.source", source.name);
+            allowDefaultMethods = true;
         }
     }
 

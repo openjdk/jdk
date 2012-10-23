@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,11 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
+
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * This abstract class exists to provide functionality needed in the
@@ -38,6 +39,11 @@ import com.sun.tools.doclets.formats.html.markup.*;
  * However, because each member type has its own subclass, subclassing
  * can not be used effectively to change formatting.  The concrete
  * class subclass of this class can be subclassed to change formatting.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @see AbstractMemberWriter
  * @see ClassWriterImpl
@@ -58,18 +64,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
                                  String path, String filename, String relpath)
                                  throws IOException {
         super(configuration, path, filename, relpath);
-    }
-
-    public void printTypeSummaryHeader() {
-        tdIndex();
-        font("-1");
-        code();
-    }
-
-    public void printTypeSummaryFooter() {
-        codeEnd();
-        fontEnd();
-        tdEnd();
     }
 
     /**
@@ -99,14 +93,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         return table;
     }
 
-    public void printTableHeadingBackground(String str) {
-        tableIndexDetail();
-        tableHeaderStart("#CCCCFF", 1);
-        strong(str);
-        tableHeaderEnd();
-        tableEnd();
-    }
-
     /**
      * Add the inherited summary header.
      *
@@ -120,19 +106,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         mw.addInheritedSummaryLabel(cd, inheritedTree);
     }
 
-    public void printSummaryFooter(AbstractMemberWriter mw, ClassDoc cd) {
-        tableEnd();
-        space();
-    }
-
-    public void printInheritedSummaryFooter(AbstractMemberWriter mw, ClassDoc cd) {
-        codeEnd();
-        summaryRowEnd();
-        trEnd();
-        tableEnd();
-        space();
-    }
-
     /**
      * Add the index comment.
      *
@@ -141,24 +114,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     protected void addIndexComment(Doc member, Content contentTree) {
         addIndexComment(member, member.firstSentenceTags(), contentTree);
-    }
-
-    protected void printIndexComment(Doc member, Tag[] firstSentenceTags) {
-        Tag[] deprs = member.tags("deprecated");
-        if (Util.isDeprecated((ProgramElementDoc) member)) {
-            strongText("doclet.Deprecated");
-            space();
-            if (deprs.length > 0) {
-                printInlineDeprecatedComment(member, deprs[0]);
-            }
-            return;
-        } else {
-            ClassDoc cd = ((ProgramElementDoc)member).containingClass();
-            if (cd != null && Util.isDeprecated(cd)) {
-                strongText("doclet.Deprecated"); space();
-            }
-        }
-        printSummaryComment(member, firstSentenceTags);
     }
 
     /**
@@ -217,18 +172,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         addSummaryLinkComment(mw, member, member.firstSentenceTags(), contentTree);
     }
 
-    public void printSummaryLinkComment(AbstractMemberWriter mw,
-                                        ProgramElementDoc member,
-                                        Tag[] firstSentenceTags) {
-        codeEnd();
-        println();
-        br();
-        printNbsps();
-        printIndexComment(member, firstSentenceTags);
-        summaryRowEnd();
-        trEnd();
-    }
-
     /**
      * Add the summary link comment.
      *
@@ -257,13 +200,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
             linksTree.addContent(", ");
         }
         mw.addInheritedSummaryLink(cd, member, linksTree);
-    }
-
-    public void printMemberHeader() {
-        hr();
-    }
-
-    public void printMemberFooter() {
     }
 
     /**

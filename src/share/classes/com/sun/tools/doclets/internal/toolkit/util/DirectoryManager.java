@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class DirectoryManager {
         if (packageName == null || packageName.length() == 0) {
             return "";
         }
-        StringBuffer pathstr = new StringBuffer();
+        StringBuilder pathstr = new StringBuilder();
         for (int i = 0; i < packageName.length(); i++) {
             char ch = packageName.charAt(i);
             if (ch == '.') {
@@ -151,7 +151,7 @@ public class DirectoryManager {
         if (name == null || name.length() == 0) {
             return "";
         }
-        StringBuffer pathstr = new StringBuffer();
+        StringBuilder pathstr = new StringBuilder();
         for (int i = 0; i < name.length(); i++) {
             char ch = name.charAt(i);
             if (ch == '.') {
@@ -181,7 +181,7 @@ public class DirectoryManager {
      * @see          #getPath(String)
      */
     public static String getRelativePath(String from, String to) {
-        StringBuffer pathstr = new StringBuffer();
+        StringBuilder pathstr = new StringBuilder();
         pathstr.append(getRelativePath(from));
         pathstr.append(getPath(to));
         pathstr.append(URL_FILE_SEPARATOR);
@@ -222,7 +222,7 @@ public class DirectoryManager {
         if (from == null || from.length() == 0) {
             return "";
         }
-        StringBuffer pathstr = new StringBuffer();
+        StringBuilder pathstr = new StringBuilder();
         for (int i = 0; i < from.length(); i++) {
             char ch = from.charAt(i);
             if (ch == '.') {
@@ -293,7 +293,7 @@ public class DirectoryManager {
      * @param filename   File name to be appended to the path of the package.
      */
     public static String getPathToPackage(PackageDoc pd, String filename) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String pathstr = createPathString(pd);
         if (pathstr.length() > 0) {
             buf.append(pathstr);
