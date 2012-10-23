@@ -130,8 +130,8 @@ public abstract class AbstractDoclet {
             boolean first = true;
             while(pathTokens.hasMoreTokens()){
                 Util.copyDocFiles(configuration,
-                    pathTokens.nextToken() + File.separator,
-                    DocletConstants.DOC_FILES_DIR_NAME, first);
+                    new File(pathTokens.nextToken()),
+                    DocPaths.DOC_FILES, first);
                 first = false;
             }
         }

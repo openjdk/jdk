@@ -62,7 +62,7 @@ public class SourceToHTMLConverter {
      * Relative path from the documentation root to the file that is being
      * generated.
      */
-    private static String relativePath = "";
+    private static DocPath relativePath = DocPath.empty;
 
     /**
      * Source is converted to HTML using static methods below.
@@ -77,7 +77,7 @@ public class SourceToHTMLConverter {
      * @param outputdir the name of the directory to output to.
      */
     public static void convertRoot(ConfigurationImpl configuration, RootDoc rd,
-            String outputdir) {
+            DocPath outputdir) {
         if (rd == null || outputdir == null) {
             return;
         }
@@ -108,11 +108,11 @@ public class SourceToHTMLConverter {
      * @param outputdir the name of the directory to output to.
      */
     public static void convertPackage(ConfigurationImpl configuration, PackageDoc pd,
-            String outputdir) {
+            DocPath outputdir) {
         if (pd == null || outputdir == null) {
             return;
         }
-        String classOutputdir = getPackageOutputDir(outputdir, pd);
+        DocPath classOutputdir = getPackageOutputDir(outputdir, pd);
         ClassDoc[] cds = pd.allClasses();
         for (int i = 0; i < cds.length; i++) {
             // If -nodeprecated option is set and the class is marked as deprecated,
@@ -131,9 +131,8 @@ public class SourceToHTMLConverter {
      * @param pd the Package to generate output for.
      * @return the package output directory as a String.
      */
-    private static String getPackageOutputDir(String outputDir, PackageDoc pd) {
-        return outputDir + File.separator +
-            DirectoryManager.getDirectoryPath(pd) + File.separator;
+    private static DocPath getPackageOutputDir(DocPath outputDir, PackageDoc pd) {
+        return outputDir.resolve(DocPath.forPackage(pd));
     }
 
     /**
@@ -144,7 +143,7 @@ public class SourceToHTMLConverter {
      * @param outputdir the name of the directory to output to.
      */
     public static void convertClass(ConfigurationImpl configuration, ClassDoc cd,
-            String outputdir) {
+            DocPath outputdir) {
         if (cd == null || outputdir == null) {
             return;
         }
@@ -168,8 +167,9 @@ public class SourceToHTMLConverter {
             LineNumberReader reader = new LineNumberReader(r);
             int lineno = 1;
             String line;
-            relativePath = DirectoryManager.getRelativePath(DocletConstants.SOURCE_OUTPUT_DIR_NAME) +
-                    DirectoryManager.getRelativePath(cd.containingPackage());
+            relativePath = DocPaths.SOURCE_OUTPUT
+                    .resolve(DocPath.forPackage(cd))
+                    .invert();
             Content body = getHeader();
             Content pre = new HtmlTree(HtmlTag.PRE);
             try {
@@ -198,7 +198,7 @@ public class SourceToHTMLConverter {
      * @param className the name of the class that I am converting to HTML.
      * @param configuration the Doclet configuration to pass notices to.
      */
-    private static void writeToFile(Content body, String outputDir,
+    private static void writeToFile(Content body, DocPath outputDir,
             String className, ConfigurationImpl configuration) throws IOException {
         Content htmlDocType = DocType.Transitional();
         Content head = new HtmlTree(HtmlTag.HEAD);
@@ -208,7 +208,7 @@ public class SourceToHTMLConverter {
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
                 head, body);
         Content htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
-        File dir = new File(outputDir);
+        File dir = outputDir.resolveAgainst(configuration.destDirName);
         dir.mkdirs();
         File newFile = new File(dir, className + ".html");
         configuration.message.notice("doclet.Generating_0", newFile.getPath());
@@ -227,17 +227,14 @@ public class SourceToHTMLConverter {
      */
     public static HtmlTree getStyleSheetProperties(ConfigurationImpl configuration) {
         String filename = configuration.stylesheetfile;
+        DocPath stylesheet;
         if (filename.length() > 0) {
-            File stylefile = new File(filename);
-            String parent = stylefile.getParent();
-            filename = (parent == null)?
-                filename:
-                filename.substring(parent.length() + 1);
+            stylesheet = DocPath.create(new File(filename).getName());
         } else {
-            filename = "stylesheet.css";
+            stylesheet = DocPaths.STYLESHEET;
         }
-        filename = relativePath + filename;
-        HtmlTree link = HtmlTree.LINK("stylesheet", "text/css", filename, "Style");
+        DocPath p = relativePath.resolve(stylesheet);
+        HtmlTree link = HtmlTree.LINK("stylesheet", "text/css", p.getPath(), "Style");
         return link;
     }
 

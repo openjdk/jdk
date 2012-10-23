@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,7 @@ import java.io.File;
  *
  * @author Atul M Dambalkar
  */
-public
-    class SourcePath {
+public class SourcePath {
     private final char dirSeparator = File.pathSeparatorChar;
 
     /**
@@ -114,9 +113,9 @@ public
      * @param name Name of the directory to be searched for in the source path.
      * @return File Return the directory if found else return null.
      */
-    public File getDirectory(String name) {
+    public File getDirectory(DocPath p) {
         for (int i = 0; i < sourcePath.length; i++) {
-            File directoryNeeded = new File(sourcePath[i], name);
+            File directoryNeeded = new File(sourcePath[i], p.getPath());
             if (directoryNeeded.isDirectory()) {
                 return directoryNeeded;
             }

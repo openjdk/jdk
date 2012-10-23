@@ -67,15 +67,14 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      * @throws DocletAbortException
      */
     public PackageTreeWriter(ConfigurationImpl configuration,
-                             String path, String filename,
+                             DocPath path,
                              PackageDoc packagedoc,
                              PackageDoc prev, PackageDoc next)
                       throws IOException {
-        super(configuration, path, filename,
+        super(configuration, path,
               new ClassTree(
                 configuration.classDocCatalog.allClasses(packagedoc),
-                configuration),
-              packagedoc);
+                configuration));
         this.packagedoc = packagedoc;
         this.prev = prev;
         this.next = next;
@@ -96,17 +95,16 @@ public class PackageTreeWriter extends AbstractTreeWriter {
                                 PackageDoc pkg, PackageDoc prev,
                                 PackageDoc next, boolean noDeprecated) {
         PackageTreeWriter packgen;
-        String path = DirectoryManager.getDirectoryPath(pkg);
-        String filename = "package-tree.html";
+        DocPath path = DocPath.forPackage(pkg).resolve(DocPaths.PACKAGE_TREE);
         try {
-            packgen = new PackageTreeWriter(configuration, path, filename, pkg,
+            packgen = new PackageTreeWriter(configuration, path, pkg,
                 prev, next);
             packgen.generatePackageTreeFile();
             packgen.close();
         } catch (IOException exc) {
             configuration.standardmessage.error(
                         "doclet.exception_encountered",
-                        exc.toString(), filename);
+                        exc.toString(), path.getPath());
             throw new DocletAbortException();
         }
     }
@@ -175,9 +173,8 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         if (prev == null) {
             return getNavLinkPrevious(null);
         } else {
-            String path = DirectoryManager.getRelativePath(packagedoc.name(),
-                    prev.name());
-            return getNavLinkPrevious(path + "package-tree.html");
+            DocPath path = DocPath.relativePath(packagedoc, prev);
+            return getNavLinkPrevious(path.resolve(DocPaths.PACKAGE_TREE));
         }
     }
 
@@ -190,9 +187,8 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         if (next == null) {
             return getNavLinkNext(null);
         } else {
-            String path = DirectoryManager.getRelativePath(packagedoc.name(),
-                    next.name());
-            return getNavLinkNext(path + "package-tree.html");
+            DocPath path = DocPath.relativePath(packagedoc, next);
+            return getNavLinkNext(path.resolve(DocPaths.PACKAGE_TREE));
         }
     }
 
@@ -202,7 +198,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      * @return a content tree for the package link
      */
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink("package-summary.html", "",
+        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY, "",
                 packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;

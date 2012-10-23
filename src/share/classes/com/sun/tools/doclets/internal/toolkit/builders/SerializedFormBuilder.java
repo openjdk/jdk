@@ -474,6 +474,8 @@ public class SerializedFormBuilder extends AbstractBuilder {
         Arrays.sort(tags);
         int tagsLength = tags.length;
         for (int i = 0; i < tagsLength; i++) {
+            if (tags[i].fieldName() == null || tags[i].fieldType() == null) // ignore malformed @serialField tags
+                continue;
             Content fieldsContentTree = fieldWriter.getFieldsContentHeader(
                     (i == tagsLength - 1));
             fieldWriter.addMemberHeader(tags[i].fieldTypeDoc(),

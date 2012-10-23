@@ -47,20 +47,9 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 public class HtmlWriter {
 
     /**
-     * Name of the file, to which this writer is writing to.
-     */
-    protected final String htmlFilename;
-
-    /**
      * The window title of this file
      */
     protected String winTitle;
-
-    /**
-     * URL file separator string("/").
-     */
-    public static final String fileseparator =
-         DirectoryManager.URL_FILE_SEPARATOR;
 
     /**
      * The configuration
@@ -162,18 +151,15 @@ public class HtmlWriter {
      *             or null if none to be created.
      * @param filename File Name to which the PrintWriter will
      *                 do the Output.
-     * @param docencoding Encoding to be used for this file.
      * @exception IOException Exception raised by the FileWriter is passed on
      * to next level.
      * @exception UnsupportedEncodingException Exception raised by the
      * OutputStreamWriter is passed on to next level.
      */
-    public HtmlWriter(Configuration configuration,
-                      String path, String filename, String docencoding)
-                      throws IOException, UnsupportedEncodingException {
-        writer = Util.genWriter(configuration, path, filename, docencoding);
+    public HtmlWriter(Configuration configuration,DocPath path)
+            throws IOException, UnsupportedEncodingException {
+        writer = Util.genWriter(configuration, path);
         this.configuration = configuration;
-        htmlFilename = filename;
         this.memberDetailsListPrinted = false;
         packageTableHeader = new String[] {
             configuration.getText("doclet.Package"),
