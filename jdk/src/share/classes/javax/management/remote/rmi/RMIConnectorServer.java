@@ -412,9 +412,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
                 if (tracing)
                     logger.trace("start", "Using external directory: " + jndiUrl);
 
-                final boolean rebind = EnvHelp.computeBooleanFromString(
-                    attributes,
-                    JNDI_REBIND_ATTRIBUTE,false);
+                String stringBoolean = (String) attributes.get(JNDI_REBIND_ATTRIBUTE);
+                final boolean rebind = EnvHelp.computeBooleanFromString( stringBoolean );
 
                 if (tracing)
                     logger.trace("start", JNDI_REBIND_ATTRIBUTE + "=" + rebind);
