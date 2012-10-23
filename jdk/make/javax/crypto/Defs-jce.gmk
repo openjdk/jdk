@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ include $(BUILDDIR)/common/Release.gmk
 JCE_MANIFEST_FILE    = $(TEMPDIR)/manifest.mf
 $(JCE_MANIFEST_FILE): $(MAINMANIFEST)
 	$(prep-target)
-	$(SED) -e "s#@@RELEASE@@#$(RELEASE)#"           \
+	$(SED) -e "s#@@RELEASE@@#$(JDK_VERSION)#"       \
                -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
                $(MAINMANIFEST) >> $@
 	$(ECHO) "Extension-Name: javax.crypto" >> $@
