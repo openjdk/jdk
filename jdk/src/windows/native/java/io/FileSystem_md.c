@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,8 @@
 #include "jni.h"
 #include "jni_util.h"
 
-extern jboolean onNT;
-extern void initializeWindowsVersion();
-
 JNIEXPORT jobject JNICALL
 Java_java_io_FileSystem_getFileSystem(JNIEnv *env, jclass ignored)
 {
-    initializeWindowsVersion();
-    if (onNT) {
-        return JNU_NewObjectByName(env, "java/io/WinNTFileSystem", "()V");
-    } else {
-        return JNU_NewObjectByName(env, "java/io/Win32FileSystem", "()V");
-    }
+    return JNU_NewObjectByName(env, "java/io/WinNTFileSystem", "()V");
 }

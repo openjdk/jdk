@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ import java.util.Hashtable;
 import java.util.Vector;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.ArrayList;
 
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -51,6 +54,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLPermission;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.ExtendedSSLSession;
+import javax.net.ssl.SNIServerName;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -111,6 +115,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private PrivateKey          localPrivateKey;
     private String[]            localSupportedSignAlgs;
     private String[]            peerSupportedSignAlgs;
+    private List<SNIServerName>    requestedServerNames;
+
 
     // Principals for non-certificate based cipher suites
     private Principal peerPrincipal;
@@ -210,6 +216,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             Collection<SignatureAndHashAlgorithm> algorithms) {
         peerSupportedSignAlgs =
             SignatureAndHashAlgorithm.getAlgorithmNames(algorithms);
+    }
+
+    void setRequestedServerNames(List<SNIServerName> requestedServerNames) {
+        this.requestedServerNames = new ArrayList<>(requestedServerNames);
     }
 
     /**
@@ -748,6 +758,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * Gets an array of supported signature algorithms that the local side is
      * willing to verify.
      */
+    @Override
     public String[] getLocalSupportedSignatureAlgorithms() {
         if (localSupportedSignAlgs != null) {
             return localSupportedSignAlgs.clone();
@@ -760,12 +771,27 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * Gets an array of supported signature algorithms that the peer is
      * able to verify.
      */
+    @Override
     public String[] getPeerSupportedSignatureAlgorithms() {
         if (peerSupportedSignAlgs != null) {
             return peerSupportedSignAlgs.clone();
         }
 
         return new String[0];
+    }
+
+    /**
+     * Obtains a <code>List</code> containing all {@link SNIServerName}s
+     * of the requested Server Name Indication (SNI) extension.
+     */
+    @Override
+    public List<SNIServerName> getRequestedServerNames() {
+        if (requestedServerNames != null && !requestedServerNames.isEmpty()) {
+            return Collections.<SNIServerName>unmodifiableList(
+                                                requestedServerNames);
+        }
+
+        return Collections.<SNIServerName>emptyList();
     }
 
     /** Returns a string representation of this SSL session */
