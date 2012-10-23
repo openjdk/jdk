@@ -81,7 +81,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      * @return a content tree for the package link
      */
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY, "",
+        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
                 packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -103,7 +103,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      * @return a content tree for the class use link
      */
     protected Content getNavLinkClassUse() {
-        Content linkContent = getHyperLink(DocPaths.CLASS_USE.resolve(filename), "", useLabel);
+        Content linkContent = getHyperLink(DocPaths.CLASS_USE.resolve(filename), useLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -287,7 +287,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      */
     protected Content getNavLinkTree() {
         Content treeLinkContent = getHyperLink(DocPaths.PACKAGE_TREE,
-                "", treeLabel, "", "");
+                treeLabel, "", "");
         Content li = HtmlTree.LI(treeLinkContent);
         return li;
     }

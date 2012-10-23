@@ -32,6 +32,11 @@ import java.io.File;
 /**
  * Abstraction for immutable relative paths.
  * Paths always use '/' as a separator, and never begin or end with '/'.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 public class DocPath {
     private final String path;
@@ -175,6 +180,14 @@ public class DocPath {
      */
     public boolean isEmpty() {
         return path.isEmpty();
+    }
+
+    public DocLink fragment(String fragment) {
+        return new DocLink(path, null, fragment);
+    }
+
+    public DocLink query(String query) {
+        return new DocLink(path, query, null);
     }
 
     /**

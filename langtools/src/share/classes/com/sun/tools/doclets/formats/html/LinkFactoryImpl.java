@@ -81,8 +81,9 @@ public class LinkFactoryImpl extends LinkFactory {
                 DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf ||
                                 !(DocPath.forName(classDoc)).equals(m_writer.filename)) {
-                        linkOutput.append(m_writer.getHyperLinkString(filename,
-                            classLinkInfo.where, label.toString(),
+                        linkOutput.append(m_writer.getHyperLinkString(
+                                filename.fragment(classLinkInfo.where),
+                            label.toString(),
                             classLinkInfo.isStrong, classLinkInfo.styleName,
                             title, classLinkInfo.target));
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {

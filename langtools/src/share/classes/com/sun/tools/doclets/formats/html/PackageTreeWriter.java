@@ -198,7 +198,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      * @return a content tree for the package link
      */
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY, "",
+        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
                 packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;

@@ -112,7 +112,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             addSummaryComment(packageDoc, docSummaryDiv);
             div.addContent(docSummaryDiv);
             Content space = getSpace();
-            Content descLink = getHyperLink("", "package_description",
+            Content descLink = getHyperLink(DocLink.fragment("package_description"),
                     descriptionLabel, "", "");
             Content descPara = new HtmlTree(HtmlTag.P, seeLabel, space, descLink);
             div.addContent(descPara);
@@ -250,7 +250,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * @return a content tree for the class use link
      */
     protected Content getNavLinkClassUse() {
-        Content useLink = getHyperLink(DocPaths.PACKAGE_USE, "",
+        Content useLink = getHyperLink(DocPaths.PACKAGE_USE,
                 useLabel, "", "");
         Content li = HtmlTree.LI(useLink);
         return li;
@@ -267,7 +267,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             li = HtmlTree.LI(prevpackageLabel);
         } else {
             DocPath path = DocPath.relativePath(packageDoc, prev);
-            li = HtmlTree.LI(getHyperLink(path.resolve(DocPaths.PACKAGE_SUMMARY), "",
+            li = HtmlTree.LI(getHyperLink(path.resolve(DocPaths.PACKAGE_SUMMARY),
                 prevpackageLabel, "", ""));
         }
         return li;
@@ -284,7 +284,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             li = HtmlTree.LI(nextpackageLabel);
         } else {
             DocPath path = DocPath.relativePath(packageDoc, next);
-            li = HtmlTree.LI(getHyperLink(path.resolve(DocPaths.PACKAGE_SUMMARY), "",
+            li = HtmlTree.LI(getHyperLink(path.resolve(DocPaths.PACKAGE_SUMMARY),
                 nextpackageLabel, "", ""));
         }
         return li;
@@ -297,7 +297,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * @return a content tree for the tree link
      */
     protected Content getNavLinkTree() {
-        Content useLink = getHyperLink(DocPaths.PACKAGE_TREE, "",
+        Content useLink = getHyperLink(DocPaths.PACKAGE_TREE,
                 treeLabel, "", "");
         Content li = HtmlTree.LI(useLink);
         return li;

@@ -178,7 +178,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             Content see = seeLabel;
             see.addContent(" ");
             Content descPara = HtmlTree.P(see);
-            Content descLink = getHyperLink("", "overview_description",
+            Content descLink = getHyperLink(DocLink.fragment("overview_description"),
                 descriptionLabel, "", "");
             descPara.addContent(descLink);
             div.addContent(descPara);

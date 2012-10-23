@@ -230,10 +230,10 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     protected void addClassRow(ClassDoc usedClass, String packageName,
             Content contentTree) {
-        DocPath path = pathString(usedClass,
+        DocPath dp = pathString(usedClass,
                 DocPaths.CLASS_USE.resolve(DocPath.forName(usedClass)));
         Content td = HtmlTree.TD(HtmlStyle.colOne,
-                getHyperLink(path, packageName, new StringContent(usedClass.name())));
+                getHyperLink(dp.fragment(packageName), new StringContent(usedClass.name())));
         addIndexComment(usedClass, td);
         contentTree.addContent(td);
     }
@@ -286,7 +286,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @return a content tree for the package link
      */
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY, "",
+        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
                 packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -308,7 +308,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @return a content tree for the tree link
      */
     protected Content getNavLinkTree() {
-        Content linkContent = getHyperLink(DocPaths.PACKAGE_TREE, "",
+        Content linkContent = getHyperLink(DocPaths.PACKAGE_TREE,
                 treeLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
