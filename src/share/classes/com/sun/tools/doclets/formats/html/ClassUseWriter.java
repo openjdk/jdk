@@ -465,7 +465,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected Content getNavLinkPackage() {
         Content linkContent =
-                getHyperLink(DocPath.parent.resolve(DocPaths.PACKAGE_SUMMARY), "", packageLabel);
+                getHyperLink(DocPath.parent.resolve(DocPaths.PACKAGE_SUMMARY), packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -500,8 +500,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected Content getNavLinkTree() {
         Content linkContent = classdoc.containingPackage().isIncluded() ?
-            getHyperLink(DocPath.parent.resolve(DocPaths.PACKAGE_TREE), "", treeLabel) :
-            getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE), "", treeLabel);
+            getHyperLink(DocPath.parent.resolve(DocPaths.PACKAGE_TREE), treeLabel) :
+            getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE), treeLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }

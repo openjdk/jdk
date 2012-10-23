@@ -138,24 +138,25 @@ public class Extern {
      *
      * @param pkgName The package name.
      * @param relativepath    The relative path.
-     * @param link    The link to convert.
+     * @param filename    The link to convert.
      * @return if external return converted link else return null
      */
-    public String getExternalLink(String pkgName,
-                                  DocPath relativepath, String link) {
+    public DocLink getExternalLink(String pkgName,
+                                  DocPath relativepath, String filename) {
+        return getExternalLink(pkgName, relativepath, filename, null);
+    }
+
+    public DocLink getExternalLink(String pkgName,
+                                  DocPath relativepath, String filename, String memberName) {
         Item fnd = findPackageItem(pkgName);
-        if (fnd != null) {
-            String externlink = fnd.path + link;
-            if (fnd.relative) {  // it's a relative path.
-                if (relativepath.isEmpty())
-                    return externlink;
-                else
-                    return relativepath.getPath() + "/" + externlink;
-            } else {
-                return externlink;
-            }
-        }
-        return null;
+        if (fnd == null)
+            return null;
+
+        DocPath p = fnd.relative ?
+                relativepath.resolve(fnd.path).resolve(filename) :
+                DocPath.create(fnd.path).resolve(filename);
+
+        return new DocLink(p, "is-external=true", memberName);
     }
 
     /**

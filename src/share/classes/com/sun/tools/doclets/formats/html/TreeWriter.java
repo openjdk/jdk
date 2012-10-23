@@ -146,7 +146,7 @@ public class TreeWriter extends AbstractTreeWriter {
                 }
                 DocPath link = pathString(packages[i], DocPaths.PACKAGE_TREE);
                 Content li = HtmlTree.LI(getHyperLink(
-                        link, "", new StringContent(packages[i].name())));
+                        link, new StringContent(packages[i].name())));
                 if (i < packages.length - 1) {
                     li.addContent(", ");
                 }

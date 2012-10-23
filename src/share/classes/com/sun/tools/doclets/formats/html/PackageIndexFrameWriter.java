@@ -109,12 +109,12 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         if (pd.name().length() > 0) {
             packageLabel = getPackageLabel(pd.name());
             packageLinkContent = getHyperLink(pathString(pd,
-                     DocPaths.PACKAGE_FRAME), "", packageLabel, "",
+                     DocPaths.PACKAGE_FRAME), packageLabel, "",
                     "packageFrame");
         } else {
             packageLabel = new RawHtml("&lt;unnamed package&gt;");
             packageLinkContent = getHyperLink(DocPaths.PACKAGE_FRAME,
-                    "", packageLabel, "", "packageFrame");
+                    packageLabel, "", "packageFrame");
         }
         Content li = HtmlTree.LI(packageLinkContent);
         return li;
@@ -148,7 +148,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * @param body the Content object to which the all classes link should be added
      */
     protected void addAllClassesLink(Content body) {
-        Content linkContent = getHyperLink(DocPaths.ALLCLASSES_FRAME, "",
+        Content linkContent = getHyperLink(DocPaths.ALLCLASSES_FRAME,
                 allclassesLabel, "", "packageFrame");
         Content div = HtmlTree.DIV(HtmlStyle.indexHeader, linkContent);
         body.addContent(div);
