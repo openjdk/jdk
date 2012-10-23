@@ -103,9 +103,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_LShiftVL;
   case Op_RShiftI:
     switch (bt) {
-    case T_BOOLEAN:
+    case T_BOOLEAN:return Op_URShiftVB; // boolean is unsigned value
+    case T_CHAR:   return Op_URShiftVS; // char is unsigned value
     case T_BYTE:   return Op_RShiftVB;
-    case T_CHAR:
     case T_SHORT:  return Op_RShiftVS;
     case T_INT:    return Op_RShiftVI;
     }
@@ -115,10 +115,14 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_RShiftVL;
   case Op_URShiftI:
     switch (bt) {
-    case T_BOOLEAN:
-    case T_BYTE:   return Op_URShiftVB;
-    case T_CHAR:
-    case T_SHORT:  return Op_URShiftVS;
+    case T_BOOLEAN:return Op_URShiftVB;
+    case T_CHAR:   return Op_URShiftVS;
+    case T_BYTE:
+    case T_SHORT:  return 0; // Vector logical right shift for signed short
+                             // values produces incorrect Java result for
+                             // negative data because java code should convert
+                             // a short value into int value with sign
+                             // extension before a shift.
     case T_INT:    return Op_URShiftVI;
     }
     ShouldNotReachHere();
