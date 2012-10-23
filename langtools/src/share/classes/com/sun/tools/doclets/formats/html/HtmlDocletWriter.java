@@ -55,32 +55,24 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * Relative path from the file getting generated to the destination
      * directory. For example, if the file getting generated is
-     * "java/lang/Object.html", then the relative path string is "../../".
+     * "java/lang/Object.html", then the path to the root is "../..".
      * This string can be empty if the file getting generated is in
      * the destination directory.
      */
-    public String relativePath = "";
+    public final DocPath pathToRoot;
 
     /**
-     * Same as relativepath, but normalized to never be empty or
-     * end with a slash.
-     */
-    public String relativepathNoSlash = "";
-
-    /**
-     * Platform-dependent directory path from the current or the
+     * Platform-independent path from the current or the
      * destination directory to the file getting generated.
      * Used when creating the file.
-     * For example, if the file getting generated is
-     * "java/lang/Object.html", then the path string is "java/lang".
      */
-    public String path = "";
+    public final DocPath path;
 
     /**
      * Name of the file getting generated. If the file getting generated is
      * "java/lang/Object.html", then the filename is "Object.html".
      */
-    public String filename = "";
+    public final DocPath filename;
 
     /**
      * The display length used for indentation while generating the class page.
@@ -100,33 +92,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * Constructor to construct the HtmlStandardWriter object.
      *
-     * @param filename File to be generated.
+     * @param path File to be generated.
      */
-    public HtmlDocletWriter(ConfigurationImpl configuration,
-                              String filename) throws IOException {
-        super(configuration, filename);
-        this.configuration = configuration;
-        this.filename = filename;
-    }
-
-    /**
-     * Constructor to construct the HtmlStandardWriter object.
-     *
-     * @param path         Platform-dependent {@link #path} used when
-     *                     creating file.
-     * @param filename     Name of file to be generated.
-     * @param relativePath Value for the variable {@link #relativePath}.
-     */
-    public HtmlDocletWriter(ConfigurationImpl configuration,
-                              String path, String filename,
-                              String relativePath) throws IOException {
-        super(configuration, path, filename);
+    public HtmlDocletWriter(ConfigurationImpl configuration, DocPath path)
+            throws IOException {
+        super(configuration, path);
         this.configuration = configuration;
         this.path = path;
-        this.relativePath = relativePath;
-        this.relativepathNoSlash =
-            DirectoryManager.getPathNoTrailingSlash(this.relativePath);
-        this.filename = filename;
+        this.pathToRoot = path.parent().invert();
+        this.filename = path.basename();
     }
 
     /**
@@ -165,8 +139,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         int previndex = 0;
         while (true) {
             if (configuration.docrootparent.length() > 0) {
+                final String docroot_parent = "{@docroot}/..";
                 // Search for lowercase version of {@docRoot}/..
-                index = lowerHtml.indexOf("{@docroot}/..", previndex);
+                index = lowerHtml.indexOf(docroot_parent, previndex);
                 // If next {@docRoot}/.. pattern not found, append rest of htmlstr and exit loop
                 if (index < 0) {
                     buf.append(htmlstr.substring(previndex));
@@ -174,17 +149,18 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 }
                 // If next {@docroot}/.. pattern found, append htmlstr up to start of tag
                 buf.append(htmlstr.substring(previndex, index));
-                previndex = index + 13;  // length for {@docroot}/.. string
+                previndex = index + docroot_parent.length();
                 // Insert docrootparent absolute path where {@docRoot}/.. was located
 
                 buf.append(configuration.docrootparent);
                 // Append slash if next character is not a slash
                 if (previndex < htmlstr.length() && htmlstr.charAt(previndex) != '/') {
-                    buf.append(DirectoryManager.URL_FILE_SEPARATOR);
+                    buf.append('/');
                 }
             } else {
+                final String docroot = "{@docroot}";
                 // Search for lowercase version of {@docRoot}
-                index = lowerHtml.indexOf("{@docroot}", previndex);
+                index = lowerHtml.indexOf(docroot, previndex);
                 // If next {@docRoot} tag not found, append rest of htmlstr and exit loop
                 if (index < 0) {
                     buf.append(htmlstr.substring(previndex));
@@ -192,13 +168,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 }
                 // If next {@docroot} tag found, append htmlstr up to start of tag
                 buf.append(htmlstr.substring(previndex, index));
-                previndex = index + 10;  // length for {@docroot} string
+                previndex = index + docroot.length();
                 // Insert relative path where {@docRoot} was located
-                buf.append(relativepathNoSlash);
+                buf.append(pathToRoot.isEmpty() ? "." : pathToRoot.getPath());
                 // Append slash if next character is not a slash
-                if (relativepathNoSlash.length() > 0 && previndex < htmlstr.length() &&
-                        htmlstr.charAt(previndex) != '/') {
-                    buf.append(DirectoryManager.URL_FILE_SEPARATOR);
+                if (previndex < htmlstr.length() && htmlstr.charAt(previndex) != '/') {
+                    buf.append('/');
                 }
             }
         }
@@ -312,7 +287,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public Content getTargetPackageLink(PackageDoc pd, String target,
             Content label) {
-        return getHyperLink(pathString(pd, "package-summary.html"), "", label, "", target);
+        return getHyperLink(pathString(pd, DocPaths.PACKAGE_SUMMARY), "", label, "", target);
     }
 
     /**
@@ -539,8 +514,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkContents() {
-        Content linkContent = getHyperLink(relativePath +
-                "overview-summary.html", "", overviewLabel, "", "");
+        Content linkContent = getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_SUMMARY),
+                "", overviewLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -584,7 +559,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param prev File name for the prev link
      * @return a content tree for the link
      */
-    public Content getNavLinkPrevious(String prev) {
+    public Content getNavLinkPrevious(DocPath prev) {
         Content li;
         if (prev != null) {
             li = HtmlTree.LI(getHyperLink(prev, "", prevLabel, "", ""));
@@ -601,7 +576,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param next File name for the next link
      * @return a content tree for the link
      */
-    public Content getNavLinkNext(String next) {
+    public Content getNavLinkNext(DocPath next) {
         Content li;
         if (next != null) {
             li = HtmlTree.LI(getHyperLink(next, "", nextLabel, "", ""));
@@ -617,9 +592,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param link File to be linked, "index.html"
      * @return a content tree for the link
      */
-    protected Content getNavShowLists(String link) {
-        Content framesContent = getHyperLink(link + "?" + path +
-                filename, "", framesLabel, "", "_top");
+    protected Content getNavShowLists(DocPath link) {
+        Content framesContent = getHyperLink(link.getPath() + "?" + path.getPath(),
+                "", framesLabel, "", "_top");
         Content li = HtmlTree.LI(framesContent);
         return li;
     }
@@ -630,7 +605,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavShowLists() {
-        return getNavShowLists(relativePath + "index.html");
+        return getNavShowLists(pathToRoot.resolve(DocPaths.INDEX));
     }
 
     /**
@@ -639,7 +614,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param link File to be linked
      * @return a content tree for the link
      */
-    protected Content getNavHideLists(String link) {
+    protected Content getNavHideLists(DocPath link) {
         Content noFramesContent = getHyperLink(link, "", noframesLabel, "", "_top");
         Content li = HtmlTree.LI(noFramesContent);
         return li;
@@ -658,10 +633,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         PackageDoc[] packages = configuration.root.specifiedPackages();
         if (packages.length == 1 && configuration.root.specifiedClasses().length == 0) {
             treeLinkContent = getHyperLink(pathString(packages[0],
-                    "package-tree.html"), "", treeLabel,
+                    DocPaths.PACKAGE_TREE), "", treeLabel,
                     "", "");
         } else {
-            treeLinkContent = getHyperLink(relativePath + "overview-tree.html",
+            treeLinkContent = getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE),
                     "", treeLabel, "", "");
         }
         Content li = HtmlTree.LI(treeLinkContent);
@@ -675,7 +650,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkMainTree(String label) {
-        Content mainTreeContent = getHyperLink(relativePath + "overview-tree.html",
+        Content mainTreeContent = getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE),
                 new StringContent(label));
         Content li = HtmlTree.LI(mainTreeContent);
         return li;
@@ -697,8 +672,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkDeprecated() {
-        Content linkContent = getHyperLink(relativePath +
-                "deprecated-list.html", "", deprecatedLabel, "", "");
+        Content linkContent = getHyperLink(pathToRoot.resolve(DocPaths.DEPRECATED_LIST),
+                "", deprecatedLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -711,8 +686,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkClassIndex() {
-        Content allClassesContent = getHyperLink(relativePath +
-                AllClassesFrameWriter.OUTPUT_FILE_NAME_NOFRAMES, "",
+        Content allClassesContent = getHyperLink(pathToRoot.resolve(
+                DocPaths.ALLCLASSES_NOFRAME), "",
                 allclassesLabel, "", "");
         Content li = HtmlTree.LI(allClassesContent);
         return li;
@@ -724,9 +699,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkIndex() {
-        Content linkContent = getHyperLink(relativePath +(configuration.splitindex?
-            DirectoryManager.getPath("index-files") + fileseparator: "") +
-            (configuration.splitindex?"index-1.html" : "index-all.html"), "",
+        Content linkContent = getHyperLink(pathToRoot.resolve(
+                (configuration.splitindex
+                    ? DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1))
+                    : DocPaths.INDEX_ALL)), "",
             indexLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -740,16 +716,14 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkHelp() {
-        String helpfilenm = configuration.helpfile;
-        if (helpfilenm.equals("")) {
-            helpfilenm = "help-doc.html";
+        String helpfile = configuration.helpfile;
+        DocPath helpfilenm;
+        if (helpfile.isEmpty()) {
+            helpfilenm = DocPaths.HELP_DOC;
         } else {
-            int lastsep;
-            if ((lastsep = helpfilenm.lastIndexOf(File.separatorChar)) != -1) {
-                helpfilenm = helpfilenm.substring(lastsep + 1);
-            }
+            helpfilenm = DocPath.create(new File(helpfile).getName());
         }
-        Content linkContent = getHyperLink(relativePath + helpfilenm, "",
+        Content linkContent = getHyperLink(pathToRoot.resolve(helpfilenm), "",
                 helpLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -884,25 +858,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Return path to the class page for a classdoc. For example, the class
-     * name is "java.lang.Object" and if the current file getting generated is
-     * "java/io/File.html", then the path string to the class, returned is
-     * "../../java/lang.Object.html".
-     *
-     * @param cd Class to which the path is requested.
-     */
-    protected String pathToClass(ClassDoc cd) {
-        return pathString(cd.containingPackage(), cd.name() + ".html");
-    }
-
-    /**
      * Return the path to the class page for a classdoc. Works same as
      * {@link #pathToClass(ClassDoc)}.
      *
      * @param cd   Class to which the path is requested.
      * @param name Name of the file(doesn't include path).
      */
-    protected String pathString(ClassDoc cd, String name) {
+    protected DocPath pathString(ClassDoc cd, DocPath name) {
         return pathString(cd.containingPackage(), name);
     }
 
@@ -915,10 +877,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param pd Package in which the file name is assumed to be.
      * @param name File name, to which path string is.
      */
-    protected String pathString(PackageDoc pd, String name) {
-        StringBuilder buf = new StringBuilder(relativePath);
-        buf.append(DirectoryManager.getPathToPackage(pd, name));
-        return buf.toString();
+    protected DocPath pathString(PackageDoc pd, DocPath name) {
+        return pathToRoot.resolve(DocPath.forPackage(pd).resolve(name));
     }
 
     /**
@@ -956,12 +916,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             }
         }
         if (included || pkg == null) {
-            return getHyperLinkString(pathString(pkg, "package-summary.html"),
+            return getHyperLinkString(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
                                 "", label, isStrong, style);
         } else {
             String crossPkgLink = getCrossPackageLink(Util.getPackageName(pkg));
             if (crossPkgLink != null) {
-                return getHyperLinkString(crossPkgLink, "", label, isStrong, style);
+                return getHyperLinkString(/*TEMP*/ DocPath.create(crossPkgLink), "", label, isStrong, style);
             } else {
                 return label;
             }
@@ -987,12 +947,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             }
         }
         if (included || pkg == null) {
-            return getHyperLink(pathString(pkg, "package-summary.html"),
+            return getHyperLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
                                 "", label);
         } else {
             String crossPkgLink = getCrossPackageLink(Util.getPackageName(pkg));
             if (crossPkgLink != null) {
-                return getHyperLink(crossPkgLink, "", label);
+                return getHyperLink(/*TEMP*/ DocPath.create(crossPkgLink), "", label);
             } else {
                 return label;
             }
@@ -1020,10 +980,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             //d must be a class doc since in has no containing class.
             cd = (ClassDoc) doc;
         }
-        String href = relativePath + DocletConstants.SOURCE_OUTPUT_DIR_NAME
-                + DirectoryManager.getDirectoryPath(cd.containingPackage())
-                + cd.name() + ".html#" + SourceToHTMLConverter.getAnchorName(doc);
-        Content linkContent = getHyperLink(href, "", label, "", "");
+        DocPath href = pathToRoot
+                .resolve(DocPaths.SOURCE_OUTPUT)
+                .resolve(DocPath.forClass(cd));
+        Content linkContent = getHyperLink(href, SourceToHTMLConverter.getAnchorName(doc), label, "", "");
         htmltree.addContent(linkContent);
     }
 
@@ -1085,7 +1045,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 //exists, but no way to determine if the external class exists.  We just
                 //have to assume that it does.
                 return getHyperLinkString(
-                    configuration.extern.getExternalLink(packageName, relativePath,
+                    configuration.extern.getExternalLink(packageName, pathToRoot,
                                 className + ".html?is-external=true"),
                     refMemName == null ? "" : refMemName,
                     label == null || label.length() == 0 ? defaultLabel : label,
@@ -1105,7 +1065,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     public String getCrossPackageLink(String pkgName) {
-        return configuration.extern.getExternalLink(pkgName, relativePath,
+        return configuration.extern.getExternalLink(pkgName, pathToRoot,
             "package-summary.html?is-external=true");
     }
 
@@ -1321,7 +1281,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 String classCrossLink, packageCrossLink = getCrossPackageLink(refClassName);
                 if (packageCrossLink != null) {
                     //Package cross link found
-                    return getHyperLinkString(packageCrossLink, "",
+                    return getHyperLinkString(/*TEMP*/ DocPath.create(packageCrossLink), "",
                         (label.isEmpty() ? text : label), false);
                 } else if ((classCrossLink = getCrossClassLink(refClassName,
                         refMemName, label, false, "", !plain)) != null) {
@@ -1450,7 +1410,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param doc the doc for which the comment tags will be generated
      * @param tags the first sentence tags for the doc
      * @param depr true if it is deprecated
-     * @param first true if the first sentenge tags should be added
+     * @param first true if the first sentence tags should be added
      * @param htmltree the documentation tree to which the comment tags will be added
      */
     private void addCommentTags(Doc doc, Tag[] tags, boolean depr,
@@ -1561,7 +1521,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
 
     /**
      * Suppose a piece of documentation has a relative link.  When you copy
-     * that documetation to another place such as the index or class-use page,
+     * that documentation to another place such as the index or class-use page,
      * that relative link will no longer work.  We should redirect those links
      * so that they will work again.
      * <p>
@@ -1587,19 +1547,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             return text;
         }
 
-        String redirectPathFromRoot;
+        DocPath redirectPathFromRoot;
         if (doc instanceof ClassDoc) {
-            redirectPathFromRoot = DirectoryManager.getDirectoryPath(((ClassDoc) doc).containingPackage());
+            redirectPathFromRoot = DocPath.forPackage(((ClassDoc) doc).containingPackage());
         } else if (doc instanceof MemberDoc) {
-            redirectPathFromRoot = DirectoryManager.getDirectoryPath(((MemberDoc) doc).containingPackage());
+            redirectPathFromRoot = DocPath.forPackage(((MemberDoc) doc).containingPackage());
         } else if (doc instanceof PackageDoc) {
-            redirectPathFromRoot = DirectoryManager.getDirectoryPath((PackageDoc) doc);
+            redirectPathFromRoot = DocPath.forPackage((PackageDoc) doc);
         } else {
             return text;
-        }
-
-        if (! redirectPathFromRoot.endsWith(DirectoryManager.URL_FILE_SEPARATOR)) {
-            redirectPathFromRoot += DirectoryManager.URL_FILE_SEPARATOR;
         }
 
         //Redirect all relative links.
@@ -1627,22 +1583,21 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     //might be missing '>' character because the href has an inline tag.
                     break;
                 }
-                if(textBuff.substring(begin, end).indexOf("\"") != -1){
+                if (textBuff.substring(begin, end).indexOf("\"") != -1){
                     begin = textBuff.indexOf("\"", begin) + 1;
                     end = textBuff.indexOf("\"", begin +1);
-                    if(begin == 0 || end == -1){
+                    if (begin == 0 || end == -1){
                         //Link is missing a quote.
                         break;
                     }
                 }
                 String relativeLink = textBuff.substring(begin, end);
-                if(!(relativeLink.toLowerCase().startsWith("mailto:") ||
-                     relativeLink.toLowerCase().startsWith("http:") ||
-                     relativeLink.toLowerCase().startsWith("https:") ||
-                     relativeLink.toLowerCase().startsWith("file:"))){
-                     relativeLink = "{@"+(new DocRootTaglet()).getName() + "}"
-                        + redirectPathFromRoot
-                        + relativeLink;
+                if (!(relativeLink.toLowerCase().startsWith("mailto:") ||
+                        relativeLink.toLowerCase().startsWith("http:") ||
+                        relativeLink.toLowerCase().startsWith("https:") ||
+                        relativeLink.toLowerCase().startsWith("file:"))) {
+                    relativeLink = "{@"+(new DocRootTaglet()).getName() + "}/"
+                        + redirectPathFromRoot.resolve(relativeLink).getPath();
                     textBuff.replace(begin, end, relativeLink);
                 }
                 begin = textBuff.toString().toLowerCase().indexOf("<a", begin + 1);
@@ -1715,17 +1670,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public HtmlTree getStyleSheetProperties() {
         String filename = configuration.stylesheetfile;
+        DocPath stylesheet;
         if (filename.length() > 0) {
-            File stylefile = new File(filename);
-            String parent = stylefile.getParent();
-            filename = (parent == null)?
-                filename:
-                filename.substring(parent.length() + 1);
+            stylesheet = DocPath.create(new File(filename).getName());
         } else {
-            filename = "stylesheet.css";
+            stylesheet = DocPaths.STYLESHEET;
         }
-        filename = relativePath + filename;
-        HtmlTree link = HtmlTree.LINK("stylesheet", "text/css", filename, "Style");
+        HtmlTree link = HtmlTree.LINK("stylesheet", "text/css",
+                pathToRoot.resolve(stylesheet).getPath(),
+                "Style");
         return link;
     }
 

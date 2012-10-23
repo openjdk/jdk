@@ -45,13 +45,6 @@ import com.sun.javadoc.*;
 public interface PackageSummaryWriter {
 
     /**
-     * Return the name of the output file.
-     *
-     * @return the name of the output file.
-     */
-    public abstract String getOutputFileName();
-
-    /**
      * Get the header for the summary.
      *
      * @param heading Package name.

@@ -94,17 +94,11 @@ public class HtmlDoclet extends AbstractDoclet {
             throws Exception {
         super.generateOtherFiles(root, classtree);
         if (configuration.linksource) {
-            if (configuration.destDirName.length() > 0) {
-                SourceToHTMLConverter.convertRoot(configuration,
-                    root, configuration.destDirName + File.separator
-                    + DocletConstants.SOURCE_OUTPUT_DIR_NAME);
-            } else {
-                SourceToHTMLConverter.convertRoot(configuration,
-                    root, DocletConstants.SOURCE_OUTPUT_DIR_NAME);
-            }
+            SourceToHTMLConverter.convertRoot(configuration,
+                root, DocPaths.SOURCE_OUTPUT);
         }
 
-        if (configuration.topFile.length() == 0) {
+        if (configuration.topFile.isEmpty()) {
             configuration.standardmessage.
                 error("doclet.No_Non_Deprecated_Classes_To_Document");
             return;
@@ -155,9 +149,8 @@ public class HtmlDoclet extends AbstractDoclet {
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
         if (configuration.stylesheetfile.length() == 0) {
-            Util.copyFile(configuration, "stylesheet.css", Util.RESOURCESDIR,
-                    (configdestdir.isEmpty()) ?
-                        System.getProperty("user.dir") : configdestdir, false, true);
+            Util.copyFile(configuration, "stylesheet.css", DocPaths.RESOURCES,
+                    DocPath.empty, false, true);
         }
     }
 

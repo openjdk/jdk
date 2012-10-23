@@ -31,6 +31,8 @@ import java.util.*;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.ConfigurationImpl;
 import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.DocPath;
+import com.sun.tools.doclets.internal.toolkit.util.DocPaths;
 
 
 /**
@@ -56,25 +58,11 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      *
      * @param filename String file name.
      */
-    public HtmlDocWriter(Configuration configuration,
-                         String filename) throws IOException {
-        super(configuration,
-              null, configuration.destDirName + filename,
-              configuration.docencoding);
-        // use File to normalize file separators
+    public HtmlDocWriter(Configuration configuration, DocPath filename)
+            throws IOException {
+        super(configuration, filename);
         configuration.message.notice("doclet.Generating_0",
-            new File(configuration.destDirName, filename));
-    }
-
-    public HtmlDocWriter(Configuration configuration,
-                         String path, String filename) throws IOException {
-        super(configuration,
-              configuration.destDirName + path, filename,
-              configuration.docencoding);
-        // use File to normalize file separators
-        configuration.message.notice("doclet.Generating_0",
-            new File(configuration.destDirName,
-                    ((path.length() > 0)? path + File.separator: "") + filename));
+            filename.resolveAgainst(configuration.destDirName));
     }
 
     /**
@@ -92,7 +80,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param strong       Boolean that sets label to strong.
      * @return String    Hyper Link.
      */
-    public String getHyperLinkString(String link, String where,
+    public String getHyperLinkString(DocPath link, String where,
                                String label, boolean strong) {
         return getHyperLinkString(link, where, label, strong, "", "", "");
     }
@@ -108,10 +96,23 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param stylename  String style of text defined in style sheet.
      * @return String    Hyper Link.
      */
-    public String getHyperLinkString(String link, String where,
+    public String getHyperLinkString(DocPath link, String where,
                                String label, boolean strong,
                                String stylename) {
         return getHyperLinkString(link, where, label, strong, stylename, "", "");
+    }
+
+    /**
+     * Get Html Hyper Link string.
+     *
+     * @param where      Position of the link in the file. Character '#' is not
+     *                   needed.
+     * @param label      Tag for the link.
+     * @return a content tree for the hyper link
+     */
+    public Content getHyperLink(String where,
+                               Content label) {
+        return getHyperLink(DocPath.empty, where, label, "", "");
     }
 
     /**
@@ -123,7 +124,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param label      Tag for the link.
      * @return a content tree for the hyper link
      */
-    public Content getHyperLink(String link, String where,
+    public Content getHyperLink(DocPath link, String where,
                                Content label) {
         return getHyperLink(link, where, label, "", "");
     }
@@ -141,6 +142,13 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param target     Target frame.
      * @return String    Hyper Link.
      */
+    public String getHyperLinkString(DocPath link, String where,
+                               String label, boolean strong,
+                               String stylename, String title, String target) {
+        return getHyperLinkString(link.getPath(), where, label, strong,
+                stylename, title, target);
+    }
+
     public String getHyperLinkString(String link, String where,
                                String label, boolean strong,
                                String stylename, String title, String target) {
@@ -189,8 +197,13 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param target     Target frame.
      * @return a content tree for the hyper link.
      */
+    public Content getHyperLink(DocPath link, String where,
+            Content label, String title, String target) {
+        return getHyperLink(link.getPath(), where, label, title, target);
+    }
     public Content getHyperLink(String link, String where,
             Content label, String title, String target) {
+        if (link.startsWith("/")) Thread.dumpStack();
         if (where != null && where.length() != 0) {
             link += "#" + where;
         }
@@ -211,7 +224,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param label Label for the link
      * @return a content for the hyperlink to the file
      */
-    public Content getHyperLink(String link, Content label) {
+    public Content getHyperLink(DocPath link, Content label) {
         return getHyperLink(link, "", label);
     }
 
@@ -222,7 +235,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param label      Tag for the link.
      * @return Strign    Hyper link.
      */
-    public String getHyperLinkString(String link, String label) {
+    public String getHyperLinkString(DocPath link, String label) {
         return getHyperLinkString(link, "", label, false);
     }
 

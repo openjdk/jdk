@@ -51,16 +51,6 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 public class AllClassesFrameWriter extends HtmlDocletWriter {
 
     /**
-     * The name of the output file with frames
-     */
-    public static final String OUTPUT_FILE_NAME_FRAMES = "allclasses-frame.html";
-
-    /**
-     * The name of the output file without frames
-     */
-    public static final String OUTPUT_FILE_NAME_NOFRAMES = "allclasses-noframe.html";
-
-    /**
      * Index of all the classes.
      */
     protected IndexBuilder indexbuilder;
@@ -71,13 +61,16 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
     final HtmlTree BR = new HtmlTree(HtmlTag.BR);
 
     /**
-     * Construct AllClassesFrameWriter object. Also initilises the indexbuilder
+     * Construct AllClassesFrameWriter object. Also initializes the indexbuilder
      * variable in this class.
+     * @param configuration  The current configuration
+     * @param filename       Path to the file which is getting generated.
+     * @param indexbuilder   Unicode based Index from {@link IndexBuilder}
      * @throws IOException
      * @throws DocletAbortException
      */
     public AllClassesFrameWriter(ConfigurationImpl configuration,
-                                 String filename, IndexBuilder indexbuilder)
+                                 DocPath filename, IndexBuilder indexbuilder)
                               throws IOException {
         super(configuration, filename);
         this.indexbuilder = indexbuilder;
@@ -94,13 +87,13 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
     public static void generate(ConfigurationImpl configuration,
                                 IndexBuilder indexbuilder) {
         AllClassesFrameWriter allclassgen;
-        String filename = OUTPUT_FILE_NAME_FRAMES;
+        DocPath filename = DocPaths.ALLCLASSES_FRAME;
         try {
             allclassgen = new AllClassesFrameWriter(configuration,
                                                     filename, indexbuilder);
             allclassgen.buildAllClassesFile(true);
             allclassgen.close();
-            filename = OUTPUT_FILE_NAME_NOFRAMES;
+            filename = DocPaths.ALLCLASSES_NOFRAME;
             allclassgen = new AllClassesFrameWriter(configuration,
                                                     filename, indexbuilder);
             allclassgen.buildAllClassesFile(false);

@@ -69,7 +69,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      */
     public ConstantsSummaryWriterImpl(ConfigurationImpl configuration)
             throws IOException {
-        super(configuration, ConfigurationImpl.CONSTANTS_FILE_NAME);
+        super(configuration, DocPaths.CONSTANT_VALUES);
         this.configuration = configuration;
         constantsTableSummary = configuration.getText("doclet.Constants_Table_Summary",
                 configuration.getText("doclet.Constants_Summary"));

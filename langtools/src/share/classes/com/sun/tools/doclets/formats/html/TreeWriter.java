@@ -67,7 +67,7 @@ public class TreeWriter extends AbstractTreeWriter {
      * @param classtree the tree being built.
      */
     public TreeWriter(ConfigurationImpl configuration,
-            String filename, ClassTree classtree)
+            DocPath filename, ClassTree classtree)
     throws IOException {
         super(configuration, filename, classtree);
         packages = configuration.packages;
@@ -84,7 +84,7 @@ public class TreeWriter extends AbstractTreeWriter {
     public static void generate(ConfigurationImpl configuration,
                                 ClassTree classtree) {
         TreeWriter treegen;
-        String filename = "overview-tree.html";
+        DocPath filename = DocPaths.OVERVIEW_TREE;
         try {
             treegen = new TreeWriter(configuration, filename, classtree);
             treegen.generateTreeFile();
@@ -144,7 +144,7 @@ public class TreeWriter extends AbstractTreeWriter {
                         (configuration.nodeprecated && Util.isDeprecated(packages[i]))) {
                     continue;
                 }
-                String link = pathString(packages[i], "package-tree.html");
+                DocPath link = pathString(packages[i], DocPaths.PACKAGE_TREE);
                 Content li = HtmlTree.LI(getHyperLink(
                         link, "", new StringContent(packages[i].name())));
                 if (i < packages.length - 1) {

@@ -54,16 +54,9 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  */
 public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
-    public SubWriterHolderWriter(ConfigurationImpl configuration,
-                                 String filename) throws IOException {
+    public SubWriterHolderWriter(ConfigurationImpl configuration, DocPath filename)
+            throws IOException {
         super(configuration, filename);
-    }
-
-
-    public SubWriterHolderWriter(ConfigurationImpl configuration,
-                                 String path, String filename, String relpath)
-                                 throws IOException {
-        super(configuration, path, filename, relpath);
     }
 
     /**

@@ -67,10 +67,10 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      */
     public SplitIndexWriter(ConfigurationImpl configuration,
-                            String path, String filename,
-                            String relpath, IndexBuilder indexbuilder,
+                            DocPath path,
+                            IndexBuilder indexbuilder,
                             int prev, int next) throws IOException {
-        super(configuration, path, filename, relpath, indexbuilder);
+        super(configuration, path, indexbuilder);
         this.prev = prev;
         this.next = next;
     }
@@ -85,17 +85,16 @@ public class SplitIndexWriter extends AbstractIndexWriter {
     public static void generate(ConfigurationImpl configuration,
                                 IndexBuilder indexbuilder) {
         SplitIndexWriter indexgen;
-        String filename = "";
-        String path = DirectoryManager.getPath("index-files");
-        String relpath = DirectoryManager.getRelativePath("index-files");
+        DocPath filename = DocPath.empty;
+        DocPath path = DocPaths.INDEX_FILES;
         try {
             for (int i = 0; i < indexbuilder.elements().length; i++) {
                 int j = i + 1;
                 int prev = (j == 1)? -1: i;
                 int next = (j == indexbuilder.elements().length)? -1: j + 1;
-                filename = "index-" + j +".html";
+                filename = DocPaths.indexN(j);
                 indexgen = new SplitIndexWriter(configuration,
-                                                path, filename, relpath,
+                                                path.resolve(filename),
                                                 indexbuilder, prev, next);
                 indexgen.generateIndexFile((Character)indexbuilder.
                                                                  elements()[i]);
@@ -104,7 +103,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         } catch (IOException exc) {
             configuration.standardmessage.error(
                         "doclet.exception_encountered",
-                        exc.toString(), filename);
+                        exc.toString(), filename.getPath());
             throw new DocletAbortException();
         }
     }
@@ -142,7 +141,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         Object[] unicodeChars = indexbuilder.elements();
         for (int i = 0; i < unicodeChars.length; i++) {
             int j = i + 1;
-            contentTree.addContent(getHyperLink("index-" + j + ".html",
+            contentTree.addContent(getHyperLink(DocPaths.indexN(j),
                     new StringContent(unicodeChars[i].toString())));
             contentTree.addContent(getSpace());
         }
@@ -159,7 +158,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             return HtmlTree.LI(prevletterLabel);
         }
         else {
-            Content prevLink = getHyperLink("index-" + prev + ".html", "",
+            Content prevLink = getHyperLink(DocPaths.indexN(prev), "",
                     prevletterLabel);
             return HtmlTree.LI(prevLink);
         }
@@ -176,7 +175,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             return HtmlTree.LI(nextletterLabel);
         }
         else {
-            Content nextLink = getHyperLink("index-" + next + ".html","",
+            Content nextLink = getHyperLink(DocPaths.indexN(next), "",
                     nextletterLabel);
             return HtmlTree.LI(nextLink);
         }
