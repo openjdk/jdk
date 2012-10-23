@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package com.sun.source.util;
 
-import com.sun.source.tree.*;
 import java.util.Iterator;
+
+import com.sun.source.tree.*;
 
 /**
  * A path of tree nodes, typically used to represent the sequence of ancestor

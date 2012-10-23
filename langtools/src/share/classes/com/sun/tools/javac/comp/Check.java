@@ -230,7 +230,6 @@ public class Check {
 
     /** Warn about unsafe vararg method decl.
      *  @param pos        Position to be used for error reporting.
-     *  @param sym        The deprecated symbol.
      */
     void warnUnsafeVararg(DiagnosticPosition pos, String key, Object... args) {
         if (lint.isEnabled(LintCategory.VARARGS) && allowSimplifiedVarargs)
@@ -397,7 +396,7 @@ public class Check {
  **************************************************************************/
 
     /** Return name of local class.
-     *  This is of the form    <enclClass> $ n <classname>
+     *  This is of the form   {@code <enclClass> $ n <classname> }
      *  where
      *    enclClass is the flat name of the enclosing class,
      *    classname is the simple name of the local class
@@ -600,11 +599,10 @@ public class Check {
 
     /** Check that a type is within some bounds.
      *
-     *  Used in TypeApply to verify that, e.g., X in V<X> is a valid
+     *  Used in TypeApply to verify that, e.g., X in {@code V<X>} is a valid
      *  type argument.
-     *  @param pos           Position to be used for error reporting.
      *  @param a             The type that should be bounded by bs.
-     *  @param bs            The bound.
+     *  @param bound         The bound.
      */
     private boolean checkExtends(Type a, Type bound) {
          if (a.isUnbound()) {
@@ -1123,8 +1121,14 @@ public class Check {
                     mask = PRIVATE;
                 } else
                     mask = ConstructorFlags;
-            }  else if ((sym.owner.flags_field & INTERFACE) != 0)
-                mask = implicit = InterfaceMethodFlags;
+            }  else if ((sym.owner.flags_field & INTERFACE) != 0) {
+                if ((flags & DEFAULT) != 0) {
+                    mask = InterfaceDefaultMethodMask;
+                    implicit = PUBLIC;
+                } else {
+                    mask = implicit = InterfaceMethodFlags;
+                }
+            }
             else {
                 mask = MethodFlags;
             }
@@ -1171,7 +1175,7 @@ public class Check {
         default:
             throw new AssertionError();
         }
-        long illegal = flags & StandardFlags & ~mask;
+        long illegal = flags & ExtendedStandardFlags & ~mask;
         if (illegal != 0) {
             if ((illegal & INTERFACE) != 0) {
                 log.error(pos, "intf.not.allowed.here");
@@ -1187,7 +1191,7 @@ public class Check {
                   // in the presence of inner classes. Should it be deleted here?
                   checkDisjoint(pos, flags,
                                 ABSTRACT,
-                                PRIVATE | STATIC))
+                                PRIVATE | STATIC | DEFAULT))
                  &&
                  checkDisjoint(pos, flags,
                                ABSTRACT | INTERFACE,
@@ -1211,7 +1215,7 @@ public class Check {
                                 STRICTFP))) {
             // skip
         }
-        return flags & (mask | ~StandardFlags) | implicit;
+        return flags & (mask | ~ExtendedStandardFlags) | implicit;
     }
 
 
@@ -1262,8 +1266,10 @@ public class Check {
      *  their bounds. This must be done in a second phase after type attributon
      *  since a class might have a subclass as type parameter bound. E.g:
      *
+     *  <pre>{@code
      *  class B<A extends C> { ... }
      *  class C extends B<C> { ... }
+     *  }</pre>
      *
      *  and we can't make sure that the bound is already attributed because
      *  of possible cycles.
@@ -2574,7 +2580,7 @@ public class Check {
      * 'pos'.
      *
      * @param s The (annotation)type declaration annotated with a @ContainedBy
-     * @param containerAnno the @ContainedBy on 's'
+     * @param containedBy the @ContainedBy on 's'
      * @param pos where to report errors
      */
     public void validateContainedBy(TypeSymbol s, Attribute.Compound containedBy, DiagnosticPosition pos) {
@@ -3181,7 +3187,6 @@ public class Check {
      *  @param pos           Position for error reporting.
      *  @param sym           The symbol.
      *  @param s             The scope
-     *  @param staticImport  Whether or not this was a static import
      */
     boolean checkUniqueStaticImport(DiagnosticPosition pos, Symbol sym, Scope s) {
         return checkUniqueImport(pos, sym, s, true);

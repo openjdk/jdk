@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,7 +287,7 @@ public abstract class Gen {
                         constString = value.toString();
                 }
                 if (constString != null) {
-                    StringBuffer s = new StringBuffer("#undef ");
+                    StringBuilder s = new StringBuilder("#undef ");
                     s.append(cname); s.append("_"); s.append(fname); s.append(lineSep);
                     s.append("#define "); s.append(cname); s.append("_");
                     s.append(fname); s.append(" "); s.append(constString);
@@ -370,7 +370,7 @@ public abstract class Gen {
 
     // c.f. MethodDoc.signature
     String signature(ExecutableElement e) {
-        StringBuffer sb = new StringBuffer("(");
+        StringBuilder sb = new StringBuilder("(");
         String sep = "";
         for (VariableElement p: e.getParameters()) {
             sb.append(sep);

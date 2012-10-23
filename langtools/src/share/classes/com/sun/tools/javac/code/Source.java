@@ -26,12 +26,12 @@
 package com.sun.tools.javac.code;
 
 import java.util.*;
+
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
-import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.jvm.Target;
-
+import com.sun.tools.javac.util.*;
 import static com.sun.tools.javac.main.Option.*;
 
 /** The source language version accepted.
@@ -201,6 +201,9 @@ public enum Source {
         return compareTo(JDK1_8) >= 0;
     }
     public boolean allowMethodReferences() {
+        return compareTo(JDK1_8) >= 0;
+    }
+    public boolean allowDefaultMethods() {
         return compareTo(JDK1_8) >= 0;
     }
     public boolean allowEffectivelyFinalInInnerClasses() {

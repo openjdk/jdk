@@ -607,7 +607,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     /** Parse contents of input stream.
      *  @param filename     The name of the file from which input stream comes.
-     *  @param input        The input stream to be parsed.
+     *  @param content      The characters to be parsed.
      */
     protected JCCompilationUnit parse(JavaFileObject filename, CharSequence content) {
         long msec = now();
@@ -755,8 +755,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     /** Complete compiling a source file that has been accessed
      *  by the class file reader.
      *  @param c          The class the source file of which needs to be compiled.
-     *  @param filename   The name of the source file.
-     *  @param f          An input stream that reads the source file.
      */
     public void complete(ClassSymbol c) throws CompletionFailure {
 //      System.err.println("completing " + c);//DEBUG

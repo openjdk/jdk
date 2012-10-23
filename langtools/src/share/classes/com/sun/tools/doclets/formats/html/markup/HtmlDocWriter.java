@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.ConfigurationImpl;
 import com.sun.tools.doclets.internal.toolkit.*;
 
 
@@ -37,6 +38,11 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * This Class contains methods related to the Html Code Generation which
  * are used by the Sub-Classes in the package com.sun.tools.doclets.standard
  * and com.sun.tools.doclets.oneone.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @since 1.2
  * @author Atul M Dambalkar
@@ -75,48 +81,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Accessor for configuration.
      */
     public abstract Configuration configuration();
-
-    /**
-     * Print Html Hyper Link.
-     *
-     * @param link String name of the file.
-     * @param where Position of the link in the file. Character '#' is not
-     * needed.
-     * @param label Tag for the link.
-     * @param strong  Boolean that sets label to strong.
-     */
-    public void printHyperLink(String link, String where,
-                               String label, boolean strong) {
-        print(getHyperLinkString(link, where, label, strong, "", "", ""));
-    }
-
-    /**
-     * Print Html Hyper Link.
-     *
-     * @param link String name of the file.
-     * @param where Position of the link in the file. Character '#' is not
-     * needed.
-     * @param label Tag for the link.
-     */
-    public void printHyperLink(String link, String where, String label) {
-        printHyperLink(link, where, label, false);
-    }
-
-    /**
-     * Print Html Hyper Link.
-     *
-     * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     * needed.
-     * @param label      Tag for the link.
-     * @param strong       Boolean that sets label to strong.
-     * @param stylename  String style of text defined in style sheet.
-     */
-    public void printHyperLink(String link, String where,
-                               String label, boolean strong,
-                               String stylename) {
-        print(getHyperLinkString(link, where, label, strong, stylename, "", ""));
-    }
 
     /**
      * Return Html Hyper Link string.
@@ -180,7 +144,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     public String getHyperLinkString(String link, String where,
                                String label, boolean strong,
                                String stylename, String title, String target) {
-        StringBuffer retlink = new StringBuffer();
+        StringBuilder retlink = new StringBuilder();
         retlink.append("<a href=\"");
         retlink.append(link);
         if (where != null && where.length() != 0) {
@@ -189,10 +153,10 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         }
         retlink.append("\"");
         if (title != null && title.length() != 0) {
-            retlink.append(" title=\"" + title + "\"");
+            retlink.append(" title=\"").append(title).append("\"");
         }
         if (target != null && target.length() != 0) {
-            retlink.append(" target=\"" + target + "\"");
+            retlink.append(" target=\"").append(target).append("\"");
         }
         retlink.append(">");
         if (stylename != null && stylename.length() != 0) {
@@ -263,15 +227,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     }
 
     /**
-     * Print the name of the package, this class is in.
-     *
-     * @param cd    ClassDoc.
-     */
-    public void printPkgName(ClassDoc cd) {
-        print(getPkgName(cd));
-    }
-
-    /**
      * Get the name of the package, this class is in.
      *
      * @param cd    ClassDoc.
@@ -283,27 +238,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
             return pkgName;
         }
         return "";
-    }
-
-    /**
-     * Keep track of member details list. Print the definition list start tag
-     * if it is not printed yet.
-     */
-    public void printMemberDetailsListStartTag () {
-        if (!getMemberDetailsListPrinted()) {
-            dl();
-            memberDetailsListPrinted = true;
-        }
-    }
-
-    /**
-     * Print the definition list end tag if the list start tag was printed.
-     */
-    public void printMemberDetailsListEndTag () {
-        if (getMemberDetailsListPrinted()) {
-            dlEnd();
-            memberDetailsListPrinted = false;
-        }
     }
 
     public boolean getMemberDetailsListPrinted() {
@@ -319,12 +253,12 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param frameset the frameset to be added to the HTML document
      */
     public void printFramesetDocument(String title, boolean noTimeStamp,
-            Content frameset) {
+            Content frameset) throws IOException {
         Content htmlDocType = DocType.Frameset();
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
         if (! noTimeStamp) {
-            Content headComment = new Comment("Generated by javadoc on " + today());
+            Content headComment = new Comment(getGeneratedByString());
             head.addContent(headComment);
         }
         if (configuration.charset.length() > 0) {
@@ -339,7 +273,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
                 head, frameset);
         Content htmlDocument = new HtmlDocument(htmlDocType,
                 htmlComment, htmlTree);
-        print(htmlDocument.toString());
+        write(htmlDocument);
     }
 
     /**
@@ -356,46 +290,9 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         return space;
     }
 
-    /**
-     * Print the closing &lt;/body&gt; and &lt;/html&gt; tags.
-     */
-    public void printBodyHtmlEnd() {
-        println();
-        bodyEnd();
-        htmlEnd();
-    }
-
-    /**
-     * Calls {@link #printBodyHtmlEnd()} method.
-     */
-    public void printFooter() {
-        printBodyHtmlEnd();
-    }
-
-    /**
-     * Print closing &lt;/html&gt; tag.
-     */
-    public void printFrameFooter() {
-        htmlEnd();
-    }
-
-    /**
-     * Print ten non-breaking spaces("&#38;nbsp;").
-     */
-    public void printNbsps() {
-        print("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
-    }
-
-    /**
-     * Get the day and date information for today, depending upon user option.
-     *
-     * @return String Today.
-     * @see java.util.Calendar
-     * @see java.util.GregorianCalendar
-     * @see java.util.TimeZone
-     */
-    public String today() {
+    protected String getGeneratedByString() {
         Calendar calendar = new GregorianCalendar(TimeZone.getDefault());
-        return calendar.getTime().toString();
+        Date today = calendar.getTime();
+        return "Generated by javadoc ("+ ConfigurationImpl.BUILD_DATE + ") on " + today;
     }
 }

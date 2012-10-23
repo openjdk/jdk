@@ -671,7 +671,7 @@ public class Lower extends TreeTranslator {
     };
 
     /** Look up a synthetic name in a given scope.
-     *  @param scope        The scope.
+     *  @param s            The scope.
      *  @param name         The name.
      */
     private Symbol lookupSynthetic(Name name, Scope s) {
@@ -747,7 +747,7 @@ public class Lower extends TreeTranslator {
      *  This numbering scheme is used by the backend to decide whether
      *  to issue an invokevirtual or invokespecial call.
      *
-     *  @see Gen.visitSelect(Select tree)
+     *  @see Gen#visitSelect(JCFieldAccess tree)
      */
     private static final int
         DEREFcode = 0,
@@ -1945,7 +1945,7 @@ public class Lower extends TreeTranslator {
      *  @param sig      The signature of type T.
      */
     private Name cacheName(String sig) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         if (sig.startsWith("[")) {
             buf = buf.append("array");
             while (sig.startsWith("[")) {
