@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2012 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -409,29 +409,29 @@ cmsHANDLE  CMSEXPORT cmsCIECAM02Init(cmsContext ContextID, const cmsViewingCondi
     switch (lpMod -> surround) {
 
 
-      case CUTSHEET_SURROUND:
-          lpMod->F = 0.8;
-          lpMod->c = 0.41;
-          lpMod->Nc = 0.8;
-          break;
+    case CUTSHEET_SURROUND:
+        lpMod->F = 0.8;
+        lpMod->c = 0.41;
+        lpMod->Nc = 0.8;
+        break;
 
-      case DARK_SURROUND:
-          lpMod -> F  = 0.8;
-          lpMod -> c  = 0.525;
-          lpMod -> Nc = 0.8;
-          break;
+    case DARK_SURROUND:
+        lpMod -> F  = 0.8;
+        lpMod -> c  = 0.525;
+        lpMod -> Nc = 0.8;
+        break;
 
-      case DIM_SURROUND:
-          lpMod -> F  = 0.9;
-          lpMod -> c  = 0.59;
-          lpMod -> Nc = 0.95;
-          break;
+    case DIM_SURROUND:
+        lpMod -> F  = 0.9;
+        lpMod -> c  = 0.59;
+        lpMod -> Nc = 0.95;
+        break;
 
-      default:
-          // Average surround
-          lpMod -> F  = 1.0;
-          lpMod -> c  = 0.69;
-          lpMod -> Nc = 1.0;
+    default:
+        // Average surround
+        lpMod -> F  = 1.0;
+        lpMod -> c  = 0.69;
+        lpMod -> Nc = 1.0;
     }
 
     lpMod -> n   = compute_n(lpMod);

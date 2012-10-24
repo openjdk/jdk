@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2011 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -144,6 +144,7 @@ struct _cms_io_handler {
 
     cmsContext        ContextID;
     cmsUInt32Number   UsedSpace;
+    cmsUInt32Number   ReportedSize;
     char              PhysicalFile[cmsMAX_PATH];
 
     cmsUInt32Number   (* Read)(struct _cms_io_handler* iohandler, void *Buffer,
@@ -159,7 +160,7 @@ struct _cms_io_handler {
 // Endianess adjust functions
 CMSAPI cmsUInt16Number   CMSEXPORT  _cmsAdjustEndianess16(cmsUInt16Number Word);
 CMSAPI cmsUInt32Number   CMSEXPORT  _cmsAdjustEndianess32(cmsUInt32Number Value);
-CMSAPI void              CMSEXPORT  _cmsAdjustEndianess64(cmsUInt64Number* Result, cmsUInt64Number QWord);
+CMSAPI void              CMSEXPORT  _cmsAdjustEndianess64(cmsUInt64Number* Result, cmsUInt64Number* QWord);
 
 // Helper IO functions
 CMSAPI cmsBool           CMSEXPORT  _cmsReadUInt8Number(cmsIOHANDLER* io,  cmsUInt8Number* n);
@@ -175,7 +176,7 @@ CMSAPI cmsBool           CMSEXPORT  _cmsWriteUInt8Number(cmsIOHANDLER* io, cmsUI
 CMSAPI cmsBool           CMSEXPORT  _cmsWriteUInt16Number(cmsIOHANDLER* io, cmsUInt16Number n);
 CMSAPI cmsBool           CMSEXPORT  _cmsWriteUInt32Number(cmsIOHANDLER* io, cmsUInt32Number n);
 CMSAPI cmsBool           CMSEXPORT  _cmsWriteFloat32Number(cmsIOHANDLER* io, cmsFloat32Number n);
-CMSAPI cmsBool           CMSEXPORT  _cmsWriteUInt64Number(cmsIOHANDLER* io, cmsUInt64Number n);
+CMSAPI cmsBool           CMSEXPORT  _cmsWriteUInt64Number(cmsIOHANDLER* io, cmsUInt64Number* n);
 CMSAPI cmsBool           CMSEXPORT  _cmsWrite15Fixed16Number(cmsIOHANDLER* io, cmsFloat64Number n);
 CMSAPI cmsBool           CMSEXPORT  _cmsWriteXYZNumber(cmsIOHANDLER* io, const cmsCIEXYZ* XYZ);
 CMSAPI cmsBool           CMSEXPORT  _cmsWriteUInt16Array(cmsIOHANDLER* io, cmsUInt32Number n, const cmsUInt16Number* Array);
@@ -209,6 +210,11 @@ CMSAPI cmsS15Fixed16Number CMSEXPORT _cmsDoubleTo15Fixed16(cmsFloat64Number v);
 CMSAPI void                CMSEXPORT _cmsEncodeDateTimeNumber(cmsDateTimeNumber *Dest, const struct tm *Source);
 CMSAPI void                CMSEXPORT _cmsDecodeDateTimeNumber(const cmsDateTimeNumber *Source, struct tm *Dest);
 
+//----------------------------------------------------------------------------------------------------------
+
+// Shared callbacks for user data
+typedef void     (* _cmsFreeUserDataFn)(cmsContext ContextID, void* Data);
+typedef void*    (* _cmsDupUserDataFn)(cmsContext ContextID, const void* Data);
 
 //----------------------------------------------------------------------------------------------------------
 
@@ -224,6 +230,7 @@ CMSAPI void                CMSEXPORT _cmsDecodeDateTimeNumber(const cmsDateTimeN
 #define cmsPluginRenderingIntentSig          0x696E7448     // 'intH'
 #define cmsPluginMultiProcessElementSig      0x6D706548     // 'mpeH'
 #define cmsPluginOptimizationSig             0x6F707448     // 'optH'
+#define cmsPluginTransformSig                0x7A666D48     // 'xfmH'
 
 typedef struct _cmsPluginBaseStruct {
 
@@ -414,8 +421,9 @@ typedef struct _cms_typehandler_struct {
         void    (* FreePtr)(struct _cms_typehandler_struct* self,
                             void *Ptr);
 
-        // The calling thread
-        cmsContext     ContextID;
+        // Additional parameters used by the calling thread
+        cmsContext       ContextID;
+        cmsUInt32Number  ICCVersion;
 
 } cmsTagTypeHandler;
 
@@ -513,6 +521,39 @@ typedef struct {
 
 }  cmsPluginMultiProcessElement;
 
+
+// Data kept in "Element" member of cmsStage
+
+// Curves
+typedef struct {
+    cmsUInt32Number nCurves;
+    cmsToneCurve**  TheCurves;
+
+} _cmsStageToneCurvesData;
+
+// Matrix
+typedef struct {
+    cmsFloat64Number*  Double;          // floating point for the matrix
+    cmsFloat64Number*  Offset;          // The offset
+
+} _cmsStageMatrixData;
+
+// CLUT
+typedef struct {
+
+    union {                       // Can have only one of both representations at same time
+        cmsUInt16Number*  T;      // Points to the table 16 bits table
+        cmsFloat32Number* TFloat; // Points to the cmsFloat32Number table
+
+    } Tab;
+
+    cmsInterpParams* Params;
+    cmsUInt32Number  nEntries;
+    cmsBool          HasFloatValues;
+
+} _cmsStageCLutData;
+
+
 //----------------------------------------------------------------------------------------------------------
 // Optimization. Using this plug-in, additional optimization strategies may be implemented.
 // The function should return TRUE if any optimization is done on the LUT, this terminates
@@ -522,9 +563,6 @@ typedef struct {
 typedef void     (* _cmsOPTeval16Fn)(register const cmsUInt16Number In[],
                                      register cmsUInt16Number Out[],
                                      register const void* Data);
-
-typedef void     (* _cmsOPTfreeDataFn)(cmsContext ContextID, void* Data);
-typedef void*    (* _cmsOPTdupDataFn)(cmsContext ContextID, const void* Data);
 
 
 typedef cmsBool  (* _cmsOPToptimizeFn)(cmsPipeline** Lut,
@@ -539,8 +577,8 @@ typedef cmsBool  (* _cmsOPToptimizeFn)(cmsPipeline** Lut,
 CMSAPI void CMSEXPORT _cmsPipelineSetOptimizationParameters(cmsPipeline* Lut,
                                                _cmsOPTeval16Fn Eval16,
                                                void* PrivateData,
-                                               _cmsOPTfreeDataFn FreePrivateDataFn,
-                                               _cmsOPTdupDataFn DupPrivateDataFn);
+                                               _cmsFreeUserDataFn FreePrivateDataFn,
+                                               _cmsDupUserDataFn DupPrivateDataFn);
 
 typedef struct {
       cmsPluginBase     base;
@@ -551,6 +589,39 @@ typedef struct {
 }  cmsPluginOptimization;
 
 //----------------------------------------------------------------------------------------------------------
+// Full xform
+typedef void     (* _cmsTransformFn)(struct _cmstransform_struct *CMMcargo,
+                                     const void* InputBuffer,
+                                     void* OutputBuffer,
+                                     cmsUInt32Number Size,
+                                     cmsUInt32Number Stride);
+
+typedef cmsBool  (* _cmsTransformFactory)(_cmsTransformFn* xform,
+                                         void** UserData,
+                                         _cmsFreeUserDataFn* FreePrivateDataFn,
+                                         cmsPipeline** Lut,
+                                         cmsUInt32Number* InputFormat,
+                                         cmsUInt32Number* OutputFormat,
+                                         cmsUInt32Number* dwFlags);
+
+
+// Retrieve user data as specified by the factory
+CMSAPI void   CMSEXPORT _cmsSetTransformUserData(struct _cmstransform_struct *CMMcargo, void* ptr, _cmsFreeUserDataFn FreePrivateDataFn);
+CMSAPI void * CMSEXPORT _cmsGetTransformUserData(struct _cmstransform_struct *CMMcargo);
+
+
+// Retrieve formatters
+CMSAPI void   CMSEXPORT _cmsGetTransformFormatters16   (struct _cmstransform_struct *CMMcargo, cmsFormatter16* FromInput, cmsFormatter16* ToOutput);
+CMSAPI void   CMSEXPORT _cmsGetTransformFormattersFloat(struct _cmstransform_struct *CMMcargo, cmsFormatterFloat* FromInput, cmsFormatterFloat* ToOutput);
+
+typedef struct {
+      cmsPluginBase     base;
+
+      // Transform entry point
+      _cmsTransformFactory  Factory;
+
+}  cmsPluginTransform;
+
 
 #ifndef CMS_USE_CPP_API
 #   ifdef __cplusplus
