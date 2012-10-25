@@ -2569,7 +2569,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
          FLAG_SET_CMDLINE(uintx, MaxNewSize, NewSize);
       }
 
+#ifndef _ALLBSD_SOURCE  // UseLargePages is not yet supported on BSD.
       FLAG_SET_DEFAULT(UseLargePages, true);
+#endif
 
       // Increase some data structure sizes for efficiency
       FLAG_SET_CMDLINE(uintx, BaseFootPrintEstimate, MaxHeapSize);
@@ -3132,6 +3134,10 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 
 #if (defined JAVASE_EMBEDDED || defined ARM)
   UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
+#endif
+
+#ifdef _ALLBSD_SOURCE  // UseLargePages is not yet supported on BSD.
+  UNSUPPORTED_OPTION(UseLargePages, "-XX:+UseLargePages");
 #endif
 
 #if !INCLUDE_ALTERNATE_GCS
