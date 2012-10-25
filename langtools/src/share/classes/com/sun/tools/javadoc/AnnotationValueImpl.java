@@ -29,8 +29,8 @@ import com.sun.javadoc.*;
 
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.TypeTags;
 
+import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 
 /**
  * Represents a value of an annotation type element.
@@ -76,7 +76,7 @@ public class AnnotationValueImpl implements AnnotationValue {
         public Object value;
 
         public void visitConstant(Attribute.Constant c) {
-            if (c.type.tag == TypeTags.BOOLEAN) {
+            if (c.type.hasTag(BOOLEAN)) {
                 // javac represents false and true as integers 0 and 1
                 value = Boolean.valueOf(
                                 ((Integer)c.value).intValue() != 0);
@@ -133,7 +133,7 @@ public class AnnotationValueImpl implements AnnotationValue {
         }
 
         public void visitConstant(Attribute.Constant c) {
-            if (c.type.tag == TypeTags.BOOLEAN) {
+            if (c.type.hasTag(BOOLEAN)) {
                 // javac represents false and true as integers 0 and 1
                 sb.append(((Integer)c.value).intValue() != 0);
             } else {

@@ -59,7 +59,7 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.ERRONEOUS;
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -228,7 +228,7 @@ public class Resolve {
 
     JCDiagnostic getVerboseApplicableCandidateDiag(int pos, Symbol sym, Type inst) {
         JCDiagnostic subDiag = null;
-        if (sym.type.tag == FORALL) {
+        if (sym.type.hasTag(FORALL)) {
             subDiag = diags.fragment("partial.inst.sig", inst);
         }
 
@@ -331,7 +331,7 @@ public class Resolve {
     }
 
     boolean isAccessible(Env<AttrContext> env, Type t, boolean checkInner) {
-        return (t.tag == ARRAY)
+        return (t.hasTag(ARRAY))
             ? isAccessible(env, types.elemtype(t))
             : isAccessible(env, t.tsym, checkInner);
     }
@@ -467,10 +467,10 @@ public class Resolve {
         // need to inferred.
         List<Type> tvars = List.nil();
         if (typeargtypes == null) typeargtypes = List.nil();
-        if (mt.tag != FORALL && typeargtypes.nonEmpty()) {
+        if (!mt.hasTag(FORALL) && typeargtypes.nonEmpty()) {
             // This is not a polymorphic method, but typeargs are supplied
             // which is fine, see JLS 15.12.2.1
-        } else if (mt.tag == FORALL && typeargtypes.nonEmpty()) {
+        } else if (mt.hasTag(FORALL) && typeargtypes.nonEmpty()) {
             ForAll pmt = (ForAll) mt;
             if (typeargtypes.length() != pmt.tvars.length())
                 throw inapplicableMethodException.setMessage("arg.length.mismatch"); // not enough args
@@ -487,7 +487,7 @@ public class Resolve {
                 actuals = actuals.tail;
             }
             mt = types.subst(pmt.qtype, pmt.tvars, typeargtypes);
-        } else if (mt.tag == FORALL) {
+        } else if (mt.hasTag(FORALL)) {
             ForAll pmt = (ForAll) mt;
             List<Type> tvars1 = types.newInstances(pmt.tvars);
             tvars = tvars.appendList(tvars1);
@@ -499,7 +499,7 @@ public class Resolve {
         for (List<Type> l = argtypes;
              l.tail != null/*inlined: l.nonEmpty()*/ && !instNeeded;
              l = l.tail) {
-            if (l.head.tag == FORALL) instNeeded = true;
+            if (l.head.hasTag(FORALL)) instNeeded = true;
         }
 
         if (instNeeded)
@@ -807,7 +807,7 @@ public class Resolve {
 
         @Override
         protected Type check(DiagnosticPosition pos, Type found) {
-            if (found.tag == DEFERRED) {
+            if (found.hasTag(DEFERRED)) {
                 DeferredType dt = (DeferredType)found;
                 return dt.check(this);
             } else {
@@ -875,7 +875,7 @@ public class Resolve {
                      Type site,
                      Name name,
                      TypeSymbol c) {
-        while (c.type.tag == TYPEVAR)
+        while (c.type.hasTag(TYPEVAR))
             c = c.type.getUpperBound().tsym;
         Symbol bestSoFar = varNotFound;
         Symbol sym;
@@ -888,7 +888,7 @@ public class Resolve {
             e = e.next();
         }
         Type st = types.supertype(c.type);
-        if (st != null && (st.tag == CLASS || st.tag == TYPEVAR)) {
+        if (st != null && (st.hasTag(CLASS) || st.hasTag(TYPEVAR))) {
             sym = findField(env, site, name, st.tsym);
             if (sym.kind < bestSoFar.kind) bestSoFar = sym;
         }
@@ -1184,7 +1184,7 @@ public class Resolve {
                     lastFormal2 : formals2.head;
 
             //is this a structural actual argument?
-            boolean isStructuralPoly = actual.tag == DEFERRED &&
+            boolean isStructuralPoly = actual.hasTag(DEFERRED) &&
                     (((DeferredType)actual).tree.hasTag(LAMBDA) ||
                     ((DeferredType)actual).tree.hasTag(REFERENCE));
 
@@ -1301,7 +1301,7 @@ public class Resolve {
         Type rt1 = mt1.getReturnType();
         Type rt2 = mt2.getReturnType();
 
-        if (mt1.tag == FORALL && mt2.tag == FORALL) {
+        if (mt1.hasTag(FORALL) && mt2.hasTag(FORALL)) {
             //if both are generic methods, adjust return type ahead of subtyping check
             rt1 = types.subst(rt1, mt1.getTypeArguments(), mt2.getTypeArguments());
         }
@@ -1448,11 +1448,11 @@ public class Resolve {
                     }
 
                     TypeSymbol symbolFor(Type t) {
-                        if (t.tag != CLASS &&
-                                t.tag != TYPEVAR) {
+                        if (!t.hasTag(CLASS) &&
+                                !t.hasTag(TYPEVAR)) {
                             return null;
                         }
-                        while (t.tag == TYPEVAR)
+                        while (t.hasTag(TYPEVAR))
                             t = t.getUpperBound();
                         if (seen.contains(t.tsym)) {
                             //degenerate case in which we have a circular
@@ -1610,7 +1610,7 @@ public class Resolve {
             e = e.next();
         }
         Type st = types.supertype(c.type);
-        if (st != null && st.tag == CLASS) {
+        if (st != null && st.hasTag(CLASS)) {
             sym = findMemberType(env, site, name, st.tsym);
             if (sym.kind < bestSoFar.kind) bestSoFar = sym;
         }
@@ -1660,7 +1660,7 @@ public class Resolve {
                  e = e.next()) {
                 if (e.sym.kind == TYP) {
                     if (staticOnly &&
-                        e.sym.type.tag == TYPEVAR &&
+                        e.sym.type.hasTag(TYPEVAR) &&
                         e.sym.owner.kind == TYP) return new StaticError(e.sym);
                     return e.sym;
                 }
@@ -1669,8 +1669,8 @@ public class Resolve {
             sym = findMemberType(env1, env1.enclClass.sym.type, name,
                                  env1.enclClass.sym);
             if (staticOnly && sym.kind == TYP &&
-                sym.type.tag == CLASS &&
-                sym.type.getEnclosingType().tag == CLASS &&
+                sym.type.hasTag(CLASS) &&
+                sym.type.getEnclosingType().hasTag(CLASS) &&
                 env1.enclClass.sym.type.isParameterized() &&
                 sym.type.getEnclosingType().isParameterized())
                 return new StaticError(sym);
@@ -1906,7 +1906,7 @@ public class Resolve {
                     //method symbol that can be used for lookups in the speculative cache,
                     //causing problems in Attr.checkId()
                     for (Type t : argtypes) {
-                        if (t.tag == DEFERRED) {
+                        if (t.hasTag(DEFERRED)) {
                             DeferredType dt = (DeferredType)t;
                             dt.speculativeCache.dupAllTo(msym, accessedSym);
                         }
@@ -1955,7 +1955,7 @@ public class Resolve {
     }
 
     public void printscopes(Type t) {
-        while (t.tag == CLASS) {
+        while (t.hasTag(CLASS)) {
             printscopes(t.tsym.members());
             t = types.supertype(t);
         }
@@ -2259,7 +2259,7 @@ public class Resolve {
             //- System.out.println(" e " + e.sym);
             if (sym.kind == MTH &&
                 (sym.flags_field & SYNTHETIC) == 0) {
-                    List<Type> oldParams = e.sym.type.tag == FORALL ?
+                    List<Type> oldParams = e.sym.type.hasTag(FORALL) ?
                             ((ForAll)sym.type).tvars :
                             List.<Type>nil();
                     Type constrType = new ForAll(site.tsym.type.getTypeArguments().appendList(oldParams),
@@ -2565,7 +2565,7 @@ public class Resolve {
                 findMethod(env, site, name, argtypes, typeargtypes,
                         phase.isBoxingRequired(), phase.isVarargsRequired(), syms.operatorNames.contains(name));
             return sym.kind != MTH ||
-                          site.getEnclosingType().tag == NONE ||
+                          site.getEnclosingType().hasTag(NONE) ||
                           hasEnclosingInstance(env, site) ?
                           sym : new InvalidSymbolError(Kinds.MISSING_ENCL, sym, null) {
                     @Override
@@ -2578,7 +2578,7 @@ public class Resolve {
 
         @Override
         ReferenceKind referenceKind(Symbol sym) {
-            return site.getEnclosingType().tag == NONE ?
+            return site.getEnclosingType().hasTag(NONE) ?
                     ReferenceKind.TOPLEVEL : ReferenceKind.IMPLICIT_INNER;
         }
     }
@@ -2847,7 +2847,7 @@ public class Resolve {
         } else {
             ListBuffer<Object> diagArgs = ListBuffer.lb();
             for (Type t : argtypes) {
-                if (t.tag == DEFERRED) {
+                if (t.hasTag(DEFERRED)) {
                     diagArgs.append(((DeferredAttr.DeferredType)t).tree);
                 } else {
                     diagArgs.append(t);
@@ -3222,7 +3222,7 @@ public class Resolve {
                 Name name,
                 List<Type> argtypes,
                 List<Type> typeargtypes) {
-            if (sym.owner.type.tag == ERROR)
+            if (sym.owner.type.hasTag(ERROR))
                 return null;
 
             if (sym.name == names.init && sym.owner != site.tsym) {
@@ -3267,7 +3267,7 @@ public class Resolve {
                 Name name,
                 List<Type> argtypes,
                 List<Type> typeargtypes) {
-            Symbol errSym = ((sym.kind == TYP && sym.type.tag == CLASS)
+            Symbol errSym = ((sym.kind == TYP && sym.type.hasTag(CLASS))
                 ? types.erasure(sym.type).tsym
                 : sym);
             return diags.create(dkind, log.currentSource(), pos,

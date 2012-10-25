@@ -55,7 +55,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.jvm.ClassFile.*;
 import static com.sun.tools.javac.jvm.ClassFile.Version.*;
 
@@ -1870,7 +1870,7 @@ public class ClassReader implements Completer {
      *  `typevars'.
      */
     protected void enterTypevars(Type t) {
-        if (t.getEnclosingType() != null && t.getEnclosingType().tag == CLASS)
+        if (t.getEnclosingType() != null && t.getEnclosingType().hasTag(CLASS))
             enterTypevars(t.getEnclosingType());
         for (List<Type> xs = t.getTypeArguments(); xs.nonEmpty(); xs = xs.tail)
             typevars.enter(xs.head.tsym);
@@ -1895,7 +1895,7 @@ public class ClassReader implements Completer {
 
         // prepare type variable table
         typevars = typevars.dup(currentOwner);
-        if (ct.getEnclosingType().tag == CLASS)
+        if (ct.getEnclosingType().hasTag(CLASS))
             enterTypevars(ct.getEnclosingType());
 
         // read flags, or skip if this is an inner class
