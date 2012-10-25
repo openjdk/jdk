@@ -37,7 +37,9 @@ import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
+import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
+import static com.sun.tools.javac.code.TypeTag.VOID;
 
 /** This pass translates Generic Java to conventional Java.
  *
@@ -155,7 +157,7 @@ public class TransTypes extends TreeTranslator {
      */
     JCExpression retype(JCExpression tree, Type erasedType, Type target) {
 //      System.err.println("retype " + tree + " to " + erasedType);//DEBUG
-        if (erasedType.tag > lastBaseTag) {
+        if (!erasedType.isPrimitive()) {
             if (target != null && target.isPrimitive())
                 target = erasure(tree.type);
             tree.type = erasedType;
@@ -245,7 +247,7 @@ public class TransTypes extends TreeTranslator {
                            make.Select(receiver, impl).setType(calltype),
                            translateArgs(make.Idents(md.params), origErasure.getParameterTypes(), null))
                 .setType(calltype);
-            JCStatement stat = (origErasure.getReturnType().tag == VOID)
+            JCStatement stat = (origErasure.getReturnType().hasTag(VOID))
                 ? make.Exec(call)
                 : make.Return(coerce(call, bridgeType.getReturnType()));
             md.body = make.Block(0, List.of(stat));
@@ -400,7 +402,7 @@ public class TransTypes extends TreeTranslator {
      */
     void addBridges(DiagnosticPosition pos, ClassSymbol origin, ListBuffer<JCTree> bridges) {
         Type st = types.supertype(origin.type);
-        while (st.tag == CLASS) {
+        while (st.hasTag(CLASS)) {
 //          if (isSpecialization(st))
             addBridges(pos, st.tsym, origin, bridges);
             st = types.supertype(st);
@@ -701,7 +703,7 @@ public class TransTypes extends TreeTranslator {
         Type et = tree.sym.erasure(types);
 
         // Map type variables to their bounds.
-        if (tree.sym.kind == TYP && tree.sym.type.tag == TYPEVAR) {
+        if (tree.sym.kind == TYP && tree.sym.type.hasTag(TYPEVAR)) {
             result = make.at(tree.pos).Type(et);
         } else
         // Map constants expressions to themselves.
@@ -720,7 +722,7 @@ public class TransTypes extends TreeTranslator {
 
     public void visitSelect(JCFieldAccess tree) {
         Type t = tree.selected.type;
-        while (t.tag == TYPEVAR)
+        while (t.hasTag(TYPEVAR))
             t = t.getUpperBound();
         if (t.isCompound()) {
             if ((tree.sym.flags() & IPROXY) != 0) {
@@ -844,7 +846,7 @@ public class TransTypes extends TreeTranslator {
                        translateArgs(make.Idents(md.params),
                                      implErasure.getParameterTypes(), null))
             .setType(calltype);
-        JCStatement stat = (member.getReturnType().tag == VOID)
+        JCStatement stat = (member.getReturnType().hasTag(VOID))
             ? make.Exec(call)
             : make.Return(coerce(call, member.erasure(types).getReturnType()));
         md.body = make.Block(0, List.of(stat));
@@ -862,7 +864,7 @@ public class TransTypes extends TreeTranslator {
         Type st = types.supertype(c.type);
 
         // process superclass before derived
-        if (st.tag == CLASS)
+        if (st.hasTag(CLASS))
             translateClass((ClassSymbol)st.tsym);
 
         Env<AttrContext> myEnv = enter.typeEnvs.remove(c);

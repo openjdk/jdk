@@ -32,11 +32,12 @@ import com.sun.javadoc.*;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.code.TypeTags;
 
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 
 import com.sun.tools.javac.util.Position;
+
+import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 
 /**
  * Represents a field in a java class.
@@ -103,7 +104,7 @@ public class FieldDocImpl extends MemberDocImpl implements FieldDoc {
      */
     public Object constantValue() {
         Object result = sym.getConstValue();
-        if (result != null && sym.type.tag == TypeTags.BOOLEAN)
+        if (result != null && sym.type.hasTag(BOOLEAN))
             // javac represents false and true as Integers 0 and 1
             result = Boolean.valueOf(((Integer)result).intValue() != 0);
         return result;

@@ -1133,28 +1133,28 @@ public class Pretty extends JCTree.Visitor {
     public void visitLiteral(JCLiteral tree) {
         try {
             switch (tree.typetag) {
-                case TypeTags.INT:
+                case INT:
                     print(tree.value.toString());
                     break;
-                case TypeTags.LONG:
+                case LONG:
                     print(tree.value + "L");
                     break;
-                case TypeTags.FLOAT:
+                case FLOAT:
                     print(tree.value + "F");
                     break;
-                case TypeTags.DOUBLE:
+                case DOUBLE:
                     print(tree.value.toString());
                     break;
-                case TypeTags.CHAR:
+                case CHAR:
                     print("\'" +
                             Convert.quote(
                             String.valueOf((char)((Number)tree.value).intValue())) +
                             "\'");
                     break;
-                case TypeTags.BOOLEAN:
+                case BOOLEAN:
                     print(((Number)tree.value).intValue() == 1 ? "true" : "false");
                     break;
-                case TypeTags.BOT:
+                case BOT:
                     print("null");
                     break;
                 default:
@@ -1169,31 +1169,31 @@ public class Pretty extends JCTree.Visitor {
     public void visitTypeIdent(JCPrimitiveTypeTree tree) {
         try {
             switch(tree.typetag) {
-                case TypeTags.BYTE:
+                case BYTE:
                     print("byte");
                     break;
-                case TypeTags.CHAR:
+                case CHAR:
                     print("char");
                     break;
-                case TypeTags.SHORT:
+                case SHORT:
                     print("short");
                     break;
-                case TypeTags.INT:
+                case INT:
                     print("int");
                     break;
-                case TypeTags.LONG:
+                case LONG:
                     print("long");
                     break;
-                case TypeTags.FLOAT:
+                case FLOAT:
                     print("float");
                     break;
-                case TypeTags.DOUBLE:
+                case DOUBLE:
                     print("double");
                     break;
-                case TypeTags.BOOLEAN:
+                case BOOLEAN:
                     print("boolean");
                     break;
-                case TypeTags.VOID:
+                case VOID:
                     print("void");
                     break;
                 default:

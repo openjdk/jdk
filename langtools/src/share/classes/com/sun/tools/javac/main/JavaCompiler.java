@@ -63,6 +63,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Log.WriterKind;
 
+import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 import static com.sun.tools.javac.util.ListBuffer.lb;
@@ -1349,7 +1350,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             @Override
             public void visitClassDef(JCClassDecl node) {
                 Type st = types.supertype(node.sym.type);
-                if (st.tag == TypeTags.CLASS) {
+                if (st.hasTag(CLASS)) {
                     ClassSymbol c = st.tsym.outermostClass();
                     Env<AttrContext> stEnv = enter.getEnv(c);
                     if (stEnv != null && env != stEnv) {

@@ -34,6 +34,8 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 
+import static com.sun.tools.javac.code.TypeTag.ARRAY;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** Enter annotations on symbols.  Annotations accumulate in a queue,
@@ -289,7 +291,7 @@ public class Annotate {
             }
             return enterAnnotation((JCAnnotation)tree, expected, env);
         }
-        if (expected.tag == TypeTags.ARRAY) { // should really be isArray()
+        if (expected.hasTag(ARRAY)) { // should really be isArray()
             if (!tree.hasTag(NEWARRAY)) {
                 tree = make.at(tree.pos).
                     NewArray(null, List.<JCExpression>nil(), List.of(tree));
@@ -309,7 +311,7 @@ public class Annotate {
             return new Attribute.
                 Array(expected, buf.toArray(new Attribute[buf.length()]));
         }
-        if (expected.tag == TypeTags.CLASS &&
+        if (expected.hasTag(CLASS) &&
             (expected.tsym.flags() & Flags.ENUM) != 0) {
             attr.attribExpr(tree, env, expected);
             Symbol sym = TreeInfo.symbol(tree);

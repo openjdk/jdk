@@ -31,7 +31,7 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
 
 
 /**
@@ -95,7 +95,7 @@ public class ParameterizedTypeImpl
      * Return null is this is a top-level type.
      */
     public com.sun.javadoc.Type containingType() {
-        if (type.getEnclosingType().tag == CLASS) {
+        if (type.getEnclosingType().hasTag(CLASS)) {
             // This is the type of an inner class.
             return TypeMaker.getType(env, type.getEnclosingType());
         }
@@ -134,7 +134,7 @@ public class ParameterizedTypeImpl
             return TypeMaker.getTypeName(cl, full);
         }
         StringBuilder s = new StringBuilder();
-        if (cl.getEnclosingType().tag != CLASS) {               // if not an inner class...
+        if (!(cl.getEnclosingType().hasTag(CLASS))) {               // if not an inner class...
             s.append(TypeMaker.getTypeName(cl, full));
         } else {
             ClassType encl = (ClassType)cl.getEnclosingType();

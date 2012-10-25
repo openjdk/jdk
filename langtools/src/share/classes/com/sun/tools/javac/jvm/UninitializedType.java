@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package com.sun.tools.javac.jvm;
 
 import com.sun.tools.javac.code.*;
 
+import static com.sun.tools.javac.code.TypeTag.UNINITIALIZED_OBJECT;
+import static com.sun.tools.javac.code.TypeTag.UNINITIALIZED_THIS;
 
 /** These pseudo-types appear in the generated verifier tables to
  *  indicate objects that have been allocated but not yet constructed.
@@ -37,8 +39,6 @@ import com.sun.tools.javac.code.*;
  *  deletion without notice.</b>
  */
 class UninitializedType extends Type.DelegatedType {
-    public static final int UNINITIALIZED_THIS = TypeTags.TypeTagCount;
-    public static final int UNINITIALIZED_OBJECT = UNINITIALIZED_THIS + 1;
 
     public static UninitializedType uninitializedThis(Type qtype) {
         return new UninitializedType(UNINITIALIZED_THIS, qtype, -1);
@@ -49,7 +49,7 @@ class UninitializedType extends Type.DelegatedType {
     }
 
     public final int offset; // PC where allocation took place
-    private UninitializedType(int tag, Type qtype, int offset) {
+    private UninitializedType(TypeTag tag, Type qtype, int offset) {
         super(tag, qtype);
         this.offset = offset;
     }

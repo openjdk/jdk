@@ -1,7 +1,5 @@
-
-
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +28,14 @@
  */
 
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree.JCLiteral;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.tree.TreeMaker;
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.*;
 
 public class MakeLiteralTest {
     public static void main(String... args) throws Exception {
@@ -65,9 +64,9 @@ public class MakeLiteralTest {
             throw new Exception(errors + " errors found");
     }
 
-    void test(Object value, int tag, Type type, Object constValue) {
+    void test(Object value, TypeTag tag, Type type, Object constValue) {
         JCLiteral l = maker.Literal(value);
-        if (l.type.tag != tag)
+        if (!l.type.hasTag(tag))
             error("unexpected tag: " + l.getTag() + ": expected: " + tag);
         if (!types.isSameType(l.type, type))
             error("unexpected type: " + l.type + ": expected: " + type);
