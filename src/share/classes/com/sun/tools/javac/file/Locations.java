@@ -420,12 +420,8 @@ public class Locations {
             if (!options.contains(option))
                 return false;
             searchPath = value == null ? null :
-                    Collections.unmodifiableCollection(computePath(value));
+                    Collections.unmodifiableCollection(createPath().addFiles(value));
             return true;
-        }
-
-        protected Path computePath(String value) {
-            return new Path().addFiles(value);
         }
 
         @Override
@@ -439,9 +435,17 @@ public class Locations {
             if (files == null) {
                 p = computePath(null);
             } else {
-                p = new Path().addFiles(files);
+                p = createPath().addFiles(files);
             }
             searchPath = Collections.unmodifiableCollection(p);
+        }
+
+        protected Path computePath(String value) {
+            return createPath().addFiles(value);
+        }
+
+        protected Path createPath() {
+            return new Path();
         }
     }
 
@@ -477,11 +481,15 @@ public class Locations {
             // Default to current working directory.
             if (cp == null) cp = ".";
 
+            return createPath().addFiles(cp);
+        }
+
+        @Override
+        protected Path createPath() {
             return new Path()
-                .expandJarClassPaths(true)        // Only search user jars for Class-Paths
-                .emptyPathDefault(new File("."))  // Empty path elt ==> current directory
-                .addFiles(cp);
-            }
+                .expandJarClassPaths(true)         // Only search user jars for Class-Paths
+                .emptyPathDefault(new File("."));  // Empty path elt ==> current directory
+        }
 
         private void lazy() {
             if (searchPath == null)
@@ -591,7 +599,6 @@ public class Locations {
             String extdirsOpt = optionValues.get(EXTDIRS);
             String xbootclasspathPrependOpt = optionValues.get(XBOOTCLASSPATH_PREPEND);
             String xbootclasspathAppendOpt = optionValues.get(XBOOTCLASSPATH_APPEND);
-
             path.addFiles(xbootclasspathPrependOpt);
 
             if (endorseddirsOpt != null)
