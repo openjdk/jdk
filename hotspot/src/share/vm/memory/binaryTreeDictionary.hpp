@@ -259,7 +259,7 @@ class BinaryTreeDictionary: public FreeBlockDictionary<Chunk_t> {
     assert(res == NULL || res->is_free(),
            "Should be returning a free chunk");
     assert(dither != FreeBlockDictionary<Chunk_t>::exactly ||
-           res->size() == size, "Not correct size");
+           res == NULL || res->size() == size, "Not correct size");
     return res;
   }
 
