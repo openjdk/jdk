@@ -45,7 +45,7 @@ import com.sun.tools.javac.tree.EndPosTable;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -485,7 +485,7 @@ public class Lower extends TreeTranslator {
      *  @param value      The literal's value.
      */
     JCExpression makeLit(Type type, Object value) {
-        return make.Literal(type.tag, value).setType(type.constType(value));
+        return make.Literal(type.getTag(), value).setType(type.constType(value));
     }
 
     /** Make an attributed tree representing null.
@@ -549,7 +549,7 @@ public class Lower extends TreeTranslator {
      *  reference type..
      */
     JCExpression makeString(JCExpression tree) {
-        if (tree.type.tag >= CLASS) {
+        if (!tree.type.isPrimitiveOrVoid()) {
             return tree;
         } else {
             Symbol valueOfSym = lookupMethod(tree.pos(),
@@ -1405,7 +1405,7 @@ public class Lower extends TreeTranslator {
     Name outerThisName(Type type, Symbol owner) {
         Type t = type.getEnclosingType();
         int nestingLevel = 0;
-        while (t.tag == CLASS) {
+        while (t.hasTag(CLASS)) {
             t = t.getEnclosingType();
             nestingLevel++;
         }
@@ -1529,7 +1529,7 @@ public class Lower extends TreeTranslator {
             new VarSymbol(SYNTHETIC | FINAL,
                           makeSyntheticName(names.fromString("twrVar" +
                                            depth), twrVars),
-                          (resource.type.tag == TypeTags.BOT) ?
+                          (resource.type.hasTag(BOT)) ?
                           syms.autoCloseableType : resource.type,
                           currentMethodSym);
             twrVars.enter(syntheticTwrVar);
@@ -1992,7 +1992,7 @@ public class Lower extends TreeTranslator {
     }
 
     private JCExpression classOfType(Type type, DiagnosticPosition pos) {
-        switch (type.tag) {
+        switch (type.getTag()) {
         case BYTE: case SHORT: case CHAR: case INT: case LONG: case FLOAT:
         case DOUBLE: case BOOLEAN: case VOID:
             // replace with <BoxedClass>.TYPE
@@ -2761,7 +2761,7 @@ public class Lower extends TreeTranslator {
     }
 //where
         private JCTree convert(JCTree tree, Type pt) {
-            if (tree.type == pt || tree.type.tag == TypeTags.BOT)
+            if (tree.type == pt || tree.type.hasTag(BOT))
                 return tree;
             JCTree result = make_at(tree.pos()).TypeCast(make.Type(pt), (JCExpression)tree);
             result.type = (tree.type.constValue() != null) ? cfolder.coerce(tree.type, pt)
@@ -2934,7 +2934,7 @@ public class Lower extends TreeTranslator {
             return tree;
         if (havePrimitive) {
             Type unboxedTarget = types.unboxedType(type);
-            if (unboxedTarget.tag != NONE) {
+            if (!unboxedTarget.hasTag(NONE)) {
                 if (!types.isSubtype(tree.type, unboxedTarget)) //e.g. Character c = 89;
                     tree.type = unboxedTarget.constType(tree.type.constValue());
                 return (T)boxPrimitive((JCExpression)tree, type);
@@ -2974,7 +2974,7 @@ public class Lower extends TreeTranslator {
     /** Unbox an object to a primitive value. */
     JCExpression unbox(JCExpression tree, Type primitive) {
         Type unboxedType = types.unboxedType(tree.type);
-        if (unboxedType.tag == NONE) {
+        if (unboxedType.hasTag(NONE)) {
             unboxedType = primitive;
             if (!unboxedType.isPrimitive())
                 throw new AssertionError(unboxedType);
@@ -3292,7 +3292,7 @@ public class Lower extends TreeTranslator {
                 iteratorTarget = types.erasure(iterableType.getTypeArguments().head);
             Type eType = tree.expr.type;
             tree.expr.type = types.erasure(eType);
-            if (eType.tag == TYPEVAR && eType.getUpperBound().isCompound())
+            if (eType.hasTag(TYPEVAR) && eType.getUpperBound().isCompound())
                 tree.expr = make.TypeCast(types.erasure(iterableType), tree.expr);
             Symbol iterator = lookupMethod(tree.expr.pos(),
                                            names.iterator,

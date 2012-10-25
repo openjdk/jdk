@@ -38,7 +38,7 @@ import com.sun.tools.javac.util.*;
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.*;
 
 /** This class represents Java types. The class itself defines the behavior of
  *  the following types:
@@ -66,7 +66,7 @@ import static com.sun.tools.javac.code.TypeTags.*;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  *
- *  @see TypeTags
+ *  @see TypeTag
  */
 public class Type implements PrimitiveType {
 
@@ -83,13 +83,75 @@ public class Type implements PrimitiveType {
 
     /** The tag of this type.
      *
-     *  @see TypeTags
+     *  @see TypeTag
      */
-    public int tag;
+    protected TypeTag tag;
 
     /** The defining class / interface / package / type variable
      */
     public TypeSymbol tsym;
+
+    /**
+     * Checks if the current type tag is equal to the given tag.
+     * @return true if tag is equal to the current type tag.
+     */
+    public boolean hasTag(TypeTag tag) {
+        return this.tag == tag;
+    }
+
+    /**
+     * Returns the current type tag.
+     * @return the value of the current type tag.
+     */
+    public TypeTag getTag() {
+        return tag;
+    }
+
+    public boolean isNumeric() {
+        switch (tag) {
+            case BYTE: case CHAR:
+            case SHORT:
+            case INT: case LONG:
+            case FLOAT: case DOUBLE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public boolean isPrimitive() {
+        return (isNumeric() || tag == BOOLEAN);
+    }
+
+    public boolean isPrimitiveOrVoid() {
+        return (isPrimitive() || tag == VOID);
+    }
+
+    public boolean isReference() {
+        switch (tag) {
+        case CLASS:
+        case ARRAY:
+        case TYPEVAR:
+        case WILDCARD:
+        case ERROR:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    public boolean isNullOrReference() {
+        return (tag == BOT || isReference());
+    }
+
+    public boolean isPartial() {
+        switch(tag) {
+            case ERROR: case UNKNOWN: case UNDETVAR:
+                return true;
+            default:
+                return false;
+        }
+    }
 
     /**
      * The constant value of this type, null if this type does not
@@ -121,7 +183,7 @@ public class Type implements PrimitiveType {
 
     /** Define a type given its tag and type symbol
      */
-    public Type(int tag, TypeSymbol tsym) {
+    public Type(TypeTag tag, TypeSymbol tsym) {
         this.tag = tag;
         this.tsym = tsym;
     }
@@ -162,7 +224,7 @@ public class Type implements PrimitiveType {
      */
     public Type constType(Object constValue) {
         final Object value = constValue;
-        Assert.check(tag <= BOOLEAN);
+        Assert.check(isPrimitive());
         return new Type(tag, tsym) {
                 @Override
                 public Object constValue() {
@@ -350,10 +412,6 @@ public class Type implements PrimitiveType {
 
     public boolean isFinal() {
         return (tsym.flags() & FINAL) != 0;
-    }
-
-    public boolean isPrimitive() {
-        return tag < VOID;
     }
 
     /**
@@ -808,7 +866,7 @@ public class Type implements PrimitiveType {
         }
 
         public int hashCode() {
-            return (ARRAY << 5) + elemtype.hashCode();
+            return (ARRAY.ordinal() << 5) + elemtype.hashCode();
         }
 
         public boolean isVarargs() {
@@ -915,7 +973,7 @@ public class Type implements PrimitiveType {
         }
 
         public int hashCode() {
-            int h = METHOD;
+            int h = METHOD.ordinal();
             for (List<Type> thisargs = this.argtypes;
                  thisargs.tail != null; /*inlined: thisargs.nonEmpty()*/
                  thisargs = thisargs.tail)
@@ -1099,7 +1157,7 @@ public class Type implements PrimitiveType {
 
     public static abstract class DelegatedType extends Type {
         public Type qtype;
-        public DelegatedType(int tag, Type qtype) {
+        public DelegatedType(TypeTag tag, Type qtype) {
             super(tag, qtype.tsym);
             this.qtype = qtype;
         }
@@ -1285,7 +1343,7 @@ public class Type implements PrimitiveType {
     /** Represents VOID or NONE.
      */
     static class JCNoType extends Type implements NoType {
-        public JCNoType(int tag) {
+        public JCNoType(TypeTag tag) {
             super(tag, null);
         }
 
@@ -1307,7 +1365,7 @@ public class Type implements PrimitiveType {
 
     static class BottomType extends Type implements NullType {
         public BottomType() {
-            super(TypeTags.BOT, null);
+            super(BOT, null);
         }
 
         @Override
