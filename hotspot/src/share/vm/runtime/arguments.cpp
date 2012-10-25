@@ -257,6 +257,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "MaxPermHeapExpansion", JDK_Version::jdk(8),  JDK_Version::jdk(9) },
   { "CMSRevisitStackSize",           JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "PrintRevisitStats",             JDK_Version::jdk(8), JDK_Version::jdk(9) },
+  { "UseVectoredExceptions",         JDK_Version::jdk(8), JDK_Version::jdk(9) },
 #ifdef PRODUCT
   { "DesiredMethodLimit",
                            JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },
