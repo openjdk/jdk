@@ -534,7 +534,6 @@ BOOL AwtToolkit::Dispose() {
     D3DInitializer::GetInstance().Clean();
 
     AwtObjectList::Cleanup();
-    AwtFont::Cleanup();
 
     awt_dnd_uninitialize();
     awt_clipboard_uninitialize((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2));
@@ -553,6 +552,8 @@ BOOL AwtToolkit::Dispose() {
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
     }
+
+    AwtFont::Cleanup();
 
     HWND toolkitHWndToDestroy = tk.m_toolkitHWnd;
     tk.m_toolkitHWnd = 0;
