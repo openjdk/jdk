@@ -59,6 +59,7 @@
 #include "memory/generation.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/heap.hpp"
+#include "memory/metablock.hpp"
 #include "memory/space.hpp"
 #include "memory/tenuredGeneration.hpp"
 #include "memory/universe.hpp"
@@ -249,6 +250,7 @@ typedef TwoOopHashtable<Klass*, mtClass>      KlassTwoOopHashtable;
 typedef Hashtable<Klass*, mtClass>            KlassHashtable;
 typedef HashtableEntry<Klass*, mtClass>       KlassHashtableEntry;
 typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
+typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
 
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
@@ -1237,7 +1239,15 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(AccessFlags,                 _flags,                                       jint)                                   \
   nonstatic_field(elapsedTimer,                _counter,                                     jlong)                                  \
   nonstatic_field(elapsedTimer,                _active,                                      bool)                                   \
-  nonstatic_field(InvocationCounter,           _counter,                                     unsigned int)
+  nonstatic_field(InvocationCounter,           _counter,                                     unsigned int)                           \
+  volatile_nonstatic_field(FreeChunk,          _size,                                        size_t)                                 \
+  nonstatic_field(FreeChunk,                   _next,                                        FreeChunk*)                             \
+  nonstatic_field(FreeChunk,                   _prev,                                        FreeChunk*)                             \
+  nonstatic_field(FreeList<FreeChunk>,         _size,                                        size_t)                                 \
+  nonstatic_field(FreeList<Metablock>,         _size,                                        size_t)                                 \
+  nonstatic_field(FreeList<FreeChunk>,         _count,                                       ssize_t)                                \
+  nonstatic_field(FreeList<Metablock>,         _count,                                       ssize_t)                                \
+  nonstatic_field(MetablockTreeDictionary,     _total_size,                                  size_t)
 
   /* NOTE that we do not use the last_entry() macro here; it is used  */
   /* in vmStructs_<os>_<cpu>.hpp's VM_STRUCTS_OS_CPU macro (and must  */
@@ -2080,7 +2090,24 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_toplevel_type(Universe)                                         \
   declare_toplevel_type(vframeArray)                                      \
   declare_toplevel_type(vframeArrayElement)                               \
-  declare_toplevel_type(Annotations*)
+  declare_toplevel_type(Annotations*)                                     \
+                                                                          \
+  /***************/                                                       \
+  /* Miscellaneous types */                                               \
+  /***************/                                                       \
+                                                                          \
+  /* freelist */                                                          \
+  declare_toplevel_type(FreeChunk*)                                       \
+  declare_toplevel_type(Metablock*)                                       \
+  declare_toplevel_type(FreeBlockDictionary<FreeChunk>*)                  \
+  declare_toplevel_type(FreeList<FreeChunk>*)                             \
+  declare_toplevel_type(FreeList<FreeChunk>)                              \
+  declare_toplevel_type(FreeBlockDictionary<Metablock>*)                  \
+  declare_toplevel_type(FreeList<Metablock>*)                             \
+  declare_toplevel_type(FreeList<Metablock>)                              \
+  declare_toplevel_type(MetablockTreeDictionary*)                         \
+  declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)   \
+              declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)
 
 
   /* NOTE that we do not use the last_entry() macro here; it is used  */
