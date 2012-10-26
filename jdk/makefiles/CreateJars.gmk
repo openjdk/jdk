@@ -42,35 +42,30 @@ BEANMANIFEST := $(JDK_TOPDIR)/make/javax/swing/beaninfo/manifest
 
 JARS:=
 
+$(eval $(call MakeDir,$(IMAGES_OUTPUTDIR)/lib))
+
 ##########################################################################################
 
-JCONSOLE_JAR_DEPS := \
-  $(shell $(FIND) $(JDK_OUTPUTDIR)/classes/sun/tools/jconsole/ -name "_the.package") \
-  $(shell $(FIND) $(JDK_OUTPUTDIR)/classes/com/sun/tools/jconsole/ -name "_the.package")
-
-$(eval $(call SetupArchive,BUILD_JCONSOLE_JAR,$(JCONSOLE_JAR_DEPS),\
+$(eval $(call SetupArchive,BUILD_JCONSOLE_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
 		SUFFIXES:=.class .gif .png .properties,\
 		INCLUDES:=sun/tools/jconsole com/sun/tools/jconsole,\
 		JARMAIN:=sun.tools.jconsole.JConsole,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/jconsole.jar,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/jconsole.jar,\
 		SKIP_METAINF:=true))
 
-JARS+=$(JDK_OUTPUTDIR)/lib/jconsole.jar
+JARS+=$(IMAGES_OUTPUTDIR)/lib/jconsole.jar
 
 ##########################################################################################
 
-DNS_JAR_DEPS := \
-  $(shell $(FIND) $(JDK_OUTPUTDIR)/classes/sun/net/spi/nameservice/dns/ -name "_the.package") \
-
-$(eval $(call SetupArchive,BUILD_DNS_JAR,$(DNS_JAR_DEPS),\
+$(eval $(call SetupArchive,BUILD_DNS_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
 		INCLUDES:=sun/net/spi/nameservice/dns,\
 		EXTRA_FILES:=META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/ext/dnsns.jar,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/dnsns.jar,\
 		SKIP_METAINF:=true))
 
-JARS+=$(JDK_OUTPUTDIR)/lib/ext/dnsns.jar
+JARS+=$(IMAGES_OUTPUTDIR)/lib/ext/dnsns.jar
 
 ##########################################################################################
 
@@ -83,10 +78,10 @@ $(eval $(call SetupArchive,BUILD_LOCALEDATA_JAR,,\
 		SUFFIXES:=.class _dict _th,\
 		INCLUDES:=$(LOCALEDATA_INCLUDES),\
 		EXCLUDES:=sun/text/resources/th/BreakIteratorRules_th.class,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/ext/localedata.jar,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/localedata.jar,\
 		SKIP_METAINF:=true))
 
-JARS+=$(JDK_OUTPUTDIR)/lib/ext/localedata.jar
+JARS+=$(IMAGES_OUTPUTDIR)/lib/ext/localedata.jar
 
 ##########################################################################################
 # rt.jar and resources.jar are being built in the same way as in the old build. They require
@@ -264,8 +259,8 @@ endif
 ALL_FILES_IN_CLASSES := $(shell $(FIND) $(JDK_OUTPUTDIR)/classes -type f \
 			| $(GREP) -v -e '/_the\.*' -e '^_the\.*' -e 'javac_state')
 
-RT_JAR_MANIFEST_FILE := $(JDK_OUTPUTDIR)/lib/_the.rt.jar_manifest
-RESOURCE_JAR_MANIFEST_FILE := $(JDK_OUTPUTDIR)/lib/_the.resources.jar_manifest
+RT_JAR_MANIFEST_FILE := $(IMAGES_OUTPUTDIR)/lib/_the.rt.jar_manifest
+RESOURCE_JAR_MANIFEST_FILE := $(IMAGES_OUTPUTDIR)/lib/_the.resources.jar_manifest
 
 $(RT_JAR_MANIFEST_FILE): $(MAINMANIFEST) $(BEANMANIFEST)
 	$(MKDIR) -p $(@D)
@@ -285,40 +280,40 @@ $(RESOURCE_JAR_MANIFEST_FILE): $(MAINMANIFEST)
 	       $(MAINMANIFEST) >> $@.tmp
 	$(MV) $@.tmp $@
 
-$(JDK_OUTPUTDIR)/lib/_the.jars.exclude: $(MAKEFILE)
+$(IMAGES_OUTPUTDIR)/lib/_the.jars.exclude: $(MAKEFILE)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	$(call ListPathsSafely,RT_JAR_EXCLUDES,\n, >> $@.tmp)
 	$(MV) $@.tmp $@
 
-$(JDK_OUTPUTDIR)/lib/classlist : $(JDK_TOPDIR)/make/tools/sharing/classlist.$(OPENJDK_TARGET_OS) \
+$(IMAGES_OUTPUTDIR)/lib/classlist : $(JDK_TOPDIR)/make/tools/sharing/classlist.$(OPENJDK_TARGET_OS) \
   $(MAKEFILE)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	$(TOOL_ADDJSUM) $< $@.tmp
 	$(MV) $@.tmp $@
 
-$(JDK_OUTPUTDIR)/lib/_the.jars.contents: $(BUILD_TOOLS) $(JDK_OUTPUTDIR)/lib/_the.jars.exclude \
-					 $(ALL_FILES_IN_CLASSES) $(JDK_OUTPUTDIR)/lib/classlist
+$(IMAGES_OUTPUTDIR)/lib/_the.jars.contents: $(BUILD_TOOLS) $(IMAGES_OUTPUTDIR)/lib/_the.jars.exclude \
+					 $(ALL_FILES_IN_CLASSES) $(IMAGES_OUTPUTDIR)/lib/classlist
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	($(CD) $(JDK_OUTPUTDIR)/classes && \
 	    $(TOOL_JARREORDER) \
-		-o  $@.tmp $(JDK_OUTPUTDIR)/lib/classlist $(JDK_OUTPUTDIR)/lib/_the.jars.exclude . )
+		-o  $@.tmp $(IMAGES_OUTPUTDIR)/lib/classlist $(IMAGES_OUTPUTDIR)/lib/_the.jars.exclude . )
 	$(MV) $@.tmp $@
 
-$(JDK_OUTPUTDIR)/lib/_the.rt.jar.contents: $(JDK_OUTPUTDIR)/lib/_the.jars.contents
+$(IMAGES_OUTPUTDIR)/lib/_the.rt.jar.contents: $(IMAGES_OUTPUTDIR)/lib/_the.jars.contents
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
-	$(GREP) -e '\.class$$' $(JDK_OUTPUTDIR)/lib/_the.jars.contents > $@.tmp
+	$(GREP) -e '\.class$$' $(IMAGES_OUTPUTDIR)/lib/_the.jars.contents > $@.tmp
 	$(MV) $@.tmp $@
 
-$(JDK_OUTPUTDIR)/lib/_the.resources.jar.contents: $(JDK_OUTPUTDIR)/lib/_the.jars.contents
+$(IMAGES_OUTPUTDIR)/lib/_the.resources.jar.contents: $(IMAGES_OUTPUTDIR)/lib/_the.jars.contents
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	$(GREP) -v -e '\.class$$' \
 	    -e '/_the\.*' -e '^_the\.*' -e '\\_the\.*' -e 'javac_state' \
-	    $(JDK_OUTPUTDIR)/lib/_the.jars.contents > $@.tmp
+	    $(IMAGES_OUTPUTDIR)/lib/_the.jars.contents > $@.tmp
 	$(MV) $@.tmp $@
 
 RT_JAR_CREATE_OPTIONS := c0fm
@@ -326,30 +321,28 @@ ifeq ($(COMPRESS_JARS), true)
     RT_JAR_CREATE_OPTIONS := cfm
 endif
 
-$(JDK_OUTPUTDIR)/lib/rt.jar: $(JDK_OUTPUTDIR)/lib/_the.rt.jar.contents $(RT_JAR_MANIFEST_FILE)
+$(IMAGES_OUTPUTDIR)/lib/rt.jar: $(IMAGES_OUTPUTDIR)/lib/_the.rt.jar.contents $(RT_JAR_MANIFEST_FILE)
 	$(ECHO) Creating rt.jar
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	$(CD) $(JDK_OUTPUTDIR)/classes && \
 	    $(JAR) $(RT_JAR_CREATE_OPTIONS) $@.tmp $(RT_JAR_MANIFEST_FILE) \
-	        @$(JDK_OUTPUTDIR)/lib/_the.rt.jar.contents
+	        @$(IMAGES_OUTPUTDIR)/lib/_the.rt.jar.contents
 	$(MV) $@.tmp $@
 
-$(JDK_OUTPUTDIR)/lib/resources.jar: $(JDK_OUTPUTDIR)/lib/_the.resources.jar.contents \
+$(IMAGES_OUTPUTDIR)/lib/resources.jar: $(IMAGES_OUTPUTDIR)/lib/_the.resources.jar.contents \
 				    $(RESOURCE_JAR_MANIFEST_FILE)
 	$(ECHO) Creating resources.jar
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	$(CD) $(JDK_OUTPUTDIR)/classes && \
 	    $(JAR) $(RT_JAR_CREATE_OPTIONS) $@.tmp $(RESOURCE_JAR_MANIFEST_FILE) \
-	        @$(JDK_OUTPUTDIR)/lib/_the.resources.jar.contents
+	        @$(IMAGES_OUTPUTDIR)/lib/_the.resources.jar.contents
 	$(MV) $@.tmp $@
 
-JARS+=$(JDK_OUTPUTDIR)/lib/rt.jar $(JDK_OUTPUTDIR)/lib/resources.jar
+JARS+=$(IMAGES_OUTPUTDIR)/lib/rt.jar $(IMAGES_OUTPUTDIR)/lib/resources.jar
 
 ##########################################################################################
-
-CHARSETS_JAR_DEPS :=
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
     CHARSETS_EXTRA_FILES:=sun/awt/motif/X11GBK.class \
@@ -362,32 +355,34 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
                           sun/awt/motif/X11KSC5601.class
 endif
 
-$(eval $(call SetupArchive,BUILD_CHARSETS_JAR,$(CHARSETS_JAR_DEPS),\
+$(eval $(call SetupArchive,BUILD_CHARSETS_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class .dat,\
 		INCLUDES:=sun/nio/cs/ext,\
 		EXTRA_FILES := sun/awt/HKSCS.class \
 			       $(CHARSETS_EXTRA_FILES) \
                                META-INF/services/java.nio.charset.spi.CharsetProvider, \
-		JAR:=$(JDK_OUTPUTDIR)/lib/charsets.jar, \
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/charsets.jar, \
 		SKIP_METAINF := true, \
                 CHECK_COMPRESS_JAR:=true))
 
-JARS+=$(JDK_OUTPUTDIR)/lib/charsets.jar
+JARS+=$(IMAGES_OUTPUTDIR)/lib/charsets.jar
 
 ##########################################################################################
 
+ifndef OPENJDK
 ifeq ($(ENABLE_JFR), true)
     $(eval $(call SetupArchive,BUILD_JFR_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
 		INCLUDES:=com/oracle/jrockit/jfr \
 			  oracle/jrockit/jfr,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/jfr.jar,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/jfr.jar,\
 		SKIP_METAINF:=true,\
 		MANIFEST:=$(MAINMANIFEST), \
                 CHECK_COMPRESS_JAR:=true))
 
-    JARS+=$(JDK_OUTPUTDIR)/lib/jfr.jar
+    JARS+=$(IMAGES_OUTPUTDIR)/lib/jfr.jar
+endif
 endif
 
 ##########################################################################################
@@ -398,30 +393,30 @@ $(eval $(call SetupArchive,BUILD_JSSE_JAR,,\
 			  sun/security/rsa/SunRsaSign.class \
 			  sun/security/ssl \
 			  com/sun/net/ssl/internal/ssl,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/jsse.jar,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/jsse.jar,\
 		SKIP_METAINF:=true,\
 		MANIFEST:=$(MAINMANIFEST), \
                 CHECK_COMPRESS_JAR:=true))
 
-JARS+=$(JDK_OUTPUTDIR)/lib/jsse.jar
+JARS+=$(IMAGES_OUTPUTDIR)/lib/jsse.jar
 
 ##########################################################################################
 
-SUNPKCS11_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunpkcs11.jar
+SUNPKCS11_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunpkcs11.jar
 
 ifndef OPENJDK
 
     SUNPKCS11_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/pkcs11/sunpkcs11.jar
 
     $(SUNPKCS11_JAR_DST) : $(SUNPKCS11_JAR_SRC)
-	@$(ECHO) "\n>>>Installing prebuilt SunPKCS11 provider..."
+	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunPKCS11 provider..."
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@
 
 else
 
-    $(eval $(call SetupArchive,BUILD_SUNPKCS11_JAR,$(SUNPKCS11_JAR_DEPS),\
+    $(eval $(call SetupArchive,BUILD_SUNPKCS11_JAR,,\
 	SRCS:=$(JDK_OUTPUTDIR)/classes, \
 	SUFFIXES:=.class,\
 	INCLUDES:=sun/security/pkcs11,\
@@ -434,14 +429,14 @@ JARS += $(SUNPKCS11_JAR_DST)
 
 ##########################################################################################
 
-SUNEC_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunec.jar
+SUNEC_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunec.jar
 
 ifndef OPENJDK
 
 SUNEC_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ec/sunec.jar
 
 $(SUNEC_JAR_DST) : $(SUNEC_JAR_SRC)
-	@$(ECHO) "\n>>>Installing prebuilt SunEC provider..."
+	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunEC provider..."
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@
@@ -467,26 +462,26 @@ $(eval $(call SetupArchive,BUILD_SWINGBEANS_JAR,,\
 		INCLUDES:=javax/swing sun/swing,\
 		EXCLUDES:=javax/swing/plaf,\
 		EXTRA_FILES:=javax/swing/SwingBeanInfoBase.class sun/swing/BeanInfoUtils.class,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/dt.jar,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/dt.jar,\
 		SKIP_METAINF:=true))
 
-JARS+=$(JDK_OUTPUTDIR)/lib/dt.jar
+JARS+=$(IMAGES_OUTPUTDIR)/lib/dt.jar
 
 ##########################################################################################
 
-SUNJCE_PROVIDER_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunjce_provider.jar
+SUNJCE_PROVIDER_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunjce_provider.jar
 
 ifndef OPENJDK
     SUNJCE_PROVIDER_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/sunjce_provider.jar
 
     $(SUNJCE_PROVIDER_JAR_DST) : $(SUNJCE_PROVIDER_JAR_SRC)
-	@$(ECHO) "\n>>>Installing prebuilt SunJCE provider..."
+	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunJCE provider..."
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@
 else
 
-    $(eval $(call SetupArchive,BUILD_SUNJCE_PROVIDER_JAR,$(SUNJCE_PROVIDER_JAR_DEPS),\
+    $(eval $(call SetupArchive,BUILD_SUNJCE_PROVIDER_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:= com/sun/crypto/provider,\
@@ -498,21 +493,21 @@ endif
 
 JARS += $(SUNJCE_PROVIDER_JAR_DST)
 
-JCE_JAR_DST := $(JDK_OUTPUTDIR)/lib/jce.jar
+JCE_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/jce.jar
 
 ifndef OPENJDK
 
 JCE_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
 
 $(JCE_JAR_DST) : $(JCE_JAR_SRC)
-	@$(ECHO) "\n>>>Installing prebuilt jce.jar..."
+	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt jce.jar..."
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@
 
 else
 
-$(eval $(call SetupArchive,BUILD_JCE_JAR,$(JCE_JAR_DEPS),\
+$(eval $(call SetupArchive,BUILD_JCE_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:= javax/crypto sun/security/internal,\
@@ -532,9 +527,9 @@ ifdef OPENJDK
 # TODO fix so that SetupArchive does not write files into SRCS
 #   then we don't need this extra copying
 #
-US_EXPORT_POLICY_JAR_DST := $(JDK_OUTPUTDIR)/lib/security/US_export_policy.jar
+US_EXPORT_POLICY_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/security/US_export_policy.jar
 US_EXPORT_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
-US_EXPORT_POLICY_JAR_TMP := $(JDK_OUTPUTDIR)/US_export_policy_jar.tmp
+US_EXPORT_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/US_export_policy_jar.tmp
 
 $(US_EXPORT_POLICY_JAR_TMP)/% : $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
 	$(MKDIR) -p $(@D)
@@ -563,11 +558,12 @@ ifdef OPENJDK
 # TODO fix so that SetupArchive does not write files into SRCS
 #   then we don't need this extra copying
 #
-LOCAL_POLICY_JAR_DST := $(JDK_OUTPUTDIR)/lib/security/local_policy.jar
+LOCAL_POLICY_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/security/local_policy.jar
 LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/limited
-LOCAL_POLICY_JAR_TMP := $(JDK_OUTPUTDIR)/local_policy_jar.tmp
+LOCAL_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/local_policy_jar.tmp
 
-LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/exempt_local.policy $(LOCAL_POLICY_JAR_TMP)/default_local.policy
+LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/exempt_local.policy \
+			 $(LOCAL_POLICY_JAR_TMP)/default_local.policy
 
 $(LOCAL_POLICY_JAR_TMP)/% : $(LOCAL_POLICY_JAR_SRC_DIR)/%
 	$(MKDIR) -p $(@D)
@@ -589,26 +585,24 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS),windows)
 
-SUNMSCAPI_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunmscapi.jar
+SUNMSCAPI_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunmscapi.jar
 
 ifndef OPENJDK
 SUNMSCAPI_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/mscapi/sunmscapi.jar
 
 $(SUNMSCAPI_JAR_DST) : $(SUNMSCAPI_JAR_SRC)
-	@$(ECHO) "\n>>>Installing prebuilt SunMSCAPI provider..."
+	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunMSCAPI provider..."
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@
 
 else
 
-$(eval $(call SetupArchive,BUILD_SUNMSCAPI_JAR,$(SUNMSCAPI_JAR_DEPS),\
+$(eval $(call SetupArchive,BUILD_SUNMSCAPI_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:= sun/security/mscapi,\
 		JAR:=$(SUNMSCAPI_JAR_DST), \
-		MANIFEST:=$(JDK_TOPDIR)/make/tools/manifest.mf, \
-		EXTRA_MANIFEST_ATTR:=Extension-Name: javax.crypto\nImplementation-Vendor-Id: com.sun, \
 		SKIP_METAINF:=true))
 endif
 
@@ -621,11 +615,11 @@ endif
 ifeq ($(OPENJDK_TARGET_OS),solaris)
 ifndef OPENJDK
 
-UCRYPTO_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/ucrypto.jar
+UCRYPTO_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/ucrypto.jar
 UCRYPTO_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ucrypto/ucrypto.jar
 
 $(UCRYPTO_JAR_DST) : $(UCRYPTO_JAR_SRC)
-	@$(ECHO) "\n>>>Installing prebuilt OracleUcrypto provider..."
+	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt OracleUcrypto provider..."
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@
@@ -640,9 +634,9 @@ endif
 # Get the CLDRVERSION
 include GensrcCLDR.gmk
 
-CLDRDATA_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/cldrdata.jar
+CLDRDATA_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/cldrdata.jar
 
-$(eval $(call SetupArchive,BUILD_CLDRDATA_JAR,$(CLDRDATA_DEPS),\
+$(eval $(call SetupArchive,BUILD_CLDRDATA_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
 		SUFFIXES:=.class,\
 		INCLUDES:=sun/text/resources/cldr \
@@ -715,21 +709,25 @@ TOOLS_JAR_INCLUDES := \
 	sun/tools/jinfo         \
 	sun/tools/jmap
 
-$(eval $(call SetupArchive,BUILD_TOOLS_JAR,$(TOOLS_JAR_DEPS),\
+# The sjavac tools is not ready for public consumption.
+TOOLS_JAR_EXCLUDES=com/sun/tools/sjavac
+
+$(eval $(call SetupArchive,BUILD_TOOLS_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
 		SUFFIXES:=.class .prp .gif .properties .xml .css .xsd .js .html .txt .java \
 			  Tool aliasmap options,\
 		INCLUDES:=$(TOOLS_JAR_INCLUDES),\
+		EXCLUDES:=$(TOOLS_JAR_EXCLUDES),\
 		EXTRA_FILES:=META-INF/services/com.sun.jdi.connect.Connector \
 			     META-INF/services/com.sun.jdi.connect.spi.TransportService \
 			     META-INF/services/com.sun.tools.attach.spi.AttachProvider \
 			     META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin \
 			     META-INF/services/com.sun.tools.internal.xjc.Plugin,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/tools.jar,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/tools.jar,\
 		SKIP_METAINF:=true, \
                 CHECK_COMPRESS_JAR:=true))
 
-JARS+=$(JDK_OUTPUTDIR)/lib/tools.jar
+JARS+=$(IMAGES_OUTPUTDIR)/lib/tools.jar
 
 ##########################################################################################
 
@@ -761,7 +759,7 @@ EXPORTED_PRIVATE_PKGS = com.sun.servicetag \
                         com.oracle.net \
                         com.oracle.nio
 
-$(IMAGES_OUTPUTDIR)/symbols/_the.symbols: $(JDK_OUTPUTDIR)/lib/rt.jar
+$(IMAGES_OUTPUTDIR)/symbols/_the.symbols: $(IMAGES_OUTPUTDIR)/lib/rt.jar
 	$(RM) -r $(IMAGES_OUTPUTDIR)/symbols/META-INF/sym
 	$(MKDIR) -p $(IMAGES_OUTPUTDIR)/symbols/META-INF/sym
 	$(JAVA) \
@@ -769,19 +767,19 @@ $(IMAGES_OUTPUTDIR)/symbols/_the.symbols: $(JDK_OUTPUTDIR)/lib/rt.jar
 		$(JAVAC_JARS) \
 	    -XDprocess.packages -proc:only \
 	    -processor com.sun.tools.javac.sym.CreateSymbols \
-	    -Acom.sun.tools.javac.sym.Jar=$(JDK_OUTPUTDIR)/lib/rt.jar \
+	    -Acom.sun.tools.javac.sym.Jar=$(IMAGES_OUTPUTDIR)/lib/rt.jar \
 	    -Acom.sun.tools.javac.sym.Dest=$(IMAGES_OUTPUTDIR)/symbols/META-INF/sym/rt.jar \
 	    $(CORE_PKGS) $(NON_CORE_PKGS) $(EXCLUDE_PROPWARN_PKGS) $(EXPORTED_PRIVATE_PKGS)
 	$(TOUCH) $@
 
-MAKE_SURE_DIR_EXISTS_DUMMY := $(shell $(MKDIR) -p $(IMAGES_OUTPUTDIR)/symbols)
+$(shell $(MKDIR) -p $(IMAGES_OUTPUTDIR)/symbols)
 $(eval $(call SetupArchive,BUILD_CT_SYM,$(IMAGES_OUTPUTDIR)/symbols/_the.symbols,\
 		SRCS:=$(IMAGES_OUTPUTDIR)/symbols,\
 		INCLUDES:=META-INF/sym,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/ct.sym, \
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/ct.sym, \
 		CHECK_COMPRESS_JAR:=true))
 
-JARS+=$(JDK_OUTPUTDIR)/lib/ct.sym
+JARS+=$(IMAGES_OUTPUTDIR)/lib/ct.sym
 
 ##########################################################################################
 
@@ -861,11 +859,12 @@ $(IMAGES_OUTPUTDIR)/src/launcher/%: $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DI
 
 $(IMAGES_OUTPUTDIR)/src.zip: $(LAUNCHER_ZIP_SRC)
 
-# This dir needs to exsist before macro is evaluated to avoid warning from find.
-MAKE_SURE_DIR_EXISTS_DUMMY := $(shell $(MKDIR) -p $(IMAGES_OUTPUTDIR)/src)
+# This dir needs to exist before macro is evaluated to avoid warning from find.
+$(eval $(call MakeDir,$(IMAGES_OUTPUTDIR)/src))
 $(eval $(call SetupZipArchive,BUILD_SRC_ZIP,\
 		SRC:=$(SRC_ZIP_SRCS) $(IMAGES_OUTPUTDIR)/src,\
 		INCLUDES:=$(SRC_ZIP_INCLUDES) launcher,\
+		EXCLUDES:=javax/swing/beaninfo,\
 		SUFFIXES:=.java .c .h,\
 		ZIP:=$(IMAGES_OUTPUTDIR)/src.zip,\
 		EXTRA_DEPS:=$(LAUNCHER_ZIP_SRC)))

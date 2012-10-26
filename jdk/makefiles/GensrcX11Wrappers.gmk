@@ -33,6 +33,7 @@
 
 GENSRC_X11WRAPPERS :=
 GENSRC_X11WRAPPERS_TMP := $(JDK_OUTPUTDIR)/gensrc_x11wrappers
+GENSRC_X11WRAPPERS_DST := $(JDK_OUTPUTDIR)/gensrc
 
 GENSRC_SIZER_SRC := $(JDK_TOPDIR)/src/solaris/classes/sun/awt/X11/generator
 
@@ -45,8 +46,8 @@ ifneq ($(OPENJDK_TARGET_OS), linux)
 GENSRC_SIZES := sizes.32 sizes.64
 endif
 else
-ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), solaris-x86)
-# As a special case, solaris on x86 (32-bit) also generates the 64-bit version
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+# As a special case, solaris 32-bit also generates the 64-bit version
 GENSRC_SIZES := sizes.32 sizes.64
 endif
 endif
@@ -54,6 +55,7 @@ endif
 ##########################################################################################
 
 $(GENSRC_X11WRAPPERS_TMP)/sizer/sizer.%.c : $(GENSRC_SIZER_SRC)/xlibtypes.txt
+	$(ECHO) "Generating X11 wrapper ($*-bit version)"
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(TOOL_WRAPPERGENERATOR) $(@D) $< "sizer" $*
@@ -88,10 +90,9 @@ $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.64 : $(JDK_TOPDIR)/src/solaris/classes/sun
 	$(CP) $< $@
 endif
 
-$(GENSRC_X11WRAPPERS_TMP)/classes/_the.classes : $(foreach S,$(GENSRC_SIZES),$(GENSRC_X11WRAPPERS_TMP)/sizer/$(S))
+$(GENSRC_X11WRAPPERS_DST)/_the.generated.x11 : $(foreach S,$(GENSRC_SIZES),$(GENSRC_X11WRAPPERS_TMP)/sizer/$(S))
 	$(RM) $@
 	$(MKDIR) -p $(@D)/sun/awt/X11
-	$(RM) $(@D)/sun/awt/X11/*
 	$(TOOL_WRAPPERGENERATOR) $(@D)/sun/awt/X11 $(GENSRC_SIZER_SRC)/xlibtypes.txt "gen" $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes
 ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), solaris-x86_64)
   # On solaris-x86_64, as a safety measure, compare the generated file with the checked-in version 
@@ -100,4 +101,4 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), solaris-x86_64)
 endif
 	$(TOUCH) $@
 
-GENSRC_X11WRAPPERS += $(GENSRC_X11WRAPPERS_TMP)/classes/_the.classes
+GENSRC_X11WRAPPERS += $(GENSRC_X11WRAPPERS_DST)/_the.generated.x11
