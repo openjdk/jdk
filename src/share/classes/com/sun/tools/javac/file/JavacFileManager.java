@@ -90,7 +90,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         EnumSet.of(JavaFileObject.Kind.SOURCE, JavaFileObject.Kind.CLASS);
 
     protected boolean mmappedIO;
-    protected boolean ignoreSymbolFile;
+    protected boolean symbolFileEnabled;
 
     protected enum SortFiles implements Comparator<File> {
         FORWARD {
@@ -142,12 +142,19 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             zipFileIndexCache = ZipFileIndexCache.getSharedInstance();
 
         mmappedIO = options.isSet("mmappedIO");
-        ignoreSymbolFile = options.isSet("ignore.symbol.file");
+        symbolFileEnabled = !options.isSet("ignore.symbol.file");
 
         String sf = options.get("sortFiles");
         if (sf != null) {
             sortFiles = (sf.equals("reverse") ? SortFiles.REVERSE : SortFiles.FORWARD);
         }
+    }
+
+    /**
+     * Set whether or not to use ct.sym as an alternate to rt.jar.
+     */
+    public void setSymbolFileEnabled(boolean b) {
+        symbolFileEnabled = b;
     }
 
     @Override
@@ -466,7 +473,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      */
     private Archive openArchive(File zipFileName, boolean useOptimizedZip) throws IOException {
         File origZipFileName = zipFileName;
-        if (!ignoreSymbolFile && locations.isDefaultBootClassPathRtJar(zipFileName)) {
+        if (symbolFileEnabled && locations.isDefaultBootClassPathRtJar(zipFileName)) {
             File file = zipFileName.getParentFile().getParentFile(); // ${java.home}
             if (new File(file.getName()).equals(new File("jre")))
                 file = file.getParentFile();
