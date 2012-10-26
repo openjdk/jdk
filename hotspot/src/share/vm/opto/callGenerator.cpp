@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciCallSite.hpp"
-#include "ci/ciCPCache.hpp"
+#include "ci/ciObjArray.hpp"
 #include "ci/ciMemberName.hpp"
 #include "ci/ciMethodHandle.hpp"
 #include "classfile/javaClasses.hpp"
@@ -134,7 +134,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     kit.C->log()->elem("direct_call bci='%d'", jvms->bci());
   }
 
-  CallStaticJavaNode *call = new (kit.C, tf()->domain()->cnt()) CallStaticJavaNode(tf(), target, method(), kit.bci());
+  CallStaticJavaNode *call = new (kit.C) CallStaticJavaNode(tf(), target, method(), kit.bci());
   _call_node = call;  // Save the call node in case we need it later
   if (!is_static) {
     // Make an explicit receiver null_check as part of this call.
@@ -167,7 +167,7 @@ public:
   VirtualCallGenerator(ciMethod* method, int vtable_index)
     : CallGenerator(method), _vtable_index(vtable_index)
   {
-    assert(vtable_index == methodOopDesc::invalid_vtable_index ||
+    assert(vtable_index == Method::invalid_vtable_index ||
            vtable_index >= 0, "either invalid or usable");
   }
   virtual bool      is_virtual() const          { return true; }
@@ -217,11 +217,11 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   assert(!method()->is_static(), "virtual call must not be to static");
   assert(!method()->is_final(), "virtual call should not be to final");
   assert(!method()->is_private(), "virtual call should not be to private");
-  assert(_vtable_index == methodOopDesc::invalid_vtable_index || !UseInlineCaches,
+  assert(_vtable_index == Method::invalid_vtable_index || !UseInlineCaches,
          "no vtable calls if +UseInlineCaches ");
   address target = SharedRuntime::get_resolve_virtual_call_stub();
   // Normal inline cache used for call
-  CallDynamicJavaNode *call = new (kit.C, tf()->domain()->cnt()) CallDynamicJavaNode(tf(), target, method(), _vtable_index, kit.bci());
+  CallDynamicJavaNode *call = new (kit.C) CallDynamicJavaNode(tf(), target, method(), _vtable_index, kit.bci());
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call);
   Node* ret = kit.set_results_for_java_call(call);
@@ -300,7 +300,7 @@ void LateInlineCallGenerator::do_late_inline() {
   Compile* C = Compile::current();
   JVMState* jvms     = call->jvms()->clone_shallow(C);
   uint size = call->req();
-  SafePointNode* map = new (C, size) SafePointNode(size, jvms);
+  SafePointNode* map = new (C) SafePointNode(size, jvms);
   for (uint i1 = 0; i1 < size; i1++) {
     map->init_req(i1, call->in(i1));
   }
@@ -551,7 +551,7 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
 
   // Finish the diamond.
   kit.C->set_has_split_ifs(true); // Has chance for split-if optimization
-  RegionNode* region = new (kit.C, 3) RegionNode(3);
+  RegionNode* region = new (kit.C) RegionNode(3);
   region->init_req(1, kit.control());
   region->init_req(2, slow_map->control());
   kit.set_control(gvn.transform(region));
@@ -603,7 +603,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         const TypeOopPtr* oop_ptr = receiver->bottom_type()->is_oopptr();
         ciMethod* target = oop_ptr->const_oop()->as_method_handle()->get_vmtarget();
         guarantee(!target->is_method_handle_intrinsic(), "should not happen");  // XXX remove
-        const int vtable_index = methodOopDesc::invalid_vtable_index;
+        const int vtable_index = Method::invalid_vtable_index;
         CallGenerator* cg = C->call_generator(target, vtable_index, false, jvms, true, PROB_ALWAYS);
         if (cg != NULL && cg->is_inline())
           return cg;
@@ -636,7 +636,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
           const Type*       sig_type = TypeOopPtr::make_from_klass(signature->accessing_klass());
           if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-            Node* cast_obj = gvn.transform(new (C, 2) CheckCastPPNode(kit.control(), arg, sig_type));
+            Node* cast_obj = gvn.transform(new (C) CheckCastPPNode(kit.control(), arg, sig_type));
             kit.set_argument(0, cast_obj);
           }
         }
@@ -648,12 +648,12 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
             const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
             const Type*       sig_type = TypeOopPtr::make_from_klass(t->as_klass());
             if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-              Node* cast_obj = gvn.transform(new (C, 2) CheckCastPPNode(kit.control(), arg, sig_type));
+              Node* cast_obj = gvn.transform(new (C) CheckCastPPNode(kit.control(), arg, sig_type));
               kit.set_argument(receiver_skip + i, cast_obj);
             }
           }
         }
-        const int vtable_index = methodOopDesc::invalid_vtable_index;
+        const int vtable_index = Method::invalid_vtable_index;
         const bool call_is_virtual = target->is_abstract();  // FIXME workaround
         CallGenerator* cg = C->call_generator(target, vtable_index, call_is_virtual, jvms, true, PROB_ALWAYS);
         if (cg != NULL && cg->is_inline())

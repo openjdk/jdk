@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,12 @@
 // Print an event.
 void AdvancedThresholdPolicy::print_specific(EventType type, methodHandle mh, methodHandle imh,
                                              int bci, CompLevel level) {
-  tty->print(" rate: ");
+  tty->print(" rate=");
   if (mh->prev_time() == 0) tty->print("n/a");
   else tty->print("%f", mh->rate());
 
-  tty->print(" k: %.2lf,%.2lf", threshold_scale(CompLevel_full_profile, Tier3LoadFeedback),
-                                threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback));
+  tty->print(" k=%.2lf,%.2lf", threshold_scale(CompLevel_full_profile, Tier3LoadFeedback),
+                               threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback));
 
 }
 
@@ -73,7 +73,7 @@ void AdvancedThresholdPolicy::initialize() {
 }
 
 // update_rate() is called from select_task() while holding a compile queue lock.
-void AdvancedThresholdPolicy::update_rate(jlong t, methodOop m) {
+void AdvancedThresholdPolicy::update_rate(jlong t, Method* m) {
   if (is_old(m)) {
     // We don't remove old methods from the queue,
     // so we can just zero the rate.
@@ -106,7 +106,7 @@ void AdvancedThresholdPolicy::update_rate(jlong t, methodOop m) {
 
 // Check if this method has been stale from a given number of milliseconds.
 // See select_task().
-bool AdvancedThresholdPolicy::is_stale(jlong t, jlong timeout, methodOop m) {
+bool AdvancedThresholdPolicy::is_stale(jlong t, jlong timeout, Method* m) {
   jlong delta_s = t - SafepointSynchronize::end_of_last_safepoint();
   jlong delta_t = t - m->prev_time();
   if (delta_t > timeout && delta_s > timeout) {
@@ -120,16 +120,16 @@ bool AdvancedThresholdPolicy::is_stale(jlong t, jlong timeout, methodOop m) {
 
 // We don't remove old methods from the compile queue even if they have
 // very low activity. See select_task().
-bool AdvancedThresholdPolicy::is_old(methodOop method) {
+bool AdvancedThresholdPolicy::is_old(Method* method) {
   return method->invocation_count() > 50000 || method->backedge_count() > 500000;
 }
 
-double AdvancedThresholdPolicy::weight(methodOop method) {
+double AdvancedThresholdPolicy::weight(Method* method) {
   return (method->rate() + 1) * ((method->invocation_count() + 1) *  (method->backedge_count() + 1));
 }
 
 // Apply heuristics and return true if x should be compiled before y
-bool AdvancedThresholdPolicy::compare_methods(methodOop x, methodOop y) {
+bool AdvancedThresholdPolicy::compare_methods(Method* x, Method* y) {
   if (x->highest_comp_level() > y->highest_comp_level()) {
     // recompilation after deopt
     return true;
@@ -143,8 +143,8 @@ bool AdvancedThresholdPolicy::compare_methods(methodOop x, methodOop y) {
 }
 
 // Is method profiled enough?
-bool AdvancedThresholdPolicy::is_method_profiled(methodOop method) {
-  methodDataOop mdo = method->method_data();
+bool AdvancedThresholdPolicy::is_method_profiled(Method* method) {
+  MethodData* mdo = method->method_data();
   if (mdo != NULL) {
     int i = mdo->invocation_count_delta();
     int b = mdo->backedge_count_delta();
@@ -156,19 +156,20 @@ bool AdvancedThresholdPolicy::is_method_profiled(methodOop method) {
 // Called with the queue locked and with at least one element
 CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
   CompileTask *max_task = NULL;
-  methodHandle max_method;
+  Method* max_method = NULL;
   jlong t = os::javaTimeMillis();
   // Iterate through the queue and find a method with a maximum rate.
   for (CompileTask* task = compile_queue->first(); task != NULL;) {
     CompileTask* next_task = task->next();
-    methodHandle method = (methodOop)JNIHandles::resolve(task->method_handle());
-    update_rate(t, method());
+    Method* method = task->method();
+    MethodData* mdo = method->method_data();
+    update_rate(t, method);
     if (max_task == NULL) {
       max_task = task;
       max_method = method;
     } else {
       // If a method has been stale for some time, remove it from the queue.
-      if (is_stale(t, TieredCompileTaskTimeout, method()) && !is_old(method())) {
+      if (is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method)) {
         if (PrintTieredEvents) {
           print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel)task->comp_level());
         }
@@ -180,7 +181,7 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
       }
 
       // Select a method with a higher rate
-      if (compare_methods(method(), max_method())) {
+      if (compare_methods(method, max_method)) {
         max_task = task;
         max_method = method;
       }
@@ -189,7 +190,7 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
   }
 
   if (max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile
-      && is_method_profiled(max_method())) {
+      && is_method_profiled(max_method)) {
     max_task->set_comp_level(CompLevel_limited_profile);
     if (PrintTieredEvents) {
       print_event(UPDATE_IN_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
@@ -247,7 +248,7 @@ bool AdvancedThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level) 
 // If a method is old enough and is still in the interpreter we would want to
 // start profiling without waiting for the compiled method to arrive.
 // We also take the load on compilers into the account.
-bool AdvancedThresholdPolicy::should_create_mdo(methodOop method, CompLevel cur_level) {
+bool AdvancedThresholdPolicy::should_create_mdo(Method* method, CompLevel cur_level) {
   if (cur_level == CompLevel_none &&
       CompileBroker::queue_size(CompLevel_full_optimization) <=
       Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
@@ -274,7 +275,7 @@ bool AdvancedThresholdPolicy::should_not_inline(ciEnv* env, ciMethod* callee) {
 void AdvancedThresholdPolicy::create_mdo(methodHandle mh, JavaThread* THREAD) {
   if (mh->is_native() || mh->is_abstract() || mh->is_accessor()) return;
   if (mh->method_data() == NULL) {
-    methodOopDesc::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
+    Method::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
   }
 }
 
@@ -318,7 +319,7 @@ void AdvancedThresholdPolicy::create_mdo(methodHandle mh, JavaThread* THREAD) {
  */
 
 // Common transition function. Given a predicate determines if a method should transition to another level.
-CompLevel AdvancedThresholdPolicy::common(Predicate p, methodOop method, CompLevel cur_level, bool disable_feedback) {
+CompLevel AdvancedThresholdPolicy::common(Predicate p, Method* method, CompLevel cur_level, bool disable_feedback) {
   CompLevel next_level = cur_level;
   int i = method->invocation_count();
   int b = method->backedge_count();
@@ -352,7 +353,7 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, methodOop method, CompLev
         // Special case: we got here because this method was fully profiled in the interpreter.
         next_level = CompLevel_full_optimization;
       } else {
-        methodDataOop mdo = method->method_data();
+        MethodData* mdo = method->method_data();
         if (mdo != NULL) {
           if (mdo->would_profile()) {
             if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
@@ -368,7 +369,7 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, methodOop method, CompLev
       break;
     case CompLevel_full_profile:
       {
-        methodDataOop mdo = method->method_data();
+        MethodData* mdo = method->method_data();
         if (mdo != NULL) {
           if (mdo->would_profile()) {
             int mdo_i = mdo->invocation_count_delta();
@@ -388,7 +389,7 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, methodOop method, CompLev
 }
 
 // Determine if a method should be compiled with a normal entry point at a different level.
-CompLevel AdvancedThresholdPolicy::call_event(methodOop method, CompLevel cur_level) {
+CompLevel AdvancedThresholdPolicy::call_event(Method* method, CompLevel cur_level) {
   CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(),
                              common(&AdvancedThresholdPolicy::loop_predicate, method, cur_level, true));
   CompLevel next_level = common(&AdvancedThresholdPolicy::call_predicate, method, cur_level);
@@ -397,7 +398,7 @@ CompLevel AdvancedThresholdPolicy::call_event(methodOop method, CompLevel cur_le
   // equalized by raising the regular method level in order to avoid OSRs during each
   // invocation of the method.
   if (osr_level == CompLevel_full_optimization && cur_level == CompLevel_full_profile) {
-    methodDataOop mdo = method->method_data();
+    MethodData* mdo = method->method_data();
     guarantee(mdo != NULL, "MDO should not be NULL");
     if (mdo->invocation_count() >= 1) {
       next_level = CompLevel_full_optimization;
@@ -409,7 +410,7 @@ CompLevel AdvancedThresholdPolicy::call_event(methodOop method, CompLevel cur_le
 }
 
 // Determine if we should do an OSR compilation of a given method.
-CompLevel AdvancedThresholdPolicy::loop_event(methodOop method, CompLevel cur_level) {
+CompLevel AdvancedThresholdPolicy::loop_event(Method* method, CompLevel cur_level) {
   CompLevel next_level = common(&AdvancedThresholdPolicy::loop_predicate, method, cur_level, true);
   if (cur_level == CompLevel_none) {
     // If there is a live OSR method that means that we deopted to the interpreter

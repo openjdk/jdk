@@ -123,7 +123,6 @@ class Matcher : public PhaseTransform {
 
 public:
   int LabelRootDepth;
-  static const int base2reg[];        // Map Types to machine register types
   // Convert ideal machine register to a register mask for spill-loads
   static const RegMask *idealreg2regmask[];
   RegMask *idealreg2spillmask  [_last_machine_leaf];
@@ -262,6 +261,7 @@ public:
 
   // Vector ideal reg
   static const int vector_ideal_reg(int len);
+  static const int vector_shift_count_ideal_reg(int len);
 
   // CPU supports misaligned vectors store/load.
   static const bool misaligned_vectors_ok();
@@ -380,6 +380,7 @@ public:
   static const bool clone_shift_expressions;
 
   static bool narrow_oop_use_complex_address();
+  static bool narrow_klass_use_complex_address();
 
   // Generate implicit null check for narrow oops if it can fold
   // into address expression (x64).

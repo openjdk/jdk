@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,9 +197,9 @@ UNSAFE_ENTRY(jobject, Unsafe_GetObject140(JNIEnv *env, jobject unsafe, jobject o
     if (ret != NULL) {
       if (offset == java_lang_ref_Reference::referent_offset) {
         oop o = JNIHandles::resolve_non_null(obj);
-        klassOop k = o->klass();
-        if (instanceKlass::cast(k)->reference_type() != REF_NONE) {
-          assert(instanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
+        Klass* k = o->klass();
+        if (InstanceKlass::cast(k)->reference_type() != REF_NONE) {
+          assert(InstanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
           needs_barrier = true;
         }
       }
@@ -255,9 +255,9 @@ UNSAFE_ENTRY(jobject, Unsafe_GetObject(JNIEnv *env, jobject unsafe, jobject obj,
     if (ret != NULL) {
       if (offset == java_lang_ref_Reference::referent_offset && obj != NULL) {
         oop o = JNIHandles::resolve(obj);
-        klassOop k = o->klass();
-        if (instanceKlass::cast(k)->reference_type() != REF_NONE) {
-          assert(instanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
+        Klass* k = o->klass();
+        if (InstanceKlass::cast(k)->reference_type() != REF_NONE) {
+          assert(InstanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
           needs_barrier = true;
         }
       }
@@ -695,7 +695,7 @@ jint find_field_offset(jobject field, int must_be_static, TRAPS) {
 
   oop reflected   = JNIHandles::resolve_non_null(field);
   oop mirror      = java_lang_reflect_Field::clazz(reflected);
-  klassOop k      = java_lang_Class::as_klassOop(mirror);
+  Klass* k      = java_lang_Class::as_Klass(mirror);
   int slot        = java_lang_reflect_Field::slot(reflected);
   int modifiers   = java_lang_reflect_Field::modifiers(reflected);
 
@@ -706,7 +706,7 @@ jint find_field_offset(jobject field, int must_be_static, TRAPS) {
     }
   }
 
-  int offset = instanceKlass::cast(k)->field_offset(slot);
+  int offset = InstanceKlass::cast(k)->field_offset(slot);
   return field_offset_from_byte_offset(offset);
 }
 
@@ -768,9 +768,9 @@ UNSAFE_ENTRY(void, Unsafe_EnsureClassInitialized(JNIEnv *env, jobject unsafe, jo
   }
   oop mirror = JNIHandles::resolve_non_null(clazz);
 
-  klassOop klass = java_lang_Class::as_klassOop(mirror);
+  Klass* klass = java_lang_Class::as_Klass(mirror);
   if (klass != NULL && Klass::cast(klass)->should_be_initialized()) {
-    instanceKlass* k = instanceKlass::cast(klass);
+    InstanceKlass* k = InstanceKlass::cast(klass);
     k->initialize(CHECK);
   }
 }
@@ -782,7 +782,7 @@ UNSAFE_ENTRY(jboolean, Unsafe_ShouldBeInitialized(JNIEnv *env, jobject unsafe, j
     THROW_(vmSymbols::java_lang_NullPointerException(), false);
   }
   oop mirror = JNIHandles::resolve_non_null(clazz);
-  klassOop klass = java_lang_Class::as_klassOop(mirror);
+  Klass* klass = java_lang_Class::as_Klass(mirror);
   if (klass != NULL && Klass::cast(klass)->should_be_initialized()) {
     return true;
   }
@@ -795,14 +795,14 @@ static void getBaseAndScale(int& base, int& scale, jclass acls, TRAPS) {
     THROW(vmSymbols::java_lang_NullPointerException());
   }
   oop      mirror = JNIHandles::resolve_non_null(acls);
-  klassOop k      = java_lang_Class::as_klassOop(mirror);
-  if (k == NULL || !k->klass_part()->oop_is_array()) {
+  Klass* k      = java_lang_Class::as_Klass(mirror);
+  if (k == NULL || !k->oop_is_array()) {
     THROW(vmSymbols::java_lang_InvalidClassException());
-  } else if (k->klass_part()->oop_is_objArray()) {
+  } else if (k->oop_is_objArray()) {
     base  = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     scale = heapOopSize;
-  } else if (k->klass_part()->oop_is_typeArray()) {
-    typeArrayKlass* tak = typeArrayKlass::cast(k);
+  } else if (k->oop_is_typeArray()) {
+    TypeArrayKlass* tak = TypeArrayKlass::cast(k);
     base  = tak->array_header_in_bytes();
     assert(base == arrayOopDesc::base_offset_in_bytes(tak->element_type()), "array_header_size semantics ok");
     scale = (1 << tak->log2_element_size());
@@ -1039,7 +1039,7 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
     cp_patches_h = objArrayHandle(THREAD, (objArrayOop)p);
   }
 
-  KlassHandle host_klass(THREAD, java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(host_class)));
+  KlassHandle host_klass(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(host_class)));
   const char* host_source = host_klass->external_name();
   Handle      host_loader(THREAD, host_klass->class_loader());
   Handle      host_domain(THREAD, host_klass->protection_domain());
@@ -1063,7 +1063,7 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
   instanceKlassHandle anon_klass;
   {
     Symbol* no_class_name = NULL;
-    klassOop anonk = SystemDictionary::parse_stream(no_class_name,
+    Klass* anonk = SystemDictionary::parse_stream(no_class_name,
                                                     host_loader, host_domain,
                                                     &st, host_klass, cp_patches,
                                                     CHECK_NULL);
@@ -1156,12 +1156,7 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSwapObject(JNIEnv *env, jobject unsafe, 
   oop e = JNIHandles::resolve(e_h);
   oop p = JNIHandles::resolve(obj);
   HeapWord* addr = (HeapWord *)index_oop_from_field_offset_long(p, offset);
-  if (UseCompressedOops) {
-    update_barrier_set_pre((narrowOop*)addr, e);
-  } else {
-    update_barrier_set_pre((oop*)addr, e);
-  }
-  oop res = oopDesc::atomic_compare_exchange_oop(x, addr, e);
+  oop res = oopDesc::atomic_compare_exchange_oop(x, addr, e, true);
   jboolean success  = (res == e);
   if (success)
     update_barrier_set((void*)addr, x);

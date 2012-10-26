@@ -62,6 +62,7 @@ class SharedRuntime: AllStatic {
 
   static DeoptimizationBlob* _deopt_blob;
 
+  static SafepointBlob*      _polling_page_vectors_safepoint_handler_blob;
   static SafepointBlob*      _polling_page_safepoint_handler_blob;
   static SafepointBlob*      _polling_page_return_handler_blob;
 
@@ -75,7 +76,8 @@ class SharedRuntime: AllStatic {
 #endif // !PRODUCT
 
  private:
-  static SafepointBlob* generate_handler_blob(address call_ptr, bool cause_return);
+  enum { POLL_AT_RETURN,  POLL_AT_LOOP, POLL_AT_VECTOR_LOOP };
+  static SafepointBlob* generate_handler_blob(address call_ptr, int poll_type);
   static RuntimeStub*   generate_resolve_blob(address destination, const char* name);
 
  public:
@@ -223,6 +225,7 @@ class SharedRuntime: AllStatic {
 
   static SafepointBlob* polling_page_return_handler_blob()     { return _polling_page_return_handler_blob; }
   static SafepointBlob* polling_page_safepoint_handler_blob()  { return _polling_page_safepoint_handler_blob; }
+  static SafepointBlob* polling_page_vectors_safepoint_handler_blob()  { return _polling_page_vectors_safepoint_handler_blob; }
 
   // Counters
 #ifndef PRODUCT
@@ -234,7 +237,7 @@ class SharedRuntime: AllStatic {
   static void throw_and_post_jvmti_exception(JavaThread *thread, Symbol* name, const char *message = NULL);
 
   // RedefineClasses() tracing support for obsolete method entry
-  static int rc_trace_method_entry(JavaThread* thread, methodOopDesc* m);
+  static int rc_trace_method_entry(JavaThread* thread, Method* m);
 
   // To be used as the entry point for unresolved native methods.
   static address native_method_throw_unsatisfied_link_error_entry();
@@ -253,8 +256,8 @@ class SharedRuntime: AllStatic {
   // dtrace notifications
   static int dtrace_object_alloc(oopDesc* o);
   static int dtrace_object_alloc_base(Thread* thread, oopDesc* o);
-  static int dtrace_method_entry(JavaThread* thread, methodOopDesc* m);
-  static int dtrace_method_exit(JavaThread* thread, methodOopDesc* m);
+  static int dtrace_method_entry(JavaThread* thread, Method* m);
+  static int dtrace_method_exit(JavaThread* thread, Method* m);
 
   // Utility method for retrieving the Java thread id, returns 0 if the
   // thread is not a well formed Java thread.
@@ -345,7 +348,11 @@ class SharedRuntime: AllStatic {
   // the bottom of the frame the first 16 words will be skipped and SharedInfo::stack0
   // will be just above it. (
   // return value is the maximum number of VMReg stack slots the convention will use.
-  static int java_calling_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed, int is_outgoing);
+  static int java_calling_convention(const BasicType* sig_bt, VMRegPair* regs, int total_args_passed, int is_outgoing);
+
+  static void check_member_name_argument_is_last_argument(methodHandle method,
+                                                          const BasicType* sig_bt,
+                                                          const VMRegPair* regs) NOT_DEBUG_RETURN;
 
   // Ditto except for calling C
   static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed);
@@ -412,6 +419,10 @@ class SharedRuntime: AllStatic {
   // when an interrupt occurs.
   static uint out_preserve_stack_slots();
 
+  // Is vector's size (in bytes) bigger than a size saved by default?
+  // For example, on x86 16 bytes XMM registers are saved by default.
+  static bool is_wide_vector(int size);
+
   // Save and restore a native result
   static void    save_native_result(MacroAssembler *_masm, BasicType ret_type, int frame_slots );
   static void restore_native_result(MacroAssembler *_masm, BasicType ret_type, int frame_slots );
@@ -425,13 +436,11 @@ class SharedRuntime: AllStatic {
   // The wrapper may contain special-case code if the given method
   // is a JNI critical method, or a compiled method handle adapter,
   // such as _invokeBasic, _linkToVirtual, etc.
-  static nmethod *generate_native_wrapper(MacroAssembler* masm,
+  static nmethod* generate_native_wrapper(MacroAssembler* masm,
                                           methodHandle method,
                                           int compile_id,
-                                          int total_args_passed,
-                                          int max_arg,
-                                          BasicType *sig_bt,
-                                          VMRegPair *regs,
+                                          BasicType* sig_bt,
+                                          VMRegPair* regs,
                                           BasicType ret_type );
 
   // Block before entering a JNI critical method
@@ -452,7 +461,7 @@ class SharedRuntime: AllStatic {
 
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.
-  static void fixup_callers_callsite(methodOopDesc* moop, address ret_pc);
+  static void fixup_callers_callsite(Method* moop, address ret_pc);
 
   // Slow-path Locking and Unlocking
   static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);

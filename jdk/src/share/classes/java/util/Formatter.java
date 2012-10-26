@@ -918,7 +918,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     <p> If the {@code '0'} flag is given then the output will be padded
  *     with leading zeros to the field width following any indication of sign.
  *
- *     <p> If {@code '('}, {@code '+'}, '&nbsp&nbsp;', or {@code ','} flags
+ *     <p> If {@code '('}, {@code '+'}, '&nbsp;&nbsp;', or {@code ','} flags
  *     are given then a {@link FormatFlagsConversionMismatchException} will be
  *     thrown.
  *

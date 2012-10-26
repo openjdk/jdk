@@ -340,7 +340,11 @@ class URICertStore extends CertStoreSpi {
             // Fetch the CRLs via LDAP. LDAPCertStore has its own
             // caching mechanism, see the class description for more info.
             // Safe cast since xsel is an X509 certificate selector.
-            return (Collection<X509CRL>) ldapCertStore.getCRLs(xsel);
+            try {
+                return (Collection<X509CRL>) ldapCertStore.getCRLs(xsel);
+            } catch (CertStoreException cse) {
+                throw new PKIX.CertStoreTypeException("LDAP", cse);
+            }
         }
 
         // Return the CRLs for this entry. It returns the cached value
@@ -391,11 +395,12 @@ class URICertStore extends CertStoreSpi {
                 debug.println("Exception fetching CRL:");
                 e.printStackTrace();
             }
+            // exception, forget previous values
+            lastModified = 0;
+            crl = null;
+            throw new PKIX.CertStoreTypeException("URI",
+                                                  new CertStoreException(e));
         }
-        // exception, forget previous values
-        lastModified = 0;
-        crl = null;
-        return Collections.emptyList();
     }
 
     /**

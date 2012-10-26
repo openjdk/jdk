@@ -752,7 +752,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * -128 and 127 (inclusive) as required by JLS.
      *
      * The cache is initialized on first usage.  The size of the cache
-     * may be controlled by the -XX:AutoBoxCacheMax=<size> option.
+     * may be controlled by the {@code -XX:AutoBoxCacheMax=<size>} option.
      * During VM initialization, java.lang.Integer.IntegerCache.high property
      * may be set and saved in the private system properties in the
      * sun.misc.VM class.

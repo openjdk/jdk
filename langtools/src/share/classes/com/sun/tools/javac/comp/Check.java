@@ -40,6 +40,9 @@ import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
+import com.sun.tools.javac.comp.Infer.InferenceContext;
+import com.sun.tools.javac.comp.Infer.InferenceContext.FreeTypeListener;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
@@ -66,6 +69,7 @@ public class Check {
     private final Resolve rs;
     private final Symtab syms;
     private final Enter enter;
+    private final DeferredAttr deferredAttr;
     private final Infer infer;
     private final Types types;
     private final JCDiagnostic.Factory diags;
@@ -98,6 +102,7 @@ public class Check {
         rs = Resolve.instance(context);
         syms = Symtab.instance(context);
         enter = Enter.instance(context);
+        deferredAttr = DeferredAttr.instance(context);
         infer = Infer.instance(context);
         this.types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
@@ -416,7 +421,7 @@ public class Check {
      * checks - depending on the check context, meaning of 'compatibility' might
      * vary significantly.
      */
-    interface CheckContext {
+    public interface CheckContext {
         /**
          * Is type 'found' compatible with type 'req' in given context
          */
@@ -429,6 +434,12 @@ public class Check {
          * Obtain a warner for this check context
          */
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req);
+
+        public Infer.InferenceContext inferenceContext();
+
+        public DeferredAttr.DeferredAttrContext deferredAttrContext();
+
+        public boolean allowBoxing();
     }
 
     /**
@@ -455,6 +466,18 @@ public class Check {
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
             return enclosingContext.checkWarner(pos, found, req);
         }
+
+        public Infer.InferenceContext inferenceContext() {
+            return enclosingContext.inferenceContext();
+        }
+
+        public DeferredAttrContext deferredAttrContext() {
+            return enclosingContext.deferredAttrContext();
+        }
+
+        public boolean allowBoxing() {
+            return enclosingContext.allowBoxing();
+        }
     }
 
     /**
@@ -471,6 +494,18 @@ public class Check {
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
             return convertWarner(pos, found, req);
         }
+
+        public InferenceContext inferenceContext() {
+            return infer.emptyContext;
+        }
+
+        public DeferredAttrContext deferredAttrContext() {
+            return deferredAttr.emptyDeferredAttrContext;
+        }
+
+        public boolean allowBoxing() {
+            return true;
+        }
     };
 
     /** Check that a given type is assignable to a given proto-type.
@@ -483,7 +518,16 @@ public class Check {
         return checkType(pos, found, req, basicHandler);
     }
 
-    Type checkType(final DiagnosticPosition pos, Type found, Type req, CheckContext checkContext) {
+    Type checkType(final DiagnosticPosition pos, final Type found, final Type req, final CheckContext checkContext) {
+        final Infer.InferenceContext inferenceContext = checkContext.inferenceContext();
+        if (inferenceContext.free(req)) {
+            inferenceContext.addFreeTypeListener(List.of(req), new FreeTypeListener() {
+                @Override
+                public void typesInferred(InferenceContext inferenceContext) {
+                    checkType(pos, found, inferenceContext.asInstType(req, types), checkContext);
+                }
+            });
+        }
         if (req.tag == ERROR)
             return req;
         if (req.tag == NONE)
@@ -523,9 +567,9 @@ public class Check {
      */
     public void checkRedundantCast(Env<AttrContext> env, JCTypeCast tree) {
         if (!tree.type.isErroneous() &&
-            (env.info.lint == null || env.info.lint.isEnabled(Lint.LintCategory.CAST))
-            && types.isSameType(tree.expr.type, tree.clazz.type)
-            && !is292targetTypeCast(tree)) {
+                (env.info.lint == null || env.info.lint.isEnabled(Lint.LintCategory.CAST))
+                && types.isSameType(tree.expr.type, tree.clazz.type)
+                && !is292targetTypeCast(tree)) {
             log.warning(Lint.LintCategory.CAST,
                     tree.pos(), "redundant.cast", tree.expr.type);
         }
@@ -602,6 +646,22 @@ public class Check {
                                 : t);
         else
             return t;
+    }
+
+    /** Check that type is a valid qualifier for a constructor reference expression
+     */
+    Type checkConstructorRefType(DiagnosticPosition pos, Type t) {
+        t = checkClassType(pos, t);
+        if (t.tag == CLASS) {
+            if ((t.tsym.flags() & (ABSTRACT | INTERFACE)) != 0) {
+                log.error(pos, "abstract.cant.be.instantiated");
+                t = types.createErrorType(t);
+            } else if ((t.tsym.flags() & ENUM) != 0) {
+                log.error(pos, "enum.cant.be.instantiated");
+                t = types.createErrorType(t);
+            }
+        }
+        return t;
     }
 
     /** Check that type is a class or interface type.
@@ -796,29 +856,34 @@ public class Check {
                 sym.owner == syms.enumSym)
                 formals = formals.tail.tail;
         List<JCExpression> args = argtrees;
-        while (formals.head != last) {
-            JCTree arg = args.head;
-            Warner warn = convertWarner(arg.pos(), arg.type, formals.head);
-            assertConvertible(arg, arg.type, formals.head, warn);
-            args = args.tail;
-            formals = formals.tail;
-        }
-        if (useVarargs) {
-            Type varArg = types.elemtype(last);
-            while (args.tail != null) {
+        DeferredAttr.DeferredTypeMap checkDeferredMap =
+                deferredAttr.new DeferredTypeMap(DeferredAttr.AttrMode.CHECK, sym, env.info.pendingResolutionPhase);
+        if (args != null) {
+            //this is null when type-checking a method reference
+            while (formals.head != last) {
                 JCTree arg = args.head;
-                Warner warn = convertWarner(arg.pos(), arg.type, varArg);
-                assertConvertible(arg, arg.type, varArg, warn);
+                Warner warn = convertWarner(arg.pos(), arg.type, formals.head);
+                assertConvertible(arg, arg.type, formals.head, warn);
                 args = args.tail;
+                formals = formals.tail;
             }
-        } else if ((sym.flags() & VARARGS) != 0 && allowVarargs) {
-            // non-varargs call to varargs method
-            Type varParam = owntype.getParameterTypes().last();
-            Type lastArg = argtypes.last();
-            if (types.isSubtypeUnchecked(lastArg, types.elemtype(varParam)) &&
-                    !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
-                log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
-                        types.elemtype(varParam), varParam);
+            if (useVarargs) {
+                Type varArg = types.elemtype(last);
+                while (args.tail != null) {
+                    JCTree arg = args.head;
+                    Warner warn = convertWarner(arg.pos(), arg.type, varArg);
+                    assertConvertible(arg, arg.type, varArg, warn);
+                    args = args.tail;
+                }
+            } else if ((sym.flags() & VARARGS) != 0 && allowVarargs) {
+                // non-varargs call to varargs method
+                Type varParam = owntype.getParameterTypes().last();
+                Type lastArg = checkDeferredMap.apply(argtypes.last());
+                if (types.isSubtypeUnchecked(lastArg, types.elemtype(varParam)) &&
+                        !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
+                    log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
+                            types.elemtype(varParam), varParam);
+            }
         }
         if (unchecked) {
             warnUnchecked(env.tree.pos(),
@@ -826,7 +891,7 @@ public class Check {
                     kindName(sym),
                     sym.name,
                     rs.methodArguments(sym.type.getParameterTypes()),
-                    rs.methodArguments(argtypes),
+                    rs.methodArguments(Type.map(argtypes, checkDeferredMap)),
                     kindName(sym.location()),
                     sym.location());
            owntype = new MethodType(owntype.getParameterTypes(),
@@ -853,6 +918,9 @@ public class Check {
                 case NEWCLASS:
                     ((JCNewClass) tree).varargsElement = elemtype;
                     break;
+                case REFERENCE:
+                    ((JCMemberReference) tree).varargsElement = elemtype;
+                    break;
                 default:
                     throw new AssertionError(""+tree);
             }
@@ -870,6 +938,65 @@ public class Check {
                 return;
         }
 
+        void checkAccessibleFunctionalDescriptor(DiagnosticPosition pos, Env<AttrContext> env, Type desc) {
+            AccessChecker accessChecker = new AccessChecker(env);
+            //check args accessibility (only if implicit parameter types)
+            for (Type arg : desc.getParameterTypes()) {
+                if (!accessChecker.visit(arg)) {
+                    log.error(pos, "cant.access.arg.type.in.functional.desc", arg);
+                    return;
+                }
+            }
+            //check return type accessibility
+            if (!accessChecker.visit(desc.getReturnType())) {
+                log.error(pos, "cant.access.return.in.functional.desc", desc.getReturnType());
+                return;
+            }
+            //check thrown types accessibility
+            for (Type thrown : desc.getThrownTypes()) {
+                if (!accessChecker.visit(thrown)) {
+                    log.error(pos, "cant.access.thrown.in.functional.desc", thrown);
+                    return;
+                }
+            }
+        }
+
+        class AccessChecker extends Types.UnaryVisitor<Boolean> {
+
+            Env<AttrContext> env;
+
+            AccessChecker(Env<AttrContext> env) {
+                this.env = env;
+            }
+
+            Boolean visit(List<Type> ts) {
+                for (Type t : ts) {
+                    if (!visit(t))
+                        return false;
+                }
+                return true;
+            }
+
+            public Boolean visitType(Type t, Void s) {
+                return true;
+            }
+
+            @Override
+            public Boolean visitArrayType(ArrayType t, Void s) {
+                return visit(t.elemtype);
+            }
+
+            @Override
+            public Boolean visitClassType(ClassType t, Void s) {
+                return rs.isAccessible(env, t, true) &&
+                        visit(t.getTypeArguments());
+            }
+
+            @Override
+            public Boolean visitWildcardType(WildcardType t, Void s) {
+                return visit(t.type);
+            }
+        };
     /**
      * Check that type 't' is a valid instantiation of a generic class
      * (see JLS 4.5)
@@ -2373,9 +2500,12 @@ public class Check {
         tree.accept(new AnnotationValidator());
     }
 
-    /** Annotation types are restricted to primitives, String, an
+    /**
+     *  {@literal
+     *  Annotation types are restricted to primitives, String, an
      *  enum, an annotation, Class, Class<?>, Class<? extends
      *  Anything>, arrays of the preceding.
+     *  }
      */
     void validateAnnotationType(JCTree restype) {
         // restype may be null if an error occurred, so don't bother validating it
@@ -2467,6 +2597,7 @@ public class Check {
         validateDocumented(t.tsym, s, pos);
         validateInherited(t.tsym, s, pos);
         validateTarget(t.tsym, s, pos);
+        validateDefault(t.tsym, s, pos);
     }
 
     /**
@@ -2645,6 +2776,21 @@ public class Check {
                 return false;
         }
         return true;
+    }
+
+    private void validateDefault(Symbol container, Symbol contained, DiagnosticPosition pos) {
+        // validate that all other elements of containing type has defaults
+        Scope scope = container.members();
+        for(Symbol elm : scope.getElements()) {
+            if (elm.name != names.value &&
+                elm.kind == Kinds.MTH &&
+                ((MethodSymbol)elm).defaultValue == null) {
+                log.error(pos,
+                          "invalid.containedby.annotation.elem.nondefault",
+                          container,
+                          elm);
+            }
+        }
     }
 
     /** Is s a method symbol that overrides a method in a superclass? */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,41 +37,23 @@
 inline void oopDesc::update_contents(ParCompactionManager* cm) {
   // The klass field must be updated before anything else
   // can be done.
-  DEBUG_ONLY(klassOopDesc* original_klass = klass());
+  DEBUG_ONLY(Klass* original_klass = klass());
 
-  // Can the option to update and/or copy be moved up in the
-  // call chain to avoid calling into here?
-
-  if (PSParallelCompact::should_update_klass(klass())) {
-    update_header();
-    assert(klass()->is_klass(), "Not updated correctly");
-  } else {
-    assert(klass()->is_klass(), "Not updated");
-  }
-
-  Klass* new_klass = blueprint();
+  Klass* new_klass = klass();
   if (!new_klass->oop_is_typeArray()) {
     // It might contain oops beyond the header, so take the virtual call.
     new_klass->oop_update_pointers(cm, this);
   }
-  // Else skip it.  The typeArrayKlass in the header never needs scavenging.
+  // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
 }
 
 inline void oopDesc::follow_contents(ParCompactionManager* cm) {
   assert (PSParallelCompact::mark_bitmap()->is_marked(this),
     "should be marked");
-  blueprint()->oop_follow_contents(cm, this);
+  klass()->oop_follow_contents(cm, this);
 }
 
 // Used by parallel old GC.
-
-inline void oopDesc::follow_header(ParCompactionManager* cm) {
-  if (UseCompressedOops) {
-    PSParallelCompact::mark_and_push(cm, compressed_klass_addr());
-  } else {
-    PSParallelCompact::mark_and_push(cm, klass_addr());
-  }
-}
 
 inline oop oopDesc::forward_to_atomic(oop p) {
   assert(ParNewGeneration::is_legal_forward_ptr(p),
@@ -97,12 +79,8 @@ inline oop oopDesc::forward_to_atomic(oop p) {
   return forwardee();
 }
 
-inline void oopDesc::update_header() {
-  if (UseCompressedOops) {
-    PSParallelCompact::adjust_pointer(compressed_klass_addr());
-  } else {
-    PSParallelCompact::adjust_pointer(klass_addr());
-  }
+inline void oopDesc::update_header(ParCompactionManager* cm) {
+  PSParallelCompact::adjust_klass(cm, klass());
 }
 
 #endif // SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP

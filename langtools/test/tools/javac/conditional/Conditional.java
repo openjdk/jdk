@@ -27,6 +27,7 @@
  * @summary Conditional operator applies assignment conversion
  * @author Tim Hanson, BEA
  *
+ * @compile -XDallowPoly Conditional.java
  * @compile/fail Conditional.java
  */
 

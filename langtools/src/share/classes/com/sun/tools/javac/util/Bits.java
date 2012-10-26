@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package com.sun.tools.javac.util;
+
+import java.util.Arrays;
 
 /** A class for extensible, mutable bit sets.
  *
@@ -62,9 +64,7 @@ public class Bits {
 
     private void sizeTo(int len) {
         if (bits.length < len) {
-            int[] newbits = new int[len];
-            System.arraycopy(bits, 0, newbits, 0, bits.length);
-            bits = newbits;
+            bits = Arrays.copyOf(bits, len);
         }
     }
 
@@ -127,7 +127,7 @@ public class Bits {
             (bits[x >>> wordshift] & (1 << (x & wordmask))) != 0;
     }
 
-    /** this set = this set & xs.
+    /** {@literal this set = this set & xs}.
      */
     public Bits andSet(Bits xs) {
         sizeTo(xs.bits.length);
@@ -179,12 +179,12 @@ public class Bits {
         return n - (x&1);
     }
 
-    /** Return the index of the least bit position >= x that is set.
+    /** Return the index of the least bit position &ge; x that is set.
      *  If none are set, returns -1.  This provides a nice way to iterate
      *  over the members of a bit set:
-     *  <pre>
+     *  <pre>{@code
      *  for (int i = bits.nextBit(0); i>=0; i = bits.nextBit(i+1)) ...
-     *  </pre>
+     *  }</pre>
      */
     public int nextBit(int x) {
         int windex = x >>> wordshift;

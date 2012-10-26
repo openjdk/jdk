@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,20 +42,19 @@ public class Universe {
   private static sun.jvm.hotspot.types.OopField systemThreadGroupField;
 
   // single dimensional primitive array klasses
-  private static sun.jvm.hotspot.types.OopField boolArrayKlassObjField;
-  private static sun.jvm.hotspot.types.OopField byteArrayKlassObjField;
-  private static sun.jvm.hotspot.types.OopField charArrayKlassObjField;
-  private static sun.jvm.hotspot.types.OopField intArrayKlassObjField;
-  private static sun.jvm.hotspot.types.OopField shortArrayKlassObjField;
-  private static sun.jvm.hotspot.types.OopField longArrayKlassObjField;
-  private static sun.jvm.hotspot.types.OopField singleArrayKlassObjField;
-  private static sun.jvm.hotspot.types.OopField doubleArrayKlassObjField;
-
-  // system obj array klass object
-  private static sun.jvm.hotspot.types.OopField systemObjArrayKlassObjField;
+  private static sun.jvm.hotspot.types.AddressField boolArrayKlassField;
+  private static sun.jvm.hotspot.types.AddressField byteArrayKlassField;
+  private static sun.jvm.hotspot.types.AddressField charArrayKlassField;
+  private static sun.jvm.hotspot.types.AddressField intArrayKlassField;
+  private static sun.jvm.hotspot.types.AddressField shortArrayKlassField;
+  private static sun.jvm.hotspot.types.AddressField longArrayKlassField;
+  private static sun.jvm.hotspot.types.AddressField singleArrayKlassField;
+  private static sun.jvm.hotspot.types.AddressField doubleArrayKlassField;
 
   private static AddressField narrowOopBaseField;
   private static CIntegerField narrowOopShiftField;
+  private static AddressField narrowKlassBaseField;
+  private static CIntegerField narrowKlassShiftField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -78,19 +77,19 @@ public class Universe {
     mainThreadGroupField   = type.getOopField("_main_thread_group");
     systemThreadGroupField = type.getOopField("_system_thread_group");
 
-    boolArrayKlassObjField = type.getOopField("_boolArrayKlassObj");
-    byteArrayKlassObjField = type.getOopField("_byteArrayKlassObj");
-    charArrayKlassObjField = type.getOopField("_charArrayKlassObj");
-    intArrayKlassObjField = type.getOopField("_intArrayKlassObj");
-    shortArrayKlassObjField = type.getOopField("_shortArrayKlassObj");
-    longArrayKlassObjField = type.getOopField("_longArrayKlassObj");
-    singleArrayKlassObjField = type.getOopField("_singleArrayKlassObj");
-    doubleArrayKlassObjField = type.getOopField("_doubleArrayKlassObj");
-
-    systemObjArrayKlassObjField = type.getOopField("_systemObjArrayKlassObj");
+    boolArrayKlassField      = type.getAddressField("_boolArrayKlassObj");
+    byteArrayKlassField      = type.getAddressField("_byteArrayKlassObj");
+    charArrayKlassField      = type.getAddressField("_charArrayKlassObj");
+    intArrayKlassField       = type.getAddressField("_intArrayKlassObj");
+    shortArrayKlassField     = type.getAddressField("_shortArrayKlassObj");
+    longArrayKlassField      = type.getAddressField("_longArrayKlassObj");
+    singleArrayKlassField    = type.getAddressField("_singleArrayKlassObj");
+    doubleArrayKlassField    = type.getAddressField("_doubleArrayKlassObj");
 
     narrowOopBaseField = type.getAddressField("_narrow_oop._base");
     narrowOopShiftField = type.getCIntegerField("_narrow_oop._shift");
+    narrowKlassBaseField = type.getAddressField("_narrow_klass._base");
+    narrowKlassShiftField = type.getCIntegerField("_narrow_klass._shift");
   }
 
   public Universe() {
@@ -116,6 +115,19 @@ public class Universe {
     return (int)narrowOopShiftField.getValue();
   }
 
+  public static long getNarrowKlassBase() {
+    if (narrowKlassBaseField.getValue() == null) {
+      return 0;
+    } else {
+      return narrowKlassBaseField.getValue().minus(null);
+    }
+  }
+
+  public static int getNarrowKlassShift() {
+    return (int)narrowKlassShiftField.getValue();
+  }
+
+
   /** Returns "TRUE" iff "p" points into the allocated area of the heap. */
   public boolean isIn(Address p) {
     return heap().isIn(p);
@@ -138,21 +150,17 @@ public class Universe {
     return newOop(systemThreadGroupField.getValue());
   }
 
-  public Oop systemObjArrayKlassObj() {
-    return newOop(systemObjArrayKlassObjField.getValue());
-  }
-
   // iterate through the single dimensional primitive array klasses
-  // refer to basic_type_classes_do(void f(klassOop)) in universe.cpp
+  // refer to basic_type_classes_do(void f(Klass*)) in universe.cpp
   public void basicTypeClassesDo(SystemDictionary.ClassVisitor visitor) {
-    visitor.visit((Klass)newOop(boolArrayKlassObjField.getValue()));
-    visitor.visit((Klass)newOop(byteArrayKlassObjField.getValue()));
-    visitor.visit((Klass)newOop(charArrayKlassObjField.getValue()));
-    visitor.visit((Klass)newOop(intArrayKlassObjField.getValue()));
-    visitor.visit((Klass)newOop(shortArrayKlassObjField.getValue()));
-    visitor.visit((Klass)newOop(longArrayKlassObjField.getValue()));
-    visitor.visit((Klass)newOop(singleArrayKlassObjField.getValue()));
-    visitor.visit((Klass)newOop(doubleArrayKlassObjField.getValue()));
+    visitor.visit(new TypeArrayKlass(boolArrayKlassField.getValue()));
+    visitor.visit(new TypeArrayKlass(byteArrayKlassField.getValue()));
+    visitor.visit(new TypeArrayKlass(charArrayKlassField.getValue()));
+    visitor.visit(new TypeArrayKlass(intArrayKlassField.getValue()));
+    visitor.visit(new TypeArrayKlass(shortArrayKlassField.getValue()));
+    visitor.visit(new TypeArrayKlass(longArrayKlassField.getValue()));
+    visitor.visit(new TypeArrayKlass(singleArrayKlassField.getValue()));
+    visitor.visit(new TypeArrayKlass(doubleArrayKlassField.getValue()));
   }
 
   public void print() { printOn(System.out); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,10 +120,7 @@ TraceTime::TraceTime(const char* title,
 
   if (_active) {
     _accum = NULL;
-    if (PrintGCTimeStamps) {
-      _logfile->stamp();
-      _logfile->print(": ");
-    }
+    _logfile->stamp(PrintGCTimeStamps);
     _logfile->print("[%s", title);
     _logfile->flush();
     _t.start();
@@ -141,10 +138,7 @@ TraceTime::TraceTime(const char* title,
   _logfile = (logfile != NULL) ? logfile : tty;
   if (_active) {
     if (_verbose) {
-      if (PrintGCTimeStamps) {
-        _logfile->stamp();
-        _logfile->print(": ");
-      }
+      _logfile->stamp(PrintGCTimeStamps);
       _logfile->print("[%s", title);
       _logfile->flush();
     }

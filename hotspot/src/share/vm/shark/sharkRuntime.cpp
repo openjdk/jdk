@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "oops/klassOop.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/thread.hpp"
@@ -43,13 +42,13 @@ JRT_ENTRY(int, SharkRuntime::find_exception_handler(JavaThread* thread,
   KlassHandle exc_klass(thread, ((oop) tos_at(thread, 0))->klass());
 
   for (int i = 0; i < num_indexes; i++) {
-    klassOop tmp = pool->klass_at(indexes[i], CHECK_0);
+    Klass* tmp = pool->klass_at(indexes[i], CHECK_0);
     KlassHandle chk_klass(thread, tmp);
 
     if (exc_klass() == chk_klass())
       return i;
 
-    if (exc_klass()->klass_part()->is_subtype_of(chk_klass()))
+    if (exc_klass()->is_subtype_of(chk_klass()))
       return i;
   }
 
@@ -83,7 +82,7 @@ JRT_ENTRY(void, SharkRuntime::monitorexit(JavaThread*      thread,
 JRT_END
 
 JRT_ENTRY(void, SharkRuntime::new_instance(JavaThread* thread, int index))
-  klassOop k_oop = method(thread)->constants()->klass_at(index, CHECK);
+  Klass* k_oop = method(thread)->constants()->klass_at(index, CHECK);
   instanceKlassHandle klass(THREAD, k_oop);
 
   // Make sure we are not instantiating an abstract klass
@@ -120,7 +119,7 @@ JRT_END
 JRT_ENTRY(void, SharkRuntime::anewarray(JavaThread* thread,
                                         int         index,
                                         int         size))
-  klassOop klass = method(thread)->constants()->klass_at(index, CHECK);
+  Klass* klass = method(thread)->constants()->klass_at(index, CHECK);
   objArrayOop obj = oopFactory::new_objArray(klass, size, CHECK);
   thread->set_vm_result(obj);
 JRT_END
@@ -129,16 +128,16 @@ JRT_ENTRY(void, SharkRuntime::multianewarray(JavaThread* thread,
                                              int         index,
                                              int         ndims,
                                              int*        dims))
-  klassOop klass = method(thread)->constants()->klass_at(index, CHECK);
-  oop obj = arrayKlass::cast(klass)->multi_allocate(ndims, dims, CHECK);
+  Klass* klass = method(thread)->constants()->klass_at(index, CHECK);
+  oop obj = ArrayKlass::cast(klass)->multi_allocate(ndims, dims, CHECK);
   thread->set_vm_result(obj);
 JRT_END
 
 JRT_ENTRY(void, SharkRuntime::register_finalizer(JavaThread* thread,
                                                  oop         object))
   assert(object->is_oop(), "should be");
-  assert(object->klass()->klass_part()->has_finalizer(), "should have");
-  instanceKlass::register_finalizer(instanceOop(object), CHECK);
+  assert(object->klass()->has_finalizer(), "should have");
+  InstanceKlass::register_finalizer(instanceOop(object), CHECK);
 JRT_END
 
 JRT_ENTRY(void, SharkRuntime::throw_ArithmeticException(JavaThread* thread,
@@ -196,8 +195,8 @@ void SharkRuntime::dump(const char *name, intptr_t value) {
   tty->print_cr("");
 }
 
-bool SharkRuntime::is_subtype_of(klassOop check_klass, klassOop object_klass) {
-  return object_klass->klass_part()->is_subtype_of(check_klass);
+bool SharkRuntime::is_subtype_of(Klass* check_klass, Klass* object_klass) {
+  return object_klass->is_subtype_of(check_klass);
 }
 
 int SharkRuntime::uncommon_trap(JavaThread* thread, int trap_request) {

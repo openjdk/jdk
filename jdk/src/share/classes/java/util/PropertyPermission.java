@@ -130,18 +130,15 @@ public final class PropertyPermission extends BasicPermission {
      * @param mask the actions mask to use.
      *
      */
-
-    private void init(int mask)
-    {
-
+    private void init(int mask) {
         if ((mask & ALL) != mask)
-                throw new IllegalArgumentException("invalid actions mask");
+            throw new IllegalArgumentException("invalid actions mask");
 
         if (mask == NONE)
-                throw new IllegalArgumentException("invalid actions mask");
+            throw new IllegalArgumentException("invalid actions mask");
 
         if (getName() == null)
-                throw new NullPointerException("name can't be null");
+            throw new NullPointerException("name can't be null");
 
         this.mask = mask;
     }
@@ -160,9 +157,7 @@ public final class PropertyPermission extends BasicPermission {
      * @throws IllegalArgumentException if <code>name</code> is empty or if
      * <code>actions</code> is invalid.
      */
-
-    public PropertyPermission(String name, String actions)
-    {
+    public PropertyPermission(String name, String actions) {
         super(name,actions);
         init(getMask(actions));
     }
@@ -196,7 +191,6 @@ public final class PropertyPermission extends BasicPermission {
         return ((this.mask & that.mask) == that.mask) && super.implies(that);
     }
 
-
     /**
      * Checks two PropertyPermission objects for equality. Checks that <i>obj</i> is
      * a PropertyPermission, and has the same name and actions as this object.
@@ -226,16 +220,14 @@ public final class PropertyPermission extends BasicPermission {
      *
      * @return a hash code value for this object.
      */
-
     public int hashCode() {
         return this.getName().hashCode();
     }
 
-
     /**
      * Converts an actions String to an actions mask.
      *
-     * @param action the action string.
+     * @param actions the action string.
      * @return the actions mask.
      */
     private static int getMask(String actions) {
@@ -246,7 +238,8 @@ public final class PropertyPermission extends BasicPermission {
             return mask;
         }
 
-        // Check against use of constants (used heavily within the JDK)
+        // Use object identity comparison against known-interned strings for
+        // performance benefit (these values are used heavily within the JDK).
         if (actions == SecurityConstants.PROPERTY_READ_ACTION) {
             return READ;
         } if (actions == SecurityConstants.PROPERTY_WRITE_ACTION) {
@@ -331,8 +324,7 @@ public final class PropertyPermission extends BasicPermission {
      *
      * @return the canonical string representation of the actions.
      */
-    static String getActions(int mask)
-    {
+    static String getActions(int mask) {
         StringBuilder sb = new StringBuilder();
         boolean comma = false;
 
@@ -358,8 +350,7 @@ public final class PropertyPermission extends BasicPermission {
      *
      * @return the canonical string representation of the actions.
      */
-    public String getActions()
-    {
+    public String getActions() {
         if (actions == null)
             actions = getActions(this.mask);
 
@@ -372,7 +363,6 @@ public final class PropertyPermission extends BasicPermission {
      *
      * @return the actions mask.
      */
-
     int getMask() {
         return mask;
     }
@@ -385,7 +375,6 @@ public final class PropertyPermission extends BasicPermission {
      * @return a new PermissionCollection object suitable for storing
      * PropertyPermissions.
      */
-
     public PermissionCollection newPermissionCollection() {
         return new PropertyPermissionCollection();
     }
@@ -435,7 +424,7 @@ public final class PropertyPermission extends BasicPermission {
  * @serial include
  */
 final class PropertyPermissionCollection extends PermissionCollection
-implements Serializable
+    implements Serializable
 {
 
     /**
@@ -453,10 +442,8 @@ implements Serializable
     private boolean all_allowed;
 
     /**
-     * Create an empty PropertyPermissions object.
-     *
+     * Create an empty PropertyPermissionCollection object.
      */
-
     public PropertyPermissionCollection() {
         perms = new HashMap<>(32);     // Capacity for default policy
         all_allowed = false;
@@ -474,9 +461,7 @@ implements Serializable
      * @exception SecurityException - if this PropertyPermissionCollection
      *                                object has been marked readonly
      */
-
-    public void add(Permission permission)
-    {
+    public void add(Permission permission) {
         if (! (permission instanceof PropertyPermission))
             throw new IllegalArgumentException("invalid permission: "+
                                                permission);
@@ -513,14 +498,12 @@ implements Serializable
      * Check and see if this set of permissions implies the permissions
      * expressed in "permission".
      *
-     * @param p the Permission object to compare
+     * @param permission the Permission object to compare
      *
      * @return true if "permission" is a proper subset of a permission in
      * the set, false if not.
      */
-
-    public boolean implies(Permission permission)
-    {
+    public boolean implies(Permission permission) {
         if (! (permission instanceof PropertyPermission))
                 return false;
 
@@ -654,8 +637,9 @@ implements Serializable
      * Reads in a Hashtable of PropertyPermissions and saves them in the
      * perms field. Reads in all_allowed.
      */
-    private void readObject(ObjectInputStream in) throws IOException,
-    ClassNotFoundException {
+    private void readObject(ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
         // Don't call defaultReadObject()
 
         // Read in serialized fields

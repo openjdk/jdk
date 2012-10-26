@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,14 @@
 #include "precompiled.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
-#include "ci/ciObjArrayKlassKlass.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciUtilities.hpp"
 #include "oops/objArrayKlass.hpp"
 
 // ciObjArrayKlass
 //
-// This class represents a klassOop in the HotSpot virtual machine
-// whose Klass part is an objArrayKlass.
+// This class represents a Klass* in the HotSpot virtual machine
+// whose Klass part is an ObjArrayKlass.
 
 // ------------------------------------------------------------------
 // ciObjArrayKlass::ciObjArrayKlass
@@ -41,8 +40,8 @@
 // Constructor for loaded object array klasses.
 ciObjArrayKlass::ciObjArrayKlass(KlassHandle h_k) : ciArrayKlass(h_k) {
   assert(get_Klass()->oop_is_objArray(), "wrong type");
-  klassOop element_klassOop = get_objArrayKlass()->bottom_klass();
-  _base_element_klass = CURRENT_ENV->get_object(element_klassOop)->as_klass();
+  Klass* element_Klass = get_ObjArrayKlass()->bottom_klass();
+  _base_element_klass = CURRENT_ENV->get_klass(element_Klass);
   assert(_base_element_klass->is_instance_klass() ||
          _base_element_klass->is_type_array_klass(), "bad base klass");
   if (dimension() == 1) {
@@ -63,8 +62,7 @@ ciObjArrayKlass::ciObjArrayKlass(ciSymbol* array_name,
                                  ciKlass* base_element_klass,
                                  int dimension)
   : ciArrayKlass(array_name,
-                 dimension,
-                 ciObjArrayKlassKlass::make()) {
+                 dimension, T_OBJECT) {
     _base_element_klass = base_element_klass;
     assert(_base_element_klass->is_instance_klass() ||
            _base_element_klass->is_type_array_klass(), "bad base klass");
@@ -85,8 +83,8 @@ ciKlass* ciObjArrayKlass::element_klass() {
     // Produce the element klass.
     if (is_loaded()) {
       VM_ENTRY_MARK;
-      klassOop element_klassOop = get_objArrayKlass()->element_klass();
-      _element_klass = CURRENT_THREAD_ENV->get_object(element_klassOop)->as_klass();
+      Klass* element_Klass = get_ObjArrayKlass()->element_klass();
+      _element_klass = CURRENT_THREAD_ENV->get_klass(element_Klass);
     } else {
       VM_ENTRY_MARK;
       // We are an unloaded array klass.  Attempt to fetch our
@@ -154,13 +152,13 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass) {
   if (element_klass->is_loaded()) {
     EXCEPTION_CONTEXT;
     // The element klass is loaded
-    klassOop array = element_klass->get_Klass()->array_klass(THREAD);
+    Klass* array = element_klass->get_Klass()->array_klass(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       CURRENT_THREAD_ENV->record_out_of_memory_failure();
       return ciEnv::unloaded_ciobjarrayklass();
     }
-    return CURRENT_THREAD_ENV->get_object(array)->as_obj_array_klass();
+    return CURRENT_THREAD_ENV->get_obj_array_klass(array);
   }
 
   // The array klass was unable to be made or the element klass was
@@ -179,6 +177,5 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass) {
 //
 // Make an array klass corresponding to the specified primitive type.
 ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass) {
-  assert(element_klass->is_java_klass(), "wrong kind of klass");
   GUARDED_VM_ENTRY(return make_impl(element_klass);)
 }

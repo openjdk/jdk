@@ -181,7 +181,7 @@ void vmSymbols::symbols_do(SymbolClosure* f) {
   }
 }
 
-void vmSymbols::serialize(SerializeOopClosure* soc) {
+void vmSymbols::serialize(SerializeClosure* soc) {
   soc->do_region((u_char*)&_symbols[FIRST_SID],
                  (SID_LIMIT - FIRST_SID) * sizeof(_symbols[0]));
   soc->do_region((u_char*)_type_signatures, sizeof(_type_signatures));
@@ -211,7 +211,7 @@ vmSymbols::SID vmSymbols::find_sid(Symbol* symbol) {
   // Then, use a binary search over the index.
   // Expected trip count is less than log2_SID_LIMIT, about eight.
   // This is slow but acceptable, given that calls are not
-  // dynamically common.  (methodOop::intrinsic_id has a cache.)
+  // dynamically common.  (Method*::intrinsic_id has a cache.)
   NOT_PRODUCT(find_sid_calls++);
   int min = (int)FIRST_SID, max = (int)SID_LIMIT - 1;
   SID sid = NO_SID, sid1;
@@ -322,24 +322,6 @@ vmIntrinsics::ID vmIntrinsics::for_raw_conversion(BasicType src, BasicType dest)
 #undef SRC_DEST
 
   return vmIntrinsics::_none;
-}
-
-methodOop vmIntrinsics::method_for(vmIntrinsics::ID id) {
-  if (id == _none)  return NULL;
-  Symbol* cname = vmSymbols::symbol_at(class_for(id));
-  Symbol* mname = vmSymbols::symbol_at(name_for(id));
-  Symbol* msig  = vmSymbols::symbol_at(signature_for(id));
-  if (cname == NULL || mname == NULL || msig == NULL)  return NULL;
-  klassOop k = SystemDictionary::find_well_known_klass(cname);
-  if (k == NULL)  return NULL;
-  methodOop m = instanceKlass::cast(k)->find_method(mname, msig);
-  if (m == NULL &&
-      cname == vmSymbols::java_lang_invoke_MethodHandle() &&
-      msig == vmSymbols::star_name()) {
-    // Any signature polymorphic method is represented by a fixed concrete signature:
-    m = instanceKlass::cast(k)->find_method(mname, vmSymbols::object_array_object_signature());
-  }
-  return m;
 }
 
 
@@ -504,12 +486,12 @@ vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {
 #ifndef PRODUCT
 // verify_method performs an extra check on a matched intrinsic method
 
-static bool match_method(methodOop m, Symbol* n, Symbol* s) {
+static bool match_method(Method* m, Symbol* n, Symbol* s) {
   return (m->name() == n &&
           m->signature() == s);
 }
 
-static vmIntrinsics::ID match_method_with_klass(methodOop m, Symbol* mk) {
+static vmIntrinsics::ID match_method_with_klass(Method* m, Symbol* mk) {
 #define VM_INTRINSIC_MATCH(id, klassname, namepart, sigpart, flags) \
   { Symbol* k = vmSymbols::klassname(); \
     if (mk == k) { \
@@ -524,7 +506,7 @@ static vmIntrinsics::ID match_method_with_klass(methodOop m, Symbol* mk) {
 #undef VM_INTRINSIC_MATCH
 }
 
-void vmIntrinsics::verify_method(ID actual_id, methodOop m) {
+void vmIntrinsics::verify_method(ID actual_id, Method* m) {
   Symbol* mk = Klass::cast(m->method_holder())->name();
   ID declared_id = match_method_with_klass(m, mk);
 

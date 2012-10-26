@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,13 +74,19 @@ void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_cod
     }
   } else if (patch->id() == PatchingStub::load_klass_id) {
     switch (code) {
-      case Bytecodes::_putstatic:
-      case Bytecodes::_getstatic:
       case Bytecodes::_new:
       case Bytecodes::_anewarray:
       case Bytecodes::_multianewarray:
       case Bytecodes::_instanceof:
       case Bytecodes::_checkcast:
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  } else if (patch->id() == PatchingStub::load_mirror_id) {
+    switch (code) {
+      case Bytecodes::_putstatic:
+      case Bytecodes::_getstatic:
       case Bytecodes::_ldc:
       case Bytecodes::_ldc_w:
         break;
@@ -765,6 +771,11 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
 
     case lir_throw:
       throw_op(op->in_opr1(), op->in_opr2(), op->info());
+      break;
+
+    case lir_xadd:
+    case lir_xchg:
+      atomic_op(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr());
       break;
 
     default:

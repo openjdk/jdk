@@ -198,7 +198,7 @@ void Matcher::match( ) {
   const TypeTuple *range = C->tf()->range();
   if( range->cnt() > TypeFunc::Parms ) { // If not a void function
     // Get ideal-register return type
-    int ireg = base2reg[range->field_at(TypeFunc::Parms)->base()];
+    int ireg = range->field_at(TypeFunc::Parms)->ideal_reg();
     // Get machine return register
     uint sop = C->start()->Opcode();
     OptoRegPair regs = return_value(ireg, false);
@@ -727,7 +727,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
         tail_call_rms[tail_call_edge_cnt].Insert(OptoReg::Name(i+1));
         tail_jump_rms[tail_jump_edge_cnt].Insert(OptoReg::Name(i+1));
         halt_rms     [     halt_edge_cnt].Insert(OptoReg::Name(i+1));
-        mproj = new (C, 1) MachProjNode( start, proj_cnt, ret_rms[ret_edge_cnt], Op_RegD );
+        mproj = new (C) MachProjNode( start, proj_cnt, ret_rms[ret_edge_cnt], Op_RegD );
         proj_cnt += 2;          // Skip 2 for doubles
       }
       else if( (i&1) == 1 &&    // Else check for high half of double
@@ -753,7 +753,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
         tail_call_rms[tail_call_edge_cnt].Insert(OptoReg::Name(i+1));
         tail_jump_rms[tail_jump_edge_cnt].Insert(OptoReg::Name(i+1));
         halt_rms     [     halt_edge_cnt].Insert(OptoReg::Name(i+1));
-        mproj = new (C, 1) MachProjNode( start, proj_cnt, ret_rms[ret_edge_cnt], Op_RegL );
+        mproj = new (C) MachProjNode( start, proj_cnt, ret_rms[ret_edge_cnt], Op_RegL );
         proj_cnt += 2;          // Skip 2 for longs
       }
       else if( (i&1) == 1 &&    // Else check for high half of long
@@ -768,7 +768,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
         mproj = C->top();
       } else {
         // Make a projection for it off the Start
-        mproj = new (C, 1) MachProjNode( start, proj_cnt++, ret_rms[ret_edge_cnt], _register_save_type[i] );
+        mproj = new (C) MachProjNode( start, proj_cnt++, ret_rms[ret_edge_cnt], _register_save_type[i] );
       }
 
       ret_edge_cnt ++;
@@ -821,13 +821,13 @@ void Matcher::init_spill_mask( Node *ret ) {
 
   // Compute generic short-offset Loads
 #ifdef _LP64
-  MachNode *spillCP = match_tree(new (C, 3) LoadNNode(NULL,mem,fp,atp,TypeInstPtr::BOTTOM));
+  MachNode *spillCP = match_tree(new (C) LoadNNode(NULL,mem,fp,atp,TypeInstPtr::BOTTOM));
 #endif
-  MachNode *spillI  = match_tree(new (C, 3) LoadINode(NULL,mem,fp,atp));
-  MachNode *spillL  = match_tree(new (C, 3) LoadLNode(NULL,mem,fp,atp));
-  MachNode *spillF  = match_tree(new (C, 3) LoadFNode(NULL,mem,fp,atp));
-  MachNode *spillD  = match_tree(new (C, 3) LoadDNode(NULL,mem,fp,atp));
-  MachNode *spillP  = match_tree(new (C, 3) LoadPNode(NULL,mem,fp,atp,TypeInstPtr::BOTTOM));
+  MachNode *spillI  = match_tree(new (C) LoadINode(NULL,mem,fp,atp));
+  MachNode *spillL  = match_tree(new (C) LoadLNode(NULL,mem,fp,atp));
+  MachNode *spillF  = match_tree(new (C) LoadFNode(NULL,mem,fp,atp));
+  MachNode *spillD  = match_tree(new (C) LoadDNode(NULL,mem,fp,atp));
+  MachNode *spillP  = match_tree(new (C) LoadPNode(NULL,mem,fp,atp,TypeInstPtr::BOTTOM));
   assert(spillI != NULL && spillL != NULL && spillF != NULL &&
          spillD != NULL && spillP != NULL, "");
 
@@ -844,19 +844,19 @@ void Matcher::init_spill_mask( Node *ret ) {
   // Vector regmasks.
   if (Matcher::vector_size_supported(T_BYTE,4)) {
     TypeVect::VECTS = TypeVect::make(T_BYTE, 4);
-    MachNode *spillVectS = match_tree(new (C, 3) LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTS));
+    MachNode *spillVectS = match_tree(new (C) LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTS));
     idealreg2regmask[Op_VecS] = &spillVectS->out_RegMask();
   }
   if (Matcher::vector_size_supported(T_FLOAT,2)) {
-    MachNode *spillVectD = match_tree(new (C, 3) LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTD));
+    MachNode *spillVectD = match_tree(new (C) LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTD));
     idealreg2regmask[Op_VecD] = &spillVectD->out_RegMask();
   }
   if (Matcher::vector_size_supported(T_FLOAT,4)) {
-    MachNode *spillVectX = match_tree(new (C, 3) LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTX));
+    MachNode *spillVectX = match_tree(new (C) LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTX));
     idealreg2regmask[Op_VecX] = &spillVectX->out_RegMask();
   }
   if (Matcher::vector_size_supported(T_FLOAT,8)) {
-    MachNode *spillVectY = match_tree(new (C, 3) LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTY));
+    MachNode *spillVectY = match_tree(new (C) LoadVectorNode(NULL,mem,fp,atp,TypeVect::VECTY));
     idealreg2regmask[Op_VecY] = &spillVectY->out_RegMask();
   }
 }
@@ -1058,7 +1058,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
         Node *m = n->in(i);          // Get input
         int op = m->Opcode();
         assert((op == Op_BoxLock) == jvms->is_monitor_use(i), "boxes only at monitor sites");
-        if( op == Op_ConI || op == Op_ConP || op == Op_ConN ||
+        if( op == Op_ConI || op == Op_ConP || op == Op_ConN || op == Op_ConNKlass ||
             op == Op_ConF || op == Op_ConD || op == Op_ConL
             // || op == Op_BoxLock  // %%%% enable this and remove (+++) in chaitin.cpp
             ) {
@@ -1285,7 +1285,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     // a little in-place argument insertion.
     // FIXME: Is this still necessary?
     int regs_per_word  = NOT_LP64(1) LP64_ONLY(2); // %%% make a global const!
-    out_arg_limit_per_call += methodOopDesc::extra_stack_entries() * regs_per_word;
+    out_arg_limit_per_call += Method::extra_stack_entries() * regs_per_word;
     // Do not update mcall->_argsize because (a) the extra space is not
     // pushed as arguments and (b) _argsize is dead (not used anywhere).
   }
@@ -1303,7 +1303,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     // is excluded on the max-per-method basis, debug info cannot land in
     // this killed area.
     uint r_cnt = mcall->tf()->range()->cnt();
-    MachProjNode *proj = new (C, 1) MachProjNode( mcall, r_cnt+10000, RegMask::Empty, MachProjNode::fat_proj );
+    MachProjNode *proj = new (C) MachProjNode( mcall, r_cnt+10000, RegMask::Empty, MachProjNode::fat_proj );
     if (!RegMask::can_represent_arg(OptoReg::Name(out_arg_limit_per_call-1))) {
       C->record_method_not_compilable_all_tiers("unsupported outgoing calling sequence");
     } else {
@@ -1450,7 +1450,8 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
       if (j == max_scan)        // No post-domination before scan end?
         return true;            // Then break the match tree up
     }
-    if (m->is_DecodeN() && Matcher::narrow_oop_use_complex_address()) {
+    if ((m->is_DecodeN() && Matcher::narrow_oop_use_complex_address()) ||
+        (m->is_DecodeNKlass() && Matcher::narrow_klass_use_complex_address())) {
       // These are commonly used in address expressions and can
       // efficiently fold into them on X64 in some cases.
       return false;
@@ -1574,14 +1575,14 @@ Node *Matcher::Label_Root( const Node *n, State *svec, Node *control, const Node
 // program.  The register allocator is free to split uses later to
 // split live ranges.
 MachNode* Matcher::find_shared_node(Node* leaf, uint rule) {
-  if (!leaf->is_Con() && !leaf->is_DecodeN()) return NULL;
+  if (!leaf->is_Con() && !leaf->is_DecodeNarrowPtr()) return NULL;
 
   // See if this Con has already been reduced using this rule.
   if (_shared_nodes.Size() <= leaf->_idx) return NULL;
   MachNode* last = (MachNode*)_shared_nodes.at(leaf->_idx);
   if (last != NULL && rule == last->rule()) {
     // Don't expect control change for DecodeN
-    if (leaf->is_DecodeN())
+    if (leaf->is_DecodeNarrowPtr())
       return last;
     // Get the new space root.
     Node* xroot = new_node(C->root());
@@ -1671,12 +1672,12 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
       // DecodeN node consumed by an address may have different type
       // then its input. Don't compare types for such case.
       if (m->adr_type() != mach_at &&
-          (m->in(MemNode::Address)->is_DecodeN() ||
+          (m->in(MemNode::Address)->is_DecodeNarrowPtr() ||
            m->in(MemNode::Address)->is_AddP() &&
-           m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeN() ||
+           m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr() ||
            m->in(MemNode::Address)->is_AddP() &&
            m->in(MemNode::Address)->in(AddPNode::Address)->is_AddP() &&
-           m->in(MemNode::Address)->in(AddPNode::Address)->in(AddPNode::Address)->is_DecodeN())) {
+           m->in(MemNode::Address)->in(AddPNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr())) {
         mach_at = m->adr_type();
       }
       if (m->adr_type() != mach_at) {
@@ -1721,7 +1722,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
     guarantee(_proj_list.size() == num_proj, "no allocation during spill generation");
   }
 
-  if (leaf->is_Con() || leaf->is_DecodeN()) {
+  if (leaf->is_Con() || leaf->is_DecodeNarrowPtr()) {
     // Record the con for sharing
     _shared_nodes.map(leaf->_idx, ex);
   }
@@ -2038,7 +2039,7 @@ void Matcher::find_shared( Node *n ) {
           continue; // for(int i = ...)
         }
 
-        if( mop == Op_AddP && m->in(AddPNode::Base)->Opcode() == Op_DecodeN ) {
+        if( mop == Op_AddP && m->in(AddPNode::Base)->is_DecodeNarrowPtr()) {
           // Bases used in addresses must be shared but since
           // they are shared through a DecodeN they may appear
           // to have a single use so force sharing here.
@@ -2134,10 +2135,10 @@ void Matcher::find_shared( Node *n ) {
       case Op_CompareAndSwapP:
       case Op_CompareAndSwapN: {   // Convert trinary to binary-tree
         Node *newval = n->in(MemNode::ValueIn );
-        Node *oldval  = n->in(LoadStoreNode::ExpectedIn);
-        Node *pair = new (C, 3) BinaryNode( oldval, newval );
+        Node *oldval  = n->in(LoadStoreConditionalNode::ExpectedIn);
+        Node *pair = new (C) BinaryNode( oldval, newval );
         n->set_req(MemNode::ValueIn,pair);
-        n->del_req(LoadStoreNode::ExpectedIn);
+        n->del_req(LoadStoreConditionalNode::ExpectedIn);
         break;
       }
       case Op_CMoveD:              // Convert trinary to binary-tree
@@ -2150,22 +2151,22 @@ void Matcher::find_shared( Node *n ) {
         // we could move this code up next to the graph reshaping for IfNodes
         // or vice-versa, but I do not want to debug this for Ladybird.
         // 10/2/2000 CNC.
-        Node *pair1 = new (C, 3) BinaryNode(n->in(1),n->in(1)->in(1));
+        Node *pair1 = new (C) BinaryNode(n->in(1),n->in(1)->in(1));
         n->set_req(1,pair1);
-        Node *pair2 = new (C, 3) BinaryNode(n->in(2),n->in(3));
+        Node *pair2 = new (C) BinaryNode(n->in(2),n->in(3));
         n->set_req(2,pair2);
         n->del_req(3);
         break;
       }
       case Op_LoopLimit: {
-        Node *pair1 = new (C, 3) BinaryNode(n->in(1),n->in(2));
+        Node *pair1 = new (C) BinaryNode(n->in(1),n->in(2));
         n->set_req(1,pair1);
         n->set_req(2,n->in(3));
         n->del_req(3);
         break;
       }
       case Op_StrEquals: {
-        Node *pair1 = new (C, 3) BinaryNode(n->in(2),n->in(3));
+        Node *pair1 = new (C) BinaryNode(n->in(2),n->in(3));
         n->set_req(2,pair1);
         n->set_req(3,n->in(4));
         n->del_req(4);
@@ -2173,9 +2174,9 @@ void Matcher::find_shared( Node *n ) {
       }
       case Op_StrComp:
       case Op_StrIndexOf: {
-        Node *pair1 = new (C, 3) BinaryNode(n->in(2),n->in(3));
+        Node *pair1 = new (C) BinaryNode(n->in(2),n->in(3));
         n->set_req(2,pair1);
-        Node *pair2 = new (C, 3) BinaryNode(n->in(4),n->in(5));
+        Node *pair2 = new (C) BinaryNode(n->in(4),n->in(5));
         n->set_req(3,pair2);
         n->del_req(5);
         n->del_req(4);
@@ -2277,7 +2278,7 @@ void Matcher::validate_null_checks( ) {
     if (has_new_node(val)) {
       Node* new_val = new_node(val);
       if (is_decoden) {
-        assert(val->is_DecodeN() && val->in(0) == NULL, "sanity");
+        assert(val->is_DecodeNarrowPtr() && val->in(0) == NULL, "sanity");
         // Note: new_val may have a control edge if
         // the original ideal node DecodeN was matched before
         // it was unpinned in Matcher::collect_null_checks().

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -931,6 +931,7 @@ void Canonicalizer::do_UnsafeGetRaw(UnsafeGetRaw* x) { if (OptimizeUnsafes) do_U
 void Canonicalizer::do_UnsafePutRaw(UnsafePutRaw* x) { if (OptimizeUnsafes) do_UnsafeRawOp(x); }
 void Canonicalizer::do_UnsafeGetObject(UnsafeGetObject* x) {}
 void Canonicalizer::do_UnsafePutObject(UnsafePutObject* x) {}
+void Canonicalizer::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {}
 void Canonicalizer::do_UnsafePrefetchRead (UnsafePrefetchRead*  x) {}
 void Canonicalizer::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {}
 void Canonicalizer::do_ProfileCall(ProfileCall* x) {}

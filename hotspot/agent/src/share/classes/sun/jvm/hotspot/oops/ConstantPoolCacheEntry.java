@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ public class ConstantPoolCacheEntry {
   private static long          size;
   private static long          baseOffset;
   private static CIntegerField indices;
-  private static sun.jvm.hotspot.types.OopField f1;
+  private static AddressField  f1;
   private static CIntegerField f2;
   private static CIntegerField flags;
 
@@ -54,11 +54,11 @@ public class ConstantPoolCacheEntry {
     size = type.getSize();
 
     indices = type.getCIntegerField("_indices");
-    f1      = type.getOopField     ("_f1");
+    f1      = type.getAddressField ("_f1");
     f2      = type.getCIntegerField("_f2");
     flags   = type.getCIntegerField("_flags");
 
-    type = db.lookupType("constantPoolCacheOopDesc");
+    type = db.lookupType("ConstantPoolCache");
     baseOffset = type.getSize();
   }
 
@@ -69,43 +69,32 @@ public class ConstantPoolCacheEntry {
 
   public int getConstantPoolIndex() {
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that(!isSecondaryEntry(), "must not be a secondary CP entry");
+      Assert.that((getIndices() & 0xFFFF) != 0, "must be main entry");
     }
     return (int) (getIndices() & 0xFFFF);
   }
 
-  public boolean isSecondaryEntry() {
-    return (getIndices() & 0xFFFF) == 0;
-  }
-
-  public int getMainEntryIndex() {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(isSecondaryEntry(), "must be a secondary CP entry");
-    }
-    return (int) (getIndices() >>> 16);
-  }
-
   private long getIndices() {
-      return cp.getHandle().getCIntegerAt(indices.getOffset() + offset, indices.getSize(), indices.isUnsigned());
+    return cp.getAddress().getCIntegerAt(indices.getOffset() + offset, indices.getSize(), indices.isUnsigned());
   }
 
-  public Oop getF1() {
-    return cp.getHeap().newOop(cp.getHandle().getOopHandleAt(f1.getOffset() + offset));
+  public Metadata getF1() {
+    return Metadata.instantiateWrapperFor(cp.getAddress().getAddressAt(f1.getOffset() + offset));
   }
 
   public int getF2() {
-    return cp.getHandle().getJIntAt(f1.getOffset() + offset);
+    return cp.getAddress().getJIntAt(f1.getOffset() + offset);
   }
 
   public int getFlags() {
-    return cp.getHandle().getJIntAt(flags.getOffset() + offset);
+    return cp.getAddress().getJIntAt(flags.getOffset() + offset);
   }
 
   static NamedFieldIdentifier f1FieldName = new NamedFieldIdentifier("_f1");
   static NamedFieldIdentifier f2FieldName = new NamedFieldIdentifier("_f2");
   static NamedFieldIdentifier flagsFieldName = new NamedFieldIdentifier("_flags");
 
-  public void iterateFields(OopVisitor visitor) {
+  public void iterateFields(MetadataVisitor visitor) {
     visitor.doOop(new OopField(f1FieldName, f1.getOffset() + offset, true), true);
     visitor.doInt(new IntField(f2FieldName, f2.getOffset() + offset, true), true);
     visitor.doInt(new IntField(flagsFieldName, flags.getOffset() + offset, true), true);

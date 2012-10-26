@@ -43,9 +43,9 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(true, false));
-#ifndef SERVICES_KERNEL   // Heap dumping not supported
+#if INCLUDE_SERVICES // Heap dumping supported
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(true, false));
-#endif // SERVICES_KERNEL
+#endif // INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(true, false));
 
@@ -171,7 +171,7 @@ int PrintVMFlagsDCmd::num_arguments() {
 void PrintSystemPropertiesDCmd::execute(TRAPS) {
   // load sun.misc.VMSupport
   Symbol* klass = vmSymbols::sun_misc_VMSupport();
-  klassOop k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
+  Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
   instanceKlassHandle ik (THREAD, k);
   if (ik->should_be_initialized()) {
     ik->initialize(THREAD);
@@ -204,7 +204,7 @@ void PrintSystemPropertiesDCmd::execute(TRAPS) {
   // The result should be a [B
   oop res = (oop)result.get_jobject();
   assert(res->is_typeArray(), "just checking");
-  assert(typeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
+  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
 
   // copy the bytes to the output stream
   typeArrayOop ba = typeArrayOop(res);
@@ -243,7 +243,7 @@ void SystemGCDCmd::execute(TRAPS) {
 }
 
 void RunFinalizationDCmd::execute(TRAPS) {
-  klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(),
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(),
                                                  true, CHECK);
   instanceKlassHandle klass(THREAD, k);
   JavaValue result(T_VOID);
@@ -252,7 +252,7 @@ void RunFinalizationDCmd::execute(TRAPS) {
                          vmSymbols::void_method_signature(), CHECK);
 }
 
-#ifndef SERVICES_KERNEL   // Heap dumping not supported
+#if INCLUDE_SERVICES // Heap dumping supported
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
   _filename("filename","Name of the dump file", "STRING",true),
@@ -292,7 +292,7 @@ int HeapDumpDCmd::num_arguments() {
     return 0;
   }
 }
-#endif // SERVICES_KERNEL
+#endif // INCLUDE_SERVICES
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
@@ -447,7 +447,7 @@ void JMXStartRemoteDCmd::execute(TRAPS) {
     // throw java.lang.NoSuchMethodError if the method doesn't exist
 
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
     instanceKlassHandle ik (THREAD, k);
 
     JavaValue result(T_VOID);
@@ -506,7 +506,7 @@ void JMXStartLocalDCmd::execute(TRAPS) {
     // throw java.lang.NoSuchMethodError if method doesn't exist
 
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
     instanceKlassHandle ik (THREAD, k);
 
     JavaValue result(T_VOID);
@@ -524,7 +524,7 @@ void JMXStopRemoteDCmd::execute(TRAPS) {
     // throw java.lang.NoSuchMethodError if method doesn't exist
 
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
     instanceKlassHandle ik (THREAD, k);
 
     JavaValue result(T_VOID);

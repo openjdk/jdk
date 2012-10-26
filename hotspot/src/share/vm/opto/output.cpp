@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,9 +265,9 @@ void Compile::Insert_zap_nodes() {
 Node* Compile::call_zap_node(MachSafePointNode* node_to_check, int block_no) {
   const TypeFunc *tf = OptoRuntime::zap_dead_locals_Type();
   CallStaticJavaNode* ideal_node =
-    new (this, tf->domain()->cnt()) CallStaticJavaNode( tf,
+    new (this) CallStaticJavaNode( tf,
          OptoRuntime::zap_dead_locals_stub(_method->flags().is_native()),
-                            "call zap dead locals stub", 0, TypePtr::BOTTOM);
+                       "call zap dead locals stub", 0, TypePtr::BOTTOM);
   // We need to copy the OopMap from the site we're zapping at.
   // We have to make a copy, because the zap site might not be
   // a call site, and zap_dead is a call site.
@@ -626,7 +626,7 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       sv = new ObjectValue(spobj->_idx,
-                           new ConstantOopWriteValue(cik->constant_encoding()));
+                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
       Compile::set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index();
@@ -715,8 +715,7 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     array->append(new ConstantOopWriteValue(NULL));
     break;
   case Type::AryPtr:
-  case Type::InstPtr:
-  case Type::KlassPtr:          // fall through
+  case Type::InstPtr:          // fall through
     array->append(new ConstantOopWriteValue(t->isa_oopptr()->const_oop()->constant_encoding()));
     break;
   case Type::NarrowOop:
@@ -902,7 +901,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
           ObjectValue* sv = new ObjectValue(spobj->_idx,
-                                new ConstantOopWriteValue(cik->constant_encoding()));
+                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
           Compile::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index();
@@ -1658,8 +1657,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
                    "");
       }
       if (method() != NULL) {
-        method()->print_oop();
-        print_codes();
+        method()->print_metadata();
       }
       dump_asm(node_offsets, node_offset_limit);
       if (xtty != NULL) {
@@ -1871,7 +1869,9 @@ void Compile::ScheduleAndBundle() {
   if (!do_scheduling())
     return;
 
-  assert(MaxVectorSize <= 8, "scheduling code works only with pairs");
+  // Scheduling code works only with pairs (8 bytes) maximum.
+  if (max_vector_size() > 8)
+    return;
 
   NOT_PRODUCT( TracePhase t2("isched", &_t_instrSched, TimeCompiler); )
 
@@ -2684,7 +2684,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
     if ( _pinch_free_list.size() > 0) {
       pinch = _pinch_free_list.pop();
     } else {
-      pinch = new (_cfg->C, 1) Node(1); // Pinch point to-be
+      pinch = new (_cfg->C) Node(1); // Pinch point to-be
     }
     if (pinch->_idx >= _regalloc->node_regs_max_index()) {
       _cfg->C->record_method_not_compilable("too many D-U pinch points");

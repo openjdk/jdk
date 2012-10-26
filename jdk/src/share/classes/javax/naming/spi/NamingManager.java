@@ -416,7 +416,7 @@ public class NamingManager {
      *                  specified.
      *                  See the <code>getObjectInstance</code> method for
      *                  details.
-     * @param ctx       The context relative to which <code>name</code> is
+     * @param nameCtx   The context relative to which <code>name</code> is
      *                  specified, or null for the default initial context.
      *                  See the <code>getObjectInstance</code> method for
      *                  details.

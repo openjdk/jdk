@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
+  PSParallelCompact::FollowKlassClosure follow_klass_closure(&mark_and_push_closure);
 
   switch (_root_type) {
     case universe:
@@ -110,6 +111,7 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
 
     case system_dictionary:
       SystemDictionary::always_strong_oops_do(&mark_and_push_closure);
+      ClassLoaderDataGraph::always_strong_oops_do(&mark_and_push_closure, &follow_klass_closure, true);
       break;
 
     case code_cache:
@@ -202,7 +204,7 @@ void StealMarkingTask::do_it(GCTaskManager* manager, uint which) {
   int random_seed = 17;
   do {
     while (ParCompactionManager::steal_objarray(which, &random_seed, task)) {
-      objArrayKlass* const k = (objArrayKlass*)task.obj()->blueprint();
+      ObjArrayKlass* const k = (ObjArrayKlass*)task.obj()->klass();
       k->oop_follow_contents(cm, task.obj(), task.index());
       cm->follow_marking_stacks();
     }

@@ -26,9 +26,12 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compileBroker.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
 #include "memory/gcLocker.hpp"
+#include "memory/metadataFactory.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/klassVtable.hpp"
@@ -40,16 +43,16 @@
 #include "utilities/bitMap.inline.hpp"
 
 
-objArrayOop VM_RedefineClasses::_old_methods = NULL;
-objArrayOop VM_RedefineClasses::_new_methods = NULL;
-methodOop*  VM_RedefineClasses::_matching_old_methods = NULL;
-methodOop*  VM_RedefineClasses::_matching_new_methods = NULL;
-methodOop*  VM_RedefineClasses::_deleted_methods      = NULL;
-methodOop*  VM_RedefineClasses::_added_methods        = NULL;
+Array<Method*>* VM_RedefineClasses::_old_methods = NULL;
+Array<Method*>* VM_RedefineClasses::_new_methods = NULL;
+Method**  VM_RedefineClasses::_matching_old_methods = NULL;
+Method**  VM_RedefineClasses::_matching_new_methods = NULL;
+Method**  VM_RedefineClasses::_deleted_methods      = NULL;
+Method**  VM_RedefineClasses::_added_methods        = NULL;
 int         VM_RedefineClasses::_matching_methods_length = 0;
 int         VM_RedefineClasses::_deleted_methods_length  = 0;
 int         VM_RedefineClasses::_added_methods_length    = 0;
-klassOop    VM_RedefineClasses::_the_class_oop = NULL;
+Klass*      VM_RedefineClasses::_the_class_oop = NULL;
 
 
 VM_RedefineClasses::VM_RedefineClasses(jint class_count,
@@ -93,6 +96,15 @@ bool VM_RedefineClasses::doit_prologue() {
   // call chain it is required that the current thread is a Java thread.
   _res = load_new_class_versions(Thread::current());
   if (_res != JVMTI_ERROR_NONE) {
+    // free any successfully created classes, since none are redefined
+    for (int i = 0; i < _class_count; i++) {
+      if (_scratch_classes[i] != NULL) {
+        ClassLoaderData* cld = _scratch_classes[i]->class_loader_data();
+        // Free the memory for this class at class unloading time.  Not before
+        // because CMS might think this is still live.
+        cld->add_to_deallocate_list((InstanceKlass*)_scratch_classes[i]);
+      }
+    }
     // Free os::malloc allocated memory in load_new_class_version.
     os::free(_scratch_classes);
     RC_TIMER_STOP(_timer_vm_op_prologue);
@@ -103,6 +115,43 @@ bool VM_RedefineClasses::doit_prologue() {
   return true;
 }
 
+// Keep track of marked on-stack metadata so it can be cleared.
+GrowableArray<Metadata*>* _marked_objects = NULL;
+NOT_PRODUCT(bool MetadataOnStackMark::_is_active = false;)
+
+// Walk metadata on the stack and mark it so that redefinition doesn't delete
+// it.  Class unloading also walks the previous versions and might try to
+// delete it, so this class is used by class unloading also.
+MetadataOnStackMark::MetadataOnStackMark() {
+  assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
+  NOT_PRODUCT(_is_active = true;)
+  if (_marked_objects == NULL) {
+    _marked_objects = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(1000, true);
+  }
+  Threads::metadata_do(Metadata::mark_on_stack);
+  CodeCache::alive_nmethods_do(nmethod::mark_on_stack);
+  CompileBroker::mark_on_stack();
+}
+
+MetadataOnStackMark::~MetadataOnStackMark() {
+  assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
+  // Unmark everything that was marked.   Can't do the same walk because
+  // redefine classes messes up the code cache so the set of methods
+  // might not be the same.
+  for (int i = 0; i< _marked_objects->length(); i++) {
+    _marked_objects->at(i)->set_on_stack(false);
+  }
+  _marked_objects->clear();   // reuse growable array for next time.
+  NOT_PRODUCT(_is_active = false;)
+}
+
+// Record which objects are marked so we can unmark the same objects.
+void MetadataOnStackMark::record(Metadata* m) {
+  assert(_is_active, "metadata on stack marking is active");
+  _marked_objects->push(m);
+}
+
+
 void VM_RedefineClasses::doit() {
   Thread *thread = Thread::current();
 
@@ -111,7 +160,7 @@ void VM_RedefineClasses::doit() {
     // shared readwrite, private just in case we need to redefine
     // a shared class. We do the remap during the doit() phase of
     // the safepoint to be safer.
-    if (!CompactingPermGenGen::remap_shared_readonly_as_readwrite()) {
+    if (!MetaspaceShared::remap_shared_readonly_as_readwrite()) {
       RC_TRACE_WITH_THREAD(0x00000001, thread,
         ("failed to remap shared readonly space to readwrite, private"));
       _res = JVMTI_ERROR_INTERNAL;
@@ -119,9 +168,21 @@ void VM_RedefineClasses::doit() {
     }
   }
 
+  // Mark methods seen on stack and everywhere else so old methods are not
+  // cleaned up if they're on the stack.
+  MetadataOnStackMark md_on_stack;
+  HandleMark hm(thread);   // make sure any handles created are deleted
+                           // before the stack walk again.
+
   for (int i = 0; i < _class_count; i++) {
     redefine_single_class(_class_defs[i].klass, _scratch_classes[i], thread);
+    ClassLoaderData* cld = _scratch_classes[i]->class_loader_data();
+    // Free the memory for this class at class unloading time.  Not before
+    // because CMS might think this is still live.
+    cld->add_to_deallocate_list((InstanceKlass*)_scratch_classes[i]);
+    _scratch_classes[i] = NULL;
   }
+
   // Disable any dependent concurrent compilations
   SystemDictionary::notice_modification();
 
@@ -136,7 +197,6 @@ void VM_RedefineClasses::doit() {
 
 void VM_RedefineClasses::doit_epilogue() {
   // Free os::malloc allocated memory.
-  // The memory allocated in redefine will be free'ed in next VM operation.
   os::free(_scratch_classes);
 
   if (RC_TRACE_ENABLED(0x00000004)) {
@@ -160,7 +220,7 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
   if (java_lang_Class::is_primitive(klass_mirror)) {
     return false;
   }
-  klassOop the_class_oop = java_lang_Class::as_klassOop(klass_mirror);
+  Klass* the_class_oop = java_lang_Class::as_Klass(klass_mirror);
   // classes for arrays cannot be redefined
   if (the_class_oop == NULL || !Klass::cast(the_class_oop)->oop_is_instance()) {
     return false;
@@ -215,7 +275,7 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
     case JVM_CONSTANT_Double:  // fall through
     case JVM_CONSTANT_Long:
     {
-      constantPoolOopDesc::copy_entry_to(scratch_cp, scratch_i, *merge_cp_p, *merge_cp_length_p,
+      ConstantPool::copy_entry_to(scratch_cp, scratch_i, *merge_cp_p, *merge_cp_length_p,
         THREAD);
 
       if (scratch_i != *merge_cp_length_p) {
@@ -232,15 +292,14 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
     case JVM_CONSTANT_Utf8:    // fall through
 
     // This was an indirect CP entry, but it has been changed into
-    // an interned string so this entry can be directly appended.
+    // Symbol*s so this entry can be directly appended.
     case JVM_CONSTANT_String:      // fall through
 
     // These were indirect CP entries, but they have been changed into
     // Symbol*s so these entries can be directly appended.
     case JVM_CONSTANT_UnresolvedClass:  // fall through
-    case JVM_CONSTANT_UnresolvedString:
     {
-      constantPoolOopDesc::copy_entry_to(scratch_cp, scratch_i, *merge_cp_p, *merge_cp_length_p,
+      ConstantPool::copy_entry_to(scratch_cp, scratch_i, *merge_cp_p, *merge_cp_length_p,
         THREAD);
 
       if (scratch_i != *merge_cp_length_p) {
@@ -467,8 +526,7 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
     // not be seen by itself.
     case JVM_CONSTANT_Invalid: // fall through
 
-    // At this stage, String or UnresolvedString could be here, but not
-    // StringIndex
+    // At this stage, String could be here, but not StringIndex
     case JVM_CONSTANT_StringIndex: // fall through
 
     // At this stage JVM_CONSTANT_UnresolvedClassInError should not be
@@ -485,20 +543,23 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
 } // end append_entry()
 
 
-void VM_RedefineClasses::swap_all_method_annotations(int i, int j, instanceKlassHandle scratch_class) {
-  typeArrayOop save;
+void VM_RedefineClasses::swap_all_method_annotations(int i, int j, instanceKlassHandle scratch_class, TRAPS) {
+  AnnotationArray* save;
 
-  save = scratch_class->get_method_annotations_of(i);
-  scratch_class->set_method_annotations_of(i, scratch_class->get_method_annotations_of(j));
-  scratch_class->set_method_annotations_of(j, save);
+  Annotations* sca = scratch_class->annotations();
+  if (sca == NULL) return;
 
-  save = scratch_class->get_method_parameter_annotations_of(i);
-  scratch_class->set_method_parameter_annotations_of(i, scratch_class->get_method_parameter_annotations_of(j));
-  scratch_class->set_method_parameter_annotations_of(j, save);
+  save = sca->get_method_annotations_of(i);
+  sca->set_method_annotations_of(scratch_class, i, sca->get_method_annotations_of(j), CHECK);
+  sca->set_method_annotations_of(scratch_class, j, save, CHECK);
 
-  save = scratch_class->get_method_default_annotations_of(i);
-  scratch_class->set_method_default_annotations_of(i, scratch_class->get_method_default_annotations_of(j));
-  scratch_class->set_method_default_annotations_of(j, save);
+  save = sca->get_method_parameter_annotations_of(i);
+  sca->set_method_parameter_annotations_of(scratch_class, i, sca->get_method_parameter_annotations_of(j), CHECK);
+  sca->set_method_parameter_annotations_of(scratch_class, j, save, CHECK);
+
+  save = sca->get_method_default_annotations_of(i);
+  sca->set_method_default_annotations_of(scratch_class, i, sca->get_method_default_annotations_of(j), CHECK);
+  sca->set_method_default_annotations_of(scratch_class, j, save, CHECK);
 }
 
 
@@ -524,15 +585,15 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   // technically a bit more difficult, and, more importantly, I am not sure at present that the
   // order of interfaces does not matter on the implementation level, i.e. that the VM does not
   // rely on it somewhere.
-  objArrayOop k_interfaces = the_class->local_interfaces();
-  objArrayOop k_new_interfaces = scratch_class->local_interfaces();
+  Array<Klass*>* k_interfaces = the_class->local_interfaces();
+  Array<Klass*>* k_new_interfaces = scratch_class->local_interfaces();
   int n_intfs = k_interfaces->length();
   if (n_intfs != k_new_interfaces->length()) {
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_HIERARCHY_CHANGED;
   }
   for (i = 0; i < n_intfs; i++) {
-    if (Klass::cast((klassOop) k_interfaces->obj_at(i))->name() !=
-        Klass::cast((klassOop) k_new_interfaces->obj_at(i))->name()) {
+    if (Klass::cast(k_interfaces->at(i))->name() !=
+        Klass::cast(k_new_interfaces->at(i))->name()) {
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_HIERARCHY_CHANGED;
     }
   }
@@ -591,23 +652,24 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   // old methods in the same order as the old methods and places
   // new overloaded methods at the end of overloaded methods of
   // that name. The code for this order normalization is adapted
-  // from the algorithm used in instanceKlass::find_method().
+  // from the algorithm used in InstanceKlass::find_method().
   // Since we are swapping out of order entries as we find them,
   // we only have to search forward through the overloaded methods.
   // Methods which are added and have the same name as an existing
   // method (but different signature) will be put at the end of
   // the methods with that name, and the name mismatch code will
   // handle them.
-  objArrayHandle k_old_methods(the_class->methods());
-  objArrayHandle k_new_methods(scratch_class->methods());
+  Array<Method*>* k_old_methods(the_class->methods());
+  Array<Method*>* k_new_methods(scratch_class->methods());
   int n_old_methods = k_old_methods->length();
   int n_new_methods = k_new_methods->length();
+  Thread* thread = Thread::current();
 
   int ni = 0;
   int oi = 0;
   while (true) {
-    methodOop k_old_method;
-    methodOop k_new_method;
+    Method* k_old_method;
+    Method* k_new_method;
     enum { matched, added, deleted, undetermined } method_was = undetermined;
 
     if (oi >= n_old_methods) {
@@ -615,16 +677,16 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
         break; // we've looked at everything, done
       }
       // New method at the end
-      k_new_method = (methodOop) k_new_methods->obj_at(ni);
+      k_new_method = k_new_methods->at(ni);
       method_was = added;
     } else if (ni >= n_new_methods) {
       // Old method, at the end, is deleted
-      k_old_method = (methodOop) k_old_methods->obj_at(oi);
+      k_old_method = k_old_methods->at(oi);
       method_was = deleted;
     } else {
       // There are more methods in both the old and new lists
-      k_old_method = (methodOop) k_old_methods->obj_at(oi);
-      k_new_method = (methodOop) k_new_methods->obj_at(ni);
+      k_old_method = k_old_methods->at(oi);
+      k_new_method = k_new_methods->at(ni);
       if (k_old_method->name() != k_new_method->name()) {
         // Methods are sorted by method name, so a mismatch means added
         // or deleted
@@ -641,7 +703,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
         // search forward through the new overloaded methods.
         int nj;  // outside the loop for post-loop check
         for (nj = ni + 1; nj < n_new_methods; nj++) {
-          methodOop m = (methodOop)k_new_methods->obj_at(nj);
+          Method* m = k_new_methods->at(nj);
           if (k_old_method->name() != m->name()) {
             // reached another method name so no more overloaded methods
             method_was = deleted;
@@ -649,8 +711,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           }
           if (k_old_method->signature() == m->signature()) {
             // found a match so swap the methods
-            k_new_methods->obj_at_put(ni, m);
-            k_new_methods->obj_at_put(nj, k_new_method);
+            k_new_methods->at_put(ni, m);
+            k_new_methods->at_put(nj, k_new_method);
             k_new_method = m;
             method_was = matched;
             break;
@@ -676,13 +738,16 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
         u2 new_num = k_new_method->method_idnum();
         u2 old_num = k_old_method->method_idnum();
         if (new_num != old_num) {
-          methodOop idnum_owner = scratch_class->method_with_idnum(old_num);
+          Method* idnum_owner = scratch_class->method_with_idnum(old_num);
           if (idnum_owner != NULL) {
             // There is already a method assigned this idnum -- switch them
             idnum_owner->set_method_idnum(new_num);
           }
           k_new_method->set_method_idnum(old_num);
-          swap_all_method_annotations(old_num, new_num, scratch_class);
+          swap_all_method_annotations(old_num, new_num, scratch_class, thread);
+           if (thread->has_pending_exception()) {
+             return JVMTI_ERROR_OUT_OF_MEMORY;
+           }
         }
       }
       RC_TRACE(0x00008000, ("Method matched: new: %s [%d] == old: %s [%d]",
@@ -704,18 +769,21 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
       }
       {
         u2 num = the_class->next_method_idnum();
-        if (num == constMethodOopDesc::UNSET_IDNUM) {
+        if (num == ConstMethod::UNSET_IDNUM) {
           // cannot add any more methods
           return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_ADDED;
         }
         u2 new_num = k_new_method->method_idnum();
-        methodOop idnum_owner = scratch_class->method_with_idnum(num);
+        Method* idnum_owner = scratch_class->method_with_idnum(num);
         if (idnum_owner != NULL) {
           // There is already a method assigned this idnum -- switch them
           idnum_owner->set_method_idnum(new_num);
         }
         k_new_method->set_method_idnum(num);
-        swap_all_method_annotations(new_num, num, scratch_class);
+        swap_all_method_annotations(new_num, num, scratch_class, thread);
+        if (thread->has_pending_exception()) {
+          return JVMTI_ERROR_OUT_OF_MEMORY;
+        }
       }
       RC_TRACE(0x00008000, ("Method added: new: %s [%d]",
                             k_new_method->name_and_sig_as_C_string(), ni));
@@ -799,41 +867,17 @@ bool VM_RedefineClasses::is_unresolved_class_mismatch(constantPoolHandle cp1,
 } // end is_unresolved_class_mismatch()
 
 
-// Returns true if the current mismatch is due to a resolved/unresolved
-// string pair. Otherwise, returns false.
-bool VM_RedefineClasses::is_unresolved_string_mismatch(constantPoolHandle cp1,
-       int index1, constantPoolHandle cp2, int index2) {
-
-  jbyte t1 = cp1->tag_at(index1).value();
-  if (t1 != JVM_CONSTANT_String && t1 != JVM_CONSTANT_UnresolvedString) {
-    return false;  // wrong entry type; not our special case
-  }
-
-  jbyte t2 = cp2->tag_at(index2).value();
-  if (t2 != JVM_CONSTANT_String && t2 != JVM_CONSTANT_UnresolvedString) {
-    return false;  // wrong entry type; not our special case
-  }
-
-  if (t1 == t2) {
-    return false;  // not a mismatch; not our special case
-  }
-
-  char *s1 = cp1->string_at_noresolve(index1);
-  char *s2 = cp2->string_at_noresolve(index2);
-  if (strcmp(s1, s2) != 0) {
-    return false;  // strings don't match; not our special case
-  }
-
-  return true;  // made it through the gauntlet; this is our special case
-} // end is_unresolved_string_mismatch()
-
-
 jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
+
   // For consistency allocate memory using os::malloc wrapper.
-  _scratch_classes = (instanceKlassHandle *)
-    os::malloc(sizeof(instanceKlassHandle) * _class_count, mtInternal);
+  _scratch_classes = (Klass**)
+    os::malloc(sizeof(Klass*) * _class_count, mtClass);
   if (_scratch_classes == NULL) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+  // Zero initialize the _scratch_classes array.
+  for (int i = 0; i < _class_count; i++) {
+    _scratch_classes[i] = NULL;
   }
 
   ResourceMark rm(THREAD);
@@ -843,12 +887,17 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
   // should not happen since we're trying to do a RedefineClasses
   guarantee(state != NULL, "exiting thread calling load_new_class_versions");
   for (int i = 0; i < _class_count; i++) {
+    // Create HandleMark so that any handles created while loading new class
+    // versions are deleted. Constant pools are deallocated while merging
+    // constant pools
+    HandleMark hm(THREAD);
+
     oop mirror = JNIHandles::resolve_non_null(_class_defs[i].klass);
     // classes for primitives cannot be redefined
     if (!is_modifiable_class(mirror)) {
       return JVMTI_ERROR_UNMODIFIABLE_CLASS;
     }
-    klassOop the_class_oop = java_lang_Class::as_klassOop(mirror);
+    Klass* the_class_oop = java_lang_Class::as_Klass(mirror);
     instanceKlassHandle the_class = instanceKlassHandle(THREAD, the_class_oop);
     Symbol*  the_class_sym = the_class->name();
 
@@ -869,7 +918,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     // load hook event.
     state->set_class_being_redefined(&the_class, _class_load_kind);
 
-    klassOop k = SystemDictionary::parse_stream(the_class_sym,
+    Klass* k = SystemDictionary::parse_stream(the_class_sym,
                                                 the_class_loader,
                                                 protection_domain,
                                                 &st,
@@ -881,8 +930,13 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
 
     instanceKlassHandle scratch_class (THREAD, k);
 
+    // Need to clean up allocated InstanceKlass if there's an error so assign
+    // the result here. Caller deallocates all the scratch classes in case of
+    // an error.
+    _scratch_classes[i] = k;
+
     if (HAS_PENDING_EXCEPTION) {
-      Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
+      Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
       // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
       RC_TRACE_WITH_THREAD(0x00000002, THREAD, ("parse_stream exception: '%s'",
         ex_name->as_C_string()));
@@ -908,7 +962,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     if (!the_class->is_linked()) {
       the_class->link_class(THREAD);
       if (HAS_PENDING_EXCEPTION) {
-        Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
+        Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
         // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
         RC_TRACE_WITH_THREAD(0x00000002, THREAD, ("link_class exception: '%s'",
           ex_name->as_C_string()));
@@ -946,7 +1000,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     }
 
     if (HAS_PENDING_EXCEPTION) {
-      Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
+      Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
       // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
       RC_TRACE_WITH_THREAD(0x00000002, THREAD,
         ("verify_byte_codes exception: '%s'", ex_name->as_C_string()));
@@ -972,7 +1026,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       }
 
       if (HAS_PENDING_EXCEPTION) {
-        Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
+        Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
         // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
         RC_TRACE_WITH_THREAD(0x00000002, THREAD,
           ("verify_byte_codes post merge-CP exception: '%s'",
@@ -992,7 +1046,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       Rewriter::relocate_and_link(scratch_class, THREAD);
     }
     if (HAS_PENDING_EXCEPTION) {
-      Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
+      Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
       CLEAR_PENDING_EXCEPTION;
       if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
         return JVMTI_ERROR_OUT_OF_MEMORY;
@@ -1000,8 +1054,6 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
         return JVMTI_ERROR_INTERNAL;
       }
     }
-
-    _scratch_classes[i] = scratch_class;
 
     // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
     RC_TRACE_WITH_THREAD(0x00000001, THREAD,
@@ -1047,11 +1099,11 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
        int *merge_cp_length_p, TRAPS) {
 
   if (merge_cp_p == NULL) {
-    assert(false, "caller must provide scatch constantPool");
+    assert(false, "caller must provide scratch constantPool");
     return false; // robustness
   }
   if (merge_cp_length_p == NULL) {
-    assert(false, "caller must provide scatch CP length");
+    assert(false, "caller must provide scratch CP length");
     return false; // robustness
   }
   // Worst case we need old_cp->length() + scratch_cp()->length(),
@@ -1070,7 +1122,7 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
     // Pass 0:
     // The old_cp is copied to *merge_cp_p; this means that any code
     // using old_cp does not have to change. This work looks like a
-    // perfect fit for constantPoolOop::copy_cp_to(), but we need to
+    // perfect fit for ConstantPool*::copy_cp_to(), but we need to
     // handle one special case:
     // - revert JVM_CONSTANT_Class to JVM_CONSTANT_UnresolvedClass
     // This will make verification happy.
@@ -1095,13 +1147,13 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
       case JVM_CONSTANT_Long:
         // just copy the entry to *merge_cp_p, but double and long take
         // two constant pool entries
-        constantPoolOopDesc::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_0);
+        ConstantPool::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_0);
         old_i++;
         break;
 
       default:
         // just copy the entry to *merge_cp_p
-        constantPoolOopDesc::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_0);
+        ConstantPool::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i, CHECK_0);
         break;
       }
     } // end for each old_cp entry
@@ -1150,13 +1202,6 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
         // with the same string value. Since Pass 0 reverted any
         // class entries to unresolved class entries in *merge_cp_p,
         // we go with the unresolved class entry.
-        continue;
-      } else if (is_unresolved_string_mismatch(scratch_cp, scratch_i,
-                                               *merge_cp_p, scratch_i)) {
-        // The mismatch in compare_entry_to() above is because of a
-        // resolved versus unresolved string entry at the same index
-        // with the same string value. We can live with whichever
-        // happens to be at scratch_i in *merge_cp_p.
         continue;
       }
 
@@ -1233,6 +1278,23 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
 } // end merge_constant_pools()
 
 
+// Scoped object to clean up the constant pool(s) created for merging
+class MergeCPCleaner {
+  ClassLoaderData*   _loader_data;
+  ConstantPool*      _cp;
+  ConstantPool*      _scratch_cp;
+ public:
+  MergeCPCleaner(ClassLoaderData* loader_data, ConstantPool* merge_cp) :
+                 _loader_data(loader_data), _cp(merge_cp), _scratch_cp(NULL) {}
+  ~MergeCPCleaner() {
+    _loader_data->add_to_deallocate_list(_cp);
+    if (_scratch_cp != NULL) {
+      _loader_data->add_to_deallocate_list(_scratch_cp);
+    }
+  }
+  void add_scratch_cp(ConstantPool* scratch_cp) { _scratch_cp = scratch_cp; }
+};
+
 // Merge constant pools between the_class and scratch_class and
 // potentially rewrite bytecodes in scratch_class to use the merged
 // constant pool.
@@ -1243,19 +1305,35 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   int merge_cp_length = the_class->constants()->length()
         + scratch_class->constants()->length();
 
-  constantPoolHandle old_cp(THREAD, the_class->constants());
-  constantPoolHandle scratch_cp(THREAD, scratch_class->constants());
-
   // Constant pools are not easily reused so we allocate a new one
   // each time.
   // merge_cp is created unsafe for concurrent GC processing.  It
   // should be marked safe before discarding it. Even though
   // garbage,  if it crosses a card boundary, it may be scanned
   // in order to find the start of the first complete object on the card.
-  constantPoolHandle merge_cp(THREAD,
-    oopFactory::new_constantPool(merge_cp_length,
-                                 oopDesc::IsUnsafeConc,
-                                 THREAD));
+  ClassLoaderData* loader_data = the_class->class_loader_data();
+  ConstantPool* merge_cp_oop =
+    ConstantPool::allocate(loader_data,
+                                  merge_cp_length,
+                                  THREAD);
+  MergeCPCleaner cp_cleaner(loader_data, merge_cp_oop);
+
+  HandleMark hm(THREAD);  // make sure handles are cleared before
+                          // MergeCPCleaner clears out merge_cp_oop
+  constantPoolHandle merge_cp(THREAD, merge_cp_oop);
+
+  // Get constants() from the old class because it could have been rewritten
+  // while we were at a safepoint allocating a new constant pool.
+  constantPoolHandle old_cp(THREAD, the_class->constants());
+  constantPoolHandle scratch_cp(THREAD, scratch_class->constants());
+
+  // If the length changed, the class was redefined out from under us. Return
+  // an error.
+  if (merge_cp_length != the_class->constants()->length()
+         + scratch_class->constants()->length()) {
+    return JVMTI_ERROR_INTERNAL;
+  }
+
   int orig_length = old_cp->orig_length();
   if (orig_length == 0) {
     // This old_cp is an actual original constant pool. We save
@@ -1298,8 +1376,7 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
       // rewriting so we can't use the old constant pool with the new
       // class.
 
-      merge_cp()->set_is_conc_safe(true);
-      merge_cp = constantPoolHandle();  // toss the merged constant pool
+      // toss the merged constant pool at return
     } else if (old_cp->length() < scratch_cp->length()) {
       // The old constant pool has fewer entries than the new constant
       // pool and the index map is empty. This means the new constant
@@ -1308,8 +1385,7 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
       // rewriting so we can't use the new constant pool with the old
       // class.
 
-      merge_cp()->set_is_conc_safe(true);
-      merge_cp = constantPoolHandle();  // toss the merged constant pool
+      // toss the merged constant pool at return
     } else {
       // The old constant pool has more entries than the new constant
       // pool and the index map is empty. This means that both the old
@@ -1317,13 +1393,11 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
       // pool.
 
       // Replace the new constant pool with a shrunken copy of the
-      // merged constant pool; the previous new constant pool will
-      // get GCed.
-      set_new_constant_pool(scratch_class, merge_cp, merge_cp_length, true,
-        THREAD);
-      // drop local ref to the merged constant pool
-      merge_cp()->set_is_conc_safe(true);
-      merge_cp = constantPoolHandle();
+      // merged constant pool
+      set_new_constant_pool(loader_data, scratch_class, merge_cp, merge_cp_length, THREAD);
+      // The new constant pool replaces scratch_cp so have cleaner clean it up.
+      // It can't be cleaned up while there are handles to it.
+      cp_cleaner.add_scratch_cp(scratch_cp());
     }
   } else {
     if (RC_TRACE_ENABLED(0x00040000)) {
@@ -1350,12 +1424,11 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     // merged constant pool so now the rewritten bytecodes have
     // valid references; the previous new constant pool will get
     // GCed.
-    set_new_constant_pool(scratch_class, merge_cp, merge_cp_length, true,
-      THREAD);
-    merge_cp()->set_is_conc_safe(true);
+    set_new_constant_pool(loader_data, scratch_class, merge_cp, merge_cp_length, THREAD);
+    // The new constant pool replaces scratch_cp so have cleaner clean it up.
+    // It can't be cleaned up while there are handles to it.
+    cp_cleaner.add_scratch_cp(scratch_cp());
   }
-  assert(old_cp()->is_conc_safe(), "Just checking");
-  assert(scratch_cp()->is_conc_safe(), "Just checking");
 
   return JVMTI_ERROR_NONE;
 } // end merge_cp_and_rewrite()
@@ -1411,21 +1484,21 @@ bool VM_RedefineClasses::rewrite_cp_refs(instanceKlassHandle scratch_class,
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods(
        instanceKlassHandle scratch_class, TRAPS) {
 
-  objArrayHandle methods(THREAD, scratch_class->methods());
+  Array<Method*>* methods = scratch_class->methods();
 
-  if (methods.is_null() || methods->length() == 0) {
+  if (methods == NULL || methods->length() == 0) {
     // no methods so nothing to do
     return true;
   }
 
   // rewrite constant pool references in the methods:
   for (int i = methods->length() - 1; i >= 0; i--) {
-    methodHandle method(THREAD, (methodOop)methods->obj_at(i));
+    methodHandle method(THREAD, methods->at(i));
     methodHandle new_method;
     rewrite_cp_refs_in_method(method, &new_method, CHECK_false);
     if (!new_method.is_null()) {
       // the method has been replaced so save the new method version
-      methods->obj_at_put(i, new_method());
+      methods->at_put(i, new_method());
     }
   }
 
@@ -1441,7 +1514,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
   *new_method_p = methodHandle();  // default is no new method
 
   // We cache a pointer to the bytecodes here in code_base. If GC
-  // moves the methodOop, then the bytecodes will also move which
+  // moves the Method*, then the bytecodes will also move which
   // will likely cause a crash. We create a No_Safepoint_Verifier
   // object to detect whether we pass a possible safepoint in this
   // code block.
@@ -1570,9 +1643,8 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
 bool VM_RedefineClasses::rewrite_cp_refs_in_class_annotations(
        instanceKlassHandle scratch_class, TRAPS) {
 
-  typeArrayHandle class_annotations(THREAD,
-    scratch_class->class_annotations());
-  if (class_annotations.is_null() || class_annotations->length() == 0) {
+  AnnotationArray* class_annotations = scratch_class->class_annotations();
+  if (class_annotations == NULL || class_annotations->length() == 0) {
     // no class_annotations so nothing to do
     return true;
   }
@@ -1596,7 +1668,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_class_annotations(
 // }
 //
 bool VM_RedefineClasses::rewrite_cp_refs_in_annotations_typeArray(
-       typeArrayHandle annotations_typeArray, int &byte_i_ref, TRAPS) {
+       AnnotationArray* annotations_typeArray, int &byte_i_ref, TRAPS) {
 
   if ((byte_i_ref + 2) > annotations_typeArray->length()) {
     // not enough room for num_annotations field
@@ -1606,7 +1678,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotations_typeArray(
   }
 
   u2 num_annotations = Bytes::get_Java_u2((address)
-                         annotations_typeArray->byte_at_addr(byte_i_ref));
+                         annotations_typeArray->adr_at(byte_i_ref));
   byte_i_ref += 2;
 
   RC_TRACE_WITH_THREAD(0x02000000, THREAD,
@@ -1642,7 +1714,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotations_typeArray(
 // }
 //
 bool VM_RedefineClasses::rewrite_cp_refs_in_annotation_struct(
-       typeArrayHandle annotations_typeArray, int &byte_i_ref, TRAPS) {
+       AnnotationArray* annotations_typeArray, int &byte_i_ref, TRAPS) {
   if ((byte_i_ref + 2 + 2) > annotations_typeArray->length()) {
     // not enough room for smallest annotation_struct
     RC_TRACE_WITH_THREAD(0x02000000, THREAD,
@@ -1654,8 +1726,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotation_struct(
                     byte_i_ref, "mapped old type_index=%d", THREAD);
 
   u2 num_element_value_pairs = Bytes::get_Java_u2((address)
-                                 annotations_typeArray->byte_at_addr(
-                                 byte_i_ref));
+                                 annotations_typeArray->adr_at(byte_i_ref));
   byte_i_ref += 2;
 
   RC_TRACE_WITH_THREAD(0x02000000, THREAD,
@@ -1700,11 +1771,11 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotation_struct(
 // pool reference if a rewrite was not needed or the new constant
 // pool reference if a rewrite was needed.
 u2 VM_RedefineClasses::rewrite_cp_ref_in_annotation_data(
-     typeArrayHandle annotations_typeArray, int &byte_i_ref,
+     AnnotationArray* annotations_typeArray, int &byte_i_ref,
      const char * trace_mesg, TRAPS) {
 
   address cp_index_addr = (address)
-    annotations_typeArray->byte_at_addr(byte_i_ref);
+    annotations_typeArray->adr_at(byte_i_ref);
   u2 old_cp_index = Bytes::get_Java_u2(cp_index_addr);
   u2 new_cp_index = find_new_index(old_cp_index);
   if (new_cp_index != 0) {
@@ -1739,7 +1810,7 @@ u2 VM_RedefineClasses::rewrite_cp_ref_in_annotation_data(
 // }
 //
 bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
-       typeArrayHandle annotations_typeArray, int &byte_i_ref, TRAPS) {
+       AnnotationArray* annotations_typeArray, int &byte_i_ref, TRAPS) {
 
   if ((byte_i_ref + 1) > annotations_typeArray->length()) {
     // not enough room for a tag let alone the rest of an element_value
@@ -1748,7 +1819,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
     return false;
   }
 
-  u1 tag = annotations_typeArray->byte_at(byte_i_ref);
+  u1 tag = annotations_typeArray->at(byte_i_ref);
   byte_i_ref++;
   RC_TRACE_WITH_THREAD(0x02000000, THREAD, ("tag='%c'", tag));
 
@@ -1850,7 +1921,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
       // For the above tag value, value.array_value is the right union
       // field. This is an array of nested element_value.
       u2 num_values = Bytes::get_Java_u2((address)
-                        annotations_typeArray->byte_at_addr(byte_i_ref));
+                        annotations_typeArray->adr_at(byte_i_ref));
       byte_i_ref += 2;
       RC_TRACE_WITH_THREAD(0x02000000, THREAD, ("num_values=%d", num_values));
 
@@ -1880,10 +1951,12 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
 bool VM_RedefineClasses::rewrite_cp_refs_in_fields_annotations(
        instanceKlassHandle scratch_class, TRAPS) {
 
-  objArrayHandle fields_annotations(THREAD,
-    scratch_class->fields_annotations());
+  Annotations* sca = scratch_class->annotations();
+  if (sca == NULL) return true;
 
-  if (fields_annotations.is_null() || fields_annotations->length() == 0) {
+  Array<AnnotationArray*>* fields_annotations = sca->fields_annotations();
+
+  if (fields_annotations == NULL || fields_annotations->length() == 0) {
     // no fields_annotations so nothing to do
     return true;
   }
@@ -1892,9 +1965,8 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_fields_annotations(
     ("fields_annotations length=%d", fields_annotations->length()));
 
   for (int i = 0; i < fields_annotations->length(); i++) {
-    typeArrayHandle field_annotations(THREAD,
-      (typeArrayOop)fields_annotations->obj_at(i));
-    if (field_annotations.is_null() || field_annotations->length() == 0) {
+    AnnotationArray* field_annotations = fields_annotations->at(i);
+    if (field_annotations == NULL || field_annotations->length() == 0) {
       // this field does not have any annotations so skip it
       continue;
     }
@@ -1917,10 +1989,12 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_fields_annotations(
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods_annotations(
        instanceKlassHandle scratch_class, TRAPS) {
 
-  objArrayHandle methods_annotations(THREAD,
-    scratch_class->methods_annotations());
+  Annotations* sca = scratch_class->annotations();
+  if (sca == NULL) return true;
 
-  if (methods_annotations.is_null() || methods_annotations->length() == 0) {
+  Array<AnnotationArray*>* methods_annotations = sca->methods_annotations();
+
+  if (methods_annotations == NULL || methods_annotations->length() == 0) {
     // no methods_annotations so nothing to do
     return true;
   }
@@ -1929,9 +2003,8 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_annotations(
     ("methods_annotations length=%d", methods_annotations->length()));
 
   for (int i = 0; i < methods_annotations->length(); i++) {
-    typeArrayHandle method_annotations(THREAD,
-      (typeArrayOop)methods_annotations->obj_at(i));
-    if (method_annotations.is_null() || method_annotations->length() == 0) {
+    AnnotationArray* method_annotations = methods_annotations->at(i);
+    if (method_annotations == NULL || method_annotations->length() == 0) {
       // this method does not have any annotations so skip it
       continue;
     }
@@ -1966,10 +2039,13 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_annotations(
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods_parameter_annotations(
        instanceKlassHandle scratch_class, TRAPS) {
 
-  objArrayHandle methods_parameter_annotations(THREAD,
-    scratch_class->methods_parameter_annotations());
+  Annotations* sca = scratch_class->annotations();
+  if (sca == NULL) return true;
 
-  if (methods_parameter_annotations.is_null()
+  Array<AnnotationArray*>* methods_parameter_annotations =
+    sca->methods_parameter_annotations();
+
+  if (methods_parameter_annotations == NULL
       || methods_parameter_annotations->length() == 0) {
     // no methods_parameter_annotations so nothing to do
     return true;
@@ -1980,9 +2056,8 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_parameter_annotations(
     methods_parameter_annotations->length()));
 
   for (int i = 0; i < methods_parameter_annotations->length(); i++) {
-    typeArrayHandle method_parameter_annotations(THREAD,
-      (typeArrayOop)methods_parameter_annotations->obj_at(i));
-    if (method_parameter_annotations.is_null()
+    AnnotationArray* method_parameter_annotations = methods_parameter_annotations->at(i);
+    if (method_parameter_annotations == NULL
         || method_parameter_annotations->length() == 0) {
       // this method does not have any parameter annotations so skip it
       continue;
@@ -1997,7 +2072,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_parameter_annotations(
 
     int byte_i = 0;  // byte index into method_parameter_annotations
 
-    u1 num_parameters = method_parameter_annotations->byte_at(byte_i);
+    u1 num_parameters = method_parameter_annotations->at(byte_i);
     byte_i++;
 
     RC_TRACE_WITH_THREAD(0x02000000, THREAD,
@@ -2031,10 +2106,13 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_parameter_annotations(
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods_default_annotations(
        instanceKlassHandle scratch_class, TRAPS) {
 
-  objArrayHandle methods_default_annotations(THREAD,
-    scratch_class->methods_default_annotations());
+  Annotations* sca = scratch_class->annotations();
+  if (sca == NULL) return true;
 
-  if (methods_default_annotations.is_null()
+  Array<AnnotationArray*>* methods_default_annotations =
+    sca->methods_default_annotations();
+
+  if (methods_default_annotations == NULL
       || methods_default_annotations->length() == 0) {
     // no methods_default_annotations so nothing to do
     return true;
@@ -2045,9 +2123,8 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_default_annotations(
     methods_default_annotations->length()));
 
   for (int i = 0; i < methods_default_annotations->length(); i++) {
-    typeArrayHandle method_default_annotations(THREAD,
-      (typeArrayOop)methods_default_annotations->obj_at(i));
-    if (method_default_annotations.is_null()
+    AnnotationArray* method_default_annotations = methods_default_annotations->at(i);
+    if (method_default_annotations == NULL
         || method_default_annotations->length() == 0) {
       // this method does not have any default annotations so skip it
       continue;
@@ -2086,8 +2163,8 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     return;
   }
 
-  typeArrayOop stackmap_data = method->stackmap_data();
-  address stackmap_p = (address)stackmap_data->byte_at_addr(0);
+  AnnotationArray* stackmap_data = method->stackmap_data();
+  address stackmap_p = (address)stackmap_data->adr_at(0);
   address stackmap_end = stackmap_p + stackmap_data->length();
 
   assert(stackmap_p + 2 <= stackmap_end, "no room for number_of_entries");
@@ -2335,17 +2412,16 @@ void VM_RedefineClasses::rewrite_cp_refs_in_verification_type_info(
 // are copied from scratch_cp to a smaller constant pool and the
 // smaller constant pool is associated with scratch_class.
 void VM_RedefineClasses::set_new_constant_pool(
+       ClassLoaderData* loader_data,
        instanceKlassHandle scratch_class, constantPoolHandle scratch_cp,
-       int scratch_cp_length, bool shrink, TRAPS) {
-  assert(!shrink || scratch_cp->length() >= scratch_cp_length, "sanity check");
+       int scratch_cp_length, TRAPS) {
+  assert(scratch_cp->length() >= scratch_cp_length, "sanity check");
 
-  if (shrink) {
     // scratch_cp is a merged constant pool and has enough space for a
     // worst case merge situation. We want to associate the minimum
     // sized constant pool with the klass to save space.
     constantPoolHandle smaller_cp(THREAD,
-      oopFactory::new_constantPool(scratch_cp_length,
-                                   oopDesc::IsUnsafeConc,
+    ConstantPool::allocate(loader_data, scratch_cp_length,
                                    THREAD));
     // preserve orig_length() value in the smaller copy
     int orig_length = scratch_cp->orig_length();
@@ -2353,8 +2429,6 @@ void VM_RedefineClasses::set_new_constant_pool(
     smaller_cp->set_orig_length(orig_length);
     scratch_cp->copy_cp_to(1, scratch_cp_length - 1, smaller_cp, 1, THREAD);
     scratch_cp = smaller_cp;
-    smaller_cp()->set_is_conc_safe(true);
-  }
 
   // attach new constant pool to klass
   scratch_cp->set_pool_holder(scratch_class());
@@ -2430,9 +2504,9 @@ void VM_RedefineClasses::set_new_constant_pool(
 
   // Attach each method in klass to the new constant pool and update
   // to use new constant pool indices as needed:
-  objArrayHandle methods(THREAD, scratch_class->methods());
+  Array<Method*>* methods = scratch_class->methods();
   for (i = methods->length() - 1; i >= 0; i--) {
-    methodHandle method(THREAD, (methodOop)methods->obj_at(i));
+    methodHandle method(THREAD, methods->at(i));
     method->set_constants(scratch_cp());
 
     int new_index = find_new_index(method->name_index());
@@ -2528,9 +2602,17 @@ void VM_RedefineClasses::set_new_constant_pool(
 
     rewrite_cp_refs_in_stack_map_table(method, THREAD);
   } // end for each method
-  assert(scratch_cp()->is_conc_safe(), "Just checking");
 } // end set_new_constant_pool()
 
+
+void VM_RedefineClasses::adjust_array_vtable(Klass* k_oop) {
+  ArrayKlass* ak = ArrayKlass::cast(k_oop);
+  bool trace_name_printed = false;
+  ak->vtable()->adjust_method_entries(_matching_old_methods,
+                                      _matching_new_methods,
+                                      _matching_methods_length,
+                                      &trace_name_printed);
+}
 
 // Unevolving classes may point to methods of the_class directly
 // from their constant pool caches, itables, and/or vtables. We
@@ -2539,12 +2621,13 @@ void VM_RedefineClasses::set_new_constant_pool(
 //
 // Note: We currently don't support updating the vtable in
 // arrayKlassOops. See Open Issues in jvmtiRedefineClasses.hpp.
-void VM_RedefineClasses::adjust_cpool_cache_and_vtable(klassOop k_oop,
-       oop initiating_loader, TRAPS) {
-  Klass *k = k_oop->klass_part();
+void VM_RedefineClasses::adjust_cpool_cache_and_vtable(Klass* k_oop,
+       ClassLoaderData* initiating_loader,
+       TRAPS) {
+  Klass *k = k_oop;
   if (k->oop_is_instance()) {
     HandleMark hm(THREAD);
-    instanceKlass *ik = (instanceKlass *) k;
+    InstanceKlass *ik = (InstanceKlass *) k;
 
     // HotSpot specific optimization! HotSpot does not currently
     // support delegation from the bootstrap class loader to a
@@ -2559,9 +2642,15 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(klassOop k_oop,
     // loader as its defining class loader, then we can skip all
     // classes loaded by the bootstrap class loader.
     bool is_user_defined =
-           instanceKlass::cast(_the_class_oop)->class_loader() != NULL;
+           InstanceKlass::cast(_the_class_oop)->class_loader() != NULL;
     if (is_user_defined && ik->class_loader() == NULL) {
       return;
+    }
+
+    // If the class being redefined is java.lang.Object, we need to fix all
+    // array class vtables also
+    if (_the_class_oop == SystemDictionary::Object_klass()) {
+      ik->array_klasses_do(adjust_array_vtable);
     }
 
     // This is a very busy routine. We don't want too much tracing
@@ -2577,9 +2666,9 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(klassOop k_oop,
 
     // Fix the vtable embedded in the_class and subclasses of the_class,
     // if one exists. We discard scratch_class and we don't keep an
-    // instanceKlass around to hold obsolete methods so we don't have
-    // any other instanceKlass embedded vtables to update. The vtable
-    // holds the methodOops for virtual (but not final) methods.
+    // InstanceKlass around to hold obsolete methods so we don't have
+    // any other InstanceKlass embedded vtables to update. The vtable
+    // holds the Method*s for virtual (but not final) methods.
     if (ik->vtable_length() > 0 && ik->is_subtype_of(_the_class_oop)) {
       // ik->vtable() creates a wrapper object; rm cleans it up
       ResourceMark rm(THREAD);
@@ -2593,8 +2682,8 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(klassOop k_oop,
     // interface or if the current class is a subclass of the_class, then
     // we potentially have to fix the itable. If we are redefining an
     // interface, then we have to call adjust_method_entries() for
-    // every instanceKlass that has an itable since there isn't a
-    // subclass relationship between an interface and an instanceKlass.
+    // every InstanceKlass that has an itable since there isn't a
+    // subclass relationship between an interface and an InstanceKlass.
     if (ik->itable_length() > 0 && (Klass::cast(_the_class_oop)->is_interface()
         || ik->is_subclass_of(_the_class_oop))) {
       // ik->itable() creates a wrapper object; rm cleans it up
@@ -2609,7 +2698,7 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(klassOop k_oop,
     // methods in the_class. We have to update method information in
     // other_cp's cache. If other_cp has a previous version, then we
     // have to repeat the process for each previous version. The
-    // constant pool cache holds the methodOops for non-virtual
+    // constant pool cache holds the Method*s for non-virtual
     // methods and for virtual, final methods.
     //
     // Special case: if the current class is the_class, then new_cp
@@ -2619,7 +2708,7 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(klassOop k_oop,
     // updated. We can simply start with the previous version(s) in
     // that case.
     constantPoolHandle other_cp;
-    constantPoolCacheOop cp_cache;
+    ConstantPoolCache* cp_cache;
 
     if (k_oop != _the_class_oop) {
       // this klass' constant pool cache may need adjustment
@@ -2659,13 +2748,13 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(klassOop k_oop,
 
 void VM_RedefineClasses::update_jmethod_ids() {
   for (int j = 0; j < _matching_methods_length; ++j) {
-    methodOop old_method = _matching_old_methods[j];
+    Method* old_method = _matching_old_methods[j];
     jmethodID jmid = old_method->find_jmethod_id_or_null();
     if (jmid != NULL) {
       // There is a jmethodID, change it to point to the new method
       methodHandle new_method_h(_matching_new_methods[j]);
-      JNIHandles::change_method_associated_with_jmethod_id(jmid, new_method_h);
-      assert(JNIHandles::resolve_jmethod_id(jmid) == _matching_new_methods[j],
+      Method::change_method_associated_with_jmethod_id(jmid, new_method_h());
+      assert(Method::resolve_jmethod_id(jmid) == _matching_new_methods[j],
              "should be replaced");
     }
   }
@@ -2677,14 +2766,13 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
   int obsolete_count = 0;
   int old_index = 0;
   for (int j = 0; j < _matching_methods_length; ++j, ++old_index) {
-    methodOop old_method = _matching_old_methods[j];
-    methodOop new_method = _matching_new_methods[j];
-    methodOop old_array_method;
+    Method* old_method = _matching_old_methods[j];
+    Method* new_method = _matching_new_methods[j];
+    Method* old_array_method;
 
     // Maintain an old_index into the _old_methods array by skipping
     // deleted methods
-    while ((old_array_method = (methodOop) _old_methods->obj_at(old_index))
-                                                            != old_method) {
+    while ((old_array_method = _old_methods->at(old_index)) != old_method) {
       ++old_index;
     }
 
@@ -2718,29 +2806,29 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
       // methods by new methods will save us space except for those
       // (hopefully few) old methods that are still executing.
       //
-      // A method refers to a constMethodOop and this presents another
-      // possible avenue to space savings. The constMethodOop in the
+      // A method refers to a ConstMethod* and this presents another
+      // possible avenue to space savings. The ConstMethod* in the
       // new method contains possibly new attributes (LNT, LVT, etc).
       // At first glance, it seems possible to save space by replacing
-      // the constMethodOop in the old method with the constMethodOop
+      // the ConstMethod* in the old method with the ConstMethod*
       // from the new method. The old and new methods would share the
-      // same constMethodOop and we would save the space occupied by
-      // the old constMethodOop. However, the constMethodOop contains
+      // same ConstMethod* and we would save the space occupied by
+      // the old ConstMethod*. However, the ConstMethod* contains
       // a back reference to the containing method. Sharing the
-      // constMethodOop between two methods could lead to confusion in
+      // ConstMethod* between two methods could lead to confusion in
       // the code that uses the back reference. This would lead to
       // brittle code that could be broken in non-obvious ways now or
       // in the future.
       //
-      // Another possibility is to copy the constMethodOop from the new
+      // Another possibility is to copy the ConstMethod* from the new
       // method to the old method and then overwrite the new method with
-      // the old method. Since the constMethodOop contains the bytecodes
+      // the old method. Since the ConstMethod* contains the bytecodes
       // for the method embedded in the oop, this option would change
       // the bytecodes out from under any threads executing the old
       // method and make the thread's bcp invalid. Since EMCP requires
       // that the bytecodes be the same modulo constant pool indices, it
       // is straight forward to compute the correct new bcp in the new
-      // constMethodOop from the old bcp in the old constMethodOop. The
+      // ConstMethod* from the old bcp in the old ConstMethod*. The
       // time consuming part would be searching all the frames in all
       // of the threads to find all of the calls to the old method.
       //
@@ -2766,8 +2854,8 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
       obsolete_count++;
 
       // obsolete methods need a unique idnum
-      u2 num = instanceKlass::cast(_the_class_oop)->next_method_idnum();
-      if (num != constMethodOopDesc::UNSET_IDNUM) {
+      u2 num = InstanceKlass::cast(_the_class_oop)->next_method_idnum();
+      if (num != ConstMethod::UNSET_IDNUM) {
 //      u2 old_num = old_method->method_idnum();
         old_method->set_method_idnum(num);
 // TO DO: attach obsolete annotations to obsolete method's new idnum
@@ -2782,7 +2870,7 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
     old_method->set_is_old();
   }
   for (int i = 0; i < _deleted_methods_length; ++i) {
-    methodOop old_method = _deleted_methods[i];
+    Method* old_method = _deleted_methods[i];
 
     assert(old_method->vtable_index() < 0,
            "cannot delete methods with vtable entries");;
@@ -2837,11 +2925,11 @@ class TransferNativeFunctionRegistration {
   //    (1) without the prefix.
   //    (2) with the prefix.
   // where 'prefix' is the prefix at that 'depth' (first prefix, second prefix,...)
-  methodOop search_prefix_name_space(int depth, char* name_str, size_t name_len,
+  Method* search_prefix_name_space(int depth, char* name_str, size_t name_len,
                                      Symbol* signature) {
     TempNewSymbol name_symbol = SymbolTable::probe(name_str, (int)name_len);
     if (name_symbol != NULL) {
-      methodOop method = Klass::cast(the_class())->lookup_method(name_symbol, signature);
+      Method* method = Klass::cast(the_class())->lookup_method(name_symbol, signature);
       if (method != NULL) {
         // Even if prefixed, intermediate methods must exist.
         if (method->is_native()) {
@@ -2877,7 +2965,7 @@ class TransferNativeFunctionRegistration {
   }
 
   // Return the method name with old prefixes stripped away.
-  char* method_name_without_prefixes(methodOop method) {
+  char* method_name_without_prefixes(Method* method) {
     Symbol* name = method->name();
     char* name_str = name->as_utf8();
 
@@ -2894,7 +2982,7 @@ class TransferNativeFunctionRegistration {
 
   // Strip any prefixes off the old native method, then try to find a
   // (possibly prefixed) new native that matches it.
-  methodOop strip_and_search_for_new_native(methodOop method) {
+  Method* strip_and_search_for_new_native(Method* method) {
     ResourceMark rm;
     char* name_str = method_name_without_prefixes(method);
     return search_prefix_name_space(0, name_str, strlen(name_str),
@@ -2912,18 +3000,18 @@ class TransferNativeFunctionRegistration {
   }
 
   // Attempt to transfer any of the old or deleted methods that are native
-  void transfer_registrations(methodOop* old_methods, int methods_length) {
+  void transfer_registrations(Method** old_methods, int methods_length) {
     for (int j = 0; j < methods_length; j++) {
-      methodOop old_method = old_methods[j];
+      Method* old_method = old_methods[j];
 
       if (old_method->is_native() && old_method->has_native_function()) {
-        methodOop new_method = strip_and_search_for_new_native(old_method);
+        Method* new_method = strip_and_search_for_new_native(old_method);
         if (new_method != NULL) {
           // Actually set the native function in the new method.
           // Redefine does not send events (except CFLH), certainly not this
           // behind the scenes re-registration.
           new_method->set_native_function(old_method->native_function(),
-                              !methodOopDesc::native_bind_event_is_interesting);
+                              !Method::native_bind_event_is_interesting);
         }
       }
     }
@@ -2977,13 +3065,13 @@ void VM_RedefineClasses::flush_dependent_code(instanceKlassHandle k_h, TRAPS) {
 }
 
 void VM_RedefineClasses::compute_added_deleted_matching_methods() {
-  methodOop old_method;
-  methodOop new_method;
+  Method* old_method;
+  Method* new_method;
 
-  _matching_old_methods = NEW_RESOURCE_ARRAY(methodOop, _old_methods->length());
-  _matching_new_methods = NEW_RESOURCE_ARRAY(methodOop, _old_methods->length());
-  _added_methods        = NEW_RESOURCE_ARRAY(methodOop, _new_methods->length());
-  _deleted_methods      = NEW_RESOURCE_ARRAY(methodOop, _old_methods->length());
+  _matching_old_methods = NEW_RESOURCE_ARRAY(Method*, _old_methods->length());
+  _matching_new_methods = NEW_RESOURCE_ARRAY(Method*, _old_methods->length());
+  _added_methods        = NEW_RESOURCE_ARRAY(Method*, _new_methods->length());
+  _deleted_methods      = NEW_RESOURCE_ARRAY(Method*, _old_methods->length());
 
   _matching_methods_length = 0;
   _deleted_methods_length  = 0;
@@ -2997,17 +3085,17 @@ void VM_RedefineClasses::compute_added_deleted_matching_methods() {
         break; // we've looked at everything, done
       }
       // New method at the end
-      new_method = (methodOop) _new_methods->obj_at(nj);
+      new_method = _new_methods->at(nj);
       _added_methods[_added_methods_length++] = new_method;
       ++nj;
     } else if (nj >= _new_methods->length()) {
       // Old method, at the end, is deleted
-      old_method = (methodOop) _old_methods->obj_at(oj);
+      old_method = _old_methods->at(oj);
       _deleted_methods[_deleted_methods_length++] = old_method;
       ++oj;
     } else {
-      old_method = (methodOop) _old_methods->obj_at(oj);
-      new_method = (methodOop) _new_methods->obj_at(nj);
+      old_method = _old_methods->at(oj);
+      new_method = _new_methods->at(nj);
       if (old_method->name() == new_method->name()) {
         if (old_method->signature() == new_method->signature()) {
           _matching_old_methods[_matching_methods_length  ] = old_method;
@@ -3052,12 +3140,15 @@ void VM_RedefineClasses::compute_added_deleted_matching_methods() {
 //      that we would like to pass to the helper method are saved in
 //      static global fields in the VM operation.
 void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
-       instanceKlassHandle scratch_class, TRAPS) {
+       Klass* scratch_class_oop, TRAPS) {
 
+  HandleMark hm(THREAD);   // make sure handles from this call are freed
   RC_TIMER_START(_timer_rsc_phase1);
 
+  instanceKlassHandle scratch_class(scratch_class_oop);
+
   oop the_class_mirror = JNIHandles::resolve_non_null(the_jclass);
-  klassOop the_class_oop = java_lang_Class::as_klassOop(the_class_mirror);
+  Klass* the_class_oop = java_lang_Class::as_Klass(the_class_mirror);
   instanceKlassHandle the_class = instanceKlassHandle(THREAD, the_class_oop);
 
 #ifndef JVMTI_KERNEL
@@ -3105,13 +3196,13 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // done here since we are past the bytecode verification and
   // constant pool optimization phases.
   for (int i = _old_methods->length() - 1; i >= 0; i--) {
-    methodOop method = (methodOop)_old_methods->obj_at(i);
+    Method* method = _old_methods->at(i);
     method->set_constants(scratch_class->constants());
   }
 
   {
     // walk all previous versions of the klass
-    instanceKlass *ik = (instanceKlass *)the_class()->klass_part();
+    InstanceKlass *ik = (InstanceKlass *)the_class();
     PreviousVersionWalker pvw(ik);
     instanceKlassHandle ikh;
     do {
@@ -3124,9 +3215,9 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 
         // Attach each method in the previous version of klass to the
         // new constant pool
-        objArrayOop prev_methods = ik->methods();
+        Array<Method*>* prev_methods = ik->methods();
         for (int i = prev_methods->length() - 1; i >= 0; i--) {
-          methodOop method = (methodOop)prev_methods->obj_at(i);
+          Method* method = prev_methods->at(i);
           method->set_constants(scratch_class->constants());
         }
       }
@@ -3139,7 +3230,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   scratch_class->set_methods(_old_methods);     // To prevent potential GCing of the old methods,
                                           // and to be able to undo operation easily.
 
-  constantPoolOop old_constants = the_class->constants();
+  ConstantPool* old_constants = the_class->constants();
   the_class->set_constants(scratch_class->constants());
   scratch_class->set_constants(old_constants);  // See the previous comment.
 #if 0
@@ -3166,7 +3257,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // Miranda methods are a little more complicated. A miranda method is
   // provided by an interface when the class implementing the interface
   // does not provide its own method.  These interfaces are implemented
-  // internally as an instanceKlass. These special instanceKlasses
+  // internally as an InstanceKlass. These special instanceKlasses
   // share the constant pool of the class that "implements" the
   // interface. By sharing the constant pool, the method holder of a
   // miranda method is the class that "implements" the interface. In a
@@ -3205,7 +3296,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 #endif
 
   // Replace inner_classes
-  typeArrayOop old_inner_classes = the_class->inner_classes();
+  Array<u2>* old_inner_classes = the_class->inner_classes();
   the_class->set_inner_classes(scratch_class->inner_classes());
   scratch_class->set_inner_classes(old_inner_classes);
 
@@ -3247,34 +3338,10 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     the_class->set_access_flags(flags);
   }
 
-  // Replace class annotation fields values
-  typeArrayOop old_class_annotations = the_class->class_annotations();
-  the_class->set_class_annotations(scratch_class->class_annotations());
-  scratch_class->set_class_annotations(old_class_annotations);
-
-  // Replace fields annotation fields values
-  objArrayOop old_fields_annotations = the_class->fields_annotations();
-  the_class->set_fields_annotations(scratch_class->fields_annotations());
-  scratch_class->set_fields_annotations(old_fields_annotations);
-
-  // Replace methods annotation fields values
-  objArrayOop old_methods_annotations = the_class->methods_annotations();
-  the_class->set_methods_annotations(scratch_class->methods_annotations());
-  scratch_class->set_methods_annotations(old_methods_annotations);
-
-  // Replace methods parameter annotation fields values
-  objArrayOop old_methods_parameter_annotations =
-    the_class->methods_parameter_annotations();
-  the_class->set_methods_parameter_annotations(
-    scratch_class->methods_parameter_annotations());
-  scratch_class->set_methods_parameter_annotations(old_methods_parameter_annotations);
-
-  // Replace methods default annotation fields values
-  objArrayOop old_methods_default_annotations =
-    the_class->methods_default_annotations();
-  the_class->set_methods_default_annotations(
-    scratch_class->methods_default_annotations());
-  scratch_class->set_methods_default_annotations(old_methods_default_annotations);
+  // Replace annotation fields value
+  Annotations* old_annotations = the_class->annotations();
+  the_class->set_annotations(scratch_class->annotations());
+  scratch_class->set_annotations(old_annotations);
 
   // Replace minor version number of class file
   u2 old_minor_version = the_class->minor_version();
@@ -3305,6 +3372,9 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // that reference methods of the evolved class.
   SystemDictionary::classes_do(adjust_cpool_cache_and_vtable, THREAD);
 
+  // Fix Resolution Error table also to remove old constant pools
+  SystemDictionary::delete_resolution_error(old_constants);
+
   if (the_class->oop_map_cache() != NULL) {
     // Flush references to any obsolete methods from the oop map cache
     // so that obsolete methods are not pinned.
@@ -3313,7 +3383,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 
   // increment the classRedefinedCount field in the_class and in any
   // direct and indirect subclasses of the_class
-  increment_class_counter((instanceKlass *)the_class()->klass_part(), THREAD);
+  increment_class_counter((InstanceKlass *)the_class(), THREAD);
 
   // RC_TRACE macro has an embedded ResourceMark
   RC_TRACE_WITH_THREAD(0x00000001, THREAD,
@@ -3326,11 +3396,11 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 } // end redefine_single_class()
 
 
-// Increment the classRedefinedCount field in the specific instanceKlass
+// Increment the classRedefinedCount field in the specific InstanceKlass
 // and in all direct and indirect subclasses.
-void VM_RedefineClasses::increment_class_counter(instanceKlass *ik, TRAPS) {
+void VM_RedefineClasses::increment_class_counter(InstanceKlass *ik, TRAPS) {
   oop class_mirror = ik->java_mirror();
-  klassOop class_oop = java_lang_Class::as_klassOop(class_mirror);
+  Klass* class_oop = java_lang_Class::as_Klass(class_mirror);
   int new_count = java_lang_Class::classRedefinedCount(class_mirror) + 1;
   java_lang_Class::set_classRedefinedCount(class_mirror, new_count);
 
@@ -3344,7 +3414,7 @@ void VM_RedefineClasses::increment_class_counter(instanceKlass *ik, TRAPS) {
        subk = subk->next_sibling()) {
     if (subk->oop_is_instance()) {
       // Only update instanceKlasses
-      instanceKlass *subik = (instanceKlass*)subk;
+      InstanceKlass *subik = (InstanceKlass*)subk;
       // recursively do subclasses of the current subclass
       increment_class_counter(subik, THREAD);
     }
@@ -3352,21 +3422,35 @@ void VM_RedefineClasses::increment_class_counter(instanceKlass *ik, TRAPS) {
 }
 
 #ifndef PRODUCT
-void VM_RedefineClasses::check_class(klassOop k_oop,
-       oop initiating_loader, TRAPS) {
-  Klass *k = k_oop->klass_part();
+void VM_RedefineClasses::check_class(Klass* k_oop,
+                                     ClassLoaderData* initiating_loader,
+                                     TRAPS) {
+  Klass *k = k_oop;
   if (k->oop_is_instance()) {
     HandleMark hm(THREAD);
-    instanceKlass *ik = (instanceKlass *) k;
+    InstanceKlass *ik = (InstanceKlass *) k;
 
     if (ik->vtable_length() > 0) {
       ResourceMark rm(THREAD);
       if (!ik->vtable()->check_no_old_entries()) {
         tty->print_cr("klassVtable::check_no_old_entries failure -- OLD method found -- class: %s", ik->signature_name());
         ik->vtable()->dump_vtable();
-        dump_methods();
         assert(false, "OLD method found");
       }
+    }
+    if (ik->itable_length() > 0) {
+      ResourceMark rm(THREAD);
+      if (!ik->itable()->check_no_old_entries()) {
+        tty->print_cr("klassItable::check_no_old_entries failure -- OLD method found -- class: %s", ik->signature_name());
+        assert(false, "OLD method found");
+      }
+    }
+    // Check that the constant pool cache has no deleted entries.
+    if (ik->constants() != NULL &&
+        ik->constants()->cache() != NULL &&
+       !ik->constants()->cache()->check_no_old_entries()) {
+      tty->print_cr("klassVtable::check_no_old_entries failure -- OLD method found -- class: %s", ik->signature_name());
+      assert(false, "OLD method found");
     }
   }
 }
@@ -3375,7 +3459,7 @@ void VM_RedefineClasses::dump_methods() {
         int j;
         tty->print_cr("_old_methods --");
         for (j = 0; j < _old_methods->length(); ++j) {
-          methodOop m = (methodOop) _old_methods->obj_at(j);
+          Method* m = _old_methods->at(j);
           tty->print("%4d  (%5d)  ", j, m->vtable_index());
           m->access_flags().print_on(tty);
           tty->print(" --  ");
@@ -3384,7 +3468,7 @@ void VM_RedefineClasses::dump_methods() {
         }
         tty->print_cr("_new_methods --");
         for (j = 0; j < _new_methods->length(); ++j) {
-          methodOop m = (methodOop) _new_methods->obj_at(j);
+          Method* m = _new_methods->at(j);
           tty->print("%4d  (%5d)  ", j, m->vtable_index());
           m->access_flags().print_on(tty);
           tty->print(" --  ");
@@ -3393,7 +3477,7 @@ void VM_RedefineClasses::dump_methods() {
         }
         tty->print_cr("_matching_(old/new)_methods --");
         for (j = 0; j < _matching_methods_length; ++j) {
-          methodOop m = _matching_old_methods[j];
+          Method* m = _matching_old_methods[j];
           tty->print("%4d  (%5d)  ", j, m->vtable_index());
           m->access_flags().print_on(tty);
           tty->print(" --  ");
@@ -3406,7 +3490,7 @@ void VM_RedefineClasses::dump_methods() {
         }
         tty->print_cr("_deleted_methods --");
         for (j = 0; j < _deleted_methods_length; ++j) {
-          methodOop m = _deleted_methods[j];
+          Method* m = _deleted_methods[j];
           tty->print("%4d  (%5d)  ", j, m->vtable_index());
           m->access_flags().print_on(tty);
           tty->print(" --  ");
@@ -3415,7 +3499,7 @@ void VM_RedefineClasses::dump_methods() {
         }
         tty->print_cr("_added_methods --");
         for (j = 0; j < _added_methods_length; ++j) {
-          methodOop m = _added_methods[j];
+          Method* m = _added_methods[j];
           tty->print("%4d  (%5d)  ", j, m->vtable_index());
           m->access_flags().print_on(tty);
           tty->print(" --  ");

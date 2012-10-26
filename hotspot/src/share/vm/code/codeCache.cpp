@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 #include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
+#include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
+#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "gc_implementation/shared/markSweep.hpp"
@@ -33,7 +35,7 @@
 #include "memory/gcLocker.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -54,6 +56,7 @@ class CodeBlob_sizes {
   int stub_size;
   int relocation_size;
   int scopes_oop_size;
+  int scopes_metadata_size;
   int scopes_data_size;
   int scopes_pcs_size;
 
@@ -66,6 +69,7 @@ class CodeBlob_sizes {
     stub_size        = 0;
     relocation_size  = 0;
     scopes_oop_size  = 0;
+    scopes_metadata_size  = 0;
     scopes_data_size = 0;
     scopes_pcs_size  = 0;
   }
@@ -83,6 +87,7 @@ class CodeBlob_sizes {
                   code_size               * 100 / total_size,
                   stub_size               * 100 / total_size,
                   scopes_oop_size         * 100 / total_size,
+                  scopes_metadata_size    * 100 / total_size,
                   scopes_data_size        * 100 / total_size,
                   scopes_pcs_size         * 100 / total_size);
   }
@@ -98,6 +103,7 @@ class CodeBlob_sizes {
       stub_size        += nm->stub_size();
 
       scopes_oop_size  += nm->oops_size();
+      scopes_metadata_size  += nm->metadata_size();
       scopes_data_size += nm->scopes_data_size();
       scopes_pcs_size  += nm->scopes_pcs_size();
     } else {
@@ -284,6 +290,12 @@ void CodeCache::nmethods_do(void f(nmethod* nm)) {
   }
 }
 
+void CodeCache::alive_nmethods_do(void f(nmethod* nm)) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  FOR_ALL_ALIVE_NMETHODS(nm) {
+    f(nm);
+  }
+}
 
 int CodeCache::alignment_unit() {
   return (int)_heap->alignment_unit();
@@ -297,12 +309,10 @@ int CodeCache::alignment_offset() {
 
 // Mark nmethods for unloading if they contain otherwise unreachable
 // oops.
-void CodeCache::do_unloading(BoolObjectClosure* is_alive,
-                             OopClosure* keep_alive,
-                             bool unloading_occurred) {
+void CodeCache::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred) {
   assert_locked_or_safepoint(CodeCache_lock);
   FOR_ALL_ALIVE_NMETHODS(nm) {
-    nm->do_unloading(is_alive, keep_alive, unloading_occurred);
+    nm->do_unloading(is_alive, unloading_occurred);
   }
 }
 
@@ -448,7 +458,7 @@ void CodeCache::verify_perm_nmethods(CodeBlobClosure* f_or_null) {
 #endif //PRODUCT
 
 
-nmethod* CodeCache::find_and_remove_saved_code(methodOop m) {
+nmethod* CodeCache::find_and_remove_saved_code(Method* m) {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   nmethod* saved = _saved_nmethods;
   nmethod* prev = NULL;
@@ -468,7 +478,7 @@ nmethod* CodeCache::find_and_remove_saved_code(methodOop m) {
       if (LogCompilation && (xtty != NULL)) {
         ttyLocker ttyl;
         xtty->begin_elem("nmethod_reconnected compile_id='%3d'", saved->compile_id());
-        xtty->method(methodOop(m));
+        xtty->method(m);
         xtty->stamp();
         xtty->end_elem();
       }
@@ -518,7 +528,7 @@ void CodeCache::speculatively_disconnect(nmethod* nm) {
   if (LogCompilation && (xtty != NULL)) {
     ttyLocker ttyl;
     xtty->begin_elem("nmethod_disconnected compile_id='%3d'", nm->compile_id());
-    xtty->method(methodOop(nm->method()));
+    xtty->method(nm->method());
     xtty->stamp();
     xtty->end_elem();
   }
@@ -548,6 +558,32 @@ void CodeCache::gc_epilogue() {
   set_needs_cache_clean(false);
   prune_scavenge_root_nmethods();
   assert(!nmethod::oops_do_marking_is_active(), "oops_do_marking_prologue must be called");
+
+#ifdef ASSERT
+  // make sure that we aren't leaking icholders
+  int count = 0;
+  FOR_ALL_BLOBS(cb) {
+    if (cb->is_nmethod()) {
+      RelocIterator iter((nmethod*)cb);
+      while(iter.next()) {
+        if (iter.type() == relocInfo::virtual_call_type) {
+          if (CompiledIC::is_icholder_call_site(iter.virtual_call_reloc())) {
+            CompiledIC *ic = CompiledIC_at(iter.reloc());
+            if (TraceCompiledIC) {
+              tty->print("noticed icholder " INTPTR_FORMAT " ", ic->cached_icholder());
+              ic->print();
+            }
+            assert(ic->cached_icholder() != NULL, "must be non-NULL");
+            count++;
+          }
+        }
+      }
+    }
+  }
+
+  assert(count + InlineCacheBuffer::pending_icholder_count() + CompiledICHolder::live_not_claimed_count() ==
+         CompiledICHolder::live_count(), "must agree");
+#endif
 }
 
 
@@ -649,8 +685,8 @@ int CodeCache::mark_for_deoptimization(DepChange& changes) {
 
   { No_Safepoint_Verifier nsv;
     for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
-      klassOop d = str.klass();
-      number_of_marked_CodeBlobs += instanceKlass::cast(d)->mark_dependent_nmethods(changes);
+      Klass* d = str.klass();
+      number_of_marked_CodeBlobs += InstanceKlass::cast(d)->mark_dependent_nmethods(changes);
     }
   }
 
@@ -683,10 +719,10 @@ int CodeCache::mark_for_evol_deoptimization(instanceKlassHandle dependee) {
   int number_of_marked_CodeBlobs = 0;
 
   // Deoptimize all methods of the evolving class itself
-  objArrayOop old_methods = dependee->methods();
+  Array<Method*>* old_methods = dependee->methods();
   for (int i = 0; i < old_methods->length(); i++) {
     ResourceMark rm;
-    methodOop old_method = (methodOop) old_methods->obj_at(i);
+    Method* old_method = old_methods->at(i);
     nmethod *nm = old_method->code();
     if (nm != NULL) {
       nm->mark_for_deoptimization();
@@ -702,7 +738,7 @@ int CodeCache::mark_for_evol_deoptimization(instanceKlassHandle dependee) {
       nm->mark_for_deoptimization();
       number_of_marked_CodeBlobs++;
     } else  {
-      // flush caches in case they refer to a redefined methodOop
+      // flush caches in case they refer to a redefined Method*
       nm->clear_inline_caches();
     }
   }
@@ -721,7 +757,7 @@ void CodeCache::mark_all_nmethods_for_deoptimization() {
 }
 
 
-int CodeCache::mark_for_deoptimization(methodOop dependee) {
+int CodeCache::mark_for_deoptimization(Method* dependee) {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   int number_of_marked_CodeBlobs = 0;
 

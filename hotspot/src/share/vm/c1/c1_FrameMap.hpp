@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,6 +192,10 @@ class FrameMap : public CompilationResourceObj {
   }
   static LIR_Opr as_oop_opr(Register r) {
     return LIR_OprFact::single_cpu_oop(cpu_reg2rnr(r));
+  }
+
+  static LIR_Opr as_metadata_opr(Register r) {
+    return LIR_OprFact::single_cpu_metadata(cpu_reg2rnr(r));
   }
 
   FrameMap(ciMethod* method, int monitors, int reserved_argument_area_size);

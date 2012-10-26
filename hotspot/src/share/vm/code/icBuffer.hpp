@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CODE_ICBUFFER_HPP
 #define SHARE_VM_CODE_ICBUFFER_HPP
 
+#include "asm/codeBuffer.hpp"
 #include "code/stubs.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
@@ -48,7 +49,8 @@ class ICStub: public Stub {
  protected:
   friend class ICStubInterface;
   // This will be called only by ICStubInterface
-  void    initialize(int size) { _size = size; _ic_site = NULL; }
+  void    initialize(int size,
+                     CodeComments comments)      { _size = size; _ic_site = NULL; }
   void    finalize(); // called when a method is removed
 
   // General info
@@ -57,7 +59,7 @@ class ICStub: public Stub {
 
  public:
   // Creation
-  void set_stub(CompiledIC *ic, oop cached_value, address dest_addr);
+  void set_stub(CompiledIC *ic, void* cached_value, address dest_addr);
 
   // Code info
   address code_begin() const                     { return (address)this + round_to(sizeof(ICStub), CodeEntryAlignment); }
@@ -70,7 +72,7 @@ class ICStub: public Stub {
 
   // stub info
   address destination() const;  // destination of jump instruction
-  oop     cached_oop() const;   // cached_oop for stub
+  void* cached_value() const;   // cached_value for stub
 
   // Debugging
   void    verify()            PRODUCT_RETURN;
@@ -99,6 +101,9 @@ class InlineCacheBuffer: public AllStatic {
   static StubQueue* _buffer;
   static ICStub*    _next_stub;
 
+  static CompiledICHolder* _pending_released;
+  static int _pending_count;
+
   static StubQueue* buffer()                         { return _buffer;         }
   static void       set_next_stub(ICStub* next_stub) { _next_stub = next_stub; }
   static ICStub*    get_next_stub()                  { return _next_stub;      }
@@ -109,9 +114,9 @@ class InlineCacheBuffer: public AllStatic {
 
 
   // Machine-dependent implementation of ICBuffer
-  static void    assemble_ic_buffer_code(address code_begin, oop cached_oop, address entry_point);
+  static void    assemble_ic_buffer_code(address code_begin, void* cached_value, address entry_point);
   static address ic_buffer_entry_point  (address code_begin);
-  static oop     ic_buffer_cached_oop   (address code_begin);
+  static void*   ic_buffer_cached_value (address code_begin);
 
  public:
 
@@ -127,11 +132,14 @@ class InlineCacheBuffer: public AllStatic {
   // for debugging
   static bool is_empty();
 
+  static void release_pending_icholders();
+  static void queue_for_release(CompiledICHolder* icholder);
+  static int pending_icholder_count() { return _pending_count; }
 
   // New interface
-  static void    create_transition_stub(CompiledIC *ic, oop cached_oop, address entry);
+  static void    create_transition_stub(CompiledIC *ic, void* cached_value, address entry);
   static address ic_destination_for(CompiledIC *ic);
-  static oop     cached_oop_for(CompiledIC *ic);
+  static void*   cached_value_for(CompiledIC *ic);
 };
 
 #endif // SHARE_VM_CODE_ICBUFFER_HPP

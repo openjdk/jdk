@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class AccessFlags implements /* imports */ ClassConstants {
   public long getValue         () { return flags; }
 
   // Hotspot internal flags
-  // methodOop flags
+  // Method* flags
   public boolean isMonitorMatching   () { return (flags & JVM_ACC_MONITOR_MATCH          ) != 0; }
   public boolean hasMonitorBytecodes () { return (flags & JVM_ACC_HAS_MONITOR_BYTECODES  ) != 0; }
   public boolean hasLoops            () { return (flags & JVM_ACC_HAS_LOOPS              ) != 0; }
@@ -69,13 +69,13 @@ public class AccessFlags implements /* imports */ ClassConstants {
   public boolean hasJsrs             () { return (flags & JVM_ACC_HAS_JSRS               ) != 0; }
   public boolean isObsolete          () { return (flags & JVM_ACC_IS_OBSOLETE            ) != 0; }
 
-  // klassOop flags
+  // Klass* flags
   public boolean hasMirandaMethods    () { return (flags & JVM_ACC_HAS_MIRANDA_METHODS    ) != 0; }
   public boolean hasVanillaConstructor() { return (flags & JVM_ACC_HAS_VANILLA_CONSTRUCTOR) != 0; }
   public boolean hasFinalizer         () { return (flags & JVM_ACC_HAS_FINALIZER          ) != 0; }
   public boolean isCloneable          () { return (flags & JVM_ACC_IS_CLONEABLE           ) != 0; }
 
-  // klassOop and methodOop flags
+  // Klass* and Method* flags
   public boolean hasLocalVariableTable() { return (flags & JVM_ACC_HAS_LOCAL_VARIABLE_TABLE ) != 0; }
 
   // field flags

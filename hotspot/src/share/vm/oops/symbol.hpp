@@ -36,7 +36,7 @@
 //
 // All Symbols are allocated and added to the SymbolTable.
 // When a class is unloaded, the reference counts of the Symbol pointers in
-// the ConstantPool and in instanceKlass (see release_C_heap_structures) are
+// the ConstantPool and in InstanceKlass (see release_C_heap_structures) are
 // decremented.  When the reference count for a Symbol goes to 0, the garbage
 // collector can free the Symbol and remove it from the SymbolTable.
 //
@@ -96,7 +96,13 @@
 // TempNewSymbol (passed in as a parameter) so the reference count on its symbol
 // will be decremented when it goes out of scope.
 
-class Symbol : public ResourceObj {
+
+// This cannot be inherited from ResourceObj because it cannot have a vtable.
+// Since sometimes this is allocated from Metadata, pick a base allocation
+// type without virtual functions.
+class ClassLoaderData;
+
+class Symbol : public MetaspaceObj {
   friend class VMStructs;
   friend class SymbolTable;
   friend class MoveSymbols;
@@ -111,9 +117,9 @@ class Symbol : public ResourceObj {
     max_symbol_length = (1 << 16) -1
   };
 
-  static int object_size(int length) {
-    size_t size = heap_word_size(sizeof(Symbol) + (length > 0 ? length - 1 : 0));
-    return align_object_size(size);
+  static int size(int length) {
+    size_t sz = heap_word_size(sizeof(Symbol) + (length > 0 ? length - 1 : 0));
+    return align_object_size(sz);
   }
 
   void byte_at_put(int index, int value) {
@@ -124,17 +130,23 @@ class Symbol : public ResourceObj {
   Symbol(const u1* name, int length, int refcount);
   void* operator new(size_t size, int len, TRAPS);
   void* operator new(size_t size, int len, Arena* arena, TRAPS);
+  void* operator new(size_t size, int len, ClassLoaderData* loader_data, TRAPS);
+
+  void  operator delete(void* p);
 
  public:
   // Low-level access (used with care, since not GC-safe)
   const jbyte* base() const { return &_body[0]; }
 
-  int object_size()         { return object_size(utf8_length()); }
+  int size()                { return size(utf8_length()); }
 
   // Returns the largest size symbol we can safely hold.
   static int max_length()   { return max_symbol_length; }
 
   int identity_hash()       { return _identity_hash; }
+
+  // For symbol table alternate hashing
+  unsigned int new_hash(jint seed);
 
   // Reference counting.  See comments above this class for when to use.
   int refcount() const      { return _refcount; }

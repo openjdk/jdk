@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,8 +249,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   //   The jclass is always pointing to the mirror of _the_class.
   //   ~28 JVM_* functions called by the verifier for the information
   //   about CP entries and klass structure should check the jvmtiThreadState
-  //   info about equivalent klass versions and use it to replace a klassOop
-  //   of _the_class with a klassOop of _scratch_class. The function
+  //   info about equivalent klass versions and use it to replace a Klass*
+  //   of _the_class with a Klass* of _scratch_class. The function
   //   class_to_verify_considering_redefinition() must be called for it.
   //
   //   Note again, that this redirection happens only for the verifier thread.
@@ -274,7 +274,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline void clear_class_versions_map() { set_class_versions_map(NULL, NULL); }
 
   static inline
-  klassOop class_to_verify_considering_redefinition(klassOop klass,
+  Klass* class_to_verify_considering_redefinition(Klass* klass,
                                                     JavaThread *thread) {
     JvmtiThreadState *state = thread->jvmti_thread_state();
     if (state != NULL && state->_the_class_for_redefinition_verification != NULL) {
@@ -391,7 +391,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   static ByteSize earlyret_oop_offset()   { return byte_offset_of(JvmtiThreadState, _earlyret_oop); }
   static ByteSize earlyret_value_offset() { return byte_offset_of(JvmtiThreadState, _earlyret_value); }
 
-  void oops_do(OopClosure* f); // GC support
+  void oops_do(OopClosure* f) NOT_JVMTI_RETURN; // GC support
 
 public:
   void set_should_post_on_exceptions(bool val) { _thread->set_should_post_on_exceptions_flag(val ? JNI_TRUE : JNI_FALSE); }
@@ -400,16 +400,22 @@ public:
 class RedefineVerifyMark : public StackObj {
  private:
   JvmtiThreadState *_state;
+  KlassHandle       _scratch_class;
+  Handle            _scratch_mirror;
 
  public:
   RedefineVerifyMark(KlassHandle *the_class, KlassHandle *scratch_class,
-                     JvmtiThreadState *state) : _state(state)
+                     JvmtiThreadState *state) : _state(state), _scratch_class(*scratch_class)
   {
     _state->set_class_versions_map(the_class, scratch_class);
+    _scratch_mirror = Handle(_scratch_class->java_mirror());
     (*scratch_class)->set_java_mirror((*the_class)->java_mirror());
   }
 
   ~RedefineVerifyMark() {
+    // Restore the scratch class's mirror, so when scratch_class is removed
+    // the correct mirror pointing to it can be cleared.
+    _scratch_class->set_java_mirror(_scratch_mirror());
     _state->clear_class_versions_map();
   }
 };

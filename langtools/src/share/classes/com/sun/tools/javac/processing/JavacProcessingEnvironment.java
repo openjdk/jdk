@@ -49,7 +49,7 @@ import static javax.tools.StandardLocation.*;
 
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent;
-import com.sun.tools.javac.api.JavacTaskImpl;
+import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
@@ -97,11 +97,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final boolean printRounds;
     private final boolean verbose;
     private final boolean lint;
-    private final boolean procOnly;
     private final boolean fatalErrors;
     private final boolean werror;
     private final boolean showResolveErrors;
-    private boolean foundTypeProcessors;
 
     private final JavacFiler filer;
     private final JavacMessager messager;
@@ -167,12 +165,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         printRounds = options.isSet(XPRINTROUNDS);
         verbose = options.isSet(VERBOSE);
         lint = Lint.instance(context).isEnabled(PROCESSING);
-        procOnly = options.isSet(PROC, "only") || options.isSet(XPRINT);
+        if (options.isSet(PROC, "only") || options.isSet(XPRINT)) {
+            JavaCompiler compiler = JavaCompiler.instance(context);
+            compiler.shouldStopPolicyIfNoError = CompileState.PROCESS;
+        }
         fatalErrors = options.isSet("fatalEnterError");
         showResolveErrors = options.isSet("showResolveErrors");
         werror = options.isSet(WERROR);
         platformAnnotations = initPlatformAnnotations();
-        foundTypeProcessors = false;
 
         // Initialize services before any processors are initialized
         // in case processors use them.
@@ -462,7 +462,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * State about how a processor has been used by the tool.  If a
      * processor has been used on a prior round, its process method is
      * called on all subsequent rounds, perhaps with an empty set of
-     * annotations to process.  The {@code annotatedSupported} method
+     * annotations to process.  The {@code annotationSupported} method
      * caches the supported annotation information from the first (and
      * only) getSupportedAnnotationTypes call to the processor.
      */
@@ -806,7 +806,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             log = Log.instance(context);
             log.nerrors = priorErrors;
             log.nwarnings += priorWarnings;
-            log.deferDiagnostics = true;
+            log.deferAll();
 
             // the following is for the benefit of JavacProcessingEnvironment.getContext()
             JavacProcessingEnvironment.this.context = context;
@@ -882,7 +882,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         /** Create the compiler to be used for the final compilation. */
         JavaCompiler finalCompiler(boolean errorStatus) {
             try {
-                JavaCompiler c = JavaCompiler.instance(nextContext());
+                Context nextCtx = nextContext();
+                JavacProcessingEnvironment.this.context = nextCtx;
+                JavaCompiler c = JavaCompiler.instance(nextCtx);
                 c.log.nwarnings += compiler.log.nwarnings;
                 if (errorStatus) {
                     c.log.nerrors += compiler.log.nerrors;
@@ -1021,7 +1023,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         /** Get the context for the next round of processing.
-         * Important values are propogated from round to round;
+         * Important values are propagated from round to round;
          * other values are implicitly reset.
          */
         private Context nextContext() {
@@ -1072,8 +1074,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             Assert.checkNonNull(tokens);
             next.put(Tokens.tokensKey, tokens);
 
+            Log nextLog = Log.instance(next);
             // propogate the log's writers directly, instead of going through context
-            Log.instance(next).setWriters(log);
+            nextLog.setWriters(log);
+            nextLog.setSourceMap(log);
 
             JavaCompiler oldCompiler = JavaCompiler.instance(context);
             JavaCompiler nextCompiler = JavaCompiler.instance(next);
@@ -1084,10 +1088,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             elementUtils.setContext(next);
             typeUtils.setContext(next);
 
-            JavacTaskImpl task = (JavacTaskImpl) context.get(JavacTask.class);
+            JavacTask task = context.get(JavacTask.class);
             if (task != null) {
                 next.put(JavacTask.class, task);
-                task.updateContext(next);
+                if (task instanceof BasicJavacTask)
+                    ((BasicJavacTask) task).updateContext(next);
             }
 
             JavacTrees trees = context.get(JavacTrees.class);
@@ -1187,14 +1192,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             return compiler;
         }
 
-        if (procOnly && !foundTypeProcessors) {
-            compiler.todo.clear();
-        } else {
-            if (procOnly && foundTypeProcessors)
-                compiler.shouldStopPolicy = CompileState.FLOW;
-
-            compiler.enterTrees(roots);
-        }
+        compiler.enterTreesIfNeeded(roots);
 
         return compiler;
     }
@@ -1362,7 +1360,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * {@inheritdoc}
      *
      * Command line options suitable for presenting to annotation
-     * processors.  "-Afoo=bar" should be "-Afoo" => "bar".
+     * processors.
+     * {@literal "-Afoo=bar"} should be {@literal "-Afoo" => "bar"}.
      */
     public Map<String,String> getOptions() {
         return processorOptions;

@@ -63,6 +63,13 @@ public class WhiteBox {
   public native long getObjectAddress(Object o);
   public native int  getHeapOopSize();
 
+  // Runtime
+  // Make sure class name is in the correct format
+  public boolean isClassAlive(String name) {
+    return isClassAlive0(name.replace('.', '/'));
+  }
+  private native boolean isClassAlive0(String name);
+
   // G1
   public native boolean g1InConcurrentMark();
   public native boolean g1IsHumongous(Object o);

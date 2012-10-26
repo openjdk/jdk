@@ -703,7 +703,7 @@ public abstract class MappedMXBeanType {
                 if (data instanceof java.lang.management.MonitorInfo) {
                     return MonitorInfoCompositeData.toCompositeData((MonitorInfo) data);
                 }
-                return LockDataConverter.toLockInfoCompositeData((LockInfo) data);
+                return LockInfoCompositeData.toCompositeData((LockInfo) data);
             }
 
             if (data instanceof MemoryNotificationInfo) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
 
 #include "utilities/xmlstream.hpp"
 
+class ciBaseObject;
 class ciObject;
+class ciMetadata;
 class ciSymbol;
 
 // CompileLog
@@ -60,14 +62,23 @@ class CompileLog : public xmlStream {
 
   intx          thread_id()                      { return _thread_id; }
   const char*   file()                           { return _file; }
+
+  // Optional context marker, to help place actions that occur during
+  // parsing. If there is no log output until the next context string
+  // or reset, context string will be silently ignored
   stringStream* context()                        { return &_context; }
+  void    clear_context()                        { context()->reset(); }
+  void      set_context(const char* format, ...);
 
   void          name(ciSymbol* s);               // name='s'
   void          name(Symbol* s)                  { xmlStream::name(s); }
 
   // Output an object description, return obj->ident().
-  int           identify(ciObject* obj);
+  int           identify(ciBaseObject* obj);
   void          clear_identities();
+
+  void inline_fail   (const char* reason);
+  void inline_success(const char* reason);
 
   // virtuals
   virtual void see_tag(const char* tag, bool push);
@@ -75,6 +86,9 @@ class CompileLog : public xmlStream {
 
   // make a provisional end of log mark
   void mark_file_end() { _file_end = out()->count(); }
+
+  // Print code cache statistics
+  void code_cache_state();
 
   // copy all logs to the given stream
   static void finish_log(outputStream* out);
