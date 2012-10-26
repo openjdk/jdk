@@ -408,11 +408,11 @@ public abstract class Configuration {
                 group.checkPackageGroups(os[1], os[2]);
             } else if (opt.equals("-link")) {
                 String url = os[1];
-                extern.url(url, url, root, false);
+                extern.link(url, url, root, false);
             } else if (opt.equals("-linkoffline")) {
                 String url = os[1];
                 String pkglisturl = os[2];
-                extern.url(url, pkglisturl, root, true);
+                extern.link(url, pkglisturl, root, true);
             }
         }
         if (sourcepath.length() == 0) {
