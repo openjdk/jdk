@@ -828,6 +828,12 @@ Java_java_io_WinNTFileSystem_getDriveDirectory(JNIEnv *env, jobject this,
     return ret;
 }
 
+JNIEXPORT jint JNICALL
+Java_java_io_WinNTFileSystem_listRoots0(JNIEnv *env, jclass ignored)
+{
+    return GetLogicalDrives();
+}
+
 JNIEXPORT jlong JNICALL
 Java_java_io_WinNTFileSystem_getSpace0(JNIEnv *env, jobject this,
                                        jobject file, jint t)

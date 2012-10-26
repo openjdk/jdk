@@ -39,6 +39,7 @@ import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SNIMatcher;
 
 
 /**
@@ -91,6 +92,10 @@ class SSLServerSocketImpl extends SSLServerSocket
 
     // The cryptographic algorithm constraints
     private AlgorithmConstraints    algorithmConstraints = null;
+
+    // The server name indication
+    Collection<SNIMatcher>      sniMatchers =
+                                    Collections.<SNIMatcher>emptyList();
 
     /**
      * Create an SSL server socket on a port, using a non-default
@@ -289,6 +294,7 @@ class SSLServerSocketImpl extends SSLServerSocket
         // the super implementation does not handle the following parameters
         params.setEndpointIdentificationAlgorithm(identificationProtocol);
         params.setAlgorithmConstraints(algorithmConstraints);
+        params.setSNIMatchers(sniMatchers);
 
         return params;
     }
@@ -302,6 +308,10 @@ class SSLServerSocketImpl extends SSLServerSocket
         // the super implementation does not handle the following parameters
         identificationProtocol = params.getEndpointIdentificationAlgorithm();
         algorithmConstraints = params.getAlgorithmConstraints();
+        Collection<SNIMatcher> matchers = params.getSNIMatchers();
+        if (matchers != null) {
+            sniMatchers = params.getSNIMatchers();
+        }
     }
 
     /**
@@ -312,7 +322,8 @@ class SSLServerSocketImpl extends SSLServerSocket
     public Socket accept() throws IOException {
         SSLSocketImpl s = new SSLSocketImpl(sslContext, useServerMode,
             enabledCipherSuites, doClientAuth, enableSessionCreation,
-            enabledProtocols, identificationProtocol, algorithmConstraints);
+            enabledProtocols, identificationProtocol, algorithmConstraints,
+            sniMatchers);
 
         implAccept(s);
         s.doneConnect();
