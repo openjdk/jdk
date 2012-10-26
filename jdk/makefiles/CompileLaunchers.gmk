@@ -122,6 +122,12 @@ define SetupLauncher
         $1_CFLAGS:=$(filter-out -MD,$(CFLAGS_JDKEXE))
     endif
 
+    ifneq ($(wildcard $(JDK_TOPDIR)/makefiles/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)),)
+        $1_MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)
+    else
+        $1_MAPFILE:=
+    endif
+
     $(call SetupNativeCompilation,BUILD_LAUNCHER_$1,\
 	SRC:=$(JDK_TOPDIR)/src/share/bin,\
 	INCLUDE_FILES:=main.c,\
@@ -148,7 +154,7 @@ define SetupLauncher
                        $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)),\
 	LDFLAGS_solaris:=$$($1_LDFLAGS_solaris) \
                        $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)),\
-	MAPFILE := $(JDK_TOPDIR)/makefiles/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU), \
+	MAPFILE := $$($1_MAPFILE), \
         LDFLAGS_SUFFIX:=$(LDFLAGS_JDKEXE_SUFFIX) $$($1_LDFLAGS_SUFFIX),\
 	LDFLAGS_SUFFIX_posix:=$4,\
 	LDFLAGS_SUFFIX_windows:=$$($1_WINDOWS_JLI_LIB) \
@@ -161,9 +167,9 @@ define SetupLauncher
 	DEBUG_SYMBOLS:=true,\
 	VERSIONINFO_RESOURCE:=$$($1_VERSION_INFO_RESOURCE),\
 	RC_FLAGS:=$(RC_FLAGS)\
-		  /D "JDK_FNAME=$1$(EXE_SUFFIX)" \
-		  /D "JDK_INTERNAL_NAME=$1" \
-		  /D "JDK_FTYPE=0x1L" \
+		  -D "JDK_FNAME=$1$(EXE_SUFFIX)" \
+		  -D "JDK_INTERNAL_NAME=$1" \
+		  -D "JDK_FTYPE=0x1L" \
 		  $7,\
 	MANIFEST:=$(JDK_TOPDIR)/src/windows/resource/java.manifest)
 
@@ -238,6 +244,13 @@ $(eval $(call SetupLauncher,javac,\
     -DEXPAND_CLASSPATH_WILDCARDS \
     -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.javac.Main"$(COMMA) }'))
+
+ifeq ($(ENABLE_SJAVAC),yes)
+$(eval $(call SetupLauncher,sjavac,\
+    -DEXPAND_CLASSPATH_WILDCARDS \
+    -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.sjavac.Main"$(COMMA) }'))
+endif
 
 $(eval $(call SetupLauncher,javadoc,\
     -DEXPAND_CLASSPATH_WILDCARDS \
@@ -404,41 +417,55 @@ endif
 
 ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
     UNPACKEXE_CFLAGS += -xregs=no%appl
+    UNPACKEXE_LDFLAGS_solaris += -xmemalign=4s
 endif
 
 UNPACKEXE_LANG:=C
 ifeq ($(OPENJDK_TARGET_OS),solaris)
     UNPACKEXE_LANG:=C++
 endif
-
+# On windows, unpack200 is linked completely differently to all other
+# executables, using the compiler with the compiler arguments.
+# It's also linked incrementally, producing a .ilk file that needs to 
+# be kept away.
+ifeq ($(OPENJDK_TARGET_OS),windows)
+    BUILD_UNPACKEXE_LDEXE:=$(CC)
+    EXE_OUT_OPTION_save:=$(EXE_OUT_OPTION)
+    EXE_OUT_OPTION:=-Fe
+endif
 $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE,\
                 SRC:=$(JDK_TOPDIR)/src/share/native/com/sun/java/util/jar/pack,\
 		EXCLUDE_FILES:=jni.cpp,\
 		LANG:=$(UNPACKEXE_LANG),\
-		OPTIMIZATION := LOW, \
+		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(UNPACKEXE_CFLAGS) $(CXXFLAGS_JDKEXE)\
                         -DFULL, \
 		CFLAGS_release:=-DPRODUCT,\
 		CFLAGS_linux:=-fPIC,\
-		CFLAGS_solaris := -KPIC, \
-		CFLAGS_macosx := -fPIC, \
-		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libunpack/mapfile-vers-unpack200, \
-		LDFLAGS:=$(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
+		CFLAGS_solaris:=-KPIC, \
+		CFLAGS_macosx:=-fPIC, \
+		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libunpack/mapfile-vers-unpack200,\
+		LDFLAGS:=$(UNPACKEXE_ZIPOBJS),\
+		LDFLAGS_windows:=$(CXXFLAGS_JDKEXE),\
+		LDFLAGS_posix:=$(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
 			 $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX)) \
-			 $(call SET_SHARED_LIBRARY_ORIGIN) \
-			 $(UNPACKEXE_ZIPOBJS),\
+			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_linux:=-lc,\
+		LDFLAGS_solaris:=$(UNPACKEXE_LDFLAGS_solaris) -lc,\
 		LDFLAGS_SUFFIX:=$(LIBCXX),\
-		LDFLAGS_SUFFIX_solaris:=-lc,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/unpackexe$(OUTPUT_SUBDIR),\
-		OUTPUT_DIR:=$(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR),\
+		OUTPUT_DIR:=$(JDK_OUTPUTDIR)/objs/unpackexe$(OUTPUT_SUBDIR),\
 		PROGRAM:=unpack200,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=unpack200.exe" \
-			  /D "JDK_INTERNAL_NAME=unpack200" \
-			  /D "JDK_FTYPE=0x1L",\
+			  -D "JDK_FNAME=unpack200.exe" \
+			  -D "JDK_INTERNAL_NAME=unpack200" \
+			  -D "JDK_FTYPE=0x1L",\
 		MANIFEST:=$(JDK_TOPDIR)/src/windows/resource/unpack200_proto.exe.manifest))
+
+ifeq ($(OPENJDK_TARGET_OS),windows)
+    EXE_OUT_OPTION:=$(EXE_OUT_OPTION_save)
+endif
 
 ifneq ($(USE_EXTERNAL_LIBZ), true)
 
@@ -446,7 +473,15 @@ $(BUILD_UNPACKEXE) : $(UNPACKEXE_ZIPOBJS)
 
 endif
 
-BUILD_LAUNCHERS += $(BUILD_UNPACKEXE)
+# Build into object dir and copy executable afterwards to avoid .ilk file in
+# image. The real fix would be clean up linking of unpack200 using 
+# -link -incremental:no
+# like all other launchers.
+$(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/unpack200$(EXE_SUFFIX): $(BUILD_UNPACKEXE)
+	$(MKDIR) -p $(@D)
+	$(CP) '$<' '$@'
+
+BUILD_LAUNCHERS += $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/unpack200$(EXE_SUFFIX)
 
 ##########################################################################################
 
@@ -533,13 +568,12 @@ endif
 # TODO: 
 # On windows java-rmi.cgi shouldn't be bundled since Java 1.2, but has been built all
 # this time anyway. Since jdk6, it has been built from the wrong source and resulted
-# in a copy of the standard java launcher named "java-rmi.exe" ending up in the final
-# images bin dir. This weird behavior is mimicked here in the converted makefiles for
-# now. Should probably just be deleted.
+# in a (almost) copy of the standard java launcher named "java-rmi.exe" ending up in 
+# the final images bin dir. This weird behavior is mimicked here in the converted 
+# makefiles for now. Should probably just be deleted.
 # http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6512052
 ifeq ($(OPENJDK_TARGET_OS),windows)
-    $(eval $(call SetupLauncher,java-rmi,\
-        -DEXPAND_CLASSPATH_WILDCARDS,\
+    $(eval $(call SetupLauncher,java-rmi,,\
         $(call SET_SHARED_LIBRARY_MAPFILE,$(JDK_TOPDIR)/makefiles/java/main/java/mapfile-$(OPENJDK_TARGET_CPU))))
 else
     $(JAVA_RMI_CGI): $(JDK_TOPDIR)/src/solaris/bin/java-rmi.cgi.sh

@@ -40,14 +40,14 @@ LOCALE_FILES:=$(shell $(FIND) $(JDK_TOPDIR)/src/share/classes \
 LOCALE_RESOURCES:=$(sort $(subst .properties,,$(subst .java,,$(notdir $(LOCALE_FILES)))))
 
 # Include the list of resources found during the previous compile.
--include $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/_the.locale_resources
+-include $(JDK_OUTPUTDIR)/gensrc/_the.locale_resources
 
 MISSING_RESOURCES:=$(filter-out $(LOCALE_RESOURCES),$(PREV_LOCALE_RESOURCES))
 NEW_RESOURCES:=$(filter-out $(PREV_LOCALE_RESOURCES),$(LOCALE_RESOURCES))
 
 ifneq (,$(MISSING_RESOURCES)$(NEW_RESOURCES))
     # There is a difference in the number of supported resources. Trigger a regeneration.
-    $(shell $(RM) $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/locale/provider/LocaleDataMetaInfo.java)
+    $(shell $(RM) $(JDK_OUTPUTDIR)/gensrc/sun/util/locale/provider/LocaleDataMetaInfo.java)
 endif
 
 # The non-euro zone locales have to be separated from the euro-zone locales.
@@ -93,18 +93,18 @@ $(eval $(call CaptureLocale,CalendarData))
 SED_ARGS+= -e 's/$(HASH)AvailableLocales_EuroLocales$(HASH)/$(sort $(ALL_EURO_LOCALES))/g'
 SED_ARGS+= -e 's/$(HASH)AvailableLocales_NonEuroLocales$(HASH)/$(sort $(ALL_NON_EURO_LOCALES))/g'
 
-$(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/locale/provider/LocaleDataMetaInfo.java: \
+$(JDK_OUTPUTDIR)/gensrc/sun/util/locale/provider/LocaleDataMetaInfo.java: \
 		$(JDK_TOPDIR)/src/share/classes/sun/util/locale/provider/LocaleDataMetaInfo-XLocales.java.template
 	$(MKDIR) -p $(@D)
 	$(ECHO) Creating sun/util/LocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
-	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" > $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/_the.locale_resources
+	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" > $(JDK_OUTPUTDIR)/gensrc/_the.locale_resources
 	$(SED) $(SED_ARGS) $< > $@
 
-GENSRC_LOCALEDATAMETAINFO:=$(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/locale/provider/LocaleDataMetaInfo.java
+GENSRC_LOCALEDATAMETAINFO:=$(JDK_OUTPUTDIR)/gensrc/sun/util/locale/provider/LocaleDataMetaInfo.java
 
 ###
 
-GENSRC_CRBC_DST := $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/CoreResourceBundleControl.java
+GENSRC_CRBC_DST := $(JDK_OUTPUTDIR)/gensrc/sun/util/CoreResourceBundleControl.java
 GENSRC_CRBC_CMD := $(JDK_TOPDIR)/makefiles/scripts/localelist.sh
 
 JRE_NONEXIST_LOCALES := en en_US de_DE es_ES fr_FR it_IT ja_JP ko_KR sv_SE zh
