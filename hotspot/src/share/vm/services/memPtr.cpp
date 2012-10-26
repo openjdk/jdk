@@ -40,35 +40,3 @@ jint SequenceGenerator::next() {
   return seq;
 }
 
-
-
-bool VMMemRegion::contains(const VMMemRegion* mr) const {
-  assert(base() != 0, "Sanity check");
-  assert(size() != 0 || committed_size() != 0,
-    "Sanity check");
-  address base_addr = base();
-  address end_addr = base_addr +
-    (is_reserve_record()? reserved_size(): committed_size());
-  if (mr->is_reserve_record()) {
-    if (mr->base() == base_addr && mr->size() == size()) {
-      // the same range
-      return true;
-    }
-    return false;
-  } else if (mr->is_commit_record() || mr->is_uncommit_record()) {
-    assert(mr->base() != 0 && mr->committed_size() > 0,
-      "bad record");
-    return (mr->base() >= base_addr &&
-      (mr->base() + mr->committed_size()) <= end_addr);
-  } else if (mr->is_type_tagging_record()) {
-    assert(mr->base() != NULL, "Sanity check");
-    return (mr->base() >= base_addr && mr->base() < end_addr);
-  } else if (mr->is_release_record()) {
-    assert(mr->base() != 0 && mr->size() > 0,
-      "bad record");
-    return (mr->base() == base_addr && mr->size() == size());
-  } else {
-    ShouldNotReachHere();
-    return false;
-  }
-}

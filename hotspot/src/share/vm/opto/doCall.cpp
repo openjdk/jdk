@@ -107,7 +107,17 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // intrinsics handle strict f.p. correctly.
   if (allow_inline && allow_intrinsics) {
     CallGenerator* cg = find_intrinsic(callee, call_is_virtual);
-    if (cg != NULL)  return cg;
+    if (cg != NULL) {
+      if (cg->is_predicted()) {
+        // Code without intrinsic but, hopefully, inlined.
+        CallGenerator* inline_cg = this->call_generator(callee,
+              vtable_index, call_is_virtual, jvms, allow_inline, prof_factor, false);
+        if (inline_cg != NULL) {
+          cg = CallGenerator::for_predicted_intrinsic(cg, inline_cg);
+        }
+      }
+      return cg;
+    }
   }
 
   // Do method handle calls.
