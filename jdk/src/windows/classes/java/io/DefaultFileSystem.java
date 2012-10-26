@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,18 @@
  * questions.
  */
 
-#include <windows.h>
-#include "jni.h"
-#include "jni_util.h"
+package java.io;
 
-JNIEXPORT jobject JNICALL
-Java_java_io_FileSystem_getFileSystem(JNIEnv *env, jclass ignored)
-{
-    return JNU_NewObjectByName(env, "java/io/WinNTFileSystem", "()V");
+/**
+ *
+ * @since 1.8
+ */
+class DefaultFileSystem {
+
+    /**
+     * Return the FileSystem object for Windows platform.
+     */
+    public static FileSystem getFileSystem() {
+        return new WinNTFileSystem();
+    }
 }
