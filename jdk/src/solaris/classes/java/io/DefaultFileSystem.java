@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,18 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jni_util.h"
-#include "java_io_FileSystem.h"
+package java.io;
 
+/**
+ *
+ * @since 1.8
+ */
+class DefaultFileSystem {
 
-JNIEXPORT jobject JNICALL
-Java_java_io_FileSystem_getFileSystem(JNIEnv *env, jclass ignored)
-{
-    return JNU_NewObjectByName(env, "java/io/UnixFileSystem", "()V");
+    /**
+     * Return the FileSystem object for Unix-based platform.
+     */
+    public static FileSystem getFileSystem() {
+        return new UnixFileSystem();
+    }
 }
