@@ -98,7 +98,6 @@ import java.util.Queue;
  * @since 1.5
  * @author Doug Lea
  * @param <E> the type of elements held in this collection
- *
  */
 public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
         implements Queue<E>, java.io.Serializable {
@@ -246,7 +245,6 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * - tail.next may or may not be self-pointing to tail.
      */
     private transient volatile Node<E> tail;
-
 
     /**
      * Creates a {@code ConcurrentLinkedQueue} that is initially empty.
@@ -609,8 +607,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * The following code can be used to dump the queue into a newly
      * allocated array of {@code String}:
      *
-     * <pre>
-     *     String[] y = x.toArray(new String[0]);</pre>
+     *  <pre> {@code String[] y = x.toArray(new String[0]);}</pre>
      *
      * Note that {@code toArray(new Object[0])} is identical in function to
      * {@code toArray()}.
@@ -747,11 +744,10 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Saves the state to a stream (that is, serializes it).
+     * Saves this queue to a stream (that is, serializes it).
      *
      * @serialData All of the elements (each an {@code E}) in
      * the proper order, followed by a null
-     * @param s the stream
      */
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
@@ -771,8 +767,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Reconstitutes the instance from a stream (that is, deserializes it).
-     * @param s the stream
+     * Reconstitutes this queue from a stream (that is, deserializes it).
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
