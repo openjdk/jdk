@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ import javax.tools.StandardLocation;
 
 import com.sun.javadoc.*;
 
-import static com.sun.javadoc.LanguageVersion.*;
-
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Scope;
@@ -75,6 +73,11 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * which may or may not have been processed in this run are
  * referred to using Type (which can be converted to ClassDocImpl,
  * if possible).
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @see Type
  *
@@ -846,7 +849,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * Note that this is not necessarily what the compiler would do!
      *
      * @param methodName the unqualified name to search for.
-     * @param paramTypeArray the array of Strings for method parameter types.
+     * @param paramTypes the array of Strings for method parameter types.
      * @return the first MethodDocImpl which matches, null if not found.
      */
     public MethodDocImpl findMethod(String methodName, String[] paramTypes) {
@@ -973,7 +976,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * Find constructor in this class.
      *
      * @param constrName the unqualified name to search for.
-     * @param paramTypeArray the array of Strings for constructor parameters.
+     * @param paramTypes the array of Strings for constructor parameters.
      * @return the first ConstructorDocImpl which matches, null if not found.
      */
     public ConstructorDoc findConstructor(String constrName,

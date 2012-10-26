@@ -128,8 +128,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     /** Import all classes of a class or package on demand.
      *  @param pos           Position to be used for error reporting.
      *  @param tsym          The class or package the members of which are imported.
-     *  @param toScope   The (import) scope in which imported classes
-     *               are entered.
+     *  @param env           The env in which the imported classes will be entered.
      */
     private void importAll(int pos,
                            final TypeSymbol tsym,
@@ -150,8 +149,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     /** Import all static members of a class or package on demand.
      *  @param pos           Position to be used for error reporting.
      *  @param tsym          The class or package the members of which are imported.
-     *  @param toScope   The (import) scope in which imported classes
-     *               are entered.
+     *  @param env           The env in which the imported classes will be entered.
      */
     private void importStaticAll(int pos,
                                  final TypeSymbol tsym,

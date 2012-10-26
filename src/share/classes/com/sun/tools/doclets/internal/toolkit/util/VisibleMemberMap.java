@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
+import java.util.*;
+
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
-import java.util.*;
 
 /**
  * A data structure that encapsulates the visible members of a particular
@@ -36,9 +37,10 @@ import java.util.*;
  * or method) and the leaf of the class tree.  The data structure will map
  * all visible members in the leaf and classes above the leaf in the tree.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  * @author Jamie Ho (rewrite)
@@ -125,7 +127,7 @@ public class VisibleMemberMap {
      * Return the package private members inherited by the class.  Only return
      * if parent is package private and not documented.
      *
-     * @param configuation the current configuration of the doclet.
+     * @param configuration the current configuration of the doclet.
      * @return the package private members inherited by the class.
      */
     private List<ProgramElementDoc> getInheritedPackagePrivateMethods(Configuration configuration) {
@@ -148,7 +150,7 @@ public class VisibleMemberMap {
      * end of the list members that are inherited by inaccessible parents. We
      * document these members in the child because the parent is not documented.
      *
-     * @param configuation the current configuration of the doclet.
+     * @param configuration the current configuration of the doclet.
      */
     public List<ProgramElementDoc> getLeafClassMembers(Configuration configuration) {
         List<ProgramElementDoc> result = getMembersFor(classdoc);
