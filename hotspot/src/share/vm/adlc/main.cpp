@@ -215,9 +215,9 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "asm/assembler.hpp");
   AD.addInclude(AD._CPP_file, "code/vmreg.hpp");
   AD.addInclude(AD._CPP_file, "gc_interface/collectedHeap.inline.hpp");
-  AD.addInclude(AD._CPP_file, "oops/compiledICHolderOop.hpp");
+  AD.addInclude(AD._CPP_file, "oops/compiledICHolder.hpp");
   AD.addInclude(AD._CPP_file, "oops/markOop.hpp");
-  AD.addInclude(AD._CPP_file, "oops/methodOop.hpp");
+  AD.addInclude(AD._CPP_file, "oops/method.hpp");
   AD.addInclude(AD._CPP_file, "oops/oop.inline.hpp");
   AD.addInclude(AD._CPP_file, "oops/oop.inline2.hpp");
   AD.addInclude(AD._CPP_file, "opto/cfgnode.hpp");
@@ -341,14 +341,20 @@ int main(int argc, char *argv[])
 static void usage(ArchDesc& AD)
 {
   printf("Architecture Description Language Compiler\n\n");
-  printf("Usage: adl [-doqw] [-Dflag[=def]] [-Uflag] [-cFILENAME] [-hFILENAME] [-aDFAFILE] ADLFILE\n");
+  printf("Usage: adlc [-doqwTs] [-#]* [-D<FLAG>[=<DEF>]] [-U<FLAG>] [-c<CPP_FILE_NAME>] [-h<HPP_FILE_NAME>] [-a<DFA_FILE_NAME>] [-v<GLOBALS_FILE_NAME>] <ADL_FILE_NAME>\n");
   printf(" d  produce DFA debugging info\n");
   printf(" o  no output produced, syntax and semantic checking only\n");
   printf(" q  quiet mode, supresses all non-essential messages\n");
   printf(" w  suppress warning messages\n");
+  printf(" T  make DFA as many subroutine calls\n");
+  printf(" s  output which instructions are cisc-spillable\n");
+  printf(" D  define preprocessor symbol\n");
+  printf(" U  undefine preprocessor symbol\n");
   printf(" c  specify CPP file name (default: %s)\n", AD._CPP_file._name);
   printf(" h  specify HPP file name (default: %s)\n", AD._HPP_file._name);
   printf(" a  specify DFA output file name\n");
+  printf(" v  specify adGlobals output file name\n");
+  printf(" #  increment ADL debug level\n");
   printf("\n");
 }
 
@@ -450,22 +456,6 @@ static char *strip_ext(char *fname)
   return fname;
 }
 
-//------------------------------strip_path_and_ext------------------------------
-static char *strip_path_and_ext(char *fname)
-{
-  char *ep;
-  char *sp;
-
-  if (fname) {
-    for (sp = fname; *sp; sp++)
-      if (*sp == '/')  fname = sp+1;
-    ep = fname;                    // start at first character and look for '.'
-    while (ep <= (fname + strlen(fname) - 1) && *ep != '.') ep++;
-    if (*ep == '.')     *ep = '\0'; // truncate string at '.'
-  }
-  return fname;
-}
-
 //------------------------------base_plus_suffix-------------------------------
 // New concatenated string
 static char *base_plus_suffix(const char* base, const char *suffix)
@@ -474,18 +464,6 @@ static char *base_plus_suffix(const char* base, const char *suffix)
 
   char* fname = new char[len];
   sprintf(fname,"%s%s",base,suffix);
-  return fname;
-}
-
-
-//------------------------------prefix_plus_base_plus_suffix-------------------
-// New concatenated string
-static char *prefix_plus_base_plus_suffix(const char* prefix, const char* base, const char *suffix)
-{
-  int len = (int)strlen(prefix) + (int)strlen(base) + (int)strlen(suffix) + 1;
-
-  char* fname = new char[len];
-  sprintf(fname,"%s%s%s",prefix,base,suffix);
   return fname;
 }
 

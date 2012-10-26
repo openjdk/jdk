@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class Instance extends Oop {
 
   // Returns header size in bytes.
   public static long getHeaderSize() {
-    if (VM.getVM().isCompressedOopsEnabled()) {
+    if (VM.getVM().isCompressedKlassPointersEnabled()) {
       return typeSize - VM.getVM().getIntSize();
     } else {
       return typeSize;

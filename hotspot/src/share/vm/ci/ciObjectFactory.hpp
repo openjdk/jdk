@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,12 @@ class ciObjectFactory : public ResourceObj {
 
 private:
   static volatile bool _initialized;
-  static GrowableArray<ciObject*>* _shared_ci_objects;
+  static GrowableArray<ciMetadata*>* _shared_ci_metadata;
   static ciSymbol*                 _shared_ci_symbols[];
   static int                       _shared_ident_limit;
 
   Arena*                    _arena;
-  GrowableArray<ciObject*>* _ci_objects;
+  GrowableArray<ciMetadata*>*        _ci_metadata;
   GrowableArray<ciMethod*>* _unloaded_methods;
   GrowableArray<ciKlass*>* _unloaded_klasses;
   GrowableArray<ciInstance*>* _unloaded_instances;
@@ -68,10 +68,13 @@ private:
   NonPermObject* _non_perm_bucket[NON_PERM_BUCKETS];
   int _non_perm_count;
 
-  int find(oop key, GrowableArray<ciObject*>* objects);
-  bool is_found_at(int index, oop key, GrowableArray<ciObject*>* objects);
-  void insert(int index, ciObject* obj, GrowableArray<ciObject*>* objects);
+  int find(Metadata* key, GrowableArray<ciMetadata*>* objects);
+  bool is_found_at(int index, Metadata* key, GrowableArray<ciMetadata*>* objects);
+  void insert(int index, ciMetadata* obj, GrowableArray<ciMetadata*>* objects);
+
   ciObject* create_new_object(oop o);
+  ciMetadata* create_new_object(Metadata* o);
+
   static bool is_equal(NonPermObject* p, oop key) {
     return p->object()->get_oop() == key;
   }
@@ -79,8 +82,7 @@ private:
   NonPermObject* &find_non_perm(oop key);
   void insert_non_perm(NonPermObject* &where, oop key, ciObject* obj);
 
-  void init_ident_of(ciObject* obj);
-  void init_ident_of(ciSymbol* obj);
+  void init_ident_of(ciBaseObject* obj);
 
   Arena* arena() { return _arena; }
 
@@ -99,7 +101,7 @@ public:
 
   // Get the ciObject corresponding to some oop.
   ciObject* get(oop key);
-
+  ciMetadata* get_metadata(Metadata* key);
   ciSymbol* get_symbol(Symbol* key);
 
   // Get the ciSymbol corresponding to one of the vmSymbols.
@@ -134,6 +136,9 @@ public:
   ciMethodData* get_empty_methodData();
 
   ciReturnAddress* get_return_address(int bci);
+
+  // RedefineClasses support
+  void metadata_do(void f(Metadata*));
 
   void print_contents();
   void print();

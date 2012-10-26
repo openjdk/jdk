@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #define SHARE_VM_INTERPRETER_BYTECODEINTERPRETER_HPP
 
 #include "memory/allocation.hpp"
-#include "oops/methodDataOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/methodData.hpp"
+#include "oops/method.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/globals.hpp"
@@ -62,7 +62,7 @@ union VMJavaVal64 {
 typedef class BytecodeInterpreter* interpreterState;
 
 struct call_message {
-    class methodOopDesc* _callee;    /* method to call during call_method request */
+    class Method* _callee;    /* method to call during call_method request */
     address   _callee_entry_point;   /* address to jump to for call_method request */
     int       _bcp_advance;          /* size of the invoke bytecode operation */
 };
@@ -119,8 +119,8 @@ private:
     JavaThread*           _thread;        // the vm's java thread pointer
     address               _bcp;           // instruction pointer
     intptr_t*             _locals;        // local variable pointer
-    constantPoolCacheOop  _constants;     // constant pool cache
-    methodOop             _method;        // method being executed
+    ConstantPoolCache*    _constants;     // constant pool cache
+    Method*               _method;        // method being executed
     DataLayout*           _mdx;           // compiler profiling data for current bytecode
     intptr_t*             _stack;         // expression stack
     messages              _msg;           // frame manager <-> interpreter message
@@ -143,7 +143,7 @@ public:
 static void layout_interpreterState(interpreterState to_fill,
                                     frame* caller,
                                     frame* interpreter_frame,
-                                    methodOop method,
+                                    Method* method,
                                     intptr_t* locals,
                                     intptr_t* stack,
                                     intptr_t* stack_base,
@@ -197,16 +197,16 @@ inline void set_bcp(address new_bcp) { _bcp = new_bcp; }
 
 inline intptr_t* locals() { return _locals; }
 
-inline constantPoolCacheOop constants() { return _constants; }
-inline methodOop method() { return _method; }
+inline ConstantPoolCache* constants() { return _constants; }
+inline Method* method() { return _method; }
 inline DataLayout* mdx() { return _mdx; }
 inline void set_mdx(DataLayout *new_mdx) { _mdx = new_mdx; }
 
 inline messages msg() { return _msg; }
 inline void set_msg(messages new_msg) { _msg = new_msg; }
 
-inline methodOop callee() { return _result._to_call._callee; }
-inline void set_callee(methodOop new_callee) { _result._to_call._callee = new_callee; }
+inline Method* callee() { return _result._to_call._callee; }
+inline void set_callee(Method* new_callee) { _result._to_call._callee = new_callee; }
 inline void set_callee_entry_point(address entry) { _result._to_call._callee_entry_point = entry; }
 inline void set_osr_buf(address buf) { _result._osr._osr_buf = buf; }
 inline void set_osr_entry(address entry) { _result._osr._osr_entry = entry; }

@@ -654,14 +654,14 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       const TypeTuple *domain = StartOSRNode::osr_domain();
       const TypeTuple *range = TypeTuple::make_range(method()->signature());
       init_tf(TypeFunc::make(domain, range));
-      StartNode* s = new (this, 2) StartOSRNode(root(), domain);
+      StartNode* s = new (this) StartOSRNode(root(), domain);
       initial_gvn()->set_type_bottom(s);
       init_start(s);
       cg = CallGenerator::for_osr(method(), entry_bci());
     } else {
       // Normal case.
       init_tf(TypeFunc::make(method()));
-      StartNode* s = new (this, 2) StartNode(root(), tf()->domain());
+      StartNode* s = new (this) StartNode(root(), tf()->domain());
       initial_gvn()->set_type_bottom(s);
       init_start(s);
       if (method()->intrinsic_id() == vmIntrinsics::_Reference_get && UseG1GC) {
@@ -825,8 +825,12 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                            &_handler_table, &_inc_table,
                            compiler,
                            env()->comp_level(),
-                           has_unsafe_access()
+                           has_unsafe_access(),
+                           SharedRuntime::is_wide_vector(max_vector_size())
                            );
+
+    if (log() != NULL) // Print code cache state into compiler log
+      log()->code_cache_state();
   }
 }
 
@@ -925,17 +929,6 @@ Compile::Compile( ciEnv* ci_env,
   }
 }
 
-#ifndef PRODUCT
-void print_opto_verbose_signature( const TypeFunc *j_sig, const char *stub_name ) {
-  if(PrintOpto && Verbose) {
-    tty->print("%s   ", stub_name); j_sig->print_flattened(); tty->cr();
-  }
-}
-#endif
-
-void Compile::print_codes() {
-}
-
 //------------------------------Init-------------------------------------------
 // Prepare for a single compilation
 void Compile::Init(int aliaslevel) {
@@ -957,13 +950,13 @@ void Compile::Init(int aliaslevel) {
   // Globally visible Nodes
   // First set TOP to NULL to give safe behavior during creation of RootNode
   set_cached_top_node(NULL);
-  set_root(new (this, 3) RootNode());
+  set_root(new (this) RootNode());
   // Now that you have a Root to point to, create the real TOP
-  set_cached_top_node( new (this, 1) ConNode(Type::TOP) );
+  set_cached_top_node( new (this) ConNode(Type::TOP) );
   set_recent_alloc(NULL, NULL);
 
   // Create Debug Information Recorder to record scopes, oopmaps, etc.
-  env()->set_oop_recorder(new OopRecorder(comp_arena()));
+  env()->set_oop_recorder(new OopRecorder(env()->arena()));
   env()->set_debug_info(new DebugInformationRecorder(env()->oop_recorder()));
   env()->set_dependencies(new Dependencies(env()));
 
@@ -974,6 +967,7 @@ void Compile::Init(int aliaslevel) {
   _trap_can_recompile = false;  // no traps emitted yet
   _major_progress = true; // start out assuming good things will happen
   set_has_unsafe_access(false);
+  set_max_vector_size(0);
   Copy::zero_to_bytes(_trap_hist, sizeof(_trap_hist));
   set_decompile_count(0);
 
@@ -1182,7 +1176,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     // space to include all of the array body.  Only the header, klass
     // and array length can be accessed un-aliased.
     if( offset != Type::OffsetBot ) {
-      if( ta->const_oop() ) { // methodDataOop or methodOop
+      if( ta->const_oop() ) { // MethodData* or Method*
         offset = Type::OffsetBot;   // Flatten constant access into array body
         tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),ta->ary(),ta->klass(),false,offset);
       } else if( offset == arrayOopDesc::length_offset_in_bytes() ) {
@@ -2245,6 +2239,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
           nop != Op_CreateEx &&
           nop != Op_CheckCastPP &&
           nop != Op_DecodeN &&
+          nop != Op_DecodeNKlass &&
           !n->is_Mem() ) {
         Node *x = n->clone();
         call->set_req( TypeFunc::Parms, x );
@@ -2285,13 +2280,19 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   case Op_CompareAndSwapL:
   case Op_CompareAndSwapP:
   case Op_CompareAndSwapN:
+  case Op_GetAndAddI:
+  case Op_GetAndAddL:
+  case Op_GetAndSetI:
+  case Op_GetAndSetL:
+  case Op_GetAndSetP:
+  case Op_GetAndSetN:
   case Op_StoreP:
   case Op_StoreN:
+  case Op_StoreNKlass:
   case Op_LoadB:
   case Op_LoadUB:
   case Op_LoadUS:
   case Op_LoadI:
-  case Op_LoadUI2L:
   case Op_LoadKlass:
   case Op_LoadNKlass:
   case Op_LoadL:
@@ -2321,7 +2322,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
             addp->in(AddPNode::Base) == n->in(AddPNode::Base),
             "Base pointers must match" );
 #ifdef _LP64
-    if (UseCompressedOops &&
+    if ((UseCompressedOops || UseCompressedKlassPointers) &&
         addp->Opcode() == Op_ConP &&
         addp == n->in(AddPNode::Base) &&
         n->in(AddPNode::Offset)->is_Con()) {
@@ -2330,8 +2331,10 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
       // instructions (4) then load 64-bits constant (7).
       // Do this transformation here since IGVN will convert ConN back to ConP.
       const Type* t = addp->bottom_type();
-      if (t->isa_oopptr()) {
+      if (t->isa_oopptr() || t->isa_klassptr()) {
         Node* nn = NULL;
+
+        int op = t->isa_oopptr() ? Op_ConN : Op_ConNKlass;
 
         // Look for existing ConN node of the same exact type.
         Compile* C = Compile::current();
@@ -2339,7 +2342,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
         uint cnt = r->outcnt();
         for (uint i = 0; i < cnt; i++) {
           Node* m = r->raw_out(i);
-          if (m!= NULL && m->Opcode() == Op_ConN &&
+          if (m!= NULL && m->Opcode() == op &&
               m->bottom_type()->make_ptr() == t) {
             nn = m;
             break;
@@ -2348,7 +2351,11 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
         if (nn != NULL) {
           // Decode a narrow oop to match address
           // [R12 + narrow_oop_reg<<3 + offset]
-          nn = new (C,  2) DecodeNNode(nn, t);
+          if (t->isa_oopptr()) {
+            nn = new (C) DecodeNNode(nn, t);
+          } else {
+            nn = new (C) DecodeNKlassNode(nn, t);
+          }
           n->set_req(AddPNode::Base, nn);
           n->set_req(AddPNode::Address, nn);
           if (addp->outcnt() == 0) {
@@ -2403,22 +2410,24 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   case Op_CmpP:
     // Do this transformation here to preserve CmpPNode::sub() and
     // other TypePtr related Ideal optimizations (for example, ptr nullness).
-    if (n->in(1)->is_DecodeN() || n->in(2)->is_DecodeN()) {
+    if (n->in(1)->is_DecodeNarrowPtr() || n->in(2)->is_DecodeNarrowPtr()) {
       Node* in1 = n->in(1);
       Node* in2 = n->in(2);
-      if (!in1->is_DecodeN()) {
+      if (!in1->is_DecodeNarrowPtr()) {
         in2 = in1;
         in1 = n->in(2);
       }
-      assert(in1->is_DecodeN(), "sanity");
+      assert(in1->is_DecodeNarrowPtr(), "sanity");
 
       Compile* C = Compile::current();
       Node* new_in2 = NULL;
-      if (in2->is_DecodeN()) {
+      if (in2->is_DecodeNarrowPtr()) {
+        assert(in2->Opcode() == in1->Opcode(), "must be same node type");
         new_in2 = in2->in(1);
       } else if (in2->Opcode() == Op_ConP) {
         const Type* t = in2->bottom_type();
         if (t == TypePtr::NULL_PTR) {
+          assert(in1->is_DecodeN(), "compare klass to null?");
           // Don't convert CmpP null check into CmpN if compressed
           // oops implicit null check is not generated.
           // This will allow to generate normal oop implicit null check.
@@ -2463,10 +2472,12 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
           //
         } else if (t->isa_oopptr()) {
           new_in2 = ConNode::make(C, t->make_narrowoop());
+        } else if (t->isa_klassptr()) {
+          new_in2 = ConNode::make(C, t->make_narrowklass());
         }
       }
       if (new_in2 != NULL) {
-        Node* cmpN = new (C, 3) CmpNNode(in1->in(1), new_in2);
+        Node* cmpN = new (C) CmpNNode(in1->in(1), new_in2);
         n->subsume_by( cmpN );
         if (in1->outcnt() == 0) {
           in1->disconnect_inputs(NULL);
@@ -2479,23 +2490,28 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     break;
 
   case Op_DecodeN:
-    assert(!n->in(1)->is_EncodeP(), "should be optimized out");
+  case Op_DecodeNKlass:
+    assert(!n->in(1)->is_EncodeNarrowPtr(), "should be optimized out");
     // DecodeN could be pinned when it can't be fold into
     // an address expression, see the code for Op_CastPP above.
-    assert(n->in(0) == NULL || !Matcher::narrow_oop_use_complex_address(), "no control");
+    assert(n->in(0) == NULL || (UseCompressedOops && !Matcher::narrow_oop_use_complex_address()), "no control");
     break;
 
-  case Op_EncodeP: {
+  case Op_EncodeP:
+  case Op_EncodePKlass: {
     Node* in1 = n->in(1);
-    if (in1->is_DecodeN()) {
+    if (in1->is_DecodeNarrowPtr()) {
       n->subsume_by(in1->in(1));
     } else if (in1->Opcode() == Op_ConP) {
       Compile* C = Compile::current();
       const Type* t = in1->bottom_type();
       if (t == TypePtr::NULL_PTR) {
+        assert(t->isa_oopptr(), "null klass?");
         n->subsume_by(ConNode::make(C, TypeNarrowOop::NULL_PTR));
       } else if (t->isa_oopptr()) {
         n->subsume_by(ConNode::make(C, t->make_narrowoop()));
+      } else if (t->isa_klassptr()) {
+        n->subsume_by(ConNode::make(C, t->make_narrowklass()));
       }
     }
     if (in1->outcnt() == 0) {
@@ -2529,7 +2545,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   }
 
   case Op_Phi:
-    if (n->as_Phi()->bottom_type()->isa_narrowoop()) {
+    if (n->as_Phi()->bottom_type()->isa_narrowoop() || n->as_Phi()->bottom_type()->isa_narrowklass()) {
       // The EncodeP optimization may create Phi with the same edges
       // for all paths. It is not handled well by Register Allocator.
       Node* unique_in = n->in(1);
@@ -2562,8 +2578,8 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
           n->subsume_by(divmod->mod_proj());
         } else {
           // replace a%b with a-((a/b)*b)
-          Node* mult = new (C, 3) MulINode(d, d->in(2));
-          Node* sub  = new (C, 3) SubINode(d->in(1), mult);
+          Node* mult = new (C) MulINode(d, d->in(2));
+          Node* sub  = new (C) SubINode(d->in(1), mult);
           n->subsume_by( sub );
         }
       }
@@ -2583,8 +2599,8 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
           n->subsume_by(divmod->mod_proj());
         } else {
           // replace a%b with a-((a/b)*b)
-          Node* mult = new (C, 3) MulLNode(d, d->in(2));
-          Node* sub  = new (C, 3) SubLNode(d->in(1), mult);
+          Node* mult = new (C) MulLNode(d, d->in(2));
+          Node* sub  = new (C) SubLNode(d->in(1), mult);
           n->subsume_by( sub );
         }
       }
@@ -2635,7 +2651,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
       } else {
         if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
           Compile* C = Compile::current();
-          Node* shift = new (C, 3) AndINode(in2, ConNode::make(C, TypeInt::make(mask)));
+          Node* shift = new (C) AndINode(in2, ConNode::make(C, TypeInt::make(mask)));
           n->set_req(2, shift);
         }
       }
@@ -2692,12 +2708,13 @@ static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Re
   }
 
   // Skip next transformation if compressed oops are not used.
-  if (!UseCompressedOops || !Matcher::gen_narrow_oop_implicit_null_checks())
+  if ((UseCompressedOops && !Matcher::gen_narrow_oop_implicit_null_checks()) ||
+      (!UseCompressedOops && !UseCompressedKlassPointers))
     return;
 
-  // Go over safepoints nodes to skip DecodeN nodes for debug edges.
+  // Go over safepoints nodes to skip DecodeN/DecodeNKlass nodes for debug edges.
   // It could be done for an uncommon traps or any safepoints/calls
-  // if the DecodeN node is referenced only in a debug info.
+  // if the DecodeN/DecodeNKlass node is referenced only in a debug info.
   while (sfpt.size() > 0) {
     n = sfpt.pop();
     JVMState *jvms = n->as_SafePoint()->jvms();
@@ -2708,7 +2725,7 @@ static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Re
                         n->as_CallStaticJava()->uncommon_trap_request() != 0);
     for (int j = start; j < end; j++) {
       Node* in = n->in(j);
-      if (in->is_DecodeN()) {
+      if (in->is_DecodeNarrowPtr()) {
         bool safe_to_skip = true;
         if (!is_uncommon ) {
           // Is it safe to skip?
@@ -3026,12 +3043,13 @@ bool Compile::Constant::operator==(const Constant& other) {
   if (can_be_reused() != other.can_be_reused())  return false;
   // For floating point values we compare the bit pattern.
   switch (type()) {
-  case T_FLOAT:   return (_value.i == other._value.i);
+  case T_FLOAT:   return (_v._value.i == other._v._value.i);
   case T_LONG:
-  case T_DOUBLE:  return (_value.j == other._value.j);
+  case T_DOUBLE:  return (_v._value.j == other._v._value.j);
   case T_OBJECT:
-  case T_ADDRESS: return (_value.l == other._value.l);
-  case T_VOID:    return (_value.l == other._value.l);  // jump-table entries
+  case T_METADATA: return (_v._metadata == other._v._metadata);
+  case T_ADDRESS: return (_v._value.l == other._v._value.l);
+  case T_VOID:    return (_v._value.l == other._v._value.l);  // jump-table entries
   default: ShouldNotReachHere();
   }
   return false;
@@ -3042,6 +3060,7 @@ static int type_to_size_in_bytes(BasicType t) {
   case T_LONG:    return sizeof(jlong  );
   case T_FLOAT:   return sizeof(jfloat );
   case T_DOUBLE:  return sizeof(jdouble);
+  case T_METADATA: return sizeof(Metadata*);
     // We use T_VOID as marker for jump-table entries (labels) which
     // need an internal word relocation.
   case T_VOID:
@@ -3135,6 +3154,12 @@ void Compile::ConstantTable::emit(CodeBuffer& cb) {
       }
       break;
     }
+    case T_METADATA: {
+      Metadata* obj = con.get_metadata();
+      int metadata_index = _masm.oop_recorder()->find_index(obj);
+      constant_addr = _masm.address_constant((address) obj, metadata_Relocation::spec(metadata_index));
+      break;
+    }
     default: ShouldNotReachHere();
     }
     assert(constant_addr, "consts section too small");
@@ -3168,6 +3193,12 @@ Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, BasicType typ
   return con;
 }
 
+Compile::Constant Compile::ConstantTable::add(Metadata* metadata) {
+  Constant con(metadata);
+  add(con);
+  return con;
+}
+
 Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, MachOper* oper) {
   jvalue value;
   BasicType type = oper->type()->basic_type();
@@ -3177,7 +3208,8 @@ Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, MachOper* ope
   case T_DOUBLE:  value.d = oper->constantD(); break;
   case T_OBJECT:
   case T_ADDRESS: value.l = (jobject) oper->constant(); break;
-  default: ShouldNotReachHere();
+  case T_METADATA: return add((Metadata*)oper->constant()); break;
+  default: guarantee(false, err_msg_res("unhandled type: %s", type2name(type)));
   }
   return add(n, type, value);
 }

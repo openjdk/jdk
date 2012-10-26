@@ -59,7 +59,7 @@ int                        PSScavenge::_consecutive_skipped_scavenges = 0;
 ReferenceProcessor*        PSScavenge::_ref_processor = NULL;
 CardTableExtension*        PSScavenge::_card_table = NULL;
 bool                       PSScavenge::_survivor_overflow = false;
-int                        PSScavenge::_tenuring_threshold = 0;
+uint                       PSScavenge::_tenuring_threshold = 0;
 HeapWord*                  PSScavenge::_young_generation_boundary = NULL;
 elapsedTimer               PSScavenge::_accumulated_time;
 Stack<markOop, mtGC>       PSScavenge::_preserved_mark_stack;
@@ -284,7 +284,6 @@ bool PSScavenge::invoke_no_policy() {
 
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
-  PSPermGen* perm_gen = heap->perm_gen();
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
   heap->increment_total_collections();
 
@@ -316,7 +315,7 @@ bool PSScavenge::invoke_no_policy() {
   if (VerifyBeforeGC && heap->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
     gclog_or_tty->print(" VerifyBeforeGC:");
-    Universe::verify(true);
+    Universe::verify();
   }
 
   {
@@ -338,7 +337,6 @@ bool PSScavenge::invoke_no_policy() {
     if (VerifyObjectStartArray &&
         VerifyBeforeGC) {
       old_gen->verify_object_start_array();
-      perm_gen->verify_object_start_array();
     }
 
     // Verify no unmarked old->young roots
@@ -370,12 +368,11 @@ bool PSScavenge::invoke_no_policy() {
     // Reset our survivor overflow.
     set_survivor_overflow(false);
 
-    // We need to save the old/perm top values before
+    // We need to save the old top values before
     // creating the promotion_manager. We pass the top
     // values to the card_table, to prevent it from
     // straying into the promotion labs.
     HeapWord* old_top = old_gen->object_space()->top();
-    HeapWord* perm_top = perm_gen->object_space()->top();
 
     // Release all previously held resources
     gc_task_manager()->release_all_resources();
@@ -398,12 +395,14 @@ bool PSScavenge::invoke_no_policy() {
 
       GCTaskQueue* q = GCTaskQueue::create();
 
-      uint stripe_total = active_workers;
-      for(uint i=0; i < stripe_total; i++) {
-        q->enqueue(new OldToYoungRootsTask(old_gen, old_top, i, stripe_total));
+      if (!old_gen->object_space()->is_empty()) {
+        // There are only old-to-young pointers if there are objects
+        // in the old gen.
+        uint stripe_total = active_workers;
+        for(uint i=0; i < stripe_total; i++) {
+          q->enqueue(new OldToYoungRootsTask(old_gen, old_top, i, stripe_total));
+        }
       }
-
-      q->enqueue(new SerialOldToYoungRootsTask(perm_gen, perm_top));
 
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::universe));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jni_handles));
@@ -454,13 +453,11 @@ bool PSScavenge::invoke_no_policy() {
       reference_processor()->enqueue_discovered_references(NULL);
     }
 
-    if (!JavaObjectsInPerm) {
       // Unlink any dead interned Strings
       StringTable::unlink(&_is_alive_closure);
       // Process the remaining live ones
       PSScavengeRootsClosure root_closure(promotion_manager);
       StringTable::oops_do(&root_closure);
-    }
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
     PSPromotionManager::post_scavenge();
@@ -503,10 +500,8 @@ bool PSScavenge::invoke_no_policy() {
                          heap->total_collections());
 
           if (Verbose) {
-            gclog_or_tty->print("old_gen_capacity: %d young_gen_capacity: %d"
-              " perm_gen_capacity: %d ",
-              old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes(),
-              perm_gen->capacity_in_bytes());
+            gclog_or_tty->print("old_gen_capacity: %d young_gen_capacity: %d",
+              old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
           }
         }
 
@@ -534,7 +529,7 @@ bool PSScavenge::invoke_no_policy() {
 
        if (PrintTenuringDistribution) {
          gclog_or_tty->cr();
-         gclog_or_tty->print_cr("Desired survivor size %ld bytes, new threshold %d (max %d)",
+         gclog_or_tty->print_cr("Desired survivor size %ld bytes, new threshold %u (max %u)",
                                 size_policy->calculated_survivor_size_in_bytes(),
                                 _tenuring_threshold, MaxTenuringThreshold);
        }
@@ -564,7 +559,6 @@ bool PSScavenge::invoke_no_policy() {
           size_policy->compute_generation_free_space(young_gen->used_in_bytes(),
                                    young_gen->eden_space()->used_in_bytes(),
                                    old_gen->used_in_bytes(),
-                                   perm_gen->used_in_bytes(),
                                    young_gen->eden_space()->capacity_in_bytes(),
                                    old_gen->max_gen_size(),
                                    max_eden_size,
@@ -614,7 +608,6 @@ bool PSScavenge::invoke_no_policy() {
     if (VerifyObjectStartArray &&
         VerifyAfterGC) {
       old_gen->verify_object_start_array();
-      perm_gen->verify_object_start_array();
     }
 
     // Verify all old -> young cards are now precise
@@ -646,7 +639,7 @@ bool PSScavenge::invoke_no_policy() {
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
     gclog_or_tty->print(" VerifyAfterGC:");
-    Universe::verify(false);
+    Universe::verify();
   }
 
   heap->print_heap_after_gc();
@@ -810,11 +803,8 @@ void PSScavenge::initialize() {
 
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
-  PSPermGen* perm_gen = heap->perm_gen();
 
   // Set boundary between young_gen and old_gen
-  assert(perm_gen->reserved().end() <= old_gen->object_space()->bottom(),
-         "perm above old");
   assert(old_gen->reserved().end() <= young_gen->eden_space()->bottom(),
          "old above young");
   _young_generation_boundary = young_gen->eden_space()->bottom();

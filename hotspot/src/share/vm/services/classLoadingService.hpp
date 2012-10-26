@@ -29,7 +29,7 @@
 #include "runtime/perfData.hpp"
 #include "utilities/growableArray.hpp"
 
-class instanceKlass;
+class InstanceKlass;
 
 // VM monitoring and management support for the Class Loading subsystem
 class ClassLoadingService : public AllStatic {
@@ -48,14 +48,14 @@ private:
 
   static PerfVariable* _class_methods_size;
 
-  static size_t compute_class_size(instanceKlass* k);
+  static size_t compute_class_size(InstanceKlass* k);
 
 public:
   static void init();
 
   static bool get_verbose() { return TraceClassLoading; }
   static bool set_verbose(bool verbose);
-  static void reset_trace_class_unloading();
+  static void reset_trace_class_unloading() NOT_MANAGEMENT_RETURN;
 
   static jlong loaded_class_count() {
     return _classes_loaded_count->get_value() + _shared_classes_loaded_count->get_value();
@@ -102,13 +102,16 @@ public:
     return (UsePerfData ? _class_methods_size->get_value() : -1);
   }
 
-  static void notify_class_loaded(instanceKlass* k, bool shared_class);
+  static void notify_class_loaded(InstanceKlass* k, bool shared_class)
+      NOT_MANAGEMENT_RETURN;
   // All unloaded classes are non-shared
-  static void notify_class_unloaded(instanceKlass* k);
+  static void notify_class_unloaded(InstanceKlass* k) NOT_MANAGEMENT_RETURN;
   static void add_class_method_size(int size) {
+#if INCLUDE_MANAGEMENT
     if (UsePerfData) {
       _class_methods_size->inc(size);
     }
+#endif // INCLUDE_MANAGEMENT
   }
 };
 
@@ -127,12 +130,12 @@ public:
   int num_loaded_classes()         { return _klass_handle_array->length(); }
   KlassHandle get_klass(int index) { return _klass_handle_array->at(index); }
 
-  static void add_loaded_class(klassOop k) {
+  static void add_loaded_class(Klass* k) {
     // FIXME: For now - don't include array klasses
     // The spec is unclear at this point to count array klasses or not
     // and also indirect creation of array of super class and secondaries
     //
-    // for (klassOop l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+    // for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
     //  KlassHandle h(_current_thread, l);
     //  _loaded_classes->append(h);
     // }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,12 +69,12 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address npe_addr = __ pc();
   __ load_klass(O0, G3_scratch);
 
-  // set methodOop (in case of interpreted method), and destination address
+  // set Method* (in case of interpreted method), and destination address
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
     // check offset vs vtable length
-    __ ld(G3_scratch, instanceKlass::vtable_length_offset()*wordSize, G5);
+    __ ld(G3_scratch, InstanceKlass::vtable_length_offset()*wordSize, G5);
     __ cmp_and_br_short(G5, vtable_index*vtableEntry::size(), Assembler::greaterUnsigned, Assembler::pt, L);
     __ set(vtable_index, O2);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), O0, O2);
@@ -96,11 +96,11 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address ame_addr = __ pc();  // if the vtable entry is null, the method is abstract
                                // NOTE: for vtable dispatches, the vtable entry will never be null.
 
-  __ ld_ptr(G5_method, in_bytes(methodOopDesc::from_compiled_offset()), G3_scratch);
+  __ ld_ptr(G5_method, in_bytes(Method::from_compiled_offset()), G3_scratch);
 
   // jump to target (either compiled code or c2iadapter)
   __ JMP(G3_scratch, 0);
-  // load methodOop (in case we call c2iadapter)
+  // load Method* (in case we call c2iadapter)
   __ delayed()->nop();
 
   masm->flush();
@@ -130,7 +130,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   CodeBuffer cb(s->entry_point(), sparc_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
 
-  Register G3_klassOop = G3_scratch;
+  Register G3_Klass = G3_scratch;
   Register G5_interface = G5;  // Passed in as an argument
   Label search;
 
@@ -141,8 +141,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   // get receiver klass (also an implicit null-check)
   address npe_addr = __ pc();
-  __ load_klass(O0, G3_klassOop);
-  __ verify_oop(G3_klassOop);
+  __ load_klass(O0, G3_Klass);
 
   // Push a new window to get some temp registers.  This chops the head of all
   // my 64-bit %o registers in the LION build, but this is OK because no longs
@@ -160,7 +159,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   Register L5_method = L5;
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             G3_klassOop, G5_interface, itable_index,
+                             G3_Klass, G5_interface, itable_index,
                              // outputs: method, scan temp. reg
                              L5_method, L2, L3,
                              throw_icce);
@@ -169,9 +168,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   if (DebugVtables) {
     Label L01;
     __ br_notnull_short(L5_method, Assembler::pt, L01);
-    __ stop("methodOop is null");
+    __ stop("Method* is null");
     __ bind(L01);
-    __ verify_oop(L5_method);
   }
 #endif
 
@@ -182,9 +180,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // Restore registers *before* the AME point.
 
   address ame_addr = __ pc();   // if the vtable entry is null, the method is abstract
-  __ ld_ptr(G5_method, in_bytes(methodOopDesc::from_compiled_offset()), G3_scratch);
+  __ ld_ptr(G5_method, in_bytes(Method::from_compiled_offset()), G3_scratch);
 
-  // G5_method:  methodOop
+  // G5_method:  Method*
   // O0:         Receiver
   // G3_scratch: entry point
   __ JMP(G3_scratch, 0);
@@ -221,14 +219,14 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
       // ld;ld;ld,jmp,nop
       const int basic = 5*BytesPerInstWord +
                         // shift;add for load_klass (only shift with zero heap based)
-                        (UseCompressedOops ?
-                         ((Universe::narrow_oop_base() == NULL) ? BytesPerInstWord : 2*BytesPerInstWord) : 0);
+                        (UseCompressedKlassPointers ?
+                         ((Universe::narrow_klass_base() == NULL) ? BytesPerInstWord : 2*BytesPerInstWord) : 0);
       return basic + slop;
     } else {
       const int basic = (28 LP64_ONLY(+ 6)) * BytesPerInstWord +
                         // shift;add for load_klass (only shift with zero heap based)
-                        (UseCompressedOops ?
-                         ((Universe::narrow_oop_base() == NULL) ? BytesPerInstWord : 2*BytesPerInstWord) : 0);
+                        (UseCompressedKlassPointers ?
+                         ((Universe::narrow_klass_base() == NULL) ? BytesPerInstWord : 2*BytesPerInstWord) : 0);
       return (basic + slop);
     }
   }

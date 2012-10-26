@@ -887,7 +887,7 @@ void GraphBuilder::load_constant() {
           patch_state = copy_state_before();
           t = new ObjectConstant(obj);
         } else {
-          assert(!obj->is_klass(), "must be java_mirror of klass");
+          assert(obj->is_instance(), "must be java_mirror of klass");
           t = new InstanceConstant(obj->as_instance());
         }
         break;
@@ -1434,7 +1434,7 @@ void GraphBuilder::method_return(Value x) {
     if (compilation()->env()->dtrace_method_probes()) {
       // Report exit from inline methods
       Values* args = new Values(1);
-      args->push(append(new Constant(new ObjectConstant(method()))));
+      args->push(append(new Constant(new MethodConstant(method()))));
       append(new RuntimeCall(voidType, "dtrace_method_exit", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), args));
     }
 
@@ -1682,6 +1682,12 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   ciInstanceKlass* callee_holder = ciEnv::get_instance_klass_for_declared_method_holder(holder);
   ciInstanceKlass* actual_recv = callee_holder;
 
+  CompileLog* log = compilation()->log();
+  if (log != NULL)
+      log->elem("call method='%d' instr='%s'",
+                log->identify(target),
+                Bytecodes::name(code));
+
   // Some methods are obviously bindable without any type checks so
   // convert them directly to an invokespecial or invokestatic.
   if (target->is_loaded() && !target->is_abstract() && target->can_be_statically_bound()) {
@@ -1826,6 +1832,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     }
     code = Bytecodes::_invokespecial;
   }
+
   // check if we could do inlining
   if (!PatchALot && Inline && klass->is_loaded() &&
       (klass->is_initialized() || klass->is_interface() && target->holder()->is_initialized())
@@ -1887,7 +1894,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     code == Bytecodes::_invokeinterface;
   Values* args = state()->pop_arguments(target->arg_size_no_receiver());
   Value recv = has_receiver ? apop() : NULL;
-  int vtable_index = methodOopDesc::invalid_vtable_index;
+  int vtable_index = Method::invalid_vtable_index;
 
 #ifdef SPARC
   // Currently only supported on Sparc.
@@ -2448,6 +2455,7 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
 #endif
   _skip_block = false;
   assert(state() != NULL, "ValueStack missing!");
+  CompileLog* log = compilation()->log();
   ciBytecodeStream s(method());
   s.reset_to_bci(bci);
   int prev_bci = bci;
@@ -2465,6 +2473,9 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
          (code = stream()->next()) != ciBytecodeStream::EOBC() &&
          (block_at(s.cur_bci()) == NULL || block_at(s.cur_bci()) == block())) {
     assert(state()->kind() == ValueStack::Parsing, "invalid state kind");
+
+    if (log != NULL)
+      log->set_context("bc code='%d' bci='%d'", (int)code, s.cur_bci());
 
     // Check for active jsr during OSR compilation
     if (compilation()->is_osr_compile()
@@ -2686,8 +2697,13 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
       case Bytecodes::_breakpoint     : BAILOUT_("concurrent setting of breakpoint", NULL);
       default                         : ShouldNotReachHere(); break;
     }
+
+    if (log != NULL)
+      log->clear_context(); // skip marker if nothing was printed
+
     // save current bci to setup Goto at the end
     prev_bci = s.cur_bci();
+
   }
   CHECK_BAILOUT_(NULL);
   // stop processing of this block (see try_inline_full)
@@ -3383,6 +3399,41 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
       append_unsafe_CAS(callee);
       return true;
 
+    case vmIntrinsics::_getAndAddInt:
+      if (!VM_Version::supports_atomic_getadd4()) {
+        return false;
+      }
+      return append_unsafe_get_and_set_obj(callee, true);
+    case vmIntrinsics::_getAndAddLong:
+      if (!VM_Version::supports_atomic_getadd8()) {
+        return false;
+      }
+      return append_unsafe_get_and_set_obj(callee, true);
+    case vmIntrinsics::_getAndSetInt:
+      if (!VM_Version::supports_atomic_getset4()) {
+        return false;
+      }
+      return append_unsafe_get_and_set_obj(callee, false);
+    case vmIntrinsics::_getAndSetLong:
+      if (!VM_Version::supports_atomic_getset8()) {
+        return false;
+      }
+      return append_unsafe_get_and_set_obj(callee, false);
+    case vmIntrinsics::_getAndSetObject:
+#ifdef _LP64
+      if (!UseCompressedOops && !VM_Version::supports_atomic_getset8()) {
+        return false;
+      }
+      if (UseCompressedOops && !VM_Version::supports_atomic_getset4()) {
+        return false;
+      }
+#else
+      if (!VM_Version::supports_atomic_getset4()) {
+        return false;
+      }
+#endif
+      return append_unsafe_get_and_set_obj(callee, false);
+
     case vmIntrinsics::_Reference_get:
       // Use the intrinsic version of Reference.get() so that the value in
       // the referent field can be registered by the G1 pre-barrier code.
@@ -3544,7 +3595,7 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
     // Report exit from inline methods.  We don't have a stream here
     // so pass an explicit bci of SynchronizationEntryBCI.
     Values* args = new Values(1);
-    args->push(append_with_bci(new Constant(new ObjectConstant(method())), bci));
+    args->push(append_with_bci(new Constant(new MethodConstant(method())), bci));
     append_with_bci(new RuntimeCall(voidType, "dtrace_method_exit", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), args), bci);
   }
 
@@ -3632,7 +3683,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
       INLINE_BAILOUT("total inlining greater than DesiredMethodLimit");
     }
     // printing
-    print_inlining(callee, "");
+    print_inlining(callee);
   }
 
   // NOTE: Bailouts from this point on, which occur at the
@@ -3732,7 +3783,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
 
   if (compilation()->env()->dtrace_method_probes()) {
     Values* args = new Values(1);
-    args->push(append(new Constant(new ObjectConstant(method()))));
+    args->push(append(new Constant(new MethodConstant(method()))));
     append(new RuntimeCall(voidType, "dtrace_method_entry", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry), args));
   }
 
@@ -4098,14 +4149,41 @@ void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
 
 
 void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool success) {
+  CompileLog* log = compilation()->log();
+  if (log != NULL) {
+    if (success) {
+      if (msg != NULL)
+        log->inline_success(msg);
+      else
+        log->inline_success("receiver is statically known");
+    } else {
+      log->inline_fail(msg);
+    }
+  }
+
   if (!PrintInlining)  return;
-  assert(msg != NULL, "must be");
   CompileTask::print_inlining(callee, scope()->level(), bci(), msg);
   if (success && CIPrintMethodCodes) {
     callee->print_codes();
   }
 }
 
+bool GraphBuilder::append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add) {
+  if (InlineUnsafeOps) {
+    Values* args = state()->pop_arguments(callee->arg_size());
+    BasicType t = callee->return_type()->basic_type();
+    null_check(args->at(0));
+    Instruction* offset = args->at(2);
+#ifndef _LP64
+    offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
+#endif
+    Instruction* op = append(new UnsafeGetAndSetObject(t, args->at(1), offset, args->at(3), is_add));
+    compilation()->set_has_unsafe_access(true);
+    kill_all();
+    push(op->type(), op);
+  }
+  return InlineUnsafeOps;
+}
 
 #ifndef PRODUCT
 void GraphBuilder::print_stats() {

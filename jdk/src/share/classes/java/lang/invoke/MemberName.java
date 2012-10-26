@@ -558,7 +558,7 @@ import java.util.Objects;
         try {
             return (MemberName) super.clone();
         } catch (CloneNotSupportedException ex) {
-            throw new InternalError(ex);
+            throw newInternalError(ex);
         }
      }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
@@ -51,6 +54,27 @@ void  StackObj::operator delete(void* p)   { ShouldNotCallThis(); };
 void* _ValueObj::operator new(size_t size)  { ShouldNotCallThis(); return 0; };
 void  _ValueObj::operator delete(void* p)   { ShouldNotCallThis(); };
 
+void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
+                                size_t word_size, bool read_only, TRAPS) {
+  // Klass has it's own operator new
+  return Metaspace::allocate(loader_data, word_size, read_only,
+                             Metaspace::NonClassType, CHECK_NULL);
+}
+
+bool MetaspaceObj::is_shared() const {
+  return MetaspaceShared::is_in_shared_space(this);
+}
+
+bool MetaspaceObj::is_metadata() const {
+  // ClassLoaderDataGraph::contains((address)this); has lock inversion problems
+  return !Universe::heap()->is_in_reserved(this);
+}
+
+void MetaspaceObj::print_address_on(outputStream* st) const {
+  st->print(" {"INTPTR_FORMAT"}", this);
+}
+
+
 void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flags) {
   address res;
   switch (type) {
@@ -67,6 +91,26 @@ void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flag
   }
   return res;
 }
+
+void* ResourceObj::operator new(size_t size, const std::nothrow_t&  nothrow_constant,
+    allocation_type type, MEMFLAGS flags) {
+  //should only call this with std::nothrow, use other operator new() otherwise
+  address res;
+  switch (type) {
+   case C_HEAP:
+    res = (address)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);
+    DEBUG_ONLY(if (res!= NULL) set_allocation_type(res, C_HEAP);)
+    break;
+   case RESOURCE_AREA:
+    // new(size) sets allocation type RESOURCE_AREA.
+    res = (address)operator new(size, std::nothrow);
+    break;
+   default:
+    ShouldNotReachHere();
+  }
+  return res;
+}
+
 
 void ResourceObj::operator delete(void* p) {
   assert(((ResourceObj *)p)->allocated_on_C_heap(),
@@ -482,7 +526,7 @@ void Arena::signal_out_of_memory(size_t sz, const char* whence) const {
 }
 
 // Grow a new Chunk
-void* Arena::grow( size_t x ) {
+void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
   size_t len = MAX2(x, (size_t) Chunk::size);
 
@@ -490,7 +534,10 @@ void* Arena::grow( size_t x ) {
   _chunk = new (len) Chunk(len);
 
   if (_chunk == NULL) {
-    signal_out_of_memory(len * Chunk::aligned_overhead_size(), "Arena::grow");
+    if (alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+      signal_out_of_memory(len * Chunk::aligned_overhead_size(), "Arena::grow");
+    }
+    return NULL;
   }
   if (k) k->set_next(_chunk);   // Append new chunk to end of linked list
   else _first = _chunk;
@@ -505,13 +552,16 @@ void* Arena::grow( size_t x ) {
 
 
 // Reallocate storage in Arena.
-void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size) {
+void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFailType alloc_failmode) {
   assert(new_size >= 0, "bad size");
   if (new_size == 0) return NULL;
 #ifdef ASSERT
   if (UseMallocOnly) {
     // always allocate a new object  (otherwise we'll free this one twice)
-    char* copy = (char*)Amalloc(new_size);
+    char* copy = (char*)Amalloc(new_size, alloc_failmode);
+    if (copy == NULL) {
+      return NULL;
+    }
     size_t n = MIN2(old_size, new_size);
     if (n > 0) memcpy(copy, old_ptr, n);
     Afree(old_ptr,old_size);    // Mostly done to keep stats accurate
@@ -537,7 +587,10 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size) {
   }
 
   // Oops, got to relocate guts
-  void *new_ptr = Amalloc(new_size);
+  void *new_ptr = Amalloc(new_size, alloc_failmode);
+  if (new_ptr == NULL) {
+    return NULL;
+  }
   memcpy( new_ptr, c_old, old_size );
   Afree(c_old,old_size);        // Mostly done to keep stats accurate
   return new_ptr;

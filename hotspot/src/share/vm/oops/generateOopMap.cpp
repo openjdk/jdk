@@ -1272,7 +1272,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
       case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
         int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
-        constantPoolOop cp    = method()->constants();
+        ConstantPool* cp      = method()->constants();
         int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
         int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
         Symbol* signature     = cp->symbol_at(signatureIdx);
@@ -1304,7 +1304,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
       case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
         int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
-        constantPoolOop cp    = method()->constants();
+        ConstantPool* cp      = method()->constants();
         int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
         int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
         Symbol* signature     = cp->symbol_at(signatureIdx);
@@ -1846,14 +1846,22 @@ void GenerateOopMap::do_jsr(int targ_bci) {
 
 void GenerateOopMap::do_ldc(int bci) {
   Bytecode_loadconstant ldc(method(), bci);
-  constantPoolOop cp  = method()->constants();
+  ConstantPool* cp  = method()->constants();
+  constantTag tag = cp->tag_at(ldc.pool_index()); // idx is index in resolved_references
   BasicType       bt  = ldc.result_type();
-  CellTypeState   cts = (bt == T_OBJECT) ? CellTypeState::make_line_ref(bci) : valCTS;
-  // Make sure bt==T_OBJECT is the same as old code (is_pointer_entry).
-  // Note that CONSTANT_MethodHandle entries are u2 index pairs, not pointer-entries,
-  // and they are processed by _fast_aldc and the CP cache.
-  assert((ldc.has_cache_index() || cp->is_object_entry(ldc.pool_index()))
-         ? (bt == T_OBJECT) : true, "expected object type");
+  CellTypeState   cts;
+  if (tag.is_klass() ||
+      tag.is_unresolved_klass() ||
+      tag.is_string() ||
+      tag.is_object() ||
+      tag.is_method_handle() ||
+      tag.is_method_type()) {
+    assert(bt == T_OBJECT, "Guard is incorrect");
+    cts = CellTypeState::make_line_ref(bci);
+  } else {
+    assert(bt != T_OBJECT, "Guard is incorrect");
+    cts = valCTS;
+  }
   ppush1(cts);
 }
 
@@ -1889,7 +1897,7 @@ int GenerateOopMap::copy_cts(CellTypeState *dst, CellTypeState *src) {
 
 void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
   // Dig up signature for field in constant pool
-  constantPoolOop cp     = method()->constants();
+  ConstantPool* cp     = method()->constants();
   int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx);
   int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
   Symbol* signature      = cp->symbol_at(signatureIdx);
@@ -1919,7 +1927,7 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
 
 void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci) {
  // Dig up signature for field in constant pool
-  constantPoolOop cp  = _method->constants();
+  ConstantPool* cp  = _method->constants();
   Symbol* signature   = cp->signature_ref_at(idx);
 
   // Parse method signature
@@ -2302,7 +2310,9 @@ void GenerateOopMap::rewrite_refval_conflict(int from, int to) {
     BytecodeStream bcs(_method);
     startOver = false;
 
-    while( bcs.next() >=0 && !startOver && !_got_error) {
+    while( !startOver && !_got_error &&
+           // test bcs in case method changed and it became invalid
+           bcs.next() >=0) {
       startOver = rewrite_refval_conflict_inst(&bcs, from, to);
     }
   } while (startOver && !_got_error);
@@ -2383,7 +2393,7 @@ bool GenerateOopMap::rewrite_load_or_store(BytecodeStream *bcs, Bytecodes::Code 
     bcp = _method->bcp_from(bcs->bci());
   }
 
-  // Patch either directly in methodOop or in temp. buffer
+  // Patch either directly in Method* or in temp. buffer
   if (newIlen == 1) {
     assert(varNo < 4, "varNo too large");
     *bcp = bc0 + varNo;

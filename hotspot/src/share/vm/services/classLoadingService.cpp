@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ HS_DTRACE_PROBE_DECL4(hotspot, class__unloaded, char*, int, oop, bool);
 
 #endif
 
+#if INCLUDE_MANAGEMENT
 // counters for classes loaded from class files
 PerfCounter*    ClassLoadingService::_classes_loaded_count = NULL;
 PerfCounter*    ClassLoadingService::_classes_unloaded_count = NULL;
@@ -134,7 +135,7 @@ void ClassLoadingService::init() {
   }
 }
 
-void ClassLoadingService::notify_class_unloaded(instanceKlass* k) {
+void ClassLoadingService::notify_class_unloaded(InstanceKlass* k) {
   DTRACE_CLASSLOAD_PROBE(unloaded, k, false);
   // Classes that can be unloaded must be non-shared
   _classes_unloaded_count->inc();
@@ -146,20 +147,20 @@ void ClassLoadingService::notify_class_unloaded(instanceKlass* k) {
 
     // Compute method size & subtract from running total.
     // We are called during phase 1 of mark sweep, so it's
-    // still ok to iterate through methodOops here.
-    objArrayOop methods = k->methods();
+    // still ok to iterate through Method*s here.
+    Array<Method*>* methods = k->methods();
     for (int i = 0; i < methods->length(); i++) {
-      _class_methods_size->inc(-methods->obj_at(i)->size());
+      _class_methods_size->inc(-methods->at(i)->size());
     }
   }
 
   if (TraceClassUnloading) {
     ResourceMark rm;
-    tty->print_cr("[Unloading class %s]", k->external_name());
+    tty->print_cr("[Unloading class %s " INTPTR_FORMAT "]", k->external_name(), k);
   }
 }
 
-void ClassLoadingService::notify_class_loaded(instanceKlass* k, bool shared_class) {
+void ClassLoadingService::notify_class_loaded(InstanceKlass* k, bool shared_class) {
   DTRACE_CLASSLOAD_PROBE(loaded, k, shared_class);
   PerfCounter* classes_counter = (shared_class ? _shared_classes_loaded_count
                                                : _classes_loaded_count);
@@ -175,20 +176,22 @@ void ClassLoadingService::notify_class_loaded(instanceKlass* k, bool shared_clas
   }
 }
 
-size_t ClassLoadingService::compute_class_size(instanceKlass* k) {
-  // lifted from ClassStatistics.do_class(klassOop k)
+size_t ClassLoadingService::compute_class_size(InstanceKlass* k) {
+  // lifted from ClassStatistics.do_class(Klass* k)
 
   size_t class_size = 0;
 
-  class_size += k->as_klassOop()->size();
+  class_size += k->size();
 
   if (k->oop_is_instance()) {
     class_size += k->methods()->size();
+    // FIXME: Need to count the contents of methods
     class_size += k->constants()->size();
     class_size += k->local_interfaces()->size();
     class_size += k->transitive_interfaces()->size();
     // We do not have to count implementors, since we only store one!
-    class_size += k->fields()->size();
+    // FIXME: How should these be accounted for, now when they have moved.
+    //class_size += k->fields()->size();
   }
   return class_size * oopSize;
 }
@@ -237,3 +240,5 @@ LoadedClassesEnumerator::LoadedClassesEnumerator(Thread* cur_thread) {
   // FIXME: Exclude array klasses for now
   // Universe::basic_type_classes_do(&add_loaded_class);
 }
+
+#endif // INCLUDE_MANAGEMENT

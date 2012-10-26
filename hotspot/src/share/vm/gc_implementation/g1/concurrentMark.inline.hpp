@@ -28,6 +28,42 @@
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 
+// Utility routine to set an exclusive range of cards on the given
+// card liveness bitmap
+inline void ConcurrentMark::set_card_bitmap_range(BitMap* card_bm,
+                                                  BitMap::idx_t start_idx,
+                                                  BitMap::idx_t end_idx,
+                                                  bool is_par) {
+
+  // Set the exclusive bit range [start_idx, end_idx).
+  assert((end_idx - start_idx) > 0, "at least one card");
+  assert(end_idx <= card_bm->size(), "sanity");
+
+  // Silently clip the end index
+  end_idx = MIN2(end_idx, card_bm->size());
+
+  // For small ranges use a simple loop; otherwise use set_range or
+  // use par_at_put_range (if parallel). The range is made up of the
+  // cards that are spanned by an object/mem region so 8 cards will
+  // allow up to object sizes up to 4K to be handled using the loop.
+  if ((end_idx - start_idx) <= 8) {
+    for (BitMap::idx_t i = start_idx; i < end_idx; i += 1) {
+      if (is_par) {
+        card_bm->par_set_bit(i);
+      } else {
+        card_bm->set_bit(i);
+      }
+    }
+  } else {
+    // Note BitMap::par_at_put_range() and BitMap::set_range() are exclusive.
+    if (is_par) {
+      card_bm->par_at_put_range(start_idx, end_idx, true);
+    } else {
+      card_bm->set_range(start_idx, end_idx);
+    }
+  }
+}
+
 // Returns the index in the liveness accounting card bitmap
 // for the given address
 inline BitMap::idx_t ConcurrentMark::card_bitmap_index_for(HeapWord* addr) {
@@ -35,7 +71,6 @@ inline BitMap::idx_t ConcurrentMark::card_bitmap_index_for(HeapWord* addr) {
   // by the card shift -- address 0 corresponds to card number 0.  One
   // must subtract the card num of the bottom of the heap to obtain a
   // card table index.
-
   intptr_t card_num = intptr_t(uintptr_t(addr) >> CardTableModRefBS::card_shift);
   return card_num - heap_bottom_card_num();
 }
@@ -46,8 +81,10 @@ inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
                                          size_t* marked_bytes_array,
                                          BitMap* task_card_bm) {
   G1CollectedHeap* g1h = _g1h;
+  CardTableModRefBS* ct_bs = (CardTableModRefBS*) (g1h->barrier_set());
+
   HeapWord* start = mr.start();
-  HeapWord* last = mr.last();
+  HeapWord* end = mr.end();
   size_t region_size_bytes = mr.byte_size();
   uint index = hr->hrs_index();
 
@@ -61,24 +98,21 @@ inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
   marked_bytes_array[index] += region_size_bytes;
 
   BitMap::idx_t start_idx = card_bitmap_index_for(start);
-  BitMap::idx_t last_idx = card_bitmap_index_for(last);
+  BitMap::idx_t end_idx = card_bitmap_index_for(end);
 
-  // The card bitmap is task/worker specific => no need to use 'par' routines.
-  // Set bits in the inclusive bit range [start_idx, last_idx].
-  //
-  // For small ranges use a simple loop; otherwise use set_range
-  // The range are the cards that are spanned by the object/region
-  // so 8 cards will allow objects/regions up to 4K to be handled
-  // using the loop.
-  if ((last_idx - start_idx) <= 8) {
-    for (BitMap::idx_t i = start_idx; i <= last_idx; i += 1) {
-     task_card_bm->set_bit(i);
-    }
-  } else {
-    assert(last_idx < task_card_bm->size(), "sanity");
-    // Note: BitMap::set_range() is exclusive.
-    task_card_bm->set_range(start_idx, last_idx+1);
+  // Note: if we're looking at the last region in heap - end
+  // could be actually just beyond the end of the heap; end_idx
+  // will then correspond to a (non-existent) card that is also
+  // just beyond the heap.
+  if (g1h->is_in_g1_reserved(end) && !ct_bs->is_card_aligned(end)) {
+    // end of region is not card aligned - incremement to cover
+    // all the cards spanned by the region.
+    end_idx += 1;
   }
+  // The card bitmap is task/worker specific => no need to use
+  // the 'par' BitMap routines.
+  // Set bits in the exclusive bit range [start_idx, end_idx).
+  set_card_bitmap_range(task_card_bm, start_idx, end_idx, false /* is_par */);
 }
 
 // Counts the given memory region in the task/worker counting
@@ -245,7 +279,7 @@ inline void CMTask::push(oop obj) {
   assert(_nextMarkBitMap->isMarked(objAddr), "invariant");
 
   if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%d] pushing "PTR_FORMAT, _task_id, (void*) obj);
+    gclog_or_tty->print_cr("[%u] pushing "PTR_FORMAT, _worker_id, (void*) obj);
   }
 
   if (!_task_queue->push(obj)) {
@@ -253,9 +287,9 @@ inline void CMTask::push(oop obj) {
     // to the global stack.
 
     if (_cm->verbose_medium()) {
-      gclog_or_tty->print_cr("[%d] task queue overflow, "
+      gclog_or_tty->print_cr("[%u] task queue overflow, "
                              "moving entries to the global stack",
-                             _task_id);
+                             _worker_id);
     }
     move_entries_to_global_stack();
 
@@ -284,8 +318,8 @@ inline void CMTask::push(oop obj) {
 
 inline void CMTask::deal_with_reference(oop obj) {
   if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%d] we're dealing with reference = "PTR_FORMAT,
-                           _task_id, (void*) obj);
+    gclog_or_tty->print_cr("[%u] we're dealing with reference = "PTR_FORMAT,
+                           _worker_id, (void*) obj);
   }
 
   ++_refs_reached;
@@ -301,8 +335,8 @@ inline void CMTask::deal_with_reference(oop obj) {
       HeapRegion* hr = _g1h->heap_region_containing_raw(obj);
       if (!hr->obj_allocated_since_next_marking(obj)) {
         if (_cm->verbose_high()) {
-          gclog_or_tty->print_cr("[%d] "PTR_FORMAT" is not considered marked",
-                                 _task_id, (void*) obj);
+          gclog_or_tty->print_cr("[%u] "PTR_FORMAT" is not considered marked",
+                                 _worker_id, (void*) obj);
         }
 
         // we need to mark it first
@@ -316,8 +350,8 @@ inline void CMTask::deal_with_reference(oop obj) {
 
           if (_finger != NULL && objAddr < _finger) {
             if (_cm->verbose_high()) {
-              gclog_or_tty->print_cr("[%d] below the local finger ("PTR_FORMAT"), "
-                                     "pushing it", _task_id, _finger);
+              gclog_or_tty->print_cr("[%u] below the local finger ("PTR_FORMAT"), "
+                                     "pushing it", _worker_id, _finger);
             }
             push(obj);
           } else if (_curr_region != NULL && objAddr < _region_limit) {
@@ -333,9 +367,9 @@ inline void CMTask::deal_with_reference(oop obj) {
             // correctness problems.
 
             if (_cm->verbose_high()) {
-              gclog_or_tty->print_cr("[%d] below the global finger "
+              gclog_or_tty->print_cr("[%u] below the global finger "
                                      "("PTR_FORMAT"), pushing it",
-                                     _task_id, global_finger);
+                                     _worker_id, global_finger);
             }
             push(obj);
           } else {
@@ -348,9 +382,9 @@ inline void CMTask::deal_with_reference(oop obj) {
             // see long comment above
 
             if (_cm->verbose_high()) {
-              gclog_or_tty->print_cr("[%d] below the global finger "
+              gclog_or_tty->print_cr("[%u] below the global finger "
                                      "("PTR_FORMAT"), pushing it",
-                                     _task_id, global_finger);
+                                     _worker_id, global_finger);
             }
             push(obj);
           }

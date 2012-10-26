@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 #ifndef SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP
 #define SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP
 
+#include "gc_implementation/shared/markSweep.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #ifndef SERIALGC
 #include "gc_implementation/parallelScavenge/psCompactionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #endif
 
-void objArrayKlass::oop_follow_contents(oop obj, int index) {
+void ObjArrayKlass::oop_follow_contents(oop obj, int index) {
   if (UseCompressedOops) {
     objarray_follow_contents<narrowOop>(obj, index);
   } else {
@@ -40,7 +41,7 @@ void objArrayKlass::oop_follow_contents(oop obj, int index) {
 }
 
 template <class T>
-void objArrayKlass::objarray_follow_contents(oop obj, int index) {
+void ObjArrayKlass::objarray_follow_contents(oop obj, int index) {
   objArrayOop a = objArrayOop(obj);
   const size_t len = size_t(a->length());
   const size_t beg_index = size_t(index);
@@ -63,7 +64,7 @@ void objArrayKlass::objarray_follow_contents(oop obj, int index) {
 }
 
 #ifndef SERIALGC
-void objArrayKlass::oop_follow_contents(ParCompactionManager* cm, oop obj,
+void ObjArrayKlass::oop_follow_contents(ParCompactionManager* cm, oop obj,
                                         int index) {
   if (UseCompressedOops) {
     objarray_follow_contents<narrowOop>(cm, obj, index);
@@ -73,7 +74,7 @@ void objArrayKlass::oop_follow_contents(ParCompactionManager* cm, oop obj,
 }
 
 template <class T>
-void objArrayKlass::objarray_follow_contents(ParCompactionManager* cm, oop obj,
+void ObjArrayKlass::objarray_follow_contents(ParCompactionManager* cm, oop obj,
                                              int index) {
   objArrayOop a = objArrayOop(obj);
   const size_t len = size_t(a->length());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@
 // - LocationValue   describes a value in a given location (in frame or register)
 // - ConstantValue   describes a constant
 
+class ConstantOopReadValue;
+
 class ScopeValue: public ResourceObj {
  public:
   // Testers
@@ -50,6 +52,11 @@ class ScopeValue: public ResourceObj {
   virtual bool is_constant_long() const { return false; }
   virtual bool is_constant_oop() const { return false; }
   virtual bool equals(ScopeValue* other) const { return false; }
+
+  ConstantOopReadValue* as_ConstantOopReadValue() {
+    assert(is_constant_oop(), "must be");
+    return (ConstantOopReadValue*) this;
+  }
 
   // Serialization of debugging information
   virtual void write_on(DebugInfoWriteStream* stream) = 0;
@@ -94,7 +101,7 @@ class ObjectValue: public ScopeValue {
      , _field_values()
      , _value()
      , _visited(false) {
-    assert(klass->is_constant_oop(), "should be constant klass oop");
+    assert(klass->is_constant_oop(), "should be constant java mirror oop");
   }
 
   ObjectValue(int id)
@@ -260,7 +267,15 @@ class DebugInfoReadStream : public CompressedReadStream {
   } ;
 
   oop read_oop() {
-    return code()->oop_at(read_int());
+    oop o = code()->oop_at(read_int());
+    assert(o == NULL || o->is_oop(), "oop only");
+    return o;
+  }
+  Method* read_method() {
+    Method* o = (Method*)(code()->metadata_at(read_int()));
+    assert(o == NULL ||
+           o->is_metadata(), "meta data only");
+    return o;
   }
   ScopeValue* read_object_value();
   ScopeValue* get_cached_object();
@@ -279,6 +294,8 @@ class DebugInfoWriteStream : public CompressedWriteStream {
   DebugInfoWriteStream(DebugInformationRecorder* recorder, int initial_size);
   void write_handle(jobject h);
   void write_bci(int bci) { write_int(bci - InvocationEntryBci); }
+
+  void write_metadata(Metadata* m);
 };
 
 #endif // SHARE_VM_CODE_DEBUGINFO_HPP

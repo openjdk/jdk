@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,13 @@
 
 // ciKlass
 //
-// This class represents a klassOop in the HotSpot virtual
+// This class represents a Klass* in the HotSpot virtual
 // machine.
 
 // ------------------------------------------------------------------
 // ciKlass::ciKlass
 ciKlass::ciKlass(KlassHandle h_k) : ciType(h_k) {
-  assert(get_oop()->is_klass(), "wrong type");
+  assert(get_Klass()->is_klass(), "wrong type");
   Klass* k = get_Klass();
   _layout_helper = k->layout_helper();
   Symbol* klass_name = k->name();
@@ -49,7 +49,7 @@ ciKlass::ciKlass(KlassHandle h_k) : ciType(h_k) {
 //
 // Nameless klass variant.
 ciKlass::ciKlass(KlassHandle h_k, ciSymbol* name) : ciType(h_k) {
-  assert(get_oop()->is_klass(), "wrong type");
+  assert(get_Klass()->is_klass(), "wrong type");
   _name = name;
   _layout_helper = Klass::_lh_neutral_value;
 }
@@ -58,7 +58,7 @@ ciKlass::ciKlass(KlassHandle h_k, ciSymbol* name) : ciType(h_k) {
 // ciKlass::ciKlass
 //
 // Unloaded klass variant.
-ciKlass::ciKlass(ciSymbol* name, ciKlass* klass) : ciType(klass) {
+ciKlass::ciKlass(ciSymbol* name, BasicType bt) : ciType(bt) {
   _name = name;
   _layout_helper = Klass::_lh_neutral_value;
 }
@@ -67,7 +67,6 @@ ciKlass::ciKlass(ciSymbol* name, ciKlass* klass) : ciType(klass) {
 // ciKlass::is_subtype_of
 bool ciKlass::is_subtype_of(ciKlass* that) {
   assert(is_loaded() && that->is_loaded(), "must be loaded");
-  assert(is_java_klass() && that->is_java_klass(), "must be java klasses");
   // Check to see if the klasses are identical.
   if (this == that) {
     return true;
@@ -75,7 +74,7 @@ bool ciKlass::is_subtype_of(ciKlass* that) {
 
   VM_ENTRY_MARK;
   Klass* this_klass = get_Klass();
-  klassOop that_klass = that->get_klassOop();
+  Klass* that_klass = that->get_Klass();
   bool result = this_klass->is_subtype_of(that_klass);
 
   return result;
@@ -85,12 +84,11 @@ bool ciKlass::is_subtype_of(ciKlass* that) {
 // ciKlass::is_subclass_of
 bool ciKlass::is_subclass_of(ciKlass* that) {
   assert(is_loaded() && that->is_loaded(), "must be loaded");
-  assert(is_java_klass() && that->is_java_klass(), "must be java klasses");
   // Check to see if the klasses are identical.
 
   VM_ENTRY_MARK;
   Klass* this_klass = get_Klass();
-  klassOop that_klass = that->get_klassOop();
+  Klass* that_klass = that->get_Klass();
   bool result = this_klass->is_subclass_of(that_klass);
 
   return result;
@@ -100,7 +98,6 @@ bool ciKlass::is_subclass_of(ciKlass* that) {
 // ciKlass::super_depth
 juint ciKlass::super_depth() {
   assert(is_loaded(), "must be loaded");
-  assert(is_java_klass(), "must be java klasses");
 
   VM_ENTRY_MARK;
   Klass* this_klass = get_Klass();
@@ -111,7 +108,6 @@ juint ciKlass::super_depth() {
 // ciKlass::super_check_offset
 juint ciKlass::super_check_offset() {
   assert(is_loaded(), "must be loaded");
-  assert(is_java_klass(), "must be java klasses");
 
   VM_ENTRY_MARK;
   Klass* this_klass = get_Klass();
@@ -122,19 +118,17 @@ juint ciKlass::super_check_offset() {
 // ciKlass::super_of_depth
 ciKlass* ciKlass::super_of_depth(juint i) {
   assert(is_loaded(), "must be loaded");
-  assert(is_java_klass(), "must be java klasses");
 
   VM_ENTRY_MARK;
   Klass* this_klass = get_Klass();
-  klassOop super = this_klass->primary_super_of_depth(i);
-  return (super != NULL) ? CURRENT_THREAD_ENV->get_object(super)->as_klass() : NULL;
+  Klass* super = this_klass->primary_super_of_depth(i);
+  return (super != NULL) ? CURRENT_THREAD_ENV->get_klass(super) : NULL;
 }
 
 // ------------------------------------------------------------------
 // ciKlass::can_be_primary_super
 bool ciKlass::can_be_primary_super() {
   assert(is_loaded(), "must be loaded");
-  assert(is_java_klass(), "must be java klasses");
 
   VM_ENTRY_MARK;
   Klass* this_klass = get_Klass();
@@ -156,7 +150,6 @@ bool ciKlass::can_be_primary_super() {
 ciKlass*
 ciKlass::least_common_ancestor(ciKlass* that) {
   assert(is_loaded() && that->is_loaded(), "must be loaded");
-  assert(is_java_klass() && that->is_java_klass(), "must be java klasses");
   // Check to see if the klasses are identical.
   if (this == that) {
     return this;
@@ -178,7 +171,7 @@ ciKlass::least_common_ancestor(ciKlass* that) {
 
   // Create the ciInstanceKlass for the lca.
   ciKlass* result =
-    CURRENT_THREAD_ENV->get_object(lca->as_klassOop())->as_klass();
+    CURRENT_THREAD_ENV->get_klass(lca);
 
   return result;
 }
@@ -204,7 +197,7 @@ ciInstance* ciKlass::java_mirror() {
     if (!is_loaded())
       return ciEnv::current()->get_unloaded_klass_mirror(this);
     oop java_mirror = get_Klass()->java_mirror();
-    return CURRENT_ENV->get_object(java_mirror)->as_instance();
+    return CURRENT_ENV->get_instance(java_mirror);
   )
 }
 

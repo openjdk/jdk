@@ -23,65 +23,82 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/klassOop.hpp"
-#include "oops/objArrayKlassKlass.hpp"
+#include "oops/klass.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/handles.inline.hpp"
 
-bool typeArrayKlass::compute_is_subtype_of(klassOop k) {
-  if (!k->klass_part()->oop_is_typeArray()) {
-    return arrayKlass::compute_is_subtype_of(k);
+bool TypeArrayKlass::compute_is_subtype_of(Klass* k) {
+  if (!k->oop_is_typeArray()) {
+    return ArrayKlass::compute_is_subtype_of(k);
   }
 
-  typeArrayKlass* tak = typeArrayKlass::cast(k);
+  TypeArrayKlass* tak = TypeArrayKlass::cast(k);
   if (dimension() != tak->dimension()) return false;
 
   return element_type() == tak->element_type();
 }
 
-klassOop typeArrayKlass::create_klass(BasicType type, int scale,
+TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
                                       const char* name_str, TRAPS) {
-  typeArrayKlass o;
-
   Symbol* sym = NULL;
   if (name_str != NULL) {
     sym = SymbolTable::new_permanent_symbol(name_str, CHECK_NULL);
   }
-  KlassHandle klassklass (THREAD, Universe::typeArrayKlassKlassObj());
 
-  arrayKlassHandle k = base_create_array_klass(o.vtbl_value(), header_size(), klassklass, CHECK_NULL);
-  typeArrayKlass* ak = typeArrayKlass::cast(k());
-  ak->set_name(sym);
-  ak->set_layout_helper(array_layout_helper(type));
-  assert(scale == (1 << ak->log2_element_size()), "scale must check out");
-  assert(ak->oop_is_javaArray(), "sanity");
-  assert(ak->oop_is_typeArray(), "sanity");
-  ak->set_max_length(arrayOopDesc::max_array_length(type));
-  assert(k()->size() > header_size(), "bad size");
+  ClassLoaderData* null_loader_data = ClassLoaderData::the_null_class_loader_data();
+
+  TypeArrayKlass* ak = TypeArrayKlass::allocate(null_loader_data, type, sym, CHECK_NULL);
+
+  // Add all classes to our internal class loader list here,
+  // including classes in the bootstrap (NULL) class loader.
+  // GC walks these as strong roots.
+  null_loader_data->add_class(ak);
 
   // Call complete_create_array_klass after all instance variables have been initialized.
-  KlassHandle super (THREAD, k->super());
-  complete_create_array_klass(k, super, CHECK_NULL);
+  complete_create_array_klass(ak, ak->super(), CHECK_NULL);
 
-  return k();
+  return ak;
 }
 
-typeArrayOop typeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
+TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS) {
+  assert(TypeArrayKlass::header_size() <= InstanceKlass::header_size(),
+      "array klasses must be same size as InstanceKlass");
+
+  int size = ArrayKlass::static_size(TypeArrayKlass::header_size());
+
+  return new (loader_data, size, THREAD) TypeArrayKlass(type, name);
+}
+
+TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name) {
+  set_layout_helper(array_layout_helper(type));
+  assert(oop_is_array(), "sanity");
+  assert(oop_is_typeArray(), "sanity");
+
+  set_max_length(arrayOopDesc::max_array_length(type));
+  assert(size() >= TypeArrayKlass::header_size(), "bad size");
+
+  set_class_loader_data(ClassLoaderData::the_null_class_loader_data());
+}
+
+typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
   assert(log2_element_size() >= 0, "bad scale");
   if (length >= 0) {
     if (length <= max_length()) {
       size_t size = typeArrayOopDesc::object_size(layout_helper(), length);
-      KlassHandle h_k(THREAD, as_klassOop());
+      KlassHandle h_k(THREAD, this);
       typeArrayOop t;
       CollectedHeap* ch = Universe::heap();
       if (do_zero) {
@@ -89,7 +106,6 @@ typeArrayOop typeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
       } else {
         t = (typeArrayOop)CollectedHeap::array_allocate_nozero(h_k, (int)size, length, CHECK_NULL);
       }
-      assert(t->is_parsable(), "Don't publish unless parsable");
       return t;
     } else {
       report_java_out_of_memory("Requested array size exceeds VM limit");
@@ -101,17 +117,7 @@ typeArrayOop typeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
   }
 }
 
-typeArrayOop typeArrayKlass::allocate_permanent(int length, TRAPS) {
-  if (length < 0) THROW_0(vmSymbols::java_lang_NegativeArraySizeException());
-  int size = typeArrayOopDesc::object_size(layout_helper(), length);
-  KlassHandle h_k(THREAD, as_klassOop());
-  typeArrayOop t = (typeArrayOop)
-    CollectedHeap::permanent_array_allocate(h_k, size, length, CHECK_NULL);
-  assert(t->is_parsable(), "Can't publish until parsable");
-  return t;
-}
-
-oop typeArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
+oop TypeArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
   // For typeArrays this is only called for the last dimension
   assert(rank == 1, "just checking");
   int length = *last_size;
@@ -119,11 +125,11 @@ oop typeArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
 }
 
 
-void typeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS) {
+void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS) {
   assert(s->is_typeArray(), "must be type array");
 
   // Check destination
-  if (!d->is_typeArray() || element_type() != typeArrayKlass::cast(d->klass())->element_type()) {
+  if (!d->is_typeArray() || element_type() != TypeArrayKlass::cast(d->klass())->element_type()) {
     THROW(vmSymbols::java_lang_ArrayStoreException());
   }
 
@@ -150,19 +156,13 @@ void typeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
 
 
 // create a klass of array holding typeArrays
-klassOop typeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
-  typeArrayKlassHandle h_this(THREAD, as_klassOop());
-  return array_klass_impl(h_this, or_null, n, THREAD);
-}
+Klass* TypeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
+  int dim = dimension();
+  assert(dim <= n, "check order of chain");
+    if (dim == n)
+      return this;
 
-klassOop typeArrayKlass::array_klass_impl(typeArrayKlassHandle h_this, bool or_null, int n, TRAPS) {
-  int dimension = h_this->dimension();
-  assert(dimension <= n, "check order of chain");
-    if (dimension == n)
-      return h_this();
-
-  objArrayKlassHandle  h_ak(THREAD, h_this->higher_dimension());
-  if (h_ak.is_null()) {
+  if (higher_dimension() == NULL) {
     if (or_null)  return NULL;
 
     ResourceMark rm;
@@ -172,93 +172,93 @@ klassOop typeArrayKlass::array_klass_impl(typeArrayKlassHandle h_this, bool or_n
       // Atomic create higher dimension and link into list
       MutexLocker mu(MultiArray_lock, THREAD);
 
-      h_ak = objArrayKlassHandle(THREAD, h_this->higher_dimension());
-      if (h_ak.is_null()) {
-        klassOop oak = objArrayKlassKlass::cast(
-          Universe::objArrayKlassKlassObj())->allocate_objArray_klass(
-          dimension + 1, h_this, CHECK_NULL);
-        h_ak = objArrayKlassHandle(THREAD, oak);
-        h_ak->set_lower_dimension(h_this());
+      if (higher_dimension() == NULL) {
+        Klass* oak = ObjArrayKlass::allocate_objArray_klass(
+              class_loader_data(), dim + 1, this, CHECK_NULL);
+        ObjArrayKlass* h_ak = ObjArrayKlass::cast(oak);
+        h_ak->set_lower_dimension(this);
         OrderAccess::storestore();
-        h_this->set_higher_dimension(h_ak());
-        assert(h_ak->oop_is_objArray(), "incorrect initialization of objArrayKlass");
+        set_higher_dimension(h_ak);
+        assert(h_ak->oop_is_objArray(), "incorrect initialization of ObjArrayKlass");
       }
     }
   } else {
     CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
   }
+  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
   if (or_null) {
     return h_ak->array_klass_or_null(n);
   }
   return h_ak->array_klass(n, CHECK_NULL);
 }
 
-klassOop typeArrayKlass::array_klass_impl(bool or_null, TRAPS) {
+Klass* TypeArrayKlass::array_klass_impl(bool or_null, TRAPS) {
   return array_klass_impl(or_null, dimension() +  1, THREAD);
 }
 
-int typeArrayKlass::oop_size(oop obj) const {
+int TypeArrayKlass::oop_size(oop obj) const {
   assert(obj->is_typeArray(),"must be a type array");
   typeArrayOop t = typeArrayOop(obj);
   return t->object_size();
 }
 
-void typeArrayKlass::oop_follow_contents(oop obj) {
+void TypeArrayKlass::oop_follow_contents(oop obj) {
   assert(obj->is_typeArray(),"must be a type array");
   // Performance tweak: We skip iterating over the klass pointer since we
-  // know that Universe::typeArrayKlass never moves.
+  // know that Universe::TypeArrayKlass never moves.
 }
 
 #ifndef SERIALGC
-void typeArrayKlass::oop_follow_contents(ParCompactionManager* cm, oop obj) {
+void TypeArrayKlass::oop_follow_contents(ParCompactionManager* cm, oop obj) {
   assert(obj->is_typeArray(),"must be a type array");
   // Performance tweak: We skip iterating over the klass pointer since we
-  // know that Universe::typeArrayKlass never moves.
+  // know that Universe::TypeArrayKlass never moves.
 }
 #endif // SERIALGC
 
-int typeArrayKlass::oop_adjust_pointers(oop obj) {
+int TypeArrayKlass::oop_adjust_pointers(oop obj) {
   assert(obj->is_typeArray(),"must be a type array");
   typeArrayOop t = typeArrayOop(obj);
   // Performance tweak: We skip iterating over the klass pointer since we
-  // know that Universe::typeArrayKlass never moves.
+  // know that Universe::TypeArrayKlass never moves.
   return t->object_size();
 }
 
-int typeArrayKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
+int TypeArrayKlass::oop_oop_iterate(oop obj, ExtendedOopClosure* blk) {
   assert(obj->is_typeArray(),"must be a type array");
   typeArrayOop t = typeArrayOop(obj);
   // Performance tweak: We skip iterating over the klass pointer since we
-  // know that Universe::typeArrayKlass never moves.
+  // know that Universe::TypeArrayKlass never moves.
   return t->object_size();
 }
 
-int typeArrayKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) {
+int TypeArrayKlass::oop_oop_iterate_m(oop obj, ExtendedOopClosure* blk, MemRegion mr) {
   assert(obj->is_typeArray(),"must be a type array");
   typeArrayOop t = typeArrayOop(obj);
   // Performance tweak: We skip iterating over the klass pointer since we
-  // know that Universe::typeArrayKlass never moves.
+  // know that Universe::TypeArrayKlass never moves.
   return t->object_size();
 }
 
 #ifndef SERIALGC
-void typeArrayKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
+void TypeArrayKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
+  ShouldNotReachHere();
   assert(obj->is_typeArray(),"must be a type array");
 }
 
 int
-typeArrayKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
+TypeArrayKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   assert(obj->is_typeArray(),"must be a type array");
   return typeArrayOop(obj)->object_size();
 }
 #endif // SERIALGC
 
-void typeArrayKlass::initialize(TRAPS) {
+void TypeArrayKlass::initialize(TRAPS) {
   // Nothing to do. Having this function is handy since objArrayKlasses can be
-  // initialized by calling initialize on their bottom_klass, see objArrayKlass::initialize
+  // initialized by calling initialize on their bottom_klass, see ObjArrayKlass::initialize
 }
 
-const char* typeArrayKlass::external_name(BasicType type) {
+const char* TypeArrayKlass::external_name(BasicType type) {
   switch (type) {
     case T_BOOLEAN: return "[Z";
     case T_CHAR:    return "[C";
@@ -273,8 +273,35 @@ const char* typeArrayKlass::external_name(BasicType type) {
   return NULL;
 }
 
-#ifndef PRODUCT
+
 // Printing
+
+void TypeArrayKlass::print_on(outputStream* st) const {
+#ifndef PRODUCT
+  assert(is_klass(), "must be klass");
+  print_value_on(st);
+  Klass::print_on(st);
+#endif //PRODUCT
+}
+
+void TypeArrayKlass::print_value_on(outputStream* st) const {
+  assert(is_klass(), "must be klass");
+  st->print("{type array ");
+  switch (element_type()) {
+    case T_BOOLEAN: st->print("bool");    break;
+    case T_CHAR:    st->print("char");    break;
+    case T_FLOAT:   st->print("float");   break;
+    case T_DOUBLE:  st->print("double");  break;
+    case T_BYTE:    st->print("byte");    break;
+    case T_SHORT:   st->print("short");   break;
+    case T_INT:     st->print("int");     break;
+    case T_LONG:    st->print("long");    break;
+    default: ShouldNotReachHere();
+  }
+  st->print("}");
+}
+
+#ifndef PRODUCT
 
 static void print_boolean_array(typeArrayOop ta, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
@@ -337,8 +364,8 @@ static void print_long_array(typeArrayOop ta, int print_len, outputStream* st) {
 }
 
 
-void typeArrayKlass::oop_print_on(oop obj, outputStream* st) {
-  arrayKlass::oop_print_on(obj, st);
+void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
+  ArrayKlass::oop_print_on(obj, st);
   typeArrayOop ta = typeArrayOop(obj);
   int print_len = MIN2((intx) ta->length(), MaxElementPrintSize);
   switch (element_type()) {
@@ -354,12 +381,12 @@ void typeArrayKlass::oop_print_on(oop obj, outputStream* st) {
   }
   int remaining = ta->length() - print_len;
   if (remaining > 0) {
-    tty->print_cr(" - <%d more elements, increase MaxElementPrintSize to print>", remaining);
+    st->print_cr(" - <%d more elements, increase MaxElementPrintSize to print>", remaining);
   }
 }
 
 #endif // PRODUCT
 
-const char* typeArrayKlass::internal_name() const {
+const char* TypeArrayKlass::internal_name() const {
   return Klass::external_name();
 }

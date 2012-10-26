@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public abstract class DocImpl implements Doc, Comparable<Object> {
     /**
      * Return the see also tags in this Doc item.
      *
-     * @return an array of SeeTag containing all &#64see tags.
+     * @return an array of SeeTag containing all &#64;see tags.
      */
     public SeeTag[] seeTags() {
         return comment().seeTags();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -118,7 +118,7 @@ class SharkContext : public llvm::LLVMContext {
   const llvm::PointerType*  _jniEnv_type;
   const llvm::PointerType*  _jniHandleBlock_type;
   const llvm::PointerType*  _klass_type;
-  const llvm::PointerType*  _methodOop_type;
+  const llvm::PointerType*  _Method*_type;
   const llvm::ArrayType*    _monitor_type;
   const llvm::PointerType*  _oop_type;
   const llvm::PointerType*  _thread_type;
@@ -139,8 +139,8 @@ class SharkContext : public llvm::LLVMContext {
   const llvm::PointerType* klass_type() const {
     return _klass_type;
   }
-  const llvm::PointerType* methodOop_type() const {
-    return _methodOop_type;
+  const llvm::PointerType* Method*_type() const {
+    return _Method*_type;
   }
   const llvm::ArrayType* monitor_type() const {
     return _monitor_type;

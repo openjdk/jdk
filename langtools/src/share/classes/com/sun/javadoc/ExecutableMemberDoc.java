@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,8 @@ public interface ExecutableMemberDoc extends MemberDoc {
     /**
      * Return the throws tags in this method.
      *
-     * @return an array of ThrowTag containing all <code>&#64exception</code>
-     * and <code>&#64throws</code> tags.
+     * @return an array of ThrowTag containing all <code>&#64;exception</code>
+     * and <code>&#64;throws</code> tags.
      */
     ThrowsTag[] throwsTags();
 
@@ -99,7 +99,7 @@ public interface ExecutableMemberDoc extends MemberDoc {
      * Return the param tags in this method, excluding the type
      * parameter tags.
      *
-     * @return an array of ParamTag containing all <code>&#64param</code> tags
+     * @return an array of ParamTag containing all <code>&#64;param</code> tags
      * corresponding to the parameters of this method.
      */
     ParamTag[] paramTags();
@@ -107,7 +107,7 @@ public interface ExecutableMemberDoc extends MemberDoc {
     /**
      * Return the type parameter tags in this method.
      *
-     * @return an array of ParamTag containing all <code>&#64param</code> tags
+     * @return an array of ParamTag containing all <code>&#64;param</code> tags
      * corresponding to the type parameters of this method.
      * @since 1.5
      */

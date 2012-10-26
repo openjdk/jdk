@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,35 +48,15 @@ public class ObjectHeap {
     DEBUG = System.getProperty("sun.jvm.hotspot.oops.ObjectHeap.DEBUG") != null;
   }
 
-  private OopHandle              methodKlassHandle;
-  private OopHandle              constMethodKlassHandle;
-  private OopHandle              methodDataKlassHandle;
-  private OopHandle              constantPoolKlassHandle;
-  private OopHandle              constantPoolCacheKlassHandle;
-  private OopHandle              klassKlassHandle;
-  private OopHandle              instanceKlassKlassHandle;
-  private OopHandle              typeArrayKlassKlassHandle;
-  private OopHandle              objArrayKlassKlassHandle;
-  private OopHandle              boolArrayKlassHandle;
-  private OopHandle              byteArrayKlassHandle;
-  private OopHandle              charArrayKlassHandle;
-  private OopHandle              intArrayKlassHandle;
-  private OopHandle              shortArrayKlassHandle;
-  private OopHandle              longArrayKlassHandle;
-  private OopHandle              singleArrayKlassHandle;
-  private OopHandle              doubleArrayKlassHandle;
-  private OopHandle              arrayKlassKlassHandle;
-  private OopHandle              compiledICHolderKlassHandle;
+  private Address              boolArrayKlassHandle;
+  private Address              byteArrayKlassHandle;
+  private Address              charArrayKlassHandle;
+  private Address              intArrayKlassHandle;
+  private Address              shortArrayKlassHandle;
+  private Address              longArrayKlassHandle;
+  private Address              singleArrayKlassHandle;
+  private Address              doubleArrayKlassHandle;
 
-  private MethodKlass            methodKlassObj;
-  private ConstMethodKlass       constMethodKlassObj;
-  private MethodDataKlass        methodDataKlassObj;
-  private ConstantPoolKlass      constantPoolKlassObj;
-  private ConstantPoolCacheKlass constantPoolCacheKlassObj;
-  private KlassKlass             klassKlassObj;
-  private InstanceKlassKlass     instanceKlassKlassObj;
-  private TypeArrayKlassKlass    typeArrayKlassKlassObj;
-  private ObjArrayKlassKlass     objArrayKlassKlassObj;
   private TypeArrayKlass         boolArrayKlassObj;
   private TypeArrayKlass         byteArrayKlassObj;
   private TypeArrayKlass         charArrayKlassObj;
@@ -85,71 +65,34 @@ public class ObjectHeap {
   private TypeArrayKlass         longArrayKlassObj;
   private TypeArrayKlass         singleArrayKlassObj;
   private TypeArrayKlass         doubleArrayKlassObj;
-  private ArrayKlassKlass        arrayKlassKlassObj;
-  private CompiledICHolderKlass  compiledICHolderKlassObj;
 
   public void initialize(TypeDataBase db) throws WrongTypeException {
     // Lookup the roots in the object hierarchy.
     Type universeType = db.lookupType("Universe");
 
-    methodKlassHandle         = universeType.getOopField("_methodKlassObj").getValue();
-    methodKlassObj            = new MethodKlass(methodKlassHandle, this);
+    boolArrayKlassHandle      = universeType.getAddressField("_boolArrayKlassObj").getValue();
+    boolArrayKlassObj         = new TypeArrayKlass(boolArrayKlassHandle);
 
-    constMethodKlassHandle    = universeType.getOopField("_constMethodKlassObj").getValue();
-    constMethodKlassObj       = new ConstMethodKlass(constMethodKlassHandle, this);
+    byteArrayKlassHandle      = universeType.getAddressField("_byteArrayKlassObj").getValue();
+    byteArrayKlassObj         = new TypeArrayKlass(byteArrayKlassHandle);
 
-    constantPoolKlassHandle   = universeType.getOopField("_constantPoolKlassObj").getValue();
-    constantPoolKlassObj      = new ConstantPoolKlass(constantPoolKlassHandle, this);
+    charArrayKlassHandle      = universeType.getAddressField("_charArrayKlassObj").getValue();
+    charArrayKlassObj         = new TypeArrayKlass(charArrayKlassHandle);
 
-    constantPoolCacheKlassHandle = universeType.getOopField("_constantPoolCacheKlassObj").getValue();
-    constantPoolCacheKlassObj = new ConstantPoolCacheKlass(constantPoolCacheKlassHandle, this);
+    intArrayKlassHandle       = universeType.getAddressField("_intArrayKlassObj").getValue();
+    intArrayKlassObj          = new TypeArrayKlass(intArrayKlassHandle);
 
-    klassKlassHandle          = universeType.getOopField("_klassKlassObj").getValue();
-    klassKlassObj             = new KlassKlass(klassKlassHandle, this);
+    shortArrayKlassHandle     = universeType.getAddressField("_shortArrayKlassObj").getValue();
+    shortArrayKlassObj        = new TypeArrayKlass(shortArrayKlassHandle);
 
-    arrayKlassKlassHandle     = universeType.getOopField("_arrayKlassKlassObj").getValue();
-    arrayKlassKlassObj        = new ArrayKlassKlass(arrayKlassKlassHandle, this);
+    longArrayKlassHandle      = universeType.getAddressField("_longArrayKlassObj").getValue();
+    longArrayKlassObj         = new TypeArrayKlass(longArrayKlassHandle);
 
-    instanceKlassKlassHandle  = universeType.getOopField("_instanceKlassKlassObj").getValue();
-    instanceKlassKlassObj     = new InstanceKlassKlass(instanceKlassKlassHandle, this);
+    singleArrayKlassHandle    = universeType.getAddressField("_singleArrayKlassObj").getValue();
+    singleArrayKlassObj       = new TypeArrayKlass(singleArrayKlassHandle);
 
-    typeArrayKlassKlassHandle = universeType.getOopField("_typeArrayKlassKlassObj").getValue();
-    typeArrayKlassKlassObj    = new TypeArrayKlassKlass(typeArrayKlassKlassHandle, this);
-
-    objArrayKlassKlassHandle  = universeType.getOopField("_objArrayKlassKlassObj").getValue();
-    objArrayKlassKlassObj     = new ObjArrayKlassKlass(objArrayKlassKlassHandle, this);
-
-    boolArrayKlassHandle      = universeType.getOopField("_boolArrayKlassObj").getValue();
-    boolArrayKlassObj         = new TypeArrayKlass(boolArrayKlassHandle, this);
-
-    byteArrayKlassHandle      = universeType.getOopField("_byteArrayKlassObj").getValue();
-    byteArrayKlassObj         = new TypeArrayKlass(byteArrayKlassHandle, this);
-
-    charArrayKlassHandle      = universeType.getOopField("_charArrayKlassObj").getValue();
-    charArrayKlassObj         = new TypeArrayKlass(charArrayKlassHandle, this);
-
-    intArrayKlassHandle       = universeType.getOopField("_intArrayKlassObj").getValue();
-    intArrayKlassObj          = new TypeArrayKlass(intArrayKlassHandle, this);
-
-    shortArrayKlassHandle     = universeType.getOopField("_shortArrayKlassObj").getValue();
-    shortArrayKlassObj        = new TypeArrayKlass(shortArrayKlassHandle, this);
-
-    longArrayKlassHandle      = universeType.getOopField("_longArrayKlassObj").getValue();
-    longArrayKlassObj         = new TypeArrayKlass(longArrayKlassHandle, this);
-
-    singleArrayKlassHandle    = universeType.getOopField("_singleArrayKlassObj").getValue();
-    singleArrayKlassObj       = new TypeArrayKlass(singleArrayKlassHandle, this);
-
-    doubleArrayKlassHandle    = universeType.getOopField("_doubleArrayKlassObj").getValue();
-    doubleArrayKlassObj       = new TypeArrayKlass(doubleArrayKlassHandle, this);
-
-    if (!VM.getVM().isCore()) {
-      methodDataKlassHandle   = universeType.getOopField("_methodDataKlassObj").getValue();
-      methodDataKlassObj      = new MethodDataKlass(methodDataKlassHandle, this);
-
-      compiledICHolderKlassHandle = universeType.getOopField("_compiledICHolderKlassObj").getValue();
-      compiledICHolderKlassObj= new CompiledICHolderKlass(compiledICHolderKlassHandle ,this);
-    }
+    doubleArrayKlassHandle    = universeType.getAddressField("_doubleArrayKlassObj").getValue();
+    doubleArrayKlassObj       = new TypeArrayKlass(doubleArrayKlassHandle);
   }
 
   public ObjectHeap(TypeDataBase db) throws WrongTypeException {
@@ -195,16 +138,6 @@ public class ObjectHeap {
   public long getDoubleSize()  { return doubleSize;  }
 
   // Accessors for well-known system classes (from Universe)
-  public MethodKlass            getMethodKlassObj()            { return methodKlassObj; }
-  public ConstMethodKlass       getConstMethodKlassObj()       { return constMethodKlassObj; }
-  public MethodDataKlass        getMethodDataKlassObj()        { return methodDataKlassObj; }
-  public ConstantPoolKlass      getConstantPoolKlassObj()      { return constantPoolKlassObj; }
-  public ConstantPoolCacheKlass getConstantPoolCacheKlassObj() { return constantPoolCacheKlassObj; }
-  public KlassKlass             getKlassKlassObj()             { return klassKlassObj; }
-  public ArrayKlassKlass        getArrayKlassKlassObj()        { return arrayKlassKlassObj; }
-  public InstanceKlassKlass     getInstanceKlassKlassObj()     { return instanceKlassKlassObj; }
-  public ObjArrayKlassKlass     getObjArrayKlassKlassObj()     { return objArrayKlassKlassObj; }
-  public TypeArrayKlassKlass    getTypeArrayKlassKlassObj()    { return typeArrayKlassKlassObj; }
   public TypeArrayKlass         getBoolArrayKlassObj()         { return boolArrayKlassObj; }
   public TypeArrayKlass         getByteArrayKlassObj()         { return byteArrayKlassObj; }
   public TypeArrayKlass         getCharArrayKlassObj()         { return charArrayKlassObj; }
@@ -213,12 +146,6 @@ public class ObjectHeap {
   public TypeArrayKlass         getLongArrayKlassObj()         { return longArrayKlassObj; }
   public TypeArrayKlass         getSingleArrayKlassObj()       { return singleArrayKlassObj; }
   public TypeArrayKlass         getDoubleArrayKlassObj()       { return doubleArrayKlassObj; }
-  public CompiledICHolderKlass  getCompiledICHolderKlassObj()  {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(!VM.getVM().isCore(), "must not be called for core build");
-    }
-    return compiledICHolderKlassObj;
-  }
 
   /** Takes a BasicType and returns the corresponding primitive array
       klass */
@@ -301,22 +228,13 @@ public class ObjectHeap {
     visitor.epilogue();
   }
 
-  // Iterates through only the perm generation for the purpose of
-  // finding static fields for liveness analysis
-  public void iteratePerm(HeapVisitor visitor) {
-    CollectedHeap heap = VM.getVM().getUniverse().heap();
-    List liveRegions = new ArrayList();
-    addPermGenLiveRegions(liveRegions, heap);
-    sortLiveRegions(liveRegions);
-    iterateLiveRegions(liveRegions, visitor, null);
-  }
-
-  public boolean isValidMethod(OopHandle handle) {
-    OopHandle klass = Oop.getKlassForOopHandle(handle);
-    if (klass != null && klass.equals(methodKlassHandle)) {
+  public boolean isValidMethod(Address handle) {
+    try {
+      Method m = (Method)Metadata.instantiateWrapperFor(handle);
       return true;
-    }
-    return false;
+    } catch (Exception e) {
+      return false;
+  }
   }
 
   // Creates an instance from the Oop hierarchy based based on the handle
@@ -329,60 +247,12 @@ public class ObjectHeap {
     // Handle the null reference
     if (handle == null) return null;
 
-    // First check if handle is one of the root objects
-    if (handle.equals(methodKlassHandle))              return getMethodKlassObj();
-    if (handle.equals(constMethodKlassHandle))         return getConstMethodKlassObj();
-    if (handle.equals(constantPoolKlassHandle))        return getConstantPoolKlassObj();
-    if (handle.equals(constantPoolCacheKlassHandle))   return getConstantPoolCacheKlassObj();
-    if (handle.equals(instanceKlassKlassHandle))       return getInstanceKlassKlassObj();
-    if (handle.equals(objArrayKlassKlassHandle))       return getObjArrayKlassKlassObj();
-    if (handle.equals(klassKlassHandle))               return getKlassKlassObj();
-    if (handle.equals(arrayKlassKlassHandle))          return getArrayKlassKlassObj();
-    if (handle.equals(typeArrayKlassKlassHandle))      return getTypeArrayKlassKlassObj();
-    if (handle.equals(boolArrayKlassHandle))           return getBoolArrayKlassObj();
-    if (handle.equals(byteArrayKlassHandle))           return getByteArrayKlassObj();
-    if (handle.equals(charArrayKlassHandle))           return getCharArrayKlassObj();
-    if (handle.equals(intArrayKlassHandle))            return getIntArrayKlassObj();
-    if (handle.equals(shortArrayKlassHandle))          return getShortArrayKlassObj();
-    if (handle.equals(longArrayKlassHandle))           return getLongArrayKlassObj();
-    if (handle.equals(singleArrayKlassHandle))         return getSingleArrayKlassObj();
-    if (handle.equals(doubleArrayKlassHandle))         return getDoubleArrayKlassObj();
-    if (!VM.getVM().isCore()) {
-      if (handle.equals(compiledICHolderKlassHandle))  return getCompiledICHolderKlassObj();
-      if (handle.equals(methodDataKlassHandle))        return getMethodDataKlassObj();
-    }
-
     // Then check if obj.klass() is one of the root objects
-    OopHandle klass = Oop.getKlassForOopHandle(handle);
+    Klass klass = Oop.getKlassForOopHandle(handle);
     if (klass != null) {
-      if (klass.equals(methodKlassHandle))              return new Method(handle, this);
-      if (klass.equals(constMethodKlassHandle))         return new ConstMethod(handle, this);
-      if (klass.equals(constantPoolKlassHandle))        return new ConstantPool(handle, this);
-      if (klass.equals(constantPoolCacheKlassHandle))   return new ConstantPoolCache(handle, this);
-      if (!VM.getVM().isCore()) {
-        if (klass.equals(compiledICHolderKlassHandle))  return new CompiledICHolder(handle, this);
-        if (klass.equals(methodDataKlassHandle))        return new MethodData(handle, this);
-      }
-      if (klass.equals(instanceKlassKlassHandle)) {
-          InstanceKlass ik = new InstanceKlass(handle, this);
-          if (ik.getName().asString().equals("java/lang/Class")) {
-              // We would normally do this using the vtable style
-              // lookup but since it's not used for these currently
-              // it's simpler to just check for the name.
-              return new InstanceMirrorKlass(handle, this);
-          }
-          return ik;
-      }
-      if (klass.equals(objArrayKlassKlassHandle))       return new ObjArrayKlass(handle, this);
-      if (klass.equals(typeArrayKlassKlassHandle))      return new TypeArrayKlass(handle, this);
-
-      // Lastly check if obj.klass().klass() is on of the root objects
-      OopHandle klassKlass = Oop.getKlassForOopHandle(klass);
-      if (klassKlass != null) {
-        if (klassKlass.equals(instanceKlassKlassHandle))    return new Instance(handle, this);
-        if (klassKlass.equals(objArrayKlassKlassHandle))    return new ObjArray(handle, this);
-        if (klassKlass.equals(typeArrayKlassKlassHandle))   return new TypeArray(handle, this);
-      }
+      if (klass instanceof TypeArrayKlass) return new TypeArray(handle, this);
+      if (klass instanceof ObjArrayKlass) return new ObjArray(handle, this);
+      if (klass instanceof InstanceKlass) return new Instance(handle, this);
     }
 
     if (DEBUG) {
@@ -434,20 +304,14 @@ public class ObjectHeap {
     visitor.prologue(totalSize);
 
     CompactibleFreeListSpace cmsSpaceOld = null;
-    CompactibleFreeListSpace cmsSpacePerm = null;
     CollectedHeap heap = VM.getVM().getUniverse().heap();
 
     if (heap instanceof GenCollectedHeap) {
       GenCollectedHeap genHeap = (GenCollectedHeap) heap;
       Generation genOld = genHeap.getGen(1);
-      Generation genPerm = genHeap.permGen();
       if (genOld instanceof ConcurrentMarkSweepGeneration) {
           ConcurrentMarkSweepGeneration concGen = (ConcurrentMarkSweepGeneration)genOld;
           cmsSpaceOld = concGen.cmsSpace();
-      }
-      if (genPerm instanceof ConcurrentMarkSweepGeneration) {
-          ConcurrentMarkSweepGeneration concGen = (ConcurrentMarkSweepGeneration)genPerm;
-          cmsSpacePerm = concGen.cmsSpace();
       }
     }
 
@@ -476,8 +340,6 @@ public class ObjectHeap {
 
              if ( (cmsSpaceOld != null) && cmsSpaceOld.contains(handle) ){
                  size = cmsSpaceOld.collector().blockSizeUsingPrintezisBits(handle);
-             } else if ((cmsSpacePerm != null) && cmsSpacePerm.contains(handle) ){
-                 size = cmsSpacePerm.collector().blockSizeUsingPrintezisBits(handle);
              }
 
              if (size <= 0) {
@@ -494,8 +356,7 @@ public class ObjectHeap {
                           break;
                   }
           }
-          if ( (cmsSpaceOld != null) && cmsSpaceOld.contains(handle) ||
-               (cmsSpacePerm != null) && cmsSpacePerm.contains(handle) ) {
+          if ( (cmsSpaceOld != null) && cmsSpaceOld.contains(handle)) {
               handle = handle.addOffsetToAsOopHandle(CompactibleFreeListSpace.adjustObjectSizeInBytes(obj.getObjectSize()) );
           } else {
               handle = handle.addOffsetToAsOopHandle(obj.getObjectSize());
@@ -511,32 +372,6 @@ public class ObjectHeap {
     }
 
     visitor.epilogue();
-  }
-
-  private void addPermGenLiveRegions(List output, CollectedHeap heap) {
-    LiveRegionsCollector lrc = new LiveRegionsCollector(output);
-    if (heap instanceof SharedHeap) {
-       if (Assert.ASSERTS_ENABLED) {
-          Assert.that(heap instanceof GenCollectedHeap ||
-                      heap instanceof G1CollectedHeap,
-                      "Expecting GenCollectedHeap or G1CollectedHeap, " +
-                      "but got " + heap.getClass().getName());
-       }
-       // Handles both GenCollectedHeap and G1CollectedHeap
-       SharedHeap sharedHeap = (SharedHeap) heap;
-       Generation gen = sharedHeap.permGen();
-       gen.spaceIterate(lrc, true);
-    } else if (heap instanceof ParallelScavengeHeap) {
-       ParallelScavengeHeap psh = (ParallelScavengeHeap) heap;
-       PSPermGen permGen = psh.permGen();
-       addLiveRegions(permGen.objectSpace().getLiveRegions(), output);
-    } else {
-       if (Assert.ASSERTS_ENABLED) {
-          Assert.that(false,
-                      "Expecting SharedHeap or ParallelScavengeHeap, " +
-                      "but got " + heap.getClass().getName());
-       }
-    }
   }
 
   private void addLiveRegions(List input, List output) {
@@ -607,9 +442,6 @@ public class ObjectHeap {
                       heap.getClass().getName());
        }
     }
-
-    // handle perm generation
-    addPermGenLiveRegions(liveRegions, heap);
 
     // If UseTLAB is enabled, snip out regions associated with TLABs'
     // dead regions. Note that TLABs can be present in any generation.

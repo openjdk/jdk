@@ -25,5 +25,5 @@
 // options: -source 7 -Xlint:-options
 
 class MethodReferencesNotSupported {
-    S s = A#foo;
+    S s = A::foo;
 }

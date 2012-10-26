@@ -78,7 +78,7 @@ ifeq ($(COMPILER_VERSION), VS2010)
   MS_RUNTIME_LIBRARIES = $(MSVCRNN_DLL)
 endif
 
-EXTRA_LFLAGS += /LIBPATH:$(DXSDK_LIB_PATH)
+EXTRA_LFLAGS += -LIBPATH:$(DXSDK_LIB_PATH)
 
 # Full Debug Symbols has been enabled on Windows since JDK1.4.1.
 # The Full Debug Symbols (FDS) default for VARIANT == OPT builds is
@@ -198,7 +198,7 @@ CC_OPT = $(CC_OPT/$(OPTIMIZATION_LEVEL))
 #   -MTd       Use static debug version (better than -MDd, no runtime issues)
 #   -D_DEBUG   Change use of malloc/free/etc to use special debug ones (-MTd)
 #
-#      NOTE: We also will use /D _STATIC_CPPLIB  so we don't need msvcpnn.dll
+#      NOTE: We also will use -D _STATIC_CPPLIB  so we don't need msvcpnn.dll
 #
 # If MS_RUNTIME_STATIC is requested we may have a problem, it is no longer
 #     supported by VS2010
@@ -223,12 +223,12 @@ ifeq ($(MFC_DEBUG), true)
 endif
 
 # Always add _STATIC_CPPLIB definition
-STATIC_CPPLIB_OPTION = /D _STATIC_CPPLIB
+STATIC_CPPLIB_OPTION = -D _STATIC_CPPLIB
 
 # Silence the warning about using _STATIC_CPPLIB
 ifneq ($(SHOW_ALL_WARNINGS),true)
   # Needed with VS2010 to turn off the deprecated warning.
-  STATIC_CPPLIB_OPTION += /D _DISABLE_DEPRECATE_STATIC_CPPLIB
+  STATIC_CPPLIB_OPTION += -D _DISABLE_DEPRECATE_STATIC_CPPLIB
 endif
 
 MS_RUNTIME_OPTION += $(STATIC_CPPLIB_OPTION)
@@ -242,7 +242,7 @@ ifeq ($(CC_VERSION),msvc)
   #   -Od      Turns off optimization and speeds compilation
   #   -YX -Fp/.../foobar.pch   Use precompiled headers (try someday?)
   #   -nologo  Don't print out startup message
-  #   /D _STATIC_CPPLIB
+  #  -D _STATIC_CPPLIB
   #            Use static link for the C++ runtime (so msvcpnn.dll not needed)
   #   
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
@@ -258,12 +258,12 @@ ifeq ($(CC_VERSION),msvc)
   CFLAGS_COMMON += $(MS_RUNTIME_OPTION) $(CFLAGS_$(COMPILER_VERSION))
 
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-    LDEBUG = /debug
+    LDEBUG = -debug
   endif
   
   ifeq ($(VTUNE_SUPPORT), true)
     OTHER_CFLAGS = -Z7 -Ox 
-    LDEBUG += /pdb:NONE
+    LDEBUG += -pdb:NONE
   endif
   
   # VS2010, always need safe exception handlers, not needed on 64bit
@@ -272,7 +272,7 @@ ifeq ($(CC_VERSION),msvc)
   endif
 
   # LFLAGS are the flags given to $(LINK) and used to build the actual DLL file
-  BASELFLAGS = -nologo /opt:REF /incremental:no
+  BASELFLAGS = -nologo -opt:REF -incremental:no
 
   LFLAGS = $(BASELFLAGS) $(LDEBUG) $(EXTRA_LFLAGS) $(LFLAGS_$(COMPILER_VERSION))
   LDDFLAGS += $(LFLAGS_$(COMPILER_VERSION))
@@ -404,7 +404,7 @@ else
   JDK_UPDATE_VER := 0
 endif
 
-RC_FLAGS = /l 0x409 /r
+RC_FLAGS = -l 0x409 -r
 
 ifeq ($(VARIANT), OPT)
   RC_FLAGS += -d NDEBUG 

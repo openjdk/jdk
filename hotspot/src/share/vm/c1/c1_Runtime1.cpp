@@ -307,10 +307,10 @@ const char* Runtime1::name_for_address(address entry) {
 }
 
 
-JRT_ENTRY(void, Runtime1::new_instance(JavaThread* thread, klassOopDesc* klass))
+JRT_ENTRY(void, Runtime1::new_instance(JavaThread* thread, Klass* klass))
   NOT_PRODUCT(_new_instance_slowcase_cnt++;)
 
-  assert(oop(klass)->is_klass(), "not a class");
+  assert(klass->is_klass(), "not a class");
   instanceKlassHandle h(thread, klass);
   h->check_valid_for_instantiation(true, CHECK);
   // make sure klass is initialized
@@ -321,13 +321,13 @@ JRT_ENTRY(void, Runtime1::new_instance(JavaThread* thread, klassOopDesc* klass))
 JRT_END
 
 
-JRT_ENTRY(void, Runtime1::new_type_array(JavaThread* thread, klassOopDesc* klass, jint length))
+JRT_ENTRY(void, Runtime1::new_type_array(JavaThread* thread, Klass* klass, jint length))
   NOT_PRODUCT(_new_type_array_slowcase_cnt++;)
   // Note: no handle for klass needed since they are not used
   //       anymore after new_typeArray() and no GC can happen before.
   //       (This may have to change if this code changes!)
-  assert(oop(klass)->is_klass(), "not a class");
-  BasicType elt_type = typeArrayKlass::cast(klass)->element_type();
+  assert(klass->is_klass(), "not a class");
+  BasicType elt_type = TypeArrayKlass::cast(klass)->element_type();
   oop obj = oopFactory::new_typeArray(elt_type, length, CHECK);
   thread->set_vm_result(obj);
   // This is pretty rare but this runtime patch is stressful to deoptimization
@@ -339,14 +339,14 @@ JRT_ENTRY(void, Runtime1::new_type_array(JavaThread* thread, klassOopDesc* klass
 JRT_END
 
 
-JRT_ENTRY(void, Runtime1::new_object_array(JavaThread* thread, klassOopDesc* array_klass, jint length))
+JRT_ENTRY(void, Runtime1::new_object_array(JavaThread* thread, Klass* array_klass, jint length))
   NOT_PRODUCT(_new_object_array_slowcase_cnt++;)
 
   // Note: no handle for klass needed since they are not used
   //       anymore after new_objArray() and no GC can happen before.
   //       (This may have to change if this code changes!)
-  assert(oop(array_klass)->is_klass(), "not a class");
-  klassOop elem_klass = objArrayKlass::cast(array_klass)->element_klass();
+  assert(array_klass->is_klass(), "not a class");
+  Klass* elem_klass = ObjArrayKlass::cast(array_klass)->element_klass();
   objArrayOop obj = oopFactory::new_objArray(elem_klass, length, CHECK);
   thread->set_vm_result(obj);
   // This is pretty rare but this runtime patch is stressful to deoptimization
@@ -357,12 +357,12 @@ JRT_ENTRY(void, Runtime1::new_object_array(JavaThread* thread, klassOopDesc* arr
 JRT_END
 
 
-JRT_ENTRY(void, Runtime1::new_multi_array(JavaThread* thread, klassOopDesc* klass, int rank, jint* dims))
+JRT_ENTRY(void, Runtime1::new_multi_array(JavaThread* thread, Klass* klass, int rank, jint* dims))
   NOT_PRODUCT(_new_multi_array_slowcase_cnt++;)
 
-  assert(oop(klass)->is_klass(), "not a class");
+  assert(klass->is_klass(), "not a class");
   assert(rank >= 1, "rank must be nonzero");
-  oop obj = arrayKlass::cast(klass)->multi_allocate(rank, dims, CHECK);
+  oop obj = ArrayKlass::cast(klass)->multi_allocate(rank, dims, CHECK);
   thread->set_vm_result(obj);
 JRT_END
 
@@ -383,7 +383,7 @@ JRT_END
 // associated with the top activation record. The inlinee (that is possibly included in the enclosing
 // method) method oop is passed as an argument. In order to do that it is embedded in the code as
 // a constant.
-static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, methodOopDesc* m) {
+static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, Method* m) {
   nmethod* osr_nm = NULL;
   methodHandle method(THREAD, m);
 
@@ -423,7 +423,7 @@ static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, meth
   return osr_nm;
 }
 
-JRT_BLOCK_ENTRY(address, Runtime1::counter_overflow(JavaThread* thread, int bci, methodOopDesc* method))
+JRT_BLOCK_ENTRY(address, Runtime1::counter_overflow(JavaThread* thread, int bci, Method* method))
   nmethod* osr_nm;
   JRT_BLOCK
     osr_nm = counter_overflow_helper(thread, bci, method);
@@ -702,7 +702,7 @@ JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* thread))
 JRT_END
 
 
-static klassOop resolve_field_return_klass(methodHandle caller, int bci, TRAPS) {
+static Klass* resolve_field_return_klass(methodHandle caller, int bci, TRAPS) {
   Bytecode_field field_access(caller, bci);
   // This can be static or non-static field access
   Bytecodes::Code code       = field_access.code();
@@ -815,8 +815,12 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
 #endif // PRODUCT
   bool deoptimize_for_volatile = false;
   int patch_field_offset = -1;
-  KlassHandle init_klass(THREAD, klassOop(NULL)); // klass needed by access_field_patching code
-  Handle load_klass(THREAD, NULL);                // oop needed by load_klass_patching code
+  KlassHandle init_klass(THREAD, NULL); // klass needed by load_klass_patching code
+  KlassHandle load_klass(THREAD, NULL); // klass needed by load_klass_patching code
+  Handle mirror(THREAD, NULL);                    // oop needed by load_mirror_patching code
+  bool load_klass_or_mirror_patch_id =
+    (stub_id == Runtime1::load_klass_patching_id || stub_id == Runtime1::load_mirror_patching_id);
+
   if (stub_id == Runtime1::access_field_patching_id) {
 
     Bytecode_field field_access(caller_method, bci);
@@ -839,15 +843,14 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
 #ifndef PRODUCT
     patch_field_type = result.field_type();
 #endif
-  } else if (stub_id == Runtime1::load_klass_patching_id) {
-    oop k;
+  } else if (load_klass_or_mirror_patch_id) {
+    Klass* k = NULL;
     switch (code) {
       case Bytecodes::_putstatic:
       case Bytecodes::_getstatic:
-        { klassOop klass = resolve_field_return_klass(caller_method, bci, CHECK);
-          // Save a reference to the class that has to be checked for initialization
+        { Klass* klass = resolve_field_return_klass(caller_method, bci, CHECK);
           init_klass = KlassHandle(THREAD, klass);
-          k = klass->java_mirror();
+          mirror = Handle(THREAD, klass->java_mirror());
         }
         break;
       case Bytecodes::_new:
@@ -872,7 +875,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         break;
       case Bytecodes::_anewarray:
         { Bytecode_anewarray anew(caller_method(), caller_method->bcp_from(bci));
-          klassOop ek = caller_method->constants()->klass_at(anew.index(), CHECK);
+          Klass* ek = caller_method->constants()->klass_at(anew.index(), CHECK);
           k = Klass::cast(ek)->array_klass(CHECK);
         }
         break;
@@ -880,14 +883,14 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
       case Bytecodes::_ldc_w:
         {
           Bytecode_loadconstant cc(caller_method, bci);
-          k = cc.resolve_constant(CHECK);
-          assert(k != NULL && !k->is_klass(), "must be class mirror or other Java constant");
+          oop m = cc.resolve_constant(CHECK);
+          mirror = Handle(THREAD, m);
         }
         break;
       default: Unimplemented();
     }
     // convert to handle
-    load_klass = Handle(THREAD, k);
+    load_klass = KlassHandle(THREAD, k);
   } else {
     ShouldNotReachHere();
   }
@@ -913,7 +916,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
 
   // If we are patching in a non-perm oop, make sure the nmethod
   // is on the right list.
-  if (ScavengeRootsInCode && load_klass.not_null() && load_klass->is_scavengable()) {
+  if (ScavengeRootsInCode && mirror.not_null() && mirror()->is_scavengable()) {
     MutexLockerEx ml_code (CodeCache_lock, Mutex::_no_safepoint_check_flag);
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     guarantee(nm != NULL, "only nmethods can contain non-perm oops");
@@ -978,7 +981,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           assert(n_move->offset() == 0 || (n_move->offset() == 4 && (patch_field_type == T_DOUBLE || patch_field_type == T_LONG)), "illegal offset for type");
           assert(patch_field_offset >= 0, "illegal offset");
           n_move->add_offset_in_bytes(patch_field_offset);
-        } else if (stub_id == Runtime1::load_klass_patching_id) {
+        } else if (load_klass_or_mirror_patch_id) {
           // If a getstatic or putstatic is referencing a klass which
           // isn't fully initialized, the patch body isn't copied into
           // place until initialization is complete.  In this case the
@@ -986,7 +989,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           // initializing thread are forced to come into the VM and
           // block.
           do_patch = (code != Bytecodes::_getstatic && code != Bytecodes::_putstatic) ||
-                     instanceKlass::cast(init_klass())->is_initialized();
+                     InstanceKlass::cast(init_klass())->is_initialized();
           NativeGeneralJump* jump = nativeGeneralJump_at(instr_pc);
           if (jump->jump_destination() == being_initialized_entry) {
             assert(do_patch == true, "initialization must be complete at this point");
@@ -997,60 +1000,80 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
             assert(n_copy->data() == 0 ||
                    n_copy->data() == (intptr_t)Universe::non_oop_word(),
                    "illegal init value");
+            if (stub_id == Runtime1::load_klass_patching_id) {
             assert(load_klass() != NULL, "klass not set");
             n_copy->set_data((intx) (load_klass()));
+            } else {
+              assert(mirror() != NULL, "klass not set");
+              n_copy->set_data((intx) (mirror()));
+            }
 
             if (TracePatching) {
               Disassembler::decode(copy_buff, copy_buff + *byte_count, tty);
             }
 
 #if defined(SPARC) || defined(PPC)
-            // Update the oop location in the nmethod with the proper
-            // oop.  When the code was generated, a NULL was stuffed
-            // in the oop table and that table needs to be update to
+            // Update the location in the nmethod with the proper
+            // metadata.  When the code was generated, a NULL was stuffed
+            // in the metadata table and that table needs to be update to
             // have the right value.  On intel the value is kept
-            // directly in the instruction instead of in the oop
+            // directly in the instruction instead of in the metadata
             // table, so set_data above effectively updated the value.
             nmethod* nm = CodeCache::find_nmethod(instr_pc);
             assert(nm != NULL, "invalid nmethod_pc");
-            RelocIterator oops(nm, copy_buff, copy_buff + 1);
+            RelocIterator mds(nm, copy_buff, copy_buff + 1);
             bool found = false;
-            while (oops.next() && !found) {
-              if (oops.type() == relocInfo::oop_type) {
-                oop_Relocation* r = oops.oop_reloc();
+            while (mds.next() && !found) {
+              if (mds.type() == relocInfo::oop_type) {
+                assert(stub_id == Runtime1::load_mirror_patching_id, "wrong stub id");
+                oop_Relocation* r = mds.oop_reloc();
                 oop* oop_adr = r->oop_addr();
-                *oop_adr = load_klass();
+                *oop_adr = mirror();
                 r->fix_oop_relocation();
+                found = true;
+              } else if (mds.type() == relocInfo::metadata_type) {
+                assert(stub_id == Runtime1::load_klass_patching_id, "wrong stub id");
+                metadata_Relocation* r = mds.metadata_reloc();
+                Metadata** metadata_adr = r->metadata_addr();
+                *metadata_adr = load_klass();
+                r->fix_metadata_relocation();
                 found = true;
               }
             }
-            assert(found, "the oop must exist!");
+            assert(found, "the metadata must exist!");
 #endif
 
           }
         } else {
           ShouldNotReachHere();
         }
+
         if (do_patch) {
           // replace instructions
           // first replace the tail, then the call
 #ifdef ARM
-          if(stub_id == Runtime1::load_klass_patching_id && !VM_Version::supports_movw()) {
+          if(load_klass_or_mirror_patch_id && !VM_Version::supports_movw()) {
             nmethod* nm = CodeCache::find_nmethod(instr_pc);
-            oop* oop_addr = NULL;
+            address addr = NULL;
             assert(nm != NULL, "invalid nmethod_pc");
-            RelocIterator oops(nm, copy_buff, copy_buff + 1);
-            while (oops.next()) {
-              if (oops.type() == relocInfo::oop_type) {
-                oop_Relocation* r = oops.oop_reloc();
-                oop_addr = r->oop_addr();
+            RelocIterator mds(nm, copy_buff, copy_buff + 1);
+            while (mds.next()) {
+              if (mds.type() == relocInfo::oop_type) {
+                assert(stub_id == Runtime1::load_mirror_patching_id, "wrong stub id");
+                oop_Relocation* r = mds.oop_reloc();
+                addr = (address)r->oop_addr();
+                break;
+              } else if (mds.type() == relocInfo::metadata_type) {
+                assert(stub_id == Runtime1::load_klass_patching_id, "wrong stub id");
+                metadata_Relocation* r = mds.metadata_reloc();
+                addr = (address)r->metadata_addr();
                 break;
               }
             }
-            assert(oop_addr != NULL, "oop relocation must exist");
+            assert(addr != NULL, "metadata relocation must exist");
             copy_buff -= *byte_count;
             NativeMovConstReg* n_copy2 = nativeMovConstReg_at(copy_buff);
-            n_copy2->set_pc_relative_offset((address)oop_addr, instr_pc);
+            n_copy2->set_pc_relative_offset(addr, instr_pc);
           }
 #endif
 
@@ -1063,8 +1086,12 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           ICache::invalidate_range(instr_pc, *byte_count);
           NativeGeneralJump::replace_mt_safe(instr_pc, copy_buff);
 
-          if (stub_id == Runtime1::load_klass_patching_id) {
-            // update relocInfo to oop
+          if (load_klass_or_mirror_patch_id) {
+            relocInfo::relocType rtype =
+              (stub_id == Runtime1::load_klass_patching_id) ?
+                                   relocInfo::metadata_type :
+                                   relocInfo::oop_type;
+            // update relocInfo to metadata
             nmethod* nm = CodeCache::find_nmethod(instr_pc);
             assert(nm != NULL, "invalid nmethod_pc");
 
@@ -1073,18 +1100,19 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
             // future GCs.
             RelocIterator iter(nm, (address)instr_pc, (address)(instr_pc + 1));
             relocInfo::change_reloc_info_for_address(&iter, (address) instr_pc,
-                                                     relocInfo::none, relocInfo::oop_type);
+                                                     relocInfo::none, rtype);
 #ifdef SPARC
-            // Sparc takes two relocations for an oop so update the second one.
+            // Sparc takes two relocations for an metadata so update the second one.
             address instr_pc2 = instr_pc + NativeMovConstReg::add_offset;
             RelocIterator iter2(nm, instr_pc2, instr_pc2 + 1);
             relocInfo::change_reloc_info_for_address(&iter2, (address) instr_pc2,
-                                                     relocInfo::none, relocInfo::oop_type);
+                                                     relocInfo::none, rtype);
 #endif
 #ifdef PPC
           { address instr_pc2 = instr_pc + NativeMovConstReg::lo_offset;
             RelocIterator iter2(nm, instr_pc2, instr_pc2 + 1);
-            relocInfo::change_reloc_info_for_address(&iter2, (address) instr_pc2, relocInfo::none, relocInfo::oop_type);
+            relocInfo::change_reloc_info_for_address(&iter2, (address) instr_pc2,
+                                                     relocInfo::none, rtype);
           }
 #endif
           }
@@ -1118,6 +1146,25 @@ int Runtime1::move_klass_patching(JavaThread* thread) {
 
     ResetNoHandleMark rnhm;
     patch_code(thread, load_klass_patching_id);
+  }
+  // Back in JAVA, use no oops DON'T safepoint
+
+  // Return true if calling code is deoptimized
+
+  return caller_is_deopted();
+}
+
+int Runtime1::move_mirror_patching(JavaThread* thread) {
+//
+// NOTE: we are still in Java
+//
+  Thread* THREAD = thread;
+  debug_only(NoHandleMark nhm;)
+  {
+    // Enter VM mode
+
+    ResetNoHandleMark rnhm;
+    patch_code(thread, load_mirror_patching_id);
   }
   // Back in JAVA, use no oops DON'T safepoint
 
@@ -1187,8 +1234,8 @@ template <class T> int obj_arraycopy_work(oopDesc* src, T* src_addr,
     bs->write_ref_array((HeapWord*)dst_addr, length);
     return ac_ok;
   } else {
-    klassOop bound = objArrayKlass::cast(dst->klass())->element_klass();
-    klassOop stype = objArrayKlass::cast(src->klass())->element_klass();
+    Klass* bound = ObjArrayKlass::cast(dst->klass())->element_klass();
+    Klass* stype = ObjArrayKlass::cast(src->klass())->element_klass();
     if (stype == bound || Klass::cast(stype)->is_subtype_of(bound)) {
       // Elements are guaranteed to be subtypes, so no check necessary
       bs->write_ref_array_pre(dst_addr, length);
@@ -1214,9 +1261,9 @@ JRT_LEAF(int, Runtime1::arraycopy(oopDesc* src, int src_pos, oopDesc* dst, int d
 
   if (length == 0) return ac_ok;
   if (src->is_typeArray()) {
-    const klassOop klass_oop = src->klass();
+    Klass* const klass_oop = src->klass();
     if (klass_oop != dst->klass()) return ac_failed;
-    typeArrayKlass* klass = typeArrayKlass::cast(klass_oop);
+    TypeArrayKlass* klass = TypeArrayKlass::cast(klass_oop);
     const int l2es = klass->log2_element_size();
     const int ihs = klass->array_header_in_bytes() / wordSize;
     char* src_addr = (char*) ((oopDesc**)src + ihs) + (src_pos << l2es);
@@ -1279,7 +1326,7 @@ JRT_LEAF(int, Runtime1::is_instance_of(oopDesc* mirror, oopDesc* obj))
   // the return value as a boolean true.
 
   assert(mirror != NULL, "should null-check on mirror before calling");
-  klassOop k = java_lang_Class::as_klassOop(mirror);
+  Klass* k = java_lang_Class::as_Klass(mirror);
   return (k != NULL && obj != NULL && obj->is_a(k)) ? 1 : 0;
 JRT_END
 

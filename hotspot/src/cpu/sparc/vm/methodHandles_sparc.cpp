@@ -46,9 +46,9 @@ static RegisterOrConstant constant(int value) {
 
 void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg, Register temp_reg, Register temp2_reg) {
   if (VerifyMethodHandles)
-    verify_klass(_masm, klass_reg, SystemDictionaryHandles::Class_klass(), temp_reg, temp2_reg,
+    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class), temp_reg, temp2_reg,
                  "MH argument is a Class");
-  __ load_heap_oop(Address(klass_reg, java_lang_Class::klass_offset_in_bytes()), klass_reg);
+  __ ld_ptr(Address(klass_reg, java_lang_Class::klass_offset_in_bytes()), klass_reg);
 }
 
 #ifdef ASSERT
@@ -63,13 +63,11 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj_reg, KlassHandle klass,
+                                 Register obj_reg, SystemDictionary::WKID klass_id,
                                  Register temp_reg, Register temp2_reg,
                                  const char* error_message) {
-  oop* klass_addr = klass.raw_value();
-  assert(klass_addr >= SystemDictionaryHandles::Object_klass().raw_value() &&
-         klass_addr <= SystemDictionaryHandles::Long_klass().raw_value(),
-         "must be one of the SystemDictionaryHandles");
+  Klass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
+  KlassHandle klass = SystemDictionary::well_known_klass(klass_id);
   bool did_save = false;
   if (temp_reg == noreg || temp2_reg == noreg) {
     temp_reg = L1;
@@ -83,12 +81,12 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   __ verify_oop(obj_reg);
   __ br_null_short(obj_reg, Assembler::pn, L_bad);
   __ load_klass(obj_reg, temp_reg);
-  __ set(ExternalAddress(klass_addr), temp2_reg);
+  __ set(ExternalAddress((Metadata**)klass_addr), temp2_reg);
   __ ld_ptr(Address(temp2_reg, 0), temp2_reg);
   __ cmp_and_brx_short(temp_reg, temp2_reg, Assembler::equal, Assembler::pt, L_ok);
   intptr_t super_check_offset = klass->super_check_offset();
   __ ld_ptr(Address(temp_reg, super_check_offset), temp_reg);
-  __ set(ExternalAddress(klass_addr), temp2_reg);
+  __ set(ExternalAddress((Metadata**)klass_addr), temp2_reg);
   __ ld_ptr(Address(temp2_reg, 0), temp2_reg);
   __ cmp_and_brx_short(temp_reg, temp2_reg, Assembler::equal, Assembler::pt, L_ok);
   __ BIND(L_bad);
@@ -123,7 +121,7 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
 void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register method, Register target, Register temp,
                                             bool for_compiler_entry) {
   assert(method == G5_method, "interpreter calling convention");
-  __ verify_oop(method);
+  assert_different_registers(method, target, temp);
 
   if (!for_compiler_entry && JvmtiExport::can_post_interpreter_events()) {
     Label run_compiled_code;
@@ -134,7 +132,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     const Address interp_only(G2_thread, JavaThread::interp_only_mode_offset());
     __ ld(interp_only, temp);
     __ cmp_and_br_short(temp, 0, Assembler::zero, Assembler::pt, run_compiled_code);
-    __ ld_ptr(G5_method, in_bytes(methodOopDesc::interpreter_entry_offset()), target);
+    __ ld_ptr(G5_method, in_bytes(Method::interpreter_entry_offset()), target);
     __ jmp(target, 0);
     __ delayed()->nop();
     __ BIND(run_compiled_code);
@@ -142,8 +140,8 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     // it doesn't matter, since this is interpreter code.
   }
 
-  const ByteSize entry_offset = for_compiler_entry ? methodOopDesc::from_compiled_offset() :
-                                                     methodOopDesc::from_interpreted_offset();
+  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_offset() :
+                                                     Method::from_interpreted_offset();
   __ ld_ptr(G5_method, in_bytes(entry_offset), target);
   __ jmp(target, 0);
   __ delayed()->nop();
@@ -156,27 +154,26 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   BLOCK_COMMENT("jump_to_lambda_form {");
   // This is the initial entry point of a lazy method handle.
   // After type checking, it picks up the invoker from the LambdaForm.
-  assert_different_registers(recv, method_temp, temp2, temp3);
+  assert_different_registers(recv, method_temp, temp2);  // temp3 is only passed on
   assert(method_temp == G5_method, "required register for loading method");
 
   //NOT_PRODUCT({ FlagSetting fs(TraceMethodHandles, true); trace_method_handle(_masm, "LZMH"); });
 
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv);
-  __ load_heap_oop(Address(recv,        NONZERO(java_lang_invoke_MethodHandle::form_offset_in_bytes())),       method_temp);
+  __ load_heap_oop(Address(recv,        NONZERO(java_lang_invoke_MethodHandle::form_offset_in_bytes())),   method_temp);
   __ verify_oop(method_temp);
-  __ load_heap_oop(Address(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes())), method_temp);
+  __ load_heap_oop(Address(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes())),  method_temp);
   __ verify_oop(method_temp);
-  // the following assumes that a methodOop is normally compressed in the vmtarget field:
-  __ load_heap_oop(Address(method_temp, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes())),     method_temp);
-  __ verify_oop(method_temp);
+  // the following assumes that a Method* is normally compressed in the vmtarget field:
+  __ ld_ptr(       Address(method_temp, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes())), method_temp);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // make sure recv is already on stack
-    __ load_sized_value(Address(method_temp, methodOopDesc::size_of_parameters_offset()),
+    __ load_sized_value(Address(method_temp, Method::size_of_parameters_offset()),
                         temp2,
                         sizeof(u2), /*is_signed*/ false);
-    // assert(sizeof(u2) == sizeof(methodOopDesc::_size_of_parameters), "");
+    // assert(sizeof(u2) == sizeof(Method::_size_of_parameters), "");
     Label L;
     __ ld_ptr(__ argument_address(temp2, temp2, -1), temp2);
     __ cmp_and_br_short(temp2, recv, Assembler::equal, Assembler::pt, L);
@@ -204,14 +201,12 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   }
 
   // I5_savedSP/O5_savedSP: sender SP (must preserve; see prepare_to_jump_from_interpreted)
-  // G5_method:  methodOop
+  // G5_method:  Method*
   // G4 (Gargs): incoming argument list (must preserve)
   // O0: used as temp to hold mh or receiver
   // O1, O4: garbage temps, blown away
   Register O1_scratch    = O1;
   Register O4_param_size = O4;   // size of parameters
-
-  address code_start = __ pc();
 
   // here's where control starts out:
   __ align(CodeEntryAlignment);
@@ -220,14 +215,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   if (VerifyMethodHandles) {
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
-    __ ldub(Address(G5_method, methodOopDesc::intrinsic_id_offset_in_bytes()), O1_scratch);
+    __ ldub(Address(G5_method, Method::intrinsic_id_offset_in_bytes()), O1_scratch);
     __ cmp_and_br_short(O1_scratch, (int) iid, Assembler::equal, Assembler::pt, L);
     if (iid == vmIntrinsics::_linkToVirtual ||
         iid == vmIntrinsics::_linkToSpecial) {
       // could do this for all kinds, but would explode assembly code size
-      trace_method_handle(_masm, "bad methodOop::intrinsic_id");
+      trace_method_handle(_masm, "bad Method*::intrinsic_id");
     }
-    __ STOP("bad methodOop::intrinsic_id");
+    __ STOP("bad Method*::intrinsic_id");
     __ bind(L);
     BLOCK_COMMENT("} verify_intrinsic_id");
   }
@@ -237,10 +232,10 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   int ref_kind = signature_polymorphic_intrinsic_ref_kind(iid);
   assert(ref_kind != 0 || iid == vmIntrinsics::_invokeBasic, "must be _invokeBasic or a linkTo intrinsic");
   if (ref_kind == 0 || MethodHandles::ref_kind_has_receiver(ref_kind)) {
-    __ load_sized_value(Address(G5_method, methodOopDesc::size_of_parameters_offset()),
+    __ load_sized_value(Address(G5_method, Method::size_of_parameters_offset()),
                         O4_param_size,
                         sizeof(u2), /*is_signed*/ false);
-    // assert(sizeof(u2) == sizeof(methodOopDesc::_size_of_parameters), "");
+    // assert(sizeof(u2) == sizeof(Method::_size_of_parameters), "");
     O4_first_arg_addr = __ argument_address(O4_param_size, O4_param_size, -1);
   } else {
     DEBUG_ONLY(O4_param_size = noreg);
@@ -255,22 +250,9 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   // O4_first_arg_addr is live!
 
   if (TraceMethodHandles) {
-    const char* name = vmIntrinsics::name_at(iid);
-    if (*name == '_')  name += 1;
-    const size_t len = strlen(name) + 50;
-    char* qname = NEW_C_HEAP_ARRAY(char, len, mtInternal);
-    const char* suffix = "";
-    if (vmIntrinsics::method_for(iid) == NULL ||
-        !vmIntrinsics::method_for(iid)->access_flags().is_public()) {
-      if (is_signature_polymorphic_static(iid))
-        suffix = "/static";
-      else
-        suffix = "/private";
-    }
-    jio_snprintf(qname, len, "MethodHandle::interpreter_entry::%s%s", name, suffix);
     if (O0_mh != noreg)
       __ mov(O0_mh, G3_method_handle);  // make stub happy
-    trace_method_handle(_masm, qname);
+    trace_method_handle_interpreter_entry(_masm, iid);
   }
 
   if (iid == vmIntrinsics::_invokeBasic) {
@@ -290,14 +272,6 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     generate_method_handle_dispatch(_masm, iid, O0_recv, G5_member, not_for_compiler_entry);
   }
 
-  if (PrintMethodHandleStubs) {
-    address code_end = __ pc();
-    tty->print_cr("--------");
-    tty->print_cr("method handle interpreter entry for %s", vmIntrinsics::name_at(iid));
-    Disassembler::decode(code_start, code_end);
-    tty->cr();
-  }
-
   return entry_point;
 }
 
@@ -307,31 +281,31 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                                                     Register member_reg,
                                                     bool for_compiler_entry) {
   assert(is_signature_polymorphic(iid), "expected invoke iid");
-  // temps used in this code are not used in *either* compiled or interpreted calling sequences
   Register temp1 = (for_compiler_entry ? G1_scratch : O1);
-  Register temp2 = (for_compiler_entry ? G4_scratch : O4);
-  Register temp3 = G3_scratch;
-  Register temp4 = (for_compiler_entry ? noreg      : O2);
+  Register temp2 = (for_compiler_entry ? G3_scratch : O2);
+  Register temp3 = (for_compiler_entry ? G4_scratch : O3);
+  Register temp4 = (for_compiler_entry ? noreg      : O4);
   if (for_compiler_entry) {
     assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic ? noreg : O0), "only valid assignment");
-    assert_different_registers(temp1,      O0, O1, O2, O3, O4, O5);
-    assert_different_registers(temp2,      O0, O1, O2, O3, O4, O5);
-    assert_different_registers(temp3,      O0, O1, O2, O3, O4, O5);
-    assert_different_registers(temp4,      O0, O1, O2, O3, O4, O5);
+    assert_different_registers(temp1, O0, O1, O2, O3, O4, O5);
+    assert_different_registers(temp2, O0, O1, O2, O3, O4, O5);
+    assert_different_registers(temp3, O0, O1, O2, O3, O4, O5);
+    assert_different_registers(temp4, O0, O1, O2, O3, O4, O5);
+  } else {
+    assert_different_registers(temp1, temp2, temp3, temp4, O5_savedSP);  // don't trash lastSP
   }
   if (receiver_reg != noreg)  assert_different_registers(temp1, temp2, temp3, temp4, receiver_reg);
   if (member_reg   != noreg)  assert_different_registers(temp1, temp2, temp3, temp4, member_reg);
-  if (!for_compiler_entry)    assert_different_registers(temp1, temp2, temp3, temp4, O5_savedSP);  // don't trash lastSP
 
   if (iid == vmIntrinsics::_invokeBasic) {
     // indirect through MH.form.vmentry.vmtarget
-    jump_to_lambda_form(_masm, receiver_reg, G5_method, temp2, temp3, for_compiler_entry);
+    jump_to_lambda_form(_masm, receiver_reg, G5_method, temp1, temp2, for_compiler_entry);
 
   } else {
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
       // make sure the trailing argument really is a MemberName (caller responsibility)
-      verify_klass(_masm, member_reg, SystemDictionaryHandles::MemberName_klass(),
+      verify_klass(_masm, member_reg, SystemDictionary::WK_KLASS_ENUM_NAME(MemberName_klass),
                    temp1, temp2,
                    "MemberName required for invokeVirtual etc.");
     }
@@ -350,7 +324,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         // load receiver klass itself
         __ null_check(receiver_reg, oopDesc::klass_offset_in_bytes());
         __ load_klass(receiver_reg, temp1_recv_klass);
-        __ verify_oop(temp1_recv_klass);
+        __ verify_klass_ptr(temp1_recv_klass);
       }
       BLOCK_COMMENT("check_receiver {");
       // The receiver for the MemberName must be in receiver_reg.
@@ -358,14 +332,14 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles && iid == vmIntrinsics::_linkToSpecial) {
         // Did not load it above...
         __ load_klass(receiver_reg, temp1_recv_klass);
-        __ verify_oop(temp1_recv_klass);
+        __ verify_klass_ptr(temp1_recv_klass);
       }
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {
         Label L_ok;
         Register temp2_defc = temp2;
         __ load_heap_oop(member_clazz, temp2_defc);
         load_klass_from_Class(_masm, temp2_defc, temp3, temp4);
-        __ verify_oop(temp2_defc);
+        __ verify_klass_ptr(temp2_defc);
         __ check_klass_subtype(temp1_recv_klass, temp2_defc, temp3, temp4, L_ok);
         // If we get here, the type check failed!
         __ STOP("receiver class disagrees with MemberName.clazz");
@@ -382,24 +356,22 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     //  member_reg - MemberName that was the trailing argument
     //  temp1_recv_klass - klass of stacked receiver, if needed
     //  O5_savedSP - interpreter linkage (if interpreted)
-    //  O0..O7,G1,G4 - compiler arguments (if compiled)
+    //  O0..O5 - compiler arguments (if compiled)
 
-    bool method_is_live = false;
+    Label L_incompatible_class_change_error;
     switch (iid) {
     case vmIntrinsics::_linkToSpecial:
       if (VerifyMethodHandles) {
-        verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
+        verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp2);
       }
-      __ load_heap_oop(member_vmtarget, G5_method);
-      method_is_live = true;
+      __ ld_ptr(member_vmtarget, G5_method);
       break;
 
     case vmIntrinsics::_linkToStatic:
       if (VerifyMethodHandles) {
-        verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
+        verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp2);
       }
-      __ load_heap_oop(member_vmtarget, G5_method);
-      method_is_live = true;
+      __ ld_ptr(member_vmtarget, G5_method);
       break;
 
     case vmIntrinsics::_linkToVirtual:
@@ -408,7 +380,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       // minus the CP setup and profiling:
 
       if (VerifyMethodHandles) {
-        verify_ref_kind(_masm, JVM_REF_invokeVirtual, member_reg, temp3);
+        verify_ref_kind(_masm, JVM_REF_invokeVirtual, member_reg, temp2);
       }
 
       // pick out the vtable index from the MemberName, and then we can discard it:
@@ -425,9 +397,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       // Note:  The verifier invariants allow us to ignore MemberName.clazz and vmtarget
       // at this point.  And VerifyMethodHandles has already checked clazz, if needed.
 
-      // get target methodOop & entry point
+      // get target Method* & entry point
       __ lookup_virtual_method(temp1_recv_klass, temp2_index, G5_method);
-      method_is_live = true;
       break;
     }
 
@@ -436,13 +407,13 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       // same as TemplateTable::invokeinterface
       // (minus the CP setup and profiling, with different argument motion)
       if (VerifyMethodHandles) {
-        verify_ref_kind(_masm, JVM_REF_invokeInterface, member_reg, temp3);
+        verify_ref_kind(_masm, JVM_REF_invokeInterface, member_reg, temp2);
       }
 
-      Register temp3_intf = temp3;
-      __ load_heap_oop(member_clazz, temp3_intf);
-      load_klass_from_Class(_masm, temp3_intf, temp2, temp4);
-      __ verify_oop(temp3_intf);
+      Register temp2_intf = temp2;
+      __ load_heap_oop(member_clazz, temp2_intf);
+      load_klass_from_Class(_masm, temp2_intf, temp3, temp4);
+      __ verify_klass_ptr(temp2_intf);
 
       Register G5_index = G5_method;
       __ ld_ptr(member_vmindex, G5_index);
@@ -454,37 +425,34 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       }
 
       // given intf, index, and recv klass, dispatch to the implementation method
-      Label L_no_such_interface;
-      Register no_sethi_temp = noreg;
-      __ lookup_interface_method(temp1_recv_klass, temp3_intf,
+      __ lookup_interface_method(temp1_recv_klass, temp2_intf,
                                  // note: next two args must be the same:
                                  G5_index, G5_method,
-                                 temp2, no_sethi_temp,
-                                 L_no_such_interface);
-
-      __ verify_oop(G5_method);
-      jump_from_method_handle(_masm, G5_method, temp2, temp3, for_compiler_entry);
-
-      __ bind(L_no_such_interface);
-      AddressLiteral icce(StubRoutines::throw_IncompatibleClassChangeError_entry());
-      __ jump_to(icce, temp3);
-      __ delayed()->nop();
+                                 temp3, temp4,
+                                 L_incompatible_class_change_error);
       break;
     }
 
     default:
-      fatal(err_msg("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
+      fatal(err_msg_res("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
       break;
     }
 
-    if (method_is_live) {
-      // live at this point:  G5_method, O5_savedSP (if interpreted)
+    // Live at this point:
+    //   G5_method
+    //   O5_savedSP (if interpreted)
 
-      // After figuring out which concrete method to call, jump into it.
-      // Note that this works in the interpreter with no data motion.
-      // But the compiled version will require that rcx_recv be shifted out.
-      __ verify_oop(G5_method);
-      jump_from_method_handle(_masm, G5_method, temp1, temp3, for_compiler_entry);
+    // After figuring out which concrete method to call, jump into it.
+    // Note that this works in the interpreter with no data motion.
+    // But the compiled version will require that rcx_recv be shifted out.
+    __ verify_method_ptr(G5_method);
+    jump_from_method_handle(_masm, G5_method, temp1, temp2, for_compiler_entry);
+
+    if (iid == vmIntrinsics::_linkToInterface) {
+      __ BIND(L_incompatible_class_change_error);
+      AddressLiteral icce(StubRoutines::throw_IncompatibleClassChangeError_entry());
+      __ jump_to(icce, temp1);
+      __ delayed()->nop();
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
       final long addressSize = vm.getAddressSize();
 
       for (; cur.lessThan(limit);) {
-         Address klassOop = cur.getAddressAt(addressSize);
+         Address k = cur.getAddressAt(addressSize);
          if (FreeChunk.indicatesFreeChunk(cur)) {
             if (! cur.equals(regionStart)) {
                res.add(new MemRegion(regionStart, cur));
@@ -181,7 +181,7 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
             // note that fc.size() gives chunk size in heap words
             cur = cur.addOffsetTo(chunkSize * addressSize);
             regionStart = cur;
-         } else if (klassOop != null) {
+         } else if (k != null) {
             Oop obj = heap.newOop(cur.addOffsetToAsOopHandle(0));
             long objectSize = obj.getObjectSize();
             cur = cur.addOffsetTo(adjustObjectSizeInBytes(objectSize));

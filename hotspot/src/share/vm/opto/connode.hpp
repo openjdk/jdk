@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public:
 
   // Factory method:
   static ConINode* make( Compile* C, int con ) {
-    return new (C, 1) ConINode( TypeInt::make(con) );
+    return new (C) ConINode( TypeInt::make(con) );
   }
 
 };
@@ -73,9 +73,9 @@ public:
   // Factory methods:
   static ConPNode* make( Compile *C ,address con ) {
     if (con == NULL)
-      return new (C, 1) ConPNode( TypePtr::NULL_PTR ) ;
+      return new (C) ConPNode( TypePtr::NULL_PTR ) ;
     else
-      return new (C, 1) ConPNode( TypeRawPtr::make(con) );
+      return new (C) ConPNode( TypeRawPtr::make(con) );
   }
 };
 
@@ -85,6 +85,14 @@ public:
 class ConNNode : public ConNode {
 public:
   ConNNode( const TypeNarrowOop *t ) : ConNode(t) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------ConNKlassNode---------------------------------
+// Simple narrow klass constants
+class ConNKlassNode : public ConNode {
+public:
+  ConNKlassNode( const TypeNarrowKlass *t ) : ConNode(t) {}
   virtual int Opcode() const;
 };
 
@@ -98,7 +106,7 @@ public:
 
   // Factory method:
   static ConLNode* make( Compile *C ,jlong con ) {
-    return new (C, 1) ConLNode( TypeLong::make(con) );
+    return new (C) ConLNode( TypeLong::make(con) );
   }
 
 };
@@ -112,7 +120,7 @@ public:
 
   // Factory method:
   static ConFNode* make( Compile *C, float con  ) {
-    return new (C, 1) ConFNode( TypeF::make(con) );
+    return new (C) ConFNode( TypeF::make(con) );
   }
 
 };
@@ -126,7 +134,7 @@ public:
 
   // Factory method:
   static ConDNode* make( Compile *C, double con ) {
-    return new (C, 1) ConDNode( TypeD::make(con) );
+    return new (C) ConDNode( TypeD::make(con) );
   }
 
 };
@@ -270,42 +278,91 @@ public:
 };
 
 
+//------------------------------EncodeNarrowPtr--------------------------------
+class EncodeNarrowPtrNode : public TypeNode {
+ protected:
+  EncodeNarrowPtrNode(Node* value, const Type* type):
+    TypeNode(type, 2) {
+    init_class_id(Class_EncodeNarrowPtr);
+    init_req(0, NULL);
+    init_req(1, value);
+  }
+ public:
+  virtual uint  ideal_reg() const { return Op_RegN; }
+  virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
+};
+
 //------------------------------EncodeP--------------------------------
 // Encodes an oop pointers into its compressed form
 // Takes an extra argument which is the real heap base as a long which
 // may be useful for code generation in the backend.
-class EncodePNode : public TypeNode {
+class EncodePNode : public EncodeNarrowPtrNode {
  public:
   EncodePNode(Node* value, const Type* type):
-    TypeNode(type, 2) {
+    EncodeNarrowPtrNode(value, type) {
     init_class_id(Class_EncodeP);
-    init_req(0, NULL);
-    init_req(1, value);
   }
   virtual int Opcode() const;
   virtual Node *Identity( PhaseTransform *phase );
   virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual uint  ideal_reg() const { return Op_RegN; }
+};
 
-  virtual Node *Ideal_DU_postCCP( PhaseCCP *ccp );
+//------------------------------EncodePKlass--------------------------------
+// Encodes a klass pointer into its compressed form
+// Takes an extra argument which is the real heap base as a long which
+// may be useful for code generation in the backend.
+class EncodePKlassNode : public EncodeNarrowPtrNode {
+ public:
+  EncodePKlassNode(Node* value, const Type* type):
+    EncodeNarrowPtrNode(value, type) {
+    init_class_id(Class_EncodePKlass);
+  }
+  virtual int Opcode() const;
+  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type *Value( PhaseTransform *phase ) const;
+};
+
+//------------------------------DecodeNarrowPtr--------------------------------
+class DecodeNarrowPtrNode : public TypeNode {
+ protected:
+  DecodeNarrowPtrNode(Node* value, const Type* type):
+    TypeNode(type, 2) {
+    init_class_id(Class_DecodeNarrowPtr);
+    init_req(0, NULL);
+    init_req(1, value);
+  }
+ public:
+  virtual uint  ideal_reg() const { return Op_RegP; }
 };
 
 //------------------------------DecodeN--------------------------------
 // Converts a narrow oop into a real oop ptr.
 // Takes an extra argument which is the real heap base as a long which
 // may be useful for code generation in the backend.
-class DecodeNNode : public TypeNode {
+class DecodeNNode : public DecodeNarrowPtrNode {
  public:
   DecodeNNode(Node* value, const Type* type):
-    TypeNode(type, 2) {
+    DecodeNarrowPtrNode(value, type) {
     init_class_id(Class_DecodeN);
-    init_req(0, NULL);
-    init_req(1, value);
   }
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
   virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual uint  ideal_reg() const { return Op_RegP; }
+  virtual Node *Identity( PhaseTransform *phase );
+};
+
+//------------------------------DecodeNKlass--------------------------------
+// Converts a narrow klass pointer into a real klass ptr.
+// Takes an extra argument which is the real heap base as a long which
+// may be useful for code generation in the backend.
+class DecodeNKlassNode : public DecodeNarrowPtrNode {
+ public:
+  DecodeNKlassNode(Node* value, const Type* type):
+    DecodeNarrowPtrNode(value, type) {
+    init_class_id(Class_DecodeNKlass);
+  }
+  virtual int Opcode() const;
+  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node *Identity( PhaseTransform *phase );
 };
 
 //------------------------------Conv2BNode-------------------------------------

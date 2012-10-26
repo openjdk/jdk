@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,29 @@
 package sun.jvm.hotspot.runtime;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.utilities.PlatformInfo;
 
 /** Encapsulates some byte-swapping operations defined in the VM */
 
 public class Bytes {
+  // swap if client platform is different from server's.
   private boolean swap;
 
   public Bytes(MachineDescription machDesc) {
-    swap = !machDesc.isBigEndian();
+    String cpu = PlatformInfo.getCPU();
+    if (cpu.equals("sparc")) {
+      if (machDesc.isBigEndian()) {
+        swap = false;
+      } else {
+        swap = true;
+      }
+    } else { // intel
+      if (machDesc.isBigEndian()) {
+        swap = true;
+      } else {
+        swap = false;
+      }
+    }
   }
 
   /** Should only swap if the hardware's underlying byte order is

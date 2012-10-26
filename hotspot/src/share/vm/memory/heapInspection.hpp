@@ -28,13 +28,13 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-#ifndef SERVICES_KERNEL
+#if INCLUDE_SERVICES
 
 
 // HeapInspection
 
 // KlassInfoTable is a bucket hash table that
-// maps klassOops to extra information:
+// maps Klass*s to extra information:
 //    instance count and instance word size.
 //
 // A KlassInfoBucket is the head of a link list
@@ -47,17 +47,17 @@
 class KlassInfoEntry: public CHeapObj<mtInternal> {
  private:
   KlassInfoEntry* _next;
-  klassOop        _klass;
+  Klass*          _klass;
   long            _instance_count;
   size_t          _instance_words;
 
  public:
-  KlassInfoEntry(klassOop k, KlassInfoEntry* next) :
+  KlassInfoEntry(Klass* k, KlassInfoEntry* next) :
     _klass(k), _instance_count(0), _instance_words(0), _next(next)
   {}
   KlassInfoEntry* next()     { return _next; }
-  bool is_equal(klassOop k)  { return k == _klass; }
-  klassOop klass()           { return _klass; }
+  bool is_equal(Klass* k)  { return k == _klass; }
+  Klass* klass()           { return _klass; }
   long count()               { return _instance_count; }
   void set_count(long ct)    { _instance_count = ct; }
   size_t words()             { return _instance_words; }
@@ -78,7 +78,7 @@ class KlassInfoBucket: public CHeapObj<mtInternal> {
   KlassInfoEntry* list()           { return _list; }
   void set_list(KlassInfoEntry* l) { _list = l; }
  public:
-  KlassInfoEntry* lookup(const klassOop k);
+  KlassInfoEntry* lookup(Klass* const k);
   void initialize() { _list = NULL; }
   void empty();
   void iterate(KlassInfoClosure* cic);
@@ -94,8 +94,8 @@ class KlassInfoTable: public StackObj {
   HeapWord* _ref;
 
   KlassInfoBucket* _buckets;
-  uint hash(klassOop p);
-  KlassInfoEntry* lookup(const klassOop k);
+  uint hash(Klass* p);
+  KlassInfoEntry* lookup(Klass* const k);
 
  public:
   // Table size
@@ -129,12 +129,12 @@ class KlassInfoHisto : public StackObj {
   void sort();
 };
 
-#endif // SERVICES_KERNEL
+#endif // INCLUDE_SERVICES
 
 class HeapInspection : public AllStatic {
  public:
-  static void heap_inspection(outputStream* st, bool need_prologue) KERNEL_RETURN;
-  static void find_instances_at_safepoint(klassOop k, GrowableArray<oop>* result) KERNEL_RETURN;
+  static void heap_inspection(outputStream* st, bool need_prologue) NOT_SERVICES_RETURN;
+  static void find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) NOT_SERVICES_RETURN;
 };
 
 #endif // SHARE_VM_MEMORY_HEAPINSPECTION_HPP

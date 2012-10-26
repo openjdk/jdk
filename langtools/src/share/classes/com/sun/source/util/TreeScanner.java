@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import com.sun.source.tree.*;
  *
  * <p>Here is an example to count the number of identifier nodes in a tree:
  * <pre>
- *   class CountIdentifiers extends TreeScanner<Integer,Void> {
+ *   class CountIdentifiers extends TreeScanner&lt;Integer,Void&gt; {
  *      {@literal @}Override
  *      public Integer visitIdentifier(IdentifierTree node, Void p) {
  *          return 1;

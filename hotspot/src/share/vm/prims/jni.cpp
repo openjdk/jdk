@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +42,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/markOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -208,7 +209,7 @@ static jint CurrentVersion = JNI_VERSION_1_6;
 
 // out-of-line helpers for class jfieldIDWorkaround:
 
-bool jfieldIDWorkaround::is_valid_jfieldID(klassOop k, jfieldID id) {
+bool jfieldIDWorkaround::is_valid_jfieldID(Klass* k, jfieldID id) {
   if (jfieldIDWorkaround::is_instance_jfieldID(k, id)) {
     uintptr_t as_uint = (uintptr_t) id;
     intptr_t offset = raw_instance_offset(id);
@@ -217,7 +218,7 @@ bool jfieldIDWorkaround::is_valid_jfieldID(klassOop k, jfieldID id) {
         return false;
       }
     }
-    return instanceKlass::cast(k)->contains_field_offset(offset);
+    return InstanceKlass::cast(k)->contains_field_offset(offset);
   } else {
     JNIid* result = (JNIid*) id;
 #ifdef ASSERT
@@ -229,14 +230,14 @@ bool jfieldIDWorkaround::is_valid_jfieldID(klassOop k, jfieldID id) {
 }
 
 
-intptr_t jfieldIDWorkaround::encode_klass_hash(klassOop k, intptr_t offset) {
+intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, intptr_t offset) {
   if (offset <= small_offset_mask) {
-    klassOop field_klass = k;
-    klassOop super_klass = Klass::cast(field_klass)->super();
+    Klass* field_klass = k;
+    Klass* super_klass = Klass::cast(field_klass)->super();
     // With compressed oops the most super class with nonstatic fields would
     // be the owner of fields embedded in the header.
-    while (instanceKlass::cast(super_klass)->has_nonstatic_fields() &&
-           instanceKlass::cast(super_klass)->contains_field_offset(offset)) {
+    while (InstanceKlass::cast(super_klass)->has_nonstatic_fields() &&
+           InstanceKlass::cast(super_klass)->contains_field_offset(offset)) {
       field_klass = super_klass;   // super contains the field also
       super_klass = Klass::cast(field_klass)->super();
     }
@@ -256,7 +257,7 @@ intptr_t jfieldIDWorkaround::encode_klass_hash(klassOop k, intptr_t offset) {
   }
 }
 
-bool jfieldIDWorkaround::klass_hash_ok(klassOop k, jfieldID id) {
+bool jfieldIDWorkaround::klass_hash_ok(Klass* k, jfieldID id) {
   uintptr_t as_uint = (uintptr_t) id;
   intptr_t klass_hash = (as_uint >> klass_shift) & klass_mask;
   do {
@@ -269,7 +270,7 @@ bool jfieldIDWorkaround::klass_hash_ok(klassOop k, jfieldID id) {
   return false;
 }
 
-void jfieldIDWorkaround::verify_instance_jfieldID(klassOop k, jfieldID id) {
+void jfieldIDWorkaround::verify_instance_jfieldID(Klass* k, jfieldID id) {
   guarantee(jfieldIDWorkaround::is_instance_jfieldID(k, id), "must be an instance field" );
   uintptr_t as_uint = (uintptr_t) id;
   intptr_t offset = raw_instance_offset(id);
@@ -288,7 +289,7 @@ void jfieldIDWorkaround::verify_instance_jfieldID(klassOop k, jfieldID id) {
 #endif
     }
   }
-  guarantee(instanceKlass::cast(k)->contains_field_offset(offset),
+  guarantee(InstanceKlass::cast(k)->contains_field_offset(offset),
       "Bug in native code: jfieldID offset must address interior of object");
 }
 
@@ -405,7 +406,7 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
       ClassLoader::sync_JNIDefineClassLockFreeCounter()->inc();
     }
   }
-  klassOop k = SystemDictionary::resolve_from_stream(class_name, class_loader,
+  Klass* k = SystemDictionary::resolve_from_stream(class_name, class_loader,
                                                      Handle(), &st, true,
                                                      CHECK_NULL);
 
@@ -474,9 +475,9 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
       }
       oop mirror = (oop) result.get_jobject();
       loader = Handle(THREAD,
-        instanceKlass::cast(java_lang_Class::as_klassOop(mirror))->class_loader());
+        InstanceKlass::cast(java_lang_Class::as_Klass(mirror))->class_loader());
       protection_domain = Handle(THREAD,
-        instanceKlass::cast(java_lang_Class::as_klassOop(mirror))->protection_domain());
+        InstanceKlass::cast(java_lang_Class::as_Klass(mirror))->protection_domain());
     }
   } else {
     // We call ClassLoader.getSystemClassLoader to obtain the system class loader.
@@ -488,7 +489,7 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
                                         protection_domain, true, thread);
 
   if (TraceClassResolution && result != NULL) {
-    trace_class_resolution(java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(result)));
+    trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
   }
 
   // If we were the first invocation of jni_FindClass, we enable compilation again
@@ -531,12 +532,12 @@ JNI_ENTRY(jmethodID, jni_FromReflectedMethod(JNIEnv *env, jobject method))
     mirror = java_lang_reflect_Method::clazz(reflected);
     slot   = java_lang_reflect_Method::slot(reflected);
   }
-  klassOop k     = java_lang_Class::as_klassOop(mirror);
+  Klass* k     = java_lang_Class::as_Klass(mirror);
 
   KlassHandle k1(THREAD, k);
   // Make sure class is initialized before handing id's out to methods
   Klass::cast(k1())->initialize(CHECK_NULL);
-  methodOop m = instanceKlass::cast(k1())->method_with_idnum(slot);
+  Method* m = InstanceKlass::cast(k1())->method_with_idnum(slot);
   ret = m==NULL? NULL : m->jmethod_id();  // return NULL if reflected method deleted
   return ret;
 JNI_END
@@ -562,7 +563,7 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
   // field is a handle to a java.lang.reflect.Field object
   oop reflected   = JNIHandles::resolve_non_null(field);
   oop mirror      = java_lang_reflect_Field::clazz(reflected);
-  klassOop k      = java_lang_Class::as_klassOop(mirror);
+  Klass* k      = java_lang_Class::as_Klass(mirror);
   int slot        = java_lang_reflect_Field::slot(reflected);
   int modifiers   = java_lang_reflect_Field::modifiers(reflected);
 
@@ -572,11 +573,11 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
 
   // First check if this is a static field
   if (modifiers & JVM_ACC_STATIC) {
-    intptr_t offset = instanceKlass::cast(k1())->field_offset( slot );
-    JNIid* id = instanceKlass::cast(k1())->jni_id_for(offset);
+    intptr_t offset = InstanceKlass::cast(k1())->field_offset( slot );
+    JNIid* id = InstanceKlass::cast(k1())->jni_id_for(offset);
     assert(id != NULL, "corrupt Field object");
     debug_only(id->set_is_static_field_id();)
-    // A jfieldID for a static field is a JNIid specifying the field holder and the offset within the klassOop
+    // A jfieldID for a static field is a JNIid specifying the field holder and the offset within the Klass*
     ret = jfieldIDWorkaround::to_static_jfieldID(id);
     return ret;
   }
@@ -584,8 +585,8 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
   // The slot is the index of the field description in the field-array
   // The jfieldID is the offset of the field within the object
   // It may also have hash bits for k, if VerifyJNIFields is turned on.
-  intptr_t offset = instanceKlass::cast(k1())->field_offset( slot );
-  assert(instanceKlass::cast(k1())->contains_field_offset(offset), "stay within object");
+  intptr_t offset = InstanceKlass::cast(k1())->field_offset( slot );
+  assert(InstanceKlass::cast(k1())->contains_field_offset(offset), "stay within object");
   ret = jfieldIDWorkaround::to_instance_jfieldID(k1(), offset);
   return ret;
 JNI_END
@@ -608,7 +609,7 @@ JNI_ENTRY(jobject, jni_ToReflectedMethod(JNIEnv *env, jclass cls, jmethodID meth
   jobject ret = NULL;
   DT_RETURN_MARK(ToReflectedMethod, jobject, (const jobject&)ret);
 
-  methodHandle m (THREAD, JNIHandles::resolve_jmethod_id(method_id));
+  methodHandle m (THREAD, Method::resolve_jmethod_id(method_id));
   assert(m->is_static() == (isStatic != 0), "jni_ToReflectedMethod access flags doesn't match");
   oop reflection_method;
   if (m->is_initializer()) {
@@ -646,13 +647,13 @@ JNI_ENTRY(jclass, jni_GetSuperclass(JNIEnv *env, jclass sub))
   // arrays return Object
   // interfaces return NULL
   // proper classes return Klass::super()
-  klassOop k = java_lang_Class::as_klassOop(mirror);
+  Klass* k = java_lang_Class::as_Klass(mirror);
   if (Klass::cast(k)->is_interface()) return NULL;
 
   // return mirror for superclass
-  klassOop super = Klass::cast(k)->java_super();
+  Klass* super = Klass::cast(k)->java_super();
   // super2 is the value computed by the compiler's getSuperClass intrinsic:
-  debug_only(klassOop super2 = ( Klass::cast(k)->oop_is_javaArray()
+  debug_only(Klass* super2 = ( Klass::cast(k)->oop_is_array()
                                  ? SystemDictionary::Object_klass()
                                  : Klass::cast(k)->super() ) );
   assert(super == super2,
@@ -682,8 +683,8 @@ JNI_QUICK_ENTRY(jboolean, jni_IsAssignableFrom(JNIEnv *env, jclass sub, jclass s
 #endif /* USDT2 */
     return ret;
   }
-  klassOop sub_klass   = java_lang_Class::as_klassOop(sub_mirror);
-  klassOop super_klass = java_lang_Class::as_klassOop(super_mirror);
+  Klass* sub_klass   = java_lang_Class::as_Klass(sub_mirror);
+  Klass* super_klass = java_lang_Class::as_Klass(super_mirror);
   assert(sub_klass != NULL && super_klass != NULL, "invalid arguments to jni_IsAssignableFrom");
   jboolean ret = Klass::cast(sub_klass)->is_subtype_of(super_klass) ?
                    JNI_TRUE : JNI_FALSE;
@@ -736,7 +737,7 @@ JNI_ENTRY(jint, jni_ThrowNew(JNIEnv *env, jclass clazz, const char *message))
   jint ret = JNI_OK;
   DT_RETURN_MARK(ThrowNew, jint, (const jint&)ret);
 
-  instanceKlass* k = instanceKlass::cast(java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(clazz)));
+  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
   Symbol*  name = k->name();
   Handle class_loader (THREAD,  k->class_loader());
   Handle protection_domain (THREAD, k->protection_domain());
@@ -1157,7 +1158,7 @@ class JNI_ArgumentPusherVaArg : public JNI_ArgumentPusher {
     set_ap(rap);
   }
   JNI_ArgumentPusherVaArg(jmethodID method_id, va_list rap)
-      : JNI_ArgumentPusher(JNIHandles::resolve_jmethod_id(method_id)->signature()) {
+      : JNI_ArgumentPusher(Method::resolve_jmethod_id(method_id)->signature()) {
     set_ap(rap);
   }
 
@@ -1228,7 +1229,7 @@ class JNI_ArgumentPusherArray : public JNI_ArgumentPusher {
     set_ap(rap);
   }
   JNI_ArgumentPusherArray(jmethodID method_id, const jvalue *rap)
-      : JNI_ArgumentPusher(JNIHandles::resolve_jmethod_id(method_id)->signature()) {
+      : JNI_ArgumentPusher(Method::resolve_jmethod_id(method_id)->signature()) {
     set_ap(rap);
   }
 
@@ -1318,7 +1319,7 @@ static methodHandle jni_resolve_virtual_call(Handle recv, methodHandle method, T
 
 
 static void jni_invoke_static(JNIEnv *env, JavaValue* result, jobject receiver, JNICallType call_type, jmethodID method_id, JNI_ArgumentPusher *args, TRAPS) {
-  methodHandle method(THREAD, JNIHandles::resolve_jmethod_id(method_id));
+  methodHandle method(THREAD, Method::resolve_jmethod_id(method_id));
 
   // Create object to hold arguments for the JavaCall, and associate it with
   // the jni parser
@@ -1352,11 +1353,11 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
   Handle h_recv(THREAD, recv);
 
   int number_of_parameters;
-  methodOop selected_method;
+  Method* selected_method;
   {
-    methodOop m = JNIHandles::resolve_jmethod_id(method_id);
+    Method* m = Method::resolve_jmethod_id(method_id);
     number_of_parameters = m->size_of_parameters();
-    klassOop holder = m->method_holder();
+    Klass* holder = m->method_holder();
     if (!(Klass::cast(holder))->is_interface()) {
       // non-interface call -- for that little speed boost, don't handlize
       debug_only(No_Safepoint_Verifier nosafepoint;)
@@ -1364,11 +1365,11 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
         // jni_GetMethodID makes sure class is linked and initialized
         // so m should have a valid vtable index.
         int vtbl_index = m->vtable_index();
-        if (vtbl_index != methodOopDesc::nonvirtual_vtable_index) {
-          klassOop k = h_recv->klass();
+        if (vtbl_index != Method::nonvirtual_vtable_index) {
+          Klass* k = h_recv->klass();
           // k might be an arrayKlassOop but all vtables start at
           // the same place. The cast is to avoid virtual call and assertion.
-          instanceKlass *ik = (instanceKlass*)k->klass_part();
+          InstanceKlass *ik = (InstanceKlass*)k;
           selected_method = ik->method_at_vtable(vtbl_index);
         } else {
           // final method
@@ -1388,8 +1389,8 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
         m->set_cached_itable_index(itbl_index);
         // the above may have grabbed a lock, 'm' and anything non-handlized can't be used again
       }
-      klassOop k = h_recv->klass();
-      selected_method = instanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
+      Klass* k = h_recv->klass();
+      selected_method = InstanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
     }
   }
 
@@ -1421,10 +1422,10 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
 
 
 static instanceOop alloc_object(jclass clazz, TRAPS) {
-  KlassHandle k(THREAD, java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(clazz)));
+  KlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
   Klass::cast(k())->check_valid_for_instantiation(false, CHECK_NULL);
-  instanceKlass::cast(k())->initialize(CHECK_NULL);
-  instanceOop ih = instanceKlass::cast(k())->allocate_instance(THREAD);
+  InstanceKlass::cast(k())->initialize(CHECK_NULL);
+  instanceOop ih = InstanceKlass::cast(k())->allocate_instance(THREAD);
   return ih;
 }
 
@@ -1542,7 +1543,7 @@ JNI_ENTRY(jclass, jni_GetObjectClass(JNIEnv *env, jobject obj))
   HOTSPOT_JNI_GETOBJECTCLASS_ENTRY(
                                    env, obj);
 #endif /* USDT2 */
-  klassOop k = JNIHandles::resolve_non_null(obj)->klass();
+  Klass* k = JNIHandles::resolve_non_null(obj)->klass();
   jclass ret =
     (jclass) JNIHandles::make_local(env, Klass::cast(k)->java_mirror());
 #ifndef USDT2
@@ -1565,7 +1566,7 @@ JNI_QUICK_ENTRY(jboolean, jni_IsInstanceOf(JNIEnv *env, jobject obj, jclass claz
   jboolean ret = JNI_TRUE;
   if (obj != NULL) {
     ret = JNI_FALSE;
-    klassOop k = java_lang_Class::as_klassOop(
+    Klass* k = java_lang_Class::as_Klass(
       JNIHandles::resolve_non_null(clazz));
     if (k != NULL) {
       ret = JNIHandles::resolve_non_null(obj)->is_a(k) ? JNI_TRUE : JNI_FALSE;
@@ -1605,18 +1606,18 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   }
 
   KlassHandle klass(THREAD,
-               java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(clazz)));
+               java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
 
   // Make sure class is linked and initialized before handing id's out to
-  // methodOops.
+  // Method*s.
   Klass::cast(klass())->initialize(CHECK_NULL);
 
-  methodOop m;
+  Method* m;
   if (name == vmSymbols::object_initializer_name() ||
       name == vmSymbols::class_initializer_name()) {
     // Never search superclasses for constructors
     if (klass->oop_is_instance()) {
-      m = instanceKlass::cast(klass())->find_method(name, signature);
+      m = InstanceKlass::cast(klass())->find_method(name, signature);
     } else {
       m = NULL;
     }
@@ -1624,7 +1625,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
     m = klass->lookup_method(name, signature);
     // Look up interfaces
     if (m == NULL && klass->oop_is_instance()) {
-      m = instanceKlass::cast(klass())->lookup_method_in_all_interfaces(name,
+      m = InstanceKlass::cast(klass())->lookup_method_in_all_interfaces(name,
                                                                    signature);
     }
   }
@@ -2424,7 +2425,7 @@ JNI_ENTRY(ResultType, \
   JavaValue jvalue(Tag); \
   JNI_ArgumentPusherVaArg ap(methodID, args); \
   /* Make sure class is initialized before trying to invoke its method */ \
-  KlassHandle k(THREAD, java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(cls))); \
+  KlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls))); \
   Klass::cast(k())->initialize(CHECK_0); \
   jni_invoke_static(env, &jvalue, NULL, JNI_STATIC, methodID, &ap, CHECK_0); \
   va_end(args); \
@@ -2608,13 +2609,13 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
   KlassHandle k(THREAD,
-                java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(clazz)));
+                java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
   // Make sure class is initialized before handing id's out to fields
   Klass::cast(k())->initialize(CHECK_NULL);
 
   fieldDescriptor fd;
   if (!Klass::cast(k())->oop_is_instance() ||
-      !instanceKlass::cast(k())->find_field(fieldname, signame, false, &fd)) {
+      !InstanceKlass::cast(k())->find_field(fieldname, signame, false, &fd)) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
 
@@ -2634,7 +2635,7 @@ JNI_ENTRY(jobject, jni_GetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID
                                    env, obj, (uintptr_t) fieldID);
 #endif /* USDT2 */
   oop o = JNIHandles::resolve_non_null(obj);
-  klassOop k = o->klass();
+  Klass* k = o->klass();
   int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);
   // Keep JVMTI addition small and only check enabled flag here.
   // jni_GetField_probe() assumes that is okay to create handles.
@@ -2651,8 +2652,8 @@ JNI_ENTRY(jobject, jni_GetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID
 
     if (ret != NULL &&
         offset == java_lang_ref_Reference::referent_offset &&
-        instanceKlass::cast(k)->reference_type() != REF_NONE) {
-      assert(instanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
+        InstanceKlass::cast(k)->reference_type() != REF_NONE) {
+      assert(InstanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
       needs_barrier = true;
     }
 
@@ -2685,7 +2686,7 @@ JNI_QUICK_ENTRY(Return, jni_Get##Result##Field(JNIEnv *env, jobject obj, jfieldI
   DT_RETURN_MARK_FOR(Result, Get##Result##Field, Return, (const Return&)ret);\
 \
   oop o = JNIHandles::resolve_non_null(obj); \
-  klassOop k = o->klass(); \
+  Klass* k = o->klass(); \
   int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);  \
   /* Keep JVMTI addition small and only check enabled flag here.       */ \
   /* jni_GetField_probe_nh() assumes that is not okay to create handles */ \
@@ -2722,7 +2723,7 @@ JNI_QUICK_ENTRY(Return, jni_Get##Result##Field(JNIEnv *env, jobject obj, jfieldI
   DT_RETURN_MARK_FOR(Result, Get##Result##Field, Return, (const Return&)ret);\
 \
   oop o = JNIHandles::resolve_non_null(obj); \
-  klassOop k = o->klass(); \
+  Klass* k = o->klass(); \
   int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);  \
   /* Keep JVMTI addition small and only check enabled flag here.       */ \
   /* jni_GetField_probe_nh() assumes that is not okay to create handles */ \
@@ -2795,7 +2796,7 @@ JNI_QUICK_ENTRY(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldID fiel
                                    env, obj, (uintptr_t) fieldID, value);
 #endif /* USDT2 */
   oop o = JNIHandles::resolve_non_null(obj);
-  klassOop k = o->klass();
+  Klass* k = o->klass();
   int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);
   // Keep JVMTI addition small and only check enabled flag here.
   // jni_SetField_probe_nh() assumes that is not okay to create handles
@@ -2820,13 +2821,12 @@ JNI_END
 JNI_QUICK_ENTRY(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfieldID fieldID, Argument value)) \
   JNIWrapper("Set" XSTR(Result) "Field"); \
 \
-  HS_DTRACE_PROBE_CDECL_N(hotspot_jni, Set##Result##Field__entry, \
-    ( JNIEnv*, jobject, jfieldID FP_SELECT_##Result(COMMA Argument,/*empty*/) ) ); \
-  HS_DTRACE_PROBE_N(hotspot_jni, Set##Result##Field__entry, \
-    ( env, obj, fieldID FP_SELECT_##Result(COMMA value,/*empty*/) ) ); \
+  FP_SELECT_##Result( \
+    DTRACE_PROBE4(hotspot_jni, Set##Result##Field__entry, env, obj, fieldID, value), \
+    DTRACE_PROBE3(hotspot_jni, Set##Result##Field__entry, env, obj, fieldID)); \
 \
   oop o = JNIHandles::resolve_non_null(obj); \
-  klassOop k = o->klass(); \
+  Klass* k = o->klass(); \
   int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);  \
   /* Keep JVMTI addition small and only check enabled flag here.       */ \
   /* jni_SetField_probe_nh() assumes that is not okay to create handles */ \
@@ -2860,7 +2860,7 @@ JNI_QUICK_ENTRY(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfieldID 
   EntryProbe; \
 \
   oop o = JNIHandles::resolve_non_null(obj); \
-  klassOop k = o->klass(); \
+  Klass* k = o->klass(); \
   int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);  \
   /* Keep JVMTI addition small and only check enabled flag here.       */ \
   /* jni_SetField_probe_nh() assumes that is not okay to create handles */ \
@@ -2922,19 +2922,19 @@ JNI_ENTRY(jobject, jni_ToReflectedField(JNIEnv *env, jclass cls, jfieldID fieldI
 
   fieldDescriptor fd;
   bool found = false;
-  klassOop k = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(cls));
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
 
   assert(jfieldIDWorkaround::is_static_jfieldID(fieldID) == (isStatic != 0), "invalid fieldID");
 
   if (isStatic) {
-    // Static field. The fieldID a JNIid specifying the field holder and the offset within the klassOop.
+    // Static field. The fieldID a JNIid specifying the field holder and the offset within the Klass*.
     JNIid* id = jfieldIDWorkaround::from_static_jfieldID(fieldID);
     assert(id->is_static_field_id(), "invalid static field id");
     found = id->find_local_field(&fd);
   } else {
     // Non-static field. The fieldID is really the offset of the field within the instanceOop.
     int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);
-    found = instanceKlass::cast(k)->find_field_from_offset(offset, false, &fd);
+    found = InstanceKlass::cast(k)->find_field_from_offset(offset, false, &fd);
   }
   assert(found, "bad fieldID passed into jni_ToReflectedField");
   oop reflected = Reflection::new_field(&fd, UseNewReflection, CHECK_NULL);
@@ -2974,18 +2974,18 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
   KlassHandle k(THREAD,
-                java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(clazz)));
+                java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
   // Make sure class is initialized before handing id's out to static fields
   Klass::cast(k())->initialize(CHECK_NULL);
 
   fieldDescriptor fd;
   if (!Klass::cast(k())->oop_is_instance() ||
-      !instanceKlass::cast(k())->find_field(fieldname, signame, true, &fd)) {
+      !InstanceKlass::cast(k())->find_field(fieldname, signame, true, &fd)) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
 
-  // A jfieldID for a static field is a JNIid specifying the field holder and the offset within the klassOop
-  JNIid* id = instanceKlass::cast(fd.field_holder())->jni_id_for(fd.offset());
+  // A jfieldID for a static field is a JNIid specifying the field holder and the offset within the Klass*
+  JNIid* id = InstanceKlass::cast(fd.field_holder())->jni_id_for(fd.offset());
   debug_only(id->set_is_static_field_id();)
 
   debug_only(id->verify(fd.field_holder()));
@@ -3003,9 +3003,9 @@ JNI_ENTRY(jobject, jni_GetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID 
   HOTSPOT_JNI_GETSTATICOBJECTFIELD_ENTRY(
                                          env, clazz, (uintptr_t) fieldID);
 #endif /* USDT2 */
-#ifndef JNICHECK_KERNEL
-  DEBUG_ONLY(klassOop param_k = jniCheck::validate_class(thread, clazz);)
-#endif // JNICHECK_KERNEL
+#if INCLUDE_JNI_CHECK
+  DEBUG_ONLY(Klass* param_k = jniCheck::validate_class(thread, clazz);)
+#endif // INCLUDE_JNI_CHECK
   JNIid* id = jfieldIDWorkaround::from_static_jfieldID(fieldID);
   assert(id->is_static_field_id(), "invalid static field id");
   // Keep JVMTI addition small and only check enabled flag here.
@@ -3130,10 +3130,9 @@ JNI_END
 \
 JNI_ENTRY(void, jni_SetStatic##Result##Field(JNIEnv *env, jclass clazz, jfieldID fieldID, Argument value)) \
   JNIWrapper("SetStatic" XSTR(Result) "Field"); \
-  HS_DTRACE_PROBE_CDECL_N(hotspot_jni, SetStatic##Result##Field__entry,\
-    ( JNIEnv*, jclass, jfieldID FP_SELECT_##Result(COMMA Argument,/*empty*/) ) ); \
-  HS_DTRACE_PROBE_N(hotspot_jni, SetStatic##Result##Field__entry, \
-    ( env, clazz, fieldID FP_SELECT_##Result(COMMA value,/*empty*/) ) ); \
+  FP_SELECT_##Result( \
+     DTRACE_PROBE4(hotspot_jni, SetStatic##Result##Field__entry, env, clazz, fieldID, value), \
+     DTRACE_PROBE3(hotspot_jni, SetStatic##Result##Field__entry, env, clazz, fieldID)); \
 \
   JNIid* id = jfieldIDWorkaround::from_static_jfieldID(fieldID); \
   assert(id->is_static_field_id(), "invalid static field id"); \
@@ -3439,11 +3438,11 @@ JNI_ENTRY(jobjectArray, jni_NewObjectArray(JNIEnv *env, jsize length, jclass ele
 #endif /* USDT2 */
   jobjectArray ret = NULL;
   DT_RETURN_MARK(NewObjectArray, jobjectArray, (const jobjectArray&)ret);
-  KlassHandle ek(THREAD, java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(elementClass)));
-  klassOop ako = Klass::cast(ek())->array_klass(CHECK_NULL);
+  KlassHandle ek(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(elementClass)));
+  Klass* ako = Klass::cast(ek())->array_klass(CHECK_NULL);
   KlassHandle ak = KlassHandle(THREAD, ako);
-  objArrayKlass::cast(ak())->initialize(CHECK_NULL);
-  objArrayOop result = objArrayKlass::cast(ak())->allocate(length, CHECK_NULL);
+  ObjArrayKlass::cast(ak())->initialize(CHECK_NULL);
+  objArrayOop result = ObjArrayKlass::cast(ak())->allocate(length, CHECK_NULL);
   oop initial_value = JNIHandles::resolve(initialElement);
   if (initial_value != NULL) {  // array already initialized with NULL
     for (int index = 0; index < length; index++) {
@@ -3502,7 +3501,7 @@ JNI_ENTRY(void, jni_SetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize
   objArrayOop a = objArrayOop(JNIHandles::resolve_non_null(array));
   oop v = JNIHandles::resolve(value);
   if (a->is_within_bounds(index)) {
-    if (v == NULL || v->is_a(objArrayKlass::cast(a->klass())->element_klass())) {
+    if (v == NULL || v->is_a(ObjArrayKlass::cast(a->klass())->element_klass())) {
       a->obj_at_put(index, v);
     } else {
       THROW(vmSymbols::java_lang_ArrayStoreException());
@@ -3787,7 +3786,7 @@ jni_Get##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
   } else { \
     if (len > 0) { \
-      int sc = typeArrayKlass::cast(src->klass())->log2_element_size(); \
+      int sc = TypeArrayKlass::cast(src->klass())->log2_element_size(); \
       memcpy((u_char*) buf, \
              (u_char*) src->Tag##_at_addr(start), \
              len << sc);                          \
@@ -3822,7 +3821,7 @@ jni_Get##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
   } else { \
     if (len > 0) { \
-      int sc = typeArrayKlass::cast(src->klass())->log2_element_size(); \
+      int sc = TypeArrayKlass::cast(src->klass())->log2_element_size(); \
       memcpy((u_char*) buf, \
              (u_char*) src->Tag##_at_addr(start), \
              len << sc);                          \
@@ -3871,7 +3870,7 @@ jni_Set##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
   } else { \
     if (len > 0) { \
-      int sc = typeArrayKlass::cast(dst->klass())->log2_element_size(); \
+      int sc = TypeArrayKlass::cast(dst->klass())->log2_element_size(); \
       memcpy((u_char*) dst->Tag##_at_addr(start), \
              (u_char*) buf, \
              len << sc);    \
@@ -3906,7 +3905,7 @@ jni_Set##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
   } else { \
     if (len > 0) { \
-      int sc = typeArrayKlass::cast(dst->klass())->log2_element_size(); \
+      int sc = TypeArrayKlass::cast(dst->klass())->log2_element_size(); \
       memcpy((u_char*) dst->Tag##_at_addr(start), \
              (u_char*) buf, \
              len << sc);    \
@@ -3949,10 +3948,11 @@ DEFINE_SETSCALARARRAYREGION(T_DOUBLE,  jdouble,  Double,  double
 // is not native.  Ask JVM TI what prefixes have been specified.  Then check
 // to see if the native method is now wrapped with the prefixes.  See the
 // SetNativeMethodPrefix(es) functions in the JVM TI Spec for details.
-static methodOop find_prefixed_native(KlassHandle k,
+static Method* find_prefixed_native(KlassHandle k,
                                       Symbol* name, Symbol* signature, TRAPS) {
+#if INCLUDE_JVMTI
   ResourceMark rm(THREAD);
-  methodOop method;
+  Method* method;
   int name_len = name->utf8_length();
   char* name_str = name->as_utf8();
   int prefix_count;
@@ -3982,16 +3982,17 @@ static methodOop find_prefixed_native(KlassHandle k,
     name_len = trial_len;
     name_str = trial_name_str;
   }
+#endif // INCLUDE_JVMTI
   return NULL; // not found
 }
 
 static bool register_native(KlassHandle k, Symbol* name, Symbol* signature, address entry, TRAPS) {
-  methodOop method = Klass::cast(k())->lookup_method(name, signature);
+  Method* method = Klass::cast(k())->lookup_method(name, signature);
   if (method == NULL) {
     ResourceMark rm;
     stringStream st;
     st.print("Method %s name or signature does not match",
-             methodOopDesc::name_and_sig_as_C_string(Klass::cast(k()), name, signature));
+             Method::name_and_sig_as_C_string(Klass::cast(k()), name, signature));
     THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
   }
   if (!method->is_native()) {
@@ -4001,14 +4002,14 @@ static bool register_native(KlassHandle k, Symbol* name, Symbol* signature, addr
       ResourceMark rm;
       stringStream st;
       st.print("Method %s is not declared as native",
-               methodOopDesc::name_and_sig_as_C_string(Klass::cast(k()), name, signature));
+               Method::name_and_sig_as_C_string(Klass::cast(k()), name, signature));
       THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
     }
   }
 
   if (entry != NULL) {
     method->set_native_function(entry,
-      methodOopDesc::native_bind_event_is_interesting);
+      Method::native_bind_event_is_interesting);
   } else {
     method->clear_native_function();
   }
@@ -4041,7 +4042,7 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
   jint ret = 0;
   DT_RETURN_MARK(RegisterNatives, jint, (const jint&)ret);
 
-  KlassHandle h_k(thread, java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(clazz)));
+  KlassHandle h_k(thread, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
 
   for (int index = 0; index < nMethods; index++) {
     const char* meth_name = methods[index].name;
@@ -4081,11 +4082,11 @@ JNI_ENTRY(jint, jni_UnregisterNatives(JNIEnv *env, jclass clazz))
  HOTSPOT_JNI_UNREGISTERNATIVES_ENTRY(
                                      env, clazz);
 #endif /* USDT2 */
-  klassOop k   = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(clazz));
+  Klass* k   = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
   //%note jni_2
   if (Klass::cast(k)->oop_is_instance()) {
-    for (int index = 0; index < instanceKlass::cast(k)->methods()->length(); index++) {
-      methodOop m = methodOop(instanceKlass::cast(k)->methods()->obj_at(index));
+    for (int index = 0; index < InstanceKlass::cast(k)->methods()->length(); index++) {
+      Method* m = InstanceKlass::cast(k)->methods()->at(index);
       if (m->is_native()) {
         m->clear_native_function();
         m->set_signature_handler(NULL);
@@ -4251,7 +4252,7 @@ JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboole
   if (a->is_objArray()) {
     type = T_OBJECT;
   } else {
-    type = typeArrayKlass::cast(a->klass())->element_type();
+    type = TypeArrayKlass::cast(a->klass())->element_type();
   }
   void* ret = arrayOop(a)->base(type);
 #ifndef USDT2
@@ -4412,7 +4413,7 @@ static jclass lookupOne(JNIEnv* env, const char* name, TRAPS) {
   jclass result =  find_class_from_class_loader(env, sym, true, loader, protection_domain, true, CHECK_NULL);
 
   if (TraceClassResolution && result != NULL) {
-    trace_class_resolution(java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(result)));
+    trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
   }
   return result;
 }
@@ -4975,11 +4976,9 @@ void quicken_jni_functions() {
 
 // Returns the function structure
 struct JNINativeInterface_* jni_functions() {
-#ifndef JNICHECK_KERNEL
+#if INCLUDE_JNI_CHECK
   if (CheckJNICalls) return jni_functions_check();
-#else  // JNICHECK_KERNEL
-  if (CheckJNICalls) warning("-Xcheck:jni is not supported in kernel vm.");
-#endif // JNICHECK_KERNEL
+#endif // INCLUDE_JNI_CHECK
   return &jni_NativeInterface;
 }
 

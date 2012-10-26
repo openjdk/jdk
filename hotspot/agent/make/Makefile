@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,7 @@ endif
 PKGLIST = \
 sun.jvm.hotspot \
 sun.jvm.hotspot.asm \
-sun.jvm.hotspot.asm.amd64 \
-sun.jvm.hotspot.asm.ia64 \
 sun.jvm.hotspot.asm.sparc \
-sun.jvm.hotspot.asm.x86 \
 sun.jvm.hotspot.bugspot \
 sun.jvm.hotspot.bugspot.tree \
 sun.jvm.hotspot.c1 \
@@ -138,10 +135,7 @@ com.sun.java.swing.ui
 FILELIST = \
 sun/jvm/hotspot/*.java \
 sun/jvm/hotspot/asm/*.java \
-sun/jvm/hotspot/asm/amd64/*.java \
-sun/jvm/hotspot/asm/ia64/*.java \
 sun/jvm/hotspot/asm/sparc/*.java \
-sun/jvm/hotspot/asm/x86/*.java \
 sun/jvm/hotspot/bugspot/*.java \
 sun/jvm/hotspot/bugspot/tree/*.java \
 sun/jvm/hotspot/c1/*.java \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ private:
     return basic_plus_adr(base, base, offset);
   }
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset) {
-    Node* adr = new (C, 4) AddPNode(base, ptr, offset);
+    Node* adr = new (C) AddPNode(base, ptr, offset);
     return transform_later(adr);
   }
   Node* transform_later(Node* n) {
