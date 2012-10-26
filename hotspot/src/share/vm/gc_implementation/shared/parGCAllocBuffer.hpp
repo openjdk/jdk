@@ -52,6 +52,10 @@ protected:
   static size_t FillerHeaderSize;
   static size_t AlignmentReserve;
 
+  // Flush the stats supporting ergonomic sizing of PLAB's
+  // Should not be called directly
+  void flush_stats(PLABStats* stats);
+
 public:
   // Initializes the buffer to be empty, but with the given "word_sz".
   // Must get initialized with "set_buf" for an allocation to succeed.
@@ -120,12 +124,22 @@ public:
   }
 
   // Flush the stats supporting ergonomic sizing of PLAB's
-  void flush_stats(PLABStats* stats);
+  // and retire the current buffer.
   void flush_stats_and_retire(PLABStats* stats, bool end_of_gc, bool retain) {
     // We flush the stats first in order to get a reading of
     // unused space in the last buffer.
     if (ResizePLAB) {
       flush_stats(stats);
+
+      // Since we have flushed the stats we need to clear
+      // the _allocated and _wasted fields. Not doing so
+      // will artifically inflate the values in the stats
+      // to which we add them.
+      // The next time we flush these values, we will add
+      // what we have just flushed in addition to the size
+      // of the buffers allocated between now and then.
+      _allocated = 0;
+      _wasted = 0;
     }
     // Retire the last allocation buffer.
     retire(end_of_gc, retain);
@@ -190,7 +204,8 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
     return _desired_plab_sz;
   }
 
-  void adjust_desired_plab_sz(); // filter computation, latches output to
+  void adjust_desired_plab_sz(uint no_of_gc_workers);
+                                 // filter computation, latches output to
                                  // _desired_plab_sz, clears sensor accumulators
 
   void add_allocated(size_t v) {

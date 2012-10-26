@@ -58,6 +58,10 @@ public abstract class DebuggerBase implements Debugger {
   protected long heapOopSize;
   protected long narrowOopBase;  // heap base for compressed oops.
   protected int  narrowOopShift; // shift to decode compressed oops.
+  // class metadata space
+  protected long klassPtrSize;
+  protected long narrowKlassBase;  // heap base for compressed klass ptrs.
+  protected int  narrowKlassShift; // shift to decode compressed klass ptrs.
   // Should be initialized if desired by calling initCache()
   private PageCache cache;
 
@@ -159,10 +163,14 @@ public abstract class DebuggerBase implements Debugger {
     javaPrimitiveTypesConfigured = true;
   }
 
-  public void putHeapConst(long heapOopSize, long narrowOopBase, int narrowOopShift) {
+  public void putHeapConst(long heapOopSize, long klassPtrSize, long narrowOopBase, int narrowOopShift,
+                           long narrowKlassBase, int narrowKlassShift) {
     this.heapOopSize = heapOopSize;
+    this.klassPtrSize = klassPtrSize;
     this.narrowOopBase = narrowOopBase;
     this.narrowOopShift = narrowOopShift;
+    this.narrowKlassBase = narrowKlassBase;
+    this.narrowKlassShift = narrowKlassShift;
   }
 
   /** May be called by subclasses if desired to initialize the page
@@ -464,6 +472,15 @@ public abstract class DebuggerBase implements Debugger {
     return value;
   }
 
+  protected long readCompKlassAddressValue(long address)
+    throws UnmappedAddressException, UnalignedAddressException {
+    long value = readCInteger(address, getKlassPtrSize(), true);
+    if (value != 0) {
+      value = (long)(narrowKlassBase + (long)(value << narrowKlassShift));
+    }
+    return value;
+  }
+
   protected void writeAddressValue(long address, long value)
     throws UnmappedAddressException, UnalignedAddressException {
     writeCInteger(address, machDesc.getAddressSize(), value);
@@ -550,5 +567,16 @@ public abstract class DebuggerBase implements Debugger {
   }
   public int getNarrowOopShift() {
     return narrowOopShift;
+  }
+
+  public long getKlassPtrSize() {
+    return klassPtrSize;
+  }
+
+  public long getNarrowKlassBase() {
+    return narrowKlassBase;
+  }
+  public int getNarrowKlassShift() {
+    return narrowKlassShift;
   }
 }

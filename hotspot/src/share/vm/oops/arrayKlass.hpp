@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,36 +27,43 @@
 
 #include "memory/universe.hpp"
 #include "oops/klass.hpp"
-#include "oops/klassOop.hpp"
-#include "oops/klassVtable.hpp"
 
-// arrayKlass is the abstract baseclass for all array classes
+class klassVtable;
 
-class arrayKlass: public Klass {
+// ArrayKlass is the abstract baseclass for all array classes
+
+class ArrayKlass: public Klass {
   friend class VMStructs;
  private:
   int      _dimension;         // This is n'th-dimensional array.
-  volatile klassOop _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
-  volatile klassOop _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
+  Klass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
+  Klass* volatile _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
   int      _vtable_len;        // size of vtable for this klass
   juint    _alloc_size;        // allocation profiling support
   oop      _component_mirror;  // component type, as a java/lang/Class
 
+ protected:
+  // Constructors
+  // The constructor with the Symbol argument does the real array
+  // initialization, the other is a dummy
+  ArrayKlass(Symbol* name);
+  ArrayKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
+
  public:
   // Testing operation
-  bool oop_is_array() const { return true; }
+  bool oop_is_array_slow() const { return true; }
 
   // Instance variables
   int dimension() const                 { return _dimension;      }
   void set_dimension(int dimension)     { _dimension = dimension; }
 
-  klassOop higher_dimension() const     { return _higher_dimension; }
-  void set_higher_dimension(klassOop k) { oop_store_without_check((oop*) &_higher_dimension, (oop) k); }
-  oop* adr_higher_dimension()           { return (oop*)&this->_higher_dimension;}
+  Klass* higher_dimension() const     { return _higher_dimension; }
+  void set_higher_dimension(Klass* k) { _higher_dimension = k; }
+  Klass** adr_higher_dimension()      { return (Klass**)&this->_higher_dimension;}
 
-  klassOop lower_dimension() const      { return _lower_dimension; }
-  void set_lower_dimension(klassOop k)  { oop_store_without_check((oop*) &_lower_dimension, (oop) k); }
-  oop* adr_lower_dimension()            { return (oop*)&this->_lower_dimension;}
+  Klass* lower_dimension() const      { return _lower_dimension; }
+  void set_lower_dimension(Klass* k)  { _lower_dimension = k; }
+  Klass** adr_lower_dimension()       { return (Klass**)&this->_lower_dimension;}
 
   // Allocation profiling support
   juint alloc_size() const              { return _alloc_size; }
@@ -69,13 +76,13 @@ class arrayKlass: public Klass {
   BasicType element_type() const        { return layout_helper_element_type(layout_helper()); }
 
   oop  component_mirror() const         { return _component_mirror; }
-  void set_component_mirror(oop m)      { oop_store((oop*) &_component_mirror, m); }
+  void set_component_mirror(oop m)      { klass_oop_store(&_component_mirror, m); }
   oop* adr_component_mirror()           { return (oop*)&this->_component_mirror;}
 
   // Compiler/Interpreter offset
-  static ByteSize component_mirror_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(arrayKlass, _component_mirror)); }
+  static ByteSize component_mirror_offset() { return in_ByteSize(offset_of(ArrayKlass, _component_mirror)); }
 
-  virtual klassOop java_super() const;//{ return SystemDictionary::Object_klass(); }
+  virtual Klass* java_super() const;//{ return SystemDictionary::Object_klass(); }
 
   // Allocation
   // Sizes points to the first dimension of the array, subsequent dimensions
@@ -84,23 +91,20 @@ class arrayKlass: public Klass {
   objArrayOop allocate_arrayArray(int n, int length, TRAPS);
 
   // Lookup operations
-  methodOop uncached_lookup_method(Symbol* name, Symbol* signature) const;
+  Method* uncached_lookup_method(Symbol* name, Symbol* signature) const;
 
-  // Casting from klassOop
-  static arrayKlass* cast(klassOop k) {
-    Klass* kp = k->klass_part();
-    assert(kp->null_vtbl() || kp->oop_is_array(), "cast to arrayKlass");
-    return (arrayKlass*) kp;
+  // Casting from Klass*
+  static ArrayKlass* cast(Klass* k) {
+    assert(k->oop_is_array(), "cast to ArrayKlass");
+    return (ArrayKlass*) k;
   }
 
-  objArrayOop compute_secondary_supers(int num_extra_slots, TRAPS);
-  bool compute_is_subtype_of(klassOop k);
+  GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots);
+  bool compute_is_subtype_of(Klass* k);
 
   // Sizing
-  static int header_size()                 { return oopDesc::header_size() + sizeof(arrayKlass)/HeapWordSize; }
-  int object_size(int header_size) const;
-
-  bool object_is_parsable() const          { return _vtable_len > 0; }
+  static int header_size()                 { return sizeof(ArrayKlass)/HeapWordSize; }
+  static int static_size(int header_size);
 
   // Java vtable
   klassVtable* vtable() const;             // return new klassVtable
@@ -112,16 +116,16 @@ class arrayKlass: public Klass {
 
  public:
   // Iterators
-  void array_klasses_do(void f(klassOop k));
-  void with_array_klasses_do(void f(klassOop k));
+  void array_klasses_do(void f(Klass* k));
+  void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
+  void with_array_klasses_do(void f(Klass* k));
 
-  // Shared creation method
-  static arrayKlassHandle base_create_array_klass(
-                                          const Klass_vtbl& vtbl,
-                                          int header_size, KlassHandle klass,
-                                          TRAPS);
+  // GC support
+  virtual void oops_do(OopClosure* cl);
+
   // Return a handle.
-  static void     complete_create_array_klass(arrayKlassHandle k, KlassHandle super_klass, TRAPS);
+  static void     complete_create_array_klass(ArrayKlass* k, KlassHandle super_klass, TRAPS);
+
 
   // jvm support
   jint compute_modifier_flags(TRAPS) const;
@@ -129,10 +133,19 @@ class arrayKlass: public Klass {
   // JVMTI support
   jint jvmti_class_status() const;
 
+  // CDS support - remove and restore oops from metadata. Oops are not shared.
+  virtual void remove_unshareable_info();
+  virtual void restore_unshareable_info(TRAPS);
+
   // Printing
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
+
   void oop_print_on(oop obj, outputStream* st);
 
   // Verification
+  void verify_on(outputStream* st);
+
   void oop_verify_on(oop obj, outputStream* st);
 };
 

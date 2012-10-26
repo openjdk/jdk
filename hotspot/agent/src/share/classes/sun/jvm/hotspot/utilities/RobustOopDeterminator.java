@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.jvm.hotspot.utilities;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.memory.*;
+import sun.jvm.hotspot.oops.Metadata;
+import sun.jvm.hotspot.oops.Klass;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
@@ -38,7 +40,7 @@ import sun.jvm.hotspot.types.*;
     states than the ObjectHeap code. */
 
 public class RobustOopDeterminator {
-  private static OopField klassField;
+  private static AddressField klassField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -51,10 +53,10 @@ public class RobustOopDeterminator {
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("oopDesc");
 
-    if (VM.getVM().isCompressedOopsEnabled()) {
-      klassField = type.getNarrowOopField("_metadata._compressed_klass");
+    if (VM.getVM().isCompressedKlassPointersEnabled()) {
+      klassField = type.getAddressField("_metadata._compressed_klass");
     } else {
-      klassField = type.getOopField("_metadata._klass");
+      klassField = type.getAddressField("_metadata._klass");
     }
   }
 
@@ -66,18 +68,14 @@ public class RobustOopDeterminator {
       return false;
     }
     try {
-      for (int i = 0; i < 4; ++i) {
-        OopHandle next = klassField.getValue(oop);
-        if (next == null) {
-          return false;
-        }
-        if (next.equals(oop)) {
+      // Try to instantiate the Klass
+      if (VM.getVM().isCompressedKlassPointersEnabled()) {
+        Metadata.instantiateWrapperFor(oop.getCompKlassAddressAt(klassField.getOffset()));
+      } else {
+        Metadata.instantiateWrapperFor(klassField.getValue(oop));
+      }
           return true;
         }
-        oop = next;
-      }
-      return false;
-    }
     catch (AddressException e) {
       return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,26 +34,131 @@
 // Makes a string of the macro expansion of a
 #define XSTR(a) STR(a)
 
-// KERNEL variant
-#ifdef KERNEL
-#define COMPILER1
-#define SERIALGC
+// -DINCLUDE_<something>=0 | 1 can be specified on the command line to include
+// or exclude functionality.
 
-#define JVMTI_KERNEL
-#define FPROF_KERNEL
-#define VM_STRUCTS_KERNEL
-#define JNICHECK_KERNEL
-#define SERVICES_KERNEL
+#ifndef INCLUDE_JVMTI
+#define INCLUDE_JVMTI 1
+#endif  // INCLUDE_JVMTI
 
-#define KERNEL_RETURN        {}
-#define KERNEL_RETURN_(code) { return code; }
+#if INCLUDE_JVMTI
+#define JVMTI_ONLY(x) x
+#define NOT_JVMTI(x)
+#define NOT_JVMTI_RETURN
+#define NOT_JVMTI_RETURN_(code) /* next token must be ; */
+#else
+#define JVMTI_ONLY(x)
+#define NOT_JVMTI(x) x
+#define NOT_JVMTI_RETURN { return; }
+#define NOT_JVMTI_RETURN_(code) { return code; }
+#endif // INCLUDE_JVMTI
 
-#else  // KERNEL
+#ifndef INCLUDE_FPROF
+#define INCLUDE_FPROF 1
+#endif
 
-#define KERNEL_RETURN        /* next token must be ; */
-#define KERNEL_RETURN_(code) /* next token must be ; */
+#if INCLUDE_FPROF
+#define NOT_FPROF_RETURN        /* next token must be ; */
+#define NOT_FPROF_RETURN_(code) /* next token must be ; */
+#else
+#define NOT_FPROF_RETURN                {}
+#define NOT_FPROF_RETURN_(code) { return code; }
+#endif // INCLUDE_FPROF
 
-#endif // KERNEL
+#ifndef INCLUDE_VM_STRUCTS
+#define INCLUDE_VM_STRUCTS 1
+#endif
+
+#if INCLUDE_VM_STRUCTS
+#define NOT_VM_STRUCTS_RETURN        /* next token must be ; */
+#define NOT_VM_STRUCTS_RETURN_(code) /* next token must be ; */
+#else
+#define NOT_VM_STRUCTS_RETURN           {}
+#define NOT_VM_STRUCTS_RETURN_(code) { return code; }
+#endif // INCLUDE_VM_STRUCTS
+
+#ifndef INCLUDE_JNI_CHECK
+#define INCLUDE_JNI_CHECK 1
+#endif
+
+#if INCLUDE_JNI_CHECK
+#define NOT_JNI_CHECK_RETURN        /* next token must be ; */
+#define NOT_JNI_CHECK_RETURN_(code) /* next token must be ; */
+#else
+#define NOT_JNI_CHECK_RETURN            {}
+#define NOT_JNI_CHECK_RETURN_(code) { return code; }
+#endif // INCLUDE_JNI_CHECK
+
+#ifndef INCLUDE_SERVICES
+#define INCLUDE_SERVICES 1
+#endif
+
+#if INCLUDE_SERVICES
+#define NOT_SERVICES_RETURN        /* next token must be ; */
+#define NOT_SERVICES_RETURN_(code) /* next token must be ; */
+#else
+#define NOT_SERVICES_RETURN             {}
+#define NOT_SERVICES_RETURN_(code) { return code; }
+#endif // INCLUDE_SERVICES
+
+#ifndef INCLUDE_CDS
+#define INCLUDE_CDS 1
+#endif
+
+#if INCLUDE_CDS
+#define CDS_ONLY(x) x
+#define NOT_CDS(x)
+#define NOT_CDS_RETURN        /* next token must be ; */
+#define NOT_CDS_RETURN_(code) /* next token must be ; */
+#else
+#define CDS_ONLY(x)
+#define NOT_CDS(x) x
+#define NOT_CDS_RETURN          {}
+#define NOT_CDS_RETURN_(code) { return code; }
+#endif // INCLUDE_CDS
+
+#ifndef INCLUDE_MANAGEMENT
+#define INCLUDE_MANAGEMENT 1
+#endif // INCLUDE_MANAGEMENT
+
+#if INCLUDE_MANAGEMENT
+#define NOT_MANAGEMENT_RETURN        /* next token must be ; */
+#define NOT_MANAGEMENT_RETURN_(code) /* next token must be ; */
+#else
+#define NOT_MANAGEMENT_RETURN        {}
+#define NOT_MANAGEMENT_RETURN_(code) { return code; }
+#endif // INCLUDE_MANAGEMENT
+
+/*
+ * When INCLUDE_ALTERNATE_GCS is false the only garbage collectors
+ * included in the JVM are defaultNewGeneration and markCompact.
+ *
+ * When INCLUDE_ALTERNATE_GCS is true all garbage collectors are
+ * included in the JVM.
+ */
+#ifndef INCLUDE_ALTERNATE_GCS
+#define INCLUDE_ALTERNATE_GCS 1
+#endif // INCLUDE_ALTERNATE_GCS
+
+#if INCLUDE_ALTERNATE_GCS
+#define NOT_ALTERNATE_GCS_RETURN        /* next token must be ; */
+#define NOT_ALTERNATE_GCS_RETURN_(code) /* next token must be ; */
+#else
+#define NOT_ALTERNATE_GCS_RETURN        {}
+#define NOT_ALTERNATE_GCS_RETURN_(code) { return code; }
+#endif // INCLUDE_ALTERNATE_GCS
+
+#ifndef INCLUDE_NMT
+#define INCLUDE_NMT 1
+#endif // INCLUDE_NMT
+
+#if INCLUDE_NMT
+#define NOT_NMT_RETURN        /* next token must be ; */
+#define NOT_NMT_RETURN_(code) /* next token must be ; */
+#else
+#define NOT_NMT_RETURN        {}
+#define NOT_NMT_RETURN_(code) { return code; }
+#endif // INCLUDE_NMT
 
 // COMPILER1 variant
 #ifdef COMPILER1

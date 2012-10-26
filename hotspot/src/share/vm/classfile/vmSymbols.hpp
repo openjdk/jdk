@@ -234,7 +234,7 @@
   template(parameter_annotations_name,                "parameterAnnotations")                     \
   template(annotation_default_name,                   "annotationDefault")                        \
   template(sun_reflect_ConstantPool,                  "sun/reflect/ConstantPool")                 \
-  template(constantPoolOop_name,                      "constantPoolOop")                          \
+  template(ConstantPool_name,                         "constantPoolOop")                          \
   template(sun_reflect_UnsafeStaticFieldAccessorImpl, "sun/reflect/UnsafeStaticFieldAccessorImpl")\
   template(base_name,                                 "base")                                     \
                                                                                                   \
@@ -359,6 +359,8 @@
   template(values_name,                               "values")                                   \
   template(receiver_name,                             "receiver")                                 \
   template(vmtarget_name,                             "vmtarget")                                 \
+  template(next_target_name,                          "next_target")                              \
+  template(vmloader_name,                             "vmloader")                                 \
   template(vmindex_name,                              "vmindex")                                  \
   template(vmcount_name,                              "vmcount")                                  \
   template(vmentry_name,                              "vmentry")                                  \
@@ -373,6 +375,8 @@
   template(array_klass_name,                          "array_klass")                              \
   template(oop_size_name,                             "oop_size")                                 \
   template(static_oop_field_count_name,               "static_oop_field_count")                   \
+  template(loader_data_name,                          "loader_data")                              \
+  template(dependencies_name,                         "dependencies")                             \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \
   template(register_method_name,                      "register")                                 \
@@ -869,6 +873,20 @@
    do_name(     putOrderedInt_name,                              "putOrderedInt")                                       \
    do_alias(    putOrderedInt_signature,                        /*(Ljava/lang/Object;JI)V*/ putInt_signature)           \
                                                                                                                         \
+  do_intrinsic(_getAndAddInt,             sun_misc_Unsafe,        getAndAddInt_name, getAndAddInt_signature, F_R)       \
+   do_name(     getAndAddInt_name,                                "getAndAddInt")                                       \
+   do_signature(getAndAddInt_signature,                           "(Ljava/lang/Object;JI)I" )                           \
+  do_intrinsic(_getAndAddLong,            sun_misc_Unsafe,        getAndAddLong_name, getAndAddLong_signature, F_R)     \
+   do_name(     getAndAddLong_name,                               "getAndAddLong")                                      \
+   do_signature(getAndAddLong_signature,                          "(Ljava/lang/Object;JJ)J" )                           \
+  do_intrinsic(_getAndSetInt,             sun_misc_Unsafe,        getAndSet_name, getAndSetInt_signature, F_R)          \
+   do_name(     getAndSet_name,                                   "getAndSet")                                          \
+   do_alias(    getAndSetInt_signature,                         /*"(Ljava/lang/Object;JI)I"*/ getAndAddInt_signature)   \
+  do_intrinsic(_getAndSetLong,            sun_misc_Unsafe,        getAndSet_name, getAndSetLong_signature, F_R)         \
+   do_alias(    getAndSetLong_signature,                        /*"(Ljava/lang/Object;JJ)J"*/ getAndAddLong_signature)  \
+  do_intrinsic(_getAndSetObject,          sun_misc_Unsafe,        getAndSet_name, getAndSetObject_signature,  F_R)      \
+   do_signature(getAndSetObject_signature,                        "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
+                                                                                                                        \
   /* prefetch_signature is shared by all prefetch variants */                                                           \
   do_signature( prefetch_signature,        "(Ljava/lang/Object;J)V")                                                    \
                                                                                                                         \
@@ -1012,7 +1030,7 @@ class vmSymbols: AllStatic {
 
   // Sharing support
   static void symbols_do(SymbolClosure* f);
-  static void serialize(SerializeOopClosure* soc);
+  static void serialize(SerializeClosure* soc);
 
   static Symbol* type_signature(BasicType t) {
     assert((uint)t < T_VOID+1, "range check");
@@ -1110,7 +1128,7 @@ public:
     return id;
   }
 
-  static void verify_method(ID actual_id, methodOop m) PRODUCT_RETURN;
+  static void verify_method(ID actual_id, Method* m) PRODUCT_RETURN;
 
   // Find out the symbols behind an intrinsic:
   static vmSymbols::SID     class_for(ID id);
@@ -1119,9 +1137,6 @@ public:
   static Flags              flags_for(ID id);
 
   static const char* short_name_as_C_string(ID id, char* buf, int size);
-
-  // Access to intrinsic methods:
-  static methodOop method_for(ID id);
 
   // Wrapper object methods:
   static ID for_boxing(BasicType type);

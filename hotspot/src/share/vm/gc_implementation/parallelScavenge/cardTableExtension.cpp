@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
   // fail unless the object head is also unmarked.
   virtual void do_object(oop obj) {
     CheckForUnmarkedOops object_check(_young_gen, _card_table);
-    obj->oop_iterate(&object_check);
+    obj->oop_iterate_no_header(&object_check);
     if (object_check.has_unmarked_oop()) {
       assert(_card_table->addr_is_marked_imprecise(obj), "Found unmarked young_gen object");
     }
@@ -121,103 +121,12 @@ class CheckForPreciseMarks : public OopClosure {
 
 // We get passed the space_top value to prevent us from traversing into
 // the old_gen promotion labs, which cannot be safely parsed.
-void CardTableExtension::scavenge_contents(ObjectStartArray* start_array,
-                                           MutableSpace* sp,
-                                           HeapWord* space_top,
-                                           PSPromotionManager* pm)
-{
-  assert(start_array != NULL && sp != NULL && pm != NULL, "Sanity");
-  assert(start_array->covered_region().contains(sp->used_region()),
-         "ObjectStartArray does not cover space");
 
-  if (sp->not_empty()) {
-    oop* sp_top = (oop*)space_top;
-    oop* prev_top = NULL;
-    jbyte* current_card = byte_for(sp->bottom());
-    jbyte* end_card     = byte_for(sp_top - 1);    // sp_top is exclusive
-    // scan card marking array
-    while (current_card <= end_card) {
-      jbyte value = *current_card;
-      // skip clean cards
-      if (card_is_clean(value)) {
-        current_card++;
-      } else {
-        // we found a non-clean card
-        jbyte* first_nonclean_card = current_card++;
-        oop* bottom = (oop*)addr_for(first_nonclean_card);
-        // find object starting on card
-        oop* bottom_obj = (oop*)start_array->object_start((HeapWord*)bottom);
-        // bottom_obj = (oop*)start_array->object_start((HeapWord*)bottom);
-        assert(bottom_obj <= bottom, "just checking");
-        // make sure we don't scan oops we already looked at
-        if (bottom < prev_top) bottom = prev_top;
-        // figure out when to stop scanning
-        jbyte* first_clean_card;
-        oop* top;
-        bool restart_scanning;
-        do {
-          restart_scanning = false;
-          // find a clean card
-          while (current_card <= end_card) {
-            value = *current_card;
-            if (card_is_clean(value)) break;
-            current_card++;
-          }
-          // check if we reached the end, if so we are done
-          if (current_card >= end_card) {
-            first_clean_card = end_card + 1;
-            current_card++;
-            top = sp_top;
-          } else {
-            // we have a clean card, find object starting on that card
-            first_clean_card = current_card++;
-            top = (oop*)addr_for(first_clean_card);
-            oop* top_obj = (oop*)start_array->object_start((HeapWord*)top);
-            // top_obj = (oop*)start_array->object_start((HeapWord*)top);
-            assert(top_obj <= top, "just checking");
-            if (oop(top_obj)->is_objArray() || oop(top_obj)->is_typeArray()) {
-              // an arrayOop is starting on the clean card - since we do exact store
-              // checks for objArrays we are done
-            } else {
-              // otherwise, it is possible that the object starting on the clean card
-              // spans the entire card, and that the store happened on a later card.
-              // figure out where the object ends
-              top = top_obj + oop(top_obj)->size();
-              jbyte* top_card = CardTableModRefBS::byte_for(top - 1);   // top is exclusive
-              if (top_card > first_clean_card) {
-                // object ends a different card
-                current_card = top_card + 1;
-                if (card_is_clean(*top_card)) {
-                  // the ending card is clean, we are done
-                  first_clean_card = top_card;
-                } else {
-                  // the ending card is not clean, continue scanning at start of do-while
-                  restart_scanning = true;
-                }
-              } else {
-                // object ends on the clean card, we are done.
-                assert(first_clean_card == top_card, "just checking");
-              }
-            }
-          }
-        } while (restart_scanning);
-        // we know which cards to scan, now clear them
-        while (first_nonclean_card < first_clean_card) {
-          *first_nonclean_card++ = clean_card;
-        }
-        // scan oops in objects
-        do {
-          oop(bottom_obj)->push_contents(pm);
-          bottom_obj += oop(bottom_obj)->size();
-          assert(bottom_obj <= sp_top, "just checking");
-        } while (bottom_obj < top);
-        pm->drain_stacks_cond_depth();
-        // remember top oop* scanned
-        prev_top = top;
-      }
-    }
-  }
-}
+// Do not call this method if the space is empty.
+// It is a waste to start tasks and get here only to
+// do no work.  If this method needs to be called
+// when the space is empty, fix the calculation of
+// end_card to allow sp_top == sp->bottom().
 
 void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_array,
                                                     MutableSpace* sp,
@@ -228,6 +137,8 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
   int ssize = 128; // Naked constant!  Work unit = 64k.
   int dirty_card_count = 0;
 
+  // It is a waste to get here if empty.
+  assert(sp->bottom() < sp->top(), "Should not be called if empty");
   oop* sp_top = (oop*)space_top;
   jbyte* start_card = byte_for(sp->bottom());
   jbyte* end_card   = byte_for(sp_top - 1) + 1;
@@ -253,6 +164,16 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
     // Note! ending cards are exclusive!
     HeapWord* slice_start = addr_for(worker_start_card);
     HeapWord* slice_end = MIN2((HeapWord*) sp_top, addr_for(worker_end_card));
+
+#ifdef ASSERT
+    if (GCWorkerDelayMillis > 0) {
+      // Delay 1 worker so that it proceeds after all the work
+      // has been completed.
+      if (stripe_number < 2) {
+        os::sleep(Thread::current(), GCWorkerDelayMillis, false);
+      }
+    }
+#endif
 
     // If there are not objects starting within the chunk, skip it.
     if (!start_array->object_starts_in_range(slice_start, slice_end)) {
@@ -406,10 +327,8 @@ void CardTableExtension::verify_all_young_refs_imprecise() {
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
   PSOldGen* old_gen = heap->old_gen();
-  PSPermGen* perm_gen = heap->perm_gen();
 
   old_gen->object_iterate(&check);
-  perm_gen->object_iterate(&check);
 }
 
 // This should be called immediately after a scavenge, before mutators resume.
@@ -418,15 +337,12 @@ void CardTableExtension::verify_all_young_refs_precise() {
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
   PSOldGen* old_gen = heap->old_gen();
-  PSPermGen* perm_gen = heap->perm_gen();
 
   CheckForPreciseMarks check(heap->young_gen(), (CardTableExtension*)heap->barrier_set());
 
-  old_gen->oop_iterate(&check);
-  perm_gen->oop_iterate(&check);
+  old_gen->oop_iterate_no_header(&check);
 
   verify_all_young_refs_precise_helper(old_gen->object_space()->used_region());
-  verify_all_young_refs_precise_helper(perm_gen->object_space()->used_region());
 }
 
 void CardTableExtension::verify_all_young_refs_precise_helper(MemRegion mr) {

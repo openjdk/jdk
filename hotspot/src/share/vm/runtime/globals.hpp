@@ -175,8 +175,7 @@ define_pd_global(intx, InitialCodeCacheSize,         160*K);
 define_pd_global(intx, ReservedCodeCacheSize,        32*M);
 define_pd_global(intx, CodeCacheExpansionSize,       32*K);
 define_pd_global(intx, CodeCacheMinBlockLength,      1);
-define_pd_global(uintx,PermSize,    ScaleForWordSize(4*M));
-define_pd_global(uintx,MaxPermSize, ScaleForWordSize(64*M));
+define_pd_global(uintx,MetaspaceSize,    ScaleForWordSize(4*M));
 define_pd_global(bool, NeverActAsServerClassMachine, true);
 define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 #define CI_COMPILER_COUNT 0
@@ -439,7 +438,11 @@ class CommandLineFlags {
 #define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, lp64_product) \
                                                                             \
   lp64_product(bool, UseCompressedOops, false,                              \
-            "Use 32-bit object references in 64-bit VM. "                   \
+            "Use 32-bit object references in 64-bit VM  "                   \
+            "lp64_product means flag is always constant in 32 bit VM")      \
+                                                                            \
+  lp64_product(bool, UseCompressedKlassPointers, false,                     \
+            "Use 32-bit klass pointers in 64-bit VM  "                      \
             "lp64_product means flag is always constant in 32 bit VM")      \
                                                                             \
   notproduct(bool, CheckCompressedOops, true,                               \
@@ -470,7 +473,7 @@ class CommandLineFlags {
   develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
           "Whether to clean the chunk pool asynchronously")                 \
                                                                             \
-  /* Temporary: See 6948537 */                                             \
+  /* Temporary: See 6948537 */                                              \
   experimental(bool, UseMemSetInBOT, true,                                  \
           "(Unstable) uses memset in BOT updates in GC code")               \
                                                                             \
@@ -860,6 +863,9 @@ class CommandLineFlags {
   product(ccstr, NativeMemoryTracking, "off",                               \
           "Native memory tracking options")                                 \
                                                                             \
+  diagnostic(bool, PrintNMTStatistics, false,                               \
+          "Print native memory tracking summary data if it is on")          \
+                                                                            \
   diagnostic(bool, LogCompilation, false,                                   \
           "Log compilation activity in detail to hotspot.log or LogFile")   \
                                                                             \
@@ -994,9 +1000,6 @@ class CommandLineFlags {
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
-  diagnostic(bool, LinkWellKnownClasses, false,                             \
-          "Resolve a well known class as soon as its name is seen")         \
-                                                                            \
   develop(bool, DisableStartThread, false,                                  \
           "Disable starting of additional Java threads "                    \
           "(for debugging only)")                                           \
@@ -1059,9 +1062,6 @@ class CommandLineFlags {
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
                                                                             \
   product(bool, MonitorInUseLists, false, "Track Monitors for Deflation")   \
-                                                                            \
-  product(intx, Atomics, 0,                                                 \
-          "(Unsafe,Unstable) Diagnostic - Controls emission of atomics")    \
                                                                             \
   product(intx, SyncFlags, 0, "(Unsafe,Unstable) Experimental Sync flags" ) \
                                                                             \
@@ -1187,11 +1187,6 @@ class CommandLineFlags {
   product(intx, BiasedLockingDecayTime, 25000,                              \
           "Decay time (in milliseconds) to re-enable bulk rebiasing of a "  \
           "type after previous bulk rebias")                                \
-                                                                            \
-  develop(bool, JavaObjectsInPerm, false,                                   \
-          "controls whether Classes and interned Strings are allocated"     \
-          "in perm.  This purely intended to allow debugging issues"        \
-          "in production.")                                                 \
                                                                             \
   /* tracing */                                                             \
                                                                             \
@@ -1625,7 +1620,7 @@ class CommandLineFlags {
           "Use BinaryTreeDictionary as default in the CMS generation")      \
                                                                             \
   product(uintx, CMSIndexedFreeListReplenish, 4,                            \
-          "Replenish an indexed free list with this number of chunks")     \
+          "Replenish an indexed free list with this number of chunks")      \
                                                                             \
   product(bool, CMSReplenishIntermediate, true,                             \
           "Replenish all intermediate free-list caches")                    \
@@ -1677,9 +1672,6 @@ class CommandLineFlags {
   product(uintx, CMSConcMarkMultiple, 32,                                   \
           "Size (in cards) of CMS concurrent MT marking task")              \
                                                                             \
-  product(uintx, CMSRevisitStackSize, 1*M,                                  \
-          "Size of CMS KlassKlass revisit stack")                           \
-                                                                            \
   product(bool, CMSAbortSemantics, false,                                   \
           "Whether abort-on-overflow semantics is implemented")             \
                                                                             \
@@ -1696,10 +1688,6 @@ class CommandLineFlags {
                                                                             \
   product(bool, CMSConcurrentMTEnabled, true,                               \
           "Whether multi-threaded concurrent work enabled (if ParNewGC)")   \
-                                                                            \
-  product(bool, CMSPermGenPrecleaningEnabled, true,                         \
-          "Whether concurrent precleaning enabled in perm gen"              \
-          " (effective only when CMSPrecleaningEnabled is true)")           \
                                                                             \
   product(bool, CMSPrecleaningEnabled, true,                                \
           "Whether concurrent precleaning enabled")                         \
@@ -1816,11 +1804,6 @@ class CommandLineFlags {
           "Percentage of MinHeapFreeRatio in CMS generation that is "       \
           "allocated before a CMS collection cycle commences")              \
                                                                             \
-  product(intx, CMSTriggerPermRatio, 80,                                    \
-          "Percentage of MinHeapFreeRatio in the CMS perm generation that " \
-          "is allocated before a CMS collection cycle commences, that "     \
-          "also collects the perm generation")                              \
-                                                                            \
   product(uintx, CMSBootstrapOccupancy, 50,                                 \
           "Percentage CMS generation occupancy at which to "                \
           "initiate CMS collection for bootstrapping collection stats")     \
@@ -1835,11 +1818,6 @@ class CommandLineFlags {
           "concurrent GC cycle based on the occupancy of the entire heap, " \
           "not just one of the generations (e.g., G1). A value of 0 "       \
           "denotes 'do constant GC cycles'.")                               \
-                                                                            \
-  product(intx, CMSInitiatingPermOccupancyFraction, -1,                     \
-          "Percentage CMS perm generation occupancy to start a "            \
-          "CMScollection cycle. A negative value means that "               \
-          "CMSTriggerPermRatio is used")                                    \
                                                                             \
   product(bool, UseCMSInitiatingOccupancyOnly, false,                       \
           "Only use occupancy as a crierion for starting a CMS collection") \
@@ -1900,6 +1878,29 @@ class CommandLineFlags {
           "Number of ObjArray elements to push onto the marking stack"      \
           "before pushing a continuation entry")                            \
                                                                             \
+  develop(bool, MetadataAllocationFailALot, false,                          \
+          "Fail metadata allocations at intervals controlled by "           \
+          "MetadataAllocationFailALotInterval")                             \
+                                                                            \
+  develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
+          "metadata allocation failure alot interval")                      \
+                                                                            \
+  develop(bool, MetaDataDeallocateALot, false,                              \
+          "Deallocation bunches of metadata at intervals controlled by "    \
+          "MetaDataAllocateALotInterval")                                   \
+                                                                            \
+  develop(uintx, MetaDataDeallocateALotInterval, 100,                       \
+          "Metadata deallocation alot interval")                            \
+                                                                            \
+  develop(bool, TraceMetadataChunkAllocation, false,                        \
+          "Trace humongous metadata allocations")                           \
+                                                                            \
+  product(bool, TraceMetadataHumongousAllocation, false,                    \
+          "Trace humongous metadata allocations")                           \
+                                                                            \
+  develop(bool, TraceMetavirtualspaceAllocation, false,                     \
+          "Trace humongous metadata allocations")                           \
+                                                                            \
   notproduct(bool, ExecuteInternalVMTests, false,                           \
           "Enable execution of internal VM tests.")                         \
                                                                             \
@@ -1919,9 +1920,6 @@ class CommandLineFlags {
                                                                             \
   product(bool, TLABStats, true,                                            \
           "Print various TLAB related information")                         \
-                                                                            \
-  product(bool, PrintRevisitStats, false,                                   \
-          "Print revisit (klass and MDO) stack related information")        \
                                                                             \
   EMBEDDED_ONLY(product(bool, LowMemoryProtection, true,                    \
           "Enable LowMemoryProtection"))                                    \
@@ -2023,12 +2021,6 @@ class CommandLineFlags {
   product(uintx, SurvivorPadding, 3,                                        \
           "How much buffer to keep for survivor overflow")                  \
                                                                             \
-  product(uintx, AdaptivePermSizeWeight, 20,                                \
-          "Weight for perm gen exponential resizing, between 0 and 100")    \
-                                                                            \
-  product(uintx, PermGenPadding, 3,                                         \
-          "How much buffer to keep for perm gen sizing")                    \
-                                                                            \
   product(uintx, ThresholdTolerance, 10,                                    \
           "Allowed collection cost difference between generations")         \
                                                                             \
@@ -2054,7 +2046,7 @@ class CommandLineFlags {
   product(uintx, TenuredGenerationSizeSupplementDecay, 2,                   \
           "Decay factor to TenuredGenerationSizeIncrement")                 \
                                                                             \
-  product(uintx, MaxGCPauseMillis, max_uintx,                           \
+  product(uintx, MaxGCPauseMillis, max_uintx,                               \
           "Adaptive size policy maximum GC pause time goal in msec, "       \
           "or (G1 Only) the max. GC time per MMU time slice")               \
                                                                             \
@@ -2216,6 +2208,12 @@ class CommandLineFlags {
   product_rw(bool, TraceLoaderConstraints, false,                           \
           "Trace loader constraints")                                       \
                                                                             \
+  develop(bool, TraceClassLoaderData, false,                                \
+          "Trace class loader loader_data lifetime")                        \
+                                                                            \
+  product(uintx, InitialBootClassLoaderMetaspaceSize, 3*M,                  \
+          "Initial size of the boot class loader data metaspace")           \
+                                                                            \
   product(bool, TraceGen0Time, false,                                       \
           "Trace accumulated time for Gen 0 collection")                    \
                                                                             \
@@ -2262,7 +2260,7 @@ class CommandLineFlags {
   develop(bool, TraceGCTaskQueue, false,                                    \
           "Trace actions of the GC task queues")                            \
                                                                             \
-  diagnostic(bool, TraceGCTaskThread, false,                                   \
+  diagnostic(bool, TraceGCTaskThread, false,                                \
           "Trace actions of the GC task threads")                           \
                                                                             \
   product(bool, PrintParallelOldGCPhaseTimes, false,                        \
@@ -2328,7 +2326,7 @@ class CommandLineFlags {
   develop(bool, CITimeEach, false,                                          \
           "display timing information after each successful compilation")   \
                                                                             \
-  develop(bool, CICountOSR, true,                                           \
+  develop(bool, CICountOSR, false,                                          \
           "use a separate counter when assigning ids to osr compilations")  \
                                                                             \
   develop(bool, CICompileNatives, true,                                     \
@@ -2777,7 +2775,7 @@ class CommandLineFlags {
   product(intx, SafepointTimeoutDelay, 10000,                               \
           "Delay in milliseconds for option SafepointTimeout")              \
                                                                             \
-  product(intx, NmethodSweepFraction, 16,                                    \
+  product(intx, NmethodSweepFraction, 16,                                   \
           "Number of invocations of sweeper to cover all nmethods")         \
                                                                             \
   product(intx, NmethodSweepCheckInterval, 5,                               \
@@ -2900,7 +2898,7 @@ class CommandLineFlags {
           "if non-zero, start verifying C heap after Nth call to "          \
           "malloc/realloc/free")                                            \
                                                                             \
-  product(intx, TypeProfileWidth,     2,                                   \
+  product(intx, TypeProfileWidth,     2,                                    \
           "number of receiver types to record in call/cast profile")        \
                                                                             \
   develop(intx, BciProfileWidth,      2,                                    \
@@ -2986,11 +2984,15 @@ class CommandLineFlags {
           "Additional size added to desired new generation size per "       \
           "non-daemon thread (in bytes)")                                   \
                                                                             \
-  product_pd(uintx, PermSize,                                               \
-          "Initial size of permanent generation (in bytes)")                \
+  product_pd(uintx, MetaspaceSize,                                          \
+          "Initial size of Metaspaces (in bytes)")                          \
                                                                             \
-  product_pd(uintx, MaxPermSize,                                            \
-          "Maximum size of permanent generation (in bytes)")                \
+  product(uintx, MaxMetaspaceSize, max_uintx,                               \
+          "Maximum size of Metaspaces (in bytes)")                          \
+                                                                            \
+  product(uintx, ClassMetaspaceSize, 2*M,                                   \
+          "Maximum size of InstanceKlass area in Metaspace used for "       \
+          "UseCompressedKlassPointers")                                     \
                                                                             \
   product(uintx, MinHeapFreeRatio,    40,                                   \
           "Min percentage of heap free after GC to avoid expansion")        \
@@ -3004,10 +3006,10 @@ class CommandLineFlags {
   product(uintx, MinHeapDeltaBytes, ScaleForWordSize(128*K),                \
           "Min change in heap space due to GC (in bytes)")                  \
                                                                             \
-  product(uintx, MinPermHeapExpansion, ScaleForWordSize(256*K),             \
+  product(uintx, MinMetaspaceExpansion, ScaleForWordSize(256*K),            \
           "Min expansion of permanent heap (in bytes)")                     \
                                                                             \
-  product(uintx, MaxPermHeapExpansion, ScaleForWordSize(4*M),               \
+  product(uintx, MaxMetaspaceExpansion, ScaleForWordSize(4*M),              \
           "Max expansion of permanent heap without full GC (in bytes)")     \
                                                                             \
   product(intx, QueuedAllocationWarningCount, 0,                            \
@@ -3020,10 +3022,10 @@ class CommandLineFlags {
   diagnostic(intx, VerifyGCLevel,     0,                                    \
           "Generation level at which to start +VerifyBefore/AfterGC")       \
                                                                             \
-  product(intx, MaxTenuringThreshold,    15,                                \
+  product(uintx, MaxTenuringThreshold,    15,                               \
           "Maximum value for tenuring threshold")                           \
                                                                             \
-  product(intx, InitialTenuringThreshold,     7,                            \
+  product(uintx, InitialTenuringThreshold,    7,                            \
           "Initial value for tenuring threshold")                           \
                                                                             \
   product(intx, TargetSurvivorRatio,    50,                                 \
@@ -3037,10 +3039,6 @@ class CommandLineFlags {
           "generation and treats this as the max value when the heap is"    \
           "either completely full or completely empty.  Par compact also"   \
           "has a smaller default value; see arguments.cpp.")                \
-                                                                            \
-  product(uintx, PermMarkSweepDeadRatio,    20,                             \
-          "Percentage (0-100) of the perm gen allowed as dead wood."        \
-          "See MarkSweepDeadRatio for collector-specific comments.")        \
                                                                             \
   product(intx, MarkSweepAlwaysCompactCount,     4,                         \
           "How often should we fully compact the heap (ignoring the dead "  \
@@ -3060,6 +3058,9 @@ class CommandLineFlags {
                                                                             \
   develop(uintx, GCExpandToAllocateDelayMillis, 0,                          \
           "Delay in ms between expansion and allocation")                   \
+                                                                            \
+  develop(uintx, GCWorkerDelayMillis, 0,                                    \
+          "Delay in ms in scheduling GC workers")                           \
                                                                             \
   product(intx, DeferThrSuspendLoopCount,     4000,                         \
           "(Unstable) Number of times to iterate in safepoint loop "        \
@@ -3523,33 +3524,20 @@ class CommandLineFlags {
   product(bool, PrintSharedSpaces, false,                                   \
           "Print usage of shared spaces")                                   \
                                                                             \
-  product(uintx, SharedDummyBlockSize, 512*M,                               \
-          "Size of dummy block used to shift heap addresses (in bytes)")    \
-                                                                            \
-  product(uintx, SharedReadWriteSize,  NOT_LP64(12*M) LP64_ONLY(13*M),      \
+  product(uintx, SharedReadWriteSize,  NOT_LP64(12*M) LP64_ONLY(16*M),      \
           "Size of read-write space in permanent generation (in bytes)")    \
                                                                             \
-  product(uintx, SharedReadOnlySize,   10*M,                                \
+  product(uintx, SharedReadOnlySize,  NOT_LP64(12*M) LP64_ONLY(16*M),       \
           "Size of read-only space in permanent generation (in bytes)")     \
                                                                             \
-  product(uintx, SharedMiscDataSize, NOT_LP64(4*M) LP64_ONLY(5*M) NOT_PRODUCT(+1*M),       \
+  product(uintx, SharedMiscDataSize,    NOT_LP64(2*M) LP64_ONLY(4*M),       \
           "Size of the shared data area adjacent to the heap (in bytes)")   \
                                                                             \
-  product(uintx, SharedMiscCodeSize,    4*M,                                \
+  product(uintx, SharedMiscCodeSize,    120*K,                              \
           "Size of the shared code area adjacent to the heap (in bytes)")   \
                                                                             \
-  diagnostic(bool, SharedOptimizeColdStart, true,                           \
-          "At dump time, order shared objects to achieve better "           \
-          "cold startup time.")                                             \
-                                                                            \
-  develop(intx, SharedOptimizeColdStartPolicy, 2,                           \
-          "Reordering policy for SharedOptimizeColdStart "                  \
-          "0=favor classload-time locality, 1=balanced, "                   \
-          "2=favor runtime locality")                                       \
-                                                                            \
-  diagnostic(bool, SharedSkipVerify, false,                                 \
-          "Skip assert() and verify() which page-in unwanted shared "       \
-          "objects. ")                                                      \
+  product(uintx, SharedDummyBlockSize, 0,                                   \
+          "Size of dummy block used to shift heap addresses (in bytes)")    \
                                                                             \
   diagnostic(bool, EnableInvokeDynamic, true,                               \
           "support JSR 292 (method handles, invokedynamic, "                \

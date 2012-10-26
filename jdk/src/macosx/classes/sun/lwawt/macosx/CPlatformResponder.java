@@ -134,7 +134,7 @@ final class CPlatformResponder {
         boolean postsTyped = false;
 
         char testChar = KeyEvent.CHAR_UNDEFINED;
-        char testDeadChar = 0;
+        boolean isDeadChar = (chars!= null && chars.length() == 0);
 
         if (isFlagsChangedEvent) {
             int[] in = new int[] {modifierFlags, keyCode};
@@ -150,12 +150,19 @@ final class CPlatformResponder {
                 testChar = chars.charAt(0);
             }
 
-            int[] in = new int[] {testChar, testDeadChar, modifierFlags, keyCode};
-            int[] out = new int[2]; // [jkeyCode, jkeyLocation]
+            int[] in = new int[] {testChar, isDeadChar ? 1 : 0, modifierFlags, keyCode};
+            int[] out = new int[3]; // [jkeyCode, jkeyLocation, deadChar]
 
             postsTyped = NSEvent.nsToJavaKeyInfo(in, out);
             if (!postsTyped) {
                 testChar = KeyEvent.CHAR_UNDEFINED;
+            }
+
+            if(isDeadChar){
+                testChar = (char) out[2];
+                if(testChar == 0){
+                    return;
+                }
             }
 
             jkeyCode = out[0];

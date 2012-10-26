@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,14 @@
 #define SHARE_VM_CI_CIKLASS_HPP
 
 #include "ci/ciType.hpp"
-#include "oops/klassOop.hpp"
 
 // ciKlass
 //
-// This class and its subclasses represent klassOops in the
-// HotSpot virtual machine.  In the vm, each klassOop contains an
+// This class and its subclasses represent Klass*s in the
+// HotSpot virtual machine.  In the vm, each Klass* contains an
 // embedded Klass object.  ciKlass is subclassed to explicitly
-// represent the kind of Klass embedded in the klassOop.  For
-// example, a klassOop with an embedded objArrayKlass object is
+// represent the kind of Klass embedded in the Klass*.  For
+// example, a Klass* with an embedded ObjArrayKlass object is
 // represented in the ciObject hierarchy by the class
 // ciObjArrayKlass.
 class ciKlass : public ciType {
@@ -50,15 +49,13 @@ private:
 
 protected:
   ciKlass(KlassHandle k_h, ciSymbol* name);
-  ciKlass(ciSymbol* name, ciKlass* klass);
+  ciKlass(ciSymbol* name, BasicType bt);
 
-  klassOop get_klassOop() const {
-    klassOop k = (klassOop)get_oop();
+  Klass* get_Klass() const {
+    Klass* k = (Klass*)_metadata;
     assert(k != NULL, "illegal use of unloaded klass");
     return k;
   }
-
-  Klass*   get_Klass() const { return get_klassOop()->klass_part(); }
 
   // Certain subklasses have an associated class loader.
   virtual oop loader()             { return NULL; }
@@ -87,6 +84,9 @@ public:
   ciKlass* super_of_depth(juint i);
   bool can_be_primary_super();
   static juint primary_super_limit() { return Klass::primary_super_limit(); }
+
+  // Is this ciObject the ciInstanceKlass representing java.lang.Object()?
+  virtual bool is_java_lang_Object() const  { return false; }
 
   // Get the shared parent of two klasses.
   ciKlass* least_common_ancestor(ciKlass* k);
@@ -119,7 +119,7 @@ public:
   jint                   access_flags();
 
   // What kind of ciObject is this?
-  bool is_klass() { return true; }
+  bool is_klass() const { return true; }
 
   void print_name_on(outputStream* st);
 };

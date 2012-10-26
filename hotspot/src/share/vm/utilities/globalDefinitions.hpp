@@ -128,6 +128,14 @@ class HeapWord {
 #endif
 };
 
+// Analogous opaque struct for metadata allocated from
+// metaspaces.
+class MetaWord {
+  friend class VMStructs;
+ private:
+  char* i;
+};
+
 // HeapWordSize must be 2^LogHeapWordSize.
 const int HeapWordSize        = sizeof(HeapWord);
 #ifdef _LP64
@@ -272,6 +280,10 @@ inline size_t pointer_delta(const void* left,
 inline size_t pointer_delta(const HeapWord* left, const HeapWord* right) {
   return pointer_delta(left, right, sizeof(HeapWord));
 }
+// A version specialized for MetaWord*'s.
+inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
+  return pointer_delta(left, right, sizeof(MetaWord));
+}
 
 //
 // ANSI C++ does not allow casting from one pointer type to a function pointer
@@ -334,6 +346,14 @@ extern int MinObjAlignmentInBytesMask;
 
 extern int LogMinObjAlignment;
 extern int LogMinObjAlignmentInBytes;
+
+const int LogKlassAlignmentInBytes = 3;
+const int LogKlassAlignment        = LogKlassAlignmentInBytes - LogHeapWordSize;
+const int KlassAlignmentInBytes    = 1 << LogKlassAlignmentInBytes;
+const int KlassAlignment           = KlassAlignmentInBytes / HeapWordSize;
+
+// Klass encoding metaspace max size
+const uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlassAlignmentInBytes;
 
 // Machine dependent stuff
 
@@ -469,21 +489,23 @@ void basic_types_init(); // cannot define here; uses assert
 
 // NOTE: replicated in SA in vm/agent/sun/jvm/hotspot/runtime/BasicType.java
 enum BasicType {
-  T_BOOLEAN  =  4,
-  T_CHAR     =  5,
-  T_FLOAT    =  6,
-  T_DOUBLE   =  7,
-  T_BYTE     =  8,
-  T_SHORT    =  9,
-  T_INT      = 10,
-  T_LONG     = 11,
-  T_OBJECT   = 12,
-  T_ARRAY    = 13,
-  T_VOID     = 14,
-  T_ADDRESS  = 15,
-  T_NARROWOOP= 16,
-  T_CONFLICT = 17, // for stack value type with conflicting contents
-  T_ILLEGAL  = 99
+  T_BOOLEAN     =  4,
+  T_CHAR        =  5,
+  T_FLOAT       =  6,
+  T_DOUBLE      =  7,
+  T_BYTE        =  8,
+  T_SHORT       =  9,
+  T_INT         = 10,
+  T_LONG        = 11,
+  T_OBJECT      = 12,
+  T_ARRAY       = 13,
+  T_VOID        = 14,
+  T_ADDRESS     = 15,
+  T_NARROWOOP   = 16,
+  T_METADATA    = 17,
+  T_NARROWKLASS = 18,
+  T_CONFLICT    = 19, // for stack value type with conflicting contents
+  T_ILLEGAL     = 99
 };
 
 inline bool is_java_primitive(BasicType t) {
@@ -531,18 +553,19 @@ extern size_t lcm(size_t a, size_t b);
 
 // NOTE: replicated in SA in vm/agent/sun/jvm/hotspot/runtime/BasicType.java
 enum BasicTypeSize {
-  T_BOOLEAN_size = 1,
-  T_CHAR_size    = 1,
-  T_FLOAT_size   = 1,
-  T_DOUBLE_size  = 2,
-  T_BYTE_size    = 1,
-  T_SHORT_size   = 1,
-  T_INT_size     = 1,
-  T_LONG_size    = 2,
-  T_OBJECT_size  = 1,
-  T_ARRAY_size   = 1,
-  T_NARROWOOP_size = 1,
-  T_VOID_size    = 0
+  T_BOOLEAN_size     = 1,
+  T_CHAR_size        = 1,
+  T_FLOAT_size       = 1,
+  T_DOUBLE_size      = 2,
+  T_BYTE_size        = 1,
+  T_SHORT_size       = 1,
+  T_INT_size         = 1,
+  T_LONG_size        = 2,
+  T_OBJECT_size      = 1,
+  T_ARRAY_size       = 1,
+  T_NARROWOOP_size   = 1,
+  T_NARROWKLASS_size = 1,
+  T_VOID_size        = 0
 };
 
 
@@ -554,23 +577,24 @@ extern BasicType type2wfield[T_CONFLICT+1];
 
 // size in bytes
 enum ArrayElementSize {
-  T_BOOLEAN_aelem_bytes = 1,
-  T_CHAR_aelem_bytes    = 2,
-  T_FLOAT_aelem_bytes   = 4,
-  T_DOUBLE_aelem_bytes  = 8,
-  T_BYTE_aelem_bytes    = 1,
-  T_SHORT_aelem_bytes   = 2,
-  T_INT_aelem_bytes     = 4,
-  T_LONG_aelem_bytes    = 8,
+  T_BOOLEAN_aelem_bytes     = 1,
+  T_CHAR_aelem_bytes        = 2,
+  T_FLOAT_aelem_bytes       = 4,
+  T_DOUBLE_aelem_bytes      = 8,
+  T_BYTE_aelem_bytes        = 1,
+  T_SHORT_aelem_bytes       = 2,
+  T_INT_aelem_bytes         = 4,
+  T_LONG_aelem_bytes        = 8,
 #ifdef _LP64
-  T_OBJECT_aelem_bytes  = 8,
-  T_ARRAY_aelem_bytes   = 8,
+  T_OBJECT_aelem_bytes      = 8,
+  T_ARRAY_aelem_bytes       = 8,
 #else
-  T_OBJECT_aelem_bytes  = 4,
-  T_ARRAY_aelem_bytes   = 4,
+  T_OBJECT_aelem_bytes      = 4,
+  T_ARRAY_aelem_bytes       = 4,
 #endif
-  T_NARROWOOP_aelem_bytes = 4,
-  T_VOID_aelem_bytes    = 0
+  T_NARROWOOP_aelem_bytes   = 4,
+  T_NARROWKLASS_aelem_bytes = 4,
+  T_VOID_aelem_bytes        = 0
 };
 
 extern int _type2aelembytes[T_CONFLICT+1]; // maps a BasicType to nof bytes used by its array element
@@ -854,6 +878,7 @@ class PeriodicTask;
 class JavaCallWrapper;
 
 class   oopDesc;
+class   metaDataOopDesc;
 
 class NativeCall;
 
@@ -911,6 +936,7 @@ const int      freeBlockPad     = 0xBA;                     // value used to pad
 const int      uninitBlockPad   = 0xF1;                     // value used to zap newly malloc'd blocks.
 const intptr_t badJNIHandleVal  = (intptr_t) CONST64(0xFEFEFEFEFEFEFEFE); // value used to zap jni handle area
 const juint    badHeapWordVal   = 0xBAADBABE;               // value used to zap heap after GC
+const juint    badMetaWordVal   = 0xBAADFADE;               // value used to zap metadata heap after GC
 const int      badCodeHeapNewVal= 0xCC;                     // value used to zap Code heap at allocation
 const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap Code heap at deallocation
 

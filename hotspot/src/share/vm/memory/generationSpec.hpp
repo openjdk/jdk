@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_VM_MEMORY_GENERATIONSPEC_HPP
 
 #include "memory/generation.hpp"
-#include "memory/permGen.hpp"
 
 // The specification of a generation.  This class also encapsulates
 // some generation-specific behavior.  This is done here rather than as a
@@ -67,64 +66,5 @@ public:
 };
 
 typedef GenerationSpec* GenerationSpecPtr;
-
-// The specification of a permanent generation. This class is very
-// similar to GenerationSpec in use. Due to PermGen's not being a
-// true Generation, we cannot combine the spec classes either.
-class PermanentGenerationSpec : public CHeapObj<mtGC> {
-  friend class VMStructs;
-private:
-  PermGen::Name    _name;
-  size_t           _init_size;
-  size_t           _max_size;
-  size_t           _read_only_size;
-  size_t           _read_write_size;
-  size_t           _misc_data_size;
-  size_t           _misc_code_size;
-  bool             _enable_shared_spaces;
-
-  enum {
-    _n_spaces = 2
-  };
-
-public:
-  PermanentGenerationSpec(PermGen::Name name, size_t init_size,
-                          size_t max_size, size_t read_only_size,
-                          size_t read_write_size, size_t misc_data_size,
-                          size_t misc_code_size);
-
-  PermGen* init(ReservedSpace rs, size_t init_size, GenRemSet* remset);
-
-  void disable_sharing() {
-    _enable_shared_spaces = false;
-    _read_only_size = 0;
-    _read_write_size = 0;
-    _misc_data_size = 0;
-    _misc_code_size = 0;
-  }
-
-  // Accessors
-  PermGen::Name name()           const { return _name; }
-  size_t init_size()             const { return _init_size; }
-  void set_init_size(size_t size)      { _init_size = size; }
-
-  // Max size for user DOES NOT include shared spaces.
-  // Max size for space allocation DOES include shared spaces.
-  size_t max_size() const {
-    return _max_size + _read_only_size + _read_write_size;
-  }
-
-  // Need one covered region for the main space, and one for the shared
-  // spaces (together).
-  int n_covered_regions() const { return 2; }
-
-  void align(size_t alignment);
-
-  size_t read_only_size() const { return _read_only_size; }
-  size_t read_write_size() const { return _read_write_size; }
-  size_t misc_data_size() const { return _misc_data_size; }
-  size_t misc_code_size() const { return _misc_code_size; }
-  bool enable_shared_spaces()    const { return _enable_shared_spaces; }
-};
 
 #endif // SHARE_VM_MEMORY_GENERATIONSPEC_HPP

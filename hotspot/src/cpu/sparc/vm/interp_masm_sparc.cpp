@@ -28,8 +28,8 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markOop.hpp"
-#include "oops/methodDataOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/methodData.hpp"
+#include "oops/method.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -514,17 +514,16 @@ void InterpreterMacroAssembler::empty_expression_stack() {
 
   // Reset SP by subtracting more space from Lesp.
   Label done;
-  verify_oop(Lmethod);
   assert(G4_scratch != Gframe_size, "Only you can prevent register aliasing!");
 
   // A native does not need to do this, since its callee does not change SP.
-  ld(Lmethod, methodOopDesc::access_flags_offset(), Gframe_size);  // Load access flags.
+  ld(Lmethod, Method::access_flags_offset(), Gframe_size);  // Load access flags.
   btst(JVM_ACC_NATIVE, Gframe_size);
   br(Assembler::notZero, false, Assembler::pt, done);
   delayed()->nop();
 
   // Compute max expression stack+register save area
-  lduh(Lmethod, in_bytes(methodOopDesc::max_stack_offset()), Gframe_size);  // Load max stack.
+  lduh(Lmethod, in_bytes(Method::max_stack_offset()), Gframe_size);  // Load max stack.
   add( Gframe_size, frame::memory_parameter_word_sp_offset, Gframe_size );
 
   //
@@ -610,7 +609,7 @@ void InterpreterMacroAssembler::call_from_interpreter(Register target, Register 
 
   // Assume we want to go compiled if available
 
-  ld_ptr(G5_method, in_bytes(methodOopDesc::from_interpreted_offset()), target);
+  ld_ptr(G5_method, in_bytes(Method::from_interpreted_offset()), target);
 
   if (JvmtiExport::can_post_interpreter_events()) {
     // JVMTI events, such as single-stepping, are implemented partly by avoiding running
@@ -622,11 +621,11 @@ void InterpreterMacroAssembler::call_from_interpreter(Register target, Register 
     const Address interp_only(G2_thread, JavaThread::interp_only_mode_offset());
     ld(interp_only, scratch);
     cmp_zero_and_br(Assembler::notZero, scratch, skip_compiled_code, true, Assembler::pn);
-    delayed()->ld_ptr(G5_method, in_bytes(methodOopDesc::interpreter_entry_offset()), target);
+    delayed()->ld_ptr(G5_method, in_bytes(Method::interpreter_entry_offset()), target);
     bind(skip_compiled_code);
   }
 
-  // the i2c_adapters need methodOop in G5_method (right? %%%)
+  // the i2c_adapters need Method* in G5_method (right? %%%)
   // do the call
 #ifdef ASSERT
   {
@@ -725,20 +724,18 @@ void InterpreterMacroAssembler::get_4_byte_integer_at_bcp(
   if (should_set_CC == set_CC) tst(Rdst);
 }
 
-
-void InterpreterMacroAssembler::get_cache_index_at_bcp(Register cache, Register tmp,
+void InterpreterMacroAssembler::get_cache_index_at_bcp(Register temp, Register index,
                                                        int bcp_offset, size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   if (index_size == sizeof(u2)) {
-    get_2_byte_integer_at_bcp(bcp_offset, cache, tmp, Unsigned);
+    get_2_byte_integer_at_bcp(bcp_offset, temp, index, Unsigned);
   } else if (index_size == sizeof(u4)) {
     assert(EnableInvokeDynamic, "giant index used only for JSR 292");
-    get_4_byte_integer_at_bcp(bcp_offset, cache, tmp);
-    assert(constantPoolCacheOopDesc::decode_secondary_index(~123) == 123, "else change next line");
-    xor3(tmp, -1, tmp);  // convert to plain index
+    get_4_byte_integer_at_bcp(bcp_offset, temp, index);
+    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
+    xor3(index, -1, index);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
-    assert(EnableInvokeDynamic, "tiny index used only for JSR 292");
-    ldub(Lbcp, bcp_offset, tmp);
+    ldub(Lbcp, bcp_offset, index);
   } else {
     ShouldNotReachHere();
   }
@@ -765,7 +762,7 @@ void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register
                                                                         int bcp_offset,
                                                                         size_t index_size) {
   get_cache_and_index_at_bcp(cache, temp, bcp_offset, index_size);
-  ld_ptr(cache, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::indices_offset(), bytecode);
+  ld_ptr(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset(), bytecode);
   const int shift_count = (1 + byte_no) * BitsPerByte;
   assert((byte_no == TemplateTable::f1_byte && shift_count == ConstantPoolCacheEntry::bytecode_1_shift) ||
          (byte_no == TemplateTable::f2_byte && shift_count == ConstantPoolCacheEntry::bytecode_2_shift),
@@ -790,9 +787,29 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, R
               // and from word index to byte offset
   sll(tmp, exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord), tmp);
               // skip past the header
-  add(tmp, in_bytes(constantPoolCacheOopDesc::base_offset()), tmp);
+  add(tmp, in_bytes(ConstantPoolCache::base_offset()), tmp);
               // construct pointer to cache entry
   add(LcpoolCache, tmp, cache);
+}
+
+
+// Load object from cpool->resolved_references(index)
+void InterpreterMacroAssembler::load_resolved_reference_at_index(
+                                           Register result, Register index) {
+  assert_different_registers(result, index);
+  assert_not_delayed();
+  // convert from field index to resolved_references() index and from
+  // word index to byte offset. Since this is a java object, it can be compressed
+  Register tmp = index;  // reuse
+  sll(index, LogBytesPerHeapOop, tmp);
+  get_constant_pool(result);
+  // load pointer for resolved_references[] objArray
+  ld_ptr(result, ConstantPool::resolved_references_offset_in_bytes(), result);
+  // JNIHandles::resolve(result)
+  ld_ptr(result, 0, result);
+  // Add in the index
+  add(result, tmp, result);
+  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result);
 }
 
 
@@ -939,25 +956,25 @@ void InterpreterMacroAssembler::index_check(Register array, Register index, int 
 
 
 void InterpreterMacroAssembler::get_const(Register Rdst) {
-  ld_ptr(Lmethod, in_bytes(methodOopDesc::const_offset()), Rdst);
+  ld_ptr(Lmethod, in_bytes(Method::const_offset()), Rdst);
 }
 
 
 void InterpreterMacroAssembler::get_constant_pool(Register Rdst) {
   get_const(Rdst);
-  ld_ptr(Rdst, in_bytes(constMethodOopDesc::constants_offset()), Rdst);
+  ld_ptr(Rdst, in_bytes(ConstMethod::constants_offset()), Rdst);
 }
 
 
 void InterpreterMacroAssembler::get_constant_pool_cache(Register Rdst) {
   get_constant_pool(Rdst);
-  ld_ptr(Rdst, constantPoolOopDesc::cache_offset_in_bytes(), Rdst);
+  ld_ptr(Rdst, ConstantPool::cache_offset_in_bytes(), Rdst);
 }
 
 
 void InterpreterMacroAssembler::get_cpool_and_tags(Register Rcpool, Register Rtags) {
   get_constant_pool(Rcpool);
-  ld_ptr(Rcpool, constantPoolOopDesc::tags_offset_in_bytes(), Rtags);
+  ld_ptr(Rcpool, ConstantPool::tags_offset_in_bytes(), Rtags);
 }
 
 
@@ -985,7 +1002,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
   stbool(G0, do_not_unlock_if_synchronized); // reset the flag
 
   // check if synchronized method
-  const Address access_flags(Lmethod, methodOopDesc::access_flags_offset());
+  const Address access_flags(Lmethod, Method::access_flags_offset());
   interp_verify_oop(Otos_i, state, __FILE__, __LINE__);
   push(state); // save tos
   ld(access_flags, G3_scratch); // Load access flags.
@@ -1121,7 +1138,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   notify_method_exit(false, state, NotifyJVMTI);
 
   interp_verify_oop(Otos_i, state, __FILE__, __LINE__);
-  verify_oop(Lmethod);
   verify_thread();
 
   // return tos
@@ -1295,16 +1311,16 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 
 #ifndef CC_INTERP
 
-// Get the method data pointer from the methodOop and set the
+// Get the method data pointer from the Method* and set the
 // specified register to its value.
 
 void InterpreterMacroAssembler::set_method_data_pointer() {
   assert(ProfileInterpreter, "must be profiling interpreter");
   Label get_continue;
 
-  ld_ptr(Lmethod, in_bytes(methodOopDesc::method_data_offset()), ImethodDataPtr);
+  ld_ptr(Lmethod, in_bytes(Method::method_data_offset()), ImethodDataPtr);
   test_method_data_pointer(get_continue);
-  add(ImethodDataPtr, in_bytes(methodDataOopDesc::data_offset()), ImethodDataPtr);
+  add(ImethodDataPtr, in_bytes(MethodData::data_offset()), ImethodDataPtr);
   bind(get_continue);
 }
 
@@ -1315,10 +1331,10 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   Label zero_continue;
 
   // Test MDO to avoid the call if it is NULL.
-  ld_ptr(Lmethod, in_bytes(methodOopDesc::method_data_offset()), ImethodDataPtr);
+  ld_ptr(Lmethod, in_bytes(Method::method_data_offset()), ImethodDataPtr);
   test_method_data_pointer(zero_continue);
   call_VM_leaf(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::bcp_to_di), Lmethod, Lbcp);
-  add(ImethodDataPtr, in_bytes(methodDataOopDesc::data_offset()), ImethodDataPtr);
+  add(ImethodDataPtr, in_bytes(MethodData::data_offset()), ImethodDataPtr);
   add(ImethodDataPtr, O0, ImethodDataPtr);
   bind(zero_continue);
 }
@@ -1339,8 +1355,8 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
   // If the mdp is valid, it will point to a DataLayout header which is
   // consistent with the bcp.  The converse is highly probable also.
   lduh(ImethodDataPtr, in_bytes(DataLayout::bci_offset()), G3_scratch);
-  ld_ptr(Lmethod, methodOopDesc::const_offset(), O5);
-  add(G3_scratch, in_bytes(constMethodOopDesc::codes_offset()), G3_scratch);
+  ld_ptr(Lmethod, Method::const_offset(), O5);
+  add(G3_scratch, in_bytes(ConstMethod::codes_offset()), G3_scratch);
   add(G3_scratch, O5, G3_scratch);
   cmp(Lbcp, G3_scratch);
   brx(Assembler::equal, false, Assembler::pt, verify_continue);
@@ -1379,12 +1395,17 @@ void InterpreterMacroAssembler::test_invocation_counter_for_mdp(Register invocat
   AddressLiteral profile_limit((address) &InvocationCounter::InterpreterProfileLimit);
   sethi(profile_limit, Rtmp);
   ld(Rtmp, profile_limit.low10(), Rtmp);
-  cmp_and_br_short(invocation_count, Rtmp, Assembler::lessUnsigned, Assembler::pn, profile_continue);
+  cmp(invocation_count, Rtmp);
+  // Use long branches because call_VM() code and following code generated by
+  // test_backedge_count_for_osr() is large in debug VM.
+  br(Assembler::lessUnsigned, false, Assembler::pn, profile_continue);
+  delayed()->nop();
 
   // Build it now.
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
   set_method_data_pointer_for_bcp();
-  ba_short(profile_continue);
+  ba(profile_continue);
+  delayed()->nop();
   bind(done);
 }
 
@@ -2072,14 +2093,14 @@ void InterpreterMacroAssembler::compute_stack_base( Register Rdest ) {
 void InterpreterMacroAssembler::increment_invocation_counter( Register Rtmp, Register Rtmp2 ) {
   assert(UseCompiler, "incrementing must be useful");
 #ifdef CC_INTERP
-  Address inv_counter(G5_method, methodOopDesc::invocation_counter_offset() +
+  Address inv_counter(G5_method, Method::invocation_counter_offset() +
                                  InvocationCounter::counter_offset());
-  Address be_counter (G5_method, methodOopDesc::backedge_counter_offset() +
+  Address be_counter (G5_method, Method::backedge_counter_offset() +
                                  InvocationCounter::counter_offset());
 #else
-  Address inv_counter(Lmethod, methodOopDesc::invocation_counter_offset() +
+  Address inv_counter(Lmethod, Method::invocation_counter_offset() +
                                InvocationCounter::counter_offset());
-  Address be_counter (Lmethod, methodOopDesc::backedge_counter_offset() +
+  Address be_counter (Lmethod, Method::backedge_counter_offset() +
                                InvocationCounter::counter_offset());
 #endif /* CC_INTERP */
   int delta = InvocationCounter::count_increment;
@@ -2108,14 +2129,14 @@ void InterpreterMacroAssembler::increment_invocation_counter( Register Rtmp, Reg
 void InterpreterMacroAssembler::increment_backedge_counter( Register Rtmp, Register Rtmp2 ) {
   assert(UseCompiler, "incrementing must be useful");
 #ifdef CC_INTERP
-  Address be_counter (G5_method, methodOopDesc::backedge_counter_offset() +
+  Address be_counter (G5_method, Method::backedge_counter_offset() +
                                  InvocationCounter::counter_offset());
-  Address inv_counter(G5_method, methodOopDesc::invocation_counter_offset() +
+  Address inv_counter(G5_method, Method::invocation_counter_offset() +
                                  InvocationCounter::counter_offset());
 #else
-  Address be_counter (Lmethod, methodOopDesc::backedge_counter_offset() +
+  Address be_counter (Lmethod, Method::backedge_counter_offset() +
                                InvocationCounter::counter_offset());
-  Address inv_counter(Lmethod, methodOopDesc::invocation_counter_offset() +
+  Address inv_counter(Lmethod, Method::invocation_counter_offset() +
                                InvocationCounter::counter_offset());
 #endif /* CC_INTERP */
   int delta = InvocationCounter::count_increment;
@@ -2152,7 +2173,7 @@ void InterpreterMacroAssembler::test_backedge_count_for_osr( Register backedge_c
   cmp_and_br_short(backedge_count, Rtmp, Assembler::lessUnsigned, Assembler::pt, did_not_overflow);
 
   // When ProfileInterpreter is on, the backedge_count comes from the
-  // methodDataOop, which value does not get reset on the call to
+  // MethodData*, which value does not get reset on the call to
   // frequency_counter_overflow().  To avoid excessive calls to the overflow
   // routine while the method is being compiled, add a second test to make sure
   // the overflow function is called only once every overflow_frequency.
@@ -2212,10 +2233,10 @@ void InterpreterMacroAssembler::interp_verify_oop(Register reg, TosState state, 
 
 
 // local helper function for the verify_oop_or_return_address macro
-static bool verify_return_address(methodOopDesc* m, int bci) {
+static bool verify_return_address(Method* m, int bci) {
 #ifndef PRODUCT
   address pc = (address)(m->constMethod())
-             + in_bytes(constMethodOopDesc::codes_offset()) + bci;
+             + in_bytes(ConstMethod::codes_offset()) + bci;
   // assume it is a valid return address if it is inside m and is preceded by a jsr
   if (!m->contains(pc))                                          return false;
   address jsr_pc;

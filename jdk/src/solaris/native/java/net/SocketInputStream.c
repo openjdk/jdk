@@ -67,14 +67,14 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
     jint fd, nread;
 
     if (IS_NULL(fdObj)) {
-        /* should't this be a NullPointerException? -br */
+        /* shouldn't this be a NullPointerException? -br */
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         "Socket closed");
         return -1;
     } else {
         fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
         /* Bug 4086704 - If the Socket associated with this file descriptor
-         * was closed (sysCloseFD), the the file descriptor is set to -1.
+         * was closed (sysCloseFD), then the file descriptor is set to -1.
          */
         if (fd == -1) {
             JNU_ThrowByName(env, "java/net/SocketException", "Socket closed");

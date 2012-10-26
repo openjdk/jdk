@@ -134,7 +134,7 @@ public abstract class HandshakeMessage {
      */
     final void write(HandshakeOutStream s) throws IOException {
         int len = messageLength();
-        if (len > (1 << 24)) {
+        if (len >= Record.OVERFLOW_OF_INT24) {
             throw new SSLException("Handshake message too big"
                 + ", type = " + messageType() + ", len = " + len);
         }

@@ -41,8 +41,8 @@ import java.util.ArrayList;
  * @since 1.5
  *
  * @see javax.management
- * @see java.util.Logger
- * @see java.util.LogManager
+ * @see Logger
+ * @see LogManager
  */
 class Logging implements LoggingMXBean {
 

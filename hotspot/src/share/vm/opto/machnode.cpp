@@ -38,7 +38,7 @@ int MachOper::reg(PhaseRegAlloc *ra_, const Node *node, int idx) const {
   return (int)(ra_->get_encode(node->in(idx)));
 }
 intptr_t  MachOper::constant() const { return 0x00; }
-bool MachOper::constant_is_oop() const { return false; }
+relocInfo::relocType MachOper::constant_reloc() const { return relocInfo::none; }
 jdouble MachOper::constantD() const { ShouldNotReachHere(); return 0.0; }
 jfloat  MachOper::constantF() const { ShouldNotReachHere(); return 0.0; }
 jlong   MachOper::constantL() const { ShouldNotReachHere(); return CONST64(0) ; }
@@ -54,7 +54,7 @@ int MachOper::constant_disp()  const { return 0; }
 int MachOper::base_position()  const { return -1; }  // no base input
 int MachOper::index_position() const { return -1; }  // no index input
 // Check for PC-Relative displacement
-bool MachOper::disp_is_oop() const { return false; }
+relocInfo::relocType MachOper::disp_reloc() const { return relocInfo::none; }
 // Return the label
 Label*   MachOper::label()  const { ShouldNotReachHere(); return 0; }
 intptr_t MachOper::method() const { ShouldNotReachHere(); return 0; }
@@ -265,7 +265,8 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
     // See if it adds up to a base + offset.
     if (index != NULL) {
       const Type* t_index = index->bottom_type();
-      if (t_index->isa_narrowoop()) { // EncodeN, LoadN, LoadConN, LoadNKlass.
+      if (t_index->isa_narrowoop() || t_index->isa_narrowklass()) { // EncodeN, LoadN, LoadConN, LoadNKlass,
+                                                                    // EncodeNKlass, LoadConNklass.
         // Memory references through narrow oops have a
         // funny base so grab the type from the index:
         // [R12 + narrow_oop_reg<<3 + offset]
@@ -349,6 +350,10 @@ const class TypePtr *MachNode::adr_type() const {
 
   const Type* t = base->bottom_type();
   if (UseCompressedOops && Universe::narrow_oop_shift() == 0) {
+    // 32-bit unscaled narrow oop can be the base of any address expression
+    t = t->make_ptr();
+  }
+  if (UseCompressedKlassPointers && Universe::narrow_klass_shift() == 0) {
     // 32-bit unscaled narrow oop can be the base of any address expression
     t = t->make_ptr();
   }

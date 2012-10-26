@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,6 @@ public class JSJavaFactoryImpl implements JSJavaFactory {
              res = new JSJavaObjArray((ObjArray)oop, this);
          } else if (oop instanceof Instance) {
             res = newJavaInstance((Instance) oop);
-         } else if (oop instanceof Method) {
-            res = new JSJavaMethod((Method) oop, this);
          }
       }
       if (res != null) {
@@ -63,6 +61,14 @@ public class JSJavaFactoryImpl implements JSJavaFactory {
       }
       if (res != null) {
          om.put(klass, new SoftReference(res));
+      }
+      return res;
+   }
+
+   public JSJavaMethod newJSJavaMethod(Method method) {
+      JSJavaMethod res = new JSJavaMethod(method, this);
+      if (res != null) {
+         om.put(method, new SoftReference(res));
       }
       return res;
    }

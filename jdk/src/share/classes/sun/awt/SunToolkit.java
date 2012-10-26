@@ -506,40 +506,25 @@ public abstract class SunToolkit extends Toolkit
         postEvent(targetToAppContext(e.getSource()), pe);
     }
 
-    protected static final Lock flushLock = new ReentrantLock();
-    private static boolean isFlushingPendingEvents = false;
-
     /*
      * Flush any pending events which haven't been posted to the AWT
      * EventQueue yet.
      */
     public static void flushPendingEvents()  {
-        flushLock.lock();
-        try {
-            // Don't call flushPendingEvents() recursively
-            if (!isFlushingPendingEvents) {
-                isFlushingPendingEvents = true;
-                AppContext appContext = AppContext.getAppContext();
-                PostEventQueue postEventQueue =
-                    (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
-                if (postEventQueue != null) {
-                    postEventQueue.flush();
-                }
-            }
-        } finally {
-            isFlushingPendingEvents = false;
-            flushLock.unlock();
-        }
+        AppContext appContext = AppContext.getAppContext();
+        flushPendingEvents(appContext);
     }
 
-    public static boolean isPostEventQueueEmpty()  {
-        AppContext appContext = AppContext.getAppContext();
+    /*
+     * Flush the PostEventQueue for the right AppContext.
+     * The default flushPendingEvents only flushes the thread-local context,
+     * which is not always correct, c.f. 3746956
+     */
+    public static void flushPendingEvents(AppContext appContext) {
         PostEventQueue postEventQueue =
-            (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
+                (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
         if (postEventQueue != null) {
-            return postEventQueue.noEvents();
-        } else {
-            return true;
+            postEventQueue.flush();
         }
     }
 
@@ -2045,15 +2030,10 @@ class PostEventQueue {
     private EventQueueItem queueTail = null;
     private final EventQueue eventQueue;
 
-    // For the case when queue is cleared but events are not posted
-    private volatile boolean isFlushing = false;
+    private Thread flushThread = null;
 
     PostEventQueue(EventQueue eq) {
         eventQueue = eq;
-    }
-
-    public synchronized boolean noEvents() {
-        return queueHead == null && !isFlushing;
     }
 
     /*
@@ -2066,20 +2046,48 @@ class PostEventQueue {
      * potentially lead to deadlock
      */
     public void flush() {
-        EventQueueItem tempQueue;
-        synchronized (this) {
-            tempQueue = queueHead;
-            queueHead = queueTail = null;
-            isFlushing = true;
-        }
+
+        Thread newThread = Thread.currentThread();
+
         try {
-            while (tempQueue != null) {
-                eventQueue.postEvent(tempQueue.event);
-                tempQueue = tempQueue.next;
+            EventQueueItem tempQueue;
+            synchronized (this) {
+                // Avoid method recursion
+                if (newThread == flushThread) {
+                    return;
+                }
+                // Wait for other threads' flushing
+                while (flushThread != null) {
+                    wait();
+                }
+                // Skip everything if queue is empty
+                if (queueHead == null) {
+                    return;
+                }
+                // Remember flushing thread
+                flushThread = newThread;
+
+                tempQueue = queueHead;
+                queueHead = queueTail = null;
+            }
+            try {
+                while (tempQueue != null) {
+                    eventQueue.postEvent(tempQueue.event);
+                    tempQueue = tempQueue.next;
+                }
+            }
+            finally {
+                // Only the flushing thread can get here
+                synchronized (this) {
+                    // Forget flushing thread, inform other pending threads
+                    flushThread = null;
+                    notifyAll();
+                }
             }
         }
-        finally {
-            isFlushing = false;
+        catch (InterruptedException e) {
+            // Couldn't allow exception go up, so at least recover the flag
+            newThread.interrupt();
         }
     }
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ SHARK_SPECIFIC_FILES="shark"
 ZERO_SPECIFIC_FILES="zero"
 
 # These files need to be excluded when building the kernel target.
-KERNEL_EXCLUDED_FILES="attachListener.cpp attachListener_windows.cpp dump.cpp dump_${Platform_arch_model}.cpp forte.cpp fprofiler.cpp heapDumper.cpp heapInspection.cpp jniCheck.cpp jvmtiCodeBlobEvents.cpp jvmtiExtensions.cpp jvmtiImpl.cpp jvmtiRawMonitor.cpp jvmtiTagMap.cpp jvmtiTrace.cpp restore.cpp serialize.cpp vmStructs.cpp g1MemoryPool.cpp psMemoryPool.cpp gcAdaptivePolicyCounters.cpp concurrentGCThread.cpp mutableNUMASpace.cpp allocationStats.cpp gSpaceCounters.cpp immutableSpace.cpp mutableSpace.cpp spaceCounters.cpp yieldingWorkgroup.cpp"
+KERNEL_EXCLUDED_FILES="attachListener.cpp attachListener_windows.cpp metaspaceShared_${Platform_arch_model}.cpp forte.cpp fprofiler.cpp heapDumper.cpp heapInspection.cpp jniCheck.cpp jvmtiCodeBlobEvents.cpp jvmtiExtensions.cpp jvmtiImpl.cpp jvmtiRawMonitor.cpp jvmtiTagMap.cpp jvmtiTrace.cpp vmStructs.cpp g1MemoryPool.cpp psMemoryPool.cpp gcAdaptivePolicyCounters.cpp concurrentGCThread.cpp metaspaceShared.cpp mutableNUMASpace.cpp allocationStats.cpp gSpaceCounters.cpp immutableSpace.cpp mutableSpace.cpp spaceCounters.cpp yieldingWorkgroup.cpp"
 
 # Always exclude these.
 Src_Files_EXCLUDE="jsig.c jvmtiEnvRecommended.cpp jvmtiEnvStub.cpp"

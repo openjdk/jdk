@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,20 +221,11 @@ function main(globals, jvmarg) {
   // if "registerCommand" function is defined
   // then register few global functions as "commands".
   if (typeof(registerCommand) == 'function') {
-    this.printDis = function(addr, len) {
-      if (!addr) {
-         writeln("Usage: dis address [ length ]");
-      } else {
-         dis(addr, len);
-      }
-    }
-    registerCommand("dis", "dis address [ length ]", "printDis");
-
     this.jclass = function(name) {
       if (typeof(name) == "string") {
          var clazz = sapkg.utilities.SystemDictionaryHelper.findInstanceKlass(name);
          if (clazz) {
-             writeln(clazz.getName().asString() + " @" + clazz.getHandle().toString());
+             writeln(clazz.getName().asString() + " @" + clazz.getAddress().toString());
          } else {
              writeln("class not found: " + name);
          } 
@@ -250,15 +241,6 @@ function main(globals, jvmarg) {
       });
     }
     registerCommand("classes", "classes", "jclasses");
-
-    this.printJDis = function(addr) {
-      if (!addr) {
-         writeln("Usage: jdis address");
-      } else {
-         jdis(addr);
-      }
-    }
-    registerCommand("jdis", "jdis address", "printJDis");
 
     this.dclass = function(clazz, dir) {
       if (!clazz) {
@@ -395,18 +377,6 @@ function addr2sym(addr) {
     }
 }
 
-// read 'num' bytes at 'addr' and return an array as result.
-// returns Java byte[] type result and not a JavaScript array.
-function readBytesAt(addr, num) {
-   addr = any2addr(addr);
-   var res = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, num);
-   var i;
-   for (i = 0; i < num; i++) {
-      res[i] = addr.getJByteAt(i);
-   }
-   return res;
-}
-
 // read 'num' words at 'addr' and return an array as result.
 // returns Java long[] type result and not a JavaScript array.
 function readWordsAt(addr, num) {
@@ -506,54 +476,6 @@ function mem(addr, num) {
    writeln();
 }
 
-// return the disassemble class for current CPU
-function disassemblerClass() {
-   var DisAsmClass;
-   if (CPU == 'x86') {
-      DisAsmClass = sapkg.asm.x86.X86Disassembler;
-   } else if (CPU == 'sparc') {
-      DisAsmClass = sapkg.asm.sparc.SPARCV9Disassembler;
-   }
-   return DisAsmClass;
-}
-
-// print native code disassembly of 'num' bytes at 'addr'
-function dis(addr, num) {
-   addr = any2addr(addr);
-   var nmethod = findNMethod(addr);
-   if (nmethod != null) {
-      // disassemble it as nmethod
-      nmethoddis(nmethod);     
-   } else {
-      // raw disassembly
-      if (num == undefined) {
-         // size of one SPARC instruction and
-         // unknown number of Intel instructions.
-         num = 4;
-      }
-      DisAsmClass = disassemblerClass();
-      if (DisAsmClass == undefined) {
-         // unsupported CPU
-         writeln(CPU + " is not yet supported!");
-         return;
-      }
-
-      var bytes = readBytesAt(addr, num);
-      var disAsm = new DisAsmClass(addr2num(addr), bytes);
-      disAsm.decode(new sapkg.asm.InstructionVisitor() {
-                      visit: function (pc, instr) {
-                         write(addr2sym(num2addr(pc)) + ':', '\t');
-                         writeln(instr.asString(pc, 
-                                 new sapkg.asm.SymbolFinder() {
-                                    getSymbolFor: function(addr) {
-                                       return addr2sym(num2addr(addr));
-                                    }
-                                 }));
-                      }
-                   });
-   }
-}
-
 // System dictionary functions
 
 // find InstanceKlass by name
@@ -584,31 +506,6 @@ function forEachKlassAndLoader(callback) {
 function forEachPrimArrayKlass(callback) {
    var VisitorClass = sapkg.memory.SystemDictionary.ClassAndLoaderVisitor;
    sa.sysDict.primArrayClassesDo(new VisitorClass() { visit: callback });
-}
-
-// (hotspot) symbol table functions
-
-// String-to-Symbol
-function str2sym(str) {
-   return sa.symTbl.probe(str);
-}
-
-// Symbol-to-String
-function sym2str(sym) {
-   return sym.asString();
-}
-
-// oop functions
-
-// Address-to-Oop
-function addr2oop(addr) {
-   addr = any2addr(addr);
-   return sa.objHeap.newOop(addr.addOffsetToAsOopHandle(0));
-}
-
-// Oop-to-Address
-function oop2addr(oop) {
-   return oop.handle;
 }
 
 // 'oop' to higher-level java object wrapper in which for(i in o) 
@@ -644,202 +541,6 @@ function forEachOopOfKlass(callback, klass, includeSubtypes) {
    sa.objHeap.iterateObjectsOfKlass(
         new sapkg.oops.HeapVisitor() { doObj: callback },
         klass, includeSubtypes);
-}
-
-// code cache functions
-
-// iterates CodeCache for each 'CodeBlob'
-function forEachCodeBlob(callback) {
-   var VisitorClass = sapkg.code.CodeCacheVisitor;
-   sa.codeCache.iterate(new VisitorClass() { visit: callback });
-}
-
-// find the ClodBlob (if any) that contains given address
-function findCodeBlob(addr) {
-   addr = any2addr(addr);
-   return sa.codeCache.findBlobUnsafe(addr);
-}
-
-// find the NMethod (if any) that contains given address
-function findNMethod(addr) {
-   var codeBlob = findCodeBlob(addr);
-   return (codeBlob != null && codeBlob.isNMethod())? codeBlob : null;
-}
-
-// returns PcDesc at given address or null
-function pcDescAt(addr) {
-   addr = any2addr(addr);
-   var nmethod = findNMethod(addr);
-   return (nmethod != null)? nmethod.safepoints.get(addr) : null;
-}
-
-// helpers for nmethod disassembler
-function printScope(scopeDesc) {
-   if (scopeDesc == null) {
-      return;
-   }
-   printScope(scopeDesc.sender());
-   var method = scopeDesc.method;
-   var bci = scopeDesc.BCI;
-   var line = -1;
-   if (method.hasLineNumberTable()) {
-      line = method.getLineNumberFromBCI(bci);
-   }
-  
-   write('\t', method.externalNameAndSignature(), '@', method.handle, 'bci=' + bci);
-   if (line != -1) { 
-      write('line=' + line); 
-   }
-   writeln();
-}
-
-function printSafepointInfo(nmethod, pcDesc) {
-   var scopeDesc = nmethod.getScopeDescAt(
-                      pcDesc.getRealPC(nmethod),
-                      pcDesc.isAtCall());
-   printScope(scopeDesc);
-}
-
-// print disassembly for a given nmethod
-function nmethoddis(nmethod) {
-   var DisAsmClass = disassemblerClass();
-   if (DisAsmClass == undefined) {
-      writeln(CPU + " is not yet supported!");
-      return;
-   }
-
-   var method = nmethod.method;
-   writeln('NMethod:', method.externalNameAndSignature(), '@', method.handle);
-
-   var codeBegin = nmethod.codeBegin();
-   var codeEnd = nmethod.codeEnd();
-   var size = codeEnd.minus(codeBegin);
-   var code = readBytesAt(codeBegin, size);
-   var startPc = addr2num(codeBegin);
-   var verifiedEntryPoint = addr2num(nmethod.verifiedEntryPoint);
-   var entryPoint = addr2num(nmethod.entryPoint);
-   var interpreterEntryPoint = addr2num(nmethod.interpreterEntryPointOrNull);
-   var safepoints = nmethod.safepoints;
-   var disAsm = new DisAsmClass(startPc, code);
-   disAsm.decode(new sapkg.asm.InstructionVisitor() {
-                    visit: function(curPc, instr) {
-                       if (curPc == verifiedEntryPoint) {
-                          writeln();                                    
-                          writeln("Verified Entry Point:");
-                       }
-                       if (curPc == entryPoint) {
-                          writeln();
-                          writeln("Entry Point:");                     
-                       }
-                       if (curPc == interpreterEntryPoint) {
-                          writeln("");
-                          writeln("Interpreter Entry Point:");
-                       }
-
-                       var pcDesc = safepoints.get(num2addr(curPc));
-                       var isSafepoint = (pcDesc != null);
-                       if (isSafepoint && pcDesc.isAtCall()) {
-                          printSafepointInfo(nmethod, pcDesc);
-                       }
-
-                       write(num2addr(curPc) + ':', '\t');
-                       writeln(instr.asString(curPc, 
-                                 new sapkg.asm.SymbolFinder() {
-                                    getSymbolFor: function(addr) {
-                                       return addr2sym(num2addr(addr));
-                                    }
-                                 }));
-
-                       if (isSafepoint && !pcDesc.isAtCall()) {
-                          printSafepointInfo(nmethod, pcDesc);
-                       }
-                    }                    
-                 });
-}
-
-// bytecode interpreter functions
-
-// iterates interpreter codelets for each interpreter codelet
-function forEachInterpCodelet(callback) {
-   var stubQueue = sa.interpreter.code;
-   var stub = stubQueue.first;
-   while (stub != null) {
-      if (callback(stub) == false) return;
-      stub = stubQueue.getNext(stub);
-   }
-}
-
-// helper for bytecode disassembler
-function printExceptionTable(method) {
-   var expTbl = method.getExceptionTable();
-   var len = expTbl.getLength();
-   if (len != 0) {     
-      var i;
-      var cpool = method.constants;
-      writeln("start", '\t', "end", '\t', "handler", '\t', "exception");
-      writeln("");
-      for (i = 0; i < len; i += 4) {
-         write(expTbl.getIntAt(i), '\t', 
-               expTbl.getIntAt(i + 1), '\t', 
-               expTbl.getIntAt(i + 2), '\t');
-         var cpIndex = expTbl.getIntAt(i + 3);
-         var oop = (cpIndex == 0)? null : cpool.getObjAt(cpIndex);
-         if (oop == null) {
-            writeln("<any>");
-         } else if (oop.isSymbol()) {
-            writeln(oop.asString().replace('/', '.'));
-         } else if (oop.isKlass()) {
-            writeln(oop.name.asString().replace('/', '.'));
-         } else {
-            writeln(cpIndex);
-         }
-      }
-   }
-}
-
-// print Java bytecode disassembly
-function jdis(method) {   
-   if (method.getByteCode == undefined) {
-      // method oop may be specified by address
-      method = addr2oop(any2addr(method));
-   }
-   writeln(method, '-', method.externalNameAndSignature());
-   if (method.isNative()) {
-      writeln("native method");
-      return;
-   }
-   if (method.isAbstract()) {
-      writeln("abstract method");
-      return;
-   }
-   
-   writeln();
-   var BytecodeDisAsmClass = sapkg.interpreter.BytecodeDisassembler;
-   var disAsm = new BytecodeDisAsmClass(method);
-   var bci = 0;
-   var hasLines = method.hasLineNumberTable();
-   if (hasLines) {
-      writeln("bci", '\t', "line", '\t', "instruction");
-   } else {
-      writeln("bci", '\t', "instruction");
-   }
-   writeln("");
-   disAsm.decode(new sapkg.interpreter.BytecodeVisitor() {
-                    prologue: function(method) { },
-                    epilogue: function() { },
-                    visit: function(bytecode) {
-                       if (hasLines) {
-                          var line = method.getLineNumberFromBCI(bci);
-                          writeln(bci, '\t', line, '\t', bytecode);
-                       } else {
-                          writeln(bci, '\t', bytecode);
-                       }
-                       bci++;
-                    }
-                 });
-
-    writeln();
-    printExceptionTable(method);
 }
 
 // Java thread
@@ -1096,7 +797,6 @@ vmType2Class["DebuggerThread"] = sapkg.runtime.DebuggerThread;
 
 // gc
 vmType2Class["GenCollectedHeap"] = sapkg.memory.GenCollectedHeap;
-vmType2Class["CompactingPermGenGen"] = sapkg.memory.CompactingPermGenGen;
 vmType2Class["DefNewGeneration"] = sapkg.memory.DefNewGeneration;
 vmType2Class["TenuredGeneration"] = sapkg.memory.TenuredGeneration;
 

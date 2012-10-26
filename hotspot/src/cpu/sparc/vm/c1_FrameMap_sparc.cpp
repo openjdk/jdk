@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,39 @@ LIR_Opr FrameMap::I4_oop_opr;
 LIR_Opr FrameMap::I5_oop_opr;
 LIR_Opr FrameMap::I6_oop_opr;
 LIR_Opr FrameMap::I7_oop_opr;
+
+LIR_Opr FrameMap::G0_metadata_opr;
+LIR_Opr FrameMap::G1_metadata_opr;
+LIR_Opr FrameMap::G2_metadata_opr;
+LIR_Opr FrameMap::G3_metadata_opr;
+LIR_Opr FrameMap::G4_metadata_opr;
+LIR_Opr FrameMap::G5_metadata_opr;
+LIR_Opr FrameMap::G6_metadata_opr;
+LIR_Opr FrameMap::G7_metadata_opr;
+LIR_Opr FrameMap::O0_metadata_opr;
+LIR_Opr FrameMap::O1_metadata_opr;
+LIR_Opr FrameMap::O2_metadata_opr;
+LIR_Opr FrameMap::O3_metadata_opr;
+LIR_Opr FrameMap::O4_metadata_opr;
+LIR_Opr FrameMap::O5_metadata_opr;
+LIR_Opr FrameMap::O6_metadata_opr;
+LIR_Opr FrameMap::O7_metadata_opr;
+LIR_Opr FrameMap::L0_metadata_opr;
+LIR_Opr FrameMap::L1_metadata_opr;
+LIR_Opr FrameMap::L2_metadata_opr;
+LIR_Opr FrameMap::L3_metadata_opr;
+LIR_Opr FrameMap::L4_metadata_opr;
+LIR_Opr FrameMap::L5_metadata_opr;
+LIR_Opr FrameMap::L6_metadata_opr;
+LIR_Opr FrameMap::L7_metadata_opr;
+LIR_Opr FrameMap::I0_metadata_opr;
+LIR_Opr FrameMap::I1_metadata_opr;
+LIR_Opr FrameMap::I2_metadata_opr;
+LIR_Opr FrameMap::I3_metadata_opr;
+LIR_Opr FrameMap::I4_metadata_opr;
+LIR_Opr FrameMap::I5_metadata_opr;
+LIR_Opr FrameMap::I6_metadata_opr;
+LIR_Opr FrameMap::I7_metadata_opr;
 
 LIR_Opr FrameMap::SP_opr;
 LIR_Opr FrameMap::FP_opr;
@@ -309,6 +342,39 @@ void FrameMap::initialize() {
   I5_oop_opr = as_oop_opr(I5);
   I6_oop_opr = as_oop_opr(I6);
   I7_oop_opr = as_oop_opr(I7);
+
+  G0_metadata_opr = as_metadata_opr(G0);
+  G1_metadata_opr = as_metadata_opr(G1);
+  G2_metadata_opr = as_metadata_opr(G2);
+  G3_metadata_opr = as_metadata_opr(G3);
+  G4_metadata_opr = as_metadata_opr(G4);
+  G5_metadata_opr = as_metadata_opr(G5);
+  G6_metadata_opr = as_metadata_opr(G6);
+  G7_metadata_opr = as_metadata_opr(G7);
+  O0_metadata_opr = as_metadata_opr(O0);
+  O1_metadata_opr = as_metadata_opr(O1);
+  O2_metadata_opr = as_metadata_opr(O2);
+  O3_metadata_opr = as_metadata_opr(O3);
+  O4_metadata_opr = as_metadata_opr(O4);
+  O5_metadata_opr = as_metadata_opr(O5);
+  O6_metadata_opr = as_metadata_opr(O6);
+  O7_metadata_opr = as_metadata_opr(O7);
+  L0_metadata_opr = as_metadata_opr(L0);
+  L1_metadata_opr = as_metadata_opr(L1);
+  L2_metadata_opr = as_metadata_opr(L2);
+  L3_metadata_opr = as_metadata_opr(L3);
+  L4_metadata_opr = as_metadata_opr(L4);
+  L5_metadata_opr = as_metadata_opr(L5);
+  L6_metadata_opr = as_metadata_opr(L6);
+  L7_metadata_opr = as_metadata_opr(L7);
+  I0_metadata_opr = as_metadata_opr(I0);
+  I1_metadata_opr = as_metadata_opr(I1);
+  I2_metadata_opr = as_metadata_opr(I2);
+  I3_metadata_opr = as_metadata_opr(I3);
+  I4_metadata_opr = as_metadata_opr(I4);
+  I5_metadata_opr = as_metadata_opr(I5);
+  I6_metadata_opr = as_metadata_opr(I6);
+  I7_metadata_opr = as_metadata_opr(I7);
 
   FP_opr = as_pointer_opr(FP);
   SP_opr = as_pointer_opr(SP);

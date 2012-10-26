@@ -30,6 +30,10 @@ import java.util.Locale;
 import com.sun.tools.javac.api.Messages;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.DeferredAttr.DeferredType;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.Pretty;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
@@ -50,6 +54,8 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     List<Type> seenCaptured = List.nil();
     static final int PRIME = 997;  // largest prime less than 1000
+
+    protected Printer() { }
 
     /**
      * This method should be overriden in order to provide proper i18n support.

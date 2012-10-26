@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-// TypeArrayKlass is a proxy for typeArrayKlass in the JVM
+// TypeArrayKlass is a proxy for TypeArrayKlass in the JVM
 
 public class TypeArrayKlass extends ArrayKlass {
   static {
@@ -43,12 +43,12 @@ public class TypeArrayKlass extends ArrayKlass {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type t             = db.lookupType("typeArrayKlass");
-    maxLength          = new CIntField(t.getCIntegerField("_max_length"), Oop.getHeaderSize());
+    Type t             = db.lookupType("TypeArrayKlass");
+    maxLength          = new CIntField(t.getCIntegerField("_max_length"), 0);
   }
 
-  TypeArrayKlass(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public TypeArrayKlass(Address addr) {
+    super(addr);
   }
 
   private static CIntField  maxLength;
@@ -96,12 +96,10 @@ public class TypeArrayKlass extends ArrayKlass {
     tty.print("TypeArrayKlass for " + getTypeName());
   }
 
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
+  public void iterateFields(MetadataVisitor visitor) {
+    super.iterateFields(visitor);
       visitor.doCInt(maxLength, true);
     }
-  }
 
   public Klass arrayKlassImpl(boolean orNull, int n) {
     int dimension = (int) getDimension();

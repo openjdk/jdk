@@ -604,6 +604,10 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             env.dup(tree, env.info.dup(env.info.scope.dupUnshared()));
         localEnv.enclMethod = tree;
         localEnv.info.scope.owner = tree.sym;
+        if (tree.sym.type != null) {
+            //when this is called in the enter stage, there's no type to be set
+            localEnv.info.returnResult = attr.new ResultInfo(VAL, tree.sym.type.getReturnType());
+        }
         if ((tree.mods.flags & STATIC) != 0) localEnv.info.staticLevel++;
         return localEnv;
     }
@@ -642,7 +646,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         tree.sym = v;
         if (tree.init != null) {
             v.flags_field |= HASINIT;
-            if ((v.flags_field & FINAL) != 0 && !tree.init.hasTag(NEWCLASS)) {
+            if ((v.flags_field & FINAL) != 0 &&
+                    !tree.init.hasTag(NEWCLASS) &&
+                    !tree.init.hasTag(LAMBDA)) {
                 Env<AttrContext> initEnv = getInitEnv(tree, env);
                 initEnv.info.enclVar = v;
                 v.setLazyConstValue(initEnv(tree, initEnv), attr, tree.init);
@@ -667,7 +673,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     Env<AttrContext> initEnv(JCVariableDecl tree, Env<AttrContext> env) {
         Env<AttrContext> localEnv = env.dupto(new AttrContextEnv(tree, env.info.dup()));
         if (tree.sym.owner.kind == TYP) {
-            localEnv.info.scope = new Scope.DelegatedScope(env.info.scope);
+            localEnv.info.scope = env.info.scope.dupUnshared();
             localEnv.info.scope.owner = tree.sym;
         }
         if ((tree.mods.flags & STATIC) != 0 ||
@@ -970,9 +976,11 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 List<Type> thrown = List.nil();
                 long ctorFlags = 0;
                 boolean based = false;
+                boolean addConstructor = true;
                 if (c.name.isEmpty()) {
                     JCNewClass nc = (JCNewClass)env.next.tree;
                     if (nc.constructor != null) {
+                        addConstructor = nc.constructor.kind != ERR;
                         Type superConstrType = types.memberType(c.type,
                                                                 nc.constructor);
                         argtypes = superConstrType.getParameterTypes();
@@ -985,10 +993,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                         thrown = superConstrType.getThrownTypes();
                     }
                 }
-                JCTree constrDef = DefaultConstructor(make.at(tree.pos), c,
-                                                    typarams, argtypes, thrown,
-                                                    ctorFlags, based);
-                tree.defs = tree.defs.prepend(constrDef);
+                if (addConstructor) {
+                    JCTree constrDef = DefaultConstructor(make.at(tree.pos), c,
+                                                        typarams, argtypes, thrown,
+                                                        ctorFlags, based);
+                    tree.defs = tree.defs.prepend(constrDef);
+                }
             }
 
             // If this is a class, enter symbols for this and super into

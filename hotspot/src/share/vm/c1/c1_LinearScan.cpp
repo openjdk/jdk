@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2065,6 +2065,12 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
         assert(assigned_reg >= pd_first_cpu_reg && assigned_reg <= pd_last_cpu_reg, "no cpu register");
         assert(interval->assigned_regHi() == any_reg, "must not have hi register");
         return LIR_OprFact::single_cpu_address(assigned_reg);
+      }
+
+      case T_METADATA: {
+        assert(assigned_reg >= pd_first_cpu_reg && assigned_reg <= pd_last_cpu_reg, "no cpu register");
+        assert(interval->assigned_regHi() == any_reg, "must not have hi register");
+        return LIR_OprFact::single_cpu_metadata(assigned_reg);
       }
 
 #ifdef __SOFTFP__

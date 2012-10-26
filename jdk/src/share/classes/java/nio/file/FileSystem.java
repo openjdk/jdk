@@ -347,7 +347,7 @@ public abstract class FileSystem
      *   <td><tt>C:&#92;&#92;*</tt>
      *   <td>Matches <tt>C:&#92;foo</tt> and <tt>C:&#92;bar</tt> on the Windows
      *   platform (note that the backslash is escaped; as a string literal in the
-     *   Java Language the pattern would be <tt>"C:&#92;&#92;&#92;&#92*"</tt>) </td>
+     *   Java Language the pattern would be <tt>"C:&#92;&#92;&#92;&#92;*"</tt>) </td>
      * </tr>
      *
      * </table>

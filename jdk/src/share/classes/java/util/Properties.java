@@ -34,7 +34,10 @@ import java.io.Reader;
 import java.io.Writer;
 import java.io.OutputStreamWriter;
 import java.io.BufferedWriter;
-import java.lang.reflect.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
+import sun.util.spi.XmlPropertiesProvider;
 
 /**
  * The {@code Properties} class represents a persistent set of
@@ -866,7 +869,7 @@ class Properties extends Hashtable<Object,Object> {
     {
         if (in == null)
             throw new NullPointerException();
-        XMLUtils.load(this, in);
+        XmlSupport.load(this, in);
         in.close();
     }
 
@@ -934,7 +937,7 @@ class Properties extends Hashtable<Object,Object> {
     {
         if (os == null)
             throw new NullPointerException();
-        XMLUtils.save(this, os, comment, encoding);
+        XmlSupport.save(this, os, comment, encoding);
     }
 
     /**
@@ -1113,59 +1116,82 @@ class Properties extends Hashtable<Object,Object> {
         '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'
     };
 
+    /**
+     * Supporting class for loading/storing properties in XML format.
+     *
+     * <p> The {@code load} and {@code store} methods defined here delegate to a
+     * system-wide {@code XmlPropertiesProvider}. On first invocation of either
+     * method then the system-wide provider is located as follows: </p>
+     *
+     * <ol>
+     *   <li> If the system property {@code sun.util.spi.XmlPropertiesProvider}
+     *   is defined then it is taken to be the full-qualified name of a concrete
+     *   provider class. The class is loaded with the system class loader as the
+     *   initiating loader. If it cannot be loaded or instantiated using a zero
+     *   argument constructor then an unspecified error is thrown. </li>
+     *
+     *   <li> If the system property is not defined then the service-provider
+     *   loading facility defined by the {@link ServiceLoader} class is used to
+     *   locate a provider with the system class loader as the initiating
+     *   loader and {@code sun.util.spi.XmlPropertiesProvider} as the service
+     *   type. If this process fails then an unspecified error is thrown. If
+     *   there is more than one service provider installed then it is
+     *   not specified as to which provider will be used. </li>
+     *
+     *   <li> If the provider is not found by the above means then a system
+     *   default provider will be instantiated and used. </li>
+     * </ol>
+     */
+    private static class XmlSupport {
 
-    private static class XMLUtils {
-        private static Method load = null;
-        private static Method save = null;
-        static {
+        private static XmlPropertiesProvider loadProviderFromProperty(ClassLoader cl) {
+            String cn = System.getProperty("sun.util.spi.XmlPropertiesProvider");
+            if (cn == null)
+                return null;
             try {
-                // reference sun.util.xml.Utils reflectively
-                // to allow the Properties class be compiled in
-                // the absence of XML
-                Class<?> c = Class.forName("sun.util.xml.XMLUtils", true, null);
-                load = c.getMethod("load", Properties.class, InputStream.class);
-                save = c.getMethod("save", Properties.class, OutputStream.class,
-                                   String.class, String.class);
-            } catch (ClassNotFoundException cnf) {
-                throw new AssertionError(cnf);
-            } catch (NoSuchMethodException e) {
-                throw new AssertionError(e);
+                Class<?> c = Class.forName(cn, true, cl);
+                return (XmlPropertiesProvider)c.newInstance();
+            } catch (ClassNotFoundException |
+                     IllegalAccessException |
+                     InstantiationException x) {
+                throw new ServiceConfigurationError(null, x);
             }
         }
 
-        static void invoke(Method m, Object... args) throws IOException {
-            try {
-                m.invoke(null, args);
-            } catch (IllegalAccessException e) {
-                throw new AssertionError(e);
-            } catch (InvocationTargetException e) {
-                Throwable t = e.getCause();
-                if (t instanceof RuntimeException)
-                    throw (RuntimeException)t;
-
-                if (t instanceof IOException) {
-                    throw (IOException)t;
-                } else {
-                    throw new AssertionError(t);
-                }
-            }
+        private static XmlPropertiesProvider loadProviderAsService(ClassLoader cl) {
+            Iterator<XmlPropertiesProvider> iterator =
+                 ServiceLoader.load(XmlPropertiesProvider.class, cl).iterator();
+            return iterator.hasNext() ? iterator.next() : null;
         }
+
+        private static XmlPropertiesProvider loadProvider() {
+            return AccessController.doPrivileged(
+                new PrivilegedAction<XmlPropertiesProvider>() {
+                    public XmlPropertiesProvider run() {
+                        ClassLoader cl = ClassLoader.getSystemClassLoader();
+                        XmlPropertiesProvider provider = loadProviderFromProperty(cl);
+                        if (provider != null)
+                            return provider;
+                        provider = loadProviderAsService(cl);
+                        if (provider != null)
+                            return provider;
+                        throw new InternalError("No fallback");
+                }});
+        }
+
+        private static final XmlPropertiesProvider PROVIDER = loadProvider();
 
         static void load(Properties props, InputStream in)
             throws IOException, InvalidPropertiesFormatException
         {
-            if (load == null)
-                throw new InternalError("sun.util.xml.XMLUtils not found");
-            invoke(load, props, in);
+            PROVIDER.load(props, in);
         }
 
         static void save(Properties props, OutputStream os, String comment,
                          String encoding)
             throws IOException
         {
-            if (save == null)
-                throw new InternalError("sun.util.xml.XMLUtils not found");
-            invoke(save, props, os, comment, encoding);
+            PROVIDER.store(props, os, comment, encoding);
         }
     }
 }

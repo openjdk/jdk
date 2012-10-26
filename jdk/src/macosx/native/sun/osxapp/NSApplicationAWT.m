@@ -31,6 +31,7 @@
 #import "PropertiesUtilities.h"
 #import "ThreadUtilities.h"
 #import "QueuingApplicationDelegate.h"
+#import "AWTIconData.h"
 
 
 static BOOL sUsingDefaultNIB = YES;
@@ -52,6 +53,9 @@ BOOL postEventDuringEventSynthesis = NO;
 
 AWT_ASSERT_APPKIT_THREAD;
     fApplicationName = nil;
+    dummyEventTimestamp = 0.0;
+    seenDummyEventLock = nil;
+
 
     // NSApplication will call _RegisterApplication with the application's bundle, but there may not be one.
     // So, we need to call it ourselves to ensure the app is set up properly.
@@ -255,25 +259,26 @@ AWT_ASSERT_APPKIT_THREAD;
         theIconPath = [PropertiesUtilities javaSystemPropertyForKey:@"apple.awt.application.icon" withEnv:env];
     }
 
-    // If the icon file wasn't specified as an argument and we need to get an icon
-    // we'll use the generic java app icon.
-    NSString *defaultIconPath = [NSString stringWithFormat:@"%@%@", SHARED_FRAMEWORK_BUNDLE, @"/Resources/GenericApp.icns"];
-    if (theIconPath == nil) {
+    // Use the path specified to get the icon image
+    NSImage* iconImage = nil;
+    if (theIconPath != nil) {
+        iconImage = [[NSImage alloc] initWithContentsOfFile:theIconPath];
+    } 
+
+    // If no icon file was specified or we failed to get the icon image
+    // and there is no bundle's icon, then use the default icon
+    if (iconImage == nil) {
         NSString* bundleIcon = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleIconFile"];
         if (bundleIcon == nil) {
-            theIconPath = defaultIconPath;
+            NSData* iconData;
+            iconData = [[NSData alloc] initWithBytesNoCopy: sAWTIconData length: sizeof(sAWTIconData) freeWhenDone: NO];
+            iconImage = [[NSImage alloc] initWithData: iconData];
+            [iconData release];
         }
     }
 
-    // Set up the dock icon if we have an icon name.
-    if (theIconPath != nil) {
-        NSImage *iconImage = [[NSImage alloc] initWithContentsOfFile:theIconPath];
-
-        // If we failed for some reason fall back to the default icon.
-        if (iconImage == nil) {
-            iconImage = [[NSImage alloc] initWithContentsOfFile:defaultIconPath];
-        }
-
+    // Set up the dock icon if we have an icon image.
+    if (iconImage != nil) {
         [NSApp setApplicationIconImage:iconImage];
         [iconImage release];
     }
@@ -326,6 +331,45 @@ AWT_ASSERT_APPKIT_THREAD;
     postEventDuringEventSynthesis = NO;
 
     return event;
+}
+
+// NSTimeInterval has microseconds precision
+#define TS_EQUAL(ts1, ts2) (fabs((ts1) - (ts2)) < 1e-6)
+
+- (void)sendEvent:(NSEvent *)event
+{
+    if ([event type] == NSApplicationDefined && TS_EQUAL([event timestamp], dummyEventTimestamp)) {
+        [seenDummyEventLock lockWhenCondition:NO];
+        [seenDummyEventLock unlockWithCondition:YES];
+    } else {
+        [super sendEvent:event];
+    }
+}
+
+- (void)postDummyEvent {
+    seenDummyEventLock = [[NSConditionLock alloc] initWithCondition:NO];
+    dummyEventTimestamp = [NSProcessInfo processInfo].systemUptime;
+    
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];    
+    NSEvent* event = [NSEvent otherEventWithType: NSApplicationDefined
+                                        location: NSMakePoint(0,0)
+                                   modifierFlags: 0
+                                       timestamp: dummyEventTimestamp
+                                    windowNumber: 0
+                                         context: nil
+                                         subtype: 0
+                                           data1: 0
+                                           data2: 0];
+    [NSApp postEvent: event atStart: NO];
+    [pool drain];
+}
+
+- (void)waitForDummyEvent {
+    [seenDummyEventLock lockWhenCondition:YES];
+    [seenDummyEventLock unlock];
+    [seenDummyEventLock release];
+
+    seenDummyEventLock = nil;
 }
 
 @end

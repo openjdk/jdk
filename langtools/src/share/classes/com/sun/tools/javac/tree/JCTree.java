@@ -1810,11 +1810,46 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static class JCMemberReference extends JCExpression implements MemberReferenceTree {
         public ReferenceMode mode;
+        public ReferenceKind kind;
         public Name name;
         public JCExpression expr;
         public List<JCExpression> typeargs;
         public Type targetType;
         public Symbol sym;
+        public Type varargsElement;
+
+        /**
+         * Javac-dependent classification for member references, based
+         * on relevant properties w.r.t. code-generation
+         */
+        public enum ReferenceKind {
+            /** super # instMethod */
+            SUPER(ReferenceMode.INVOKE, false),
+            /** Type # instMethod */
+            UNBOUND(ReferenceMode.INVOKE, true),
+            /** Type # staticMethod */
+            STATIC(ReferenceMode.INVOKE, false),
+            /** Expr # instMethod */
+            BOUND(ReferenceMode.INVOKE, false),
+            /** Expr # staticMethod */
+            STATIC_EVAL(ReferenceMode.INVOKE, false),
+            /** Inner # new */
+            IMPLICIT_INNER(ReferenceMode.NEW, false),
+            /** Toplevel # new */
+            TOPLEVEL(ReferenceMode.NEW, false);
+
+            ReferenceMode mode;
+            boolean unbound;
+
+            private ReferenceKind(ReferenceMode mode, boolean unbound) {
+                this.mode = mode;
+                this.unbound = unbound;
+            }
+
+            public boolean isUnbound() {
+                return unbound;
+            }
+        }
 
         protected JCMemberReference(ReferenceMode mode, Name name, JCExpression expr, List<JCExpression> typeargs) {
             this.mode = mode;
@@ -1842,6 +1877,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return REFERENCE;
+        }
+        public boolean hasKind(ReferenceKind kind) {
+            return this.kind == kind;
         }
     }
 
@@ -2010,7 +2048,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
-     * A parameterized type, T<...>
+     * A parameterized type, {@literal T<...>}
      */
     public static class JCTypeApply extends JCExpression implements ParameterizedTypeTree {
         public JCExpression clazz;

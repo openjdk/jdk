@@ -79,10 +79,8 @@ public class MultiTaskListener implements TaskListener {
             if (ccw.unwrap(l) == listener)
                 throw new IllegalStateException();
         }
-        TaskListener[] newListeners = new TaskListener[listeners.length + 1];
-        System.arraycopy(listeners, 0, newListeners, 0, listeners.length);
-        newListeners[newListeners.length - 1] = ccw.wrap(listener);
-        listeners = newListeners;
+        listeners = Arrays.copyOf(listeners, listeners.length + 1);
+        listeners[listeners.length - 1] = ccw.wrap(listener);
     }
 
     public void remove(TaskListener listener) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,17 @@ class MarkSweep : AllStatic {
    public:
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
-    virtual const bool should_remember_mdo() const { return true; }
-    virtual void remember_mdo(DataLayout* p) { MarkSweep::revisit_mdo(p); }
+  };
+
+  // The one and only place to start following the classes.
+  // Should only be applied to the ClassLoaderData klasses list.
+  class FollowKlassClosure : public KlassClosure {
+   public:
+    void do_klass(Klass* klass);
+  };
+  class AdjustKlassClosure : public KlassClosure {
+   public:
+    void do_klass(Klass* klass);
   };
 
   class FollowStackClosure: public VoidClosure {
@@ -121,13 +130,12 @@ class MarkSweep : AllStatic {
   // Vars
   //
  protected:
+  // Total invocations of a MarkSweep collection
+  static unsigned int _total_invocations;
+
   // Traversal stacks used during phase1
   static Stack<oop, mtGC>                      _marking_stack;
   static Stack<ObjArrayTask, mtGC>             _objarray_stack;
-  // Stack for live klasses to revisit at end of marking phase
-  static Stack<Klass*, mtGC>                   _revisit_klass_stack;
-  // Set (stack) of MDO's to revisit at end of marking phase
-  static Stack<DataLayout*, mtGC>              _revisit_mdo_stack;
 
   // Space for storing/restoring mark word
   static Stack<markOop, mtGC>                  _preserved_mark_stack;
@@ -167,27 +175,25 @@ class MarkSweep : AllStatic {
 #endif
 
   // Non public closures
-  static IsAliveClosure   is_alive;
   static KeepAliveClosure keep_alive;
-
-  // Class unloading. Update subklass/sibling/implementor links at end of marking phase.
-  static void follow_weak_klass_links();
-
-  // Class unloading. Clear weak refs in MDO's (ProfileData)
-  // at the end of the marking phase.
-  static void follow_mdo_weak_refs();
 
   // Debugging
   static void trace(const char* msg) PRODUCT_RETURN;
 
  public:
   // Public closures
+  static IsAliveClosure       is_alive;
   static FollowRootClosure    follow_root_closure;
   static CodeBlobToOopClosure follow_code_root_closure; // => follow_root_closure
   static MarkAndPushClosure   mark_and_push_closure;
+  static FollowKlassClosure   follow_klass_closure;
   static FollowStackClosure   follow_stack_closure;
   static AdjustPointerClosure adjust_root_pointer_closure;
   static AdjustPointerClosure adjust_pointer_closure;
+  static AdjustKlassClosure   adjust_klass_closure;
+
+  // Accessors
+  static unsigned int total_invocations() { return _total_invocations; }
 
   // Reference Processing
   static ReferenceProcessor* const ref_processor() { return _ref_processor; }
@@ -196,11 +202,19 @@ class MarkSweep : AllStatic {
   static void mark_object(oop obj);
   // Mark pointer and follow contents.  Empty marking stack afterwards.
   template <class T> static inline void follow_root(T* p);
+
   // Check mark and maybe push on marking stack
-  template <class T> static inline void mark_and_push(T* p);
+  template <class T> static void mark_and_push(T* p);
+
   static inline void push_objarray(oop obj, size_t index);
 
   static void follow_stack();   // Empty marking stack.
+
+  static void follow_klass(Klass* klass);
+  static void adjust_klass(Klass* klass);
+
+  static void follow_class_loader(ClassLoaderData* cld);
+  static void adjust_class_loader(ClassLoaderData* cld);
 
   static void preserve_mark(oop p, markOop mark);
                                 // Save the mark word so it can be restored later
@@ -219,7 +233,7 @@ class MarkSweep : AllStatic {
   static void track_interior_pointers(oop obj);
   static void check_interior_pointers();
 
-  static void reset_live_oop_tracking(bool at_perm);
+  static void reset_live_oop_tracking();
   static void register_live_oop(oop p, size_t size);
   static void validate_live_oop(oop p, size_t size);
   static void live_oop_moved_to(HeapWord* q, size_t size, HeapWord* compaction_top);
@@ -231,12 +245,6 @@ class MarkSweep : AllStatic {
   // tracking down heap stomps.
   static void print_new_location_of_heap_address(HeapWord* q);
 #endif
-
-  // Call backs for class unloading
-  // Update subklass/sibling/implementor links at end of marking.
-  static void revisit_weak_klass_link(Klass* k);
-  // For weak refs clearing in MDO's
-  static void revisit_mdo(DataLayout* p);
 };
 
 class PreservedMark VALUE_OBJ_CLASS_SPEC {

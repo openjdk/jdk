@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,13 @@ AGENT_DIR = $(GAMMADIR)/agent
 
 SASRCDIR = $(AGENT_DIR)/src/os/$(Platform_os_family)
 
-NON_STUB_SASRCFILES = $(SASRCDIR)/salibelf.c          \
-                      $(SASRCDIR)/symtab.c            \
-                      $(SASRCDIR)/libproc_impl.c      \
-                      $(SASRCDIR)/ps_proc.c           \
-                      $(SASRCDIR)/ps_core.c           \
-                      $(SASRCDIR)/BsdDebuggerLocal.c
+NON_STUB_SASRCFILES = $(SASRCDIR)/salibelf.c                 \
+                      $(SASRCDIR)/symtab.c                   \
+                      $(SASRCDIR)/libproc_impl.c             \
+                      $(SASRCDIR)/ps_proc.c                  \
+                      $(SASRCDIR)/ps_core.c                  \
+                      $(SASRCDIR)/BsdDebuggerLocal.c         \
+                      $(AGENT_DIR)/src/share/native/sadis.c
 
 ifeq ($(OS_VENDOR), FreeBSD)
   SASRCFILES = $(NON_STUB_SASRCFILES)

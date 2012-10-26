@@ -48,18 +48,17 @@
 //   - OneContigSpaceCardGeneration - abstract class holding a single
 //                                    contiguous space with card marking
 //     - TenuredGeneration         - tenured (old object) space (markSweepCompact)
-//     - CompactingPermGenGen      - reflective object area (klasses, methods, symbols, ...)
 //   - ConcurrentMarkSweepGeneration - Mostly Concurrent Mark Sweep Generation
 //                                       (Detlefs-Printezis refinement of
 //                                       Boehm-Demers-Schenker)
 //
 // The system configurations currently allowed are:
 //
-//   DefNewGeneration + TenuredGeneration + PermGeneration
-//   DefNewGeneration + ConcurrentMarkSweepGeneration + ConcurrentMarkSweepPermGen
+//   DefNewGeneration + TenuredGeneration
+//   DefNewGeneration + ConcurrentMarkSweepGeneration
 //
-//   ParNewGeneration + TenuredGeneration + PermGeneration
-//   ParNewGeneration + ConcurrentMarkSweepGeneration + ConcurrentMarkSweepPermGen
+//   ParNewGeneration + TenuredGeneration
+//   ParNewGeneration + ConcurrentMarkSweepGeneration
 //
 
 class DefNewGeneration;
@@ -442,7 +441,6 @@ class Generation: public CHeapObj<mtGC> {
   // Mark sweep support phase2
   virtual void prepare_for_compaction(CompactPoint* cp);
   // Mark sweep support phase3
-  virtual void pre_adjust_pointers() {ShouldNotReachHere();}
   virtual void adjust_pointers();
   // Mark sweep support phase4
   virtual void compact();
@@ -538,11 +536,11 @@ class Generation: public CHeapObj<mtGC> {
 
   // Iterate over all the ref-containing fields of all objects in the
   // generation, calling "cl.do_oop" on each.
-  virtual void oop_iterate(OopClosure* cl);
+  virtual void oop_iterate(ExtendedOopClosure* cl);
 
   // Same as above, restricted to the intersection of a memory region and
   // the generation.
-  virtual void oop_iterate(MemRegion mr, OopClosure* cl);
+  virtual void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
 
   // Iterate over all objects in the generation, calling "cl.do_object" on
   // each.
@@ -666,7 +664,6 @@ class CardGeneration: public Generation {
 class OneContigSpaceCardGeneration: public CardGeneration {
   friend class VMStructs;
   // Abstractly, this is a subtype that gets access to protected fields.
-  friend class CompactingPermGen;
   friend class VM_PopulateDumpSharedSpace;
 
  protected:

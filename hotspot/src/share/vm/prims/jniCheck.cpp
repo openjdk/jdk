@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,12 +215,12 @@ checkStaticFieldID(JavaThread* thr, jfieldID fid, jclass cls, int ftype)
 
   /* validate the class being passed */
   ASSERT_OOPS_ALLOWED;
-  klassOop k_oop = jniCheck::validate_class(thr, cls, false);
+  Klass* k_oop = jniCheck::validate_class(thr, cls, false);
 
   /* check for proper subclass hierarchy */
   JNIid* id = jfieldIDWorkaround::from_static_jfieldID(fid);
-  klassOop f_oop = id->holder();
-  if (!instanceKlass::cast(k_oop)->is_subtype_of(f_oop))
+  Klass* f_oop = id->holder();
+  if (!InstanceKlass::cast(k_oop)->is_subtype_of(f_oop))
     ReportJNIFatalError(thr, fatal_wrong_static_field);
 
   /* check for proper field type */
@@ -247,7 +247,7 @@ checkInstanceFieldID(JavaThread* thr, jfieldID fid, jobject obj, int ftype)
   if (!oopObj) {
     ReportJNIFatalError(thr, fatal_null_object);
   }
-  klassOop k_oop = oopObj->klass();
+  Klass* k_oop = oopObj->klass();
 
   if (!jfieldIDWorkaround::is_valid_jfieldID(k_oop, fid)) {
     ReportJNIFatalError(thr, fatal_wrong_field);
@@ -255,11 +255,11 @@ checkInstanceFieldID(JavaThread* thr, jfieldID fid, jobject obj, int ftype)
 
   /* make sure the field exists */
   int offset = jfieldIDWorkaround::from_instance_jfieldID(k_oop, fid);
-  if (!instanceKlass::cast(k_oop)->contains_field_offset(offset))
+  if (!InstanceKlass::cast(k_oop)->contains_field_offset(offset))
     ReportJNIFatalError(thr, fatal_wrong_field);
 
   /* check for proper field type */
-  if (!instanceKlass::cast(k_oop)->find_field_from_offset(offset,
+  if (!InstanceKlass::cast(k_oop)->find_field_from_offset(offset,
                                                               false, &fd))
     ReportJNIFatalError(thr, fatal_instance_field_not_found);
 
@@ -290,7 +290,7 @@ checkArray(JavaThread* thr, jarray jArray, int elementType)
 
   if (elementType != -1) {
     if (aOop->is_typeArray()) {
-      BasicType array_type = typeArrayKlass::cast(aOop->klass())->element_type();
+      BasicType array_type = TypeArrayKlass::cast(aOop->klass())->element_type();
       if (array_type != elementType)
         ReportJNIFatalError(thr, fatal_element_type_mismatch);
       } else if (aOop->is_objArray()) {
@@ -316,16 +316,16 @@ oop jniCheck::validate_handle(JavaThread* thr, jobject obj) {
 }
 
 
-methodOop jniCheck::validate_jmethod_id(JavaThread* thr, jmethodID method_id) {
+Method* jniCheck::validate_jmethod_id(JavaThread* thr, jmethodID method_id) {
   ASSERT_OOPS_ALLOWED;
   // do the fast jmethodID check first
-  methodOop moop = JNIHandles::checked_resolve_jmethod_id(method_id);
+  Method* moop = Method::checked_resolve_jmethod_id(method_id);
   if (moop == NULL) {
     ReportJNIFatalError(thr, fatal_wrong_class_or_method);
   }
-  // jmethodIDs are supposed to be weak global handles, but that
-  // can be expensive so check it last
-  else if (!JNIHandles::is_weak_global_handle((jobject) method_id)) {
+  // jmethodIDs are supposed to be weak handles in the class loader data,
+  // but that can be expensive so check it last
+  else if (!Method::is_method_id(method_id)) {
     ReportJNIFatalError(thr, fatal_non_weak_method);
   }
   return moop;
@@ -360,7 +360,7 @@ void jniCheck::validate_class_descriptor(JavaThread* thr, const char* name) {
   }
 }
 
-klassOop jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_primitive) {
+Klass* jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_primitive) {
   ASSERT_OOPS_ALLOWED;
   oop mirror = jniCheck::validate_handle(thr, clazz);
   if (!mirror) {
@@ -371,7 +371,7 @@ klassOop jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_prim
     ReportJNIFatalError(thr, fatal_class_not_a_class);
   }
 
-  klassOop k = java_lang_Class::as_klassOop(mirror);
+  Klass* k = java_lang_Class::as_Klass(mirror);
   // Make allowances for primitive classes ...
   if (!(k != NULL || allow_primitive && java_lang_Class::is_primitive(mirror))) {
     ReportJNIFatalError(thr, fatal_class_not_a_class);
@@ -379,12 +379,12 @@ klassOop jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_prim
   return k;
 }
 
-void jniCheck::validate_throwable_klass(JavaThread* thr, klassOop klass) {
+void jniCheck::validate_throwable_klass(JavaThread* thr, Klass* klass) {
   ASSERT_OOPS_ALLOWED;
   assert(klass != NULL, "klass argument must have a value");
 
   if (!Klass::cast(klass)->oop_is_instance() ||
-      !instanceKlass::cast(klass)->is_subclass_of(SystemDictionary::Throwable_klass())) {
+      !InstanceKlass::cast(klass)->is_subclass_of(SystemDictionary::Throwable_klass())) {
     ReportJNIFatalError(thr, fatal_class_not_a_throwable_class);
   }
 }
@@ -540,8 +540,8 @@ JNI_ENTRY_CHECKED(jint,
                        const char *msg))
     functionEnter(thr);
     IN_VM(
-      klassOop k = jniCheck::validate_class(thr, clazz, false);
-      assert(k != NULL, "validate_class shouldn't return NULL klassOop");
+      Klass* k = jniCheck::validate_class(thr, clazz, false);
+      assert(k != NULL, "validate_class shouldn't return NULL Klass*");
       jniCheck::validate_throwable_klass(thr, k);
     )
     jint result = UNCHECKED()->ThrowNew(env, clazz, msg);

@@ -38,10 +38,10 @@ Available commands:
   assert true | false <font color="red">turn on/off asserts in SA code</font>
   attach pid | exec core  <font color="red">attach SA to a process or core</font>
   class name <font color="red">find a Java class from debuggee and print oop</font>
-  classes <font color="red">print all loaded Java classes with klassOop</font>
+  classes <font color="red">print all loaded Java classes with Klass*</font>
   detach <font color="red">detach SA from current target</font>
   dis address [ length ]  <font color="red">disassemble (sparc/x86) specified number of instructions from given address</font>
-  dumpclass { address | name } [ directory ] <font color="red">dump .class file for given klassOop or class name</font>
+  dumpclass { address | name } [ directory ] <font color="red">dump .class file for given Klass* or class name</font>
   dumpheap [ file ] <font color="red">dump heap in hprof binary format</font>
   echo [ true | false ] <font color="red">turn on/off command echo mode</font>
   examine [ address/count ] | [ address,address] <font color="red">show contents of memory from given address</font>
@@ -51,7 +51,7 @@ Available commands:
   help [ command ] <font color="red">print help message for all commands or just given command</font>
   history <font color="red">show command history. usual !command-number syntax works.</font>
   inspect expression <font color="red">inspect a given oop</font>
-  jdis address <font color="red">show bytecode disassembly of a given methodOop</font>
+  jdis address <font color="red">show bytecode disassembly of a given Method*</font>
   jhisto <font color="red">show Java heap histogram</font>
   jseval script <font color="red">evaluate a given string as JavaScript code</font>
   jsload file <font color="red">load and evaluate a JavaScript file</font>
@@ -59,7 +59,7 @@ Available commands:
   livenmethods <font color="red">show all live nmethods</font>
   mem address [ length ] <font color="red">show contents of memory -- also shows closest ELF/COFF symbol if found</font>
   pmap <font color="red">show Solaris pmap-like output</font>
-  print expression <font color="red">print given klassOop, methodOop or arbitrary address</font>
+  print expression <font color="red">print given Klass*, Method* or arbitrary address</font>
   printas type expression <font color="red">print given address as given HotSpot type. eg. print JavaThread &lt;address&gt;</font>
   printstatics [ type ] <font color="red">print static fields of given HotSpot type (or all types if none specified)</font>
   pstack [-v] <font color="red">show mixed mode stack trace for all Java, non-Java threads. -v is verbose mode</font>

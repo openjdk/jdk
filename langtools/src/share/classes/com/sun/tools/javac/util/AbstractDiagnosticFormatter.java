@@ -43,8 +43,10 @@ import com.sun.tools.javac.code.Printer;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.CapturedType;
+import com.sun.tools.javac.tree.JCTree.*;
 
 import com.sun.tools.javac.file.BaseFileObject;
+import com.sun.tools.javac.tree.Pretty;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
 
 /**
@@ -180,6 +182,9 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             }
             return s;
         }
+        else if (arg instanceof JCExpression) {
+            return expr2String((JCExpression)arg);
+        }
         else if (arg instanceof Iterable<?>) {
             return formatIterable(d, (Iterable<?>)arg, l);
         }
@@ -199,6 +204,20 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             return String.valueOf(arg);
         }
     }
+    //where
+            private String expr2String(JCExpression tree) {
+                switch(tree.getTag()) {
+                    case PARENS:
+                        return expr2String(((JCParens)tree).expr);
+                    case LAMBDA:
+                    case REFERENCE:
+                    case CONDEXPR:
+                        return Pretty.toSimpleString(tree);
+                    default:
+                        Assert.error("unexpected tree kind " + tree.getKind());
+                        return null;
+                }
+            }
 
     /**
      * Format an iterable argument of a given diagnostic.
@@ -490,6 +509,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
      * lead to infinite loops.
      */
     protected Printer printer = new Printer() {
+
         @Override
         protected String localize(Locale locale, String key, Object... args) {
             return AbstractDiagnosticFormatter.this.localize(locale, key, args);

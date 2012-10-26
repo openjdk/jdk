@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -510,7 +510,6 @@ wrapper_fill_cframe_list(void *cd, const prgregset_t regs, uint_t argc,
 // mapped.  This structure gets written to a file.  It is not a class, so
 // that the compilers don't add any compiler-private data to it.
 
-// Refer to CompactingPermGenGen::n_regions in compactingPermGenGen.hpp
 const int NUM_SHARED_MAPS = 4;
 
 // Refer to FileMapInfo::_current_version in filemap.hpp
@@ -531,7 +530,7 @@ struct FileMapHeader {
    bool   _read_only;       // read only space?
    bool   _allow_exec;      // executable code in space?
 
- } _space[NUM_SHARED_MAPS]; // was _space[CompactingPermGenGen::n_regions];
+ } _space[NUM_SHARED_MAPS];
 
  // Ignore the rest of the FileMapHeader. We don't need those fields here.
 };

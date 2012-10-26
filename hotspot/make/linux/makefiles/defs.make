@@ -29,8 +29,14 @@
 SLASH_JAVA ?= /java
 
 # Need PLATFORM (os-arch combo names) for jdk and hotspot, plus libarch name
-ARCH:=$(shell uname -m)
-PATH_SEP = :
+
+# ARCH can be set explicitly in spec.gmk
+ifndef ARCH
+  ARCH := $(shell uname -m)
+endif
+
+PATH_SEP ?= :
+
 ifeq ($(LP64), 1)
   ARCH_DATA_MODEL ?= 64
 else
@@ -72,8 +78,8 @@ ifeq ($(ARCH), sparc64)
   HS_ARCH            = sparc
 endif
 
-# x86_64
-ifeq ($(ARCH), x86_64) 
+# amd64/x86_64
+ifneq (,$(findstring $(ARCH), amd64 x86_64))
   ifeq ($(ARCH_DATA_MODEL), 64)
     ARCH_DATA_MODEL = 64
     MAKE_ARGS       += LP64=1
@@ -90,8 +96,8 @@ ifeq ($(ARCH), x86_64)
   endif
 endif
 
-# i686
-ifeq ($(ARCH), i686)
+# i686/i586 ie 32-bit x86
+ifneq (,$(findstring $(ARCH), i686 i586))
   ARCH_DATA_MODEL  = 32
   PLATFORM         = linux-i586
   VM_PLATFORM      = linux_i486
@@ -248,6 +254,7 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 endif
 EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
 EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
+EXPORT_MINIMAL_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/minimal
 
 EXPORT_LIST += $(EXPORT_JRE_LIB_DIR)/wb.jar
 
@@ -271,6 +278,19 @@ ifeq ($(JVM_VARIANT_CLIENT),true)
       EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.diz
     else
       EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.debuginfo
+    endif
+  endif 
+endif
+
+ifeq ($(JVM_VARIANT_MINIMAL1),true)
+  EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/Xusage.txt
+  EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.$(LIBRARY_SUFFIX)
+
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.diz
+    else
+	EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.debuginfo
     endif
   endif 
 endif

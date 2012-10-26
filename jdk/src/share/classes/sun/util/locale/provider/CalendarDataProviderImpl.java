@@ -137,7 +137,7 @@ public class CalendarDataProviderImpl extends CalendarDataProvider implements Av
 
     @Override
     public boolean isSupportedLocale(Locale locale) {
-        if (locale == Locale.ROOT) {
+        if (Locale.ROOT.equals(locale)) {
             return true;
         }
         String calendarType = null;

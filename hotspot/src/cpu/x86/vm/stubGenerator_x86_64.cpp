@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/instanceOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -109,7 +109,7 @@ class StubGenerator: public StubCodeGenerator {
   //    c_rarg0:   call wrapper address                   address
   //    c_rarg1:   result                                 address
   //    c_rarg2:   result type                            BasicType
-  //    c_rarg3:   method                                 methodOop
+  //    c_rarg3:   method                                 Method*
   //    c_rarg4:   (interpreter) entry point              address
   //    c_rarg5:   parameters                             intptr_t*
   //    16(rbp): parameter size (in words)              int
@@ -139,7 +139,7 @@ class StubGenerator: public StubCodeGenerator {
   //    c_rarg0:   call wrapper address                   address
   //    c_rarg1:   result                                 address
   //    c_rarg2:   result type                            BasicType
-  //    c_rarg3:   method                                 methodOop
+  //    c_rarg3:   method                                 Method*
   //    48(rbp): (interpreter) entry point              address
   //    56(rbp): parameters                             intptr_t*
   //    64(rbp): parameter size (in words)              int
@@ -332,7 +332,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // call Java function
     __ BIND(parameters_done);
-    __ movptr(rbx, method);             // get methodOop
+    __ movptr(rbx, method);             // get Method*
     __ movptr(c_rarg1, entry_point);    // get entry_point
     __ mov(r13, rsp);                   // set sender sp
     BLOCK_COMMENT("call Java function");
@@ -1027,28 +1027,11 @@ class StubGenerator: public StubCodeGenerator {
     // set r12 to heapbase for load_klass()
     __ reinit_heapbase();
 
-    // make sure klass is 'reasonable'
+    // make sure klass is 'reasonable', which is not zero.
     __ load_klass(rax, rax);  // get klass
     __ testptr(rax, rax);
     __ jcc(Assembler::zero, error); // if klass is NULL it is broken
-    // Check if the klass is in the right area of memory
-    __ mov(c_rarg2, rax);
-    __ movptr(c_rarg3, (intptr_t) Universe::verify_klass_mask());
-    __ andptr(c_rarg2, c_rarg3);
-    __ movptr(c_rarg3, (intptr_t) Universe::verify_klass_bits());
-    __ cmpptr(c_rarg2, c_rarg3);
-    __ jcc(Assembler::notZero, error);
-
-    // make sure klass' klass is 'reasonable'
-    __ load_klass(rax, rax);
-    __ testptr(rax, rax);
-    __ jcc(Assembler::zero, error); // if klass' klass is NULL it is broken
-    // Check if the klass' klass is in the right area of memory
-    __ movptr(c_rarg3, (intptr_t) Universe::verify_klass_mask());
-    __ andptr(rax, c_rarg3);
-    __ movptr(c_rarg3, (intptr_t) Universe::verify_klass_bits());
-    __ cmpptr(rax, c_rarg3);
-    __ jcc(Assembler::notZero, error);
+    // TODO: Future assert that klass is lower 4g memory for UseCompressedKlassPointers
 
     // return if everything seems ok
     __ bind(exit);
@@ -2621,7 +2604,7 @@ class StubGenerator: public StubCodeGenerator {
     arraycopy_range_checks(src, src_pos, dst, dst_pos, r11_length,
                            r10, L_failed);
 
-    // typeArrayKlass
+    // TypeArrayKlass
     //
     // src_addr = (src + array_header_in_bytes()) + (src_pos << log2elemsize);
     // dst_addr = (dst + array_header_in_bytes()) + (dst_pos << log2elemsize);
@@ -2687,7 +2670,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movl2ptr(count, r11_length); // length
     __ jump(RuntimeAddress(long_copy_entry));
 
-    // objArrayKlass
+    // ObjArrayKlass
   __ BIND(L_objArray);
     // live at this point:  r10_src_klass, r11_length, src[_pos], dst[_pos]
 
@@ -2740,8 +2723,8 @@ class StubGenerator: public StubCodeGenerator {
       assert_clean_int(sco_temp, rax);
       generate_type_check(r10_src_klass, sco_temp, r11_dst_klass, L_plain_copy);
 
-      // Fetch destination element klass from the objArrayKlass header.
-      int ek_offset = in_bytes(objArrayKlass::element_klass_offset());
+      // Fetch destination element klass from the ObjArrayKlass header.
+      int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
       __ movptr(r11_dst_klass, Address(r11_dst_klass, ek_offset));
       __ movl(  sco_temp,      Address(r11_dst_klass, sco_offset));
       assert_clean_int(sco_temp, rax);

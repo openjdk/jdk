@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,13 +52,6 @@
 #include "thread_linux.inline.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
-
 
 // Linux/Sparc has rather obscure naming of registers in sigcontext
 // different between 32 and 64 bits
@@ -225,7 +218,7 @@ char* os::non_memory_address_word() {
   return (char*) 0;
 }
 
-void os::initialize_thread() {}
+void os::initialize_thread(Thread* thr) {}
 
 void os::print_context(outputStream *st, void *context) {
   if (context == NULL) return;

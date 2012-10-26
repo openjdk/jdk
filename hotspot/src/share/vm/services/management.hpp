@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,32 +42,33 @@ private:
   static TimeStamp          _stamp; // Timestamp since vm init done time
 
   // Management klasses
-  static klassOop           _sensor_klass;
-  static klassOop           _threadInfo_klass;
-  static klassOop           _memoryUsage_klass;
-  static klassOop           _memoryPoolMXBean_klass;
-  static klassOop           _memoryManagerMXBean_klass;
-  static klassOop           _garbageCollectorMXBean_klass;
-  static klassOop           _managementFactory_klass;
-  static klassOop           _garbageCollectorImpl_klass;
-  static klassOop           _gcInfo_klass;
+  static Klass*             _sensor_klass;
+  static Klass*             _threadInfo_klass;
+  static Klass*             _memoryUsage_klass;
+  static Klass*             _memoryPoolMXBean_klass;
+  static Klass*             _memoryManagerMXBean_klass;
+  static Klass*             _garbageCollectorMXBean_klass;
+  static Klass*             _managementFactory_klass;
+  static Klass*             _garbageCollectorImpl_klass;
+  static Klass*             _gcInfo_klass;
 
-  static klassOop load_and_initialize_klass(Symbol* sh, TRAPS);
+  static Klass* load_and_initialize_klass(Symbol* sh, TRAPS);
 
 public:
   static void init();
   static void initialize(TRAPS);
 
-  static jlong ticks_to_ms(jlong ticks);
-  static jlong timestamp();
+  static jlong ticks_to_ms(jlong ticks) NOT_MANAGEMENT_RETURN_(0L);
+  static jlong timestamp() NOT_MANAGEMENT_RETURN_(0L);
 
-  static void  oops_do(OopClosure* f);
+  static void  oops_do(OopClosure* f) NOT_MANAGEMENT_RETURN;
   static void* get_jmm_interface(int version);
   static void  get_optional_support(jmmOptionalSupport* support);
 
   static void get_loaded_classes(JavaThread* cur_thread, GrowableArray<KlassHandle>* klass_handle_array);
 
-  static void  record_vm_startup_time(jlong begin, jlong duration);
+  static void  record_vm_startup_time(jlong begin, jlong duration)
+      NOT_MANAGEMENT_RETURN;
   static void  record_vm_init_completed() {
     // Initialize the timestamp to get the current time
     _vm_init_done_time->set_value(os::javaTimeMillis());
@@ -83,16 +84,21 @@ public:
     return _vm_init_done_time->get_value();
   }
 
-  // methods to return a klassOop.
-  static klassOop java_lang_management_ThreadInfo_klass(TRAPS);
-  static klassOop java_lang_management_MemoryUsage_klass(TRAPS);
-  static klassOop java_lang_management_MemoryPoolMXBean_klass(TRAPS);
-  static klassOop java_lang_management_MemoryManagerMXBean_klass(TRAPS);
-  static klassOop java_lang_management_GarbageCollectorMXBean_klass(TRAPS);
-  static klassOop sun_management_Sensor_klass(TRAPS);
-  static klassOop sun_management_ManagementFactory_klass(TRAPS);
-  static klassOop sun_management_GarbageCollectorImpl_klass(TRAPS);
-  static klassOop com_sun_management_GcInfo_klass(TRAPS);
+  // methods to return a Klass*.
+  static Klass* java_lang_management_ThreadInfo_klass(TRAPS);
+  static Klass* java_lang_management_MemoryUsage_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
+  static Klass* java_lang_management_MemoryPoolMXBean_klass(TRAPS);
+  static Klass* java_lang_management_MemoryManagerMXBean_klass(TRAPS);
+  static Klass* java_lang_management_GarbageCollectorMXBean_klass(TRAPS);
+  static Klass* sun_management_Sensor_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
+  static Klass* sun_management_ManagementFactory_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
+  static Klass* sun_management_GarbageCollectorImpl_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
+  static Klass* com_sun_management_GcInfo_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
 
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, TRAPS);
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, objArrayHandle monitors_array, typeArrayHandle depths_array, objArrayHandle synchronizers_array, TRAPS);

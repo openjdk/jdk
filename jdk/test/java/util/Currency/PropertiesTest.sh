@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # @test
-# @bug 6332666
+# @bug 6332666 7180362
 # @summary tests the capability of replacing the currency data with user
 #     specified currency properties file
 # @build PropertiesTest

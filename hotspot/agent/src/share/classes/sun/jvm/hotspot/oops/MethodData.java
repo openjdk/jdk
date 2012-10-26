@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import sun.jvm.hotspot.utilities.*;
 
 // A MethodData provides interpreter profiling information
 
-public class MethodData extends Oop {
+public class MethodData extends Metadata {
   static int TypeProfileWidth = 2;
   static int BciProfileWidth = 2;
   static int CompileThreshold;
@@ -129,11 +129,11 @@ public class MethodData extends Oop {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type      = db.lookupType("methodDataOopDesc");
+    Type type      = db.lookupType("MethodData");
     baseOffset     = type.getSize();
 
     size           = new CIntField(type.getCIntegerField("_size"), 0);
-    method         = new OopField(type.getOopField("_method"), 0);
+    method         = new MetadataField(type.getAddressField("_method"), 0);
 
     VM.Flag[] flags = VM.getVM().getCommandLineFlags();
     for (int f = 0; f < flags.length; f++) {
@@ -188,24 +188,20 @@ public class MethodData extends Oop {
     }
   }
 
-  MethodData(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public MethodData(Address addr) {
+    super(addr);
   }
 
   public boolean isMethodData()        { return true; }
 
   private static long baseOffset;
   private static CIntField size;
-  private static OopField  method;
+  private static MetadataField  method;
   private static CIntField dataSize;
   private static AddressField data;
 
   public static int sizeofMethodDataOopDesc;
   public static int cellSize;
-
-  public long getObjectSize() {
-    return alignObjectSize(size.getValue(this));
-  }
 
   public Method getMethod() {
     return (Method) method.getValue(this);
@@ -216,19 +212,17 @@ public class MethodData extends Oop {
     tty.print("MethodData for " + m.getName().asString() + m.getSignature().asString());
   }
 
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
-      visitor.doOop(method, true);
+  public void iterateFields(MetadataVisitor visitor) {
+    super.iterateFields(visitor);
+    visitor.doMetadata(method, true);
       visitor.doCInt(size, true);
     }
-  }
 
   int dataSize() {
     if (dataSize == null) {
       return 0;
     } else {
-      return (int)dataSize.getValue(this);
+      return (int)dataSize.getValue(getAddress());
     }
   }
 
@@ -298,13 +292,13 @@ public class MethodData extends Oop {
   }
 
   public byte[] orig() {
-    // fetch the orig methodDataOopDesc data between header and dataSize
-    return fetchDataAt(this.getHandle(), 0, sizeofMethodDataOopDesc);
+    // fetch the orig MethodData data between header and dataSize
+    return fetchDataAt(getAddress(), 0, sizeofMethodDataOopDesc);
   }
 
   public long[] data() {
     // Read the data as an array of intptr_t elements
-    OopHandle base = getHandle();
+    Address base = getAddress();
     long offset = data.getOffset();
     int elements = dataSize() / cellSize;
     long[] result = new long[elements];

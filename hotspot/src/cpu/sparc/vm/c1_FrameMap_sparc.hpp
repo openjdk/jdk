@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,39 @@
   static LIR_Opr I5_oop_opr;
   static LIR_Opr I6_oop_opr;
   static LIR_Opr I7_oop_opr;
+
+  static LIR_Opr G0_metadata_opr;
+  static LIR_Opr G1_metadata_opr;
+  static LIR_Opr G2_metadata_opr;
+  static LIR_Opr G3_metadata_opr;
+  static LIR_Opr G4_metadata_opr;
+  static LIR_Opr G5_metadata_opr;
+  static LIR_Opr G6_metadata_opr;
+  static LIR_Opr G7_metadata_opr;
+  static LIR_Opr O0_metadata_opr;
+  static LIR_Opr O1_metadata_opr;
+  static LIR_Opr O2_metadata_opr;
+  static LIR_Opr O3_metadata_opr;
+  static LIR_Opr O4_metadata_opr;
+  static LIR_Opr O5_metadata_opr;
+  static LIR_Opr O6_metadata_opr;
+  static LIR_Opr O7_metadata_opr;
+  static LIR_Opr L0_metadata_opr;
+  static LIR_Opr L1_metadata_opr;
+  static LIR_Opr L2_metadata_opr;
+  static LIR_Opr L3_metadata_opr;
+  static LIR_Opr L4_metadata_opr;
+  static LIR_Opr L5_metadata_opr;
+  static LIR_Opr L6_metadata_opr;
+  static LIR_Opr L7_metadata_opr;
+  static LIR_Opr I0_metadata_opr;
+  static LIR_Opr I1_metadata_opr;
+  static LIR_Opr I2_metadata_opr;
+  static LIR_Opr I3_metadata_opr;
+  static LIR_Opr I4_metadata_opr;
+  static LIR_Opr I5_metadata_opr;
+  static LIR_Opr I6_metadata_opr;
+  static LIR_Opr I7_metadata_opr;
 
   static LIR_Opr in_long_opr;
   static LIR_Opr out_long_opr;

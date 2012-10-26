@@ -134,6 +134,20 @@ java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 # 7148492
 java/lang/management/MemoryMXBean/ResetPeakMemoryUsage.java	generic-all
 
+# 7196801
+java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
+
+# Exclude until the fix for 7195557 propagates widely.
+java/lang/management/MemoryMXBean/CollectionUsageThresholdParallelGC.sh generic-all
+java/lang/management/MemoryMXBean/CollectionUsageThresholdSerialGC.sh generic-all
+java/lang/management/MemoryMXBean/MemoryTest.java		generic-all
+java/lang/management/MemoryMXBean/MemoryTestAllGC.sh		generic-all
+
+# Exclude until hotspot/jdk repos are sync'd w.r.t. JAVA_MAX_SUPPORTED_VERSION
+# Needed when hotspot fix 7054345 is present.  Remove when the JDK source is 
+# updated accordingly.
+java/lang/System/Versions.java   generic-all
+
 ############################################################################
 
 # jdk_management
@@ -144,8 +158,8 @@ javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
 # 7144846
 javax/management/remote/mandatory/connection/ReconnectTest.java	generic-all
 
-# 7158614, locks up Windows machines at least
-sun/management/jmxremote/startstop/JMXStartStopTest.sh		windows-all
+# 7120365
+javax/management/remote/mandatory/notif/DiffHBTest.java 	generic-all
 
 ############################################################################
 
@@ -216,11 +230,6 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 sun/net/www/protocol/http/B6299712.java                         macosx-all
 java/net/CookieHandler/CookieManagerTest.java                   macosx-all
 
-# 7164518
-sun/security/krb5/auto/Unreachable.java                         macosx-all
-
-# JPRT needs to set 127.0.0.1 in proxy bypass list
-java/net/URLClassLoader/closetest/CloseTest.java                macosx-all
 ############################################################################
 
 # jdk_io
@@ -251,9 +260,6 @@ java/nio/channels/DatagramChannel/ChangingAddress.java          macosx-all
 # 7132677
 java/nio/channels/Selector/OutOfBand.java                       macosx-all
 
-# 7142919
-java/nio/channels/AsyncCloseAndInterrupt.java			solaris-all
-
 ############################################################################
 
 # jdk_rmi
@@ -277,6 +283,9 @@ sun/rmi/transport/proxy/EagerHttpFallback.java                  linux-all
 
 # jdk_security
 
+# 7164518: no PortUnreachableException on Mac
+sun/security/krb5/auto/Unreachable.java                         macosx-all
+
 # 7193792
 sun/security/pkcs11/ec/TestECDSA.java				solaris-all
 sun/security/pkcs11/ec/TestECDSA.java				linux-all
@@ -284,47 +293,17 @@ sun/security/pkcs11/ec/TestECDSA.java				linux-all
 # 7193793
 sun/security/pkcs11/ec/TestECDH.java				linux-all
 
+# 7198198: the test also fails on SuSE Linux
+sun/security/pkcs11/ec/ReadCertificates.java                    linux-all
+
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
 
-# Failing on Solaris i586, 3/9/2010, not a -samevm issue (jdk_security3)
-sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-i586
-sun/security/pkcs11/ec/ReadCertificates.java                    generic-all
-sun/security/pkcs11/ec/ReadPKCS12.java                          generic-all
-sun/security/pkcs11/ec/TestCurves.java                          solaris-i586
-#sun/security/pkcs11/ec/TestECGenSpec.java                      solaris-i586
-#sun/security/pkcs11/ec/TestKeyFactory.java                     solaris-i586
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            generic-all
-
-# Fails on Fedora 9/Ubuntu 10.04 64bit, PKCS11Exception: CKR_DEVICE_ERROR
-sun/security/pkcs11/KeyAgreement/TestDH.java                    generic-all
-
-# Run too slow on Solaris 10 sparc
-sun/security/ssl/com/sun/net/ssl/internal/ssl/InputRecord/SSLSocketTimeoutNulls.java solaris-sparc
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/ClientTimeout.java solaris-sparc
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/ServerTimeout.java solaris-sparc
-sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/ReadTimeout.java solaris-sparc
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/NotifyHandshakeTest.sh solaris-sparc
-
-# Solaris 10 sparc, passed/failed confusion? java.security.ProviderException: update() failed
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.java generic-all
-
-# Othervm, sparc, NoRouteToHostException: Cannot assign requested address
-sun/security/ssl/javax/net/ssl/NewAPIs/SessionCacheSizeTests.java generic-all
-
-# Times out on windows X64, othervm mode
-#    Solaris sparc and sparcv9 -server, timeout
-sun/security/ssl/javax/net/ssl/NewAPIs/SessionTimeOutTests.java generic-all
-
-# Various failures on Linux Fedora 9 X64, othervm mode
-sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/TestAllSuites.java generic-all
-sun/security/ssl/sanity/ciphersuites/CheckCipherSuites.java     generic-all
-
-# Various failures on Linux Fedora 9 X64, othervm mode
-sun/security/ssl/sanity/interop/ClientJSSEServerJSSE.java       generic-all
-
-# 7079203 sun/security/tools/keytool/printssl.sh fails on solaris with timeout
-sun/security/tools/keytool/printssl.sh                          solaris-all
+# 6988842: 4 tests failing on Solaris 5.10
+sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-all
+sun/security/pkcs11/ec/ReadCertificates.java                    solaris-all
+sun/security/pkcs11/ec/ReadPKCS12.java                          solaris-all
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 
 # 7041639, Solaris DSA keypair generation bug (Note: jdk_util also affected)
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
@@ -348,6 +327,8 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 
 # jdk_text
 
+# 7196199
+java/text/Bidi/Bug6665028.java                                  generic-all
 ############################################################################
 
 # jdk_tools

@@ -567,7 +567,7 @@ bool InstructForm::rematerialize(FormDict &globals, RegisterForm *registers ) {
         if( strcmp(rc_name,"stack_slots") ) {
           // Check for ideal_type of RegFlags
           const char *type = opform->ideal_type( globals, registers );
-          if( !strcmp(type,"RegFlags") )
+          if( (type != NULL) && !strcmp(type, "RegFlags") )
             rematerialize = true;
         } else
           rematerialize = false; // Do not rematerialize things target stk
@@ -746,13 +746,16 @@ int InstructForm::memory_operand(FormDict &globals) const {
 // Expected use is for pointer vs oop determination for LoadP
 bool InstructForm::captures_bottom_type(FormDict &globals) const {
   if( _matrule && _matrule->_rChild &&
-       (!strcmp(_matrule->_rChild->_opType,"CastPP")     ||  // new result type
-        !strcmp(_matrule->_rChild->_opType,"CastX2P")    ||  // new result type
-        !strcmp(_matrule->_rChild->_opType,"DecodeN")    ||
-        !strcmp(_matrule->_rChild->_opType,"EncodeP")    ||
-        !strcmp(_matrule->_rChild->_opType,"LoadN")      ||
-        !strcmp(_matrule->_rChild->_opType,"LoadNKlass") ||
-        !strcmp(_matrule->_rChild->_opType,"CreateEx")   ||  // type of exception
+       (!strcmp(_matrule->_rChild->_opType,"CastPP")       ||  // new result type
+        !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
+        !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
+        !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
+        !strcmp(_matrule->_rChild->_opType,"DecodeNKlass") ||
+        !strcmp(_matrule->_rChild->_opType,"EncodePKlass") ||
+        !strcmp(_matrule->_rChild->_opType,"LoadN")        ||
+        !strcmp(_matrule->_rChild->_opType,"GetAndSetN")   ||
+        !strcmp(_matrule->_rChild->_opType,"LoadNKlass")   ||
+        !strcmp(_matrule->_rChild->_opType,"CreateEx")     ||  // type of exception
         !strcmp(_matrule->_rChild->_opType,"CheckCastPP")) ) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
   else if ( is_ideal_store() != Form::none  )                return true;
@@ -790,6 +793,20 @@ uint InstructForm::num_opnds() {
   }
     */
   return num_opnds;
+}
+
+const char *InstructForm::opnd_ident(int idx) {
+  return _components.at(idx)->_name;
+}
+
+const char *InstructForm::unique_opnd_ident(int idx) {
+  uint i;
+  for (i = 1; i < num_opnds(); ++i) {
+    if (unique_opnds_idx(i) == idx) {
+      break;
+    }
+  }
+  return (_components.at(i) != NULL) ? _components.at(i)->_name : "";
 }
 
 // Return count of unmatched operands.
@@ -863,6 +880,9 @@ uint InstructForm::oper_input_base(FormDict &globals) {
   return base;
 }
 
+// This function determines the order of the MachOper in _opnds[]
+// by writing the operand names into the _components list.
+//
 // Implementation does not modify state of internal structures
 void InstructForm::build_components() {
   // Add top-level operands to the components
@@ -958,11 +978,11 @@ void InstructForm::build_components() {
 
 // Return zero-based position in component list;  -1 if not in list.
 int   InstructForm::operand_position(const char *name, int usedef) {
-  return unique_opnds_idx(_components.operand_position(name, usedef));
+  return unique_opnds_idx(_components.operand_position(name, usedef, this));
 }
 
 int   InstructForm::operand_position_format(const char *name) {
-  return unique_opnds_idx(_components.operand_position_format(name));
+  return unique_opnds_idx(_components.operand_position_format(name, this));
 }
 
 // Return zero-based position in component list; -1 if not in list.
@@ -1222,7 +1242,7 @@ bool InstructForm::check_branch_variant(ArchDesc &AD, InstructForm *short_branch
     if (different) {
       globalAD->syntax_err(short_branch->_linenum, "Instruction %s and its short form %s have different parameters\n", _ident, short_branch->_ident);
     }
-    if (AD._short_branch_debug) {
+    if (AD._adl_debug > 1 || AD._short_branch_debug) {
       fprintf(stderr, "Instruction %s has short form %s\n", _ident, short_branch->_ident);
     }
     _short_branch_form = short_branch;
@@ -1254,16 +1274,19 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
   // Find replacement variable's type
   const Form *form   = _localNames[rep_var];
   if (form == NULL) {
-    fprintf(stderr, "unknown replacement variable in format statement: '%s'\n", rep_var);
-    assert(false, "ShouldNotReachHere()");
+    globalAD->syntax_err(_linenum, "Unknown replacement variable %s in format statement of %s.",
+                         rep_var, _ident);
+    return;
   }
   OpClassForm *opc   = form->is_opclass();
   assert( opc, "replacement variable was not found in local names");
   // Lookup the index position of the replacement variable
   int idx  = operand_position_format(rep_var);
   if ( idx == -1 ) {
-    assert( strcmp(opc->_ident,"label")==0, "Unimplemented");
-    assert( false, "ShouldNotReachHere()");
+    globalAD->syntax_err(_linenum, "Could not find replacement variable %s in format statement of %s.\n",
+                         rep_var, _ident);
+    assert(strcmp(opc->_ident, "label") == 0, "Unimplemented");
+    return;
   }
 
   if (is_noninput_operand(idx)) {
@@ -1272,7 +1295,7 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
     OperandForm* oper = form->is_operand();
     if (oper != NULL && oper->is_bound_register()) {
       const RegDef* first = oper->get_RegClass()->find_first_elem();
-      fprintf(fp, "    tty->print(\"%s\");\n", first->_regname);
+      fprintf(fp, "    st->print(\"%s\");\n", first->_regname);
     } else {
       globalAD->syntax_err(_linenum, "In %s can't find format for %s %s", _ident, opc->_ident, rep_var);
     }
@@ -1370,26 +1393,28 @@ void InstructForm::index_temps(FILE *fp, FormDict &globals, const char *prefix, 
   // idx0=0 is used to indicate that info comes from this same node, not from input edge.
   // idx1 starts at oper_input_base()
   if ( cur_num_opnds >= 1 ) {
-    fprintf(fp,"    // Start at oper_input_base() and count operands\n");
-    fprintf(fp,"    unsigned %sidx0 = %d;\n", prefix, oper_input_base(globals));
-    fprintf(fp,"    unsigned %sidx1 = %d;\n", prefix, oper_input_base(globals));
+    fprintf(fp,"  // Start at oper_input_base() and count operands\n");
+    fprintf(fp,"  unsigned %sidx0 = %d;\n", prefix, oper_input_base(globals));
+    fprintf(fp,"  unsigned %sidx1 = %d;", prefix, oper_input_base(globals));
+    fprintf(fp," \t// %s\n", unique_opnd_ident(1));
 
     // Generate starting points for other unique operands if they exist
     for ( idx = 2; idx < num_unique_opnds(); ++idx ) {
       if( *receiver == 0 ) {
-        fprintf(fp,"    unsigned %sidx%d = %sidx%d + opnd_array(%d)->num_edges();\n",
+        fprintf(fp,"  unsigned %sidx%d = %sidx%d + opnd_array(%d)->num_edges();",
                 prefix, idx, prefix, idx-1, idx-1 );
       } else {
-        fprintf(fp,"    unsigned %sidx%d = %sidx%d + %s_opnds[%d]->num_edges();\n",
+        fprintf(fp,"  unsigned %sidx%d = %sidx%d + %s_opnds[%d]->num_edges();",
                 prefix, idx, prefix, idx-1, receiver, idx-1 );
       }
+      fprintf(fp," \t// %s\n", unique_opnd_ident(idx));
     }
   }
   if( *receiver != 0 ) {
     // This value is used by generate_peepreplace when copying a node.
     // Don't emit it in other cases since it can hide bugs with the
     // use invalid idx's.
-    fprintf(fp,"    unsigned %sidx%d = %sreq(); \n", prefix, idx, receiver);
+    fprintf(fp,"  unsigned %sidx%d = %sreq(); \n", prefix, idx, receiver);
   }
 
 }
@@ -1773,9 +1798,25 @@ static int effect_lookup(const char *name) {
   return Component::INVALID;
 }
 
+const char *Component::getUsedefName() {
+  switch (_usedef) {
+    case Component::INVALID:  return "INVALID";  break;
+    case Component::USE:      return "USE";      break;
+    case Component::USE_DEF:  return "USE_DEF";  break;
+    case Component::USE_KILL: return "USE_KILL"; break;
+    case Component::KILL:     return "KILL";     break;
+    case Component::TEMP:     return "TEMP";     break;
+    case Component::DEF:      return "DEF";      break;
+    case Component::CALL:     return "CALL";     break;
+    default: assert(false, "unknown effect");
+  }
+  return "Undefined Use/Def info";
+}
+
 Effect::Effect(const char *name) : _name(name), _use_def(effect_lookup(name)) {
   _ftype = Form::EFF;
 }
+
 Effect::~Effect() {
 }
 
@@ -2272,7 +2313,7 @@ void OperandForm::build_components() {
 }
 
 int OperandForm::operand_position(const char *name, int usedef) {
-  return _components.operand_position(name, usedef);
+  return _components.operand_position(name, usedef, this);
 }
 
 
@@ -2383,8 +2424,8 @@ void OperandForm::disp_is_oop(FILE *fp, FormDict &globals) {
   if ( op->is_base_constant(globals) == Form::idealP ) {
     // Find the constant's index:  _c0, _c1, _c2, ... , _cN
     uint idx  = op->constant_position( globals, rep_var);
-    fprintf(fp,"  virtual bool disp_is_oop() const {");
-    fprintf(fp,  "  return _c%d->isa_oop_ptr();", idx);
+    fprintf(fp,"  virtual relocInfo::relocType disp_reloc() const {");
+    fprintf(fp,  "  return _c%d->reloc();", idx);
     fprintf(fp, " }\n");
   }
 }
@@ -2398,20 +2439,20 @@ void  OperandForm::int_format(FILE *fp, FormDict &globals, uint index) {
   if (_matrule && (_matrule->is_base_register(globals) ||
                    strcmp(ideal_type(globalAD->globalNames()), "RegFlags") == 0)) {
     // !!!!! !!!!!
-    fprintf(fp,    "{ char reg_str[128];\n");
-    fprintf(fp,"      ra->dump_register(node,reg_str);\n");
-    fprintf(fp,"      tty->print(\"%cs\",reg_str);\n",'%');
-    fprintf(fp,"    }\n");
+    fprintf(fp,"  { char reg_str[128];\n");
+    fprintf(fp,"    ra->dump_register(node,reg_str);\n");
+    fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
+    fprintf(fp,"  }\n");
   } else if (_matrule && (dtype = _matrule->is_base_constant(globals)) != Form::none) {
     format_constant( fp, index, dtype );
   } else if (ideal_to_sReg_type(_ident) != Form::none) {
     // Special format for Stack Slot Register
-    fprintf(fp,    "{ char reg_str[128];\n");
-    fprintf(fp,"      ra->dump_register(node,reg_str);\n");
-    fprintf(fp,"      tty->print(\"%cs\",reg_str);\n",'%');
-    fprintf(fp,"    }\n");
+    fprintf(fp,"  { char reg_str[128];\n");
+    fprintf(fp,"    ra->dump_register(node,reg_str);\n");
+    fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
+    fprintf(fp,"  }\n");
   } else {
-    fprintf(fp,"tty->print(\"No format defined for %s\n\");\n", _ident);
+    fprintf(fp,"  st->print(\"No format defined for %s\n\");\n", _ident);
     fflush(fp);
     fprintf(stderr,"No format defined for %s\n", _ident);
     dump();
@@ -2425,36 +2466,37 @@ void  OperandForm::ext_format(FILE *fp, FormDict &globals, uint index) {
   Form::DataType dtype;
   if (_matrule && (_matrule->is_base_register(globals) ||
                    strcmp(ideal_type(globalAD->globalNames()), "RegFlags") == 0)) {
-    fprintf(fp,    "{ char reg_str[128];\n");
-    fprintf(fp,"      ra->dump_register(node->in(idx");
-    if ( index != 0 ) fprintf(fp,                  "+%d",index);
-    fprintf(fp,                                       "),reg_str);\n");
-    fprintf(fp,"      tty->print(\"%cs\",reg_str);\n",'%');
-    fprintf(fp,"    }\n");
+    fprintf(fp,"  { char reg_str[128];\n");
+    fprintf(fp,"    ra->dump_register(node->in(idx");
+    if ( index != 0 ) fprintf(fp,              "+%d",index);
+    fprintf(fp,                                      "),reg_str);\n");
+    fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
+    fprintf(fp,"  }\n");
   } else if (_matrule && (dtype = _matrule->is_base_constant(globals)) != Form::none) {
     format_constant( fp, index, dtype );
   } else if (ideal_to_sReg_type(_ident) != Form::none) {
     // Special format for Stack Slot Register
-    fprintf(fp,    "{ char reg_str[128];\n");
-    fprintf(fp,"      ra->dump_register(node->in(idx");
+    fprintf(fp,"  { char reg_str[128];\n");
+    fprintf(fp,"    ra->dump_register(node->in(idx");
     if ( index != 0 ) fprintf(fp,                  "+%d",index);
     fprintf(fp,                                       "),reg_str);\n");
-    fprintf(fp,"      tty->print(\"%cs\",reg_str);\n",'%');
-    fprintf(fp,"    }\n");
+    fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
+    fprintf(fp,"  }\n");
   } else {
-    fprintf(fp,"tty->print(\"No format defined for %s\n\");\n", _ident);
+    fprintf(fp,"  st->print(\"No format defined for %s\n\");\n", _ident);
     assert( false,"Internal error:\n  output_external_operand() attempting to output other than a Register or Constant");
   }
 }
 
 void OperandForm::format_constant(FILE *fp, uint const_index, uint const_type) {
   switch(const_type) {
-  case Form::idealI:  fprintf(fp,"st->print(\"#%%d\", _c%d);\n", const_index); break;
-  case Form::idealP:  fprintf(fp,"_c%d->dump_on(st);\n",         const_index); break;
-  case Form::idealN:  fprintf(fp,"_c%d->dump_on(st);\n",         const_index); break;
-  case Form::idealL:  fprintf(fp,"st->print(\"#%%lld\", _c%d);\n", const_index); break;
-  case Form::idealF:  fprintf(fp,"st->print(\"#%%f\", _c%d);\n", const_index); break;
-  case Form::idealD:  fprintf(fp,"st->print(\"#%%f\", _c%d);\n", const_index); break;
+  case Form::idealI: fprintf(fp,"  st->print(\"#%%d\", _c%d);\n", const_index); break;
+  case Form::idealP: fprintf(fp,"  if (_c%d) _c%d->dump_on(st);\n", const_index, const_index); break;
+  case Form::idealNKlass:
+  case Form::idealN: fprintf(fp,"  if (_c%d) _c%d->dump_on(st);\n", const_index, const_index); break;
+  case Form::idealL: fprintf(fp,"  st->print(\"#%%lld\", _c%d);\n", const_index); break;
+  case Form::idealF: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
+  case Form::idealD: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
   default:
     assert( false, "ShouldNotReachHere()");
   }
@@ -2824,17 +2866,8 @@ void Component::output(FILE *fp) {
   fprintf(fp,"Component:");  // Write to output files
   fprintf(fp, "  name = %s", _name);
   fprintf(fp, ", type = %s", _type);
-  const char * usedef = "Undefined Use/Def info";
-  switch (_usedef) {
-    case USE:      usedef = "USE";      break;
-    case USE_DEF:  usedef = "USE_DEF";  break;
-    case USE_KILL: usedef = "USE_KILL"; break;
-    case KILL:     usedef = "KILL";     break;
-    case TEMP:     usedef = "TEMP";     break;
-    case DEF:      usedef = "DEF";      break;
-    default: assert(false, "unknown effect");
-  }
-  fprintf(fp, ", use/def = %s\n", usedef);
+  assert(_usedef != 0, "unknown effect");
+  fprintf(fp, ", use/def = %s\n", getUsedefName());
 }
 
 
@@ -2926,9 +2959,9 @@ int ComponentList::num_operands() {
   return count;
 }
 
-// Return zero-based position in list;  -1 if not in list.
+// Return zero-based position of operand 'name' in list;  -1 if not in list.
 // if parameter 'usedef' is ::USE, it will match USE, USE_DEF, ...
-int ComponentList::operand_position(const char *name, int usedef) {
+int ComponentList::operand_position(const char *name, int usedef, Form *fm) {
   PreserveIter pi(this);
   int position = 0;
   int num_opnds = num_operands();
@@ -2951,10 +2984,18 @@ int ComponentList::operand_position(const char *name, int usedef) {
         return position+1;
       } else {
         if( preceding_non_use && strcmp(component->_name, preceding_non_use->_name) ) {
-          fprintf(stderr, "the name '%s' should not precede the name '%s'\n", preceding_non_use->_name, name);
+          fprintf(stderr, "the name '%s(%s)' should not precede the name '%s(%s)'",
+                  preceding_non_use->_name, preceding_non_use->getUsedefName(),
+                  name, component->getUsedefName());
+          if (fm && fm->is_instruction()) fprintf(stderr,  "in form '%s'", fm->is_instruction()->_ident);
+          if (fm && fm->is_operand()) fprintf(stderr,  "in form '%s'", fm->is_operand()->_ident);
+          fprintf(stderr,  "\n");
         }
         if( position >= num_opnds ) {
-          fprintf(stderr, "the name '%s' is too late in its name list\n", name);
+          fprintf(stderr, "the name '%s' is too late in its name list", name);
+          if (fm && fm->is_instruction()) fprintf(stderr,  "in form '%s'", fm->is_instruction()->_ident);
+          if (fm && fm->is_operand()) fprintf(stderr,  "in form '%s'", fm->is_operand()->_ident);
+          fprintf(stderr,  "\n");
         }
         assert(position < num_opnds, "advertised index in bounds");
         return position;
@@ -3000,10 +3041,10 @@ int ComponentList::operand_position(const char *name) {
   return Not_in_list;
 }
 
-int ComponentList::operand_position_format(const char *name) {
+int ComponentList::operand_position_format(const char *name, Form *fm) {
   PreserveIter pi(this);
   int  first_position = operand_position(name);
-  int  use_position   = operand_position(name, Component::USE);
+  int  use_position   = operand_position(name, Component::USE, fm);
 
   return ((first_position < use_position) ? use_position : first_position);
 }
@@ -3266,8 +3307,8 @@ const char *MatchNode::reduce_right(FormDict &globals) const {
 
   // If we are a "Set", start from the right child.
   const MatchNode *const mnode = sets_result() ?
-    (const MatchNode *const)this->_rChild :
-    (const MatchNode *const)this;
+    (const MatchNode *)this->_rChild :
+    (const MatchNode *)this;
 
   // If our right child exists, it is the right reduction
   if ( mnode->_rChild ) {
@@ -3284,8 +3325,8 @@ const char *MatchNode::reduce_left(FormDict &globals) const {
 
   // If we are a "Set", start from the right child.
   const MatchNode *const mnode = sets_result() ?
-    (const MatchNode *const)this->_rChild :
-    (const MatchNode *const)this;
+    (const MatchNode *)this->_rChild :
+    (const MatchNode *)this;
 
   // If our left child exists, it is the left reduction
   if ( mnode->_lChild ) {
@@ -3389,9 +3430,9 @@ void MatchNode::output(FILE *fp) {
 
 int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
   static const char *needs_ideal_memory_list[] = {
-    "StoreI","StoreL","StoreP","StoreN","StoreD","StoreF" ,
+    "StoreI","StoreL","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
-    "LoadI", "LoadUI2L", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
+    "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
     "StoreVector", "LoadVector",
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
@@ -3399,7 +3440,9 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StorePConditional", "StoreIConditional", "StoreLConditional",
     "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP", "CompareAndSwapN",
     "StoreCM",
-    "ClearArray"
+    "ClearArray",
+    "GetAndAddI", "GetAndSetI", "GetAndSetP",
+    "GetAndAddL", "GetAndSetL", "GetAndSetN",
   };
   int cnt = sizeof(needs_ideal_memory_list)/sizeof(char*);
   if( strcmp(_opType,"PrefetchRead")==0 ||
@@ -3944,6 +3987,8 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ConvL2I")==0 ||
         strcmp(opType,"DecodeN")==0 ||
         strcmp(opType,"EncodeP")==0 ||
+        strcmp(opType,"EncodePKlass")==0 ||
+        strcmp(opType,"DecodeNKlass")==0 ||
         strcmp(opType,"RoundDouble")==0 ||
         strcmp(opType,"RoundFloat")==0 ||
         strcmp(opType,"ReverseBytesI")==0 ||
@@ -4040,18 +4085,28 @@ Form::DataType MatchRule::is_ideal_load() const {
 }
 
 bool MatchRule::is_vector() const {
-  if( _rChild ) {
+  static const char *vector_list[] = {
+    "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
+    "SubVB","SubVS","SubVI","SubVL","SubVF","SubVD",
+    "MulVS","MulVI","MulVF","MulVD",
+    "DivVF","DivVD",
+    "AndV" ,"XorV" ,"OrV",
+    "LShiftCntV","RShiftCntV",
+    "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
+    "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
+    "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
+    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD",
+    "LoadVector","StoreVector",
+    // Next are not supported currently.
+    "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
+    "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"
+  };
+  int cnt = sizeof(vector_list)/sizeof(char*);
+  if (_rChild) {
     const char  *opType = _rChild->_opType;
-    if( strcmp(opType,"ReplicateB")==0 ||
-        strcmp(opType,"ReplicateS")==0 ||
-        strcmp(opType,"ReplicateI")==0 ||
-        strcmp(opType,"ReplicateL")==0 ||
-        strcmp(opType,"ReplicateF")==0 ||
-        strcmp(opType,"ReplicateD")==0 ||
-        strcmp(opType,"LoadVector")==0 ||
-        strcmp(opType,"StoreVector")==0 ||
-        0 /* 0 to line up columns nicely */ )
-      return true;
+    for (int i=0; i<cnt; i++)
+      if (strcmp(opType,vector_list[i]) == 0)
+        return true;
   }
   return false;
 }
@@ -4095,12 +4150,17 @@ void MatchRule::dump() {
   output(stderr);
 }
 
-void MatchRule::output(FILE *fp) {
+// Write just one line.
+void MatchRule::output_short(FILE *fp) {
   fprintf(fp,"MatchRule: ( %s",_name);
   if (_lChild) _lChild->output(fp);
   if (_rChild) _rChild->output(fp);
-  fprintf(fp," )\n");
-  fprintf(fp,"   nesting depth = %d\n", _depth);
+  fprintf(fp," )");
+}
+
+void MatchRule::output(FILE *fp) {
+  output_short(fp);
+  fprintf(fp,"\n   nesting depth = %d\n", _depth);
   if (_result) fprintf(fp,"   Result Type = %s", _result);
   fprintf(fp,"\n");
 }

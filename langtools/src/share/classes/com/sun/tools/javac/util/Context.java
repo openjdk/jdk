@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,10 @@ public class Context {
      * The underlying map storing the data.
      * We maintain the invariant that this table contains only
      * mappings of the form
-     * Key<T> -> T or Key<T> -> Factory<T> */
+     * {@literal Key<T> -> T }
+     * or
+     * {@literal Key<T> -> Factory<T> }
+     */
     private Map<Key<?>,Object> ht = new HashMap<Key<?>,Object>();
 
     /** Set the factory for the key in this context. */
