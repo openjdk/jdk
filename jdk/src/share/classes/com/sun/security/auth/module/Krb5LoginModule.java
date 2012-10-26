@@ -802,7 +802,7 @@ public class Krb5LoginModule implements LoginModule {
 
         if (doNotPrompt) {
             throw new LoginException
-                ("Unable to obtain Princpal Name for authentication ");
+                ("Unable to obtain Principal Name for authentication ");
         } else {
             if (callbackHandler == null)
                 throw new LoginException("No CallbackHandler "

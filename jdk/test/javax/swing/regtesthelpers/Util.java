@@ -157,6 +157,36 @@ public class Util {
     }
 
     /**
+     * Moves mouse smoothly from (x0, y0) to (x1, y1).
+     */
+    public static void glide(Robot robot, int x0, int y0, int x1, int y1) throws AWTException {
+        float dmax = (float) Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+        float dx = (x1 - x0) / dmax;
+        float dy = (y1 - y0) / dmax;
+
+        for (int i = 0; i <= dmax; i += 10) {
+            robot.mouseMove((int) (x0 + dx * i), (int) (y0 + dy * i));
+        }
+    }
+
+    /**
+     * Gets component center point
+     *
+     * @return center point of the <code>component</code>
+     */
+    public static Point getCenterPoint(final Component component) throws Exception {
+        return Util.invokeOnEDT(new Callable<Point>() {
+
+            @Override
+            public Point call() throws Exception {
+                Point p = component.getLocationOnScreen();
+                Dimension size = component.getSize();
+                return new Point(p.x + size.width / 2, p.y + size.height / 2);
+            }
+        });
+    }
+
+    /**
      * Invokes the <code>task</code> on the EDT thread.
      *
      * @return result of the <code>task</code>

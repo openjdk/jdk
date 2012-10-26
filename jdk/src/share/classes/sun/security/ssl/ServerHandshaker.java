@@ -276,6 +276,18 @@ final class ServerHandshaker extends Handshaker {
             mesg.print(System.out);
         }
 
+        // check the server name indication if required
+        ServerNameExtension clientHelloSNIExt = (ServerNameExtension)
+                    mesg.extensions.get(ExtensionType.EXT_SERVER_NAME);
+        if (!sniMatchers.isEmpty()) {
+            // we do not reject client without SNI extension
+            if (clientHelloSNIExt != null &&
+                        !clientHelloSNIExt.isMatched(sniMatchers)) {
+                fatalSE(Alerts.alert_unrecognized_name,
+                    "Unrecognized server name indication");
+            }
+        }
+
         // Does the message include security renegotiation indication?
         boolean renegotiationIndicated = false;
 
@@ -474,6 +486,26 @@ final class ServerHandshaker extends Handshaker {
                     }
                 }
 
+                // cannot resume session with different server name indication
+                if (resumingSession) {
+                    List<SNIServerName> oldServerNames =
+                            previous.getRequestedServerNames();
+                    if (clientHelloSNIExt != null) {
+                        if (!clientHelloSNIExt.isIdentical(oldServerNames)) {
+                            resumingSession = false;
+                        }
+                    } else if (!oldServerNames.isEmpty()) {
+                        resumingSession = false;
+                    }
+
+                    if (!resumingSession &&
+                            debug != null && Debug.isOn("handshake")) {
+                        System.out.println(
+                            "The requested server name indication " +
+                            "is not identical to the previous one");
+                    }
+                }
+
                 if (resumingSession &&
                         (doClientAuth == SSLEngineImpl.clauth_required)) {
                     try {
@@ -613,6 +645,14 @@ final class ServerHandshaker extends Handshaker {
                     // algorithms in chooseCipherSuite()
             }
 
+            // set the server name indication in the session
+            List<SNIServerName> clientHelloSNI =
+                    Collections.<SNIServerName>emptyList();
+            if (clientHelloSNIExt != null) {
+                clientHelloSNI = clientHelloSNIExt.getServerNames();
+            }
+            session.setRequestedServerNames(clientHelloSNI);
+
             // set the handshake session
             setHandshakeSessionSE(session);
 
@@ -652,6 +692,15 @@ final class ServerHandshaker extends Handshaker {
             HelloExtension serverHelloRI = new RenegotiationInfoExtension(
                                         clientVerifyData, serverVerifyData);
             m1.extensions.add(serverHelloRI);
+        }
+
+        if (!sniMatchers.isEmpty() && clientHelloSNIExt != null) {
+            // When resuming a session, the server MUST NOT include a
+            // server_name extension in the server hello.
+            if (!resumingSession) {
+                ServerNameExtension serverHelloSNI = new ServerNameExtension();
+                m1.extensions.add(serverHelloSNI);
+            }
         }
 
         if (debug != null && Debug.isOn("handshake")) {

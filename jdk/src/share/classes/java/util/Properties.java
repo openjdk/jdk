@@ -81,8 +81,9 @@ import sun.util.spi.XmlPropertiesProvider;
  * <p> The {@link #loadFromXML(InputStream)} and {@link
  * #storeToXML(OutputStream, String, String)} methods load and store properties
  * in a simple XML format.  By default the UTF-8 character encoding is used,
- * however a specific encoding may be specified if required.  An XML properties
- * document has the following DOCTYPE declaration:
+ * however a specific encoding may be specified if required. Implementations
+ * are required to support UTF-8 and UTF-16 and may support other encodings.
+ * An XML properties document has the following DOCTYPE declaration:
  *
  * <pre>
  * &lt;!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd"&gt;
@@ -853,23 +854,30 @@ class Properties extends Hashtable<Object,Object> {
      * Furthermore, the document must satisfy the properties DTD described
      * above.
      *
+     * <p> An implementation is required to read XML documents that use the
+     * "{@code UTF-8}" or "{@code UTF-16}" encoding. An implementation may
+     * support additional encodings.
+     *
      * <p>The specified stream is closed after this method returns.
      *
      * @param in the input stream from which to read the XML document.
      * @throws IOException if reading from the specified input stream
      *         results in an <tt>IOException</tt>.
+     * @throws java.io.UnsupportedEncodingException if the document's encoding
+     *         declaration can be read and it specifies an encoding that is not
+     *         supported
      * @throws InvalidPropertiesFormatException Data on input stream does not
      *         constitute a valid XML document with the mandated document type.
      * @throws NullPointerException if {@code in} is null.
      * @see    #storeToXML(OutputStream, String, String)
+     * @see    <a href="http://www.w3.org/TR/REC-xml/#charencoding">Character
+     *         Encoding in Entities</a>
      * @since 1.5
      */
     public synchronized void loadFromXML(InputStream in)
         throws IOException, InvalidPropertiesFormatException
     {
-        if (in == null)
-            throw new NullPointerException();
-        XmlSupport.load(this, in);
+        XmlSupport.load(this, Objects.requireNonNull(in));
         in.close();
     }
 
@@ -896,8 +904,6 @@ class Properties extends Hashtable<Object,Object> {
     public void storeToXML(OutputStream os, String comment)
         throws IOException
     {
-        if (os == null)
-            throw new NullPointerException();
         storeToXML(os, comment, "UTF-8");
     }
 
@@ -910,8 +916,12 @@ class Properties extends Hashtable<Object,Object> {
      * &lt;!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd"&gt;
      * </pre>
      *
-     *<p>If the specified comment is {@code null} then no comment
+     * <p>If the specified comment is {@code null} then no comment
      * will be stored in the document.
+     *
+     * <p> An implementation is required to support writing of XML documents
+     * that use the "{@code UTF-8}" or "{@code UTF-16}" encoding. An
+     * implementation may support additional encodings.
      *
      * <p>The specified stream remains open after this method returns.
      *
@@ -924,20 +934,23 @@ class Properties extends Hashtable<Object,Object> {
      *
      * @throws IOException if writing to the specified output stream
      *         results in an <tt>IOException</tt>.
+     * @throws java.io.UnsupportedEncodingException if the encoding is not
+     *         supported by the implementation.
      * @throws NullPointerException if {@code os} is {@code null},
      *         or if {@code encoding} is {@code null}.
      * @throws ClassCastException  if this {@code Properties} object
      *         contains any keys or values that are not
      *         {@code Strings}.
      * @see    #loadFromXML(InputStream)
+     * @see    <a href="http://www.w3.org/TR/REC-xml/#charencoding">Character
+     *         Encoding in Entities</a>
      * @since 1.5
      */
     public void storeToXML(OutputStream os, String comment, String encoding)
         throws IOException
     {
-        if (os == null)
-            throw new NullPointerException();
-        XmlSupport.save(this, os, comment, encoding);
+        XmlSupport.save(this, Objects.requireNonNull(os), comment,
+                        Objects.requireNonNull(encoding));
     }
 
     /**
