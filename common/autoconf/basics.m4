@@ -34,84 +34,102 @@ AC_DEFUN([ADD_JVM_ARG_IF_OK],
     fi
 ])
 
-AC_DEFUN([SET_FULL_PATH],
+# This will make sure the given variable points to a full and proper
+# path. This means:
+# 1) There will be no spaces in the path. On posix platforms,
+#    spaces in the path will result in an error. On Windows,
+#    the path will be rewritten using short-style to be space-free.
+# 2) The path will be absolute, and it will be in unix-style (on
+#     cygwin).
+# $1: The name of the variable to fix
+AC_DEFUN([BASIC_FIXUP_PATH],
 [
-    # Translate "gcc -E" into "`which gcc` -E" ie
-    # extract the full path to the binary and at the
-    # same time maintain any arguments passed to it.
-    # The command MUST exist in the path, or else!
-    tmp="[$]$1"
-    car="${tmp%% *}"
-    tmp="[$]$1 EOL"
-    cdr="${tmp#* }"
-    # On windows we want paths without spaces.
-    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-        SET_FULL_PATH_SPACESAFE(car)
-    else
-        # "which" is not portable, but is used here
-        # because we know that the command exists!
-        car=`which $car`
-    fi
-    if test "x$cdr" != xEOL; then
-        $1="$car ${cdr% *}"
-    else
-        $1="$car"
-    fi
-])
-
-AC_DEFUN([SPACESAFE],
-[
-    # Fail with message $2 if var $1 contains a path with no spaces in it.
-    # Unless on Windows, where we can rewrite the path.
-    HAS_SPACE=`echo "[$]$1" | grep " "`
-    if test "x$HAS_SPACE" != x; then
-        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-            # First convert it to DOS-style, short mode (no spaces)
-            $1=`$CYGPATH -s -m -a "[$]$1"`
-            # Now it's case insensitive; let's make it lowercase to improve readability
-            $1=`$ECHO "[$]$1" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
-            # Now convert it back to Unix-stile (cygpath)
-            $1=`$CYGPATH -u "[$]$1"`
-        else
-            AC_MSG_ERROR([You cannot have spaces in $2! "[$]$1"])
-        fi
-    fi
-])
-
-AC_DEFUN([SET_FULL_PATH_SPACESAFE],
-[
-    # Translate long cygdrive or C:\sdfsf path
-    # into a short mixed mode path that has no
-    # spaces in it.
-    tmp="[$]$1"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    BASIC_FIXUP_PATH_CYGWIN($1)
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    BASIC_FIXUP_PATH_MSYS($1)
+  else
+    # We're on a posix platform. Hooray! :)
+    path="[$]$1"
     
-    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-        tmp=`$CYGPATH -u "[$]$1"`
-        tmp=`which "$tmp"`
-        # If file exists with .exe appended, that's the real filename
-        # and cygpath needs that to convert to short style path.
-        if test -f "${tmp}.exe"; then
-           tmp="${tmp}.exe"
-        elif test -f "${tmp}.cmd"; then
-           tmp="${tmp}.cmd"
-        fi
-        # Convert to C:/ mixed style path without spaces.
-         tmp=`$CYGPATH -s -m "$tmp"`
+    if test ! -f "$path" && test ! -d "$path"; then
+      AC_MSG_ERROR([The path of $1, which resolves as "$path", is not found.])
     fi
-    $1="$tmp"
+
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
+      AC_MSG_ERROR([Spaces are not allowed in this path.])
+    fi
+  fi
 ])
 
-AC_DEFUN([REMOVE_SYMBOLIC_LINKS],
+# This will make sure the given variable points to a executable
+# with a full and proper path. This means:
+# 1) There will be no spaces in the path. On posix platforms,
+#    spaces in the path will result in an error. On Windows,
+#    the path will be rewritten using short-style to be space-free.
+# 2) The path will be absolute, and it will be in unix-style (on
+#     cygwin).
+# Any arguments given to the executable is preserved.
+# If the input variable does not have a directory specification, then
+# it need to be in the PATH.
+# $1: The name of the variable to fix
+AC_DEFUN([BASIC_FIXUP_EXECUTABLE],
+[
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    BASIC_FIXUP_EXECUTABLE_CYGWIN($1)
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    BASIC_FIXUP_EXECUTABLE_MSYS($1)
+  else
+    # We're on a posix platform. Hooray! :)
+    # First separate the path from the arguments. This will split at the first
+    # space.
+    complete="[$]$1"
+    path="${complete%% *}"
+    tmp="$complete EOL"
+    arguments="${tmp#* }"
+
+    new_path=`$WHICH $path 2> /dev/null`
+    if test "x$new_path" = x; then
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test "x$is_absolute_path" != x; then
+        AC_MSG_NOTICE([Resolving $1 (as $path) with 'which' failed, using $path directly.])
+        new_path="$path"
+      else
+        AC_MSG_NOTICE([The path of $1, which resolves as "$complete", is not found.])
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          AC_MSG_NOTICE([This might be caused by spaces in the path, which is not allowed.])
+        fi
+        AC_MSG_ERROR([Cannot locate the the path of $1])
+      fi
+    fi
+  fi
+
+  # Now join together the path and the arguments once again
+  if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+  else
+      new_complete="$new_path"
+  fi
+
+  if test "x$complete" != "x$new_complete"; then
+    $1="$new_complete"
+    AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
+  fi
+])
+
+AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
 [
     if test "x$OPENJDK_BUILD_OS" != xwindows; then
         # Follow a chain of symbolic links. Use readlink
         # where it exists, else fall back to horribly
         # complicated shell code.
-        AC_PATH_PROG(READLINK, readlink)
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | grep GNU`
+            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -125,23 +143,25 @@ AC_DEFUN([REMOVE_SYMBOLIC_LINKS],
         else
             STARTDIR=$PWD
             COUNTER=0
-            DIR=`dirname [$]$1`
-            FIL=`basename [$]$1`
+            DIR=`$DIRNAME [$]$1`
+            FILE=`$BASENAME [$]$1`
             while test $COUNTER -lt 20; do
-                ISLINK=`ls -l $DIR/$FIL | grep '\->' | sed -e 's/.*-> \(.*\)/\1/'`
+                ISLINK=`$LS -l $DIR/$FILE | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
                 # The link might be relative! We have to use cd to travel safely.
                 cd $DIR
-                cd `dirname $ISLINK`
-                DIR=`pwd`
-                FIL=`basename $ISLINK`
+                # ... and we must get the to the absolute path, not one using symbolic links.             
+                cd `pwd -P`
+                cd `$DIRNAME $ISLINK`
+                DIR=`$THEPWDCMD`
+                FILE=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
             cd $STARTDIR
-            $1=$DIR/$FIL
+            $1=$DIR/$FILE
         fi
     fi
 ])
@@ -152,6 +172,107 @@ AC_DEFUN_ONCE([BASIC_INIT],
 AC_SUBST(CONFIGURE_COMMAND_LINE)
 DATE_WHEN_CONFIGURED=`LANG=C date`
 AC_SUBST(DATE_WHEN_CONFIGURED)
+AC_MSG_NOTICE([Configuration created at $DATE_WHEN_CONFIGURED.])
+AC_MSG_NOTICE([configure script generated at timestamp $DATE_WHEN_GENERATED.])
+])
+
+# Test that variable $1 denoting a program is not empty. If empty, exit with an error.
+# $1: variable to check
+# $2: executable name to print in warning (optional)
+AC_DEFUN([BASIC_CHECK_NONEMPTY],
+[
+    if test "x[$]$1" = x; then
+        if test "x$2" = x; then
+          PROG_NAME=translit($1,A-Z,a-z)
+        else
+          PROG_NAME=$2
+        fi
+        AC_MSG_NOTICE([Could not find $PROG_NAME!])
+        AC_MSG_ERROR([Cannot continue])
+    fi
+])
+
+# Does AC_PATH_PROG followed by BASIC_CHECK_NONEMPTY.
+# Arguments as AC_PATH_PROG:
+# $1: variable to set
+# $2: executable name to look for
+AC_DEFUN([BASIC_REQUIRE_PROG],
+[
+    AC_PATH_PROGS($1, $2)
+    BASIC_CHECK_NONEMPTY($1, $2)
+])
+
+# Setup the most fundamental tools that relies on not much else to set up,
+# but is used by much of the early bootstrap code.
+AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
+[
+
+# Start with tools that do not need have cross compilation support
+# and can be expected to be found in the default PATH. These tools are
+# used by configure. Nor are these tools expected to be found in the
+# devkit from the builddeps server either, since they are
+# needed to download the devkit.
+
+# First are all the simple required tools.
+BASIC_REQUIRE_PROG(BASENAME, basename)
+BASIC_REQUIRE_PROG(BASH, bash)
+BASIC_REQUIRE_PROG(CAT, cat)
+BASIC_REQUIRE_PROG(CHMOD, chmod)
+BASIC_REQUIRE_PROG(CMP, cmp)
+BASIC_REQUIRE_PROG(CP, cp)
+BASIC_REQUIRE_PROG(CUT, cut)
+BASIC_REQUIRE_PROG(DATE, date)
+BASIC_REQUIRE_PROG(DIFF, [gdiff diff])
+BASIC_REQUIRE_PROG(DIRNAME, dirname)
+BASIC_REQUIRE_PROG(ECHO, echo)
+BASIC_REQUIRE_PROG(EXPR, expr)
+BASIC_REQUIRE_PROG(FILE, file)
+BASIC_REQUIRE_PROG(FIND, find)
+BASIC_REQUIRE_PROG(HEAD, head)
+BASIC_REQUIRE_PROG(LN, ln)
+BASIC_REQUIRE_PROG(LS, ls)
+BASIC_REQUIRE_PROG(MKDIR, mkdir)
+BASIC_REQUIRE_PROG(MKTEMP, mktemp)
+BASIC_REQUIRE_PROG(MV, mv)
+BASIC_REQUIRE_PROG(PRINTF, printf)
+BASIC_REQUIRE_PROG(THEPWDCMD, pwd)
+BASIC_REQUIRE_PROG(RM, rm)
+BASIC_REQUIRE_PROG(SH, sh)
+BASIC_REQUIRE_PROG(SORT, sort)
+BASIC_REQUIRE_PROG(TAIL, tail)
+BASIC_REQUIRE_PROG(TAR, tar)
+BASIC_REQUIRE_PROG(TEE, tee)
+BASIC_REQUIRE_PROG(TOUCH, touch)
+BASIC_REQUIRE_PROG(TR, tr)
+BASIC_REQUIRE_PROG(UNAME, uname)
+BASIC_REQUIRE_PROG(UNIQ, uniq)
+BASIC_REQUIRE_PROG(WC, wc)
+BASIC_REQUIRE_PROG(WHICH, which)
+BASIC_REQUIRE_PROG(XARGS, xargs)
+
+# Then required tools that require some special treatment.
+AC_PROG_AWK
+BASIC_CHECK_NONEMPTY(AWK)
+AC_PROG_GREP
+BASIC_CHECK_NONEMPTY(GREP)
+AC_PROG_EGREP
+BASIC_CHECK_NONEMPTY(EGREP)
+AC_PROG_FGREP
+BASIC_CHECK_NONEMPTY(FGREP)
+AC_PROG_SED
+BASIC_CHECK_NONEMPTY(SED)
+
+AC_PATH_PROGS(NAWK, [nawk gawk awk])
+BASIC_CHECK_NONEMPTY(NAWK)
+
+# Always force rm.
+RM="$RM -f"
+
+# These are not required on all platforms
+AC_PATH_PROG(CYGPATH, cygpath)
+AC_PATH_PROG(READLINK, readlink)
+AC_PATH_PROG(DF, df)
+AC_PATH_PROG(SETFILE, SetFile)
 ])
 
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
@@ -159,46 +280,37 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
 # Locate the directory of this script.
 SCRIPT="[$]0"
-REMOVE_SYMBOLIC_LINKS(SCRIPT)
-AUTOCONF_DIR=`dirname [$]0`
+BASIC_REMOVE_SYMBOLIC_LINKS(SCRIPT)
+AUTOCONF_DIR=`cd \`$DIRNAME $SCRIPT\`; $THEPWDCMD`
 
 # Where is the source? It is located two levels above the configure script.
 CURDIR="$PWD"
 cd "$AUTOCONF_DIR/../.."
 SRC_ROOT="`pwd`"
-if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-    SRC_ROOT_LENGTH=`pwd|wc -m`
-    if test $SRC_ROOT_LENGTH -gt 100; then
-        AC_MSG_ERROR([Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported])
-    fi
+
+if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  PATH_SEP=";"
+  BASIC_CHECK_PATHS_WINDOWS
+else
+  PATH_SEP=":"
 fi
+
 AC_SUBST(SRC_ROOT)
+AC_SUBST(PATH_SEP)
 cd "$CURDIR"
 
-SPACESAFE(SRC_ROOT,[the path to the source root])
-SPACESAFE(CURDIR,[the path to the current directory])
+BASIC_FIXUP_PATH(SRC_ROOT)
+BASIC_FIXUP_PATH(CURDIR)
 
 if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
     # Add extra search paths on solaris for utilities like ar and as etc...
     PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
 fi
 
-# For cygwin we need cygpath first, since it is used everywhere.
-AC_PATH_PROG(CYGPATH, cygpath)
-PATH_SEP=":"
-if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-    if test "x$CYGPATH" = x; then
-        AC_MSG_ERROR([Something is wrong with your cygwin installation since I cannot find cygpath.exe in your path])
-    fi
-    PATH_SEP=";"
-fi
-AC_SUBST(PATH_SEP)
-
 # You can force the sys-root if the sys-root encoded into the cross compiler tools
 # is not correct.
 AC_ARG_WITH(sys-root, [AS_HELP_STRING([--with-sys-root],
-  [pass this sys-root to the compilers and linker (useful if the sys-root encoded in
-   the cross compiler tools is incorrect)])])
+  [pass this sys-root to the compilers and tools (for cross-compiling)])])
 
 if test "x$with_sys_root" != x; then
   SYS_ROOT=$with_sys_root
@@ -208,7 +320,7 @@ fi
 AC_SUBST(SYS_ROOT)
 
 AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
-  [search this directory for (cross-compiling) compilers and tools])], [TOOLS_DIR=$with_tools_dir])
+  [search this directory for compilers and tools (for cross-compiling)])], [TOOLS_DIR=$with_tools_dir])
 
 AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
   [use this directory as base for tools-dir and sys-root (for cross-compiling)])],
@@ -228,8 +340,9 @@ AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
 AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
 [
 
+AC_MSG_CHECKING([what configuration name to use])
 AC_ARG_WITH(conf-name, [AS_HELP_STRING([--with-conf-name],
-	[use this as the name of the configuration, overriding the generated default])],
+	[use this as the name of the configuration @<:@generated from important configuration options@:>@])],
         [ CONF_NAME=${with_conf_name} ])
 
 # Test from where we are running configure, in or outside of src root.
@@ -240,7 +353,7 @@ if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" || te
         CONF_NAME="${OPENJDK_TARGET_OS}-${OPENJDK_TARGET_CPU}-${JDK_VARIANT}-${ANDED_JVM_VARIANTS}-${DEBUG_LEVEL}"
     fi
     OUTPUT_ROOT="$SRC_ROOT/build/${CONF_NAME}"
-    mkdir -p "$OUTPUT_ROOT"
+    $MKDIR -p "$OUTPUT_ROOT"
     if test ! -d "$OUTPUT_ROOT"; then
         AC_MSG_ERROR([Could not create build directory $OUTPUT_ROOT])
     fi
@@ -254,8 +367,9 @@ else
     fi
     OUTPUT_ROOT="$CURDIR"
 fi
+AC_MSG_RESULT([$CONF_NAME])
 
-SPACESAFE(OUTPUT_ROOT,[the path to the output root])
+BASIC_FIXUP_PATH(OUTPUT_ROOT)
 
 AC_SUBST(SPEC, $OUTPUT_ROOT/spec.gmk)
 AC_SUBST(CONF_NAME, $CONF_NAME)
@@ -287,7 +401,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_LOGGING],
 # Setup default logging of stdout and stderr to build.log in the output root.
 BUILD_LOG='$(OUTPUT_ROOT)/build.log'
 BUILD_LOG_PREVIOUS='$(OUTPUT_ROOT)/build.log.old'
-BUILD_LOG_WRAPPER='$(SH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
+BUILD_LOG_WRAPPER='$(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
 AC_SUBST(BUILD_LOG)
 AC_SUBST(BUILD_LOG_PREVIOUS)
 AC_SUBST(BUILD_LOG_WRAPPER)
@@ -305,7 +419,6 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
   DESCRIPTION="$2"
   if test "x$MAKE_CANDIDATE" != x; then
     AC_MSG_NOTICE([Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION])
-    SET_FULL_PATH(MAKE_CANDIDATE)
     MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
     IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
     if test "x$IS_GNU_MAKE" = x; then
@@ -314,8 +427,27 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
       IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[[12346789]]'`
       if test "x$IS_MODERN_MAKE" = x; then
         AC_MSG_NOTICE([Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring.])
-      else 
-        FOUND_MAKE=$MAKE_CANDIDATE
+      else
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+          if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+            MAKE_EXPECTED_ENV='cygwin'
+          elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+            MAKE_EXPECTED_ENV='msys'
+          else
+            AC_MSG_ERROR([Unknown Windows environment])
+          fi
+          MAKE_BUILT_FOR=`$MAKE_CANDIDATE --version | $GREP -i 'built for'`
+          IS_MAKE_CORRECT_ENV=`$ECHO $MAKE_BUILT_FOR | $GREP $MAKE_EXPECTED_ENV`
+        else
+          # Not relevant for non-Windows
+          IS_MAKE_CORRECT_ENV=true
+        fi
+        if test "x$IS_MAKE_CORRECT_ENV" = x; then
+          AC_MSG_NOTICE([Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring.])
+        else
+          FOUND_MAKE=$MAKE_CANDIDATE
+          BASIC_FIXUP_EXECUTABLE(FOUND_MAKE)
+        fi
       fi
     fi
   fi
@@ -330,7 +462,7 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
     if test ! -f "$MAKE"; then
       AC_MSG_ERROR([The specified make (by MAKE=$MAKE) is not found.])
     fi
-    BASIC_CHECK_MAKE_VERSION("$MAKE", [user supplied MAKE=])
+    BASIC_CHECK_MAKE_VERSION("$MAKE", [user supplied MAKE=$MAKE])
     if test "x$FOUND_MAKE" = x; then
       AC_MSG_ERROR([The specified make (by MAKE=$MAKE) is not GNU make 3.81 or newer.])
     fi
@@ -375,7 +507,7 @@ AC_DEFUN([BASIC_CHECK_FIND_DELETE],
     AC_MSG_CHECKING([if find supports -delete])
     FIND_DELETE="-delete"
 
-    DELETEDIR=`mktemp -d tmp.XXXXXXXXXX` || (echo Could not create temporary directory!; exit $?)
+    DELETEDIR=`$MKTEMP -d tmp.XXXXXXXXXX` || (echo Could not create temporary directory!; exit $?)
 
     echo Hejsan > $DELETEDIR/TestIfFindSupportsDelete
 
@@ -389,102 +521,22 @@ AC_DEFUN([BASIC_CHECK_FIND_DELETE],
         AC_MSG_RESULT([yes])    
     fi
     rmdir $DELETEDIR
+    AC_SUBST(FIND_DELETE)
 ])
 
-# Test that variable $1 denoting a program is not empty. If empty, exit with an error.
-# $1: variable to check
-# $2: executable name to print in warning (optional)
-AC_DEFUN([CHECK_NONEMPTY],
+AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 [
-    if test "x[$]$1" = x; then
-        if test "x$2" = x; then
-          PROG_NAME=translit($1,A-Z,a-z)
-        else
-          PROG_NAME=$2
-        fi
-        AC_MSG_NOTICE([Could not find $PROG_NAME!])
-        AC_MSG_ERROR([Cannot continue])
-    fi
-])
-
-# Does AC_PATH_PROG followed by CHECK_NONEMPTY.
-# Arguments as AC_PATH_PROG:
-# $1: variable to set
-# $2: executable name to look for
-AC_DEFUN([BASIC_REQUIRE_PROG],
-[
-    AC_PATH_PROGS($1, $2)
-    CHECK_NONEMPTY($1, $2)
-])
-
-AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
-[
-# Start with tools that do not need have cross compilation support
-# and can be expected to be found in the default PATH. These tools are
-# used by configure. Nor are these tools expected to be found in the
-# devkit from the builddeps server either, since they are
-# needed to download the devkit.
-
-# First are all the simple required tools.
-BASIC_REQUIRE_PROG(BASENAME, basename)
-BASIC_REQUIRE_PROG(CAT, cat)
-BASIC_REQUIRE_PROG(CHMOD, chmod)
-BASIC_REQUIRE_PROG(CMP, cmp)
-BASIC_REQUIRE_PROG(CP, cp)
-BASIC_REQUIRE_PROG(CPIO, cpio)
-BASIC_REQUIRE_PROG(CUT, cut)
-BASIC_REQUIRE_PROG(DATE, date)
-BASIC_REQUIRE_PROG(DF, df)
-BASIC_REQUIRE_PROG(DIFF, [gdiff diff])
-BASIC_REQUIRE_PROG(ECHO, echo)
-BASIC_REQUIRE_PROG(EXPR, expr)
-BASIC_REQUIRE_PROG(FILE, file)
-BASIC_REQUIRE_PROG(FIND, find)
-BASIC_REQUIRE_PROG(HEAD, head)
-BASIC_REQUIRE_PROG(LN, ln)
-BASIC_REQUIRE_PROG(LS, ls)
-BASIC_REQUIRE_PROG(MKDIR, mkdir)
-BASIC_REQUIRE_PROG(MV, mv)
-BASIC_REQUIRE_PROG(PRINTF, printf)
-BASIC_REQUIRE_PROG(SH, sh)
-BASIC_REQUIRE_PROG(SORT, sort)
-BASIC_REQUIRE_PROG(TAIL, tail)
-BASIC_REQUIRE_PROG(TAR, tar)
-BASIC_REQUIRE_PROG(TEE, tee)
-BASIC_REQUIRE_PROG(TOUCH, touch)
-BASIC_REQUIRE_PROG(TR, tr)
-BASIC_REQUIRE_PROG(UNIQ, uniq)
-BASIC_REQUIRE_PROG(UNZIP, unzip)
-BASIC_REQUIRE_PROG(WC, wc)
-BASIC_REQUIRE_PROG(XARGS, xargs)
-BASIC_REQUIRE_PROG(ZIP, zip)
-
-# Then required tools that require some special treatment.
-AC_PROG_AWK
-CHECK_NONEMPTY(AWK)
-AC_PROG_GREP
-CHECK_NONEMPTY(GREP)
-AC_PROG_EGREP
-CHECK_NONEMPTY(EGREP)
-AC_PROG_FGREP
-CHECK_NONEMPTY(FGREP)
-AC_PROG_SED
-CHECK_NONEMPTY(SED)
-
-AC_PATH_PROGS(NAWK, [nawk gawk awk])
-CHECK_NONEMPTY(NAWK)
-
 BASIC_CHECK_GNU_MAKE
 
-BASIC_REQUIRE_PROG(RM, rm)
-RM="$RM -f"
-
 BASIC_CHECK_FIND_DELETE
-AC_SUBST(FIND_DELETE)
+
+# These tools might not be installed by default, 
+# need hint on how to install them.
+BASIC_REQUIRE_PROG(UNZIP, unzip)
+BASIC_REQUIRE_PROG(ZIP, zip)
 
 # Non-required basic tools
 
-AC_PATH_PROG(THEPWDCMD, pwd)
 AC_PATH_PROG(LDD, ldd)
 if test "x$LDD" = "x"; then
     # List shared lib dependencies is used for
@@ -497,52 +549,17 @@ if test "x$OTOOL" = "x"; then
    OTOOL="true"
 fi
 AC_PATH_PROGS(READELF, [readelf greadelf])
-AC_PATH_PROGS(OBJDUMP, [objdump gobjdump])
 AC_PATH_PROG(HG, hg)
-])
+AC_PATH_PROG(STAT, stat)
+AC_PATH_PROG(TIME, time)
 
-AC_DEFUN_ONCE([BASIC_COMPILE_UNCYGDRIVE],
-[
-# When using cygwin, we need a wrapper binary that renames
-# /cygdrive/c/ arguments into c:/ arguments and peeks into
-# @files and rewrites these too! This wrapper binary is
-# called uncygdrive.exe.
-UNCYGDRIVE=
-if test "x$OPENJDK_BUILD_OS" = xwindows; then
-    AC_MSG_CHECKING([if uncygdrive can be created])
-    UNCYGDRIVE_SRC=`$CYGPATH -m $SRC_ROOT/common/src/uncygdrive.c`
-    rm -f $OUTPUT_ROOT/uncygdrive*
-    UNCYGDRIVE=`$CYGPATH -m $OUTPUT_ROOT/uncygdrive.exe`
-    cd $OUTPUT_ROOT
-    $CC $UNCYGDRIVE_SRC /Fe$UNCYGDRIVE > $OUTPUT_ROOT/uncygdrive1.log 2>&1
-    cd $CURDIR
-
-    if test ! -x $OUTPUT_ROOT/uncygdrive.exe; then 
-        AC_MSG_RESULT([no])
-        cat $OUTPUT_ROOT/uncygdrive1.log
-        AC_MSG_ERROR([Could not create $OUTPUT_ROOT/uncygdrive.exe])
-    fi
-    AC_MSG_RESULT([$UNCYGDRIVE])
-    AC_MSG_CHECKING([if uncygdrive.exe works])
-    cd $OUTPUT_ROOT
-    $UNCYGDRIVE $CC $SRC_ROOT/common/src/uncygdrive.c /Fe$OUTPUT_ROOT/uncygdrive2.exe > $OUTPUT_ROOT/uncygdrive2.log 2>&1 
-    cd $CURDIR
-    if test ! -x $OUTPUT_ROOT/uncygdrive2.exe; then 
-        AC_MSG_RESULT([no])
-        cat $OUTPUT_ROOT/uncygdrive2.log
-        AC_MSG_ERROR([Uncygdrive did not work!])
-    fi
-    AC_MSG_RESULT([yes])
-    rm -f $OUTPUT_ROOT/uncygdrive?.??? $OUTPUT_ROOT/uncygdrive.obj
-    # The path to uncygdrive to use should be Unix-style
-    UNCYGDRIVE="$OUTPUT_ROOT/uncygdrive.exe"
+if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  BASIC_REQUIRE_PROG(COMM, comm)
 fi
-
-AC_SUBST(UNCYGDRIVE)
 ])
 
-
-# Check if build directory is on local disk.
+# Check if build directory is on local disk. If not possible to determine,
+# we prefer to claim it's local.
 # Argument 1: directory to test
 # Argument 2: what to do if it is on local disk
 # Argument 3: what to do otherwise (remote disk or failure)
@@ -550,11 +567,26 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
 [
 	# df -l lists only local disks; if the given directory is not found then
 	# a non-zero exit code is given
-	if $DF -l $1 > /dev/null 2>&1; then
-          $2
-        else
-          $3
-        fi
+  if test "x$DF" = x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # msys does not have df; use Windows "net use" instead.
+      IS_NETWORK_DISK=`net use | grep \`pwd -W | cut -d ":" -f 1 | tr a-z A-Z\`:`
+      if test "x$IS_NETWORK_DISK" = x; then
+        $2
+      else
+        $3
+      fi
+    else
+      # No df here, say it's local
+      $2
+    fi
+  else
+    if $DF -l $1 > /dev/null 2>&1; then
+      $2
+    else
+      $3
+    fi
+  fi
 ])
 
 AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],

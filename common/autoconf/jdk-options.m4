@@ -64,7 +64,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JVM_VARIANTS],
 #             ie normal interpreter and C1, only the serial GC, kernel jvmti etc
 #    zero: no machine code interpreter, no compiler
 #    zeroshark: zero interpreter and shark/llvm compiler backend
-AC_MSG_CHECKING([which variants of the JVM that should be built])
+AC_MSG_CHECKING([which variants of the JVM to build])
 AC_ARG_WITH([jvm-variants], [AS_HELP_STRING([--with-jvm-variants],
 	[JVM variants (separated by commas) to build (server, client, kernel, zero, zeroshark) @<:@server@:>@])])
 
@@ -241,39 +241,38 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 # Should we build only OpenJDK even if closed sources are present?
 #
 AC_ARG_ENABLE([openjdk-only], [AS_HELP_STRING([--enable-openjdk-only],
-    [build OpenJDK regardless of the presence of closed repositories @<:@disabled@:>@])],,)
+    [supress building closed source even if present @<:@disabled@:>@])],,[enable_openjdk_only="no"])
 
-if test "x$enable_openjdk_only" = "xyes"; then
-    OPENJDK=true
-elif test "x$enable_openjdk_only" = "xno"; then
-    OPENJDK=false
-elif test -d "$SRC_ROOT/jdk/src/closed"; then
-    OPENJDK=false
+AC_MSG_CHECKING([for presence of closed sources])
+if test -d "$SRC_ROOT/jdk/src/closed"; then
+    CLOSED_SOURCE_PRESENT=yes
 else
+    CLOSED_SOURCE_PRESENT=no
+fi
+AC_MSG_RESULT([$CLOSED_SOURCE_PRESENT])
+
+AC_MSG_CHECKING([if closed source is supressed (openjdk-only)])
+SUPRESS_CLOSED_SOURCE="$enable_openjdk_only"
+AC_MSG_RESULT([$SUPRESS_CLOSED_SOURCE])
+
+if test "x$CLOSED_SOURCE_PRESENT" = xno; then
+  OPENJDK=true
+  if test "x$SUPRESS_CLOSED_SOURCE" = "xyes"; then
+    AC_MSG_WARN([No closed source present, --enable-openjdk-only makes no sense])
+  fi
+else
+  if test "x$SUPRESS_CLOSED_SOURCE" = "xyes"; then
     OPENJDK=true
+  else
+    OPENJDK=false
+  fi
 fi
 
 if test "x$OPENJDK" = "xtrue"; then
-    SET_OPENJDK=OPENJDK=true
+    SET_OPENJDK="OPENJDK=true"
 fi
 
 AC_SUBST(SET_OPENJDK)
-
-###############################################################################
-#
-# JIGSAW or not.  The JIGSAW variable is used during the intermediate
-# stage when we are building both the old style JDK and the new style modularized JDK.
-# When the modularized JDK is finalized, this option will go away.
-#
-AC_ARG_ENABLE([jigsaw], [AS_HELP_STRING([--enable-jigsaw],
-    [build Jigsaw images (not yet available) @<:@disabled@:>@])],,)
-
-if test "x$enable_jigsaw" = "xyes"; then
-    JIGSAW=true
-else
-    JIGSAW=false
-fi
-AC_SUBST(JIGSAW)
 
 ###############################################################################
 #
@@ -282,7 +281,7 @@ AC_SUBST(JIGSAW)
 #
 AC_MSG_CHECKING([headful support])
 AC_ARG_ENABLE([headful], [AS_HELP_STRING([--disable-headful],
-	[build headful support (graphical UI support) @<:@enabled@:>@])],
+	[disable building headful support (graphical UI support) @<:@enabled@:>@])],
     [SUPPORT_HEADFUL=${enable_headful}], [SUPPORT_HEADFUL=yes])
 
 SUPPORT_HEADLESS=yes
@@ -305,25 +304,9 @@ AC_SUBST(SUPPORT_HEADLESS)
 AC_SUBST(SUPPORT_HEADFUL)
 AC_SUBST(BUILD_HEADLESS)
 
-###############################################################################
-#
-# Should we compile nimbus swing L&F? We can probably remove this option
-# since nimbus is officially part of javax now.
-#
-AC_MSG_CHECKING([whether to build nimbus L&F])
-AC_ARG_ENABLE([nimbus], [AS_HELP_STRING([--disable-nimbus],
-	[disable Nimbus L&F @<:@enabled@:>@])],
-	[ENABLE_NIMBUS="${enableval}"], [ENABLE_NIMBUS='yes'])
-AC_MSG_RESULT([$ENABLE_NIMBUS])
-DISABLE_NIMBUS=
-if test "x$ENABLE_NIMBUS" = xno; then
-    DISABLE_NIMBUS=true
-fi
-AC_SUBST(DISABLE_NIMBUS)
-
 # Control wether Hotspot runs Queens test after build.
 AC_ARG_ENABLE([hotspot-test-in-build], [AS_HELP_STRING([--enable-hotspot-test-in-build],
-	[enable running of Queens test after Hotspot build (not yet available) @<:@disabled@:>@])],,
+	[run the Queens test after Hotspot build @<:@disabled@:>@])],,
     [enable_hotspot_test_in_build=no])
 if test "x$enable_hotspot_test_in_build" = "xyes"; then
     TEST_IN_BUILD=true
@@ -356,38 +339,6 @@ AC_SUBST(CACERTS_FILE)
 COMPRESS_JARS=false
 
 AC_SUBST(COMPRESS_JARS)
-
-###############################################################################
-#
-# Should we compile JFR
-#   default no, except for on closed-jdk
-#
-ENABLE_JFR=no
-
-# Is the JFR source present
-
-#
-# For closed default is yes
-#
-if test "x${OPENJDK}" != "xtrue"; then
-   ENABLE_JFR=yes
-fi
-
-AC_MSG_CHECKING([whether to build jfr])
-AC_ARG_ENABLE([jfr], [AS_HELP_STRING([--enable-jfr],
-	[enable jfr (default is no)])]
-	[ENABLE_JFR="${enableval}"])
-AC_MSG_RESULT([${ENABLE_JFR}])
-
-if test "x$ENABLE_JFR" = "xyes"; then
-    ENABLE_JFR=true
-elif test "x$ENABLE_JFR" = "xno"; then
-    ENABLE_JFR=false
-else
-   AC_MSG_ERROR([Invalid argument to --enable-jfr])
-fi
-
-AC_SUBST(ENABLE_JFR)
 ])
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VERSION_NUMBERS],
@@ -409,6 +360,8 @@ AC_SUBST(PRODUCT_NAME)
 AC_SUBST(PRODUCT_SUFFIX)
 AC_SUBST(JDK_RC_PLATFORM_NAME)
 AC_SUBST(COMPANY_NAME)
+AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
+AC_SUBST(MACOSX_BUNDLE_ID_BASE)
 
 COPYRIGHT_YEAR=`date +'%Y'`
 AC_SUBST(COPYRIGHT_YEAR)
@@ -437,7 +390,7 @@ else
     BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
     # Avoid [:alnum:] since it depends on the locale.
     CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyz0123456789'`
-    USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvqxyz'`
+    USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
     FULL_VERSION="${RELEASE}-${USER_RELEASE_SUFFIX}-${JDK_BUILD_NUMBER}"
 fi
 AC_SUBST(FULL_VERSION)
@@ -473,7 +426,7 @@ if test "x$OPENJDK_TARGET_OS" = xmacosx; then
 fi
 
 AC_ARG_ENABLE([debug-symbols],
-              [AS_HELP_STRING([--disable-debug-symbols],[disable generation of debug symbols (@<:@enabled@:>@)])],
+              [AS_HELP_STRING([--disable-debug-symbols],[disable generation of debug symbols @<:@enabled@:>@])],
               [ENABLE_DEBUG_SYMBOLS=${enable_debug_symbols}],
 )
 
@@ -487,7 +440,7 @@ fi
 
 if test "x$ENABLE_DEBUG_SYMBOLS" = "xdefault"; then
   # Default is on if objcopy is found, otherwise off
-  if test "x$OBJCOPY" != x; then
+  if test "x$OBJCOPY" != x || test "x$OPENJDK_TARGET_OS" = xwindows; then
      ENABLE_DEBUG_SYMBOLS=yes
   else
      ENABLE_DEBUG_SYMBOLS=no
@@ -502,7 +455,7 @@ AC_MSG_RESULT([$ENABLE_DEBUG_SYMBOLS])
 ZIP_DEBUGINFO_FILES=yes
 
 AC_ARG_ENABLE([zip-debug-info],
-              [AS_HELP_STRING([--disable-zip-debug-info],[don't zip debug-info files (@<:@enabled@:@)])],
+              [AS_HELP_STRING([--disable-zip-debug-info],[disable zipping of debug-info files @<:@enabled@:>@])],
               [ZIP_DEBUGINFO_FILES=${enable_zip_debug_info}],
 )
 
@@ -528,5 +481,5 @@ AC_SUBST(CXXFLAGS_DEBUG_SYMBOLS)
 # for a degree of customization of the build targets and the rules/recipes
 # to create them
 AC_ARG_WITH([custom-make-dir], [AS_HELP_STRING([--with-custom-make-dir],
-    [directory containing custom build/make files])], [CUSTOM_MAKE_DIR=$with_custom_make_dir])
+    [use this directory for custom build/make files])], [CUSTOM_MAKE_DIR=$with_custom_make_dir])
 AC_SUBST(CUSTOM_MAKE_DIR)
