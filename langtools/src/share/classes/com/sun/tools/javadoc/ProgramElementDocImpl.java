@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,26 @@
 
 package com.sun.tools.javadoc;
 
-import com.sun.javadoc.*;
-
-import com.sun.tools.javac.code.Attribute;
-import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symbol.ClassSymbol;
-
-import com.sun.tools.javac.tree.JCTree;
-
-import com.sun.tools.javac.util.Position;
-
 import java.lang.reflect.Modifier;
 import java.text.CollationKey;
+
+import com.sun.javadoc.*;
+import com.sun.tools.javac.code.Attribute;
+import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.util.Position;
 
 /**
  * Represents a java program element: class, interface, field,
  * constructor, or method.
  * This is an abstract class dealing with information common to
  * these elements.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @see MemberDocImpl
  * @see ClassDocImpl

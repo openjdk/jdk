@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package com.sun.tools.javac.code;
 
-import static com.sun.tools.javac.code.TargetType.TargetAttribute.*;
-
 import java.util.EnumSet;
 import java.util.Set;
+
+import static com.sun.tools.javac.code.TargetType.TargetAttribute.*;
 
 /**
  * Describes the type of program element an extended annotation (or extended

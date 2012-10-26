@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,18 @@
 
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
+import java.util.*;
+
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import java.util.*;
 
 /**
  * A taglet that represents the @param tag.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Jamie Ho
  * @since 1.4
@@ -182,7 +184,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      * Given an array of <code>ParamTag</code>s,return its string representation.
      * Try to inherit the param tags that are missing.
      *
-     * @param doc               the doc that holds the param tags.
+     * @param holder            the doc that holds the param tags.
      * @param writer            the TagletWriter that will write this tag.
      * @param formalParameters  The array of parmeters (from type or executable
      *                          member) to check.
@@ -255,7 +257,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      *        been documented.
      * @param rankMap a {@link java.util.Map} which holds ordering
      *                    information about the parameters.
-     * @param nameMap a {@link java.util.Map} which holds a mapping
+     * @param rankMap a {@link java.util.Map} which holds a mapping
      *                of a rank of a parameter to its name.  This is
      *                used to ensure that the right name is used
      *                when parameter documentation is inherited.

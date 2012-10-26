@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.javadoc.*;
 import java.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Process and manage grouping of packages, as specified by "-group" option on
@@ -48,9 +49,10 @@ import java.util.*;
  * will put the package java.lang in the group "Lang" and not in group "Core".
  * </p>
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  */

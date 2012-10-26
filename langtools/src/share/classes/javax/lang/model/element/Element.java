@@ -32,7 +32,6 @@ import java.lang.annotation.IncompleteAnnotationException;
 import java.util.List;
 import java.util.Set;
 
-import javax.lang.model.element.Modifier;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 

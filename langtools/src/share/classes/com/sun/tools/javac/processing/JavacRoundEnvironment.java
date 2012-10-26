@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
      * Only type elements <i>included</i> in this round of annotation
      * processing, or declarations of members, parameters, or type
      * parameters declared within those, are returned.  Included type
-     * elements are {@linkplain #getSpecifiedTypeElements specified
+     * elements are {@linkplain #getRootElements specified
      * types} and any types nested within them.
      *
      * @param a  annotation type being requested

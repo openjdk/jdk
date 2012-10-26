@@ -28,12 +28,10 @@ package com.sun.tools.javac.util;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.nio.CharBuffer;
-import java.util.Map;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.EndPosTable;
-import com.sun.tools.javac.tree.JCTree;
 
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 

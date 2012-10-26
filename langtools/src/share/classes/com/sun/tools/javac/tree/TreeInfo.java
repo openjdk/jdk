@@ -790,8 +790,8 @@ public class TreeInfo {
      *  pre: flags != 0
      */
     public static long firstFlag(long flags) {
-        int flag = 1;
-        while ((flag & StandardFlags) != 0 && (flag & flags) == 0)
+        long flag = 1;
+        while ((flag & flags & ExtendedStandardFlags) == 0)
             flag = flag << 1;
         return flag;
     }
@@ -799,7 +799,7 @@ public class TreeInfo {
     /** Return flags as a string, separated by " ".
      */
     public static String flagNames(long flags) {
-        return Flags.toString(flags & StandardFlags).trim();
+        return Flags.toString(flags & ExtendedStandardFlags).trim();
     }
 
     /** Operator precedences values.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,11 @@ import com.sun.javadoc.*;
 /**
  * Represents an @param documentation tag.
  * Parses and stores the name and comment parts of the parameter tag.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Robert Field
  *
@@ -101,8 +106,8 @@ class ParamTagImpl extends TagImpl implements ParamTag {
      * TagImpls consisting of SeeTagImpl(s) and text containing TagImpl(s).
      *
      * @return TagImpl[] Array of tags with inline SeeTagImpls.
-     * @see TagImpl#inlineTagImpls()
-     * @see ThrowsTagImpl#inlineTagImpls()
+     * @see TagImpl#inlineTags()
+     * @see ThrowsTagImpl#inlineTags()
      */
     @Override
     public Tag[] inlineTags() {
