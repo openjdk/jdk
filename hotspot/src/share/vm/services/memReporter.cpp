@@ -51,6 +51,7 @@ void BaselineReporter::report_baseline(const MemBaseline& baseline, bool summary
 
   report_summaries(baseline);
   if (!summary_only && MemTracker::track_callsite()) {
+    report_virtual_memory_map(baseline);
     report_callsites(baseline);
   }
   _outputer.done();
@@ -72,6 +73,25 @@ void BaselineReporter::report_summaries(const MemBaseline& baseline) {
   }
 
   _outputer.done_category_summary();
+}
+
+void BaselineReporter::report_virtual_memory_map(const MemBaseline& baseline) {
+  _outputer.start_virtual_memory_map();
+  MemBaseline* pBL = const_cast<MemBaseline*>(&baseline);
+  MemPointerArrayIteratorImpl itr = MemPointerArrayIteratorImpl(pBL->_vm_map);
+  VMMemRegionEx* rgn = (VMMemRegionEx*)itr.current();
+  while (rgn != NULL) {
+    if (rgn->is_reserved_region()) {
+      _outputer.reserved_memory_region(FLAGS_TO_MEMORY_TYPE(rgn->flags()),
+        rgn->base(), rgn->base() + rgn->size(), amount_in_current_scale(rgn->size()), rgn->pc());
+    } else {
+      _outputer.committed_memory_region(rgn->base(), rgn->base() + rgn->size(),
+        amount_in_current_scale(rgn->size()), rgn->pc());
+    }
+    rgn = (VMMemRegionEx*)itr.next();
+  }
+
+  _outputer.done_virtual_memory_map();
 }
 
 void BaselineReporter::report_callsites(const MemBaseline& baseline) {
@@ -324,6 +344,40 @@ void BaselineTTYOutputer::done_category_summary() {
   _output->print_cr(" ");
 }
 
+
+void BaselineTTYOutputer::start_virtual_memory_map() {
+  _output->print_cr("Virtual memory map:");
+}
+
+void BaselineTTYOutputer::reserved_memory_region(MEMFLAGS type, address base, address end,
+                                                 size_t size, address pc) {
+  const char* unit = memory_unit(_scale);
+  char buf[128];
+  int  offset;
+  _output->print_cr(" ");
+  _output->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] reserved %d%s for %s", base, end, size, unit,
+            MemBaseline::type2name(type));
+  if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
+      _output->print_cr("\t\tfrom [%s+0x%x]", buf, offset);
+  }
+}
+
+void BaselineTTYOutputer::committed_memory_region(address base, address end, size_t size, address pc) {
+  const char* unit = memory_unit(_scale);
+  char buf[128];
+  int  offset;
+  _output->print("\t[" PTR_FORMAT " - " PTR_FORMAT "] committed %d%s", base, end, size, unit);
+  if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
+      _output->print_cr(" from [%s+0x%x]", buf, offset);
+  }
+}
+
+void BaselineTTYOutputer::done_virtual_memory_map() {
+  _output->print_cr(" ");
+}
+
+
+
 void BaselineTTYOutputer::start_callsite() {
   _output->print_cr("Details:");
   _output->print_cr(" ");
@@ -337,7 +391,7 @@ void BaselineTTYOutputer::malloc_callsite(address pc, size_t malloc_amt,
   size_t malloc_count) {
   if (malloc_amt > 0) {
     const char* unit = memory_unit(_scale);
-    char buf[64];
+    char buf[128];
     int  offset;
     if (pc == 0) {
       _output->print("[BOOTSTRAP]%18s", " ");
@@ -357,7 +411,7 @@ void BaselineTTYOutputer::virtual_memory_callsite(address pc, size_t reserved_am
   size_t committed_amt) {
   if (reserved_amt > 0) {
     const char* unit = memory_unit(_scale);
-    char buf[64];
+    char buf[128];
     int  offset;
     if (pc == 0) {
       _output->print("[BOOTSTRAP]%18s", " ");
@@ -502,7 +556,7 @@ void BaselineTTYOutputer::diff_malloc_callsite(address pc,
     int malloc_diff, int malloc_count_diff) {
   if (malloc_diff != 0) {
     const char* unit = memory_unit(_scale);
-    char buf[64];
+    char buf[128];
     int  offset;
     if (pc == 0) {
       _output->print_cr("[BOOTSTRAP]%18s", " ");
