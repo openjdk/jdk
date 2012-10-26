@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.memory.CompactingPermGenGen;
 
 // Oop represents the superclass for all types of
 // objects in the HotSpot object heap.
@@ -47,8 +46,8 @@ public class Oop {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type  = db.lookupType("oopDesc");
     mark       = new CIntField(type.getCIntegerField("_mark"), 0);
-    klass      = new OopField(type.getOopField("_metadata._klass"), 0);
-    compressedKlass  = new NarrowOopField(type.getOopField("_metadata._compressed_klass"), 0);
+    klass      = new MetadataField(type.getAddressField("_metadata._klass"), 0);
+    compressedKlass  = new NarrowKlassField(type.getAddressField("_metadata._compressed_klass"), 0);
     headerSize = type.getSize();
   }
 
@@ -71,28 +70,16 @@ public class Oop {
   public  static long getHeaderSize() { return headerSize; } // Header size in bytes.
 
   private static CIntField mark;
-  private static OopField  klass;
-  private static NarrowOopField compressedKlass;
-
-  public boolean isShared() {
-    return CompactingPermGenGen.isShared(handle);
-  }
-
-  public boolean isSharedReadOnly() {
-    return CompactingPermGenGen.isSharedReadOnly(handle);
-  }
-
-  public boolean isSharedReadWrite() {
-    return CompactingPermGenGen.isSharedReadWrite(handle);
-  }
+  private static MetadataField  klass;
+  private static NarrowKlassField compressedKlass;
 
   // Accessors for declared fields
   public Mark  getMark()   { return new Mark(getHandle()); }
   public Klass getKlass() {
-    if (VM.getVM().isCompressedOopsEnabled()) {
-      return (Klass) compressedKlass.getValue(this);
+    if (VM.getVM().isCompressedKlassPointersEnabled()) {
+      return (Klass)compressedKlass.getValue(getHandle());
     } else {
-      return (Klass) klass.getValue(this);
+      return (Klass)klass.getValue(getHandle());
     }
   }
 
@@ -113,14 +100,7 @@ public class Oop {
   public boolean isArray()             { return false; }
   public boolean isObjArray()          { return false; }
   public boolean isTypeArray()         { return false; }
-  public boolean isSymbol()            { return false; }
-  public boolean isKlass()             { return false; }
   public boolean isThread()            { return false; }
-  public boolean isMethod()            { return false; }
-  public boolean isMethodData()        { return false; }
-  public boolean isConstantPool()      { return false; }
-  public boolean isConstantPoolCache() { return false; }
-  public boolean isCompiledICHolder()  { return false; }
 
   // Align the object size.
   public static long alignObjectSize(long size) {
@@ -167,10 +147,10 @@ public class Oop {
   void iterateFields(OopVisitor visitor, boolean doVMFields) {
     if (doVMFields) {
       visitor.doCInt(mark, true);
-      if (VM.getVM().isCompressedOopsEnabled()) {
-        visitor.doOop(compressedKlass, true);
+      if (VM.getVM().isCompressedKlassPointersEnabled()) {
+        throw new InternalError("unimplemented");
       } else {
-        visitor.doOop(klass, true);
+        visitor.doMetadata(klass, true);
       }
     }
   }
@@ -223,14 +203,14 @@ public class Oop {
   public boolean verify() { return true;}
 
   // Package-private routine to speed up ObjectHeap.newOop
-  static OopHandle getKlassForOopHandle(OopHandle handle) {
+  static Klass getKlassForOopHandle(OopHandle handle) {
     if (handle == null) {
       return null;
     }
-    if (VM.getVM().isCompressedOopsEnabled()) {
-      return handle.getCompOopHandleAt(compressedKlass.getOffset());
+    if (VM.getVM().isCompressedKlassPointersEnabled()) {
+      return (Klass)Metadata.instantiateWrapperFor(handle.getCompKlassAddressAt(compressedKlass.getOffset()));
     } else {
-      return handle.getOopHandleAt(klass.getOffset());
+      return (Klass)Metadata.instantiateWrapperFor(handle.getAddressAt(klass.getOffset()));
     }
   }
 };

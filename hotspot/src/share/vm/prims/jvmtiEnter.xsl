@@ -37,6 +37,8 @@
   <xsl:call-template name="sourceHeader"/>
   <xsl:text>
 # include "precompiled.hpp"
+# include "utilities/macros.hpp"
+#if INCLUDE_JVMTI
 # include "prims/jvmtiEnter.hpp"
 # include "prims/jvmtiRawMonitor.hpp"
 # include "prims/jvmtiUtil.hpp"
@@ -247,6 +249,7 @@ struct jvmtiInterface_1_ jvmti</xsl:text>
 
   <xsl:text>
 };
+#endif // INCLUDE_JVMTI
 </xsl:text>
 </xsl:template>
 
@@ -469,7 +472,7 @@ static jvmtiError JNICALL
 </xsl:text>
 
   <xsl:if test="not(contains(@jkernel,'yes'))">
-  <xsl:text>&#xA;#ifdef JVMTI_KERNEL &#xA;</xsl:text>
+  <xsl:text>&#xA;#if !INCLUDE_JVMTI &#xA;</xsl:text>
   <xsl:text>  return JVMTI_ERROR_NOT_AVAILABLE; &#xA;</xsl:text>
   <xsl:text>#else &#xA;</xsl:text>
   </xsl:if>
@@ -596,7 +599,7 @@ static jvmtiError JNICALL
 </xsl:text>
 
   <xsl:if test="not(contains(@jkernel,'yes'))">
-  <xsl:text>#endif // JVMTI_KERNEL&#xA;</xsl:text>
+  <xsl:text>#endif // INCLUDE_JVMTI&#xA;</xsl:text>
   </xsl:if>
 
   <xsl:text>}&#xA;</xsl:text>
@@ -880,12 +883,12 @@ static jvmtiError JNICALL
     </xsl:apply-templates>
     <xsl:text>
   }
-  klassOop k_oop = java_lang_Class::as_klassOop(k_mirror);
+  Klass* k_oop = java_lang_Class::as_Klass(k_mirror);
   if (k_oop == NULL) {
 </xsl:text>
     <xsl:apply-templates select=".." mode="traceError">     
       <xsl:with-param name="err">JVMTI_ERROR_INVALID_CLASS</xsl:with-param>
-      <xsl:with-param name="comment"> - no klassOop - jclass = 0x%x</xsl:with-param>
+      <xsl:with-param name="comment"> - no Klass* - jclass = 0x%x</xsl:with-param>
       <xsl:with-param name="extraValue">, <xsl:value-of select="$name"/></xsl:with-param>
     </xsl:apply-templates>
     <xsl:text>
@@ -898,7 +901,7 @@ static jvmtiError JNICALL
 
 <xsl:template match="jmethodID" mode="dochecks">
   <xsl:param name="name"/>
-  <xsl:text>  methodOop method_oop = JNIHandles::checked_resolve_jmethod_id(</xsl:text>
+  <xsl:text>  Method* method_oop = Method::checked_resolve_jmethod_id(</xsl:text>
   <xsl:value-of select="$name"/>
   <xsl:text>);&#xA;</xsl:text>
   <xsl:text>  if (method_oop == NULL) {&#xA;</xsl:text>

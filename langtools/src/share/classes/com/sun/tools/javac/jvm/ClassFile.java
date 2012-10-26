@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import com.sun.tools.javac.util.Name;
  *     classSignature         ::= [ typeparams ] supertype { interfacetype }
  *  </pre>
  *  <p>The type syntax in signatures is extended as follows:
- *  <pre>
+ *  <pre>{@literal
  *     type       ::= ... | classtype | methodtype | typevar
  *     classtype  ::= classsig { '.' classsig }
  *     classig    ::= 'L' name [typeargs] ';'
@@ -54,7 +54,7 @@ import com.sun.tools.javac.util.Name;
  *     typeargs   ::= '<' type { type } '>'
  *     typeparams ::= '<' typeparam { typeparam } '>'
  *     typeparam  ::= name ':' type
- *  </pre>
+ *  }</pre>
  *  <p>This class defines constants used in class files as well
  *  as routines to convert between internal ``.'' and external ``/''
  *  separators in class names.
@@ -83,6 +83,16 @@ public class ClassFile {
     public final static int CONSTANT_MethodHandle = 15;
     public final static int CONSTANT_MethodType = 16;
     public final static int CONSTANT_InvokeDynamic = 18;
+
+    public final static int REF_getField = 1;
+    public final static int REF_getStatic = 2;
+    public final static int REF_putField = 3;
+    public final static int REF_putStatic = 4;
+    public final static int REF_invokeVirtual = 5;
+    public final static int REF_invokeStatic = 6;
+    public final static int REF_invokeSpecial = 7;
+    public final static int REF_newInvokeSpecial = 8;
+    public final static int REF_invokeInterface = 9;
 
     public final static int MAX_PARAMETERS = 0xff;
     public final static int MAX_DIMENSIONS = 0xff;

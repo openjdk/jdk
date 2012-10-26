@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,19 @@ import java.util.*;
 import java.io.File;
 
 public class Util {
-    static String join(String padder, Vector v) {
+
+    static String join(String padder, Vector<String> v) {
         return join(padder, v, false);
     }
 
-    static String join(String padder, Vector v, boolean quoted) {
+    static String join(String padder, Vector<String> v, boolean quoted) {
         StringBuffer sb = new StringBuffer();
 
-        for (Iterator iter = v.iterator(); iter.hasNext(); ) {
+        for (Iterator<String> iter = v.iterator(); iter.hasNext(); ) {
             if (quoted) {
                 sb.append('"');
             }
-            sb.append((String)iter.next());
+            sb.append(iter.next());
             if (quoted) {
                 sb.append('"');
             }
@@ -48,10 +49,10 @@ public class Util {
     }
 
 
-    static String prefixed_join(String padder, Vector v, boolean quoted) {
+    static String prefixed_join(String padder, Vector<String> v, boolean quoted) {
         StringBuffer sb = new StringBuffer();
 
-        for (Iterator iter = v.iterator(); iter.hasNext(); ) {
+        for (Iterator<String> iter = v.iterator(); iter.hasNext(); ) {
             sb.append(padder);
 
             if (quoted) {

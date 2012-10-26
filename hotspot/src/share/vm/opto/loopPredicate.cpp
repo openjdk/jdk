@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
     assert(rgn->is_Call(), "must be call uct");
     CallNode* call = rgn->as_Call();
     IdealLoopTree* loop = get_loop(call);
-    rgn = new (C, 1) RegionNode(1);
+    rgn = new (C) RegionNode(1);
     rgn->add_req(uncommon_proj);
     register_control(rgn, loop, uncommon_proj);
     _igvn.hash_delete(call);
@@ -185,8 +185,8 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
   IfNode *new_iff = iff->clone()->as_If();
   new_iff->set_req(0, entry);
   register_control(new_iff, lp, entry);
-  Node *if_cont = new (C, 1) IfTrueNode(new_iff);
-  Node *if_uct  = new (C, 1) IfFalseNode(new_iff);
+  Node *if_cont = new (C) IfTrueNode(new_iff);
+  Node *if_uct  = new (C) IfFalseNode(new_iff);
   if (cont_proj->is_IfFalse()) {
     // Swap
     Node* tmp = if_uct; if_uct = if_cont; if_cont = tmp;
@@ -246,7 +246,7 @@ ProjNode* PhaseIterGVN::create_new_if_for_predicate(ProjNode* cont_proj, Node* n
   if (!rgn->is_Region()) { // create a region to guard the call
     assert(rgn->is_Call(), "must be call uct");
     CallNode* call = rgn->as_Call();
-    rgn = new (C, 1) RegionNode(1);
+    rgn = new (C) RegionNode(1);
     register_new_node_with_optimizer(rgn);
     rgn->add_req(uncommon_proj);
     hash_delete(call);
@@ -263,8 +263,8 @@ ProjNode* PhaseIterGVN::create_new_if_for_predicate(ProjNode* cont_proj, Node* n
   new_iff->set_req(0, new_entry);
 
   register_new_node_with_optimizer(new_iff);
-  Node *if_cont = new (C, 1) IfTrueNode(new_iff);
-  Node *if_uct  = new (C, 1) IfFalseNode(new_iff);
+  Node *if_cont = new (C) IfTrueNode(new_iff);
+  Node *if_uct  = new (C) IfFalseNode(new_iff);
   if (cont_proj->is_IfFalse()) {
     // Swap
     Node* tmp = if_uct; if_uct = if_cont; if_cont = tmp;
@@ -309,10 +309,10 @@ ProjNode* PhaseIdealLoop::clone_predicate(ProjNode* predicate_proj, Node* new_en
 
   // Match original condition since predicate's projections could be swapped.
   assert(predicate_proj->in(0)->in(1)->in(1)->Opcode()==Op_Opaque1, "must be");
-  Node* opq = new (igvn->C, 2) Opaque1Node(igvn->C, predicate_proj->in(0)->in(1)->in(1)->in(1));
+  Node* opq = new (igvn->C) Opaque1Node(igvn->C, predicate_proj->in(0)->in(1)->in(1)->in(1));
   igvn->C->add_predicate_opaq(opq);
 
-  Node* bol = new (igvn->C, 2) Conv2BNode(opq);
+  Node* bol = new (igvn->C) Conv2BNode(opq);
   if (loop_phase != NULL) {
     loop_phase->register_new_node(opq, ctrl);
     loop_phase->register_new_node(bol, ctrl);
@@ -660,11 +660,11 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
       // Calculate exact limit here.
       // Note, counted loop's test is '<' or '>'.
       limit = exact_limit(loop);
-      max_idx_expr = new (C, 3) SubINode(limit, stride);
+      max_idx_expr = new (C) SubINode(limit, stride);
       register_new_node(max_idx_expr, ctrl);
       if (TraceLoopPredicate) predString->print("(limit - stride) ");
     } else {
-      max_idx_expr = new (C, 3) SubINode(limit, stride);
+      max_idx_expr = new (C) SubINode(limit, stride);
       register_new_node(max_idx_expr, ctrl);
       if (TraceLoopPredicate) predString->print("(limit - stride) ");
     }
@@ -674,22 +674,22 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
 
   if (scale != 1) {
     ConNode* con_scale = _igvn.intcon(scale);
-    max_idx_expr = new (C, 3) MulINode(max_idx_expr, con_scale);
+    max_idx_expr = new (C) MulINode(max_idx_expr, con_scale);
     register_new_node(max_idx_expr, ctrl);
     if (TraceLoopPredicate) predString->print("* %d ", scale);
   }
 
   if (offset && (!offset->is_Con() || offset->get_int() != 0)){
-    max_idx_expr = new (C, 3) AddINode(max_idx_expr, offset);
+    max_idx_expr = new (C) AddINode(max_idx_expr, offset);
     register_new_node(max_idx_expr, ctrl);
     if (TraceLoopPredicate)
       if (offset->is_Con()) predString->print("+ %d ", offset->get_int());
       else predString->print("+ offset ");
   }
 
-  CmpUNode* cmp = new (C, 3) CmpUNode(max_idx_expr, range);
+  CmpUNode* cmp = new (C) CmpUNode(max_idx_expr, range);
   register_new_node(cmp, ctrl);
-  BoolNode* bol = new (C, 2) BoolNode(cmp, BoolTest::lt);
+  BoolNode* bol = new (C) BoolNode(cmp, BoolTest::lt);
   register_new_node(bol, ctrl);
 
   if (TraceLoopPredicate) {
@@ -805,7 +805,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       // Negate test if necessary
       bool negated = false;
       if (proj->_con != predicate_proj->_con) {
-        new_predicate_bol = new (C, 2) BoolNode(new_predicate_bol->in(1), new_predicate_bol->_test.negate());
+        new_predicate_bol = new (C) BoolNode(new_predicate_bol->in(1), new_predicate_bol->_test.negate());
         register_new_node(new_predicate_bol, ctrl);
         negated = true;
       }

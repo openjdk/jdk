@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,9 +249,9 @@ Handle ThreadService::dump_stack_traces(GrowableArray<instanceHandle>* threads,
   // Allocate the resulting StackTraceElement[][] object
 
   ResourceMark rm(THREAD);
-  klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_StackTraceElement_array(), true, CHECK_NH);
-  objArrayKlassHandle ik (THREAD, k);
-  objArrayOop r = oopFactory::new_objArray(ik(), num_threads, CHECK_NH);
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_StackTraceElement_array(), true, CHECK_NH);
+  ObjArrayKlass* ik = ObjArrayKlass::cast(k);
+  objArrayOop r = oopFactory::new_objArray(ik, num_threads, CHECK_NH);
   objArrayHandle result_obj(THREAD, r);
 
   int num_snapshots = dump_result.num_snapshots();
@@ -384,7 +384,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(bool concurrent_locks)
 ThreadDumpResult::ThreadDumpResult() : _num_threads(0), _num_snapshots(0), _snapshots(NULL), _next(NULL), _last(NULL) {
 
   // Create a new ThreadDumpResult object and append to the list.
-  // If GC happens before this function returns, methodOop
+  // If GC happens before this function returns, Method*
   // in the stack trace will be visited.
   ThreadService::add_thread_dump(this);
 }
@@ -448,7 +448,6 @@ StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
 }
 
 void StackFrameInfo::oops_do(OopClosure* f) {
-  f->do_oop((oop*) &_method);
   if (_locked_monitors != NULL) {
     int length = _locked_monitors->length();
     for (int i = 0; i < length; i++) {
@@ -463,7 +462,7 @@ void StackFrameInfo::print_on(outputStream* st) const {
   int len = (_locked_monitors != NULL ? _locked_monitors->length() : 0);
   for (int i = 0; i < len; i++) {
     oop o = _locked_monitors->at(i);
-    instanceKlass* ik = instanceKlass::cast(o->klass());
+    InstanceKlass* ik = InstanceKlass::cast(o->klass());
     st->print_cr("\t- locked <" INTPTR_FORMAT "> (a %s)", (address)o, ik->external_name());
   }
 
@@ -564,7 +563,7 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
 }
 
 Handle ThreadStackTrace::allocate_fill_stack_trace_element_array(TRAPS) {
-  klassOop k = SystemDictionary::StackTraceElement_klass();
+  Klass* k = SystemDictionary::StackTraceElement_klass();
   assert(k != NULL, "must be loaded in 1.4+");
   instanceKlassHandle ik(THREAD, k);
 
@@ -681,7 +680,7 @@ void ConcurrentLocksDump::print_locks_on(JavaThread* t, outputStream* st) {
 
   for (int i = 0; i < locks->length(); i++) {
     instanceOop obj = locks->at(i);
-    instanceKlass* ik = instanceKlass::cast(obj->klass());
+    InstanceKlass* ik = InstanceKlass::cast(obj->klass());
     st->print_cr("\t- <" INTPTR_FORMAT "> (a %s)", (address)obj, ik->external_name());
   }
   st->cr();
@@ -832,7 +831,7 @@ void DeadlockCycle::print_on(outputStream* st) const {
       oop obj = (oop)waitingToLockMonitor->object();
       if (obj != NULL) {
         st->print(" (object "INTPTR_FORMAT ", a %s)", (address)obj,
-                   (instanceKlass::cast(obj->klass()))->external_name());
+                   (InstanceKlass::cast(obj->klass()))->external_name());
 
         if (!currentThread->current_pending_monitor_is_from_java()) {
           owner_desc = "\n  in JNI, which is held by";
@@ -846,7 +845,7 @@ void DeadlockCycle::print_on(outputStream* st) const {
     } else {
       st->print("  waiting for ownable synchronizer " INTPTR_FORMAT ", (a %s)",
                 (address)waitingToLockBlocker,
-                (instanceKlass::cast(waitingToLockBlocker->klass()))->external_name());
+                (InstanceKlass::cast(waitingToLockBlocker->klass()))->external_name());
       assert(waitingToLockBlocker->is_a(SystemDictionary::abstract_ownable_synchronizer_klass()),
              "Must be an AbstractOwnableSynchronizer");
       oop ownerObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(waitingToLockBlocker);

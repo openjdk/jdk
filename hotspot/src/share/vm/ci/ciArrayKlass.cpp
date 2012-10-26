@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@
 
 // ciArrayKlass
 //
-// This class represents a klassOop in the HotSpot virtual machine
-// whose Klass part in an arrayKlass.
+// This class represents a Klass* in the HotSpot virtual machine
+// whose Klass part in an ArrayKlass.
 
 // ------------------------------------------------------------------
 // ciArrayKlass::ciArrayKlass
@@ -39,15 +39,15 @@
 // Loaded array klass.
 ciArrayKlass::ciArrayKlass(KlassHandle h_k) : ciKlass(h_k) {
   assert(get_Klass()->oop_is_array(), "wrong type");
-  _dimension = get_arrayKlass()->dimension();
+  _dimension = get_ArrayKlass()->dimension();
 }
 
 // ------------------------------------------------------------------
 // ciArrayKlass::ciArrayKlass
 //
 // Unloaded array klass.
-ciArrayKlass::ciArrayKlass(ciSymbol* name, int dimension, ciKlass* klass)
-  : ciKlass(name, klass) {
+ciArrayKlass::ciArrayKlass(ciSymbol* name, int dimension, BasicType bt)
+  : ciKlass(name, bt) {
   _dimension = dimension;
 }
 

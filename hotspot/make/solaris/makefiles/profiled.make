@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ CFLAGS += -pg
 # with -pg the profile flag is split out separately and used in rules.make
 
 PROF_AOUT_FLAGS += -pg
-
-SYSDEFS += $(REORDER_FLAG)
 
 # To do a profiled build of the product, such as for generating the
 # reordering file, set PROFILE_PRODUCT.  Otherwise the reordering file will

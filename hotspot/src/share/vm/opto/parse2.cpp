@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,9 +127,9 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
       Node* len = load_array_length(ary);
 
       // Test length vs index (standard trick using unsigned compare)
-      Node* chk = _gvn.transform( new (C, 3) CmpUNode(idx, len) );
+      Node* chk = _gvn.transform( new (C) CmpUNode(idx, len) );
       BoolTest::mask btest = BoolTest::lt;
-      tst = _gvn.transform( new (C, 2) BoolNode(chk, btest) );
+      tst = _gvn.transform( new (C) BoolNode(chk, btest) );
     }
     // Branch to failure if out of bounds
     { BuildCutout unless(this, tst, PROB_MAX);
@@ -165,15 +165,15 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
 
 // returns IfNode
 IfNode* Parse::jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask) {
-  Node   *cmp = _gvn.transform( new (C, 3) CmpINode( a, b)); // two cases: shiftcount > 32 and shiftcount <= 32
-  Node   *tst = _gvn.transform( new (C, 2) BoolNode( cmp, mask));
+  Node   *cmp = _gvn.transform( new (C) CmpINode( a, b)); // two cases: shiftcount > 32 and shiftcount <= 32
+  Node   *tst = _gvn.transform( new (C) BoolNode( cmp, mask));
   IfNode *iff = create_and_map_if( control(), tst, ((mask == BoolTest::eq) ? PROB_STATIC_INFREQUENT : PROB_FAIR), COUNT_UNKNOWN );
   return iff;
 }
 
 // return Region node
 Node* Parse::jump_if_join(Node* iffalse, Node* iftrue) {
-  Node *region  = new (C, 3) RegionNode(3); // 2 results
+  Node *region  = new (C) RegionNode(3); // 2 results
   record_for_igvn(region);
   region->init_req(1, iffalse);
   region->init_req(2, iftrue );
@@ -188,28 +188,28 @@ Node* Parse::jump_if_join(Node* iffalse, Node* iftrue) {
 void Parse::jump_if_true_fork(IfNode *iff, int dest_bci_if_true, int prof_table_index) {
   // True branch, use existing map info
   { PreserveJVMState pjvms(this);
-    Node *iftrue  = _gvn.transform( new (C, 1) IfTrueNode (iff) );
+    Node *iftrue  = _gvn.transform( new (C) IfTrueNode (iff) );
     set_control( iftrue );
     profile_switch_case(prof_table_index);
     merge_new_path(dest_bci_if_true);
   }
 
   // False branch
-  Node *iffalse = _gvn.transform( new (C, 1) IfFalseNode(iff) );
+  Node *iffalse = _gvn.transform( new (C) IfFalseNode(iff) );
   set_control( iffalse );
 }
 
 void Parse::jump_if_false_fork(IfNode *iff, int dest_bci_if_true, int prof_table_index) {
   // True branch, use existing map info
   { PreserveJVMState pjvms(this);
-    Node *iffalse  = _gvn.transform( new (C, 1) IfFalseNode (iff) );
+    Node *iffalse  = _gvn.transform( new (C) IfFalseNode (iff) );
     set_control( iffalse );
     profile_switch_case(prof_table_index);
     merge_new_path(dest_bci_if_true);
   }
 
   // False branch
-  Node *iftrue = _gvn.transform( new (C, 1) IfTrueNode(iff) );
+  Node *iftrue = _gvn.transform( new (C) IfTrueNode(iff) );
   set_control( iftrue );
 }
 
@@ -437,14 +437,14 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
 
   // Normalize table lookups to zero
   int lowval = lo->lo();
-  key_val = _gvn.transform( new (C, 3) SubINode(key_val, _gvn.intcon(lowval)) );
+  key_val = _gvn.transform( new (C) SubINode(key_val, _gvn.intcon(lowval)) );
 
   // Generate a guard to protect against input keyvals that aren't
   // in the switch domain.
   if (needs_guard) {
     Node*   size = _gvn.intcon(num_cases);
-    Node*   cmp = _gvn.transform( new (C, 3) CmpUNode(key_val, size) );
-    Node*   tst = _gvn.transform( new (C, 2) BoolNode(cmp, BoolTest::ge) );
+    Node*   cmp = _gvn.transform( new (C) CmpUNode(key_val, size) );
+    Node*   tst = _gvn.transform( new (C) BoolNode(cmp, BoolTest::ge) );
     IfNode* iff = create_and_map_if( control(), tst, PROB_FAIR, COUNT_UNKNOWN);
     jump_if_true_fork(iff, default_dest, NullTableIndex);
   }
@@ -457,21 +457,21 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   // Clean the 32-bit int into a real 64-bit offset.
   // Otherwise, the jint value 0 might turn into an offset of 0x0800000000.
   const TypeLong* lkeytype = TypeLong::make(CONST64(0), num_cases-1, Type::WidenMin);
-  key_val       = _gvn.transform( new (C, 2) ConvI2LNode(key_val, lkeytype) );
+  key_val       = _gvn.transform( new (C) ConvI2LNode(key_val, lkeytype) );
 #endif
   // Shift the value by wordsize so we have an index into the table, rather
   // than a switch value
   Node *shiftWord = _gvn.MakeConX(wordSize);
-  key_val = _gvn.transform( new (C, 3) MulXNode( key_val, shiftWord));
+  key_val = _gvn.transform( new (C) MulXNode( key_val, shiftWord));
 
   // Create the JumpNode
-  Node* jtn = _gvn.transform( new (C, 2) JumpNode(control(), key_val, num_cases) );
+  Node* jtn = _gvn.transform( new (C) JumpNode(control(), key_val, num_cases) );
 
   // These are the switch destinations hanging off the jumpnode
   int i = 0;
   for (SwitchRange* r = lo; r <= hi; r++) {
     for (int j = r->lo(); j <= r->hi(); j++, i++) {
-      Node* input = _gvn.transform(new (C, 1) JumpProjNode(jtn, i, r->dest(), j - lowval));
+      Node* input = _gvn.transform(new (C) JumpProjNode(jtn, i, r->dest(), j - lowval));
       {
         PreserveJVMState pjvms(this);
         set_control(input);
@@ -572,8 +572,8 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
         // two comparisons of same values--should enable 1 test for 2 branches
         // Use BoolTest::le instead of BoolTest::gt
         IfNode *iff_le  = jump_if_fork_int(key_val, test_val, BoolTest::le);
-        Node   *iftrue  = _gvn.transform( new (C, 1) IfTrueNode(iff_le) );
-        Node   *iffalse = _gvn.transform( new (C, 1) IfFalseNode(iff_le) );
+        Node   *iftrue  = _gvn.transform( new (C) IfTrueNode(iff_le) );
+        Node   *iffalse = _gvn.transform( new (C) IfFalseNode(iff_le) );
         { PreserveJVMState pjvms(this);
           set_control(iffalse);
           jump_switch_ranges(key_val, mid+1, hi, switch_depth+1);
@@ -589,8 +589,8 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
       if (mid == hi) {
         jump_if_true_fork(iff_ge, mid->dest(), mid->table_index());
       } else {
-        Node *iftrue  = _gvn.transform( new (C, 1) IfTrueNode(iff_ge) );
-        Node *iffalse = _gvn.transform( new (C, 1) IfFalseNode(iff_ge) );
+        Node *iftrue  = _gvn.transform( new (C) IfTrueNode(iff_ge) );
+        Node *iffalse = _gvn.transform( new (C) IfFalseNode(iff_ge) );
         { PreserveJVMState pjvms(this);
           set_control(iftrue);
           jump_switch_ranges(key_val, mid, hi, switch_depth+1);
@@ -645,7 +645,7 @@ void Parse::modf() {
                               CAST_FROM_FN_PTR(address, SharedRuntime::frem),
                               "frem", NULL, //no memory effects
                               f1, f2);
-  Node* res = _gvn.transform(new (C, 1) ProjNode(c, TypeFunc::Parms + 0));
+  Node* res = _gvn.transform(new (C) ProjNode(c, TypeFunc::Parms + 0));
 
   push(res);
 }
@@ -657,10 +657,10 @@ void Parse::modd() {
                               CAST_FROM_FN_PTR(address, SharedRuntime::drem),
                               "drem", NULL, //no memory effects
                               d1, top(), d2, top());
-  Node* res_d   = _gvn.transform(new (C, 1) ProjNode(c, TypeFunc::Parms + 0));
+  Node* res_d   = _gvn.transform(new (C) ProjNode(c, TypeFunc::Parms + 0));
 
 #ifdef ASSERT
-  Node* res_top = _gvn.transform(new (C, 1) ProjNode(c, TypeFunc::Parms + 1));
+  Node* res_top = _gvn.transform(new (C) ProjNode(c, TypeFunc::Parms + 1));
   assert(res_top == top(), "second value must be top");
 #endif
 
@@ -674,7 +674,7 @@ void Parse::l2f() {
                               CAST_FROM_FN_PTR(address, SharedRuntime::l2f),
                               "l2f", NULL, //no memory effects
                               f1, f2);
-  Node* res = _gvn.transform(new (C, 1) ProjNode(c, TypeFunc::Parms + 0));
+  Node* res = _gvn.transform(new (C) ProjNode(c, TypeFunc::Parms + 0));
 
   push(res);
 }
@@ -701,17 +701,17 @@ void Parse::do_irem() {
         // Sigh, must handle negative dividends
         Node *zero = _gvn.intcon(0);
         IfNode *ifff = jump_if_fork_int(a, zero, BoolTest::lt);
-        Node *iff = _gvn.transform( new (C, 1) IfFalseNode(ifff) );
-        Node *ift = _gvn.transform( new (C, 1) IfTrueNode (ifff) );
+        Node *iff = _gvn.transform( new (C) IfFalseNode(ifff) );
+        Node *ift = _gvn.transform( new (C) IfTrueNode (ifff) );
         Node *reg = jump_if_join(ift, iff);
         Node *phi = PhiNode::make(reg, NULL, TypeInt::INT);
         // Negative path; negate/and/negate
-        Node *neg = _gvn.transform( new (C, 3) SubINode(zero, a) );
-        Node *andn= _gvn.transform( new (C, 3) AndINode(neg, mask) );
-        Node *negn= _gvn.transform( new (C, 3) SubINode(zero, andn) );
+        Node *neg = _gvn.transform( new (C) SubINode(zero, a) );
+        Node *andn= _gvn.transform( new (C) AndINode(neg, mask) );
+        Node *negn= _gvn.transform( new (C) SubINode(zero, andn) );
         phi->init_req(1, negn);
         // Fast positive case
-        Node *andx = _gvn.transform( new (C, 3) AndINode(a, mask) );
+        Node *andx = _gvn.transform( new (C) AndINode(a, mask) );
         phi->init_req(2, andx);
         // Push the merge
         push( _gvn.transform(phi) );
@@ -720,7 +720,7 @@ void Parse::do_irem() {
     }
   }
   // Default case
-  push( _gvn.transform( new (C, 3) ModINode(control(),a,b) ) );
+  push( _gvn.transform( new (C) ModINode(control(),a,b) ) );
 }
 
 // Handle jsr and jsr_w bytecode
@@ -997,7 +997,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   explicit_null_checks_inserted++;
 
   // Generate real control flow
-  Node   *tst = _gvn.transform( new (C, 2) BoolNode( c, btest ) );
+  Node   *tst = _gvn.transform( new (C) BoolNode( c, btest ) );
 
   // Sanity check the probability value
   assert(prob > 0.0f,"Bad probability in Parser");
@@ -1006,7 +1006,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   assert(iff->_prob > 0.0f,"Optimizer made bad probability in parser");
   // True branch
   { PreserveJVMState pjvms(this);
-    Node* iftrue  = _gvn.transform( new (C, 1) IfTrueNode (iff) );
+    Node* iftrue  = _gvn.transform( new (C) IfTrueNode (iff) );
     set_control(iftrue);
 
     if (stopped()) {            // Path is dead?
@@ -1026,7 +1026,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   }
 
   // False branch
-  Node* iffalse = _gvn.transform( new (C, 1) IfFalseNode(iff) );
+  Node* iffalse = _gvn.transform( new (C) IfFalseNode(iff) );
   set_control(iffalse);
 
   if (stopped()) {              // Path is dead?
@@ -1089,7 +1089,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   }
   assert(btest != BoolTest::eq, "!= is the only canonical exact test");
 
-  Node* tst0 = new (C, 2) BoolNode(c, btest);
+  Node* tst0 = new (C) BoolNode(c, btest);
   Node* tst = _gvn.transform(tst0);
   BoolTest::mask taken_btest   = BoolTest::illegal;
   BoolTest::mask untaken_btest = BoolTest::illegal;
@@ -1120,8 +1120,8 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   float true_prob = (taken_if_true ? prob : untaken_prob);
   IfNode* iff = create_and_map_if(control(), tst, true_prob, cnt);
   assert(iff->_prob > 0.0f,"Optimizer made bad probability in parser");
-  Node* taken_branch   = new (C, 1) IfTrueNode(iff);
-  Node* untaken_branch = new (C, 1) IfFalseNode(iff);
+  Node* taken_branch   = new (C) IfTrueNode(iff);
+  Node* untaken_branch = new (C) IfFalseNode(iff);
   if (!taken_if_true) {  // Finish conversion to canonical form
     Node* tmp      = taken_branch;
     taken_branch   = untaken_branch;
@@ -1239,7 +1239,7 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
 
 static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   Node* ldk;
-  if (n->is_DecodeN()) {
+  if (n->is_DecodeNKlass()) {
     if (n->in(1)->Opcode() != Op_LoadNKlass) {
       return NULL;
     } else {
@@ -1285,7 +1285,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
           JVMState* jvms = this->jvms();
           if (obj_in_map >= 0 &&
               (jvms->is_loc(obj_in_map) || jvms->is_stk(obj_in_map))) {
-            TypeNode* ccast = new (C, 2) CheckCastPPNode(control(), obj, tboth);
+            TypeNode* ccast = new (C) CheckCastPPNode(control(), obj, tboth);
             const Type* tcc = ccast->as_Type()->type();
             assert(tcc != obj_type && tcc->higher_equal(obj_type), "must improve");
             // Delay transform() call to allow recovery of pre-cast value
@@ -1320,10 +1320,10 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
       const Type* tboth = tcon->join(tval);
       if (tboth == tval)  break;        // Nothing to gain.
       if (tcon->isa_int()) {
-        ccast = new (C, 2) CastIINode(val, tboth);
+        ccast = new (C) CastIINode(val, tboth);
       } else if (tcon == TypePtr::NULL_PTR) {
         // Cast to null, but keep the pointer identity temporarily live.
-        ccast = new (C, 2) CastPPNode(val, tboth);
+        ccast = new (C) CastPPNode(val, tboth);
       } else {
         const TypeF* tf = tcon->isa_float_constant();
         const TypeD* td = tcon->isa_double_constant();
@@ -1447,7 +1447,7 @@ void Parse::do_one_bytecode() {
                       NULL, tag.internal_name());
         break;
       }
-      assert(constant.basic_type() != T_OBJECT || !constant.as_object()->is_klass(),
+      assert(constant.basic_type() != T_OBJECT || constant.as_object()->is_instance(),
              "must be java_mirror of klass");
       bool pushed = push_constant(constant, true);
       guarantee(pushed, "must be possible to push this constant");
@@ -1738,59 +1738,59 @@ void Parse::do_one_bytecode() {
     if (stopped())  return;
     b = pop();
     a = pop();
-    push( _gvn.transform( new (C, 3) DivINode(control(),a,b) ) );
+    push( _gvn.transform( new (C) DivINode(control(),a,b) ) );
     break;
   case Bytecodes::_imul:
     b = pop(); a = pop();
-    push( _gvn.transform( new (C, 3) MulINode(a,b) ) );
+    push( _gvn.transform( new (C) MulINode(a,b) ) );
     break;
   case Bytecodes::_iadd:
     b = pop(); a = pop();
-    push( _gvn.transform( new (C, 3) AddINode(a,b) ) );
+    push( _gvn.transform( new (C) AddINode(a,b) ) );
     break;
   case Bytecodes::_ineg:
     a = pop();
-    push( _gvn.transform( new (C, 3) SubINode(_gvn.intcon(0),a)) );
+    push( _gvn.transform( new (C) SubINode(_gvn.intcon(0),a)) );
     break;
   case Bytecodes::_isub:
     b = pop(); a = pop();
-    push( _gvn.transform( new (C, 3) SubINode(a,b) ) );
+    push( _gvn.transform( new (C) SubINode(a,b) ) );
     break;
   case Bytecodes::_iand:
     b = pop(); a = pop();
-    push( _gvn.transform( new (C, 3) AndINode(a,b) ) );
+    push( _gvn.transform( new (C) AndINode(a,b) ) );
     break;
   case Bytecodes::_ior:
     b = pop(); a = pop();
-    push( _gvn.transform( new (C, 3) OrINode(a,b) ) );
+    push( _gvn.transform( new (C) OrINode(a,b) ) );
     break;
   case Bytecodes::_ixor:
     b = pop(); a = pop();
-    push( _gvn.transform( new (C, 3) XorINode(a,b) ) );
+    push( _gvn.transform( new (C) XorINode(a,b) ) );
     break;
   case Bytecodes::_ishl:
     b = pop(); a = pop();
-    push( _gvn.transform( new (C, 3) LShiftINode(a,b) ) );
+    push( _gvn.transform( new (C) LShiftINode(a,b) ) );
     break;
   case Bytecodes::_ishr:
     b = pop(); a = pop();
-    push( _gvn.transform( new (C, 3) RShiftINode(a,b) ) );
+    push( _gvn.transform( new (C) RShiftINode(a,b) ) );
     break;
   case Bytecodes::_iushr:
     b = pop(); a = pop();
-    push( _gvn.transform( new (C, 3) URShiftINode(a,b) ) );
+    push( _gvn.transform( new (C) URShiftINode(a,b) ) );
     break;
 
   case Bytecodes::_fneg:
     a = pop();
-    b = _gvn.transform(new (C, 2) NegFNode (a));
+    b = _gvn.transform(new (C) NegFNode (a));
     push(b);
     break;
 
   case Bytecodes::_fsub:
     b = pop();
     a = pop();
-    c = _gvn.transform( new (C, 3) SubFNode(a,b) );
+    c = _gvn.transform( new (C) SubFNode(a,b) );
     d = precision_rounding(c);
     push( d );
     break;
@@ -1798,7 +1798,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_fadd:
     b = pop();
     a = pop();
-    c = _gvn.transform( new (C, 3) AddFNode(a,b) );
+    c = _gvn.transform( new (C) AddFNode(a,b) );
     d = precision_rounding(c);
     push( d );
     break;
@@ -1806,7 +1806,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_fmul:
     b = pop();
     a = pop();
-    c = _gvn.transform( new (C, 3) MulFNode(a,b) );
+    c = _gvn.transform( new (C) MulFNode(a,b) );
     d = precision_rounding(c);
     push( d );
     break;
@@ -1814,7 +1814,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_fdiv:
     b = pop();
     a = pop();
-    c = _gvn.transform( new (C, 3) DivFNode(0,a,b) );
+    c = _gvn.transform( new (C) DivFNode(0,a,b) );
     d = precision_rounding(c);
     push( d );
     break;
@@ -1824,7 +1824,7 @@ void Parse::do_one_bytecode() {
       // Generate a ModF node.
       b = pop();
       a = pop();
-      c = _gvn.transform( new (C, 3) ModFNode(0,a,b) );
+      c = _gvn.transform( new (C) ModFNode(0,a,b) );
       d = precision_rounding(c);
       push( d );
     }
@@ -1837,7 +1837,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_fcmpl:
     b = pop();
     a = pop();
-    c = _gvn.transform( new (C, 3) CmpF3Node( a, b));
+    c = _gvn.transform( new (C) CmpF3Node( a, b));
     push(c);
     break;
   case Bytecodes::_fcmpg:
@@ -1849,40 +1849,40 @@ void Parse::do_one_bytecode() {
     // as well by using CmpF3 which implements unordered-lesser instead of
     // unordered-greater semantics.  Finally, commute the result bits.  Result
     // is same as using a CmpF3Greater except we did it with CmpF3 alone.
-    c = _gvn.transform( new (C, 3) CmpF3Node( b, a));
-    c = _gvn.transform( new (C, 3) SubINode(_gvn.intcon(0),c) );
+    c = _gvn.transform( new (C) CmpF3Node( b, a));
+    c = _gvn.transform( new (C) SubINode(_gvn.intcon(0),c) );
     push(c);
     break;
 
   case Bytecodes::_f2i:
     a = pop();
-    push(_gvn.transform(new (C, 2) ConvF2INode(a)));
+    push(_gvn.transform(new (C) ConvF2INode(a)));
     break;
 
   case Bytecodes::_d2i:
     a = pop_pair();
-    b = _gvn.transform(new (C, 2) ConvD2INode(a));
+    b = _gvn.transform(new (C) ConvD2INode(a));
     push( b );
     break;
 
   case Bytecodes::_f2d:
     a = pop();
-    b = _gvn.transform( new (C, 2) ConvF2DNode(a));
+    b = _gvn.transform( new (C) ConvF2DNode(a));
     push_pair( b );
     break;
 
   case Bytecodes::_d2f:
     a = pop_pair();
-    b = _gvn.transform( new (C, 2) ConvD2FNode(a));
+    b = _gvn.transform( new (C) ConvD2FNode(a));
     // This breaks _227_mtrt (speed & correctness) and _222_mpegaudio (speed)
-    //b = _gvn.transform(new (C, 2) RoundFloatNode(0, b) );
+    //b = _gvn.transform(new (C) RoundFloatNode(0, b) );
     push( b );
     break;
 
   case Bytecodes::_l2f:
     if (Matcher::convL2FSupported()) {
       a = pop_pair();
-      b = _gvn.transform( new (C, 2) ConvL2FNode(a));
+      b = _gvn.transform( new (C) ConvL2FNode(a));
       // For i486.ad, FILD doesn't restrict precision to 24 or 53 bits.
       // Rather than storing the result into an FP register then pushing
       // out to memory to round, the machine instruction that implements
@@ -1897,7 +1897,7 @@ void Parse::do_one_bytecode() {
 
   case Bytecodes::_l2d:
     a = pop_pair();
-    b = _gvn.transform( new (C, 2) ConvL2DNode(a));
+    b = _gvn.transform( new (C) ConvL2DNode(a));
     // For i486.ad, rounding is always necessary (see _l2f above).
     // c = dprecision_rounding(b);
     c = _gvn.transform(b);
@@ -1906,20 +1906,20 @@ void Parse::do_one_bytecode() {
 
   case Bytecodes::_f2l:
     a = pop();
-    b = _gvn.transform( new (C, 2) ConvF2LNode(a));
+    b = _gvn.transform( new (C) ConvF2LNode(a));
     push_pair(b);
     break;
 
   case Bytecodes::_d2l:
     a = pop_pair();
-    b = _gvn.transform( new (C, 2) ConvD2LNode(a));
+    b = _gvn.transform( new (C) ConvD2LNode(a));
     push_pair(b);
     break;
 
   case Bytecodes::_dsub:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) SubDNode(a,b) );
+    c = _gvn.transform( new (C) SubDNode(a,b) );
     d = dprecision_rounding(c);
     push_pair( d );
     break;
@@ -1927,7 +1927,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_dadd:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) AddDNode(a,b) );
+    c = _gvn.transform( new (C) AddDNode(a,b) );
     d = dprecision_rounding(c);
     push_pair( d );
     break;
@@ -1935,7 +1935,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_dmul:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) MulDNode(a,b) );
+    c = _gvn.transform( new (C) MulDNode(a,b) );
     d = dprecision_rounding(c);
     push_pair( d );
     break;
@@ -1943,14 +1943,14 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_ddiv:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) DivDNode(0,a,b) );
+    c = _gvn.transform( new (C) DivDNode(0,a,b) );
     d = dprecision_rounding(c);
     push_pair( d );
     break;
 
   case Bytecodes::_dneg:
     a = pop_pair();
-    b = _gvn.transform(new (C, 2) NegDNode (a));
+    b = _gvn.transform(new (C) NegDNode (a));
     push_pair(b);
     break;
 
@@ -1961,7 +1961,7 @@ void Parse::do_one_bytecode() {
       a = pop_pair();
       // a % b
 
-      c = _gvn.transform( new (C, 3) ModDNode(0,a,b) );
+      c = _gvn.transform( new (C) ModDNode(0,a,b) );
       d = dprecision_rounding(c);
       push_pair( d );
     }
@@ -1974,7 +1974,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_dcmpl:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) CmpD3Node( a, b));
+    c = _gvn.transform( new (C) CmpD3Node( a, b));
     push(c);
     break;
 
@@ -1987,8 +1987,8 @@ void Parse::do_one_bytecode() {
     // unordered-lesser instead of unordered-greater semantics.
     // Finally, negate the result bits.  Result is same as using a
     // CmpD3Greater except we did it with CmpD3 alone.
-    c = _gvn.transform( new (C, 3) CmpD3Node( b, a));
-    c = _gvn.transform( new (C, 3) SubINode(_gvn.intcon(0),c) );
+    c = _gvn.transform( new (C) CmpD3Node( b, a));
+    c = _gvn.transform( new (C) SubINode(_gvn.intcon(0),c) );
     push(c);
     break;
 
@@ -1997,44 +1997,44 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_land:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) AndLNode(a,b) );
+    c = _gvn.transform( new (C) AndLNode(a,b) );
     push_pair(c);
     break;
   case Bytecodes::_lor:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) OrLNode(a,b) );
+    c = _gvn.transform( new (C) OrLNode(a,b) );
     push_pair(c);
     break;
   case Bytecodes::_lxor:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) XorLNode(a,b) );
+    c = _gvn.transform( new (C) XorLNode(a,b) );
     push_pair(c);
     break;
 
   case Bytecodes::_lshl:
     b = pop();                  // the shift count
     a = pop_pair();             // value to be shifted
-    c = _gvn.transform( new (C, 3) LShiftLNode(a,b) );
+    c = _gvn.transform( new (C) LShiftLNode(a,b) );
     push_pair(c);
     break;
   case Bytecodes::_lshr:
     b = pop();                  // the shift count
     a = pop_pair();             // value to be shifted
-    c = _gvn.transform( new (C, 3) RShiftLNode(a,b) );
+    c = _gvn.transform( new (C) RShiftLNode(a,b) );
     push_pair(c);
     break;
   case Bytecodes::_lushr:
     b = pop();                  // the shift count
     a = pop_pair();             // value to be shifted
-    c = _gvn.transform( new (C, 3) URShiftLNode(a,b) );
+    c = _gvn.transform( new (C) URShiftLNode(a,b) );
     push_pair(c);
     break;
   case Bytecodes::_lmul:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) MulLNode(a,b) );
+    c = _gvn.transform( new (C) MulLNode(a,b) );
     push_pair(c);
     break;
 
@@ -2046,7 +2046,7 @@ void Parse::do_one_bytecode() {
     if (stopped())  return;
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) ModLNode(control(),a,b) );
+    c = _gvn.transform( new (C) ModLNode(control(),a,b) );
     push_pair(c);
     break;
 
@@ -2058,20 +2058,20 @@ void Parse::do_one_bytecode() {
     if (stopped())  return;
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) DivLNode(control(),a,b) );
+    c = _gvn.transform( new (C) DivLNode(control(),a,b) );
     push_pair(c);
     break;
 
   case Bytecodes::_ladd:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) AddLNode(a,b) );
+    c = _gvn.transform( new (C) AddLNode(a,b) );
     push_pair(c);
     break;
   case Bytecodes::_lsub:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) SubLNode(a,b) );
+    c = _gvn.transform( new (C) SubLNode(a,b) );
     push_pair(c);
     break;
   case Bytecodes::_lcmp:
@@ -2102,58 +2102,58 @@ void Parse::do_one_bytecode() {
     }
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new (C, 3) CmpL3Node( a, b ));
+    c = _gvn.transform( new (C) CmpL3Node( a, b ));
     push(c);
     break;
 
   case Bytecodes::_lneg:
     a = pop_pair();
-    b = _gvn.transform( new (C, 3) SubLNode(longcon(0),a));
+    b = _gvn.transform( new (C) SubLNode(longcon(0),a));
     push_pair(b);
     break;
   case Bytecodes::_l2i:
     a = pop_pair();
-    push( _gvn.transform( new (C, 2) ConvL2INode(a)));
+    push( _gvn.transform( new (C) ConvL2INode(a)));
     break;
   case Bytecodes::_i2l:
     a = pop();
-    b = _gvn.transform( new (C, 2) ConvI2LNode(a));
+    b = _gvn.transform( new (C) ConvI2LNode(a));
     push_pair(b);
     break;
   case Bytecodes::_i2b:
     // Sign extend
     a = pop();
-    a = _gvn.transform( new (C, 3) LShiftINode(a,_gvn.intcon(24)) );
-    a = _gvn.transform( new (C, 3) RShiftINode(a,_gvn.intcon(24)) );
+    a = _gvn.transform( new (C) LShiftINode(a,_gvn.intcon(24)) );
+    a = _gvn.transform( new (C) RShiftINode(a,_gvn.intcon(24)) );
     push( a );
     break;
   case Bytecodes::_i2s:
     a = pop();
-    a = _gvn.transform( new (C, 3) LShiftINode(a,_gvn.intcon(16)) );
-    a = _gvn.transform( new (C, 3) RShiftINode(a,_gvn.intcon(16)) );
+    a = _gvn.transform( new (C) LShiftINode(a,_gvn.intcon(16)) );
+    a = _gvn.transform( new (C) RShiftINode(a,_gvn.intcon(16)) );
     push( a );
     break;
   case Bytecodes::_i2c:
     a = pop();
-    push( _gvn.transform( new (C, 3) AndINode(a,_gvn.intcon(0xFFFF)) ) );
+    push( _gvn.transform( new (C) AndINode(a,_gvn.intcon(0xFFFF)) ) );
     break;
 
   case Bytecodes::_i2f:
     a = pop();
-    b = _gvn.transform( new (C, 2) ConvI2FNode(a) ) ;
+    b = _gvn.transform( new (C) ConvI2FNode(a) ) ;
     c = precision_rounding(b);
     push (b);
     break;
 
   case Bytecodes::_i2d:
     a = pop();
-    b = _gvn.transform( new (C, 2) ConvI2DNode(a));
+    b = _gvn.transform( new (C) ConvI2DNode(a));
     push_pair(b);
     break;
 
   case Bytecodes::_iinc:        // Increment local
     i = iter().get_index();     // Get local index
-    set_local( i, _gvn.transform( new (C, 3) AddINode( _gvn.intcon(iter().get_iinc_con()), local(i) ) ) );
+    set_local( i, _gvn.transform( new (C) AddINode( _gvn.intcon(iter().get_iinc_con()), local(i) ) ) );
     break;
 
   // Exit points of synchronized methods must have an unlock node
@@ -2225,7 +2225,7 @@ void Parse::do_one_bytecode() {
     maybe_add_safepoint(iter().get_dest());
     a = null();
     b = pop();
-    c = _gvn.transform( new (C, 3) CmpPNode(b, a) );
+    c = _gvn.transform( new (C) CmpPNode(b, a) );
     do_ifnull(btest, c);
     break;
 
@@ -2236,7 +2236,7 @@ void Parse::do_one_bytecode() {
     maybe_add_safepoint(iter().get_dest());
     a = pop();
     b = pop();
-    c = _gvn.transform( new (C, 3) CmpPNode(b, a) );
+    c = _gvn.transform( new (C) CmpPNode(b, a) );
     do_if(btest, c);
     break;
 
@@ -2251,7 +2251,7 @@ void Parse::do_one_bytecode() {
     maybe_add_safepoint(iter().get_dest());
     a = _gvn.intcon(0);
     b = pop();
-    c = _gvn.transform( new (C, 3) CmpINode(b, a) );
+    c = _gvn.transform( new (C) CmpINode(b, a) );
     do_if(btest, c);
     break;
 
@@ -2266,7 +2266,7 @@ void Parse::do_one_bytecode() {
     maybe_add_safepoint(iter().get_dest());
     a = pop();
     b = pop();
-    c = _gvn.transform( new (C, 3) CmpINode( b, a ) );
+    c = _gvn.transform( new (C) CmpINode( b, a ) );
     do_if(btest, c);
     break;
 

@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.cant.apply.symbol.1
+// key: compiler.err.cant.apply.symbol
 // key: compiler.misc.inconvertible.types
 // key: compiler.misc.infer.no.conforming.assignment.exists
 

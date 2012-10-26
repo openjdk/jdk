@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ class typeArrayOopDesc : public arrayOopDesc {
   jfloat*   float_base()  const { return (jfloat*)  base(T_FLOAT); }
   jdouble*  double_base() const { return (jdouble*) base(T_DOUBLE); }
 
-  friend class typeArrayKlass;
+  friend class TypeArrayKlass;
 
  public:
   jbyte* byte_at_addr(int which) const {
@@ -151,6 +151,23 @@ class typeArrayOopDesc : public arrayOopDesc {
   jbyte byte_at_acquire(int which) const              { return OrderAccess::load_acquire(byte_at_addr(which)); }
   void release_byte_at_put(int which, jbyte contents) { OrderAccess::release_store(byte_at_addr(which), contents); }
 
+  // Java thinks metadata arrays are just arrays of either long or int, since
+  // there doesn't seem to be T_ADDRESS, so this is a bit of unfortunate
+  // casting
+#ifdef _LP64
+  Metadata* metadata_at(int which) const {
+    return (Metadata*)*long_at_addr(which); }
+  void metadata_at_put(int which, Metadata* contents) {
+    *long_at_addr(which) = (long)contents;
+  }
+#else
+  Metadata* metadata_at(int which) const {
+    return (Metadata*)*int_at_addr(which); }
+  void metadata_at_put(int which, Metadata* contents) {
+    *int_at_addr(which) = (int)contents;
+  }
+#endif // _LP64
+
   // Sizing
 
   // Returns the number of words necessary to hold an array of "len"
@@ -173,7 +190,7 @@ class typeArrayOopDesc : public arrayOopDesc {
 
  public:
   int object_size() {
-    typeArrayKlass* tk = typeArrayKlass::cast(klass());
+    TypeArrayKlass* tk = TypeArrayKlass::cast(klass());
     return object_size(tk->layout_helper(), length());
   }
 };

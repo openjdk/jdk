@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 #include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "compiler/disassembler.hpp"
+#include "memory/gcLocker.hpp"
+#include "oops/methodData.hpp"
+#include "oops/oop.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/xmlstream.hpp"
 
@@ -142,7 +145,7 @@ CodeBuffer::~CodeBuffer() {
 
 void CodeBuffer::initialize_oop_recorder(OopRecorder* r) {
   assert(_oop_recorder == &_default_oop_recorder && _default_oop_recorder.is_unused(), "do this once");
-  DEBUG_ONLY(_default_oop_recorder.oop_size());  // force unused OR to be frozen
+  DEBUG_ONLY(_default_oop_recorder.freeze());  // force unused OR to be frozen
   _oop_recorder = r;
 }
 
@@ -488,6 +491,87 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   assert(buf_offset == total_content_size(), "sanity");
   dest->verify_section_allocation();
 }
+
+void CodeBuffer::finalize_oop_references(methodHandle mh) {
+  No_Safepoint_Verifier nsv;
+
+  GrowableArray<oop> oops;
+
+  // Make sure that immediate metadata records something in the OopRecorder
+  for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
+    // pull code out of each section
+    CodeSection* cs = code_section(n);
+    if (cs->is_empty())  continue;  // skip trivial section
+    RelocIterator iter(cs);
+    while (iter.next()) {
+      if (iter.type() == relocInfo::metadata_type) {
+        metadata_Relocation* md = iter.metadata_reloc();
+        if (md->metadata_is_immediate()) {
+          Metadata* m = md->metadata_value();
+          if (oop_recorder()->is_real(m)) {
+            oop o = NULL;
+            if (m->is_methodData()) {
+              m = ((MethodData*)m)->method();
+            }
+            if (m->is_method()) {
+              m = ((Method*)m)->method_holder();
+            }
+            if (m->is_klass()) {
+              o = ((Klass*)m)->class_loader();
+            } else {
+              // XXX This will currently occur for MDO which don't
+              // have a backpointer.  This has to be fixed later.
+              m->print();
+              ShouldNotReachHere();
+            }
+            if (o != NULL && oops.find(o) == -1) {
+              oops.append(o);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (!oop_recorder()->is_unused()) {
+    for (int i = 0; i < oop_recorder()->metadata_count(); i++) {
+      Metadata* m = oop_recorder()->metadata_at(i);
+      if (oop_recorder()->is_real(m)) {
+        oop o = NULL;
+        if (m->is_methodData()) {
+          m = ((MethodData*)m)->method();
+        }
+        if (m->is_method()) {
+          m = ((Method*)m)->method_holder();
+        }
+        if (m->is_klass()) {
+          o = ((Klass*)m)->class_loader();
+        } else {
+          m->print();
+          ShouldNotReachHere();
+        }
+        if (o != NULL && oops.find(o) == -1) {
+          oops.append(o);
+        }
+      }
+    }
+
+  }
+
+  // Add the class loader of Method* for the nmethod itself
+  oop cl = mh->method_holder()->class_loader();
+  if (cl != NULL) {
+    oops.append(cl);
+  }
+
+  // Add any oops that we've found
+  Thread* thread = Thread::current();
+  for (int i = 0; i < oops.length(); i++) {
+    oop_recorder()->find_index((jobject)thread->handle_area()->allocate_handle(oops.at(i)));
+  }
+}
+
+
 
 csize_t CodeBuffer::total_offset_of(CodeSection* cs) const {
   csize_t size_so_far = 0;
@@ -942,25 +1026,30 @@ class CodeComment: public CHeapObj<mtCode> {
     }
     return a;
   }
+
+  // Convenience for add_comment.
+  CodeComment* find_last(intptr_t offset) {
+    CodeComment* a = find(offset);
+    if (a != NULL) {
+      while ((a->_next != NULL) && (a->_next->_offset == offset)) {
+        a = a->_next;
+      }
+    }
+    return a;
+  }
 };
 
 
 void CodeComments::add_comment(intptr_t offset, const char * comment) {
-  CodeComment* c = new CodeComment(offset, comment);
-  CodeComment* insert = NULL;
-  if (_comments != NULL) {
-    CodeComment* c = _comments->find(offset);
-    insert = c;
-    while (c && c->offset() == offset) {
-      insert = c;
-      c = c->next();
-    }
-  }
-  if (insert) {
-    // insert after comments with same offset
-    c->set_next(insert->next());
-    insert->set_next(c);
+  CodeComment* c      = new CodeComment(offset, comment);
+  CodeComment* inspos = (_comments == NULL) ? NULL : _comments->find_last(offset);
+
+  if (inspos) {
+    // insert after already existing comments with same offset
+    c->set_next(inspos->next());
+    inspos->set_next(c);
   } else {
+    // no comments with such offset, yet. Insert before anything else.
     c->set_next(_comments);
     _comments = c;
   }
@@ -968,12 +1057,11 @@ void CodeComments::add_comment(intptr_t offset, const char * comment) {
 
 
 void CodeComments::assign(CodeComments& other) {
-  assert(_comments == NULL, "don't overwrite old value");
   _comments = other._comments;
 }
 
 
-void CodeComments::print_block_comment(outputStream* stream, intptr_t offset) {
+void CodeComments::print_block_comment(outputStream* stream, intptr_t offset) const {
   if (_comments != NULL) {
     CodeComment* c = _comments->find(offset);
     while (c && c->offset() == offset) {
@@ -1001,6 +1089,7 @@ void CodeComments::free() {
 
 
 void CodeBuffer::decode() {
+  ttyLocker ttyl;
   Disassembler::decode(decode_begin(), insts_end());
   _decode_begin = insts_end();
 }
@@ -1012,6 +1101,7 @@ void CodeBuffer::skip_decode() {
 
 
 void CodeBuffer::decode_all() {
+  ttyLocker ttyl;
   for (int n = 0; n < (int)SECT_LIMIT; n++) {
     // dump contents of each section
     CodeSection* cs = code_section(n);

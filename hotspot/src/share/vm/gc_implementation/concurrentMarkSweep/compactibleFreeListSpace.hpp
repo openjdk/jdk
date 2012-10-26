@@ -70,7 +70,6 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   friend class ConcurrentMarkSweepGeneration;
   friend class ASConcurrentMarkSweepGeneration;
   friend class CMSCollector;
-  friend class CMSPermGenGen;
   // Local alloc buffer for promotion into this space.
   friend class CFLS_LAB;
 
@@ -349,8 +348,8 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   Mutex* freelistLock() const { return &_freelistLock; }
 
   // Iteration support
-  void oop_iterate(MemRegion mr, OopClosure* cl);
-  void oop_iterate(OopClosure* cl);
+  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
+  void oop_iterate(ExtendedOopClosure* cl);
 
   void object_iterate(ObjectClosure* blk);
   // Apply the closure to each object in the space whose references
@@ -377,7 +376,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
        object_iterate_careful(ObjectClosureCareful* cl);
 
   // Override: provides a DCTO_CL specific to this kind of space.
-  DirtyCardToOopClosure* new_dcto_cl(OopClosure* cl,
+  DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,
                                      CardTableModRefBS::PrecisionStyle precision,
                                      HeapWord* boundary);
 

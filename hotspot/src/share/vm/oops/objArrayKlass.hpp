@@ -25,40 +25,48 @@
 #ifndef SHARE_VM_OOPS_OBJARRAYKLASS_HPP
 #define SHARE_VM_OOPS_OBJARRAYKLASS_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "memory/specialized_oop_closures.hpp"
 #include "oops/arrayKlass.hpp"
-#include "oops/instanceKlass.hpp"
 
-// objArrayKlass is the klass for objArrays
+// ObjArrayKlass is the klass for objArrays
 
-class objArrayKlass : public arrayKlass {
+class ObjArrayKlass : public ArrayKlass {
   friend class VMStructs;
  private:
-  klassOop _element_klass;            // The klass of the elements of this array type
-  klassOop _bottom_klass;             // The one-dimensional type (instanceKlass or typeArrayKlass)
- public:
-  // Instance variables
-  klassOop element_klass() const      { return _element_klass; }
-  void set_element_klass(klassOop k)  { oop_store_without_check((oop*) &_element_klass, (oop) k); }
-  oop* element_klass_addr()           { return (oop*)&_element_klass; }
+  Klass* _element_klass;            // The klass of the elements of this array type
+  Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)
 
-  klassOop bottom_klass() const       { return _bottom_klass; }
-  void set_bottom_klass(klassOop k)   { oop_store_without_check((oop*) &_bottom_klass, (oop) k); }
-  oop* bottom_klass_addr()            { return (oop*)&_bottom_klass; }
+  // Constructor
+  ObjArrayKlass(int n, KlassHandle element_klass, Symbol* name);
+  static ObjArrayKlass* allocate(ClassLoaderData* loader_data, int n, KlassHandle klass_handle, Symbol* name, TRAPS);
+ public:
+  // For dummy objects
+  ObjArrayKlass() {}
+
+  // Instance variables
+  Klass* element_klass() const      { return _element_klass; }
+  void set_element_klass(Klass* k)  { _element_klass = k; }
+  Klass** element_klass_addr()      { return &_element_klass; }
+
+  Klass* bottom_klass() const       { return _bottom_klass; }
+  void set_bottom_klass(Klass* k)   { _bottom_klass = k; }
+  Klass** bottom_klass_addr()       { return &_bottom_klass; }
 
   // Compiler/Interpreter offset
-  static ByteSize element_klass_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(objArrayKlass, _element_klass)); }
+  static ByteSize element_klass_offset() { return in_ByteSize(offset_of(ObjArrayKlass, _element_klass)); }
 
   // Dispatched operation
   bool can_be_primary_super_slow() const;
-  objArrayOop compute_secondary_supers(int num_extra_slots, TRAPS);
-  bool compute_is_subtype_of(klassOop k);
+  GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots);
+  bool compute_is_subtype_of(Klass* k);
   bool oop_is_objArray_slow()  const  { return true; }
   int oop_size(oop obj) const;
-  int klass_oop_size() const          { return object_size(); }
 
   // Allocation
-  DEFINE_ALLOCATE_PERMANENT(objArrayKlass);
+  static Klass* allocate_objArray_klass(ClassLoaderData* loader_data,
+                                          int n, KlassHandle element_klass, TRAPS);
+
   objArrayOop allocate(int length, TRAPS);
   oop multi_allocate(int rank, jint* sizes, TRAPS);
 
@@ -67,31 +75,29 @@ class objArrayKlass : public arrayKlass {
 
   // Compute protection domain
   oop protection_domain() { return Klass::cast(bottom_klass())->protection_domain(); }
-  // Compute class loader
-  oop class_loader() const { return Klass::cast(bottom_klass())->class_loader(); }
 
  private:
   // Either oop or narrowOop depending on UseCompressedOops.
-  // must be called from within objArrayKlass.cpp
+  // must be called from within ObjArrayKlass.cpp
   template <class T> void do_copy(arrayOop s, T* src, arrayOop d,
                                   T* dst, int length, TRAPS);
  protected:
-  // Returns the objArrayKlass for n'th dimension.
-  virtual klassOop array_klass_impl(bool or_null, int n, TRAPS);
+  // Returns the ObjArrayKlass for n'th dimension.
+  virtual Klass* array_klass_impl(bool or_null, int n, TRAPS);
 
   // Returns the array class with this class as element type.
-  virtual klassOop array_klass_impl(bool or_null, TRAPS);
+  virtual Klass* array_klass_impl(bool or_null, TRAPS);
 
  public:
-  // Casting from klassOop
-  static objArrayKlass* cast(klassOop k) {
-    assert(k->klass_part()->oop_is_objArray_slow(), "cast to objArrayKlass");
-    return (objArrayKlass*) k->klass_part();
+  // Casting from Klass*
+  static ObjArrayKlass* cast(Klass* k) {
+    assert(k->oop_is_objArray(), "cast to ObjArrayKlass");
+    return (ObjArrayKlass*) k;
   }
 
   // Sizing
-  static int header_size()                { return oopDesc::header_size() + sizeof(objArrayKlass)/HeapWordSize; }
-  int object_size() const                 { return arrayKlass::object_size(header_size()); }
+  static int header_size()                { return sizeof(ObjArrayKlass)/HeapWordSize; }
+  int size() const                        { return ArrayKlass::static_size(header_size()); }
 
   // Initialization (virtual from Klass)
   void initialize(TRAPS);
@@ -112,10 +118,10 @@ class objArrayKlass : public arrayKlass {
 #endif // !SERIALGC
 
   // Iterators
-  int oop_oop_iterate(oop obj, OopClosure* blk) {
+  int oop_oop_iterate(oop obj, ExtendedOopClosure* blk) {
     return oop_oop_iterate_v(obj, blk);
   }
-  int oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) {
+  int oop_oop_iterate_m(oop obj, ExtendedOopClosure* blk, MemRegion mr) {
     return oop_oop_iterate_v_m(obj, blk, mr);
   }
 #define ObjArrayKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)   \
@@ -131,18 +137,21 @@ class objArrayKlass : public arrayKlass {
   // JVM support
   jint compute_modifier_flags(TRAPS) const;
 
- private:
-   static klassOop array_klass_impl   (objArrayKlassHandle this_oop, bool or_null, int n, TRAPS);
-
  public:
   // Printing
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
+
   void oop_print_value_on(oop obj, outputStream* st);
 #ifndef PRODUCT
   void oop_print_on      (oop obj, outputStream* st);
 #endif //PRODUCT
 
-  // Verification
   const char* internal_name() const;
+
+  // Verification
+  void verify_on(outputStream* st);
+
   void oop_verify_on(oop obj, outputStream* st);
 };
 

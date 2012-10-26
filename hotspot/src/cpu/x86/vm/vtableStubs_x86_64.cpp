@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   if (DebugVtables) {
     Label L;
     // check offset vs vtable length
-    __ cmpl(Address(rax, instanceKlass::vtable_length_offset() * wordSize),
+    __ cmpl(Address(rax, InstanceKlass::vtable_length_offset() * wordSize),
             vtable_index * vtableEntry::size());
     __ jcc(Assembler::greater, L);
     __ movl(rbx, vtable_index);
@@ -83,7 +83,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   }
 #endif // PRODUCT
 
-  // load methodOop and target address
+  // load Method* and target address
   const Register method = rbx;
 
   __ lookup_virtual_method(rax, vtable_index, method);
@@ -92,16 +92,16 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     Label L;
     __ cmpptr(method, (int32_t)NULL_WORD);
     __ jcc(Assembler::equal, L);
-    __ cmpptr(Address(method, methodOopDesc::from_compiled_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(method, Method::from_compiled_offset()), (int32_t)NULL_WORD);
     __ jcc(Assembler::notZero, L);
     __ stop("Vtable entry is NULL");
     __ bind(L);
   }
   // rax: receiver klass
-  // rbx: methodOop
+  // rbx: Method*
   // rcx: receiver
   address ame_addr = __ pc();
-  __ jmp( Address(rbx, methodOopDesc::from_compiled_offset()));
+  __ jmp( Address(rbx, Method::from_compiled_offset()));
 
   __ flush();
 
@@ -161,14 +161,14 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   const Register method = rbx;
   Label throw_icce;
 
-  // Get methodOop and entrypoint for compiler
+  // Get Method* and entrypoint for compiler
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
                              r10, rax, itable_index,
                              // outputs: method, scan temp. reg
                              method, r11,
                              throw_icce);
 
-  // method (rbx): methodOop
+  // method (rbx): Method*
   // j_rarg0: receiver
 
 #ifdef ASSERT
@@ -176,17 +176,17 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
     Label L2;
     __ cmpptr(method, (int32_t)NULL_WORD);
     __ jcc(Assembler::equal, L2);
-    __ cmpptr(Address(method, methodOopDesc::from_compiled_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(method, Method::from_compiled_offset()), (int32_t)NULL_WORD);
     __ jcc(Assembler::notZero, L2);
     __ stop("compiler entrypoint is null");
     __ bind(L2);
   }
 #endif // ASSERT
 
-  // rbx: methodOop
+  // rbx: Method*
   // j_rarg0: receiver
   address ame_addr = __ pc();
-  __ jmp(Address(method, methodOopDesc::from_compiled_offset()));
+  __ jmp(Address(method, Method::from_compiled_offset()));
 
   __ bind(throw_icce);
   __ jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
@@ -212,11 +212,11 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   if (is_vtable_stub) {
     // Vtable stub size
     return (DebugVtables ? 512 : 24) + (CountCompiledCalls ? 13 : 0) +
-           (UseCompressedOops ? 16 : 0);  // 1 leaq can be 3 bytes + 1 long
+           (UseCompressedKlassPointers ? 16 : 0);  // 1 leaq can be 3 bytes + 1 long
   } else {
     // Itable stub size
     return (DebugVtables ? 512 : 74) + (CountCompiledCalls ? 13 : 0) +
-           (UseCompressedOops ? 32 : 0);  // 2 leaqs
+           (UseCompressedKlassPointers ? 32 : 0);  // 2 leaqs
   }
   // In order to tune these parameters, run the JVM with VM options
   // +PrintMiscellaneous and +WizardMode to see information about

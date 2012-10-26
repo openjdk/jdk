@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ $(LAUNCHER_OUT)/%.o: $(LAUNCHERDIR)/%.c
 $(LAUNCHER): $(OBJS) $(LIBJVM) $(LAUNCHER_MAPFILE)
 	$(QUIETLY) echo Linking launcher...
 	$(QUIETLY) $(LINK_LAUNCHER/PRE_HOOK)
-	$(QUIETLY) $(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(OBJS) $(LIBS_LAUNCHER)
+	$(QUIETLY) $(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(sort $(OBJS)) $(LIBS_LAUNCHER)
 	$(QUIETLY) $(LINK_LAUNCHER/POST_HOOK)
 
 $(LAUNCHER): $(LAUNCHER_SCRIPT)

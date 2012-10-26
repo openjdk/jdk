@@ -39,8 +39,6 @@ ifeq ($(SPEC),)
   STRIP	= /usr/ccs/bin/strip
 endif
 
-REORDER_FLAG = -xF
-
 # Check for the versions of C++ and C compilers ($CXX and $CC) used. 
 
 # Get the last thing on the line that looks like x.x+ (x is a digit).

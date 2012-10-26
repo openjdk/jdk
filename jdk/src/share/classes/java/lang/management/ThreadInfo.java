@@ -147,8 +147,9 @@ public class ThreadInfo {
      * @param waitedCount   Number of times waited on a lock
      * @param waitedTime    Approx time waited on a lock
      * @param stackTrace    Thread stack trace
-     * @param lockedMonitors List of locked monitors
-     * @param lockedSynchronizers List of locked synchronizers
+     * @param monitors      List of locked monitors
+     * @param stackDepths   List of stack depths
+     * @param synchronizers List of locked synchronizers
      */
     private ThreadInfo(Thread t, int state, Object lockObj, Thread lockOwner,
                        long blockedCount, long blockedTime,
@@ -696,9 +697,7 @@ public class ThreadInfo {
      *   <td>lockInfo</td>
      *   <td><tt>javax.management.openmbean.CompositeData</tt>
      *       - the mapped type for {@link LockInfo} as specified in the
-     *       <a href="../../../javax/management/MXBean.html#mapping-rules">
-     *       type mapping rules</a> of
-     *       {@linkplain javax.management.MXBean MXBeans}.
+     *         {@link LockInfo#from} method.
      *       <p>
      *       If <tt>cd</tt> does not contain this attribute,
      *       the <tt>LockInfo</tt> object will be constructed from
@@ -766,10 +765,7 @@ public class ThreadInfo {
      *   <td>lockedSynchronizers</td>
      *   <td><tt>javax.management.openmbean.CompositeData[]</tt>
      *       whose element type is the mapped type for
-     *       {@link LockInfo} as specified in the
-     *       <a href="../../../javax/management/MXBean.html#mapping-rules">
-     *       type mapping rules</a> of
-     *       {@linkplain javax.management.MXBean MXBeans}.
+     *       {@link LockInfo} as specified in the {@link LockInfo#from} method.
      *       <p>
      *       If <tt>cd</tt> does not contain this attribute,
      *       this attribute will be set to an empty array. </td>
@@ -830,7 +826,6 @@ public class ThreadInfo {
      * @since 1.6
      */
     public LockInfo[] getLockedSynchronizers() {
-       // represents an <a href="LockInfo.html#OwnableSynchronizer">
         return lockedSynchronizers;
     }
 

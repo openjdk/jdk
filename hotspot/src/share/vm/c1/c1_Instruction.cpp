@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,6 +396,8 @@ intx Constant::hash() const {
     switch (type()->tag()) {
     case intTag:
       return HASH2(name(), type()->as_IntConstant()->value());
+    case addressTag:
+      return HASH2(name(), type()->as_AddressConstant()->value());
     case longTag:
       {
         jlong temp = type()->as_LongConstant()->value();
@@ -411,6 +413,11 @@ intx Constant::hash() const {
     case objectTag:
       assert(type()->as_ObjectType()->is_loaded(), "can't handle unloaded values");
       return HASH2(name(), type()->as_ObjectType()->constant_value());
+    case metaDataTag:
+      assert(type()->as_MetadataType()->is_loaded(), "can't handle unloaded values");
+      return HASH2(name(), type()->as_MetadataType()->constant_value());
+    default:
+      ShouldNotReachHere();
     }
   }
   return 0;
@@ -452,6 +459,14 @@ bool Constant::is_equal(Value v) const {
       {
         ObjectType* t1 =    type()->as_ObjectType();
         ObjectType* t2 = v->type()->as_ObjectType();
+        return (t1 != NULL && t2 != NULL &&
+                t1->is_loaded() && t2->is_loaded() &&
+                t1->constant_value() == t2->constant_value());
+      }
+    case metaDataTag:
+      {
+        MetadataType* t1 =    type()->as_MetadataType();
+        MetadataType* t2 = v->type()->as_MetadataType();
         return (t1 != NULL && t2 != NULL &&
                 t1->is_loaded() && t2->is_loaded() &&
                 t1->constant_value() == t2->constant_value());
@@ -499,6 +514,18 @@ Constant::CompareResult Constant::compare(Instruction::Condition cond, Value rig
   case objectTag: {
     ciObject* xvalue = lt->as_ObjectType()->constant_value();
     ciObject* yvalue = rt->as_ObjectType()->constant_value();
+    assert(xvalue != NULL && yvalue != NULL, "not constants");
+    if (xvalue->is_loaded() && yvalue->is_loaded()) {
+      switch (cond) {
+      case If::eql: return xvalue == yvalue ? cond_true : cond_false;
+      case If::neq: return xvalue != yvalue ? cond_true : cond_false;
+      }
+    }
+    break;
+  }
+  case metaDataTag: {
+    ciMetadata* xvalue = lt->as_MetadataType()->constant_value();
+    ciMetadata* yvalue = rt->as_MetadataType()->constant_value();
     assert(xvalue != NULL && yvalue != NULL, "not constants");
     if (xvalue->is_loaded() && yvalue->is_loaded()) {
       switch (cond) {

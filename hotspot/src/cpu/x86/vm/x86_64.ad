@@ -516,6 +516,7 @@ void emit_d32_reloc(CodeBuffer& cbuf, int d32, RelocationHolder const& rspec, in
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d32 != 0 && d32 != (intptr_t) Universe::non_oop_word()) {
+    assert(Universe::heap()->is_in_reserved((address)(intptr_t)d32), "should be real oop");
     assert(oop((intptr_t)d32)->is_oop() && (ScavengeRootsInCode || !oop((intptr_t)d32)->is_scavengable()), "cannot embed scavengable oops in code");
   }
 #endif
@@ -542,6 +543,7 @@ void emit_d64_reloc(CodeBuffer& cbuf, int64_t d64, RelocationHolder const& rspec
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d64 != 0 && d64 != (int64_t) Universe::non_oop_word()) {
+    assert(Universe::heap()->is_in_reserved((address)d64), "should be real oop");
     assert(oop(d64)->is_oop() && (ScavengeRootsInCode || !oop(d64)->is_scavengable()),
            "cannot embed scavengable oops in code");
   }
@@ -568,9 +570,9 @@ void store_to_stackslot(CodeBuffer &cbuf, int opcode, int rm_field, int disp)
    // rRegI ereg, memory mem) %{    // emit_reg_mem
 void encode_RegMem(CodeBuffer &cbuf,
                    int reg,
-                   int base, int index, int scale, int disp, bool disp_is_oop)
+                   int base, int index, int scale, int disp, relocInfo::relocType disp_reloc)
 {
-  assert(!disp_is_oop, "cannot have disp");
+  assert(disp_reloc == relocInfo::none, "cannot have disp");
   int regenc = reg & 7;
   int baseenc = base & 7;
   int indexenc = index & 7;
@@ -580,7 +582,7 @@ void encode_RegMem(CodeBuffer &cbuf,
     // If no displacement, mode is 0x0; unless base is [RBP] or [R13]
     if (disp == 0 && base != RBP_enc && base != R13_enc) {
       emit_rm(cbuf, 0x0, regenc, baseenc); // *
-    } else if (-0x80 <= disp && disp < 0x80 && !disp_is_oop) {
+    } else if (-0x80 <= disp && disp < 0x80 && disp_reloc == relocInfo::none) {
       // If 8-bit displacement, mode 0x1
       emit_rm(cbuf, 0x1, regenc, baseenc); // *
       emit_d8(cbuf, disp);
@@ -588,7 +590,7 @@ void encode_RegMem(CodeBuffer &cbuf,
       // If 32-bit displacement
       if (base == -1) { // Special flag for absolute address
         emit_rm(cbuf, 0x0, regenc, 0x5); // *
-        if (disp_is_oop) {
+        if (disp_reloc != relocInfo::none) {
           emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
         } else {
           emit_d32(cbuf, disp);
@@ -596,7 +598,7 @@ void encode_RegMem(CodeBuffer &cbuf,
       } else {
         // Normal base + offset
         emit_rm(cbuf, 0x2, regenc, baseenc); // *
-        if (disp_is_oop) {
+        if (disp_reloc != relocInfo::none) {
           emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
         } else {
           emit_d32(cbuf, disp);
@@ -611,7 +613,7 @@ void encode_RegMem(CodeBuffer &cbuf,
       emit_rm(cbuf, 0x0, regenc, 0x4); // *
       emit_rm(cbuf, scale, indexenc, baseenc);
     } else {
-      if (-0x80 <= disp && disp < 0x80 && !disp_is_oop) {
+      if (-0x80 <= disp && disp < 0x80 && disp_reloc == relocInfo::none) {
         // If 8-bit displacement, mode 0x1
         emit_rm(cbuf, 0x1, regenc, 0x4); // *
         emit_rm(cbuf, scale, indexenc, baseenc);
@@ -625,7 +627,7 @@ void encode_RegMem(CodeBuffer &cbuf,
           emit_rm(cbuf, 0x2, regenc, 0x4);
           emit_rm(cbuf, scale, indexenc, baseenc); // *
         }
-        if (disp_is_oop) {
+        if (disp_reloc != relocInfo::none) {
           emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
         } else {
           emit_d32(cbuf, disp);
@@ -1382,8 +1384,8 @@ void emit_java_to_interp(CodeBuffer& cbuf)
   if (base == NULL)  return;  // CodeBuffer::expand failed
   // static stub relocation stores the instruction address of the call
   __ relocate(static_stub_Relocation::spec(mark), RELOC_IMM64);
-  // static stub relocation also tags the methodOop in the code-stream.
-  __ movoop(rbx, (jobject) NULL);  // method is zapped till fixup time
+  // static stub relocation also tags the Method* in the code-stream.
+  __ mov_metadata(rbx, (Metadata*) NULL);  // method is zapped till fixup time
   // This is recognized as unresolved by relocs/nativeinst/ic code
   __ jump(RuntimeAddress(__ pc()));
 
@@ -1407,10 +1409,10 @@ uint reloc_java_to_interp()
 #ifndef PRODUCT
 void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     st->print_cr("movl    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    if (Universe::narrow_oop_shift() != 0) {
-      st->print_cr("\tdecode_heap_oop_not_null rscratch1, rscratch1");
+    if (Universe::narrow_klass_shift() != 0) {
+      st->print_cr("\tdecode_klass_not_null rscratch1, rscratch1");
     }
     st->print_cr("\tcmpq    rax, rscratch1\t # Inline cache check");
   } else {
@@ -1426,7 +1428,7 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   MacroAssembler masm(&cbuf);
   uint insts_size = cbuf.insts_size();
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     masm.load_klass(rscratch1, j_rarg0);
     masm.cmpptr(rax, rscratch1);
   } else {
@@ -1572,6 +1574,11 @@ const bool Matcher::need_masked_shift_count = false;
 bool Matcher::narrow_oop_use_complex_address() {
   assert(UseCompressedOops, "only for compressed oops code");
   return (LogMinObjAlignmentInBytes <= 3);
+}
+
+bool Matcher::narrow_klass_use_complex_address() {
+  assert(UseCompressedKlassPointers, "only for compressed klass code");
+  return (LogKlassAlignmentInBytes <= 3);
 }
 
 // Is it better to copy float constants, or load them directly from
@@ -2044,35 +2051,15 @@ encode %{
     }
   %}
 
-  enc_class Java_Dynamic_Call(method meth)
-  %{
-    // JAVA DYNAMIC CALL
-    // !!!!!
-    // Generate  "movq rax, -1", placeholder instruction to load oop-info
-    // emit_call_dynamic_prologue( cbuf );
-    cbuf.set_insts_mark();
-
-    // movq rax, -1
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0xB8 | RAX_enc);
-    emit_d64_reloc(cbuf,
-                   (int64_t) Universe::non_oop_word(),
-                   oop_Relocation::spec_for_immediate(), RELOC_IMM64);
-    address virtual_call_oop_addr = cbuf.insts_mark();
-    // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
-    // who we intended to call.
-    cbuf.set_insts_mark();
-    $$$emit8$primary;
-    emit_d32_reloc(cbuf,
-                   (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
-                   virtual_call_Relocation::spec(virtual_call_oop_addr),
-                   RELOC_DISP32);
+  enc_class Java_Dynamic_Call(method meth) %{
+    MacroAssembler _masm(&cbuf);
+    __ ic_call((address)$meth$$method);
   %}
 
   enc_class Java_Compiled_Call(method meth)
   %{
     // JAVA COMPILED CALL
-    int disp = in_bytes(methodOopDesc:: from_compiled_offset());
+    int disp = in_bytes(Method:: from_compiled_offset());
 
     // XXX XXX offset is 128 is 1.5 NON-PRODUCT !!!
     // assert(-0x80 <= disp && disp < 0x80, "compiled_code_offset isn't small");
@@ -2190,8 +2177,8 @@ encode %{
     }
     emit_opcode(cbuf, 0xB8 | dstenc);
     // This next line should be generated from ADLC
-    if ($src->constant_is_oop()) {
-      emit_d64_reloc(cbuf, $src$$constant, relocInfo::oop_type, RELOC_IMM64);
+    if ($src->constant_reloc() != relocInfo::none) {
+      emit_d64_reloc(cbuf, $src$$constant, $src->constant_reloc(), RELOC_IMM64);
     } else {
       emit_d64(cbuf, $src$$constant);
     }
@@ -2452,9 +2439,9 @@ encode %{
     int index = $mem$$index;
     int scale = $mem$$scale;
     int disp = $mem$$disp;
-    bool disp_is_oop = $mem->disp_is_oop();
+    relocInfo::relocType disp_reloc = $mem->disp_reloc();
 
-    encode_RegMem(cbuf, reg, base, index, scale, disp, disp_is_oop);
+    encode_RegMem(cbuf, reg, base, index, scale, disp, disp_reloc);
   %}
 
   enc_class RM_opc_mem(immI rm_opcode, memory mem)
@@ -2467,11 +2454,11 @@ encode %{
     int scale = $mem$$scale;
     int displace = $mem$$disp;
 
-    bool disp_is_oop = $mem->disp_is_oop(); // disp-as-oop when
+    relocInfo::relocType disp_reloc = $mem->disp_reloc();       // disp-as-oop when
                                             // working with static
                                             // globals
     encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace,
-                  disp_is_oop);
+                  disp_reloc);
   %}
 
   enc_class reg_lea(rRegI dst, rRegI src0, immI src1)
@@ -2481,9 +2468,9 @@ encode %{
     int index        = 0x04;            // 0x04 indicates no index
     int scale        = 0x00;            // 0x00 indicates no scale
     int displace     = $src1$$constant; // 0x00 indicates no displacement
-    bool disp_is_oop = false;
+    relocInfo::relocType disp_reloc = relocInfo::none;
     encode_RegMem(cbuf, reg_encoding, base, index, scale, displace,
-                  disp_is_oop);
+                  disp_reloc);
   %}
 
   enc_class neg_reg(rRegI dst)
@@ -3157,6 +3144,14 @@ operand immN() %{
   interface(CONST_INTER);
 %}
 
+operand immNKlass() %{
+  match(ConNKlass);
+
+  op_cost(10);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // NULL Pointer Immediate
 operand immN0() %{
   predicate(n->get_narrowcon() == 0);
@@ -3169,7 +3164,7 @@ operand immN0() %{
 
 operand immP31()
 %{
-  predicate(!n->as_Type()->type()->isa_oopptr()
+  predicate(n->as_Type()->type()->reloc() == relocInfo::none
             && (n->get_ptr() >> 31) == 0);
   match(ConP);
 
@@ -4056,6 +4051,145 @@ operand indPosIndexScaleOffsetNarrow(rRegN reg, immL32 off, rRegI idx, immI2 sca
   %}
 %}
 
+operand indirectNarrowKlass(rRegN reg)
+%{
+  predicate(Universe::narrow_klass_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(DecodeNKlass reg);
+
+  format %{ "[$reg]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0x4);
+    scale(0x0);
+    disp(0x0);
+  %}
+%}
+
+operand indOffset8NarrowKlass(rRegN reg, immL8 off)
+%{
+  predicate(Universe::narrow_klass_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeNKlass reg) off);
+
+  format %{ "[$reg + $off (8-bit)]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0x4);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffset32NarrowKlass(rRegN reg, immL32 off)
+%{
+  predicate(Universe::narrow_klass_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeNKlass reg) off);
+
+  format %{ "[$reg + $off (32-bit)]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0x4);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indIndexOffsetNarrowKlass(rRegN reg, rRegL lreg, immL32 off)
+%{
+  predicate(Universe::narrow_klass_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (AddP (DecodeNKlass reg) lreg) off);
+
+  op_cost(10);
+  format %{"[$reg + $off + $lreg]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($lreg);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indIndexNarrowKlass(rRegN reg, rRegL lreg)
+%{
+  predicate(Universe::narrow_klass_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeNKlass reg) lreg);
+
+  op_cost(10);
+  format %{"[$reg + $lreg]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($lreg);
+    scale(0x0);
+    disp(0x0);
+  %}
+%}
+
+operand indIndexScaleNarrowKlass(rRegN reg, rRegL lreg, immI2 scale)
+%{
+  predicate(Universe::narrow_klass_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeNKlass reg) (LShiftL lreg scale));
+
+  op_cost(10);
+  format %{"[$reg + $lreg << $scale]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($lreg);
+    scale($scale);
+    disp(0x0);
+  %}
+%}
+
+operand indIndexScaleOffsetNarrowKlass(rRegN reg, immL32 off, rRegL lreg, immI2 scale)
+%{
+  predicate(Universe::narrow_klass_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (AddP (DecodeNKlass reg) (LShiftL lreg scale)) off);
+
+  op_cost(10);
+  format %{"[$reg + $off + $lreg << $scale]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($lreg);
+    scale($scale);
+    disp($off);
+  %}
+%}
+
+operand indCompressedKlassOffset(rRegN reg, immL32 off) %{
+  predicate(UseCompressedKlassPointers && (Universe::narrow_klass_shift() == Address::times_8));
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeNKlass reg) off);
+
+  op_cost(10);
+  format %{"[R12 + $reg << 3 + $off] (compressed klass addressing)" %}
+  interface(MEMORY_INTER) %{
+    base(0xc); // R12
+    index($reg);
+    scale(0x3);
+    disp($off);
+  %}
+%}
+
+operand indPosIndexScaleOffsetNarrowKlass(rRegN reg, immL32 off, rRegI idx, immI2 scale)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  predicate(Universe::narrow_klass_shift() == 0 && n->in(2)->in(3)->in(1)->as_Type()->type()->is_long()->_lo >= 0);
+  match(AddP (AddP (DecodeNKlass reg) (LShiftL (ConvI2L idx) scale)) off);
+
+  op_cost(10);
+  format %{"[$reg + $off + $idx << $scale]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($idx);
+    scale($scale);
+    disp($off);
+  %}
+%}
 
 //----------Special Memory Operands--------------------------------------------
 // Stack Slot Operand - This operand is used for loading and storing temporary
@@ -4227,7 +4361,11 @@ opclass memory(indirect, indOffset8, indOffset32, indIndexOffset, indIndex,
                indCompressedOopOffset,
                indirectNarrow, indOffset8Narrow, indOffset32Narrow,
                indIndexOffsetNarrow, indIndexNarrow, indIndexScaleNarrow,
-               indIndexScaleOffsetNarrow, indPosIndexScaleOffsetNarrow);
+               indIndexScaleOffsetNarrow, indPosIndexScaleOffsetNarrow,
+               indCompressedKlassOffset,
+               indirectNarrowKlass, indOffset8NarrowKlass, indOffset32NarrowKlass,
+               indIndexOffsetNarrowKlass, indIndexNarrowKlass, indIndexScaleNarrowKlass,
+               indIndexScaleOffsetNarrowKlass, indPosIndexScaleOffsetNarrowKlass);
 
 //----------PIPELINE-----------------------------------------------------------
 // Rules which define the behavior of the target architectures pipeline.
@@ -5062,9 +5200,9 @@ instruct loadI2L_immI(rRegL dst, memory mem, immI mask, rFlagsReg cr) %{
 %}
 
 // Load Unsigned Integer into Long Register
-instruct loadUI2L(rRegL dst, memory mem)
+instruct loadUI2L(rRegL dst, memory mem, immL_32bits mask) 
 %{
-  match(Set dst (LoadUI2L mem));
+  match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
 
   ins_cost(125);
   format %{ "movl    $dst, $mem\t# uint -> long" %}
@@ -5487,6 +5625,22 @@ instruct loadConN(rRegN dst, immN src) %{
   ins_pipe(ialu_reg_fat); // XXX
 %}
 
+instruct loadConNKlass(rRegN dst, immNKlass src) %{
+  match(Set dst src);
+
+  ins_cost(125);
+  format %{ "movl    $dst, $src\t# compressed klass ptr" %}
+  ins_encode %{
+    address con = (address)$src$$constant;
+    if (con == NULL) {
+      ShouldNotReachHere();
+    } else {
+      __ set_narrow_klass($dst$$Register, (Klass*)$src$$constant);
+    }
+  %}
+  ins_pipe(ialu_reg_fat); // XXX
+%}
+
 instruct loadConF0(regF dst, immF0 src)
 %{
   match(Set dst src);
@@ -5756,7 +5910,7 @@ instruct storeP(memory mem, any_RegP src)
 
 instruct storeImmP0(memory mem, immP0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
   match(Set mem (StoreP mem zero));
 
   ins_cost(125); // XXX
@@ -5792,9 +5946,21 @@ instruct storeN(memory mem, rRegN src)
   ins_pipe(ialu_mem_reg);
 %}
 
+instruct storeNKlass(memory mem, rRegN src)
+%{
+  match(Set mem (StoreNKlass mem src));
+
+  ins_cost(125); // XXX
+  format %{ "movl    $mem, $src\t# compressed klass ptr" %}
+  ins_encode %{
+    __ movl($mem$$Address, $src$$Register);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct storeImmN0(memory mem, immN0 zero)
 %{
-  predicate(Universe::narrow_oop_base() == NULL);
+  predicate(Universe::narrow_oop_base() == NULL && Universe::narrow_klass_base() == NULL);
   match(Set mem (StoreN mem zero));
 
   ins_cost(125); // XXX
@@ -5822,10 +5988,22 @@ instruct storeImmN(memory mem, immN src)
   ins_pipe(ialu_mem_imm);
 %}
 
+instruct storeImmNKlass(memory mem, immNKlass src)
+%{
+  match(Set mem (StoreNKlass mem src));
+
+  ins_cost(150); // XXX
+  format %{ "movl    $mem, $src\t# compressed klass ptr" %}
+  ins_encode %{
+    __ set_narrow_klass($mem$$Address, (Klass*)$src$$constant);
+  %}
+  ins_pipe(ialu_mem_imm);
+%}
+
 // Store Integer Immediate
 instruct storeImmI0(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
   match(Set mem (StoreI mem zero));
 
   ins_cost(125); // XXX
@@ -5850,7 +6028,7 @@ instruct storeImmI(memory mem, immI src)
 // Store Long Immediate
 instruct storeImmL0(memory mem, immL0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
   match(Set mem (StoreL mem zero));
 
   ins_cost(125); // XXX
@@ -5875,7 +6053,7 @@ instruct storeImmL(memory mem, immL32 src)
 // Store Short/Char Immediate
 instruct storeImmC0(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
   match(Set mem (StoreC mem zero));
 
   ins_cost(125); // XXX
@@ -5901,7 +6079,7 @@ instruct storeImmI16(memory mem, immI16 src)
 // Store Byte Immediate
 instruct storeImmB0(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
   match(Set mem (StoreB mem zero));
 
   ins_cost(125); // XXX
@@ -5926,7 +6104,7 @@ instruct storeImmB(memory mem, immI8 src)
 // Store CMS card-mark Immediate
 instruct storeImmCM0_reg(memory mem, immI0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
   match(Set mem (StoreCM mem zero));
 
   ins_cost(125); // XXX
@@ -5964,7 +6142,7 @@ instruct storeF(memory mem, regF src)
 // Store immediate Float value (it is faster than store from XMM register)
 instruct storeF0(memory mem, immF0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
   match(Set mem (StoreF mem zero));
 
   ins_cost(25); // XXX
@@ -6014,7 +6192,7 @@ instruct storeD0_imm(memory mem, immD0 src)
 
 instruct storeD0(memory mem, immD0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
   match(Set mem (StoreD mem zero));
 
   ins_cost(25); // XXX
@@ -6466,8 +6644,8 @@ instruct encodeHeapOop_not_null(rRegN dst, rRegP src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop(rRegP dst, rRegN src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
-            n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant);
+  predicate(n->bottom_type()->is_ptr()->ptr() != TypePtr::NotNull &&
+            n->bottom_type()->is_ptr()->ptr() != TypePtr::Constant);
   match(Set dst (DecodeN src));
   effect(KILL cr);
   format %{ "decode_heap_oop $dst,$src" %}
@@ -6483,8 +6661,8 @@ instruct decodeHeapOop(rRegP dst, rRegN src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop_not_null(rRegP dst, rRegN src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
-            n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant);
+  predicate(n->bottom_type()->is_ptr()->ptr() == TypePtr::NotNull ||
+            n->bottom_type()->is_ptr()->ptr() == TypePtr::Constant);
   match(Set dst (DecodeN src));
   effect(KILL cr);
   format %{ "decode_heap_oop_not_null $dst,$src" %}
@@ -6495,6 +6673,32 @@ instruct decodeHeapOop_not_null(rRegP dst, rRegN src, rFlagsReg cr) %{
       __ decode_heap_oop_not_null(d, s);
     } else {
       __ decode_heap_oop_not_null(d);
+    }
+  %}
+  ins_pipe(ialu_reg_long);
+%}
+
+instruct encodeKlass_not_null(rRegN dst, rRegP src, rFlagsReg cr) %{
+  match(Set dst (EncodePKlass src));
+  effect(KILL cr);
+  format %{ "encode_heap_oop_not_null $dst,$src" %}
+  ins_encode %{
+    __ encode_klass_not_null($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_long);
+%}
+
+instruct decodeKlass_not_null(rRegP dst, rRegN src, rFlagsReg cr) %{
+  match(Set dst (DecodeNKlass src));
+  effect(KILL cr);
+  format %{ "decode_heap_oop_not_null $dst,$src" %}
+  ins_encode %{
+    Register s = $src$$Register;
+    Register d = $dst$$Register;
+    if (s != d) {
+      __ decode_klass_not_null(d, s);
+    } else {
+      __ decode_klass_not_null(d);
     }
   %}
   ins_pipe(ialu_reg_long);
@@ -7260,6 +7464,7 @@ instruct compareAndSwapP(rRegI res,
                          rax_RegP oldval, rRegP newval,
                          rFlagsReg cr)
 %{
+  predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
 
@@ -7283,6 +7488,7 @@ instruct compareAndSwapL(rRegI res,
                          rax_RegL oldval, rRegL newval,
                          rFlagsReg cr)
 %{
+  predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
 
@@ -7344,6 +7550,88 @@ instruct compareAndSwapN(rRegI res,
              REX_breg(res), Opcode(0x0F), Opcode(0x94), reg(res), // sete
              REX_reg_breg(res, res), // movzbl
              Opcode(0xF), Opcode(0xB6), reg_reg(res, res));
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddI_no_res( memory mem, Universe dummy, immI add, rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddI mem add));
+  effect(KILL cr);
+  format %{ "ADDL  [$mem],$add" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ addl($mem$$Address, $add$$constant);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddI( memory mem, rRegI newval, rFlagsReg cr) %{
+  match(Set newval (GetAndAddI mem newval));
+  effect(KILL cr);
+  format %{ "XADDL  [$mem],$newval" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ xaddl($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddL_no_res( memory mem, Universe dummy, immL add, rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddL mem add));
+  effect(KILL cr);
+  format %{ "ADDQ  [$mem],$add" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ addq($mem$$Address, $add$$constant);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xaddL( memory mem, rRegL newval, rFlagsReg cr) %{
+  match(Set newval (GetAndAddL mem newval));
+  effect(KILL cr);
+  format %{ "XADDQ  [$mem],$newval" %}
+  ins_encode %{
+    if (os::is_MP()) { __ lock(); }
+    __ xaddq($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgI( memory mem, rRegI newval) %{
+  match(Set newval (GetAndSetI mem newval));
+  format %{ "XCHGL  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgl($newval$$Register, $mem$$Address);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgL( memory mem, rRegL newval) %{
+  match(Set newval (GetAndSetL mem newval));
+  format %{ "XCHGL  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgq($newval$$Register, $mem$$Address);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgP( memory mem, rRegP newval) %{
+  match(Set newval (GetAndSetP mem newval));
+  format %{ "XCHGQ  $newval,[$mem]" %}
+  ins_encode %{
+    __ xchgq($newval$$Register, $mem$$Address);
+  %}
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct xchgN( memory mem, rRegN newval) %{
+  match(Set newval (GetAndSetN mem newval));
+  format %{ "XCHGL  $newval,$mem]" %}
+  ins_encode %{
+    __ xchgl($newval$$Register, $mem$$Address);
+  %}
   ins_pipe( pipe_cmpxchg );
 %}
 
@@ -10348,7 +10636,7 @@ instruct compP_rReg_mem(rFlagsRegU cr, rRegP op1, memory op2)
 // and raw pointers have no anti-dependencies.
 instruct compP_mem_rReg(rFlagsRegU cr, rRegP op1, memory op2)
 %{
-  predicate(!n->in(2)->in(2)->bottom_type()->isa_oop_ptr());
+  predicate(n->in(2)->in(2)->bottom_type()->reloc() == relocInfo::none);
   match(Set cr (CmpP op1 (LoadP op2)));
 
   format %{ "cmpq    $op1, $op2\t# raw ptr" %}
@@ -10386,7 +10674,7 @@ instruct testP_mem(rFlagsReg cr, memory op, immP0 zero)
 
 instruct testP_mem_reg0(rFlagsReg cr, memory mem, immP0 zero)
 %{
-  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL) && (Universe::narrow_klass_base() == NULL));
   match(Set cr (CmpP (LoadP mem) zero));
 
   format %{ "cmpq    R12, $mem\t# ptr (R12_heapbase==0)" %}
@@ -10437,6 +10725,27 @@ instruct compN_mem_imm(rFlagsRegU cr, memory mem, immN src)
   ins_pipe(ialu_cr_reg_mem);
 %}
 
+instruct compN_rReg_imm_klass(rFlagsRegU cr, rRegN op1, immNKlass op2) %{
+  match(Set cr (CmpN op1 op2));
+
+  format %{ "cmpl    $op1, $op2\t# compressed klass ptr" %}
+  ins_encode %{
+    __ cmp_narrow_klass($op1$$Register, (Klass*)$op2$$constant);
+  %}
+  ins_pipe(ialu_cr_reg_imm);
+%}
+
+instruct compN_mem_imm_klass(rFlagsRegU cr, memory mem, immNKlass src)
+%{
+  match(Set cr (CmpN src (LoadNKlass mem)));
+
+  format %{ "cmpl    $mem, $src\t# compressed klass ptr" %}
+  ins_encode %{
+    __ cmp_narrow_klass($mem$$Address, (Klass*)$src$$constant);
+  %}
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
 instruct testN_reg(rFlagsReg cr, rRegN src, immN0 zero) %{
   match(Set cr (CmpN src zero));
 
@@ -10460,7 +10769,7 @@ instruct testN_mem(rFlagsReg cr, memory mem, immN0 zero)
 
 instruct testN_mem_reg0(rFlagsReg cr, memory mem, immN0 zero)
 %{
-  predicate(Universe::narrow_oop_base() == NULL);
+  predicate(Universe::narrow_oop_base() == NULL && (Universe::narrow_klass_base() == NULL));
   match(Set cr (CmpN (LoadN mem) zero));
 
   format %{ "cmpl    R12, $mem\t# compressed ptr (R12_heapbase==0)" %}
@@ -10757,8 +11066,8 @@ instruct partialSubtypeCheck(rdi_RegP result,
 
   ins_cost(1100);  // slightly larger than the next version
   format %{ "movq    rdi, [$sub + in_bytes(Klass::secondary_supers_offset())]\n\t"
-            "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
-            "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
+            "movl    rcx, [rdi + Array<Klass*>::length_offset_in_bytes()]\t# length to scan\n\t"
+            "addq    rdi, Array<Klass*>::base_offset_in_bytes()\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while rcx--\n\t"
             "jne,s   miss\t\t# Missed: rdi not-zero\n\t"
             "movq    [$sub + in_bytes(Klass::secondary_super_cache_offset())], $super\t# Hit: update cache\n\t"
@@ -10780,8 +11089,8 @@ instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
 
   ins_cost(1000);
   format %{ "movq    rdi, [$sub + in_bytes(Klass::secondary_supers_offset())]\n\t"
-            "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
-            "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
+            "movl    rcx, [rdi + Array<Klass*>::length_offset_in_bytes()]\t# length to scan\n\t"
+            "addq    rdi, Array<Klass*>::base_offset_in_bytes()\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while cx-- != 0\n\t"
             "jne,s   miss\t\t# Missed: flags nz\n\t"
             "movq    [$sub + in_bytes(Klass::secondary_super_cache_offset())], $super\t# Hit: update cache\n\t"
@@ -11060,7 +11369,6 @@ instruct CallDynamicJavaDirect(method meth)
   ins_cost(300);
   format %{ "movq    rax, #Universe::non_oop_word()\n\t"
             "call,dynamic " %}
-  opcode(0xE8); /* E8 cd */
   ins_encode(Java_Dynamic_Call(meth), call_epilog);
   ins_pipe(pipe_slow);
   ins_alignment(4);

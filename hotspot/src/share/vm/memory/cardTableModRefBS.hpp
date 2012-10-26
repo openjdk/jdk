@@ -285,12 +285,6 @@ public:
 
   bool has_write_ref_pre_barrier() { return false; }
 
-  inline bool write_ref_needs_barrier(void* field, oop new_val) {
-    // Note that this assumes the perm gen is the highest generation
-    // in the address space
-    return new_val != NULL && !new_val->is_perm();
-  }
-
   // Record a reference update. Note that these versions are precise!
   // The scanning code has to handle the fact that the write barrier may be
   // either precise or imprecise. We make non-virtual inline variants of

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
 
-public class ciSymbol extends VMObject {
+public class ciSymbol extends ciMetadata {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -42,12 +42,10 @@ public class ciSymbol extends VMObject {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type = db.lookupType("ciSymbol");
-    identField = type.getCIntegerField("_ident");
     symbolField = type.getAddressField("_symbol");
   }
 
   private static AddressField symbolField;
-  private static CIntegerField identField;
 
   public String asUtf88() {
     Symbol sym = Symbol.create(symbolField.getValue(getAddress()));

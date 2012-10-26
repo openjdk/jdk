@@ -45,9 +45,9 @@
 #include "memory/heap.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
-#include "oops/constMethodOop.hpp"
+#include "oops/constMethod.hpp"
 #include "oops/klass.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/virtualspace.hpp"
@@ -205,7 +205,7 @@ int generateJvmOffsets(GEN_variant gen_variant) {
 #endif
 
   GEN_OFFS(Klass, _name);
-  GEN_OFFS(constantPoolOopDesc, _pool_holder);
+  GEN_OFFS(ConstantPool, _pool_holder);
   printf("\n");
 
   GEN_VALUE(OFFSET_HeapBlockHeader_used, offset_of(HeapBlock::Header, _used));
@@ -213,21 +213,21 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   printf("\n");
 
   GEN_VALUE(AccessFlags_NATIVE, JVM_ACC_NATIVE);
-  GEN_VALUE(constMethodOopDesc_has_linenumber_table, constMethodOopDesc::_has_linenumber_table);
+  GEN_VALUE(ConstMethod_has_linenumber_table, ConstMethod::_has_linenumber_table);
   GEN_OFFS(AccessFlags, _flags);
   GEN_OFFS(Symbol, _length);
   GEN_OFFS(Symbol, _body);
   printf("\n");
 
-  GEN_OFFS(methodOopDesc, _constMethod);
-  GEN_OFFS(methodOopDesc, _access_flags);
+  GEN_OFFS(Method, _constMethod);
+  GEN_OFFS(Method, _access_flags);
   printf("\n");
 
-  GEN_OFFS(constMethodOopDesc, _constants);
-  GEN_OFFS(constMethodOopDesc, _flags);
-  GEN_OFFS(constMethodOopDesc, _code_size);
-  GEN_OFFS(constMethodOopDesc, _name_index);
-  GEN_OFFS(constMethodOopDesc, _signature_index);
+  GEN_OFFS(ConstMethod, _constants);
+  GEN_OFFS(ConstMethod, _flags);
+  GEN_OFFS(ConstMethod, _code_size);
+  GEN_OFFS(ConstMethod, _name_index);
+  GEN_OFFS(ConstMethod, _signature_index);
   printf("\n");
 
   GEN_OFFS(CodeHeap, _memory);
@@ -250,7 +250,7 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   printf("\n");
 
   GEN_OFFS(nmethod, _method);
-  GEN_OFFS(nmethod, _oops_offset);
+  GEN_OFFS(nmethod, _metadata_offset);
   GEN_OFFS(nmethod, _scopes_data_offset);
   GEN_OFFS(nmethod, _scopes_pcs_offset);
   GEN_OFFS(nmethod, _handler_table_offset);
@@ -262,18 +262,18 @@ int generateJvmOffsets(GEN_variant gen_variant) {
 
   printf("\n");
 
-  GEN_OFFS(NarrowOopStruct, _base);
-  GEN_OFFS(NarrowOopStruct, _shift);
+  GEN_OFFS(NarrowPtrStruct, _base);
+  GEN_OFFS(NarrowPtrStruct, _shift);
   printf("\n");
 
   GEN_VALUE(SIZE_HeapBlockHeader, sizeof(HeapBlock::Header));
   GEN_SIZE(oopDesc);
-  GEN_SIZE(constantPoolOopDesc);
+  GEN_SIZE(ConstantPool);
   printf("\n");
 
   GEN_SIZE(PcDesc);
-  GEN_SIZE(methodOopDesc);
-  GEN_SIZE(constMethodOopDesc);
+  GEN_SIZE(Method);
+  GEN_SIZE(ConstMethod);
   GEN_SIZE(nmethod);
   GEN_SIZE(CodeBlob);
   GEN_SIZE(BufferBlob);

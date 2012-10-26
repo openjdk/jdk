@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ private:
 
   ciMethod* _method;           // the method
   ciInstanceKlass* _holder;
-  ciCPCache* _cpcache;
   address _bc_start;            // Start of current bytecode for table
   address _was_wide;            // Address past last wide bytecode
   jint* _table_base;            // Aligned start of last table or switch
@@ -69,7 +68,6 @@ private:
   void reset( address base, unsigned int size ) {
     _bc_start =_was_wide = 0;
     _start = _pc = base; _end = base + size;
-    _cpcache = NULL;
   }
 
   void assert_wide(bool require_wide) const {
@@ -259,15 +257,17 @@ public:
   int      get_field_holder_index();
   int      get_field_signature_index();
 
-  ciMethod* get_method(bool& will_link, ciSignature* *declared_signature_result);
-  bool      has_appendix();
-  ciObject* get_appendix();
-  ciKlass*  get_declared_method_holder();
-  int       get_method_holder_index();
-  int       get_method_signature_index();
+  ciMethod*     get_method(bool& will_link, ciSignature* *declared_signature_result);
+  bool          has_appendix();
+  ciObject*     get_appendix();
+  bool          has_method_type();
+  ciMethodType* get_method_type();
+  ciKlass*      get_declared_method_holder();
+  int           get_method_holder_index();
+  int           get_method_signature_index();
 
-  ciCPCache*  get_cpcache() const;
-  ciCallSite* get_call_site();
+  // Get the resolved references arrays from the constant pool
+  ciObjArray* get_resolved_references();
 };
 
 

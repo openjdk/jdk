@@ -1787,7 +1787,7 @@ public class SimpleDateFormat extends DateFormat {
      * timeFields. Returns -start (for ParsePosition) if failed.
      * @param text the time text to be parsed.
      * @param start where to start parsing.
-     * @param ch the pattern character for the date field text to be parsed.
+     * @param patternCharIndex the index of the pattern character.
      * @param count the count of a pattern character.
      * @param obeyCount if true, then the next field directly abuts this one,
      * and we should use the count to know when to stop parsing.

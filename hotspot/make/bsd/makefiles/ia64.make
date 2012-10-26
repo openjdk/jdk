@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 #
 # IA64 only uses c++ based interpreter
 CFLAGS += -DCC_INTERP -D_LP64=1 -DVM_LITTLE_ENDIAN
-# Hotspot uses very unstrict aliasing turn this optimization off
-OPT_CFLAGS += -fno-strict-aliasing
 ifeq ($(VERSION),debug)
 ASM_FLAGS= -DDEBUG
 else

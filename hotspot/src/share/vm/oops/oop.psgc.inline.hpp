@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,12 @@
 // ParallelScavengeHeap methods
 
 inline void oopDesc::push_contents(PSPromotionManager* pm) {
-  Klass* klass = blueprint();
-  if (!klass->oop_is_typeArray()) {
+  Klass* k = klass();
+  if (!k->oop_is_typeArray()) {
     // It might contain oops beyond the header, so take the virtual call.
-    klass->oop_push_contents(pm, this);
+    k->oop_push_contents(pm, this);
   }
-  // Else skip it.  The typeArrayKlass in the header never needs scavenging.
+  // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
 }
 
 #endif // SHARE_VM_OOPS_OOP_PSGC_INLINE_HPP

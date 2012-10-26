@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ enum {
   // flags actually put in .class file
   JVM_ACC_WRITTEN_FLAGS           = 0x00007FFF,
 
-  // methodOop flags
+  // Method* flags
   JVM_ACC_MONITOR_MATCH           = 0x10000000,     // True if we know that monitorenter/monitorexit bytecodes match
   JVM_ACC_HAS_MONITOR_BYTECODES   = 0x20000000,     // Method contains monitorenter/monitorexit bytecodes
   JVM_ACC_HAS_LOOPS               = 0x40000000,     // Method has loops
@@ -47,29 +47,30 @@ enum {
   JVM_ACC_QUEUED                  = 0x01000000,     // Queued for compilation
   JVM_ACC_NOT_C2_COMPILABLE       = 0x02000000,
   JVM_ACC_NOT_C1_COMPILABLE       = 0x04000000,
-  JVM_ACC_NOT_OSR_COMPILABLE      = 0x08000000,
+  JVM_ACC_NOT_C2_OSR_COMPILABLE   = 0x08000000,
   JVM_ACC_HAS_LINE_NUMBER_TABLE   = 0x00100000,
   JVM_ACC_HAS_CHECKED_EXCEPTIONS  = 0x00400000,
   JVM_ACC_HAS_JSRS                = 0x00800000,
   JVM_ACC_IS_OLD                  = 0x00010000,     // RedefineClasses() has replaced this method
   JVM_ACC_IS_OBSOLETE             = 0x00020000,     // RedefineClasses() has made method obsolete
   JVM_ACC_IS_PREFIXED_NATIVE      = 0x00040000,     // JVMTI has prefixed this native method
+  JVM_ACC_ON_STACK                = 0x00080000,     // RedefinedClasses() is used on the stack
 
-  // klassOop flags
+  // Klass* flags
   JVM_ACC_HAS_MIRANDA_METHODS     = 0x10000000,     // True if this class has miranda methods in it's vtable
   JVM_ACC_HAS_VANILLA_CONSTRUCTOR = 0x20000000,     // True if klass has a vanilla default constructor
   JVM_ACC_HAS_FINALIZER           = 0x40000000,     // True if klass has a non-empty finalize() method
   JVM_ACC_IS_CLONEABLE            = (int)0x80000000,// True if klass supports the Clonable interface
   JVM_ACC_HAS_FINAL_METHOD        = 0x01000000,     // True if klass has final method
 
-  // klassOop and methodOop flags
+  // Klass* and Method* flags
   JVM_ACC_HAS_LOCAL_VARIABLE_TABLE= 0x00200000,
 
   JVM_ACC_PROMOTED_FLAGS          = 0x00200000,     // flags promoted from methods to the holding klass
 
   // field flags
   // Note: these flags must be defined in the low order 16 bits because
-  // instanceKlass only stores a ushort worth of information from the
+  // InstanceKlass only stores a ushort worth of information from the
   // AccessFlags value.
   // These bits must not conflict with any other field-related access flags
   // (e.g., ACC_ENUM).
@@ -114,15 +115,15 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   // Attribute flags
   bool is_synthetic   () const         { return (_flags & JVM_ACC_SYNTHETIC   ) != 0; }
 
-  // methodOop flags
+  // Method* flags
   bool is_monitor_matching     () const { return (_flags & JVM_ACC_MONITOR_MATCH          ) != 0; }
   bool has_monitor_bytecodes   () const { return (_flags & JVM_ACC_HAS_MONITOR_BYTECODES  ) != 0; }
   bool has_loops               () const { return (_flags & JVM_ACC_HAS_LOOPS              ) != 0; }
   bool loops_flag_init         () const { return (_flags & JVM_ACC_LOOPS_FLAG_INIT        ) != 0; }
   bool queued_for_compilation  () const { return (_flags & JVM_ACC_QUEUED                 ) != 0; }
-  bool is_not_c1_compilable () const    { return (_flags & JVM_ACC_NOT_C1_COMPILABLE      ) != 0; }
-  bool is_not_c2_compilable () const    { return (_flags & JVM_ACC_NOT_C2_COMPILABLE      ) != 0; }
-  bool is_not_osr_compilable   () const { return (_flags & JVM_ACC_NOT_OSR_COMPILABLE     ) != 0; }
+  bool is_not_c1_compilable    () const { return (_flags & JVM_ACC_NOT_C1_COMPILABLE      ) != 0; }
+  bool is_not_c2_compilable    () const { return (_flags & JVM_ACC_NOT_C2_COMPILABLE      ) != 0; }
+  bool is_not_c2_osr_compilable() const { return (_flags & JVM_ACC_NOT_C2_OSR_COMPILABLE  ) != 0; }
   bool has_linenumber_table    () const { return (_flags & JVM_ACC_HAS_LINE_NUMBER_TABLE  ) != 0; }
   bool has_checked_exceptions  () const { return (_flags & JVM_ACC_HAS_CHECKED_EXCEPTIONS ) != 0; }
   bool has_jsrs                () const { return (_flags & JVM_ACC_HAS_JSRS               ) != 0; }
@@ -130,13 +131,13 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   bool is_obsolete             () const { return (_flags & JVM_ACC_IS_OBSOLETE            ) != 0; }
   bool is_prefixed_native      () const { return (_flags & JVM_ACC_IS_PREFIXED_NATIVE     ) != 0; }
 
-  // klassOop flags
+  // Klass* flags
   bool has_miranda_methods     () const { return (_flags & JVM_ACC_HAS_MIRANDA_METHODS    ) != 0; }
   bool has_vanilla_constructor () const { return (_flags & JVM_ACC_HAS_VANILLA_CONSTRUCTOR) != 0; }
   bool has_finalizer           () const { return (_flags & JVM_ACC_HAS_FINALIZER          ) != 0; }
   bool has_final_method        () const { return (_flags & JVM_ACC_HAS_FINAL_METHOD       ) != 0; }
   bool is_cloneable            () const { return (_flags & JVM_ACC_IS_CLONEABLE           ) != 0; }
-  // klassOop and methodOop flags
+  // Klass* and Method* flags
   bool has_localvariable_table () const { return (_flags & JVM_ACC_HAS_LOCAL_VARIABLE_TABLE) != 0; }
   void set_has_localvariable_table()    { atomic_set_bits(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE); }
   void clear_has_localvariable_table()  { atomic_clear_bits(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE); }
@@ -145,6 +146,7 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   bool is_field_access_watched() const  { return (_flags & JVM_ACC_FIELD_ACCESS_WATCHED) != 0; }
   bool is_field_modification_watched() const
                                         { return (_flags & JVM_ACC_FIELD_MODIFICATION_WATCHED) != 0; }
+  bool on_stack() const                 { return (_flags & JVM_ACC_ON_STACK) != 0; }
   bool is_internal() const              { return (_flags & JVM_ACC_FIELD_INTERNAL) != 0; }
   bool field_has_generic_signature() const
                                         { return (_flags & JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE) != 0; }
@@ -168,7 +170,7 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   void atomic_clear_bits(jint bits);
 
  private:
-  friend class methodOopDesc;
+  friend class Method;
   friend class Klass;
   friend class ClassFileParser;
   // the functions below should only be called on the _access_flags inst var directly,
@@ -177,14 +179,14 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   // attribute flags
   void set_is_synthetic()              { atomic_set_bits(JVM_ACC_SYNTHETIC);               }
 
-  // methodOop flags
+  // Method* flags
   void set_monitor_matching()          { atomic_set_bits(JVM_ACC_MONITOR_MATCH);           }
   void set_has_monitor_bytecodes()     { atomic_set_bits(JVM_ACC_HAS_MONITOR_BYTECODES);   }
   void set_has_loops()                 { atomic_set_bits(JVM_ACC_HAS_LOOPS);               }
   void set_loops_flag_init()           { atomic_set_bits(JVM_ACC_LOOPS_FLAG_INIT);         }
   void set_not_c1_compilable()         { atomic_set_bits(JVM_ACC_NOT_C1_COMPILABLE);       }
   void set_not_c2_compilable()         { atomic_set_bits(JVM_ACC_NOT_C2_COMPILABLE);       }
-  void set_not_osr_compilable()        { atomic_set_bits(JVM_ACC_NOT_OSR_COMPILABLE);      }
+  void set_not_c2_osr_compilable()     { atomic_set_bits(JVM_ACC_NOT_C2_OSR_COMPILABLE);   }
   void set_has_linenumber_table()      { atomic_set_bits(JVM_ACC_HAS_LINE_NUMBER_TABLE);   }
   void set_has_checked_exceptions()    { atomic_set_bits(JVM_ACC_HAS_CHECKED_EXCEPTIONS);  }
   void set_has_jsrs()                  { atomic_set_bits(JVM_ACC_HAS_JSRS);                }
@@ -192,7 +194,7 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   void set_is_obsolete()               { atomic_set_bits(JVM_ACC_IS_OBSOLETE);             }
   void set_is_prefixed_native()        { atomic_set_bits(JVM_ACC_IS_PREFIXED_NATIVE);      }
 
-  // klassOop flags
+  // Klass* flags
   void set_has_vanilla_constructor()   { atomic_set_bits(JVM_ACC_HAS_VANILLA_CONSTRUCTOR); }
   void set_has_finalizer()             { atomic_set_bits(JVM_ACC_HAS_FINALIZER);           }
   void set_has_final_method()          { atomic_set_bits(JVM_ACC_HAS_FINAL_METHOD);        }
@@ -222,6 +224,14 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
                                          atomic_set_bits(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE);
                                        }
 
+  void set_on_stack(const bool value)
+                                       {
+                                         if (value) {
+                                           atomic_set_bits(JVM_ACC_ON_STACK);
+                                         } else {
+                                           atomic_clear_bits(JVM_ACC_ON_STACK);
+                                         }
+                                       }
   // Conversion
   jshort as_short() const              { return (jshort)_flags; }
   jint   as_int() const                { return _flags; }

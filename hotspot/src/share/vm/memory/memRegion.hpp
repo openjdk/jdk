@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 // The intent is that they remain very small and contain no
 // objects.
 
+class MetaWord;
+
 class MemRegion VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
 private:
@@ -48,6 +50,10 @@ public:
     _start(start), _word_size(word_size) {};
   MemRegion(HeapWord* start, HeapWord* end) :
     _start(start), _word_size(pointer_delta(end, start)) {
+    assert(end >= start, "incorrect constructor arguments");
+  }
+  MemRegion(MetaWord* start, MetaWord* end) :
+    _start((HeapWord*)start), _word_size(pointer_delta(end, start)) {
     assert(end >= start, "incorrect constructor arguments");
   }
 

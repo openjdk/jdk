@@ -68,6 +68,9 @@ public interface RemoteDebugger extends Remote {
   public long      getHeapOopSize() throws RemoteException;
   public long      getNarrowOopBase() throws RemoteException;
   public int       getNarrowOopShift() throws RemoteException;
+  public long      getKlassPtrSize() throws RemoteException;
+  public long      getNarrowKlassBase() throws RemoteException;
+  public int       getNarrowKlassShift() throws RemoteException;
 
   public boolean   areThreadsEqual(long addrOrId1, boolean isAddress1,
                                    long addrOrId2, boolean isAddress2) throws RemoteException;

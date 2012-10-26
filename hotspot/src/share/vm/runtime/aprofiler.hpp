@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.hpp"
-#include "oops/klassOop.hpp"
 #include "utilities/top.hpp"
 
 // A simple allocation profiler for Java. The profiler collects and prints
@@ -46,12 +45,12 @@ class AllocationProfiler: AllStatic {
   friend class MarkSweep;
  private:
   static bool _active;                          // tells whether profiler is active
-  static GrowableArray<klassOop>* _print_array; // temporary array for printing
+  static GrowableArray<Klass*>* _print_array; // temporary array for printing
 
   // Utility printing functions
-  static void add_class_to_array(klassOop k);
-  static void add_classes_to_array(klassOop k);
-  static int  compare_classes(klassOop* k1, klassOop* k2);
+  static void add_class_to_array(Klass* k);
+  static void add_classes_to_array(Klass* k);
+  static int  compare_classes(Klass** k1, Klass** k2);
   static int  average(size_t alloc_size, int alloc_count);
   static void sort_and_print_array(size_t cutoff);
 

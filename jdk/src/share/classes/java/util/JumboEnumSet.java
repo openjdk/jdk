@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,7 @@ class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> {
             unseen = elements[0];
         }
 
+        @Override
         public boolean hasNext() {
             while (unseen == 0 && unseenIndex < elements.length - 1)
                 unseen = elements[++unseenIndex];
@@ -128,6 +129,7 @@ class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public E next() {
             if (!hasNext())
                 throw new NoSuchElementException();
@@ -138,6 +140,7 @@ class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> {
                                 + Long.numberOfTrailingZeros(lastReturned)];
         }
 
+        @Override
         public void remove() {
             if (lastReturned == 0)
                 throw new IllegalStateException();
@@ -342,7 +345,7 @@ class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> {
      * the same size, and every member of the given set is contained in
      * this set.
      *
-     * @param e object to be compared for equality with this set
+     * @param o object to be compared for equality with this set
      * @return <tt>true</tt> if the specified object is equal to this set
      */
     public boolean equals(Object o) {

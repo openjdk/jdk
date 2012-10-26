@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
                                                                                    \
 int objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end) {  \
   SpecializationStats::record_call();                                              \
-  return ((objArrayKlass*)blueprint())->oop_oop_iterate_range##nv_suffix(this, blk, start, end); \
+  return ((ObjArrayKlass*)klass())->oop_oop_iterate_range##nv_suffix(this, blk, start, end); \
 }
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayOop_OOP_ITERATE_DEFN)

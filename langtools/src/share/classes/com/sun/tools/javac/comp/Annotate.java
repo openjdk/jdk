@@ -26,7 +26,6 @@
 package com.sun.tools.javac.comp;
 
 import java.util.Map;
-import java.util.Objects;
 
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -151,10 +150,10 @@ public class Annotate {
                                        Map<Symbol.TypeSymbol, ListBuffer<Attribute.Compound>> annotated,
                                        Map<Attribute.Compound, JCDiagnostic.DiagnosticPosition> pos,
                                        Log log) {
-            Objects.requireNonNull(env);
-            Objects.requireNonNull(annotated);
-            Objects.requireNonNull(pos);
-            Objects.requireNonNull(log);
+            Assert.checkNonNull(env);
+            Assert.checkNonNull(annotated);
+            Assert.checkNonNull(pos);
+            Assert.checkNonNull(log);
 
             this.env = env;
             this.annotated = annotated;
@@ -514,22 +513,6 @@ public class Annotate {
                       valueRetType,
                       expectedType);
             fatalError = true;
-        }
-
-        // validate that all other elements of containing type has defaults
-        scope = targetContainerType.tsym.members();
-        error = false;
-        for(Symbol elm : scope.getElements()) {
-            if (elm.name != names.value &&
-                elm.kind == Kinds.MTH &&
-                ((MethodSymbol)elm).defaultValue == null) {
-                log.error(pos,
-                          "invalid.containedby.annotation.elem.nondefault",
-                          targetContainerType,
-                          elm);
-                containerValueSymbol = null;
-                error = true;
-            }
         }
         if (error) {
             fatalError = true;

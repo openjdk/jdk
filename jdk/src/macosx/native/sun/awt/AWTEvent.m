@@ -26,6 +26,7 @@
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 #import <sys/time.h>
+#include <Carbon/Carbon.h>
 
 #import "LWCToolkit.h"
 #import "ThreadUtilities.h"
@@ -244,6 +245,7 @@ static struct _nsKeyToJavaModifier
     //NSUInteger cgsRightMask;
     unsigned short leftKeyCode;
     unsigned short rightKeyCode;
+    jint javaExtMask;
     jint javaMask;
     jint javaKey;
 }
@@ -254,6 +256,7 @@ const nsKeyToJavaModifierTable[] =
         0,
         0,
         0, // no Java equivalent
+        0, // no Java equivalent
         java_awt_event_KeyEvent_VK_CAPS_LOCK
     },
     {
@@ -263,6 +266,7 @@ const nsKeyToJavaModifierTable[] =
         56,
         60,
         java_awt_event_InputEvent_SHIFT_DOWN_MASK,
+        java_awt_event_InputEvent_SHIFT_MASK,
         java_awt_event_KeyEvent_VK_SHIFT
     },
     {
@@ -272,6 +276,7 @@ const nsKeyToJavaModifierTable[] =
         59,
         62,
         java_awt_event_InputEvent_CTRL_DOWN_MASK,
+        java_awt_event_InputEvent_CTRL_MASK,
         java_awt_event_KeyEvent_VK_CONTROL
     },
     {
@@ -281,6 +286,7 @@ const nsKeyToJavaModifierTable[] =
         58,
         61,
         java_awt_event_InputEvent_ALT_DOWN_MASK,
+        java_awt_event_InputEvent_ALT_MASK,
         java_awt_event_KeyEvent_VK_ALT
     },
     {
@@ -290,6 +296,7 @@ const nsKeyToJavaModifierTable[] =
         55,
         54,
         java_awt_event_InputEvent_META_DOWN_MASK,
+        java_awt_event_InputEvent_META_MASK,
         java_awt_event_KeyEvent_VK_META
     },
     // NSNumericPadKeyMask
@@ -298,10 +305,11 @@ const nsKeyToJavaModifierTable[] =
         0,
         0,
         0, // no Java equivalent
+        0, // no Java equivalent
         java_awt_event_KeyEvent_VK_HELP
     },
     // NSFunctionKeyMask
-    {0, 0, 0, 0, 0}
+    {0, 0, 0, 0, 0, 0}
 };
 
 /*
@@ -371,26 +379,68 @@ NsCharToJavaChar(unichar nsChar, NSUInteger modifiers)
     return nsChar;
 }
 
+static unichar NsGetDeadKeyChar(unsigned short keyCode)
+{
+    TISInputSourceRef currentKeyboard = TISCopyCurrentKeyboardInputSource();
+    CFDataRef uchr = (CFDataRef)TISGetInputSourceProperty(currentKeyboard, kTISPropertyUnicodeKeyLayoutData);
+    if (uchr == nil) { return; }
+    const UCKeyboardLayout *keyboardLayout = (const UCKeyboardLayout*)CFDataGetBytePtr(uchr);
+    // Carbon modifiers should be used instead of NSEvent modifiers
+    UInt32 modifierKeyState = (GetCurrentEventKeyModifiers() >> 8) & 0xFF;
+
+    if (keyboardLayout) {
+        UInt32 deadKeyState = 0;
+        UniCharCount maxStringLength = 255;
+        UniCharCount actualStringLength = 0;
+        UniChar unicodeString[maxStringLength];
+
+        // get the deadKeyState
+        OSStatus status = UCKeyTranslate(keyboardLayout,
+                                         keyCode, kUCKeyActionDown, modifierKeyState,
+                                         LMGetKbdType(), kUCKeyTranslateNoDeadKeysBit,
+                                         &deadKeyState,
+                                         maxStringLength,
+                                         &actualStringLength, unicodeString);
+
+        if (status == noErr && deadKeyState != 0) {
+            // Press SPACE to get the dead key char
+            status = UCKeyTranslate(keyboardLayout,
+                                    kVK_Space, kUCKeyActionDown, 0,
+                                    LMGetKbdType(), 0,
+                                    &deadKeyState,
+                                    maxStringLength,
+                                    &actualStringLength, unicodeString);
+
+            if (status == noErr && actualStringLength > 0) {
+                return unicodeString[0];
+            }
+        }
+    }
+    return 0;
+}
+
 /*
  * This is the function that uses the table above to take incoming
  * NSEvent keyCodes and translate to the Java virtual key code.
  */
 static void
-NsCharToJavaVirtualKeyCode(unichar ch, unichar deadChar,
+NsCharToJavaVirtualKeyCode(unichar ch, BOOL isDeadChar,
                            NSUInteger flags, unsigned short key,
-                           jint *keyCode, jint *keyLocation, BOOL *postsTyped)
+                           jint *keyCode, jint *keyLocation, BOOL *postsTyped, unichar *deadChar)
 {
     static size_t size = sizeof(keyTable) / sizeof(struct _key);
     NSInteger offset;
 
-    if (deadChar) {
+    if (isDeadChar) {
+        unichar testDeadChar = NsGetDeadKeyChar(key);
         const struct CharToVKEntry *map;
         for (map = charToDeadVKTable; map->c != 0; ++map) {
-            if (deadChar == map->c) {
+            if (testDeadChar == map->c) {
                 *keyCode = map->javaKey;
                 *postsTyped = NO;
                 // TODO: use UNKNOWN here?
                 *keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN;
+                *deadChar = testDeadChar;
                 return;
             }
         }
@@ -491,25 +541,51 @@ NsKeyModifiersToJavaKeyInfo(NSUInteger nsFlags, unsigned short eventKeyCode,
 /*
  * This returns the java modifiers for a key NSEvent.
  */
-static jint
-NsKeyModifiersToJavaModifiers(NSUInteger nsFlags)
+jint NsKeyModifiersToJavaModifiers(NSUInteger nsFlags, BOOL isExtMods)
 {
     jint javaModifiers = 0;
     const struct _nsKeyToJavaModifier* cur;
 
     for (cur = nsKeyToJavaModifierTable; cur->nsMask != 0; ++cur) {
         if ((cur->nsMask & nsFlags) != 0) {
-            javaModifiers |= cur->javaMask;
+            javaModifiers |= isExtMods? cur->javaExtMask : cur->javaMask;
         }
     }
 
     return javaModifiers;
 }
 
+/*
+ * This returns the NSEvent flags for java key modifiers.
+ */
+NSUInteger JavaModifiersToNsKeyModifiers(jint javaModifiers, BOOL isExtMods)
+{
+    NSUInteger nsFlags = 0;
+    const struct _nsKeyToJavaModifier* cur;
+
+    for (cur = nsKeyToJavaModifierTable; cur->nsMask != 0; ++cur) {
+        jint mask = isExtMods? cur->javaExtMask : cur->javaMask;
+        if ((mask & javaModifiers) != 0) {
+            nsFlags |= cur->nsMask;
+        }
+    }
+
+    // special case
+    jint mask = isExtMods? java_awt_event_InputEvent_ALT_GRAPH_DOWN_MASK :
+                           java_awt_event_InputEvent_ALT_GRAPH_MASK;
+
+    if ((mask & javaModifiers) != 0) {
+        nsFlags |= NSAlternateKeyMask;
+    }
+
+    return nsFlags;
+}
+
+
 jint GetJavaMouseModifiers(NSInteger button, NSUInteger modifierFlags)
 {
     // Mousing needs the key modifiers
-    jint modifiers = NsKeyModifiersToJavaModifiers(modifierFlags);
+    jint modifiers = NsKeyModifiersToJavaModifiers(modifierFlags, YES);
 
 
     /*
@@ -590,7 +666,7 @@ Java_sun_lwawt_macosx_event_NSEvent_nsToJavaKeyModifiers
 
 JNF_COCOA_ENTER(env);
 
-    jmodifiers = NsKeyModifiersToJavaModifiers(modifierFlags);
+    jmodifiers = NsKeyModifiersToJavaModifiers(modifierFlags, YES);
 
 JNF_COCOA_EXIT(env);
 
@@ -615,20 +691,22 @@ JNF_COCOA_ENTER(env);
 
     // in  = [testChar, testDeadChar, modifierFlags, keyCode]
     jchar testChar = (jchar)data[0];
-    jchar testDeadChar = (jchar)data[1];
+    BOOL isDeadChar = (data[1] != 0);
     jint modifierFlags = data[2];
     jshort keyCode = (jshort)data[3];
 
     jint jkeyCode = java_awt_event_KeyEvent_VK_UNDEFINED;
     jint jkeyLocation = java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN;
+    jchar testDeadChar = 0;
 
-    NsCharToJavaVirtualKeyCode((unichar)testChar, (unichar)testDeadChar,
+    NsCharToJavaVirtualKeyCode((unichar)testChar, isDeadChar,
                                (NSUInteger)modifierFlags, (unsigned short)keyCode,
-                               &jkeyCode, &jkeyLocation, &postsTyped);
+                               &jkeyCode, &jkeyLocation, &postsTyped, &testDeadChar);
 
     // out = [jkeyCode, jkeyLocation];
     (*env)->SetIntArrayRegion(env, outData, 0, 1, &jkeyCode);
     (*env)->SetIntArrayRegion(env, outData, 1, 1, &jkeyLocation);
+    (*env)->SetIntArrayRegion(env, outData, 2, 1, (jint *)&testDeadChar);
 
     (*env)->ReleaseIntArrayElements(env, inData, data, 0);
 
@@ -685,12 +763,12 @@ Java_sun_lwawt_macosx_event_NSEvent_nsToJavaChar
 (JNIEnv *env, jclass cls, char nsChar, jint modifierFlags)
 {
     jchar javaChar = 0;
-    
+
 JNF_COCOA_ENTER(env);
-    
+
     javaChar = NsCharToJavaChar(nsChar, modifierFlags);
 
 JNF_COCOA_EXIT(env);
-    
+
     return javaChar;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "ci/ciMethod.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.inline.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
@@ -99,7 +99,7 @@ void CompileLog::pop_tag(const char* tag) {
 
 // ------------------------------------------------------------------
 // CompileLog::identify
-int CompileLog::identify(ciObject* obj) {
+int CompileLog::identify(ciBaseObject* obj) {
   if (obj == NULL)  return 0;
   int id = obj->ident();
   if (id < 0)  return id;
@@ -121,57 +121,62 @@ int CompileLog::identify(ciObject* obj) {
   _identities[id] = 1;  // mark
 
   // Now, print the object's identity once, in detail.
-  if (obj->is_klass()) {
-    ciKlass* klass = obj->as_klass();
-    begin_elem("klass id='%d'", id);
-    name(klass->name());
-    if (!klass->is_loaded()) {
-      print(" unloaded='1'");
-    } else {
-      print(" flags='%d'", klass->modifier_flags());
-    }
-    end_elem();
-  } else if (obj->is_method()) {
-    ciMethod* method = obj->as_method();
-    ciSignature* sig = method->signature();
-    // Pre-identify items that we will need!
-    identify(sig->return_type());
-    for (int i = 0; i < sig->count(); i++) {
-      identify(sig->type_at(i));
-    }
-    begin_elem("method id='%d' holder='%d'",
-               id, identify(method->holder()));
-    name(method->name());
-    print(" return='%d'", identify(sig->return_type()));
-    if (sig->count() > 0) {
-      print(" arguments='");
-      for (int i = 0; i < sig->count(); i++) {
-        print((i == 0) ? "%d" : " %d", identify(sig->type_at(i)));
+  if (obj->is_metadata()) {
+    ciMetadata* mobj = obj->as_metadata();
+    if (mobj->is_klass()) {
+      ciKlass* klass = mobj->as_klass();
+      begin_elem("klass id='%d'", id);
+      name(klass->name());
+      if (!klass->is_loaded()) {
+        print(" unloaded='1'");
+      } else {
+        print(" flags='%d'", klass->modifier_flags());
       }
-      print("'");
-    }
-    if (!method->is_loaded()) {
-      print(" unloaded='1'");
+      end_elem();
+    } else if (mobj->is_method()) {
+      ciMethod* method = mobj->as_method();
+      ciSignature* sig = method->signature();
+      // Pre-identify items that we will need!
+      identify(sig->return_type());
+      for (int i = 0; i < sig->count(); i++) {
+        identify(sig->type_at(i));
+      }
+      begin_elem("method id='%d' holder='%d'",
+          id, identify(method->holder()));
+      name(method->name());
+      print(" return='%d'", identify(sig->return_type()));
+      if (sig->count() > 0) {
+        print(" arguments='");
+        for (int i = 0; i < sig->count(); i++) {
+          print((i == 0) ? "%d" : " %d", identify(sig->type_at(i)));
+        }
+        print("'");
+      }
+      if (!method->is_loaded()) {
+        print(" unloaded='1'");
+      } else {
+        print(" flags='%d'", (jchar) method->flags().as_int());
+        // output a few metrics
+        print(" bytes='%d'", method->code_size());
+        method->log_nmethod_identity(this);
+        //print(" count='%d'", method->invocation_count());
+        //int bec = method->backedge_count();
+        //if (bec != 0)  print(" backedge_count='%d'", bec);
+        print(" iicount='%d'", method->interpreter_invocation_count());
+      }
+      end_elem();
+    } else if (mobj->is_type()) {
+      BasicType type = mobj->as_type()->basic_type();
+      elem("type id='%d' name='%s'", id, type2name(type));
     } else {
-      print(" flags='%d'", (jchar) method->flags().as_int());
-      // output a few metrics
-      print(" bytes='%d'", method->code_size());
-      method->log_nmethod_identity(this);
-      //print(" count='%d'", method->invocation_count());
-      //int bec = method->backedge_count();
-      //if (bec != 0)  print(" backedge_count='%d'", bec);
-      print(" iicount='%d'", method->interpreter_invocation_count());
+      // Should not happen.
+      elem("unknown id='%d'", id);
+      ShouldNotReachHere();
     }
-    end_elem();
   } else if (obj->is_symbol()) {
     begin_elem("symbol id='%d'", id);
     name(obj->as_symbol());
     end_elem();
-  } else if (obj->is_null_object()) {
-    elem("null_object id='%d'", id);
-  } else if (obj->is_type()) {
-    BasicType type = obj->as_type()->basic_type();
-    elem("type id='%d' name='%s'", id, type2name(type));
   } else {
     // Should not happen.
     elem("unknown id='%d'", id);
@@ -296,4 +301,49 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
 void CompileLog::finish_log(outputStream* file) {
   char buf[4 * K];
   finish_log_on_error(file, buf, sizeof(buf));
+}
+
+// ------------------------------------------------------------------
+// CompileLog::inline_success
+//
+// Print about successful method inlining.
+void CompileLog::inline_success(const char* reason) {
+  begin_elem("inline_success reason='");
+  text(reason);
+  end_elem("'");
+}
+
+// ------------------------------------------------------------------
+// CompileLog::inline_fail
+//
+// Print about failed method inlining.
+void CompileLog::inline_fail(const char* reason) {
+  begin_elem("inline_fail reason='");
+  text(reason);
+  end_elem("'");
+}
+
+// ------------------------------------------------------------------
+// CompileLog::set_context
+//
+// Set XML tag as an optional marker - it is printed only if
+// there are other entries after until it is reset.
+void CompileLog::set_context(const char* format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  clear_context();
+  _context.print("<");
+  _context.vprint(format, ap);
+  _context.print_cr("/>");
+  va_end(ap);
+}
+
+// ------------------------------------------------------------------
+// CompileLog::code_cache_state
+//
+// Print code cache state.
+void CompileLog::code_cache_state() {
+  begin_elem("code_cache");
+  CodeCache::log_state(this);
+  end_elem("");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@
 
 // ciTypeArrayKlass
 //
-// This class represents a klassOop in the HotSpot virtual machine
+// This class represents a Klass* in the HotSpot virtual machine
 // whose Klass part in a TypeArrayKlass.
 
 // ------------------------------------------------------------------
 // ciTypeArrayKlass::ciTypeArrayKlass
 ciTypeArrayKlass::ciTypeArrayKlass(KlassHandle h_k) : ciArrayKlass(h_k) {
   assert(get_Klass()->oop_is_typeArray(), "wrong type");
-  assert(element_type() == get_typeArrayKlass()->element_type(), "");
+  assert(element_type() == get_TypeArrayKlass()->element_type(), "");
 }
 
 // ------------------------------------------------------------------
@@ -43,8 +43,8 @@ ciTypeArrayKlass::ciTypeArrayKlass(KlassHandle h_k) : ciArrayKlass(h_k) {
 //
 // Implementation of make.
 ciTypeArrayKlass* ciTypeArrayKlass::make_impl(BasicType t) {
-  klassOop k = Universe::typeArrayKlassObj(t);
-  return CURRENT_ENV->get_object(k)->as_type_array_klass();
+  Klass* k = Universe::typeArrayKlassObj(t);
+  return CURRENT_ENV->get_type_array_klass(k);
 }
 
 // ------------------------------------------------------------------

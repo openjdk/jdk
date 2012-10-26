@@ -162,7 +162,7 @@ implements CRTFlags {
     }
 
     /** Source file positions in CRT are integers in the format:
-     *  line-number << LINESHIFT + column-number
+     *  {@literal line-number << LINESHIFT + column-number }
      */
      private int encodePosition(int pos, Position.LineMap lineMap, Log log) {
          int line = lineMap.getLineNumber(pos);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,9 +157,9 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     movptr(Address(obj, oopDesc::mark_offset_in_bytes ()), (int32_t)(intptr_t)markOopDesc::prototype());
   }
 #ifdef _LP64
-  if (UseCompressedOops) { // Take care not to kill klass
+  if (UseCompressedKlassPointers) { // Take care not to kill klass
     movptr(t1, klass);
-    encode_heap_oop_not_null(t1);
+    encode_klass_not_null(t1);
     movl(Address(obj, oopDesc::klass_offset_in_bytes()), t1);
   } else
 #endif
@@ -171,7 +171,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     movl(Address(obj, arrayOopDesc::length_offset_in_bytes()), len);
   }
 #ifdef _LP64
-  else if (UseCompressedOops) {
+  else if (UseCompressedKlassPointers) {
     xorptr(t1, t1);
     store_klass_gap(obj, t1);
   }
@@ -334,7 +334,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
   int start_offset = offset();
 
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     load_klass(rscratch1, receiver);
     cmpptr(rscratch1, iCache);
   } else {
@@ -345,7 +345,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   jump_cc(Assembler::notEqual,
           RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   const int ic_cmp_size = LP64_ONLY(10) NOT_LP64(9);
-  assert(UseCompressedOops || offset() - start_offset == ic_cmp_size, "check alignment in emit_method_entry");
+  assert(UseCompressedKlassPointers || offset() - start_offset == ic_cmp_size, "check alignment in emit_method_entry");
 }
 
 
