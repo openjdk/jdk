@@ -26,10 +26,6 @@
 package com.sun.tools.javac.code;
 
 import java.util.Collections;
-
-import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.util.*;
-
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
@@ -37,6 +33,8 @@ import java.util.Set;
 
 import javax.lang.model.type.*;
 
+import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.util.*;
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;

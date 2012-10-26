@@ -108,8 +108,7 @@ public class JavaTokenizer {
      * {@code input[input.length -1]} is a white space character.
      *
      * @param fac the factory which created this Scanner
-     * @param input the input, might be modified
-     * @param inputLength the size of the input.
+     * @param buf the input, might be modified
      * Must be positive and less than or equal to input.length.
      */
     protected JavaTokenizer(ScannerFactory fac, CharBuffer buf) {

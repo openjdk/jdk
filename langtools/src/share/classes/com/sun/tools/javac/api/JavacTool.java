@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public final class JavacTool implements JavaCompiler {
      * Constructor used by service provider mechanism.  The recommended way to
      * obtain an instance of this class is by using {@link #create} or the
      * service provider mechanism.
-     * @see javax.tools.JavaCompilerTool
+     * @see javax.tools.JavaCompiler
      * @see javax.tools.ToolProvider
      * @see #create
      */

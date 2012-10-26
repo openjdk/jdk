@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.tools.classfile;
 
+import java.util.Map;
+
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Double_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Fieldref_info;
@@ -40,7 +42,6 @@ import com.sun.tools.classfile.ConstantPool.CONSTANT_NameAndType_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_String_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Utf8_info;
 import com.sun.tools.classfile.ConstantPool.CPInfo;
-import java.util.Map;
 
 /**
  * Rewrites a class file using a map of translations.
