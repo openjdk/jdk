@@ -1809,7 +1809,7 @@ void SuperWord::compute_vector_element_type() {
             const Type* vt = vtn;
             if (VectorNode::is_shift(in)) {
               Node* load = in->in(1);
-              if (load->is_Load() && (velt_type(load)->basic_type() == T_INT)) {
+              if (load->is_Load() && in_bb(load) && (velt_type(load)->basic_type() == T_INT)) {
                 vt = velt_type(load);
               } else if (in->Opcode() != Op_LShiftI) {
                 // Widen type to Int to avoid creation of right shift vector
