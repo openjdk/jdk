@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,36 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "runtime/deoptimization.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/stubRoutines.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
-#endif
+/**
+ * @author Tom Deneau
+ */
 
-// Implementation of the platform-specific part of StubRoutines - for
-// a description of how to extend it, see the stubRoutines.hpp file.
+import javax.crypto.Cipher;
 
-address StubRoutines::x86::_verify_mxcsr_entry         = NULL;
-address StubRoutines::x86::_verify_fpu_cntrl_wrd_entry = NULL;
-address StubRoutines::x86::_key_shuffle_mask_addr = NULL;
+public class TestAESEncode extends TestAESBase {
+  @Override
+  public void run() {
+    try {
+      if (!noReinit) cipher.init(Cipher.ENCRYPT_MODE, key, algParams);
+      if (checkOutput) {
+        // checked version creates new output buffer each time
+        encode = cipher.doFinal(input, 0, msgSize);
+        compareArrays(encode, expectedEncode);
+      } else {
+        // non-checked version outputs to existing encode buffer for maximum speed
+        encode = new byte[cipher.getOutputSize(msgSize)];
+        cipher.doFinal(input, 0, msgSize, encode);
+      }
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
+  }
+
+  @Override
+  void childShowCipher() {
+    showCipher(cipher, "Encryption");
+  }
+
+}
