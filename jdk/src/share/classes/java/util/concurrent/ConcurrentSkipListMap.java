@@ -1507,7 +1507,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     /* ---------------- Serialization -------------- */
 
     /**
-     * Saves the state of this map to a stream (that is, serializes it).
+     * Saves this map to a stream (that is, serializes it).
      *
      * @serialData The key (Object) and value (Object) for each
      * key-value mapping represented by the map, followed by
@@ -1532,9 +1532,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Reconstitutes the map from a stream (that is, deserializes it).
-     *
-     * @param s the stream
+     * Reconstitutes this map from a stream (that is, deserializes it).
      */
     private void readObject(final java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
@@ -2342,7 +2340,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             Collection<?> c = (Collection<?>) o;
             try {
                 return containsAll(c) && c.containsAll(this);
-            } catch (ClassCastException unused)   {
+            } catch (ClassCastException unused) {
                 return false;
             } catch (NullPointerException unused) {
                 return false;
@@ -2451,7 +2449,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             Collection<?> c = (Collection<?>) o;
             try {
                 return containsAll(c) && c.containsAll(this);
-            } catch (ClassCastException unused)   {
+            } catch (ClassCastException unused) {
                 return false;
             } catch (NullPointerException unused) {
                 return false;

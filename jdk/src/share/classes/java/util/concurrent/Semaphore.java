@@ -34,9 +34,8 @@
  */
 
 package java.util.concurrent;
-import java.util.*;
-import java.util.concurrent.locks.*;
-import java.util.concurrent.atomic.*;
+import java.util.Collection;
+import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
  * A counting semaphore.  Conceptually, a semaphore maintains a set of
@@ -49,7 +48,7 @@ import java.util.concurrent.atomic.*;
  * <p>Semaphores are often used to restrict the number of threads than can
  * access some (physical or logical) resource. For example, here is
  * a class that uses a semaphore to control access to a pool of items:
- * <pre>
+ *  <pre> {@code
  * class Pool {
  *   private static final int MAX_AVAILABLE = 100;
  *   private final Semaphore available = new Semaphore(MAX_AVAILABLE, true);
@@ -91,9 +90,7 @@ import java.util.concurrent.atomic.*;
  *     }
  *     return false;
  *   }
- *
- * }
- * </pre>
+ * }}</pre>
  *
  * <p>Before obtaining an item each thread must acquire a permit from
  * the semaphore, guaranteeing that an item is available for use. When
@@ -111,7 +108,7 @@ import java.util.concurrent.atomic.*;
  * exclusion lock.  This is more commonly known as a <em>binary
  * semaphore</em>, because it only has two states: one permit
  * available, or zero permits available.  When used in this way, the
- * binary semaphore has the property (unlike many {@link Lock}
+ * binary semaphore has the property (unlike many {@link java.util.concurrent.locks.Lock}
  * implementations), that the &quot;lock&quot; can be released by a
  * thread other than the owner (as semaphores have no notion of
  * ownership).  This can be useful in some specialized contexts, such
@@ -155,9 +152,7 @@ import java.util.concurrent.atomic.*;
  *
  * @since 1.5
  * @author Doug Lea
- *
  */
-
 public class Semaphore implements java.io.Serializable {
     private static final long serialVersionUID = -3222578661600680210L;
     /** All mechanics via AbstractQueuedSynchronizer subclass */
@@ -493,7 +488,6 @@ public class Semaphore implements java.io.Serializable {
      *
      * @param permits the number of permits to acquire
      * @throws IllegalArgumentException if {@code permits} is negative
-     *
      */
     public void acquireUninterruptibly(int permits) {
         if (permits < 0) throw new IllegalArgumentException();
