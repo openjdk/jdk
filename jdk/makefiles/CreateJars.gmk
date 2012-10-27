@@ -249,7 +249,6 @@ endif
 ifeq ($(OPENJDK_TARGET_OS), macosx)
         RT_JAR_EXCLUDES += com/sun/nio/sctp \
                            sun/nio/ch/sctp \
-                           sun/jdbc \
                            sun/nio/ch/DevPollArrayWrapper\$$$$Updator.class \
                            sun/nio/ch/DevPollArrayWrapper.class \
                            sun/nio/ch/DevPollSelectorImpl.class \

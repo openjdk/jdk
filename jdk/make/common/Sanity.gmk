@@ -64,7 +64,6 @@ sanity-base: pre-sanity \
     sane-math_iso \
     sane-libCrun \
     sane-unixccs_path \
-    sane-odbcdir \
     sane-msdevtools_path \
     sane-dxsdk \
     sane-compiler \
