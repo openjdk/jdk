@@ -265,6 +265,9 @@ PACKAGE_PATH=@PACKAGE_PATH@
 # Source file for cacerts
 CACERTS_FILE=@CACERTS_FILE@
 
+# Enable unlimited crypto policy
+UNLIMITED_CRYPTO=@UNLIMITED_CRYPTO@
+
 # Necessary additional compiler flags to compile X11 
 X_CFLAGS:=@X_CFLAGS@
 X_LIBS:=@X_LIBS@
