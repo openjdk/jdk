@@ -3385,6 +3385,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_LWAWT,\
 		INCLUDE_FILES:=$(LIBAWT_LWAWT_FILES),\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) \
+                        $(X_CFLAGS) \
+                        $(X_LIBS) \
                         $(foreach dir,$(LIBAWT_LWAWT_DIRS),-I$(dir)) \
                         -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
                         -I$(JDK_TOPDIR)/src/share/native/sun/java2d \

@@ -64,6 +64,8 @@ $(GENSRC_X11WRAPPERS_TMP)/sizer/sizer.%.exe : $(GENSRC_X11WRAPPERS_TMP)/sizer/si
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	(cd $(@D) && $(BUILD_CC) -m$* -o $@.tmp $< \
+              $(X_CFLAGS) \
+              $(X_LIBS) \
               -I$(JDK_OUTPUTDIR)/include \
               -I$(JDK_TOPDIR)/src/share/javavm/export \
               -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/javavm/export \
