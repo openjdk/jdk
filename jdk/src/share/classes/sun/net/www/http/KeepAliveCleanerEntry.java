@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,34 @@
  * questions.
  */
 
-package build.tools.generatenimbus;
+package sun.net.www.http;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import java.io.*;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+class KeepAliveCleanerEntry
+{
+    KeepAliveStream kas;
+    HttpClient hc;
 
-    public String getName() {
-        return name;
+    public KeepAliveCleanerEntry(KeepAliveStream kas, HttpClient hc) {
+        this.kas = kas;
+        this.hc = hc;
     }
 
-    public T getValue() {
-        return value;
+    protected KeepAliveStream getKeepAliveStream() {
+        return kas;
     }
 
-    public void setValue(T value) {
-        this.value = value;
+    protected HttpClient getHttpClient() {
+        return hc;
     }
+
+    protected void setQueuedForCleanup() {
+        kas.queuedForCleanup = true;
+    }
+
+    protected boolean getQueuedForCleanup() {
+        return kas.queuedForCleanup;
+    }
+
 }

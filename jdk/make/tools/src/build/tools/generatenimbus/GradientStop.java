@@ -26,20 +26,15 @@
 package build.tools.generatenimbus;
 
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+class GradientStop {
+    @XmlAttribute private float position;
+    public float getPosition() { return position; }
 
-    public String getName() {
-        return name;
-    }
+    @XmlAttribute private float midpoint;
+    public float getMidpoint() { return midpoint; }
 
-    public T getValue() {
-        return value;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
-    }
+    @XmlElement private Matte matte;
+    public Matte getColor() { return matte; }
 }

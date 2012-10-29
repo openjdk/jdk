@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,23 @@
  * questions.
  */
 
-package build.tools.generatenimbus;
+package sun.security.ssl;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import java.io.IOException;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+abstract class HelloExtension {
 
-    public String getName() {
-        return name;
+    final ExtensionType type;
+
+    HelloExtension(ExtensionType type) {
+        this.type = type;
     }
 
-    public T getValue() {
-        return value;
-    }
+    // Length of the encoded extension, including the type and length fields
+    abstract int length();
 
-    public void setValue(T value) {
-        this.value = value;
-    }
+    abstract void send(HandshakeOutStream s) throws IOException;
+
+    public abstract String toString();
+
 }

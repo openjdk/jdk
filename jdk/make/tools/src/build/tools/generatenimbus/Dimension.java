@@ -27,19 +27,12 @@ package build.tools.generatenimbus;
 
 import javax.xml.bind.annotation.XmlAttribute;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+class Dimension {
+    @XmlAttribute int width;
+    @XmlAttribute int height;
 
-    public String getName() {
-        return name;
-    }
-
-    public T getValue() {
-        return value;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
+    public String write(boolean uiResource) {
+        String uiSuffix = (uiResource ? "UIResource" : "");
+        return String.format("new Dimension%s(%d, %d)", uiSuffix, width, height);
     }
 }

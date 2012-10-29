@@ -25,21 +25,16 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
-
-    public String getName() {
-        return name;
+class UIFont extends UIDefault<Typeface> {
+    @XmlElement
+    public void setTypeface(Typeface t) {
+        setValue(t);
     }
 
-    public T getValue() {
-        return value;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
+    public String write() {
+        return String.format("        d.put(\"%s\", %s);\n",
+                             getName(), getValue().write());
     }
 }

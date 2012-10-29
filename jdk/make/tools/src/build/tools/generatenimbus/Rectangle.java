@@ -27,19 +27,35 @@ package build.tools.generatenimbus;
 
 import javax.xml.bind.annotation.XmlAttribute;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+class Rectangle extends Shape {
+    @XmlAttribute private double x1;
+    public double getX1() { return x1; }
 
-    public String getName() {
-        return name;
+    @XmlAttribute private double x2;
+    public double getX2() { return x2; }
+
+    @XmlAttribute private double y1;
+    public double getY1() { return y1; }
+
+    @XmlAttribute private double y2;
+    public double getY2() { return y2; }
+
+    @XmlAttribute
+    public double getRounding() {
+        double rounding = Math.abs(roundingX - x1) * 2;
+        return rounding > 2 ? rounding : 0;
     }
 
-    public T getValue() {
-        return value;
+    public void setRounding(double rounding) {
+        if (rounding > 0 && rounding < 2) {
+            rounding = 0;
+        }
+        roundingX = rounding / 2d + x1;
+    }
+    private double roundingX;
+
+    public boolean isRounded() {
+        return getRounding() > 0;
     }
 
-    public void setValue(T value) {
-        this.value = value;
-    }
 }

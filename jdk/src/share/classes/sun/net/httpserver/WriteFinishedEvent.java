@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,12 @@
  * questions.
  */
 
-package build.tools.generatenimbus;
+package sun.net.httpserver;
 
-import javax.xml.bind.annotation.XmlAttribute;
-
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
-
-    public String getName() {
-        return name;
-    }
-
-    public T getValue() {
-        return value;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
+class WriteFinishedEvent extends Event {
+    WriteFinishedEvent (ExchangeImpl t) {
+        super (t);
+        assert !t.writefinished;
+        t.writefinished = true;
     }
 }

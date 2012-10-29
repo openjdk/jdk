@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,35 @@
  * questions.
  */
 
-package build.tools.generatenimbus;
+package sun.security.ssl;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import java.io.IOException;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+final class UnknownExtension extends HelloExtension {
 
-    public String getName() {
-        return name;
+    private final byte[] data;
+
+    UnknownExtension(HandshakeInStream s, int len, ExtensionType type)
+            throws IOException {
+        super(type);
+        data = new byte[len];
+        // s.read() does not handle 0-length arrays.
+        if (len != 0) {
+            s.read(data);
+        }
     }
 
-    public T getValue() {
-        return value;
+    int length() {
+        return 4 + data.length;
     }
 
-    public void setValue(T value) {
-        this.value = value;
+    void send(HandshakeOutStream s) throws IOException {
+        s.putInt16(type.id);
+        s.putBytes16(data);
+    }
+
+    public String toString() {
+        return "Unsupported extension " + type + ", data: " +
+            Debug.toString(data);
     }
 }

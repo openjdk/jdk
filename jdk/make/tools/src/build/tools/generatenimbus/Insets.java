@@ -27,19 +27,26 @@ package build.tools.generatenimbus;
 
 import javax.xml.bind.annotation.XmlAttribute;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+class Insets {
+    @XmlAttribute int top;
+    @XmlAttribute int left;
+    @XmlAttribute int bottom;
+    @XmlAttribute int right;
 
-    public String getName() {
-        return name;
+    public Insets() {
+        this(0, 0, 0, 0);
     }
 
-    public T getValue() {
-        return value;
+    public Insets(int top, int left, int bottom, int right) {
+        this.top = top;
+        this.left = left;
+        this.bottom = bottom;
+        this.right = right;
     }
 
-    public void setValue(T value) {
-        this.value = value;
+    public String write(boolean uiResource) {
+        String uiSuffix = (uiResource ? "UIResource" : "");
+        return String.format("new Insets%s(%d, %d, %d, %d)",
+                             uiSuffix, top, left, bottom, right);
     }
 }

@@ -25,21 +25,15 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import java.util.ArrayList;
+import java.util.List;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 
-    public String getName() {
-        return name;
-    }
-
-    public T getValue() {
-        return value;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
-    }
+class Path extends Shape {
+    @XmlElement(name="point")
+    @XmlElementWrapper(name="points")
+    private List<Point> controlPoints = new ArrayList<Point>();
+    public List<Point> getControlPoints() { return controlPoints; }
 }

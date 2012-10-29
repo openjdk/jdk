@@ -25,21 +25,25 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import java.util.ArrayList;
+import java.util.List;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlElements;
 
-    public String getName() {
-        return name;
-    }
+class Layer {
+    /** List of shapes in this layer, first shape is painted on top */
+    @XmlElements({
+        @XmlElement(name = "ellipse", type = Ellipse.class),
+        @XmlElement(name = "path", type = Path.class),
+        @XmlElement(name = "rectangle", type = Rectangle.class)
+    })
+    @XmlElementWrapper(name="shapes")
+    private List<Shape> shapes = new ArrayList<Shape>();
+    public List<Shape> getShapes() { return shapes; }
 
-    public T getValue() {
-        return value;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
+    public boolean isEmpty() {
+        return shapes.isEmpty();
     }
 }

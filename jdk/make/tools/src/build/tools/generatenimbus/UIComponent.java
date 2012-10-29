@@ -25,21 +25,30 @@
 
 package build.tools.generatenimbus;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+class UIComponent extends UIRegion {
+    @XmlAttribute private String componentName;
 
-    public String getName() {
-        return name;
-    }
+    @XmlElement(name="stateType")
+    @XmlElementWrapper(name="stateTypes")
+    private List<UIStateType> stateTypes = new ArrayList<UIStateType>();
+    public List<UIStateType> getStateTypes() { return stateTypes; }
 
-    public T getValue() {
-        return value;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
+    @Override public String getKey() {
+        if (key == null || "".equals(key)) {
+            if (componentName == null || "".equals(componentName)) {
+                return name;
+            } else {
+                return "\"" + componentName + "\"";
+            }
+        } else {
+            return key;
+        }
     }
 }

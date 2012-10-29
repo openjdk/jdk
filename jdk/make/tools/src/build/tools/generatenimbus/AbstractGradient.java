@@ -25,21 +25,16 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import java.util.ArrayList;
+import java.util.List;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+import javax.xml.bind.annotation.XmlElement;
 
-    public String getName() {
-        return name;
+class AbstractGradient extends Paint {
+    public static enum CycleMethod {
+        NO_CYCLE, REFLECT, REPEAT
     }
 
-    public T getValue() {
-        return value;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
-    }
+    @XmlElement(name="stop") private ArrayList<GradientStop> stops;
+    public List<GradientStop> getStops() { return stops; }
 }
