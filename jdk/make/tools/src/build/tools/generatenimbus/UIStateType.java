@@ -26,20 +26,12 @@
 package build.tools.generatenimbus;
 
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+class UIStateType {
+    @XmlAttribute private String key;
+    public String getKey() { return key; }
 
-    public String getName() {
-        return name;
-    }
-
-    public T getValue() {
-        return value;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
-    }
+    @XmlElement private String codeSnippet;
+    public String getCodeSnippet() { return codeSnippet; }
 }

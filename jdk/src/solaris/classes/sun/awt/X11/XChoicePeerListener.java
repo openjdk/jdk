@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,18 @@
  * questions.
  */
 
-package build.tools.generatenimbus;
+package sun.awt.X11;
 
-import javax.xml.bind.annotation.XmlAttribute;
-
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
-
-    public String getName() {
-        return name;
-    }
-
-    public T getValue() {
-        return value;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
-    }
+/*
+ * The listener interface for receiving "interesting" for XFileDialogPeer
+ * choice events (opening, closing).
+ * The listener added by means of the method addXChoicePeerListener
+ * A opening choice event is generated when the invoking unfurledChoice.toFront()
+ * A closing choice event is generated at the time of the processing the mouse releasing
+ * and the Enter pressing.
+ * see 6240074 for more information
+ */
+interface XChoicePeerListener{
+    public void unfurledChoiceOpening(ListHelper choiceHelper);
+    public void unfurledChoiceClosing();
 }

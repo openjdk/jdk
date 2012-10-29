@@ -25,21 +25,17 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+class UIColor extends UIDefault<Matte> {
 
-    public String getName() {
-        return name;
+    @XmlElement
+    public void setMatte(Matte m) {
+        setValue(m);
     }
 
-    public T getValue() {
-        return value;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
+    public String write() {
+        return String.format("        addColor(d, \"%s\", %s);\n",
+                             getName(), getValue().write());
     }
 }

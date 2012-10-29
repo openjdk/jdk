@@ -25,21 +25,21 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import java.util.List;
 
-public class UIDefault<T> {
-    @XmlAttribute private String name;
-    private T value;
+import javax.xml.bind.annotation.XmlElement;
 
-    public String getName() {
-        return name;
-    }
+class Canvas {
+    @XmlElement private Dimension size;
+    public Dimension getSize() { return size; }
 
-    public T getValue() {
-        return value;
-    }
+    @XmlElement(name="layer") private List<Layer> layers;
+    public List<Layer> getLayers() { return layers; }
 
-    public void setValue(T value) {
-        this.value = value;
+    @XmlElement private Insets stretchingInsets = null;
+    public Insets getStretchingInsets() { return stretchingInsets; }
+
+    public boolean isBlank() {
+        return layers.size() == 0 || (layers.size() == 1 && layers.get(0).isEmpty());
     }
 }
