@@ -117,7 +117,6 @@ void CppInterpreterGenerator::generate_all() {
     method_entry(empty);
     method_entry(accessor);
     method_entry(abstract);
-    method_entry(method_handle);
     method_entry(java_lang_math_sin   );
     method_entry(java_lang_math_cos   );
     method_entry(java_lang_math_tan   );
@@ -125,7 +124,12 @@ void CppInterpreterGenerator::generate_all() {
     method_entry(java_lang_math_sqrt  );
     method_entry(java_lang_math_log   );
     method_entry(java_lang_math_log10 );
+    method_entry(java_lang_math_pow );
+    method_entry(java_lang_math_exp );
     method_entry(java_lang_ref_reference_get);
+
+    initialize_method_handle_entries();
+
     Interpreter::_native_entry_begin = Interpreter::code()->code_end();
     method_entry(native);
     method_entry(native_synchronized);
