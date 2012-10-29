@@ -170,6 +170,10 @@ public class Names {
     public final Name ex;
     public final Name package_info;
 
+    //lambda-related
+    public final Name lambda;
+    public final Name metaFactory;
+
     public final Name.Table table;
 
     public Names(Context context) {
@@ -298,6 +302,10 @@ public class Names {
         deprecated = fromString("deprecated");
         ex = fromString("ex");
         package_info = fromString("package-info");
+
+        //lambda-related
+        lambda = fromString("lambda");
+        metaFactory = fromString("metaFactory");
     }
 
     protected Name.Table createTable(Options options) {
