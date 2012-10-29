@@ -767,6 +767,7 @@ JDK_MICRO_VERSION
 JDK_MINOR_VERSION
 JDK_MAJOR_VERSION
 COMPRESS_JARS
+UNLIMITED_CRYPTO
 CACERTS_FILE
 TEST_IN_BUILD
 BUILD_HEADLESS
@@ -962,6 +963,7 @@ enable_openjdk_only
 enable_headful
 enable_hotspot_test_in_build
 with_cacerts_file
+enable_unlimited_crypto
 with_boot_jdk
 with_boot_jdk_jvmargs
 with_add_source_root
@@ -1647,6 +1649,8 @@ Optional Features:
                           support) [enabled]
   --enable-hotspot-test-in-build
                           run the Queens test after Hotspot build [disabled]
+  --enable-unlimited-crypto
+                          Enable unlimited crypto policy [disabled]
   --disable-debug-symbols disable generation of debug symbols [enabled]
   --disable-zip-debug-info
                           disable zipping of debug-info files [enabled]
@@ -3661,7 +3665,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1351257228
+DATE_WHEN_GENERATED=1351539315
 
 ###############################################################################
 #
@@ -6906,25 +6910,25 @@ SCRIPT="$0"
         else
             STARTDIR=$PWD
             COUNTER=0
-            DIR=`$DIRNAME $SCRIPT`
-            FILE=`$BASENAME $SCRIPT`
+            sym_link_dir=`$DIRNAME $SCRIPT`
+            sym_link_file=`$BASENAME $SCRIPT`
             while test $COUNTER -lt 20; do
-                ISLINK=`$LS -l $DIR/$FILE | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
                 # The link might be relative! We have to use cd to travel safely.
-                cd $DIR
+                cd $sym_link_dir
                 # ... and we must get the to the absolute path, not one using symbolic links.
                 cd `pwd -P`
                 cd `$DIRNAME $ISLINK`
-                DIR=`$THEPWDCMD`
-                FILE=`$BASENAME $ISLINK`
+                sym_link_dir=`$THEPWDCMD`
+                sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
             cd $STARTDIR
-            SCRIPT=$DIR/$FILE
+            SCRIPT=$sym_link_dir/$sym_link_file
         fi
     fi
 
@@ -7563,8 +7567,6 @@ fi
 # and options (variants and debug level) parsed.
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking what configuration name to use" >&5
-$as_echo_n "checking what configuration name to use... " >&6; }
 
 # Check whether --with-conf-name was given.
 if test "${with_conf_name+set}" = set; then :
@@ -7593,7 +7595,35 @@ else
         CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${SRC_ROOT}/build/!!"`
     fi
     OUTPUT_ROOT="$CURDIR"
+
+    # WARNING: This might be a bad thing to do. You need to be sure you want to
+    # have a configuration in this directory. Do some sanity checks!
+
+    if test ! -e "$OUTPUT_ROOT/spec.gmk"; then
+      # If we have a spec.gmk, we have run here before and we are OK. Otherwise, check for
+      # other files
+      files_present=`$LS $OUTPUT_ROOT`
+      if test "x$files_present" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Current directory is $CURDIR." >&5
+$as_echo "$as_me: Current directory is $CURDIR." >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Since this is not the source root, configure will output the configuration here" >&5
+$as_echo "$as_me: Since this is not the source root, configure will output the configuration here" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: (as opposed to creating a configuration in <src_root>/build/<conf-name>)." >&5
+$as_echo "$as_me: (as opposed to creating a configuration in <src_root>/build/<conf-name>)." >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: However, this directory is not empty. This is not allowed, since it could" >&5
+$as_echo "$as_me: However, this directory is not empty. This is not allowed, since it could" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: seriously mess up just about everything." >&5
+$as_echo "$as_me: seriously mess up just about everything." >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Try 'cd $SRC_ROOT' and restart configure" >&5
+$as_echo "$as_me: Try 'cd $SRC_ROOT' and restart configure" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: (or create a new empty directory and cd to it)." >&5
+$as_echo "$as_me: (or create a new empty directory and cd to it)." >&6;}
+        as_fn_error $? "Will not continue creating configuration in $CURDIR" "$LINENO" 5
+      fi
+    fi
 fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking what configuration name to use" >&5
+$as_echo_n "checking what configuration name to use... " >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONF_NAME" >&5
 $as_echo "$CONF_NAME" >&6; }
 
@@ -10334,6 +10364,24 @@ fi
 
 ###############################################################################
 #
+# Enable or disable unlimited crypto
+#
+# Check whether --enable-unlimited-crypto was given.
+if test "${enable_unlimited_crypto+set}" = set; then :
+  enableval=$enable_unlimited_crypto;
+else
+  enable_unlimited_crypto=no
+fi
+
+if test "x$enable_unlimited_crypto" = "xyes"; then
+    UNLIMITED_CRYPTO=true
+else
+    UNLIMITED_CRYPTO=false
+fi
+
+
+###############################################################################
+#
 # Compress jars
 #
 COMPRESS_JARS=false
@@ -11543,25 +11591,25 @@ fi
         else
             STARTDIR=$PWD
             COUNTER=0
-            DIR=`$DIRNAME $BINARY`
-            FILE=`$BASENAME $BINARY`
+            sym_link_dir=`$DIRNAME $BINARY`
+            sym_link_file=`$BASENAME $BINARY`
             while test $COUNTER -lt 20; do
-                ISLINK=`$LS -l $DIR/$FILE | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
                 # The link might be relative! We have to use cd to travel safely.
-                cd $DIR
+                cd $sym_link_dir
                 # ... and we must get the to the absolute path, not one using symbolic links.
                 cd `pwd -P`
                 cd `$DIRNAME $ISLINK`
-                DIR=`$THEPWDCMD`
-                FILE=`$BASENAME $ISLINK`
+                sym_link_dir=`$THEPWDCMD`
+                sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
             cd $STARTDIR
-            BINARY=$DIR/$FILE
+            BINARY=$sym_link_dir/$sym_link_file
         fi
     fi
 
@@ -17823,25 +17871,25 @@ $as_echo_n "checking resolved symbolic links for CC... " >&6; }
         else
             STARTDIR=$PWD
             COUNTER=0
-            DIR=`$DIRNAME $TEST_COMPILER`
-            FILE=`$BASENAME $TEST_COMPILER`
+            sym_link_dir=`$DIRNAME $TEST_COMPILER`
+            sym_link_file=`$BASENAME $TEST_COMPILER`
             while test $COUNTER -lt 20; do
-                ISLINK=`$LS -l $DIR/$FILE | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
                 # The link might be relative! We have to use cd to travel safely.
-                cd $DIR
+                cd $sym_link_dir
                 # ... and we must get the to the absolute path, not one using symbolic links.
                 cd `pwd -P`
                 cd `$DIRNAME $ISLINK`
-                DIR=`$THEPWDCMD`
-                FILE=`$BASENAME $ISLINK`
+                sym_link_dir=`$THEPWDCMD`
+                sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
             cd $STARTDIR
-            TEST_COMPILER=$DIR/$FILE
+            TEST_COMPILER=$sym_link_dir/$sym_link_file
         fi
     fi
 
@@ -18231,25 +18279,25 @@ $as_echo_n "checking for resolved symbolic links for CC... " >&6; }
         else
             STARTDIR=$PWD
             COUNTER=0
-            DIR=`$DIRNAME $PROPER_COMPILER_CC`
-            FILE=`$BASENAME $PROPER_COMPILER_CC`
+            sym_link_dir=`$DIRNAME $PROPER_COMPILER_CC`
+            sym_link_file=`$BASENAME $PROPER_COMPILER_CC`
             while test $COUNTER -lt 20; do
-                ISLINK=`$LS -l $DIR/$FILE | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
                 # The link might be relative! We have to use cd to travel safely.
-                cd $DIR
+                cd $sym_link_dir
                 # ... and we must get the to the absolute path, not one using symbolic links.
                 cd `pwd -P`
                 cd `$DIRNAME $ISLINK`
-                DIR=`$THEPWDCMD`
-                FILE=`$BASENAME $ISLINK`
+                sym_link_dir=`$THEPWDCMD`
+                sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
             cd $STARTDIR
-            PROPER_COMPILER_CC=$DIR/$FILE
+            PROPER_COMPILER_CC=$sym_link_dir/$sym_link_file
         fi
     fi
 
@@ -19278,25 +19326,25 @@ $as_echo_n "checking resolved symbolic links for CXX... " >&6; }
         else
             STARTDIR=$PWD
             COUNTER=0
-            DIR=`$DIRNAME $TEST_COMPILER`
-            FILE=`$BASENAME $TEST_COMPILER`
+            sym_link_dir=`$DIRNAME $TEST_COMPILER`
+            sym_link_file=`$BASENAME $TEST_COMPILER`
             while test $COUNTER -lt 20; do
-                ISLINK=`$LS -l $DIR/$FILE | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
                 # The link might be relative! We have to use cd to travel safely.
-                cd $DIR
+                cd $sym_link_dir
                 # ... and we must get the to the absolute path, not one using symbolic links.
                 cd `pwd -P`
                 cd `$DIRNAME $ISLINK`
-                DIR=`$THEPWDCMD`
-                FILE=`$BASENAME $ISLINK`
+                sym_link_dir=`$THEPWDCMD`
+                sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
             cd $STARTDIR
-            TEST_COMPILER=$DIR/$FILE
+            TEST_COMPILER=$sym_link_dir/$sym_link_file
         fi
     fi
 
@@ -19686,25 +19734,25 @@ $as_echo_n "checking for resolved symbolic links for CXX... " >&6; }
         else
             STARTDIR=$PWD
             COUNTER=0
-            DIR=`$DIRNAME $PROPER_COMPILER_CXX`
-            FILE=`$BASENAME $PROPER_COMPILER_CXX`
+            sym_link_dir=`$DIRNAME $PROPER_COMPILER_CXX`
+            sym_link_file=`$BASENAME $PROPER_COMPILER_CXX`
             while test $COUNTER -lt 20; do
-                ISLINK=`$LS -l $DIR/$FILE | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
                 # The link might be relative! We have to use cd to travel safely.
-                cd $DIR
+                cd $sym_link_dir
                 # ... and we must get the to the absolute path, not one using symbolic links.
                 cd `pwd -P`
                 cd `$DIRNAME $ISLINK`
-                DIR=`$THEPWDCMD`
-                FILE=`$BASENAME $ISLINK`
+                sym_link_dir=`$THEPWDCMD`
+                sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
             cd $STARTDIR
-            PROPER_COMPILER_CXX=$DIR/$FILE
+            PROPER_COMPILER_CXX=$sym_link_dir/$sym_link_file
         fi
     fi
 
@@ -20039,7 +20087,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 ### Locate other tools
 
-if test "x$OPENJDK_TARGET_OS" != xwindows; then
+if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     ac_ext=m
 ac_cpp='$OBJCPP $CPPFLAGS'
 ac_compile='$OBJC -c $OBJCFLAGS $CPPFLAGS conftest.$ac_ext >&5'

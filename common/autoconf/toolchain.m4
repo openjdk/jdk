@@ -264,7 +264,7 @@ AC_PROG_CXX([$CXX])
 
 ### Locate other tools
 
-if test "x$OPENJDK_TARGET_OS" != xwindows; then
+if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     AC_PROG_OBJC
     BASIC_FIXUP_EXECUTABLE(OBJC)
 else

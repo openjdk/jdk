@@ -143,25 +143,25 @@ AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
         else
             STARTDIR=$PWD
             COUNTER=0
-            DIR=`$DIRNAME [$]$1`
-            FILE=`$BASENAME [$]$1`
+            sym_link_dir=`$DIRNAME [$]$1`
+            sym_link_file=`$BASENAME [$]$1`
             while test $COUNTER -lt 20; do
-                ISLINK=`$LS -l $DIR/$FILE | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
                 # The link might be relative! We have to use cd to travel safely.
-                cd $DIR
+                cd $sym_link_dir
                 # ... and we must get the to the absolute path, not one using symbolic links.             
                 cd `pwd -P`
                 cd `$DIRNAME $ISLINK`
-                DIR=`$THEPWDCMD`
-                FILE=`$BASENAME $ISLINK`
+                sym_link_dir=`$THEPWDCMD`
+                sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
             cd $STARTDIR
-            $1=$DIR/$FILE
+            $1=$sym_link_dir/$sym_link_file
         fi
     fi
 ])
@@ -340,7 +340,6 @@ AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
 AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
 [
 
-AC_MSG_CHECKING([what configuration name to use])
 AC_ARG_WITH(conf-name, [AS_HELP_STRING([--with-conf-name],
 	[use this as the name of the configuration @<:@generated from important configuration options@:>@])],
         [ CONF_NAME=${with_conf_name} ])
@@ -366,7 +365,27 @@ else
         CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${SRC_ROOT}/build/!!"`
     fi
     OUTPUT_ROOT="$CURDIR"
+
+    # WARNING: This might be a bad thing to do. You need to be sure you want to
+    # have a configuration in this directory. Do some sanity checks!
+
+    if test ! -e "$OUTPUT_ROOT/spec.gmk"; then
+      # If we have a spec.gmk, we have run here before and we are OK. Otherwise, check for
+      # other files
+      files_present=`$LS $OUTPUT_ROOT`
+      if test "x$files_present" != x; then
+        AC_MSG_NOTICE([Current directory is $CURDIR.])
+        AC_MSG_NOTICE([Since this is not the source root, configure will output the configuration here])
+        AC_MSG_NOTICE([(as opposed to creating a configuration in <src_root>/build/<conf-name>).])
+        AC_MSG_NOTICE([However, this directory is not empty. This is not allowed, since it could])
+        AC_MSG_NOTICE([seriously mess up just about everything.])
+        AC_MSG_NOTICE([Try 'cd $SRC_ROOT' and restart configure])
+        AC_MSG_NOTICE([(or create a new empty directory and cd to it).])
+        AC_MSG_ERROR([Will not continue creating configuration in $CURDIR])
+      fi
+    fi
 fi
+AC_MSG_CHECKING([what configuration name to use])
 AC_MSG_RESULT([$CONF_NAME])
 
 BASIC_FIXUP_PATH(OUTPUT_ROOT)
