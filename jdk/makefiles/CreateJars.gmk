@@ -244,15 +244,7 @@ endif
 ifeq ($(OPENJDK_TARGET_OS), macosx)
         RT_JAR_EXCLUDES += com/sun/nio/sctp \
                            sun/nio/ch/sctp \
-                           sun/jdbc \
-                           sun/nio/ch/DevPollArrayWrapper\$$$$Updator.class \
-                           sun/nio/ch/DevPollArrayWrapper.class \
-                           sun/nio/ch/DevPollSelectorImpl.class \
-                           sun/nio/ch/DevPollSelectorProvider.class \
-                           sun/nio/ch/EPollArrayWrapper\$$$$Updator.class \
-                           sun/nio/ch/EPollArrayWrapper.class \
-                           sun/nio/ch/EPollSelectorImpl.class \
-                           sun/nio/ch/EPollSelectorProvider.class
+                           sun/jdbc
 endif
 
 # Find all files in the classes dir to use as dependencies. This could be more fine granular.
@@ -527,6 +519,9 @@ ifdef OPENJDK
 # TODO fix so that SetupArchive does not write files into SRCS
 #   then we don't need this extra copying
 #
+# NOTE:  We currently do not place restrictions on our limited export
+# policy.  This was not a typo.
+#
 US_EXPORT_POLICY_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/security/US_export_policy.jar
 US_EXPORT_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
 US_EXPORT_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/US_export_policy_jar.tmp
@@ -559,11 +554,18 @@ ifdef OPENJDK
 #   then we don't need this extra copying
 #
 LOCAL_POLICY_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/security/local_policy.jar
-LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/limited
 LOCAL_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/local_policy_jar.tmp
 
-LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/exempt_local.policy \
+ifeq ($(UNLIMITED_CRYPTO), true)
+    LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
+    LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/default_local.policy
+    LOCAL_POLICY_JAR_ATTR := Crypto-Strength: unlimited
+else
+    LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/limited
+    LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/exempt_local.policy \
 			 $(LOCAL_POLICY_JAR_TMP)/default_local.policy
+    LOCAL_POLICY_JAR_ATTR := Crypto-Strength: limited
+endif
 
 $(LOCAL_POLICY_JAR_TMP)/% : $(LOCAL_POLICY_JAR_SRC_DIR)/%
 	$(MKDIR) -p $(@D)
@@ -574,7 +576,7 @@ $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR,$(LOCAL_POLICY_JAR_DEPS),\
 		SRCS:=$(LOCAL_POLICY_JAR_TMP),\
 		SUFFIXES:= .policy,\
 		JAR:=$(LOCAL_POLICY_JAR_DST), \
-		EXTRA_MANIFEST_ATTR := Crypto-Strength: limited, \
+		EXTRA_MANIFEST_ATTR := $(LOCAL_POLICY_JAR_ATTR), \
 		SKIP_METAINF := true))
 
 JARS += $(LOCAL_POLICY_JAR_DST)
