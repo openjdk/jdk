@@ -244,25 +244,23 @@ public class KDCOptions extends KerberosFlags {
 
             Config config = Config.getInstance();
 
-            /*
-             * First see if the IBM hex format is being used.
-             * If not, try the Sun's string (boolean) format.
-             */
+            // If key not present, returns Integer.MIN_VALUE, which is
+            // almost all zero.
 
-            int options =config.getDefaultIntValue("kdc_default_options",
-                    "libdefaults");
+            int options = config.getIntValue("libdefaults",
+                    "kdc_default_options");
 
             if ((options & RENEWABLE_OK) == RENEWABLE_OK) {
                 set(RENEWABLE_OK, true);
             } else {
-                if (config.getDefaultBooleanValue("renewable", "libdefaults")) {
+                if (config.getBooleanValue("libdefaults", "renewable")) {
                     set(RENEWABLE_OK, true);
                 }
             }
             if ((options & PROXIABLE) == PROXIABLE) {
                 set(PROXIABLE, true);
             } else {
-                if (config.getDefaultBooleanValue("proxiable", "libdefaults")) {
+                if (config.getBooleanValue("libdefaults", "proxiable")) {
                     set(PROXIABLE, true);
                 }
             }
@@ -270,7 +268,7 @@ public class KDCOptions extends KerberosFlags {
             if ((options & FORWARDABLE) == FORWARDABLE) {
                 set(FORWARDABLE, true);
             } else {
-                if (config.getDefaultBooleanValue("forwardable", "libdefaults")) {
+                if (config.getBooleanValue("libdefaults", "forwardable")) {
                     set(FORWARDABLE, true);
                 }
             }

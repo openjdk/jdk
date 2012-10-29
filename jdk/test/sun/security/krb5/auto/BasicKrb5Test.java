@@ -25,6 +25,7 @@
  * @test
  * @bug 6706974
  * @summary Add krb5 test infrastructure
+ * @compile -XDignore.symbol.file BasicKrb5Test.java
  * @run main/othervm BasicKrb5Test
  * @run main/othervm BasicKrb5Test des-cbc-crc
  * @run main/othervm BasicKrb5Test des-cbc-md5
@@ -86,7 +87,7 @@ public class BasicKrb5Test {
         new OneKDC(etype).writeJAASConf();
 
         System.out.println("Testing etype " + etype);
-        if (etype != null && !EType.isSupported(Config.getInstance().getType(etype))) {
+        if (etype != null && !EType.isSupported(Config.getType(etype))) {
             // aes256 is not enabled on all systems
             System.out.println("Not supported.");
             return;
