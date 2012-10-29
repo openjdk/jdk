@@ -120,9 +120,9 @@ import java.io.IOException;
 
 public class KDCOptions extends KerberosFlags {
 
-    public final int KDC_OPT_PROXIABLE = 0x10000000;
-    public final int KDC_OPT_RENEWABLE_OK = 0x00000010;
-    public final int KDC_OPT_FORWARDABLE = 0x40000000;
+    private static final int KDC_OPT_PROXIABLE = 0x10000000;
+    private static final int KDC_OPT_RENEWABLE_OK = 0x00000010;
+    private static final int KDC_OPT_FORWARDABLE = 0x40000000;
 
 
     // KDC Options
@@ -250,14 +250,14 @@ public class KDCOptions extends KerberosFlags {
             int options = config.getIntValue("libdefaults",
                     "kdc_default_options");
 
-            if ((options & RENEWABLE_OK) == RENEWABLE_OK) {
+            if ((options & KDC_OPT_RENEWABLE_OK) == KDC_OPT_RENEWABLE_OK) {
                 set(RENEWABLE_OK, true);
             } else {
                 if (config.getBooleanValue("libdefaults", "renewable")) {
                     set(RENEWABLE_OK, true);
                 }
             }
-            if ((options & PROXIABLE) == PROXIABLE) {
+            if ((options & KDC_OPT_PROXIABLE) == KDC_OPT_PROXIABLE) {
                 set(PROXIABLE, true);
             } else {
                 if (config.getBooleanValue("libdefaults", "proxiable")) {
@@ -265,7 +265,7 @@ public class KDCOptions extends KerberosFlags {
                 }
             }
 
-            if ((options & FORWARDABLE) == FORWARDABLE) {
+            if ((options & KDC_OPT_FORWARDABLE) == KDC_OPT_FORWARDABLE) {
                 set(FORWARDABLE, true);
             } else {
                 if (config.getBooleanValue("libdefaults", "forwardable")) {
