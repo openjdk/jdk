@@ -598,29 +598,21 @@ public class LWWindowPeer
     }
 
     /**
-     * Called by the delegate when any part of the window should be repainted.
+     * Called by the {@code PlatformWindow} when any part of the window should
+     * be repainted.
      */
-    public void notifyExpose(final int x, final int y, final int w, final int h) {
-        // TODO: there's a serious problem with Swing here: it handles
-        // the exposition internally, so SwingPaintEventDispatcher always
-        // return null from createPaintEvent(). However, we flush the
-        // back buffer here unconditionally, so some flickering may appear.
-        // A possible solution is to split postPaintEvent() into two parts,
-        // and override that part which is only called after if
-        // createPaintEvent() returned non-null value and flush the buffer
-        // from the overridden method
-        flushOnscreenGraphics();
-        repaintPeer(new Rectangle(x, y, w, h));
+    public final void notifyExpose(final Rectangle r) {
+        repaintPeer(r);
     }
 
     /**
-     * Called by the delegate when this window is moved/resized by user.
-     * There's no notifyReshape() in LWComponentPeer as the only
+     * Called by the {@code PlatformWindow} when this window is moved/resized by
+     * user. There's no notifyReshape() in LWComponentPeer as the only
      * components which could be resized by user are top-level windows.
      */
     public final void notifyReshape(int x, int y, int w, int h) {
-        boolean moved = false;
-        boolean resized = false;
+        final boolean moved;
+        final boolean resized;
         synchronized (getStateLock()) {
             moved = (x != sysX) || (y != sysY);
             resized = (w != sysW) || (h != sysH);
@@ -644,12 +636,13 @@ public class LWWindowPeer
             flushOnscreenGraphics();
         }
 
-        // Third, COMPONENT_MOVED/COMPONENT_RESIZED events
+        // Third, COMPONENT_MOVED/COMPONENT_RESIZED/PAINT events
         if (moved) {
             handleMove(x, y, true);
         }
         if (resized) {
-            handleResize(w, h,true);
+            handleResize(w, h, true);
+            repaintPeer();
         }
     }
 
