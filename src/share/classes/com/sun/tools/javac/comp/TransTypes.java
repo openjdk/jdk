@@ -120,6 +120,16 @@ public class TransTypes extends TreeTranslator {
      *  @param tree    The expression tree.
      *  @param target  The target type.
      */
+    public JCExpression coerce(Env<AttrContext> env, JCExpression tree, Type target) {
+        Env<AttrContext> prevEnv = this.env;
+        try {
+            this.env = env;
+            return coerce(tree, target);
+        }
+        finally {
+            this.env = prevEnv;
+        }
+    }
     JCExpression coerce(JCExpression tree, Type target) {
         Type btarget = target.baseType();
         if (tree.type.isPrimitive() == target.isPrimitive()) {
@@ -194,6 +204,20 @@ public class TransTypes extends TreeTranslator {
             args.head = translate(args.head, parameter);
         }
         return _args;
+    }
+
+    public <T extends JCTree> List<T> translateArgs(List<T> _args,
+                                           List<Type> parameters,
+                                           Type varargsElement,
+                                           Env<AttrContext> localEnv) {
+        Env<AttrContext> prevEnv = env;
+        try {
+            env = localEnv;
+            return translateArgs(_args, parameters, varargsElement);
+        }
+        finally {
+            env = prevEnv;
+        }
     }
 
     /** Add a bridge definition and enter corresponding method symbol in
@@ -451,9 +475,9 @@ public class TransTypes extends TreeTranslator {
         result = tree;
     }
 
-    JCMethodDecl currentMethod = null;
+    JCTree currentMethod = null;
     public void visitMethodDef(JCMethodDecl tree) {
-        JCMethodDecl previousMethod = currentMethod;
+        JCTree previousMethod = currentMethod;
         try {
             currentMethod = tree;
             tree.restype = translate(tree.restype, null);
@@ -519,6 +543,22 @@ public class TransTypes extends TreeTranslator {
         result = tree;
     }
 
+    public void visitLambda(JCLambda tree) {
+        JCTree prevMethod = currentMethod;
+        try {
+            currentMethod = null;
+            tree.params = translate(tree.params);
+            tree.body = translate(tree.body, null);
+            //save non-erased target
+            tree.targetType = tree.type;
+            tree.type = erasure(tree.type);
+            result = tree;
+        }
+        finally {
+            currentMethod = prevMethod;
+        }
+    }
+
     public void visitSwitch(JCSwitch tree) {
         Type selsuper = types.supertype(tree.selector.type);
         boolean enumSwitch = selsuper != null &&
@@ -570,7 +610,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitReturn(JCReturn tree) {
-        tree.expr = translate(tree.expr, currentMethod.sym.erasure(types).getReturnType());
+        tree.expr = translate(tree.expr, currentMethod != null ? types.erasure(currentMethod.type).getReturnType() : null);
         result = tree;
     }
 
@@ -601,6 +641,7 @@ public class TransTypes extends TreeTranslator {
             Assert.check(tree.args.length() == argtypes.length());
         tree.args = translateArgs(tree.args, argtypes, tree.varargsElement);
 
+        tree.type = types.erasure(tree.type);
         // Insert casts of method invocation results as needed.
         result = retype(tree, mt.getReturnType(), pt);
     }
@@ -614,6 +655,8 @@ public class TransTypes extends TreeTranslator {
         tree.args = translateArgs(
             tree.args, tree.constructor.erasure(types).getParameterTypes(), tree.varargsElement);
         tree.def = translate(tree.def, null);
+        if (tree.constructorType != null)
+            tree.constructorType = erasure(tree.constructorType);
         tree.type = erasure(tree.type);
         result = tree;
     }
@@ -629,16 +672,6 @@ public class TransTypes extends TreeTranslator {
         }
 
         result = tree;
-    }
-
-    @Override
-    public void visitLambda(JCLambda tree) {
-        Assert.error("Translation of lambda expression not supported yet");
-    }
-
-    @Override
-    public void visitReference(JCMemberReference tree) {
-        Assert.error("Translation of method reference not supported yet");
     }
 
     public void visitParens(JCParens tree) {
@@ -747,6 +780,14 @@ public class TransTypes extends TreeTranslator {
             tree.type = erasure(tree.type);
             result = tree;
         }
+    }
+
+    public void visitReference(JCMemberReference tree) {
+        tree.expr = translate(tree.expr, null);
+        //save non-erased target
+        tree.targetType = tree.type;
+        tree.type = erasure(tree.type);
+        result = tree;
     }
 
     public void visitTypeArray(JCArrayTypeTree tree) {
