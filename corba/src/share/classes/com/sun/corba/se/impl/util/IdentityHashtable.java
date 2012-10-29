@@ -42,16 +42,6 @@ import java.util.NoSuchElementException;
  * instead, it uses the System.identityHashcode() method and pointer comparison.
  * In addition, all synchronization has been removed.
  */
-/**
- * IdentityHashtable collision list.
- */
-class IdentityHashtableEntry {
-        int hash;
-        Object key;
-        Object value;
-        IdentityHashtableEntry next;
-}
-
 public final class IdentityHashtable extends Dictionary {
     /**
      * The hash table data.
