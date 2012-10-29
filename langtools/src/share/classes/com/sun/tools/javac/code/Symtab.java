@@ -127,6 +127,7 @@ public class Symtab {
     public final Type cloneableType;
     public final Type serializableType;
     public final Type methodHandleType;
+    public final Type methodHandleLookupType;
     public final Type methodTypeType;
     public final Type nativeHeaderType;
     public final Type throwableType;
@@ -158,6 +159,7 @@ public class Symtab {
     public final Type systemType;
     public final Type autoCloseableType;
     public final Type trustMeType;
+    public final Type lambdaMetafactory;
     public final Type containedByType;
     public final Type containerForType;
     public final Type documentedType;
@@ -456,6 +458,7 @@ public class Symtab {
         throwableType = enterClass("java.lang.Throwable");
         serializableType = enterClass("java.io.Serializable");
         methodHandleType = enterClass("java.lang.invoke.MethodHandle");
+        methodHandleLookupType = enterClass("java.lang.invoke.MethodHandles$Lookup");
         methodTypeType = enterClass("java.lang.invoke.MethodType");
         errorType = enterClass("java.lang.Error");
         illegalArgumentExceptionType = enterClass("java.lang.IllegalArgumentException");
@@ -503,10 +506,12 @@ public class Symtab {
                              autoCloseableType.tsym);
         trustMeType = enterClass("java.lang.SafeVarargs");
         nativeHeaderType = enterClass("javax.tools.annotation.GenerateNativeHeader");
+        lambdaMetafactory = enterClass("java.lang.invoke.LambdaMetafactory");
 
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);
         synthesizeEmptyInterfaceIfMissing(serializableType);
+        synthesizeEmptyInterfaceIfMissing(lambdaMetafactory);
         synthesizeBoxTypeIfMissing(doubleType);
         synthesizeBoxTypeIfMissing(floatType);
         synthesizeBoxTypeIfMissing(voidType);
