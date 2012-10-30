@@ -149,14 +149,12 @@ public class HtmlWriter {
      *
      * @param path The directory path to be created for this file
      *             or null if none to be created.
-     * @param filename File Name to which the PrintWriter will
-     *                 do the Output.
      * @exception IOException Exception raised by the FileWriter is passed on
      * to next level.
      * @exception UnsupportedEncodingException Exception raised by the
      * OutputStreamWriter is passed on to next level.
      */
-    public HtmlWriter(Configuration configuration,DocPath path)
+    public HtmlWriter(Configuration configuration, DocPath path)
             throws IOException, UnsupportedEncodingException {
         writer = Util.genWriter(configuration, path);
         this.configuration = configuration;

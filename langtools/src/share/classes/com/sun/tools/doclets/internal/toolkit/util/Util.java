@@ -397,7 +397,7 @@ public class Util {
      * "java" and then "java/applet" if they don't exist. The file separator
      * string "/" is platform dependent system property.
      *
-     * @param path Directory path string.
+     * @param dir Directory path string.
      */
     public static void createDirectory(Configuration configuration, File dir) {
         if (dir == null) {
@@ -643,8 +643,6 @@ public class Util {
      * FileOutputStream and OutputStreamWriter depending upon docencoding.
      *
      * @param path The directory path to be created for this file.
-     * @param filename File Name to which the PrintWriter will do the Output.
-     * @param docencoding Encoding to be used for this file.
      * @exception IOException Exception raised by the FileWriter is passed on
      * to next level.
      * @exception UnsupportedEncodingException Exception raised by the

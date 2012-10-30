@@ -114,13 +114,13 @@ public class DocPath {
         path = (p.endsWith("/") ? p.substring(0, p.length() - 1) : p);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         return (other instanceof DocPath) && path.equals(((DocPath)other).path);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         return path.hashCode();

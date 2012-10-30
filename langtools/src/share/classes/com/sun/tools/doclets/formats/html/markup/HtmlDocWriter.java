@@ -75,8 +75,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Return Html Hyper Link string.
      *
      * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     * needed.
      * @param label      Tag for the link.
      * @param strong       Boolean that sets label to strong.
      * @return String    Hyper Link.
@@ -95,8 +93,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Get Html Hyper Link string.
      *
      * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     *                   needed.
      * @param label      Tag for the link.
      * @param strong       Boolean that sets label to strong.
      * @param stylename  String style of text defined in style sheet.
@@ -131,8 +127,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Get Html Hyper Link string.
      *
      * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     *                   needed.
      * @param label      Tag for the link.
      * @return a content tree for the hyper link
      */
@@ -150,8 +144,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Get Html Hyper Link string.
      *
      * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     *                   needed.
      * @param label      Tag for the link.
      * @param strong       Boolean that sets label to strong.
      * @param stylename  String style of text defined in style sheet.
@@ -201,8 +193,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Get Html Hyper Link.
      *
      * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     *                   needed.
      * @param label      Tag for the link.
      * @param title      String that describes the link's content for accessibility.
      * @param target     Target frame.

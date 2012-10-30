@@ -860,8 +860,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Return the path to the class page for a classdoc. Works same as
-     * {@link #pathToClass(ClassDoc)}.
+     * Return the path to the class page for a classdoc.
      *
      * @param cd   Class to which the path is requested.
      * @param name Name of the file(doesn't include path).
