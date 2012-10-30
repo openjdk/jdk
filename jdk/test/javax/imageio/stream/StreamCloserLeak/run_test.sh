@@ -1,6 +1,6 @@
 #!/bin/ksh -p
 #
-# Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,24 +78,40 @@ OS=`uname -s`
 case "$OS" in
    SunOS )
       VAR="One value for Sun"
-      DEFAULT_JDK=/usr/local/java/jdk1.2/solaris
+      DEFAULT_JDK=/
       FILESEP="/"
       PATHSEP=":"
       TMP="/tmp"
       ;;
 
-   Linux | Darwin )
+   Linux )
       VAR="A different value for Linux"
-      DEFAULT_JDK=/usr/local/java/jdk1.4/linux-i386
+      DEFAULT_JDK=/
       FILESEP="/"
       PATHSEP=":"
       TMP="/tmp"
       ;;
 
-   Windows_95 | Windows_98 | Windows_NT | Windows_ME | CYGWIN* )
+   Darwin )
+      VAR="A different value for MacOSX"
+      DEFAULT_JDK=/usr
+      FILESEP="/"
+      PATHSEP=":"
+      TMP="/tmp"
+      ;;
+
+   Windows* )
       VAR="A different value for Win32"
-      DEFAULT_JDK=/usr/local/java/jdk1.2/win32
+      DEFAULT_JDK="C:/Program Files/Java/jdk1.8.0"
       FILESEP="\\"
+      PATHSEP=";"
+      TMP=`cd "${SystemRoot}/Temp"; echo ${PWD}`
+      ;;
+
+    CYGWIN* )
+      VAR="A different value for Cygwin"
+      DEFAULT_JDK="/cygdrive/c/Program\ Files/Java/jdk1.8.0"
+      FILESEP="/"
       PATHSEP=";"
       TMP=`cd "${SystemRoot}/Temp"; echo ${PWD}`
       ;;
