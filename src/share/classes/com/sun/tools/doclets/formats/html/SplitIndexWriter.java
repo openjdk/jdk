@@ -62,8 +62,6 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * from this file.
      *
      * @param path       Path to the file which is getting generated.
-     * @param filename   Name of the file which is getting genrated.
-     * @param relpath    Relative path from this file to the current directory.
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      */
     public SplitIndexWriter(ConfigurationImpl configuration,

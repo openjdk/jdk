@@ -227,7 +227,6 @@ public class Attr extends JCTree.Visitor {
      *  are correct.
      *
      *  @param tree     The tree whose kind and type is checked
-     *  @param owntype  The computed type of the tree
      *  @param ownkind  The computed kind of the tree
      *  @param resultInfo  The expected result of the tree
      */

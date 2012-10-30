@@ -110,7 +110,7 @@ public class SourcePath {
     /**
      * Find the specified directory in the source path.
      *
-     * @param name Name of the directory to be searched for in the source path.
+     * @param p Name of the directory to be searched for in the source path.
      * @return File Return the directory if found else return null.
      */
     public File getDirectory(DocPath p) {

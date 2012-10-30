@@ -106,7 +106,7 @@ public enum TypeTag {
      */
     DEFERRED,
 
-    /** The tag of the bottom type <null>.
+    /** The tag of the bottom type {@code <null>}.
      */
     BOT,
 
