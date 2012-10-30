@@ -840,7 +840,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
         // backward compatability 4365188
         CodeBase cb;
 
-        ValueHandler vh = ORBUtility.createValueHandler(this);
+        ValueHandler vh = ORBUtility.createValueHandler();
 
         cb = (CodeBase)vh.getRunTimeCodeBase();
         return ORBUtility.connectAndGetIOR( this, cb ) ;
