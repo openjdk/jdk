@@ -30,24 +30,10 @@ import sun.jvm.hotspot.utilities.PlatformInfo;
 /** Encapsulates some byte-swapping operations defined in the VM */
 
 public class Bytes {
-  // swap if client platform is different from server's.
   private boolean swap;
 
   public Bytes(MachineDescription machDesc) {
-    String cpu = PlatformInfo.getCPU();
-    if (cpu.equals("sparc")) {
-      if (machDesc.isBigEndian()) {
-        swap = false;
-      } else {
-        swap = true;
-      }
-    } else { // intel
-      if (machDesc.isBigEndian()) {
-        swap = true;
-      } else {
-        swap = false;
-      }
-    }
+    swap = !machDesc.isBigEndian();
   }
 
   /** Should only swap if the hardware's underlying byte order is

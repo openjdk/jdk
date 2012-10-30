@@ -73,6 +73,7 @@ public class TestLongVect {
       test_subc(a0, a1);
       test_subv(a0, a1, (long)VALUE);
       test_suba(a0, a1, a2);
+
       test_mulc(a0, a1);
       test_mulv(a0, a1, (long)VALUE);
       test_mula(a0, a1, a2);
@@ -85,6 +86,7 @@ public class TestLongVect {
       test_divc_n(a0, a1);
       test_divv(a0, a1, (long)-VALUE);
       test_diva(a0, a1, a3);
+
       test_andc(a0, a1);
       test_andv(a0, a1, (long)BIT_MASK);
       test_anda(a0, a1, a4);
@@ -94,30 +96,48 @@ public class TestLongVect {
       test_xorc(a0, a1);
       test_xorv(a0, a1, (long)BIT_MASK);
       test_xora(a0, a1, a4);
+
       test_sllc(a0, a1);
       test_sllv(a0, a1, VALUE);
       test_srlc(a0, a1);
       test_srlv(a0, a1, VALUE);
       test_srac(a0, a1);
       test_srav(a0, a1, VALUE);
+
       test_sllc_n(a0, a1);
       test_sllv(a0, a1, -VALUE);
       test_srlc_n(a0, a1);
       test_srlv(a0, a1, -VALUE);
       test_srac_n(a0, a1);
       test_srav(a0, a1, -VALUE);
+
       test_sllc_o(a0, a1);
       test_sllv(a0, a1, SHIFT);
       test_srlc_o(a0, a1);
       test_srlv(a0, a1, SHIFT);
       test_srac_o(a0, a1);
       test_srav(a0, a1, SHIFT);
+
       test_sllc_on(a0, a1);
       test_sllv(a0, a1, -SHIFT);
       test_srlc_on(a0, a1);
       test_srlv(a0, a1, -SHIFT);
       test_srac_on(a0, a1);
       test_srav(a0, a1, -SHIFT);
+
+      test_sllc_add(a0, a1);
+      test_sllv_add(a0, a1, ADD_INIT);
+      test_srlc_add(a0, a1);
+      test_srlv_add(a0, a1, ADD_INIT);
+      test_srac_add(a0, a1);
+      test_srav_add(a0, a1, ADD_INIT);
+
+      test_sllc_and(a0, a1);
+      test_sllv_and(a0, a1, BIT_MASK);
+      test_srlc_and(a0, a1);
+      test_srlv_and(a0, a1, BIT_MASK);
+      test_srac_and(a0, a1);
+      test_srav_and(a0, a1, BIT_MASK);
     }
     // Test and verify results
     System.out.println("Verification");
@@ -352,6 +372,60 @@ public class TestLongVect {
       test_srav(a0, a1, -SHIFT);
       for (int i=0; i<ARRLEN; i++) {
         errn += verify("test_srav_on: ", i, a0[i], (long)((long)(ADD_INIT+i)>>(-SHIFT)));
+      }
+
+      test_sllc_add(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_sllc_add: ", i, a0[i], (long)(((long)(ADD_INIT+i) + ADD_INIT)<<VALUE));
+      }
+      test_sllv_add(a0, a1, ADD_INIT);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_sllv_add: ", i, a0[i], (long)(((long)(ADD_INIT+i) + ADD_INIT)<<VALUE));
+      }
+
+      test_srlc_add(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_srlc_add: ", i, a0[i], (long)(((long)(ADD_INIT+i) + ADD_INIT)>>>VALUE));
+      }
+      test_srlv_add(a0, a1, ADD_INIT);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_srlv_add: ", i, a0[i], (long)(((long)(ADD_INIT+i) + ADD_INIT)>>>VALUE));
+      }
+
+      test_srac_add(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_srac_add: ", i, a0[i], (long)(((long)(ADD_INIT+i) + ADD_INIT)>>VALUE));
+      }
+      test_srav_add(a0, a1, ADD_INIT);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_srav_add: ", i, a0[i], (long)(((long)(ADD_INIT+i) + ADD_INIT)>>VALUE));
+      }
+
+      test_sllc_and(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_sllc_and: ", i, a0[i], (long)(((long)(ADD_INIT+i) & BIT_MASK)<<VALUE));
+      }
+      test_sllv_and(a0, a1, BIT_MASK);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_sllv_and: ", i, a0[i], (long)(((long)(ADD_INIT+i) & BIT_MASK)<<VALUE));
+      }
+
+      test_srlc_and(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_srlc_and: ", i, a0[i], (long)(((long)(ADD_INIT+i) & BIT_MASK)>>>VALUE));
+      }
+      test_srlv_and(a0, a1, BIT_MASK);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_srlv_and: ", i, a0[i], (long)(((long)(ADD_INIT+i) & BIT_MASK)>>>VALUE));
+      }
+
+      test_srac_and(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_srac_and: ", i, a0[i], (long)(((long)(ADD_INIT+i) & BIT_MASK)>>VALUE));
+      }
+      test_srav_and(a0, a1, BIT_MASK);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_srav_and: ", i, a0[i], (long)(((long)(ADD_INIT+i) & BIT_MASK)>>VALUE));
       }
 
     }
@@ -696,6 +770,84 @@ public class TestLongVect {
     end = System.currentTimeMillis();
     System.out.println("test_srav_on: " + (end - start));
 
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_sllc_add(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_sllc_add: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_sllv_add(a0, a1, ADD_INIT);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_sllv_add: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_srlc_add(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_srlc_add: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_srlv_add(a0, a1, ADD_INIT);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_srlv_add: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_srac_add(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_srac_add: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_srav_add(a0, a1, ADD_INIT);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_srav_add: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_sllc_and(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_sllc_and: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_sllv_and(a0, a1, BIT_MASK);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_sllv_and: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_srlc_and(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_srlc_and: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_srlv_and(a0, a1, BIT_MASK);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_srlv_and: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_srac_and(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_srac_and: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_srav_and(a0, a1, BIT_MASK);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_srav_and: " + (end - start));
+
     return errn;
   }
 
@@ -854,6 +1006,26 @@ public class TestLongVect {
       a0[i] = (long)(a1[i]<<b);
     }
   }
+  static void test_sllc_add(long[] a0, long[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] + ADD_INIT)<<VALUE);
+    }
+  }
+  static void test_sllv_add(long[] a0, long[] a1, long b) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] + b)<<VALUE);
+    }
+  }
+  static void test_sllc_and(long[] a0, long[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] & BIT_MASK)<<VALUE);
+    }
+  }
+  static void test_sllv_and(long[] a0, long[] a1, long b) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] & b)<<VALUE);
+    }
+  }
 
   static void test_srlc(long[] a0, long[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
@@ -880,6 +1052,26 @@ public class TestLongVect {
       a0[i] = (long)(a1[i]>>>b);
     }
   }
+  static void test_srlc_add(long[] a0, long[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] + ADD_INIT)>>>VALUE);
+    }
+  }
+  static void test_srlv_add(long[] a0, long[] a1, long b) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] + b)>>>VALUE);
+    }
+  }
+  static void test_srlc_and(long[] a0, long[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] & BIT_MASK)>>>VALUE);
+    }
+  }
+  static void test_srlv_and(long[] a0, long[] a1, long b) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] & b)>>>VALUE);
+    }
+  }
 
   static void test_srac(long[] a0, long[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
@@ -904,6 +1096,26 @@ public class TestLongVect {
   static void test_srav(long[] a0, long[] a1, int b) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (long)(a1[i]>>b);
+    }
+  }
+  static void test_srac_add(long[] a0, long[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] + ADD_INIT)>>VALUE);
+    }
+  }
+  static void test_srav_add(long[] a0, long[] a1, long b) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] + b)>>VALUE);
+    }
+  }
+  static void test_srac_and(long[] a0, long[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] & BIT_MASK)>>VALUE);
+    }
+  }
+  static void test_srav_and(long[] a0, long[] a1, long b) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (long)((a1[i] & b)>>VALUE);
     }
   }
 
