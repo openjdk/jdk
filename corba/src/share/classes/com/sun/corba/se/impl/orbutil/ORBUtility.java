@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,42 +160,10 @@ public final class ORBUtility {
     }
 
     /**
-     * Creates the correct ValueHandler for the given ORB,
-     * querying ORBVersion information.  If the ORB or
-     * ORBVersion is null, gets the ValueHandler from
-     * Util.createValueHandler.
+     * Return default ValueHandler
      */
-    public static ValueHandler createValueHandler(ORB orb) {
-
-        if (orb == null)
-            return Util.createValueHandler();
-
-        ORBVersion version = orb.getORBVersion();
-
-        if (version == null)
-            return Util.createValueHandler();
-
-        if (version.equals(ORBVersionFactory.getOLD()))
-            return new ValueHandlerImpl_1_3();
-        if (version.equals(ORBVersionFactory.getNEW()))
-            return new ValueHandlerImpl_1_3_1();
-
+    public static ValueHandler createValueHandler() {
         return Util.createValueHandler();
-    }
-
-    /**
-     * Returns true if the given ORB could accurately be determined to be a
-     * Kestrel or earlier ORB.  Note: If passed the ORBSingleton, this will return
-     * false.
-     */
-    public static boolean isLegacyORB(ORB orb)
-    {
-        try {
-            ORBVersion currentORB = orb.getORBVersion();
-            return currentORB.equals( ORBVersionFactory.getOLD() ) ;
-        } catch (SecurityException se) {
-            return false;
-        }
     }
 
     /**
