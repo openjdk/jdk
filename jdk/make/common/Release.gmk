@@ -348,15 +348,15 @@ TOOLS = \
 	sun/tools/serialver	\
 	sun/tools/tree		\
 	sun/tools/util		\
-	sun/security/tools/JarBASE64Encoder.class \
-	sun/security/tools/JarSigner.class \
-	sun/security/tools/JarSignerParameters.class \
-	sun/security/tools/JarSignerResources.class \
-	sun/security/tools/JarSignerResources_ja.class \
-	sun/security/tools/JarSignerResources_zh_CN.class \
-	sun/security/tools/SignatureFile\$$Block.class \
-	sun/security/tools/SignatureFile.class \
-	sun/security/tools/TimestampedSigner.class \
+	sun/security/tools/jarsigner/JarBASE64Encoder.class \
+	sun/security/tools/jarsigner/Main.class \
+	sun/security/tools/jarsigner/JarSignerParameters.class \
+	sun/security/tools/jarsigner/Resources.class \
+	sun/security/tools/jarsigner/Resources_ja.class \
+	sun/security/tools/jarsigner/Resources_zh_CN.class \
+	sun/security/tools/jarsigner/SignatureFile\$$Block.class \
+	sun/security/tools/jarsigner/SignatureFile.class \
+	sun/security/tools/jarsigner/TimestampedSigner.class \
 	sun/rmi/rmic		\
 	sun/applet		\
 	sun/jvmstat		\
@@ -572,15 +572,15 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "sun/tools/serialver/" >> $@
 	$(ECHO) "sun/tools/tree/" >> $@
 	$(ECHO) "sun/tools/util/" >> $@
-	$(ECHO) "sun/security/tools/JarBASE64Encoder.class" >> $@
-	$(ECHO) "sun/security/tools/JarSigner.class" >> $@
-	$(ECHO) "sun/security/tools/JarSignerParameters.class" >> $@
-	$(ECHO) "sun/security/tools/JarSignerResources.class" >> $@
-	$(ECHO) "sun/security/tools/JarSignerResources_ja.class" >> $@
-	$(ECHO) "sun/security/tools/JarSignerResources_zh_CN.class" >> $@
-	$(ECHO) "sun/security/tools/SignatureFile\$$Block.class" >> $@
-	$(ECHO) "sun/security/tools/SignatureFile.class" >> $@
-	$(ECHO) "sun/security/tools/TimestampedSigner.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/JarBASE64Encoder.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/Main.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/JarSignerParameters.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/Resources.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/Resources_ja.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/Resources_zh_CN.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/SignatureFile\$$Block.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/SignatureFile.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/TimestampedSigner.class" >> $@
 	$(ECHO) "sun/security/provider/Sun.class" >> $@
 	$(ECHO) "sun/security/rsa/SunRsaSign.class" >> $@
 	$(ECHO) "sun/security/ssl/" >> $@
@@ -784,11 +784,22 @@ initial-image-jre:: initial-image-jre-setup \
 		    $(RT_JAR) $(RESOURCES_JAR) $(JSSE_JAR) $(JFR_JAR) \
 		    $(BUILDMETAINDEX_JARFILE)
 	@# Copy in bin directory
+ifeq ($(USING_MSYS),true)
+        # No cpio in MinGW/MSYS
+	$(CD) $(OUTPUTDIR) && $(TAR) -cf - bin | ($(CD) $(JRE_IMAGE_DIR) && $(TAR) -xpf -)
+else
 	$(CD) $(OUTPUTDIR) && $(FIND) bin -depth | $(CPIO) -pdum $(JRE_IMAGE_DIR)
+endif
 	@# CTE plugin security change require new empty directory lib/applet
 	$(MKDIR) -p $(JRE_IMAGE_DIR)/lib/applet
 	@# Copy in lib directory
+ifeq ($(USING_MSYS),true)
+        # No cpio in MinGW/MSYS
+	$(CD) $(OUTPUTDIR) && $(TAR) -cf - lib | ($(CD) $(JRE_IMAGE_DIR) && $(TAR) -xpf -)
+else
 	$(CD) $(OUTPUTDIR) && $(FIND) lib -depth | $(CPIO) -pdum $(JRE_IMAGE_DIR)
+endif
+
   ifeq ($(USING_CYGWIN),true)
 	  $(RM) -rf $(JRE_IMAGE_DIR)/[A-Za-z]:
 	  $(RM) -rf $(OUTPUTDIR)/[A-Za-z]:
@@ -919,11 +930,17 @@ endif
 # only places from which we copy everything), but because the presence
 # of this file causes cygwin's find to bomb out, thus breaking the build
 # in "install".
+
 initial-image-jdk-setup:
 	$(RM) -r $(JDK_IMAGE_DIR)
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/jre
+ifeq ($(USING_MSYS),true)
+	($(CD) $(JRE_IMAGE_DIR) && $(TAR) -cf - . \
+	      | ($(CD) $(JDK_IMAGE_DIR)/jre && $(TAR) -xpf -))
+else
 	($(CD) $(JRE_IMAGE_DIR) && $(FIND) . -depth -print \
 	      | $(CPIO) -pdum $(JDK_IMAGE_DIR)/jre )
+endif
   ifeq ($(USING_CYGWIN),true)
 	  $(RM) -rf $(JRE_IMAGE_DIR)/[A-Za-z]:
 	  $(RM) -rf $(JDK_IMAGE_DIR)/jre/[A-Za-z]:

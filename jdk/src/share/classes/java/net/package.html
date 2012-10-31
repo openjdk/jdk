@@ -72,7 +72,7 @@ Provides the classes for implementing networking applications.
 <ul>
       <li>{@link java.net.URI} is the class representing a Universal Resource Identifier, as specified in RFC 2396. As the name indicates, this is just an Identifier and doesn't provide directly the means to access the resource.</li>
       <li>{@link java.net.URL} is the class representing a Universal Resource Locator, which is both an older concept for URIs and a means to access the resources.</li>
-      <li>{@link java.net.URLConnection} is created from a URL and is the communication link used to access the resource pointed by the URL. This abstract class will delegate most of the work to the underlying protocol handlers like http or ftp.</li>
+      <li>{@link java.net.URLConnection} is created from a URL and is the communication link used to access the resource pointed by the URL. This abstract class will delegate most of the work to the underlying protocol handlers like http or https.</li>
       <li>{@link java.net.HttpURLConnection} is a subclass of URLConnection and provides some additional functionalities specific to the HTTP protocol.</li>
 </ul>
 <p>The recommended usage is to use {@link java.net.URI} to identify resources, then convert it into a {@link java.net.URL} when it is time to access the resource. From that URL, you can either get the {@link java.net.URLConnection} for fine control, or get directly the InputStream.<p>

@@ -40,72 +40,6 @@
  */
 #define PIPE_SIZE (4096+24)
 
-char *
-extractExecutablePath(JNIEnv *env, char *source)
-{
-    char *p, *r;
-
-    /* If no spaces, then use entire thing */
-    if ((p = strchr(source, ' ')) == NULL)
-        return source;
-
-    /* If no quotes, or quotes after space, return up to space */
-    if (((r = strchr(source, '"')) == NULL) || (r > p)) {
-        *p = 0;
-        return source;
-    }
-
-    /* Quotes before space, return up to space after next quotes */
-    p = strchr(r, '"');
-    if ((p = strchr(p, ' ')) == NULL)
-        return source;
-    *p = 0;
-    return source;
-}
-
-DWORD
-selectProcessFlag(JNIEnv *env, jstring cmd0)
-{
-    char buf[MAX_PATH];
-    DWORD newFlag = 0;
-    char *exe, *p, *name;
-    unsigned char buffer[2];
-    long headerLoc = 0;
-    int fd = 0;
-
-    exe = (char *)JNU_GetStringPlatformChars(env, cmd0, 0);
-    exe = extractExecutablePath(env, exe);
-
-    if (exe != NULL) {
-        if ((p = strchr(exe, '\\')) == NULL) {
-            SearchPath(NULL, exe, ".exe", MAX_PATH, buf, &name);
-        } else {
-            p = strrchr(exe, '\\');
-            *p = 0;
-            p++;
-            SearchPath(exe, p, ".exe", MAX_PATH, buf, &name);
-        }
-    }
-
-    fd = _open(buf, _O_RDONLY);
-    if (fd > 0) {
-        _read(fd, buffer, 2);
-        if (buffer[0] == 'M' && buffer[1] == 'Z') {
-            _lseek(fd, 60L, SEEK_SET);
-            _read(fd, buffer, 2);
-            headerLoc = (long)buffer[1] << 8 | (long)buffer[0];
-            _lseek(fd, headerLoc, SEEK_SET);
-            _read(fd, buffer, 2);
-            if (buffer[0] == 'P' && buffer[1] == 'E') {
-                newFlag = DETACHED_PROCESS;
-            }
-        }
-        _close(fd);
-    }
-    JNU_ReleaseStringPlatformChars(env, cmd0, exe);
-    return newFlag;
-}
-
 static void
 win32Error(JNIEnv *env, const char *functionName)
 {
@@ -151,14 +85,7 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
     const jchar*  penvBlock = NULL;
     jlong  *handles = NULL;
     jlong ret = 0;
-    OSVERSIONINFO ver;
-    jboolean onNT = JNI_FALSE;
     DWORD processFlag;
-
-    ver.dwOSVersionInfoSize = sizeof(ver);
-    GetVersionEx(&ver);
-    if (ver.dwPlatformId == VER_PLATFORM_WIN32_NT)
-        onNT = JNI_TRUE;
 
     assert(cmd != NULL);
     pcmd = (*env)->GetStringChars(env, cmd, NULL);
@@ -229,10 +156,7 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
     }
     SetHandleInformation(si.hStdError, HANDLE_FLAG_INHERIT, TRUE);
 
-    if (onNT)
-        processFlag = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
-    else
-        processFlag = selectProcessFlag(env, cmd) | CREATE_UNICODE_ENVIRONMENT;
+    processFlag = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
     ret = CreateProcessW(0,                /* executable name */
                          (LPWSTR)pcmd,     /* command line */
                          0,                /* process security attribute */

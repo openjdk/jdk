@@ -68,7 +68,7 @@ public:
     debug_only(_nesting = 0;);
   }
 
-  char* allocate_bytes(size_t size) {
+  char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
 #ifdef ASSERT
     if (_nesting < 1 && !_warned++)
       fatal("memory leak: allocating without ResourceMark");
@@ -78,7 +78,7 @@ public:
       return (*save = (char*)os::malloc(size, mtThread));
     }
 #endif
-    return (char*)Amalloc(size);
+    return (char*)Amalloc(size, alloc_failmode);
   }
 
   debug_only(int nesting() const { return _nesting; });

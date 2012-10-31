@@ -232,7 +232,7 @@ $(eval $(call SetupLauncher,jar,\
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.jar.Main"$(COMMA) }'))
 
 $(eval $(call SetupLauncher,jarsigner,\
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.JarSigner"$(COMMA) }'))
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.jarsigner.Main"$(COMMA) }'))
 
 $(eval $(call SetupLauncher,javac,\
     -DEXPAND_CLASSPATH_WILDCARDS \
@@ -310,7 +310,7 @@ $(eval $(call SetupLauncher,jstatd,\
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.jstatd.Jstatd"$(COMMA) }'))
 
 $(eval $(call SetupLauncher,keytool,\
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.KeyTool"$(COMMA) }'))
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.keytool.Main"$(COMMA) }'))
 
 $(eval $(call SetupLauncher,native2ascii,\
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.native2ascii.Main"$(COMMA) }'))

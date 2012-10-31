@@ -395,7 +395,7 @@ endif
 ifeq ($(PLATFORM), windows)
     MKS_CHECK :=$(call CheckVersions,$(MKS_VER),$(REQUIRED_MKS_VER))
 sane-mks:
-  ifndef USING_CYGWIN
+  ifdef USING_MKS
     ifeq ($(MKS_CHECK),missing)
 	@$(call OfficialErrorMessage,MKS version,$(MKS_VER),$(REQUIRED_MKS_VER))
     endif
@@ -905,14 +905,25 @@ sane-unixcommand_path:
 	    "" >> $(ERROR_FILE) ; \
 	fi
 ifeq ($(PLATFORM), windows)
-	@for utility in cpio ar file m4 ; do \
+ifeq ($(USING_MSYS), true)
+	@for utility in $(AR) $(FILE) $(M4) ; do \
 	  if [ ! -r "`$(WHICH) $${utility}`" ]; then \
 	    $(ECHO) "WARNING: You do not have the utility $${utility} in the \n" \
 	      "      directory $(UNIXCOMMAND_PATH). \n" \
-	      "      The utilities cpio, ar, file, and m4 are required. \n" \
+	      "      The utilities ar, file and m4 are required. \n" \
 	      "" >> $(WARNING_FILE) ; \
 	  fi; \
 	done
+else
+	@for utility in $(AR) $(CPIO) $(FILE) $(M4) ; do \
+	  if [ ! -r "`$(WHICH) $${utility}`" ]; then \
+	    $(ECHO) "WARNING: You do not have the utility $${utility} in the \n" \
+	      "      directory $(UNIXCOMMAND_PATH). \n" \
+	      "      The utilities ar, cpio, file and m4 are required. \n" \
+	      "" >> $(WARNING_FILE) ; \
+	  fi; \
+	done
+endif
 endif
 
 ######################################################
@@ -999,7 +1010,8 @@ ifeq ($(PLATFORM), windows)
 	    "      This is normally obtained from the WINDOWSSDKDIR." \
 	    "" >> $(ERROR_FILE)
   endif
-  ifeq ($(wildcard $(DUMPBIN)),)
+  # MinGW/MSYS make 3.81 will not tolerate a path with a quoted substring
+  ifeq ($(wildcard $(subst ",,$(DUMPBIN))),)
 	@$(ECHO) "ERROR: Cannot find the DUMPBIN utility from path: $(DUMPBIN)\n" \
 	    "      This is normally obtained from the COMPILER_PATH." \
 	    "" >> $(ERROR_FILE)
