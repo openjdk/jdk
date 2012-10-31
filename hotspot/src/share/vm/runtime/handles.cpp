@@ -48,7 +48,7 @@
 oop* HandleArea::allocate_handle(oop obj) {
   assert(_handle_mark_nesting > 1, "memory leak: allocating handle outside HandleMark");
   assert(_no_handle_mark_nesting == 0, "allocating handle inside NoHandleMark");
-  assert(SharedSkipVerify || obj->is_oop(), "sanity check");
+  assert(obj->is_oop(), "sanity check");
   return real_allocate_handle(obj);
 }
 

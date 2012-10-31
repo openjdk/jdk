@@ -1699,6 +1699,9 @@ void SystemDictionary::always_strong_oops_do(OopClosure* blk) {
   blk->do_oop(&_system_loader_lock_obj);
 
   dictionary()->always_strong_oops_do(blk);
+
+  // Visit extra methods
+  invoke_method_table()->oops_do(blk);
 }
 
 void SystemDictionary::always_strong_classes_do(KlassClosure* closure) {

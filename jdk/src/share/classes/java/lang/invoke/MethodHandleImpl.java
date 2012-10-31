@@ -478,7 +478,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                     .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
             NF_checkSpreadArgument.resolve();
         } catch (ReflectiveOperationException ex) {
-            throw new InternalError(ex);
+            throw newInternalError(ex);
         }
     }
 

@@ -3388,6 +3388,7 @@ void G1CollectedHeap::print_on(outputStream* st) const {
   st->print("%u survivors (" SIZE_FORMAT "K)", survivor_regions,
             (size_t) survivor_regions * HeapRegion::GrainBytes / K);
   st->cr();
+  MetaspaceAux::print_on(st);
 }
 
 void G1CollectedHeap::print_extended_on(outputStream* st) const {
