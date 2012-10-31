@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,7 +475,7 @@ public class ValueConversions {
                     .findStatic(THIS_CLASS, "fillNewTypedArray",
                           MethodType.methodType(Object[].class, Object[].class, Integer.class, Object[].class));
         } catch (NoSuchMethodException | IllegalAccessException ex) {
-            throw new InternalError("uncaught exception", ex);
+            throw newInternalError("uncaught exception", ex);
         }
     }
 
@@ -489,7 +489,7 @@ public class ValueConversions {
                 COPY_AS_PRIMITIVE_ARRAY = IMPL_LOOKUP.findStatic(THIS_CLASS, "copyAsPrimitiveArray", MethodType.methodType(Object.class, Wrapper.class, Object[].class));
                 MAKE_LIST = IMPL_LOOKUP.findStatic(THIS_CLASS, "makeList", MethodType.methodType(List.class, Object[].class));
             } catch (ReflectiveOperationException ex) {
-                throw new InternalError("uncaught exception", ex);
+                throw newInternalError("uncaught exception", ex);
             }
         }
     }
@@ -522,14 +522,19 @@ public class ValueConversions {
     static {
         MethodHandle mh = null;
         try {
-            java.lang.reflect.Method m = MethodHandles.class
+            final java.lang.reflect.Method m = MethodHandles.class
                 .getDeclaredMethod("collectArguments",
                     MethodHandle.class, int.class, MethodHandle.class);
-            m.setAccessible(true);
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    @Override
+                    public Void run() {
+                        m.setAccessible(true);
+                        return null;
+                    }
+                });
             mh = IMPL_LOOKUP.unreflect(m);
-
-        } catch (ReflectiveOperationException | SecurityException ex) {
-            throw new InternalError(ex);
+        } catch (ReflectiveOperationException ex) {
+            throw newInternalError(ex);
         }
         COLLECT_ARGUMENTS = mh;
     }
@@ -1208,5 +1213,13 @@ public class ValueConversions {
     }
     private static MethodHandle buildVarargsList(int nargs) {
         return MethodHandles.filterReturnValue(varargsArray(nargs), LazyStatics.MAKE_LIST);
+    }
+
+    // handy shared exception makers (they simplify the common case code)
+    private static InternalError newInternalError(String message, Throwable cause) {
+        return new InternalError(message, cause);
+    }
+    private static InternalError newInternalError(Throwable cause) {
+        return new InternalError(cause);
     }
 }

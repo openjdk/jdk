@@ -324,6 +324,13 @@ AWT_ASSERT_APPKIT_THREAD;
     }
 }
 
++ (NSNumber *) getNSWindowDisplayID_AppKitThread:(NSWindow *)window {
+    AWT_ASSERT_APPKIT_THREAD;
+    NSScreen *screen = [window screen];
+    NSDictionary *deviceDescription = [screen deviceDescription];
+    return [deviceDescription objectForKey:@"NSScreenNumber"];
+}
+
 - (void) dealloc {
 AWT_ASSERT_APPKIT_THREAD;
 
@@ -1113,19 +1120,22 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSynthesizeMou
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL
-Java_sun_lwawt_macosx_CPlatformWindow_nativeGetNSWindowDisplayID_1AppKitThread
+Java_sun_lwawt_macosx_CPlatformWindow_nativeGetNSWindowDisplayID
 (JNIEnv *env, jclass clazz, jlong windowPtr)
 {
-    jint ret; // CGDirectDisplayID
+    __block jint ret; // CGDirectDisplayID
 
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_APPKIT_THREAD;
 
     NSWindow *window = OBJC(windowPtr);
-    NSScreen *screen = [window screen];
-    NSDictionary *deviceDescription = [screen deviceDescription];
-    NSNumber *displayID = [deviceDescription objectForKey:@"NSScreenNumber"];
-    ret = (jint)[displayID intValue];
+
+    if ([NSThread isMainThread]) {
+        ret = (jint)[[AWTWindow getNSWindowDisplayID_AppKitThread: window] intValue];
+    } else {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+            ret = (jint)[[AWTWindow getNSWindowDisplayID_AppKitThread: window] intValue];
+        }];
+    }
 
 JNF_COCOA_EXIT(env);
 

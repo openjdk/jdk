@@ -233,7 +233,7 @@ public class FileHandler extends StreamHandler {
      * @exception  NullPointerException if pattern property is an empty String.
      */
     public FileHandler() throws IOException, SecurityException {
-        checkAccess();
+        checkPermission();
         configure();
         openFiles();
     }
@@ -259,7 +259,7 @@ public class FileHandler extends StreamHandler {
         if (pattern.length() < 1 ) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = 0;
@@ -291,7 +291,7 @@ public class FileHandler extends StreamHandler {
         if (pattern.length() < 1 ) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = 0;
@@ -328,7 +328,7 @@ public class FileHandler extends StreamHandler {
         if (limit < 0 || count < 1 || pattern.length() < 1) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = limit;
@@ -367,7 +367,7 @@ public class FileHandler extends StreamHandler {
         if (limit < 0 || count < 1 || pattern.length() < 1) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = limit;
@@ -380,7 +380,7 @@ public class FileHandler extends StreamHandler {
     // configured instance variables.
     private void openFiles() throws IOException {
         LogManager manager = LogManager.getLogManager();
-        manager.checkAccess();
+        manager.checkPermission();
         if (count < 1) {
            throw new IllegalArgumentException("file count = " + count);
         }
