@@ -156,7 +156,7 @@ public class HtmlWriter {
      */
     public HtmlWriter(Configuration configuration, DocPath path)
             throws IOException, UnsupportedEncodingException {
-        writer = Util.genWriter(configuration, path);
+        writer = DocFile.createFileForOutput(configuration, path).openWriter();
         this.configuration = configuration;
         this.memberDetailsListPrinted = false;
         packageTableHeader = new String[] {

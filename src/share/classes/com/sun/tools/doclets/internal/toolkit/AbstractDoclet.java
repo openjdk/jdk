@@ -106,7 +106,7 @@ public abstract class AbstractDoclet {
 
     /**
      * Start the generation of files. Call generate methods in the individual
-     * writers, which will in turn genrate the documentation files. Call the
+     * writers, which will in turn generate the documentation files. Call the
      * TreeWriter generation first to ensure the Class Hierarchy is built
      * first and then can be used in the later generation.
      *
@@ -124,17 +124,7 @@ public abstract class AbstractDoclet {
         ClassTree classtree = new ClassTree(configuration, configuration.nodeprecated);
 
         generateClassFiles(root, classtree);
-        if (configuration.sourcepath != null && configuration.sourcepath.length() > 0) {
-            StringTokenizer pathTokens = new StringTokenizer(configuration.sourcepath,
-                String.valueOf(File.pathSeparatorChar));
-            boolean first = true;
-            while(pathTokens.hasMoreTokens()){
-                Util.copyDocFiles(configuration,
-                    new File(pathTokens.nextToken()),
-                    DocPaths.DOC_FILES, first);
-                first = false;
-            }
-        }
+        Util.copyDocFiles(configuration, DocPaths.DOC_FILES);
 
         PackageListWriter.generate(configuration);
         generatePackageFiles(classtree);

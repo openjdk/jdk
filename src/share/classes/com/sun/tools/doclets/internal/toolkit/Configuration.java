@@ -456,7 +456,7 @@ public abstract class Configuration {
                 tagletManager.addCustomTag(args[1], tagletpath);
                 continue;
             }
-            String[] tokens = Util.tokenize(args[1],
+            String[] tokens = tokenize(args[1],
                 TagletManager.SIMPLE_TAGLET_OPT_SEPERATOR, 3);
             if (tokens.length == 1) {
                 String tagName = args[1];
@@ -478,6 +478,47 @@ public abstract class Configuration {
                 message.error("doclet.Error_invalid_custom_tag_argument", args[1]);
             }
         }
+    }
+
+    /**
+     * Given a string, return an array of tokens.  The separator can be escaped
+     * with the '\' character.  The '\' character may also be escaped by the
+     * '\' character.
+     *
+     * @param s         the string to tokenize.
+     * @param separator the separator char.
+     * @param maxTokens the maximum number of tokens returned.  If the
+     *                  max is reached, the remaining part of s is appended
+     *                  to the end of the last token.
+     *
+     * @return an array of tokens.
+     */
+    private String[] tokenize(String s, char separator, int maxTokens) {
+        List<String> tokens = new ArrayList<String>();
+        StringBuilder  token = new StringBuilder ();
+        boolean prevIsEscapeChar = false;
+        for (int i = 0; i < s.length(); i += Character.charCount(i)) {
+            int currentChar = s.codePointAt(i);
+            if (prevIsEscapeChar) {
+                // Case 1:  escaped character
+                token.appendCodePoint(currentChar);
+                prevIsEscapeChar = false;
+            } else if (currentChar == separator && tokens.size() < maxTokens-1) {
+                // Case 2:  separator
+                tokens.add(token.toString());
+                token = new StringBuilder();
+            } else if (currentChar == '\\') {
+                // Case 3:  escape character
+                prevIsEscapeChar = true;
+            } else {
+                // Case 4:  regular character
+                token.appendCodePoint(currentChar);
+            }
+        }
+        if (token.length() > 0) {
+            tokens.add(token.toString());
+        }
+        return tokens.toArray(new String[] {});
     }
 
     private void addToSet(Set<String> s, String str){
@@ -532,12 +573,12 @@ public abstract class Configuration {
             String opt = os[0].toLowerCase();
             if (opt.equals("-d")) {
                 String destdirname = addTrailingFileSep(os[1]);
-                File destDir = new File(destdirname);
+                DocFile destDir = DocFile.createFileForDirectory(this, destdirname);
                 if (!destDir.exists()) {
                     //Create the output directory (in case it doesn't exist yet)
                     reporter.printNotice(getText("doclet.dest_dir_create",
                         destdirname));
-                    (new File(destdirname)).mkdirs();
+                    destDir.mkdirs();
                 } else if (!destDir.isDirectory()) {
                     reporter.printError(getText(
                         "doclet.destination_directory_not_directory_0",
@@ -711,7 +752,7 @@ public abstract class Configuration {
     public InputStream getBuilderXML() throws FileNotFoundException {
         return builderXMLPath == null ?
             Configuration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
-            new FileInputStream(new File(builderXMLPath));
+            DocFile.createFileForInput(this, builderXMLPath).openInputStream();
     }
 
     /**
