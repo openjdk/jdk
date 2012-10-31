@@ -321,7 +321,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
         while (tokens.hasMoreTokens()) {
             String token = tokens.nextToken();
             if (token.equals("|")) {
-                if (isNonEuroLangSupported()) {
+                if (isNonUSLangSupported()) {
                     continue;
                 }
                 break;
@@ -361,7 +361,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
          */
         int barIndex = supportedLocaleString.indexOf('|');
         StringTokenizer localeStringTokenizer;
-        if (isNonEuroLangSupported()) {
+        if (isNonUSLangSupported()) {
             localeStringTokenizer = new StringTokenizer(supportedLocaleString.substring(0, barIndex)
                     + supportedLocaleString.substring(barIndex + 1));
         } else {
@@ -390,17 +390,17 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
         return locales;
     }
 
-    private static volatile Boolean isNonEuroSupported = null;
+    private static volatile Boolean isNonUSSupported = null;
 
     /*
-     * Returns true if the non European resources jar file exists in jre
+     * Returns true if the non US resources jar file exists in jre
      * extension directory. @returns true if the jar file is there. Otherwise,
      * returns false.
      */
-    private static boolean isNonEuroLangSupported() {
-        if (isNonEuroSupported == null) {
+    private static boolean isNonUSLangSupported() {
+        if (isNonUSSupported == null) {
             synchronized (JRELocaleProviderAdapter.class) {
-                if (isNonEuroSupported == null) {
+                if (isNonUSSupported == null) {
                     final String sep = File.separator;
                     String localeDataJar =
                             java.security.AccessController.doPrivileged(
@@ -412,7 +412,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
                      * localedata.jar is installed or not.
                      */
                     final File f = new File(localeDataJar);
-                    isNonEuroSupported =
+                    isNonUSSupported =
                         AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
                             @Override
                             public Boolean run() {
@@ -422,6 +422,6 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
                }
             }
         }
-        return isNonEuroSupported;
+        return isNonUSSupported;
     }
 }
