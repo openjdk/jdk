@@ -356,8 +356,10 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      *            called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
-     * @deprecated
+     * @deprecated Use {@code getBigDecimal(int columnIndex)}
+     *             or {@code getBigDecimal(String columnLabel)}
      */
+    @Deprecated
     BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException;
 
     /**
@@ -477,6 +479,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * @deprecated use <code>getCharacterStream</code> in place of
      *              <code>getUnicodeStream</code>
      */
+    @Deprecated
     java.io.InputStream getUnicodeStream(int columnIndex) throws SQLException;
 
     /**
@@ -641,8 +644,10 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      *            called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
-     * @deprecated
+     * @deprecated Use {@code getBigDecimal(int columnIndex)}
+     *             or {@code getBigDecimal(String columnLabel)}
      */
+    @Deprecated
     BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException;
 
     /**
@@ -760,6 +765,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * this method
      * @deprecated use <code>getCharacterStream</code> instead
      */
+    @Deprecated
     java.io.InputStream getUnicodeStream(String columnLabel) throws SQLException;
 
     /**

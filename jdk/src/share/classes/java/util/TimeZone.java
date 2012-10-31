@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -719,15 +719,16 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * Returns the default TimeZone in an AppContext if any AppContext
      * has ever used. null is returned if any AppContext hasn't been
      * used or if the AppContext doesn't have the default TimeZone.
+     *
+     * Note that javaAWTAccess may be null if sun.awt.AppContext class hasn't
+     * been loaded. If so, it implies that AWTSecurityManager is not our
+     * SecurityManager and we can use a local static variable.
+     * This works around a build time issue.
      */
-    private synchronized static TimeZone getDefaultInAppContext() {
+    private static TimeZone getDefaultInAppContext() {
         // JavaAWTAccess provides access implementation-private methods without using reflection.
         JavaAWTAccess javaAWTAccess = SharedSecrets.getJavaAWTAccess();
 
-        // Note that javaAWTAccess may be null if sun.awt.AppContext class hasn't
-        // been loaded. If so, it implies that AWTSecurityManager is not our
-        // SecurityManager and we can use a local static variable.
-        // This works around a build time issue.
         if (javaAWTAccess == null) {
             return mainAppContextDefault;
         } else {
@@ -749,15 +750,16 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * tz. null is handled special: do nothing if any AppContext
      * hasn't been used, remove the default TimeZone in the
      * AppContext otherwise.
+     *
+     * Note that javaAWTAccess may be null if sun.awt.AppContext class hasn't
+     * been loaded. If so, it implies that AWTSecurityManager is not our
+     * SecurityManager and we can use a local static variable.
+     * This works around a build time issue.
      */
-    private synchronized static void setDefaultInAppContext(TimeZone tz) {
+    private static void setDefaultInAppContext(TimeZone tz) {
         // JavaAWTAccess provides access implementation-private methods without using reflection.
         JavaAWTAccess javaAWTAccess = SharedSecrets.getJavaAWTAccess();
 
-        // Note that javaAWTAccess may be null if sun.awt.AppContext class hasn't
-        // been loaded. If so, it implies that AWTSecurityManager is not our
-        // SecurityManager and we can use a local static variable.
-        // This works around a build time issue.
         if (javaAWTAccess == null) {
             mainAppContextDefault = tz;
         } else {
@@ -822,7 +824,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
     private static final int    GMT_ID_LENGTH = 3;
 
     // a static TimeZone we can reference if no AppContext is in place
-    private static TimeZone mainAppContextDefault;
+    private static volatile TimeZone mainAppContextDefault;
 
     /**
      * Parses a custom time zone identifier and returns a corresponding zone.
