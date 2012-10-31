@@ -723,7 +723,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (helpfile.isEmpty()) {
             helpfilenm = DocPaths.HELP_DOC;
         } else {
-            helpfilenm = DocPath.create(new File(helpfile).getName());
+            DocFile file = DocFile.createFileForInput(configuration, helpfile);
+            helpfilenm = DocPath.create(file.getName());
         }
         Content linkContent = getHyperLink(pathToRoot.resolve(helpfilenm),
                 helpLabel, "", "");
@@ -1671,12 +1672,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return an HtmlTree for the lINK tag which provides the stylesheet location
      */
     public HtmlTree getStyleSheetProperties() {
-        String filename = configuration.stylesheetfile;
+        String stylesheetfile = configuration.stylesheetfile;
         DocPath stylesheet;
-        if (filename.length() > 0) {
-            stylesheet = DocPath.create(new File(filename).getName());
-        } else {
+        if (stylesheetfile.isEmpty()) {
             stylesheet = DocPaths.STYLESHEET;
+        } else {
+            DocFile file = DocFile.createFileForInput(configuration, stylesheetfile);
+            stylesheet = DocPath.create(file.getName());
         }
         HtmlTree link = HtmlTree.LINK("stylesheet", "text/css",
                 pathToRoot.resolve(stylesheet).getPath(),

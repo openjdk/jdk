@@ -26,11 +26,13 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
+
 import javax.tools.FileObject;
+
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Converts Java Source Code to HTML.
@@ -95,8 +97,7 @@ public class SourceToHTMLConverter {
             // package files to HTML.
             if (!(configuration.nodeprecated &&
                     (Util.isDeprecated(cds[i]) || Util.isDeprecated(cds[i].containingPackage()))))
-                convertClass(configuration, cds[i],
-                        getPackageOutputDir(outputdir, cds[i].containingPackage()));
+                convertClass(configuration, cds[i], outputdir);
         }
     }
 
@@ -109,10 +110,9 @@ public class SourceToHTMLConverter {
      */
     public static void convertPackage(ConfigurationImpl configuration, PackageDoc pd,
             DocPath outputdir) {
-        if (pd == null || outputdir == null) {
+        if (pd == null) {
             return;
         }
-        DocPath classOutputdir = getPackageOutputDir(outputdir, pd);
         ClassDoc[] cds = pd.allClasses();
         for (int i = 0; i < cds.length; i++) {
             // If -nodeprecated option is set and the class is marked as deprecated,
@@ -120,19 +120,8 @@ public class SourceToHTMLConverter {
             // containing package deprecation since it is already check in
             // the calling method above.
             if (!(configuration.nodeprecated && Util.isDeprecated(cds[i])))
-                convertClass(configuration, cds[i], classOutputdir);
+                convertClass(configuration, cds[i], outputdir);
         }
-    }
-
-    /**
-     * Return the directory write output to for the given package.
-     *
-     * @param outputDir the directory to output to.
-     * @param pd the Package to generate output for.
-     * @return the package output directory as a String.
-     */
-    private static DocPath getPackageOutputDir(DocPath outputDir, PackageDoc pd) {
-        return outputDir.resolve(DocPath.forPackage(pd));
     }
 
     /**
@@ -144,7 +133,7 @@ public class SourceToHTMLConverter {
      */
     public static void convertClass(ConfigurationImpl configuration, ClassDoc cd,
             DocPath outputdir) {
-        if (cd == null || outputdir == null) {
+        if (cd == null) {
             return;
         }
         try {
@@ -184,8 +173,8 @@ public class SourceToHTMLConverter {
             addBlankLines(pre);
             Content div = HtmlTree.DIV(HtmlStyle.sourceContainer, pre);
             body.addContent(div);
-            writeToFile(body, outputdir, cd.name(), configuration);
-        } catch (Exception e){
+            writeToFile(body, outputdir.resolve(DocPath.forClass(cd)), configuration);
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -194,12 +183,11 @@ public class SourceToHTMLConverter {
      * Write the output to the file.
      *
      * @param body the documentation content to be written to the file.
-     * @param outputDir the directory to output to.
-     * @param className the name of the class that I am converting to HTML.
+     * @param path the path for the file.
      * @param configuration the Doclet configuration to pass notices to.
      */
-    private static void writeToFile(Content body, DocPath outputDir,
-            String className, ConfigurationImpl configuration) throws IOException {
+    private static void writeToFile(Content body, DocPath path,
+            ConfigurationImpl configuration) throws IOException {
         Content htmlDocType = DocType.Transitional();
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(HtmlTree.TITLE(new StringContent(
@@ -208,15 +196,15 @@ public class SourceToHTMLConverter {
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
                 head, body);
         Content htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
-        File dir = outputDir.resolveAgainst(configuration.destDirName);
-        dir.mkdirs();
-        File newFile = new File(dir, className + ".html");
-        configuration.message.notice("doclet.Generating_0", newFile.getPath());
-        FileOutputStream fout = new FileOutputStream(newFile);
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fout));
-        bw.write(htmlDocument.toString());
-        bw.close();
-        fout.close();
+        configuration.message.notice("doclet.Generating_0", path.getPath());
+        DocFile df = DocFile.createFileForOutput(configuration, path);
+        Writer w = df.openWriter();
+        try {
+            htmlDocument.write(w, true);
+        } finally {
+            w.close();
+        }
+
     }
 
     /**
@@ -229,7 +217,8 @@ public class SourceToHTMLConverter {
         String filename = configuration.stylesheetfile;
         DocPath stylesheet;
         if (filename.length() > 0) {
-            stylesheet = DocPath.create(new File(filename).getName());
+            DocFile file = DocFile.createFileForInput(configuration, filename);
+            stylesheet = DocPath.create(file.getName());
         } else {
             stylesheet = DocPaths.STYLESHEET;
         }
