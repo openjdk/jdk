@@ -48,8 +48,6 @@ import sun.security.ssl.HandshakeMessage.*;
 import sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 
-import sun.net.util.IPAddressUtil;
-
 /**
  * ClientHandshaker does the protocol handshaking from the point
  * of view of a client.  It is driven asychronously by handshake messages
@@ -91,6 +89,9 @@ final class ClientHandshaker extends Handshaker {
     // To switch off the SNI extension.
     private final static boolean enableSNIExtension =
             Debug.getBooleanProperty("jsse.enableSNIExtension", true);
+
+    private List<SNIServerName> requestedServerNames =
+            Collections.<SNIServerName>emptyList();
 
     /*
      * Constructors
@@ -579,6 +580,7 @@ final class ClientHandshaker extends Handshaker {
         session = new SSLSessionImpl(protocolVersion, cipherSuite,
                             getLocalSupportedSignAlgs(),
                             mesg.sessionId, getHostSE(), getPortSE());
+        session.setRequestedServerNames(requestedServerNames);
         setHandshakeSessionSE(session);
         if (debug != null && Debug.isOn("handshake")) {
             System.out.println("** " + cipherSuite);
@@ -1246,17 +1248,14 @@ final class ClientHandshaker extends Handshaker {
 
         // add server_name extension
         if (enableSNIExtension) {
-            // We cannot use the hostname resolved from name services.  For
-            // virtual hosting, multiple hostnames may be bound to the same IP
-            // address, so the hostname resolved from name services is not
-            // reliable.
-            String hostname = getRawHostnameSE();
+            if (session != null) {
+                requestedServerNames = session.getRequestedServerNames();
+            } else {
+                requestedServerNames = serverNames;
+            }
 
-            // we only allow FQDN
-            if (hostname != null && hostname.indexOf('.') > 0 &&
-                    !IPAddressUtil.isIPv4LiteralAddress(hostname) &&
-                    !IPAddressUtil.isIPv6LiteralAddress(hostname)) {
-                clientHelloMessage.addServerNameIndicationExtension(hostname);
+            if (!requestedServerNames.isEmpty()) {
+                clientHelloMessage.addSNIExtension(requestedServerNames);
             }
         }
 

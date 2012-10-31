@@ -34,6 +34,10 @@ IMPORT_RT_PACKAGES += \
      javax/xml/ws \
      javax/jws \
      javax/annotation \
+     com/sun/org/glassfish \
+     com/sun/istack/internal \
+     com/sun/istack/internal/localization \
+     com/sun/istack/internal/logging \
      com/sun/xml/internal/bind \
      com/sun/xml/internal/fastinfoset \
      com/sun/xml/internal/messaging \

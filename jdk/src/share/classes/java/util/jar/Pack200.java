@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003,2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,12 +456,12 @@ public abstract class Pack200 {
          * The unpacker's progress as a percentage, as periodically
          * updated by the unpacker.
          * Values of 0 - 100 are normal, and -1 indicates a stall.
-         * Observe this property with a {@link PropertyChangeListener}.
+         * Progress can be monitored by polling the value of this
+         * property.
          * <p>
          * At a minimum, the unpacker must set progress to 0
          * at the beginning of a packing operation, and to 100
          * at the end.
-         * @see  #addPropertyChangeListener
          */
         String PROGRESS                 = "pack.progress";
 
@@ -577,7 +577,15 @@ public abstract class Pack200 {
          * @see #properties
          * @see #PROGRESS
          * @param listener  An object to be invoked when a property is changed.
+         * @deprecated The dependency on {@code PropertyChangeListener} creates
+         *             a significant impediment to future modularization of the
+         *             Java platform. This method will be removed in a future
+         *             release.
+         *             Applications that need to monitor progress of the packer
+         *             can poll the value of the {@link #PROGRESS PROGRESS}
+         *             property instead.
          */
+        @Deprecated
         void addPropertyChangeListener(PropertyChangeListener listener) ;
 
         /**
@@ -586,7 +594,12 @@ public abstract class Pack200 {
          *
          * @see #addPropertyChangeListener
          * @param listener  The PropertyChange listener to be removed.
+         * @deprecated The dependency on {@code PropertyChangeListener} creates
+         *             a significant impediment to future modularization of the
+         *             Java platform. This method will be removed in a future
+         *             release.
          */
+        @Deprecated
         void removePropertyChangeListener(PropertyChangeListener listener);
 
     }
@@ -640,12 +653,12 @@ public abstract class Pack200 {
          * The unpacker's progress as a percentage, as periodically
          * updated by the unpacker.
          * Values of 0 - 100 are normal, and -1 indicates a stall.
-         * Observe this property with a {@link PropertyChangeListener}.
+         * Progress can be monitored by polling the value of this
+         * property.
          * <p>
          * At a minimum, the unpacker must set progress to 0
          * at the beginning of a packing operation, and to 100
          * at the end.
-         * @see #addPropertyChangeListener
          */
         String PROGRESS         = "unpack.progress";
 
@@ -708,7 +721,15 @@ public abstract class Pack200 {
          * @see #properties
          * @see #PROGRESS
          * @param listener  An object to be invoked when a property is changed.
+         * @deprecated The dependency on {@code PropertyChangeListener} creates
+         *             a significant impediment to future modularization of the
+         *             Java platform. This method will be removed in a future
+         *             release.
+         *             Applications that need to monitor progress of the
+         *             unpacker can poll the value of the {@link #PROGRESS
+         *             PROGRESS} property instead.
          */
+        @Deprecated
         void addPropertyChangeListener(PropertyChangeListener listener) ;
 
         /**
@@ -717,7 +738,12 @@ public abstract class Pack200 {
          *
          * @see #addPropertyChangeListener
          * @param listener  The PropertyChange listener to be removed.
+         * @deprecated The dependency on {@code PropertyChangeListener} creates
+         *             a significant impediment to future modularization of the
+         *             Java platform. This method will be removed in a future
+         *             release.
          */
+        @Deprecated
         void removePropertyChangeListener(PropertyChangeListener listener);
     }
 

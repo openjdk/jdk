@@ -26,6 +26,7 @@
 package sun.lwawt.macosx;
 
 import sun.awt.SunToolkit;
+import sun.lwawt.macosx.event.NSEvent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,6 +43,16 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     private JDialog messageDialog;
     private DialogEventHandler handler;
 
+    // In order to construct MouseEvent object, we need to specify a
+    // Component target. Because TrayIcon isn't Component's subclass,
+    // we use this dummy frame instead
+    private final Frame dummyFrame;
+
+    // A bitmask that indicates what mouse buttons produce MOUSE_CLICKED events
+    // on MOUSE_RELEASE. Click events are only generated if there were no drag
+    // events between MOUSE_PRESSED and MOUSE_RELEASED for particular button
+    private static int mouseClickButtons = 0;
+
     CTrayIcon(TrayIcon target) {
         super(0, true);
 
@@ -49,6 +60,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         this.handler = null;
         this.target = target;
         this.popup = target.getPopupMenu();
+        this.dummyFrame = new Frame();
         setPtr(createModel());
 
         //if no one else is creating the peer.
@@ -119,6 +131,8 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
             disposeMessageDialog();
         }
 
+        dummyFrame.dispose();
+
         LWCToolkit.targetDisposedPeer(target, this);
         target = null;
 
@@ -161,15 +175,76 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
 
     private native void setNativeImage(final long model, final long nsimage, final boolean autosize);
 
-    //invocation from the AWTTrayIcon.m
-    public void performAction() {
+    private void postEvent(final AWTEvent event) {
         SunToolkit.executeOnEventHandlerThread(target, new Runnable() {
             public void run() {
-                final String cmd = target.getActionCommand();
-                final ActionEvent event = new ActionEvent(target, ActionEvent.ACTION_PERFORMED, cmd);
                 SunToolkit.postEvent(SunToolkit.targetToAppContext(target), event);
             }
         });
+    }
+
+    //invocation from the AWTTrayIcon.m
+    private void handleMouseEvent(NSEvent nsEvent) {
+        int buttonNumber = nsEvent.getButtonNumber();
+        final SunToolkit tk = (SunToolkit)Toolkit.getDefaultToolkit();
+        if ((buttonNumber > 2 && !tk.areExtraMouseButtonsEnabled())
+                || buttonNumber > tk.getNumberOfButtons() - 1) {
+            return;
+        }
+
+        int jeventType = NSEvent.nsToJavaEventType(nsEvent.getType());
+
+        int jbuttonNumber = MouseEvent.NOBUTTON;
+        int jclickCount = 0;
+        if (jeventType != MouseEvent.MOUSE_MOVED) {
+            jbuttonNumber = NSEvent.nsToJavaButton(buttonNumber);
+            jclickCount = nsEvent.getClickCount();
+        }
+
+        int jmodifiers = NSEvent.nsToJavaMouseModifiers(buttonNumber,
+                nsEvent.getModifierFlags());
+        boolean isPopupTrigger = NSEvent.isPopupTrigger(jmodifiers);
+
+        int eventButtonMask = (jbuttonNumber > 0)?
+                MouseEvent.getMaskForButton(jbuttonNumber) : 0;
+        long when = System.currentTimeMillis();
+
+        if (jeventType == MouseEvent.MOUSE_PRESSED) {
+            mouseClickButtons |= eventButtonMask;
+        } else if (jeventType == MouseEvent.MOUSE_DRAGGED) {
+            mouseClickButtons = 0;
+        }
+
+        // The MouseEvent's coordinates are relative to screen
+        int absX = nsEvent.getAbsX();
+        int absY = nsEvent.getAbsY();
+
+        MouseEvent mouseEvent = new MouseEvent(dummyFrame, jeventType, when,
+                jmodifiers, absX, absY, absX, absY, jclickCount, isPopupTrigger,
+                jbuttonNumber);
+        mouseEvent.setSource(target);
+        postEvent(mouseEvent);
+
+        // fire ACTION event
+        if (jeventType == MouseEvent.MOUSE_PRESSED && isPopupTrigger) {
+            final String cmd = target.getActionCommand();
+            final ActionEvent event = new ActionEvent(target,
+                    ActionEvent.ACTION_PERFORMED, cmd);
+            postEvent(event);
+        }
+
+        // synthesize CLICKED event
+        if (jeventType == MouseEvent.MOUSE_RELEASED) {
+            if ((mouseClickButtons & eventButtonMask) != 0) {
+                MouseEvent clickEvent = new MouseEvent(dummyFrame,
+                        MouseEvent.MOUSE_CLICKED, when, jmodifiers, absX, absY,
+                        absX, absY, jclickCount, isPopupTrigger, jbuttonNumber);
+                clickEvent.setSource(target);
+                postEvent(clickEvent);
+            }
+
+            mouseClickButtons &= ~eventButtonMask;
+        }
     }
 
     private native Point2D nativeGetIconLocation(long trayIconModel);
@@ -256,6 +331,9 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
 
         dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
         dialog.setModal(false);
+        dialog.setModalExclusionType(Dialog.ModalExclusionType.TOOLKIT_EXCLUDE);
+        dialog.setAlwaysOnTop(true);
+        dialog.setAutoRequestFocus(false);
         dialog.setResizable(false);
         dialog.setContentPane(op);
 

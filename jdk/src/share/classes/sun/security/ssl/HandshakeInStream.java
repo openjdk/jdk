@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,8 @@ public class HandshakeInStream extends InputStream {
         r.mark(readlimit);
     }
 
-    public void reset() {
+    @Override
+    public void reset() throws IOException {
         r.reset();
     }
 
@@ -190,6 +191,7 @@ public class HandshakeInStream extends InputStream {
 
     byte[] getBytes8() throws IOException {
         int len = getInt8();
+        verifyLength(len);
         byte b[] = new byte[len];
 
         read(b, 0, len);
@@ -198,6 +200,7 @@ public class HandshakeInStream extends InputStream {
 
     public byte[] getBytes16() throws IOException {
         int len = getInt16();
+        verifyLength(len);
         byte b[] = new byte[len];
 
         read(b, 0, len);
@@ -206,10 +209,19 @@ public class HandshakeInStream extends InputStream {
 
     byte[] getBytes24() throws IOException {
         int len = getInt24();
+        verifyLength(len);
         byte b[] = new byte[len];
 
         read(b, 0, len);
         return b;
+    }
+
+    // Is a length greater than available bytes in the record?
+    private void verifyLength(int len) throws SSLException {
+        if (len > available()) {
+            throw new SSLException(
+                        "Not enough data to fill declared vector size");
+        }
     }
 
 }

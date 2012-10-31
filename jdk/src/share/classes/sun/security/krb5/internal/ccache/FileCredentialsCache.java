@@ -348,7 +348,7 @@ public class FileCredentialsCache extends CredentialsCache
      * Returns path name of the credentials cache file.
      * The path name is searched in the following order:
      *
-     * 1. KRB5CCNAME
+     * 1. KRB5CCNAME (bare file name without FILE:)
      * 2. /tmp/krb5cc_<uid> on unix systems
      * 3. <user.home>/krb5cc_<user.name>
      * 4. <user.home>/krb5cc (if can't get <user.name>)
@@ -359,11 +359,19 @@ public class FileCredentialsCache extends CredentialsCache
         String stdCacheNameComponent = "krb5cc";
         String name;
 
+        // The env var can start with TYPE:, we only support FILE: here.
+        // http://docs.oracle.com/cd/E19082-01/819-2252/6n4i8rtr3/index.html
         name = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<String>() {
             @Override
             public String run() {
-                return System.getenv("KRB5CCNAME");
+                String cache = System.getenv("KRB5CCNAME");
+                if (cache != null &&
+                        (cache.length() >= 5) &&
+                        cache.regionMatches(true, 0, "FILE:", 0, 5)) {
+                    cache = cache.substring(5);
+                }
+                return cache;
             }
         });
         if (name != null) {

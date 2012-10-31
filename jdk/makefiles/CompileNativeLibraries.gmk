@@ -209,7 +209,6 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
 else
 	LIBJAVA_EXCLUDE_FILES += \
 		ProcessImpl_md.c \
-		Win32FileSystem_md.c \
 		WinNTFileSystem_md.c \
 		dirent_md.c \
 		WindowsPreferences.c \
