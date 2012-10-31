@@ -182,8 +182,13 @@ ifeq ($(PLATFORM),windows)
     ALL_SETTINGS+=$(call addRequiredVersionSetting,CYGWIN_VER)
     ALL_SETTINGS+=$(call addRequiredSetting,CYGPATH_CMD)
   else
-    ALL_SETTINGS+=$(call addRequiredVersionSetting,MKS_VER)
-    ALL_SETTINGS+=$(call addOptionalSetting,DOSNAME_CMD)
+    ifdef USING_MSYS
+      ALL_SETTINGS+=$(call addRequiredSetting,USING_MSYS)
+      ALL_SETTINGS+=$(call addRequiredSetting,DOSPATH_CMD)
+    else
+      ALL_SETTINGS+=$(call addRequiredVersionSetting,MKS_VER)
+      ALL_SETTINGS+=$(call addOptionalSetting,DOSNAME_CMD)
+    endif
   endif
 endif
 ifeq ($(PLATFORM),linux)
