@@ -356,12 +356,11 @@ void Klass::set_next_sibling(Klass* s) {
 }
 
 void Klass::append_to_sibling_list() {
-  debug_only(if (!SharedSkipVerify) verify();)
+  debug_only(verify();)
   // add ourselves to superklass' subklass list
   InstanceKlass* super = superklass();
   if (super == NULL) return;        // special case: class Object
-  assert(SharedSkipVerify ||
-         (!super->is_interface()    // interfaces cannot be supers
+  assert((!super->is_interface()    // interfaces cannot be supers
           && (super->superklass() == NULL || !is_interface())),
          "an interface can only be a subklass of Object");
   Klass* prev_first_subklass = super->subklass_oop();
@@ -371,7 +370,7 @@ void Klass::append_to_sibling_list() {
   }
   // make ourselves the superklass' first subklass
   super->set_subklass(this);
-  debug_only(if (!SharedSkipVerify) verify();)
+  debug_only(verify();)
 }
 
 void Klass::remove_from_sibling_list() {
