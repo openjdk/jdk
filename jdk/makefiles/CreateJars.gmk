@@ -131,15 +131,15 @@ RT_JAR_EXCLUDES := \
 	sun/tools/serialver \
 	sun/tools/tree \
 	sun/tools/util \
-	sun/security/tools/JarBASE64Encoder.class \
-	sun/security/tools/JarSigner.class \
-	sun/security/tools/JarSignerParameters.class \
-	sun/security/tools/JarSignerResources.class \
-	sun/security/tools/JarSignerResources_ja.class \
-	sun/security/tools/JarSignerResources_zh_CN.class \
-	sun/security/tools/SignatureFile\$$$$Block.class \
-	sun/security/tools/SignatureFile.class \
-	sun/security/tools/TimestampedSigner.class \
+	sun/security/tools/jarsigner/JarBASE64Encoder.class \
+	sun/security/tools/jarsigner/Main.class \
+	sun/security/tools/jarsigner/JarSignerParameters.class \
+	sun/security/tools/jarsigner/Resources.class \
+	sun/security/tools/jarsigner/Resources_ja.class \
+	sun/security/tools/jarsigner/Resources_zh_CN.class \
+	sun/security/tools/jarsigner/SignatureFile\$$$$Block.class \
+	sun/security/tools/jarsigner/SignatureFile.class \
+	sun/security/tools/jarsigner/TimestampedSigner.class \
 	sun/security/provider/Sun.class \
 	sun/security/rsa/SunRsaSign.class \
 	sun/security/ssl \

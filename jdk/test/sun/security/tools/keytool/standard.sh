@@ -56,7 +56,7 @@ case "$OS" in
     ;;
 esac
 
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}KeyToolTest.java || exit 10
+${TESTJAVA}${FS}bin${FS}javac -d . -XDignore.symbol.file ${TESTSRC}${FS}KeyToolTest.java || exit 10
 
 echo | ${TESTJAVA}${FS}bin${FS}java -Dfile KeyToolTest
 status=$?

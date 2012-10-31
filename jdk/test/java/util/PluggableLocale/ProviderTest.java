@@ -42,5 +42,7 @@ public class ProviderTest {
                     "result do not match with provider's result. target: "+target+" result: "+result+" providers: "+providers);
             }
         }
+
+        System.out.println("checkValidity succeeded. target: "+target+" result: "+result+" jre's: "+jres+" providers: "+providers+" jre-preferred: "+jresPreferred);
     }
 }
