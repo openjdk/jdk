@@ -52,7 +52,7 @@ public class PackageListWriter extends PrintWriter {
      * @param configuration the current configuration of the doclet.
      */
     public PackageListWriter(Configuration configuration) throws IOException {
-        super(Util.genWriter(configuration, DocPaths.PACKAGE_LIST));
+        super(DocFile.createFileForOutput(configuration, DocPaths.PACKAGE_LIST).openWriter());
         this.configuration = configuration;
     }
 

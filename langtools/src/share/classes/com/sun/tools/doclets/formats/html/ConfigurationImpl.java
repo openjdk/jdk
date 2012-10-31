@@ -25,7 +25,6 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import java.io.*;
 import java.net.*;
 import java.util.*;
 
@@ -45,6 +44,11 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * Also do the error checking on the options used. For example it is illegal to
  * use "-helpfile" option when already "-nohelp" option is used.
  * </p>
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Robert Field.
  * @author Atul Dambalkar.
@@ -362,7 +366,7 @@ public class ConfigurationImpl extends Configuration {
                         "-helpfile"));
                     return false;
                 }
-                File help = new File(os[1]);
+                DocFile help = DocFile.createFileForInput(this, os[1]);
                 if (!help.exists()) {
                     reporter.printError(getText("doclet.File_not_found", os[1]));
                     return false;

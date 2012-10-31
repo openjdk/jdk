@@ -30,6 +30,7 @@ import java.util.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
+import javax.tools.StandardLocation;
 
 /**
  * Utilities Class for Doclets.
@@ -192,32 +193,6 @@ public class Util {
     }
 
     /**
-     * Copy source file to destination file.
-     *
-     * @throws SecurityException
-     * @throws IOException
-     */
-    public static void copyFile(File destfile, File srcfile)
-        throws IOException {
-        byte[] bytearr = new byte[512];
-        int len = 0;
-        FileInputStream input = new FileInputStream(srcfile);
-        File destDir = destfile.getParentFile();
-        destDir.mkdirs();
-        FileOutputStream output = new FileOutputStream(destfile);
-        try {
-            while ((len = input.read(bytearr)) != -1) {
-                output.write(bytearr, 0, len);
-                }
-        } catch (FileNotFoundException exc) {
-        } catch (SecurityException exc) {
-            } finally {
-            input.close();
-            output.close();
-            }
-        }
-
-    /**
      * Copy the given directory contents from the source package directory
      * to the generated documentation directory. For example for a package
      * java.lang this method find out the source location of the package using
@@ -230,208 +205,51 @@ public class Util {
      * @param dir The original directory name to copy from.
      * @param overwrite Overwrite files if true.
      */
-    public static void copyDocFiles(Configuration configuration,
-            File path, DocPath dir, boolean overwrite) {
-        if (checkCopyDocFilesErrors(configuration, path, dir)) {
-            return;
-        }
-        File srcdir = new File(path, dir.getPath());
-        File destdir = new File(configuration.docFileDestDirName, dir.getPath());
+    public static void copyDocFiles(Configuration configuration, PackageDoc pd) {
+        copyDocFiles(configuration, DocPath.forPackage(pd).resolve(DocPaths.DOC_FILES));
+    }
+
+    public static void copyDocFiles(Configuration configuration, DocPath dir) {
         try {
-            createDirectory(configuration, destdir);
-            String[] files = srcdir.list();
-            for (int i = 0; i < files.length; i++) {
-                File srcfile = new File(srcdir, files[i]);
-                File destfile = new File(destdir, files[i]);
-                if (srcfile.isFile()) {
-                    if (destfile.exists() && ! overwrite) {
-                        configuration.message.warning((SourcePosition) null,
-                                "doclet.Copy_Overwrite_warning",
-                                srcfile.toString(), destdir.toString());
-                    } else {
-                        configuration.message.notice(
-                            "doclet.Copying_File_0_To_Dir_1",
-                            srcfile.toString(), destdir.toString());
-                        Util.copyFile(destfile, srcfile);
-                    }
-                } else if (srcfile.isDirectory()) {
-                    if (configuration.copydocfilesubdirs
-                        && ! configuration.shouldExcludeDocFileDir(
-                          srcfile.getName())){
-                        copyDocFiles(configuration, path, dir.resolve(files[i]),
-                                overwrite);
+            boolean first = true;
+            for (DocFile f : DocFile.list(configuration, StandardLocation.SOURCE_PATH, dir)) {
+                if (!f.isDirectory()) {
+                    continue;
+                }
+                DocFile srcdir = f;
+                DocFile destdir = DocFile.createFileForOutput(configuration, dir);
+                if (srcdir.isSameFile(destdir)) {
+                    continue;
+                }
+
+                for (DocFile srcfile: srcdir.list()) {
+                    DocFile destfile = destdir.resolve(srcfile.getName());
+                    if (srcfile.isFile()) {
+                        if (destfile.exists() && !first) {
+                            configuration.message.warning((SourcePosition) null,
+                                    "doclet.Copy_Overwrite_warning",
+                                    srcfile.getPath(), destdir.getPath());
+                        } else {
+                            configuration.message.notice(
+                                    "doclet.Copying_File_0_To_Dir_1",
+                                    srcfile.getPath(), destdir.getPath());
+                            destfile.copyFile(srcfile);
+                        }
+                    } else if (srcfile.isDirectory()) {
+                        if (configuration.copydocfilesubdirs
+                                && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
+                            copyDocFiles(configuration, dir.resolve(srcfile.getName()));
+                        }
                     }
                 }
+
+                first = false;
             }
         } catch (SecurityException exc) {
             throw new DocletAbortException();
         } catch (IOException exc) {
             throw new DocletAbortException();
         }
-    }
-
-    /**
-     * Given the parameters for copying doc-files, check for errors.
-     *
-     * @param configuration The configuration of the current doclet.
-     * @param path The relative path to the directory to be copied.
-     * @param dirName The original directory name to copy from.
-     */
-    private static boolean checkCopyDocFilesErrors (Configuration configuration,
-            File path, DocPath dirName) {
-        if ((configuration.sourcepath == null || configuration.sourcepath.length() == 0) &&
-               (configuration.destDirName == null || configuration.destDirName.length() == 0)) {
-            //The destination path and source path are definitely equal.
-            return true;
-        }
-        File sourcePath, destPath = new File(configuration.destDirName);
-        StringTokenizer pathTokens = new StringTokenizer(
-            configuration.sourcepath == null ? "" : configuration.sourcepath,
-            File.pathSeparator);
-        //Check if the destination path is equal to the source path.  If yes,
-        //do not copy doc-file directories.
-        while(pathTokens.hasMoreTokens()){
-            sourcePath = new File(pathTokens.nextToken());
-            if(destPath.equals(sourcePath)){
-                return true;
-            }
-        }
-        //Make sure the doc-file being copied exists.
-        File srcdir = new File(path, dirName.getPath());
-        if (! srcdir.exists()) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Copy a file in the resources directory to the destination
-     * directory (if it is not there already).  If
-     * <code>overwrite</code> is true and the destination file
-     * already exists, overwrite it.
-     *
-     * @param configuration  Holds the destination directory and error message
-     * @param resourcefile   The name of the resource file to copy
-     * @param overwrite      A flag to indicate whether the file in the
-     *                       destination directory will be overwritten if
-     *                       it already exists.
-     */
-    public static void copyResourceFile(Configuration configuration,
-            String resourcefile, boolean overwrite) {
-        copyFile(configuration, resourcefile, DocPaths.RESOURCES, DocPaths.RESOURCES,
-                overwrite, false);
-    }
-
-    /**
-     * Copy a file from a source directory to a destination directory
-     * (if it is not there already). If <code>overwrite</code> is true and
-     * the destination file already exists, overwrite it.
-     *
-     * @param configuration Holds the error message
-     * @param file The name of the file to copy
-     * @param source The source directory
-     * @param destination The destination directory where the file needs to be copied
-     * @param overwrite A flag to indicate whether the file in the
-     *                  destination directory will be overwritten if
-     *                  it already exists.
-     * @param replaceNewLine true if the newline needs to be replaced with platform-
-     *                  specific newline.
-     */
-    public static void copyFile(Configuration configuration, String file, DocPath source,
-            DocPath destination, boolean overwrite, boolean replaceNewLine) {
-        copyFile(configuration, file, source.getPath(), destination.getPath(),
-                overwrite, replaceNewLine);
-    }
-
-    public static void copyFile(Configuration configuration, String file, String source,
-            String destination, boolean overwrite, boolean replaceNewLine) {
-        File destdir = configuration.destDirName.isEmpty() ?
-                (destination.isEmpty() ? null : new File(destination)) :
-                new File(configuration.destDirName, destination);
-        File destfile = (destdir == null) ? new File(file) : new File(destdir, file);
-        createDirectory(configuration, destfile.getParentFile());
-        if (destfile.exists() && (! overwrite)) return;
-        try {
-            InputStream in = Configuration.class.getResourceAsStream(
-                    source + '/' + file);
-            if (in == null) return;
-            OutputStream out = new FileOutputStream(destfile);
-            try {
-                if (!replaceNewLine) {
-                    byte[] buf = new byte[2048];
-                    int n;
-                    while((n = in.read(buf))>0) out.write(buf,0,n);
-                } else {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                    BufferedWriter writer;
-                    if (configuration.docencoding == null) {
-                        writer = new BufferedWriter(new OutputStreamWriter(out));
-                    } else {
-                        writer = new BufferedWriter(new OutputStreamWriter(out,
-                            configuration.docencoding));
-                    }
-                    try {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            writer.write(line);
-                            writer.write(DocletConstants.NL);
-                        }
-                    } finally {
-                        reader.close();
-                        writer.close();
-                    }
-                }
-            } finally {
-                in.close();
-                out.close();
-            }
-        } catch (IOException ie) {
-            ie.printStackTrace(System.err);
-            throw new DocletAbortException();
-        }
-    }
-
-    /**
-     * Given a path string create all the directories in the path. For example,
-     * if the path string is "java/applet", the method will create directory
-     * "java" and then "java/applet" if they don't exist. The file separator
-     * string "/" is platform dependent system property.
-     *
-     * @param dir Directory path string.
-     */
-    public static void createDirectory(Configuration configuration, File dir) {
-        if (dir == null) {
-            return;
-        }
-        if (dir.exists()) {
-            return;
-        } else {
-            if (dir.mkdirs()) {
-                return;
-            } else {
-                configuration.message.error(
-                       "doclet.Unable_to_create_directory_0", dir.getPath());
-                throw new DocletAbortException();
-            }
-        }
-    }
-
-    /**
-     * Given a PackageDoc, return the source path for that package.
-     * @param configuration The Configuration for the current Doclet.
-     * @param pkgDoc The package to search the path for.
-     * @return A string representing the path to the given package.
-     */
-    public static File getPackageSourcePath(Configuration configuration,
-            PackageDoc pkgDoc) {
-        DocPath pkgPath = DocPath.forPackage(pkgDoc);
-        File pkgDir = new SourcePath(configuration.sourcepath).getDirectory(pkgPath);
-        if (pkgDir == null)
-            return null;
-        //Make sure that both paths are using the same separators.
-        String completePath = Util.replaceText(pkgDir.getPath(), File.separator, "/");
-        String pathForPkg = completePath.substring(0, completePath.lastIndexOf(pkgPath.getPath()));
-        return new File(pathForPkg);
     }
 
     /**
@@ -639,31 +457,6 @@ public class Util {
     }
 
     /**
-     * Create the directory path for the file to be generated, construct
-     * FileOutputStream and OutputStreamWriter depending upon docencoding.
-     *
-     * @param path The directory path to be created for this file.
-     * @exception IOException Exception raised by the FileWriter is passed on
-     * to next level.
-     * @exception UnsupportedEncodingException Exception raised by the
-     * OutputStreamWriter is passed on to next level.
-     * @return Writer Writer for the file getting generated.
-     * @see java.io.FileOutputStream
-     * @see java.io.OutputStreamWriter
-     */
-    public static Writer genWriter(Configuration configuration, DocPath path)
-            throws IOException, UnsupportedEncodingException {
-        File file = path.resolveAgainst(configuration.destDirName);
-        createDirectory(configuration, file.getParentFile());
-        FileOutputStream fos = new FileOutputStream(file);
-        if (configuration.docencoding == null) {
-            return new BufferedWriter(new OutputStreamWriter(fos));
-        } else {
-            return new BufferedWriter(new OutputStreamWriter(fos, configuration.docencoding));
-        }
-    }
-
-    /**
      * Given an annotation, return true if it should be documented and false
      * otherwise.
      *
@@ -680,47 +473,6 @@ public class Util {
             }
         }
         return false;
-    }
-
-    /**
-     * Given a string, return an array of tokens.  The separator can be escaped
-     * with the '\' character.  The '\' character may also be escaped by the
-     * '\' character.
-     *
-     * @param s         the string to tokenize.
-     * @param separator the separator char.
-     * @param maxTokens the maxmimum number of tokens returned.  If the
-     *                  max is reached, the remaining part of s is appended
-     *                  to the end of the last token.
-     *
-     * @return an array of tokens.
-     */
-    public static String[] tokenize(String s, char separator, int maxTokens) {
-        List<String> tokens = new ArrayList<String>();
-        StringBuilder  token = new StringBuilder ();
-        boolean prevIsEscapeChar = false;
-        for (int i = 0; i < s.length(); i += Character.charCount(i)) {
-            int currentChar = s.codePointAt(i);
-            if (prevIsEscapeChar) {
-                // Case 1:  escaped character
-                token.appendCodePoint(currentChar);
-                prevIsEscapeChar = false;
-            } else if (currentChar == separator && tokens.size() < maxTokens-1) {
-                // Case 2:  separator
-                tokens.add(token.toString());
-                token = new StringBuilder();
-            } else if (currentChar == '\\') {
-                // Case 3:  escape character
-                prevIsEscapeChar = true;
-            } else {
-                // Case 4:  regular character
-                token.appendCodePoint(currentChar);
-            }
-        }
-        if (token.length() > 0) {
-            tokens.add(token.toString());
-        }
-        return tokens.toArray(new String[] {});
     }
 
     /**

@@ -30,6 +30,8 @@ import java.net.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.tools.StandardLocation;
+
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 
@@ -177,7 +179,7 @@ public class Extern {
             if (isUrl(pkglisturl)) {
                 readPackageListFromURL(url, toURL(pkglisturl));
             } else {
-                readPackageListFromFile(url, new File(pkglisturl));
+                readPackageListFromFile(url, DocFile.createFileForInput(configuration, pkglisturl));
             }
             return true;
         } catch (Fault f) {
@@ -247,16 +249,18 @@ public class Extern {
      * @param path URL or directory path to the packages.
      * @param pkgListPath Path to the local "package-list" file.
      */
-    private void readPackageListFromFile(String path, File pkgListPath)
+    private void readPackageListFromFile(String path, DocFile pkgListPath)
             throws Fault {
-        File file = new File(pkgListPath, "package-list");
+        DocFile file = pkgListPath.resolve(DocPaths.PACKAGE_LIST);
         if (! (file.isAbsolute() || linkoffline)){
-            file = new File(configuration.destDirName, file.getPath());
+            file = file.resolveAgainst(StandardLocation.CLASS_OUTPUT);
         }
         try {
             if (file.exists() && file.canRead()) {
-                readPackageList(new FileInputStream(file), path,
-                    ! ((new File(path)).isAbsolute() || isUrl(path)));
+                boolean pathIsRelative =
+                        !DocFile.createFileForInput(configuration, path).isAbsolute()
+                        && !isUrl(path);
+                readPackageList(file.openInputStream(), path, pathIsRelative);
             } else {
                 throw new Fault(configuration.getText("doclet.File_error", file.getPath()), null);
             }

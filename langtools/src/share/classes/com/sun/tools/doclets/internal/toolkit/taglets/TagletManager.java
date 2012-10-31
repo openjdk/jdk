@@ -161,7 +161,7 @@ public class TagletManager {
      * @param message the message retriever to print warnings.
      */
     public TagletManager(boolean nosince, boolean showversion,
-                         boolean showauthor, MessageRetriever message){
+                         boolean showauthor, MessageRetriever message) {
         overridenStandardTags = new HashSet<String>();
         potentiallyConflictingTags = new HashSet<String>();
         standardTags = new HashSet<String>();
@@ -253,47 +253,17 @@ public class TagletManager {
      * @param path the search path string
      * @return the resulting array of directory and JAR file URLs
      */
-    private static URL[] pathToURLs(String path) {
-        StringTokenizer st = new StringTokenizer(path, File.pathSeparator);
-        URL[] urls = new URL[st.countTokens()];
-        int count = 0;
-        while (st.hasMoreTokens()) {
-            URL url = fileToURL(new File(st.nextToken()));
-            if (url != null) {
-                urls[count++] = url;
+    private URL[] pathToURLs(String path) {
+        Set<URL> urls = new LinkedHashSet<URL>();
+        for (String s: path.split(File.pathSeparator)) {
+            if (s.isEmpty()) continue;
+            try {
+                urls.add(new File(s).getAbsoluteFile().toURI().toURL());
+            } catch (MalformedURLException e) {
+                message.error("doclet.MalformedURL", s);
             }
         }
-        urls = Arrays.copyOf(urls, count);
-        return urls;
-    }
-
-    /**
-     * Returns the directory or JAR file URL corresponding to the specified
-     * local file name.
-     *
-     * @param file the File object
-     * @return the resulting directory or JAR file URL, or null if unknown
-     */
-    private static URL fileToURL(File file) {
-        String name;
-        try {
-            name = file.getCanonicalPath();
-        } catch (IOException e) {
-            name = file.getAbsolutePath();
-        }
-        name = name.replace(File.separatorChar, '/');
-        if (!name.startsWith("/")) {
-            name = "/" + name;
-        }
-        // If the file does not exist, then assume that it's a directory
-        if (!file.isFile()) {
-            name = name + "/";
-        }
-        try {
-            return new URL("file", "", name);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("file");
-        }
+        return urls.toArray(new URL[urls.size()]);
     }
 
 
