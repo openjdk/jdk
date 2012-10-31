@@ -222,7 +222,7 @@ public class CallSite {
             GET_TARGET = IMPL_LOOKUP.
                 findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
         } catch (ReflectiveOperationException e) {
-            throw new InternalError(e);
+            throw newInternalError(e);
         }
     }
 
