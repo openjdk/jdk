@@ -177,7 +177,8 @@ void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
     const int alignment = markOopDesc::biased_lock_alignment;
     size_t aligned_size = size + (alignment - sizeof(intptr_t));
     void* real_malloc_addr = throw_excpt? AllocateHeap(aligned_size, flags, CURRENT_PC)
-                                          : os::malloc(aligned_size, flags, CURRENT_PC);
+                                          : AllocateHeap(aligned_size, flags, CURRENT_PC,
+                                              AllocFailStrategy::RETURN_NULL);
     void* aligned_addr     = (void*) align_size_up((intptr_t) real_malloc_addr, alignment);
     assert(((uintptr_t) aligned_addr + (uintptr_t) size) <=
            ((uintptr_t) real_malloc_addr + (uintptr_t) aligned_size),
@@ -191,7 +192,7 @@ void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
     return aligned_addr;
   } else {
     return throw_excpt? AllocateHeap(size, flags, CURRENT_PC)
-                       : os::malloc(size, flags, CURRENT_PC);
+                       : AllocateHeap(size, flags, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
   }
 }
 

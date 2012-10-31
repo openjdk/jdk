@@ -53,6 +53,12 @@
   #endif
 #endif
 
+class AllocFailStrategy {
+public:
+  enum AllocFailEnum { EXIT_OOM, RETURN_NULL };
+};
+typedef AllocFailStrategy::AllocFailEnum AllocFailType;
+
 // All classes in the virtual machine must be subclassed
 // by one of the following allocation classes:
 //
@@ -315,7 +321,8 @@ protected:
   Chunk *_first;                // First chunk
   Chunk *_chunk;                // current chunk
   char *_hwm, *_max;            // High water mark and max in current chunk
-  void* grow(size_t x);         // Get a new Chunk of at least size x
+  // Get a new Chunk of at least size x
+  void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
 
   NOT_PRODUCT(static julong _bytes_allocated;) // total #bytes allocated since start
@@ -350,14 +357,14 @@ protected:
   void  operator delete(void* p);
 
   // Fast allocate in the arena.  Common case is: pointer test + increment.
-  void* Amalloc(size_t x) {
+  void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert(is_power_of_2(ARENA_AMALLOC_ALIGNMENT) , "should be a power of 2");
     x = ARENA_ALIGN(x);
     debug_only(if (UseMallocOnly) return malloc(x);)
     check_for_overflow(x, "Arena::Amalloc");
     NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
-      return grow(x);
+      return grow(x, alloc_failmode);
     } else {
       char *old = _hwm;
       _hwm += x;
@@ -365,13 +372,13 @@ protected:
     }
   }
   // Further assume size is padded out to words
-  void *Amalloc_4(size_t x) {
+  void *Amalloc_4(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
     debug_only(if (UseMallocOnly) return malloc(x);)
     check_for_overflow(x, "Arena::Amalloc_4");
     NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
-      return grow(x);
+      return grow(x, alloc_failmode);
     } else {
       char *old = _hwm;
       _hwm += x;
@@ -381,7 +388,7 @@ protected:
 
   // Allocate with 'double' alignment. It is 8 bytes on sparc.
   // In other cases Amalloc_D() should be the same as Amalloc_4().
-  void* Amalloc_D(size_t x) {
+  void* Amalloc_D(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
     debug_only(if (UseMallocOnly) return malloc(x);)
 #if defined(SPARC) && !defined(_LP64)
@@ -392,7 +399,7 @@ protected:
     check_for_overflow(x, "Arena::Amalloc_D");
     NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
-      return grow(x); // grow() returns a result aligned >= 8 bytes.
+      return grow(x, alloc_failmode); // grow() returns a result aligned >= 8 bytes.
     } else {
       char *old = _hwm;
       _hwm += x;
@@ -412,7 +419,8 @@ protected:
     if (((char*)ptr) + size == _hwm) _hwm = (char*)ptr;
   }
 
-  void *Arealloc( void *old_ptr, size_t old_size, size_t new_size );
+  void *Arealloc( void *old_ptr, size_t old_size, size_t new_size,
+      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
   // Move contents of this arena into an empty arena
   Arena *move_contents(Arena *empty_arena);
@@ -458,9 +466,12 @@ private:
 
 
 //%note allocation_1
-extern char* resource_allocate_bytes(size_t size);
-extern char* resource_allocate_bytes(Thread* thread, size_t size);
-extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_size);
+extern char* resource_allocate_bytes(size_t size,
+    AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+extern char* resource_allocate_bytes(Thread* thread, size_t size,
+    AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_size,
+    AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 extern void resource_free_bytes( char *old, size_t size );
 
 //----------------------------------------------------------------------
@@ -496,6 +507,8 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 
  public:
   void* operator new(size_t size, allocation_type type, MEMFLAGS flags);
+  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant,
+      allocation_type type, MEMFLAGS flags);
   void* operator new(size_t size, Arena *arena) {
       address res = (address)arena->Amalloc(size);
       DEBUG_ONLY(set_allocation_type(res, ARENA);)
@@ -506,6 +519,13 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
       DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
       return res;
   }
+
+  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) {
+      address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
+      DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
+      return res;
+  }
+
   void  operator delete(void* p);
 };
 
