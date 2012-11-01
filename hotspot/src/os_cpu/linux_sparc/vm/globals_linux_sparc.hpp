@@ -35,7 +35,5 @@ define_pd_global(intx, CompilerThreadStackSize,  0);
 
 // Used on 64 bit platforms for UseCompressedOops base address or CDS
 define_pd_global(uintx, HeapBaseMinAddress,      CONST64(4)*G);
-// Only used on 64 bit Windows platforms
-define_pd_global(bool, UseVectoredExceptions, false);
 
 #endif // OS_CPU_LINUX_SPARC_VM_GLOBALS_LINUX_SPARC_HPP

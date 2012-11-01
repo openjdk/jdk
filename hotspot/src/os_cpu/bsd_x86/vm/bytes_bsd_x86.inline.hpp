@@ -25,10 +25,6 @@
 #ifndef OS_CPU_BSD_X86_VM_BYTES_BSD_X86_INLINE_HPP
 #define OS_CPU_BSD_X86_VM_BYTES_BSD_X86_INLINE_HPP
 
-#ifndef _ALLBSD_SOURCE
-#include <byteswap.h>
-#endif
-
 #ifdef __APPLE__
 #include <libkern/OSByteOrder.h>
 #endif

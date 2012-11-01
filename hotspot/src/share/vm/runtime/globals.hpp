@@ -857,9 +857,6 @@ class CommandLineFlags {
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
                                                                             \
-  product_pd(bool, UseVectoredExceptions,                                   \
-          "Temp Flag - Use Vectored Exceptions rather than SEH (Windows Only)") \
-                                                                            \
   develop(bool, TraceVMOperation, false,                                    \
           "Trace vm operations")                                            \
                                                                             \

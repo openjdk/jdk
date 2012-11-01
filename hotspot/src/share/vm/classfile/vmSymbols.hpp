@@ -115,6 +115,7 @@
   /* Java runtime version access */                                                               \
   template(sun_misc_Version,                          "sun/misc/Version")                         \
   template(java_runtime_name_name,                    "java_runtime_name")                        \
+  template(java_runtime_version_name,                 "java_runtime_version")                     \
                                                                                                   \
   /* class file format tags */                                                                    \
   template(tag_source_file,                           "SourceFile")                               \
