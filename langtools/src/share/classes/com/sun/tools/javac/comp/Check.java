@@ -27,6 +27,7 @@ package com.sun.tools.javac.comp;
 
 import java.util.*;
 import java.util.Set;
+import javax.tools.JavaFileManager;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.jvm.*;
@@ -77,6 +78,7 @@ public class Check {
     private boolean suppressAbortOnBadClassFile;
     private boolean enableSunApiLintControl;
     private final TreeInfo treeinfo;
+    private final JavaFileManager fileManager;
 
     // The set of lint options currently in effect. It is initialized
     // from the context, and then is set/reset as needed by Attr as it
@@ -109,6 +111,7 @@ public class Check {
         Options options = Options.instance(context);
         lint = Lint.instance(context);
         treeinfo = TreeInfo.instance(context);
+        fileManager = context.get(JavaFileManager.class);
 
         Source source = Source.instance(context);
         allowGenerics = source.allowGenerics();
@@ -3229,6 +3232,19 @@ public class Check {
             }
             return true;
         }
+
+    /** Check that an auxiliary class is not accessed from any other file than its own.
+     */
+    void checkForBadAuxiliaryClassAccess(DiagnosticPosition pos, Env<AttrContext> env, ClassSymbol c) {
+        if (lint.isEnabled(Lint.LintCategory.AUXILIARYCLASS) &&
+            (c.flags() & AUXILIARY) != 0 &&
+            rs.isAccessible(env, c) &&
+            !fileManager.isSameFile(c.sourcefile, env.toplevel.sourcefile))
+        {
+            log.warning(pos, "auxiliary.class.accessed.from.outside.of.its.source.file",
+                        c, c.sourcefile);
+        }
+    }
 
     private class ConversionWarner extends Warner {
         final String uncheckedKey;
