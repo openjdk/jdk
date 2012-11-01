@@ -42,7 +42,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.text.spi.DecimalFormatSymbolsProvider;
+import java.util.ArrayList;
 import java.util.Currency;
+import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -554,20 +556,31 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             }
             ResourceBundle rb = adapter.getLocaleData().getNumberFormatData(locale);
             data = new Object[3];
+
+            // NumberElements look up. First, try the Unicode extension
+            String numElemKey;
             String numberType = locale.getUnicodeLocaleType("nu");
-            StringBuilder numElemKey =
-                new StringBuilder(numberType != null ?
-                                  numberType : rb.getString("DefaultNumberingSystem"));
-            if (numElemKey.length() != 0) {
-                numElemKey.append(".");
+            if (numberType != null) {
+                numElemKey = numberType + ".NumberElements";
+                if (rb.containsKey(numElemKey)) {
+                    data[0] = rb.getStringArray(numElemKey);
+                }
             }
-            numElemKey.append("NumberElements");
-            try {
-                data[0] = rb.getStringArray(numElemKey.toString());
-            } catch (MissingResourceException mre) {
-                // numberType must be bogus. Use the last resort numbering system.
+
+            // Next, try DefaultNumberingSystem value
+            if (data[0] == null && rb.containsKey("DefaultNumberingSystem")) {
+                numElemKey = rb.getString("DefaultNumberingSystem") + ".NumberElements";
+                if (rb.containsKey(numElemKey)) {
+                    data[0] = rb.getStringArray(numElemKey);
+                }
+            }
+
+            // Last resort. No need to check the availability.
+            // Just let it throw MissingResourceException when needed.
+            if (data[0] == null) {
                 data[0] = rb.getStringArray("NumberElements");
             }
+
             needCacheUpdate = true;
         }
 
