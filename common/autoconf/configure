@@ -1,4 +1,32 @@
-#!/bin/sh
+#!/bin/bash
+#
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+if test "x$BASH_VERSION" = x; then
+  echo This script needs bash to run.
+  echo It is recommended to use the configure script in the source tree root instead.
+  exit 1
+fi
 
 CONFIGURE_COMMAND_LINE="$@"
 conf_script_dir=`dirname $0`
@@ -13,58 +41,81 @@ fi
 ### Test that the generated configure is up-to-date
 ###
 
-# On Solaris /bin/sh doesn't support test -nt but /usr/bin/test does.
-TEST=`which test`
-
-print_error_not_up_to_date() {
-  echo "Error: The configure source files is newer than the generated files."
-  echo "Please run 'sh autogen.sh' to update the generated files."
-  echo "Note that this test might trigger incorrectly sometimes due to hg timestamps".
+run_autogen_or_fail() {
+  if test "x`which autoconf 2> /dev/null`" = x; then
+    echo "Cannot locate autoconf, unable to correct situation."
+    echo "Please install autoconf and run 'bash autogen.sh' to update the generated files."
+    echo "Error: Cannot continue" 1>&2
+    exit 1
+  else
+    echo "Running autogen.sh to correct the situation"
+    bash $conf_script_dir/autogen.sh
+  fi
 }
 
-# NOTE: This test can occasionally go wrong due to the way mercurial handles
-# timestamps. It it supposed to aid during development of build-infra, but should
-# go away before making this the default build system.
-for file in configure.ac *.m4 ; do
-  if $TEST $file -nt generated-configure.sh; then
-    print_error_not_up_to_date
-    exit 1
-  fi
-done
-
-if $TEST -e $conf_custom_script_dir/generated-configure.sh; then
-  # If custom source configure is available, make sure it is up-to-date as well.
-  for file in configure.ac *.m4 $conf_custom_script_dir/*.m4; do
-    if $TEST $file -nt $conf_custom_script_dir/generated-configure.sh; then
-      print_error_not_up_to_date
-      exit 1
+check_autoconf_timestamps() {
+  for file in $conf_script_dir/configure.ac $conf_script_dir/*.m4 ; do
+    if test $file -nt $conf_script_dir/generated-configure.sh; then
+      echo "Warning: The configure source files is newer than the generated files."
+      run_autogen_or_fail
     fi
   done
 
+  if test -e $conf_custom_script_dir/generated-configure.sh; then
+    # If custom source configure is available, make sure it is up-to-date as well.
+    for file in $conf_script_dir/configure.ac $conf_script_dir/*.m4 $conf_custom_script_dir/*.m4; do
+      if test $file -nt $conf_custom_script_dir/generated-configure.sh; then
+        echo "Warning: The configure source files is newer than the custom generated files."
+        run_autogen_or_fail
+      fi
+    done
+  fi
+}
+
+check_hg_updates() {
+  if test "x`which hg 2> /dev/null`" != x; then
+    conf_updated_autoconf_files=`cd $conf_script_dir && hg status -mard 2> /dev/null | grep autoconf`
+    if test "x$conf_updated_autoconf_files" != x; then
+      echo "Configure source code has been updated, checking time stamps"
+      check_autoconf_timestamps
+    fi
+
+    if test -e $conf_custom_script_dir; then
+      # If custom source configure is available, make sure it is up-to-date as well.
+      conf_custom_updated_autoconf_files=`cd $conf_custom_script_dir && hg status -mard 2> /dev/null | grep autoconf`
+      if test "x$conf_custom_updated_autoconf_files" != x; then
+        echo "Configure custom source code has been updated, checking time stamps"
+        check_autoconf_timestamps
+      fi
+    fi
+    
+  fi
+}
+
+# Check for local changes
+check_hg_updates
+
+if test -e $conf_custom_script_dir/generated-configure.sh; then
   # Test if open configure is newer than custom configure, if so, custom needs to
   # be regenerated. This test is required to ensure consistency with custom source.
-  conf_open_configure_timestamp=`grep DATE_WHEN_GENERATED: $conf_script_dir/generated-configure.sh  | cut -d" " -f 3`
-  conf_custom_configure_timestamp=`grep DATE_WHEN_GENERATED: $conf_custom_script_dir/generated-configure.sh  | cut -d" " -f 3`
-  if $TEST $conf_open_configure_timestamp -gt $conf_custom_configure_timestamp; then
-    echo "Error: The generated configure file contains changes not present in the custom generated file."
-    echo "Please run 'sh autogen.sh' to update the generated files."
-    exit 1
+  conf_open_configure_timestamp=`grep DATE_WHEN_GENERATED= $conf_script_dir/generated-configure.sh  | cut -d"=" -f 2`
+  conf_custom_configure_timestamp=`grep DATE_WHEN_GENERATED= $conf_custom_script_dir/generated-configure.sh  | cut -d"=" -f 2`
+  if test $conf_open_configure_timestamp -gt $conf_custom_configure_timestamp; then
+    echo "Warning: The generated configure file contains changes not present in the custom generated file."
+    run_autogen_or_fail
   fi
-  
 fi
 
 # Autoconf calls the configure script recursively sometimes. 
 # Don't start logging twice in that case
-if $TEST "x$conf_debug_configure" = xtrue; then
+if test "x$conf_debug_configure" = xtrue; then
   conf_debug_configure=recursive
 fi
 ###
 ### Process command-line arguments
 ###
-conf_processed_arguments=
+conf_processed_arguments=()
 conf_openjdk_target=
-conf_extra_cflags=
-conf_extra_cxxflags=
 
 for conf_option
 do
@@ -72,20 +123,14 @@ do
   --openjdk-target=*)
     conf_openjdk_target=`expr "X$conf_option" : '[^=]*=\(.*\)'`
     continue ;;
-  --with-extra-cflags=*)
-    conf_extra_cflags=`expr "X$conf_option" : '[^=]*=\(.*\)'`
-    continue ;;
-  --with-extra-cxxflags=*)
-    conf_extra_cxxflags=`expr "X$conf_option" : '[^=]*=\(.*\)'`
-    continue ;;
   --debug-configure)
-    if $TEST "x$conf_debug_configure" != xrecursive; then
+    if test "x$conf_debug_configure" != xrecursive; then
       conf_debug_configure=true
       export conf_debug_configure
     fi
     continue ;;
   *)
-    conf_processed_arguments="$conf_processed_arguments $conf_option" ;;
+    conf_processed_arguments=("${conf_processed_arguments[@]}" "$conf_option") ;;
   esac
 
   case $conf_option in
@@ -95,11 +140,13 @@ do
     conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
   -host | --host | --hos | --ho | -host=* | --host=* | --hos=* | --ho=*)
     conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
+  -help | --help | --hel | --he | -h)
+    conf_print_help=true ;;
   esac
 done
 
-if $TEST "x$conf_legacy_crosscompile" != "x"; then
-  if $TEST "x$conf_openjdk_target" != "x"; then
+if test "x$conf_legacy_crosscompile" != "x"; then
+  if test "x$conf_openjdk_target" != "x"; then
     echo "Error: Specifying --openjdk-target together with autoconf"
     echo "legacy cross-compilation flags is not supported."
     echo "You specified: --openjdk-target=$conf_openjdk_target and $conf_legacy_crosscompile."
@@ -112,20 +159,20 @@ if $TEST "x$conf_legacy_crosscompile" != "x"; then
   fi
 fi
 
-if $TEST "x$conf_openjdk_target" != "x"; then
+if test "x$conf_openjdk_target" != "x"; then
   conf_build_platform=`sh $conf_script_dir/build-aux/config.guess`
-  conf_processed_arguments="--build=$conf_build_platform --host=$conf_openjdk_target --target=$conf_openjdk_target $conf_processed_arguments"
+  conf_processed_arguments=("--build=$conf_build_platform" "--host=$conf_openjdk_target" "--target=$conf_openjdk_target" "${conf_processed_arguments[@]}")
 fi
 
 # Make configure exit with error on invalid options as default.
 # Can be overridden by --disable-option-checking, since we prepend our argument
 # and later options override earlier.
-conf_processed_arguments="--enable-option-checking=fatal $conf_processed_arguments"
+conf_processed_arguments=("--enable-option-checking=fatal" "${conf_processed_arguments[@]}")
 
 ###
 ### Call the configure script
 ###
-if $TEST -e $conf_custom_script_dir/generated-configure.sh; then
+if test -e $conf_custom_script_dir/generated-configure.sh; then
   # Custom source configure available; run that instead
   echo Running custom generated-configure.sh
   conf_script_to_run=$conf_custom_script_dir/generated-configure.sh
@@ -134,17 +181,17 @@ else
   conf_script_to_run=$conf_script_dir/generated-configure.sh
 fi  
 
-if $TEST "x$conf_debug_configure" != x; then
+if test "x$conf_debug_configure" != x; then
   # Turn on shell debug output if requested (initial or recursive)
   set -x
 fi
 
-if $TEST "x$conf_debug_configure" = xtrue; then
+if test "x$conf_debug_configure" = xtrue; then
   # Turn on logging, but don't turn on twice when called recursive
   conf_debug_logfile=./debug-configure.log
-  (exec 3>&1 ; (. $conf_script_to_run $conf_processed_arguments --with-extra-cflags="$conf_extra_cflags" --with-extra-cxxflags="$conf_extra_cxxflags" 2>&1 1>&3 ) | tee -a $conf_debug_logfile 1>&2 ; exec 3>&-) | tee -a $conf_debug_logfile
+  (exec 3>&1 ; (. $conf_script_to_run "${conf_processed_arguments[@]}" 2>&1 1>&3 ) | tee -a $conf_debug_logfile 1>&2 ; exec 3>&-) | tee -a $conf_debug_logfile
 else
-  . $conf_script_to_run $conf_processed_arguments --with-extra-cflags="$conf_extra_cflags" --with-extra-cxxflags="$conf_extra_cxxflags"
+  ( . $conf_script_to_run "${conf_processed_arguments[@]}" )
 fi
 
 conf_result_code=$?
@@ -152,8 +199,28 @@ conf_result_code=$?
 ### Post-processing
 ###
 
+if test $conf_result_code -eq 0; then
+  if test "x$conf_print_help" = xtrue; then
+    cat <<EOT
+
+Additional (non-autoconf) OpenJDK Options:
+  --openjdk-target=TARGET cross-compile with TARGET as target platform
+                          (i.e. the one you will run the resulting binary on).
+                          Equivalent to --host=TARGET --target=TARGET
+                          --build=<current platform>
+  --debug-configure       Run the configure script with additional debug
+                          logging enabled.
+
+Please be aware that, when cross-compiling, the OpenJDK configure script will
+generally use 'target' where autoconf traditionally uses 'host'.
+EOT
+  fi
+else
+  echo configure exiting with result code $conf_result_code
+fi
+
 # Move the log file to the output root, if this was successfully created
-if $TEST -d "$OUTPUT_ROOT"; then
+if test -d "$OUTPUT_ROOT"; then
   mv -f config.log "$OUTPUT_ROOT" 2> /dev/null
 fi
 

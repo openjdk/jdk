@@ -58,7 +58,7 @@ int is_cygdrive_here(int pos, char *in, int len)
  * Works in place since drive letter is always
  * shorter than /cygdrive/
  */
-char *replace_cygdrive(char *in)
+char *replace_cygdrive_cygwin(char *in)
 {
   int len = strlen(in);
   char *out = malloc(len+1);
@@ -119,6 +119,61 @@ char *replace_substring(char *in, char *sub, char *rep)
   return out;
 }
 
+char* msys_path_list; // @-separated list of paths prefix to look for
+char* msys_path_list_end; // Points to last \0 in msys_path_list.
+
+void setup_msys_path_list(char* argument)
+{
+  char* p;
+  char* drive_letter_pos;
+
+  msys_path_list = strdup(&argument[2]);
+  msys_path_list_end = &msys_path_list[strlen(msys_path_list)];
+
+  // Convert all at-sign (@) in path list to \0.
+  // @ was chosen as separator to minimize risk of other tools messing around with it
+  p = msys_path_list;
+  do {
+    if (p[1] == ':') {
+      // msys has mangled our path list, restore it from c:/... to /c/...
+      drive_letter_pos = p+1;
+      *drive_letter_pos = *p;
+      *p = '/';
+    }
+
+    // Look for an @ in the list
+    p = strchr(p, '@');
+    if (p != NULL) {
+      *p = '\0';
+      p++;
+    }
+  } while (p != NULL);
+}
+
+char *replace_cygdrive_msys(char *in)
+{
+  char* str;
+  char* prefix;
+  char* p;
+
+  str = strdup(in);
+
+  // For each prefix in the path list, search for it and replace /c/... with c:/...
+  for (prefix = msys_path_list; prefix < msys_path_list_end && prefix != NULL; prefix += strlen(prefix)+1) {
+    p=str;
+    while ((p = strstr(p, prefix))) {
+      char* drive_letter = p+1;
+      *p = *drive_letter;
+      *drive_letter = ':';
+      p++;
+    }
+  }
+
+  return str;
+}
+
+char*(*replace_cygdrive)(char *in) = NULL;
+
 char *files_to_delete[1024];
 int num_files_to_delete = 0;
 
@@ -158,7 +213,7 @@ char *fix_at_file(char *in)
 
   atout = fopen(name, "w");
   if (atout == NULL) {
-    fprintf(stderr, "Could open temporary file for writing! %s\n", name);
+    fprintf(stderr, "Could not open temporary file for writing! %s\n", name);
     exit(-1);
   }
 
@@ -167,7 +222,13 @@ char *fix_at_file(char *in)
     append(&buffer, &buflen, &used, block, blocklen);
   }
   buffer[used] = 0;
+  if (getenv("DEBUG_FIXPATH") != NULL) {
+    fprintf(stderr, "fixpath input from @-file %s: %s\n", &in[1], buffer);
+  }
   fixed = replace_cygdrive(buffer);
+  if (getenv("DEBUG_FIXPATH") != NULL) {
+    fprintf(stderr, "fixpath converted to @-file %s is: %s\n", name, fixed);
+  }
   fwrite(fixed, strlen(fixed), 1, atout);
   fclose(atin);
   fclose(atout);
@@ -194,12 +255,31 @@ int main(int argc, char **argv)
     int i;
     DWORD exitCode;
 
-    if (argc<2) {
-        fprintf(stderr, "Usage: uncygdrive.exe /cygdrive/c/WINDOWS/notepad.exe /cygdrive/c/x/test.txt");
+    if (argc<3 || argv[1][0] != '-' || (argv[1][1] != 'c' && argv[1][1] != 'm')) {
+        fprintf(stderr, "Usage: fixpath -c|m<path@path@...> /cygdrive/c/WINDOWS/notepad.exe /cygdrive/c/x/test.txt");
         exit(0);
     }
 
-    line = replace_cygdrive(strstr(GetCommandLine(), argv[1]));
+    if (getenv("DEBUG_FIXPATH") != NULL) {
+      fprintf(stderr, "fixpath input line >%s<\n", strstr(GetCommandLine(), argv[1]));
+    }
+
+    if (argv[1][1] == 'c' && argv[1][2] == '\0') {
+      if (getenv("DEBUG_FIXPATH") != NULL) {
+        fprintf(stderr, "using cygwin mode\n");
+      }
+      replace_cygdrive = replace_cygdrive_cygwin;
+    } else if (argv[1][1] == 'm') {
+      if (getenv("DEBUG_FIXPATH") != NULL) {
+        fprintf(stderr, "using msys mode, with path list: %s\n", &argv[1][2]);
+      }
+      setup_msys_path_list(argv[1]);
+      replace_cygdrive = replace_cygdrive_msys;
+    } else {
+      fprintf(stderr, "Unknown mode: %s\n", argv[1]);
+      exit(-1);
+    }
+    line = replace_cygdrive(strstr(GetCommandLine(), argv[2]));
 
     for (i=1; i<argc; ++i) {
        if (argv[i][0] == '@') {
@@ -210,8 +290,8 @@ int main(int argc, char **argv)
        }
     }
 
-    if (getenv("DEBUG_UNCYGDRIVE") != NULL) {
-      fprintf(stderr, "uncygdrive >%s<\n", line);
+    if (getenv("DEBUG_FIXPATH") != NULL) {
+      fprintf(stderr, "fixpath converted line >%s<\n", line);
     }
 
     ZeroMemory(&si,sizeof(si));
@@ -238,9 +318,9 @@ int main(int argc, char **argv)
     WaitForSingleObject(pi.hProcess,INFINITE);
     GetExitCodeProcess(pi.hProcess,&exitCode);
 
-    if (getenv("DEBUG_UNCYGDRIVE") != NULL) {
+    if (getenv("DEBUG_FIXPATH") != NULL) {
       for (i=0; i<num_files_to_delete; ++i) {
-        fprintf(stderr, "Not deleting temporary uncygdrive file %s\n",
+        fprintf(stderr, "Not deleting temporary fixpath file %s\n",
                 files_to_delete[i]);
       }
     }
