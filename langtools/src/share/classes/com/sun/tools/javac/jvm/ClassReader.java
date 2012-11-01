@@ -1018,6 +1018,15 @@ public class ClassReader implements Completer {
                     ClassSymbol c = (ClassSymbol) sym;
                     Name n = readName(nextChar());
                     c.sourcefile = new SourceFileObject(n, c.flatname);
+                    // If the class is a toplevel class, originating from a Java source file,
+                    // but the class name does not match the file name, then it is
+                    // an auxiliary class.
+                    String sn = n.toString();
+                    if (c.owner.kind == Kinds.PCK &&
+                        sn.endsWith(".java") &&
+                        !sn.equals(c.name.toString()+".java")) {
+                        c.flags_field |= AUXILIARY;
+                    }
                 }
             },
 
