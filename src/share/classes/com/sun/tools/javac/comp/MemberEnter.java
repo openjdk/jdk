@@ -1022,11 +1022,13 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // name as a top-level package.
             if (checkClash &&
                 c.owner.kind == PCK && c.owner != syms.unnamedPackage &&
-                reader.packageExists(c.fullname))
-                {
-                    log.error(tree.pos, "clash.with.pkg.of.same.name", Kinds.kindName(sym), c);
-                }
-
+                reader.packageExists(c.fullname)) {
+                log.error(tree.pos, "clash.with.pkg.of.same.name", Kinds.kindName(sym), c);
+            }
+            if (c.owner.kind == PCK && (c.flags_field & PUBLIC) == 0 &&
+                !env.toplevel.sourcefile.isNameCompatible(c.name.toString(),JavaFileObject.Kind.SOURCE)) {
+                c.flags_field |= AUXILIARY;
+            }
         } catch (CompletionFailure ex) {
             chk.completionError(tree.pos(), ex);
         } finally {

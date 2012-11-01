@@ -3050,6 +3050,7 @@ public class Attr extends JCTree.Visitor {
                 // except for two situations:
                 owntype = sym.type;
                 if (owntype.hasTag(CLASS)) {
+                    chk.checkForBadAuxiliaryClassAccess(tree.pos(), env, (ClassSymbol)sym);
                     Type ownOuter = owntype.getEnclosingType();
 
                     // (a) If the symbol's type is parameterized, erase it
