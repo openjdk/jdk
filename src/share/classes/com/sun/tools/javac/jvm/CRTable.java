@@ -503,6 +503,14 @@ implements CRTFlags {
             result = sr;
         }
 
+        @Override
+        public void visitLetExpr(LetExpr tree) {
+            SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
+            sr.mergeWith(csp(tree.defs));
+            sr.mergeWith(csp(tree.expr));
+            result = sr;
+        }
+
         public void visitTypeParameter(JCTypeParameter tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
             sr.mergeWith(csp(tree.bounds));
@@ -525,7 +533,7 @@ implements CRTFlags {
          */
         public int startPos(JCTree tree) {
             if (tree == null) return Position.NOPOS;
-            return tree.pos;
+            return TreeInfo.getStartPos(tree);
         }
 
         /** The end position of given tree, if it has
@@ -533,9 +541,7 @@ implements CRTFlags {
          */
         public int endPos(JCTree tree) {
             if (tree == null) return Position.NOPOS;
-            if (tree.hasTag(JCTree.Tag.BLOCK))
-                return ((JCBlock) tree).endpos;
-            return endPosTable.getEndPos(tree);
+            return TreeInfo.getEndPos(tree, endPosTable);
         }
     }
 
