@@ -249,6 +249,8 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
         if (completed) {
             if (propName.equals(Sasl.STRENGTH)) {
                 return negotiatedStrength;
+            } else if (propName.equals(Sasl.BOUND_SERVER_NAME)) {
+                return digestUri.substring(digestUri.indexOf('/') + 1);
             } else {
                 return super.getNegotiatedProperty(propName);
             }
