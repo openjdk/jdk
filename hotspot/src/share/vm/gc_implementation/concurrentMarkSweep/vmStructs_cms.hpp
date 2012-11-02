@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_VMSTRUCTS_CMS_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_VMSTRUCTS_CMS_HPP
 
+typedef BinaryTreeDictionary<FreeChunk, AdaptiveFreeList> AFLBinaryTreeDictionary;
+
 #define VM_STRUCTS_CMS(nonstatic_field, \
                    volatile_nonstatic_field, \
                    static_field) \
@@ -38,14 +40,8 @@
   nonstatic_field(CMSCollector,                _markBitMap,                                   CMSBitMap)                             \
   nonstatic_field(ConcurrentMarkSweepGeneration, _cmsSpace,                                   CompactibleFreeListSpace*)             \
      static_field(ConcurrentMarkSweepThread,   _collector,                                    CMSCollector*)                         \
-  volatile_nonstatic_field(FreeChunk,          _size,                                         size_t)                                \
-  nonstatic_field(FreeChunk,                   _next,                                         FreeChunk*)                            \
-  nonstatic_field(FreeChunk,                   _prev,                                         FreeChunk*)                            \
   nonstatic_field(LinearAllocBlock,            _word_size,                                    size_t)                                \
-  nonstatic_field(FreeList<FreeChunk>,         _size,                                         size_t)                                \
-  nonstatic_field(FreeList<FreeChunk>,         _count,                                        ssize_t)                               \
-  nonstatic_field(BinaryTreeDictionary<FreeChunk>,_total_size,                                 size_t)                                \
-  nonstatic_field(CompactibleFreeListSpace,    _dictionary,                                   FreeBlockDictionary<FreeChunk>*)       \
+  nonstatic_field(AFLBinaryTreeDictionary,     _total_size,                                   size_t)                                \
   nonstatic_field(CompactibleFreeListSpace,    _indexedFreeList[0],                           FreeList<FreeChunk>)                   \
   nonstatic_field(CompactibleFreeListSpace,    _smallLinearAllocBlock,                        LinearAllocBlock)
 
@@ -60,19 +56,17 @@
   declare_toplevel_type(CMSCollector)                                     \
   declare_toplevel_type(CMSBitMap)                                        \
   declare_toplevel_type(FreeChunk)                                        \
+  declare_toplevel_type(Metablock)                                        \
   declare_toplevel_type(ConcurrentMarkSweepThread*)                       \
   declare_toplevel_type(ConcurrentMarkSweepGeneration*)                   \
   declare_toplevel_type(SurrogateLockerThread*)                           \
   declare_toplevel_type(CompactibleFreeListSpace*)                        \
   declare_toplevel_type(CMSCollector*)                                    \
-  declare_toplevel_type(FreeChunk*)                                       \
-  declare_toplevel_type(BinaryTreeDictionary<FreeChunk>*)                 \
-  declare_toplevel_type(FreeBlockDictionary<FreeChunk>*)                  \
-  declare_toplevel_type(FreeList<FreeChunk>*)                             \
-  declare_toplevel_type(FreeList<FreeChunk>)                              \
+  declare_toplevel_type(AFLBinaryTreeDictionary*)                         \
   declare_toplevel_type(LinearAllocBlock)                                 \
   declare_toplevel_type(FreeBlockDictionary<FreeChunk>)                   \
-            declare_type(BinaryTreeDictionary<FreeChunk>, FreeBlockDictionary<FreeChunk>)
+  declare_type(AFLBinaryTreeDictionary, FreeBlockDictionary<FreeChunk>)   \
+            declare_type(AFLBinaryTreeDictionary, FreeBlockDictionary<FreeChunk>) \
 
 #define VM_INT_CONSTANTS_CMS(declare_constant)                            \
   declare_constant(Generation::ConcurrentMarkSweep)                       \

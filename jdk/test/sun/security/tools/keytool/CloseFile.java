@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@
  * @bug 6489721
  * @summary keytool has not closed several file streams
  * @author weijun.wang
+ * @compile -XDignore.symbol.file CloseFile.java
+ * @run main CloseFile
  *
  * This test is only useful on Windows, which fails before the fix and succeeds
  * after it. On other platforms, it always passes.
  */
 
-import sun.security.tools.KeyTool;
 import java.io.*;
 
 public class CloseFile {
@@ -58,7 +59,7 @@ public class CloseFile {
     }
 
     static void run(String s) throws Exception {
-        KeyTool.main((s+" -debug").split(" "));
+        sun.security.tools.keytool.Main.main((s+" -debug").split(" "));
     }
     static void remove(String filename, boolean check) {
         new File(filename).delete();

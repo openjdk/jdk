@@ -500,7 +500,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         g.setForce(force);
 
         if (fileManager instanceof JavahFileManager)
-            ((JavahFileManager) fileManager).setIgnoreSymbolFile(true);
+            ((JavahFileManager) fileManager).setSymbolFileEnabled(false);
 
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
         List<String> opts = new ArrayList<String>();

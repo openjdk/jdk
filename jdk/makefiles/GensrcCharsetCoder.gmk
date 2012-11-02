@@ -25,8 +25,8 @@
 
 GENSRC_CHARSETCODER :=
 
-GENSRC_CHARSETCODER_TMP := $(JDK_OUTPUTDIR)/gensrc_charsetcoder
-GENSRC_CHARSETCODER_DST := $(JDK_OUTPUTDIR)/gensrc_charsetcoder/java/nio/charset
+GENSRC_CHARSETCODER_TMP := $(JDK_OUTPUTDIR)/gensrc
+GENSRC_CHARSETCODER_DST := $(JDK_OUTPUTDIR)/gensrc/java/nio/charset
 
 GENSRC_CHARSETCODER_SRC := $(JDK_TOPDIR)/src/share/classes/java/nio
 

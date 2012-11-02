@@ -86,11 +86,14 @@ AWT_ASSERT_APPKIT_THREAD;
 
     if (windowLayer != nil) {
         self.cglLayer = windowLayer;
+        //Layer hosting view
+        [self setLayer: cglLayer];
         [self setWantsLayer: YES];
-        [self.layer addSublayer: (CALayer *)cglLayer];
-        [self setLayerContentsRedrawPolicy: NSViewLayerContentsRedrawDuringViewResize];
-        [self setLayerContentsPlacement: NSViewLayerContentsPlacementTopLeft];
-        [self setAutoresizingMask: NSViewHeightSizable | NSViewWidthSizable];
+        //Layer backed view
+        //[self.layer addSublayer: (CALayer *)cglLayer];
+        //[self setLayerContentsRedrawPolicy: NSViewLayerContentsRedrawDuringViewResize];
+        //[self setLayerContentsPlacement: NSViewLayerContentsPlacementTopLeft];
+        //[self setAutoresizingMask: NSViewHeightSizable | NSViewWidthSizable];
 
 #ifdef REMOTELAYER
         CGLLayer *parentLayer = (CGLLayer*)self.cglLayer;

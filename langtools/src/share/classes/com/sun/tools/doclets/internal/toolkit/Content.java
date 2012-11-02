@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,19 @@
 
 package com.sun.tools.doclets.internal.toolkit;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * A class to create content for javadoc output pages.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Bhavesh Patel
  */
@@ -39,10 +48,16 @@ public abstract class Content {
      *
      * @return string representation of the content
      */
+    @Override
     public String toString() {
-        StringBuilder contentBuilder = new StringBuilder();
-        write(contentBuilder);
-        return contentBuilder.toString();
+        StringWriter out = new StringWriter();
+        try {
+            write(out, true);
+        } catch (IOException e) {
+            // cannot happen from StringWriter
+            throw new DocletAbortException();
+        }
+        return out.toString();
     }
 
     /**
@@ -60,10 +75,10 @@ public abstract class Content {
     public abstract void addContent(String stringContent);
 
     /**
-     * Writes content to a StringBuilder.
+     * Writes content to a writer.
      *
      */
-    public abstract void write(StringBuilder contentBuilder);
+    public abstract boolean write(Writer writer, boolean atNewline) throws IOException ;
 
     /**
      * Returns true if the content is empty.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
 
 package com.sun.tools.doclets.internal.toolkit;
 
-import com.sun.javadoc.*;
 import java.io.*;
+
+import com.sun.javadoc.*;
 
 /**
  * The interface for writing package summary output.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Jamie Ho
  * @author Bhavesh Patel (Modified)
@@ -41,13 +43,6 @@ import java.io.*;
  */
 
 public interface PackageSummaryWriter {
-
-    /**
-     * Return the name of the output file.
-     *
-     * @return the name of the output file.
-     */
-    public abstract String getOutputFileName();
 
     /**
      * Get the header for the summary.
@@ -113,7 +108,7 @@ public interface PackageSummaryWriter {
      *
      * @param contentTree the content tree that will be printed
      */
-    public abstract void printDocument(Content contentTree);
+    public abstract void printDocument(Content contentTree) throws IOException;
 
     /**
      * Close the writer.

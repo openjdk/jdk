@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,20 @@
 
 package com.sun.tools.doclets.formats.html.markup;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
+
 import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Class for generating an HTML document for javadoc output.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Bhavesh Patel
  */
@@ -69,7 +77,7 @@ public class HtmlDocument extends Content {
      *
      * @param htmlContent html content to be added
      */
-    public void addContent(Content htmlContent) {
+    public final void addContent(Content htmlContent) {
         if (htmlContent.isValid())
             docContent.add(htmlContent);
     }
@@ -96,8 +104,9 @@ public class HtmlDocument extends Content {
     /**
      * {@inheritDoc}
      */
-    public void write(StringBuilder contentBuilder) {
+    public boolean write(Writer out,  boolean atNewline) throws IOException {
         for (Content c : docContent)
-            c.write(contentBuilder);
+            atNewline = c.write(out, atNewline);
+        return atNewline;
     }
 }

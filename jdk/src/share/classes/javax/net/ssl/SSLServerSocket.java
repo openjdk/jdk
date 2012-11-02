@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -484,15 +484,19 @@ public abstract class SSLServerSocket extends ServerSocket {
      *
      * <p>This means:
      * <ul>
-     * <li>if <code>params.getCipherSuites()</code> is non-null,
-     *   <code>setEnabledCipherSuites()</code> is called with that value
-     * <li>if <code>params.getProtocols()</code> is non-null,
-     *   <code>setEnabledProtocols()</code> is called with that value
-     * <li>if <code>params.getNeedClientAuth()</code> or
-     *   <code>params.getWantClientAuth()</code> return <code>true</code>,
-     *   <code>setNeedClientAuth(true)</code> and
-     *   <code>setWantClientAuth(true)</code> are called, respectively;
-     *   otherwise <code>setWantClientAuth(false)</code> is called.
+     * <li>If {@code params.getCipherSuites()} is non-null,
+     *   {@code setEnabledCipherSuites()} is called with that value.</li>
+     * <li>If {@code params.getProtocols()} is non-null,
+     *   {@code setEnabledProtocols()} is called with that value.</li>
+     * <li>If {@code params.getNeedClientAuth()} or
+     *   {@code params.getWantClientAuth()} return {@code true},
+     *   {@code setNeedClientAuth(true)} and
+     *   {@code setWantClientAuth(true)} are called, respectively;
+     *   otherwise {@code setWantClientAuth(false)} is called.</li>
+     * <li>If {@code params.getServerNames()} is non-null, the socket will
+     *   configure its server names with that value.</li>
+     * <li>If {@code params.getSNIMatchers()} is non-null, the socket will
+     *   configure its SNI matchers with that value.</li>
      * </ul>
      *
      * @param params the parameters

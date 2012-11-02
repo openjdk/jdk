@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,15 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-
-import com.sun.javadoc.*;
-import java.util.Map;
-import java.util.HashMap;
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.tools.StandardLocation;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Process and manage "-link" and "-linkoffline" to external packages. The
@@ -40,9 +42,10 @@ import java.net.*;
  * documented) file in the current or the destination directory, while
  * generating the documentation.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  * @author Robert Field
@@ -91,7 +94,7 @@ public class Extern {
          * If the same package name is found in the map, then the first mapped
          * Item object or offline location will be retained.
          *
-         * @param packagename Package name found in the "package-list" file.
+         * @param packageName Package name found in the "package-list" file.
          * @param path        URL or Directory path from where the "package-list"
          * file is picked.
          * @param relative    True if path is URL, false if directory path.
@@ -137,21 +140,25 @@ public class Extern {
      *
      * @param pkgName The package name.
      * @param relativepath    The relative path.
-     * @param link    The link to convert.
+     * @param filename    The link to convert.
      * @return if external return converted link else return null
      */
-    public String getExternalLink(String pkgName,
-                                  String relativepath, String link) {
+    public DocLink getExternalLink(String pkgName,
+                                  DocPath relativepath, String filename) {
+        return getExternalLink(pkgName, relativepath, filename, null);
+    }
+
+    public DocLink getExternalLink(String pkgName,
+                                  DocPath relativepath, String filename, String memberName) {
         Item fnd = findPackageItem(pkgName);
-        if (fnd != null) {
-            String externlink = fnd.path + link;
-            if (fnd.relative) {  // it's a relative path.
-                return relativepath + externlink;
-            } else {
-                return externlink;
-            }
-        }
-        return null;
+        if (fnd == null)
+            return null;
+
+        DocPath p = fnd.relative ?
+                relativepath.resolve(fnd.path).resolve(filename) :
+                DocPath.create(fnd.path).resolve(filename);
+
+        return new DocLink(p, "is-external=true", memberName);
     }
 
     /**
@@ -162,24 +169,45 @@ public class Extern {
      * @param pkglisturl This can be another URL for "package-list" or ordinary
      *                   file.
      * @param reporter   The <code>DocErrorReporter</code> used to report errors.
-     * @param linkoffline True if -linkoffline isused and false if -link is used.
+     * @param linkoffline True if -linkoffline is used and false if -link is used.
      */
-    public boolean url(String url, String pkglisturl,
+    public boolean link(String url, String pkglisturl,
                               DocErrorReporter reporter, boolean linkoffline) {
         this.linkoffline = linkoffline;
-        String errMsg = composeExternPackageList(url, pkglisturl);
-        if (errMsg != null) {
-            reporter.printWarning(errMsg);
-            return false;
-        } else {
+        try {
+            url = adjustEndFileSeparator(url);
+            if (isUrl(pkglisturl)) {
+                readPackageListFromURL(url, toURL(pkglisturl));
+            } else {
+                readPackageListFromFile(url, DocFile.createFileForInput(configuration, pkglisturl));
+            }
             return true;
+        } catch (Fault f) {
+            reporter.printWarning(f.getMessage());
+            return false;
+        }
+    }
+
+    private URL toURL(String url) throws Fault {
+        try {
+            return new URL(url);
+        } catch (MalformedURLException e) {
+            throw new Fault(configuration.getText("doclet.MalformedURL", url), e);
+        }
+    }
+
+    private class Fault extends Exception {
+        private static final long serialVersionUID = 0;
+
+        Fault(String msg, Exception cause) {
+            super(msg, cause);
         }
     }
 
     /**
      * Get the Extern Item object associated with this package name.
      *
-     * @param pkgname Package name.
+     * @param pkgName Package name.
      */
     private Item findPackageItem(String pkgName) {
         if (packageToItemMap == null) {
@@ -189,31 +217,10 @@ public class Extern {
     }
 
     /**
-     * Adjusts the end file separator if it is missing from the URL or the
-     * directory path and depending upon the URL or file path, fetch or
-     * read the "package-list" file.
-     *
-     * @param urlOrDirPath        URL or the directory path.
-     * @param pkgListUrlOrDirPath URL or directory path for the "package-list" file or the "package-list"
-     * file itself.
-     */
-    private String composeExternPackageList(String urlOrDirPath, String pkgListUrlOrDirPath) {
-        urlOrDirPath = adjustEndFileSeparator(urlOrDirPath);
-        pkgListUrlOrDirPath = adjustEndFileSeparator(pkgListUrlOrDirPath);
-        return isUrl(pkgListUrlOrDirPath) ?
-            fetchURLComposeExternPackageList(urlOrDirPath, pkgListUrlOrDirPath) :
-            readFileComposeExternPackageList(urlOrDirPath, pkgListUrlOrDirPath);
-    }
-
-    /**
      * If the URL or Directory path is missing end file separator, add that.
      */
     private String adjustEndFileSeparator(String url) {
-        String filesep = "/";
-        if (!url.endsWith(filesep)) {
-            url += filesep;
-        }
-        return url;
+        return url.endsWith("/") ? url : url + '/';
     }
 
     /**
@@ -222,17 +229,18 @@ public class Extern {
      * @param urlpath        Path to the packages.
      * @param pkglisturlpath URL or the path to the "package-list" file.
      */
-    private String fetchURLComposeExternPackageList(String urlpath,
-                                                   String pkglisturlpath) {
-        String link = pkglisturlpath + "package-list";
+    private void readPackageListFromURL(String urlpath, URL pkglisturlpath)
+            throws Fault {
         try {
-            readPackageList((new URL(link)).openStream(), urlpath, false);
+            URL link = pkglisturlpath.toURI().resolve(DocPaths.PACKAGE_LIST.getPath()).toURL();
+            readPackageList(link.openStream(), urlpath, false);
+        } catch (URISyntaxException exc) {
+            throw new Fault(configuration.getText("doclet.MalformedURL", pkglisturlpath.toString()), exc);
         } catch (MalformedURLException exc) {
-            return configuration.getText("doclet.MalformedURL", link);
+            throw new Fault(configuration.getText("doclet.MalformedURL", pkglisturlpath.toString()), exc);
         } catch (IOException exc) {
-            return configuration.getText("doclet.URL_error", link);
+            throw new Fault(configuration.getText("doclet.URL_error", pkglisturlpath.toString()), exc);
         }
-        return null;
     }
 
     /**
@@ -241,27 +249,24 @@ public class Extern {
      * @param path URL or directory path to the packages.
      * @param pkgListPath Path to the local "package-list" file.
      */
-    private String readFileComposeExternPackageList(String path,
-                                                   String pkgListPath) {
-
-        String link = pkgListPath + "package-list";
-        if (! ((new File(pkgListPath)).isAbsolute() || linkoffline)){
-            link = configuration.destDirName + link;
+    private void readPackageListFromFile(String path, DocFile pkgListPath)
+            throws Fault {
+        DocFile file = pkgListPath.resolve(DocPaths.PACKAGE_LIST);
+        if (! (file.isAbsolute() || linkoffline)){
+            file = file.resolveAgainst(StandardLocation.CLASS_OUTPUT);
         }
         try {
-            File file = new File(link);
             if (file.exists() && file.canRead()) {
-                readPackageList(new FileInputStream(file), path,
-                    ! ((new File(path)).isAbsolute() || isUrl(path)));
+                boolean pathIsRelative =
+                        !DocFile.createFileForInput(configuration, path).isAbsolute()
+                        && !isUrl(path);
+                readPackageList(file.openInputStream(), path, pathIsRelative);
             } else {
-                return configuration.getText("doclet.File_error", link);
+                throw new Fault(configuration.getText("doclet.File_error", file.getPath()), null);
             }
-        } catch (FileNotFoundException exc) {
-            return configuration.getText("doclet.File_error", link);
         } catch (IOException exc) {
-            return configuration.getText("doclet.File_error", link);
+           throw new Fault(configuration.getText("doclet.File_error", file.getPath()), exc);
         }
-        return null;
     }
 
     /**
@@ -276,7 +281,7 @@ public class Extern {
                                 boolean relative)
                          throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(input));
-        StringBuffer strbuf = new StringBuffer();
+        StringBuilder strbuf = new StringBuilder();
         try {
             int c;
             while ((c = in.read()) >= 0) {

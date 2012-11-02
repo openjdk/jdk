@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public abstract class Handler {
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      */
     public void setFormatter(Formatter newFormatter) throws SecurityException {
-        checkAccess();
+        checkPermission();
         // Check for a null pointer:
         newFormatter.getClass();
         formatter = newFormatter;
@@ -140,7 +140,7 @@ public abstract class Handler {
      */
     public void setEncoding(String encoding)
                         throws SecurityException, java.io.UnsupportedEncodingException {
-        checkAccess();
+        checkPermission();
         if (encoding != null) {
             try {
                 if(!java.nio.charset.Charset.isSupported(encoding)) {
@@ -175,7 +175,7 @@ public abstract class Handler {
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      */
     public void setFilter(Filter newFilter) throws SecurityException {
-        checkAccess();
+        checkPermission();
         filter = newFilter;
     }
 
@@ -199,7 +199,7 @@ public abstract class Handler {
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      */
     public void setErrorManager(ErrorManager em) {
-        checkAccess();
+        checkPermission();
         if (em == null) {
            throw new NullPointerException();
         }
@@ -213,7 +213,7 @@ public abstract class Handler {
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      */
     public ErrorManager getErrorManager() {
-        checkAccess();
+        checkPermission();
         return errorManager;
     }
 
@@ -253,7 +253,7 @@ public abstract class Handler {
         if (newLevel == null) {
             throw new NullPointerException();
         }
-        checkAccess();
+        checkPermission();
         logLevel = newLevel;
     }
 
@@ -296,9 +296,9 @@ public abstract class Handler {
     // If "sealed" is true, we check that the caller has
     // appropriate security privileges to update Handler
     // state and if not throw a SecurityException.
-    void checkAccess() throws SecurityException {
+    void checkPermission() throws SecurityException {
         if (sealed) {
-            manager.checkAccess();
+            manager.checkPermission();
         }
     }
 }

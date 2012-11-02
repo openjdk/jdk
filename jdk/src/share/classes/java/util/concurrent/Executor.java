@@ -56,23 +56,23 @@ package java.util.concurrent;
  * executor can run the submitted task immediately in the caller's
  * thread:
  *
- * <pre>
+ *  <pre> {@code
  * class DirectExecutor implements Executor {
- *     public void execute(Runnable r) {
- *         r.run();
- *     }
- * }</pre>
+ *   public void execute(Runnable r) {
+ *     r.run();
+ *   }
+ * }}</pre>
  *
  * More typically, tasks are executed in some thread other
  * than the caller's thread.  The executor below spawns a new thread
  * for each task.
  *
- * <pre>
+ *  <pre> {@code
  * class ThreadPerTaskExecutor implements Executor {
- *     public void execute(Runnable r) {
- *         new Thread(r).start();
- *     }
- * }</pre>
+ *   public void execute(Runnable r) {
+ *     new Thread(r).start();
+ *   }
+ * }}</pre>
  *
  * Many <tt>Executor</tt> implementations impose some sort of
  * limitation on how and when tasks are scheduled.  The executor below

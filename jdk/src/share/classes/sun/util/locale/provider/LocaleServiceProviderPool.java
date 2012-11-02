@@ -302,7 +302,7 @@ public final class LocaleServiceProviderPool {
 
                 for (LocaleProviderAdapter.Type type: findProviders(current)) {
                     LocaleServiceProvider lsp = providers.get(type);
-                    providersObj = getter.getObject((P)lsp, current, key, params);
+                    providersObj = getter.getObject((P)lsp, locale, key, params);
                     if (providersObj != null) {
                         return providersObj;
                     } else if (isObjectProvider) {
@@ -356,7 +356,7 @@ public final class LocaleServiceProviderPool {
      * @param locale the input locale
      * @return the list of candidate locales for the given locale
      */
-    private static List<Locale> getLookupLocales(Locale locale) {
+    static List<Locale> getLookupLocales(Locale locale) {
         // Note: We currently use the default implementation of
         // ResourceBundle.Control.getCandidateLocales. The result
         // returned by getCandidateLocales are already normalized

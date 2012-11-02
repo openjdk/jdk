@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ class MacOSXPreferences extends AbstractPreferences {
         else
             this.isUser = isUserNode();
         path = isRoot ? absolutePath() : absolutePath() + "/";
-        file = cfFileForNode(isUser);
+        file = cfFileForNode(this.isUser);
         if (isNew)
             newNode = isNew;
         else

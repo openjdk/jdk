@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -826,6 +826,12 @@ Java_java_io_WinNTFileSystem_getDriveDirectory(JNIEnv *env, jobject this,
     ret = (*env)->NewString(env, p, (jsize)wcslen(p));
     free (pf);
     return ret;
+}
+
+JNIEXPORT jint JNICALL
+Java_java_io_WinNTFileSystem_listRoots0(JNIEnv *env, jclass ignored)
+{
+    return GetLogicalDrives();
 }
 
 JNIEXPORT jlong JNICALL
