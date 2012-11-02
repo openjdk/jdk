@@ -58,14 +58,12 @@ final class CramMD5Server extends CramMD5Base implements SaslServer {
     private CallbackHandler cbh;
 
     /**
-     * Creates a SASL mechanism with client credentials that it needs
-     * to participate in CRAM-MD5 authentication exchange with the server.
+     * Creates a CRAM-MD5 SASL server.
      *
-     * @param authID A  non-null string representing the principal
-     * being authenticated.
-     *
-     * @param pw A non-null String or byte[]
-     * containing the password. If it is an array, it is first cloned.
+     * @param protocol ignored in CRAM-MD5
+     * @param serverFqdn non-null, used in generating a challenge
+     * @param props ignored in CRAM-MD5
+     * @param cbh find password, authorize user
      */
     CramMD5Server(String protocol, String serverFqdn, Map<String, ?> props,
         CallbackHandler cbh) throws SaslException {

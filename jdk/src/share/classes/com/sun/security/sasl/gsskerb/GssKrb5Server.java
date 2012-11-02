@@ -67,9 +67,14 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
 
     private int handshakeStage = 0;
     private String peer;
+    private String me;
     private String authzid;
     private CallbackHandler cbh;
 
+    // When serverName is null, the server will be unbound. We need to save and
+    // check the protocol name after the context is established. This value
+    // will be null if serverName is not null.
+    private final String protocolSaved;
     /**
      * Creates a SASL mechanism with server credentials that it needs
      * to participate in GSS-API/Kerberos v5 authentication exchange
@@ -81,7 +86,15 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
         super(props, MY_CLASS_NAME);
 
         this.cbh = cbh;
-        String service = protocol + "@" + serverName;
+
+        String service;
+        if (serverName == null) {
+            protocolSaved = protocol;
+            service = null;
+        } else {
+            protocolSaved = null;
+            service = protocol + "@" + serverName;
+        }
 
         logger.log(Level.FINE, "KRB5SRV01:Using service name: {0}", service);
 
@@ -89,8 +102,8 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
             GSSManager mgr = GSSManager.getInstance();
 
             // Create the name for the requested service entity for Krb5 mech
-            GSSName serviceName = mgr.createName(service,
-                GSSName.NT_HOSTBASED_SERVICE, KRB5_OID);
+            GSSName serviceName = service == null ? null:
+                    mgr.createName(service, GSSName.NT_HOSTBASED_SERVICE, KRB5_OID);
 
             GSSCredential cred = mgr.createCredential(serviceName,
                 GSSCredential.INDEFINITE_LIFETIME,
@@ -163,8 +176,18 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
                     handshakeStage = 1;
 
                     peer = secCtx.getSrcName().toString();
+                    me = secCtx.getTargName().toString();
 
-                    logger.log(Level.FINE, "KRB5SRV05:Peer name is : {0}", peer);
+                    logger.log(Level.FINE,
+                            "KRB5SRV05:Peer name is : {0}, my name is : {1}",
+                            new Object[]{peer, me});
+
+                    // me might take the form of proto@host or proto/host
+                    if (protocolSaved != null &&
+                            !protocolSaved.equalsIgnoreCase(me.split("[/@]")[0])) {
+                        throw new SaslException(
+                                "GSS context targ name protocol error: " + me);
+                    }
 
                     if (gssOutToken == null) {
                         return doHandshake1(EMPTY);
@@ -318,5 +341,26 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
         } else {
             throw new IllegalStateException("Authentication incomplete");
         }
+    }
+
+    public Object getNegotiatedProperty(String propName) {
+        if (!completed) {
+            throw new IllegalStateException("Authentication incomplete");
+        }
+
+        Object result;
+        switch (propName) {
+            case Sasl.BOUND_SERVER_NAME:
+                try {
+                    // me might take the form of proto@host or proto/host
+                    result = me.split("[/@]")[1];
+                } catch (Exception e) {
+                    result = null;
+                }
+                break;
+            default:
+                result = super.getNegotiatedProperty(propName);
+        }
+        return result;
     }
 }

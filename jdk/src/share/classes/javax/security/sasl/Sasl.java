@@ -119,6 +119,18 @@ public class Sasl {
     "javax.security.sasl.server.authentication";
 
     /**
+     * The name of a property that specifies the bound server name for
+     * an unbound server. A server is created as an unbound server by setting
+     * the {@code serverName} argument in {@link #createSaslServer} as null.
+     * The property contains the bound host name after the authentication
+     * exchange has completed. It is only available on the server side.
+     * <br>The value of this constant is
+     * <tt>"javax.security.sasl.bound.server.name"</tt>.
+     */
+    public static final String BOUND_SERVER_NAME =
+    "javax.security.sasl.bound.server.name";
+
+    /**
      * The name of a property that specifies the maximum size of the receive
      * buffer in bytes of <tt>SaslClient</tt>/<tt>SaslServer</tt>.
      * The property contains the string representation of an integer.
@@ -449,7 +461,10 @@ public class Sasl {
      * IANA-registered name of a SASL mechanism. (e.g. "GSSAPI", "CRAM-MD5").
      * @param protocol The non-null string name of the protocol for which
      * the authentication is being performed (e.g., "ldap").
-     * @param serverName The non-null fully qualified host name of the server.
+     * @param serverName The fully qualified host name of the server, or null
+     * if the server is not bound to any specific host name. If the mechanism
+     * does not allow an unbound server, a <code>SaslException</code> will
+     * be thrown.
      * @param props The possibly null set of properties used to
      * select the SASL mechanism and to configure the authentication
      * exchange of the selected mechanism.

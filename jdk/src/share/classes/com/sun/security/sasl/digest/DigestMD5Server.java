@@ -141,8 +141,10 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
     private List<String> serverRealms;
 
     DigestMD5Server(String protocol, String serverName, Map<String, ?> props,
-        CallbackHandler cbh) throws SaslException {
-        super(props, MY_CLASS_NAME, 1, protocol + "/" + serverName, cbh);
+            CallbackHandler cbh) throws SaslException {
+        super(props, MY_CLASS_NAME, 1,
+                protocol + "/" + (serverName==null?"*":serverName),
+                cbh);
 
         serverRealms = new ArrayList<String>();
 
@@ -173,7 +175,12 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
 
         // By default, use server name as realm
         if (serverRealms.isEmpty()) {
-            serverRealms.add(serverName);
+            if (serverName == null) {
+                throw new SaslException(
+                        "A realm must be provided in props or serverName");
+            } else {
+                serverRealms.add(serverName);
+            }
         }
     }
 
@@ -539,7 +546,7 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
         // host should match one of service's configured service names
         // Check against digest URI that mech was created with
 
-        if (digestUri.equalsIgnoreCase(digestUriFromResponse)) {
+        if (uriMatches(digestUri, digestUriFromResponse)) {
             digestUri = digestUriFromResponse; // account for case-sensitive diffs
         } else {
             throw new SaslException("DIGEST-MD5: digest response format " +
@@ -651,6 +658,21 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
                 passwd[i] = 0;
             }
         }
+    }
+
+    private static boolean uriMatches(String thisUri, String incomingUri) {
+        // Full match
+        if (thisUri.equalsIgnoreCase(incomingUri)) {
+            return true;
+        }
+        // Unbound match
+        if (thisUri.endsWith("/*")) {
+            int protoAndSlash = thisUri.length() - 1;
+            String thisProtoAndSlash = thisUri.substring(0, protoAndSlash);
+            String incomingProtoAndSlash = incomingUri.substring(0, protoAndSlash);
+            return thisProtoAndSlash.equalsIgnoreCase(incomingProtoAndSlash);
+        }
+        return false;
     }
 
     /**

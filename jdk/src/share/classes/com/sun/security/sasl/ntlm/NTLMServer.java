@@ -99,6 +99,7 @@ final class NTLMServer implements SaslServer {
     private String authzId;
     private final String mech;
     private String hostname;
+    private String target;
 
     /**
      * @param mech not null
@@ -180,6 +181,7 @@ final class NTLMServer implements SaslServer {
                 String[] out = server.verify(response, nonce);
                 authzId = out[0];
                 hostname = out[1];
+                target = out[2];
                 return null;
             }
         } catch (NTLMException ex) {
@@ -220,6 +222,8 @@ final class NTLMServer implements SaslServer {
         switch (propName) {
             case Sasl.QOP:
                 return "auth";
+            case Sasl.BOUND_SERVER_NAME:
+                return target;
             case NTLM_HOSTNAME:
                 return hostname;
             default:
