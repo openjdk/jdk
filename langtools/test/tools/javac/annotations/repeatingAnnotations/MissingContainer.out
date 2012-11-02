@@ -1,0 +1,5 @@
+MissingContainer.java:20:1: compiler.err.invalid.containedby.annotation: Foo
+MissingContainer.java:20:6: compiler.err.invalid.containedby.annotation: Foo
+MissingContainer.java:12:1: compiler.err.annotation.missing.default.value: java.lang.annotation.ContainedBy, value
+MissingContainer.java:15:1: compiler.err.invalid.container.wrong.containedby: Foo, FooContainer
+4 errors
