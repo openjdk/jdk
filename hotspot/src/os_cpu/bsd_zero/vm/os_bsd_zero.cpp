@@ -23,7 +23,7 @@
  *
  */
 
-#if defined(_ALLBSD_SOURCE) && !defined(__APPLE__) && !defined(__NetBSD__)
+#if !defined(__APPLE__) && !defined(__NetBSD__)
 #include <pthread.h>
 # include <pthread_np.h> /* For pthread_attr_get_np */
 #endif
@@ -178,26 +178,6 @@ JVM_handle_bsd_signal(int sig,
           thread->disable_stack_red_zone();
           ShouldNotCallThis();
         }
-#ifndef _ALLBSD_SOURCE
-        else {
-          // Accessing stack address below sp may cause SEGV if
-          // current thread has MAP_GROWSDOWN stack. This should
-          // only happen when current thread was created by user
-          // code with MAP_GROWSDOWN flag and then attached to VM.
-          // See notes in os_bsd.cpp.
-          if (thread->osthread()->expanding_stack() == 0) {
-            thread->osthread()->set_expanding_stack();
-            if (os::Bsd::manually_expand_stack(thread, addr)) {
-              thread->osthread()->clear_expanding_stack();
-              return true;
-            }
-            thread->osthread()->clear_expanding_stack();
-          }
-          else {
-            fatal("recursive segv. expanding stack.");
-          }
-        }
-#endif
       }
     }
 
@@ -266,16 +246,6 @@ void os::Bsd::init_thread_fpu_state(void) {
   // Nothing to do
 }
 
-#ifndef _ALLBSD_SOURCE
-int os::Bsd::get_fpu_control_word() {
-  ShouldNotCallThis();
-}
-
-void os::Bsd::set_fpu_control_word(int fpu) {
-  ShouldNotCallThis();
-}
-#endif
-
 bool os::is_allocatable(size_t bytes) {
 #ifdef _LP64
   return true;
@@ -339,7 +309,7 @@ static void current_stack_region(address *bottom, size_t *size) {
   stack_top = (address) ss.ss_sp;
   stack_bytes  = ss.ss_size;
   stack_bottom = stack_top - stack_bytes;
-#elif defined(_ALLBSD_SOURCE)
+#else
   pthread_attr_t attr;
 
   int rslt = pthread_attr_init(&attr);
@@ -362,67 +332,6 @@ static void current_stack_region(address *bottom, size_t *size) {
   pthread_attr_destroy(&attr);
 
   stack_top = stack_bottom + stack_bytes;
-#else /* Linux */
-  pthread_attr_t attr;
-  int res = pthread_getattr_np(pthread_self(), &attr);
-  if (res != 0) {
-    if (res == ENOMEM) {
-      vm_exit_out_of_memory(0, "pthread_getattr_np");
-    }
-    else {
-      fatal(err_msg("pthread_getattr_np failed with errno = " INT32_FORMAT,
-            res));
-    }
-  }
-
-  res = pthread_attr_getstack(&attr, (void **) &stack_bottom, &stack_bytes);
-  if (res != 0) {
-    fatal(err_msg("pthread_attr_getstack failed with errno = " INT32_FORMAT,
-          res));
-  }
-  stack_top = stack_bottom + stack_bytes;
-
-  // The block of memory returned by pthread_attr_getstack() includes
-  // guard pages where present.  We need to trim these off.
-  size_t page_bytes = os::Bsd::page_size();
-  assert(((intptr_t) stack_bottom & (page_bytes - 1)) == 0, "unaligned stack");
-
-  size_t guard_bytes;
-  res = pthread_attr_getguardsize(&attr, &guard_bytes);
-  if (res != 0) {
-    fatal(err_msg(
-        "pthread_attr_getguardsize failed with errno = " INT32_FORMAT, res));
-  }
-  int guard_pages = align_size_up(guard_bytes, page_bytes) / page_bytes;
-  assert(guard_bytes == guard_pages * page_bytes, "unaligned guard");
-
-#ifdef IA64
-  // IA64 has two stacks sharing the same area of memory, a normal
-  // stack growing downwards and a register stack growing upwards.
-  // Guard pages, if present, are in the centre.  This code splits
-  // the stack in two even without guard pages, though in theory
-  // there's nothing to stop us allocating more to the normal stack
-  // or more to the register stack if one or the other were found
-  // to grow faster.
-  int total_pages = align_size_down(stack_bytes, page_bytes) / page_bytes;
-  stack_bottom += (total_pages - guard_pages) / 2 * page_bytes;
-#endif // IA64
-
-  stack_bottom += guard_bytes;
-
-  pthread_attr_destroy(&attr);
-
-  // The initial thread has a growable stack, and the size reported
-  // by pthread_attr_getstack is the maximum size it could possibly
-  // be given what currently mapped.  This can be huge, so we cap it.
-  if (os::Bsd::is_initial_thread()) {
-    stack_bytes = stack_top - stack_bottom;
-
-    if (stack_bytes > JavaThread::stack_size_at_create())
-      stack_bytes = JavaThread::stack_size_at_create();
-
-    stack_bottom = stack_top - stack_bytes;
-  }
 #endif
 
   assert(os::current_stack_pointer() >= stack_bottom, "should do");
