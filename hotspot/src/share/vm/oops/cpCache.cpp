@@ -243,25 +243,17 @@ void ConstantPoolCacheEntry::set_interface_call(methodHandle method, int index) 
 }
 
 
-void ConstantPoolCacheEntry::set_method_handle(constantPoolHandle cpool,
-                                               methodHandle adapter,
-                                               Handle appendix, Handle method_type,
-                                               objArrayHandle resolved_references) {
-  set_method_handle_common(cpool, Bytecodes::_invokehandle, adapter, appendix, method_type, resolved_references);
+void ConstantPoolCacheEntry::set_method_handle(constantPoolHandle cpool, const CallInfo &call_info) {
+  set_method_handle_common(cpool, Bytecodes::_invokehandle, call_info);
 }
 
-void ConstantPoolCacheEntry::set_dynamic_call(constantPoolHandle cpool,
-                                              methodHandle adapter,
-                                              Handle appendix, Handle method_type,
-                                              objArrayHandle resolved_references) {
-  set_method_handle_common(cpool, Bytecodes::_invokedynamic, adapter, appendix, method_type, resolved_references);
+void ConstantPoolCacheEntry::set_dynamic_call(constantPoolHandle cpool, const CallInfo &call_info) {
+  set_method_handle_common(cpool, Bytecodes::_invokedynamic, call_info);
 }
 
 void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
                                                       Bytecodes::Code invoke_code,
-                                                      methodHandle adapter,
-                                                      Handle appendix, Handle method_type,
-                                                      objArrayHandle resolved_references) {
+                                                      const CallInfo &call_info) {
   // NOTE: This CPCE can be the subject of data races.
   // There are three words to update: flags, refs[f2], f1 (in that order).
   // Writers must store all other values before f1.
@@ -276,6 +268,9 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
     return;
   }
 
+  const methodHandle adapter = call_info.resolved_method();
+  const Handle appendix      = call_info.resolved_appendix();
+  const Handle method_type   = call_info.resolved_method_type();
   const bool has_appendix    = appendix.not_null();
   const bool has_method_type = method_type.not_null();
 
@@ -315,6 +310,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   // This allows us to create fewer method oops, while keeping type safety.
   //
 
+  objArrayHandle resolved_references = cpool->resolved_references();
   // Store appendix, if any.
   if (has_appendix) {
     const int appendix_index = f2_as_index() + _indy_resolved_references_appendix_offset;
