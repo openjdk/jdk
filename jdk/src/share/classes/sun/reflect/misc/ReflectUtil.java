@@ -178,4 +178,29 @@ public final class ReflectUtil {
 
         return !isAncestor(from, to);
     }
+
+    /**
+     * Access check on the interfaces that a proxy class implements and throw
+     * {@code SecurityException} if it accesses a restricted package.
+     *
+     * @param ccl the caller's class loader
+     * @param interfaces the list of interfaces that a proxy class implements
+     *
+     * @see Proxy#checkProxyAccess
+     */
+    public static void checkProxyPackageAccess(ClassLoader ccl,
+                                               Class<?>... interfaces)
+    {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            for (Class<?> intf : interfaces) {
+                ClassLoader cl = intf.getClassLoader();
+                if (needsPackageAccessCheck(ccl, cl)) {
+                    checkPackageAccess(intf);
+                }
+            }
+        }
+    }
+
+    public static final String PROXY_PACKAGE = "sun.proxy";
 }
