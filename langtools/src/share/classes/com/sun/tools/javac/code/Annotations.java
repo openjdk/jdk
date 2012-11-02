@@ -26,18 +26,18 @@
 package com.sun.tools.javac.code;
 
 import java.util.Map;
+
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Pair;
-
 import static com.sun.tools.javac.code.Kinds.PCK;
-import com.sun.tools.javac.util.*;
 
 /**
  * Container for all annotations (attributes in javac) on a Symbol.

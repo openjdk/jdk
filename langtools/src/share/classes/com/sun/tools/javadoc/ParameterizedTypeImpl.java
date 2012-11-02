@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,17 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
 
 
 /**
  * Implementation of <code>ParameterizedType</code>, which
  * represents an invocation of a generic class or interface.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Scott Seligman
  * @since 1.5
@@ -90,7 +95,7 @@ public class ParameterizedTypeImpl
      * Return null is this is a top-level type.
      */
     public com.sun.javadoc.Type containingType() {
-        if (type.getEnclosingType().tag == CLASS) {
+        if (type.getEnclosingType().hasTag(CLASS)) {
             // This is the type of an inner class.
             return TypeMaker.getType(env, type.getEnclosingType());
         }
@@ -129,7 +134,7 @@ public class ParameterizedTypeImpl
             return TypeMaker.getTypeName(cl, full);
         }
         StringBuilder s = new StringBuilder();
-        if (cl.getEnclosingType().tag != CLASS) {               // if not an inner class...
+        if (!(cl.getEnclosingType().hasTag(CLASS))) {               // if not an inner class...
             s.append(TypeMaker.getTypeName(cl, full));
         } else {
             ClassType encl = (ClassType)cl.getEnclosingType();

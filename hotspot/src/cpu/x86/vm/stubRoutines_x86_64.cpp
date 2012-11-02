@@ -56,3 +56,4 @@ address StubRoutines::x86::_float_sign_flip = NULL;
 address StubRoutines::x86::_double_sign_mask = NULL;
 address StubRoutines::x86::_double_sign_flip = NULL;
 address StubRoutines::x86::_mxcsr_std = NULL;
+address StubRoutines::x86::_key_shuffle_mask_addr = NULL;

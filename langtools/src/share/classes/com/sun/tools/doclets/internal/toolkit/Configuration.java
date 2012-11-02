@@ -25,12 +25,13 @@
 
 package com.sun.tools.doclets.internal.toolkit;
 
+import java.io.*;
+import java.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
-import com.sun.javadoc.*;
-import java.util.*;
-import java.io.*;
 
 /**
  * Configure the output based on the options. Doclets should sub-class
@@ -38,9 +39,10 @@ import java.io.*;
  * all user options which are supported by the 1.1 doclet and the standard
  * doclet.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Robert Field.
  * @author Atul Dambalkar.
@@ -406,11 +408,11 @@ public abstract class Configuration {
                 group.checkPackageGroups(os[1], os[2]);
             } else if (opt.equals("-link")) {
                 String url = os[1];
-                extern.url(url, url, root, false);
+                extern.link(url, url, root, false);
             } else if (opt.equals("-linkoffline")) {
                 String url = os[1];
                 String pkglisturl = os[2];
-                extern.url(url, pkglisturl, root, true);
+                extern.link(url, pkglisturl, root, true);
             }
         }
         if (sourcepath.length() == 0) {
@@ -454,7 +456,7 @@ public abstract class Configuration {
                 tagletManager.addCustomTag(args[1], tagletpath);
                 continue;
             }
-            String[] tokens = Util.tokenize(args[1],
+            String[] tokens = tokenize(args[1],
                 TagletManager.SIMPLE_TAGLET_OPT_SEPERATOR, 3);
             if (tokens.length == 1) {
                 String tagName = args[1];
@@ -463,7 +465,7 @@ public abstract class Configuration {
                     tagletManager.addNewSimpleCustomTag(tagName, null, "");
                 } else {
                     //Create a simple tag with the heading that has the same name as the tag.
-                    StringBuffer heading = new StringBuffer(tagName + ":");
+                    StringBuilder heading = new StringBuilder(tagName + ":");
                     heading.setCharAt(0, Character.toUpperCase(tagName.charAt(0)));
                     tagletManager.addNewSimpleCustomTag(tagName, heading.toString(), "a");
                 }
@@ -476,6 +478,47 @@ public abstract class Configuration {
                 message.error("doclet.Error_invalid_custom_tag_argument", args[1]);
             }
         }
+    }
+
+    /**
+     * Given a string, return an array of tokens.  The separator can be escaped
+     * with the '\' character.  The '\' character may also be escaped by the
+     * '\' character.
+     *
+     * @param s         the string to tokenize.
+     * @param separator the separator char.
+     * @param maxTokens the maximum number of tokens returned.  If the
+     *                  max is reached, the remaining part of s is appended
+     *                  to the end of the last token.
+     *
+     * @return an array of tokens.
+     */
+    private String[] tokenize(String s, char separator, int maxTokens) {
+        List<String> tokens = new ArrayList<String>();
+        StringBuilder  token = new StringBuilder ();
+        boolean prevIsEscapeChar = false;
+        for (int i = 0; i < s.length(); i += Character.charCount(i)) {
+            int currentChar = s.codePointAt(i);
+            if (prevIsEscapeChar) {
+                // Case 1:  escaped character
+                token.appendCodePoint(currentChar);
+                prevIsEscapeChar = false;
+            } else if (currentChar == separator && tokens.size() < maxTokens-1) {
+                // Case 2:  separator
+                tokens.add(token.toString());
+                token = new StringBuilder();
+            } else if (currentChar == '\\') {
+                // Case 3:  escape character
+                prevIsEscapeChar = true;
+            } else {
+                // Case 4:  regular character
+                token.appendCodePoint(currentChar);
+            }
+        }
+        if (token.length() > 0) {
+            tokens.add(token.toString());
+        }
+        return tokens.toArray(new String[] {});
     }
 
     private void addToSet(Set<String> s, String str){
@@ -530,12 +573,12 @@ public abstract class Configuration {
             String opt = os[0].toLowerCase();
             if (opt.equals("-d")) {
                 String destdirname = addTrailingFileSep(os[1]);
-                File destDir = new File(destdirname);
+                DocFile destDir = DocFile.createFileForDirectory(this, destdirname);
                 if (!destDir.exists()) {
                     //Create the output directory (in case it doesn't exist yet)
                     reporter.printNotice(getText("doclet.dest_dir_create",
                         destdirname));
-                    (new File(destdirname)).mkdirs();
+                    destDir.mkdirs();
                 } else if (!destDir.isDirectory()) {
                     reporter.printError(getText(
                         "doclet.destination_directory_not_directory_0",
@@ -709,7 +752,7 @@ public abstract class Configuration {
     public InputStream getBuilderXML() throws FileNotFoundException {
         return builderXMLPath == null ?
             Configuration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
-            new FileInputStream(new File(builderXMLPath));
+            DocFile.createFileForInput(this, builderXMLPath).openInputStream();
     }
 
     /**

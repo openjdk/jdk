@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ BIFILES_TH =	$(DATA_PKG_DIR)/th/WordBreakIteratorData_th \
 $(BIFILES): $(DATA_PKG_DIR)/_the.bifiles
 $(DATA_PKG_DIR)/_the.bifiles: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
 $(DATA_PKG_DIR)/_the.bifiles: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKITERATOR)
-	$(ECHO) "Generating BreakIteratorData"
+	$(ECHO) $(LOG_INFO) "Generating BreakIteratorData"
 	$(MKDIR) -p  $(DATA_PKG_DIR)
 	$(RM) $(BIFILES)
 	$(TOOL_GENERATEBREAKITERATORDATA) \
@@ -86,7 +86,7 @@ $(DATA_PKG_DIR)/_the.bifiles: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKITERATO
 $(BIFILES_TH): $(DATA_PKG_DIR)/_the.bifiles_th
 $(DATA_PKG_DIR)/_the.bifiles_th: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
 $(DATA_PKG_DIR)/_the.bifiles_th: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKITERATOR)
-	$(ECHO) "Generating BreakIteratorData_th"
+	$(ECHO) $(LOG_INFO) "Generating BreakIteratorData_th"
 	$(MKDIR) -p  $(DATA_PKG_DIR)/th
 	$(RM) $(BIFILES_TH)
 	$(TOOL_GENERATEBREAKITERATORDATA) \

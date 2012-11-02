@@ -28,21 +28,19 @@ package com.sun.tools.javac.code;
 import java.lang.ref.SoftReference;
 import java.util.*;
 
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.List;
-
-import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.comp.Check;
-
-import static com.sun.tools.javac.code.Scope.*;
-import static com.sun.tools.javac.code.Type.*;
-import static com.sun.tools.javac.code.TypeTags.*;
-import static com.sun.tools.javac.code.Symbol.*;
-import static com.sun.tools.javac.code.Flags.*;
+import com.sun.tools.javac.jvm.ClassReader;
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.List;
 import static com.sun.tools.javac.code.BoundKind.*;
+import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.Scope.*;
+import static com.sun.tools.javac.code.Symbol.*;
+import static com.sun.tools.javac.code.Type.*;
+import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.util.ListBuffer.lb;
 
 /**
@@ -607,8 +605,8 @@ public class Types {
     }
     //where
         private boolean isSubtypeUncheckedInternal(Type t, Type s, Warner warn) {
-            if (t.tag == ARRAY && s.tag == ARRAY) {
-                if (((ArrayType)t).elemtype.tag <= lastBaseTag) {
+            if (t.hasTag(ARRAY) && s.hasTag(ARRAY)) {
+                if (((ArrayType)t).elemtype.isPrimitive()) {
                     return isSameType(elemtype(t), elemtype(s));
                 } else {
                     return isSubtypeUnchecked(elemtype(t), elemtype(s), warn);
@@ -666,7 +664,7 @@ public class Types {
         if (t == s)
             return true;
 
-        if (s.tag >= firstPartialTag)
+        if (s.isPartial())
             return isSuperType(s, t);
 
         if (s.isCompound()) {
@@ -688,25 +686,27 @@ public class Types {
         {
             public Boolean visitType(Type t, Type s) {
                 switch (t.tag) {
-                case BYTE: case CHAR:
-                    return (t.tag == s.tag ||
-                              t.tag + 2 <= s.tag && s.tag <= DOUBLE);
-                case SHORT: case INT: case LONG: case FLOAT: case DOUBLE:
-                    return t.tag <= s.tag && s.tag <= DOUBLE;
-                case BOOLEAN: case VOID:
-                    return t.tag == s.tag;
-                case TYPEVAR:
-                    return isSubtypeNoCapture(t.getUpperBound(), s);
-                case BOT:
-                    return
-                        s.tag == BOT || s.tag == CLASS ||
-                        s.tag == ARRAY || s.tag == TYPEVAR;
-                case WILDCARD: //we shouldn't be here - avoids crash (see 7034495)
-                case NONE:
-                    return false;
-                default:
-                    throw new AssertionError("isSubtype " + t.tag);
-                }
+                 case BYTE:
+                     return (!s.hasTag(CHAR) && t.getTag().isSubRangeOf(s.getTag()));
+                 case CHAR:
+                     return (!s.hasTag(SHORT) && t.getTag().isSubRangeOf(s.getTag()));
+                 case SHORT: case INT: case LONG:
+                 case FLOAT: case DOUBLE:
+                     return t.getTag().isSubRangeOf(s.getTag());
+                 case BOOLEAN: case VOID:
+                     return t.hasTag(s.getTag());
+                 case TYPEVAR:
+                     return isSubtypeNoCapture(t.getUpperBound(), s);
+                 case BOT:
+                     return
+                         s.hasTag(BOT) || s.hasTag(CLASS) ||
+                         s.hasTag(ARRAY) || s.hasTag(TYPEVAR);
+                 case WILDCARD: //we shouldn't be here - avoids crash (see 7034495)
+                 case NONE:
+                     return false;
+                 default:
+                     throw new AssertionError("isSubtype " + t.tag);
+                 }
             }
 
             private Set<TypePair> cache = new HashSet<TypePair>();
@@ -776,7 +776,7 @@ public class Types {
             @Override
             public Boolean visitArrayType(ArrayType t, Type s) {
                 if (s.tag == ARRAY) {
-                    if (t.elemtype.tag <= lastBaseTag)
+                    if (t.elemtype.isPrimitive())
                         return isSameType(t.elemtype, elemtype(s));
                     else
                         return isSubtypeNoCapture(t.elemtype, elemtype(s));
@@ -909,7 +909,7 @@ public class Types {
                 if (t == s)
                     return true;
 
-                if (s.tag >= firstPartialTag)
+                if (s.isPartial())
                     return visit(s, t);
 
                 switch (t.tag) {
@@ -938,7 +938,7 @@ public class Types {
 
             @Override
             public Boolean visitWildcardType(WildcardType t, Type s) {
-                if (s.tag >= firstPartialTag)
+                if (s.isPartial())
                     return visit(s, t);
                 else
                     return false;
@@ -949,7 +949,7 @@ public class Types {
                 if (t == s)
                     return true;
 
-                if (s.tag >= firstPartialTag)
+                if (s.isPartial())
                     return visit(s, t);
 
                 if (s.isSuperBound() && !s.isExtendsBound())
@@ -978,10 +978,10 @@ public class Types {
                 if (t == s)
                     return true;
 
-                if (s.tag >= firstPartialTag)
+                if (s.isPartial())
                     return visit(s, t);
 
-                return s.tag == ARRAY
+                return s.hasTag(ARRAY)
                     && containsTypeEquivalent(t.elemtype, elemtype(s));
             }
 
@@ -1122,7 +1122,7 @@ public class Types {
             }
 
             public Boolean visitType(Type t, Type s) {
-                if (s.tag >= firstPartialTag)
+                if (s.isPartial())
                     return containedBy(s, t);
                 else
                     return isSameType(t, s);
@@ -1144,7 +1144,7 @@ public class Types {
 
             @Override
             public Boolean visitWildcardType(WildcardType t, Type s) {
-                if (s.tag >= firstPartialTag)
+                if (s.isPartial())
                     return containedBy(s, t);
                 else {
 //                    debugContainsType(t, s);
@@ -1234,7 +1234,7 @@ public class Types {
                 switch (t.tag) {
                 case BYTE: case CHAR: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE:
-                    return s.tag <= DOUBLE;
+                    return s.isNumeric();
                 case BOOLEAN:
                     return s.tag == BOOLEAN;
                 case VOID:
@@ -1375,8 +1375,7 @@ public class Types {
                 case CLASS:
                     return isSubtype(t, s);
                 case ARRAY:
-                    if (elemtype(t).tag <= lastBaseTag ||
-                            elemtype(s).tag <= lastBaseTag) {
+                    if (elemtype(t).isPrimitive() || elemtype(s).isPrimitive()) {
                         return elemtype(t).tag == elemtype(s).tag;
                     } else {
                         return visit(elemtype(t), elemtype(s));
@@ -1429,8 +1428,8 @@ public class Types {
      * conservative in that it is allowed to say that two types are
      * not disjoint, even though they actually are.
      *
-     * The type C<X> is castable to C<Y> exactly if X and Y are not
-     * disjoint.
+     * The type {@code C<X>} is castable to {@code C<Y>} exactly if
+     * {@code X} and {@code Y} are not disjoint.
      */
     public boolean disjointType(Type t, Type s) {
         return disjointType.visit(t, s);
@@ -1525,7 +1524,7 @@ public class Types {
      * something of type `t' can be a subtype of `s'? This is
      * different from the question "is `t' not a subtype of `s'?"
      * when type variables are involved: Integer is not a subtype of T
-     * where <T extends Number> but it is not true that Integer cannot
+     * where {@code <T extends Number>} but it is not true that Integer cannot
      * possibly be a subtype of T.
      */
     public boolean notSoftSubtype(Type t, Type s) {
@@ -1650,8 +1649,8 @@ public class Types {
      */
     public ArrayType makeArrayType(Type t) {
         if (t.tag == VOID ||
-            t.tag >= PACKAGE) {
-            Assert.error("Type t must not be a a VOID or PACKAGE type, " + t.toString());
+            t.tag == PACKAGE) {
+            Assert.error("Type t must not be a VOID or PACKAGE type, " + t.toString());
         }
         return new ArrayType(t, syms.arrayClass);
     }
@@ -1849,7 +1848,7 @@ public class Types {
     public boolean isAssignable(Type t, Type s, Warner warn) {
         if (t.tag == ERROR)
             return true;
-        if (t.tag <= INT && t.constValue() != null) {
+        if (t.tag.isSubRangeOf(INT) && t.constValue() != null) {
             int value = ((Number)t.constValue()).intValue();
             switch (s.tag) {
             case BYTE:
@@ -1893,11 +1892,11 @@ public class Types {
         // We don't want to erase primitive types and String type as that
         // operation is idempotent. Also, erasing these could result in loss
         // of information such as constant values attached to such types.
-        return (t.tag <= lastBaseTag) || (syms.stringType.tsym == t.tsym);
+        return (t.isPrimitive()) || (syms.stringType.tsym == t.tsym);
     }
 
     private Type erasure(Type t, boolean recurse) {
-        if (t.tag <= lastBaseTag)
+        if (t.isPrimitive())
             return t; /* fast special case */
         else
             return erasure.visit(t, recurse);
@@ -1905,7 +1904,7 @@ public class Types {
     // where
         private SimpleVisitor<Type, Boolean> erasure = new SimpleVisitor<Type, Boolean>() {
             public Type visitType(Type t, Boolean recurse) {
-                if (t.tag <= lastBaseTag)
+                if (t.isPrimitive())
                     return t; /*fast special case*/
                 else
                     return t.map(recurse ? erasureRecFun : erasureFun);
@@ -3316,7 +3315,7 @@ public class Types {
         private static final UnaryVisitor<Integer> hashCode = new UnaryVisitor<Integer>() {
 
             public Integer visitType(Type t, Void ignored) {
-                return t.tag;
+                return t.tag.ordinal();
             }
 
             @Override
@@ -3432,7 +3431,7 @@ public class Types {
      * Return the class that boxes the given primitive.
      */
     public ClassSymbol boxedClass(Type t) {
-        return reader.enterClass(syms.boxedName[t.tag]);
+        return reader.enterClass(syms.boxedName[t.tag.ordinal()]);
     }
 
     /**

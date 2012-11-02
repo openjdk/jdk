@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -839,7 +839,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
       if(onInsertRow) {
          if(p != null) {
-            bool = p.evaluate(new Float(x) , columnIndex);
+            bool = p.evaluate(Float.valueOf(x), columnIndex);
 
             if(!bool) {
                throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());
@@ -906,7 +906,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
       if(onInsertRow) {
          if(p != null) {
-            bool = p.evaluate(new Double(x) , columnIndex);
+            bool = p.evaluate(Double.valueOf(x) , columnIndex);
 
             if(!bool) {
                throw new SQLException(resBundle.handleGetObject("filteredrowsetimpl.notallowed").toString());

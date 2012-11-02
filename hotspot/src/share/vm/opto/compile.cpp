@@ -3047,9 +3047,9 @@ bool Compile::Constant::operator==(const Constant& other) {
   case T_LONG:
   case T_DOUBLE:  return (_v._value.j == other._v._value.j);
   case T_OBJECT:
-  case T_METADATA: return (_v._metadata == other._v._metadata);
   case T_ADDRESS: return (_v._value.l == other._v._value.l);
   case T_VOID:    return (_v._value.l == other._v._value.l);  // jump-table entries
+  case T_METADATA: return (_v._metadata == other._v._metadata);
   default: ShouldNotReachHere();
   }
   return false;

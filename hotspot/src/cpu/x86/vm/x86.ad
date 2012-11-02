@@ -4102,9 +4102,158 @@ instruct vsll4L_reg_imm(vecY dst, vecY src, immI8 shift) %{
 
 // ----------------------- LogicalRightShift -----------------------------------
 
-// Shorts/Chars vector logical right shift produces incorrect Java result
+// Shorts vector logical right shift produces incorrect Java result
 // for negative data because java code convert short value into int with
-// sign extension before a shift.
+// sign extension before a shift. But char vectors are fine since chars are
+// unsigned values.
+
+instruct vsrl2S(vecS dst, vecS shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVS dst shift));
+  format %{ "psrlw   $dst,$shift\t! logical right shift packed2S" %}
+  ins_encode %{
+    __ psrlw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl2S_imm(vecS dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVS dst shift));
+  format %{ "psrlw   $dst,$shift\t! logical right shift packed2S" %}
+  ins_encode %{
+    __ psrlw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl2S_reg(vecS dst, vecS src, vecS shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVS src shift));
+  format %{ "vpsrlw  $dst,$src,$shift\t! logical right shift packed2S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrlw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl2S_reg_imm(vecS dst, vecS src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (URShiftVS src shift));
+  format %{ "vpsrlw  $dst,$src,$shift\t! logical right shift packed2S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrlw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl4S(vecD dst, vecS shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVS dst shift));
+  format %{ "psrlw   $dst,$shift\t! logical right shift packed4S" %}
+  ins_encode %{
+    __ psrlw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl4S_imm(vecD dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVS dst shift));
+  format %{ "psrlw   $dst,$shift\t! logical right shift packed4S" %}
+  ins_encode %{
+    __ psrlw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl4S_reg(vecD dst, vecD src, vecS shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVS src shift));
+  format %{ "vpsrlw  $dst,$src,$shift\t! logical right shift packed4S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrlw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl4S_reg_imm(vecD dst, vecD src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (URShiftVS src shift));
+  format %{ "vpsrlw  $dst,$src,$shift\t! logical right shift packed4S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrlw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl8S(vecX dst, vecS shift) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (URShiftVS dst shift));
+  format %{ "psrlw   $dst,$shift\t! logical right shift packed8S" %}
+  ins_encode %{
+    __ psrlw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl8S_imm(vecX dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (URShiftVS dst shift));
+  format %{ "psrlw   $dst,$shift\t! logical right shift packed8S" %}
+  ins_encode %{
+    __ psrlw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl8S_reg(vecX dst, vecX src, vecS shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (URShiftVS src shift));
+  format %{ "vpsrlw  $dst,$src,$shift\t! logical right shift packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrlw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl8S_reg_imm(vecX dst, vecX src, immI8 shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (URShiftVS src shift));
+  format %{ "vpsrlw  $dst,$src,$shift\t! logical right shift packed8S" %}
+  ins_encode %{
+    bool vector256 = false;
+    __ vpsrlw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl16S_reg(vecY dst, vecY src, vecS shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (URShiftVS src shift));
+  format %{ "vpsrlw  $dst,$src,$shift\t! logical right shift packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsrlw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsrl16S_reg_imm(vecY dst, vecY src, immI8 shift) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 16);
+  match(Set dst (URShiftVS src shift));
+  format %{ "vpsrlw  $dst,$src,$shift\t! logical right shift packed16S" %}
+  ins_encode %{
+    bool vector256 = true;
+    __ vpsrlw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector256);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 // Integers vector logical right shift
 instruct vsrl2I(vecD dst, vecS shift) %{

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,8 @@ public abstract class AbstractSaslImpl {
 
     /**
      * Retrieves the negotiated property.
-     * @exception SaslException if this authentication exchange has not completed
+     * @exception IllegalStateException if this authentication exchange has
+     * not completed
      */
     public Object getNegotiatedProperty(String propName) {
         if (!completed) {
@@ -255,7 +256,9 @@ public abstract class AbstractSaslImpl {
      */
     protected static final void traceOutput(String srcClass, String srcMethod,
         String traceTag, byte[] output) {
-        traceOutput(srcClass, srcMethod, traceTag, output, 0, output.length);
+        if (output != null) {
+            traceOutput(srcClass, srcMethod, traceTag, output, 0, output.length);
+        }
     }
 
     protected static final void traceOutput(String srcClass, String srcMethod,

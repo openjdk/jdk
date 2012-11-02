@@ -453,13 +453,29 @@ ifneq ($(OSNAME),windows)
     ifeq ($(JVM_VARIANT_ZEROSHARK), true)
         $(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(SHARK_DIR)/%.$(LIBRARY_SUFFIX)
 		$(install-file)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo):	$(SHARK_DIR)/%.debuginfo
+		$(install-file)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(SHARK_DIR)/%.diz
+		$(install-file)
         $(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(SHARK_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/%.debuginfo:		$(SHARK_DIR)/%.debuginfo
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/%.diz:			$(SHARK_DIR)/%.diz
 		$(install-file)
     endif
     ifeq ($(JVM_VARIANT_ZERO), true)
         $(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(ZERO_DIR)/%.$(LIBRARY_SUFFIX)
 		$(install-file)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo:		$(ZERO_DIR)/%.debuginfo
+		$(install-file)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(ZERO_DIR)/%.diz
+		$(install-file)
         $(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(ZERO_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/%.debuginfo:		$(ZERO_DIR)/%.debuginfo
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/%.diz:			$(ZERO_DIR)/%.diz
 		$(install-file)
     endif
     ifeq ($(JVM_VARIANT_MINIMAL1), true)

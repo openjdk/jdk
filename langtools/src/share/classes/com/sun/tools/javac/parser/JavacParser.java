@@ -116,6 +116,8 @@ public class JavacParser implements Parser {
                 fac.options.isSet("allowLambda"); //pre-lambda guard
         this.allowMethodReferences = source.allowMethodReferences() &&
                 fac.options.isSet("allowMethodReferences"); //pre-lambda guard
+        this.allowDefaultMethods = source.allowDefaultMethods() &&
+                fac.options.isSet("allowDefaultMethods"); //pre-lambda guard
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments);
         this.keepLineMap = keepLineMap;
@@ -184,6 +186,10 @@ public class JavacParser implements Parser {
     /** Switch: should we allow method/constructor references?
      */
     boolean allowMethodReferences;
+
+    /** Switch: should we allow default methods in interfaces?
+     */
+    boolean allowDefaultMethods;
 
     /** Switch: should we keep docComments?
      */
@@ -554,7 +560,7 @@ public class JavacParser implements Parser {
         case INTLITERAL:
             try {
                 t = F.at(pos).Literal(
-                    TypeTags.INT,
+                    TypeTag.INT,
                     Convert.string2int(strval(prefix), token.radix()));
             } catch (NumberFormatException ex) {
                 error(token.pos, "int.number.too.large", strval(prefix));
@@ -563,7 +569,7 @@ public class JavacParser implements Parser {
         case LONGLITERAL:
             try {
                 t = F.at(pos).Literal(
-                    TypeTags.LONG,
+                    TypeTag.LONG,
                     new Long(Convert.string2long(strval(prefix), token.radix())));
             } catch (NumberFormatException ex) {
                 error(token.pos, "int.number.too.large", strval(prefix));
@@ -585,7 +591,7 @@ public class JavacParser implements Parser {
             else if (n.floatValue() == Float.POSITIVE_INFINITY)
                 error(token.pos, "fp.number.too.large");
             else
-                t = F.at(pos).Literal(TypeTags.FLOAT, n);
+                t = F.at(pos).Literal(TypeTag.FLOAT, n);
             break;
         }
         case DOUBLELITERAL: {
@@ -604,27 +610,27 @@ public class JavacParser implements Parser {
             else if (n.doubleValue() == Double.POSITIVE_INFINITY)
                 error(token.pos, "fp.number.too.large");
             else
-                t = F.at(pos).Literal(TypeTags.DOUBLE, n);
+                t = F.at(pos).Literal(TypeTag.DOUBLE, n);
             break;
         }
         case CHARLITERAL:
             t = F.at(pos).Literal(
-                TypeTags.CHAR,
+                TypeTag.CHAR,
                 token.stringVal().charAt(0) + 0);
             break;
         case STRINGLITERAL:
             t = F.at(pos).Literal(
-                TypeTags.CLASS,
+                TypeTag.CLASS,
                 token.stringVal());
             break;
         case TRUE: case FALSE:
             t = F.at(pos).Literal(
-                TypeTags.BOOLEAN,
+                TypeTag.BOOLEAN,
                 (token.kind == TRUE ? 1 : 0));
             break;
         case NULL:
             t = F.at(pos).Literal(
-                TypeTags.BOT,
+                TypeTag.BOT,
                 null);
             break;
         default:
@@ -806,9 +812,9 @@ public class JavacParser implements Parser {
         t = odStack[0];
 
         if (t.hasTag(JCTree.Tag.PLUS)) {
-            StringBuffer buf = foldStrings(t);
+            StringBuilder buf = foldStrings(t);
             if (buf != null) {
-                t = toP(F.at(startPos).Literal(TypeTags.CLASS, buf.toString()));
+                t = toP(F.at(startPos).Literal(TypeTag.CLASS, buf.toString()));
             }
         }
 
@@ -833,16 +839,16 @@ public class JavacParser implements Parser {
         /** If tree is a concatenation of string literals, replace it
          *  by a single literal representing the concatenated string.
          */
-        protected StringBuffer foldStrings(JCTree tree) {
+        protected StringBuilder foldStrings(JCTree tree) {
             if (!allowStringFolding)
                 return null;
             List<String> buf = List.nil();
             while (true) {
                 if (tree.hasTag(LITERAL)) {
                     JCLiteral lit = (JCLiteral) tree;
-                    if (lit.typetag == TypeTags.CLASS) {
-                        StringBuffer sbuf =
-                            new StringBuffer((String)lit.value);
+                    if (lit.typetag == TypeTag.CLASS) {
+                        StringBuilder sbuf =
+                            new StringBuilder((String)lit.value);
                         while (buf.nonEmpty()) {
                             sbuf.append(buf.head);
                             buf = buf.tail;
@@ -853,7 +859,7 @@ public class JavacParser implements Parser {
                     JCBinary op = (JCBinary)tree;
                     if (op.rhs.hasTag(LITERAL)) {
                         JCLiteral lit = (JCLiteral) op.rhs;
-                        if (lit.typetag == TypeTags.CLASS) {
+                        if (lit.typetag == TypeTag.CLASS) {
                             buf = buf.prepend((String) lit.value);
                             tree = op.lhs;
                             continue;
@@ -1205,7 +1211,7 @@ public class JavacParser implements Parser {
             if ((mode & EXPR) != 0) {
                 nextToken();
                 if (token.kind == DOT) {
-                    JCPrimitiveTypeTree ti = toP(F.at(pos).TypeIdent(TypeTags.VOID));
+                    JCPrimitiveTypeTree ti = toP(F.at(pos).TypeIdent(TypeTag.VOID));
                     t = bracketsSuffix(ti);
                 } else {
                     return illegal(pos);
@@ -1214,7 +1220,7 @@ public class JavacParser implements Parser {
                 // Support the corner case of myMethodHandle.<void>invoke() by passing
                 // a void type (like other primitive types) to the next phase.
                 // The error will be reported in Attr.attribTypes or Attr.visitApply.
-                JCPrimitiveTypeTree ti = to(F.at(pos).TypeIdent(TypeTags.VOID));
+                JCPrimitiveTypeTree ti = to(F.at(pos).TypeIdent(TypeTag.VOID));
                 nextToken();
                 return ti;
                 //return illegal();
@@ -2311,6 +2317,7 @@ public class JavacParser implements Parser {
             case SYNCHRONIZED: flag = Flags.SYNCHRONIZED; break;
             case STRICTFP    : flag = Flags.STRICTFP; break;
             case MONKEYS_AT  : flag = Flags.ANNOTATION; break;
+            case DEFAULT     : checkDefaultMethods(); flag = Flags.DEFAULT; break;
             case ERROR       : flag = 0; nextToken(); break;
             default: break loop;
             }
@@ -2913,7 +2920,7 @@ public class JavacParser implements Parser {
                 JCExpression type;
                 boolean isVoid = token.kind == VOID;
                 if (isVoid) {
-                    type = to(F.at(pos).TypeIdent(TypeTags.VOID));
+                    type = to(F.at(pos).TypeIdent(TypeTag.VOID));
                     nextToken();
                 } else {
                     type = parseType();
@@ -3276,28 +3283,28 @@ public class JavacParser implements Parser {
     }
 
     /** Return type tag of basic type represented by token,
-     *  -1 if token is not a basic type identifier.
+     *  NONE if token is not a basic type identifier.
      */
-    static int typetag(TokenKind token) {
+    static TypeTag typetag(TokenKind token) {
         switch (token) {
         case BYTE:
-            return TypeTags.BYTE;
+            return TypeTag.BYTE;
         case CHAR:
-            return TypeTags.CHAR;
+            return TypeTag.CHAR;
         case SHORT:
-            return TypeTags.SHORT;
+            return TypeTag.SHORT;
         case INT:
-            return TypeTags.INT;
+            return TypeTag.INT;
         case LONG:
-            return TypeTags.LONG;
+            return TypeTag.LONG;
         case FLOAT:
-            return TypeTags.FLOAT;
+            return TypeTag.FLOAT;
         case DOUBLE:
-            return TypeTags.DOUBLE;
+            return TypeTag.DOUBLE;
         case BOOLEAN:
-            return TypeTags.BOOLEAN;
+            return TypeTag.BOOLEAN;
         default:
-            return -1;
+            return TypeTag.NONE;
         }
     }
 
@@ -3359,6 +3366,12 @@ public class JavacParser implements Parser {
         if (!allowMethodReferences) {
             log.error(token.pos, "method.references.not.supported.in.source", source.name);
             allowMethodReferences = true;
+        }
+    }
+    void checkDefaultMethods() {
+        if (!allowDefaultMethods) {
+            log.error(token.pos, "default.methods.not.supported.in.source", source.name);
+            allowDefaultMethods = true;
         }
     }
 

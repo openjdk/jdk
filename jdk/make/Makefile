@@ -233,7 +233,7 @@ import_product:
 
 all build:: sanity-all post-sanity-all
 
-SUBDIRS       = tools java javax sun com
+SUBDIRS       = tools java javax sun com jdk
 ifeq ($(PLATFORM), macosx)
   SUBDIRS += apple
 endif

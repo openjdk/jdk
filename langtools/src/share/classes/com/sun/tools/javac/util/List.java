@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,7 +287,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         if (isEmpty()) {
             return "";
         } else {
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             buf.append(head);
             for (List<A> l = tail; l.nonEmpty(); l = l.tail) {
                 buf.append(sep);

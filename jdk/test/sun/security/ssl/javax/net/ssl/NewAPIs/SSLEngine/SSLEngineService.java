@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  */
 
 /*
- *
- *
  * @bug 6388456
  * @summary Need adjustable TLS max record size for interoperability
  *      with non-compliant stacks
@@ -42,17 +40,31 @@ import java.nio.channels.*;
 
 public class SSLEngineService {
 
-    private static String pathToStores = "../../../../../etc";
     private static String keyStoreFile = "keystore";
     private static String trustStoreFile = "truststore";
     private static char[] passphrase = "passphrase".toCharArray();
 
-    private static String keyFilename =
+    private String pathToStores;
+    private String keyFilename;
+    private String trustFilename;
+
+    protected SSLEngineService() {
+        init("../../../../../etc");
+    }
+
+    protected SSLEngineService(String pathToStores) {
+        init(pathToStores);
+    }
+
+    private void init(String pathToStores) {
+        this.pathToStores = pathToStores;
+        this.keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + keyStoreFile;
-    private static String trustFilename =
+        this.trustFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + trustStoreFile;
+    }
 
     // deliver local application data.
     protected static void deliver(SSLEngine ssle, SocketChannel sc)
@@ -143,9 +155,12 @@ public class SSLEngineService {
         ByteBuffer peerNetData = ByteBuffer.allocate(netBufferMax/2);
         int received = -1;
 
+        boolean needToReadMore = true;
         while (received != 0) {
-            if (ssle.isInboundDone() || sc.read(peerNetData) < 0) {
-                break;
+            if (needToReadMore) {
+                if (ssle.isInboundDone() || sc.read(peerNetData) < 0) {
+                    break;
+                }
             }
 
             peerNetData.flip();
@@ -186,6 +201,8 @@ public class SSLEngineService {
                         " bytes large packet ");
                 }
 
+                needToReadMore = (peerNetData.position() > 0) ? false : true;
+
                 break;
 
             case BUFFER_OVERFLOW :
@@ -206,6 +223,8 @@ public class SSLEngineService {
                         " bytes for BUFFER_UNDERFLOW");
                     peerNetData = enlargeBuffer(peerNetData, size);
                 }
+
+                needToReadMore = true;
                 break;
 
             default : // CLOSED :
@@ -215,8 +234,8 @@ public class SSLEngineService {
         }
     }
 
-    protected static void handshaking(SSLEngine ssle, SocketChannel sc)
-        throws Exception {
+    protected static void handshaking(SSLEngine ssle, SocketChannel sc,
+            ByteBuffer additional) throws Exception {
 
         int appBufferMax = ssle.getSession().getApplicationBufferSize();
         int netBufferMax = ssle.getSession().getPacketBufferSize();
@@ -232,15 +251,39 @@ public class SSLEngineService {
         SSLEngineResult.HandshakeStatus hs = ssle.getHandshakeStatus();
 
         // start handshaking from unwrap
+        byte[] buffer = new byte[0xFF];
+        boolean underflow = false;
         do {
             switch (hs) {
 
             case NEED_UNWRAP :
                 if (peerNetData.position() == 0) {
+                    if (additional != null && additional.hasRemaining()) {
+                        do {
+                            int len = Math.min(buffer.length,
+                                                peerNetData.remaining());
+                            len = Math.min(len, additional.remaining());
+                            if (len != 0) {
+                                additional.get(buffer, 0, len);
+                                peerNetData.put(buffer, 0, len);
+                            }
+                        } while (peerNetData.remaining() > 0 &&
+                                    additional.hasRemaining());
+                    } else {
+                        if (sc.read(peerNetData) < 0) {
+                            ssle.closeInbound();
+                            return;
+                        }
+                    }
+                }
+
+                if (underflow) {
                     if (sc.read(peerNetData) < 0) {
                         ssle.closeInbound();
                         return;
                     }
+
+                    underflow = false;
                 }
 
                 peerNetData.flip();
@@ -259,6 +302,8 @@ public class SSLEngineService {
                                 size + " bytes for BUFFER_UNDERFLOW");
                         peerNetData = enlargeBuffer(peerNetData, size);
                     }
+
+                    underflow = true;
                     break;
                 case BUFFER_OVERFLOW :
                     // maybe need to enlarge the peer application data buffer.
@@ -339,7 +384,7 @@ public class SSLEngineService {
     /*
      * Create an initialized SSLContext to use for this test.
      */
-    protected static SSLEngine createSSLEngine(boolean mode) throws Exception {
+    protected SSLEngine createSSLEngine(boolean mode) throws Exception {
 
         SSLEngine ssle;
 

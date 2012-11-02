@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -663,14 +663,14 @@ public class TestNewLanguageFeatures extends JavadocTester {
             // TYPE PARAMETER IN INDEX
             //=================================
             {BUG_ID + FS + "index-all.html",
-                "<span class=\"strong\"><a href=\"./pkg2/Foo.html#method(java.util.Vector)\">" +
+                "<span class=\"strong\"><a href=\"pkg2/Foo.html#method(java.util.Vector)\">" +
                 "method(Vector&lt;Object&gt;)</a></span>"
             },
             //=================================
             // TYPE PARAMETER IN INDEX
             //=================================
             {BUG_ID + FS + "index-all.html",
-                "<span class=\"strong\"><a href=\"./pkg2/Foo.html#method(java.util.Vector)\">" +
+                "<span class=\"strong\"><a href=\"pkg2/Foo.html#method(java.util.Vector)\">" +
                 "method(Vector&lt;Object&gt;)</a></span>"
             },
         };
