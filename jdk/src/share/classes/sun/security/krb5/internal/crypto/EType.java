@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,17 @@ import java.util.ArrayList;
 public abstract class EType {
 
     private static final boolean DEBUG = Krb5.DEBUG;
-    private static final boolean ALLOW_WEAK_CRYPTO;
+    private static boolean allowWeakCrypto;
 
     static {
+        initStatic();
+    }
+
+    public static void initStatic() {
         boolean allowed = true;
         try {
             Config cfg = Config.getInstance();
-            String temp = cfg.getDefault("allow_weak_crypto", "libdefaults");
+            String temp = cfg.get("libdefaults", "allow_weak_crypto");
             if (temp != null && temp.equals("false")) allowed = false;
         } catch (Exception exc) {
             if (DEBUG) {
@@ -63,7 +67,7 @@ public abstract class EType {
                                     exc.getMessage());
             }
         }
-        ALLOW_WEAK_CRYPTO = allowed;
+        allowWeakCrypto = allowed;
     }
 
     public static EType getInstance  (int eTypeConst)
@@ -216,7 +220,7 @@ public abstract class EType {
         } else {
             result = BUILTIN_ETYPES;
         }
-        if (!ALLOW_WEAK_CRYPTO) {
+        if (!allowWeakCrypto) {
             // The last 2 etypes are now weak ones
             return Arrays.copyOfRange(result, 0, result.length - 2);
         }

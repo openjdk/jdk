@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,6 @@ ifeq ($(PLATFORM), macosx)
   LWAWT_SUBDIR = lwawt
 endif
 
-ifndef OPENJDK
-ifneq ($(PLATFORM), macosx)
-  JDBC_SUBDIR = jdbc
-endif
-endif
-
 ifdef OPENJDK
   RENDER_SUBDIR = pisces
 else
@@ -89,7 +83,7 @@ SUBDIRS_desktop    = audio $(RENDER_SUBDIR) image \
                      $(LWAWT_PRE_SUBDIR) $(DISPLAY_LIBS) $(DGA_SUBDIR) $(LWAWT_SUBDIR) \
                      jawt font jpeg cmm $(DISPLAY_TOOLS)
 SUBDIRS_management = management
-SUBDIRS_misc       = $(ORG_SUBDIR) rmi $(JDBC_SUBDIR) tracing
+SUBDIRS_misc       = $(ORG_SUBDIR) rmi tracing
 SUBDIRS_tools      = native2ascii serialver tools jconsole
 
 ifndef OPENJDK

@@ -73,7 +73,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class LinkedBlockingDeque<E>
     extends AbstractQueue<E>
-    implements BlockingDeque<E>,  java.io.Serializable {
+    implements BlockingDeque<E>, java.io.Serializable {
 
     /*
      * Implemented as a simple doubly-linked list protected by a
@@ -922,8 +922,7 @@ public class LinkedBlockingDeque<E>
      * The following code can be used to dump the deque into a newly
      * allocated array of {@code String}:
      *
-     * <pre>
-     *     String[] y = x.toArray(new String[0]);</pre>
+     *  <pre> {@code String[] y = x.toArray(new String[0]);}</pre>
      *
      * Note that {@code toArray(new Object[0])} is identical in function to
      * {@code toArray()}.
@@ -1045,7 +1044,7 @@ public class LinkedBlockingDeque<E>
         /**
          * The next node to return in next()
          */
-         Node<E> next;
+        Node<E> next;
 
         /**
          * nextItem holds on to item fields because once we claim that
@@ -1153,11 +1152,10 @@ public class LinkedBlockingDeque<E>
     }
 
     /**
-     * Save the state of this deque to a stream (that is, serialize it).
+     * Saves this deque to a stream (that is, serializes it).
      *
      * @serialData The capacity (int), followed by elements (each an
      * {@code Object}) in the proper order, followed by a null
-     * @param s the stream
      */
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
@@ -1177,9 +1175,7 @@ public class LinkedBlockingDeque<E>
     }
 
     /**
-     * Reconstitute this deque from a stream (that is,
-     * deserialize it).
-     * @param s the stream
+     * Reconstitutes this deque from a stream (that is, deserializes it).
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {

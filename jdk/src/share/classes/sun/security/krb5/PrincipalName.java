@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -655,19 +655,19 @@ public class PrincipalName implements Cloneable {
         try {
             String subname = null;
             Config c = Config.getInstance();
-            if ((result = c.getDefault(name, "domain_realm")) != null)
+            if ((result = c.get("domain_realm", name)) != null)
                 return result;
             else {
                 for (int i = 1; i < name.length(); i++) {
                     if ((name.charAt(i) == '.') && (i != name.length() - 1)) { //mapping could be .ibm.com = AUSTIN.IBM.COM
                         subname = name.substring(i);
-                        result = c.getDefault(subname, "domain_realm");
+                        result = c.get("domain_realm", subname);
                         if (result != null) {
                             break;
                         }
                         else {
                             subname = name.substring(i + 1);      //or mapping could be ibm.com = AUSTIN.IBM.COM
-                            result = c.getDefault(subname, "domain_realm");
+                            result = c.get("domain_realm", subname);
                             if (result != null) {
                                 break;
                             }

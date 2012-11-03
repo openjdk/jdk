@@ -267,6 +267,9 @@ public class SSLSocketSNISensitive {
 
         SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept();
         try {
+            sslSocket.setSoTimeout(5000);
+            sslSocket.setSoLinger(true, 5);
+
             InputStream sslIS = sslSocket.getInputStream();
             OutputStream sslOS = sslSocket.getOutputStream();
 
@@ -312,6 +315,9 @@ public class SSLSocketSNISensitive {
         sslSocket.setSSLParameters(params);
 
         try {
+            sslSocket.setSoTimeout(5000);
+            sslSocket.setSoLinger(true, 5);
+
             InputStream sslIS = sslSocket.getInputStream();
             OutputStream sslOS = sslSocket.getOutputStream();
 
@@ -519,7 +525,7 @@ public class SSLSocketSNISensitive {
                          *
                          * Release the client, if not active already...
                          */
-                        System.err.println("Server died...");
+                        System.err.println("Server died, because of " + e);
                         serverReady = true;
                         serverException = e;
                     }
@@ -547,7 +553,7 @@ public class SSLSocketSNISensitive {
                         /*
                          * Our client thread just died.
                          */
-                        System.err.println("Client died...");
+                        System.err.println("Client died, because of " + e);
                         clientException = e;
                     }
                 }
