@@ -406,12 +406,11 @@ $(eval $(call SetupJavaCompilation,BUILD_JOBJC_HEADERS_JAR,\
 		INCLUDES := com/apple/jobjc,\
                 EXCLUDES := tests/java/com/apple/jobjc,\
 		BIN:=$(JDK_OUTPUTDIR)/jobjc_classes_headers,\
-		JAR:=$(JDK_OUTPUTDIR)/jobjc_classes_headers/dummy.jar, \
-		HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers))
+		HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers_jobjc))
 
 $(BUILD_JOBJC_HEADERS_JAR) : $(BUILD_JDK)
 
-JARS += $(JDK_OUTPUTDIR)/jobjc_classes_headers/dummy.jar
+JARS += $(BUILD_JOBJC_HEADERS_JAR)
 
 endif
 

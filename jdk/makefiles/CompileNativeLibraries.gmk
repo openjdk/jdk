@@ -1078,7 +1078,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN), \
 		LDFLAGS_SUFFIX_linux:=-lpthread,\
-		LDFLAGS_SUFFIX_solaris:=-lnsl -lsocket,\
+		LDFLAGS_SUFFIX_solaris:=-lnsl -lsocket -lc,\
 		LDFLAGS_SUFFIX_windows:=$(LDFLAGS_JDKLIB_SUFFIX) -export:jdwpTransport_OnLoad ws2_32.lib,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
@@ -1807,7 +1807,7 @@ BUILD_LIBHPROF_CFLAGS:=-I$(JDK_TOPDIR)/src/share/demo/jvmti/hprof \
 BUILD_LIBHPROF_LDFLAGS:=
 
 ifeq ($(OPENJDK_TARGET_OS),solaris)
-     BUILD_LIBHPROF_LDFLAGS += -lsocket -lnsl
+     BUILD_LIBHPROF_LDFLAGS += -lsocket -lnsl -lc
 endif
 
 LIBHPROF_OPTIMIZATION:=HIGHEST
@@ -1884,6 +1884,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNPT,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_macosx:=-liconv,\
 		LDFLAGS_SUFFIX_windows:=-export:nptInitialize -export:nptTerminate,\
+		LDFLAGS_SUFFIX_solaris:=-lc, \
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=npt.dll" \
@@ -1939,7 +1940,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNET,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX_macosx:=-ljvm -ljava,\
-		LDFLAGS_SUFFIX_solaris:=-ljvm -ljava -lnsl -lsocket $(LIBDL) ,\
+		LDFLAGS_SUFFIX_solaris:=-ljvm -ljava -lnsl -lsocket $(LIBDL) -lc ,\
 		LDFLAGS_SUFFIX_linux:=$(LIBDL) -ljvm -lpthread -ljava,\
 		LDFLAGS_SUFFIX_windows:=ws2_32.lib jvm.lib secur32.lib iphlpapi.lib \
 					delayimp.lib $(WIN_JAVA_LIB) advapi32.lib \
@@ -2125,7 +2126,7 @@ ifeq ($(OPENJDK_TARGET_OS_API),posix)
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX_linux:=-lpthread $(LIBDL) -ljava -ljvm,\
 		LDFLAGS_SUFFIX_posix:=-lnio -lnet,\
-		LDFLAGS_SUFFIX_solaris:=-lsocket -ljava -ljvm,\
+		LDFLAGS_SUFFIX_solaris:=-lsocket -ljava -ljvm -lc,\
 		LDFLAGS_SUFFIX_macosx:=-ljava -ljvm,\
 		INCLUDE_FILES:=SctpNet.c SctpChannelImpl.c SctpServerChannelImpl.c,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsctp))
@@ -3494,7 +3495,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJOBJC32,\
 		CFLAGS:=-fpascal-strings \
                         -fobjc-gc \
                         -gdwarf-2 \
-                        $(CFLAGS_JDKLIB) \
+                        $(CFLAGS_JDKLIB) -I$(JDK_OUTPUTDIR)/gensrc_headers_jobjc \
                         -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
 			-m32,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB)\
@@ -3515,7 +3516,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJOBJC64,\
 		CFLAGS:=-fpascal-strings \
                         -fobjc-gc \
                         -gdwarf-2 \
-                        $(CFLAGS_JDKLIB) \
+                        $(CFLAGS_JDKLIB) -I$(JDK_OUTPUTDIR)/gensrc_headers_jobjc \
                         -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
 			, \
 		LDFLAGS:=-fpascal-strings \
