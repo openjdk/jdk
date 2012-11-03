@@ -34,29 +34,30 @@ const u2 ConstMethod::MAX_IDNUM   = 0xFFFE;
 const u2 ConstMethod::UNSET_IDNUM = 0xFFFF;
 
 ConstMethod* ConstMethod::allocate(ClassLoaderData* loader_data,
-                                            int byte_code_size,
-                                            int compressed_line_number_size,
-                                            int localvariable_table_length,
-                                            int exception_table_length,
-                                            int checked_exceptions_length,
-                                            TRAPS) {
+                                   int byte_code_size,
+                                   int compressed_line_number_size,
+                                   int localvariable_table_length,
+                                   int exception_table_length,
+                                   int checked_exceptions_length,
+                                   MethodType method_type,
+                                   TRAPS) {
   int size = ConstMethod::size(byte_code_size,
                                       compressed_line_number_size,
                                       localvariable_table_length,
                                       exception_table_length,
                                       checked_exceptions_length);
   return new (loader_data, size, true, THREAD) ConstMethod(
-                       byte_code_size, compressed_line_number_size,
-                       localvariable_table_length, exception_table_length,
-                       checked_exceptions_length, size);
+      byte_code_size, compressed_line_number_size, localvariable_table_length,
+      exception_table_length, checked_exceptions_length, method_type, size);
 }
 
 ConstMethod::ConstMethod(int byte_code_size,
-                                       int compressed_line_number_size,
-                                       int localvariable_table_length,
-                                       int exception_table_length,
-                                       int checked_exceptions_length,
-                                       int size) {
+                         int compressed_line_number_size,
+                         int localvariable_table_length,
+                         int exception_table_length,
+                         int checked_exceptions_length,
+                         MethodType method_type,
+                         int size) {
 
   No_Safepoint_Verifier no_safepoint;
   set_interpreter_kind(Interpreter::invalid);
@@ -69,6 +70,7 @@ ConstMethod::ConstMethod(int byte_code_size,
                             compressed_line_number_size,
                             localvariable_table_length,
                             exception_table_length);
+  set_method_type(method_type);
   assert(this->size() == size, "wrong size for object");
 }
 
