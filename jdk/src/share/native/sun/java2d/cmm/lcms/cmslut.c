@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2012 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -154,7 +154,7 @@ cmsBool  CMSEXPORT cmsPipelineCheckAndRetreiveStages(const cmsPipeline* Lut, cms
     for (i=0; i < n; i++) {
 
         // Get asked type
-        Type  = va_arg(args, cmsStageSignature);
+        Type  = (cmsStageSignature)va_arg(args, cmsStageSignature);
         if (mpe ->Type != Type) {
 
             va_end(args);       // Mismatch. We are done.
@@ -197,8 +197,13 @@ void EvaluateCurves(const cmsFloat32Number In[],
                     cmsFloat32Number Out[],
                     const cmsStage *mpe)
 {
-    _cmsStageToneCurvesData* Data = (_cmsStageToneCurvesData*) mpe ->Data;
+    _cmsStageToneCurvesData* Data;
     cmsUInt32Number i;
+
+    _cmsAssert(mpe != NULL);
+
+    Data = (_cmsStageToneCurvesData*) mpe ->Data;
+    if (Data == NULL) return;
 
     if (Data ->TheCurves == NULL) return;
 
@@ -210,8 +215,13 @@ void EvaluateCurves(const cmsFloat32Number In[],
 static
 void CurveSetElemTypeFree(cmsStage* mpe)
 {
-    _cmsStageToneCurvesData* Data = (_cmsStageToneCurvesData*) mpe ->Data;
+    _cmsStageToneCurvesData* Data;
     cmsUInt32Number i;
+
+    _cmsAssert(mpe != NULL);
+
+    Data = (_cmsStageToneCurvesData*) mpe ->Data;
+    if (Data == NULL) return;
 
     if (Data ->TheCurves != NULL) {
         for (i=0; i < Data ->nCurves; i++) {
@@ -275,11 +285,13 @@ cmsStage* CMSEXPORT cmsStageAllocToneCurves(cmsContext ContextID, cmsUInt32Numbe
                                      EvaluateCurves, CurveSetDup, CurveSetElemTypeFree, NULL );
     if (NewMPE == NULL) return NULL;
 
-    NewElem = (_cmsStageToneCurvesData*) _cmsMalloc(ContextID, sizeof(_cmsStageToneCurvesData));
+    NewElem = (_cmsStageToneCurvesData*) _cmsMallocZero(ContextID, sizeof(_cmsStageToneCurvesData));
     if (NewElem == NULL) {
         cmsStageFree(NewMPE);
         return NULL;
     }
+
+    NewMPE ->Data  = (void*) NewElem;
 
     NewElem ->nCurves   = nChannels;
     NewElem ->TheCurves = (cmsToneCurve**) _cmsCalloc(ContextID, nChannels, sizeof(cmsToneCurve*));
@@ -301,11 +313,10 @@ cmsStage* CMSEXPORT cmsStageAllocToneCurves(cmsContext ContextID, cmsUInt32Numbe
             cmsStageFree(NewMPE);
             return NULL;
         }
+
     }
 
-    NewMPE ->Data  = (void*) NewElem;
-
-    return NewMPE;
+   return NewMPE;
 }
 
 
@@ -402,6 +413,9 @@ cmsStage*  CMSEXPORT cmsStageAllocMatrix(cmsContext ContextID, cmsUInt32Number R
     n = Rows * Cols;
 
     // Check for overflow
+    if (n == 0) return NULL;
+    if (n >= UINT_MAX / Cols) return NULL;
+    if (n >= UINT_MAX / Rows) return NULL;
     if (n < Rows || n < Cols) return NULL;
 
     NewMPE = _cmsStageAllocPlaceholder(ContextID, cmsSigMatrixElemType, Cols, Rows,
@@ -479,10 +493,20 @@ void EvaluateCLUTfloatIn16(const cmsFloat32Number In[], cmsFloat32Number Out[], 
 static
 cmsUInt32Number CubeSize(const cmsUInt32Number Dims[], cmsUInt32Number b)
 {
-    cmsUInt32Number rv;
+    cmsUInt32Number rv, dim;
 
-    for (rv = 1; b > 0; b--)
-        rv *= Dims[b-1];
+    _cmsAssert(Dims != NULL);
+
+    for (rv = 1; b > 0; b--) {
+
+        dim = Dims[b-1];
+        if (dim == 0) return 0;  // Error
+
+        rv *= dim;
+
+        // Check for overflow
+        if (rv > UINT_MAX / dim) return 0;
+    }
 
     return rv;
 }
@@ -549,16 +573,34 @@ cmsStage* CMSEXPORT cmsStageAllocCLut16bitGranular(cmsContext ContextID,
     _cmsStageCLutData* NewElem;
     cmsStage* NewMPE;
 
+    _cmsAssert(clutPoints != NULL);
+
+    if (inputChan > MAX_INPUT_DIMENSIONS) {
+        cmsSignalError(ContextID, cmsERROR_RANGE, "Too many input channels (%d channels, max=%d)", inputChan, MAX_INPUT_DIMENSIONS);
+        return NULL;
+    }
+
     NewMPE = _cmsStageAllocPlaceholder(ContextID, cmsSigCLutElemType, inputChan, outputChan,
                                      EvaluateCLUTfloatIn16, CLUTElemDup, CLutElemTypeFree, NULL );
 
     if (NewMPE == NULL) return NULL;
 
-    NewElem = (_cmsStageCLutData*) _cmsMalloc(ContextID, sizeof(_cmsStageCLutData));
-    if (NewElem == NULL) return NULL;
+    NewElem = (_cmsStageCLutData*) _cmsMallocZero(ContextID, sizeof(_cmsStageCLutData));
+    if (NewElem == NULL) {
+        cmsStageFree(NewMPE);
+        return NULL;
+    }
+
+    NewMPE ->Data  = (void*) NewElem;
 
     NewElem -> nEntries = n = outputChan * CubeSize(clutPoints, inputChan);
     NewElem -> HasFloatValues = FALSE;
+
+    if (n == 0) {
+        cmsStageFree(NewMPE);
+        return NULL;
+    }
+
 
     NewElem ->Tab.T  = (cmsUInt16Number*) _cmsCalloc(ContextID, n, sizeof(cmsUInt16Number));
     if (NewElem ->Tab.T == NULL) {
@@ -577,8 +619,6 @@ cmsStage* CMSEXPORT cmsStageAllocCLut16bitGranular(cmsContext ContextID,
         cmsStageFree(NewMPE);
         return NULL;
     }
-
-    NewMPE ->Data  = (void*) NewElem;
 
     return NewMPE;
 }
@@ -623,17 +663,36 @@ cmsStage* CMSEXPORT cmsStageAllocCLutFloatGranular(cmsContext ContextID, const c
 {
     cmsUInt32Number i, n;
     _cmsStageCLutData* NewElem;
-    cmsStage* NewMPE = _cmsStageAllocPlaceholder(ContextID, cmsSigCLutElemType, inputChan, outputChan,
-                                             EvaluateCLUTfloat, CLUTElemDup, CLutElemTypeFree, NULL);
+    cmsStage* NewMPE;
 
+    _cmsAssert(clutPoints != NULL);
+
+    if (inputChan > MAX_INPUT_DIMENSIONS) {
+        cmsSignalError(ContextID, cmsERROR_RANGE, "Too many input channels (%d channels, max=%d)", inputChan, MAX_INPUT_DIMENSIONS);
+        return NULL;
+    }
+
+    NewMPE = _cmsStageAllocPlaceholder(ContextID, cmsSigCLutElemType, inputChan, outputChan,
+                                             EvaluateCLUTfloat, CLUTElemDup, CLutElemTypeFree, NULL);
     if (NewMPE == NULL) return NULL;
 
 
-    NewElem = (_cmsStageCLutData*) _cmsMalloc(ContextID, sizeof(_cmsStageCLutData));
-    if (NewElem == NULL) return NULL;
+    NewElem = (_cmsStageCLutData*) _cmsMallocZero(ContextID, sizeof(_cmsStageCLutData));
+    if (NewElem == NULL) {
+        cmsStageFree(NewMPE);
+        return NULL;
+    }
 
-    NewElem -> nEntries = n = outputChan * CubeSize( clutPoints, inputChan);
+    NewMPE ->Data  = (void*) NewElem;
+
+    // There is a potential integer overflow on conputing n and nEntries.
+    NewElem -> nEntries = n = outputChan * CubeSize(clutPoints, inputChan);
     NewElem -> HasFloatValues = TRUE;
+
+    if (n == 0) {
+        cmsStageFree(NewMPE);
+        return NULL;
+    }
 
     NewElem ->Tab.TFloat  = (cmsFloat32Number*) _cmsCalloc(ContextID, n, sizeof(cmsFloat32Number));
     if (NewElem ->Tab.TFloat == NULL) {
@@ -647,7 +706,6 @@ cmsStage* CMSEXPORT cmsStageAllocCLutFloatGranular(cmsContext ContextID, const c
         }
     }
 
-    NewMPE ->Data  = (void*) NewElem;
 
     NewElem ->Params = _cmsComputeInterpParamsEx(ContextID, clutPoints,  inputChan, outputChan, NewElem ->Tab.TFloat, CMS_LERP_FLAGS_FLOAT);
     if (NewElem ->Params == NULL) {
@@ -715,8 +773,13 @@ cmsBool CMSEXPORT cmsStageSampleCLut16bit(cmsStage* mpe, cmsSAMPLER16 Sampler, v
     int nInputs, nOutputs;
     cmsUInt32Number* nSamples;
     cmsUInt16Number In[cmsMAXCHANNELS], Out[MAX_STAGE_CHANNELS];
-    _cmsStageCLutData* clut = (_cmsStageCLutData*) mpe->Data;
+    _cmsStageCLutData* clut;
 
+    if (mpe == NULL) return FALSE;
+
+    clut = (_cmsStageCLutData*) mpe->Data;
+
+    if (clut == NULL) return FALSE;
 
     nSamples = clut->Params ->nSamples;
     nInputs  = clut->Params ->nInputs;
@@ -726,6 +789,7 @@ cmsBool CMSEXPORT cmsStageSampleCLut16bit(cmsStage* mpe, cmsSAMPLER16 Sampler, v
     if (nOutputs >= MAX_STAGE_CHANNELS) return FALSE;
 
     nTotalPoints = CubeSize(nSamples, nInputs);
+    if (nTotalPoints == 0) return FALSE;
 
     index = 0;
     for (i = 0; i < nTotalPoints; i++) {
@@ -779,6 +843,7 @@ cmsBool CMSEXPORT cmsStageSampleCLutFloat(cmsStage* mpe, cmsSAMPLERFLOAT Sampler
     if (nOutputs >= MAX_STAGE_CHANNELS) return FALSE;
 
     nTotalPoints = CubeSize(nSamples, nInputs);
+    if (nTotalPoints == 0) return FALSE;
 
     index = 0;
     for (i = 0; i < nTotalPoints; i++) {
@@ -828,6 +893,7 @@ cmsBool CMSEXPORT cmsSliceSpace16(cmsUInt32Number nInputs, const cmsUInt32Number
     if (nInputs >= cmsMAXCHANNELS) return FALSE;
 
     nTotalPoints = CubeSize(clutPoints, nInputs);
+    if (nTotalPoints == 0) return FALSE;
 
     for (i = 0; i < nTotalPoints; i++) {
 
@@ -857,6 +923,7 @@ cmsInt32Number CMSEXPORT cmsSliceSpaceFloat(cmsUInt32Number nInputs, const cmsUI
     if (nInputs >= cmsMAXCHANNELS) return FALSE;
 
     nTotalPoints = CubeSize(clutPoints, nInputs);
+    if (nTotalPoints == 0) return FALSE;
 
     for (i = 0; i < nTotalPoints; i++) {
 
@@ -990,6 +1057,89 @@ cmsStage* _cmsStageAllocLabV4ToV2(cmsContext ContextID)
     mpe ->Implements = cmsSigLabV4toV2;
     return mpe;
 }
+
+
+// To Lab to float. Note that the MPE gives numbers in normal Lab range
+// and we need 0..1.0 range for the formatters
+// L* : 0...100 => 0...1.0  (L* / 100)
+// ab* : -128..+127 to 0..1  ((ab* + 128) / 255)
+
+cmsStage* _cmsStageNormalizeFromLabFloat(cmsContext ContextID)
+{
+    static const cmsFloat64Number a1[] = {
+        1.0/100.0, 0, 0,
+        0, 1.0/255.0, 0,
+        0, 0, 1.0/255.0
+    };
+
+    static const cmsFloat64Number o1[] = {
+        0,
+        128.0/255.0,
+        128.0/255.0
+    };
+
+    cmsStage *mpe = cmsStageAllocMatrix(ContextID, 3, 3, a1, o1);
+
+    if (mpe == NULL) return mpe;
+    mpe ->Implements = cmsSigLab2FloatPCS;
+    return mpe;
+}
+
+// Fom XYZ to floating point PCS
+cmsStage* _cmsStageNormalizeFromXyzFloat(cmsContext ContextID)
+{
+#define n (32768.0/65535.0)
+    static const cmsFloat64Number a1[] = {
+        n, 0, 0,
+        0, n, 0,
+        0, 0, n
+    };
+#undef n
+
+    cmsStage *mpe =  cmsStageAllocMatrix(ContextID, 3, 3, a1, NULL);
+
+    if (mpe == NULL) return mpe;
+    mpe ->Implements = cmsSigXYZ2FloatPCS;
+    return mpe;
+}
+
+cmsStage* _cmsStageNormalizeToLabFloat(cmsContext ContextID)
+{
+    static const cmsFloat64Number a1[] = {
+        100.0, 0, 0,
+        0, 255.0, 0,
+        0, 0, 255.0
+    };
+
+    static const cmsFloat64Number o1[] = {
+        0,
+        -128.0,
+        -128.0
+    };
+
+    cmsStage *mpe =  cmsStageAllocMatrix(ContextID, 3, 3, a1, o1);
+    if (mpe == NULL) return mpe;
+    mpe ->Implements = cmsSigFloatPCS2Lab;
+    return mpe;
+}
+
+cmsStage* _cmsStageNormalizeToXyzFloat(cmsContext ContextID)
+{
+#define n (65535.0/32768.0)
+
+    static const cmsFloat64Number a1[] = {
+        n, 0, 0,
+        0, n, 0,
+        0, 0, n
+    };
+#undef n
+
+    cmsStage *mpe = cmsStageAllocMatrix(ContextID, 3, 3, a1, NULL);
+    if (mpe == NULL) return mpe;
+    mpe ->Implements = cmsSigFloatPCS2XYZ;
+    return mpe;
+}
+
 
 
 // ********************************************************************************
@@ -1201,22 +1351,28 @@ cmsPipeline* CMSEXPORT cmsPipelineAlloc(cmsContext ContextID, cmsUInt32Number In
        NewLUT ->DupDataFn   = NULL;
        NewLUT ->FreeDataFn  = NULL;
        NewLUT ->Data        = NewLUT;
-
-       NewLUT ->ContextID    = ContextID;
+       NewLUT ->ContextID   = ContextID;
 
        BlessLUT(NewLUT);
 
        return NewLUT;
 }
 
+cmsContext CMSEXPORT cmsGetPipelineContextID(const cmsPipeline* lut)
+{
+    _cmsAssert(lut != NULL);
+    return lut ->ContextID;
+}
 
 cmsUInt32Number CMSEXPORT cmsPipelineInputChannels(const cmsPipeline* lut)
 {
+    _cmsAssert(lut != NULL);
     return lut ->InputChannels;
 }
 
 cmsUInt32Number CMSEXPORT cmsPipelineOutputChannels(const cmsPipeline* lut)
 {
+    _cmsAssert(lut != NULL);
     return lut ->OutputChannels;
 }
 
@@ -1244,6 +1400,7 @@ void CMSEXPORT cmsPipelineFree(cmsPipeline* lut)
 // Default to evaluate the LUT on 16 bit-basis.
 void CMSEXPORT cmsPipelineEval16(const cmsUInt16Number In[], cmsUInt16Number Out[],  const cmsPipeline* lut)
 {
+    _cmsAssert(lut != NULL);
     lut ->Eval16Fn(In, Out, lut->Data);
 }
 
@@ -1251,6 +1408,7 @@ void CMSEXPORT cmsPipelineEval16(const cmsUInt16Number In[], cmsUInt16Number Out
 // Does evaluate the LUT on cmsFloat32Number-basis.
 void CMSEXPORT cmsPipelineEvalFloat(const cmsFloat32Number In[], cmsFloat32Number Out[], const cmsPipeline* lut)
 {
+    _cmsAssert(lut != NULL);
     lut ->EvalFloatFn(In, Out, lut);
 }
 
@@ -1288,8 +1446,10 @@ cmsPipeline* CMSEXPORT cmsPipelineDup(const cmsPipeline* lut)
             Anterior = NewMPE;
     }
 
-    NewLUT ->DupDataFn  = lut ->DupDataFn;
-    NewLUT ->FreeDataFn = lut ->FreeDataFn;
+    NewLUT ->Eval16Fn    = lut ->Eval16Fn;
+    NewLUT ->EvalFloatFn = lut ->EvalFloatFn;
+    NewLUT ->DupDataFn   = lut ->DupDataFn;
+    NewLUT ->FreeDataFn  = lut ->FreeDataFn;
 
     if (NewLUT ->DupDataFn != NULL)
         NewLUT ->Data = NewLUT ->DupDataFn(lut ->ContextID, lut->Data);
@@ -1305,6 +1465,9 @@ cmsPipeline* CMSEXPORT cmsPipelineDup(const cmsPipeline* lut)
 void CMSEXPORT cmsPipelineInsertStage(cmsPipeline* lut, cmsStageLoc loc, cmsStage* mpe)
 {
     cmsStage* Anterior = NULL, *pt;
+
+    _cmsAssert(lut != NULL);
+    _cmsAssert(mpe != NULL);
 
     switch (loc) {
 
@@ -1456,13 +1619,13 @@ cmsUInt32Number CMSEXPORT cmsPipelineStageCount(const cmsPipeline* lut)
     return n;
 }
 
-// This function may be used to set the optional evalueator and a block of private data. If private data is being used, an optional
+// This function may be used to set the optional evaluator and a block of private data. If private data is being used, an optional
 // duplicator and free functions should also be specified in order to duplicate the LUT construct. Use NULL to inhibit such functionality.
 void CMSEXPORT _cmsPipelineSetOptimizationParameters(cmsPipeline* Lut,
                                         _cmsOPTeval16Fn Eval16,
                                         void* PrivateData,
-                                        _cmsOPTfreeDataFn FreePrivateDataFn,
-                                        _cmsOPTdupDataFn DupPrivateDataFn)
+                                        _cmsFreeUserDataFn FreePrivateDataFn,
+                                        _cmsDupUserDataFn  DupPrivateDataFn)
 {
 
     Lut ->Eval16Fn = Eval16;
@@ -1639,4 +1802,5 @@ cmsBool CMSEXPORT cmsPipelineEvalReverseFloat(cmsFloat32Number Target[],
 
     return TRUE;
 }
+
 

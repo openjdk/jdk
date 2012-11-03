@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2012 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -193,17 +193,21 @@ void ComputeBlackPointCompensation(const cmsCIEXYZ* BlackPointIn,
 static
 cmsFloat64Number CHAD2Temp(const cmsMAT3* Chad)
 {
-    // Convert D50 across CHAD to get the absolute white point
-     cmsVEC3 d, s;
-     cmsCIEXYZ Dest;
-     cmsCIExyY DestChromaticity;
-     cmsFloat64Number TempK;
+    // Convert D50 across inverse CHAD to get the absolute white point
+    cmsVEC3 d, s;
+    cmsCIEXYZ Dest;
+    cmsCIExyY DestChromaticity;
+    cmsFloat64Number TempK;
+    cmsMAT3 m1, m2;
+
+    m1 = *Chad;
+    if (!_cmsMAT3inverse(&m1, &m2)) return FALSE;
 
     s.n[VX] = cmsD50_XYZ() -> X;
     s.n[VY] = cmsD50_XYZ() -> Y;
     s.n[VZ] = cmsD50_XYZ() -> Z;
 
-    _cmsMAT3eval(&d, Chad, &s);
+    _cmsMAT3eval(&d, &m2, &s);
 
     Dest.X = d.n[VX];
     Dest.Y = d.n[VY];
@@ -219,15 +223,14 @@ cmsFloat64Number CHAD2Temp(const cmsMAT3* Chad)
 
 // Compute a CHAD based on a given temperature
 static
-void Temp2CHAD(cmsMAT3* Chad, cmsFloat64Number Temp)
+    void Temp2CHAD(cmsMAT3* Chad, cmsFloat64Number Temp)
 {
     cmsCIEXYZ White;
     cmsCIExyY ChromaticityOfWhite;
 
     cmsWhitePointFromTemp(&ChromaticityOfWhite, Temp);
     cmsxyY2XYZ(&White, &ChromaticityOfWhite);
-    _cmsAdaptationMatrix(Chad, NULL, cmsD50_XYZ(), &White);
-
+    _cmsAdaptationMatrix(Chad, NULL, &White, cmsD50_XYZ());
 }
 
 // Join scalings to obtain relative input to absolute and then to relative output.
@@ -240,7 +243,7 @@ cmsBool  ComputeAbsoluteIntent(cmsFloat64Number AdaptationState,
                                const cmsMAT3* ChromaticAdaptationMatrixOut,
                                cmsMAT3* m)
 {
-    cmsMAT3 Scale, m1, m2, m3;
+    cmsMAT3 Scale, m1, m2, m3, m4;
 
     // Adaptation state
     if (AdaptationState == 1.0) {
@@ -259,23 +262,32 @@ cmsBool  ComputeAbsoluteIntent(cmsFloat64Number AdaptationState,
         _cmsVEC3init(&Scale.v[1], 0,  WhitePointIn->Y / WhitePointOut->Y, 0);
         _cmsVEC3init(&Scale.v[2], 0, 0,  WhitePointIn->Z / WhitePointOut->Z);
 
-        m1 = *ChromaticAdaptationMatrixIn;
-        if (!_cmsMAT3inverse(&m1, &m2)) return FALSE;
-        _cmsMAT3per(&m3, &m2, &Scale);
 
-        // m3 holds CHAD from input white to D50 times abs. col. scaling
         if (AdaptationState == 0.0) {
+
+            m1 = *ChromaticAdaptationMatrixOut;
+            _cmsMAT3per(&m2, &m1, &Scale);
+            // m2 holds CHAD from output white to D50 times abs. col. scaling
 
             // Observer is not adapted, undo the chromatic adaptation
             _cmsMAT3per(m, &m3, ChromaticAdaptationMatrixOut);
+
+            m3 = *ChromaticAdaptationMatrixIn;
+            if (!_cmsMAT3inverse(&m3, &m4)) return FALSE;
+            _cmsMAT3per(m, &m2, &m4);
 
         } else {
 
             cmsMAT3 MixedCHAD;
             cmsFloat64Number TempSrc, TempDest, Temp;
 
-            TempSrc  = CHAD2Temp(ChromaticAdaptationMatrixIn);  // K for source white
-            TempDest = CHAD2Temp(ChromaticAdaptationMatrixOut); // K for dest white
+            m1 = *ChromaticAdaptationMatrixIn;
+            if (!_cmsMAT3inverse(&m1, &m2)) return FALSE;
+            _cmsMAT3per(&m3, &m2, &Scale);
+            // m3 holds CHAD from input white to D50 times abs. col. scaling
+
+            TempSrc  = CHAD2Temp(ChromaticAdaptationMatrixIn);
+            TempDest = CHAD2Temp(ChromaticAdaptationMatrixOut);
 
             if (TempSrc < 0.0 || TempDest < 0.0) return FALSE; // Something went wrong
 
@@ -285,9 +297,9 @@ cmsBool  ComputeAbsoluteIntent(cmsFloat64Number AdaptationState,
                 return TRUE;
             }
 
-            Temp = AdaptationState * TempSrc + (1.0 - AdaptationState) * TempDest;
+            Temp = (1.0 - AdaptationState) * TempDest + AdaptationState * TempSrc;
 
-            // Get a CHAD from D50 to whatever output temperature. This replaces output CHAD
+            // Get a CHAD from whatever output temperature to D50. This replaces output CHAD
             Temp2CHAD(&MixedCHAD, Temp);
 
             _cmsMAT3per(m, &m3, &MixedCHAD);
@@ -362,7 +374,7 @@ cmsBool ComputeConversion(int i, cmsHPROFILE hProfiles[],
             cmsCIEXYZ BlackPointIn, BlackPointOut;
 
             cmsDetectBlackPoint(&BlackPointIn,  hProfiles[i-1], Intent, 0);
-            cmsDetectBlackPoint(&BlackPointOut, hProfiles[i], Intent, 0);
+            cmsDetectDestinationBlackPoint(&BlackPointOut, hProfiles[i], Intent, 0);
 
             // If black points are equal, then do nothing
             if (BlackPointIn.X != BlackPointOut.X ||
@@ -463,6 +475,10 @@ cmsBool ColorSpaceIsCompatible(cmsColorSpaceSignature a, cmsColorSpaceSignature 
     // If they are same, they are compatible.
     if (a == b) return TRUE;
 
+    // Check for MCH4 substitution of CMYK
+    if ((a == cmsSig4colorData) && (b == cmsSigCmykData)) return TRUE;
+    if ((a == cmsSigCmykData) && (b == cmsSig4colorData)) return TRUE;
+
     // Check for XYZ/Lab. Those spaces are interchangeable as they can be computed one from other.
     if ((a == cmsSigXYZData) && (b == cmsSigLabData)) return TRUE;
     if ((a == cmsSigLabData) && (b == cmsSigXYZData)) return TRUE;
@@ -511,7 +527,7 @@ cmsPipeline* DefaultICCintents(cmsContext       ContextID,
             lIsInput = TRUE;
         }
         else {
-            // Else use profile in the input direction if current space is not PCS
+          // Else use profile in the input direction if current space is not PCS
         lIsInput      = (CurrentColorSpace != cmsSigXYZData) &&
                         (CurrentColorSpace != cmsSigLabData);
         }
@@ -537,7 +553,7 @@ cmsPipeline* DefaultICCintents(cmsContext       ContextID,
 
         // If devicelink is found, then no custom intent is allowed and we can
         // read the LUT to be applied. Settings don't apply here.
-        if (lIsDeviceLink) {
+        if (lIsDeviceLink || ((ClassSig == cmsSigNamedColorClass) && (nProfiles == 1))) {
 
             // Get the involved LUT from the profile
             Lut = _cmsReadDevicelinkLUT(hProfile, Intent);
@@ -876,7 +892,8 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
 
     // Check for non-cmyk profiles
     if (cmsGetColorSpace(hProfiles[0]) != cmsSigCmykData ||
-        cmsGetColorSpace(hProfiles[nProfiles-1]) != cmsSigCmykData)
+        !(cmsGetColorSpace(hProfiles[nProfiles-1]) == cmsSigCmykData ||
+        cmsGetDeviceClass(hProfiles[nProfiles-1]) == cmsSigOutputClass))
            return  DefaultICCintents(ContextID, nProfiles, ICCIntents, hProfiles, BPC, AdaptationStates, dwFlags);
 
     // Allocate an empty LUT for holding the result
@@ -893,6 +910,8 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
 
     // Get total area coverage (in 0..1 domain)
     bp.MaxTAC = cmsDetectTAC(hProfiles[nProfiles-1]) / 100.0;
+    if (bp.MaxTAC <= 0) goto Cleanup;
+
 
     // Create a LUT holding normal ICC transform
     bp.cmyk2cmyk = DefaultICCintents(ContextID,
@@ -902,6 +921,7 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
                                          BPC,
                                          AdaptationStates,
                                          dwFlags);
+    if (bp.cmyk2cmyk == NULL) goto Cleanup;
 
     // Now the tone curve
     bp.KTone = _cmsBuildKToneCurve(ContextID, 4096, nProfiles,
@@ -910,7 +930,7 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
                                    BPC,
                                    AdaptationStates,
                                    dwFlags);
-
+    if (bp.KTone == NULL) goto Cleanup;
 
     // To measure the output, Last profile to Lab
     hLab = cmsCreateLab4ProfileTHR(ContextID, NULL);
@@ -918,6 +938,7 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
                                          CHANNELS_SH(4)|BYTES_SH(2), hLab, TYPE_Lab_DBL,
                                          INTENT_RELATIVE_COLORIMETRIC,
                                          cmsFLAGS_NOCACHE|cmsFLAGS_NOOPTIMIZE);
+    if ( bp.hProofOutput == NULL) goto Cleanup;
 
     // Same as anterior, but lab in the 0..1 range
     bp.cmyk2Lab = cmsCreateTransformTHR(ContextID, hProfiles[nProfiles-1],
@@ -925,6 +946,7 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
                                          FLOAT_SH(1)|CHANNELS_SH(3)|BYTES_SH(4),
                                          INTENT_RELATIVE_COLORIMETRIC,
                                          cmsFLAGS_NOCACHE|cmsFLAGS_NOOPTIMIZE);
+    if (bp.cmyk2Lab == NULL) goto Cleanup;
     cmsCloseProfile(hLab);
 
     // Error estimation (for debug only)
