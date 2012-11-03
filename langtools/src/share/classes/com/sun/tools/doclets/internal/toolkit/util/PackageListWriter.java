@@ -52,8 +52,7 @@ public class PackageListWriter extends PrintWriter {
      * @param configuration the current configuration of the doclet.
      */
     public PackageListWriter(Configuration configuration) throws IOException {
-        super(Util.genWriter(configuration, configuration.destDirName,
-            DocletConstants.PACKAGE_LIST_FILE_NAME, configuration.docencoding));
+        super(DocFile.createFileForOutput(configuration, DocPaths.PACKAGE_LIST).openWriter());
         this.configuration = configuration;
     }
 
@@ -71,7 +70,7 @@ public class PackageListWriter extends PrintWriter {
             packgen.close();
         } catch (IOException exc) {
             configuration.message.error("doclet.exception_encountered",
-                exc.toString(), DocletConstants.PACKAGE_LIST_FILE_NAME);
+                exc.toString(), DocPaths.PACKAGE_LIST);
             throw new DocletAbortException();
         }
     }

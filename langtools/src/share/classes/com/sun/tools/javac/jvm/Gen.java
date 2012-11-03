@@ -42,7 +42,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.jvm.CRTFlags.*;
 import static com.sun.tools.javac.main.Option.*;
@@ -258,7 +258,7 @@ public class Gen extends JCTree.Visitor {
      */
     Symbol binaryQualifier(Symbol sym, Type site) {
 
-        if (site.tag == ARRAY) {
+        if (site.hasTag(ARRAY)) {
             if (sym == syms.lengthVar ||
                 sym.owner != syms.arrayClass)
                 return sym;
@@ -305,13 +305,13 @@ public class Gen extends JCTree.Visitor {
      */
     int makeRef(DiagnosticPosition pos, Type type) {
         checkDimension(pos, type);
-        return pool.put(type.tag == CLASS ? (Object)type.tsym : (Object)type);
+        return pool.put(type.hasTag(CLASS) ? (Object)type.tsym : (Object)type);
     }
 
     /** Check if the given type is an array with too many dimensions.
      */
     private void checkDimension(DiagnosticPosition pos, Type t) {
-        switch (t.tag) {
+        switch (t.getTag()) {
         case METHOD:
             checkDimension(pos, t.getReturnType());
             for (List<Type> args = t.getParameterTypes(); args.nonEmpty(); args = args.tail)
@@ -922,7 +922,7 @@ public class Gen extends JCTree.Visitor {
                 if (code.isAlive()) {
                     code.statBegin(TreeInfo.endPos(tree.body));
                     if (env.enclMethod == null ||
-                        env.enclMethod.sym.type.getReturnType().tag == VOID) {
+                        env.enclMethod.sym.type.getReturnType().hasTag(VOID)) {
                         code.emitop0(return_);
                     } else {
                         // sometime dead code seems alive (4415991);
@@ -1110,7 +1110,7 @@ public class Gen extends JCTree.Visitor {
 
     public void visitSwitch(JCSwitch tree) {
         int limit = code.nextreg;
-        Assert.check(tree.selector.type.tag != CLASS);
+        Assert.check(!tree.selector.type.hasTag(CLASS));
         int startpcCrt = genCrt ? code.curPc() : 0;
         Item sel = genExpr(tree.selector, syms.intType);
         List<JCCase> cases = tree.cases;
@@ -1817,8 +1817,8 @@ public class Gen extends JCTree.Visitor {
             // proceeding further.
             if ((tree.hasTag(PLUS_ASG) || tree.hasTag(MINUS_ASG)) &&
                 l instanceof LocalItem &&
-                tree.lhs.type.tag <= INT &&
-                tree.rhs.type.tag <= INT &&
+                tree.lhs.type.getTag().isSubRangeOf(INT) &&
+                tree.rhs.type.getTag().isSubRangeOf(INT) &&
                 tree.rhs.type.constValue() != null) {
                 int ival = ((Number) tree.rhs.type.constValue()).intValue();
                 if (tree.hasTag(MINUS_ASG)) ival = -ival;
@@ -1969,7 +1969,7 @@ public class Gen extends JCTree.Visitor {
          */
         void appendString(JCTree tree) {
             Type t = tree.type.baseType();
-            if (t.tag > lastBaseTag && t.tsym != syms.stringType.tsym) {
+            if (!t.isPrimitive() && t.tsym != syms.stringType.tsym) {
                 t = syms.objectType;
             }
             items.makeMemberItem(getStringBufferAppend(tree, t), false).invoke();
@@ -2067,7 +2067,7 @@ public class Gen extends JCTree.Visitor {
         // which is not statically a supertype of the expression's type.
         // For basic types, the coerce(...) in genExpr(...) will do
         // the conversion.
-        if (tree.clazz.type.tag > lastBaseTag &&
+        if (!tree.clazz.type.isPrimitive() &&
             types.asSuper(tree.expr.type, tree.clazz.type.tsym) == null) {
             code.emitop2(checkcast, makeRef(tree.pos(), tree.clazz.type));
         }
@@ -2185,7 +2185,7 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitLiteral(JCLiteral tree) {
-        if (tree.type.tag == TypeTags.BOT) {
+        if (tree.type.hasTag(BOT)) {
             code.emitop0(aconst_null);
             if (types.dimensions(pt) > 1) {
                 code.emitop2(checkcast, makeRef(tree.pos(), pt));

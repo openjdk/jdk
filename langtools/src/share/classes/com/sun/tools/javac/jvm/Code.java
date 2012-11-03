@@ -30,7 +30,8 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.BOT;
+import static com.sun.tools.javac.code.TypeTag.INT;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.jvm.UninitializedType.*;
 import static com.sun.tools.javac.jvm.ClassWriter.StackMapTableFrame;
@@ -224,7 +225,7 @@ public class Code {
      *  JVM architecture).
      */
     public static int typecode(Type type) {
-        switch (type.tag) {
+        switch (type.getTag()) {
         case BYTE: return BYTEcode;
         case SHORT: return SHORTcode;
         case CHAR: return CHARcode;
@@ -242,7 +243,7 @@ public class Code {
         case UNINITIALIZED_THIS:
         case UNINITIALIZED_OBJECT:
             return OBJECTcode;
-        default: throw new AssertionError("typecode " + type.tag);
+        default: throw new AssertionError("typecode " + type.getTag());
         }
     }
 
@@ -281,7 +282,7 @@ public class Code {
     /** Given a type, return its code for allocating arrays of that type.
      */
     public static int arraycode(Type type) {
-        switch (type.tag) {
+        switch (type.getTag()) {
         case BYTE: return 8;
         case BOOLEAN: return 4;
         case SHORT: return 9;
@@ -477,7 +478,7 @@ public class Code {
             state.pop(1);
             //sometimes 'null type' is treated as a one-dimensional array type
             //see Gen.visitLiteral - we should handle this case accordingly
-            Type stackType = a.tag == BOT ?
+            Type stackType = a.hasTag(BOT) ?
                 syms.objectType :
                 types.erasure(types.elemtype(a));
             state.push(stackType); }
@@ -1656,13 +1657,13 @@ public class Code {
 
         void push(Type t) {
             if (debugCode) System.err.println("   pushing " + t);
-            switch (t.tag) {
-            case TypeTags.VOID:
+            switch (t.getTag()) {
+            case VOID:
                 return;
-            case TypeTags.BYTE:
-            case TypeTags.CHAR:
-            case TypeTags.SHORT:
-            case TypeTags.BOOLEAN:
+            case BYTE:
+            case CHAR:
+            case SHORT:
+            case BOOLEAN:
                 t = syms.intType;
                 break;
             default:
@@ -1722,7 +1723,7 @@ public class Code {
          *  of its current type. */
         void forceStackTop(Type t) {
             if (!alive) return;
-            switch (t.tag) {
+            switch (t.getTag()) {
             case CLASS:
             case ARRAY:
                 int width = width(t);
@@ -1824,7 +1825,7 @@ public class Code {
         }
     }
 
-    static Type jsrReturnValue = new Type(TypeTags.INT, null);
+    static Type jsrReturnValue = new Type(INT, null);
 
 
 /* **************************************************************************

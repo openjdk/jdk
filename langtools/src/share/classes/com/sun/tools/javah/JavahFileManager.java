@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import com.sun.tools.javac.util.Context;
 class JavahFileManager extends JavacFileManager {
     private JavahFileManager(Context context, Charset charset) {
         super(context, true, charset);
-        setIgnoreSymbolFile(true);
+        setSymbolFileEnabled(false);
     }
 
     static JavahFileManager create(final DiagnosticListener<? super JavaFileObject> dl, PrintWriter log) {
@@ -55,9 +55,5 @@ class JavahFileManager extends JavacFileManager {
         javac_context.put(com.sun.tools.javac.util.Log.outKey, log);
 
         return new JavahFileManager(javac_context, null);
-    }
-
-    void setIgnoreSymbolFile(boolean b) {
-        ignoreSymbolFile = b;
     }
 }

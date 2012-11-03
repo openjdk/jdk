@@ -56,42 +56,19 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     private static final String LI_CIRCLE  = "circle";
 
     /**
-     * Constructor initilises classtree variable. This constructor will be used
+     * Constructor initializes classtree variable. This constructor will be used
      * while generating global tree file "overview-tree.html".
      *
+     * @param configuration  The current configuration
      * @param filename   File to be generated.
      * @param classtree  Tree built by {@link ClassTree}.
      * @throws IOException
      * @throws DocletAbortException
      */
     protected AbstractTreeWriter(ConfigurationImpl configuration,
-                                 String filename, ClassTree classtree)
+                                 DocPath filename, ClassTree classtree)
                                  throws IOException {
         super(configuration, filename);
-        this.classtree = classtree;
-    }
-
-    /**
-     * Create appropriate directory for the package and also initilise the
-     * relative path from this generated file to the current or
-     * the destination directory. This constructor will be used while
-     * generating "package tree" file.
-     *
-     * @param path Directories in this path will be created if they are not
-     * already there.
-     * @param filename Name of the package tree file to be generated.
-     * @param classtree The tree built using {@link ClassTree}.
-     * for the package pkg.
-     * @param pkg PackageDoc for which tree file will be generated.
-     * @throws IOException
-     * @throws DocletAbortException
-     */
-    protected AbstractTreeWriter(ConfigurationImpl configuration,
-                                 String path, String filename,
-                                 ClassTree classtree, PackageDoc pkg)
-                                 throws IOException {
-        super(configuration,
-              path, filename, DirectoryManager.getRelativePath(pkg.name()));
         this.classtree = classtree;
     }
 

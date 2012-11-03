@@ -81,7 +81,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
 public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /* Tree tag values, identifying kinds of trees */
-    public enum Tag{
+    public enum Tag {
         /** For methods that return an invalid tag if a given condition is not met
          */
         NO_TAG,
@@ -1912,10 +1912,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      * A constant value given literally.
      */
     public static class JCLiteral extends JCExpression implements LiteralTree {
-        public int typetag;
+        public TypeTag typetag;
         /** value representation */
         public Object value;
-        protected JCLiteral(int typetag, Object value) {
+        protected JCLiteral(TypeTag typetag, Object value) {
             this.typetag = typetag;
             this.value = value;
         }
@@ -1923,33 +1923,15 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void accept(Visitor v) { v.visitLiteral(this); }
 
         public Kind getKind() {
-            switch (typetag) {
-            case TypeTags.INT:
-                return Kind.INT_LITERAL;
-            case TypeTags.LONG:
-                return Kind.LONG_LITERAL;
-            case TypeTags.FLOAT:
-                return Kind.FLOAT_LITERAL;
-            case TypeTags.DOUBLE:
-                return Kind.DOUBLE_LITERAL;
-            case TypeTags.BOOLEAN:
-                return Kind.BOOLEAN_LITERAL;
-            case TypeTags.CHAR:
-                return Kind.CHAR_LITERAL;
-            case TypeTags.CLASS:
-                return Kind.STRING_LITERAL;
-            case TypeTags.BOT:
-                return Kind.NULL_LITERAL;
-            default:
-                throw new AssertionError("unknown literal kind " + this);
-            }
+            return typetag.getKindLiteral();
         }
+
         public Object getValue() {
             switch (typetag) {
-                case TypeTags.BOOLEAN:
+                case BOOLEAN:
                     int bi = (Integer) value;
                     return (bi != 0);
-                case TypeTags.CHAR:
+                case CHAR:
                     int ci = (Integer) value;
                     char c = (char) ci;
                     if (c != ci)
@@ -1976,12 +1958,12 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * Identifies a basic type.
-     * @see TypeTags
+     * @see TypeTag
      */
     public static class JCPrimitiveTypeTree extends JCExpression implements PrimitiveTypeTree {
         /** the basic type id */
-        public int typetag;
-        protected JCPrimitiveTypeTree(int typetag) {
+        public TypeTag typetag;
+        protected JCPrimitiveTypeTree(TypeTag typetag) {
             this.typetag = typetag;
         }
         @Override
@@ -1989,29 +1971,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         public Kind getKind() { return Kind.PRIMITIVE_TYPE; }
         public TypeKind getPrimitiveTypeKind() {
-            switch (typetag) {
-            case TypeTags.BOOLEAN:
-                return TypeKind.BOOLEAN;
-            case TypeTags.BYTE:
-                return TypeKind.BYTE;
-            case TypeTags.SHORT:
-                return TypeKind.SHORT;
-            case TypeTags.INT:
-                return TypeKind.INT;
-            case TypeTags.LONG:
-                return TypeKind.LONG;
-            case TypeTags.CHAR:
-                return TypeKind.CHAR;
-            case TypeTags.FLOAT:
-                return TypeKind.FLOAT;
-            case TypeTags.DOUBLE:
-                return TypeKind.DOUBLE;
-            case TypeTags.VOID:
-                return TypeKind.VOID;
-            default:
-                throw new AssertionError("unknown primitive type " + this);
-            }
+            return typetag.getPrimitiveTypeKind();
         }
+
         @Override
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
             return v.visitPrimitiveType(this, d);
@@ -2161,7 +2123,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
         @Override
         public Tag getTag() {
-            return WILDCARD;
+            return Tag.WILDCARD;
         }
     }
 
@@ -2362,8 +2324,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCArrayAccess Indexed(JCExpression indexed, JCExpression index);
         JCFieldAccess Select(JCExpression selected, Name selector);
         JCIdent Ident(Name idname);
-        JCLiteral Literal(int tag, Object value);
-        JCPrimitiveTypeTree TypeIdent(int typetag);
+        JCLiteral Literal(TypeTag tag, Object value);
+        JCPrimitiveTypeTree TypeIdent(TypeTag typetag);
         JCArrayTypeTree TypeArray(JCExpression elemtype);
         JCTypeApply TypeApply(JCExpression clazz, List<JCExpression> arguments);
         JCTypeParameter TypeParameter(Name name, List<JCExpression> bounds);

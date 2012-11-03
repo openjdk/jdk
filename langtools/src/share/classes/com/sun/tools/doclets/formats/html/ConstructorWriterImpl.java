@@ -280,7 +280,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            return writer.getHyperLink("", "constructor_summary",
+            return writer.getHyperLink("constructor_summary",
                     writer.getResource("doclet.navConstructor"));
         } else {
             return writer.getResource("doclet.navConstructor");
@@ -292,7 +292,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(writer.getHyperLink("", "constructor_detail",
+            liNav.addContent(writer.getHyperLink("constructor_detail",
                     writer.getResource("doclet.navConstructor")));
         } else {
             liNav.addContent(writer.getResource("doclet.navConstructor"));

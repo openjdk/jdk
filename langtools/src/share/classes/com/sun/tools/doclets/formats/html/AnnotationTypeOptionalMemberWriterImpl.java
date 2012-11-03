@@ -141,7 +141,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      */
     protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            return writer.getHyperLink("", "annotation_type_optional_element_summary",
+            return writer.getHyperLink("annotation_type_optional_element_summary",
                     writer.getResource("doclet.navAnnotationTypeOptionalMember"));
         } else {
             return writer.getResource("doclet.navAnnotationTypeOptionalMember");

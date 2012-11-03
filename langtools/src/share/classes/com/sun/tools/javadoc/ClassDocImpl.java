@@ -45,7 +45,6 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
-import com.sun.tools.javac.code.TypeTags;
 
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
@@ -63,6 +62,7 @@ import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Position;
 
 import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /**
@@ -164,7 +164,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         if (isEnum() || isInterface() || isAnnotationType()) {
             return false;
         }
-        for (Type t = type; t.tag == TypeTags.CLASS; t = env.types.supertype(t)) {
+        for (Type t = type; t.hasTag(CLASS); t = env.types.supertype(t)) {
             if (t.tsym == env.syms.errorType.tsym ||
                 t.tsym == env.syms.exceptionType.tsym) {
                 return false;
@@ -201,7 +201,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         if (isEnum() || isInterface() || isAnnotationType()) {
             return false;
         }
-        for (Type t = type; t.tag == TypeTags.CLASS; t = env.types.supertype(t)) {
+        for (Type t = type; t.hasTag(CLASS); t = env.types.supertype(t)) {
             if (t.tsym == env.syms.exceptionType.tsym) {
                 return true;
             }
@@ -217,7 +217,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         if (isEnum() || isInterface() || isAnnotationType()) {
             return false;
         }
-        for (Type t = type; t.tag == TypeTags.CLASS; t = env.types.supertype(t)) {
+        for (Type t = type; t.hasTag(CLASS); t = env.types.supertype(t)) {
             if (t.tsym == env.syms.errorType.tsym) {
                 return true;
             }
@@ -232,7 +232,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         if (isEnum() || isInterface() || isAnnotationType()) {
             return false;
         }
-        for (Type t = type; t.tag == TypeTags.CLASS; t = env.types.supertype(t)) {
+        for (Type t = type; t.hasTag(CLASS); t = env.types.supertype(t)) {
             if (t.tsym == env.syms.throwableType.tsym) {
                 return true;
             }

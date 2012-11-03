@@ -94,31 +94,22 @@ public class HtmlDoclet extends AbstractDoclet {
             throws Exception {
         super.generateOtherFiles(root, classtree);
         if (configuration.linksource) {
-            if (configuration.destDirName.length() > 0) {
-                SourceToHTMLConverter.convertRoot(configuration,
-                    root, configuration.destDirName + File.separator
-                    + DocletConstants.SOURCE_OUTPUT_DIR_NAME);
-            } else {
-                SourceToHTMLConverter.convertRoot(configuration,
-                    root, DocletConstants.SOURCE_OUTPUT_DIR_NAME);
-            }
+            SourceToHTMLConverter.convertRoot(configuration,
+                root, DocPaths.SOURCE_OUTPUT);
         }
 
-        if (configuration.topFile.length() == 0) {
+        if (configuration.topFile.isEmpty()) {
             configuration.standardmessage.
                 error("doclet.No_Non_Deprecated_Classes_To_Document");
             return;
         }
         boolean nodeprecated = configuration.nodeprecated;
-        String configdestdir = configuration.destDirName;
-        String confighelpfile = configuration.helpfile;
-        String configstylefile = configuration.stylesheetfile;
-        performCopy(configdestdir, confighelpfile);
-        performCopy(configdestdir, configstylefile);
-        Util.copyResourceFile(configuration, "background.gif", false);
-        Util.copyResourceFile(configuration, "tab.gif", false);
-        Util.copyResourceFile(configuration, "titlebar.gif", false);
-        Util.copyResourceFile(configuration, "titlebar_end.gif", false);
+        performCopy(configuration.helpfile);
+        performCopy(configuration.stylesheetfile);
+        copyResourceFile("background.gif");
+        copyResourceFile("tab.gif");
+        copyResourceFile("titlebar.gif");
+        copyResourceFile("titlebar_end.gif");
         // do early to reduce memory footprint
         if (configuration.classuse) {
             ClassUseWriter.generate(configuration, classtree);
@@ -155,9 +146,8 @@ public class HtmlDoclet extends AbstractDoclet {
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
         if (configuration.stylesheetfile.length() == 0) {
-            Util.copyFile(configuration, "stylesheet.css", Util.RESOURCESDIR,
-                    (configdestdir.isEmpty()) ?
-                        System.getProperty("user.dir") : configdestdir, false, true);
+            DocFile f = DocFile.createFileForOutput(configuration, DocPaths.STYLESHEET);
+            f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.STYLESHEET), false, true);
         }
     }
 
@@ -258,29 +248,33 @@ public class HtmlDoclet extends AbstractDoclet {
         return (ConfigurationImpl.getInstance()).validOptions(options, reporter);
     }
 
-    private void performCopy(String configdestdir, String filename) {
+    /**
+     * Copy a file in the resources directory to the destination directory.
+     * @param resource   The name of the resource file to copy
+     */
+    private void copyResourceFile(String resource) {
+        DocPath p = DocPaths.RESOURCES.resolve(resource);
+        DocFile f = DocFile.createFileForOutput(configuration, p);
+        f.copyResource(p, false, false);
+    }
+
+    private void performCopy(String filename) {
+        if (filename.isEmpty())
+            return;
+
         try {
-            String destdir = (configdestdir.length() > 0) ?
-                configdestdir + File.separatorChar: "";
-            if (filename.length() > 0) {
-                File helpstylefile = new File(filename);
-                String parent = helpstylefile.getParent();
-                String helpstylefilename = (parent == null)?
-                    filename:
-                    filename.substring(parent.length() + 1);
-                File desthelpfile = new File(destdir + helpstylefilename);
-                if (!desthelpfile.getCanonicalPath().equals(
-                        helpstylefile.getCanonicalPath())) {
-                    configuration.message.
-                        notice((SourcePosition) null,
-                            "doclet.Copying_File_0_To_File_1",
-                            helpstylefile.toString(), desthelpfile.toString());
-                    Util.copyFile(desthelpfile, helpstylefile);
-                }
-            }
+            DocFile fromfile = DocFile.createFileForInput(configuration, filename);
+            DocPath path = DocPath.create(fromfile.getName());
+            DocFile toFile = DocFile.createFileForOutput(configuration, path);
+            if (toFile.isSameFile(fromfile))
+                return;
+
+            configuration.message.notice((SourcePosition) null,
+                    "doclet.Copying_File_0_To_File_1",
+                    fromfile.toString(), path.getPath());
+            toFile.copyFile(fromfile);
         } catch (IOException exc) {
-            configuration.message.
-                error((SourcePosition) null,
+            configuration.message.error((SourcePosition) null,
                     "doclet.perform_copy_exception_encountered",
                     exc.toString());
             throw new DocletAbortException();

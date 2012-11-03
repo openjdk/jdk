@@ -60,17 +60,12 @@ public class PackageFrameWriter extends HtmlDocletWriter {
     private Set<ClassDoc> documentedClasses;
 
     /**
-     * The name of the output file.
-     */
-    public static final String OUTPUT_FILE_NAME = "package-frame.html";
-
-    /**
      * Constructor to construct PackageFrameWriter object and to generate
      * "package-frame.html" file in the respective package directory.
      * For example for package "java.lang" this will generate file
      * "package-frame.html" file in the "java/lang" directory. It will also
      * create "java/lang" directory in the current or the destination directory
-     * if it doesen't exist.
+     * if it doesn't exist.
      *
      * @param configuration the configuration of the doclet.
      * @param packageDoc PackageDoc under consideration.
@@ -78,7 +73,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
     public PackageFrameWriter(ConfigurationImpl configuration,
                               PackageDoc packageDoc)
                               throws IOException {
-        super(configuration, DirectoryManager.getDirectoryPath(packageDoc), OUTPUT_FILE_NAME, DirectoryManager.getRelativePath(packageDoc));
+        super(configuration, DocPath.forPackage(packageDoc).resolve(DocPaths.PACKAGE_FRAME));
         this.packageDoc = packageDoc;
         if (configuration.root.specifiedPackages().length == 0) {
             documentedClasses = new HashSet<ClassDoc>(Arrays.asList(configuration.root.classes()));
@@ -113,7 +108,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         } catch (IOException exc) {
             configuration.standardmessage.error(
                     "doclet.exception_encountered",
-                    exc.toString(), OUTPUT_FILE_NAME);
+                    exc.toString(), DocPaths.PACKAGE_FRAME.getPath());
             throw new DocletAbortException();
         }
     }
