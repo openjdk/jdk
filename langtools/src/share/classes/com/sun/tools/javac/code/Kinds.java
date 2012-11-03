@@ -32,7 +32,9 @@ import com.sun.source.tree.MemberReferenceTree;
 import com.sun.tools.javac.api.Formattable;
 import com.sun.tools.javac.api.Messages;
 import static com.sun.tools.javac.code.Flags.*;
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
+import static com.sun.tools.javac.code.TypeTag.PACKAGE;
+import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 
 /** Internal symbol kinds, which distinguish between elements of
  *  different subclasses of Symbol. Symbol kinds are organized so they can be

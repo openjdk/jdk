@@ -27,9 +27,11 @@ package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
 import java.util.*;
+
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.DocPath;
 
 /**
  * Abstract class to generate the overview files in
@@ -52,14 +54,14 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     protected PackageDoc[] packages;
 
     /**
-     * Constructor. Also initialises the packages variable.
+     * Constructor. Also initializes the packages variable.
      *
+     * @param configuration  The current configuration
      * @param filename Name of the package index file to be generated.
      */
     public AbstractPackageIndexWriter(ConfigurationImpl configuration,
-                                      String filename) throws IOException {
+                                      DocPath filename) throws IOException {
         super(configuration, filename);
-        this.relativepathNoSlash = ".";
         packages = configuration.packages;
     }
 

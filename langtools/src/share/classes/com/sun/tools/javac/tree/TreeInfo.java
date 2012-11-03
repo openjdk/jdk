@@ -34,6 +34,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
 import static com.sun.tools.javac.tree.JCTree.Tag.SYNCHRONIZED;
@@ -300,7 +301,7 @@ public class TreeInfo {
         if (!tree.hasTag(LITERAL))
             return false;
         JCLiteral lit = (JCLiteral) tree;
-        return (lit.typetag == TypeTags.BOT);
+        return (lit.typetag == BOT);
     }
 
     public static String getCommentText(Env<?> env, JCTree tree) {

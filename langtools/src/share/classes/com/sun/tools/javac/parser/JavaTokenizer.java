@@ -662,7 +662,10 @@ public class JavaTokenizer {
                             tk = TokenKind.EOF;
                             pos = reader.buflen;
                         } else {
-                            lexError(pos, "illegal.char", String.valueOf((int)reader.ch));
+                            String arg = (32 < reader.ch && reader.ch < 127) ?
+                                            String.format("%s", reader.ch) :
+                                            String.format("\\u%04x", (int)reader.ch);
+                            lexError(pos, "illegal.char", arg);
                             reader.scanChar();
                         }
                     }

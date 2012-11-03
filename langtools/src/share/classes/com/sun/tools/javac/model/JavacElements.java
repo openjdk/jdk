@@ -38,7 +38,7 @@ import static javax.lang.model.util.ElementFilter.methodsIn;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.TypeTags;
+import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
@@ -50,6 +50,7 @@ import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Name;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /**
@@ -124,7 +125,7 @@ public class JavacElements implements Elements {
             if (result != null || !inherited)
                 break;
             Type sup = annotated.getSuperclass();
-            if (sup.tag != TypeTags.CLASS || sup.isErroneous())
+            if (!sup.hasTag(CLASS) || sup.isErroneous())
                 break;
             annotated = (ClassSymbol) sup.tsym;
         }
@@ -444,7 +445,7 @@ public class JavacElements implements Elements {
         List<Attribute.Compound> annos = sym.getAnnotationMirrors();
         while (sym.getKind() == ElementKind.CLASS) {
             Type sup = ((ClassSymbol) sym).getSuperclass();
-            if (sup.tag != TypeTags.CLASS || sup.isErroneous() ||
+            if (!sup.hasTag(CLASS) || sup.isErroneous() ||
                     sup.tsym == syms.objectType.tsym) {
                 break;
             }

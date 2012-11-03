@@ -237,6 +237,9 @@ class SerializedForm {
 
         SerialFieldTag[] sfTag = spfDoc.serialFieldTags();
         for (int i = 0; i < sfTag.length; i++) {
+            if (sfTag[i].fieldName() == null || sfTag[i].fieldType() == null) // ignore malformed @serialField tags
+                continue;
+
             Name fieldName = names.fromString(sfTag[i].fieldName());
 
             // Look for a FieldDocImpl that is documented by serialFieldTagImpl.

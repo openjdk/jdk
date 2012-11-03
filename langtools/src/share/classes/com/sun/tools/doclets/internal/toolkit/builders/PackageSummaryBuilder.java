@@ -119,13 +119,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         packageWriter.addPackageFooter(contentTree);
         packageWriter.printDocument(contentTree);
         packageWriter.close();
-        Util.copyDocFiles(
-                configuration,
-                Util.getPackageSourcePath(configuration, packageDoc),
-                DirectoryManager.getDirectoryPath(packageDoc)
-                        + File.separator
-                        + DocletConstants.DOC_FILES_DIR_NAME,
-                true);
+        Util.copyDocFiles(configuration, packageDoc);
     }
 
     /**

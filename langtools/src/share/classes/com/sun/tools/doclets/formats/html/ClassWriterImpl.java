@@ -72,11 +72,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      */
     public ClassWriterImpl (ClassDoc classDoc,
             ClassDoc prevClass, ClassDoc nextClass, ClassTree classTree)
-    throws Exception {
-        super(ConfigurationImpl.getInstance(),
-              DirectoryManager.getDirectoryPath(classDoc.containingPackage()),
-              classDoc.name() + ".html",
-              DirectoryManager.getRelativePath(classDoc.containingPackage().name()));
+            throws Exception {
+        super(ConfigurationImpl.getInstance(), DocPath.forClass(classDoc));
         this.classDoc = classDoc;
         configuration.currentcd = classDoc;
         this.classtree = classTree;
@@ -90,7 +87,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      * @return a content tree for the package link
      */
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink("package-summary.html", "",
+        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
                 packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -112,7 +109,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      * @return a content tree for the class use link
      */
     protected Content getNavLinkClassUse() {
-        Content linkContent = getHyperLink("class-use/" + filename, "", useLabel);
+        Content linkContent = getHyperLink(DocPaths.CLASS_USE.resolve(filename), useLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -567,8 +564,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      * {@inheritDoc}
      */
     protected Content getNavLinkTree() {
-        Content treeLinkContent = getHyperLink("package-tree.html",
-                "", treeLabel, "", "");
+        Content treeLinkContent = getHyperLink(DocPaths.PACKAGE_TREE,
+                treeLabel, "", "");
         Content li = HtmlTree.LI(treeLinkContent);
         return li;
     }
