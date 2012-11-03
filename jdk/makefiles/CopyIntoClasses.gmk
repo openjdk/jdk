@@ -187,12 +187,6 @@ ifdef OPENJDK
 endif
 
 ifndef OPENJDK
-ifneq ($(OPENJDK_TARGET_OS), macosx)
-    ALL_META-INF_DIRS += $(JDK_TOPDIR)/src/closed/share/classes/sun/jdbc/odbc/META-INF
-endif
-endif
-
-ifndef OPENJDK
     ALL_META-INF_DIRS += $(JDK_TOPDIR)/src/closed/share/classes/sun/java2d/cmm/kcms/META-INF
 endif
 

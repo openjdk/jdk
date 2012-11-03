@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1238,56 +1238,5 @@ public class Timer extends NotificationBroadcasterSupport
 
         TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
                 "sendNotification", "timer notification sent");
-    }
-}
-
-/**
- * TimerAlarmClock inner class:
- * This class provides a simple implementation of an alarm clock MBean.
- * The aim of this MBean is to set up an alarm which wakes up the timer every timeout (fixed-delay)
- * or at the specified date (fixed-rate).
- */
-
-class TimerAlarmClock extends java.util.TimerTask {
-
-    Timer listener = null;
-    long timeout = 10000;
-    Date next = null;
-
-    /*
-     * ------------------------------------------
-     *  CONSTRUCTORS
-     * ------------------------------------------
-     */
-
-    public TimerAlarmClock(Timer listener, long timeout) {
-        this.listener = listener;
-        this.timeout = Math.max(0L, timeout);
-    }
-
-    public TimerAlarmClock(Timer listener, Date next) {
-        this.listener = listener;
-        this.next = next;
-    }
-
-    /*
-     * ------------------------------------------
-     *  PUBLIC METHODS
-     * ------------------------------------------
-     */
-
-    /**
-     * This method is called by the timer when it is started.
-     */
-    public void run() {
-
-        try {
-            //this.sleep(timeout);
-            TimerAlarmClockNotification notif = new TimerAlarmClockNotification(this);
-            listener.notifyAlarmClock(notif);
-        } catch (Exception e) {
-            TIMER_LOGGER.logp(Level.FINEST, Timer.class.getName(), "run",
-                    "Got unexpected exception when sending a notification", e);
-        }
     }
 }

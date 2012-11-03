@@ -315,7 +315,8 @@ $(eval $(call SetupJavaCompilation,BUILD_JDK,\
 JDK_BASE_HEADER_CLASSES:=java.lang.Integer \
 			 java.lang.Long \
 			 java.net.SocketOptions \
-			 sun.nio.ch.IOStatus
+			 sun.nio.ch.IOStatus \
+			 java.io.FileSystem
 
 JDK_BASE_HEADER_JAVA_FILES:=$(patsubst %,$(JDK_TOPDIR)/src/share/classes/%.java,\
 				$(subst .,/,$(JDK_BASE_HEADER_CLASSES)))

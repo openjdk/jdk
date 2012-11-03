@@ -206,10 +206,10 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
         AtomicReferenceFieldUpdaterImpl(final Class<T> tclass,
                                         Class<V> vclass,
                                         final String fieldName) {
-            Field field = null;
-            Class<?> fieldClass = null;
-            Class<?> caller = null;
-            int modifiers = 0;
+            final Field field;
+            final Class<?> fieldClass;
+            final Class<?> caller;
+            final int modifiers;
             try {
                 field = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<Field>() {
@@ -220,12 +220,12 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
                 caller = sun.reflect.Reflection.getCallerClass(3);
                 modifiers = field.getModifiers();
                 sun.reflect.misc.ReflectUtil.ensureMemberAccess(
-                                                                caller, tclass, null, modifiers);
+                    caller, tclass, null, modifiers);
                 ClassLoader cl = tclass.getClassLoader();
                 ClassLoader ccl = caller.getClassLoader();
                 if ((ccl != null) && (ccl != cl) &&
                     ((cl == null) || !isAncestor(cl, ccl))) {
-                    sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
+                  sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
                 }
                 fieldClass = field.getType();
             } catch (PrivilegedActionException pae) {
@@ -315,7 +315,7 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
         }
 
         @SuppressWarnings("unchecked")
-            public V get(T obj) {
+        public V get(T obj) {
             if (obj == null || obj.getClass() != tclass || cclass != null)
                 targetCheck(obj);
             return (V)unsafe.getObjectVolatile(obj, offset);
@@ -326,14 +326,14 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
                 return;
             }
             throw new RuntimeException(
-                                       new IllegalAccessException("Class " +
-                                                                  cclass.getName() +
-                                                                  " can not access a protected member of class " +
-                                                                  tclass.getName() +
-                                                                  " using an instance of " +
-                                                                  obj.getClass().getName()
-                                                                  )
-                                       );
+                new IllegalAccessException("Class " +
+                    cclass.getName() +
+                    " can not access a protected member of class " +
+                    tclass.getName() +
+                    " using an instance of " +
+                    obj.getClass().getName()
+                )
+            );
         }
     }
 }

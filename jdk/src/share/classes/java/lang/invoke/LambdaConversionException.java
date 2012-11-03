@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,28 @@
  * questions.
  */
 
-#include <windows.h>
-#include "jni.h"
-#include "jni_util.h"
+package java.lang.invoke;
 
-JNIEXPORT jobject JNICALL
-Java_java_io_FileSystem_getFileSystem(JNIEnv *env, jclass ignored)
-{
-    return JNU_NewObjectByName(env, "java/io/WinNTFileSystem", "()V");
+/**
+ * LambdaConversionException
+ */
+public class LambdaConversionException extends Exception {
+    public LambdaConversionException() {
+    }
+
+    public LambdaConversionException(String message) {
+        super(message);
+    }
+
+    public LambdaConversionException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public LambdaConversionException(Throwable cause) {
+        super(cause);
+    }
+
+    public LambdaConversionException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

@@ -356,7 +356,7 @@ public final class LocaleServiceProviderPool {
      * @param locale the input locale
      * @return the list of candidate locales for the given locale
      */
-    private static List<Locale> getLookupLocales(Locale locale) {
+    static List<Locale> getLookupLocales(Locale locale) {
         // Note: We currently use the default implementation of
         // ResourceBundle.Control.getCandidateLocales. The result
         // returned by getCandidateLocales are already normalized

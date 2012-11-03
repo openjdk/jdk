@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,11 +142,11 @@ public final class KdcComm {
 
         try {
             Config cfg = Config.getInstance();
-            String temp = cfg.getDefault("kdc_timeout", "libdefaults");
+            String temp = cfg.get("libdefaults", "kdc_timeout");
             timeout = parsePositiveIntString(temp);
-            temp = cfg.getDefault("max_retries", "libdefaults");
+            temp = cfg.get("libdefaults", "max_retries");
             max_retries = parsePositiveIntString(temp);
-            temp = cfg.getDefault("udp_preference_limit", "libdefaults");
+            temp = cfg.get("libdefaults", "udp_preference_limit");
             udf_pref_limit = parsePositiveIntString(temp);
         } catch (Exception exc) {
            // ignore any exceptions; use default values
@@ -421,7 +421,7 @@ public final class KdcComm {
         int temp = -1;
         try {
             String value =
-               Config.getInstance().getDefault(key, realm);
+               Config.getInstance().get("realms", realm, key);
             temp = parsePositiveIntString(value);
         } catch (Exception exc) {
             // Ignored, defValue will be picked up

@@ -208,7 +208,6 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-docs_import \
 	sane-math_iso \
 	sane-libCrun \
-	sane-odbcdir \
 	sane-msdevtools_path \
 	sane-hotspot_binaries \
 	sane-hotspot_import \
