@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
-import com.sun.tools.javac.code.TypeTags;
+import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.util.Context;
@@ -436,7 +436,7 @@ public class T6889255 {
         // The rest of this method assumes the local conventions in the test program
         Type t = v.type;
         String s;
-        if (t.tag == TypeTags.CLASS)
+        if (t.hasTag(TypeTag.CLASS))
             s = ((ClassType) t).tsym.name.toString();
         else
             s = t.toString();

@@ -66,8 +66,10 @@ public class TagletWriterImpl extends TagletWriter {
     public TagletOutput getDocRootOutput() {
         if (htmlWriter.configuration.docrootparent.length() > 0)
             return new TagletOutputImpl(htmlWriter.configuration.docrootparent);
+        else if (htmlWriter.pathToRoot.isEmpty())
+            return new TagletOutputImpl(".");
         else
-            return new TagletOutputImpl(htmlWriter.relativepathNoSlash);
+            return new TagletOutputImpl(htmlWriter.pathToRoot.getPath());
     }
 
     /**
@@ -170,19 +172,24 @@ public class TagletWriterImpl extends TagletWriter {
                 htmlWriter instanceof ClassWriterImpl) {
             //Automatically add link to constant values page for constant fields.
             result = addSeeHeader(result);
-            result += htmlWriter.getHyperLinkString(htmlWriter.relativePath +
-                ConfigurationImpl.CONSTANTS_FILE_NAME
-                + "#" + ((ClassWriterImpl) htmlWriter).getClassDoc().qualifiedName()
-                + "." + ((FieldDoc) holder).name(),
-                htmlWriter.configuration.getText("doclet.Constants_Summary"));
+            DocPath constantsPath =
+                    htmlWriter.pathToRoot.resolve(DocPaths.CONSTANT_VALUES);
+            String whichConstant =
+                    ((ClassWriterImpl) htmlWriter).getClassDoc().qualifiedName() + "." + ((FieldDoc) holder).name();
+            DocLink link = constantsPath.fragment(whichConstant);
+            result += htmlWriter.getHyperLinkString(link,
+                    htmlWriter.configuration.getText("doclet.Constants_Summary"),
+                    false);
         }
         if (holder.isClass() && ((ClassDoc)holder).isSerializable()) {
             //Automatically add link to serialized form page for serializable classes.
             if ((SerializedFormBuilder.serialInclude(holder) &&
                       SerializedFormBuilder.serialInclude(((ClassDoc)holder).containingPackage()))) {
                 result = addSeeHeader(result);
-                result += htmlWriter.getHyperLinkString(htmlWriter.relativePath + "serialized-form.html",
-                        ((ClassDoc)holder).qualifiedName(), htmlWriter.configuration.getText("doclet.Serialized_Form"), false);
+                DocPath serialPath = htmlWriter.pathToRoot.resolve(DocPaths.SERIALIZED_FORM);
+                DocLink link = serialPath.fragment(((ClassDoc)holder).qualifiedName());
+                result += htmlWriter.getHyperLinkString(link,
+                        htmlWriter.configuration.getText("doclet.Serialized_Form"), false);
             }
         }
         return result.equals("") ? null : new TagletOutputImpl(result + "</dd>");

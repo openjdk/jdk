@@ -40,7 +40,8 @@ import com.sun.tools.javac.tree.JCTree.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
+import static com.sun.tools.javac.code.TypeTag.VOID;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** This pass implements dataflow analysis for Java programs though
@@ -473,7 +474,7 @@ public class Flow {
                 alive = true;
                 scanStat(tree.body);
 
-                if (alive && tree.sym.type.getReturnType().tag != VOID)
+                if (alive && !tree.sym.type.getReturnType().hasTag(VOID))
                     log.error(TreeInfo.diagEndPos(tree.body), "missing.ret.stmt");
 
                 List<PendingExit> exits = pendingExits.toList();
@@ -1976,8 +1977,8 @@ public class Flow {
             Bits uninitsBeforeElse = uninitsWhenFalse;
             inits = initsWhenTrue;
             uninits = uninitsWhenTrue;
-            if (tree.truepart.type.tag == BOOLEAN &&
-                tree.falsepart.type.tag == BOOLEAN) {
+            if (tree.truepart.type.hasTag(BOOLEAN) &&
+                tree.falsepart.type.hasTag(BOOLEAN)) {
                 // if b and c are boolean valued, then
                 // v is (un)assigned after a?b:c when true iff
                 //    v is (un)assigned after b when true and

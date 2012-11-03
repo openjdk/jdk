@@ -140,12 +140,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
             //Only copy doc files dir if the containing package is not
             //documented AND if we have not documented a class from the same
             //package already. Otherwise, we are making duplicate copies.
-            Util.copyDocFiles(configuration,
-                Util.getPackageSourcePath(configuration,
-                    annotationTypeDoc.containingPackage()) +
-                DirectoryManager.getDirectoryPath(
-                    annotationTypeDoc.containingPackage())
-                    + File.separator, DocletConstants.DOC_FILES_DIR_NAME, true);
+            Util.copyDocFiles(configuration, containingPackage);
             containingPackagesSeen.add(containingPackage.name());
         }
      }

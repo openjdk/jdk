@@ -25,7 +25,6 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import java.io.*;
 import java.net.*;
 import java.util.*;
 
@@ -46,6 +45,11 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * use "-helpfile" option when already "-nohelp" option is used.
  * </p>
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @author Robert Field.
  * @author Atul Dambalkar.
  * @author Jamie Ho
@@ -60,11 +64,6 @@ public class ConfigurationImpl extends Configuration {
      * a version number instead of a date.
      */
     public static final String BUILD_DATE = System.getProperty("java.version");
-
-    /**
-     * The name of the constant values file.
-     */
-    public static final String CONSTANTS_FILE_NAME = "constant-values.html";
 
     /**
      * Argument for command line option "-header".
@@ -179,7 +178,7 @@ public class ConfigurationImpl extends Configuration {
      * First file to appear in the right-hand frame in the generated
      * documentation.
      */
-    public String topFile = "";
+    public DocPath topFile = DocPath.empty;
 
     /**
      * The classdoc for the class file getting generated.
@@ -367,7 +366,7 @@ public class ConfigurationImpl extends Configuration {
                         "-helpfile"));
                     return false;
                 }
-                File help = new File(os[1]);
+                DocFile help = DocFile.createFileForInput(this, os[1]);
                 if (!help.exists()) {
                     reporter.printError(getText("doclet.File_not_found", os[1]));
                     return false;
@@ -447,18 +446,17 @@ public class ConfigurationImpl extends Configuration {
             return;
         }
         if (createoverview) {
-            topFile = "overview-summary.html";
+            topFile = DocPaths.OVERVIEW_SUMMARY;
         } else {
             if (packages.length == 1 && packages[0].name().equals("")) {
                 if (root.classes().length > 0) {
                     ClassDoc[] classarr = root.classes();
                     Arrays.sort(classarr);
                     ClassDoc cd = getValidClass(classarr);
-                    topFile = DirectoryManager.getPathToClass(cd);
+                    topFile = DocPath.forClass(cd);
                 }
             } else {
-                topFile = DirectoryManager.getPathToPackage(packages[0],
-                                                            "package-summary.html");
+                topFile = DocPath.forPackage(packages[0]).resolve(DocPaths.PACKAGE_SUMMARY);
             }
         }
     }

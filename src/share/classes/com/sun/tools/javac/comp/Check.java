@@ -27,6 +27,7 @@ package com.sun.tools.javac.comp;
 
 import java.util.*;
 import java.util.Set;
+import javax.tools.JavaFileManager;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.jvm.*;
@@ -48,8 +49,8 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
 import static com.sun.tools.javac.code.Flags.SYNCHRONIZED;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
-import static com.sun.tools.javac.code.TypeTags.WILDCARD;
+import static com.sun.tools.javac.code.TypeTag.*;
+import static com.sun.tools.javac.code.TypeTag.WILDCARD;
 
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -77,6 +78,7 @@ public class Check {
     private boolean suppressAbortOnBadClassFile;
     private boolean enableSunApiLintControl;
     private final TreeInfo treeinfo;
+    private final JavaFileManager fileManager;
 
     // The set of lint options currently in effect. It is initialized
     // from the context, and then is set/reset as needed by Attr as it
@@ -109,6 +111,7 @@ public class Check {
         Options options = Options.instance(context);
         lint = Lint.instance(context);
         treeinfo = TreeInfo.instance(context);
+        fileManager = context.get(JavaFileManager.class);
 
         Source source = Source.instance(context);
         allowGenerics = source.allowGenerics();
@@ -280,7 +283,7 @@ public class Check {
     Type typeTagError(DiagnosticPosition pos, Object required, Object found) {
         // this error used to be raised by the parser,
         // but has been delayed to this point:
-        if (found instanceof Type && ((Type)found).tag == VOID) {
+        if (found instanceof Type && ((Type)found).hasTag(VOID)) {
             log.error(pos, "illegal.start.of.type");
             return syms.errType;
         }
@@ -358,7 +361,7 @@ public class Check {
             for (Scope.Entry e = s.next.lookup(c.name);
                  e.scope != null && e.sym.owner == c.owner;
                  e = e.next()) {
-                if (e.sym.kind == TYP && e.sym.type.tag != TYPEVAR &&
+                if (e.sym.kind == TYP && !e.sym.type.hasTag(TYPEVAR) &&
                     (e.sym.owner.kind & (VAR | MTH)) != 0 &&
                     c.name != names.error) {
                     duplicateError(pos, e.sym);
@@ -527,14 +530,14 @@ public class Check {
                 }
             });
         }
-        if (req.tag == ERROR)
+        if (req.hasTag(ERROR))
             return req;
-        if (req.tag == NONE)
+        if (req.hasTag(NONE))
             return found;
         if (checkContext.compatible(found, req, checkContext.checkWarner(pos, found, req))) {
             return found;
         } else {
-            if (found.tag <= DOUBLE && req.tag <= DOUBLE) {
+            if (found.getTag().isSubRangeOf(DOUBLE) && req.getTag().isSubRangeOf(DOUBLE)) {
                 checkContext.report(pos, diags.fragment("possible.loss.of.precision", found, req));
                 return types.createErrorType(found);
             }
@@ -594,7 +597,7 @@ public class Check {
          *  type variables?
          */
         boolean isTypeVar(Type t) {
-            return t.tag == TYPEVAR || t.tag == ARRAY && isTypeVar(types.elemtype(t));
+            return t.hasTag(TYPEVAR) || t.hasTag(ARRAY) && isTypeVar(types.elemtype(t));
         }
 
     /** Check that a type is within some bounds.
@@ -607,7 +610,7 @@ public class Check {
     private boolean checkExtends(Type a, Type bound) {
          if (a.isUnbound()) {
              return true;
-         } else if (a.tag != WILDCARD) {
+         } else if (!a.hasTag(WILDCARD)) {
              a = types.upperBound(a);
              return types.isSubtype(a, bound);
          } else if (a.isExtendsBound()) {
@@ -623,7 +626,7 @@ public class Check {
      *  @param t             The type to be checked.
      */
     Type checkNonVoid(DiagnosticPosition pos, Type t) {
-        if (t.tag == VOID) {
+        if (t.hasTag(VOID)) {
             log.error(pos, "void.not.allowed.here");
             return types.createErrorType(t);
         } else {
@@ -636,10 +639,10 @@ public class Check {
      *  @param t             The type to be checked.
      */
     Type checkClassType(DiagnosticPosition pos, Type t) {
-        if (t.tag != CLASS && t.tag != ERROR)
+        if (!t.hasTag(CLASS) && !t.hasTag(ERROR))
             return typeTagError(pos,
                                 diags.fragment("type.req.class"),
-                                (t.tag == TYPEVAR)
+                                (t.hasTag(TYPEVAR))
                                 ? diags.fragment("type.parameter", t)
                                 : t);
         else
@@ -650,7 +653,7 @@ public class Check {
      */
     Type checkConstructorRefType(DiagnosticPosition pos, Type t) {
         t = checkClassType(pos, t);
-        if (t.tag == CLASS) {
+        if (t.hasTag(CLASS)) {
             if ((t.tsym.flags() & (ABSTRACT | INTERFACE)) != 0) {
                 log.error(pos, "abstract.cant.be.instantiated");
                 t = types.createErrorType(t);
@@ -672,7 +675,7 @@ public class Check {
         if (noBounds && t.isParameterized()) {
             List<Type> args = t.getTypeArguments();
             while (args.nonEmpty()) {
-                if (args.head.tag == WILDCARD)
+                if (args.head.hasTag(WILDCARD))
                     return typeTagError(pos,
                                         diags.fragment("type.req.exact"),
                                         args.head);
@@ -687,7 +690,7 @@ public class Check {
      *  @param t             The type to be checked.
      */
     Type checkReifiableReferenceType(DiagnosticPosition pos, Type t) {
-        if (t.tag != CLASS && t.tag != ARRAY && t.tag != ERROR) {
+        if (!t.hasTag(CLASS) && !t.hasTag(ARRAY) && !t.hasTag(ERROR)) {
             return typeTagError(pos,
                                 diags.fragment("type.req.class.array"),
                                 t);
@@ -705,18 +708,12 @@ public class Check {
      *  @param t             The type to be checked.
      */
     Type checkRefType(DiagnosticPosition pos, Type t) {
-        switch (t.tag) {
-        case CLASS:
-        case ARRAY:
-        case TYPEVAR:
-        case WILDCARD:
-        case ERROR:
+        if (t.isReference())
             return t;
-        default:
+        else
             return typeTagError(pos,
                                 diags.fragment("type.req.ref"),
                                 t);
-        }
     }
 
     /** Check that each type is a reference type, i.e. a class, interface or array type
@@ -738,19 +735,12 @@ public class Check {
      *  @param t             The type to be checked.
      */
     Type checkNullOrRefType(DiagnosticPosition pos, Type t) {
-        switch (t.tag) {
-        case CLASS:
-        case ARRAY:
-        case TYPEVAR:
-        case WILDCARD:
-        case BOT:
-        case ERROR:
+        if (t.isNullOrReference())
             return t;
-        default:
+        else
             return typeTagError(pos,
                                 diags.fragment("type.req.ref"),
                                 t);
-        }
     }
 
     /** Check that flag set does not contain elements of two conflicting sets. s
@@ -1054,7 +1044,7 @@ public class Check {
             bounds = bounds_buf.toList();
 
             for (Type arg : types.capture(type).getTypeArguments()) {
-                if (arg.tag == TYPEVAR &&
+                if (arg.hasTag(TYPEVAR) &&
                         arg.getUpperBound().isErroneous() &&
                         !bounds.head.isErroneous() &&
                         !isTypeArgErroneous(args.head)) {
@@ -1309,7 +1299,7 @@ public class Check {
 
         @Override
         public void visitTypeApply(JCTypeApply tree) {
-            if (tree.type.tag == CLASS) {
+            if (tree.type.hasTag(CLASS)) {
                 List<JCExpression> args = tree.arguments;
                 List<Type> forms = tree.type.tsym.type.getTypeArguments();
 
@@ -1360,7 +1350,7 @@ public class Check {
 
         @Override
         public void visitSelect(JCFieldAccess tree) {
-            if (tree.type.tag == CLASS) {
+            if (tree.type.hasTag(CLASS)) {
                 visitSelectInternal(tree);
 
                 // Check that this type is either fully parameterized, or
@@ -1409,7 +1399,7 @@ public class Check {
 
         void checkRaw(JCTree tree, Env<AttrContext> env) {
             if (lint.isEnabled(LintCategory.RAW) &&
-                tree.type.tag == CLASS &&
+                tree.type.hasTag(CLASS) &&
                 !TreeInfo.isDiamond(tree) &&
                 !withinAnonConstr(env) &&
                 tree.type.isRaw()) {
@@ -1511,9 +1501,9 @@ public class Check {
      */
     boolean isUnchecked(Type exc) {
         return
-            (exc.tag == TYPEVAR) ? isUnchecked(types.supertype(exc)) :
-            (exc.tag == CLASS) ? isUnchecked((ClassSymbol)exc.tsym) :
-            exc.tag == BOT;
+            (exc.hasTag(TYPEVAR)) ? isUnchecked(types.supertype(exc)) :
+            (exc.hasTag(CLASS)) ? isUnchecked((ClassSymbol)exc.tsym) :
+            exc.hasTag(BOT);
     }
 
     /** Same, but handling completion failures.
@@ -1759,7 +1749,7 @@ public class Check {
             // case, we will have dealt with when examining the supertype classes
             ClassSymbol mc = m.enclClass();
             Type st = types.supertype(origin.type);
-            if (st.tag != CLASS)
+            if (!st.hasTag(CLASS))
                 return true;
             MethodSymbol stimpl = m.implementation((ClassSymbol)st.tsym, types, false);
 
@@ -1782,7 +1772,7 @@ public class Check {
      */
     public void checkCompatibleConcretes(DiagnosticPosition pos, Type site) {
         Type sup = types.supertype(site);
-        if (sup.tag != CLASS) return;
+        if (!sup.hasTag(CLASS)) return;
 
         for (Type t1 = sup;
              t1.tsym.type.isParameterized();
@@ -1803,7 +1793,7 @@ public class Check {
                 if (st1 == s1.type) continue;
 
                 for (Type t2 = sup;
-                     t2.tag == CLASS;
+                     t2.hasTag(CLASS);
                      t2 = types.supertype(t2)) {
                     for (Scope.Entry e2 = t2.tsym.members().lookup(s1.name);
                          e2.scope != null;
@@ -1876,7 +1866,7 @@ public class Check {
 
     /** Compute all the supertypes of t, indexed by type symbol. */
     private void closure(Type t, Map<TypeSymbol,Type> typeMap) {
-        if (t.tag != CLASS) return;
+        if (!t.hasTag(CLASS)) return;
         if (typeMap.put(t.tsym, t) == null) {
             closure(types.supertype(t), typeMap);
             for (Type i : types.interfaces(t))
@@ -1886,7 +1876,7 @@ public class Check {
 
     /** Compute all the supertypes of t, indexed by type symbol (except thise in typesSkip). */
     private void closure(Type t, Map<TypeSymbol,Type> typesSkip, Map<TypeSymbol,Type> typeMap) {
-        if (t.tag != CLASS) return;
+        if (!t.hasTag(CLASS)) return;
         if (typesSkip.get(t.tsym) != null) return;
         if (typeMap.put(t.tsym, t) == null) {
             closure(types.supertype(t), typesSkip, typeMap);
@@ -1916,7 +1906,8 @@ public class Check {
                     Type rt2 = types.subst(st2.getReturnType(), tvars2, tvars1);
                     boolean compat =
                         types.isSameType(rt1, rt2) ||
-                        rt1.tag >= CLASS && rt2.tag >= CLASS &&
+                        !rt1.isPrimitiveOrVoid() &&
+                        !rt2.isPrimitiveOrVoid() &&
                         (types.covariantReturnType(rt1, rt2, Warner.noWarnings) ||
                          types.covariantReturnType(rt2, rt1, Warner.noWarnings)) ||
                          checkCommonOverriderIn(s1,s2,site);
@@ -1961,7 +1952,8 @@ public class Check {
                     Type rt13 = types.subst(st3.getReturnType(), tvars3, tvars1);
                     Type rt23 = types.subst(st3.getReturnType(), tvars3, tvars2);
                     boolean compat =
-                        rt13.tag >= CLASS && rt23.tag >= CLASS &&
+                        !rt13.isPrimitiveOrVoid() &&
+                        !rt23.isPrimitiveOrVoid() &&
                         (types.covariantReturnType(rt13, rt1, Warner.noWarnings) &&
                          types.covariantReturnType(rt23, rt2, Warner.noWarnings));
                     if (compat)
@@ -1984,7 +1976,7 @@ public class Check {
                 log.error(tree.pos(), "enum.no.finalize");
                 return;
             }
-        for (Type t = origin.type; t.tag == CLASS;
+        for (Type t = origin.type; t.hasTag(CLASS);
              t = types.supertype(t)) {
             if (t != origin.type) {
                 checkOverride(tree, t, origin, m);
@@ -2064,7 +2056,7 @@ public class Check {
                 }
                 if (undef == null) {
                     Type st = types.supertype(c.type);
-                    if (st.tag == CLASS)
+                    if (st.hasTag(CLASS))
                         undef = firstUndef(impl, (ClassSymbol)st.tsym);
                 }
                 for (List<Type> l = types.interfaces(c.type);
@@ -2155,7 +2147,7 @@ public class Check {
             } else if (!c.type.isErroneous()) {
                 try {
                     seenClasses = seenClasses.prepend(c);
-                    if (c.type.tag == CLASS) {
+                    if (c.type.hasTag(CLASS)) {
                         if (supertypes.nonEmpty()) {
                             scan(supertypes);
                         }
@@ -2200,13 +2192,13 @@ public class Check {
 
     private void checkNonCyclic1(DiagnosticPosition pos, Type t, List<TypeVar> seen) {
         final TypeVar tv;
-        if  (t.tag == TYPEVAR && (t.tsym.flags() & UNATTRIBUTED) != 0)
+        if  (t.hasTag(TYPEVAR) && (t.tsym.flags() & UNATTRIBUTED) != 0)
             return;
         if (seen.contains(t)) {
             tv = (TypeVar)t;
             tv.bound = types.createErrorType(t);
             log.error(pos, "cyclic.inheritance", t);
-        } else if (t.tag == TYPEVAR) {
+        } else if (t.hasTag(TYPEVAR)) {
             tv = (TypeVar)t;
             seen = seen.prepend(tv);
             for (Type b : types.getBounds(tv))
@@ -2232,14 +2224,14 @@ public class Check {
         } else if (!c.type.isErroneous()) {
             try {
                 c.flags_field |= LOCKED;
-                if (c.type.tag == CLASS) {
+                if (c.type.hasTag(CLASS)) {
                     ClassType clazz = (ClassType)c.type;
                     if (clazz.interfaces_field != null)
                         for (List<Type> l=clazz.interfaces_field; l.nonEmpty(); l=l.tail)
                             complete &= checkNonCyclicInternal(pos, l.head);
                     if (clazz.supertype_field != null) {
                         Type st = clazz.supertype_field;
-                        if (st != null && st.tag == CLASS)
+                        if (st != null && st.hasTag(CLASS))
                             complete &= checkNonCyclicInternal(pos, st);
                     }
                     if (c.owner.kind == TYP)
@@ -2261,7 +2253,7 @@ public class Check {
         for (List<Type> l=types.interfaces(c.type); l.nonEmpty(); l=l.tail)
             l.head = types.createErrorType((ClassSymbol)l.head.tsym, Type.noType);
         Type st = types.supertype(c.type);
-        if (st.tag == CLASS)
+        if (st.hasTag(CLASS))
             ((ClassType)c.type).supertype_field = types.createErrorType((ClassSymbol)st.tsym, Type.noType);
         c.type = types.createErrorType(c, c.type);
         c.flags_field |= ACYCLIC;
@@ -2313,7 +2305,7 @@ public class Check {
     void checkCompatibleSupertypes(DiagnosticPosition pos, Type c) {
         List<Type> supertypes = types.interfaces(c);
         Type supertype = types.supertype(c);
-        if (supertype.tag == CLASS &&
+        if (supertype.hasTag(CLASS) &&
             (supertype.tsym.flags() & ABSTRACT) != 0)
             supertypes = supertypes.prepend(supertype);
         for (List<Type> l = supertypes; l.nonEmpty(); l = l.tail) {
@@ -2542,7 +2534,7 @@ public class Check {
      * @jls 9.6 Annotation Types
      */
     void validateAnnotationMethod(DiagnosticPosition pos, MethodSymbol m) {
-        for (Type sup = syms.annotationType; sup.tag == CLASS; sup = types.supertype(sup)) {
+        for (Type sup = syms.annotationType; sup.hasTag(CLASS); sup = types.supertype(sup)) {
             Scope s = sup.tsym.members();
             for (Scope.Entry e = s.lookup(m.name); e.scope != null; e = e.next()) {
                 if (e.sym.kind == MTH &&
@@ -2855,7 +2847,7 @@ public class Check {
                 { if (s.kind == TYP ||
                       s.kind == VAR ||
                       (s.kind == MTH && !s.isConstructor() &&
-                       s.type.getReturnType().tag != VOID))
+                       !s.type.getReturnType().hasTag(VOID)))
                     return true;
                 }
             else
@@ -3016,12 +3008,12 @@ public class Check {
     }
 
     void checkAnnotationResType(DiagnosticPosition pos, Type type) {
-        switch (type.tag) {
-        case TypeTags.CLASS:
+        switch (type.getTag()) {
+        case CLASS:
             if ((type.tsym.flags() & ANNOTATION) != 0)
                 checkNonCyclicElementsInternal(pos, type.tsym);
             break;
-        case TypeTags.ARRAY:
+        case ARRAY:
             checkAnnotationResType(pos, types.elemtype(type));
             break;
         default:
@@ -3114,7 +3106,7 @@ public class Check {
     void checkDivZero(DiagnosticPosition pos, Symbol operator, Type operand) {
         if (operand.constValue() != null
             && lint.isEnabled(LintCategory.DIVZERO)
-            && operand.tag <= LONG
+            && (operand.getTag().isSubRangeOf(LONG))
             && ((Number) (operand.constValue())).longValue() == 0) {
             int opc = ((OperatorSymbol)operator).opcode;
             if (opc == ByteCodes.idiv || opc == ByteCodes.imod
@@ -3240,6 +3232,19 @@ public class Check {
             }
             return true;
         }
+
+    /** Check that an auxiliary class is not accessed from any other file than its own.
+     */
+    void checkForBadAuxiliaryClassAccess(DiagnosticPosition pos, Env<AttrContext> env, ClassSymbol c) {
+        if (lint.isEnabled(Lint.LintCategory.AUXILIARYCLASS) &&
+            (c.flags() & AUXILIARY) != 0 &&
+            rs.isAccessible(env, c) &&
+            !fileManager.isSameFile(c.sourcefile, env.toplevel.sourcefile))
+        {
+            log.warning(pos, "auxiliary.class.accessed.from.outside.of.its.source.file",
+                        c, c.sourcefile);
+        }
+    }
 
     private class ConversionWarner extends Warner {
         final String uncheckedKey;

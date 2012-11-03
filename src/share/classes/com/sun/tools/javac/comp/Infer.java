@@ -42,7 +42,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.*;
 
 /** Helper class for type parameter inference, used by the attribution phase.
  *
@@ -145,7 +145,7 @@ public class Infer {
     private Filter<Type> boundFilter = new Filter<Type>() {
         @Override
         public boolean accepts(Type t) {
-            return !t.isErroneous() && t.tag != BOT;
+            return !t.isErroneous() && !t.hasTag(BOT);
         }
     };
 
@@ -163,7 +163,7 @@ public class Infer {
             else {
                 that.inst = types.lub(lobounds);
             }
-            if (that.inst == null || that.inst.tag == ERROR)
+            if (that.inst == null || that.inst.hasTag(ERROR))
                     throw inferenceException
                         .setMessage("no.unique.minimal.instance.exists",
                                     that.qtype, lobounds);
@@ -189,13 +189,13 @@ public class Infer {
             Attr.ResultInfo resultInfo,
             Warner warn) throws InferenceException {
         Type to = resultInfo.pt;
-        if (to.tag == NONE || resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
-            to = mtype.getReturnType().tag <= VOID ?
+        if (to.hasTag(NONE) || resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
+            to = mtype.getReturnType().isPrimitiveOrVoid() ?
                     mtype.getReturnType() : syms.objectType;
         }
         Type qtype1 = inferenceContext.asFree(mtype.getReturnType(), types);
         if (!types.isSubtype(qtype1,
-                qtype1.tag == UNDETVAR ? types.boxedTypeOrType(to) : to)) {
+                qtype1.hasTag(UNDETVAR) ? types.boxedTypeOrType(to) : to)) {
             throw inferenceException
                     .setMessage("infer.no.conforming.instance.exists",
                     inferenceContext.restvars(), mtype.getReturnType(), to);
@@ -515,7 +515,7 @@ public class Infer {
             //for remaining uninferred type-vars in the functional interface type,
             //simply replace the wildcards with its bound
             for (Type t : formalInterface.getTypeArguments()) {
-                if (actualTypeargs.head.tag == WILDCARD) {
+                if (actualTypeargs.head.hasTag(WILDCARD)) {
                     WildcardType wt = (WildcardType)actualTypeargs.head;
                     typeargs.append(wt.type);
                 } else {
@@ -592,7 +592,7 @@ public class Infer {
 
             public Type apply(Type t) {
                 t = types.erasure(super.apply(t));
-                if (t.tag == BOT)
+                if (t.hasTag(BOT))
                     // nulls type as the marker type Null (which has no instances)
                     // infer as java.lang.Void for now
                     t = types.boxedClass(syms.voidType).type;
@@ -614,7 +614,7 @@ public class Infer {
         }
 
         public Type apply(Type t) {
-            if (t.tag == TYPEVAR) return new UndetVar((TypeVar)t, types, includeBounds);
+            if (t.hasTag(TYPEVAR)) return new UndetVar((TypeVar)t, types, includeBounds);
             else return t.map(this);
         }
     };

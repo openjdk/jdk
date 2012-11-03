@@ -36,7 +36,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 /**
  * Generate the package index page "overview-summary.html" for the right-hand
  * frame. A click on the package name on this page will update the same frame
- * with the "pacakge-summary.html" file for the clicked package.
+ * with the "package-summary.html" file for the clicked package.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -73,7 +73,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * @see Group
      */
     public PackageIndexWriter(ConfigurationImpl configuration,
-                              String filename)
+                              DocPath filename)
                        throws IOException {
         super(configuration, filename);
         this.root = configuration.root;
@@ -88,7 +88,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     public static void generate(ConfigurationImpl configuration) {
         PackageIndexWriter packgen;
-        String filename = "overview-summary.html";
+        DocPath filename = DocPaths.OVERVIEW_SUMMARY;
         try {
             packgen = new PackageIndexWriter(configuration, filename);
             packgen.buildPackageIndexFile("doclet.Window_Overview_Summary", true);
@@ -178,7 +178,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             Content see = seeLabel;
             see.addContent(" ");
             Content descPara = HtmlTree.P(see);
-            Content descLink = getHyperLink("", "overview_description",
+            Content descLink = getHyperLink(DocLink.fragment("overview_description"),
                 descriptionLabel, "", "");
             descPara.addContent(descLink);
             div.addContent(descPara);
