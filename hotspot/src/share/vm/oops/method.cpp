@@ -35,6 +35,7 @@
 #include "memory/generation.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
+#include "oops/constMethod.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
@@ -57,22 +58,24 @@
 // Implementation of Method
 
 Method* Method::allocate(ClassLoaderData* loader_data,
-                            int byte_code_size,
-                            AccessFlags access_flags,
-                            int compressed_line_number_size,
-                            int localvariable_table_length,
-                            int exception_table_length,
-                            int checked_exceptions_length,
-                            TRAPS) {
+                         int byte_code_size,
+                         AccessFlags access_flags,
+                         int compressed_line_number_size,
+                         int localvariable_table_length,
+                         int exception_table_length,
+                         int checked_exceptions_length,
+                         ConstMethod::MethodType method_type,
+                         TRAPS) {
   assert(!access_flags.is_native() || byte_code_size == 0,
          "native methods should not contain byte codes");
   ConstMethod* cm = ConstMethod::allocate(loader_data,
-                                      byte_code_size,
-                                      compressed_line_number_size,
-                                      localvariable_table_length,
-                                      exception_table_length,
-                                      checked_exceptions_length,
-                                      CHECK_NULL);
+                                          byte_code_size,
+                                          compressed_line_number_size,
+                                          localvariable_table_length,
+                                          exception_table_length,
+                                          checked_exceptions_length,
+                                          method_type,
+                                          CHECK_NULL);
 
   int size = Method::size(access_flags.is_native());
 
@@ -1031,7 +1034,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   methodHandle m;
   {
     Method* m_oop = Method::allocate(loader_data, 0, accessFlags_from(flags_bits),
-                                              0, 0, 0, 0, CHECK_(empty));
+            0, 0, 0, 0, ConstMethod::NORMAL, CHECK_(empty));
     m = methodHandle(THREAD, m_oop);
   }
   m->set_constants(cp());
@@ -1083,15 +1086,16 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
   int localvariable_len = m->localvariable_table_length();
   int exception_table_len = m->exception_table_length();
 
-  ClassLoaderData* loader_data = m()->method_holder()->class_loader_data();
+  ClassLoaderData* loader_data = m->method_holder()->class_loader_data();
   Method* newm_oop = Method::allocate(loader_data,
-                                               new_code_length,
-                                              flags,
-                                              new_compressed_linenumber_size,
-                                              localvariable_len,
-                                              exception_table_len,
-                                              checked_exceptions_len,
-                                              CHECK_(methodHandle()));
+                                      new_code_length,
+                                      flags,
+                                      new_compressed_linenumber_size,
+                                      localvariable_len,
+                                      exception_table_len,
+                                      checked_exceptions_len,
+                                      m->method_type(),
+                                      CHECK_(methodHandle()));
   methodHandle newm (THREAD, newm_oop);
   int new_method_size = newm->method_size();
 
