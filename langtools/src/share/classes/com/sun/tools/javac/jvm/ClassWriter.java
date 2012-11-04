@@ -1540,7 +1540,7 @@ public class ClassWriter extends ClassFile {
         List<Type> interfaces = types.interfaces(c.type);
         List<Type> typarams = c.type.getTypeArguments();
 
-        int flags = adjustFlags(c.flags());
+        int flags = adjustFlags(c.flags() & ~DEFAULT);
         if ((flags & PROTECTED) != 0) flags |= PUBLIC;
         flags = flags & ClassFlags & ~STRICTFP;
         if ((flags & INTERFACE) == 0) flags |= ACC_SUPER;
@@ -1676,6 +1676,8 @@ public class ClassWriter extends ClassFile {
             result |= ACC_BRIDGE;
         if ((flags & VARARGS) != 0  && target.useVarargsFlag())
             result |= ACC_VARARGS;
+        if ((flags & DEFAULT) != 0)
+            result &= ~ABSTRACT;
         return result;
     }
 

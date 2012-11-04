@@ -1192,9 +1192,9 @@ public abstract class Symbol implements Element {
 
             // check for an inherited implementation
             if ((flags() & ABSTRACT) != 0 ||
-                (other.flags() & ABSTRACT) == 0 ||
-                !other.isOverridableIn(origin) ||
-                !this.isMemberOf(origin, types))
+                    (other.flags() & ABSTRACT) == 0 ||
+                    !other.isOverridableIn(origin) ||
+                    !this.isMemberOf(origin, types))
                 return false;
 
             // assert types.asSuper(origin.type, other.owner) != null;
