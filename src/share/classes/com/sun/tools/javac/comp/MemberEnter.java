@@ -560,6 +560,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         MethodSymbol m = new MethodSymbol(0, tree.name, null, enclScope.owner);
         m.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, m, tree);
         tree.sym = m;
+
+        //if this is a default method, add the DEFAULT flag to the enclosing interface
+        if ((tree.mods.flags & DEFAULT) != 0) {
+            m.enclClass().flags_field |= DEFAULT;
+        }
+
         Env<AttrContext> localEnv = methodEnv(tree, env);
 
         DeferredLintHandler prevLintHandler =
@@ -677,7 +683,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             localEnv.info.scope.owner = tree.sym;
         }
         if ((tree.mods.flags & STATIC) != 0 ||
-            (env.enclClass.sym.flags() & INTERFACE) != 0)
+                ((env.enclClass.sym.flags() & INTERFACE) != 0 && env.enclMethod == null))
             localEnv.info.staticLevel++;
         return localEnv;
     }
@@ -1001,20 +1007,19 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 }
             }
 
-            // If this is a class, enter symbols for this and super into
-            // current scope.
-            if ((c.flags_field & INTERFACE) == 0) {
-                VarSymbol thisSym =
-                    new VarSymbol(FINAL | HASINIT, names._this, c.type, c);
-                thisSym.pos = Position.FIRSTPOS;
-                env.info.scope.enter(thisSym);
-                if (ct.supertype_field.hasTag(CLASS)) {
-                    VarSymbol superSym =
-                        new VarSymbol(FINAL | HASINIT, names._super,
-                                      ct.supertype_field, c);
-                    superSym.pos = Position.FIRSTPOS;
-                    env.info.scope.enter(superSym);
-                }
+            // enter symbols for 'this' into current scope.
+            VarSymbol thisSym =
+                new VarSymbol(FINAL | HASINIT, names._this, c.type, c);
+            thisSym.pos = Position.FIRSTPOS;
+            env.info.scope.enter(thisSym);
+            // if this is a class, enter symbol for 'super' into current scope.
+            if ((c.flags_field & INTERFACE) == 0 &&
+                    ct.supertype_field.hasTag(CLASS)) {
+                VarSymbol superSym =
+                    new VarSymbol(FINAL | HASINIT, names._super,
+                                  ct.supertype_field, c);
+                superSym.pos = Position.FIRSTPOS;
+                env.info.scope.enter(superSym);
             }
 
             // check that no package exists with same fully qualified name,

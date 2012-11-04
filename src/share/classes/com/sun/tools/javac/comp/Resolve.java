@@ -52,6 +52,7 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import javax.lang.model.element.ElementVisitor;
 
@@ -88,6 +89,7 @@ public class Resolve {
     public final boolean boxingEnabled; // = source.allowBoxing();
     public final boolean varargsEnabled; // = source.allowVarargs();
     public final boolean allowMethodHandles;
+    public final boolean allowDefaultMethods;
     private final boolean debugResolve;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
 
@@ -122,6 +124,7 @@ public class Resolve {
         verboseResolutionMode = VerboseResolutionMode.getVerboseResolutionMode(options);
         Target target = Target.instance(context);
         allowMethodHandles = target.hasMethodHandles();
+        allowDefaultMethods = source.allowDefaultMethods();
         polymorphicSignatureScope = new Scope(syms.noSymbol);
 
         inapplicableMethodException = new InapplicableMethodException(diags);
@@ -1327,6 +1330,42 @@ public class Resolve {
         }
     }
 
+    Symbol lookupMethod(Env<AttrContext> env,
+            Type site,
+            Name name,
+            List<Type> argtypes,
+            List<Type> typeargtypes,
+            Scope sc,
+            Symbol bestSoFar,
+            boolean allowBoxing,
+            boolean useVarargs,
+            boolean operator,
+            boolean abstractok) {
+        for (Symbol s : sc.getElementsByName(name, new LookupFilter(abstractok))) {
+            bestSoFar = selectBest(env, site, argtypes, typeargtypes, s,
+                    bestSoFar, allowBoxing, useVarargs, operator);
+        }
+        return bestSoFar;
+    }
+    //where
+        class LookupFilter implements Filter<Symbol> {
+
+            boolean abstractOk;
+
+            LookupFilter(boolean abstractOk) {
+                this.abstractOk = abstractOk;
+            }
+
+            public boolean accepts(Symbol s) {
+                long flags = s.flags();
+                return s.kind == MTH &&
+                        (flags & SYNTHETIC) == 0 &&
+                        (abstractOk ||
+                        (flags & DEFAULT) != 0 ||
+                        (flags & ABSTRACT) == 0);
+            }
+        };
+
     /** Find best qualified method matching given name, type and value
      *  arguments.
      *  @param env       The current environment.
@@ -1371,47 +1410,74 @@ public class Resolve {
                               boolean allowBoxing,
                               boolean useVarargs,
                               boolean operator) {
-        boolean abstractOk = true;
-        List<Type> itypes = List.nil();
+        @SuppressWarnings({"unchecked","rawtypes"})
+        List<Type>[] itypes = (List<Type>[])new List[] { List.<Type>nil(), List.<Type>nil() };
+        InterfaceLookupPhase iphase = InterfaceLookupPhase.ABSTRACT_OK;
         for (TypeSymbol s : superclasses(intype)) {
             bestSoFar = lookupMethod(env, site, name, argtypes, typeargtypes,
                     s.members(), bestSoFar, allowBoxing, useVarargs, operator, true);
-            //We should not look for abstract methods if receiver is a concrete class
-            //(as concrete classes are expected to implement all abstracts coming
-            //from superinterfaces)
-            abstractOk &= (s.flags() & (ABSTRACT | INTERFACE | ENUM)) != 0;
-            if (abstractOk) {
+            if (name == names.init) return bestSoFar;
+            iphase = (iphase == null) ? null : iphase.update(s, this);
+            if (iphase != null) {
                 for (Type itype : types.interfaces(s.type)) {
-                    itypes = types.union(types.closure(itype), itypes);
+                    itypes[iphase.ordinal()] = types.union(types.closure(itype), itypes[iphase.ordinal()]);
                 }
             }
-            if (name == names.init) break;
         }
 
         Symbol concrete = bestSoFar.kind < ERR &&
                 (bestSoFar.flags() & ABSTRACT) == 0 ?
                 bestSoFar : methodNotFound;
 
-        if (name != names.init) {
+        for (InterfaceLookupPhase iphase2 : InterfaceLookupPhase.values()) {
+            if (iphase2 == InterfaceLookupPhase.DEFAULT_OK && !allowDefaultMethods) break;
             //keep searching for abstract methods
-            for (Type itype : itypes) {
+            for (Type itype : itypes[iphase2.ordinal()]) {
                 if (!itype.isInterface()) continue; //skip j.l.Object (included by Types.closure())
+                if (iphase2 == InterfaceLookupPhase.DEFAULT_OK &&
+                        (itype.tsym.flags() & DEFAULT) == 0) continue;
                 bestSoFar = lookupMethod(env, site, name, argtypes, typeargtypes,
-                    itype.tsym.members(), bestSoFar, allowBoxing, useVarargs, operator, true);
-                    if (concrete != bestSoFar &&
-                            concrete.kind < ERR  && bestSoFar.kind < ERR &&
-                            types.isSubSignature(concrete.type, bestSoFar.type)) {
-                        //this is an hack - as javac does not do full membership checks
-                        //most specific ends up comparing abstract methods that might have
-                        //been implemented by some concrete method in a subclass and,
-                        //because of raw override, it is possible for an abstract method
-                        //to be more specific than the concrete method - so we need
-                        //to explicitly call that out (see CR 6178365)
-                        bestSoFar = concrete;
-                    }
+                        itype.tsym.members(), bestSoFar, allowBoxing, useVarargs, operator, true);
+                if (concrete != bestSoFar &&
+                        concrete.kind < ERR  && bestSoFar.kind < ERR &&
+                        types.isSubSignature(concrete.type, bestSoFar.type)) {
+                    //this is an hack - as javac does not do full membership checks
+                    //most specific ends up comparing abstract methods that might have
+                    //been implemented by some concrete method in a subclass and,
+                    //because of raw override, it is possible for an abstract method
+                    //to be more specific than the concrete method - so we need
+                    //to explicitly call that out (see CR 6178365)
+                    bestSoFar = concrete;
+                }
             }
         }
         return bestSoFar;
+    }
+
+    enum InterfaceLookupPhase {
+        ABSTRACT_OK() {
+            @Override
+            InterfaceLookupPhase update(Symbol s, Resolve rs) {
+                //We should not look for abstract methods if receiver is a concrete class
+                //(as concrete classes are expected to implement all abstracts coming
+                //from superinterfaces)
+                if ((s.flags() & (ABSTRACT | INTERFACE | ENUM)) != 0) {
+                    return this;
+                } else if (rs.allowDefaultMethods) {
+                    return DEFAULT_OK;
+                } else {
+                    return null;
+                }
+            }
+        },
+        DEFAULT_OK() {
+            @Override
+            InterfaceLookupPhase update(Symbol s, Resolve rs) {
+                return this;
+            }
+        };
+
+        abstract InterfaceLookupPhase update(Symbol s, Resolve rs);
     }
 
     /**
@@ -1466,34 +1532,6 @@ public class Resolve {
             }
         };
     }
-
-    /**
-     * Lookup a method with given name and argument types in a given scope
-     */
-    Symbol lookupMethod(Env<AttrContext> env,
-            Type site,
-            Name name,
-            List<Type> argtypes,
-            List<Type> typeargtypes,
-            Scope sc,
-            Symbol bestSoFar,
-            boolean allowBoxing,
-            boolean useVarargs,
-            boolean operator,
-            boolean abstractok) {
-        for (Symbol s : sc.getElementsByName(name, lookupFilter)) {
-            bestSoFar = selectBest(env, site, argtypes, typeargtypes, s,
-                    bestSoFar, allowBoxing, useVarargs, operator);
-        }
-        return bestSoFar;
-    }
-    //where
-        Filter<Symbol> lookupFilter = new Filter<Symbol>() {
-            public boolean accepts(Symbol s) {
-                return s.kind == MTH &&
-                        (s.flags() & SYNTHETIC) == 0;
-            }
-        };
 
     /** Find unqualified method matching given name, type and value arguments.
      *  @param env       The current environment.
@@ -1920,7 +1958,7 @@ public class Resolve {
     /** Check that sym is not an abstract method.
      */
     void checkNonAbstract(DiagnosticPosition pos, Symbol sym) {
-        if ((sym.flags() & ABSTRACT) != 0)
+        if ((sym.flags() & ABSTRACT) != 0 && (sym.flags() & DEFAULT) == 0)
             log.error(pos, "abstract.cant.be.accessed.directly",
                       kindName(sym), sym, sym.location());
     }
@@ -2744,9 +2782,47 @@ public class Resolve {
             if ((env1.enclClass.sym.flags() & STATIC) != 0) staticOnly = true;
             env1 = env1.outer;
         }
+        if (allowDefaultMethods && c.isInterface() &&
+                name == names._super && !isStatic(env) &&
+                types.isDirectSuperInterface(c.type, env.enclClass.sym)) {
+            //this might be a default super call if one of the superinterfaces is 'c'
+            for (Type t : pruneInterfaces(env.enclClass.type)) {
+                if (t.tsym == c) {
+                    env.info.defaultSuperCallSite = t;
+                    return new VarSymbol(0, names._super,
+                            types.asSuper(env.enclClass.type, c), env.enclClass.sym);
+                }
+            }
+            //find a direct superinterface that is a subtype of 'c'
+            for (Type i : types.interfaces(env.enclClass.type)) {
+                if (i.tsym.isSubClass(c, types) && i.tsym != c) {
+                    log.error(pos, "illegal.default.super.call", c,
+                            diags.fragment("redundant.supertype", c, i));
+                    return syms.errSymbol;
+                }
+            }
+            Assert.error();
+        }
         log.error(pos, "not.encl.class", c);
         return syms.errSymbol;
     }
+    //where
+    private List<Type> pruneInterfaces(Type t) {
+        ListBuffer<Type> result = ListBuffer.lb();
+        for (Type t1 : types.interfaces(t)) {
+            boolean shouldAdd = true;
+            for (Type t2 : types.interfaces(t)) {
+                if (t1 != t2 && types.isSubtypeNoCapture(t2, t1)) {
+                    shouldAdd = false;
+                }
+            }
+            if (shouldAdd) {
+                result.append(t1);
+            }
+        }
+        return result.toList();
+    }
+
 
     /**
      * Resolve `c.this' for an enclosing class c that contains the

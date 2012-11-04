@@ -30,6 +30,7 @@
 import java.io.File;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
@@ -43,13 +44,15 @@ public class EagerInterfaceCompletionTest {
 
     JavaCompiler javacTool;
     File testDir;
+    VersionKind versionKind;
     HierarchyKind hierarchyKind;
     TestKind testKind;
     ActionKind actionKind;
 
-    EagerInterfaceCompletionTest(JavaCompiler javacTool, File testDir,
+    EagerInterfaceCompletionTest(JavaCompiler javacTool, File testDir, VersionKind versionKind,
             HierarchyKind hierarchyKind, TestKind testKind, ActionKind actionKind) {
         this.javacTool = javacTool;
+        this.versionKind = versionKind;
         this.hierarchyKind = hierarchyKind;
         this.testDir = testDir;
         this.testKind = testKind;
@@ -62,7 +65,7 @@ public class EagerInterfaceCompletionTest {
         actionKind.doAction(this);
         DiagnosticChecker dc = new DiagnosticChecker();
         compile(dc, testKind.source);
-        if (testKind.completionFailure(actionKind, hierarchyKind) != dc.errorFound) {
+        if (testKind.completionFailure(versionKind, actionKind, hierarchyKind) != dc.errorFound) {
             if (dc.errorFound) {
                 error("Unexpected completion failure" +
                       "\nhierarhcyKind " + hierarchyKind +
@@ -80,7 +83,8 @@ public class EagerInterfaceCompletionTest {
     void compile(DiagnosticChecker dc, JavaSource... sources) {
         try {
             CompilationTask ct = javacTool.getTask(null, null, dc,
-                    Arrays.asList("-d", testDir.getAbsolutePath(), "-cp", testDir.getAbsolutePath()),
+                    Arrays.asList("-d", testDir.getAbsolutePath(), "-cp",
+                    testDir.getAbsolutePath(), versionKind.optsArr[0], versionKind.optsArr[1]),
                     null, Arrays.asList(sources));
             ct.call();
         }
@@ -108,11 +112,24 @@ public class EagerInterfaceCompletionTest {
         boolean errorFound = false;
 
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            errorFound = true;
+            if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
+                errorFound = true;
+            }
         }
     }
 
     //global declarations
+
+    enum VersionKind {
+        PRE_LAMBDA("-source", "7"),
+        LAMBDA("-source", "8");
+
+        String[] optsArr;
+
+        VersionKind(String... optsArr) {
+            this.optsArr = optsArr;
+        }
+    }
 
     enum HierarchyKind {
         INTERFACE("interface A { boolean f = false; void m(); }\n" +
@@ -157,13 +174,14 @@ public class EagerInterfaceCompletionTest {
             this.source = new JavaSource("Test2.java", code);
         }
 
-        boolean completionFailure(ActionKind ak, HierarchyKind hk) {
+        boolean completionFailure(VersionKind vk, ActionKind ak, HierarchyKind hk) {
             switch (this) {
                 case ACCESS_ONLY:
                 case CONSTR: return ak == ActionKind.REMOVE_B;
                 case FIELD:
                 case SUPER: return true;
-                case METHOD: return hk != HierarchyKind.INTERFACE || ak == ActionKind.REMOVE_B;
+                case METHOD: return hk != HierarchyKind.INTERFACE || ak == ActionKind.REMOVE_B ||
+                        (hk == HierarchyKind.INTERFACE && ak == ActionKind.REMOVE_A && vk == VersionKind.LAMBDA);
                 default: throw new AssertionError("Unexpected test kind " + this);
             }
         }
@@ -173,12 +191,15 @@ public class EagerInterfaceCompletionTest {
         String SCRATCH_DIR = System.getProperty("user.dir");
         JavaCompiler javacTool = ToolProvider.getSystemJavaCompiler();
         int n = 0;
-        for (HierarchyKind hierarchyKind : HierarchyKind.values()) {
-            for (TestKind testKind : TestKind.values()) {
-                for (ActionKind actionKind : ActionKind.values()) {
-                    File testDir = new File(SCRATCH_DIR, "test"+n);
-                    new EagerInterfaceCompletionTest(javacTool, testDir, hierarchyKind, testKind, actionKind).test();
-                    n++;
+        for (VersionKind versionKind : VersionKind.values()) {
+            for (HierarchyKind hierarchyKind : HierarchyKind.values()) {
+                for (TestKind testKind : TestKind.values()) {
+                    for (ActionKind actionKind : ActionKind.values()) {
+                        File testDir = new File(SCRATCH_DIR, "test"+n);
+                        new EagerInterfaceCompletionTest(javacTool, testDir, versionKind,
+                                hierarchyKind, testKind, actionKind).test();
+                        n++;
+                    }
                 }
             }
         }
