@@ -51,6 +51,8 @@ import java.util.Collection;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -450,22 +452,9 @@ public class Resolve {
                         List<Type> typeargtypes,
                         boolean allowBoxing,
                         boolean useVarargs,
-                        Warner warn)
-        throws Infer.InferenceException {
-        if (useVarargs && (m.flags() & VARARGS) == 0) {
-            //better error recovery - if we stumbled upon a non-varargs method
-            //during varargs applicability phase, the method should be treated as
-            //not applicable; the reason for inapplicability can be found in the
-            //candidate for 'm' that was created during the BOX phase.
-            Candidate prevCandidate = currentResolutionContext.getCandidate(m, BOX);
-            JCDiagnostic details = null;
-            if (prevCandidate != null && !prevCandidate.isApplicable()) {
-                details = prevCandidate.details;
-            }
-            throw inapplicableMethodException.setMessage(details);
-        }
-        Type mt = types.memberType(site, m);
+                        Warner warn) throws Infer.InferenceException {
 
+        Type mt = types.memberType(site, m);
         // tvars is the list of formal type variables for which type arguments
         // need to inferred.
         List<Type> tvars = List.nil();
@@ -1023,8 +1012,11 @@ public class Resolve {
                       boolean allowBoxing,
                       boolean useVarargs,
                       boolean operator) {
-        if (sym.kind == ERR) return bestSoFar;
-        if (!sym.isInheritedIn(site.tsym, types)) return bestSoFar;
+        if (sym.kind == ERR ||
+                !sym.isInheritedIn(site.tsym, types) ||
+                (useVarargs && (sym.flags() & VARARGS) == 0)) {
+            return bestSoFar;
+        }
         Assert.check(sym.kind < AMBIGUOUS);
         try {
             Type mt = rawInstantiate(env, site, sym, null, argtypes, typeargtypes,
@@ -1035,13 +1027,13 @@ public class Resolve {
             if (!operator)
                 currentResolutionContext.addInapplicableCandidate(sym, ex.getDiagnostic());
             switch (bestSoFar.kind) {
-            case ABSENT_MTH:
-                return new InapplicableSymbolError(currentResolutionContext);
-            case WRONG_MTH:
-                if (operator) return bestSoFar;
-                bestSoFar = new InapplicableSymbolsError(currentResolutionContext);
-            default:
-                return bestSoFar;
+                case ABSENT_MTH:
+                    return new InapplicableSymbolError(currentResolutionContext);
+                case WRONG_MTH:
+                    if (operator) return bestSoFar;
+                    bestSoFar = new InapplicableSymbolsError(currentResolutionContext);
+                default:
+                    return bestSoFar;
             }
         }
         if (!isAccessible(env, site, sym)) {
@@ -1330,7 +1322,7 @@ public class Resolve {
         }
     }
 
-    Symbol lookupMethod(Env<AttrContext> env,
+    Symbol findMethodInScope(Env<AttrContext> env,
             Type site,
             Name name,
             List<Type> argtypes,
@@ -1414,7 +1406,7 @@ public class Resolve {
         List<Type>[] itypes = (List<Type>[])new List[] { List.<Type>nil(), List.<Type>nil() };
         InterfaceLookupPhase iphase = InterfaceLookupPhase.ABSTRACT_OK;
         for (TypeSymbol s : superclasses(intype)) {
-            bestSoFar = lookupMethod(env, site, name, argtypes, typeargtypes,
+            bestSoFar = findMethodInScope(env, site, name, argtypes, typeargtypes,
                     s.members(), bestSoFar, allowBoxing, useVarargs, operator, true);
             if (name == names.init) return bestSoFar;
             iphase = (iphase == null) ? null : iphase.update(s, this);
@@ -1436,7 +1428,7 @@ public class Resolve {
                 if (!itype.isInterface()) continue; //skip j.l.Object (included by Types.closure())
                 if (iphase2 == InterfaceLookupPhase.DEFAULT_OK &&
                         (itype.tsym.flags() & DEFAULT) == 0) continue;
-                bestSoFar = lookupMethod(env, site, name, argtypes, typeargtypes,
+                bestSoFar = findMethodInScope(env, site, name, argtypes, typeargtypes,
                         itype.tsym.members(), bestSoFar, allowBoxing, useVarargs, operator, true);
                 if (concrete != bestSoFar &&
                         concrete.kind < ERR  && bestSoFar.kind < ERR &&
@@ -1936,7 +1928,7 @@ public class Resolve {
                         ((InapplicableSymbolError)errSym).errCandidate().sym : accessedSym;
 
                 List<Type> argtypes2 = Type.map(argtypes,
-                        deferredAttr.new RecoveryDeferredTypeMap(AttrMode.SPECULATIVE, msym, currentResolutionContext.firstErroneousResolutionPhase()));
+                        deferredAttr.new RecoveryDeferredTypeMap(AttrMode.SPECULATIVE, msym, currentResolutionContext.step));
 
                 if (msym != accessedSym) {
                     //fixup deferred type caches - this 'hack' is required because the symbol
@@ -2030,33 +2022,14 @@ public class Resolve {
                          Name name,
                          List<Type> argtypes,
                          List<Type> typeargtypes) {
-        MethodResolutionContext prevResolutionContext = currentResolutionContext;
-        try {
-            currentResolutionContext = new MethodResolutionContext();
-            Symbol sym = methodNotFound;
-            List<MethodResolutionPhase> steps = methodResolutionSteps;
-            while (steps.nonEmpty() &&
-                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
-                   sym.kind >= ERRONEOUS) {
-                currentResolutionContext.step = env.info.pendingResolutionPhase = steps.head;
-                sym = findFun(env, name, argtypes, typeargtypes,
-                        steps.head.isBoxingRequired,
-                        steps.head.isVarargsRequired);
-                currentResolutionContext.resolutionCache.put(steps.head, sym);
-                steps = steps.tail;
+        return lookupMethod(env, pos, env.enclClass.sym, new BasicLookupHelper(name, env.enclClass.type, argtypes, typeargtypes) {
+            @Override
+            Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+                return findFun(env, name, argtypes, typeargtypes,
+                        phase.isBoxingRequired(),
+                        phase.isVarargsRequired());
             }
-            if (sym.kind >= AMBIGUOUS) {//if nothing is found return the 'first' error
-                MethodResolutionPhase errPhase =
-                        currentResolutionContext.firstErroneousResolutionPhase();
-                sym = accessMethod(currentResolutionContext.resolutionCache.get(errPhase),
-                        pos, env.enclClass.sym.type, name, false, argtypes, typeargtypes);
-                env.info.pendingResolutionPhase = errPhase;
-            }
-            return sym;
-        }
-        finally {
-            currentResolutionContext = prevResolutionContext;
-        }
+        });
     }
 
     /** Resolve a qualified method identifier
@@ -2082,40 +2055,27 @@ public class Resolve {
                                   DiagnosticPosition pos, Env<AttrContext> env,
                                   Symbol location, Type site, Name name, List<Type> argtypes,
                                   List<Type> typeargtypes) {
-        MethodResolutionContext prevResolutionContext = currentResolutionContext;
-        try {
-            currentResolutionContext = resolveContext;
-            Symbol sym = methodNotFound;
-            List<MethodResolutionPhase> steps = methodResolutionSteps;
-            while (steps.nonEmpty() &&
-                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
-                   sym.kind >= ERRONEOUS) {
-                currentResolutionContext.step = env.info.pendingResolutionPhase = steps.head;
-                sym = findMethod(env, site, name, argtypes, typeargtypes,
-                        steps.head.isBoxingRequired(),
-                        steps.head.isVarargsRequired(), false);
-                currentResolutionContext.resolutionCache.put(steps.head, sym);
-                steps = steps.tail;
+        return lookupMethod(env, pos, location, resolveContext, new BasicLookupHelper(name, site, argtypes, typeargtypes) {
+            @Override
+            Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+                return findMethod(env, site, name, argtypes, typeargtypes,
+                        phase.isBoxingRequired(),
+                        phase.isVarargsRequired(), false);
             }
-            if (sym.kind >= AMBIGUOUS) {
-                //if nothing is found return the 'first' error
-                MethodResolutionPhase errPhase =
-                        currentResolutionContext.firstErroneousResolutionPhase();
-                sym = accessMethod(currentResolutionContext.resolutionCache.get(errPhase),
-                        pos, location, site, name, true, argtypes, typeargtypes);
-                env.info.pendingResolutionPhase = errPhase;
-            } else if (allowMethodHandles) {
-                MethodSymbol msym = (MethodSymbol)sym;
-                if (msym.isSignaturePolymorphic(types)) {
-                    env.info.pendingResolutionPhase = BASIC;
-                    return findPolymorphicSignatureInstance(env, sym, argtypes);
+            @Override
+            Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+                if (sym.kind >= AMBIGUOUS) {
+                    sym = super.access(env, pos, location, sym);
+                } else if (allowMethodHandles) {
+                    MethodSymbol msym = (MethodSymbol)sym;
+                    if (msym.isSignaturePolymorphic(types)) {
+                        env.info.pendingResolutionPhase = BASIC;
+                        return findPolymorphicSignatureInstance(env, sym, argtypes);
+                    }
                 }
+                return sym;
             }
-            return sym;
-        }
-        finally {
-            currentResolutionContext = prevResolutionContext;
-        }
+        });
     }
 
     /** Find or create an implicit method of exactly the given type (after erasure).
@@ -2183,38 +2143,53 @@ public class Resolve {
                               List<Type> typeargtypes) {
         return resolveConstructor(new MethodResolutionContext(), pos, env, site, argtypes, typeargtypes);
     }
+
     private Symbol resolveConstructor(MethodResolutionContext resolveContext,
-                              DiagnosticPosition pos,
+                              final DiagnosticPosition pos,
                               Env<AttrContext> env,
                               Type site,
                               List<Type> argtypes,
                               List<Type> typeargtypes) {
-        MethodResolutionContext prevResolutionContext = currentResolutionContext;
-        try {
-            currentResolutionContext = resolveContext;
-            Symbol sym = methodNotFound;
-            List<MethodResolutionPhase> steps = methodResolutionSteps;
-            while (steps.nonEmpty() &&
-                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
-                   sym.kind >= ERRONEOUS) {
-                currentResolutionContext.step = env.info.pendingResolutionPhase = steps.head;
-                sym = findConstructor(pos, env, site, argtypes, typeargtypes,
-                        steps.head.isBoxingRequired(),
-                        steps.head.isVarargsRequired());
-                currentResolutionContext.resolutionCache.put(steps.head, sym);
-                steps = steps.tail;
+        return lookupMethod(env, pos, site.tsym, resolveContext, new BasicLookupHelper(names.init, site, argtypes, typeargtypes) {
+            @Override
+            Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+                return findConstructor(pos, env, site, argtypes, typeargtypes,
+                        phase.isBoxingRequired(),
+                        phase.isVarargsRequired());
             }
-            if (sym.kind >= AMBIGUOUS) {//if nothing is found return the 'first' error
-                MethodResolutionPhase errPhase = currentResolutionContext.firstErroneousResolutionPhase();
-                sym = accessMethod(currentResolutionContext.resolutionCache.get(errPhase),
-                        pos, site, names.init, true, argtypes, typeargtypes);
-                env.info.pendingResolutionPhase = errPhase;
-            }
-            return sym;
-        }
-        finally {
-            currentResolutionContext = prevResolutionContext;
-        }
+        });
+    }
+
+    /** Resolve a constructor, throw a fatal error if not found.
+     *  @param pos       The position to use for error reporting.
+     *  @param env       The environment current at the method invocation.
+     *  @param site      The type to be constructed.
+     *  @param argtypes  The types of the invocation's value arguments.
+     *  @param typeargtypes  The types of the invocation's type arguments.
+     */
+    public MethodSymbol resolveInternalConstructor(DiagnosticPosition pos, Env<AttrContext> env,
+                                        Type site,
+                                        List<Type> argtypes,
+                                        List<Type> typeargtypes) {
+        MethodResolutionContext resolveContext = new MethodResolutionContext();
+        resolveContext.internalResolution = true;
+        Symbol sym = resolveConstructor(resolveContext, pos, env, site, argtypes, typeargtypes);
+        if (sym.kind == MTH) return (MethodSymbol)sym;
+        else throw new FatalError(
+                 diags.fragment("fatal.err.cant.locate.ctor", site));
+    }
+
+    Symbol findConstructor(DiagnosticPosition pos, Env<AttrContext> env,
+                              Type site, List<Type> argtypes,
+                              List<Type> typeargtypes,
+                              boolean allowBoxing,
+                              boolean useVarargs) {
+        Symbol sym = findMethod(env, site,
+                                    names.init, argtypes,
+                                    typeargtypes, allowBoxing,
+                                    useVarargs, false);
+        chk.checkDeprecated(pos, env.info.scope.owner, sym);
+        return sym;
     }
 
     /** Resolve constructor using diamond inference.
@@ -2232,47 +2207,36 @@ public class Resolve {
                               Type site,
                               List<Type> argtypes,
                               List<Type> typeargtypes) {
-        MethodResolutionContext prevResolutionContext = currentResolutionContext;
-        try {
-            currentResolutionContext = new MethodResolutionContext();
-            Symbol sym = methodNotFound;
-            List<MethodResolutionPhase> steps = methodResolutionSteps;
-            while (steps.nonEmpty() &&
-                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
-                   sym.kind >= ERRONEOUS) {
-                currentResolutionContext.step = env.info.pendingResolutionPhase = steps.head;
-                sym = findDiamond(env, site, argtypes, typeargtypes,
-                        steps.head.isBoxingRequired(),
-                        steps.head.isVarargsRequired());
-                currentResolutionContext.resolutionCache.put(steps.head, sym);
-                steps = steps.tail;
+        return lookupMethod(env, pos, site.tsym, new BasicLookupHelper(names.init, site, argtypes, typeargtypes) {
+            @Override
+            Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+                return findDiamond(env, site, argtypes, typeargtypes,
+                        phase.isBoxingRequired(),
+                        phase.isVarargsRequired());
             }
-            if (sym.kind >= AMBIGUOUS) {
-                Symbol errSym =
-                        currentResolutionContext.resolutionCache.get(currentResolutionContext.firstErroneousResolutionPhase());
-                final JCDiagnostic details = errSym.kind == WRONG_MTH ?
-                                ((InapplicableSymbolError)errSym).errCandidate().details :
-                                null;
-                errSym = new InapplicableSymbolError(errSym.kind, "diamondError", currentResolutionContext) {
-                    @Override
-                    JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
-                            Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-                        String key = details == null ?
-                            "cant.apply.diamond" :
-                            "cant.apply.diamond.1";
-                        return diags.create(dkind, log.currentSource(), pos, key,
-                                diags.fragment("diamond", site.tsym), details);
-                    }
-                };
-                MethodResolutionPhase errPhase = currentResolutionContext.firstErroneousResolutionPhase();
-                sym = accessMethod(errSym, pos, site, names.init, true, argtypes, typeargtypes);
-                env.info.pendingResolutionPhase = errPhase;
+            @Override
+            Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+                if (sym.kind >= AMBIGUOUS) {
+                    final JCDiagnostic details = sym.kind == WRONG_MTH ?
+                                    ((InapplicableSymbolError)sym).errCandidate().details :
+                                    null;
+                    sym = new InapplicableSymbolError(sym.kind, "diamondError", currentResolutionContext) {
+                        @Override
+                        JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
+                                Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+                            String key = details == null ?
+                                "cant.apply.diamond" :
+                                "cant.apply.diamond.1";
+                            return diags.create(dkind, log.currentSource(), pos, key,
+                                    diags.fragment("diamond", site.tsym), details);
+                        }
+                    };
+                    sym = accessMethod(sym, pos, site, names.init, true, argtypes, typeargtypes);
+                    env.info.pendingResolutionPhase = currentResolutionContext.step;
+                }
+                return sym;
             }
-            return sym;
-        }
-        finally {
-            currentResolutionContext = prevResolutionContext;
-        }
+        });
     }
 
     /** This method scans all the constructor symbol in a given class scope -
@@ -2319,392 +2283,7 @@ public class Resolve {
         return bestSoFar;
     }
 
-    /**
-     * Resolution of member references is typically done as a single
-     * overload resolution step, where the argument types A are inferred from
-     * the target functional descriptor.
-     *
-     * If the member reference is a method reference with a type qualifier,
-     * a two-step lookup process is performed. The first step uses the
-     * expected argument list A, while the second step discards the first
-     * type from A (which is treated as a receiver type).
-     *
-     * There are two cases in which inference is performed: (i) if the member
-     * reference is a constructor reference and the qualifier type is raw - in
-     * which case diamond inference is used to infer a parameterization for the
-     * type qualifier; (ii) if the member reference is an unbound reference
-     * where the type qualifier is raw - in that case, during the unbound lookup
-     * the receiver argument type is used to infer an instantiation for the raw
-     * qualifier type.
-     *
-     * When a multi-step resolution process is exploited, it is an error
-     * if two candidates are found (ambiguity).
-     *
-     * This routine returns a pair (T,S), where S is the member reference symbol,
-     * and T is the type of the class in which S is defined. This is necessary as
-     * the type T might be dynamically inferred (i.e. if constructor reference
-     * has a raw qualifier).
-     */
-    Pair<Symbol, ReferenceLookupHelper> resolveMemberReference(DiagnosticPosition pos,
-                                  Env<AttrContext> env,
-                                  JCMemberReference referenceTree,
-                                  Type site,
-                                  Name name, List<Type> argtypes,
-                                  List<Type> typeargtypes,
-                                  boolean boxingAllowed) {
-        //step 1 - bound lookup
-        ReferenceLookupHelper boundLookupHelper = name.equals(names.init) ?
-                new ConstructorReferenceLookupHelper(referenceTree, site, argtypes, typeargtypes, boxingAllowed) :
-                new MethodReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, boxingAllowed);
-        Env<AttrContext> boundEnv = env.dup(env.tree, env.info.dup());
-        Symbol boundSym = findMemberReference(boundEnv, boundLookupHelper);
 
-        //step 2 - unbound lookup
-        ReferenceLookupHelper unboundLookupHelper = boundLookupHelper.unboundLookup();
-        Env<AttrContext> unboundEnv = env.dup(env.tree, env.info.dup());
-        Symbol unboundSym = findMemberReference(unboundEnv, unboundLookupHelper);
-
-        //merge results
-        Pair<Symbol, ReferenceLookupHelper> res;
-        if (unboundSym.kind != MTH) {
-            res = new Pair<Symbol, ReferenceLookupHelper>(boundSym, boundLookupHelper);
-            env.info.pendingResolutionPhase = boundEnv.info.pendingResolutionPhase;
-        } else if (boundSym.kind == MTH) {
-            res = new Pair<Symbol, ReferenceLookupHelper>(ambiguityError(boundSym, unboundSym), boundLookupHelper);
-            env.info.pendingResolutionPhase = boundEnv.info.pendingResolutionPhase;
-        } else {
-            res = new Pair<Symbol, ReferenceLookupHelper>(unboundSym, unboundLookupHelper);
-            env.info.pendingResolutionPhase = unboundEnv.info.pendingResolutionPhase;
-        }
-
-        return res;
-    }
-
-    /**
-     * Helper for defining custom method-like lookup logic; a lookup helper
-     * provides hooks for (i) the actual lookup logic and (ii) accessing the
-     * lookup result (this step might result in compiler diagnostics to be generated)
-     */
-    abstract class LookupHelper {
-
-        /** name of the symbol to lookup */
-        Name name;
-
-        /** location in which the lookup takes place */
-        Type site;
-
-        /** actual types used during the lookup */
-        List<Type> argtypes;
-
-        /** type arguments used during the lookup */
-        List<Type> typeargtypes;
-
-        LookupHelper(Name name, Type site, List<Type> argtypes, List<Type> typeargtypes) {
-            this.name = name;
-            this.site = site;
-            this.argtypes = argtypes;
-            this.typeargtypes = typeargtypes;
-        }
-
-        /**
-         * Search for a symbol under a given overload resolution phase - this method
-         * is usually called several times, once per each overload resolution phase
-         */
-        abstract Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase);
-
-        /**
-         * Validate the result of the lookup
-         */
-        abstract Symbol access(Env<AttrContext> env, Symbol symbol);
-    }
-
-    /**
-     * Helper class for member reference lookup. A reference lookup helper
-     * defines the basic logic for member reference lookup; a method gives
-     * access to an 'unbound' helper used to perform an unbound member
-     * reference lookup.
-     */
-    abstract class ReferenceLookupHelper extends LookupHelper {
-
-        /** The member reference tree */
-        JCMemberReference referenceTree;
-
-        /** Max overload resolution phase handled by this helper */
-        MethodResolutionPhase maxPhase;
-
-        ReferenceLookupHelper(JCMemberReference referenceTree, Name name, Type site,
-                List<Type> argtypes, List<Type> typeargtypes, boolean boxingAllowed) {
-            super(name, site, argtypes, typeargtypes);
-            this.referenceTree = referenceTree;
-            this.maxPhase = boxingAllowed ? VARARITY : BASIC;
-        }
-
-        /**
-         * Returns an unbound version of this lookup helper. By default, this
-         * method returns an dummy lookup helper.
-         */
-        ReferenceLookupHelper unboundLookup() {
-            //dummy loopkup helper that always return 'methodNotFound'
-            return new ReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, maxPhase.isBoxingRequired()) {
-                @Override
-                ReferenceLookupHelper unboundLookup() {
-                    return this;
-                }
-                @Override
-                Symbol lookupReference(Env<AttrContext> env, MethodResolutionPhase phase) {
-                    return methodNotFound;
-                }
-                @Override
-                ReferenceKind referenceKind(Symbol sym) {
-                    Assert.error();
-                    return null;
-                }
-            };
-        }
-
-        /**
-         * Get the kind of the member reference
-         */
-        abstract JCMemberReference.ReferenceKind referenceKind(Symbol sym);
-
-        @Override
-        Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
-            return (env.info.pendingResolutionPhase.ordinal() > maxPhase.ordinal()) ?
-                    methodNotFound : lookupReference(env, phase);
-        }
-
-        abstract Symbol lookupReference(Env<AttrContext> env, MethodResolutionPhase phase);
-
-        Symbol access(Env<AttrContext> env, Symbol sym) {
-            if (sym.kind >= AMBIGUOUS) {
-                MethodResolutionPhase errPhase = currentResolutionContext.firstErroneousResolutionPhase();
-                if (errPhase.ordinal() > maxPhase.ordinal()) {
-                    errPhase = maxPhase;
-                }
-                env.info.pendingResolutionPhase = errPhase;
-                sym = currentResolutionContext.resolutionCache.get(errPhase);
-            }
-            return sym;
-        }
-    }
-
-    /**
-     * Helper class for method reference lookup. The lookup logic is based
-     * upon Resolve.findMethod; in certain cases, this helper class has a
-     * corresponding unbound helper class (see UnboundMethodReferenceLookupHelper).
-     * In such cases, non-static lookup results are thrown away.
-     */
-    class MethodReferenceLookupHelper extends ReferenceLookupHelper {
-
-        MethodReferenceLookupHelper(JCMemberReference referenceTree, Name name, Type site,
-                List<Type> argtypes, List<Type> typeargtypes, boolean boxingAllowed) {
-            super(referenceTree, name, site, argtypes, typeargtypes, boxingAllowed);
-        }
-
-        protected Symbol lookupReferenceInternal(Env<AttrContext> env, MethodResolutionPhase phase) {
-            return findMethod(env, site, name, argtypes, typeargtypes,
-                    phase.isBoxingRequired(), phase.isVarargsRequired(), syms.operatorNames.contains(name));
-        }
-
-        protected Symbol adjustLookupResult(Env<AttrContext> env, Symbol sym) {
-            return !TreeInfo.isStaticSelector(referenceTree.expr, names) ||
-                        sym.kind != MTH ||
-                        sym.isStatic() ? sym : new StaticError(sym);
-        }
-
-        @Override
-        final Symbol lookupReference(Env<AttrContext> env, MethodResolutionPhase phase) {
-            return adjustLookupResult(env, lookupReferenceInternal(env, phase));
-        }
-
-        @Override
-        ReferenceLookupHelper unboundLookup() {
-            if (TreeInfo.isStaticSelector(referenceTree.expr, names) &&
-                    argtypes.nonEmpty() &&
-                    types.isSubtypeUnchecked(argtypes.head, site)) {
-                return new UnboundMethodReferenceLookupHelper(referenceTree, name,
-                        site, argtypes, typeargtypes, maxPhase.isBoxingRequired());
-            } else {
-                return super.unboundLookup();
-            }
-        }
-
-        @Override
-        ReferenceKind referenceKind(Symbol sym) {
-            if (sym.isStatic()) {
-                return TreeInfo.isStaticSelector(referenceTree.expr, names) ?
-                        ReferenceKind.STATIC : ReferenceKind.STATIC_EVAL;
-            } else {
-                Name selName = TreeInfo.name(referenceTree.getQualifierExpression());
-                return selName != null && selName == names._super ?
-                        ReferenceKind.SUPER :
-                        ReferenceKind.BOUND;
-            }
-        }
-    }
-
-    /**
-     * Helper class for unbound method reference lookup. Essentially the same
-     * as the basic method reference lookup helper; main difference is that static
-     * lookup results are thrown away. If qualifier type is raw, an attempt to
-     * infer a parameterized type is made using the first actual argument (that
-     * would otherwise be ignored during the lookup).
-     */
-    class UnboundMethodReferenceLookupHelper extends MethodReferenceLookupHelper {
-
-        UnboundMethodReferenceLookupHelper(JCMemberReference referenceTree, Name name, Type site,
-                List<Type> argtypes, List<Type> typeargtypes, boolean boxingAllowed) {
-            super(referenceTree, name,
-                    site.isRaw() ? types.asSuper(argtypes.head, site.tsym) : site,
-                    argtypes.tail, typeargtypes, boxingAllowed);
-        }
-
-        @Override
-        protected Symbol adjustLookupResult(Env<AttrContext> env, Symbol sym) {
-            return sym.kind != MTH || !sym.isStatic() ? sym : new StaticError(sym);
-        }
-
-        @Override
-        ReferenceLookupHelper unboundLookup() {
-            return this;
-        }
-
-        @Override
-        ReferenceKind referenceKind(Symbol sym) {
-            return ReferenceKind.UNBOUND;
-        }
-    }
-
-    /**
-     * Helper class for constructor reference lookup. The lookup logic is based
-     * upon either Resolve.findMethod or Resolve.findDiamond - depending on
-     * whether the constructor reference needs diamond inference (this is the case
-     * if the qualifier type is raw). A special erroneous symbol is returned
-     * if the lookup returns the constructor of an inner class and there's no
-     * enclosing instance in scope.
-     */
-    class ConstructorReferenceLookupHelper extends ReferenceLookupHelper {
-
-        boolean needsInference;
-
-        ConstructorReferenceLookupHelper(JCMemberReference referenceTree, Type site, List<Type> argtypes,
-                List<Type> typeargtypes, boolean boxingAllowed) {
-            super(referenceTree, names.init, site, argtypes, typeargtypes, boxingAllowed);
-            if (site.isRaw()) {
-                this.site = new ClassType(site.getEnclosingType(), site.tsym.type.getTypeArguments(), site.tsym);
-                needsInference = true;
-            }
-        }
-
-        @Override
-        protected Symbol lookupReference(Env<AttrContext> env, MethodResolutionPhase phase) {
-            Symbol sym = needsInference ?
-                findDiamond(env, site, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired()) :
-                findMethod(env, site, name, argtypes, typeargtypes,
-                        phase.isBoxingRequired(), phase.isVarargsRequired(), syms.operatorNames.contains(name));
-            return sym.kind != MTH ||
-                          site.getEnclosingType().hasTag(NONE) ||
-                          hasEnclosingInstance(env, site) ?
-                          sym : new InvalidSymbolError(Kinds.MISSING_ENCL, sym, null) {
-                    @Override
-                    JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-                       return diags.create(dkind, log.currentSource(), pos,
-                            "cant.access.inner.cls.constr", site.tsym.name, argtypes, site.getEnclosingType());
-                    }
-                };
-        }
-
-        @Override
-        ReferenceKind referenceKind(Symbol sym) {
-            return site.getEnclosingType().hasTag(NONE) ?
-                    ReferenceKind.TOPLEVEL : ReferenceKind.IMPLICIT_INNER;
-        }
-    }
-
-    /**
-     * Resolution step for member reference. This generalizes a standard
-     * method/constructor lookup - on each overload resolution step, a
-     * lookup helper class is used to perform the reference lookup; at the end
-     * of the lookup, the helper is used to validate the results.
-     */
-    Symbol findMemberReference(Env<AttrContext> env, LookupHelper lookupHelper) {
-        MethodResolutionContext prevResolutionContext = currentResolutionContext;
-        try {
-            currentResolutionContext = new MethodResolutionContext();
-            Symbol sym = methodNotFound;
-            List<MethodResolutionPhase> steps = methodResolutionSteps;
-            while (steps.nonEmpty() &&
-                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
-                   sym.kind >= ERRONEOUS) {
-                currentResolutionContext.step = env.info.pendingResolutionPhase = steps.head;
-                sym = lookupHelper.lookup(env, steps.head);
-                currentResolutionContext.resolutionCache.put(steps.head, sym);
-                steps = steps.tail;
-            }
-            return lookupHelper.access(env, sym);
-        }
-        finally {
-            currentResolutionContext = prevResolutionContext;
-        }
-    }
-
-    /** Resolve constructor.
-     *  @param pos       The position to use for error reporting.
-     *  @param env       The environment current at the constructor invocation.
-     *  @param site      The type of class for which a constructor is searched.
-     *  @param argtypes  The types of the constructor invocation's value
-     *                   arguments.
-     *  @param typeargtypes  The types of the constructor invocation's type
-     *                   arguments.
-     *  @param allowBoxing Allow boxing and varargs conversions.
-     *  @param useVarargs Box trailing arguments into an array for varargs.
-     */
-    Symbol resolveConstructor(DiagnosticPosition pos, Env<AttrContext> env,
-                              Type site, List<Type> argtypes,
-                              List<Type> typeargtypes,
-                              boolean allowBoxing,
-                              boolean useVarargs) {
-        MethodResolutionContext prevResolutionContext = currentResolutionContext;
-        try {
-            currentResolutionContext = new MethodResolutionContext();
-            return findConstructor(pos, env, site, argtypes, typeargtypes, allowBoxing, useVarargs);
-        }
-        finally {
-            currentResolutionContext = prevResolutionContext;
-        }
-    }
-
-    Symbol findConstructor(DiagnosticPosition pos, Env<AttrContext> env,
-                              Type site, List<Type> argtypes,
-                              List<Type> typeargtypes,
-                              boolean allowBoxing,
-                              boolean useVarargs) {
-        Symbol sym = findMethod(env, site,
-                                    names.init, argtypes,
-                                    typeargtypes, allowBoxing,
-                                    useVarargs, false);
-        chk.checkDeprecated(pos, env.info.scope.owner, sym);
-        return sym;
-    }
-
-    /** Resolve a constructor, throw a fatal error if not found.
-     *  @param pos       The position to use for error reporting.
-     *  @param env       The environment current at the method invocation.
-     *  @param site      The type to be constructed.
-     *  @param argtypes  The types of the invocation's value arguments.
-     *  @param typeargtypes  The types of the invocation's type arguments.
-     */
-    public MethodSymbol resolveInternalConstructor(DiagnosticPosition pos, Env<AttrContext> env,
-                                        Type site,
-                                        List<Type> argtypes,
-                                        List<Type> typeargtypes) {
-        MethodResolutionContext resolveContext = new MethodResolutionContext();
-        resolveContext.internalResolution = true;
-        Symbol sym = resolveConstructor(resolveContext, pos, env, site, argtypes, typeargtypes);
-        if (sym.kind == MTH) return (MethodSymbol)sym;
-        else throw new FatalError(
-                 diags.fragment("fatal.err.cant.locate.ctor", site));
-    }
 
     /** Resolve operator.
      *  @param pos       The position to use for error reporting.
@@ -2754,6 +2333,350 @@ public class Resolve {
                                  Type left,
                                  Type right) {
         return resolveOperator(pos, optag, env, List.of(left, right));
+    }
+
+    /**
+     * Resolution of member references is typically done as a single
+     * overload resolution step, where the argument types A are inferred from
+     * the target functional descriptor.
+     *
+     * If the member reference is a method reference with a type qualifier,
+     * a two-step lookup process is performed. The first step uses the
+     * expected argument list A, while the second step discards the first
+     * type from A (which is treated as a receiver type).
+     *
+     * There are two cases in which inference is performed: (i) if the member
+     * reference is a constructor reference and the qualifier type is raw - in
+     * which case diamond inference is used to infer a parameterization for the
+     * type qualifier; (ii) if the member reference is an unbound reference
+     * where the type qualifier is raw - in that case, during the unbound lookup
+     * the receiver argument type is used to infer an instantiation for the raw
+     * qualifier type.
+     *
+     * When a multi-step resolution process is exploited, it is an error
+     * if two candidates are found (ambiguity).
+     *
+     * This routine returns a pair (T,S), where S is the member reference symbol,
+     * and T is the type of the class in which S is defined. This is necessary as
+     * the type T might be dynamically inferred (i.e. if constructor reference
+     * has a raw qualifier).
+     */
+    Pair<Symbol, ReferenceLookupHelper> resolveMemberReference(DiagnosticPosition pos,
+                                  Env<AttrContext> env,
+                                  JCMemberReference referenceTree,
+                                  Type site,
+                                  Name name, List<Type> argtypes,
+                                  List<Type> typeargtypes,
+                                  boolean boxingAllowed) {
+        MethodResolutionPhase maxPhase = boxingAllowed ? VARARITY : BASIC;
+        //step 1 - bound lookup
+        ReferenceLookupHelper boundLookupHelper = name.equals(names.init) ?
+                new ConstructorReferenceLookupHelper(referenceTree, site, argtypes, typeargtypes, maxPhase) :
+                new MethodReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, maxPhase);
+        Env<AttrContext> boundEnv = env.dup(env.tree, env.info.dup());
+        Symbol boundSym = lookupMethod(boundEnv, env.tree.pos(), site.tsym, boundLookupHelper);
+
+        //step 2 - unbound lookup
+        ReferenceLookupHelper unboundLookupHelper = boundLookupHelper.unboundLookup();
+        Env<AttrContext> unboundEnv = env.dup(env.tree, env.info.dup());
+        Symbol unboundSym = lookupMethod(unboundEnv, env.tree.pos(), site.tsym, unboundLookupHelper);
+
+        //merge results
+        Pair<Symbol, ReferenceLookupHelper> res;
+        if (unboundSym.kind != MTH) {
+            res = new Pair<Symbol, ReferenceLookupHelper>(boundSym, boundLookupHelper);
+            env.info.pendingResolutionPhase = boundEnv.info.pendingResolutionPhase;
+        } else if (boundSym.kind == MTH) {
+            res = new Pair<Symbol, ReferenceLookupHelper>(ambiguityError(boundSym, unboundSym), boundLookupHelper);
+            env.info.pendingResolutionPhase = boundEnv.info.pendingResolutionPhase;
+        } else {
+            res = new Pair<Symbol, ReferenceLookupHelper>(unboundSym, unboundLookupHelper);
+            env.info.pendingResolutionPhase = unboundEnv.info.pendingResolutionPhase;
+        }
+
+        return res;
+    }
+
+    /**
+     * Helper for defining custom method-like lookup logic; a lookup helper
+     * provides hooks for (i) the actual lookup logic and (ii) accessing the
+     * lookup result (this step might result in compiler diagnostics to be generated)
+     */
+    abstract class LookupHelper {
+
+        /** name of the symbol to lookup */
+        Name name;
+
+        /** location in which the lookup takes place */
+        Type site;
+
+        /** actual types used during the lookup */
+        List<Type> argtypes;
+
+        /** type arguments used during the lookup */
+        List<Type> typeargtypes;
+
+        /** Max overload resolution phase handled by this helper */
+        MethodResolutionPhase maxPhase;
+
+        LookupHelper(Name name, Type site, List<Type> argtypes, List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
+            this.name = name;
+            this.site = site;
+            this.argtypes = argtypes;
+            this.typeargtypes = typeargtypes;
+            this.maxPhase = maxPhase;
+        }
+
+        /**
+         * Should lookup stop at given phase with given result
+         */
+        protected boolean shouldStop(Symbol sym, MethodResolutionPhase phase) {
+            return phase.ordinal() > maxPhase.ordinal() ||
+                    sym.kind < ERRONEOUS || sym.kind == AMBIGUOUS;
+        }
+
+        /**
+         * Search for a symbol under a given overload resolution phase - this method
+         * is usually called several times, once per each overload resolution phase
+         */
+        abstract Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase);
+
+        /**
+         * Validate the result of the lookup
+         */
+        abstract Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym);
+    }
+
+    abstract class BasicLookupHelper extends LookupHelper {
+
+        BasicLookupHelper(Name name, Type site, List<Type> argtypes, List<Type> typeargtypes) {
+            super(name, site, argtypes, typeargtypes, MethodResolutionPhase.VARARITY);
+        }
+
+        @Override
+        Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+            if (sym.kind >= AMBIGUOUS) {
+                //if nothing is found return the 'first' error
+                sym = accessMethod(sym, pos, location, site, name, true, argtypes, typeargtypes);
+            }
+            return sym;
+        }
+    }
+
+    /**
+     * Helper class for member reference lookup. A reference lookup helper
+     * defines the basic logic for member reference lookup; a method gives
+     * access to an 'unbound' helper used to perform an unbound member
+     * reference lookup.
+     */
+    abstract class ReferenceLookupHelper extends LookupHelper {
+
+        /** The member reference tree */
+        JCMemberReference referenceTree;
+
+        ReferenceLookupHelper(JCMemberReference referenceTree, Name name, Type site,
+                List<Type> argtypes, List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
+            super(name, site, argtypes, typeargtypes, maxPhase);
+            this.referenceTree = referenceTree;
+
+        }
+
+        /**
+         * Returns an unbound version of this lookup helper. By default, this
+         * method returns an dummy lookup helper.
+         */
+        ReferenceLookupHelper unboundLookup() {
+            //dummy loopkup helper that always return 'methodNotFound'
+            return new ReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, maxPhase) {
+                @Override
+                ReferenceLookupHelper unboundLookup() {
+                    return this;
+                }
+                @Override
+                Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+                    return methodNotFound;
+                }
+                @Override
+                ReferenceKind referenceKind(Symbol sym) {
+                    Assert.error();
+                    return null;
+                }
+            };
+        }
+
+        /**
+         * Get the kind of the member reference
+         */
+        abstract JCMemberReference.ReferenceKind referenceKind(Symbol sym);
+
+        Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+            //skip error reporting
+            return sym;
+        }
+    }
+
+    /**
+     * Helper class for method reference lookup. The lookup logic is based
+     * upon Resolve.findMethod; in certain cases, this helper class has a
+     * corresponding unbound helper class (see UnboundMethodReferenceLookupHelper).
+     * In such cases, non-static lookup results are thrown away.
+     */
+    class MethodReferenceLookupHelper extends ReferenceLookupHelper {
+
+        MethodReferenceLookupHelper(JCMemberReference referenceTree, Name name, Type site,
+                List<Type> argtypes, List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
+            super(referenceTree, name, site, argtypes, typeargtypes, maxPhase);
+        }
+
+        protected Symbol lookupReferenceInternal(Env<AttrContext> env, MethodResolutionPhase phase) {
+            return findMethod(env, site, name, argtypes, typeargtypes,
+                    phase.isBoxingRequired(), phase.isVarargsRequired(), syms.operatorNames.contains(name));
+        }
+
+        protected Symbol adjustLookupResult(Env<AttrContext> env, Symbol sym) {
+            return !TreeInfo.isStaticSelector(referenceTree.expr, names) ||
+                        sym.kind != MTH ||
+                        sym.isStatic() ? sym : new StaticError(sym);
+        }
+
+        @Override
+        final Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+            return adjustLookupResult(env, lookupReferenceInternal(env, phase));
+        }
+
+        @Override
+        ReferenceLookupHelper unboundLookup() {
+            if (TreeInfo.isStaticSelector(referenceTree.expr, names) &&
+                    argtypes.nonEmpty() &&
+                    types.isSubtypeUnchecked(argtypes.head, site)) {
+                return new UnboundMethodReferenceLookupHelper(referenceTree, name,
+                        site, argtypes, typeargtypes, maxPhase);
+            } else {
+                return super.unboundLookup();
+            }
+        }
+
+        @Override
+        ReferenceKind referenceKind(Symbol sym) {
+            if (sym.isStatic()) {
+                return TreeInfo.isStaticSelector(referenceTree.expr, names) ?
+                        ReferenceKind.STATIC : ReferenceKind.STATIC_EVAL;
+            } else {
+                Name selName = TreeInfo.name(referenceTree.getQualifierExpression());
+                return selName != null && selName == names._super ?
+                        ReferenceKind.SUPER :
+                        ReferenceKind.BOUND;
+            }
+        }
+    }
+
+    /**
+     * Helper class for unbound method reference lookup. Essentially the same
+     * as the basic method reference lookup helper; main difference is that static
+     * lookup results are thrown away. If qualifier type is raw, an attempt to
+     * infer a parameterized type is made using the first actual argument (that
+     * would otherwise be ignored during the lookup).
+     */
+    class UnboundMethodReferenceLookupHelper extends MethodReferenceLookupHelper {
+
+        UnboundMethodReferenceLookupHelper(JCMemberReference referenceTree, Name name, Type site,
+                List<Type> argtypes, List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
+            super(referenceTree, name,
+                    site.isRaw() ? types.asSuper(argtypes.head, site.tsym) : site,
+                    argtypes.tail, typeargtypes, maxPhase);
+        }
+
+        @Override
+        protected Symbol adjustLookupResult(Env<AttrContext> env, Symbol sym) {
+            return sym.kind != MTH || !sym.isStatic() ? sym : new StaticError(sym);
+        }
+
+        @Override
+        ReferenceLookupHelper unboundLookup() {
+            return this;
+        }
+
+        @Override
+        ReferenceKind referenceKind(Symbol sym) {
+            return ReferenceKind.UNBOUND;
+        }
+    }
+
+    /**
+     * Helper class for constructor reference lookup. The lookup logic is based
+     * upon either Resolve.findMethod or Resolve.findDiamond - depending on
+     * whether the constructor reference needs diamond inference (this is the case
+     * if the qualifier type is raw). A special erroneous symbol is returned
+     * if the lookup returns the constructor of an inner class and there's no
+     * enclosing instance in scope.
+     */
+    class ConstructorReferenceLookupHelper extends ReferenceLookupHelper {
+
+        boolean needsInference;
+
+        ConstructorReferenceLookupHelper(JCMemberReference referenceTree, Type site, List<Type> argtypes,
+                List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
+            super(referenceTree, names.init, site, argtypes, typeargtypes, maxPhase);
+            if (site.isRaw()) {
+                this.site = new ClassType(site.getEnclosingType(), site.tsym.type.getTypeArguments(), site.tsym);
+                needsInference = true;
+            }
+        }
+
+        @Override
+        protected Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+            Symbol sym = needsInference ?
+                findDiamond(env, site, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired()) :
+                findMethod(env, site, name, argtypes, typeargtypes,
+                        phase.isBoxingRequired(), phase.isVarargsRequired(), syms.operatorNames.contains(name));
+            return sym.kind != MTH ||
+                          site.getEnclosingType().hasTag(NONE) ||
+                          hasEnclosingInstance(env, site) ?
+                          sym : new InvalidSymbolError(Kinds.MISSING_ENCL, sym, null) {
+                    @Override
+                    JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+                       return diags.create(dkind, log.currentSource(), pos,
+                            "cant.access.inner.cls.constr", site.tsym.name, argtypes, site.getEnclosingType());
+                    }
+                };
+        }
+
+        @Override
+        ReferenceKind referenceKind(Symbol sym) {
+            return site.getEnclosingType().hasTag(NONE) ?
+                    ReferenceKind.TOPLEVEL : ReferenceKind.IMPLICIT_INNER;
+        }
+    }
+
+    /**
+     * Main overload resolution routine. On each overload resolution step, a
+     * lookup helper class is used to perform the method/constructor lookup;
+     * at the end of the lookup, the helper is used to validate the results
+     * (this last step might trigger overload resolution diagnostics).
+     */
+    Symbol lookupMethod(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, LookupHelper lookupHelper) {
+        return lookupMethod(env, pos, location, new MethodResolutionContext(), lookupHelper);
+    }
+
+    Symbol lookupMethod(Env<AttrContext> env, DiagnosticPosition pos, Symbol location,
+            MethodResolutionContext resolveContext, LookupHelper lookupHelper) {
+        MethodResolutionContext prevResolutionContext = currentResolutionContext;
+        try {
+            Symbol bestSoFar = methodNotFound;
+            currentResolutionContext = resolveContext;
+            for (MethodResolutionPhase phase : methodResolutionSteps) {
+                if (!phase.isApplicable(boxingEnabled, varargsEnabled) ||
+                        lookupHelper.shouldStop(bestSoFar, phase)) break;
+                MethodResolutionPhase prevPhase = currentResolutionContext.step;
+                Symbol prevBest = bestSoFar;
+                currentResolutionContext.step = phase;
+                bestSoFar = phase.mergeResults(bestSoFar, lookupHelper.lookup(env, phase));
+                env.info.pendingResolutionPhase = (prevBest == bestSoFar) ? prevPhase : phase;
+            }
+            return lookupHelper.access(env, pos, location, bestSoFar);
+        } finally {
+            currentResolutionContext = prevResolutionContext;
+        }
     }
 
     /**
@@ -3190,20 +3113,14 @@ public class Resolve {
             return types.createErrorType(name, location, syms.errSymbol.type).tsym;
         }
 
-        protected boolean shouldReport(Candidate c) {
-            MethodResolutionPhase errPhase = resolveContext.firstErroneousResolutionPhase();
-            return !c.isApplicable() &&
-                    c.step == errPhase;
-        }
-
         private Candidate errCandidate() {
+            Candidate bestSoFar = null;
             for (Candidate c : resolveContext.candidates) {
-                if (shouldReport(c)) {
-                    return c;
-                }
+                if (c.isApplicable()) continue;
+                bestSoFar = c;
             }
-            Assert.error();
-            return null;
+            Assert.checkNonNull(bestSoFar);
+            return bestSoFar;
         }
     }
 
@@ -3232,7 +3149,7 @@ public class Resolve {
                         pos,
                         "cant.apply.symbols",
                         name == names.init ? KindName.CONSTRUCTOR : absentKind(kind),
-                        getName(),
+                        name == names.init ? site.tsym.name : name,
                         argtypes);
                 return new JCDiagnostic.MultilineDiagnostic(err, candidateDetails(site));
             } else {
@@ -3243,24 +3160,17 @@ public class Resolve {
 
         //where
         List<JCDiagnostic> candidateDetails(Type site) {
-            List<JCDiagnostic> details = List.nil();
+            Map<Symbol, JCDiagnostic> details = new LinkedHashMap<Symbol, JCDiagnostic>();
             for (Candidate c : resolveContext.candidates) {
-                if (!shouldReport(c)) continue;
+                if (c.isApplicable()) continue;
                 JCDiagnostic detailDiag = diags.fragment("inapplicable.method",
                         Kinds.kindName(c.sym),
                         c.sym.location(site, types),
                         c.sym.asMemberOf(site, types),
                         c.details);
-                details = details.prepend(detailDiag);
+                details.put(c.sym, detailDiag);
             }
-            return details.reverse();
-        }
-
-        private Name getName() {
-            Symbol sym = resolveContext.candidates.head.sym;
-            return sym.name == names.init ?
-                sym.owner.name :
-                sym.name;
+            return List.from(details.values());
         }
     }
 
@@ -3398,7 +3308,21 @@ public class Resolve {
     enum MethodResolutionPhase {
         BASIC(false, false),
         BOX(true, false),
-        VARARITY(true, true);
+        VARARITY(true, true) {
+            @Override
+            public Symbol mergeResults(Symbol bestSoFar, Symbol sym) {
+                switch (sym.kind) {
+                    case WRONG_MTH:
+                        return (bestSoFar.kind == WRONG_MTH || bestSoFar.kind == WRONG_MTHS) ?
+                            bestSoFar :
+                            sym;
+                    case ABSENT_MTH:
+                        return bestSoFar;
+                    default:
+                        return sym;
+                }
+            }
+        };
 
         boolean isBoxingRequired;
         boolean isVarargsRequired;
@@ -3420,6 +3344,10 @@ public class Resolve {
             return (varargsEnabled || !isVarargsRequired) &&
                    (boxingEnabled || !isBoxingRequired);
         }
+
+        public Symbol mergeResults(Symbol prev, Symbol sym) {
+            return sym;
+        }
     }
 
     final List<MethodResolutionPhase> methodResolutionSteps = List.of(BASIC, BOX, VARARITY);
@@ -3435,28 +3363,10 @@ public class Resolve {
 
         private List<Candidate> candidates = List.nil();
 
-        private Map<MethodResolutionPhase, Symbol> resolutionCache =
-            new EnumMap<MethodResolutionPhase, Symbol>(MethodResolutionPhase.class);
-
         MethodResolutionPhase step = null;
 
         private boolean internalResolution = false;
         private DeferredAttr.AttrMode attrMode = DeferredAttr.AttrMode.SPECULATIVE;
-
-        private MethodResolutionPhase firstErroneousResolutionPhase() {
-            MethodResolutionPhase bestSoFar = BASIC;
-            Symbol sym = methodNotFound;
-            List<MethodResolutionPhase> steps = methodResolutionSteps;
-            while (steps.nonEmpty() &&
-                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
-                   sym.kind >= WRONG_MTHS) {
-                sym = resolutionCache.get(steps.head);
-                if (sym.kind == ABSENT_MTH) break; //ignore spurious empty entries
-                bestSoFar = steps.head;
-                steps = steps.tail;
-            }
-            return bestSoFar;
-        }
 
         void addInapplicableCandidate(Symbol sym, JCDiagnostic details) {
             Candidate c = new Candidate(currentResolutionContext.step, sym, details, null);
@@ -3466,16 +3376,6 @@ public class Resolve {
         void addApplicableCandidate(Symbol sym, Type mtype) {
             Candidate c = new Candidate(currentResolutionContext.step, sym, null, mtype);
             candidates = candidates.append(c);
-        }
-
-        Candidate getCandidate(Symbol sym, MethodResolutionPhase phase) {
-            for (Candidate c : currentResolutionContext.candidates) {
-                if (c.step == phase &&
-                        c.sym.baseSymbol() == sym.baseSymbol()) {
-                    return c;
-                }
-            }
-            return null;
         }
 
         /**

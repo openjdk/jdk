@@ -502,7 +502,7 @@ public class Lower extends TreeTranslator {
         JCNewClass tree = make.NewClass(null,
             null, make.QualIdent(ctype.tsym), args, null);
         tree.constructor = rs.resolveConstructor(
-            make_pos, attrEnv, ctype, TreeInfo.types(args), null, false, false);
+            make_pos, attrEnv, ctype, TreeInfo.types(args), List.<Type>nil());
         tree.type = ctype;
         return tree;
     }
