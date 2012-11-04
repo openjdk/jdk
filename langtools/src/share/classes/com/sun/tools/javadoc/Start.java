@@ -394,6 +394,9 @@ class Start {
                 // legacy?
                 languageVersion == null || languageVersion == LanguageVersion.JAVA_1_1, quiet);
 
+        // release resources
+        comp = null;
+
         // pass off control to the doclet
         boolean ok = root != null;
         if (ok) ok = docletInvoker.start(root);
