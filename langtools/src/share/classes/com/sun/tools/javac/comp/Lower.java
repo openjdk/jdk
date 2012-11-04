@@ -3631,15 +3631,26 @@ public class Lower extends TreeTranslator {
 
     public void visitSelect(JCFieldAccess tree) {
         // need to special case-access of the form C.super.x
-        // these will always need an access method.
+        // these will always need an access method, unless C
+        // is a default interface subclassed by the current class.
         boolean qualifiedSuperAccess =
             tree.selected.hasTag(SELECT) &&
-            TreeInfo.name(tree.selected) == names._super;
+            TreeInfo.name(tree.selected) == names._super &&
+            !types.isDirectSuperInterface(((JCFieldAccess)tree.selected).selected.type, currentClass);
         tree.selected = translate(tree.selected);
-        if (tree.name == names._class)
+        if (tree.name == names._class) {
             result = classOf(tree.selected);
-        else if (tree.name == names._this || tree.name == names._super)
+        }
+        else if (tree.name == names._super &&
+                types.isDirectSuperInterface(tree.selected.type, currentClass)) {
+            //default super call!! Not a classic qualified super call
+            TypeSymbol supSym = tree.selected.type.tsym;
+            Assert.checkNonNull(types.asSuper(currentClass.type, supSym));
+            result = tree;
+        }
+        else if (tree.name == names._this || tree.name == names._super) {
             result = makeThis(tree.pos(), tree.selected.type.tsym);
+        }
         else
             result = access(tree.sym, tree, enclOp, qualifiedSuperAccess);
     }

@@ -135,6 +135,7 @@ public class Attr extends JCTree.Visitor {
         allowStringsInSwitch = source.allowStringsInSwitch();
         allowPoly = source.allowPoly() && options.isSet("allowPoly");
         allowLambda = source.allowLambda();
+        allowDefaultMethods = source.allowDefaultMethods();
         sourceName = source.name;
         relax = (options.isSet("-retrofit") ||
                  options.isSet("-relax"));
@@ -177,6 +178,10 @@ public class Attr extends JCTree.Visitor {
     /** Switch: support covariant result types?
      */
     boolean allowCovariantReturns;
+
+    /** Switch: support default methods ?
+     */
+    boolean allowDefaultMethods;
 
     /** Switch: support lambda expressions ?
      */
@@ -898,6 +903,10 @@ public class Attr extends JCTree.Visitor {
 
             localEnv.info.lint = lint;
 
+            if (isDefaultMethod && types.overridesObjectMethod(m)) {
+                log.error(tree, "default.overrides.object.member", m.name, Kinds.kindName(m.location()), m.location());
+            }
+
             // Enter all type parameters into the local method scope.
             for (List<JCTypeParameter> l = tree.typarams; l.nonEmpty(); l = l.tail)
                 localEnv.info.scope.enterIfAbsent(l.head.type.tsym);
@@ -961,10 +970,12 @@ public class Attr extends JCTree.Visitor {
                         log.error(tree.pos(),
                                   "default.allowed.in.intf.annotation.member");
                 }
-            } else if ((owner.flags() & INTERFACE) != 0 && !isDefaultMethod) {
-                log.error(tree.body.pos(), "intf.meth.cant.have.body");
-            } else if ((tree.mods.flags & ABSTRACT) != 0) {
-                log.error(tree.pos(), "abstract.meth.cant.have.body");
+            } else if ((tree.sym.flags() & ABSTRACT) != 0 && !isDefaultMethod) {
+                if ((owner.flags() & INTERFACE) != 0) {
+                    log.error(tree.body.pos(), "intf.meth.cant.have.body");
+                } else {
+                    log.error(tree.pos(), "abstract.meth.cant.have.body");
+                }
             } else if ((tree.mods.flags & NATIVE) != 0) {
                 log.error(tree.pos(), "native.meth.cant.have.body");
             } else {
@@ -3281,6 +3292,23 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
+        if (env.info.defaultSuperCallSite != null &&
+                !types.interfaceCandidates(env.enclClass.type, (MethodSymbol)sym, true).contains(sym)) {
+            Symbol ovSym = null;
+            for (MethodSymbol msym : types.interfaceCandidates(env.enclClass.type, (MethodSymbol)sym, true)) {
+                if (msym.overrides(sym, msym.enclClass(), types, true)) {
+                    for (Type i : types.interfaces(env.enclClass.type)) {
+                        if (i.tsym.isSubClass(msym.owner, types)) {
+                            ovSym = i.tsym;
+                            break;
+                        }
+                    }
+                }
+            }
+            log.error(env.tree.pos(), "illegal.default.super.call", env.info.defaultSuperCallSite,
+                    diags.fragment("overridden.default", sym, ovSym));
+        }
+
         // Compute the identifier's instantiated type.
         // For methods, we need to compute the instance type by
         // Resolve.instantiate from the symbol's type as well as
@@ -3700,6 +3728,9 @@ public class Attr extends JCTree.Visitor {
             // are compatible (i.e. no two define methods with same arguments
             // yet different return types).  (JLS 8.4.6.3)
             chk.checkCompatibleSupertypes(tree.pos(), c.type);
+            if (allowDefaultMethods) {
+                chk.checkDefaultMethodClashes(tree.pos(), c.type);
+            }
         }
 
         // Check that class does not import the same parameterized interface
