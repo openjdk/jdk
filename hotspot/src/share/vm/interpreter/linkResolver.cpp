@@ -786,7 +786,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result, methodHandle
 
     if (check_access &&
         // a) check if ACC_SUPER flag is set for the current class
-        current_klass->is_super() &&
+        (current_klass->is_super() || !AllowNonVirtualCalls) &&
         // b) check if the method class is a superclass of the current class (superclass relation is not reflexive!)
         current_klass->is_subtype_of(method_klass()) && current_klass() != method_klass() &&
         // c) check if the method is not <init>

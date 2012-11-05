@@ -3602,7 +3602,10 @@ class CommandLineFlags {
           "Enable internal testing APIs")                                   \
                                                                             \
   product(bool, PrintGCCause, true,                                         \
-          "Include GC cause in GC logging")
+          "Include GC cause in GC logging")                                 \
+                                                                            \
+  product(bool, AllowNonVirtualCalls, false,                                \
+          "Obey the ACC_SUPER flag and allow invokenonvirtual calls")
 
 /*
  *  Macros for factoring of globals
