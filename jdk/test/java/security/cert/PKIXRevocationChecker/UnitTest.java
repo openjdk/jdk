@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6854712
+ * @bug 6854712 7171570
  * @summary Basic unit test for PKIXRevocationChecker
  */
 
@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathChecker;
 import java.security.cert.CertPathValidator;
 import java.security.cert.Extension;
@@ -58,8 +59,7 @@ public class UnitTest {
         requireNull(prc.getOCSPResponder(), "getOCSPResponder()");
         requireNull(prc.getOCSPResponderCert(), "getOCSPResponderCert()");
         requireEmpty(prc.getOCSPExtensions(), "getOCSPExtensions()");
-        requireEmpty(prc.getOCSPStapledResponses(),
-                     "getOCSPStapledResponses()");
+        requireEmpty(prc.getOCSPResponses(), "getOCSPResponses()");
         requireEmpty(prc.getOptions(), "getOptions()");
 
         System.out.println("Testing that get methods return same parameters " +
@@ -94,11 +94,24 @@ public class UnitTest {
         requireNull(prc.getOCSPResponderCert(), "getOCSPResponderCert()");
         prc.setOCSPExtensions(null);
         requireEmpty(prc.getOCSPExtensions(), "getOCSPExtensions()");
-        prc.setOCSPStapledResponses(null);
-        requireEmpty(prc.getOCSPStapledResponses(),
-                     "getOCSPStapledResponses()");
+        prc.setOCSPResponses(null);
+        requireEmpty(prc.getOCSPResponses(), "getOCSPResponses()");
         prc.setOptions(null);
         requireEmpty(prc.getOptions(), "getOptions()");
+
+        System.out.println("Testing that getRevocationChecker returns new " +
+                           "instance each time");
+        CertPathChecker first = cpv.getRevocationChecker();
+        CertPathChecker second = cpv.getRevocationChecker();
+        if (first == second) {
+            throw new Exception("FAILED: CertPathCheckers not new instances");
+        }
+        CertPathBuilder cpb = CertPathBuilder.getInstance("PKIX");
+        first = cpb.getRevocationChecker();
+        second = cpb.getRevocationChecker();
+        if (first == second) {
+            throw new Exception("FAILED: CertPathCheckers not new instances");
+        }
     }
 
     static void requireNull(Object o, String msg) throws Exception {
