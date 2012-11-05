@@ -35,7 +35,8 @@
  */
 
 package java.util.concurrent;
-import java.util.concurrent.locks.*;
+import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.*;
 
 /**
@@ -222,7 +223,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
         /** Node is fulfilling another unfulfilled DATA or REQUEST */
         static final int FULFILLING = 2;
 
-        /** Return true if m has fulfilling bit set */
+        /** Returns true if m has fulfilling bit set. */
         static boolean isFulfilling(int m) { return (m & FULFILLING) != 0; }
 
         /** Node class for TransferStacks. */
@@ -430,9 +431,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              * and don't wait at all, so are trapped in transfer
              * method rather than calling awaitFulfill.
              */
-            long lastTime = timed ? System.nanoTime() : 0;
+            final long deadline = timed ? System.nanoTime() + nanos : 0L;
             Thread w = Thread.currentThread();
-            SNode h = head;
             int spins = (shouldSpin(s) ?
                          (timed ? maxTimedSpins : maxUntimedSpins) : 0);
             for (;;) {
@@ -442,10 +442,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                 if (m != null)
                     return m;
                 if (timed) {
-                    long now = System.nanoTime();
-                    nanos -= now - lastTime;
-                    lastTime = now;
-                    if (nanos <= 0) {
+                    nanos = deadline - System.nanoTime();
+                    if (nanos <= 0L) {
                         s.tryCancel();
                         continue;
                     }
@@ -737,7 +735,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
          */
         Object awaitFulfill(QNode s, E e, boolean timed, long nanos) {
             /* Same idea as TransferStack.awaitFulfill */
-            long lastTime = timed ? System.nanoTime() : 0;
+            final long deadline = timed ? System.nanoTime() + nanos : 0L;
             Thread w = Thread.currentThread();
             int spins = ((head.next == s) ?
                          (timed ? maxTimedSpins : maxUntimedSpins) : 0);
@@ -748,10 +746,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                 if (x != e)
                     return x;
                 if (timed) {
-                    long now = System.nanoTime();
-                    nanos -= now - lastTime;
-                    lastTime = now;
-                    if (nanos <= 0) {
+                    nanos = deadline - System.nanoTime();
+                    if (nanos <= 0L) {
                         s.tryCancel(e);
                         continue;
                     }
@@ -874,9 +870,9 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
-    public void put(E o) throws InterruptedException {
-        if (o == null) throw new NullPointerException();
-        if (transferer.transfer(o, false, 0) == null) {
+    public void put(E e) throws InterruptedException {
+        if (e == null) throw new NullPointerException();
+        if (transferer.transfer(e, false, 0) == null) {
             Thread.interrupted();
             throw new InterruptedException();
         }
@@ -891,10 +887,10 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
-    public boolean offer(E o, long timeout, TimeUnit unit)
+    public boolean offer(E e, long timeout, TimeUnit unit)
         throws InterruptedException {
-        if (o == null) throw new NullPointerException();
-        if (transferer.transfer(o, true, unit.toNanos(timeout)) != null)
+        if (e == null) throw new NullPointerException();
+        if (transferer.transfer(e, true, unit.toNanos(timeout)) != null)
             return true;
         if (!Thread.interrupted())
             return false;
@@ -1162,9 +1158,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     private WaitQueue waitingConsumers;
 
     /**
-     * Saves the state to a stream (that is, serializes it).
-     *
-     * @param s the stream
+     * Saves this queue to a stream (that is, serializes it).
      */
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
@@ -1182,6 +1176,9 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
         s.defaultWriteObject();
     }
 
+    /**
+     * Reconstitutes this queue from a stream (that is, deserializes it).
+     */
     private void readObject(final java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();

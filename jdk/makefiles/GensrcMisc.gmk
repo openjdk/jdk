@@ -77,32 +77,6 @@ endif
 
 ##########################################################################################
 
-ifndef OPENJDK
-ifneq ($(OPENJDK_TARGET_OS), windows)
-ifneq ($(OPENJDK_TARGET_OS), macosx)
-    # These file(s) are needed for building fake .so libs on !windows for jdbcodbc
-
-    $(JDK_OUTPUTDIR)/gensrc_c/libjdbcodbc/dummyodbc1.c : 
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(ECHO) Creating $@
-	$(PRINTF) "void dummyOdbc(void){}\n" > $@
-	$(ECHO) Created $@
-
-    $(JDK_OUTPUTDIR)/gensrc_c/libjdbcodbc/dummyodbc2.c : 
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(ECHO) Creating $@
-	$(PRINTF) "void dummyOdbc(void){}\n" > $@
-	$(ECHO) Created $@
-
-    GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc_c/libjdbcodbc/dummyodbc1.c $(JDK_OUTPUTDIR)/gensrc_c/libjdbcodbc/dummyodbc2.c
-endif
-endif
-endif
-
-##########################################################################################
-
 GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc_misc/sun/nio/ch/SocketOptionRegistry.java
 
 GENSRC_SOR_SRC := $(JDK_TOPDIR)/src/share/native/sun/nio/ch

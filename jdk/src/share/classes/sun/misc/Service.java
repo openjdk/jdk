@@ -284,12 +284,20 @@ public final class Service<S> {
             }
             String cn = nextName;
             nextName = null;
+            Class<?> c = null;
             try {
-                return service.cast(Class.forName(cn, true, loader).newInstance());
+                c = Class.forName(cn, false, loader);
             } catch (ClassNotFoundException x) {
                 fail(service,
                      "Provider " + cn + " not found");
-            } catch (Exception x) {
+            }
+            if (!service.isAssignableFrom(c)) {
+                fail(service,
+                     "Provider " + cn  + " not a subtype");
+            }
+            try {
+                return service.cast(c.newInstance());
+            } catch (Throwable x) {
                 fail(service,
                      "Provider " + cn + " could not be instantiated: " + x,
                      x);

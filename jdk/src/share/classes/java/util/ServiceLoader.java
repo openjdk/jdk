@@ -358,14 +358,21 @@ public final class ServiceLoader<S>
             }
             String cn = nextName;
             nextName = null;
+            Class<?> c = null;
             try {
-                S p = service.cast(Class.forName(cn, true, loader)
-                                   .newInstance());
-                providers.put(cn, p);
-                return p;
+                c = Class.forName(cn, false, loader);
             } catch (ClassNotFoundException x) {
                 fail(service,
                      "Provider " + cn + " not found");
+            }
+            if (!service.isAssignableFrom(c)) {
+                fail(service,
+                     "Provider " + cn  + " not a subtype");
+            }
+            try {
+                S p = service.cast(c.newInstance());
+                providers.put(cn, p);
+                return p;
             } catch (Throwable x) {
                 fail(service,
                      "Provider " + cn + " could not be instantiated: " + x,

@@ -34,9 +34,7 @@
  */
 
 package java.util.concurrent.locks;
-import java.util.concurrent.*;
 import sun.misc.Unsafe;
-
 
 /**
  * Basic thread blocking primitives for creating locks and other
@@ -78,7 +76,10 @@ import sun.misc.Unsafe;
  * higher-level synchronization utilities, and are not in themselves
  * useful for most concurrency control applications.  The {@code park}
  * method is designed for use only in constructions of the form:
- * <pre>while (!canProceed()) { ... LockSupport.park(this); }</pre>
+ *
+ *  <pre> {@code
+ * while (!canProceed()) { ... LockSupport.park(this); }}</pre>
+ *
  * where neither {@code canProceed} nor any other actions prior to the
  * call to {@code park} entail locking or blocking.  Because only one
  * permit is associated with each thread, any intermediary uses of
@@ -86,7 +87,7 @@ import sun.misc.Unsafe;
  *
  * <p><b>Sample Usage.</b> Here is a sketch of a first-in-first-out
  * non-reentrant lock class:
- * <pre>{@code
+ *  <pre> {@code
  * class FIFOMutex {
  *   private final AtomicBoolean locked = new AtomicBoolean(false);
  *   private final Queue<Thread> waiters
@@ -116,7 +117,6 @@ import sun.misc.Unsafe;
  *   }
  * }}</pre>
  */
-
 public class LockSupport {
     private LockSupport() {} // Cannot be instantiated.
 
