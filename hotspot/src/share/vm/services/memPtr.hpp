@@ -311,6 +311,17 @@ public:
   inline bool contains_address(address add) const {
     return (addr() <= add && addr() + size() > add);
   }
+
+  // if this memory region overlaps another region
+  inline bool overlaps_region(const MemPointerRecord* other) const {
+    assert(other != NULL, "Just check");
+    assert(size() > 0 && other->size() > 0, "empty range");
+    return contains_address(other->addr()) ||
+           contains_address(other->addr() + other->size() - 1) || // exclude end address
+           other->contains_address(addr()) ||
+           other->contains_address(addr() + size() - 1); // exclude end address
+  }
+
 };
 
 // MemPointerRecordEx also records callsite pc, from where
