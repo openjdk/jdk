@@ -186,8 +186,8 @@ public class KeyTab implements KeyTabConstants {
         } else {
             String kname = null;
             try {
-                String keytab_names = Config.getInstance().getDefault
-                    ("default_keytab_name", "libdefaults");
+                String keytab_names = Config.getInstance().get
+                        ("libdefaults", "default_keytab_name");
                 if (keytab_names != null) {
                     StringTokenizer st = new StringTokenizer(keytab_names, " ");
                     while (st.hasMoreTokens()) {

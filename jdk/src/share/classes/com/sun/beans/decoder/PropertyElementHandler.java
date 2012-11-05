@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import sun.reflect.misc.MethodUtil;
 
 /**
  * This class is intended to handle &lt;property&gt; element.
@@ -168,11 +170,11 @@ final class PropertyElementHandler extends AccessorElementHandler {
     private static Object getPropertyValue(Object bean, String name, Integer index) throws IllegalAccessException, IntrospectionException, InvocationTargetException, NoSuchMethodException {
         Class<?> type = bean.getClass();
         if (index == null) {
-            return findGetter(type, name).invoke(bean);
+            return MethodUtil.invoke(findGetter(type, name), bean, new Object[] {});
         } else if (type.isArray() && (name == null)) {
             return Array.get(bean, index);
         } else {
-            return findGetter(type, name, int.class).invoke(bean, index);
+            return MethodUtil.invoke(findGetter(type, name, int.class), bean, new Object[] {index});
         }
     }
 
@@ -197,11 +199,11 @@ final class PropertyElementHandler extends AccessorElementHandler {
                 : null;
 
         if (index == null) {
-            findSetter(type, name, param).invoke(bean, value);
+            MethodUtil.invoke(findSetter(type, name, param), bean, new Object[] {value});
         } else if (type.isArray() && (name == null)) {
             Array.set(bean, index, value);
         } else {
-            findSetter(type, name, int.class, param).invoke(bean, index, value);
+            MethodUtil.invoke(findSetter(type, name, int.class, param), bean, new Object[] {index, value});
         }
     }
 

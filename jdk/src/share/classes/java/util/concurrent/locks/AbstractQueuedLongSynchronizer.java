@@ -34,9 +34,10 @@
  */
 
 package java.util.concurrent.locks;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import sun.misc.Unsafe;
 
 /**
@@ -598,7 +599,7 @@ public abstract class AbstractQueuedLongSynchronizer
     /**
      * Convenience method to interrupt current thread.
      */
-    private static void selfInterrupt() {
+    static void selfInterrupt() {
         Thread.currentThread().interrupt();
     }
 
@@ -686,8 +687,10 @@ public abstract class AbstractQueuedLongSynchronizer
      * @return {@code true} if acquired
      */
     private boolean doAcquireNanos(long arg, long nanosTimeout)
-        throws InterruptedException {
-        long lastTime = System.nanoTime();
+            throws InterruptedException {
+        if (nanosTimeout <= 0L)
+            return false;
+        final long deadline = System.nanoTime() + nanosTimeout;
         final Node node = addWaiter(Node.EXCLUSIVE);
         boolean failed = true;
         try {
@@ -699,14 +702,12 @@ public abstract class AbstractQueuedLongSynchronizer
                     failed = false;
                     return true;
                 }
-                if (nanosTimeout <= 0)
+                nanosTimeout = deadline - System.nanoTime();
+                if (nanosTimeout <= 0L)
                     return false;
                 if (shouldParkAfterFailedAcquire(p, node) &&
                     nanosTimeout > spinForTimeoutThreshold)
                     LockSupport.parkNanos(this, nanosTimeout);
-                long now = System.nanoTime();
-                nanosTimeout -= now - lastTime;
-                lastTime = now;
                 if (Thread.interrupted())
                     throw new InterruptedException();
             }
@@ -786,9 +787,10 @@ public abstract class AbstractQueuedLongSynchronizer
      * @return {@code true} if acquired
      */
     private boolean doAcquireSharedNanos(long arg, long nanosTimeout)
-        throws InterruptedException {
-
-        long lastTime = System.nanoTime();
+            throws InterruptedException {
+        if (nanosTimeout <= 0L)
+            return false;
+        final long deadline = System.nanoTime() + nanosTimeout;
         final Node node = addWaiter(Node.SHARED);
         boolean failed = true;
         try {
@@ -803,14 +805,12 @@ public abstract class AbstractQueuedLongSynchronizer
                         return true;
                     }
                 }
-                if (nanosTimeout <= 0)
+                nanosTimeout = deadline - System.nanoTime();
+                if (nanosTimeout <= 0L)
                     return false;
                 if (shouldParkAfterFailedAcquire(p, node) &&
                     nanosTimeout > spinForTimeoutThreshold)
                     LockSupport.parkNanos(this, nanosTimeout);
-                long now = System.nanoTime();
-                nanosTimeout -= now - lastTime;
-                lastTime = now;
                 if (Thread.interrupted())
                     throw new InterruptedException();
             }
@@ -1260,7 +1260,7 @@ public abstract class AbstractQueuedLongSynchronizer
      * due to the queue being empty.
      *
      * <p>This method is designed to be used by a fair synchronizer to
-     * avoid <a href="AbstractQueuedSynchronizer#barging">barging</a>.
+     * avoid <a href="AbstractQueuedSynchronizer.html#barging">barging</a>.
      * Such a synchronizer's {@link #tryAcquire} method should return
      * {@code false}, and its {@link #tryAcquireShared} method should
      * return a negative value, if this method returns {@code true}
@@ -1520,8 +1520,6 @@ public abstract class AbstractQueuedLongSynchronizer
      * @throws NullPointerException if the condition is null
      */
     public final boolean owns(ConditionObject condition) {
-        if (condition == null)
-            throw new NullPointerException();
         return condition.isOwnedBy(this);
     }
 
@@ -1742,9 +1740,8 @@ public abstract class AbstractQueuedLongSynchronizer
          * Implements uninterruptible condition wait.
          * <ol>
          * <li> Save lock state returned by {@link #getState}.
-         * <li> Invoke {@link #release} with
-         *      saved state as argument, throwing
-         *      IllegalMonitorStateException if it fails.
+         * <li> Invoke {@link #release} with saved state as argument,
+         *      throwing IllegalMonitorStateException if it fails.
          * <li> Block until signalled.
          * <li> Reacquire by invoking specialized version of
          *      {@link #acquire} with saved state as argument.
@@ -1803,9 +1800,8 @@ public abstract class AbstractQueuedLongSynchronizer
          * <ol>
          * <li> If current thread is interrupted, throw InterruptedException.
          * <li> Save lock state returned by {@link #getState}.
-         * <li> Invoke {@link #release} with
-         *      saved state as argument, throwing
-         *      IllegalMonitorStateException if it fails.
+         * <li> Invoke {@link #release} with saved state as argument,
+         *      throwing IllegalMonitorStateException if it fails.
          * <li> Block until signalled or interrupted.
          * <li> Reacquire by invoking specialized version of
          *      {@link #acquire} with saved state as argument.
@@ -1836,9 +1832,8 @@ public abstract class AbstractQueuedLongSynchronizer
          * <ol>
          * <li> If current thread is interrupted, throw InterruptedException.
          * <li> Save lock state returned by {@link #getState}.
-         * <li> Invoke {@link #release} with
-         *      saved state as argument, throwing
-         *      IllegalMonitorStateException if it fails.
+         * <li> Invoke {@link #release} with saved state as argument,
+         *      throwing IllegalMonitorStateException if it fails.
          * <li> Block until signalled, interrupted, or timed out.
          * <li> Reacquire by invoking specialized version of
          *      {@link #acquire} with saved state as argument.
@@ -1851,20 +1846,18 @@ public abstract class AbstractQueuedLongSynchronizer
                 throw new InterruptedException();
             Node node = addConditionWaiter();
             long savedState = fullyRelease(node);
-            long lastTime = System.nanoTime();
+            final long deadline = System.nanoTime() + nanosTimeout;
             int interruptMode = 0;
             while (!isOnSyncQueue(node)) {
                 if (nanosTimeout <= 0L) {
                     transferAfterCancelledWait(node);
                     break;
                 }
-                LockSupport.parkNanos(this, nanosTimeout);
+                if (nanosTimeout >= spinForTimeoutThreshold)
+                    LockSupport.parkNanos(this, nanosTimeout);
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
-
-                long now = System.nanoTime();
-                nanosTimeout -= now - lastTime;
-                lastTime = now;
+                nanosTimeout = deadline - System.nanoTime();
             }
             if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
                 interruptMode = REINTERRUPT;
@@ -1872,7 +1865,7 @@ public abstract class AbstractQueuedLongSynchronizer
                 unlinkCancelledWaiters();
             if (interruptMode != 0)
                 reportInterruptAfterWait(interruptMode);
-            return nanosTimeout - (System.nanoTime() - lastTime);
+            return deadline - System.nanoTime();
         }
 
         /**
@@ -1880,9 +1873,8 @@ public abstract class AbstractQueuedLongSynchronizer
          * <ol>
          * <li> If current thread is interrupted, throw InterruptedException.
          * <li> Save lock state returned by {@link #getState}.
-         * <li> Invoke {@link #release} with
-         *      saved state as argument, throwing
-         *      IllegalMonitorStateException if it fails.
+         * <li> Invoke {@link #release} with saved state as argument,
+         *      throwing IllegalMonitorStateException if it fails.
          * <li> Block until signalled, interrupted, or timed out.
          * <li> Reacquire by invoking specialized version of
          *      {@link #acquire} with saved state as argument.
@@ -1892,8 +1884,6 @@ public abstract class AbstractQueuedLongSynchronizer
          */
         public final boolean awaitUntil(Date deadline)
                 throws InterruptedException {
-            if (deadline == null)
-                throw new NullPointerException();
             long abstime = deadline.getTime();
             if (Thread.interrupted())
                 throw new InterruptedException();
@@ -1924,9 +1914,8 @@ public abstract class AbstractQueuedLongSynchronizer
          * <ol>
          * <li> If current thread is interrupted, throw InterruptedException.
          * <li> Save lock state returned by {@link #getState}.
-         * <li> Invoke {@link #release} with
-         *      saved state as argument, throwing
-         *      IllegalMonitorStateException if it fails.
+         * <li> Invoke {@link #release} with saved state as argument,
+         *      throwing IllegalMonitorStateException if it fails.
          * <li> Block until signalled, interrupted, or timed out.
          * <li> Reacquire by invoking specialized version of
          *      {@link #acquire} with saved state as argument.
@@ -1936,14 +1925,12 @@ public abstract class AbstractQueuedLongSynchronizer
          */
         public final boolean await(long time, TimeUnit unit)
                 throws InterruptedException {
-            if (unit == null)
-                throw new NullPointerException();
             long nanosTimeout = unit.toNanos(time);
             if (Thread.interrupted())
                 throw new InterruptedException();
             Node node = addConditionWaiter();
             long savedState = fullyRelease(node);
-            long lastTime = System.nanoTime();
+            final long deadline = System.nanoTime() + nanosTimeout;
             boolean timedout = false;
             int interruptMode = 0;
             while (!isOnSyncQueue(node)) {
@@ -1955,9 +1942,7 @@ public abstract class AbstractQueuedLongSynchronizer
                     LockSupport.parkNanos(this, nanosTimeout);
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
-                long now = System.nanoTime();
-                nanosTimeout -= now - lastTime;
-                lastTime = now;
+                nanosTimeout = deadline - System.nanoTime();
             }
             if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
                 interruptMode = REINTERRUPT;

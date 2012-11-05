@@ -24,8 +24,6 @@
 /*
  * @test
  * @bug 5057532
- * @ignore Test will fail until 6338951 is resolved (java.net.URI now
- * accepts "http://-a").
  * @summary Tests that host names are parsed correctly in URLs
  * @author Eamonn McManus
  * @run clean URLTest

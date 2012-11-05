@@ -143,6 +143,11 @@ java/lang/management/MemoryMXBean/CollectionUsageThresholdSerialGC.sh generic-al
 java/lang/management/MemoryMXBean/MemoryTest.java		generic-all
 java/lang/management/MemoryMXBean/MemoryTestAllGC.sh		generic-all
 
+# Exclude until hotspot/jdk repos are sync'd w.r.t. JAVA_MAX_SUPPORTED_VERSION
+# Needed when hotspot fix 7054345 is present.  Remove when the JDK source is 
+# updated accordingly.
+java/lang/System/Versions.java   generic-all
+
 ############################################################################
 
 # jdk_management
@@ -313,6 +318,9 @@ sun/security/tools/keytool/importreadall.sh                     solaris-all
 sun/security/tools/keytool/readjar.sh                           solaris-all
 sun/security/tools/keytool/selfissued.sh                        solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
+
+# 8000439: NPG: REGRESSION : sun/security/krb5/auto/MaxRetries.java fails with timeout
+sun/security/krb5/auto/MaxRetries.java                          solaris-sparcv9
 
 ############################################################################
 

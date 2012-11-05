@@ -34,19 +34,25 @@ import java.util.Vector;
 public class SCDynamicStoreConfig {
     private static native void installNotificationCallback();
     private static native Hashtable<String, Object> getKerberosConfig();
+    private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
     static {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("osx");
-                    return null;
+        boolean isMac = java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Boolean>() {
+                public Boolean run() {
+                    String osname = System.getProperty("os.name");
+                    if (osname.contains("OS X")) {
+                        System.loadLibrary("osx");
+                        return true;
+                    }
+                    return false;
                 }
             });
-        installNotificationCallback();
+        if (isMac) installNotificationCallback();
     }
 
-    private static Vector<String> unwrapHost(Collection<Hashtable<String, String>> c) {
+    private static Vector<String> unwrapHost(
+            Collection<Hashtable<String, String>> c) {
         Vector<String> vector = new Vector<String>();
         for (Hashtable<String, String> m : c) {
             vector.add(m.get("host"));
@@ -60,20 +66,25 @@ public class SCDynamicStoreConfig {
      * are wrapped inside Hashtables
      */
     @SuppressWarnings("unchecked")
-    private static Hashtable<String, Object> convertRealmConfigs(Hashtable<String, ?> configs) {
+    private static Hashtable<String, Object>
+            convertRealmConfigs(Hashtable<String, ?> configs) {
         Hashtable<String, Object> realmsTable = new Hashtable<String, Object>();
 
         for (String realm : configs.keySet()) {
             // get the kdc
-            Hashtable<String, Collection<?>> map = (Hashtable<String, Collection<?>>) configs.get(realm);
-            Collection<Hashtable<String, String>> kdc = (Collection<Hashtable<String, String>>) map.get("kdc");
+            Hashtable<String, Collection<?>> map =
+                    (Hashtable<String, Collection<?>>) configs.get(realm);
+            Hashtable<String, Vector<String>> realmMap =
+                    new Hashtable<String, Vector<String>>();
 
             // put the kdc into the realmMap
-            Hashtable<String, Vector<String>> realmMap = new Hashtable<String, Vector<String>>();
+            Collection<Hashtable<String, String>> kdc =
+                    (Collection<Hashtable<String, String>>) map.get("kdc");
             if (kdc != null) realmMap.put("kdc", unwrapHost(kdc));
 
             // put the admin server into the realmMap
-            Collection<Hashtable<String, String>> kadmin = (Collection<Hashtable<String, String>>) map.get("kadmin");
+            Collection<Hashtable<String, String>> kadmin =
+                    (Collection<Hashtable<String, String>>) map.get("kadmin");
             if (kadmin != null) realmMap.put("admin_server", unwrapHost(kadmin));
 
             // add the full entry to the realmTable
@@ -90,23 +101,44 @@ public class SCDynamicStoreConfig {
      * @return
      * @throws IOException
      */
-    @SuppressWarnings("unchecked")
     public static Hashtable<String, Object> getConfig() throws IOException {
         Hashtable<String, Object> stanzaTable = getKerberosConfig();
         if (stanzaTable == null) {
-            throw new IOException("Could not load configuration from SCDynamicStore");
+            throw new IOException(
+                    "Could not load configuration from SCDynamicStore");
         }
-        //System.out.println("Raw map from JNI: " + stanzaTable);
+        if (DEBUG) System.out.println("Raw map from JNI: " + stanzaTable);
+        return convertNativeConfig(stanzaTable);
+    }
 
+    @SuppressWarnings("unchecked")
+    private static Hashtable<String, Object> convertNativeConfig(
+            Hashtable<String, Object> stanzaTable) {
         // convert SCDynamicStore realm structure to Java realm structure
-        Hashtable<String, ?> realms = (Hashtable<String, ?>) stanzaTable.get("realms");
+        Hashtable<String, ?> realms =
+                (Hashtable<String, ?>) stanzaTable.get("realms");
         if (realms != null) {
             stanzaTable.remove("realms");
             Hashtable<String, Object> realmsTable = convertRealmConfigs(realms);
             stanzaTable.put("realms", realmsTable);
         }
-
-       // System.out.println("stanzaTable : " + stanzaTable);
+        WrapAllStringInVector(stanzaTable);
+        if (DEBUG) System.out.println("stanzaTable : " + stanzaTable);
         return stanzaTable;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void WrapAllStringInVector(
+            Hashtable<String, Object> stanzaTable) {
+        for (String s: stanzaTable.keySet()) {
+            Object v = stanzaTable.get(s);
+            if (v instanceof Hashtable) {
+                WrapAllStringInVector((Hashtable<String,Object>)v);
+            } else if (v instanceof String) {
+                Vector<String> vec = new Vector<>();
+                vec.add((String)v);
+                stanzaTable.put(s, vec);
+            }
+        }
     }
 }

@@ -108,7 +108,7 @@ public class MaxRetries {
             if (line.startsWith(">>> KDCCommunication")) {
                 System.out.println(line);
                 if (line.indexOf(timeoutTag) < 0) {
-                    throw new Exception("Wrong timeout value");
+                    throw new Exception("Wrong timeout value" + timeoutTag);
                 }
                 count--;
             }
