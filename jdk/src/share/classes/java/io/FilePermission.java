@@ -407,7 +407,7 @@ public final class FilePermission extends Permission implements Serializable {
      * @return a hash code value for this object.
      */
     public int hashCode() {
-        return this.cpath.hashCode();
+        return 0;
     }
 
     /**

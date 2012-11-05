@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ public class Format
             s.getPrivateCredentials().add(new Format());
             System.out.println("Test 12, s.toString() = " + s.toString());
         } catch (Exception e) {
-            throw new SecurityException("test 12 failed: e.toString()");
+            throw new SecurityException("test 12 failed: e.toString()", e);
         }
 
         try {

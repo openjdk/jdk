@@ -52,14 +52,14 @@ package java.util.concurrent;
  * the following code will timeout in 50 milliseconds if the {@link
  * java.util.concurrent.locks.Lock lock} is not available:
  *
- * <pre>  Lock lock = ...;
- *  if (lock.tryLock(50L, TimeUnit.MILLISECONDS)) ...
- * </pre>
+ *  <pre> {@code
+ * Lock lock = ...;
+ * if (lock.tryLock(50L, TimeUnit.MILLISECONDS)) ...}</pre>
+ *
  * while this code will timeout in 50 seconds:
- * <pre>
- *  Lock lock = ...;
- *  if (lock.tryLock(50L, TimeUnit.SECONDS)) ...
- * </pre>
+ *  <pre> {@code
+ * Lock lock = ...;
+ * if (lock.tryLock(50L, TimeUnit.SECONDS)) ...}</pre>
  *
  * Note however, that there is no guarantee that a particular timeout
  * implementation will be able to notice the passage of time at the

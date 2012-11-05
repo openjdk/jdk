@@ -120,6 +120,10 @@ address StubRoutines::_arrayof_jbyte_fill;
 address StubRoutines::_arrayof_jshort_fill;
 address StubRoutines::_arrayof_jint_fill;
 
+address StubRoutines::_aescrypt_encryptBlock               = NULL;
+address StubRoutines::_aescrypt_decryptBlock               = NULL;
+address StubRoutines::_cipherBlockChaining_encryptAESCrypt = NULL;
+address StubRoutines::_cipherBlockChaining_decryptAESCrypt = NULL;
 
 double (* StubRoutines::_intrinsic_log   )(double) = NULL;
 double (* StubRoutines::_intrinsic_log10 )(double) = NULL;

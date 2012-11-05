@@ -113,14 +113,14 @@ public class CEmbeddedFrame extends EmbeddedFrame {
     public void handleFocusEvent(boolean focused) {
         this.focused = focused;
         if (parentWindowActive) {
-            responder.handleWindowFocusEvent(focused);
+            responder.handleWindowFocusEvent(focused, null);
         }
     }
 
     public void handleWindowFocusEvent(boolean parentWindowActive) {
         this.parentWindowActive = parentWindowActive;
         if (focused) {
-            responder.handleWindowFocusEvent(parentWindowActive);
+            responder.handleWindowFocusEvent(parentWindowActive, null);
         }
     }
 

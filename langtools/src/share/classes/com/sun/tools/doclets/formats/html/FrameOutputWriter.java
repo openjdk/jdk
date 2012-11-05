@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,10 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.*;
+
 import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Generate the documentation in the Html "frame" format in the browser. The
@@ -39,6 +40,11 @@ import com.sun.tools.doclets.formats.html.markup.*;
  * the particular package contents or the all-classes list, where as the single
  * right-hand frame will have overview or package summary or class file. Also
  * take care of browsers which do not support Html frames.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  */
@@ -57,7 +63,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * @param filename File to be generated.
      */
     public FrameOutputWriter(ConfigurationImpl configuration,
-                             String filename) throws IOException {
+                             DocPath filename) throws IOException {
         super(configuration, filename);
     noOfPackages = configuration.packages.length;
     }
@@ -71,9 +77,9 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      */
     public static void generate(ConfigurationImpl configuration) {
         FrameOutputWriter framegen;
-        String filename = "";
+        DocPath filename = DocPath.empty;
         try {
-            filename = "index.html";
+            filename = DocPaths.INDEX;
             framegen = new FrameOutputWriter(configuration, filename);
             framegen.generateFrameFile();
             framegen.close();
@@ -86,10 +92,10 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Generate the contants in the "index.html" file. Print the frame details
+     * Generate the constants in the "index.html" file. Print the frame details
      * as well as warning if browser is not supporting the Html frames.
      */
-    protected void generateFrameFile() {
+    protected void generateFrameFile() throws IOException {
         Content frameset = getFrameDetails();
         if (configuration.windowtitle.length() > 0) {
             printFramesetDocument(configuration.windowtitle, configuration.notimestamp,
@@ -149,8 +155,8 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * @param contentTree the content tree to which the information will be added
      */
     private void addAllPackagesFrameTag(Content contentTree) {
-        HtmlTree frame = HtmlTree.FRAME("overview-frame.html", "packageListFrame",
-                configuration.getText("doclet.All_Packages"));
+        HtmlTree frame = HtmlTree.FRAME(DocPaths.OVERVIEW_FRAME.getPath(),
+                "packageListFrame", configuration.getText("doclet.All_Packages"));
         contentTree.addContent(frame);
     }
 
@@ -160,8 +166,8 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * @param contentTree the content tree to which the information will be added
      */
     private void addAllClassesFrameTag(Content contentTree) {
-        HtmlTree frame = HtmlTree.FRAME("allclasses-frame.html", "packageFrame",
-                configuration.getText("doclet.All_classes_and_interfaces"));
+        HtmlTree frame = HtmlTree.FRAME(DocPaths.ALLCLASSES_FRAME.getPath(),
+                "packageFrame", configuration.getText("doclet.All_classes_and_interfaces"));
         contentTree.addContent(frame);
     }
 
@@ -171,7 +177,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * @param contentTree the content tree to which the information will be added
      */
     private void addClassFrameTag(Content contentTree) {
-        HtmlTree frame = HtmlTree.FRAME(configuration.topFile, "classFrame",
+        HtmlTree frame = HtmlTree.FRAME(configuration.topFile.getPath(), "classFrame",
                 configuration.getText("doclet.Package_class_and_interface_descriptions"),
                 SCROLL_YES);
         contentTree.addContent(frame);

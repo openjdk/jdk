@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,14 +74,18 @@ public class Checksum {
 
     private static boolean DEBUG = Krb5.DEBUG;
     static {
+        initStatic();
+    }
+
+    public static void initStatic() {
         String temp = null;
         Config cfg = null;
         try {
             cfg = Config.getInstance();
-            temp = cfg.getDefault("default_checksum", "libdefaults");
+            temp = cfg.get("libdefaults", "default_checksum");
             if (temp != null)
                 {
-                    CKSUMTYPE_DEFAULT = cfg.getType(temp);
+                    CKSUMTYPE_DEFAULT = Config.getType(temp);
                 } else {
                     /*
                      * If the default checksum is not
@@ -103,10 +107,10 @@ public class Checksum {
 
 
         try {
-            temp = cfg.getDefault("safe_checksum_type", "libdefaults");
+            temp = cfg.get("libdefaults", "safe_checksum_type");
             if (temp != null)
                 {
-                    SAFECKSUMTYPE_DEFAULT = cfg.getType(temp);
+                    SAFECKSUMTYPE_DEFAULT = Config.getType(temp);
                 } else {
                     SAFECKSUMTYPE_DEFAULT = CKSUMTYPE_RSA_MD5_DES;
                 }

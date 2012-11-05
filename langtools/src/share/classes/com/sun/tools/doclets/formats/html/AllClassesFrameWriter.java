@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@ import java.io.*;
 import java.util.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Generate the file with list of all the classes in this run. This page will be
@@ -39,21 +39,16 @@ import com.sun.tools.doclets.formats.html.markup.*;
  * the left-hand top frame. The name of the generated file is
  * "allclasses-frame.html".
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @author Atul M Dambalkar
  * @author Doug Kramer
  * @author Bhavesh Patel (Modified)
  */
 public class AllClassesFrameWriter extends HtmlDocletWriter {
-
-    /**
-     * The name of the output file with frames
-     */
-    public static final String OUTPUT_FILE_NAME_FRAMES = "allclasses-frame.html";
-
-    /**
-     * The name of the output file without frames
-     */
-    public static final String OUTPUT_FILE_NAME_NOFRAMES = "allclasses-noframe.html";
 
     /**
      * Index of all the classes.
@@ -66,13 +61,16 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
     final HtmlTree BR = new HtmlTree(HtmlTag.BR);
 
     /**
-     * Construct AllClassesFrameWriter object. Also initilises the indexbuilder
+     * Construct AllClassesFrameWriter object. Also initializes the indexbuilder
      * variable in this class.
+     * @param configuration  The current configuration
+     * @param filename       Path to the file which is getting generated.
+     * @param indexbuilder   Unicode based Index from {@link IndexBuilder}
      * @throws IOException
      * @throws DocletAbortException
      */
     public AllClassesFrameWriter(ConfigurationImpl configuration,
-                                 String filename, IndexBuilder indexbuilder)
+                                 DocPath filename, IndexBuilder indexbuilder)
                               throws IOException {
         super(configuration, filename);
         this.indexbuilder = indexbuilder;
@@ -89,13 +87,13 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
     public static void generate(ConfigurationImpl configuration,
                                 IndexBuilder indexbuilder) {
         AllClassesFrameWriter allclassgen;
-        String filename = OUTPUT_FILE_NAME_FRAMES;
+        DocPath filename = DocPaths.ALLCLASSES_FRAME;
         try {
             allclassgen = new AllClassesFrameWriter(configuration,
                                                     filename, indexbuilder);
             allclassgen.buildAllClassesFile(true);
             allclassgen.close();
-            filename = OUTPUT_FILE_NAME_NOFRAMES;
+            filename = DocPaths.ALLCLASSES_NOFRAME;
             allclassgen = new AllClassesFrameWriter(configuration,
                                                     filename, indexbuilder);
             allclassgen.buildAllClassesFile(false);

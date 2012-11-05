@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,14 @@
 package com.sun.tools.javadoc;
 
 import com.sun.javadoc.*;
-
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Scope;
-import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 
 /**
@@ -58,6 +57,11 @@ import com.sun.tools.javac.util.Names;
  *       of each Serializable fields.
  *    b. For Externalizable, data layout is described by 2(b).
  * </pre>
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @since 1.2
  * @author Joe Fialli
@@ -233,6 +237,9 @@ class SerializedForm {
 
         SerialFieldTag[] sfTag = spfDoc.serialFieldTags();
         for (int i = 0; i < sfTag.length; i++) {
+            if (sfTag[i].fieldName() == null || sfTag[i].fieldType() == null) // ignore malformed @serialField tags
+                continue;
+
             Name fieldName = names.fromString(sfTag[i].fieldName());
 
             // Look for a FieldDocImpl that is documented by serialFieldTagImpl.

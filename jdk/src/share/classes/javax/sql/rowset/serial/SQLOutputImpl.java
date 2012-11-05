@@ -215,7 +215,7 @@ public class SQLOutputImpl implements SQLOutput {
      */
     @SuppressWarnings("unchecked")
     public void writeFloat(float x) throws SQLException {
-        attribs.add(new Float(x));
+        attribs.add(Float.valueOf(x));
     }
 
     /**
@@ -230,7 +230,7 @@ public class SQLOutputImpl implements SQLOutput {
      */
     @SuppressWarnings("unchecked")
     public void writeDouble(double x) throws SQLException{
-        attribs.add(new Double(x));
+        attribs.add(Double.valueOf(x));
     }
 
     /**

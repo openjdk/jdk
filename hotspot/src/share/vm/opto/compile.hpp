@@ -149,7 +149,7 @@ class Compile : public Phase {
   private:
     BasicType _type;
     union {
-    jvalue    _value;
+      jvalue    _value;
       Metadata* _metadata;
     } _v;
     int       _offset;         // offset of this constant (in bytes) relative to the constant table base.

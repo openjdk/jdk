@@ -25,12 +25,13 @@
  * @test
  * @bug 7192202
  * @summary Make sure keytool prints both unknown and unparseable extensions
+ * @compile -XDignore.symbol.file UnknownAndUnparseable.java
+ * @run main UnknownAndUnparseable
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
-import sun.security.tools.KeyTool;
 import sun.security.x509.PKIXExtensions;
 
 public class UnknownAndUnparseable {
@@ -44,14 +45,14 @@ public class UnknownAndUnparseable {
         String genkey = s
                 + "-genkeypair -alias a -dname CN=A -ext 1.2.3.4=1234 "
                 + "-ext " + PKIXExtensions.KeyUsage_Id.toString() + "=5678";
-        KeyTool.main(genkey.split(" "));
+        sun.security.tools.keytool.Main.main(genkey.split(" "));
 
         // Get the list output to a string
         String list = s + "-list -v";
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         PrintStream oldOut = System.out;
         System.setOut(new PrintStream(bout));
-        KeyTool.main(list.split(" "));
+        sun.security.tools.keytool.Main.main(list.split(" "));
         System.setOut(oldOut);
         String out = bout.toString();
         System.out.println(out);

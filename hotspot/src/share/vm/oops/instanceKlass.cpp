@@ -743,6 +743,35 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
     }
   }
 
+  if (this_oop->has_default_methods()) {
+    // Step 7.5: initialize any interfaces which have default methods
+    for (int i = 0; i < this_oop->local_interfaces()->length(); ++i) {
+      Klass* iface = this_oop->local_interfaces()->at(i);
+      InstanceKlass* ik = InstanceKlass::cast(iface);
+      if (ik->has_default_methods() && ik->should_be_initialized()) {
+        ik->initialize(THREAD);
+
+        if (HAS_PENDING_EXCEPTION) {
+          Handle e(THREAD, PENDING_EXCEPTION);
+          CLEAR_PENDING_EXCEPTION;
+          {
+            EXCEPTION_MARK;
+            // Locks object, set state, and notify all waiting threads
+            this_oop->set_initialization_state_and_notify(
+                initialization_error, THREAD);
+
+            // ignore any exception thrown, superclass initialization error is
+            // thrown below
+            CLEAR_PENDING_EXCEPTION;
+          }
+          DTRACE_CLASSINIT_PROBE_WAIT(
+              super__failed, InstanceKlass::cast(this_oop()), -1, wait);
+          THROW_OOP(e());
+        }
+      }
+    }
+  }
+
   // Step 8
   {
     assert(THREAD->is_Java_thread(), "non-JavaThread in initialize_impl");
@@ -1252,11 +1281,7 @@ static int linear_search(Array<Method*>* methods, Symbol* name, Symbol* signatur
 }
 #endif
 
-Method* InstanceKlass::find_method(Symbol* name, Symbol* signature) const {
-  return InstanceKlass::find_method(methods(), name, signature);
-}
-
-Method* InstanceKlass::find_method(Array<Method*>* methods, Symbol* name, Symbol* signature) {
+static int binary_search(Array<Method*>* methods, Symbol* name) {
   int len = methods->length();
   // methods are sorted, so do binary search
   int l = 0;
@@ -1267,41 +1292,68 @@ Method* InstanceKlass::find_method(Array<Method*>* methods, Symbol* name, Symbol
     assert(m->is_method(), "must be method");
     int res = m->name()->fast_compare(name);
     if (res == 0) {
-      // found matching name; do linear search to find matching signature
-      // first, quick check for common case
-      if (m->signature() == signature) return m;
-      // search downwards through overloaded methods
-      int i;
-      for (i = mid - 1; i >= l; i--) {
-        Method* m = methods->at(i);
-        assert(m->is_method(), "must be method");
-        if (m->name() != name) break;
-        if (m->signature() == signature) return m;
-      }
-      // search upwards
-      for (i = mid + 1; i <= h; i++) {
-        Method* m = methods->at(i);
-        assert(m->is_method(), "must be method");
-        if (m->name() != name) break;
-        if (m->signature() == signature) return m;
-      }
-      // not found
-#ifdef ASSERT
-      int index = linear_search(methods, name, signature);
-      assert(index == -1, err_msg("binary search should have found entry %d", index));
-#endif
-      return NULL;
+      return mid;
     } else if (res < 0) {
       l = mid + 1;
     } else {
       h = mid - 1;
     }
   }
+  return -1;
+}
+
+Method* InstanceKlass::find_method(Symbol* name, Symbol* signature) const {
+  return InstanceKlass::find_method(methods(), name, signature);
+}
+
+Method* InstanceKlass::find_method(
+    Array<Method*>* methods, Symbol* name, Symbol* signature) {
+  int hit = binary_search(methods, name);
+  if (hit != -1) {
+    Method* m = methods->at(hit);
+    // Do linear search to find matching signature.  First, quick check
+    // for common case
+    if (m->signature() == signature) return m;
+    // search downwards through overloaded methods
+    int i;
+    for (i = hit - 1; i >= 0; --i) {
+        Method* m = methods->at(i);
+        assert(m->is_method(), "must be method");
+        if (m->name() != name) break;
+        if (m->signature() == signature) return m;
+    }
+    // search upwards
+    for (i = hit + 1; i < methods->length(); ++i) {
+        Method* m = methods->at(i);
+        assert(m->is_method(), "must be method");
+        if (m->name() != name) break;
+        if (m->signature() == signature) return m;
+    }
+    // not found
 #ifdef ASSERT
-  int index = linear_search(methods, name, signature);
-  assert(index == -1, err_msg("binary search should have found entry %d", index));
+    int index = linear_search(methods, name, signature);
+    assert(index == -1, err_msg("binary search should have found entry %d", index));
 #endif
+  }
   return NULL;
+}
+
+int InstanceKlass::find_method_by_name(Symbol* name, int* end) {
+  return find_method_by_name(methods(), name, end);
+}
+
+int InstanceKlass::find_method_by_name(
+    Array<Method*>* methods, Symbol* name, int* end_ptr) {
+  assert(end_ptr != NULL, "just checking");
+  int start = binary_search(methods, name);
+  int end = start + 1;
+  if (start != -1) {
+    while (start - 1 >= 0 && (methods->at(start - 1))->name() == name) --start;
+    while (end < methods->length() && (methods->at(end))->name() == name) ++end;
+    *end_ptr = end;
+    return start;
+  }
+  return -1;
 }
 
 Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature) const {

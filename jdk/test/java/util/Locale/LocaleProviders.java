@@ -47,6 +47,14 @@ public class LocaleProviders {
                 bug7198834Test();
                 break;
 
+            case "tzNameTest":
+                tzNameTest(args[1]);
+                break;
+
+            case "bug8001440Test":
+                bug8001440Test();
+                break;
+
             default:
                 throw new RuntimeException("Test method '"+methodName+"' not found.");
         }
@@ -80,5 +88,19 @@ public class LocaleProviders {
         } else {
             System.out.println("Windows HOST locale adapter not found. Ignoring this test.");
         }
+    }
+
+    static void tzNameTest(String id) {
+        TimeZone tz = TimeZone.getTimeZone(id);
+        String tzName = tz.getDisplayName(false, TimeZone.SHORT, Locale.US);
+        if (tzName.startsWith("GMT")) {
+            throw new RuntimeException("JRE's localized time zone name for "+id+" could not be retrieved. Returned name was: "+tzName);
+        }
+    }
+
+    static void bug8001440Test() {
+        Locale locale = Locale.forLanguageTag("th-TH-u-nu-hoge");
+        NumberFormat nf = NumberFormat.getInstance(locale);
+        String nu = nf.format(1234560);
     }
 }

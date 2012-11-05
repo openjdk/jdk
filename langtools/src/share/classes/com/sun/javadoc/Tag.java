@@ -70,14 +70,14 @@ public interface Tag {
      * than one tag of a given kind:
      * <p>
      * <table border="1" cellpadding="4" cellspacing="0">
-     * <tr><th><tt> kind()  </th>  <th><tt> name()      </th></tr>
-     * <tr><td><tt> @throws </td>  <td><tt> @throws     </td></tr>
-     * <tr><td><tt> @throws </td>  <td><tt> @exception  </td></tr>
-     * <tr><td><tt> @see    </td>  <td><tt> @see        </td></tr>
-     * <tr><td><tt> @see    </td>  <td><tt> @link       </td></tr>
-     * <tr><td><tt> @see    </td>  <td><tt> @linkplain  </td></tr>
-     * <tr><td><tt> @serial </td>  <td><tt> @serial     </td></tr>
-     * <tr><td><tt> @serial </td>  <td><tt> @serialData </td></tr>
+     * <tr><th><tt> kind()  </tt></th>  <th><tt> name()      </tt></th></tr>
+     * <tr><td><tt> @throws </tt></td>  <td><tt> @throws     </tt></td></tr>
+     * <tr><td><tt> @throws </tt></td>  <td><tt> @exception  </tt></td></tr>
+     * <tr><td><tt> @see    </tt></td>  <td><tt> @see        </tt></td></tr>
+     * <tr><td><tt> @see    </tt></td>  <td><tt> @link       </tt></td></tr>
+     * <tr><td><tt> @see    </tt></td>  <td><tt> @linkplain  </tt></td></tr>
+     * <tr><td><tt> @serial </tt></td>  <td><tt> @serial     </tt></td></tr>
+     * <tr><td><tt> @serial </tt></td>  <td><tt> @serialData </tt></td></tr>
      * </table>
      */
     String kind();

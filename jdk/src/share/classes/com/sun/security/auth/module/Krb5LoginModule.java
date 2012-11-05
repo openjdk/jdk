@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -802,7 +802,7 @@ public class Krb5LoginModule implements LoginModule {
 
         if (doNotPrompt) {
             throw new LoginException
-                ("Unable to obtain Princpal Name for authentication ");
+                ("Unable to obtain Principal Name for authentication ");
         } else {
             if (callbackHandler == null)
                 throw new LoginException("No CallbackHandler "
