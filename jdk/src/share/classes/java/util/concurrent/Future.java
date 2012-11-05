@@ -76,12 +76,12 @@ package java.util.concurrent;
  * implements <tt>Runnable</tt>, and so may be executed by an <tt>Executor</tt>.
  * For example, the above construction with <tt>submit</tt> could be replaced by:
  *  <pre> {@code
- *     FutureTask<String> future =
- *       new FutureTask<String>(new Callable<String>() {
- *         public String call() {
- *           return searcher.search(target);
- *       }});
- *     executor.execute(future);}</pre>
+ * FutureTask<String> future =
+ *   new FutureTask<String>(new Callable<String>() {
+ *     public String call() {
+ *       return searcher.search(target);
+ *   }});
+ * executor.execute(future);}</pre>
  *
  * <p>Memory consistency effects: Actions taken by the asynchronous computation
  * <a href="package-summary.html#MemoryVisibility"> <i>happen-before</i></a>

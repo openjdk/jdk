@@ -1,0 +1,2 @@
+DocumentedContainerAnno.java:14:1: compiler.err.invalid.containedby.annotation.not.documented: FooContainer, Foo
+1 error

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 
 package sun.security.ssl;
 
@@ -55,16 +54,25 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
      * recurse infinitely ... e.g. close() calling itself, or doing
      * I/O in terms of our own streams.
      */
-    final Socket self;
+    final private Socket self;
+    final private InputStream consumedInput;
 
     BaseSSLSocketImpl() {
         super();
         this.self = this;
+        this.consumedInput = null;
     }
 
     BaseSSLSocketImpl(Socket socket) {
         super();
         this.self = socket;
+        this.consumedInput = null;
+    }
+
+    BaseSSLSocketImpl(Socket socket, InputStream consumed) {
+        super();
+        this.self = socket;
+        this.consumedInput = consumed;
     }
 
     //
@@ -541,4 +549,57 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
         }
     }
 
+    @Override
+    public String toString() {
+        if (self == this) {
+            return super.toString();
+        }
+
+        return self.toString();
+    }
+
+    @Override
+    public InputStream getInputStream() throws IOException {
+        if (self == this) {
+            return super.getInputStream();
+        }
+
+        if (consumedInput != null) {
+            return new SequenceInputStream(consumedInput,
+                                                self.getInputStream());
+        }
+
+        return self.getInputStream();
+    }
+
+    @Override
+    public OutputStream getOutputStream() throws IOException {
+        if (self == this) {
+            return super.getOutputStream();
+        }
+
+        return self.getOutputStream();
+    }
+
+    @Override
+    public synchronized void close() throws IOException {
+        if (self == this) {
+            super.close();
+        } else {
+            self.close();
+        }
+    }
+
+    @Override
+    public synchronized void setSoTimeout(int timeout) throws SocketException {
+        if (self == this) {
+            super.setSoTimeout(timeout);
+        } else {
+            self.setSoTimeout(timeout);
+        }
+    }
+
+    boolean isLayered() {
+        return (self != this);
+    }
 }

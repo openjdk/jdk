@@ -38,6 +38,7 @@ public class GenericTest {
     com.foo.DecimalFormatSymbolsProviderImpl decimalFSP = new com.foo.DecimalFormatSymbolsProviderImpl();
     com.foo.NumberFormatProviderImpl numberFP = new com.foo.NumberFormatProviderImpl();
     com.bar.CurrencyNameProviderImpl currencyNP = new com.bar.CurrencyNameProviderImpl();
+    com.bar.CurrencyNameProviderImpl2 currencyNP2 = new com.bar.CurrencyNameProviderImpl2();
     com.bar.LocaleNameProviderImpl localeNP = new com.bar.LocaleNameProviderImpl();
     com.bar.TimeZoneNameProviderImpl tzNP = new com.bar.TimeZoneNameProviderImpl();
     com.bar.CalendarDataProviderImpl calDataP = new com.bar.CalendarDataProviderImpl();
@@ -68,6 +69,7 @@ public class GenericTest {
         expected.addAll(Arrays.asList(decimalFSP.getAvailableLocales()));
         expected.addAll(Arrays.asList(numberFP.getAvailableLocales()));
         expected.addAll(Arrays.asList(currencyNP.getAvailableLocales()));
+        expected.addAll(Arrays.asList(currencyNP2.getAvailableLocales()));
         expected.addAll(Arrays.asList(localeNP.getAvailableLocales()));
         expected.addAll(Arrays.asList(tzNP.getAvailableLocales()));
         expected.addAll(Arrays.asList(calDataP.getAvailableLocales()));

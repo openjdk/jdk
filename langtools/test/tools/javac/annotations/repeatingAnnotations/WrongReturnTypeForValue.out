@@ -1,0 +1,3 @@
+WrongReturnTypeForValue.java:22:1: compiler.err.invalid.containedby.annotation.value.return: FooContainer, Foo, Foo[]
+WrongReturnTypeForValue.java:22:6: compiler.err.invalid.containedby.annotation.value.return: FooContainer, Foo, Foo[]
+2 errors

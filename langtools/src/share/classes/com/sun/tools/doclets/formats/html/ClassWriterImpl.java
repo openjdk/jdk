@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,24 @@
 
 package com.sun.tools.doclets.formats.html;
 
+import java.io.IOException;
 import java.util.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.builders.*;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
-import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Generate the Class Information Page.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @see com.sun.javadoc.ClassDoc
  * @see java.util.Collections
  * @see java.util.List
@@ -65,11 +72,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      */
     public ClassWriterImpl (ClassDoc classDoc,
             ClassDoc prevClass, ClassDoc nextClass, ClassTree classTree)
-    throws Exception {
-        super(ConfigurationImpl.getInstance(),
-              DirectoryManager.getDirectoryPath(classDoc.containingPackage()),
-              classDoc.name() + ".html",
-              DirectoryManager.getRelativePath(classDoc.containingPackage().name()));
+            throws Exception {
+        super(ConfigurationImpl.getInstance(), DocPath.forClass(classDoc));
         this.classDoc = classDoc;
         configuration.currentcd = classDoc;
         this.classtree = classTree;
@@ -83,7 +87,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      * @return a content tree for the package link
      */
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink("package-summary.html", "",
+        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
                 packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -105,7 +109,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      * @return a content tree for the class use link
      */
     protected Content getNavLinkClassUse() {
-        Content linkContent = getHyperLink("class-use/" + filename, "", useLabel);
+        Content linkContent = getHyperLink(DocPaths.CLASS_USE.resolve(filename), useLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -196,7 +200,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
     /**
      * {@inheritDoc}
      */
-    public void printDocument(Content contentTree) {
+    public void printDocument(Content contentTree) throws IOException {
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(classDoc),
                 true, contentTree);
     }
@@ -560,8 +564,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      * {@inheritDoc}
      */
     protected Content getNavLinkTree() {
-        Content treeLinkContent = getHyperLink("package-tree.html",
-                "", treeLabel, "", "");
+        Content treeLinkContent = getHyperLink(DocPaths.PACKAGE_TREE,
+                treeLabel, "", "");
         Content li = HtmlTree.LI(treeLinkContent);
         return li;
     }

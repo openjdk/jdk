@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.util.xml;
 
 import java.io.*;
 import java.util.*;
+import java.nio.charset.*;
 import org.xml.sax.*;
 import org.w3c.dom.*;
 import javax.xml.parsers.*;
@@ -127,6 +128,13 @@ public class PlatformXmlPropertiesProvider extends XmlPropertiesProvider {
                       String encoding)
         throws IOException
     {
+        // fast-fail for unsupported charsets as UnsupportedEncodingException may
+        // not be thrown later (see JDK-8000621)
+        try {
+            Charset.forName(encoding);
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException x) {
+            throw new UnsupportedEncodingException(encoding);
+        }
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = null;
         try {

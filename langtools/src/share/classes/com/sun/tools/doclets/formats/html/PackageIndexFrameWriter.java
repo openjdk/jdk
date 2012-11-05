@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,21 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
+
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Generate the package index for the left-hand frame in the generated output.
  * A click on the package name in this frame will update the page in the bottom
  * left hand frame with the listing of contents of the clicked package.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  */
@@ -46,7 +52,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * @param filename Name of the package index file to be generated.
      */
     public PackageIndexFrameWriter(ConfigurationImpl configuration,
-                                   String filename) throws IOException {
+                                   DocPath filename) throws IOException {
         super(configuration, filename);
     }
 
@@ -56,7 +62,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      */
     public static void generate(ConfigurationImpl configuration) {
         PackageIndexFrameWriter packgen;
-        String filename = "overview-frame.html";
+        DocPath filename = DocPaths.OVERVIEW_FRAME;
         try {
             packgen = new PackageIndexFrameWriter(configuration, filename);
             packgen.buildPackageIndexFile("doclet.Window_Overview", false);
@@ -103,12 +109,12 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         if (pd.name().length() > 0) {
             packageLabel = getPackageLabel(pd.name());
             packageLinkContent = getHyperLink(pathString(pd,
-                    "package-frame.html"), "", packageLabel, "",
+                     DocPaths.PACKAGE_FRAME), packageLabel, "",
                     "packageFrame");
         } else {
             packageLabel = new RawHtml("&lt;unnamed package&gt;");
-            packageLinkContent = getHyperLink("package-frame.html",
-                    "", packageLabel, "", "packageFrame");
+            packageLinkContent = getHyperLink(DocPaths.PACKAGE_FRAME,
+                    packageLabel, "", "packageFrame");
         }
         Content li = HtmlTree.LI(packageLinkContent);
         return li;
@@ -142,7 +148,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * @param body the Content object to which the all classes link should be added
      */
     protected void addAllClassesLink(Content body) {
-        Content linkContent = getHyperLink("allclasses-frame.html", "",
+        Content linkContent = getHyperLink(DocPaths.ALLCLASSES_FRAME,
                 allclassesLabel, "", "packageFrame");
         Content div = HtmlTree.DIV(HtmlStyle.indexHeader, linkContent);
         body.addContent(div);

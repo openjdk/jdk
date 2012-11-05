@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,18 @@
 
 package com.sun.tools.doclets.internal.toolkit;
 
-import java.util.*;
 import java.io.*;
+import java.util.*;
+
 import com.sun.javadoc.*;
 
 /**
  * The interface for writing constants summary output.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Jamie Ho
  * @author Bhavesh Patel (Modified)
@@ -137,6 +139,6 @@ public interface ConstantsSummaryWriter {
      *
      * @param contentTree content tree which should be printed
      */
-    public abstract void printDocument(Content contentTree);
+    public abstract void printDocument(Content contentTree) throws IOException;
 
 }

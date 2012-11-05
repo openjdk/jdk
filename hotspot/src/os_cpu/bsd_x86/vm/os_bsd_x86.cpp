@@ -76,7 +76,7 @@
 # include <ucontext.h>
 #endif
 
-#if defined(_ALLBSD_SOURCE) && !defined(__APPLE__) && !defined(__NetBSD__)
+#if !defined(__APPLE__) && !defined(__NetBSD__)
 # include <pthread_np.h>
 #endif
 
@@ -489,23 +489,6 @@ JVM_handle_bsd_signal(int sig,
           // to handle_unexpected_exception way down below.
           thread->disable_stack_red_zone();
           tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
-#ifndef _ALLBSD_SOURCE
-        } else {
-          // Accessing stack address below sp may cause SEGV if current
-          // thread has MAP_GROWSDOWN stack. This should only happen when
-          // current thread was created by user code with MAP_GROWSDOWN flag
-          // and then attached to VM. See notes in os_bsd.cpp.
-          if (thread->osthread()->expanding_stack() == 0) {
-             thread->osthread()->set_expanding_stack();
-             if (os::Bsd::manually_expand_stack(thread, addr)) {
-               thread->osthread()->clear_expanding_stack();
-               return 1;
-             }
-             thread->osthread()->clear_expanding_stack();
-          } else {
-             fatal("recursive segv. expanding stack.");
-          }
-#endif
         }
       }
     }
@@ -744,61 +727,21 @@ JVM_handle_bsd_signal(int sig,
   ShouldNotReachHere();
 }
 
-#ifdef _ALLBSD_SOURCE
 // From solaris_i486.s ported to bsd_i486.s
 extern "C" void fixcw();
-#endif
 
 void os::Bsd::init_thread_fpu_state(void) {
 #ifndef AMD64
-# ifdef _ALLBSD_SOURCE
   // Set fpu to 53 bit precision. This happens too early to use a stub.
   fixcw();
-# else
-  // set fpu to 53 bit precision
-  set_fpu_control_word(0x27f);
-# endif
 #endif // !AMD64
 }
 
-#ifndef _ALLBSD_SOURCE
-int os::Bsd::get_fpu_control_word(void) {
-#ifdef AMD64
-  return 0;
-#else
-  int fpu_control;
-  _FPU_GETCW(fpu_control);
-  return fpu_control & 0xffff;
-#endif // AMD64
-}
-
-void os::Bsd::set_fpu_control_word(int fpu_control) {
-#ifndef AMD64
-  _FPU_SETCW(fpu_control);
-#endif // !AMD64
-}
-#endif
 
 // Check that the bsd kernel version is 2.4 or higher since earlier
 // versions do not support SSE without patches.
 bool os::supports_sse() {
-#if defined(AMD64) || defined(_ALLBSD_SOURCE)
   return true;
-#else
-  struct utsname uts;
-  if( uname(&uts) != 0 ) return false; // uname fails?
-  char *minor_string;
-  int major = strtol(uts.release,&minor_string,10);
-  int minor = strtol(minor_string+1,NULL,10);
-  bool result = (major > 2 || (major==2 && minor >= 4));
-#ifndef PRODUCT
-  if (PrintMiscellaneous && Verbose) {
-    tty->print("OS version is %d.%d, which %s support SSE/SSE2\n",
-               major,minor, result ? "DOES" : "does NOT");
-  }
-#endif
-  return result;
-#endif // AMD64
 }
 
 bool os::is_allocatable(size_t bytes) {
@@ -836,46 +779,7 @@ size_t os::Bsd::min_stack_allowed  =  (48 DEBUG_ONLY(+4))*K;
 #define GET_GS() ({int gs; __asm__ volatile("movw %%gs, %w0":"=q"(gs)); gs&0xffff;})
 #endif
 
-#ifdef _ALLBSD_SOURCE
 bool os::Bsd::supports_variable_stack_size() { return true; }
-#else
-// Test if pthread library can support variable thread stack size. BsdThreads
-// in fixed stack mode allocates 2M fixed slot for each thread. BsdThreads
-// in floating stack mode and NPTL support variable stack size.
-bool os::Bsd::supports_variable_stack_size() {
-  if (os::Bsd::is_NPTL()) {
-     // NPTL, yes
-     return true;
-
-  } else {
-    // Note: We can't control default stack size when creating a thread.
-    // If we use non-default stack size (pthread_attr_setstacksize), both
-    // floating stack and non-floating stack BsdThreads will return the
-    // same value. This makes it impossible to implement this function by
-    // detecting thread stack size directly.
-    //
-    // An alternative approach is to check %gs. Fixed-stack BsdThreads
-    // do not use %gs, so its value is 0. Floating-stack BsdThreads use
-    // %gs (either as LDT selector or GDT selector, depending on kernel)
-    // to access thread specific data.
-    //
-    // Note that %gs is a reserved glibc register since early 2001, so
-    // applications are not allowed to change its value (Ulrich Drepper from
-    // Redhat confirmed that all known offenders have been modified to use
-    // either %fs or TSD). In the worst case scenario, when VM is embedded in
-    // a native application that plays with %gs, we might see non-zero %gs
-    // even BsdThreads is running in fixed stack mode. As the result, we'll
-    // return true and skip _thread_safety_check(), so we may not be able to
-    // detect stack-heap collisions. But otherwise it's harmless.
-    //
-#ifdef __GNUC__
-    return (GET_GS() != 0);
-#else
-    return false;
-#endif
-  }
-}
-#endif
 #endif // AMD64
 
 // return default stack size for thr_type
@@ -943,7 +847,7 @@ static void current_stack_region(address * bottom, size_t * size) {
 
   *bottom = (address)((char *)ss.ss_sp - ss.ss_size);
   *size   = ss.ss_size;
-#elif defined(_ALLBSD_SOURCE)
+#else
   pthread_attr_t attr;
 
   int rslt = pthread_attr_init(&attr);
@@ -963,33 +867,6 @@ static void current_stack_region(address * bottom, size_t * size) {
   }
 
   pthread_attr_destroy(&attr);
-#else
-  if (os::Bsd::is_initial_thread()) {
-     // initial thread needs special handling because pthread_getattr_np()
-     // may return bogus value.
-     *bottom = os::Bsd::initial_thread_stack_bottom();
-     *size   = os::Bsd::initial_thread_stack_size();
-  } else {
-     pthread_attr_t attr;
-
-     int rslt = pthread_getattr_np(pthread_self(), &attr);
-
-     // JVM needs to know exact stack location, abort if it fails
-     if (rslt != 0) {
-       if (rslt == ENOMEM) {
-         vm_exit_out_of_memory(0, "pthread_getattr_np");
-       } else {
-         fatal(err_msg("pthread_getattr_np failed with errno = %d", rslt));
-       }
-     }
-
-     if (pthread_attr_getstack(&attr, (void **)bottom, size) != 0) {
-         fatal("Can not locate current stack attributes!");
-     }
-
-     pthread_attr_destroy(&attr);
-
-  }
 #endif
   assert(os::current_stack_pointer() >= *bottom &&
          os::current_stack_pointer() < *bottom + *size, "just checking");

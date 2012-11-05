@@ -85,9 +85,11 @@ void end_of_file() { }
 
 #include "dlfcn.h"
 
-#define DECODE_INSTRUCTIONS_NAME "decode_instructions_virtual"
+#define DECODE_INSTRUCTIONS_VIRTUAL_NAME "decode_instructions_virtual"
+#define DECODE_INSTRUCTIONS_NAME "decode_instructions"
 #define HSDIS_NAME               "hsdis"
 static void* decode_instructions_pv = 0;
+static void* decode_instructions_sv = 0;
 static const char* hsdis_path[] = {
   HSDIS_NAME"-"LIBARCH LIB_EXT,
   "./" HSDIS_NAME"-"LIBARCH LIB_EXT,
@@ -101,11 +103,12 @@ static const char* load_decode_instructions() {
   void* dllib = NULL;
   const char* *next_in_path = hsdis_path;
   while (1) {
-    decode_instructions_pv = dlsym(dllib, DECODE_INSTRUCTIONS_NAME);
-    if (decode_instructions_pv != NULL)
+    decode_instructions_pv = dlsym(dllib, DECODE_INSTRUCTIONS_VIRTUAL_NAME);
+    decode_instructions_sv = dlsym(dllib, DECODE_INSTRUCTIONS_NAME);
+    if (decode_instructions_pv != NULL || decode_instructions_sv != NULL)
       return NULL;
     if (dllib != NULL)
-      return "plugin does not defined "DECODE_INSTRUCTIONS_NAME;
+      return "plugin does not defined "DECODE_INSTRUCTIONS_VIRTUAL_NAME" and "DECODE_INSTRUCTIONS_NAME;
     for (dllib = NULL; dllib == NULL; ) {
       const char* next_lib = (*next_in_path++);
       if (next_lib == NULL)
@@ -213,20 +216,44 @@ void disassemble(uintptr_t from, uintptr_t to) {
     printf("%s: %s\n", err, dlerror());
     exit(1);
   }
-  printf("Decoding from %p to %p...\n", from, to);
-  decode_instructions_ftype decode_instructions
-    = (decode_instructions_ftype) decode_instructions_pv;
+  decode_func_vtype decode_instructions_v
+    = (decode_func_vtype) decode_instructions_pv;
+  decode_func_stype decode_instructions_s
+    = (decode_func_stype) decode_instructions_sv;
   void* res;
-  if (raw && xml) {
-    res = (*decode_instructions)(from, to, (unsigned char*)from, to - from, simple_handle_event, stdout, NULL, stdout, options);
-  } else if (raw) {
-    res = (*decode_instructions)(from, to, (unsigned char*)from, to - from, simple_handle_event, stdout, NULL, stdout, options);
-  } else {
-    res = (*decode_instructions)(from, to, (unsigned char*)from, to - from,
-                                 handle_event, (void*) event_cookie,
-                                 fprintf_callback, stdout,
-                                 options);
+  if (decode_instructions_pv != NULL) {
+    printf("\nDecoding from %p to %p...with %s\n", from, to, DECODE_INSTRUCTIONS_VIRTUAL_NAME);
+    if (raw) {
+      res = (*decode_instructions_v)(from, to,
+                                     (unsigned char*)from, to - from,
+                                     simple_handle_event, stdout,
+                                     NULL, stdout,
+                                     options, 0);
+    } else {
+      res = (*decode_instructions_v)(from, to,
+                                    (unsigned char*)from, to - from,
+                                     handle_event, (void*) event_cookie,
+                                     fprintf_callback, stdout,
+                                     options, 0);
+    }
+    if (res != (void*)to)
+      printf("*** Result was %p!\n", res);
   }
-  if (res != (void*)to)
-    printf("*** Result was %p!\n", res);
+  void* sres;
+  if (decode_instructions_sv != NULL) {
+    printf("\nDecoding from %p to %p...with old decode_instructions\n", from, to, DECODE_INSTRUCTIONS_NAME);
+    if (raw) {
+      sres = (*decode_instructions_s)(from, to,
+                                      simple_handle_event, stdout,
+                                      NULL, stdout,
+                                      options);
+    } else {
+      sres = (*decode_instructions_s)(from, to,
+                                      handle_event, (void*) event_cookie,
+                                      fprintf_callback, stdout,
+                                      options);
+    }
+    if (sres != (void *)to)
+      printf("*** Result of decode_instructions %p!\n", sres);
+  }
 }

@@ -1,0 +1,2 @@
+MissingDefaultCase1.java:12:1: compiler.err.invalid.containedby.annotation.elem.nondefault: FooContainer, other()
+1 error

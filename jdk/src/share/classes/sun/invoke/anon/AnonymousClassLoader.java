@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,74 +73,14 @@ import sun.misc.IOUtils;
 public class AnonymousClassLoader {
     final Class<?> hostClass;
 
-    // Note: Do not refactor the calls to checkHostClass unless you
-    //       also adjust this constant:
-    private static int CHC_CALLERS = 3;
-
-    public AnonymousClassLoader() {
-        this.hostClass = checkHostClass(null);
-    }
-    public AnonymousClassLoader(Class<?> hostClass) {
-        this.hostClass = checkHostClass(hostClass);
+    // Privileged constructor.
+    private AnonymousClassLoader(Class<?> hostClass) {
+        this.hostClass = hostClass;
     }
 
-    private static Class<?> getTopLevelClass(Class<?> clazz) {
-      for(Class<?> outer = clazz.getDeclaringClass(); outer != null;
-          outer = outer.getDeclaringClass()) {
-        clazz = outer;
-      }
-      return clazz;
-    }
-
-    private static Class<?> checkHostClass(Class<?> hostClass) {
-        // called only from the constructor
-        // does a context-sensitive check on caller class
-        // CC[0..3] = {Reflection, this.checkHostClass, this.<init>, caller}
-        Class<?> caller = sun.reflect.Reflection.getCallerClass(CHC_CALLERS);
-
-        if (caller == null) {
-            // called from the JVM directly
-            if (hostClass == null)
-                return AnonymousClassLoader.class; // anything central will do
-            return hostClass;
-        }
-
-        if (hostClass == null)
-            hostClass = caller; // default value is caller itself
-
-        // anonymous class will access hostClass on behalf of caller
-        Class<?> callee = hostClass;
-
-        if (caller == callee)
-            // caller can always nominate itself to grant caller's own access rights
-            return hostClass;
-
-        // normalize caller and callee to their top-level classes:
-        caller = getTopLevelClass(caller);
-        callee = getTopLevelClass(callee);
-        if (caller == callee)
-            return caller;
-
-        ClassLoader callerCL = caller.getClassLoader();
-        if (callerCL == null) {
-            // caller is trusted code, so accept the proposed hostClass
-            return hostClass;
-        }
-
-        // %%% should do something with doPrivileged, because trusted
-        // code should have a way to execute on behalf of
-        // partially-trusted clients
-
-        // Does the caller have the right to access the private
-        // members of the callee?  If not, raise an error.
-        final int ACC_PRIVATE = 2;
-        try {
-            sun.reflect.Reflection.ensureMemberAccess(caller, callee, null, ACC_PRIVATE);
-        } catch (IllegalAccessException ee) {
-            throw new IllegalArgumentException(ee);
-        }
-
-        return hostClass;
+    public static AnonymousClassLoader make(sun.misc.Unsafe unsafe, Class<?> hostClass) {
+        if (unsafe == null)  throw new NullPointerException();
+        return new AnonymousClassLoader(hostClass);
     }
 
     public Class<?> loadClass(byte[] classFile) {
@@ -249,7 +189,7 @@ public class AnonymousClassLoader {
     private static int fakeNameCounter = 99999;
 
     // ignore two warnings on this line:
-    static sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
+    private static sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
     // preceding line requires that this class be on the boot class path
 
     static private final Method defineAnonymousClass;

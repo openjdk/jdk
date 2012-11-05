@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/defaultMethods.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
@@ -404,21 +405,13 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
                                   Symbol* method_name, Symbol* method_signature,
                                   KlassHandle current_klass, bool check_access, TRAPS) {
 
-  // 1. check if klass is not interface
-  if (resolved_klass->is_interface()) {
-    ResourceMark rm(THREAD);
-    char buf[200];
-    jio_snprintf(buf, sizeof(buf), "Found interface %s, but class was expected", Klass::cast(resolved_klass())->external_name());
-    THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
-  }
-
   Handle nested_exception;
 
-  // 2. lookup method in resolved klass and its super klasses
+  // 1. lookup method in resolved klass and its super klasses
   lookup_method_in_klasses(resolved_method, resolved_klass, method_name, method_signature, CHECK);
 
   if (resolved_method.is_null()) { // not found in the class hierarchy
-    // 3. lookup method in all the interfaces implemented by the resolved klass
+    // 2. lookup method in all the interfaces implemented by the resolved klass
     lookup_method_in_interfaces(resolved_method, resolved_klass, method_name, method_signature, CHECK);
 
     if (resolved_method.is_null()) {
@@ -432,7 +425,7 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
     }
 
     if (resolved_method.is_null()) {
-      // 4. method lookup failed
+      // 3. method lookup failed
       ResourceMark rm(THREAD);
       THROW_MSG_CAUSE(vmSymbols::java_lang_NoSuchMethodError(),
                       Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
@@ -440,6 +433,15 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
                                                               method_signature),
                       nested_exception);
     }
+  }
+
+  // 4. check if klass is not interface
+  if (resolved_klass->is_interface() && resolved_method->is_abstract()) {
+    ResourceMark rm(THREAD);
+    char buf[200];
+    jio_snprintf(buf, sizeof(buf), "Found interface %s, but class was expected",
+        resolved_klass()->external_name());
+    THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
   // 5. check if method is concrete
@@ -743,6 +745,27 @@ void LinkResolver::linktime_resolve_special_method(methodHandle& resolved_method
                                                    Symbol* method_name, Symbol* method_signature,
                                                    KlassHandle current_klass, bool check_access, TRAPS) {
 
+  if (resolved_klass->is_interface() && current_klass() != NULL) {
+    // If the target class is a direct interface, treat this as a "super"
+    // default call.
+    //
+    // If the current method is an overpass that happens to call a direct
+    // super-interface's method, then we'll end up rerunning the default method
+    // analysis even though we don't need to, but that's ok since it will end
+    // up with the same answer.
+    InstanceKlass* ik = InstanceKlass::cast(current_klass());
+    Array<Klass*>* interfaces = ik->local_interfaces();
+    int num_interfaces = interfaces->length();
+    for (int index = 0; index < num_interfaces; index++) {
+      if (interfaces->at(index) == resolved_klass()) {
+        Method* method = DefaultMethods::find_super_default(current_klass(),
+            resolved_klass(), method_name, method_signature, CHECK);
+        resolved_method = methodHandle(THREAD, method);
+        return;
+      }
+    }
+  }
+
   resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, check_access, CHECK);
 
   // check if method name is <init>, that it is found in same klass as static type
@@ -784,11 +807,17 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result, methodHandle
   { KlassHandle method_klass  = KlassHandle(THREAD,
                                             resolved_method->method_holder());
 
-    if (check_access &&
+    const bool direct_calling_default_method =
+      resolved_klass() != NULL && resolved_method() != NULL &&
+      resolved_klass->is_interface() && !resolved_method->is_abstract();
+
+    if (!direct_calling_default_method &&
+        check_access &&
         // a) check if ACC_SUPER flag is set for the current class
         current_klass->is_super() &&
         // b) check if the method class is a superclass of the current class (superclass relation is not reflexive!)
-        current_klass->is_subtype_of(method_klass()) && current_klass() != method_klass() &&
+        current_klass->is_subtype_of(method_klass()) &&
+        current_klass() != method_klass() &&
         // c) check if the method is not <init>
         resolved_method->name() != vmSymbols::object_initializer_name()) {
       // Lookup super method

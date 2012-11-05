@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,19 @@ package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
 import java.util.*;
+
 import com.sun.javadoc.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Generate package usage information.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Robert G. Field
  * @author Bhavesh Patel (Modified)
@@ -51,11 +57,9 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @throws DocletAbortException
      */
     public PackageUseWriter(ConfigurationImpl configuration,
-                            ClassUseMapper mapper, String filename,
+                            ClassUseMapper mapper, DocPath filename,
                             PackageDoc pkgdoc) throws IOException {
-        super(configuration, DirectoryManager.getDirectoryPath(pkgdoc),
-              filename,
-              DirectoryManager.getRelativePath(pkgdoc.name()));
+        super(configuration, DocPath.forPackage(pkgdoc).resolve(filename));
         this.pkgdoc = pkgdoc;
 
         // by examining all classes in this package, find what packages
@@ -92,7 +96,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     public static void generate(ConfigurationImpl configuration,
                                 ClassUseMapper mapper, PackageDoc pkgdoc) {
         PackageUseWriter pkgusegen;
-        String filename = "package-use.html";
+        DocPath filename = DocPaths.PACKAGE_USE;
         try {
             pkgusegen = new PackageUseWriter(configuration,
                                              mapper, filename, pkgdoc);
@@ -226,10 +230,10 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     protected void addClassRow(ClassDoc usedClass, String packageName,
             Content contentTree) {
-        String path = pathString(usedClass,
-                "class-use/" + usedClass.name() + ".html");
+        DocPath dp = pathString(usedClass,
+                DocPaths.CLASS_USE.resolve(DocPath.forName(usedClass)));
         Content td = HtmlTree.TD(HtmlStyle.colOne,
-                getHyperLink(path, packageName, new StringContent(usedClass.name())));
+                getHyperLink(dp.fragment(packageName), new StringContent(usedClass.name())));
         addIndexComment(usedClass, td);
         contentTree.addContent(td);
     }
@@ -242,7 +246,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageUse(PackageDoc pkg, Content contentTree) throws IOException {
         Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst,
-                getHyperLink("", Util.getPackageName(pkg),
+                getHyperLink(Util.getPackageName(pkg),
                 new RawHtml(Util.getPackageName(pkg))));
         contentTree.addContent(tdFirst);
         HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
@@ -282,7 +286,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @return a content tree for the package link
      */
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink("package-summary.html", "",
+        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
                 packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -304,7 +308,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @return a content tree for the tree link
      */
     protected Content getNavLinkTree() {
-        Content linkContent = getHyperLink("package-tree.html", "",
+        Content linkContent = getHyperLink(DocPaths.PACKAGE_TREE,
                 treeLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;

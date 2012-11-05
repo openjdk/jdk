@@ -472,6 +472,12 @@ bool Reflection::verify_class_access(Klass* current_class, Klass* new_class, boo
     return true;
   }
 
+  // Also allow all accesses from
+  // java/lang/invoke/MagicLambdaImpl subclasses to succeed trivially.
+  if (current_class->is_subclass_of(SystemDictionary::lambda_MagicLambdaImpl_klass())) {
+    return true;
+  }
+
   return can_relax_access_check_for(current_class, new_class, classloader_only);
 }
 
@@ -561,6 +567,12 @@ bool Reflection::verify_field_access(Klass* current_class,
   if (   JDK_Version::is_gte_jdk14x_version()
       && UseNewReflection
       && Klass::cast(current_class)->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
+    return true;
+  }
+
+  // Also allow all accesses from
+  // java/lang/invoke/MagicLambdaImpl subclasses to succeed trivially.
+  if (current_class->is_subclass_of(SystemDictionary::lambda_MagicLambdaImpl_klass())) {
     return true;
   }
 

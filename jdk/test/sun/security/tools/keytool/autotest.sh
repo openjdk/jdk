@@ -78,7 +78,7 @@ case "$OS" in
 esac
 
 if [ "$LIBNAME" = "" ]; then
-  echo "Cannot find LIBNAME"
+  echo "Cannot find libsoftokn3.so"
   exit 1
 fi
 

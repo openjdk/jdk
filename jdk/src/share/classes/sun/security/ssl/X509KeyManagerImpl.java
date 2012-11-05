@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,13 +128,35 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     public String chooseServerAlias(String keyType,
             Principal[] issuers, Socket socket) {
         return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
-                        getAlgorithmConstraints(socket));
+            getAlgorithmConstraints(socket),
+            X509TrustManagerImpl.getRequestedServerNames(socket),
+            "HTTPS");    // The SNI HostName is a fully qualified domain name.
+                         // The certificate selection scheme for SNI HostName
+                         // is similar to HTTPS endpoint identification scheme
+                         // implemented in this provider.
+                         //
+                         // Using HTTPS endpoint identification scheme to guide
+                         // the selection of an appropriate authentication
+                         // certificate according to requested SNI extension.
+                         //
+                         // It is not a really HTTPS endpoint identification.
     }
 
     public String chooseEngineServerAlias(String keyType,
             Principal[] issuers, SSLEngine engine) {
         return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
-                        getAlgorithmConstraints(engine));
+            getAlgorithmConstraints(engine),
+            X509TrustManagerImpl.getRequestedServerNames(engine),
+            "HTTPS");    // The SNI HostName is a fully qualified domain name.
+                         // The certificate selection scheme for SNI HostName
+                         // is similar to HTTPS endpoint identification scheme
+                         // implemented in this provider.
+                         //
+                         // Using HTTPS endpoint identification scheme to guide
+                         // the selection of an appropriate authentication
+                         // certificate according to requested SNI extension.
+                         //
+                         // It is not a really HTTPS endpoint identification.
     }
 
     public String[] getClientAliases(String keyType, Principal[] issuers) {
@@ -321,8 +343,8 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
      * The algorithm we use is:
      *   . scan through all the aliases in all builders in order
      *   . as soon as we find a perfect match, return
-     *     (i.e. a match with a cert that has appropriate key usage
-     *      and is not expired).
+     *     (i.e. a match with a cert that has appropriate key usage,
+     *      qualified endpoint identity, and is not expired).
      *   . if we do not find a perfect match, keep looping and remember
      *     the imperfect matches
      *   . at the end, sort the imperfect matches. we prefer expired certs
@@ -331,6 +353,15 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
      */
     private String chooseAlias(List<KeyType> keyTypeList, Principal[] issuers,
             CheckType checkType, AlgorithmConstraints constraints) {
+
+        return chooseAlias(keyTypeList, issuers,
+                                    checkType, constraints, null, null);
+    }
+
+    private String chooseAlias(List<KeyType> keyTypeList, Principal[] issuers,
+            CheckType checkType, AlgorithmConstraints constraints,
+            List<SNIServerName> requestedServerNames, String idAlgorithm) {
+
         if (keyTypeList == null || keyTypeList.isEmpty()) {
             return null;
         }
@@ -340,7 +371,8 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
         for (int i = 0, n = builders.size(); i < n; i++) {
             try {
                 List<EntryStatus> results = getAliases(i, keyTypeList,
-                                    issuerSet, false, checkType, constraints);
+                            issuerSet, false, checkType, constraints,
+                            requestedServerNames, idAlgorithm);
                 if (results != null) {
                     // the results will either be a single perfect match
                     // or 1 or more imperfect matches
@@ -394,7 +426,8 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
         for (int i = 0, n = builders.size(); i < n; i++) {
             try {
                 List<EntryStatus> results = getAliases(i, keyTypeList,
-                                    issuerSet, true, checkType, constraints);
+                                    issuerSet, true, checkType, constraints,
+                                    null, null);
                 if (results != null) {
                     if (allResults == null) {
                         allResults = new ArrayList<EntryStatus>();
@@ -504,7 +537,9 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
         // first check extensions, if they match, check expiration
         // note: we may want to move this code into the sun.security.validator
         // package
-        CheckResult check(X509Certificate cert, Date date) {
+        CheckResult check(X509Certificate cert, Date date,
+                List<SNIServerName> serverNames, String idAlgorithm) {
+
             if (this == NONE) {
                 return CheckResult.OK;
             }
@@ -553,11 +588,11 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                                 return CheckResult.EXTENSION_MISMATCH;
                             }
                             // For servers, also require key agreement.
-                            // This is not totally accurate as the keyAgreement bit
-                            // is only necessary for static ECDH key exchange and
-                            // not ephemeral ECDH. We leave it in for now until
-                            // there are signs that this check causes problems
-                            // for real world EC certificates.
+                            // This is not totally accurate as the keyAgreement
+                            // bit is only necessary for static ECDH key
+                            // exchange and not ephemeral ECDH. We leave it in
+                            // for now until there are signs that this check
+                            // causes problems for real world EC certificates.
                             if ((this == SERVER) && (getBit(ku, 4) == false)) {
                                 return CheckResult.EXTENSION_MISMATCH;
                             }
@@ -571,10 +606,50 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
 
             try {
                 cert.checkValidity(date);
-                return CheckResult.OK;
             } catch (CertificateException e) {
                 return CheckResult.EXPIRED;
             }
+
+            if (serverNames != null && !serverNames.isEmpty()) {
+                for (SNIServerName serverName : serverNames) {
+                    if (serverName.getType() ==
+                                StandardConstants.SNI_HOST_NAME) {
+                        if (!(serverName instanceof SNIHostName)) {
+                            try {
+                                serverName =
+                                    new SNIHostName(serverName.getEncoded());
+                            } catch (IllegalArgumentException iae) {
+                                // unlikely to happen, just in case ...
+                                if (useDebug) {
+                                    debug.println(
+                                       "Illegal server name: " + serverName);
+                                }
+
+                                return CheckResult.INSENSITIVE;
+                            }
+                        }
+                        String hostname =
+                                ((SNIHostName)serverName).getAsciiName();
+
+                        try {
+                            X509TrustManagerImpl.checkIdentity(hostname,
+                                                        cert, idAlgorithm);
+                        } catch (CertificateException e) {
+                            if (useDebug) {
+                                debug.println(
+                                   "Certificate identity does not match " +
+                                   "Server Name Inidication (SNI): " +
+                                   hostname);
+                            }
+                            return CheckResult.INSENSITIVE;
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            return CheckResult.OK;
         }
     }
 
@@ -583,6 +658,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     // for sorting, i.e. OK is best, followed by EXPIRED and EXTENSION_MISMATCH
     private static enum CheckResult {
         OK,                     // ok or not checked
+        INSENSITIVE,            // server name indication insensitive
         EXPIRED,                // extensions valid but cert expired
         EXTENSION_MISMATCH,     // extensions invalid (expiration not checked)
     }
@@ -616,7 +692,10 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     private List<EntryStatus> getAliases(int builderIndex,
             List<KeyType> keyTypes, Set<Principal> issuerSet,
             boolean findAll, CheckType checkType,
-            AlgorithmConstraints constraints) throws Exception {
+            AlgorithmConstraints constraints,
+            List<SNIServerName> requestedServerNames,
+            String idAlgorithm) throws Exception {
+
         Builder builder = builders.get(builderIndex);
         KeyStore ks = builder.getKeyStore();
         List<EntryStatus> results = null;
@@ -699,7 +778,8 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 date = new Date();
             }
             CheckResult checkResult =
-                    checkType.check((X509Certificate)chain[0], date);
+                    checkType.check((X509Certificate)chain[0], date,
+                                    requestedServerNames, idAlgorithm);
             EntryStatus status =
                     new EntryStatus(builderIndex, keyIndex,
                                         alias, chain, checkResult);

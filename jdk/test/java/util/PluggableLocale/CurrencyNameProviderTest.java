@@ -48,14 +48,18 @@ public class CurrencyNameProviderTest extends ProviderTest {
 
     void test1() {
         com.bar.CurrencyNameProviderImpl cnp = new com.bar.CurrencyNameProviderImpl();
+        com.bar.CurrencyNameProviderImpl2 cnp2 = new com.bar.CurrencyNameProviderImpl2();
         Locale[] availloc = Locale.getAvailableLocales();
         Locale[] testloc = availloc.clone();
-        List<Locale> providerloc = Arrays.asList(cnp.getAvailableLocales());
+        List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getCurrencyNameProvider().getAvailableLocales());
+        List<Locale> providerloc = new ArrayList<Locale>();
+        providerloc.addAll(Arrays.asList(cnp.getAvailableLocales()));
+        providerloc.addAll(Arrays.asList(cnp2.getAvailableLocales()));
 
         for (Locale target: availloc) {
             // pure JRE implementation
             OpenListResourceBundle rb = (OpenListResourceBundle)LocaleProviderAdapter.forJRE().getLocaleData().getCurrencyNames(target);
-            boolean jreHasBundle = rb.getLocale().equals(target);
+            boolean jreSupportsTarget = jreimplloc.contains(target);
 
             for (Locale test: testloc) {
                 // get a Currency instance
@@ -78,31 +82,33 @@ public class CurrencyNameProviderTest extends ProviderTest {
                 String providerscurrency = null;
                 String providersname = null;
                 if (providerloc.contains(target)) {
+                    if (cnp.isSupportedLocale(target)) {
                     providerscurrency = cnp.getSymbol(c.getCurrencyCode(), target);
                     providersname = cnp.getDisplayName(c.getCurrencyCode(), target);
+                    } else {
+                        providerscurrency = cnp2.getSymbol(c.getCurrencyCode(), target);
+                        providersname = cnp2.getDisplayName(c.getCurrencyCode(), target);
+                    }
                 }
 
-                // JRE's name (if any)
+                // JRE's name
                 String jrescurrency = null;
                 String jresname = null;
                 String key = c.getCurrencyCode();
                 String nameKey = key.toLowerCase(Locale.ROOT);
-                if (jreHasBundle) {
+                if (jreSupportsTarget) {
                     try {
                         jrescurrency = rb.getString(key);
-                    } catch (MissingResourceException mre) {
-                        // JRE does not have any resource, "jrescurrency" should remain null
-                    }
+                    } catch (MissingResourceException mre) {}
                     try {
                         jresname = rb.getString(nameKey);
-                    } catch (MissingResourceException mre) {
-                        // JRE does not have any resource, "jresname" should remain null
-                    }
+                    } catch (MissingResourceException mre) {}
                 }
 
-                checkValidity(target, jrescurrency, providerscurrency, currencyresult, jrescurrency!=null);
+                checkValidity(target, jrescurrency, providerscurrency, currencyresult,
+                              jreSupportsTarget && jrescurrency != null);
                 checkValidity(target, jresname, providersname, nameresult,
-                              jreHasBundle && rb.handleGetKeys().contains(nameKey));
+                              jreSupportsTarget && jresname != null);
             }
         }
     }
@@ -111,18 +117,22 @@ public class CurrencyNameProviderTest extends ProviderTest {
     final String pattern = "###,###\u00A4";
     final String YEN_IN_OSAKA = "100,000\u5186\u3084\u3002";
     final String YEN_IN_KYOTO = "100,000\u5186\u3069\u3059\u3002";
+    final String YEN_IN_TOKYO= "100,000JPY-tokyo";
     final Locale OSAKA = new Locale("ja", "JP", "osaka");
     final Locale KYOTO = new Locale("ja", "JP", "kyoto");
+    final Locale TOKYO = new Locale("ja", "JP", "tokyo");
     Integer i = new Integer(100000);
     String formatted;
     DecimalFormat df;
 
     void test2() {
+        Locale defloc = Locale.getDefault();
+
         try {
             df = new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(OSAKA));
             System.out.println(formatted = df.format(i));
             if(!formatted.equals(YEN_IN_OSAKA)) {
-                throw new RuntimeException("formatted zone names mismatch. " +
+                throw new RuntimeException("formatted currency names mismatch. " +
                     "Should match with " + YEN_IN_OSAKA);
             }
 
@@ -132,13 +142,25 @@ public class CurrencyNameProviderTest extends ProviderTest {
             df = new DecimalFormat(pattern, DecimalFormatSymbols.getInstance());
             System.out.println(formatted = df.format(i));
             if(!formatted.equals(YEN_IN_KYOTO)) {
-                throw new RuntimeException("formatted zone names mismatch. " +
+                throw new RuntimeException("formatted currency names mismatch. " +
                     "Should match with " + YEN_IN_KYOTO);
             }
 
             df.parse(YEN_IN_KYOTO);
+
+            Locale.setDefault(TOKYO);
+            df = new DecimalFormat(pattern, DecimalFormatSymbols.getInstance());
+            System.out.println(formatted = df.format(i));
+            if(!formatted.equals(YEN_IN_TOKYO)) {
+                throw new RuntimeException("formatted currency names mismatch. " +
+                    "Should match with " + YEN_IN_TOKYO);
+            }
+
+            df.parse(YEN_IN_TOKYO);
         } catch (ParseException pe) {
             throw new RuntimeException("parse error occured" + pe);
+        } finally {
+            Locale.setDefault(defloc);
         }
     }
 }
