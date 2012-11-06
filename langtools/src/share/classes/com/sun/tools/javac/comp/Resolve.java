@@ -2022,7 +2022,7 @@ public class Resolve {
                          Name name,
                          List<Type> argtypes,
                          List<Type> typeargtypes) {
-        return lookupMethod(env, pos, env.enclClass.sym, new BasicLookupHelper(name, env.enclClass.type, argtypes, typeargtypes) {
+        return lookupMethod(env, pos, env.enclClass.sym, new BasicLookupHelper(name, env.enclClass.sym.type, argtypes, typeargtypes) {
             @Override
             Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
                 return findFun(env, name, argtypes, typeargtypes,
