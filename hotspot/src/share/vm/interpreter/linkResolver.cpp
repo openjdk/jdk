@@ -133,7 +133,7 @@ void CallInfo::set_common(KlassHandle resolved_klass, KlassHandle selected_klass
       // don't force compilation, resolve was on behalf of compiler
       return;
     }
-    if (InstanceKlass::cast(selected_method->method_holder())->is_not_initialized()) {
+    if (selected_method->method_holder()->is_not_initialized()) {
       // 'is_not_initialized' means not only '!is_initialized', but also that
       // initialization has not been started yet ('!being_initialized')
       // Do not force compilation of methods in uninitialized classes.
@@ -466,7 +466,7 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
 
     // check loader constraints
     Handle loader (THREAD, InstanceKlass::cast(current_klass())->class_loader());
-    Handle class_loader (THREAD, InstanceKlass::cast(resolved_method->method_holder())->class_loader());
+    Handle class_loader (THREAD, resolved_method->method_holder()->class_loader());
     {
       ResourceMark rm(THREAD);
       char* failed_type_name =
@@ -528,7 +528,7 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
   if (check_access) {
     HandleMark hm(THREAD);
     Handle loader (THREAD, InstanceKlass::cast(current_klass())->class_loader());
-    Handle class_loader (THREAD, InstanceKlass::cast(resolved_method->method_holder())->class_loader());
+    Handle class_loader (THREAD, resolved_method->method_holder()->class_loader());
     {
       ResourceMark rm(THREAD);
       char* failed_type_name =
@@ -910,12 +910,12 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
 
   // Virtual methods cannot be resolved before its klass has been linked, for otherwise the Method*'s
   // has not been rewritten, and the vtable initialized.
-  assert(InstanceKlass::cast(resolved_method->method_holder())->is_linked(), "must be linked");
+  assert(resolved_method->method_holder()->is_linked(), "must be linked");
 
   // Virtual methods cannot be resolved before its klass has been linked, for otherwise the Method*'s
   // has not been rewritten, and the vtable initialized. Make sure to do this after the nullcheck, since
   // a missing receiver might result in a bogus lookup.
-  assert(InstanceKlass::cast(resolved_method->method_holder())->is_linked(), "must be linked");
+  assert(resolved_method->method_holder()->is_linked(), "must be linked");
 
   // do lookup based on receiver klass using the vtable index
   if (resolved_method->method_holder()->is_interface()) { // miranda method

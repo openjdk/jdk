@@ -231,8 +231,8 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
 
 
 void ConstantPoolCacheEntry::set_interface_call(methodHandle method, int index) {
-  Klass* interf = method->method_holder();
-  assert(InstanceKlass::cast(interf)->is_interface(), "must be an interface");
+  InstanceKlass* interf = method->method_holder();
+  assert(interf->is_interface(), "must be an interface");
   assert(!method->is_final_method(), "interfaces do not have final methods; cannot link to one here");
   set_f1(interf);
   set_f2(index);
@@ -421,7 +421,7 @@ bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
         if (!(*trace_name_printed)) {
           // RC_TRACE_MESG macro has an embedded ResourceMark
           RC_TRACE_MESG(("adjust: name=%s",
-            Klass::cast(old_method->method_holder())->external_name()));
+            old_method->method_holder()->external_name()));
           *trace_name_printed = true;
         }
         // RC_TRACE macro has an embedded ResourceMark
@@ -449,7 +449,7 @@ bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
       if (!(*trace_name_printed)) {
         // RC_TRACE_MESG macro has an embedded ResourceMark
         RC_TRACE_MESG(("adjust: name=%s",
-          Klass::cast(old_method->method_holder())->external_name()));
+          old_method->method_holder()->external_name()));
         *trace_name_printed = true;
       }
       // RC_TRACE macro has an embedded ResourceMark

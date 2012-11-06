@@ -1117,8 +1117,8 @@ void DumperSupport::dump_stack_frame(DumpWriter* writer,
   writer->write_symbolID(m->name());                // method's name
   writer->write_symbolID(m->signature());           // method's signature
 
-  assert(Klass::cast(m->method_holder())->oop_is_instance(), "not InstanceKlass");
-  writer->write_symbolID(InstanceKlass::cast(m->method_holder())->source_file_name());  // source file name
+  assert(m->method_holder()->oop_is_instance(), "not InstanceKlass");
+  writer->write_symbolID(m->method_holder()->source_file_name());  // source file name
   writer->write_u4(class_serial_num);               // class serial number
   writer->write_u4((u4) line_number);               // line number
 }

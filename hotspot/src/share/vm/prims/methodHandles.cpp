@@ -233,7 +233,7 @@ Handle MethodHandles::init_method_MemberName(oop mname_oop, CallInfo& info, TRAP
   methodHandle m = info.resolved_method();
   KlassHandle defc = info.resolved_klass();
   int vmindex = -1;
-  if (defc->is_interface() && Klass::cast(m->method_holder())->is_interface()) {
+  if (defc->is_interface() && m->method_holder()->is_interface()) {
     // LinkResolver does not report itable indexes!  (fix this?)
     vmindex = klassItable::compute_itable_index(m());
   } else if (m->can_be_statically_bound()) {
@@ -749,8 +749,8 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
       DEBUG_ONLY(vmtarget = NULL);  // safety
       if (m.is_null())  break;
       if (!have_defc) {
-        Klass* defc = m->method_holder();
-        java_lang_invoke_MemberName::set_clazz(mname(), Klass::cast(defc)->java_mirror());
+        InstanceKlass* defc = m->method_holder();
+        java_lang_invoke_MemberName::set_clazz(mname(), defc->java_mirror());
       }
       if (!have_name) {
         //not java_lang_String::create_from_symbol; let's intern member names

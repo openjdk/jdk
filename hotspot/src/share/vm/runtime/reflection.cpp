@@ -56,14 +56,14 @@ static void trace_class_resolution(Klass* to_class) {
     vframeStream vfst(jthread);
     // skip over any frames belonging to java.lang.Class
     while (!vfst.at_end() &&
-           InstanceKlass::cast(vfst.method()->method_holder())->name() == vmSymbols::java_lang_Class()) {
+           vfst.method()->method_holder()->name() == vmSymbols::java_lang_Class()) {
       vfst.next();
     }
     if (!vfst.at_end()) {
       // this frame is a likely suspect
       caller = vfst.method()->method_holder();
       line_number = vfst.method()->line_number_from_bci(vfst.bci());
-      Symbol* s = InstanceKlass::cast(vfst.method()->method_holder())->source_file_name();
+      Symbol* s = vfst.method()->method_holder()->source_file_name();
       if (s != NULL) {
         source_file = s->as_C_string();
       }
@@ -642,8 +642,8 @@ oop get_mirror_from_signature(methodHandle method, SignatureStream* ss, TRAPS) {
     case T_OBJECT:
     case T_ARRAY:
       Symbol* name        = ss->as_symbol(CHECK_NULL);
-      oop loader            = InstanceKlass::cast(method->method_holder())->class_loader();
-      oop protection_domain = InstanceKlass::cast(method->method_holder())->protection_domain();
+      oop loader            = method->method_holder()->class_loader();
+      oop protection_domain = method->method_holder()->protection_domain();
       Klass* k = SystemDictionary::resolve_or_fail(
                                        name,
                                        Handle(THREAD, loader),
@@ -714,7 +714,7 @@ oop Reflection::new_method(methodHandle method, bool intern_name, bool for_const
   assert(!method()->is_initializer() ||
          (for_constant_pool_access && method()->is_static()) ||
          (method()->name() == vmSymbols::class_initializer_name()
-    && Klass::cast(method()->method_holder())->is_interface() && JDK_Version::is_jdk12x_version()), "should call new_constructor instead");
+    && method()->method_holder()->is_interface() && JDK_Version::is_jdk12x_version()), "should call new_constructor instead");
   instanceKlassHandle holder (THREAD, method->method_holder());
   int slot = method->method_idnum();
 
@@ -832,7 +832,7 @@ oop Reflection::new_field(fieldDescriptor* fd, bool intern_name, TRAPS) {
   Handle type = new_type(signature, holder, CHECK_NULL);
   Handle rh  = java_lang_reflect_Field::create(CHECK_NULL);
 
-  java_lang_reflect_Field::set_clazz(rh(), Klass::cast(fd->field_holder())->java_mirror());
+  java_lang_reflect_Field::set_clazz(rh(), fd->field_holder()->java_mirror());
   java_lang_reflect_Field::set_slot(rh(), fd->index());
   java_lang_reflect_Field::set_name(rh(), name());
   java_lang_reflect_Field::set_type(rh(), type());
@@ -900,7 +900,7 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
       method = reflected_method;
     } else {
       // resolve based on the receiver
-      if (InstanceKlass::cast(reflected_method->method_holder())->is_interface()) {
+      if (reflected_method->method_holder()->is_interface()) {
         // resolve interface call
         if (ReflectionWrapResolutionErrors) {
           // new default: 6531596
