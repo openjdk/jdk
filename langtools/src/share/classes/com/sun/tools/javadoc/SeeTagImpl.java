@@ -267,8 +267,6 @@ class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
             }
 
             if (referencedClass == null) { /* may just not be in this run */
-//                docenv().warning(holder, "tag.see.class_not_found",
-//                                 where, text);
                 // check if it's a package name
                 referencedPackage = docenv().lookupPackage(where);
                 return;
