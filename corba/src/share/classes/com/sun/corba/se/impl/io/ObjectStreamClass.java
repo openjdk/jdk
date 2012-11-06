@@ -1523,8 +1523,8 @@ public class ObjectStreamClass implements java.io.Serializable {
     private boolean hasExternalizableBlockData;
     Method writeObjectMethod;
     Method readObjectMethod;
-    private Method writeReplaceObjectMethod;
-    private Method readResolveObjectMethod;
+    private transient Method writeReplaceObjectMethod;
+    private transient Method readResolveObjectMethod;
     private Constructor cons ;
 
     /**
