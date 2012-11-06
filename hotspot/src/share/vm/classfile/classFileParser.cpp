@@ -4193,7 +4193,7 @@ void ClassFileParser::check_final_method_override(instanceKlassHandle this_klass
           }
 
           // continue to look from super_m's holder's super.
-          k = InstanceKlass::cast(super_m->method_holder())->super();
+          k = super_m->method_holder()->super();
           continue;
         }
 

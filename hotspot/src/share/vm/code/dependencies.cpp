@@ -829,7 +829,7 @@ class ClassHierarchyWalker {
       }
       if (   !Dependencies::is_concrete_method(lm)
           && !Dependencies::is_concrete_method(m)
-          && Klass::cast(lm->method_holder())->is_subtype_of(m->method_holder()))
+          && lm->method_holder()->is_subtype_of(m->method_holder()))
         // Method m is overridden by lm, but both are non-concrete.
         return true;
     }

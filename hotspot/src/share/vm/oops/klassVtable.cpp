@@ -307,7 +307,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
     if (super_method->name() == name && super_method->signature() == signature) {
 
       // get super_klass for method_holder for the found method
-      InstanceKlass* super_klass =  InstanceKlass::cast(super_method->method_holder());
+      InstanceKlass* super_klass =  super_method->method_holder();
 
       if ((super_klass->is_override(super_method, target_loader, target_classname, THREAD)) ||
       ((klass->major_version() >= VTABLE_TRANSITIVE_OVERRIDE_VERSION)
@@ -452,7 +452,7 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
     }
     // get the class holding the matching method
     // make sure you use that class for is_override
-    InstanceKlass* superk = InstanceKlass::cast(super_method->method_holder());
+    InstanceKlass* superk = super_method->method_holder();
     // we want only instance method matches
     // pretend private methods are not in the super vtable
     // since we do override around them: e.g. a.m pub/b.m private/c.m pub,
@@ -630,7 +630,7 @@ void klassVtable::adjust_method_entries(Method** old_methods, Method** new_metho
           if (!(*trace_name_printed)) {
             // RC_TRACE_MESG macro has an embedded ResourceMark
             RC_TRACE_MESG(("adjust: name=%s",
-                           Klass::cast(old_method->method_holder())->external_name()));
+                           old_method->method_holder()->external_name()));
             *trace_name_printed = true;
           }
           // RC_TRACE macro has an embedded ResourceMark
@@ -745,7 +745,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
     Method* target = klass->uncached_lookup_method(method_name, method_signature);
     while (target != NULL && target->is_static()) {
       // continue with recursive lookup through the superclass
-      Klass* super = Klass::cast(target->method_holder())->super();
+      Klass* super = target->method_holder()->super();
       target = (super == NULL) ? (Method*)NULL : Klass::cast(super)->uncached_lookup_method(method_name, method_signature);
     }
     if (target == NULL || !target->is_public() || target->is_abstract()) {
@@ -755,7 +755,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
       // if checkconstraints requested
       methodHandle  target_h (THREAD, target); // preserve across gc
       if (checkconstraints) {
-        Handle method_holder_loader (THREAD, InstanceKlass::cast(target->method_holder())->class_loader());
+        Handle method_holder_loader (THREAD, target->method_holder()->class_loader());
         if (method_holder_loader() != interface_loader()) {
           ResourceMark rm(THREAD);
           char* failed_type_name =
@@ -825,7 +825,7 @@ void klassItable::adjust_method_entries(Method** old_methods, Method** new_metho
           if (!(*trace_name_printed)) {
             // RC_TRACE_MESG macro has an embedded ResourceMark
             RC_TRACE_MESG(("adjust: name=%s",
-              Klass::cast(old_method->method_holder())->external_name()));
+              old_method->method_holder()->external_name()));
             *trace_name_printed = true;
           }
           // RC_TRACE macro has an embedded ResourceMark
@@ -960,9 +960,9 @@ void klassItable::setup_itable_offset_table(instanceKlassHandle klass) {
 
 // m must be a method in an interface
 int klassItable::compute_itable_index(Method* m) {
-  Klass* intf = m->method_holder();
-  assert(InstanceKlass::cast(intf)->is_interface(), "sanity check");
-  Array<Method*>* methods = InstanceKlass::cast(intf)->methods();
+  InstanceKlass* intf = m->method_holder();
+  assert(intf->is_interface(), "sanity check");
+  Array<Method*>* methods = intf->methods();
   int index = 0;
   while(methods->at(index) != m) {
     index++;

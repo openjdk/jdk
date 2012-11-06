@@ -113,8 +113,7 @@ int ConstMethod::size(int code_size,
 }
 
 Method* ConstMethod::method() const {
-    return InstanceKlass::cast(_constants->pool_holder())->method_with_idnum(
-                               _method_idnum);
+    return _constants->pool_holder()->method_with_idnum(_method_idnum);
   }
 
 // linenumber table - note that length is unknown until decompression,

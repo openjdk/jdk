@@ -2985,7 +2985,7 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
   }
 
   // A jfieldID for a static field is a JNIid specifying the field holder and the offset within the Klass*
-  JNIid* id = InstanceKlass::cast(fd.field_holder())->jni_id_for(fd.offset());
+  JNIid* id = fd.field_holder()->jni_id_for(fd.offset());
   debug_only(id->set_is_static_field_id();)
 
   debug_only(id->verify(fd.field_holder()));
@@ -4016,7 +4016,7 @@ static bool register_native(KlassHandle k, Symbol* name, Symbol* signature, addr
   if (PrintJNIResolving) {
     ResourceMark rm(THREAD);
     tty->print_cr("[Registering JNI native method %s.%s]",
-      Klass::cast(method->method_holder())->external_name(),
+      method->method_holder()->external_name(),
       method->name()->as_C_string());
   }
   return true;
