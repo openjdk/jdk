@@ -1559,21 +1559,8 @@ void AwtWindow::SendWindowEvent(jint id, HWND opposite,
 
 BOOL AwtWindow::AwtSetActiveWindow(BOOL isMouseEventCause, UINT hittest)
 {
-    // Fix for 6458497.
-    // Retreat if current foreground window is out of both our and embedder process.
-    // The exception is when activation is requested due to a mouse event.
-    if (!isMouseEventCause) {
-        HWND fgWindow = ::GetForegroundWindow();
-        if (NULL != fgWindow) {
-            DWORD fgProcessID;
-            ::GetWindowThreadProcessId(fgWindow, &fgProcessID);
-            if (fgProcessID != ::GetCurrentProcessId()
-                && !AwtToolkit::GetInstance().IsEmbedderProcessId(fgProcessID))
-            {
-                return FALSE;
-            }
-        }
-    }
+    // We used to reject non mouse window activation if our app wasn't active.
+    // This code since has been removed as the fix for 7185280
 
     HWND proxyContainerHWnd = GetProxyToplevelContainer();
     HWND proxyHWnd = GetProxyFocusOwner();

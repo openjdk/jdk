@@ -78,8 +78,8 @@ public class RejectedExecutionException extends RuntimeException {
 
     /**
      * Constructs a <tt>RejectedExecutionException</tt> with the
-     * specified cause.  The detail message is set to: <pre> (cause ==
-     * null ? null : cause.toString())</pre> (which typically contains
+     * specified cause.  The detail message is set to {@code (cause ==
+     * null ? null : cause.toString())} (which typically contains
      * the class and detail message of <tt>cause</tt>).
      *
      * @param  cause the cause (which is saved for later retrieval by the

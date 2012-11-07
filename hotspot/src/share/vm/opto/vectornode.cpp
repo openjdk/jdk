@@ -29,8 +29,7 @@
 //------------------------------VectorNode--------------------------------------
 
 // Return the vector operator for the specified scalar operation
-// and vector length.  Also used to check if the code generator
-// supports the vector operation.
+// and vector length.
 int VectorNode::opcode(int sopc, BasicType bt) {
   switch (sopc) {
   case Op_AddI:
@@ -75,7 +74,7 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     case T_BYTE:   return 0;   // Unimplemented
     case T_CHAR:
     case T_SHORT:  return Op_MulVS;
-    case T_INT:    return Matcher::match_rule_supported(Op_MulVI) ? Op_MulVI : 0; // SSE4_1
+    case T_INT:    return Op_MulVI;
     }
     ShouldNotReachHere();
   case Op_MulF:
@@ -104,9 +103,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_LShiftVL;
   case Op_RShiftI:
     switch (bt) {
-    case T_BOOLEAN:
+    case T_BOOLEAN:return Op_URShiftVB; // boolean is unsigned value
+    case T_CHAR:   return Op_URShiftVS; // char is unsigned value
     case T_BYTE:   return Op_RShiftVB;
-    case T_CHAR:
     case T_SHORT:  return Op_RShiftVS;
     case T_INT:    return Op_RShiftVI;
     }
@@ -116,10 +115,14 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_RShiftVL;
   case Op_URShiftI:
     switch (bt) {
-    case T_BOOLEAN:
-    case T_BYTE:   return Op_URShiftVB;
-    case T_CHAR:
-    case T_SHORT:  return Op_URShiftVS;
+    case T_BOOLEAN:return Op_URShiftVB;
+    case T_CHAR:   return Op_URShiftVS;
+    case T_BYTE:
+    case T_SHORT:  return 0; // Vector logical right shift for signed short
+                             // values produces incorrect Java result for
+                             // negative data because java code should convert
+                             // a short value into int value with sign
+                             // extension before a shift.
     case T_INT:    return Op_URShiftVI;
     }
     ShouldNotReachHere();
@@ -157,12 +160,14 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   return 0; // Unimplemented
 }
 
+// Also used to check if the code generator
+// supports the vector operation.
 bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
       Matcher::vector_size_supported(bt, vlen)) {
     int vopc = VectorNode::opcode(opc, bt);
-    return vopc > 0 && Matcher::has_match_rule(vopc);
+    return vopc > 0 && Matcher::match_rule_supported(vopc);
   }
   return false;
 }

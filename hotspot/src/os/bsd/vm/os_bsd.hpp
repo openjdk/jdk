@@ -56,19 +56,6 @@ class Bsd {
   static int sigflags[MAXSIGNUM];
 
   static int (*_clock_gettime)(clockid_t, struct timespec *);
-#ifndef _ALLBSD_SOURCE
-  static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
-
-  static address   _initial_thread_stack_bottom;
-  static uintptr_t _initial_thread_stack_size;
-
-  static const char *_glibc_version;
-  static const char *_libpthread_version;
-
-  static bool _is_floating_stack;
-  static bool _is_NPTL;
-  static bool _supports_fast_thread_cpu_time;
-#endif
 
   static GrowableArray<int>* _cpu_to_node;
 
@@ -76,27 +63,13 @@ class Bsd {
 
   static julong _physical_memory;
   static pthread_t _main_thread;
-#ifndef _ALLBSD_SOURCE
-  static Mutex* _createThread_lock;
-#endif
   static int _page_size;
 
   static julong available_memory();
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
-#ifndef _ALLBSD_SOURCE
-  static void set_glibc_version(const char *s)      { _glibc_version = s; }
-  static void set_libpthread_version(const char *s) { _libpthread_version = s; }
-#endif
-
   static bool supports_variable_stack_size();
-
-#ifndef _ALLBSD_SOURCE
-  static void set_is_NPTL()                   { _is_NPTL = true;  }
-  static void set_is_BsdThreads()           { _is_NPTL = false; }
-  static void set_is_floating_stack()         { _is_floating_stack = true; }
-#endif
 
   static void rebuild_cpu_to_node_map();
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
@@ -106,25 +79,10 @@ class Bsd {
  public:
 
   static void init_thread_fpu_state();
-#ifndef _ALLBSD_SOURCE
-  static int  get_fpu_control_word();
-  static void set_fpu_control_word(int fpu_control);
-#endif
   static pthread_t main_thread(void)                                { return _main_thread; }
 
-#ifndef _ALLBSD_SOURCE
-  // returns kernel thread id (similar to LWP id on Solaris), which can be
-  // used to access /proc
-  static pid_t gettid();
-  static void set_createThread_lock(Mutex* lk)                      { _createThread_lock = lk; }
-  static Mutex* createThread_lock(void)                             { return _createThread_lock; }
-#endif
   static void hotspot_sigmask(Thread* thread);
 
-#ifndef _ALLBSD_SOURCE
-  static address   initial_thread_stack_bottom(void)                { return _initial_thread_stack_bottom; }
-  static uintptr_t initial_thread_stack_size(void)                  { return _initial_thread_stack_size; }
-#endif
   static bool is_initial_thread(void);
 
   static int page_size(void)                                        { return _page_size; }
@@ -161,23 +119,6 @@ class Bsd {
   static struct sigaction *get_chained_signal_action(int sig);
   static bool chained_handler(int sig, siginfo_t* siginfo, void* context);
 
-#ifndef _ALLBSD_SOURCE
-  // GNU libc and libpthread version strings
-  static const char *glibc_version()          { return _glibc_version; }
-  static const char *libpthread_version()     { return _libpthread_version; }
-
-  // NPTL or BsdThreads?
-  static bool is_BsdThreads()               { return !_is_NPTL; }
-  static bool is_NPTL()                       { return _is_NPTL;  }
-
-  // NPTL is always floating stack. BsdThreads could be using floating
-  // stack or fixed stack.
-  static bool is_floating_stack()             { return _is_floating_stack; }
-
-  static void libpthread_init();
-  static bool libnuma_init();
-  static void* libnuma_dlsym(void* handle, const char* name);
-#endif
   // Minimum stack size a thread can be created with (allowing
   // the VM to completely create the thread and enter user code)
   static size_t min_stack_allowed;
@@ -186,21 +127,8 @@ class Bsd {
   static size_t default_stack_size(os::ThreadType thr_type);
   static size_t default_guard_size(os::ThreadType thr_type);
 
-#ifndef _ALLBSD_SOURCE
-  static void capture_initial_stack(size_t max_size);
-
-  // Stack overflow handling
-  static bool manually_expand_stack(JavaThread * t, address addr);
-  static int max_register_window_saves_before_flushing();
-#endif
-
   // Real-time clock functions
   static void clock_init(void);
-
-#ifndef _ALLBSD_SOURCE
-  // fast POSIX clocks support
-  static void fast_thread_clock_init(void);
-#endif
 
   static inline bool supports_monotonic_clock() {
     return _clock_gettime != NULL;
@@ -209,18 +137,6 @@ class Bsd {
   static int clock_gettime(clockid_t clock_id, struct timespec *tp) {
     return _clock_gettime ? _clock_gettime(clock_id, tp) : -1;
   }
-
-#ifndef _ALLBSD_SOURCE
-  static int pthread_getcpuclockid(pthread_t tid, clockid_t *clock_id) {
-    return _pthread_getcpuclockid ? _pthread_getcpuclockid(tid, clock_id) : -1;
-  }
-
-  static bool supports_fast_thread_cpu_time() {
-    return _supports_fast_thread_cpu_time;
-  }
-
-  static jlong fast_thread_cpu_time(clockid_t clockid);
-#endif
 
   // Stack repair handling
 

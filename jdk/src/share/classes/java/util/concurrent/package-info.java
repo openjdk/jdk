@@ -188,7 +188,7 @@
  * A {@code CopyOnWriteArrayList} is preferable to a synchronized
  * {@code ArrayList} when the expected number of reads and traversals
  * greatly outnumber the number of updates to a list.
-
+ *
  * <p>The "Concurrent" prefix used with some classes in this package
  * is a shorthand indicating several differences from similar
  * "synchronized" classes.  For example {@code java.util.Hashtable} and
@@ -218,9 +218,8 @@
  *
  * <h2><a name="MemoryVisibility">Memory Consistency Properties</a></h2>
  *
- * Chapter 17 of
- * <cite>The Java&trade; Language Specification</cite>
- * defines the
+ * <a href="http://docs.oracle.com/javase/specs/jls/se7/html/index.html">
+ * Chapter 17 of the Java Language Specification</a> defines the
  * <i>happens-before</i> relation on memory operations such as reads and
  * writes of shared variables.  The results of a write by one thread are
  * guaranteed to be visible to a read by another thread only if the write

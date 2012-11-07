@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.io.FileOutputStream;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.CRC32;
-import sun.security.tools.JarSigner;
 
 public class LargeJarEntry {
 
@@ -73,7 +72,7 @@ public class LargeJarEntry {
                 jarName, "b" };
         // now, try to sign it
         try {
-            JarSigner.main(jsArgs);
+            sun.security.tools.jarsigner.Main.main(jsArgs);
         } catch (OutOfMemoryError err) {
             throw new Exception("Test failed with OutOfMemoryError", err);
         } finally {

@@ -51,6 +51,14 @@
 
 static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
 
+// Cocoa windowDidBecomeKey/windowDidResignKey notifications
+// doesn't provide information about "opposite" window, so we
+// have to do a bit of tracking. This variable points to a window
+// which had been the key window just before a new key window
+// was set. It would be nil if the new key window isn't an AWT 
+// window or the app currently has no key window.
+static AWTWindow* lastKeyWindow = nil;
+
 // --------------------------------------------------------------
 // NSWindow/NSPanel descendants implementation
 #define AWT_NS_WINDOW_IMPLEMENTATION                            \
@@ -324,6 +332,13 @@ AWT_ASSERT_APPKIT_THREAD;
     }
 }
 
++ (NSNumber *) getNSWindowDisplayID_AppKitThread:(NSWindow *)window {
+    AWT_ASSERT_APPKIT_THREAD;
+    NSScreen *screen = [window screen];
+    NSDictionary *deviceDescription = [screen deviceDescription];
+    return [deviceDescription objectForKey:@"NSScreenNumber"];
+}
+
 - (void) dealloc {
 AWT_ASSERT_APPKIT_THREAD;
 
@@ -498,15 +513,17 @@ AWT_ASSERT_APPKIT_THREAD;
     [self _deliverIconify:JNI_FALSE];
 }
 
-- (void) _deliverWindowFocusEvent:(BOOL)focused {
+- (void) _deliverWindowFocusEvent:(BOOL)focused oppositeWindow:(AWTWindow *)opposite {
 //AWT_ASSERT_APPKIT_THREAD;
-
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
     if (platformWindow != NULL) {
-        static JNF_MEMBER_CACHE(jm_deliverWindowFocusEvent, jc_CPlatformWindow, "deliverWindowFocusEvent", "(Z)V");
-        JNFCallVoidMethod(env, platformWindow, jm_deliverWindowFocusEvent, (jboolean)focused);
+        jobject oppositeWindow = [opposite.javaPlatformWindow jObjectWithEnv:env];
+
+        static JNF_MEMBER_CACHE(jm_deliverWindowFocusEvent, jc_CPlatformWindow, "deliverWindowFocusEvent", "(ZLsun/lwawt/macosx/CPlatformWindow;)V");
+        JNFCallVoidMethod(env, platformWindow, jm_deliverWindowFocusEvent, (jboolean)focused, oppositeWindow);
         (*env)->DeleteLocalRef(env, platformWindow);
+        (*env)->DeleteLocalRef(env, oppositeWindow);
     }
 }
 
@@ -515,7 +532,10 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
     [AWTToolkit eventCountPlusPlus];
     [CMenuBar activate:self.javaMenuBar modallyDisabled:NO];
-    [self _deliverWindowFocusEvent:YES];
+    AWTWindow *opposite = [AWTWindow lastKeyWindow];
+    [AWTWindow setLastKeyWindow:nil];
+
+    [self _deliverWindowFocusEvent:YES oppositeWindow: opposite];
 }
 
 - (void) windowDidResignKey: (NSNotification *) notification {
@@ -523,7 +543,18 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
     [AWTToolkit eventCountPlusPlus];
     [self.javaMenuBar deactivate];
-    [self _deliverWindowFocusEvent:NO];
+
+    // the new key window
+    NSWindow *keyWindow = [NSApp keyWindow];
+    AWTWindow *opposite = nil;
+    if ([AWTWindow isAWTWindow: keyWindow]) {
+        opposite = (AWTWindow *)[keyWindow delegate];
+        [AWTWindow setLastKeyWindow: self];
+    } else {
+        [AWTWindow setLastKeyWindow: nil];
+    }
+
+    [self _deliverWindowFocusEvent:NO oppositeWindow: opposite];
 }
 
 - (void) windowDidBecomeMain: (NSNotification *) notification {
@@ -676,6 +707,17 @@ AWT_ASSERT_APPKIT_THREAD;
         [self.nsWindow setShowsResizeIndicator:flag];
     }
 }
+
++ (void) setLastKeyWindow:(AWTWindow *)window {
+    [window retain];
+    [lastKeyWindow release];
+    lastKeyWindow = window;
+}
+
++ (AWTWindow *) lastKeyWindow {
+    return lastKeyWindow;
+}
+
 
 @end // AWTWindow
 
@@ -1113,19 +1155,22 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSynthesizeMou
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL
-Java_sun_lwawt_macosx_CPlatformWindow_nativeGetNSWindowDisplayID_1AppKitThread
+Java_sun_lwawt_macosx_CPlatformWindow_nativeGetNSWindowDisplayID
 (JNIEnv *env, jclass clazz, jlong windowPtr)
 {
-    jint ret; // CGDirectDisplayID
+    __block jint ret; // CGDirectDisplayID
 
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_APPKIT_THREAD;
 
     NSWindow *window = OBJC(windowPtr);
-    NSScreen *screen = [window screen];
-    NSDictionary *deviceDescription = [screen deviceDescription];
-    NSNumber *displayID = [deviceDescription objectForKey:@"NSScreenNumber"];
-    ret = (jint)[displayID intValue];
+
+    if ([NSThread isMainThread]) {
+        ret = (jint)[[AWTWindow getNSWindowDisplayID_AppKitThread: window] intValue];
+    } else {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+            ret = (jint)[[AWTWindow getNSWindowDisplayID_AppKitThread: window] intValue];
+        }];
+    }
 
 JNF_COCOA_EXIT(env);
 
@@ -1197,6 +1242,10 @@ JNF_COCOA_ENTER(env);
     NSWindow *nsWindow = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWTWindow *window = (AWTWindow*)[nsWindow delegate];
+
+        if ([AWTWindow lastKeyWindow] == window) {
+            [AWTWindow setLastKeyWindow: nil];
+        }
 
         // AWTWindow holds a reference to the NSWindow in its nsWindow
         // property. Unsetting the delegate allows it to be deallocated

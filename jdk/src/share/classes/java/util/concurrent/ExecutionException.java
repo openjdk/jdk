@@ -79,11 +79,9 @@ public class ExecutionException extends Exception {
 
     /**
      * Constructs an <tt>ExecutionException</tt> with the specified cause.
-     * The detail message is set to:
-     * <pre>
-     *  (cause == null ? null : cause.toString())</pre>
-     * (which typically contains the class and detail message of
-     * <tt>cause</tt>).
+     * The detail message is set to {@code (cause == null ? null :
+     * cause.toString())} (which typically contains the class and
+     * detail message of {@code cause}).
      *
      * @param  cause the cause (which is saved for later retrieval by the
      *         {@link #getCause()} method)

@@ -259,7 +259,6 @@ public class AtomicLong extends Number implements java.io.Serializable {
         return Long.toString(get());
     }
 
-
     /**
      * Returns the value of this {@code AtomicLong} as an {@code int}
      * after a narrowing primitive conversion.
