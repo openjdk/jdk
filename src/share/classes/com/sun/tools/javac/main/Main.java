@@ -533,7 +533,7 @@ public class Main {
      * annotation processor.
      */
     void apMessage(AnnotationProcessingError ex) {
-        log.printLines("msg.proc.annotation.uncaught.exception");
+        log.printLines(PrefixKind.JAVAC, "msg.proc.annotation.uncaught.exception");
         ex.getCause().printStackTrace(log.getWriter(WriterKind.NOTICE));
     }
 
