@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,23 +27,25 @@
  * @library ..
  */
 
-import java.io.*;
 import java.net.*;
-import java.nio.*;
 import java.nio.channels.*;
-import java.util.*;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.*;
 
 public class ConnectWrite {
 
     public static void main(String[] args) throws Exception {
-        test1(13);
+        try (TestServers.DayTimeServer daytimeServer
+                = TestServers.DayTimeServer.startNewServer(25)) {
+            test1(daytimeServer);
+        }
     }
 
-    public static void test1(int port) throws Exception {
+    static void test1(TestServers.DayTimeServer daytimeServer) throws Exception {
         Selector selector = SelectorProvider.provider().openSelector();
-        InetAddress myAddress=InetAddress.getByName(TestUtil.HOST);
-        InetSocketAddress isa = new InetSocketAddress(myAddress, port);
+        InetAddress myAddress = daytimeServer.getAddress();
+        InetSocketAddress isa
+            = new InetSocketAddress(myAddress, daytimeServer.getPort());
         SocketChannel sc = SocketChannel.open();
         try {
             sc.configureBlocking(false);
