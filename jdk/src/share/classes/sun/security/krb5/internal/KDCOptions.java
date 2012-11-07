@@ -139,12 +139,44 @@ public class KDCOptions extends KerberosFlags {
     public static final int UNUSED9         = 9;
     public static final int UNUSED10        = 10;
     public static final int UNUSED11        = 11;
+    public static final int CNAME_IN_ADDL_TKT = 14;
     public static final int RENEWABLE_OK    = 27;
     public static final int ENC_TKT_IN_SKEY = 28;
     public static final int RENEW           = 30;
     public static final int VALIDATE        = 31;
 
+    private static final String[] names = {
+        "RESERVED",         //0
+        "FORWARDABLE",      //1;
+        "FORWARDED",        //2;
+        "PROXIABLE",        //3;
+        "PROXY",            //4;
+        "ALLOW_POSTDATE",   //5;
+        "POSTDATED",        //6;
+        "UNUSED7",          //7;
+        "RENEWABLE",        //8;
+        "UNUSED9",          //9;
+        "UNUSED10",         //10;
+        "UNUSED11",         //11;
+        null,null,
+        "CNAME_IN_ADDL_TKT",//14;
+        null,null,null,null,null,null,null,null,null,null,null,null,
+        "RENEWABLE_OK",     //27;
+        "ENC_TKT_IN_SKEY",  //28;
+        null,
+        "RENEW",            //30;
+        "VALIDATE",         //31;
+    };
+
     private boolean DEBUG = Krb5.DEBUG;
+
+    public static KDCOptions with(int... flags) {
+        KDCOptions options = new KDCOptions();
+        for (int flag: flags) {
+            options.set(flag, true);
+        }
+        return options;
+    }
 
     public KDCOptions() {
         super(Krb5.KDC_OPTS_MAX + 1);
@@ -238,6 +270,20 @@ public class KDCOptions extends KerberosFlags {
         return super.get(option);
     }
 
+    @Override public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("KDCOptions: ");
+        for (int i=0; i<Krb5.KDC_OPTS_MAX+1; i++) {
+            if (get(i)) {
+                if (names[i] != null) {
+                    sb.append(names[i]).append(",");
+                } else {
+                    sb.append(i).append(",");
+                }
+            }
+        }
+        return sb.toString();
+    }
 
     private void setDefault() {
         try {

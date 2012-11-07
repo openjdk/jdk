@@ -96,4 +96,13 @@ public interface GSSCredentialSpi {
      * @exception GSSException may be thrown
      */
     public Oid getMechanism();
+
+    /**
+     * Impersonates another client.
+     *
+     * @param name the client to impersonate
+     * @return the new credential
+     * @exception GSSException may be thrown
+     */
+    public GSSCredentialSpi impersonate(GSSNameSpi name) throws GSSException;
 }
