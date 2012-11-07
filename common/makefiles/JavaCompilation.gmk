@@ -480,19 +480,24 @@ define SetupJavaCompilation
         $1_SJAVAC:=$$(word 1,$$($1_JAVAC)) -cp $$(word 3,$$($1_JAVAC)) com.sun.tools.sjavac.Main
 
         # Set the $1_REMOTE to spawn a background javac server.
-        $1_REMOTE:=--server:portfile=$$($1_SJAVAC_PORTFILE),poolsize=$(SJAVAC_SERVER_CORES),id=$1,sjavac=$$(subst $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_SERVER_JVM) $$($1_SJAVAC))))
+        $1_REMOTE:=--server:portfile=$$($1_SJAVAC_PORTFILE),id=$1,sjavac=$$(subst $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_SERVER_JVM) $$($1_SJAVAC))))
 
         $$($1_BIN)/javac_state: $$($1_SRCS) $$($1_DEPENDS)
 		$(MKDIR) -p $$(@D)
 		$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.batch.tmp)
 		$(ECHO) Compiling $1
-		$$($1_JVM) $$($1_SJAVAC) \
-			$$($1_REMOTE) $$($1_SJAVAC_ARGS) \
+		($$($1_JVM) $$($1_SJAVAC) \
+			$$($1_REMOTE) \
+			-j $(NUM_CORES) \
 			--permit-unidentified-artifacts \
 			--permit-sources-without-package \
 			--compare-found-sources $$($1_BIN)/_the.batch.tmp \
+			--log=$(LOG) \
+			$$($1_SJAVAC_ARGS) \
 			$$($1_FLAGS) \
-			-implicit:none -d $$($1_BIN) $$($1_HEADERS_ARG)
+			$$($1_HEADERS_ARG) \
+			-d $$($1_BIN) && \
+			$(MV) $$($1_BIN)/_the.batch.tmp $$($1_BIN)/_the.batch)
     else
         # Using plain javac to batch compile everything.
         $1 := $$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS) $$($1_BIN)/_the.batch
