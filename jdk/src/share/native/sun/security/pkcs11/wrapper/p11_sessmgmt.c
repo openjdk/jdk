@@ -256,7 +256,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSessionI
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_SESSION_INFO ckSessionInfo;
-    jobject jSessionInfo;
+    jobject jSessionInfo=NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
