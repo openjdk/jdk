@@ -235,26 +235,13 @@ AC_ARG_WITH(builddeps-conf, [AS_HELP_STRING([--with-builddeps-conf],
     [use this configuration file for the builddeps])])
 
 AC_ARG_WITH(builddeps-server, [AS_HELP_STRING([--with-builddeps-server],
-    [download and use build dependencies from this server url, e.g. --with-builddeps-server=ftp://example.com/dir])])
+    [download and use build dependencies from this server url])])
 
 AC_ARG_WITH(builddeps-dir, [AS_HELP_STRING([--with-builddeps-dir],
-    [store downloaded build dependencies here @<:@d/localhome/builddeps@:>@])],
+    [store downloaded build dependencies here @<:@/localhome/builddeps@:>@])],
     [],
     [with_builddeps_dir=/localhome/builddeps])
 
 AC_ARG_WITH(builddeps-group, [AS_HELP_STRING([--with-builddeps-group],
     [chgrp the downloaded build dependencies to this group])])
-
-AC_ARG_ENABLE([list-builddeps], [AS_HELP_STRING([--enable-list-builddeps],
-	[list all build dependencies known to the configure script])],
-	[LIST_BUILDDEPS="${enableval}"], [LIST_BUILDDEPS='no'])
-
-if test "x$LIST_BUILDDEPS" = xyes; then
-    echo
-    echo List of build dependencies known to the configure script,
-    echo that can be used in builddeps.conf files:
-    cat $AUTOCONF_DIR/*.ac $AUTOCONF_DIR/*.m4 | grep BDEPS_CHECK_MODUL[E]\( | cut -f 2 -d ',' | tr -d ' ' | sort
-    echo
-    exit 1
-fi
 ])

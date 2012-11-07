@@ -53,13 +53,14 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 
 import javax.tools.JavaFileManager;
+import javax.tools.StandardJavaFileManager;
 import static javax.tools.StandardLocation.*;
 import static com.sun.tools.javac.main.Option.*;
 
 /** This class converts command line arguments, environment variables
  *  and system properties (in File.pathSeparator-separated String form)
  *  into a boot class path, user class path, and source path (in
- *  Collection<String> form).
+ *  {@code Collection<String>} form).
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -342,11 +343,11 @@ public class Locations {
             }
         }
 
-        /** @see JavaFileManager#handleOption. */
+        /** @see JavaFileManager#handleOption */
         abstract boolean handleOption(Option option, String value);
-        /** @see JavaFileManager#getLocation. */
+        /** @see StandardJavaFileManager#getLocation */
         abstract Collection<File> getLocation();
-        /** @see JavaFileManager#setLocation. */
+        /** @see StandardJavaFileManager#setLocation */
         abstract void setLocation(Iterable<? extends File> files) throws IOException;
     }
 

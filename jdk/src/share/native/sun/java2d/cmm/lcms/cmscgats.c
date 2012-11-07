@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2012 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -72,6 +72,7 @@
 #else
 #    define DIR_CHAR    '/'
 #endif
+
 
 // Symbols
 typedef enum {
@@ -143,6 +144,8 @@ typedef struct _SubAllocator {
 // Table. Each individual table can hold properties and rows & cols
 typedef struct _Table {
 
+        char SheetType[MAXSTR];               // The first row of the IT8 (the type)
+
         int            nSamples, nPatches;    // Cols, Rows
         int            SampleID;              // Pos of ID
 
@@ -162,7 +165,6 @@ typedef struct _FileContext {
 // This struct hold all information about an open IT8 handler.
 typedef struct {
 
-        char SheetType[MAXSTR];               // The first row of the IT8 (the type)
 
         cmsUInt32Number  TablesCount;                     // How many tables in this stream
         cmsUInt32Number  nTable;                          // The actual table
@@ -433,6 +435,8 @@ cmsBool isabsolutepath(const char *path)
     return FALSE;
 }
 
+
+
 // Makes a file path based on a given reference path
 // NOTE: this function doesn't check if the path exists or even if it's legal
 static
@@ -574,7 +578,7 @@ void ReadReal(cmsIT8* it8, int inum)
     if (it8->ch == '.') {        // Decimal point
 
         cmsFloat64Number frac = 0.0;      // fraction
-        int prec = 0;           // precision
+        int prec = 0;                     // precision
 
         NextCh(it8);               // Eats dec. point
 
@@ -621,6 +625,81 @@ void ReadReal(cmsIT8* it8, int inum)
     }
 }
 
+// Parses a float number
+// This can not call directly atof because it uses locale dependant
+// parsing, while CCMX files always use . as decimal separator
+static
+cmsFloat64Number ParseFloatNumber(const char *Buffer)
+{
+    cmsFloat64Number dnum = 0.0;
+    int sign = 1;
+
+    if (*Buffer == '-' || *Buffer == '+') {
+
+         sign = (*Buffer == '-') ? -1 : 1;
+         Buffer++;
+    }
+
+
+    while (*Buffer && isdigit((int) *Buffer)) {
+
+        dnum = dnum * 10.0 + (*Buffer - '0');
+        if (*Buffer) Buffer++;
+    }
+
+    if (*Buffer == '.') {
+
+        cmsFloat64Number frac = 0.0;      // fraction
+        int prec = 0;                     // precission
+
+        if (*Buffer) Buffer++;
+
+        while (*Buffer && isdigit((int) *Buffer)) {
+
+            frac = frac * 10.0 + (*Buffer - '0');
+            prec++;
+            if (*Buffer) Buffer++;
+        }
+
+        dnum = dnum + (frac / xpow10(prec));
+    }
+
+    // Exponent, example 34.00E+20
+    if (*Buffer && toupper(*Buffer) == 'E') {
+
+        int e;
+        int sgn;
+
+        if (*Buffer) Buffer++;
+        sgn = 1;
+
+        if (*Buffer == '-') {
+
+            sgn = -1;
+            if (*Buffer) Buffer++;
+        }
+        else
+            if (*Buffer == '+') {
+
+                sgn = +1;
+                if (*Buffer) Buffer++;
+            }
+
+            e = 0;
+            while (*Buffer && isdigit((int) *Buffer)) {
+
+                if ((cmsFloat64Number) e * 10L < INT_MAX)
+                    e = e * 10 + (*Buffer - '0');
+
+                if (*Buffer) Buffer++;
+            }
+
+            e = sgn*e;
+            dnum = dnum * xpow10(e);
+    }
+
+    return sign * dnum;
+}
 
 
 // Reads next symbol
@@ -1011,7 +1090,7 @@ void* AllocChunk(cmsIT8* it8, cmsUInt32Number size)
     cmsUInt32Number Free = it8 ->Allocator.BlockSize - it8 ->Allocator.Used;
     cmsUInt8Number* ptr;
 
-    size = _cmsALIGNLONG(size);
+    size = _cmsALIGNMEM(size);
 
     if (size > Free) {
 
@@ -1212,7 +1291,7 @@ cmsInt32Number CMSEXPORT cmsIT8SetTable(cmsHANDLE  IT8, cmsUInt32Number nTable)
 cmsHANDLE  CMSEXPORT cmsIT8Alloc(cmsContext ContextID)
 {
     cmsIT8* it8;
-    int i;
+    cmsUInt32Number i;
 
     it8 = (cmsIT8*) _cmsMallocZero(ContextID, sizeof(cmsIT8));
     if (it8 == NULL) return NULL;
@@ -1243,7 +1322,7 @@ cmsHANDLE  CMSEXPORT cmsIT8Alloc(cmsContext ContextID)
     it8 -> lineno = 1;
 
     strcpy(it8->DoubleFormatter, DEFAULT_DBL_FORMAT);
-    strcpy(it8->SheetType, "CGATS.17");
+    cmsIT8SetSheetType((cmsHANDLE) it8, "CGATS.17");
 
     // Initialize predefined properties & data
 
@@ -1260,18 +1339,15 @@ cmsHANDLE  CMSEXPORT cmsIT8Alloc(cmsContext ContextID)
 
 const char* CMSEXPORT cmsIT8GetSheetType(cmsHANDLE hIT8)
 {
-        cmsIT8* it8 = (cmsIT8*) hIT8;
-
-        return it8 ->SheetType;
-
+        return GetTable((cmsIT8*) hIT8)->SheetType;
 }
 
 cmsBool CMSEXPORT cmsIT8SetSheetType(cmsHANDLE hIT8, const char* Type)
 {
-        cmsIT8* it8 = (cmsIT8*) hIT8;
+        TABLE* t = GetTable((cmsIT8*) hIT8);
 
-        strncpy(it8 ->SheetType, Type, MAXSTR-1);
-        it8 ->SheetType[MAXSTR-1] = 0;
+        strncpy(t ->SheetType, Type, MAXSTR-1);
+        t ->SheetType[MAXSTR-1] = 0;
         return TRUE;
 }
 
@@ -1285,8 +1361,6 @@ cmsBool CMSEXPORT cmsIT8SetComment(cmsHANDLE hIT8, const char* Val)
     return AddToList(it8, &GetTable(it8)->HeaderList, "# ", NULL, Val, WRITE_UNCOOKED) != NULL;
 }
 
-
-
 // Sets a property
 cmsBool CMSEXPORT cmsIT8SetPropertyStr(cmsHANDLE hIT8, const char* Key, const char *Val)
 {
@@ -1297,7 +1371,6 @@ cmsBool CMSEXPORT cmsIT8SetPropertyStr(cmsHANDLE hIT8, const char* Key, const ch
 
     return AddToList(it8, &GetTable(it8)->HeaderList, Key, NULL, Val, WRITE_STRINGIFY) != NULL;
 }
-
 
 cmsBool CMSEXPORT cmsIT8SetPropertyDbl(cmsHANDLE hIT8, const char* cProp, cmsFloat64Number Val)
 {
@@ -1351,8 +1424,7 @@ cmsFloat64Number CMSEXPORT cmsIT8GetPropertyDbl(cmsHANDLE hIT8, const char* cPro
 {
     const char *v = cmsIT8GetProperty(hIT8, cProp);
 
-    if (v) return atof(v);
-    else return 0.0;
+    return ParseFloatNumber(v);
 }
 
 const char* CMSEXPORT cmsIT8GetPropertyMulti(cmsHANDLE hIT8, const char* Key, const char *SubKey)
@@ -1553,6 +1625,9 @@ void WriteHeader(cmsIT8* it8, SAVESTREAM* fp)
     KEYVALUE* p;
     TABLE* t = GetTable(it8);
 
+    // Writes the type
+    WriteStr(fp, t->SheetType);
+    WriteStr(fp, "\n");
 
     for (p = t->HeaderList; (p != NULL); p = p->Next)
     {
@@ -1701,8 +1776,6 @@ cmsBool CMSEXPORT cmsIT8SaveToFile(cmsHANDLE hIT8, const char* cFileName)
     sd.stream = fopen(cFileName, "wt");
     if (!sd.stream) return FALSE;
 
-    WriteStr(&sd, it8->SheetType);
-    WriteStr(&sd, "\n");
     for (i=0; i < it8 ->TablesCount; i++) {
 
             cmsIT8SetTable(hIT8, i);
@@ -1737,20 +1810,18 @@ cmsBool CMSEXPORT cmsIT8SaveToMem(cmsHANDLE hIT8, void *MemPtr, cmsUInt32Number*
     else
         sd.Max  = 0;                // Just counting the needed bytes
 
-    WriteStr(&sd, it8->SheetType);
-    WriteStr(&sd, "\n");
     for (i=0; i < it8 ->TablesCount; i++) {
 
-            cmsIT8SetTable(hIT8, i);
-            WriteHeader(it8, &sd);
-            WriteDataFormat(&sd, it8);
-            WriteData(&sd, it8);
+        cmsIT8SetTable(hIT8, i);
+        WriteHeader(it8, &sd);
+        WriteDataFormat(&sd, it8);
+        WriteData(&sd, it8);
     }
 
     sd.Used++;  // The \0 at the very end
 
     if (sd.Base)
-        sd.Ptr = 0;
+        *sd.Ptr = 0;
 
     *BytesNeeded = sd.Used;
 
@@ -1963,12 +2034,8 @@ cmsBool HeaderSection(cmsIT8* it8)
 
 
 static
-cmsBool ParseIT8(cmsIT8* it8, cmsBool nosheet)
+void ReadType(cmsIT8* it8, char* SheetTypePtr)
 {
-    char* SheetTypePtr = it8 ->SheetType;
-
-    if (nosheet == 0) {
-
     // First line is a very special case.
 
     while (isseparator(it8->ch))
@@ -1979,9 +2046,20 @@ cmsBool ParseIT8(cmsIT8* it8, cmsBool nosheet)
         *SheetTypePtr++= (char) it8 ->ch;
         NextCh(it8);
     }
-    }
 
     *SheetTypePtr = 0;
+}
+
+
+static
+cmsBool ParseIT8(cmsIT8* it8, cmsBool nosheet)
+{
+    char* SheetTypePtr = it8 ->Tab[0].SheetType;
+
+    if (nosheet == 0) {
+        ReadType(it8, SheetTypePtr);
+    }
+
     InSymbol(it8);
 
     SkipEOLN(it8);
@@ -2003,6 +2081,39 @@ cmsBool ParseIT8(cmsIT8* it8, cmsBool nosheet)
 
                             AllocTable(it8);
                             it8 ->nTable = it8 ->TablesCount - 1;
+
+                            // Read sheet type if present. We only support identifier and string.
+                            // <ident> <eoln> is a type string
+                            // anything else, is not a type string
+                            if (nosheet == 0) {
+
+                                if (it8 ->sy == SIDENT) {
+
+                                    // May be a type sheet or may be a prop value statement. We cannot use insymbol in
+                                    // this special case...
+                                     while (isseparator(it8->ch))
+                                         NextCh(it8);
+
+                                     // If a newline is found, then this is a type string
+                                    if (it8 ->ch == '\n') {
+
+                                         cmsIT8SetSheetType(it8, it8 ->id);
+                                         InSymbol(it8);
+                                    }
+                                    else
+                                    {
+                                        // It is not. Just continue
+                                        cmsIT8SetSheetType(it8, "");
+                                    }
+                                }
+                                else
+                                    // Validate quoted strings
+                                    if (it8 ->sy == SSTRING) {
+                                        cmsIT8SetSheetType(it8, it8 ->str);
+                                        InSymbol(it8);
+                                    }
+                           }
+
                     }
                     break;
 
@@ -2123,14 +2234,14 @@ void CookPointers(cmsIT8* it8)
 
 // Try to infere if the file is a CGATS/IT8 file at all. Read first line
 // that should be something like some printable characters plus a \n
-
+// returns 0 if this is not like a CGATS, or an integer otherwise. This integer is the number of words in first line?
 static
 int IsMyBlock(cmsUInt8Number* Buffer, int n)
 {
-    int cols = 1, space = 0, quot = 0;
+    int words = 1, space = 0, quot = 0;
     int i;
 
-    if (n < 10) return FALSE;   // Too small
+    if (n < 10) return 0;   // Too small
 
     if (n > 132)
         n = 132;
@@ -2141,7 +2252,7 @@ int IsMyBlock(cmsUInt8Number* Buffer, int n)
         {
         case '\n':
         case '\r':
-            return quot == 1 || cols > 2 ? 0 : cols;
+            return ((quot == 1) || (words > 2)) ? 0 : words;
         case '\t':
         case ' ':
             if(!quot && !space)
@@ -2153,14 +2264,13 @@ int IsMyBlock(cmsUInt8Number* Buffer, int n)
         default:
             if (Buffer[i] < 32) return 0;
             if (Buffer[i] > 127) return 0;
-            cols += space;
+            words += space;
             space = 0;
             break;
         }
     }
 
-    return FALSE;
-
+    return 0;
 }
 
 
@@ -2271,7 +2381,7 @@ cmsHANDLE  CMSEXPORT cmsIT8LoadFromFile(cmsContext ContextID, const char* cFileN
     it8 ->nTable = 0;
 
     if (fclose(it8 ->FileStack[0]->Stream)!= 0) {
-        cmsIT8Free(hIT8);
+            cmsIT8Free(hIT8);
             return NULL;
     }
 
@@ -2454,13 +2564,7 @@ cmsFloat64Number CMSEXPORT cmsIT8GetDataRowColDbl(cmsHANDLE hIT8, int row, int c
 
     Buffer = cmsIT8GetDataRowCol(hIT8, row, col);
 
-    if (Buffer) {
-
-        return atof(Buffer);
-
-    } else
-        return 0;
-
+    return ParseFloatNumber(Buffer);
 }
 
 
@@ -2515,14 +2619,7 @@ cmsFloat64Number CMSEXPORT cmsIT8GetDataDbl(cmsHANDLE  it8, const char* cPatch, 
 
     Buffer = cmsIT8GetData(it8, cPatch, cSample);
 
-    if (Buffer) {
-
-        return atof(Buffer);
-
-    } else {
-
-        return 0;
-    }
+    return ParseFloatNumber(Buffer);
 }
 
 
@@ -2680,5 +2777,7 @@ void CMSEXPORT cmsIT8DefineDblFormat(cmsHANDLE hIT8, const char* Formatter)
         strcpy(it8->DoubleFormatter, DEFAULT_DBL_FORMAT);
     else
         strcpy(it8->DoubleFormatter, Formatter);
+
+    it8 ->DoubleFormatter[sizeof(it8 ->DoubleFormatter)-1] = 0;
 }
 

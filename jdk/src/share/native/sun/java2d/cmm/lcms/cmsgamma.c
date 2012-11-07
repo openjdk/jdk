@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2012 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -277,18 +277,28 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
 
     switch (Type) {
 
-    // X = Y ^ Gamma
+   // X = Y ^ Gamma
     case 1:
-        if (R < 0)
-            Val = 0;
+        if (R < 0) {
+
+            if (fabs(Params[0] - 1.0) < MATRIX_DET_TOLERANCE)
+                Val = R;
+            else
+                Val = 0;
+        }
         else
             Val = pow(R, Params[0]);
         break;
 
     // Type 1 Reversed: X = Y ^1/gamma
     case -1:
-        if (R < 0)
-            Val = 0;
+         if (R < 0) {
+
+            if (fabs(Params[0] - 1.0) < MATRIX_DET_TOLERANCE)
+                Val = R;
+            else
+                Val = 0;
+        }
         else
             Val = pow(R, 1/Params[0]);
         break;
@@ -550,6 +560,19 @@ cmsFloat64Number EvalSegmentedFn(const cmsToneCurve *g, cmsFloat64Number R)
     }
 
     return MINUS_INF;
+}
+
+// Access to estimated low-res table
+cmsUInt32Number CMSEXPORT cmsGetToneCurveEstimatedTableEntries(const cmsToneCurve* t)
+{
+    _cmsAssert(t != NULL);
+    return t ->nEntries;
+}
+
+const cmsUInt16Number* CMSEXPORT cmsGetToneCurveEstimatedTable(const cmsToneCurve* t)
+{
+    _cmsAssert(t != NULL);
+    return t ->Table16;
 }
 
 
@@ -828,7 +851,7 @@ int GetInterval(cmsFloat64Number In, const cmsUInt16Number LutTable[], const str
 cmsToneCurve* CMSEXPORT cmsReverseToneCurveEx(cmsInt32Number nResultSamples, const cmsToneCurve* InCurve)
 {
     cmsToneCurve *out;
-    cmsFloat64Number a = 1, b = 0, y, x1, y1, x2, y2;
+    cmsFloat64Number a = 0, b = 0, y, x1, y1, x2, y2;
     int i, j;
     int Ascending;
 
@@ -859,6 +882,7 @@ cmsToneCurve* CMSEXPORT cmsReverseToneCurveEx(cmsInt32Number nResultSamples, con
         j = GetInterval(y, InCurve->Table16, InCurve->InterpParams);
         if (j >= 0) {
 
+
             // Get limits of interval
             x1 = InCurve ->Table16[j];
             x2 = InCurve ->Table16[j+1];
@@ -883,6 +907,7 @@ cmsToneCurve* CMSEXPORT cmsReverseToneCurveEx(cmsInt32Number nResultSamples, con
         out ->Table16[i] = _cmsQuickSaturateWord(a* y + b);
     }
 
+
     return out;
 }
 
@@ -891,7 +916,7 @@ cmsToneCurve* CMSEXPORT cmsReverseToneCurve(const cmsToneCurve* InGamma)
 {
     _cmsAssert(InGamma != NULL);
 
-    return cmsReverseToneCurveEx(InGamma -> nEntries, InGamma);
+    return cmsReverseToneCurveEx(4096, InGamma);
 }
 
 // From: Eilers, P.H.C. (1994) Smoothing and interpolation with finite
@@ -1035,20 +1060,42 @@ cmsBool  CMSEXPORT cmsIsToneCurveMonotonic(const cmsToneCurve* t)
 {
     int n;
     int i, last;
+    cmsBool lDescending;
 
     _cmsAssert(t != NULL);
 
-    n    = t ->nEntries;
-    last = t ->Table16[n-1];
+    // Degenerated curves are monotonic? Ok, let's pass them
+    n = t ->nEntries;
+    if (n < 2) return TRUE;
 
-    for (i = n-2; i >= 0; --i) {
+    // Curve direction
+    lDescending = cmsIsToneCurveDescending(t);
 
-        if (t ->Table16[i] > last)
+    if (lDescending) {
 
-            return FALSE;
-        else
-            last = t ->Table16[i];
+        last = t ->Table16[0];
 
+        for (i = 1; i < n; i++) {
+
+            if (t ->Table16[i] - last > 2) // We allow some ripple
+                return FALSE;
+            else
+                last = t ->Table16[i];
+
+        }
+    }
+    else {
+
+        last = t ->Table16[n-1];
+
+        for (i = n-2; i >= 0; --i) {
+
+            if (t ->Table16[i] - last > 2)
+                return FALSE;
+            else
+                last = t ->Table16[i];
+
+        }
     }
 
     return TRUE;
@@ -1163,4 +1210,3 @@ cmsFloat64Number CMSEXPORT cmsEstimateGamma(const cmsToneCurve* t, cmsFloat64Num
 
     return (sum / n);   // The mean
 }
-

@@ -29,8 +29,6 @@ import java.lang.reflect.Modifier;
 
 import com.sun.javadoc.*;
 
-import static com.sun.javadoc.LanguageVersion.*;
-
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -42,6 +40,11 @@ import com.sun.tools.javac.util.Position;
 
 /**
  * Represents a field in a java class.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @see MemberDocImpl
  *

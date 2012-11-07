@@ -44,3 +44,4 @@
 
 address StubRoutines::x86::_verify_mxcsr_entry         = NULL;
 address StubRoutines::x86::_verify_fpu_cntrl_wrd_entry = NULL;
+address StubRoutines::x86::_key_shuffle_mask_addr = NULL;

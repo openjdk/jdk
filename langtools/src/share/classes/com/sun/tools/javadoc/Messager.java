@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,14 @@
 
 package com.sun.tools.javadoc;
 
-import java.io.PrintWriter;
+import java.io.PrintWriter;  // Access to 'javac' output streams
 import java.text.MessageFormat;
-import java.util.ResourceBundle;
 import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
 import com.sun.javadoc.*;
-
 import com.sun.tools.javac.util.Context;
-
-import com.sun.tools.javac.util.Log;  // Access to 'javac' output streams
+import com.sun.tools.javac.util.Log;
 
 /**
  * Utility for integrating with javadoc tools and for localization.
@@ -42,6 +40,11 @@ import com.sun.tools.javac.util.Log;  // Access to 'javac' output streams
  * Message formatting.
  * <br>
  * Also provides implementation for DocErrorReporter.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @see java.util.ResourceBundle
  * @see java.text.MessageFormat

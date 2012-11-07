@@ -29,6 +29,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/defaultStream.hpp"
 
 # include <sys/stat.h>
@@ -344,23 +345,12 @@ ReservedSpace FileMapInfo::reserve_shared_memory() {
     fail_continue(err_msg("Unable to reserved shared space at required address " INTPTR_FORMAT, requested_addr));
     return rs;
   }
+  // the reserved virtual memory is for mapping class data sharing archive
+  if (MemTracker::is_on()) {
+    MemTracker::record_virtual_memory_type((address)rs.base(), mtClassShared);
+  }
   return rs;
 }
-
-// Memory map a region in the address space.
-
-char* FileMapInfo::map_region(int i, ReservedSpace rs) {
-  struct FileMapInfo::FileMapHeader::space_info* si = &_header._space[i];
-  size_t used = si->_used;
-  size_t size = align_size_up(used, os::vm_allocation_granularity());
-
-  ReservedSpace mapped_rs = rs.first_part(size, true, true);
-  ReservedSpace unmapped_rs = rs.last_part(size);
-  mapped_rs.release();
-
-  return map_region(i);
-}
-
 
 // Memory map a region in the address space.
 static const char* shared_region_name[] = { "ReadOnly", "ReadWrite", "MiscData", "MiscCode"};

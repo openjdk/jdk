@@ -75,7 +75,6 @@ $(GENDATA_FONT_CONFIG_DST)/%.src : \
 	$(RM) $@
 	$(MKDIR) -p $(@D)
 	$(CP) $< $@
-	$(CHMOD) 644 $@
 
 $(GENDATA_FONT_CONFIG_DST)/%.bfc : \
     $(GENDATA_FONT_CONFIG_SRC_DIR)/$(GENDATA_FONT_CONFIG_SRC_PREFIX)%.properties

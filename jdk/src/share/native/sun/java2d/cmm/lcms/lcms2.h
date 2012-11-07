@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2011 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -52,7 +52,7 @@
 //
 //---------------------------------------------------------------------------------
 //
-// Version 2.0
+// Version 2.4
 //
 
 #ifndef _lcms2_H
@@ -69,9 +69,6 @@
 // Uncomment this if your compiler doesn't work with fast floor function
 // #define CMS_DONT_USE_FAST_FLOOR 1
 
-// Uncomment this line if your system does not support multithreading
-#define CMS_DONT_USE_PTHREADS    1
-
 // Uncomment this line if you want lcms to use the black point tag in profile,
 // if commented, lcms will compute the black point by its own.
 // It is safer to leave it commented out
@@ -83,6 +80,9 @@
 // Uncomment this line if you need strict CGATS syntax. Makes CGATS files to
 // require "KEYWORD" on undefined identifiers, keep it comented out unless needed
 // #define CMS_STRICT_CGATS  1
+
+// Uncomment to get rid of the tables for "half" float support
+// #define CMS_NO_HALF_SUPPORT 1
 
 // ********** End of configuration toggles ******************************
 
@@ -101,7 +101,7 @@ extern "C" {
 #endif
 
 // Version/release
-#define LCMS_VERSION        2000
+#define LCMS_VERSION        2040
 
 // I will give the chance of redefining basic types for compilers that are not fully C99 compliant
 #ifndef CMS_BASIC_TYPES_ALREADY_DEFINED
@@ -109,6 +109,10 @@ extern "C" {
 // Base types
 typedef unsigned char        cmsUInt8Number;   // That is guaranteed by the C99 spec
 typedef signed char          cmsInt8Number;    // That is guaranteed by the C99 spec
+
+#if CHAR_BIT != 8
+#  error "Unable to find 8 bit type, unsupported compiler"
+#endif
 
 // IEEE float storage numbers
 typedef float                cmsFloat32Number;
@@ -211,11 +215,13 @@ typedef int                  cmsBool;
 #endif
 
 #ifdef TARGET_CPU_PPC
+# if TARGET_CPU_PPC
 #   define CMS_USE_BIG_ENDIAN   1
+# endif
 #endif
 
 #ifdef macintosh
-# ifndef __LITTLE_ENDIAN__
+# ifdef __BIG_ENDIAN__
 #   define CMS_USE_BIG_ENDIAN      1
 # endif
 #endif
@@ -276,6 +282,7 @@ typedef enum {
     cmsSigCrdInfoType                       = 0x63726469,  // 'crdi'
     cmsSigCurveType                         = 0x63757276,  // 'curv'
     cmsSigDataType                          = 0x64617461,  // 'data'
+    cmsSigDictType                          = 0x64696374,  // 'dict'
     cmsSigDateTimeType                      = 0x6474696D,  // 'dtim'
     cmsSigDeviceSettingsType                = 0x64657673,  // 'devs'
     cmsSigLut16Type                         = 0x6d667432,  // 'mft2'
@@ -302,9 +309,10 @@ typedef enum {
     cmsSigUInt32ArrayType                   = 0x75693332,  // 'ui32'
     cmsSigUInt64ArrayType                   = 0x75693634,  // 'ui64'
     cmsSigUInt8ArrayType                    = 0x75693038,  // 'ui08'
+    cmsSigVcgtType                          = 0x76636774,  // 'vcgt'
     cmsSigViewingConditionsType             = 0x76696577,  // 'view'
-    cmsSigXYZType                           = 0x58595A20,  // 'XYZ '
-    cmsSigVcgtType                          = 0x76636774   // 'vcgt'
+    cmsSigXYZType                           = 0x58595A20   // 'XYZ '
+
 
 } cmsTagTypeSignature;
 
@@ -377,7 +385,8 @@ typedef enum {
     cmsSigUcrBgTag                          = 0x62666420,  // 'bfd '
     cmsSigViewingCondDescTag                = 0x76756564,  // 'vued'
     cmsSigViewingConditionsTag              = 0x76696577,  // 'view'
-    cmsSigVcgtTag                           = 0x76636774   // 'vcgt'
+    cmsSigVcgtTag                           = 0x76636774,  // 'vcgt'
+    cmsSigMetaTag                           = 0x6D657461   // 'meta'
 
 } cmsTagSignature;
 
@@ -409,7 +418,7 @@ typedef enum {
     cmsSigMotionPictureFilmScanner          = 0x6D706673,  // 'mpfs'
     cmsSigMotionPictureFilmRecorder         = 0x6D706672,  // 'mpfr'
     cmsSigDigitalMotionPictureCamera        = 0x646D7063,  // 'dmpc'
-    cmsSigDigitalCinemaProjector            = 0x64636A70,  // 'dcpj'
+    cmsSigDigitalCinemaProjector            = 0x64636A70   // 'dcpj'
 
 } cmsTechnologySignature;
 
@@ -436,12 +445,12 @@ typedef enum {
     cmsSigMCH7Data                          = 0x4D434837,  // 'MCH7'
     cmsSigMCH8Data                          = 0x4D434838,  // 'MCH8'
     cmsSigMCH9Data                          = 0x4D434839,  // 'MCH9'
-    cmsSigMCHAData                          = 0x4D43483A,  // 'MCHA'
-    cmsSigMCHBData                          = 0x4D43483B,  // 'MCHB'
-    cmsSigMCHCData                          = 0x4D43483C,  // 'MCHC'
-    cmsSigMCHDData                          = 0x4D43483D,  // 'MCHD'
-    cmsSigMCHEData                          = 0x4D43483E,  // 'MCHE'
-    cmsSigMCHFData                          = 0x4D43483F,  // 'MCHF'
+    cmsSigMCHAData                          = 0x4D434841,  // 'MCHA'
+    cmsSigMCHBData                          = 0x4D434842,  // 'MCHB'
+    cmsSigMCHCData                          = 0x4D434843,  // 'MCHC'
+    cmsSigMCHDData                          = 0x4D434844,  // 'MCHD'
+    cmsSigMCHEData                          = 0x4D434845,  // 'MCHE'
+    cmsSigMCHFData                          = 0x4D434846,  // 'MCHF'
     cmsSigNamedData                         = 0x6e6d636c,  // 'nmcl'
     cmsSig1colorData                        = 0x31434C52,  // '1CLR'
     cmsSig2colorData                        = 0x32434C52,  // '2CLR'
@@ -470,7 +479,7 @@ typedef enum {
     cmsSigLinkClass                         = 0x6C696E6B,  // 'link'
     cmsSigAbstractClass                     = 0x61627374,  // 'abst'
     cmsSigColorSpaceClass                   = 0x73706163,  // 'spac'
-    cmsSigNamedColorClass                   = 0x6e6d636c,  // 'nmcl'
+    cmsSigNamedColorClass                   = 0x6e6d636c   // 'nmcl'
 
 } cmsProfileClassSignature;
 
@@ -512,7 +521,13 @@ typedef enum {
     cmsSigLabV4toV2                     = 0x34203220,  // '4 2 '
 
     // Identities
-    cmsSigIdentityElemType              = 0x69646E20   // 'idn '
+    cmsSigIdentityElemType              = 0x69646E20,  // 'idn '
+
+    // Float to floatPCS
+    cmsSigLab2FloatPCS                  = 0x64326C20,  // 'd2l '
+    cmsSigFloatPCS2Lab                  = 0x6C326420,  // 'l2d '
+    cmsSigXYZ2FloatPCS                  = 0x64327820,  // 'd2x '
+    cmsSigFloatPCS2XYZ                  = 0x78326420   // 'x2d '
 
 } cmsStageSignature;
 
@@ -635,7 +650,9 @@ typedef void* cmsHTRANSFORM;
 
 // Format of pixel is defined by one cmsUInt32Number, using bit fields as follows
 //
-//            A O TTTTT U Y F P X S EEE CCCC BBB
+//                               2                1          0
+//                          3 2 10987 6 5 4 3 2 1 098 7654 321
+//                          A O TTTTT U Y F P X S EEE CCCC BBB
 //
 //            A: Floating point -- With this flag we can differentiate 16 bits as float and as int
 //            O: Optimized -- previous optimization already returns the final 8-bit value
@@ -743,16 +760,19 @@ typedef void* cmsHTRANSFORM;
 #define TYPE_RGBA_16_SE        (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2)|ENDIAN16_SH(1))
 
 #define TYPE_ARGB_8            (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(1)|SWAPFIRST_SH(1))
+#define TYPE_ARGB_8_PLANAR     (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(1)|SWAPFIRST_SH(1)|PLANAR_SH(1))
 #define TYPE_ARGB_16           (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2)|SWAPFIRST_SH(1))
 
 #define TYPE_ABGR_8            (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(1)|DOSWAP_SH(1))
+#define TYPE_ABGR_8_PLANAR     (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(1)|DOSWAP_SH(1)|PLANAR_SH(1))
 #define TYPE_ABGR_16           (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2)|DOSWAP_SH(1))
 #define TYPE_ABGR_16_PLANAR    (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2)|DOSWAP_SH(1)|PLANAR_SH(1))
 #define TYPE_ABGR_16_SE        (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2)|DOSWAP_SH(1)|ENDIAN16_SH(1))
 
 #define TYPE_BGRA_8            (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1))
+#define TYPE_BGRA_8_PLANAR     (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1)|PLANAR_SH(1))
 #define TYPE_BGRA_16           (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2)|DOSWAP_SH(1)|SWAPFIRST_SH(1))
-#define TYPE_BGRA_16_SE        (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2)|ENDIAN16_SH(1)|SWAPFIRST_SH(1))
+#define TYPE_BGRA_16_SE        (COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2)|ENDIAN16_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1))
 
 #define TYPE_CMY_8             (COLORSPACE_SH(PT_CMY)|CHANNELS_SH(3)|BYTES_SH(1))
 #define TYPE_CMY_8_PLANAR      (COLORSPACE_SH(PT_CMY)|CHANNELS_SH(3)|BYTES_SH(1)|PLANAR_SH(1))
@@ -834,8 +854,8 @@ typedef void* cmsHTRANSFORM;
 #define TYPE_Lab_8             (COLORSPACE_SH(PT_Lab)|CHANNELS_SH(3)|BYTES_SH(1))
 #define TYPE_LabV2_8           (COLORSPACE_SH(PT_LabV2)|CHANNELS_SH(3)|BYTES_SH(1))
 
-#define TYPE_ALab_8            (COLORSPACE_SH(PT_Lab)|CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1)|DOSWAP_SH(1))
-#define TYPE_ALabV2_8          (COLORSPACE_SH(PT_LabV2)|CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1)|DOSWAP_SH(1))
+#define TYPE_ALab_8            (COLORSPACE_SH(PT_Lab)|CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1)|SWAPFIRST_SH(1))
+#define TYPE_ALabV2_8          (COLORSPACE_SH(PT_LabV2)|CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1)|SWAPFIRST_SH(1))
 #define TYPE_Lab_16            (COLORSPACE_SH(PT_Lab)|CHANNELS_SH(3)|BYTES_SH(2))
 #define TYPE_LabV2_16          (COLORSPACE_SH(PT_LabV2)|CHANNELS_SH(3)|BYTES_SH(2))
 #define TYPE_Yxy_16            (COLORSPACE_SH(PT_Yxy)|CHANNELS_SH(3)|BYTES_SH(2))
@@ -874,8 +894,16 @@ typedef void* cmsHTRANSFORM;
 // Float formatters.
 #define TYPE_XYZ_FLT          (FLOAT_SH(1)|COLORSPACE_SH(PT_XYZ)|CHANNELS_SH(3)|BYTES_SH(4))
 #define TYPE_Lab_FLT          (FLOAT_SH(1)|COLORSPACE_SH(PT_Lab)|CHANNELS_SH(3)|BYTES_SH(4))
+#define TYPE_LabA_FLT         (FLOAT_SH(1)|COLORSPACE_SH(PT_Lab)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(4))
 #define TYPE_GRAY_FLT         (FLOAT_SH(1)|COLORSPACE_SH(PT_GRAY)|CHANNELS_SH(1)|BYTES_SH(4))
 #define TYPE_RGB_FLT          (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|CHANNELS_SH(3)|BYTES_SH(4))
+
+#define TYPE_RGBA_FLT         (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(4))
+#define TYPE_ARGB_FLT         (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(4)|SWAPFIRST_SH(1))
+#define TYPE_BGR_FLT          (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|CHANNELS_SH(3)|BYTES_SH(4)|DOSWAP_SH(1))
+#define TYPE_BGRA_FLT         (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(4)|DOSWAP_SH(1)|SWAPFIRST_SH(1))
+#define TYPE_ABGR_FLT         (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|CHANNELS_SH(3)|BYTES_SH(4)|DOSWAP_SH(1))
+
 #define TYPE_CMYK_FLT         (FLOAT_SH(1)|COLORSPACE_SH(PT_CMYK)|CHANNELS_SH(4)|BYTES_SH(4))
 
 // Floating point formatters.
@@ -884,7 +912,20 @@ typedef void* cmsHTRANSFORM;
 #define TYPE_Lab_DBL          (FLOAT_SH(1)|COLORSPACE_SH(PT_Lab)|CHANNELS_SH(3)|BYTES_SH(0))
 #define TYPE_GRAY_DBL         (FLOAT_SH(1)|COLORSPACE_SH(PT_GRAY)|CHANNELS_SH(1)|BYTES_SH(0))
 #define TYPE_RGB_DBL          (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|CHANNELS_SH(3)|BYTES_SH(0))
+#define TYPE_BGR_DBL          (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|CHANNELS_SH(3)|BYTES_SH(0)|DOSWAP_SH(1))
 #define TYPE_CMYK_DBL         (FLOAT_SH(1)|COLORSPACE_SH(PT_CMYK)|CHANNELS_SH(4)|BYTES_SH(0))
+
+// IEEE 754-2008 "half"
+#define TYPE_GRAY_HALF_FLT    (FLOAT_SH(1)|COLORSPACE_SH(PT_GRAY)|CHANNELS_SH(1)|BYTES_SH(2))
+#define TYPE_RGB_HALF_FLT     (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|CHANNELS_SH(3)|BYTES_SH(2))
+#define TYPE_RGBA_HALF_FLT    (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2))
+#define TYPE_CMYK_HALF_FLT    (FLOAT_SH(1)|COLORSPACE_SH(PT_CMYK)|CHANNELS_SH(4)|BYTES_SH(2))
+
+#define TYPE_RGBA_HALF_FLT    (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2))
+#define TYPE_ARGB_HALF_FLT    (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2)|SWAPFIRST_SH(1))
+#define TYPE_BGR_HALF_FLT     (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|CHANNELS_SH(3)|BYTES_SH(2)|DOSWAP_SH(1))
+#define TYPE_BGRA_HALF_FLT    (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2)|DOSWAP_SH(1)|SWAPFIRST_SH(1))
+#define TYPE_ABGR_HALF_FLT    (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|CHANNELS_SH(3)|BYTES_SH(2)|DOSWAP_SH(1))
 
 #endif
 
@@ -1116,6 +1157,10 @@ CMSAPI cmsBool           CMSEXPORT cmsIsToneCurveDescending(const cmsToneCurve* 
 CMSAPI cmsInt32Number    CMSEXPORT cmsGetToneCurveParametricType(const cmsToneCurve* t);
 CMSAPI cmsFloat64Number  CMSEXPORT cmsEstimateGamma(const cmsToneCurve* t, cmsFloat64Number Precision);
 
+// Tone curve tabular estimation
+CMSAPI cmsUInt32Number         CMSEXPORT cmsGetToneCurveEstimatedTableEntries(const cmsToneCurve* t);
+CMSAPI const cmsUInt16Number*  CMSEXPORT cmsGetToneCurveEstimatedTable(const cmsToneCurve* t);
+
 
 // Implements pipelines of multi-processing elements -------------------------------------------------------------
 
@@ -1128,6 +1173,7 @@ CMSAPI cmsPipeline*      CMSEXPORT cmsPipelineAlloc(cmsContext ContextID, cmsUIn
 CMSAPI void              CMSEXPORT cmsPipelineFree(cmsPipeline* lut);
 CMSAPI cmsPipeline*      CMSEXPORT cmsPipelineDup(const cmsPipeline* Orig);
 
+CMSAPI cmsContext        CMSEXPORT cmsGetPipelineContextID(const cmsPipeline* lut);
 CMSAPI cmsUInt32Number   CMSEXPORT cmsPipelineInputChannels(const cmsPipeline* lut);
 CMSAPI cmsUInt32Number   CMSEXPORT cmsPipelineOutputChannels(const cmsPipeline* lut);
 
@@ -1188,9 +1234,8 @@ typedef cmsInt32Number (* cmsSAMPLERFLOAT)(register const cmsFloat32Number In[],
 #define SAMPLER_INSPECT     0x01000000
 
 // For CLUT only
-CMSAPI cmsBool           CMSEXPORT cmsStageSampleCLut16bit(cmsStage* mpe,    cmsSAMPLER16 Sampler,    void* Cargo, cmsUInt32Number dwFlags);
+CMSAPI cmsBool           CMSEXPORT cmsStageSampleCLut16bit(cmsStage* mpe,    cmsSAMPLER16 Sampler, void* Cargo, cmsUInt32Number dwFlags);
 CMSAPI cmsBool           CMSEXPORT cmsStageSampleCLutFloat(cmsStage* mpe, cmsSAMPLERFLOAT Sampler, void* Cargo, cmsUInt32Number dwFlags);
-
 
 // Slicers
 CMSAPI cmsBool           CMSEXPORT cmsSliceSpace16(cmsUInt32Number nInputs, const cmsUInt32Number clutPoints[],
@@ -1301,6 +1346,7 @@ CMSAPI cmsNAMEDCOLORLIST* CMSEXPORT cmsGetNamedColorList(cmsHTRANSFORM xform);
 // Profile sequence descriptor. Some fields come from profile sequence descriptor tag, others
 // come from Profile Sequence Identifier Tag
 typedef struct {
+
     cmsSignature           deviceMfg;
     cmsSignature           deviceModel;
     cmsUInt64Number        attributes;
@@ -1324,6 +1370,27 @@ CMSAPI cmsSEQ*           CMSEXPORT cmsAllocProfileSequenceDescription(cmsContext
 CMSAPI cmsSEQ*           CMSEXPORT cmsDupProfileSequenceDescription(const cmsSEQ* pseq);
 CMSAPI void              CMSEXPORT cmsFreeProfileSequenceDescription(cmsSEQ* pseq);
 
+// Dictionaries --------------------------------------------------------------------------------------------------------
+
+typedef struct _cmsDICTentry_struct {
+
+    struct _cmsDICTentry_struct* Next;
+
+    cmsMLU *DisplayName;
+    cmsMLU *DisplayValue;
+    wchar_t* Name;
+    wchar_t* Value;
+
+} cmsDICTentry;
+
+CMSAPI cmsHANDLE           CMSEXPORT cmsDictAlloc(cmsContext ContextID);
+CMSAPI void                CMSEXPORT cmsDictFree(cmsHANDLE hDict);
+CMSAPI cmsHANDLE           CMSEXPORT cmsDictDup(cmsHANDLE hDict);
+
+CMSAPI cmsBool             CMSEXPORT cmsDictAddEntry(cmsHANDLE hDict, const wchar_t* Name, const wchar_t* Value, const cmsMLU *DisplayName, const cmsMLU *DisplayValue);
+CMSAPI const cmsDICTentry* CMSEXPORT cmsDictGetEntryList(cmsHANDLE hDict);
+CMSAPI const cmsDICTentry* CMSEXPORT cmsDictNextEntry(const cmsDICTentry* e);
+
 // Access to Profile data ----------------------------------------------------------------------------------------------
 CMSAPI cmsHPROFILE       CMSEXPORT cmsCreateProfilePlaceholder(cmsContext ContextID);
 
@@ -1336,12 +1403,18 @@ CMSAPI cmsBool           CMSEXPORT cmsIsTag(cmsHPROFILE hProfile, cmsTagSignatur
 CMSAPI void*             CMSEXPORT cmsReadTag(cmsHPROFILE hProfile, cmsTagSignature sig);
 CMSAPI cmsBool           CMSEXPORT cmsWriteTag(cmsHPROFILE hProfile, cmsTagSignature sig, const void* data);
 CMSAPI cmsBool           CMSEXPORT cmsLinkTag(cmsHPROFILE hProfile, cmsTagSignature sig, cmsTagSignature dest);
+CMSAPI cmsTagSignature   CMSEXPORT cmsTagLinkedTo(cmsHPROFILE hProfile, cmsTagSignature sig);
 
 // Read and write raw data
 CMSAPI cmsInt32Number    CMSEXPORT cmsReadRawTag(cmsHPROFILE hProfile, cmsTagSignature sig, void* Buffer, cmsUInt32Number BufferSize);
 CMSAPI cmsBool           CMSEXPORT cmsWriteRawTag(cmsHPROFILE hProfile, cmsTagSignature sig, const void* data, cmsUInt32Number Size);
 
 // Access header data
+#define cmsEmbeddedProfileFalse    0x00000000
+#define cmsEmbeddedProfileTrue     0x00000001
+#define cmsUseAnywhere             0x00000000
+#define cmsUseWithEmbeddedDataOnly 0x00000002
+
 CMSAPI cmsUInt32Number   CMSEXPORT cmsGetHeaderFlags(cmsHPROFILE hProfile);
 CMSAPI void              CMSEXPORT cmsGetHeaderAttributes(cmsHPROFILE hProfile, cmsUInt64Number* Flags);
 CMSAPI void              CMSEXPORT cmsGetHeaderProfileID(cmsHPROFILE hProfile, cmsUInt8Number* ProfileID);
@@ -1377,9 +1450,9 @@ CMSAPI void              CMSEXPORT cmsSetEncodedICCversion(cmsHPROFILE hProfile,
 #define LCMS_USED_AS_OUTPUT     1
 #define LCMS_USED_AS_PROOF      2
 
-CMSAPI cmsBool           CMSEXPORT cmsIsIntentSupported(cmsHPROFILE hProfile, cmsUInt32Number Intent, int UsedDirection);
+CMSAPI cmsBool           CMSEXPORT cmsIsIntentSupported(cmsHPROFILE hProfile, cmsUInt32Number Intent, cmsUInt32Number UsedDirection);
 CMSAPI cmsBool           CMSEXPORT cmsIsMatrixShaper(cmsHPROFILE hProfile);
-CMSAPI cmsBool           CMSEXPORT cmsIsCLUT(cmsHPROFILE hProfile, cmsUInt32Number Intent, int UsedDirection);
+CMSAPI cmsBool           CMSEXPORT cmsIsCLUT(cmsHPROFILE hProfile, cmsUInt32Number Intent, cmsUInt32Number UsedDirection);
 
 // Translate form/to our notation to ICC
 CMSAPI cmsColorSpaceSignature   CMSEXPORT _cmsICCcolorSpace(int OurNotation);
@@ -1528,7 +1601,6 @@ CMSAPI cmsUInt32Number  CMSEXPORT cmsGetSupportedIntents(cmsUInt32Number nMax, c
 #define cmsFLAGS_NOOPTIMIZE               0x0100    // Inhibit optimizations
 #define cmsFLAGS_NULLTRANSFORM            0x0200    // Don't transform anyway
 
-
 // Proofing flags
 #define cmsFLAGS_GAMUTCHECK               0x1000    // Out of Gamut alarm
 #define cmsFLAGS_SOFTPROOFING             0x4000    // Do softproofing
@@ -1626,13 +1698,31 @@ CMSAPI void             CMSEXPORT cmsDoTransform(cmsHTRANSFORM Transform,
                                                  void * OutputBuffer,
                                                  cmsUInt32Number Size);
 
+CMSAPI void             CMSEXPORT cmsDoTransformStride(cmsHTRANSFORM Transform,
+                                                 const void * InputBuffer,
+                                                 void * OutputBuffer,
+                                                 cmsUInt32Number Size,
+                                                 cmsUInt32Number Stride);
+
+
 CMSAPI void             CMSEXPORT cmsSetAlarmCodes(cmsUInt16Number NewAlarm[cmsMAXCHANNELS]);
 CMSAPI void             CMSEXPORT cmsGetAlarmCodes(cmsUInt16Number NewAlarm[cmsMAXCHANNELS]);
 
 // Adaptation state for absolute colorimetric intent
 CMSAPI cmsFloat64Number CMSEXPORT cmsSetAdaptationState(cmsFloat64Number d);
 
+// Grab the ContextID from an open transform. Returns NULL if a NULL transform is passed
 CMSAPI cmsContext       CMSEXPORT cmsGetTransformContextID(cmsHTRANSFORM hTransform);
+
+// Grab the input/output formats
+CMSAPI cmsUInt32Number CMSEXPORT cmsGetTransformInputFormat(cmsHTRANSFORM hTransform);
+CMSAPI cmsUInt32Number CMSEXPORT cmsGetTransformOutputFormat(cmsHTRANSFORM hTransform);
+
+// For backwards compatibility
+CMSAPI cmsBool          CMSEXPORT cmsChangeBuffersFormat(cmsHTRANSFORM hTransform,
+                                                         cmsUInt32Number InputFormat,
+                                                         cmsUInt32Number OutputFormat);
+
 
 
 // PostScript ColorRenderingDictionary and ColorSpaceArray ----------------------------------------------------
@@ -1677,12 +1767,15 @@ CMSAPI cmsBool          CMSEXPORT cmsIT8SetComment(cmsHANDLE hIT8, const char* c
 CMSAPI cmsBool          CMSEXPORT cmsIT8SetPropertyStr(cmsHANDLE hIT8, const char* cProp, const char *Str);
 CMSAPI cmsBool          CMSEXPORT cmsIT8SetPropertyDbl(cmsHANDLE hIT8, const char* cProp, cmsFloat64Number Val);
 CMSAPI cmsBool          CMSEXPORT cmsIT8SetPropertyHex(cmsHANDLE hIT8, const char* cProp, cmsUInt32Number Val);
+CMSAPI cmsBool          CMSEXPORT cmsIT8SetPropertyMulti(cmsHANDLE hIT8, const char* Key, const char* SubKey, const char *Buffer);
 CMSAPI cmsBool          CMSEXPORT cmsIT8SetPropertyUncooked(cmsHANDLE hIT8, const char* Key, const char* Buffer);
 
 
 CMSAPI const char*      CMSEXPORT cmsIT8GetProperty(cmsHANDLE hIT8, const char* cProp);
 CMSAPI cmsFloat64Number CMSEXPORT cmsIT8GetPropertyDbl(cmsHANDLE hIT8, const char* cProp);
+CMSAPI const char*      CMSEXPORT cmsIT8GetPropertyMulti(cmsHANDLE hIT8, const char* Key, const char *SubKey);
 CMSAPI cmsUInt32Number  CMSEXPORT cmsIT8EnumProperties(cmsHANDLE hIT8, char ***PropertyNames);
+CMSAPI cmsUInt32Number  CMSEXPORT cmsIT8EnumPropertyMulti(cmsHANDLE hIT8, const char* cProp, const char ***SubpropertyNames);
 
 // Datasets
 CMSAPI const char*      CMSEXPORT cmsIT8GetDataRowCol(cmsHANDLE hIT8, int row, int col);
@@ -1712,9 +1805,12 @@ CMSAPI cmsBool          CMSEXPORT cmsIT8SetDataFormat(cmsHANDLE hIT8, int n, con
 CMSAPI int              CMSEXPORT cmsIT8EnumDataFormat(cmsHANDLE hIT8, char ***SampleNames);
 
 CMSAPI const char*      CMSEXPORT cmsIT8GetPatchName(cmsHANDLE hIT8, int nPatch, char* buffer);
+CMSAPI int              CMSEXPORT cmsIT8GetPatchByName(cmsHANDLE hIT8, const char *cPatch);
 
 // The LABEL extension
 CMSAPI int              CMSEXPORT cmsIT8SetTableByLabel(cmsHANDLE hIT8, const char* cSet, const char* cField, const char* ExpectedType);
+
+CMSAPI cmsBool          CMSEXPORT cmsIT8SetIndexColumn(cmsHANDLE hIT8, const char* cSample);
 
 // Formatter for double
 CMSAPI void             CMSEXPORT cmsIT8DefineDblFormat(cmsHANDLE hIT8, const char* Formatter);
@@ -1731,6 +1827,7 @@ CMSAPI cmsBool          CMSEXPORT cmsGDBCheckPoint(cmsHANDLE hGBD, const cmsCIEL
 
 // Estimate the black point
 CMSAPI cmsBool          CMSEXPORT cmsDetectBlackPoint(cmsCIEXYZ* BlackPoint, cmsHPROFILE hProfile, cmsUInt32Number Intent, cmsUInt32Number dwFlags);
+CMSAPI cmsBool          CMSEXPORT cmsDetectDestinationBlackPoint(cmsCIEXYZ* BlackPoint, cmsHPROFILE hProfile, cmsUInt32Number Intent, cmsUInt32Number dwFlags);
 
 // Estimate total area coverage
 CMSAPI cmsFloat64Number CMSEXPORT cmsDetectTAC(cmsHPROFILE hProfile);

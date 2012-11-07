@@ -464,32 +464,29 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
-     * Everything in one source file is kept in a TopLevel structure.
-     * @param pid              The tree representing the package clause.
-     * @param sourcefile       The source file name.
-     * @param defs             All definitions in this file (ClassDef, Import, and Skip)
-     * @param packge           The package it belongs to.
-     * @param namedImportScope A scope for all named imports.
-     * @param starImportScope  A scope for all import-on-demands.
-     * @param lineMap          Line starting positions, defined only
-     *                         if option -g is set.
-     * @param docComments      A hashtable that stores all documentation comments
-     *                         indexed by the tree nodes they refer to.
-     *                         defined only if option -s is set.
-     * @param endPositions     An object encapsulating ending positions of source
-     *                         ranges indexed by the tree nodes they belong to.
-     *                         Defined only if option -Xjcov is set.
+     * Everything in one source file is kept in a {@linkplain JCCompilationUnit} structure.
      */
     public static class JCCompilationUnit extends JCTree implements CompilationUnitTree {
         public List<JCAnnotation> packageAnnotations;
+        /** The tree representing the package clause. */
         public JCExpression pid;
+        /** All definitions in this file (ClassDef, Import, and Skip) */
         public List<JCTree> defs;
+        /* The source file name. */
         public JavaFileObject sourcefile;
+        /** The package to which this compilation unit belongs. */
         public PackageSymbol packge;
+        /** A scope for all named imports. */
         public ImportScope namedImportScope;
+        /** A scope for all import-on-demands. */
         public StarImportScope starImportScope;
+        /** Line starting positions, defined only if option -g is set. */
         public Position.LineMap lineMap = null;
+        /** A table that stores all documentation comments indexed by the tree
+         * nodes they refer to. defined only if option -s is set. */
         public DocCommentTable docComments = null;
+        /* An object encapsulating ending positions of source ranges indexed by
+         * the tree nodes they belong to. Defined only if option -Xjcov is set. */
         public EndPosTable endPositions = null;
         protected JCCompilationUnit(List<JCAnnotation> packageAnnotations,
                         JCExpression pid,
@@ -550,10 +547,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * An import clause.
-     * @param qualid    The imported class(es).
      */
     public static class JCImport extends JCTree implements ImportTree {
         public boolean staticImport;
+        /** The imported class(es). */
         public JCTree qualid;
         protected JCImport(JCTree qualid, boolean importStatic) {
             this.qualid = qualid;
@@ -605,21 +602,21 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * A class definition.
-     * @param modifiers the modifiers
-     * @param name the name of the class
-     * @param typarams formal class parameters
-     * @param extending the classes this class extends
-     * @param implementing the interfaces implemented by this class
-     * @param defs all variables and methods defined in this class
-     * @param sym the symbol
      */
     public static class JCClassDecl extends JCStatement implements ClassTree {
+        /** the modifiers */
         public JCModifiers mods;
+        /** the name of the class */
         public Name name;
+        /** formal class parameters */
         public List<JCTypeParameter> typarams;
+        /** the classes this class extends */
         public JCExpression extending;
+        /** the interfaces implemented by this class */
         public List<JCExpression> implementing;
+        /** all variables and methods defined in this class */
         public List<JCTree> defs;
+        /** the symbol */
         public ClassSymbol sym;
         protected JCClassDecl(JCModifiers mods,
                            Name name,
@@ -676,24 +673,25 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * A method definition.
-     * @param modifiers method modifiers
-     * @param name method name
-     * @param restype type of method return value
-     * @param typarams type parameters
-     * @param params value parameters
-     * @param thrown exceptions thrown by this method
-     * @param stats statements in the method
-     * @param sym method symbol
      */
     public static class JCMethodDecl extends JCTree implements MethodTree {
+        /** method modifiers */
         public JCModifiers mods;
+        /** method name */
         public Name name;
+        /** type of method return value */
         public JCExpression restype;
+        /** type parameters */
         public List<JCTypeParameter> typarams;
+        /** value parameters */
         public List<JCVariableDecl> params;
+        /** exceptions thrown by this method */
         public List<JCExpression> thrown;
+        /** statements in the method */
         public JCBlock body;
-        public JCExpression defaultValue; // for annotation types
+        /** default value, for annotation types */
+        public JCExpression defaultValue;
+        /** method symbol */
         public MethodSymbol sym;
         protected JCMethodDecl(JCModifiers mods,
                             Name name,
@@ -748,17 +746,17 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * A variable definition.
-     * @param modifiers variable modifiers
-     * @param name variable name
-     * @param vartype type of the variable
-     * @param init variables initial value
-     * @param sym symbol
      */
     public static class JCVariableDecl extends JCStatement implements VariableTree {
+        /** variable modifiers */
         public JCModifiers mods;
+        /** variable name */
         public Name name;
+        /** type of the variable */
         public JCExpression vartype;
+        /** variable's initial value */
         public JCExpression init;
+        /** symbol */
         public VarSymbol sym;
         protected JCVariableDecl(JCModifiers mods,
                          Name name,
@@ -815,11 +813,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * A statement block.
-     * @param stats statements
-     * @param flags flags
      */
     public static class JCBlock extends JCStatement implements BlockTree {
+        /** flags */
         public long flags;
+        /** statements */
         public List<JCStatement> stats;
         /** Position of closing brace, optional. */
         public int endpos = Position.NOPOS;
@@ -1206,9 +1204,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * an expression statement
-     * @param expr expression structure
      */
     public static class JCExpressionStatement extends JCStatement implements ExpressionStatementTree {
+        /** expression structure */
         public JCExpression expr;
         protected JCExpressionStatement(JCExpression expr)
         {
@@ -1776,13 +1774,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * Selects through packages and classes
-     * @param selected selected Tree hierarchie
-     * @param selector name of field to select thru
-     * @param sym symbol of the selected class
      */
     public static class JCFieldAccess extends JCExpression implements MemberSelectTree {
+        /** selected Tree hierarchy */
         public JCExpression selected;
+        /** name of field to select thru */
         public Name name;
+        /** symbol of the selected class */
         public Symbol sym;
         protected JCFieldAccess(JCExpression selected, Name name, Symbol sym) {
             this.selected = selected;
@@ -1885,11 +1883,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * An identifier
-     * @param idname the name
-     * @param sym the symbol
      */
     public static class JCIdent extends JCExpression implements IdentifierTree {
+        /** the name */
         public Name name;
+        /** the symbol */
         public Symbol sym;
         protected JCIdent(Name name, Symbol sym) {
             this.name = name;
@@ -1912,10 +1910,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * A constant value given literally.
-     * @param value value representation
      */
     public static class JCLiteral extends JCExpression implements LiteralTree {
         public int typetag;
+        /** value representation */
         public Object value;
         protected JCLiteral(int typetag, Object value) {
             this.typetag = typetag;
@@ -1978,10 +1976,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * Identifies a basic type.
-     * @param tag the basic type id
      * @see TypeTags
      */
     public static class JCPrimitiveTypeTree extends JCExpression implements PrimitiveTypeTree {
+        /** the basic type id */
         public int typetag;
         protected JCPrimitiveTypeTree(int typetag) {
             this.typetag = typetag;
@@ -2105,11 +2103,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * A formal class parameter.
-     * @param name name
-     * @param bounds bounds
      */
     public static class JCTypeParameter extends JCTree implements TypeParameterTree {
+        /** name */
         public Name name;
+        /** bounds */
         public List<JCExpression> bounds;
         protected JCTypeParameter(Name name, List<JCExpression> bounds) {
             this.name = name;

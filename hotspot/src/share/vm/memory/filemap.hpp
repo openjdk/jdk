@@ -125,7 +125,6 @@ public:
                      size_t capacity, bool read_only, bool allow_exec);
   void  write_bytes(const void* buffer, int count);
   void  write_bytes_aligned(const void* buffer, int count);
-  char* map_region(int i, ReservedSpace rs);
   char* map_region(int i);
   void  unmap_region(int i);
   void  close();

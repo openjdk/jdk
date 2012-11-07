@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ class ServiceProxy {
      *         The service class for which providers are being sought;
      *         used to construct error detail strings
      *
-     * @param  url
+     * @param  u
      *         The URL naming the configuration file to be parsed
      *
      * @return true if the name of a service is found
