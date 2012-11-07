@@ -34,8 +34,6 @@
 #include "net_util.h"
 #include <winsock2.h>
 
-static jfieldID isa_addrID;     /* address in java.net.InetSocketAddress */
-static jfieldID isa_portID;     /* port in java.net.InetSocketAddress */
 static jfieldID dci_senderID;   /* sender in sun.nio.ch.DatagramChannelImpl */
 static jfieldID dci_senderAddrID; /* sender InetAddress in sun.nio.ch.DatagramChannelImpl */
 static jfieldID dci_senderPortID; /* sender port in sun.nio.ch.DatagramChannelImpl */
@@ -50,9 +48,6 @@ Java_sun_nio_ch_DatagramChannelImpl_initIDs(JNIEnv *env, jclass clazz)
     isa_class = (*env)->NewGlobalRef(env, clazz);
     isa_ctorID = (*env)->GetMethodID(env, clazz, "<init>",
                                      "(Ljava/net/InetAddress;I)V");
-    isa_addrID = (*env)->GetFieldID(env, clazz, "addr",
-                                    "Ljava/net/InetAddress;");
-    isa_portID = (*env)->GetFieldID(env, clazz, "port", "I");
 
     clazz = (*env)->FindClass(env, "sun/nio/ch/DatagramChannelImpl");
     dci_senderID = (*env)->GetFieldID(env, clazz, "sender",
@@ -214,15 +209,14 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jobject this,
                                           jboolean preferIPv6, jobject fdo,
-                                          jlong address, jint len, jobject dest)
+                                          jlong address, jint len,
+                                          jobject destAddress, jint destPort)
 {
     jint fd = fdval(env, fdo);
     void *buf = (void *)jlong_to_ptr(address);
     SOCKETADDRESS sa;
     int sa_len;
     jint rv = 0;
-    jobject destAddress = (*env)->GetObjectField(env, dest, isa_addrID);
-    jint destPort = (*env)->GetIntField(env, dest, isa_portID);
 
     if (NET_InetAddressToSockaddr(env, destAddress, destPort,
                                   (struct sockaddr *)&sa,
