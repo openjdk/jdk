@@ -291,6 +291,26 @@ public:
   inline bool is_type_tagging_record() const {
     return is_virtual_memory_type_record(_flags);
   }
+
+  // if the two memory pointer records actually represent the same
+  // memory block
+  inline bool is_same_region(const MemPointerRecord* other) const {
+    return (addr() == other->addr() && size() == other->size());
+  }
+
+  // if this memory region fully contains another one
+  inline bool contains_region(const MemPointerRecord* other) const {
+    return contains_region(other->addr(), other->size());
+  }
+
+  // if this memory region fully contains specified memory range
+  inline bool contains_region(address add, size_t sz) const {
+    return (addr() <= add && addr() + size() >= add + sz);
+  }
+
+  inline bool contains_address(address add) const {
+    return (addr() <= add && addr() + size() > add);
+  }
 };
 
 // MemPointerRecordEx also records callsite pc, from where
@@ -321,65 +341,31 @@ class MemPointerRecordEx : public MemPointerRecord {
   }
 };
 
-// a virtual memory region
+// a virtual memory region. The region can represent a reserved
+// virtual memory region or a committed memory region
 class VMMemRegion : public MemPointerRecord {
- private:
-  // committed size
-  size_t       _committed_size;
-
 public:
-  VMMemRegion(): _committed_size(0) { }
+  VMMemRegion() { }
 
   void init(const MemPointerRecord* mp) {
-    assert(mp->is_vm_pointer(), "not virtual memory pointer");
+    assert(mp->is_vm_pointer(), "Sanity check");
     _addr = mp->addr();
-    if (mp->is_commit_record() || mp->is_uncommit_record()) {
-      _committed_size = mp->size();
-      set_size(_committed_size);
-    } else {
       set_size(mp->size());
-      _committed_size = 0;
-    }
     set_flags(mp->flags());
   }
 
   VMMemRegion& operator=(const VMMemRegion& other) {
     MemPointerRecord::operator=(other);
-    _committed_size = other.committed_size();
     return *this;
   }
 
-  inline bool is_reserve_record() const {
-    return is_virtual_memory_reserve_record(flags());
+  inline bool is_reserved_region() const {
+    return is_allocation_record();
   }
 
-  inline bool is_release_record() const {
-    return is_virtual_memory_release_record(flags());
+  inline bool is_committed_region() const {
+    return is_commit_record();
   }
-
-  // resize reserved VM range
-  inline void set_reserved_size(size_t new_size) {
-    assert(new_size >= committed_size(), "resize");
-    set_size(new_size);
-  }
-
-  inline void commit(size_t size) {
-    _committed_size += size;
-  }
-
-  inline void uncommit(size_t size) {
-    if (_committed_size >= size) {
-      _committed_size -= size;
-    } else {
-      _committed_size = 0;
-    }
-  }
-
-  /*
-   * if this virtual memory range covers whole range of
-   * the other VMMemRegion
-   */
-  bool contains(const VMMemRegion* mr) const;
 
   /* base address of this virtual memory range */
   inline address base() const {
@@ -391,29 +377,34 @@ public:
     set_flags(flags() | (f & mt_masks));
   }
 
-  // release part of memory range
-  inline void partial_release(address add, size_t sz) {
-    assert(add >= addr() && add < addr() + size(), "not valid address");
-    // for now, it can partially release from the both ends,
-    // but not in the middle
+  // expand this region to also cover specified range.
+  // The range has to be on either end of the memory region.
+  void expand_region(address addr, size_t sz) {
+    if (addr < base()) {
+      assert(addr + sz == base(), "Sanity check");
+      _addr = addr;
+      set_size(size() + sz);
+    } else {
+      assert(base() + size() == addr, "Sanity check");
+      set_size(size() + sz);
+    }
+  }
+
+  // exclude the specified address range from this region.
+  // The excluded memory range has to be on either end of this memory
+  // region.
+  inline void exclude_region(address add, size_t sz) {
+    assert(is_reserved_region() || is_committed_region(), "Sanity check");
+    assert(addr() != NULL && size() != 0, "Sanity check");
+    assert(add >= addr() && add < addr() + size(), "Sanity check");
     assert(add == addr() || (add + sz) == (addr() + size()),
-      "release in the middle");
+      "exclude in the middle");
     if (add == addr()) {
       set_addr(add + sz);
       set_size(size() - sz);
     } else {
       set_size(size() - sz);
     }
-  }
-
-  // the committed size of the virtual memory block
-  inline size_t committed_size() const {
-    return _committed_size;
-  }
-
-  // the reserved size of the virtual memory block
-  inline size_t reserved_size() const {
-    return size();
   }
 };
 

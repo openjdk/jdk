@@ -25,20 +25,21 @@
 
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
-import com.sun.javadoc.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-
 import java.io.*;
 import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
 
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+
 /**
  * Manages the<code>Taglet</code>s used by doclets.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Jamie Ho
  * @since 1.4
@@ -448,7 +449,7 @@ public class TagletManager {
             //This known tag is excluded.
             return;
         }
-        StringBuffer combined_locations = new StringBuffer();
+        StringBuilder combined_locations = new StringBuilder();
         for (int i = 0; i < locations.length; i++) {
             if (i > 0) {
                 combined_locations.append(", ");

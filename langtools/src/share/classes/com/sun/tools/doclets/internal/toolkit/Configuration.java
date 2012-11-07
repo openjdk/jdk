@@ -25,12 +25,13 @@
 
 package com.sun.tools.doclets.internal.toolkit;
 
+import java.io.*;
+import java.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
-import com.sun.javadoc.*;
-import java.util.*;
-import java.io.*;
 
 /**
  * Configure the output based on the options. Doclets should sub-class
@@ -38,9 +39,10 @@ import java.io.*;
  * all user options which are supported by the 1.1 doclet and the standard
  * doclet.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Robert Field.
  * @author Atul Dambalkar.
@@ -463,7 +465,7 @@ public abstract class Configuration {
                     tagletManager.addNewSimpleCustomTag(tagName, null, "");
                 } else {
                     //Create a simple tag with the heading that has the same name as the tag.
-                    StringBuffer heading = new StringBuffer(tagName + ":");
+                    StringBuilder heading = new StringBuilder(tagName + ":");
                     heading.setCharAt(0, Character.toUpperCase(tagName.charAt(0)));
                     tagletManager.addNewSimpleCustomTag(tagName, heading.toString(), "a");
                 }

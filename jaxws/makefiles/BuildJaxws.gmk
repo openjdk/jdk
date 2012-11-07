@@ -1,0 +1,92 @@
+#
+# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# This must be the first rule
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include JavaCompilation.gmk
+
+JAVAC_JARS ?= -Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar \
+		-jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
+DISABLE_JAXWS_WARNINGS:=-Xlint:all,-varargs,-rawtypes,-deprecation,-unchecked,-serial,-dep-ann,-cast,-fallthrough,-static
+
+# The generate new bytecode uses the new compiler for to generate bytecode
+# for the new jdk that is being built. The code compiled by this setup
+# cannot necessarily be run with the boot jdk.
+$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG,\
+     JVM:=$(JAVA),\
+     JAVAC:=$(JAVAC_JARS),\
+     FLAGS:=-XDignore.symbol.file=true $(DISABLE_JAXWS_WARNINGS) -g,\
+     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
+     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
+
+# Dummy here is needed to trigger copying of META-INF
+$(eval $(call SetupJavaCompilation,BUILD_JAF,\
+		SETUP:=GENERATE_NEWBYTECODE_DEBUG,\
+		SRC:=$(JAXWS_TOPDIR)/src/share/jaf_classes,\
+		CLEAN:=.properties,\
+		COPY:="dummy",\
+		BIN:=$(JAXWS_OUTPUTDIR)/jaf_classes))
+
+$(eval $(call SetupJavaCompilation,BUILD_JAXWS,\
+		SETUP:=GENERATE_NEWBYTECODE_DEBUG,\
+		SRC:=$(JAXWS_TOPDIR)/src/share/jaxws_classes,\
+		CLEAN:=.properties,\
+		BIN:=$(JAXWS_OUTPUTDIR)/jaxws_classes,\
+		COPY:=.xsd,\
+		COPY_FILES:=$(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/internal/xjc/runtime/JAXBContextFactory.java \
+			    $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/internal/xjc/runtime/ZeroOneBooleanAdapter.java,\
+		ADD_JAVAC_FLAGS=-cp $(OUTPUT_ROOT)/jaxp/dist/lib/classes.jar))
+
+$(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin: \
+		         $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/etc/META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin
+	mkdir -p $(@D)
+	cp $< $@
+
+$(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.xjc.Plugin: \
+		         $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/etc/META-INF/services/com.sun.tools.internal.xjc.Plugin
+	mkdir -p $(@D)
+	cp $< $@
+
+# There are two META-INF services files that are needed, add these to the list of goals
+BUILD_JAXWS += $(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin \
+               $(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.xjc.Plugin
+
+$(eval $(call SetupArchive,ARCHIVE_JAXWS,$(BUILD_JAXWS) $(BUILD_JAF),\
+		SRCS:=$(JAXWS_OUTPUTDIR)/jaxws_classes $(JAXWS_OUTPUTDIR)/jaf_classes,\
+		SUFFIXES:=.class .properties .xsd .java \
+			  com.sun.mirror.apt.AnnotationProcessorFactory \
+                          com.sun.tools.internal.xjc.Plugin,\
+		JAR:=$(JAXWS_OUTPUTDIR)/dist/lib/classes.jar))
+
+$(eval $(call SetupZipArchive,ZIP_JAXWS_SOURCES,\
+		SRC:=$(JAXWS_TOPDIR)/src/share/jaf_classes $(JAXWS_TOPDIR)/src/share/jaxws_classes,\
+		ZIP:=$(JAXWS_OUTPUTDIR)/dist/lib/src.zip))
+
+all: $(JAXWS_OUTPUTDIR)/dist/lib/classes.jar $(JAXWS_OUTPUTDIR)/dist/lib/src.zip
+
+.PHONY: default all 

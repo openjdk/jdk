@@ -26,22 +26,27 @@
 package com.sun.tools.javadoc;
 
 import java.io.DataInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.CollationKey;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.tools.FileObject;
 
 import com.sun.javadoc.*;
-
 import com.sun.tools.javac.util.Position;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * abstract base class of all Doc classes.  Doc item's are representations
  * of java language constructs (class, package, method,...) which have
  * comments and have been processed by this run of javadoc.  All Doc items
  * are unique, that is, they are == comparable.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @since 1.2
  * @author Robert Field
@@ -262,7 +267,7 @@ public abstract class DocImpl implements Doc, Comparable<Object> {
      * <p>
      * Included so that Doc item are java.lang.Comparable.
      *
-     * @param   o the <code>Object</code> to be compared.
+     * @param   obj the {@code Object} to be compared.
      * @return  a negative integer, zero, or a positive integer as this Object
      *          is less than, equal to, or greater than the given Object.
      * @exception ClassCastException the specified Object's type prevents it

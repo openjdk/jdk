@@ -27,8 +27,6 @@ package com.sun.tools.javac.comp;
 
 import java.util.*;
 
-import javax.lang.model.element.ElementKind;
-
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.*;
@@ -134,17 +132,21 @@ public class TransTypes extends TreeTranslator {
      *  Then, coerce to some given target type unless target type is null.
      *  This operation is used in situations like the following:
      *
+     *  <pre>{@code
      *  class Cell<A> { A value; }
      *  ...
      *  Cell<Integer> cell;
      *  Integer x = cell.value;
+     *  }</pre>
      *
      *  Since the erasure of Cell.value is Object, but the type
      *  of cell.value in the assignment is Integer, we need to
      *  adjust the original type of cell.value to Object, and insert
      *  a cast to Integer. That is, the last assignment becomes:
      *
+     *  <pre>{@code
      *  Integer x = (Integer)cell.value;
+     *  }</pre>
      *
      *  @param tree       The expression tree whose type might need adjustment.
      *  @param erasedType The expression's type after erasure.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,14 @@
 
 package javax.lang.model.util;
 
-import java.lang.Iterable;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.EnumSet;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.NoSuchElementException;
 
 import javax.lang.model.element.*;
-import javax.lang.model.type.*;
 
 
 /**

@@ -146,9 +146,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBVERIFY,\
 		LDFLAGS_SUFFIX_windows:=jvm.lib,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS) \
-			  /D "JDK_FNAME=verify.dll" \
-			  /D "JDK_INTERNAL_NAME=verify" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=verify.dll" \
+			  -D "JDK_INTERNAL_NAME=verify" \
+			  -D "JDK_FTYPE=0x2L",\
 		REORDER:=$(BUILD_LIBVERIFY_REORDER),\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libverify,\
 		DEBUG_SYMBOLS:=true))
@@ -171,13 +171,17 @@ LIBJAVA_SRC_DIRS:=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/lan
 		$(JDK_TOPDIR)/src/share/native/java/util \
 		$(JDK_TOPDIR)/src/share/native/java/util/concurrent/atomic \
 		$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/common \
-		$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/util \
-		$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/security/provider \
-		$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/io
+		$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/util
+
 ifneq ($(OPENJDK_TARGET_OS),macosx)
     LIBJAVA_SRC_DIRS+=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/util/locale/provider
 else
     LIBJAVA_SRC_DIRS+=$(JDK_TOPDIR)/src/macosx/native/sun/util/locale/provider
+endif
+
+ifeq ($(OPENJDK_TARGET_OS),windows)
+    LIBJAVA_SRC_DIRS+=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/security/provider \
+		$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/io
 endif
 
 LIBJAVA_CFLAGS:=$(foreach dir,$(LIBJAVA_SRC_DIRS),-I$(dir)) \
@@ -235,21 +239,21 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libjava/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN), \
-		LDFLAGS_windows:=-export:winFileHandleOpen -export:handleLseek \
-				 $(BUILD_LIBFDLIBM) $(WIN_VERIFY_LIB) jvm.lib \
-				 shell32.lib delayimp.lib /DELAYLOAD:shell32.dll \
-				 advapi32.lib,\
 		LDFLAGS_SUFFIX_posix:=-ljvm -lverify, \
 		LDFLAGS_SUFFIX_solaris:=-lnsl -lsocket -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc,\
 		LDFLAGS_SUFFIX_linux:=$(LIBDL) $(BUILD_LIBFDLIBM),\
 		LDFLAGS_SUFFIX_macosx:=-L$(JDK_OUTPUTDIR)/objs/ -lfdlibm \
                                          -framework CoreFoundation \
                                          -framework Security -framework SystemConfiguration, \
+		LDFLAGS_SUFFIX_windows:=-export:winFileHandleOpen -export:handleLseek \
+					jvm.lib $(BUILD_LIBFDLIBM) $(WIN_VERIFY_LIB) \
+					shell32.lib delayimp.lib -DELAYLOAD:shell32.dll \
+					advapi32.lib,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=java.dll" \
-			  /D "JDK_INTERNAL_NAME=java" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=java.dll" \
+			  -D "JDK_INTERNAL_NAME=java" \
+			  -D "JDK_FTYPE=0x2L",\
 		REORDER:=$(LIBJAVA_REORDER), \
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjava,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
@@ -298,9 +302,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE,\
 				$(LDFLAGS_JDKLIB_SUFFIX),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=mlib_image.dll" \
-			  /D "JDK_INTERNAL_NAME=mlib_image" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=mlib_image.dll" \
+			  -D "JDK_INTERNAL_NAME=mlib_image" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libmlib_image,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -422,9 +426,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE_V,\
                       $(CFLAGS_JDKLIB), \
 		MAPFILE:=$(BUILD_LIBMLIB_IMAGE_MAPFILE), \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
-                         $(BUILD_LIBMLIB_LDLIBS) \
+                         $(BUILD_LIBMLIB_LDLIBS) -ljava -ljvm \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libmlib_image_v))
+
+$(BUILD_LIBMLIB_IMAGE_V): $(BUILD_LIBJAVA)
 
 BUILD_LIBRARIES += $(BUILD_LIBMLIB_IMAGE_V)
 
@@ -438,7 +444,6 @@ LIBAWT_DIRS:=\
 	$(JDK_TOPDIR)/src/share/native/sun/awt/image \
 	$(JDK_TOPDIR)/src/share/native/sun/awt/image/gif \
 	$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils \
-	$(JDK_TOPDIR)/src/share/native/sun/awt/shell \
 	$(JDK_TOPDIR)/src/share/native/sun/awt/medialib \
 	$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
 	$(JDK_TOPDIR)/src/share/native/sun/awt/utility \
@@ -449,12 +454,17 @@ LIBAWT_DIRS:=\
 	$(JDK_TOPDIR)/src/share/native/sun/awt/image \
 	$(JDK_TOPDIR)/src/share/native/sun/java2d/opengl \
 	$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/opengl \
-	$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/x11 \
-	$(JDK_TOPDIR)/src/share/native/sun/font \
+	$(JDK_TOPDIR)/src/share/native/sun/font
+
+ifeq ($(OPENJDK_TARGET_OS),windows)
+    LIBAWT_DIRS+=\
 	$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/windows \
 	$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/windows \
 	$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/d3d
-
+else
+    LIBAWT_DIRS+=\
+	$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/x11
+endif
 
 LIBAWT_CFLAGS:=-D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES \
 	$(X_CFLAGS) \
@@ -649,7 +659,21 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
 			DllUtil.cpp \
 			initIDs.cpp \
 			MouseInfo.cpp \
-			rect.c
+			rect.c \
+			OGLBlitLoops.c \
+			OGLBufImgOps.c \
+		        OGLContext.c \
+		        OGLFuncs.c \
+		        OGLMaskBlit.c \
+		        OGLMaskFill.c \
+		        OGLPaints.c \
+		        OGLRenderQueue.c \
+		        OGLRenderer.c \
+		        OGLSurfaceData.c \
+		        OGLTextRenderer.c \
+		        OGLVertexCache.c \
+		        WGLGraphicsConfig.c \
+		        WGLSurfaceData.c
 	LIBAWT_LANG:=C++
 	LIBAWT_CFLAGS += -EHsc -DUNICODE -D_UNICODE
 	ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
@@ -684,15 +708,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT,\
 		ASFLAGS:=$(LIBAWT_ASFLAGS),\
 		MAPFILE:=$(LIBAWT_MAPFILE), \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN),\
-		LDFLAGS_windows:=advapi32.lib kernel32.lib user32.lib gdi32.lib winspool.lib \
-				 imm32.lib ole32.lib uuid.lib shell32.lib \
-				 comdlg32.lib winmm.lib comctl32.lib \
-				 shlwapi.lib delayimp.lib $(WIN_JAVA_LIB) jvm.lib \
-				 /DELAYLOAD:user32.dll /DELAYLOAD:gdi32.dll \
-				 /DELAYLOAD:shell32.dll /DELAYLOAD:winmm.dll \
-				 /DELAYLOAD:winspool.drv /DELAYLOAD:imm32.dll \
-				 /DELAYLOAD:ole32.dll /DELAYLOAD:comdlg32.dll \
-				 /DELAYLOAD:comctl32.dll /DELAYLOAD:shlwapi.dll,\
 		LDFLAGS_solaris:=-R/usr/dt/lib$(OPENJDK_TARGET_CPU_ISADIR) -R$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR),\
 		LDFLAGS_SUFFIX_linux:=-ljvm $(LIBM) $(LIBDL) -ljava,\
 		LDFLAGS_SUFFIX_solaris:=-ljvm $(LIBM) $(LIBDL) -ljava,\
@@ -705,11 +720,20 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT,\
 				       -framework ApplicationServices \
 				       -framework AudioToolbox \
 				       -ljava,\
+		LDFLAGS_SUFFIX_windows:=kernel32.lib user32.lib gdi32.lib winspool.lib \
+					imm32.lib ole32.lib uuid.lib shell32.lib \
+					comdlg32.lib winmm.lib comctl32.lib shlwapi.lib \
+					delayimp.lib jvm.lib $(WIN_JAVA_LIB) advapi32.lib \
+					-DELAYLOAD:user32.dll -DELAYLOAD:gdi32.dll \
+					-DELAYLOAD:shell32.dll -DELAYLOAD:winmm.dll \
+					-DELAYLOAD:winspool.drv -DELAYLOAD:imm32.dll \
+					-DELAYLOAD:ole32.dll -DELAYLOAD:comdlg32.dll \
+					-DELAYLOAD:comctl32.dll -DELAYLOAD:shlwapi.dll,\
 		VERSIONINFO_RESOURCE:=$(LIBAWT_VERSIONINFO_RESOURCE),\
 		RC_FLAGS:=$(RC_FLAGS) $(LIBAWT_RC_FLAGS) \
-			  /D "JDK_FNAME=awt.dll" \
-			  /D "JDK_INTERNAL_NAME=awt" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=awt.dll" \
+			  -D "JDK_INTERNAL_NAME=awt" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -863,9 +887,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_XAWT,\
 		LDFLAGS_SUFFIX:=$(LIBAWT_XAWT_LDFLAGS_SUFFIX),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=xawt.dll" \
-			  /D "JDK_INTERNAL_NAME=xawt" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=xawt.dll" \
+			  -D "JDK_INTERNAL_NAME=xawt" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt_xawt))
 
 $(BUILD_LIBAWT_XAWT) : $(BUILD_LIBJAVA)
@@ -946,9 +970,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP,\
 		LDFLAGS_SUFFIX_macosx:=$(LIBZ) -ljava -ljvm,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=zip.dll" \
-			  /D "JDK_INTERNAL_NAME=zip" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=zip.dll" \
+			  -D "JDK_INTERNAL_NAME=zip" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libzip,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -971,15 +995,15 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libunpack/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
-		LDFLAGS_windows:=-map:$(JDK_OUTPUTDIR)/objs/unpack.map /debug \
+		LDFLAGS_windows:=-map:$(JDK_OUTPUTDIR)/objs/unpack.map -debug \
 				jvm.lib $(WIN_JAVA_LIB),\
 		LDFLAGS_SUFFIX_posix:=-ljvm $(LIBCXX) -ljava -lc,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libunpack,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=unpack.dll" \
-			  /D "JDK_INTERNAL_NAME=unpack" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=unpack.dll" \
+			  -D "JDK_INTERNAL_NAME=unpack" \
+			  -D "JDK_FTYPE=0x2L",\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
 $(BUILD_LIBUNPACK) : $(BUILD_LIBJAVA)
@@ -1020,14 +1044,14 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBATTACH,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libattach/mapfile-$(OPENJDK_TARGET_OS), \
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS) \
-			  /D "JDK_FNAME=attach.dll" \
-			  /D "JDK_INTERNAL_NAME=attach" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=attach.dll" \
+			  -D "JDK_INTERNAL_NAME=attach" \
+			  -D "JDK_FTYPE=0x2L",\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_solaris:=-ldoor,\
-		LDFLAGS_windows:=psapi.lib advapi32.lib $(WIN_JAVA_LIB) jvm.lib,\
 		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		LDFLAGS_SUFFIX_windows:=$(WIN_JAVA_LIB) advapi32.lib psapi.lib,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libattach,\
 		DEBUG_SYMBOLS:=true))
 
@@ -1058,9 +1082,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET,\
 		LDFLAGS_SUFFIX_windows:=$(LDFLAGS_JDKLIB_SUFFIX) -export:jdwpTransport_OnLoad ws2_32.lib,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=dt_socket.dll" \
-			  /D "JDK_INTERNAL_NAME=dt_socket" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=dt_socket.dll" \
+			  -D "JDK_INTERNAL_NAME=dt_socket" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libdt_socket,\
 		DEBUG_SYMBOLS:=true))
 
@@ -1090,9 +1114,9 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
 		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=dt_shmem.dll" \
-			  /D "JDK_INTERNAL_NAME=dt_shmem" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=dt_shmem.dll" \
+			  -D "JDK_INTERNAL_NAME=dt_shmem" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libdt_shmem,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -1125,9 +1149,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP,\
 		LDFLAGS_SUFFIX:=,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=jdwp.dll" \
-			  /D "JDK_INTERNAL_NAME=jdwp" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=jdwp.dll" \
+			  -D "JDK_INTERNAL_NAME=jdwp" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjdwp,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -1166,9 +1190,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAAS,\
 		EXCLUDE_FILES:=$(LIBJAAS_EXCLUDE_FILES),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS) \
-			  /D "JDK_FNAME=$(LIBJAAS_NAME).dll" \
-			  /D "JDK_INTERNAL_NAME=$(LIBJAAS_NAME)" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=$(LIBJAAS_NAME).dll" \
+			  -D "JDK_INTERNAL_NAME=$(LIBJAAS_NAME)" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjaas,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -1196,9 +1220,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSDT,\
 		LDFLAGS_SUFFIX:=,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=jsdt.dll" \
-			  /D "JDK_INTERNAL_NAME=jsdt" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=jsdt.dll" \
+			  -D "JDK_INTERNAL_NAME=jsdt" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjsdt, \
                 DEBUG_SYMBOLS:=true))
 
@@ -1240,10 +1264,11 @@ ifdef OPENJDK
 		LDFLAGS_SUFFIX_linux:=-lm -lawt -ljava -ljvm,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=lcms.dll" \
-			  /D "JDK_INTERNAL_NAME=lcms" \
-			  /D "JDK_FTYPE=0x2L",\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/liblcms))
+			  -D "JDK_FNAME=lcms.dll" \
+			  -D "JDK_INTERNAL_NAME=lcms" \
+			  -D "JDK_FTYPE=0x2L",\
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/liblcms,\
+		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
     BUILD_LIBRARIES += $(BUILD_LIBLCMS)
 
@@ -1299,9 +1324,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJPEG,\
 		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=jpeg.dll" \
-			  /D "JDK_INTERNAL_NAME=jpeg" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=jpeg.dll" \
+			  -D "JDK_INTERNAL_NAME=jpeg" \
+			  -D "JDK_FTYPE=0x2L",\
 		REORDER:=$(BUILD_LIBJPEG_REORDER),\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjpeg,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
@@ -1313,7 +1338,7 @@ BUILD_LIBRARIES += $(BUILD_LIBJPEG)
 ##########################################################################################
 
 ifndef OPENJDK
-    FONT_HEADERS:=-I$(CLOSED_SRC)/share/native/$(PKGDIR)/t2k
+    FONT_HEADERS:=-I$(JDK_TOPDIR)/src/closed/share/native/sun/font/t2k
     BUILD_LIBFONTMANAGER_MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libfontmanager/mapfile-vers
     LIBFONTMANAGER_EXCLUDE_FILES += freetypeScaler.c
 else
@@ -1368,16 +1393,18 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER,\
 		MAPFILE:=$(BUILD_LIBFONTMANAGER_MAPFILE), \
 		LDFLAGS:=$(subst -Xlinker -z -Xlinker defs,,$(LDFLAGS_JDKLIB)) $(LDFLAGS_CXX_JDK) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
-		LDFLAGS_windows:=advapi32.lib user32.lib gdi32.lib $(WIN_AWT_LIB) $(WIN_JAVA_LIB),\
 		LDFLAGS_SUFFIX:=$(BUILD_LIBFONTMANAGER_FONTLIB),\
 		LDFLAGS_SUFFIX_linux:=-lawt $(LIBM) $(LIBCXX) -ljava -ljvm -lc,\
 		LDFLAGS_SUFFIX_solaris:=-lawt -lawt_xawt -lc $(LIBM) $(LIBCXX) -ljava -ljvm,\
-		LDFLAGS_SUFFIX_macosx:=-lawt $(LIBM) $(LIBCXX) -undefined dynamic_lookup -ljava -ljvm,\
+		LDFLAGS_SUFFIX_macosx:=-lawt $(LIBM) $(LIBCXX) -undefined dynamic_lookup \
+				       -ljava -ljvm,\
+		LDFLAGS_SUFFIX_windows:=$(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
+					$(WIN_AWT_LIB),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=fontmanager.dll" \
-			  /D "JDK_INTERNAL_NAME=fontmanager" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=fontmanager.dll" \
+			  -D "JDK_INTERNAL_NAME=fontmanager" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libfontmanager,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -1432,9 +1459,9 @@ ifndef OPENJDK
 		LDFLAGS_SUFFIX_solaris:=-lawt -lawt_xawt,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=t2k.dll" \
-			  /D "JDK_INTERNAL_NAME=t2k" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=t2k.dll" \
+			  -D "JDK_INTERNAL_NAME=t2k" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libt2k,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -1469,9 +1496,9 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=jawt.dll" \
-			  /D "JDK_INTERNAL_NAME=jawt" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=jawt.dll" \
+			  -D "JDK_INTERNAL_NAME=jawt" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjawt,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -1603,9 +1630,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT,\
 		LDFLAGS_SUFFIX_linux:=$(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=instrument.dll" \
-			  /D "JDK_INTERNAL_NAME=instrument" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=instrument.dll" \
+			  -D "JDK_INTERNAL_NAME=instrument" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(LIBINSTRUMENT_DIR),\
 		DEBUG_SYMBOLS:=true))
 
@@ -1664,14 +1691,14 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libmanagement/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
-		LDFLAGS_windows:=$(WIN_JAVA_LIB) jvm.lib advapi32.lib psapi.lib,\
 		LDFLAGS_solaris:=-lkstat,\
 		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		LDFLAGS_SUFFIX_windows:=jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=management.dll" \
-			  /D "JDK_INTERNAL_NAME=management" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=management.dll" \
+			  -D "JDK_INTERNAL_NAME=management" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libmanagement,\
 		DEBUG_SYMBOLS:=true))
 
@@ -1720,9 +1747,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBHPROF,\
 		LDFLAGS_SUFFIX:=$(BUILD_LIBHPROF_LDFLAGS),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=hprof.dll" \
-			  /D "JDK_INTERNAL_NAME=hprof" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=hprof.dll" \
+			  -D "JDK_INTERNAL_NAME=hprof" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libhprof_jvmti,\
 		DEBUG_SYMBOLS:=true))
 
@@ -1743,9 +1770,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA_CRW_DEMO,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=java_crw_demo.dll" \
-			  /D "JDK_INTERNAL_NAME=java_crw_demo" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=java_crw_demo.dll" \
+			  -D "JDK_INTERNAL_NAME=java_crw_demo" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjava_crw_demo,\
 		DEBUG_SYMBOLS:=true))
 
@@ -1769,9 +1796,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNPT,\
 		LDFLAGS_SUFFIX_windows:=-export:nptInitialize -export:nptTerminate,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=npt.dll" \
-			  /D "JDK_INTERNAL_NAME=npt" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=npt.dll" \
+			  -D "JDK_INTERNAL_NAME=npt" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libnpt,\
 		DEBUG_SYMBOLS:=true))
 
@@ -1782,9 +1809,13 @@ BUILD_LIBRARIES += $(BUILD_LIBNPT)
 LIBNET_SRC_DIRS:=$(JDK_TOPDIR)/src/share/native/java/net \
                    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/net \
                    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/net/dns \
-                   $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/net/www/protocol/http/ntlm \
-                   $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/net/sdp \
                    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/net/spi
+
+ifeq ($(OPENJDK_TARGET_OS),windows)
+    LIBNET_SRC_DIRS+=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/net/www/protocol/http/ntlm
+else
+    LIBNET_SRC_DIRS+=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/net/sdp
+endif
 
 LIBNET_CFLAGS:=$(foreach dir,$(LIBNET_SRC_DIRS),-I$(dir))
 
@@ -1820,14 +1851,14 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNET,\
 		LDFLAGS_SUFFIX_macosx:=-ljvm -ljava,\
 		LDFLAGS_SUFFIX_solaris:=-ljvm -ljava -lnsl -lsocket $(LIBDL) ,\
 		LDFLAGS_SUFFIX_linux:=$(LIBDL) -ljvm -lpthread -ljava,\
-		LDFLAGS_SUFFIX_windows:=ws2_32.lib $(JVMLIB) secur32.lib iphlpapi.lib \
-					  delayimp.lib $(WIN_JAVA_LIB) jvm.lib advapi32.lib \
-                                          /DELAYLOAD:secur32.dll /DELAYLOAD:iphlpapi.dll, \
+		LDFLAGS_SUFFIX_windows:=ws2_32.lib jvm.lib secur32.lib iphlpapi.lib \
+					delayimp.lib $(WIN_JAVA_LIB) advapi32.lib \
+					-DELAYLOAD:secur32.dll -DELAYLOAD:iphlpapi.dll, \
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=net.dll" \
-			  /D "JDK_INTERNAL_NAME=net" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=net.dll" \
+			  -D "JDK_INTERNAL_NAME=net" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libnet,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -1836,7 +1867,7 @@ $(BUILD_LIBNET) : $(BUILD_LIBJAVA)
 BUILD_LIBRARIES += $(BUILD_LIBNET)
 
 $(JDK_OUTPUTDIR)/lib/net.properties: $(JDK_TOPDIR)/src/share/lib/net.properties
-	$(ECHO) Copying $(@F)
+	$(ECHO) $(LOG_INFO) Copying $(@F)
 	$(MKDIR) -p $(@D)
 	$(CP) $< $@
 
@@ -1844,7 +1875,7 @@ COPY_FILES += $(JDK_OUTPUTDIR)/lib/net.properties
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 $(JDK_OUTPUTDIR)/lib/sdp/sdp.conf.template : $(JDK_TOPDIR)/src/${OPENJDK_TARGET_OS_API_DIR}/lib/sdp/sdp.conf.template
-	$(ECHO) Copying $(@F)
+	$(ECHO) $(LOG_INFO) Copying $(@F)
 	$(MKDIR) -p $(@D)
 	$(CP) $< $@
 
@@ -1956,18 +1987,18 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO,\
 		LDFLAGS_SUFFIX_linux:=-ljava -lnet -lpthread $(LIBDL),\
 		LDFLAGS_SUFFIX_solaris:=-ljvm -lsocket -lposix4 $(LIBDL) \
 				        -lsendfile -ljava -lnet -lc,\
-		LDFLAGS_SUFFIX_windows:=$(LDFLAGS_JDKLIB_SUFFIX) \
-                                        $(WIN_JAVA_LIB) $(JDK_OUTPUTDIR)/objs/libnet/net.lib \
-					advapi32.lib jvm.lib ws2_32.lib\
+		LDFLAGS_SUFFIX_windows:=jvm.lib ws2_32.lib $(WIN_JAVA_LIB) \
+					$(JDK_OUTPUTDIR)/objs/libnet/net.lib \
                                         $(JDK_OUTPUTDIR)/objs/libjava/io_util.obj \
-		                        $(JDK_OUTPUTDIR)/objs/libjava/FileDescriptor_md.obj ,\
+		                        $(JDK_OUTPUTDIR)/objs/libjava/FileDescriptor_md.obj \
+					advapi32.lib,\
 		LDFLAGS_SUFFIX_macosx:=-ljava -lnet -pthread -framework CoreFoundation,\
 		LDFLAGS_SUFFIX:=,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=nio.dll" \
-			  /D "JDK_INTERNAL_NAME=nio" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=nio.dll" \
+			  -D "JDK_INTERNAL_NAME=nio" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libnio,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -2127,9 +2158,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI,\
 			user32.lib,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS) \
-			  /D "JDK_FNAME=jli.dll" \
-			  /D "JDK_INTERNAL_NAME=jli" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=jli.dll" \
+			  -D "JDK_INTERNAL_NAME=jli" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjli,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -2176,6 +2207,7 @@ endif
 
 ##########################################################################################
 
+ifndef OPENJDK
 ifeq ($(ENABLE_JFR), true)
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBJFR,\
@@ -2191,14 +2223,15 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJFR,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=jfr.dll" \
-			  /D "JDK_INTERNAL_NAME=jfr" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=jfr.dll" \
+			  -D "JDK_INTERNAL_NAME=jfr" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjfr,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
 BUILD_LIBRARIES += $(BUILD_LIBJFR)
 
+endif
 endif
 
 ##########################################################################################
@@ -2241,9 +2274,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBKCMS,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/closed/share/native/sun/java2d/cmm/kcms/cmm.rc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/closed/share/native/sun/java2d/cmm/kcms/cmm.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=kcms.dll" \
-			  /D "JDK_INTERNAL_NAME=kcms" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=kcms.dll" \
+			  -D "JDK_INTERNAL_NAME=kcms" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libkcms,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -2523,7 +2556,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 else ifneq ($(OPENJDK_TARGET_OS), windows)
 	LIBSPLASHSCREEN_LDFLAGS_SUFFIX += -L$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) -lX11 -lXext $(LIBM) -lpthread
 else # OPENJDK_TARGET_OS
-	LIBSPLASHSCREEN_LDFLAGS_SUFFIX += kernel32.lib user32.lib gdi32.lib delayimp.lib /DELAYLOAD:user32.dll
+	LIBSPLASHSCREEN_LDFLAGS_SUFFIX += kernel32.lib user32.lib gdi32.lib delayimp.lib -DELAYLOAD:user32.dll
 endif # OPENJDK_TARGET_OS
 
 $(eval $(call SetupNativeCompilation,LIBSPLASHSCREEN,\
@@ -2540,9 +2573,9 @@ $(eval $(call SetupNativeCompilation,LIBSPLASHSCREEN,\
 		LDFLAGS_SUFFIX:=$(LIBSPLASHSCREEN_LDFLAGS_SUFFIX) $(LIBZ),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=splashscreen.dll" \
-			  /D "JDK_INTERNAL_NAME=splashscreen" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=splashscreen.dll" \
+			  -D "JDK_INTERNAL_NAME=splashscreen" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsplashscreen,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -2582,9 +2615,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDCPR,\
 		LDFLAGS_SUFFIX_posix:=-lm,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=dcpr.dll" \
-			  /D "JDK_INTERNAL_NAME=dcpr" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=dcpr.dll" \
+			  -D "JDK_INTERNAL_NAME=dcpr" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libdcpr,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -2615,9 +2648,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC,\
 		LDFLAGS_SUFFIX_windows:=winscard.lib,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=j2pcsc.dll" \
-			  /D "JDK_INTERNAL_NAME=j2pcsc" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=j2pcsc.dll" \
+			  -D "JDK_INTERNAL_NAME=j2pcsc" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2pcsc,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -2652,10 +2685,9 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
      BUILD_LIBKRB5_NAME:=w2k_lsa_auth
      BUILD_LIBKRB5_FILES:=NativeCreds.c WindowsDirectory.c
      BUILD_LIBKRB5_SRC:=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/security/krb5
-     BUILD_LIBKRB5_LIBS:=Secur32.lib netapi32.lib \
-	kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
-	advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib \
-	odbccp32.lib wsock32.lib
+     BUILD_LIBKRB5_LIBS:=advapi32.lib Secur32.lib netapi32.lib kernel32.lib user32.lib \
+			 gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib \
+			 ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib
 else ifeq ($(OPENJDK_TARGET_OS), macosx)
      BUILD_LIBKRB5_NAME:=osxkrb5
      BUILD_LIBKRB5_FILES:=nativeccache.c
@@ -2679,9 +2711,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBKRB5,\
 		LDFLAGS_SUFFIX:=$(BUILD_LIBKRB5_LIBS) ,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=$(BUILD_LIBKRB5_NAME).dll" \
-			  /D "JDK_INTERNAL_NAME=$(BUILD_LIBKRB5_NAME)" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=$(BUILD_LIBKRB5_NAME).dll" \
+			  -D "JDK_INTERNAL_NAME=$(BUILD_LIBKRB5_NAME)" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libkrb5,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -2695,22 +2727,20 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 $(eval $(call SetupNativeCompilation,BUILD_LIBSUNMSCAPI,\
 		LIBRARY:=sunmscapi,\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
-		SRC:=$(JDK_TOPDIR)/src/share/native/sun/security/mscapi \
-		     $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/security/mscapi,\
+		SRC:=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/security/mscapi,\
 		INCLUDE_FILES:=security.cpp, \
 		LANG:=C++,\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) \
-		        -I$(JDK_TOPDIR)/src/share/native/sun/security/mscapi \
                         -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/security/mscapi ,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX:=Crypt32.Lib advapi32.lib,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=sunmscapi.dll" \
-			  /D "JDK_INTERNAL_NAME=sunmscapi" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=sunmscapi.dll" \
+			  -D "JDK_INTERNAL_NAME=sunmscapi" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsunmscapi,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -2739,9 +2769,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PKCS11,\
 		LDFLAGS_SUFFIX_posix:=$(LIBDL), \
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=j2pkcs11.dll" \
-			  /D "JDK_INTERNAL_NAME=j2pkcs11" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=j2pkcs11.dll" \
+			  -D "JDK_INTERNAL_NAME=j2pkcs11" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2pkcs11,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -2788,9 +2818,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBSUNEC,\
                 LDFLAGS_SUFFIX_solaris:=-lc ,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=sunec.dll" \
-			  /D "JDK_INTERNAL_NAME=sunec" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=sunec.dll" \
+			  -D "JDK_INTERNAL_NAME=sunec" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsunec,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -2928,13 +2958,13 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND,\
 				-framework CoreServices -framework AudioUnit $(LIBCXX) \
 				-framework CoreMIDI -framework AudioToolbox,\
 		LDFLAGS_windows:=$(WIN_JAVA_LIB) advapi32.lib winmm.lib,\
-		LDFLAGS_SUFFIX:=-ljava -ljvm,\
+		LDFLAGS_SUFFIX_posix:=-ljava -ljvm,\
 		LDFLAGS_SUFFIX_solaris:=-lc ,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=jsound.dll" \
-			  /D "JDK_INTERNAL_NAME=jsound" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=jsound.dll" \
+			  -D "JDK_INTERNAL_NAME=jsound" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjsound,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -2999,9 +3029,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDDS,\
 		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX) dsound.lib winmm.lib user32.lib ole32.lib,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
-			  /D "JDK_FNAME=jsoundds.dll" \
-			  /D "JDK_INTERNAL_NAME=jsoundds" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=jsoundds.dll" \
+			  -D "JDK_INTERNAL_NAME=jsoundds" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjsoundds,\
 		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
 
@@ -3091,6 +3121,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBOSXAPP,\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) \
 			-I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
+			-I$(JDK_OUTPUTDIR)/gensrc/sun/osxapp \
                         -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
                         -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB)\
@@ -3263,6 +3294,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_LWAWT,\
 		INCLUDE_FILES:=$(LIBAWT_LWAWT_FILES),\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) \
+                        $(X_CFLAGS) \
+                        $(X_LIBS) \
                         $(foreach dir,$(LIBAWT_LWAWT_DIRS),-I$(dir)) \
                         -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
                         -I$(JDK_TOPDIR)/src/share/native/sun/java2d \

@@ -61,7 +61,7 @@ Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ILLEGAL,    "tuple:",        false, Node::NotAMachineReg, relocInfo::none          },  // Tuple
   { Bad,             T_ARRAY,      "array:",        false, Node::NotAMachineReg, relocInfo::none          },  // Array
 
-#if defined(IA32) || defined(AMD64)
+#ifndef SPARC
   { Bad,             T_ILLEGAL,    "vectors:",      false, Op_VecS,              relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_VecD,              relocInfo::none          },  // VectorD
   { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX,              relocInfo::none          },  // VectorX

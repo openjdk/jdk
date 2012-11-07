@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-
-import com.sun.javadoc.*;
-import java.util.Map;
-import java.util.HashMap;
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Process and manage "-link" and "-linkoffline" to external packages. The
@@ -40,9 +40,10 @@ import java.net.*;
  * documented) file in the current or the destination directory, while
  * generating the documentation.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  * @author Robert Field
@@ -91,7 +92,7 @@ public class Extern {
          * If the same package name is found in the map, then the first mapped
          * Item object or offline location will be retained.
          *
-         * @param packagename Package name found in the "package-list" file.
+         * @param packageName Package name found in the "package-list" file.
          * @param path        URL or Directory path from where the "package-list"
          * file is picked.
          * @param relative    True if path is URL, false if directory path.
@@ -179,7 +180,7 @@ public class Extern {
     /**
      * Get the Extern Item object associated with this package name.
      *
-     * @param pkgname Package name.
+     * @param pkgName Package name.
      */
     private Item findPackageItem(String pkgName) {
         if (packageToItemMap == null) {
@@ -276,7 +277,7 @@ public class Extern {
                                 boolean relative)
                          throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(input));
-        StringBuffer strbuf = new StringBuffer();
+        StringBuilder strbuf = new StringBuilder();
         try {
             int c;
             while ((c = in.read()) >= 0) {

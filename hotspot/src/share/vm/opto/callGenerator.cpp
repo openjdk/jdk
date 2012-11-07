@@ -670,6 +670,129 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
 }
 
 
+//------------------------PredictedIntrinsicGenerator------------------------------
+// Internal class which handles all predicted Intrinsic calls.
+class PredictedIntrinsicGenerator : public CallGenerator {
+  CallGenerator* _intrinsic;
+  CallGenerator* _cg;
+
+public:
+  PredictedIntrinsicGenerator(CallGenerator* intrinsic,
+                              CallGenerator* cg)
+    : CallGenerator(cg->method())
+  {
+    _intrinsic = intrinsic;
+    _cg        = cg;
+  }
+
+  virtual bool      is_virtual()   const    { return true; }
+  virtual bool      is_inlined()   const    { return true; }
+  virtual bool      is_intrinsic() const    { return true; }
+
+  virtual JVMState* generate(JVMState* jvms);
+};
+
+
+CallGenerator* CallGenerator::for_predicted_intrinsic(CallGenerator* intrinsic,
+                                                      CallGenerator* cg) {
+  return new PredictedIntrinsicGenerator(intrinsic, cg);
+}
+
+
+JVMState* PredictedIntrinsicGenerator::generate(JVMState* jvms) {
+  GraphKit kit(jvms);
+  PhaseGVN& gvn = kit.gvn();
+
+  CompileLog* log = kit.C->log();
+  if (log != NULL) {
+    log->elem("predicted_intrinsic bci='%d' method='%d'",
+              jvms->bci(), log->identify(method()));
+  }
+
+  Node* slow_ctl = _intrinsic->generate_predicate(kit.sync_jvms());
+  if (kit.failing())
+    return NULL;  // might happen because of NodeCountInliningCutoff
+
+  SafePointNode* slow_map = NULL;
+  JVMState* slow_jvms;
+  if (slow_ctl != NULL) {
+    PreserveJVMState pjvms(&kit);
+    kit.set_control(slow_ctl);
+    if (!kit.stopped()) {
+      slow_jvms = _cg->generate(kit.sync_jvms());
+      if (kit.failing())
+        return NULL;  // might happen because of NodeCountInliningCutoff
+      assert(slow_jvms != NULL, "must be");
+      kit.add_exception_states_from(slow_jvms);
+      kit.set_map(slow_jvms->map());
+      if (!kit.stopped())
+        slow_map = kit.stop();
+    }
+  }
+
+  if (kit.stopped()) {
+    // Predicate is always false.
+    kit.set_jvms(slow_jvms);
+    return kit.transfer_exceptions_into_jvms();
+  }
+
+  // Generate intrinsic code:
+  JVMState* new_jvms = _intrinsic->generate(kit.sync_jvms());
+  if (new_jvms == NULL) {
+    // Intrinsic failed, so use slow code or make a direct call.
+    if (slow_map == NULL) {
+      CallGenerator* cg = CallGenerator::for_direct_call(method());
+      new_jvms = cg->generate(kit.sync_jvms());
+    } else {
+      kit.set_jvms(slow_jvms);
+      return kit.transfer_exceptions_into_jvms();
+    }
+  }
+  kit.add_exception_states_from(new_jvms);
+  kit.set_jvms(new_jvms);
+
+  // Need to merge slow and fast?
+  if (slow_map == NULL) {
+    // The fast path is the only path remaining.
+    return kit.transfer_exceptions_into_jvms();
+  }
+
+  if (kit.stopped()) {
+    // Intrinsic method threw an exception, so it's just the slow path after all.
+    kit.set_jvms(slow_jvms);
+    return kit.transfer_exceptions_into_jvms();
+  }
+
+  // Finish the diamond.
+  kit.C->set_has_split_ifs(true); // Has chance for split-if optimization
+  RegionNode* region = new (kit.C) RegionNode(3);
+  region->init_req(1, kit.control());
+  region->init_req(2, slow_map->control());
+  kit.set_control(gvn.transform(region));
+  Node* iophi = PhiNode::make(region, kit.i_o(), Type::ABIO);
+  iophi->set_req(2, slow_map->i_o());
+  kit.set_i_o(gvn.transform(iophi));
+  kit.merge_memory(slow_map->merged_memory(), region, 2);
+  uint tos = kit.jvms()->stkoff() + kit.sp();
+  uint limit = slow_map->req();
+  for (uint i = TypeFunc::Parms; i < limit; i++) {
+    // Skip unused stack slots; fast forward to monoff();
+    if (i == tos) {
+      i = kit.jvms()->monoff();
+      if( i >= limit ) break;
+    }
+    Node* m = kit.map()->in(i);
+    Node* n = slow_map->in(i);
+    if (m != n) {
+      const Type* t = gvn.type(m)->meet(gvn.type(n));
+      Node* phi = PhiNode::make(region, m, t);
+      phi->set_req(2, n);
+      kit.map()->set_req(i, gvn.transform(phi));
+    }
+  }
+  return kit.transfer_exceptions_into_jvms();
+}
+
 //-------------------------UncommonTrapCallGenerator-----------------------------
 // Internal class which handles all out-of-line calls checking receiver type.
 class UncommonTrapCallGenerator : public CallGenerator {
