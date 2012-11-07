@@ -373,7 +373,11 @@ else
       # If we have a spec.gmk, we have run here before and we are OK. Otherwise, check for
       # other files
       files_present=`$LS $OUTPUT_ROOT`
-      if test "x$files_present" != x; then
+      # Configure has already touched config.log and confdefs.h in the current dir when this check 
+      # is performed.
+      filtered_files=`$ECHO "$files_present" | $SED -e 's/config.log//g' -e 's/confdefs.h//g' -e 's/ //g' \
+                                             | $TR -d '\n'`
+      if test "x$filtered_files" != x; then
         AC_MSG_NOTICE([Current directory is $CURDIR.])
         AC_MSG_NOTICE([Since this is not the source root, configure will output the configuration here])
         AC_MSG_NOTICE([(as opposed to creating a configuration in <src_root>/build/<conf-name>).])
