@@ -136,13 +136,18 @@ inline void HandleMark::pop_and_restore() {
   HandleArea* area = _area;   // help compilers with poor alias analysis
   // Delete later chunks
   if( _chunk->next() ) {
+    // reset arena size before delete chunks. Otherwise, the total
+    // arena size could exceed total chunk size
+    assert(area->size_in_bytes() > size_in_bytes(), "Sanity check");
+    area->set_size_in_bytes(size_in_bytes());
     _chunk->next_chop();
+  } else {
+    assert(area->size_in_bytes() == size_in_bytes(), "Sanity check");
   }
   // Roll back arena to saved top markers
   area->_chunk = _chunk;
   area->_hwm = _hwm;
   area->_max = _max;
-  area->set_size_in_bytes(_size_in_bytes);
   debug_only(area->_handle_mark_nesting--);
 }
 

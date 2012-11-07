@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,10 +321,6 @@ public class Test {
 
         test("ftp://ftp.is.co.za/rfc/rfc1808.txt")
             .s("ftp").h("ftp.is.co.za").p("/rfc/rfc1808.txt").z();
-
-        test("gopher://spinaltap.micro.umn.edu/00/Weather/California/Los%20Angeles")
-            .s("gopher").h("spinaltap.micro.umn.edu")
-            .p("/00/Weather/California/Los%20Angeles").z();
 
         test("http://www.math.uio.no/faq/compression-faq/part1.html")
             .s("http").h("www.math.uio.no").p("/faq/compression-faq/part1.html").z();

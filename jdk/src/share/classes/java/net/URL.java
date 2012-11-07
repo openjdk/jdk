@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,7 +274,7 @@ public final class URL implements java.io.Serializable {
      * <p>Protocol handlers for the following protocols are guaranteed
      * to exist on the search path :-
      * <blockquote><pre>
-     *     http, https, ftp, file, and jar
+     *     http, https, file, and jar
      * </pre></blockquote>
      * Protocol handlers for additional protocols may also be
      * available.

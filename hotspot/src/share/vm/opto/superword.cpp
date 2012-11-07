@@ -1776,16 +1776,15 @@ void SuperWord::compute_vector_element_type() {
     set_velt_type(n, container_type(n));
   }
 
-  // Propagate narrowed type backwards through operations
+  // Propagate integer narrowed type backwards through operations
   // that don't depend on higher order bits
   for (int i = _block.length() - 1; i >= 0; i--) {
     Node* n = _block.at(i);
     // Only integer types need be examined
-    const Type* vt = velt_type(n);
-    if (vt->basic_type() == T_INT) {
+    const Type* vtn = velt_type(n);
+    if (vtn->basic_type() == T_INT) {
       uint start, end;
       VectorNode::vector_operands(n, &start, &end);
-      const Type* vt = velt_type(n);
 
       for (uint j = start; j < end; j++) {
         Node* in  = n->in(j);
@@ -1801,6 +1800,24 @@ void SuperWord::compute_vector_element_type() {
             }
           }
           if (same_type) {
+            // For right shifts of small integer types (bool, byte, char, short)
+            // we need precise information about sign-ness. Only Load nodes have
+            // this information because Store nodes are the same for signed and
+            // unsigned values. And any arithmetic operation after a load may
+            // expand a value to signed Int so such right shifts can't be used
+            // because vector elements do not have upper bits of Int.
+            const Type* vt = vtn;
+            if (VectorNode::is_shift(in)) {
+              Node* load = in->in(1);
+              if (load->is_Load() && in_bb(load) && (velt_type(load)->basic_type() == T_INT)) {
+                vt = velt_type(load);
+              } else if (in->Opcode() != Op_LShiftI) {
+                // Widen type to Int to avoid creation of right shift vector
+                // (align + data_size(s1) check in stmts_can_pack() will fail).
+                // Note, left shifts work regardless type.
+                vt = TypeInt::INT;
+              }
+            }
             set_velt_type(in, vt);
           }
         }
@@ -1841,7 +1858,20 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
 // Smallest type containing range of values
 const Type* SuperWord::container_type(Node* n) {
   if (n->is_Mem()) {
-    return Type::get_const_basic_type(n->as_Mem()->memory_type());
+    BasicType bt = n->as_Mem()->memory_type();
+    if (n->is_Store() && (bt == T_CHAR)) {
+      // Use T_SHORT type instead of T_CHAR for stored values because any
+      // preceding arithmetic operation extends values to signed Int.
+      bt = T_SHORT;
+    }
+    if (n->Opcode() == Op_LoadUB) {
+      // Adjust type for unsigned byte loads, it is important for right shifts.
+      // T_BOOLEAN is used because there is no basic type representing type
+      // TypeInt::UBYTE. Use of T_BOOLEAN for vectors is fine because only
+      // size (one byte) and sign is important.
+      bt = T_BOOLEAN;
+    }
+    return Type::get_const_basic_type(bt);
   }
   const Type* t = _igvn.type(n);
   if (t->basic_type() == T_INT) {

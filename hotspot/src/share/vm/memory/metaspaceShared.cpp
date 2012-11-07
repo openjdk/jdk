@@ -663,8 +663,8 @@ bool MetaspaceShared::is_in_shared_space(const void* p) {
   if (_ro_base == NULL || _rw_base == NULL) {
     return false;
   } else {
-    return ((p > _ro_base && p < (_ro_base + SharedReadOnlySize)) ||
-            (p > _rw_base && p < (_rw_base + SharedReadWriteSize)));
+    return ((p >= _ro_base && p < (_ro_base + SharedReadOnlySize)) ||
+            (p >= _rw_base && p < (_rw_base + SharedReadWriteSize)));
   }
 }
 
@@ -692,14 +692,6 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
   // Map in the shared memory and then map the regions on top of it
   ReservedSpace shared_rs = mapinfo->reserve_shared_memory();
   if (!shared_rs.is_reserved()) return false;
-
-  // Split reserved memory into pieces (windows needs this)
-  ReservedSpace ro_rs   = shared_rs.first_part(SharedReadOnlySize);
-  ReservedSpace tmp_rs1 = shared_rs.last_part(SharedReadOnlySize);
-  ReservedSpace rw_rs   = tmp_rs1.first_part(SharedReadWriteSize);
-  ReservedSpace tmp_rs2 = tmp_rs1.last_part(SharedReadWriteSize);
-  ReservedSpace md_rs   = tmp_rs2.first_part(SharedMiscDataSize);
-  ReservedSpace mc_rs   = tmp_rs2.last_part(SharedMiscDataSize);
 
   // Map each shared region
   if ((_ro_base = mapinfo->map_region(ro)) != NULL &&

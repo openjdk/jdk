@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -206,13 +206,12 @@ MAPFILE_WARNING=$(MAPFILE_WARNING-$(VARIANT))
 #     libjdgaSUNWffb.so
 #     libjdgaSUNWm64.so
 #     libxinerama.so
-#   The library libJdbcOdbc.so has also been given an exception.
 #   The JNI/JVMTI demo libraries are also missing mapfiles, no exceptions yet.
 ifeq ($(ARCH_FAMILY),sparc)
   MAPFILE_EXCEPTIONS = \
-    (libJdbcOdbc|libjdgaSUNWafb|libjdgaSUNWcg6|libjdgaSUNWffb|libjdgaSUNWm64|libxinerama)
+    (libjdgaSUNWafb|libjdgaSUNWcg6|libjdgaSUNWffb|libjdgaSUNWm64|libxinerama)
 else
-  MAPFILE_EXCEPTIONS = (libJdbcOdbc)
+  MAPFILE_EXCEPTIONS = ()
 endif
 
 # Macro to check it's input file for banned dependencies and verify the

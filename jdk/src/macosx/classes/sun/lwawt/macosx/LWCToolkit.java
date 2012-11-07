@@ -53,7 +53,7 @@ class NamedCursor extends Cursor {
 /**
  * Mac OS X Cocoa-based AWT Toolkit.
  */
-public class LWCToolkit extends LWToolkit {
+public final class LWCToolkit extends LWToolkit {
     // While it is possible to enumerate all mouse devices
     // and query them for the number of buttons, the code
     // that does it is rather complex. Instead, we opt for
@@ -148,6 +148,10 @@ public class LWCToolkit extends LWToolkit {
                 });
             }
            });
+    }
+
+    public static LWCToolkit getLWCToolkit() {
+        return (LWCToolkit)Toolkit.getDefaultToolkit();
     }
 
     @Override
@@ -278,7 +282,6 @@ public class LWCToolkit extends LWToolkit {
         return new CMouseInfoPeer();
     }
 
-
     @Override
     protected int getScreenHeight() {
         return GraphicsEnvironment.getLocalGraphicsEnvironment()
@@ -333,8 +336,9 @@ public class LWCToolkit extends LWToolkit {
 
     @Override
     public int getScreenResolution() throws HeadlessException {
-        return ((CGraphicsDevice) GraphicsEnvironment
-                .getLocalGraphicsEnvironment().getDefaultScreenDevice()).getScreenResolution();
+        return (int) ((CGraphicsDevice) GraphicsEnvironment
+                .getLocalGraphicsEnvironment().getDefaultScreenDevice())
+                .getXResolution();
     }
 
     @Override
@@ -406,7 +410,6 @@ public class LWCToolkit extends LWToolkit {
     public int getNumberOfButtons(){
         return BUTTONS;
     }
-
 
     @Override
     public boolean isTraySupported() {
@@ -487,6 +490,22 @@ public class LWCToolkit extends LWToolkit {
         }}}, c); } catch (Exception e) { e.printStackTrace(); }
 
         synchronized(ret) { return ret[0]; }
+    }
+
+    /**
+     * Just a wrapper for LWCToolkit.invokeAndWait. Posts an empty event to the
+     * appropriate event queue and waits for it to finish.
+     */
+    public static void flushPendingEventsOnAppkit(final Component component) {
+        try {
+            invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                }
+            }, component);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // Kicks an event over to the appropriate eventqueue and waits for it to finish

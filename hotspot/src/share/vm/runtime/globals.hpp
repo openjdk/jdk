@@ -533,6 +533,9 @@ class CommandLineFlags {
   product(intx, UseSSE, 99,                                                 \
           "Highest supported SSE instructions set on x86/x64")              \
                                                                             \
+  product(bool, UseAES, false,                                               \
+          "Control whether AES instructions can be used on x86/x64")        \
+                                                                            \
   product(uintx, LargePageSizeInBytes, 0,                                   \
           "Large page size (0 to let VM choose the page size")              \
                                                                             \
@@ -634,6 +637,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseSSE42Intrinsics, false,                                  \
           "SSE4.2 versions of intrinsics")                                  \
+                                                                            \
+  product(bool, UseAESIntrinsics, false,                                    \
+          "use intrinsics for AES versions of crypto")                      \
                                                                             \
   develop(bool, TraceCallFixup, false,                                      \
           "traces all call fixups")                                         \
@@ -850,9 +856,6 @@ class CommandLineFlags {
                                                                             \
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
-                                                                            \
-  product_pd(bool, UseVectoredExceptions,                                   \
-          "Temp Flag - Use Vectored Exceptions rather than SEH (Windows Only)") \
                                                                             \
   develop(bool, TraceVMOperation, false,                                    \
           "Trace vm operations")                                            \

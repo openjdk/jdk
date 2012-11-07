@@ -342,7 +342,6 @@ BsdAttachOperation* BsdAttachListener::dequeue() {
 
     // get the credentials of the peer and check the effective uid/guid
     // - check with jeff on this.
-#ifdef _ALLBSD_SOURCE
     uid_t puid;
     gid_t pgid;
     if (::getpeereid(s, &puid, &pgid) != 0) {
@@ -350,17 +349,6 @@ BsdAttachOperation* BsdAttachListener::dequeue() {
       RESTARTABLE(::close(s), res);
       continue;
     }
-#else
-    struct ucred cred_info;
-    socklen_t optlen = sizeof(cred_info);
-    if (::getsockopt(s, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
-      int res;
-      RESTARTABLE(::close(s), res);
-      continue;
-    }
-    uid_t puid = cred_info.uid;
-    gid_t pgid = cred_info.gid;
-#endif
     uid_t euid = geteuid();
     gid_t egid = getegid();
 

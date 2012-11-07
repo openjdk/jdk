@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2011 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -468,7 +468,8 @@ static
 int FindNearSectors(cmsGDB* gbd, int alpha, int theta, cmsGDBPoint* Close[])
 {
     int nSectors = 0;
-    int i, a, t;
+    int a, t;
+    cmsUInt32Number i;
     cmsGDBPoint* pt;
 
     for (i=0; i < NSTEPS; i++) {
@@ -505,7 +506,7 @@ cmsBool InterpolateMissingSector(cmsGDB* gbd, int alpha, int theta)
     cmsVEC3 Centre;
     cmsLine ray;
     int nCloseSectors;
-    cmsGDBPoint* Close[NSTEPS];
+    cmsGDBPoint* Close[NSTEPS + 1];
     cmsSpherical closel, templ;
     cmsLine edge;
     int k, m;
@@ -582,13 +583,13 @@ cmsBool CMSEXPORT cmsGDBCompute(cmsHANDLE hGBD, cmsUInt32Number dwFlags)
     _cmsAssert(hGBD != NULL);
 
     // Interpolate black
-    for (alpha = 0; alpha <= SECTORS; alpha++) {
+    for (alpha = 0; alpha < SECTORS; alpha++) {
 
         if (!InterpolateMissingSector(gbd, alpha, 0)) return FALSE;
     }
 
     // Interpolate white
-    for (alpha = 0; alpha <= SECTORS; alpha++) {
+    for (alpha = 0; alpha < SECTORS; alpha++) {
 
         if (!InterpolateMissingSector(gbd, alpha, SECTORS-1)) return FALSE;
     }
@@ -596,7 +597,7 @@ cmsBool CMSEXPORT cmsGDBCompute(cmsHANDLE hGBD, cmsUInt32Number dwFlags)
 
     // Interpolate Mid
     for (theta = 1; theta < SECTORS; theta++) {
-        for (alpha = 0; alpha <= SECTORS; alpha++) {
+        for (alpha = 0; alpha < SECTORS; alpha++) {
 
             if (!InterpolateMissingSector(gbd, alpha, theta)) return FALSE;
         }
@@ -760,3 +761,4 @@ cmsBool cmsGBDdumpVRML(cmsHANDLE hGBD, const char* fname)
     return TRUE;
 }
 #endif
+

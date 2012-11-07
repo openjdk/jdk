@@ -46,7 +46,7 @@ import com.apple.laf.*;
 import com.apple.laf.ClientPropertyApplicator.Property;
 import com.sun.awt.AWTUtilities;
 
-public class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
+public final class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
     private native long nativeCreateNSWindow(long nsViewPtr, long styleBits, double x, double y, double w, double h);
     private static native void nativeSetNSWindowStyleBits(long nsWindowPtr, int mask, int data);
     private static native void nativeSetNSWindowMenuBar(long nsWindowPtr, long menuBarPtr);
@@ -65,7 +65,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeDispose(long nsWindowPtr);
     private static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
 
-    private static native int nativeGetNSWindowDisplayID_AppKitThread(long nsWindowPtr);
+    private static native int nativeGetNSWindowDisplayID(long nsWindowPtr);
 
     // Loger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
@@ -199,7 +199,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     // In order to keep it up-to-date we will update them on
     // 1) setting native bounds via nativeSetBounds() call
     // 2) getting notification from the native level via deliverMoveResizeEvent()
-    private Rectangle nativeBounds;
+    private Rectangle nativeBounds = new Rectangle(0, 0, 0, 0);
     private volatile boolean isFullScreenMode = false;
 
     private Window target;
@@ -444,7 +444,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public GraphicsDevice getGraphicsDevice() {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         CGraphicsEnvironment cge = (CGraphicsEnvironment)ge;
-        int displayID = nativeGetNSWindowDisplayID_AppKitThread(getNSWindowPtr());
+        int displayID = nativeGetNSWindowDisplayID(getNSWindowPtr());
         GraphicsDevice gd = cge.getScreenDevice(displayID);
         if (gd == null) {
             // this could possibly happen during device removal
@@ -869,16 +869,24 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
     }
 
+    private void flushBuffers() {
+        if (isVisible() && !nativeBounds.isEmpty()) {
+            LWCToolkit.getLWCToolkit().flushPendingEventsOnAppkit(target);
+        }
+    }
+
     /*************************************************************
      * Callbacks from the AWTWindow and AWTView objc classes.
      *************************************************************/
-    private void deliverWindowFocusEvent(boolean gained){
+    private void deliverWindowFocusEvent(boolean gained, CPlatformWindow opposite){
         // Fix for 7150349: ingore "gained" notifications when the app is inactive.
         if (gained && !((LWCToolkit)Toolkit.getDefaultToolkit()).isApplicationActive()) {
             focusLogger.fine("the app is inactive, so the notification is ignored");
             return;
         }
-        responder.handleWindowFocusEvent(gained);
+
+        LWWindowPeer oppositePeer = (opposite == null)? null : opposite.getPeer();
+        responder.handleWindowFocusEvent(gained, oppositePeer);
     }
 
     private void deliverMoveResizeEvent(int x, int y, int width, int height) {
@@ -886,10 +894,16 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         // move/resize notifications contain a bounds smaller than
         // the whole screen and therefore we ignore the native notifications
         // and the content view itself creates correct synthetic notifications
-        if (isFullScreenMode) return;
+        if (isFullScreenMode) {
+            return;
+        }
 
+        final Rectangle oldB = nativeBounds;
         nativeBounds = new Rectangle(x, y, width, height);
         peer.notifyReshape(x, y, width, height);
+        if (!oldB.getSize().equals(nativeBounds.getSize()) ) {
+            flushBuffers();
+        }
         //TODO validateSurface already called from notifyReshape
         validateSurface();
     }

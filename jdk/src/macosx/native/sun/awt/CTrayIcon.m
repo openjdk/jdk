@@ -29,6 +29,7 @@
 #import "CTrayIcon.h"
 #import "ThreadUtilities.h"
 #include "GeomUtilities.h"
+#import "LWCToolkit.h"
 
 #define kImageInset 4.0
 
@@ -76,8 +77,9 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize) {
     // Its a bad idea to force the item to release our view by setting
     // the item's view to nil: it can lead to a crash in some scenarios.
     // The item will release the view later on, so just set the view's image
-    // to nil since we are done with it.
+    // and tray icon to nil since we are done with it.
     [view setImage: nil];
+    [view setTrayIcon: nil];
     [view release];
 
     [theItem release];
@@ -115,6 +117,45 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize) {
     return [[view window] convertBaseToScreen: NSZeroPoint];
 }
 
+-(void) deliverJavaMouseEvent: (NSEvent *) event {
+    [AWTToolkit eventCountPlusPlus];
+
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+
+    NSPoint eventLocation = [event locationInWindow];
+    NSPoint localPoint = [view convertPoint: eventLocation fromView: nil];
+    localPoint.y = [view bounds].size.height - localPoint.y;
+
+    NSPoint absP = [NSEvent mouseLocation];
+    NSEventType type = [event type];
+
+    NSRect screenRect = [[NSScreen mainScreen] frame];
+    absP.y = screenRect.size.height - absP.y;
+    jint clickCount;
+
+    clickCount = [event clickCount];
+
+    static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/event/NSEvent");
+    static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IIIIIIIIDD)V");
+    jobject jEvent = JNFNewObject(env, jctor_NSEvent,
+                                  [event type],
+                                  [event modifierFlags],
+                                  clickCount,
+                                  [event buttonNumber],
+                                  (jint)localPoint.x, (jint)localPoint.y,
+                                  (jint)absP.x, (jint)absP.y,
+                                  [event deltaY],
+                                  [event deltaX]);
+    if (jEvent == nil) {
+        // Unable to create event by some reason.
+        return;
+    }
+
+    static JNF_CLASS_CACHE(jc_TrayIcon, "sun/lwawt/macosx/CTrayIcon");
+    static JNF_MEMBER_CACHE(jm_handleMouseEvent, jc_TrayIcon, "handleMouseEvent", "(Lsun/lwawt/macosx/event/NSEvent;)V");
+    JNFCallVoidMethod(env, peer, jm_handleMouseEvent, jEvent);
+}
+
 @end //AWTTrayIcon
 //================================================
 
@@ -123,7 +164,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize) {
 -(id)initWithTrayIcon:(AWTTrayIcon *)theTrayIcon {
     self = [super initWithFrame:NSMakeRect(0, 0, 1, 1)];
 
-    trayIcon = theTrayIcon;
+    [self setTrayIcon: theTrayIcon];
     isHighlighted = NO;
     image = nil;
 
@@ -151,6 +192,10 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize) {
     if (image != nil) {
         [self setNeedsDisplay:YES];
     }
+}
+
+-(void)setTrayIcon:(AWTTrayIcon*)theTrayIcon {
+    trayIcon = theTrayIcon;
 }
 
 - (void)menuWillOpen:(NSMenu *)menu
@@ -191,30 +236,57 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize) {
      ];
 }
 
-- (void) mouseDown:(NSEvent *)e {
-    //find CTrayIcon.getPopupMenuModel method and call it to get popup menu ptr.
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    static JNF_CLASS_CACHE(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
-    static JNF_MEMBER_CACHE(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
-    static JNF_MEMBER_CACHE(jm_performAction, jc_CTrayIcon, "performAction", "()V");
-    jlong res = JNFCallLongMethod(env, trayIcon.peer, jm_getPopupMenuModel);
-    if (res != 0) {
-        CPopupMenu *cmenu = jlong_to_ptr(res);
-        NSMenu* menu = [cmenu menu];
-        [menu setDelegate:self];
-        [trayIcon.theItem popUpStatusItemMenu:menu];
-        [self setNeedsDisplay:YES];
-    } else {
-        JNFCallVoidMethod(env, trayIcon.peer, jm_performAction);
+- (void)mouseDown:(NSEvent *)event {
+    [trayIcon deliverJavaMouseEvent: event];
+
+    // don't show the menu on ctrl+click: it triggers ACTION event, like right click
+    if (([event modifierFlags] & NSControlKeyMask) == 0) {
+        //find CTrayIcon.getPopupMenuModel method and call it to get popup menu ptr.
+        JNIEnv *env = [ThreadUtilities getJNIEnv];
+        static JNF_CLASS_CACHE(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
+        static JNF_MEMBER_CACHE(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
+        jlong res = JNFCallLongMethod(env, trayIcon.peer, jm_getPopupMenuModel);
+
+        if (res != 0) {
+            CPopupMenu *cmenu = jlong_to_ptr(res);
+            NSMenu* menu = [cmenu menu];
+            [menu setDelegate:self];
+            [trayIcon.theItem popUpStatusItemMenu:menu];
+            [self setNeedsDisplay:YES];
+        }
     }
 }
 
-- (void) rightMouseDown:(NSEvent *)e {
-    // Call CTrayIcon.performAction() method on right mouse press
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    static JNF_CLASS_CACHE(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
-    static JNF_MEMBER_CACHE(jm_performAction, jc_CTrayIcon, "performAction", "()V");
-    JNFCallVoidMethod(env, trayIcon.peer, jm_performAction);
+- (void) mouseUp:(NSEvent *)event {
+    [trayIcon deliverJavaMouseEvent: event];
+}
+
+- (void) mouseDragged:(NSEvent *)event {
+    [trayIcon deliverJavaMouseEvent: event];
+}
+
+- (void) rightMouseDown:(NSEvent *)event {
+    [trayIcon deliverJavaMouseEvent: event];
+}
+
+- (void) rightMouseUp:(NSEvent *)event {
+    [trayIcon deliverJavaMouseEvent: event];
+}
+
+- (void) rightMouseDragged:(NSEvent *)event {
+    [trayIcon deliverJavaMouseEvent: event];
+}
+
+- (void) otherMouseDown:(NSEvent *)event {
+    [trayIcon deliverJavaMouseEvent: event];
+}
+
+- (void) otherMouseUp:(NSEvent *)event {
+    [trayIcon deliverJavaMouseEvent: event];
+}
+
+- (void) otherMouseDragged:(NSEvent *)event {
+    [trayIcon deliverJavaMouseEvent: event];
 }
 
 

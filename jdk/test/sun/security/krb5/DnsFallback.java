@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,19 @@
  * @summary fix dns_fallback parse error, and use dns by default
  */
 
-import sun.security.krb5.*;
 import java.io.*;
+import java.lang.reflect.Method;
+import sun.security.krb5.Config;
 
 public class DnsFallback {
+
+    static Method useDNS_Realm;
+
     public static void main(String[] args) throws Exception {
+
+        useDNS_Realm = Config.class.getDeclaredMethod("useDNS_Realm");
+        useDNS_Realm.setAccessible(true);
+
 
         // for 6673164
         check("true", "true", true);
@@ -48,22 +56,25 @@ public class DnsFallback {
         check(null, null, true);
     }
 
-    static void check(String realm, String fallback, boolean output) throws Exception {
-        FileOutputStream fo = new FileOutputStream("dnsfallback.conf");
-        StringBuffer sb = new StringBuffer();
-        sb.append("[libdefaults]\n");
-        if (realm != null) {
-            sb.append("dns_lookup_realm=" + realm + "\n");
+    static void check(String realm, String fallback, boolean output)
+            throws Exception {
+
+        try (PrintStream ps =
+                new PrintStream(new FileOutputStream("dnsfallback.conf"))) {
+            ps.println("[libdefaults]\n");
+            if (realm != null) {
+                ps.println("dns_lookup_realm=" + realm);
+            }
+            if (fallback != null) {
+                ps.println("dns_fallback=" + fallback);
+            }
         }
-        if (fallback != null) {
-            sb.append("dns_fallback=" + fallback + "\n");
-        }
-        fo.write(sb.toString().getBytes());
-        fo.close();
+
         System.setProperty("java.security.krb5.conf", "dnsfallback.conf");
         Config.refresh();
         System.out.println("Testing " + realm + ", " + fallback + ", " + output);
-        if (Config.getInstance().useDNS_Realm() != output) {
+
+        if (!useDNS_Realm.invoke(Config.getInstance()).equals(output)) {
             throw new Exception("Fail");
         }
     }

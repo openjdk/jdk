@@ -53,6 +53,7 @@ extern "C" {
 - (jobject) peer;
 - (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize;
 - (NSPoint) getLocationOnScreen;
+- (void) deliverJavaMouseEvent:(NSEvent*) event;
 
 @end //AWTTrayIcon
 
@@ -68,6 +69,7 @@ extern "C" {
 -(id)initWithTrayIcon:(AWTTrayIcon *)theTrayIcon;
 -(void)setHighlighted:(BOOL)aFlag;
 -(void)setImage:(NSImage*)anImage;
+-(void)setTrayIcon:(AWTTrayIcon*)theTrayIcon;
 
 @end //AWTTrayIconView
 

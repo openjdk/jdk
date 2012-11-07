@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,9 +412,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
                 if (tracing)
                     logger.trace("start", "Using external directory: " + jndiUrl);
 
-                final boolean rebind = EnvHelp.computeBooleanFromString(
-                    attributes,
-                    JNDI_REBIND_ATTRIBUTE,false);
+                String stringBoolean = (String) attributes.get(JNDI_REBIND_ATTRIBUTE);
+                final boolean rebind = EnvHelp.computeBooleanFromString( stringBoolean );
 
                 if (tracing)
                     logger.trace("start", JNDI_REBIND_ATTRIBUTE + "=" + rebind);
