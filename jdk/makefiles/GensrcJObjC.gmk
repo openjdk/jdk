@@ -41,7 +41,6 @@ $(eval $(call SetupJavaCompilation,BUILD_JOBJC_PRIMITIVE_CODER,\
 		DISABLE_SJAVAC:=true,\
 		INCLUDES:=core/java \
                           com/apple,\
-                HEADERS:=$(JOBJC_DST)/jni_headers/core ,\
 		SRC:=$(JOBJC_SRC)/src \
                      $(JOBJC_SRC)/src/generator/java, \
 		BIN:=$(JOBJC_TMP)/bin))
@@ -97,10 +96,8 @@ $(JOBJC_TMP)/_the.generator_bootclasspath : $(BUILD_JOBJC_PRIMITIVE_CODER)
 # Run generator
 #    Now we use bootclasspath to run java again, with the bridge support to
 #    generate more source.
-#    Note the use of the | (order-only) on the BRIDGESUPPORT, should serialize
-#    them just in case GBM run in parallel has issues.
 #
-$(JOBJC_TMP)/_the.generator : $(JOBJC_TMP)/_the.generator_bootclasspath | $(BRIDGESUPPORT)
+$(JOBJC_TMP)/_the.generator : $(JOBJC_TMP)/_the.generator_bootclasspath $(BRIDGESUPPORT)
 	$(RM) $@
 	$(JAVA) $(LOG_INFO) -d64 -Xbootclasspath:`$(CAT) $(JOBJC_TMP)/_the.generator_bootclasspath` -cp $(JOBJC_TMP)/bin -ea com.apple.internal.jobjc.generator.Generator dst=$(JOBJC_DST) frameworks=$(JOBJC_TMP)/bridge
 	$(TOUCH) $@
