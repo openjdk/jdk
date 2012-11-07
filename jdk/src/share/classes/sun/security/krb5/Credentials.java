@@ -449,6 +449,18 @@ public class Credentials {
         return CredentialsUtil.acquireServiceCreds(service, ccreds);
     }
 
+    public static Credentials acquireS4U2selfCreds(PrincipalName user,
+            Credentials ccreds) throws KrbException, IOException {
+        return CredentialsUtil.acquireS4U2selfCreds(user, ccreds);
+    }
+
+    public static Credentials acquireS4U2proxyCreds(String service,
+            Ticket second, PrincipalName client, Credentials ccreds)
+        throws KrbException, IOException {
+        return CredentialsUtil.acquireS4U2proxyCreds(
+                service, second, client, ccreds);
+    }
+
     public CredentialsCache getCache() {
         return cache;
     }
@@ -490,18 +502,19 @@ public class Credentials {
 
     public String toString() {
         StringBuffer buffer = new StringBuffer("Credentials:");
-        buffer.append("\nclient=").append(client);
-        buffer.append("\nserver=").append(server);
+        buffer.append(    "\n      client=").append(client);
+        buffer.append(    "\n      server=").append(server);
         if (authTime != null) {
-            buffer.append("\nauthTime=").append(authTime);
+            buffer.append("\n    authTime=").append(authTime);
         }
         if (startTime != null) {
-            buffer.append("\nstartTime=").append(startTime);
+            buffer.append("\n   startTime=").append(startTime);
         }
-        buffer.append("\nendTime=").append(endTime);
-        buffer.append("\nrenewTill=").append(renewTill);
-        buffer.append("\nflags: ").append(flags);
-        buffer.append("\nEType (int): ").append(key.getEType());
+        buffer.append(    "\n     endTime=").append(endTime);
+        buffer.append(    "\n   renewTill=").append(renewTill);
+        buffer.append(    "\n       flags=").append(flags);
+        buffer.append(    "\nEType (skey)=").append(key.getEType());
+        buffer.append(    "\n   (tkt key)=").append(ticket.encPart.eType);
         return buffer.toString();
     }
 

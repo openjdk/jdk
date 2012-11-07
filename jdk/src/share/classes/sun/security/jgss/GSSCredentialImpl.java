@@ -28,8 +28,9 @@ package sun.security.jgss;
 import org.ietf.jgss.*;
 import sun.security.jgss.spi.*;
 import java.util.*;
+import com.sun.security.jgss.*;
 
-public class GSSCredentialImpl implements GSSCredential {
+public class GSSCredentialImpl implements ExtendedGSSCredential {
 
     private GSSManagerImpl gssManager = null;
     private boolean destroyed = false;
@@ -120,6 +121,19 @@ public class GSSCredentialImpl implements GSSCredential {
             }
             destroyed = true;
         }
+    }
+
+    public GSSCredential impersonate(GSSName name) throws GSSException {
+        if (destroyed) {
+            throw new IllegalStateException("This credential is " +
+                                        "no longer valid");
+        }
+        Oid mech = tempCred.getMechanism();
+        GSSNameSpi nameElement = (name == null ? null :
+                                  ((GSSNameImpl)name).getElement(mech));
+        GSSCredentialSpi cred = tempCred.impersonate(nameElement);
+        return (cred == null ?
+            null : new GSSCredentialImpl(gssManager, cred));
     }
 
     public GSSName getName() throws GSSException {
