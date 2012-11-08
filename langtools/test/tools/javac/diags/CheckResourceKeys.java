@@ -310,9 +310,8 @@ public class CheckResourceKeys {
                     pkg, EnumSet.of(JavaFileObject.Kind.CLASS), true)) {
                 String name = fo.getName();
                 // ignore resource files, and files which are not really part of javac
-                if (name.matches(".*resources.[A-Za-z_0-9]+\\.class")
-                        || name.endsWith("Launcher.class")
-                        || name.endsWith("CreateSymbols.class"))
+                if (name.matches(".*resources.[A-Za-z_0-9]+\\.class.*")
+                        || name.matches(".*CreateSymbols\\.class.*"))
                     continue;
                 scan(fo, results);
             }
