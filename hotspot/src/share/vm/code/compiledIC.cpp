@@ -191,8 +191,8 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     int index = klassItable::compute_itable_index(call_info->resolved_method()());
     entry = VtableStubs::create_stub(false, index, method());
     assert(entry != NULL, "entry not computed");
-    Klass* k = call_info->resolved_method()->method_holder();
-    assert(Klass::cast(k)->is_interface(), "sanity check");
+    InstanceKlass* k = call_info->resolved_method()->method_holder();
+    assert(k->is_interface(), "sanity check");
     InlineCacheBuffer::create_transition_stub(this, k, entry);
   } else {
     // Can be different than method->vtable_index(), due to package-private etc.

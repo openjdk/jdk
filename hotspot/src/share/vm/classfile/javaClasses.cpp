@@ -1156,7 +1156,7 @@ void java_lang_Throwable::print(Handle throwable, outputStream* st) {
 // Print stack trace element to resource allocated buffer
 char* java_lang_Throwable::print_stack_element_to_buffer(Method* method, int bci) {
   // Get strings and string lengths
-  InstanceKlass* klass = InstanceKlass::cast(method->method_holder());
+  InstanceKlass* klass = method->method_holder();
   const char* klass_name  = klass->external_name();
   int buf_len = (int)strlen(klass_name);
   char* source_file_name;
@@ -1747,14 +1747,14 @@ oop java_lang_StackTraceElement::create(methodHandle method, int bci, TRAPS) {
   Handle element = ik->allocate_instance_handle(CHECK_0);
   // Fill in class name
   ResourceMark rm(THREAD);
-  const char* str = InstanceKlass::cast(method->method_holder())->external_name();
+  const char* str = method->method_holder()->external_name();
   oop classname = StringTable::intern((char*) str, CHECK_0);
   java_lang_StackTraceElement::set_declaringClass(element(), classname);
   // Fill in method name
   oop methodname = StringTable::intern(method->name(), CHECK_0);
   java_lang_StackTraceElement::set_methodName(element(), methodname);
   // Fill in source file name
-  Symbol* source = InstanceKlass::cast(method->method_holder())->source_file_name();
+  Symbol* source = method->method_holder()->source_file_name();
   if (ShowHiddenFrames && source == NULL)
     source = vmSymbols::unknown_class_name();
   oop filename = StringTable::intern(source, CHECK_0);
