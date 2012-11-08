@@ -151,7 +151,7 @@ public class CheckResourceKeys {
                     pkg, EnumSet.of(JavaFileObject.Kind.CLASS), true)) {
                 String name = fo.getName();
                 // ignore resource files
-                if (name.matches(".*resources.[A-Za-z_0-9]+\\.class"))
+                if (name.matches(".*resources.[A-Za-z_0-9]+\\.class.*"))
                     continue;
                 scan(fo, results);
             }
