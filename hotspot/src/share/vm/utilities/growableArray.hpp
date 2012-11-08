@@ -217,7 +217,12 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     return missed;
   }
 
-  E at(int i) const {
+  E& at(int i) {
+    assert(0 <= i && i < _len, "illegal index");
+    return _data[i];
+  }
+
+  E const& at(int i) const {
     assert(0 <= i && i < _len, "illegal index");
     return _data[i];
   }
