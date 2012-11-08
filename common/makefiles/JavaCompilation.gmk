@@ -111,7 +111,7 @@ define SetupArchive
         ifeq ($$(word 20,$$($1_GREP_INCLUDE_PATTERNS)),)
             $1_GREP_INCLUDES:=| $(GREP) $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_INCLUDE_PATTERNS))
         else
-            $$(shell $(RM) $$($1_BIN)/_the.$$($1_JARNAME)_include)
+            $$(shell $(MKDIR) -p $$($1_BIN) && $(RM) $$($1_BIN)/_the.$$($1_JARNAME)_include)
             $$(eval $$(call ListPathsSafelyNow,$1_GREP_INCLUDE_PATTERNS,\n, \
 			>> $$($1_BIN)/_the.$$($1_JARNAME)_include))
             $1_GREP_INCLUDES:=| $(GREP) -f $$($1_BIN)/_the.$$($1_JARNAME)_include
@@ -124,7 +124,7 @@ define SetupArchive
         ifeq ($$(word 20,$$($1_GREP_EXCLUDE_PATTERNS)),)
             $1_GREP_EXCLUDES:=| $(GREP) -v $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_EXCLUDE_PATTERNS))
         else
-            $$(shell $(RM) $$($1_BIN)/_the.$$($1_JARNAME)_exclude)
+            $$(shell $(MKDIR) -p $$($1_BIN) && $(RM) $$($1_BIN)/_the.$$($1_JARNAME)_exclude)
             $$(eval $$(call ListPathsSafelyNow,$1_GREP_EXCLUDE_PATTERNS,\n, \
 			>> $$($1_BIN)/_the.$$($1_JARNAME)_exclude))
             $1_GREP_EXCLUDES:=| $(GREP) -v -f $$($1_BIN)/_the.$$($1_JARNAME)_exclude
