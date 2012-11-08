@@ -1242,7 +1242,7 @@ ifdef OPENJDK
 		INCLUDE_FILES:=cmscam02.c cmscgats.c cmscnvrt.c cmserr.c \
 			       cmsgamma.c cmsgmt.c cmsintrp.c cmsio0.c \
 			       cmsio1.c cmslut.c cmsmd5.c cmsmtrx.c \
-			       cmsnamed.c cmsopt.c cmspack.c cmspcs.c \
+			       cmsnamed.c cmsopt.c cmshalf.c cmspack.c cmspcs.c \
 			       cmsplugin.c cmsps2.c cmssamp.c cmssm.c \
 			       cmstypes.c cmsvirt.c cmswtpnt.c cmsxform.c \
 			       LCMS.c,\
