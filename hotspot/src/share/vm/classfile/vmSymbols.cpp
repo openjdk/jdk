@@ -507,7 +507,7 @@ static vmIntrinsics::ID match_method_with_klass(Method* m, Symbol* mk) {
 }
 
 void vmIntrinsics::verify_method(ID actual_id, Method* m) {
-  Symbol* mk = Klass::cast(m->method_holder())->name();
+  Symbol* mk = m->method_holder()->name();
   ID declared_id = match_method_with_klass(m, mk);
 
   if (declared_id == actual_id)  return; // success

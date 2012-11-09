@@ -121,7 +121,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     Address addr = cache.getValue(getAddress());
     return (ConstantPoolCache) VMObjectFactory.newObject(ConstantPoolCache.class, addr);
   }
-  public Klass             getPoolHolder() { return (Klass)             poolHolder.getValue(this); }
+  public InstanceKlass     getPoolHolder() { return (InstanceKlass)poolHolder.getValue(this); }
   public int               getLength()     { return (int)length.getValue(getAddress()); }
   public Oop               getResolvedReferences() {
     Address handle = resolvedReferences.getValue(getAddress());
