@@ -287,8 +287,9 @@ public class KrbApReq {
         cusec = authenticator.cusec;
         authenticator.ctime.setMicroSeconds(authenticator.cusec);
 
-        if (!authenticator.cname.equals(enc_ticketPart.cname))
+        if (!authenticator.cname.equals(enc_ticketPart.cname)) {
             throw new KrbApErrException(Krb5.KRB_AP_ERR_BADMATCH);
+        }
 
         KerberosTime currTime = new KerberosTime(KerberosTime.NOW);
         if (!authenticator.ctime.inClockSkew(currTime))

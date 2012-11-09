@@ -501,7 +501,7 @@ Zone America/Juneau	 15:02:19 -	LMT	1867 Oct 18
 			 -8:00	US	P%sT	1946
 			 -8:00	-	PST	1969
 			 -8:00	US	P%sT	1980 Apr 27 2:00
-			 -9:00	US	Y%sT	1980 Oct 26 2:00	
+			 -9:00	US	Y%sT	1980 Oct 26 2:00
 			 -8:00	US	P%sT	1983 Oct 30 2:00
 			 -9:00	US	Y%sT	1983 Nov 30
 			 -9:00	US	AK%sT
@@ -1866,7 +1866,7 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # Here is a summary of the three clock change events in Creston's history:
 # 1. 1884 or 1885: adoption of Mountain Standard Time (GMT-7)
 # Exact date unknown
-# 2. Oct 1916: switch to Pacific Standard Time (GMT-8) 
+# 2. Oct 1916: switch to Pacific Standard Time (GMT-8)
 # Exact date in October unknown;  Sunday October 1 is a reasonable guess.
 # 3. June 1918: switch to Pacific Daylight Time (GMT-7)
 # Exact date in June unknown; Sunday June 2 is a reasonable guess.
@@ -2696,20 +2696,20 @@ Zone America/Costa_Rica	-5:36:20 -	LMT	1890		# San Jose
 # except that it switches at midnight standard time as usual.
 #
 # From Steffen Thorsen (2007-10-25):
-# Carlos Alberto Fonseca Arauz informed me that Cuba will end DST one week 
+# Carlos Alberto Fonseca Arauz informed me that Cuba will end DST one week
 # earlier - on the last Sunday of October, just like in 2006.
-# 
+#
 # He supplied these references:
-# 
+#
 # http://www.prensalatina.com.mx/article.asp?ID=%7B4CC32C1B-A9F7-42FB-8A07-8631AFC923AF%7D&language=ES
 # http://actualidad.terra.es/sociedad/articulo/cuba_llama_ahorrar_energia_cambio_1957044.htm
-# 
+#
 # From Alex Kryvenishev (2007-10-25):
 # Here is also article from Granma (Cuba):
-# 
+#
 # [Regira] el Horario Normal desde el [proximo] domingo 28 de octubre
 # http://www.granma.cubaweb.cu/2007/10/24/nacional/artic07.html
-# 
+#
 # http://www.worldtimezone.com/dst_news/dst_news_cuba03.html
 
 # From Arthur David Olson (2008-03-09):
@@ -2793,7 +2793,7 @@ Zone America/Costa_Rica	-5:36:20 -	LMT	1890		# San Jose
 # </a>
 #
 # From Steffen Thorsen (2011-10-30)
-# Cuba will end DST two weeks later this year. Instead of going back 
+# Cuba will end DST two weeks later this year. Instead of going back
 # tonight, it has been delayed to 2011-11-13 at 01:00.
 #
 # One source (Spanish)
@@ -2805,11 +2805,11 @@ Zone America/Costa_Rica	-5:36:20 -	LMT	1890		# San Jose
 # <a href="http://www.timeanddate.com/news/time/cuba-time-changes-2011.html">
 # http://www.timeanddate.com/news/time/cuba-time-changes-2011.html
 # </a>
-# 
+#
 # From Steffen Thorsen (2012-03-01)
-# According to Radio Reloj, Cuba will start DST on Midnight between March 
+# According to Radio Reloj, Cuba will start DST on Midnight between March
 # 31 and April 1.
-# 
+#
 # Radio Reloj has the following info (Spanish):
 # <a href="http://www.radioreloj.cu/index.php/noticias-radio-reloj/71-miscelaneas/7529-cuba-aplicara-el-horario-de-verano-desde-el-1-de-abril">
 # http://www.radioreloj.cu/index.php/noticias-radio-reloj/71-miscelaneas/7529-cuba-aplicara-el-horario-de-verano-desde-el-1-de-abril
@@ -2819,6 +2819,13 @@ Zone America/Costa_Rica	-5:36:20 -	LMT	1890		# San Jose
 # <a href="http://www.timeanddate.com/news/time/cuba-starts-dst-2012.html">
 # http://www.timeanddate.com/news/time/cuba-starts-dst-2012.html
 # </a>
+
+# From Steffen Thorsen (2012-11-03):
+# Radio Reloj and many other sources report that Cuba is changing back
+# to standard time on 2012-11-04:
+# http://www.radioreloj.cu/index.php/noticias-radio-reloj/36-nacionales/9961-regira-horario-normal-en-cuba-desde-el-domingo-cuatro-de-noviembre
+# From Paul Eggert (2012-11-03):
+# For now, assume the future rule is first Sunday in November.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Cuba	1928	only	-	Jun	10	0:00	1:00	D
@@ -2857,7 +2864,7 @@ Rule	Cuba	2009	2010	-	Mar	Sun>=8	0:00s	1:00	D
 Rule	Cuba	2011	only	-	Mar	Sun>=15	0:00s	1:00	D
 Rule	Cuba	2011	only	-	Nov	13	0:00s	0	S
 Rule	Cuba	2012	only	-	Apr	1	0:00s	1:00	D
-Rule	Cuba	2012	max	-	Oct	lastSun	0:00s	0	S
+Rule	Cuba	2012	max	-	Nov	Sun>=1	0:00s	0	S
 Rule	Cuba	2013	max	-	Mar	Sun>=8	0:00s	1:00	D
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]

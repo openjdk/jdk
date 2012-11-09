@@ -51,6 +51,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "jlong.h"
 
 #include "sun_security_pkcs11_wrapper_PKCS11.h"
 
@@ -198,7 +199,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignUpdate
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     if (directIn != 0) {
-        rv = (*ckpFunctions->C_SignUpdate)(ckSessionHandle, (CK_BYTE_PTR)directIn, jInLen);
+        rv = (*ckpFunctions->C_SignUpdate)(ckSessionHandle, (CK_BYTE_PTR) jlong_to_ptr(directIn), jInLen);
         ckAssertReturnValueOK(env, rv);
         return;
     }
@@ -262,7 +263,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignFina
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
-    if ((jExpectedLength > 0) && (jExpectedLength < ckSignatureLength)) {
+    if ((jExpectedLength > 0) && ((CK_ULONG)jExpectedLength < ckSignatureLength)) {
         ckSignatureLength = jExpectedLength;
     }
 
@@ -496,7 +497,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1VerifyUpdate
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     if (directIn != 0) {
-        rv = (*ckpFunctions->C_VerifyUpdate)(ckSessionHandle, (CK_BYTE_PTR)directIn, jInLen);
+        rv = (*ckpFunctions->C_VerifyUpdate)(ckSessionHandle, (CK_BYTE_PTR)jlong_to_ptr(directIn), jInLen);
         ckAssertReturnValueOK(env, rv);
         return;
     }

@@ -102,7 +102,7 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
 #define VENDOR_URL_BUG "http://bugreport.sun.com/bugreport/"
 #endif
 
-#define JAVA_MAX_SUPPORTED_VERSION 51
+#define JAVA_MAX_SUPPORTED_VERSION 52
 #define JAVA_MAX_SUPPORTED_MINOR_VERSION 0
 
 #ifdef JAVA_SPECIFICATION_VENDOR /* Third party may NOT overwrite this. */

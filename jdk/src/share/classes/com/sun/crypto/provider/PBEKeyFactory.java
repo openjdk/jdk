@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,25 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
     }
 
     static {
-        validTypes = new HashSet<String>(4);
+        validTypes = new HashSet<String>(17);
         validTypes.add("PBEWithMD5AndDES".toUpperCase());
         validTypes.add("PBEWithSHA1AndDESede".toUpperCase());
         validTypes.add("PBEWithSHA1AndRC2_40".toUpperCase());
+        validTypes.add("PBEWithSHA1AndRC2_128".toUpperCase());
+        validTypes.add("PBEWithSHA1AndRC4_40".toUpperCase());
+        validTypes.add("PBEWithSHA1AndRC4_128".toUpperCase());
         // Proprietary algorithm.
         validTypes.add("PBEWithMD5AndTripleDES".toUpperCase());
+        validTypes.add("PBEWithHmacSHA1AndAES_128".toUpperCase());
+        validTypes.add("PBEWithHmacSHA224AndAES_128".toUpperCase());
+        validTypes.add("PBEWithHmacSHA256AndAES_128".toUpperCase());
+        validTypes.add("PBEWithHmacSHA384AndAES_128".toUpperCase());
+        validTypes.add("PBEWithHmacSHA512AndAES_128".toUpperCase());
+        validTypes.add("PBEWithHmacSHA1AndAES_256".toUpperCase());
+        validTypes.add("PBEWithHmacSHA224AndAES_256".toUpperCase());
+        validTypes.add("PBEWithHmacSHA256AndAES_256".toUpperCase());
+        validTypes.add("PBEWithHmacSHA384AndAES_256".toUpperCase());
+        validTypes.add("PBEWithHmacSHA512AndAES_256".toUpperCase());
     }
 
     public static final class PBEWithMD5AndDES
@@ -84,6 +97,27 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
         }
     }
 
+    public static final class PBEWithSHA1AndRC2_128
+            extends PBEKeyFactory {
+        public PBEWithSHA1AndRC2_128()  {
+            super("PBEWithSHA1AndRC2_128");
+        }
+    }
+
+    public static final class PBEWithSHA1AndRC4_40
+            extends PBEKeyFactory {
+        public PBEWithSHA1AndRC4_40()  {
+            super("PBEWithSHA1AndRC4_40");
+        }
+    }
+
+    public static final class PBEWithSHA1AndRC4_128
+            extends PBEKeyFactory {
+        public PBEWithSHA1AndRC4_128()  {
+            super("PBEWithSHA1AndRC4_128");
+        }
+    }
+
     /*
      * Private proprietary algorithm for supporting JCEKS.
      */
@@ -94,6 +128,75 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
         }
     }
 
+    public static final class PBEWithHmacSHA1AndAES_128
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA1AndAES_128()  {
+            super("PBEWithHmacSHA1AndAES_128");
+        }
+    }
+
+    public static final class PBEWithHmacSHA224AndAES_128
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA224AndAES_128()  {
+            super("PBEWithHmacSHA224AndAES_128");
+        }
+    }
+
+    public static final class PBEWithHmacSHA256AndAES_128
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA256AndAES_128()  {
+            super("PBEWithHmacSHA256AndAES_128");
+        }
+    }
+
+    public static final class PBEWithHmacSHA384AndAES_128
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA384AndAES_128()  {
+            super("PBEWithHmacSHA384AndAES_128");
+        }
+    }
+
+    public static final class PBEWithHmacSHA512AndAES_128
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA512AndAES_128()  {
+            super("PBEWithHmacSHA512AndAES_128");
+        }
+    }
+
+    public static final class PBEWithHmacSHA1AndAES_256
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA1AndAES_256()  {
+            super("PBEWithHmacSHA1AndAES_256");
+        }
+    }
+
+    public static final class PBEWithHmacSHA224AndAES_256
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA224AndAES_256()  {
+            super("PBEWithHmacSHA224AndAES_256");
+        }
+    }
+
+    public static final class PBEWithHmacSHA256AndAES_256
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA256AndAES_256()  {
+            super("PBEWithHmacSHA256AndAES_256");
+        }
+    }
+
+    public static final class PBEWithHmacSHA384AndAES_256
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA384AndAES_256()  {
+            super("PBEWithHmacSHA384AndAES_256");
+        }
+    }
+
+    public static final class PBEWithHmacSHA512AndAES_256
+            extends PBEKeyFactory {
+        public PBEWithHmacSHA512AndAES_256()  {
+            super("PBEWithHmacSHA512AndAES_256");
+        }
+    }
 
     /**
      * Generates a <code>SecretKey</code> object from the provided key

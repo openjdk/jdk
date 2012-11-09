@@ -35,6 +35,7 @@ import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 
 /**
  * This class encapsulates a Kerberos TGS-REQ that is sent from the
@@ -55,7 +56,7 @@ public class KrbTgsReq {
     private byte[] obuf;
     private byte[] ibuf;
 
-     // Used in CredentialsUtil
+    // Used in CredentialsUtil
     public KrbTgsReq(Credentials asCreds,
                      PrincipalName sname)
         throws KrbException, IOException {
@@ -72,6 +73,45 @@ public class KrbTgsReq {
             null); // EncryptionKey subSessionKey
     }
 
+    // S4U2proxy
+    public KrbTgsReq(Credentials asCreds,
+                     Ticket second,
+                     PrincipalName sname)
+            throws KrbException, IOException {
+        this(KDCOptions.with(KDCOptions.CNAME_IN_ADDL_TKT,
+                KDCOptions.FORWARDABLE),
+            asCreds,
+            sname,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            new Ticket[] {second}, // the service ticket
+            null);
+    }
+
+    // S4U2user
+    public KrbTgsReq(Credentials asCreds,
+                     PrincipalName sname,
+                     PAData extraPA)
+        throws KrbException, IOException {
+        this(KDCOptions.with(KDCOptions.FORWARDABLE),
+            asCreds,
+            asCreds.getClient(),
+            sname,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            extraPA); // the PA-FOR-USER
+    }
+
     // Called by Credentials, KrbCred
     KrbTgsReq(
             KDCOptions options,
@@ -85,14 +125,42 @@ public class KrbTgsReq {
             AuthorizationData authorizationData,
             Ticket[] additionalTickets,
             EncryptionKey subKey) throws KrbException, IOException {
+        this(options, asCreds, asCreds.getClient(), sname,
+                from, till, rtime, eTypes, addresses,
+                authorizationData, additionalTickets, subKey, null);
+    }
 
-        princName = asCreds.client;
+    private KrbTgsReq(
+            KDCOptions options,
+            Credentials asCreds,
+            PrincipalName cname,
+            PrincipalName sname,
+            KerberosTime from,
+            KerberosTime till,
+            KerberosTime rtime,
+            int[] eTypes,
+            HostAddresses addresses,
+            AuthorizationData authorizationData,
+            Ticket[] additionalTickets,
+            EncryptionKey subKey,
+            PAData extraPA) throws KrbException, IOException {
+
+        princName = cname;
         servName = sname;
         ctime = new KerberosTime(KerberosTime.NOW);
 
 
         // check if they are valid arguments. The optional fields
         // should be  consistent with settings in KDCOptions.
+
+        // TODO: Is this necessary? If the TGT is not FORWARDABLE,
+        // you can still request for a FORWARDABLE ticket, just the
+        // KDC will give you a non-FORWARDABLE one. Even if you
+        // cannot use the ticket expected, it still contains info.
+        // This means there will be problem later. We already have
+        // flags check in KrbTgsRep. Of course, sometimes the KDC
+        // will not issue the ticket at all.
+
         if (options.get(KDCOptions.FORWARDABLE) &&
                 (!(asCreds.flags.get(Krb5.TKT_OPTS_FORWARDABLE)))) {
             throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
@@ -130,13 +198,13 @@ public class KrbTgsReq {
         } else {
             if (rtime != null)  rtime = null;
         }
-        if (options.get(KDCOptions.ENC_TKT_IN_SKEY)) {
+        if (options.get(KDCOptions.ENC_TKT_IN_SKEY) || options.get(KDCOptions.CNAME_IN_ADDL_TKT)) {
             if (additionalTickets == null)
                 throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
             // in TGS_REQ there could be more than one additional
             // tickets,  but in file-based credential cache,
             // there is only one additional ticket field.
-                secondTicket = additionalTickets[0];
+            secondTicket = additionalTickets[0];
         } else {
             if (additionalTickets != null)
                 additionalTickets = null;
@@ -156,7 +224,8 @@ public class KrbTgsReq {
                 addresses,
                 authorizationData,
                 additionalTickets,
-                subKey);
+                subKey,
+                extraPA);
         obuf = tgsReqMessg.asn1Encode();
 
         // XXX We need to revisit this to see if can't move it
@@ -221,7 +290,8 @@ public class KrbTgsReq {
                          HostAddresses addresses,
                          AuthorizationData authorizationData,
                          Ticket[] additionalTickets,
-                         EncryptionKey subKey)
+                         EncryptionKey subKey,
+                         PAData extraPA)
         throws Asn1Exception, IOException, KdcErrException, KrbApErrException,
                UnknownHostException, KrbCryptoException {
         KerberosTime req_till = null;
@@ -318,10 +388,12 @@ public class KrbTgsReq {
                                          null,
                                          null).getMessage();
 
-        PAData[] tgsPAData = new PAData[1];
-        tgsPAData[0] = new PAData(Krb5.PA_TGS_REQ, tgs_ap_req);
-
-        return new TGSReq(tgsPAData, reqBody);
+        PAData tgsPAData = new PAData(Krb5.PA_TGS_REQ, tgs_ap_req);
+        return new TGSReq(
+                extraPA != null ?
+                    new PAData[] {extraPA, tgsPAData } :
+                    new PAData[] {tgsPAData},
+                reqBody);
     }
 
     TGSReq getMessage() {

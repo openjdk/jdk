@@ -67,7 +67,7 @@ class RevocationChecker extends PKIXRevocationChecker {
     private URI responderURI;
     private X509Certificate responderCert;
     private List<CertStore> certStores;
-    private Map<X509Certificate, byte[]> ocspStapled;
+    private Map<X509Certificate, byte[]> ocspResponses;
     private List<Extension> ocspExtensions;
     private boolean legacy;
 
@@ -140,7 +140,7 @@ class RevocationChecker extends PKIXRevocationChecker {
         } else {
             crlDP = true;
         }
-        ocspStapled = getOCSPStapledResponses();
+        ocspResponses = getOCSPResponses();
         ocspExtensions = getOCSPExtensions();
 
         this.anchor = anchor;
@@ -645,11 +645,11 @@ class RevocationChecker extends PKIXRevocationChecker {
         try {
             certId = new CertId(issuerCert, currCert.getSerialNumberObject());
 
-            // check if there is a stapled OCSP response available
-            byte[] responseBytes = ocspStapled.get(cert);
+            // check if there is a cached OCSP response available
+            byte[] responseBytes = ocspResponses.get(cert);
             if (responseBytes != null) {
                 if (debug != null) {
-                    debug.println("Found stapled OCSP response");
+                    debug.println("Found cached OCSP response");
                 }
                 response = new OCSPResponse(responseBytes);
 

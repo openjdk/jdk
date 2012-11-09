@@ -329,9 +329,6 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
             tagset.add(token);
         }
 
-        // ensure en-US is there (mandated by the spec, e.g. Collator.getAvailableLocales())
-        tagset.add("en-US");
-
         return tagset;
     }
 

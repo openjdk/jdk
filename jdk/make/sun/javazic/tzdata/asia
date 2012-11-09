@@ -124,7 +124,7 @@ Zone	Asia/Kabul	4:36:48 -	LMT	1890
 # From Alexander Krivenyshev (2012-02-10):
 # According to News Armenia, on Feb 9, 2012,
 # http://newsarmenia.ru/society/20120209/42609695.html
-# 
+#
 # The Armenia National Assembly adopted final reading of Amendments to the
 # Law "On procedure of calculation time on the territory of the Republic of
 # Armenia" according to which Armenia [is] abolishing Daylight Saving Time.
@@ -204,15 +204,15 @@ Zone	Asia/Bahrain	3:22:20 -	LMT	1920		# Al Manamah
 # </a>
 
 # From A. N. M. Kamrus Saadat (2009-06-15):
-# Finally we've got the official mail regarding DST start time where DST start 
-# time is mentioned as Jun 19 2009, 23:00 from BTRC (Bangladesh 
-# Telecommunication Regulatory Commission). 
+# Finally we've got the official mail regarding DST start time where DST start
+# time is mentioned as Jun 19 2009, 23:00 from BTRC (Bangladesh
+# Telecommunication Regulatory Commission).
 #
 # No DST end date has been announced yet.
 
 # From Alexander Krivenyshev (2009-09-25):
-# Bangladesh won't go back to Standard Time from October 1, 2009, 
-# instead it will continue DST measure till the cabinet makes a fresh decision. 
+# Bangladesh won't go back to Standard Time from October 1, 2009,
+# instead it will continue DST measure till the cabinet makes a fresh decision.
 #
 # Following report by same newspaper-"The Daily Star Friday":
 # "DST change awaits cabinet decision-Clock won't go back by 1-hr from Oct 1"
@@ -226,8 +226,8 @@ Zone	Asia/Bahrain	3:22:20 -	LMT	1920		# Al Manamah
 
 # From Steffen Thorsen (2009-10-13):
 # IANS (Indo-Asian News Service) now reports:
-# Bangladesh has decided that the clock advanced by an hour to make 
-# maximum use of daylight hours as an energy saving measure would 
+# Bangladesh has decided that the clock advanced by an hour to make
+# maximum use of daylight hours as an energy saving measure would
 # "continue for an indefinite period."
 #
 # One of many places where it is published:
@@ -255,7 +255,7 @@ Zone	Asia/Bahrain	3:22:20 -	LMT	1920		# Al Manamah
 
 # From Alexander Krivenyshev (2010-03-22):
 # According to Bangladesh newspaper "The Daily Star,"
-# Cabinet cancels Daylight Saving Time 
+# Cabinet cancels Daylight Saving Time
 # <a href="http://www.thedailystar.net/newDesign/latest_news.php?nid=22817">
 # http://www.thedailystar.net/newDesign/latest_news.php?nid=22817
 # </a>
@@ -383,11 +383,11 @@ Rule	PRC	1987	1991	-	Apr	Sun>=10	0:00	1:00	D
 # observing daylight saving time in 1986.
 #
 # From Thomas S. Mullaney (2008-02-11):
-# I think you're combining two subjects that need to treated 
-# separately: daylight savings (which, you're correct, wasn't 
-# implemented until the 1980s) and the unified time zone centered near 
-# Beijing (which was implemented in 1949). Briefly, there was also a 
-# "Lhasa Time" in Tibet and "Urumqi Time" in Xinjiang. The first was 
+# I think you're combining two subjects that need to treated
+# separately: daylight savings (which, you're correct, wasn't
+# implemented until the 1980s) and the unified time zone centered near
+# Beijing (which was implemented in 1949). Briefly, there was also a
+# "Lhasa Time" in Tibet and "Urumqi Time" in Xinjiang. The first was
 # ceased, and the second eventually recognized (again, in the 1980s).
 #
 # From Paul Eggert (2008-06-30):
@@ -524,7 +524,7 @@ Zone	Asia/Kashgar	5:03:56	-	LMT	1928 # or Kashi or Kaxgar
 # as of 2009-10-28:
 # Year        Period
 # 1941        1 Apr to 30 Sep
-# 1942        Whole year 
+# 1942        Whole year
 # 1943        Whole year
 # 1944        Whole year
 # 1945        Whole year
@@ -615,16 +615,16 @@ Zone	Asia/Hong_Kong	7:36:36 -	LMT	1904 Oct 30
 # From Arthur David Olson (2010-04-07):
 # Here's Google's translation of the table at the bottom of the "summert.htm" page:
 # Decade 	                                                    Name                      Start and end date
-# Republic of China 34 years to 40 years (AD 1945-1951 years) Summer Time               May 1 to September 30 
-# 41 years of the Republic of China (AD 1952)                 Daylight Saving Time      March 1 to October 31 
-# Republic of China 42 years to 43 years (AD 1953-1954 years) Daylight Saving Time      April 1 to October 31 
-# In the 44 years to 45 years (AD 1955-1956 years)            Daylight Saving Time      April 1 to September 30 
-# Republic of China 46 years to 48 years (AD 1957-1959)       Summer Time               April 1 to September 30 
-# Republic of China 49 years to 50 years (AD 1960-1961)       Summer Time               June 1 to September 30 
-# Republic of China 51 years to 62 years (AD 1962-1973 years) Stop Summer Time 
-# Republic of China 63 years to 64 years (1974-1975 AD)       Daylight Saving Time      April 1 to September 30 
-# Republic of China 65 years to 67 years (1976-1978 AD)       Stop Daylight Saving Time 
-# Republic of China 68 years (AD 1979)                        Daylight Saving Time      July 1 to September 30 
+# Republic of China 34 years to 40 years (AD 1945-1951 years) Summer Time               May 1 to September 30
+# 41 years of the Republic of China (AD 1952)                 Daylight Saving Time      March 1 to October 31
+# Republic of China 42 years to 43 years (AD 1953-1954 years) Daylight Saving Time      April 1 to October 31
+# In the 44 years to 45 years (AD 1955-1956 years)            Daylight Saving Time      April 1 to September 30
+# Republic of China 46 years to 48 years (AD 1957-1959)       Summer Time               April 1 to September 30
+# Republic of China 49 years to 50 years (AD 1960-1961)       Summer Time               June 1 to September 30
+# Republic of China 51 years to 62 years (AD 1962-1973 years) Stop Summer Time
+# Republic of China 63 years to 64 years (1974-1975 AD)       Daylight Saving Time      April 1 to September 30
+# Republic of China 65 years to 67 years (1976-1978 AD)       Stop Daylight Saving Time
+# Republic of China 68 years (AD 1979)                        Daylight Saving Time      July 1 to September 30
 # Republic of China since 69 years (AD 1980)                  Stop Daylight Saving Time
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -1193,15 +1193,15 @@ Rule	Zion	2004	only	-	Sep	22	1:00	0	S
 #
 #	ftp://ftp.cs.huji.ac.il/pub/tz/announcements/2005+beyond.ps
 
-# From Paul Eggert (2005-02-22):
+# From Paul Eggert (2012-10-26):
 # I used Ephraim Silverberg's dst-israel.el program
 # <ftp://ftp.cs.huji.ac.il/pub/tz/software/dst-israel.el> (2005-02-20)
 # along with Ed Reingold's cal-hebrew in GNU Emacs 21.4,
-# to generate the transitions in this list.
+# to generate the transitions from 2005 through 2012.
 # (I replaced "lastFri" with "Fri>=26" by hand.)
-# The spring transitions below all correspond to the following Rule:
+# The spring transitions all correspond to the following Rule:
 #
-# Rule	Zion	2005	max	-	Mar	Fri>=26	2:00	1:00	D
+# Rule	Zion	2005	2012	-	Mar	Fri>=26	2:00	1:00	D
 #
 # but older zic implementations (e.g., Solaris 8) do not support
 # "Fri>=26" to mean April 1 in years like 2005, so for now we list the
@@ -1218,39 +1218,36 @@ Rule	Zion	2009	only	-	Sep	27	2:00	0	S
 Rule	Zion	2010	only	-	Sep	12	2:00	0	S
 Rule	Zion	2011	only	-	Apr	 1	2:00	1:00	D
 Rule	Zion	2011	only	-	Oct	 2	2:00	0	S
-Rule	Zion	2012	2015	-	Mar	Fri>=26	2:00	1:00	D
+Rule	Zion	2012	only	-	Mar	Fri>=26	2:00	1:00	D
 Rule	Zion	2012	only	-	Sep	23	2:00	0	S
-Rule	Zion	2013	only	-	Sep	 8	2:00	0	S
-Rule	Zion	2014	only	-	Sep	28	2:00	0	S
-Rule	Zion	2015	only	-	Sep	20	2:00	0	S
-Rule	Zion	2016	only	-	Apr	 1	2:00	1:00	D
-Rule	Zion	2016	only	-	Oct	 9	2:00	0	S
-Rule	Zion	2017	2021	-	Mar	Fri>=26	2:00	1:00	D
-Rule	Zion	2017	only	-	Sep	24	2:00	0	S
-Rule	Zion	2018	only	-	Sep	16	2:00	0	S
-Rule	Zion	2019	only	-	Oct	 6	2:00	0	S
-Rule	Zion	2020	only	-	Sep	27	2:00	0	S
-Rule	Zion	2021	only	-	Sep	12	2:00	0	S
-Rule	Zion	2022	only	-	Apr	 1	2:00	1:00	D
-Rule	Zion	2022	only	-	Oct	 2	2:00	0	S
-Rule	Zion	2023	2032	-	Mar	Fri>=26	2:00	1:00	D
-Rule	Zion	2023	only	-	Sep	24	2:00	0	S
-Rule	Zion	2024	only	-	Oct	 6	2:00	0	S
-Rule	Zion	2025	only	-	Sep	28	2:00	0	S
-Rule	Zion	2026	only	-	Sep	20	2:00	0	S
-Rule	Zion	2027	only	-	Oct	10	2:00	0	S
-Rule	Zion	2028	only	-	Sep	24	2:00	0	S
-Rule	Zion	2029	only	-	Sep	16	2:00	0	S
-Rule	Zion	2030	only	-	Oct	 6	2:00	0	S
-Rule	Zion	2031	only	-	Sep	21	2:00	0	S
-Rule	Zion	2032	only	-	Sep	12	2:00	0	S
-Rule	Zion	2033	only	-	Apr	 1	2:00	1:00	D
-Rule	Zion	2033	only	-	Oct	 2	2:00	0	S
-Rule	Zion	2034	2037	-	Mar	Fri>=26	2:00	1:00	D
-Rule	Zion	2034	only	-	Sep	17	2:00	0	S
-Rule	Zion	2035	only	-	Oct	 7	2:00	0	S
-Rule	Zion	2036	only	-	Sep	28	2:00	0	S
-Rule	Zion	2037	only	-	Sep	13	2:00	0	S
+
+# From Ephraim Silverberg (2012-10-18):
+
+# Yesterday, the Interior Ministry Committee, after more than a year
+# past, approved sending the proposed June 2011 changes to the Time
+# Decree Law back to the Knesset for second and third (final) votes
+# before the upcoming elections on Jan. 22, 2013.  Hence, although the
+# changes are not yet law, they are expected to be so before February 2013.
+#
+# As of 2013, DST starts at 02:00 on the Friday before the last Sunday in March.
+# DST ends at 02:00 on the first Sunday after October 1, unless it occurs on the
+# second day of the Jewish Rosh Hashana holiday, in which case DST ends a day
+# later (i.e. at 02:00 the first Monday after October 2).
+# [Rosh Hashana holidays are factored in until 2100.]
+
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	Zion	2013	max	-	Mar	Fri>=23	2:00	1:00	D
+Rule	Zion	2013	2026	-	Oct	Sun>=2	2:00	0	S
+Rule	Zion	2027	only	-	Oct	Mon>=3	2:00	0	S
+Rule	Zion	2028	max	-	Oct	Sun>=2	2:00	0	S
+# The following rules are commented out for now, as they break older
+# versions of zic that support only signed 32-bit timestamps, i.e.,
+# through 2038-01-19 03:14:07 UTC.
+#Rule	Zion	2028	2053	-	Oct	Sun>=2	2:00	0	S
+#Rule	Zion	2054	only	-	Oct	Mon>=3	2:00	0	S
+#Rule	Zion	2055	2080	-	Oct	Sun>=2	2:00	0	S
+#Rule	Zion	2081	only	-	Oct	Mon>=3	2:00	0	S
+#Rule	Zion	2082	max	-	Oct	Sun>=2	2:00	0	S
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Jerusalem	2:20:56 -	LMT	1880
@@ -1385,6 +1382,16 @@ Zone	Asia/Tokyo	9:18:59	-	LMT	1887 Dec 31 15:00u
 # From Arthur David Olson (2009-04-06):
 # We still have Jordan switching to DST on Thursdays in 2000 and 2001.
 
+# From Steffen Thorsen (2012-10-25):
+# Yesterday the government in Jordan announced that they will not
+# switch back to standard time this winter, so the will stay on DST
+# until about the same time next year (at least).
+# http://www.petra.gov.jo/Public_News/Nws_NewsDetails.aspx?NewsID=88950
+#
+# From Paul Eggert (2012-10-25):
+# For now, assume this is just a one-year measure.  If it becomes
+# permanent, we should move Jordan from EET to AST effective tomorrow.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Jordan	1973	only	-	Jun	6	0:00	1:00	S
 Rule	Jordan	1973	1975	-	Oct	1	0:00	0	-
@@ -1413,7 +1420,8 @@ Rule	Jordan	2002	max	-	Mar	lastThu	24:00	1:00	S
 Rule	Jordan	2003	only	-	Oct	24	0:00s	0	-
 Rule	Jordan	2004	only	-	Oct	15	0:00s	0	-
 Rule	Jordan	2005	only	-	Sep	lastFri	0:00s	0	-
-Rule	Jordan	2006	max	-	Oct	lastFri	0:00s	0	-
+Rule	Jordan	2006	2011	-	Oct	lastFri	0:00s	0	-
+Rule	Jordan	2013	max	-	Oct	lastFri	0:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Amman	2:23:44 -	LMT	1931
 			2:00	Jordan	EE%sT
@@ -1858,15 +1866,15 @@ Zone	Asia/Muscat	3:54:20 -	LMT	1920
 # shown 8 per cent higher consumption of electricity.
 
 # From Alex Krivenyshev (2008-05-15):
-# 
-# Here is an article that Pakistan plan to introduce Daylight Saving Time 
+#
+# Here is an article that Pakistan plan to introduce Daylight Saving Time
 # on June 1, 2008 for 3 months.
-# 
-# "... The federal cabinet on Wednesday announced a new conservation plan to help 
-# reduce load shedding by approving the closure of commercial centres at 9pm and 
-# moving clocks forward by one hour for the next three months. 
+#
+# "... The federal cabinet on Wednesday announced a new conservation plan to help
+# reduce load shedding by approving the closure of commercial centres at 9pm and
+# moving clocks forward by one hour for the next three months.
 # ...."
-# 
+#
 # <a href="http://www.worldtimezone.net/dst_news/dst_news_pakistan01.html">
 # http://www.worldtimezone.net/dst_news/dst_news_pakistan01.html
 # </a>
@@ -1926,7 +1934,7 @@ Zone	Asia/Muscat	3:54:20 -	LMT	1920
 # Government has decided to restore the previous time by moving the
 # clocks backward by one hour from October 1. A formal announcement to
 # this effect will be made after the Prime Minister grants approval in
-# this regard." 
+# this regard."
 # <a href="http://www.thenews.com.pk/updates.asp?id=87168">
 # http://www.thenews.com.pk/updates.asp?id=87168
 # </a>
@@ -2222,7 +2230,7 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # <a href="http://www.maannews.net/eng/ViewDetails.aspx?ID=306795">
 # http://www.maannews.net/eng/ViewDetails.aspx?ID=306795
 # </a>
-# the clocks were set back one hour at 2010-08-11 00:00:00 local time in 
+# the clocks were set back one hour at 2010-08-11 00:00:00 local time in
 # Gaza and the West Bank.
 # Some more background info:
 # <a href="http://www.timeanddate.com/news/time/westbank-gaza-end-dst-2010.html">
@@ -2261,7 +2269,7 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # The rules for Egypt are stolen from the `africa' file.
 
 # From Steffen Thorsen (2011-09-30):
-# West Bank did end Daylight Saving Time this morning/midnight (2011-09-30 
+# West Bank did end Daylight Saving Time this morning/midnight (2011-09-30
 # 00:00).
 # So West Bank and Gaza now have the same time again.
 #
@@ -2316,6 +2324,8 @@ Rule Palestine	2010	only	-	Aug	11	0:00	0	-
 
 # From Arthur David Olson (2011-09-20):
 # 2011 transitions per http://www.timeanddate.com as of 2011-09-20.
+# From Paul Eggert (2012-10-12):
+# 2012 transitions per http://www.timeanddate.com as of 2012-10-12.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
@@ -2326,7 +2336,7 @@ Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
 			2:00 Palestine	EE%sT	2011 Apr  2 12:01
 			2:00	1:00	EEST	2011 Aug  1
 			2:00	-	EET	2012 Mar 30
-			2:00	1:00	EEST	2012 Sep 28
+			2:00	1:00	EEST	2012 Sep 21 1:00
 			2:00	-	EET
 
 Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
@@ -2341,7 +2351,7 @@ Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
 			2:00	-	EET	2011 Aug 30
 			2:00	1:00	EEST	2011 Sep 30 3:00
 			2:00	-	EET	2012 Mar 30
-			2:00	1:00	EEST	2012 Sep 28 3:00
+			2:00	1:00	EEST	2012 Sep 21 1:00
 			2:00	-	EET
 
 # Paracel Is
@@ -2535,19 +2545,19 @@ Rule	Syria	2007	only	-	Mar	lastFri	0:00	1:00	S
 # having it between Wednesday and Thursday (two workdays in Syria) since the
 # weekend in Syria is not Saturday and Sunday, but Friday and Saturday. So now
 # it is implemented at midnight of the last workday before weekend...
-# 
+#
 # From Steffen Thorsen (2007-10-27):
 # Jesper Norgaard Welen wrote:
-# 
+#
 # > "Winter local time in Syria will be observed at midnight of Thursday 1
 # > November 2007, and the clock will be put back 1 hour."
-# 
+#
 # I found confirmation on this in this gov.sy-article (Arabic):
 # http://wehda.alwehda.gov.sy/_print_veiw.asp?FileName=12521710520070926111247
-# 
+#
 # which using Google's translate tools says:
-# Council of Ministers also approved the commencement of work on 
-# identifying the winter time as of Friday, 2/11/2007 where the 60th 
+# Council of Ministers also approved the commencement of work on
+# identifying the winter time as of Friday, 2/11/2007 where the 60th
 # minute delay at midnight Thursday 1/11/2007.
 Rule	Syria	2007	only	-	Nov	 Fri>=1	0:00	0	-
 
@@ -2613,8 +2623,8 @@ Rule	Syria	2007	only	-	Nov	 Fri>=1	0:00	0	-
 # </a>
 
 # From Steffen Thorsen (2009-10-27):
-# The Syrian Arab News Network on 2009-09-29 reported that Syria will 
-# revert back to winter (standard) time on midnight between Thursday 
+# The Syrian Arab News Network on 2009-09-29 reported that Syria will
+# revert back to winter (standard) time on midnight between Thursday
 # 2009-10-29 and Friday 2009-10-30:
 # <a href="http://www.sana.sy/ara/2/2009/09/29/247012.htm">
 # http://www.sana.sy/ara/2/2009/09/29/247012.htm (Arabic)
