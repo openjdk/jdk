@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package javax.net.ssl;
 import java.net.*;
 import javax.net.SocketFactory;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.*;
 import java.util.Locale;
 
@@ -180,8 +181,55 @@ public abstract class SSLSocketFactory extends SocketFactory
      * @throws NullPointerException if the parameter s is null
      */
     public abstract Socket createSocket(Socket s, String host,
-                                        int port, boolean autoClose)
-    throws IOException;
+            int port, boolean autoClose) throws IOException;
+
+    /**
+     * Creates a server mode {@link Socket} layered over an
+     * existing connected socket, and is able to read data which has
+     * already been consumed/removed from the {@link Socket}'s
+     * underlying {@link InputStream}.
+     * <p>
+     * This method can be used by a server application that needs to
+     * observe the inbound data but still create valid SSL/TLS
+     * connections: for example, inspection of Server Name Indication
+     * (SNI) extensions (See section 3 of <A
+     * HREF="http://www.ietf.org/rfc/rfc6066.txt">TLS Extensions
+     * (RFC6066)</A>).  Data that has been already removed from the
+     * underlying {@link InputStream} should be loaded into the
+     * {@code consumed} stream before this method is called, perhaps
+     * using a {@link ByteArrayInputStream}.  When this {@link Socket}
+     * begins handshaking, it will read all of the data in
+     * {@code consumed} until it reaches {@code EOF}, then all further
+     * data is read from the underlying {@link InputStream} as
+     * usual.
+     * <p>
+     * The returned socket is configured using the socket options
+     * established for this factory, and is set to use server mode when
+     * handshaking (see {@link SSLSocket#setUseClientMode(boolean)}).
+     *
+     * @param  s
+     *         the existing socket
+     * @param  consumed
+     *         the consumed inbound network data that has already been
+     *         removed from the existing {@link Socket}
+     *         {@link InputStream}.  This parameter may be
+     *         {@code null} if no data has been removed.
+     * @param  autoClose close the underlying socket when this socket is closed.
+     *
+     * @return the {@link Socket} compliant with the socket options
+     *         established for this factory
+     *
+     * @throws IOException if an I/O error occurs when creating the socket
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation
+     * @throws NullPointerException if {@code s} is {@code null}
+     *
+     * @since 1.8
+     */
+    public Socket createSocket(Socket s, InputStream consumed,
+            boolean autoClose) throws IOException {
+        throw new UnsupportedOperationException();
+    }
 }
 
 

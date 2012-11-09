@@ -53,13 +53,14 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 
 import javax.tools.JavaFileManager;
+import javax.tools.StandardJavaFileManager;
 import static javax.tools.StandardLocation.*;
 import static com.sun.tools.javac.main.Option.*;
 
 /** This class converts command line arguments, environment variables
  *  and system properties (in File.pathSeparator-separated String form)
  *  into a boot class path, user class path, and source path (in
- *  Collection<String> form).
+ *  {@code Collection<String>} form).
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -342,11 +343,11 @@ public class Locations {
             }
         }
 
-        /** @see JavaFileManager#handleOption. */
+        /** @see JavaFileManager#handleOption */
         abstract boolean handleOption(Option option, String value);
-        /** @see JavaFileManager#getLocation. */
+        /** @see StandardJavaFileManager#getLocation */
         abstract Collection<File> getLocation();
-        /** @see JavaFileManager#setLocation. */
+        /** @see StandardJavaFileManager#setLocation */
         abstract void setLocation(Iterable<? extends File> files) throws IOException;
     }
 
@@ -419,12 +420,8 @@ public class Locations {
             if (!options.contains(option))
                 return false;
             searchPath = value == null ? null :
-                    Collections.unmodifiableCollection(computePath(value));
+                    Collections.unmodifiableCollection(createPath().addFiles(value));
             return true;
-        }
-
-        protected Path computePath(String value) {
-            return new Path().addFiles(value);
         }
 
         @Override
@@ -438,9 +435,17 @@ public class Locations {
             if (files == null) {
                 p = computePath(null);
             } else {
-                p = new Path().addFiles(files);
+                p = createPath().addFiles(files);
             }
             searchPath = Collections.unmodifiableCollection(p);
+        }
+
+        protected Path computePath(String value) {
+            return createPath().addFiles(value);
+        }
+
+        protected Path createPath() {
+            return new Path();
         }
     }
 
@@ -476,11 +481,15 @@ public class Locations {
             // Default to current working directory.
             if (cp == null) cp = ".";
 
+            return createPath().addFiles(cp);
+        }
+
+        @Override
+        protected Path createPath() {
             return new Path()
-                .expandJarClassPaths(true)        // Only search user jars for Class-Paths
-                .emptyPathDefault(new File("."))  // Empty path elt ==> current directory
-                .addFiles(cp);
-            }
+                .expandJarClassPaths(true)         // Only search user jars for Class-Paths
+                .emptyPathDefault(new File("."));  // Empty path elt ==> current directory
+        }
 
         private void lazy() {
             if (searchPath == null)
@@ -590,7 +599,6 @@ public class Locations {
             String extdirsOpt = optionValues.get(EXTDIRS);
             String xbootclasspathPrependOpt = optionValues.get(XBOOTCLASSPATH_PREPEND);
             String xbootclasspathAppendOpt = optionValues.get(XBOOTCLASSPATH_APPEND);
-
             path.addFiles(xbootclasspathPrependOpt);
 
             if (endorseddirsOpt != null)

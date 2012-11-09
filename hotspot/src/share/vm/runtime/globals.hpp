@@ -533,6 +533,9 @@ class CommandLineFlags {
   product(intx, UseSSE, 99,                                                 \
           "Highest supported SSE instructions set on x86/x64")              \
                                                                             \
+  product(bool, UseAES, false,                                               \
+          "Control whether AES instructions can be used on x86/x64")        \
+                                                                            \
   product(uintx, LargePageSizeInBytes, 0,                                   \
           "Large page size (0 to let VM choose the page size")              \
                                                                             \
@@ -634,6 +637,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseSSE42Intrinsics, false,                                  \
           "SSE4.2 versions of intrinsics")                                  \
+                                                                            \
+  product(bool, UseAESIntrinsics, false,                                    \
+          "use intrinsics for AES versions of crypto")                      \
                                                                             \
   develop(bool, TraceCallFixup, false,                                      \
           "traces all call fixups")                                         \
@@ -3589,6 +3595,15 @@ class CommandLineFlags {
                                                                             \
   product(uintx, StringTableSize, 1009,                                     \
           "Number of buckets in the interned String table")                 \
+                                                                            \
+  develop(bool, TraceDefaultMethods, false,                                 \
+          "Trace the default method processing steps")                      \
+                                                                            \
+  develop(bool, ParseAllGenericSignatures, false,                           \
+          "Parse all generic signatures while classloading")                \
+                                                                            \
+  develop(bool, VerifyGenericSignatures, false,                             \
+          "Abort VM on erroneous or inconsistent generic signatures")       \
                                                                             \
   product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \

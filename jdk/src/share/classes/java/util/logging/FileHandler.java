@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,45 +48,58 @@ import java.security.*;
  * <p>
  * <b>Configuration:</b>
  * By default each <tt>FileHandler</tt> is initialized using the following
- * <tt>LogManager</tt> configuration properties.  If properties are not defined
+ * <tt>LogManager</tt> configuration properties where <tt>&lt;handler-name&gt;</tt>
+ * refers to the fully-qualified class name of the handler.
+ * If properties are not defined
  * (or have invalid values) then the specified default values are used.
  * <ul>
- * <li>   java.util.logging.FileHandler.level
+ * <li>   &lt;handler-name&gt;.level
  *        specifies the default level for the <tt>Handler</tt>
- *        (defaults to <tt>Level.ALL</tt>).
- * <li>   java.util.logging.FileHandler.filter
+ *        (defaults to <tt>Level.ALL</tt>). </li>
+ * <li>   &lt;handler-name&gt;.filter
  *        specifies the name of a <tt>Filter</tt> class to use
- *        (defaults to no <tt>Filter</tt>).
- * <li>   java.util.logging.FileHandler.formatter
+ *        (defaults to no <tt>Filter</tt>). </li>
+ * <li>   &lt;handler-name&gt;.formatter
  *        specifies the name of a <tt>Formatter</tt> class to use
- *        (defaults to <tt>java.util.logging.XMLFormatter</tt>)
- * <li>   java.util.logging.FileHandler.encoding
+ *        (defaults to <tt>java.util.logging.XMLFormatter</tt>) </li>
+ * <li>   &lt;handler-name&gt;.encoding
  *        the name of the character set encoding to use (defaults to
- *        the default platform encoding).
- * <li>   java.util.logging.FileHandler.limit
+ *        the default platform encoding). </li>
+ * <li>   &lt;handler-name&gt;.limit
  *        specifies an approximate maximum amount to write (in bytes)
  *        to any one file.  If this is zero, then there is no limit.
- *        (Defaults to no limit).
- * <li>   java.util.logging.FileHandler.count
- *        specifies how many output files to cycle through (defaults to 1).
- * <li>   java.util.logging.FileHandler.pattern
+ *        (Defaults to no limit). </li>
+ * <li>   &lt;handler-name&gt;.count
+ *        specifies how many output files to cycle through (defaults to 1). </li>
+ * <li>   &lt;handler-name&gt;.pattern
  *        specifies a pattern for generating the output file name.  See
- *        below for details. (Defaults to "%h/java%u.log").
- * <li>   java.util.logging.FileHandler.append
+ *        below for details. (Defaults to "%h/java%u.log"). </li>
+ * <li>   &lt;handler-name&gt;.append
  *        specifies whether the FileHandler should append onto
- *        any existing files (defaults to false).
+ *        any existing files (defaults to false). </li>
  * </ul>
  * <p>
+ * For example, the properties for {@code FileHandler} would be:
+ * <ul>
+ * <li>   java.util.logging.FileHandler.level=INFO </li>
+ * <li>   java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter </li>
+ * </ul>
+ * <p>
+ * For a custom handler, e.g. com.foo.MyHandler, the properties would be:
+ * <ul>
+ * <li>   com.foo.MyHandler.level=INFO </li>
+ * <li>   com.foo.MyHandler.formatter=java.util.logging.SimpleFormatter </li>
+ * </ul>
  * <p>
  * A pattern consists of a string that includes the following special
  * components that will be replaced at runtime:
  * <ul>
- * <li>    "/"    the local pathname separator
- * <li>     "%t"   the system temporary directory
- * <li>     "%h"   the value of the "user.home" system property
- * <li>     "%g"   the generation number to distinguish rotated logs
- * <li>     "%u"   a unique number to resolve conflicts
- * <li>     "%%"   translates to a single percent sign "%"
+ * <li>    "/"    the local pathname separator </li>
+ * <li>     "%t"   the system temporary directory </li>
+ * <li>     "%h"   the value of the "user.home" system property </li>
+ * <li>     "%g"   the generation number to distinguish rotated logs </li>
+ * <li>     "%u"   a unique number to resolve conflicts </li>
+ * <li>     "%%"   translates to a single percent sign "%" </li>
  * </ul>
  * If no "%g" field has been specified and the file count is greater
  * than one, then the generation number will be added to the end of
@@ -220,7 +233,7 @@ public class FileHandler extends StreamHandler {
      * @exception  NullPointerException if pattern property is an empty String.
      */
     public FileHandler() throws IOException, SecurityException {
-        checkAccess();
+        checkPermission();
         configure();
         openFiles();
     }
@@ -246,7 +259,7 @@ public class FileHandler extends StreamHandler {
         if (pattern.length() < 1 ) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = 0;
@@ -278,7 +291,7 @@ public class FileHandler extends StreamHandler {
         if (pattern.length() < 1 ) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = 0;
@@ -315,7 +328,7 @@ public class FileHandler extends StreamHandler {
         if (limit < 0 || count < 1 || pattern.length() < 1) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = limit;
@@ -354,7 +367,7 @@ public class FileHandler extends StreamHandler {
         if (limit < 0 || count < 1 || pattern.length() < 1) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = limit;
@@ -367,7 +380,7 @@ public class FileHandler extends StreamHandler {
     // configured instance variables.
     private void openFiles() throws IOException {
         LogManager manager = LogManager.getLogManager();
-        manager.checkAccess();
+        manager.checkPermission();
         if (count < 1) {
            throw new IllegalArgumentException("file count = " + count);
         }

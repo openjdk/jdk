@@ -26,11 +26,10 @@
 package sun.util.locale.provider;
 
 import java.util.Locale;
-import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.spi.TimeZoneNameProvider;
-import sun.util.resources.OpenListResourceBundle;
 
 /**
  * Concrete implementation of the
@@ -102,12 +101,8 @@ public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
         }
 
         LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
-        OpenListResourceBundle rb = adapter.getLocaleResources(locale).getTimeZoneNames();
-        LocaleServiceProviderPool pool =
-                LocaleServiceProviderPool.getPool(TimeZoneNameProvider.class);
-        try {
-            if (!pool.hasProviders() ||
-                (rb.getLocale().equals(locale) && rb.handleGetKeys().contains(id))) {
+        ResourceBundle rb = adapter.getLocaleResources(locale).getTimeZoneNames();
+        if (rb.containsKey(id)) {
                 String[] names = rb.getStringArray(id);
                 int index = daylight ? 3 : 1;
                 if (style == TimeZone.SHORT) {
@@ -115,8 +110,6 @@ public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
                 }
                 return names[index];
             }
-        } catch (MissingResourceException mre) {
-        }
 
         return null;
     }

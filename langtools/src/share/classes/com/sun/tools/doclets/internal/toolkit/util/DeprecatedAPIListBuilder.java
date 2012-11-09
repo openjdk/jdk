@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,18 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
-import com.sun.javadoc.*;
 import java.util.*;
+
+import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.Configuration;
 
 /**
  * Build list of all the deprecated packages, classes, constructors, fields and methods.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  */
@@ -145,7 +151,7 @@ public class DeprecatedAPIListBuilder {
     /**
      * Return the list of deprecated Doc objects of a given type.
      *
-     * @param the constant representing the type of list being returned.
+     * @param type the constant representing the type of list being returned.
      */
     public List<Doc> getList(int type) {
         return deprecatedLists.get(type);

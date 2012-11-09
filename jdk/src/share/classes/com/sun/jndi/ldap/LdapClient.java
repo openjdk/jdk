@@ -150,149 +150,155 @@ public final class LdapClient implements PooledConnection {
         String authMechanism, Control[] ctls,  Hashtable<?,?> env)
         throws NamingException {
 
-        authenticateCalled = true;
-
-        try {
-            ensureOpen();
-        } catch (IOException e) {
-            NamingException ne = new CommunicationException();
-            ne.setRootCause(e);
-            throw ne;
-        }
-
-        switch (version) {
-        case LDAP_VERSION3_VERSION2:
-        case LDAP_VERSION3:
-            isLdapv3 = true;
-            break;
-        case LDAP_VERSION2:
-            isLdapv3 = false;
-            break;
-        default:
-            throw new CommunicationException("Protocol version " + version +
-                " not supported");
-        }
-
+        int readTimeout = conn.readTimeout;
+        conn.readTimeout = conn.connectTimeout;
         LdapResult res = null;
 
-        if (authMechanism.equalsIgnoreCase("none") ||
-            authMechanism.equalsIgnoreCase("anonymous")) {
+        try {
+            authenticateCalled = true;
 
-            // Perform LDAP bind if we are reauthenticating, using LDAPv2,
-            // supporting failover to LDAPv2, or controls have been supplied.
-            if (!initial ||
-                (version == LDAP_VERSION2) ||
-                (version == LDAP_VERSION3_VERSION2) ||
-                ((ctls != null) && (ctls.length > 0))) {
+            try {
+                ensureOpen();
+            } catch (IOException e) {
+                NamingException ne = new CommunicationException();
+                ne.setRootCause(e);
+                throw ne;
+            }
+
+            switch (version) {
+            case LDAP_VERSION3_VERSION2:
+            case LDAP_VERSION3:
+                isLdapv3 = true;
+                break;
+            case LDAP_VERSION2:
+                isLdapv3 = false;
+                break;
+            default:
+                throw new CommunicationException("Protocol version " + version +
+                    " not supported");
+            }
+
+            if (authMechanism.equalsIgnoreCase("none") ||
+                authMechanism.equalsIgnoreCase("anonymous")) {
+
+                // Perform LDAP bind if we are reauthenticating, using LDAPv2,
+                // supporting failover to LDAPv2, or controls have been supplied.
+                if (!initial ||
+                    (version == LDAP_VERSION2) ||
+                    (version == LDAP_VERSION3_VERSION2) ||
+                    ((ctls != null) && (ctls.length > 0))) {
+                    try {
+                        // anonymous bind; update name/pw for LDAPv2 retry
+                        res = ldapBind(name=null, (byte[])(pw=null), ctls, null,
+                            false);
+                        if (res.status == LdapClient.LDAP_SUCCESS) {
+                            conn.setBound();
+                        }
+                    } catch (IOException e) {
+                        NamingException ne =
+                            new CommunicationException("anonymous bind failed: " +
+                            conn.host + ":" + conn.port);
+                        ne.setRootCause(e);
+                        throw ne;
+                    }
+                } else {
+                    // Skip LDAP bind for LDAPv3 anonymous bind
+                    res = new LdapResult();
+                    res.status = LdapClient.LDAP_SUCCESS;
+                }
+            } else if (authMechanism.equalsIgnoreCase("simple")) {
+                // simple authentication
+                byte[] encodedPw = null;
                 try {
-                    // anonymous bind; update name/pw for LDAPv2 retry
-                    res = ldapBind(name=null, (byte[])(pw=null), ctls, null,
-                        false);
+                    encodedPw = encodePassword(pw, isLdapv3);
+                    res = ldapBind(name, encodedPw, ctls, null, false);
                     if (res.status == LdapClient.LDAP_SUCCESS) {
                         conn.setBound();
                     }
                 } catch (IOException e) {
                     NamingException ne =
-                        new CommunicationException("anonymous bind failed: " +
+                        new CommunicationException("simple bind failed: " +
+                            conn.host + ":" + conn.port);
+                    ne.setRootCause(e);
+                    throw ne;
+                } finally {
+                    // If pw was copied to a new array, clear that array as
+                    // a security precaution.
+                    if (encodedPw != pw && encodedPw != null) {
+                        for (int i = 0; i < encodedPw.length; i++) {
+                            encodedPw[i] = 0;
+                        }
+                    }
+                }
+            } else if (isLdapv3) {
+                // SASL authentication
+                try {
+                    res = LdapSasl.saslBind(this, conn, conn.host, name, pw,
+                        authMechanism, env, ctls);
+                    if (res.status == LdapClient.LDAP_SUCCESS) {
+                        conn.setBound();
+                    }
+                } catch (IOException e) {
+                    NamingException ne =
+                        new CommunicationException("SASL bind failed: " +
                         conn.host + ":" + conn.port);
                     ne.setRootCause(e);
                     throw ne;
                 }
             } else {
-                // Skip LDAP bind for LDAPv3 anonymous bind
-                res = new LdapResult();
-                res.status = LdapClient.LDAP_SUCCESS;
+                throw new AuthenticationNotSupportedException(authMechanism);
             }
-        } else if (authMechanism.equalsIgnoreCase("simple")) {
-            // simple authentication
-            byte[] encodedPw = null;
-            try {
-                encodedPw = encodePassword(pw, isLdapv3);
-                res = ldapBind(name, encodedPw, ctls, null, false);
-                if (res.status == LdapClient.LDAP_SUCCESS) {
-                    conn.setBound();
-                }
-            } catch (IOException e) {
-                NamingException ne =
-                    new CommunicationException("simple bind failed: " +
-                        conn.host + ":" + conn.port);
-                ne.setRootCause(e);
-                throw ne;
-            } finally {
-                // If pw was copied to a new array, clear that array as
-                // a security precaution.
-                if (encodedPw != pw && encodedPw != null) {
-                    for (int i = 0; i < encodedPw.length; i++) {
-                        encodedPw[i] = 0;
+
+            //
+            // re-try login using v2 if failing over
+            //
+            if (initial &&
+                (res.status == LdapClient.LDAP_PROTOCOL_ERROR) &&
+                (version == LdapClient.LDAP_VERSION3_VERSION2) &&
+                (authMechanism.equalsIgnoreCase("none") ||
+                    authMechanism.equalsIgnoreCase("anonymous") ||
+                    authMechanism.equalsIgnoreCase("simple"))) {
+
+                byte[] encodedPw = null;
+                try {
+                    isLdapv3 = false;
+                    encodedPw = encodePassword(pw, false);
+                    res = ldapBind(name, encodedPw, ctls, null, false);
+                    if (res.status == LdapClient.LDAP_SUCCESS) {
+                        conn.setBound();
+                    }
+                } catch (IOException e) {
+                    NamingException ne =
+                        new CommunicationException(authMechanism + ":" +
+                            conn.host +     ":" + conn.port);
+                    ne.setRootCause(e);
+                    throw ne;
+                } finally {
+                    // If pw was copied to a new array, clear that array as
+                    // a security precaution.
+                    if (encodedPw != pw && encodedPw != null) {
+                        for (int i = 0; i < encodedPw.length; i++) {
+                            encodedPw[i] = 0;
+                        }
                     }
                 }
             }
-        } else if (isLdapv3) {
-            // SASL authentication
-            try {
-                res = LdapSasl.saslBind(this, conn, conn.host, name, pw,
-                    authMechanism, env, ctls);
-                if (res.status == LdapClient.LDAP_SUCCESS) {
-                    conn.setBound();
-                }
-            } catch (IOException e) {
-                NamingException ne =
-                    new CommunicationException("SASL bind failed: " +
-                    conn.host + ":" + conn.port);
-                ne.setRootCause(e);
-                throw ne;
+
+            // principal name not found
+            // (map NameNotFoundException to AuthenticationException)
+            // %%% This is a workaround for Netscape servers returning
+            // %%% no such object when the principal name is not found
+            // %%% Note that when this workaround is applied, it does not allow
+            // %%% response controls to be recorded by the calling context
+            if (res.status == LdapClient.LDAP_NO_SUCH_OBJECT) {
+                throw new AuthenticationException(
+                    getErrorMessage(res.status, res.errorMessage));
             }
-        } else {
-            throw new AuthenticationNotSupportedException(authMechanism);
+            conn.setV3(isLdapv3);
+            return res;
+        } finally {
+            conn.readTimeout = readTimeout;
         }
-
-        //
-        // re-try login using v2 if failing over
-        //
-        if (initial &&
-            (res.status == LdapClient.LDAP_PROTOCOL_ERROR) &&
-            (version == LdapClient.LDAP_VERSION3_VERSION2) &&
-            (authMechanism.equalsIgnoreCase("none") ||
-                authMechanism.equalsIgnoreCase("anonymous") ||
-                authMechanism.equalsIgnoreCase("simple"))) {
-
-            byte[] encodedPw = null;
-            try {
-                isLdapv3 = false;
-                encodedPw = encodePassword(pw, false);
-                res = ldapBind(name, encodedPw, ctls, null, false);
-                if (res.status == LdapClient.LDAP_SUCCESS) {
-                    conn.setBound();
-                }
-            } catch (IOException e) {
-                NamingException ne =
-                    new CommunicationException(authMechanism + ":" +
-                        conn.host +     ":" + conn.port);
-                ne.setRootCause(e);
-                throw ne;
-            } finally {
-                // If pw was copied to a new array, clear that array as
-                // a security precaution.
-                if (encodedPw != pw && encodedPw != null) {
-                    for (int i = 0; i < encodedPw.length; i++) {
-                        encodedPw[i] = 0;
-                    }
-                }
-            }
-        }
-
-        // principal name not found
-        // (map NameNotFoundException to AuthenticationException)
-        // %%% This is a workaround for Netscape servers returning
-        // %%% no such object when the principal name is not found
-        // %%% Note that when this workaround is applied, it does not allow
-        // %%% response controls to be recorded by the calling context
-        if (res.status == LdapClient.LDAP_NO_SUCH_OBJECT) {
-            throw new AuthenticationException(
-                getErrorMessage(res.status, res.errorMessage));
-        }
-        conn.setV3(isLdapv3);
-        return res;
     }
 
     /**

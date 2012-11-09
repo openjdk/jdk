@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public abstract class Server extends NTLM {
      * various negotiated information.
      * @param type3 the incoming Type3 message from client, must not be null
      * @param nonce the same nonce provided in {@link #type2}, must not be null
-     * @return username and hostname of the client in a byte array
+     * @return client username, client hostname, and the request target
      * @throws NTLMException if the incoming message is invalid, or
      * {@code nonce} is null.
      */
@@ -194,7 +194,7 @@ public abstract class Server extends NTLM {
             throw new NTLMException(NTLMException.AUTH_FAILED,
                     "None of LM and NTLM verified");
         }
-        return new String[] {username, hostname};
+        return new String[] {username, hostname, incomingDomain};
     }
 
     /**

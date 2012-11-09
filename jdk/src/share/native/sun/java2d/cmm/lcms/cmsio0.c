@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2012 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -142,6 +142,7 @@ cmsIOHANDLER*  CMSEXPORT cmsOpenIOhandlerFromNULL(cmsContext ContextID)
     iohandler ->ContextID = ContextID;
     iohandler ->stream  = (void*) fm;
     iohandler ->UsedSpace = 0;
+    iohandler ->ReportedSize = 0;
     iohandler ->PhysicalFile[0] = 0;
 
     iohandler ->Read    = NULLRead;
@@ -232,12 +233,10 @@ cmsBool  MemoryWrite(struct _cms_io_handler* iohandler, cmsUInt32Number size, co
 
     memmove(ResData ->Block + ResData ->Pointer, Ptr, size);
     ResData ->Pointer += size;
+    iohandler->UsedSpace += size;
 
     if (ResData ->Pointer > iohandler->UsedSpace)
         iohandler->UsedSpace = ResData ->Pointer;
-
-
-    iohandler->UsedSpace += size;
 
     return TRUE;
 }
@@ -297,6 +296,7 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromMem(cmsContext ContextID, void *Buff
         fm ->FreeBlockOnClose = TRUE;
         fm ->Size    = size;
         fm ->Pointer = 0;
+        iohandler -> ReportedSize = size;
         break;
 
     case 'w':
@@ -307,10 +307,11 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromMem(cmsContext ContextID, void *Buff
         fm ->FreeBlockOnClose = FALSE;
         fm ->Size    = size;
         fm ->Pointer = 0;
+        iohandler -> ReportedSize = 0;
         break;
 
     default:
-        cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unknow access mode '%c'", *AccessMode);
+        cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unknown access mode '%c'", *AccessMode);
         return NULL;
     }
 
@@ -407,6 +408,7 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromFile(cmsContext ContextID, const cha
              cmsSignalError(ContextID, cmsERROR_FILE, "File '%s' not found", FileName);
             return NULL;
         }
+        iohandler -> ReportedSize = cmsfilelength(fm);
         break;
 
     case 'w':
@@ -416,11 +418,12 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromFile(cmsContext ContextID, const cha
              cmsSignalError(ContextID, cmsERROR_FILE, "Couldn't create '%s'", FileName);
             return NULL;
         }
+        iohandler -> ReportedSize = 0;
         break;
 
     default:
         _cmsFree(ContextID, iohandler);
-         cmsSignalError(ContextID, cmsERROR_FILE, "Unknow access mode '%c'", *AccessMode);
+         cmsSignalError(ContextID, cmsERROR_FILE, "Unknown access mode '%c'", *AccessMode);
         return NULL;
     }
 
@@ -455,6 +458,7 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromStream(cmsContext ContextID, FILE* S
     iohandler -> ContextID = ContextID;
     iohandler -> stream = (void*) Stream;
     iohandler -> UsedSpace = 0;
+    iohandler -> ReportedSize = cmsfilelength(Stream);
     iohandler -> PhysicalFile[0] = 0;
 
     iohandler ->Read    = FileRead;
@@ -643,11 +647,16 @@ cmsBool _cmsReadHeader(_cmsICCPROFILE* Icc)
     Icc -> flags           = _cmsAdjustEndianess32(Header.flags);
     Icc -> manufacturer    = _cmsAdjustEndianess32(Header.manufacturer);
     Icc -> model           = _cmsAdjustEndianess32(Header.model);
-    _cmsAdjustEndianess64(&Icc -> attributes, Header.attributes);
+    _cmsAdjustEndianess64(&Icc -> attributes, &Header.attributes);
     Icc -> Version         = _cmsAdjustEndianess32(Header.version);
 
     // Get size as reported in header
     HeaderSize = _cmsAdjustEndianess32(Header.size);
+
+    // Make sure HeaderSize is lower than profile size
+    if (HeaderSize >= Icc ->IOhandler ->ReportedSize)
+            HeaderSize = Icc ->IOhandler ->ReportedSize;
+
 
     // Get creation date/time
     _cmsDecodeDateTimeNumber(&Header.date, &Icc ->Created);
@@ -664,6 +673,7 @@ cmsBool _cmsReadHeader(_cmsICCPROFILE* Icc)
         return FALSE;
     }
 
+
     // Read tag directory
     Icc -> TagCount = 0;
     for (i=0; i < TagCount; i++) {
@@ -673,7 +683,8 @@ cmsBool _cmsReadHeader(_cmsICCPROFILE* Icc)
         if (!_cmsReadUInt32Number(io, &Tag.size)) return FALSE;
 
         // Perform some sanity check. Offset + size should fall inside file.
-        if (Tag.offset + Tag.size > HeaderSize)
+        if (Tag.offset + Tag.size > HeaderSize ||
+            Tag.offset + Tag.size < Tag.offset)
                   continue;
 
         Icc -> TagNames[Icc ->TagCount]   = Tag.sig;
@@ -728,7 +739,7 @@ cmsBool _cmsWriteHeader(_cmsICCPROFILE* Icc, cmsUInt32Number UsedSpace)
     Header.manufacturer = _cmsAdjustEndianess32(Icc -> manufacturer);
     Header.model        = _cmsAdjustEndianess32(Icc -> model);
 
-    _cmsAdjustEndianess64(&Header.attributes, Icc -> attributes);
+    _cmsAdjustEndianess64(&Header.attributes, &Icc -> attributes);
 
     // Rendering intent in the header (for embedded profiles)
     Header.renderingIntent = _cmsAdjustEndianess32(Icc -> RenderingIntent);
@@ -822,7 +833,7 @@ cmsUInt32Number CMSEXPORT cmsGetHeaderModel(cmsHPROFILE hProfile)
 void CMSEXPORT cmsSetHeaderModel(cmsHPROFILE hProfile, cmsUInt32Number model)
 {
     _cmsICCPROFILE*  Icc = (_cmsICCPROFILE*) hProfile;
-    Icc -> manufacturer = (cmsUInt32Number) model;
+    Icc -> model = (cmsUInt32Number) model;
 }
 
 
@@ -1138,10 +1149,12 @@ cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
                 continue;
             }
 
-            TypeBase    = TypeHandler ->Signature;
+            TypeBase = TypeHandler ->Signature;
             if (!_cmsWriteTypeBase(io, TypeBase))
                 return FALSE;
 
+            TypeHandler ->ContextID  = Icc ->ContextID;
+            TypeHandler ->ICCVersion = Icc ->Version;
             if (!TypeHandler ->WritePtr(TypeHandler, io, Data, TagDescriptor ->ElemCount)) {
 
                 char String[5];
@@ -1317,8 +1330,12 @@ cmsBool  CMSEXPORT cmsCloseProfile(cmsHPROFILE hProfile)
 
             cmsTagTypeHandler* TypeHandler = Icc ->TagTypeHandlers[i];
 
-            if (TypeHandler != NULL)
+            if (TypeHandler != NULL) {
+
+                TypeHandler ->ContextID = Icc ->ContextID;              // As an additional parameters
+                TypeHandler ->ICCVersion = Icc ->Version;
                 TypeHandler ->FreePtr(TypeHandler, Icc -> TagPtrs[i]);
+            }
             else
                 _cmsFree(Icc ->ContextID, Icc ->TagPtrs[i]);
         }
@@ -1371,7 +1388,6 @@ void* CMSEXPORT cmsReadTag(cmsHPROFILE hProfile, cmsTagSignature sig)
     if (n < 0) return NULL;                 // Not found, return NULL
 
 
-
     // If the element is already in memory, return the pointer
     if (Icc -> TagPtrs[n]) {
 
@@ -1406,6 +1422,9 @@ void* CMSEXPORT cmsReadTag(cmsHPROFILE hProfile, cmsTagSignature sig)
 
     // Read the tag
     Icc -> TagTypeHandlers[n] = TypeHandler;
+
+    TypeHandler ->ContextID = Icc ->ContextID;
+    TypeHandler ->ICCVersion = Icc ->Version;
     Icc -> TagPtrs[n] = TypeHandler ->ReadPtr(TypeHandler, io, &ElemCount, TagSize);
 
     // The tag type is supported, but something wrong happend and we cannot read the tag.
@@ -1463,11 +1482,15 @@ cmsBool CMSEXPORT cmsWriteTag(cmsHPROFILE hProfile, cmsTagSignature sig, const v
     cmsTagTypeSignature Type;
     int i;
     cmsFloat64Number Version;
+    char TypeString[5], SigString[5];
 
 
     if (data == NULL) {
 
-         cmsSignalError(cmsGetProfileContextID(hProfile), cmsERROR_NULL, "couldn't wite NULL to tag");
+         i = _cmsSearchTag(Icc, sig, FALSE);
+         if (i >= 0)
+             Icc ->TagNames[i] = (cmsTagSignature) 0;
+         // Unsupported by now, reserved for future ampliations (delete)
          return FALSE;
     }
 
@@ -1482,7 +1505,13 @@ cmsBool CMSEXPORT cmsWriteTag(cmsHPROFILE hProfile, cmsTagSignature sig, const v
             }
             else {
                 TypeHandler = Icc ->TagTypeHandlers[i];
-                TypeHandler->FreePtr(TypeHandler, Icc -> TagPtrs[i]);
+
+                if (TypeHandler != NULL) {
+
+                    TypeHandler ->ContextID = Icc ->ContextID;              // As an additional parameter
+                    TypeHandler ->ICCVersion = Icc ->Version;
+                    TypeHandler->FreePtr(TypeHandler, Icc -> TagPtrs[i]);
+                }
             }
         }
     }
@@ -1514,6 +1543,7 @@ cmsBool CMSEXPORT cmsWriteTag(cmsHPROFILE hProfile, cmsTagSignature sig, const v
 
     // Now we need to know which type to use. It depends on the version.
     Version = cmsGetProfileVersion(hProfile);
+
     if (TagDescriptor ->DecideType != NULL) {
 
         // Let the tag descriptor to decide the type base on depending on
@@ -1525,33 +1555,47 @@ cmsBool CMSEXPORT cmsWriteTag(cmsHPROFILE hProfile, cmsTagSignature sig, const v
     }
     else {
 
+
         Type = TagDescriptor ->SupportedTypes[0];
     }
 
     // Does the tag support this type?
     if (!IsTypeSupported(TagDescriptor, Type)) {
-        cmsSignalError(Icc ->ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported type '%x' for tag '%x'", Type, sig);
+
+        _cmsTagSignature2String(TypeString, (cmsTagSignature) Type);
+        _cmsTagSignature2String(SigString,  sig);
+
+        cmsSignalError(Icc ->ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported type '%s' for tag '%s'", TypeString, SigString);
         return FALSE;
     }
 
     // Does we have a handler for this type?
     TypeHandler =  _cmsGetTagTypeHandler(Type);
     if (TypeHandler == NULL) {
-        cmsSignalError(Icc ->ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported type '%x' for tag '%x'", Type, sig);
+
+        _cmsTagSignature2String(TypeString, (cmsTagSignature) Type);
+        _cmsTagSignature2String(SigString,  sig);
+
+        cmsSignalError(Icc ->ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported type '%s' for tag '%s'", TypeString, SigString);
         return FALSE;           // Should never happen
     }
+
 
     // Fill fields on icc structure
     Icc ->TagTypeHandlers[i]  = TypeHandler;
     Icc ->TagNames[i]         = sig;
     Icc ->TagSizes[i]         = 0;
     Icc ->TagOffsets[i]       = 0;
-    Icc ->TagPtrs[i]          = TypeHandler ->DupPtr(TypeHandler, data, TagDescriptor ->ElemCount);
+
+    TypeHandler ->ContextID  = Icc ->ContextID;
+    TypeHandler ->ICCVersion = Icc ->Version;
+    Icc ->TagPtrs[i]         = TypeHandler ->DupPtr(TypeHandler, data, TagDescriptor ->ElemCount);
 
     if (Icc ->TagPtrs[i] == NULL)  {
 
-        TypeHandler ->DupPtr(TypeHandler, data, TagDescriptor ->ElemCount);
-        cmsSignalError(Icc ->ContextID, cmsERROR_CORRUPTION_DETECTED, "Malformed struct in type '%x' for tag '%x'", Type, sig);
+        _cmsTagSignature2String(TypeString, (cmsTagSignature) Type);
+        _cmsTagSignature2String(SigString,  sig);
+        cmsSignalError(Icc ->ContextID, cmsERROR_CORRUPTION_DETECTED, "Malformed struct in type '%s' for tag '%s'", TypeString, SigString);
 
         return FALSE;
     }
@@ -1627,21 +1671,31 @@ cmsInt32Number CMSEXPORT cmsReadRawTag(cmsHPROFILE hProfile, cmsTagSignature sig
     if (data == NULL) {
         MemIO = cmsOpenIOhandlerFromNULL(cmsGetProfileContextID(hProfile));
     } else{
-          MemIO = cmsOpenIOhandlerFromMem(cmsGetProfileContextID(hProfile), data, BufferSize, "w");
+      MemIO = cmsOpenIOhandlerFromMem(cmsGetProfileContextID(hProfile), data, BufferSize, "w");
     }
     if (MemIO == NULL) return 0;
 
     // Obtain type handling for the tag
     TypeHandler = Icc ->TagTypeHandlers[i];
     TagDescriptor = _cmsGetTagDescriptor(sig);
+    if (TagDescriptor == NULL) {
+         cmsCloseIOhandler(MemIO);
+         return 0;
+    }
 
     // Serialize
+    TypeHandler ->ContextID  = Icc ->ContextID;
+    TypeHandler ->ICCVersion = Icc ->Version;
+
     if (!_cmsWriteTypeBase(MemIO, TypeHandler ->Signature)) {
         cmsCloseIOhandler(MemIO);
         return 0;
     }
 
-    if (!TypeHandler ->WritePtr(TypeHandler, MemIO, Object, TagDescriptor ->ElemCount)) return 0;
+    if (!TypeHandler ->WritePtr(TypeHandler, MemIO, Object, TagDescriptor ->ElemCount)) {
+        cmsCloseIOhandler(MemIO);
+        return 0;
+    }
 
     // Get Size and close
     rc = MemIO ->Tell(MemIO);
@@ -1691,4 +1745,18 @@ cmsBool CMSEXPORT cmsLinkTag(cmsHPROFILE hProfile, cmsTagSignature sig, cmsTagSi
     Icc ->TagOffsets[i] = 0;
 
     return TRUE;
+}
+
+
+// Returns the tag linked to sig, in the case two tags are sharing same resource
+cmsTagSignature  CMSEXPORT cmsTagLinkedTo(cmsHPROFILE hProfile, cmsTagSignature sig)
+{
+    _cmsICCPROFILE* Icc = (_cmsICCPROFILE*) hProfile;
+    int i;
+
+    // Search for given tag in ICC profile directory
+    i = _cmsSearchTag(Icc, sig, FALSE);
+    if (i < 0) return (cmsTagSignature) 0;                 // Not found, return 0
+
+    return Icc -> TagLinked[i];
 }

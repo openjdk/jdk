@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,7 @@ final class NTLMServer implements SaslServer {
     private String authzId;
     private final String mech;
     private String hostname;
+    private String target;
 
     /**
      * @param mech not null
@@ -180,6 +181,7 @@ final class NTLMServer implements SaslServer {
                 String[] out = server.verify(response, nonce);
                 authzId = out[0];
                 hostname = out[1];
+                target = out[2];
                 return null;
             }
         } catch (NTLMException ex) {
@@ -220,6 +222,8 @@ final class NTLMServer implements SaslServer {
         switch (propName) {
             case Sasl.QOP:
                 return "auth";
+            case Sasl.BOUND_SERVER_NAME:
+                return target;
             case NTLM_HOSTNAME:
                 return hostname;
             default:

@@ -70,6 +70,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  the length of the sequence of characters currently
      *          represented by this object
      */
+    @Override
     public int length() {
         return count;
     }
@@ -200,6 +201,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @throws     IndexOutOfBoundsException  if {@code index} is
      *             negative or greater than or equal to {@code length()}.
      */
+    @Override
     public char charAt(int index) {
         if ((index < 0) || (index >= count))
             throw new StringIndexOutOfBoundsException(index);
@@ -431,14 +433,29 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         return this;
     }
 
+    /**
+     * @since 1.8
+     */
+    AbstractStringBuilder append(AbstractStringBuilder asb) {
+        if (asb == null)
+            return append("null");
+        int len = asb.length();
+        ensureCapacityInternal(count + len);
+        asb.getChars(0, len, value, count);
+        count += len;
+        return this;
+    }
+
     // Documentation in subclasses because of synchro difference
+    @Override
     public AbstractStringBuilder append(CharSequence s) {
         if (s == null)
             s = "null";
         if (s instanceof String)
             return this.append((String)s);
-        if (s instanceof StringBuffer)
-            return this.append((StringBuffer)s);
+        if (s instanceof AbstractStringBuilder)
+            return this.append((AbstractStringBuilder)s);
+
         return this.append(s, 0, s.length());
     }
 
@@ -471,6 +488,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *             {@code start} is greater than {@code end} or
      *             {@code end} is greater than {@code s.length()}
      */
+    @Override
     public AbstractStringBuilder append(CharSequence s, int start, int end) {
         if (s == null)
             s = "null";
@@ -585,6 +603,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @param   c   a {@code char}.
      * @return  a reference to this object.
      */
+    @Override
     public AbstractStringBuilder append(char c) {
         ensureCapacityInternal(count + 1);
         value[count++] = c;
@@ -847,6 +866,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *          or if <tt>start</tt> is greater than <tt>end</tt>
      * @spec JSR-51
      */
+    @Override
     public CharSequence subSequence(int start, int end) {
         return substring(start, end);
     }
@@ -1397,6 +1417,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *
      * @return  a string representation of this sequence of characters.
      */
+    @Override
     public abstract String toString();
 
     /**

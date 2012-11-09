@@ -753,7 +753,7 @@ void JvmtiClassFileReconstituter::copy_bytecodes(methodHandle mh,
 
   unsigned char* p = bytecodes;
   Bytecodes::Code code;
-  bool is_rewritten = InstanceKlass::cast(mh->method_holder())->is_rewritten();
+  bool is_rewritten = mh->method_holder()->is_rewritten();
 
   while ((code = bs.next()) >= 0) {
     assert(Bytecodes::is_java_code(code), "sanity check");

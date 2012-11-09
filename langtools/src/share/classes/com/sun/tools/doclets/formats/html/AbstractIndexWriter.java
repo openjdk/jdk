@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,20 @@ import java.io.*;
 import java.util.*;
 
 import com.sun.javadoc.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Generate Index for all the Member Names with Indexing in
  * Unicode Order. This class is a base class for {@link SingleIndexWriter} and
  * {@link SplitIndexWriter}. It uses the functionality from
  * {@link HtmlDocletWriter} to generate the Index Contents.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @see    IndexBuilder
  * @author Atul M Dambalkar
@@ -51,32 +56,18 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     protected IndexBuilder indexbuilder;
 
     /**
-     * This constructor will be used by {@link SplitIndexWriter}. Initialises
+     * This constructor will be used by {@link SplitIndexWriter}. Initializes
      * path to this file and relative path from this file.
      *
+     * @param configuration  The current configuration
      * @param path       Path to the file which is getting generated.
-     * @param filename   Name of the file which is getting genrated.
-     * @param relpath    Relative path from this file to the current directory.
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      */
     protected AbstractIndexWriter(ConfigurationImpl configuration,
-                                  String path, String filename,
-                                  String relpath, IndexBuilder indexbuilder)
+                                  DocPath path,
+                                  IndexBuilder indexbuilder)
                                   throws IOException {
-        super(configuration, path, filename, relpath);
-        this.indexbuilder = indexbuilder;
-    }
-
-    /**
-     * This Constructor will be used by {@link SingleIndexWriter}.
-     *
-     * @param filename   Name of the file which is getting genrated.
-     * @param indexbuilder Unicode based Index form {@link IndexBuilder}
-     */
-    protected AbstractIndexWriter(ConfigurationImpl configuration,
-                                  String filename, IndexBuilder indexbuilder)
-                                  throws IOException {
-        super(configuration, filename);
+        super(configuration, path);
         this.indexbuilder = indexbuilder;
     }
 

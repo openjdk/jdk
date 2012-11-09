@@ -48,6 +48,9 @@ fi
 
 # Test and fix cygwin on x86_64
 echo $OUT | grep 86-pc-cygwin > /dev/null 2> /dev/null
+if test $? != 0; then
+  echo $OUT | grep 86-pc-mingw > /dev/null 2> /dev/null
+fi
 if test $? = 0; then
   case `echo $PROCESSOR_IDENTIFIER | cut -f1 -d' '` in
     intel64|Intel64|INTEL64|em64t|EM64T|amd64|AMD64|8664|x86_64)

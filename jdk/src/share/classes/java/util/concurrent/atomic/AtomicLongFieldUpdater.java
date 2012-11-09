@@ -59,7 +59,7 @@ import java.security.PrivilegedActionException;
  * @author Doug Lea
  * @param <T> The type of the object holding the updatable field
  */
-public abstract class  AtomicLongFieldUpdater<T> {
+public abstract class AtomicLongFieldUpdater<T> {
     /**
      * Creates and returns an updater for objects with the given field.
      * The Class argument is needed to check that reflective types and
@@ -274,9 +274,9 @@ public abstract class  AtomicLongFieldUpdater<T> {
         private final Class<?> cclass;
 
         CASUpdater(final Class<T> tclass, final String fieldName) {
-            Field field = null;
-            Class<?> caller = null;
-            int modifiers = 0;
+            final Field field;
+            final Class<?> caller;
+            final int modifiers;
             try {
                 field = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<Field>() {

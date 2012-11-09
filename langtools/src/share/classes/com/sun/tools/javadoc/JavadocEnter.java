@@ -25,7 +25,6 @@
 
 package com.sun.tools.javadoc;
 
-
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Kinds;
@@ -40,6 +39,12 @@ import com.sun.tools.javac.util.List;
 /**
  *  Javadoc's own enter phase does a few things above and beyond that
  *  done by javac.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  *  @author Neal Gafter
  */
 public class JavadocEnter extends Enter {

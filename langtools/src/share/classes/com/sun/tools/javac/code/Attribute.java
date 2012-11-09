@@ -34,8 +34,6 @@ import javax.lang.model.type.DeclaredType;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.*;
 
-import static com.sun.tools.javac.code.TypeTags.*;
-
 /** An annotation value.
  *
  *  <p><b>This is NOT part of any supported API.

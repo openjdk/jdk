@@ -150,6 +150,7 @@ AwtFont::AwtFont(int num, JNIEnv *env, jobject javaFont)
 
 AwtFont::~AwtFont()
 {
+    delete[] m_hFont;
 }
 
 void AwtFont::Dispose() {
@@ -160,11 +161,12 @@ void AwtFont::Dispose() {
             /*  NOTE: delete of windows HFONT happens in FontCache::Remove
                       only when the final reference to the font is disposed */
         } else if (font != NULL) {
-         // if font was not in cache, its not shared and we delete it now
-           VERIFY(::DeleteObject(font));
+            // if font was not in cache, its not shared and we delete it now
+            DASSERT(::GetObjectType(font) == OBJ_FONT);
+            VERIFY(::DeleteObject(font));
         }
+        m_hFont[i] = NULL;
     }
-    delete[] m_hFont;
 
     AwtObject::Dispose();
 }
