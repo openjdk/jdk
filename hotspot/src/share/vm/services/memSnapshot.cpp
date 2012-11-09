@@ -123,20 +123,31 @@ bool VMMemPointerIterator::insert_record_after(MemPointerRecord* rec) {
 // in different types.
 bool VMMemPointerIterator::add_reserved_region(MemPointerRecord* rec) {
   assert(rec->is_allocation_record(), "Sanity check");
-  VMMemRegion* cur = (VMMemRegion*)current();
+  VMMemRegion* reserved_region = (VMMemRegion*)current();
 
   // we don't have anything yet
-  if (cur == NULL) {
+  if (reserved_region == NULL) {
     return insert_record(rec);
   }
 
-  assert(cur->is_reserved_region(), "Sanity check");
+  assert(reserved_region->is_reserved_region(), "Sanity check");
   // duplicated records
-  if (cur->is_same_region(rec)) {
+  if (reserved_region->is_same_region(rec)) {
     return true;
   }
-  assert(cur->base() > rec->addr(), "Just check: locate()");
-  assert(!cur->overlaps_region(rec), "overlapping reserved regions");
+  // Overlapping stack regions indicate that a JNI thread failed to
+  // detach from the VM before exiting. This leaks the JavaThread object.
+  if (CheckJNICalls)  {
+      guarantee(FLAGS_TO_MEMORY_TYPE(reserved_region->flags()) != mtThreadStack ||
+         !reserved_region->overlaps_region(rec),
+         "Attached JNI thread exited without being detached");
+  }
+  // otherwise, we should not have overlapping reserved regions
+  assert(FLAGS_TO_MEMORY_TYPE(reserved_region->flags()) == mtThreadStack ||
+    reserved_region->base() > rec->addr(), "Just check: locate()");
+  assert(FLAGS_TO_MEMORY_TYPE(reserved_region->flags()) == mtThreadStack ||
+    !reserved_region->overlaps_region(rec), "overlapping reserved regions");
+
   return insert_record(rec);
 }
 
