@@ -55,16 +55,18 @@ void*       Disassembler::_library               = NULL;
 bool        Disassembler::_tried_to_load_library = false;
 
 // This routine is in the shared library:
+Disassembler::decode_func_virtual Disassembler::_decode_instructions_virtual = NULL;
 Disassembler::decode_func Disassembler::_decode_instructions = NULL;
 
 static const char hsdis_library_name[] = "hsdis-"HOTSPOT_LIB_ARCH;
-static const char decode_instructions_name[] = "decode_instructions_virtual";
-
+static const char decode_instructions_virtual_name[] = "decode_instructions_virtual";
+static const char decode_instructions_name[] = "decode_instructions";
+static bool use_new_version = true;
 #define COMMENT_COLUMN  40 LP64_ONLY(+8) /*could be an option*/
 #define BYTES_COMMENT   ";..."  /* funky byte display comment */
 
 bool Disassembler::load_library() {
-  if (_decode_instructions != NULL) {
+  if (_decode_instructions_virtual != NULL || _decode_instructions != NULL) {
     // Already succeeded.
     return true;
   }
@@ -123,11 +125,19 @@ bool Disassembler::load_library() {
     _library = os::dll_load(buf, ebuf, sizeof ebuf);
   }
   if (_library != NULL) {
+    _decode_instructions_virtual = CAST_TO_FN_PTR(Disassembler::decode_func_virtual,
+                                          os::dll_lookup(_library, decode_instructions_virtual_name));
+  }
+  if (_decode_instructions_virtual == NULL) {
+    // could not spot in new version, try old version
     _decode_instructions = CAST_TO_FN_PTR(Disassembler::decode_func,
                                           os::dll_lookup(_library, decode_instructions_name));
+    use_new_version = false;
+  } else {
+    use_new_version = true;
   }
   _tried_to_load_library = true;
-  if (_decode_instructions == NULL) {
+  if (_decode_instructions_virtual == NULL && _decode_instructions == NULL) {
     tty->print_cr("Could not load %s; %s; %s", buf,
                   ((_library != NULL)
                    ? "entry point is missing"
@@ -450,17 +460,31 @@ address decode_env::decode_instructions(address start, address end) {
     // This is mainly for debugging the library itself.
     FILE* out = stdout;
     FILE* xmlout = (_print_raw > 1 ? out : NULL);
-    return (address)
-      (*Disassembler::_decode_instructions)((uintptr_t)start, (uintptr_t)end,
-                                            start, end - start,
+    return use_new_version ?
+      (address)
+      (*Disassembler::_decode_instructions_virtual)((uintptr_t)start, (uintptr_t)end,
+                                                    start, end - start,
+                                                    NULL, (void*) xmlout,
+                                                    NULL, (void*) out,
+                                                    options(), 0/*nice new line*/)
+      :
+      (address)
+      (*Disassembler::_decode_instructions)(start, end,
                                             NULL, (void*) xmlout,
                                             NULL, (void*) out,
                                             options());
   }
 
-  return (address)
-    (*Disassembler::_decode_instructions)((uintptr_t)start, (uintptr_t)end,
-                                          start, end - start,
+  return use_new_version ?
+    (address)
+    (*Disassembler::_decode_instructions_virtual)((uintptr_t)start, (uintptr_t)end,
+                                                  start, end - start,
+                                                  &event_to_env,  (void*) this,
+                                                  &printf_to_env, (void*) this,
+                                                  options(), 0/*nice new line*/)
+    :
+    (address)
+    (*Disassembler::_decode_instructions)(start, end,
                                           &event_to_env,  (void*) this,
                                           &printf_to_env, (void*) this,
                                           options());

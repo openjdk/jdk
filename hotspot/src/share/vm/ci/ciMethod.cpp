@@ -105,7 +105,7 @@ ciMethod::ciMethod(methodHandle h_m) : ciMetadata(h_m()) {
     CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
   }
 
-  if (InstanceKlass::cast(h_m()->method_holder())->is_linked()) {
+  if (h_m()->method_holder()->is_linked()) {
     _can_be_statically_bound = h_m()->can_be_statically_bound();
   } else {
     // Have to use a conservative value in this case.
@@ -188,7 +188,7 @@ void ciMethod::load_code() {
 
   // Revert any breakpoint bytecodes in ci's copy
   if (me->number_of_breakpoints() > 0) {
-    BreakpointInfo* bp = InstanceKlass::cast(me->method_holder())->breakpoints();
+    BreakpointInfo* bp = me->method_holder()->breakpoints();
     for (; bp != NULL; bp = bp->next()) {
       if (bp->match(me)) {
         code_at_put(bp->bci(), bp->orig_bytecode());

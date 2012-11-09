@@ -43,12 +43,12 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
 
   // update the access_flags for the field in the klass
   void update_klass_field_access_flag() {
-    InstanceKlass* ik = InstanceKlass::cast(field_holder());
+    InstanceKlass* ik = field_holder();
     ik->field(index())->set_access_flags(_access_flags.as_short());
   }
 
   FieldInfo* field() const {
-    InstanceKlass* ik = InstanceKlass::cast(field_holder());
+    InstanceKlass* ik = field_holder();
     return ik->field(_index);
   }
 
@@ -59,46 +59,46 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
   Symbol* signature() const {
     return field()->signature(_cp);
   }
-  Klass* field_holder() const        { return _cp->pool_holder(); }
-  ConstantPool* constants() const    { return _cp(); }
-  AccessFlags access_flags() const     { return _access_flags; }
-  oop loader() const;
+  InstanceKlass* field_holder()   const    { return _cp->pool_holder(); }
+  ConstantPool* constants()       const    { return _cp(); }
+  AccessFlags access_flags()      const    { return _access_flags; }
+  oop loader()                    const;
   // Offset (in words) of field from start of instanceOop / Klass*
-  int offset() const                   { return field()->offset(); }
-  Symbol* generic_signature() const;
-  int index() const                    { return _index; }
-  AnnotationArray* annotations() const;
+  int offset()                    const    { return field()->offset(); }
+  Symbol* generic_signature()     const;
+  int index()                     const    { return _index; }
+  AnnotationArray* annotations()  const;
 
   // Initial field value
-  bool has_initial_value() const          { return field()->initval_index() != 0; }
-  int initial_value_index() const         { return field()->initval_index(); }
+  bool has_initial_value()        const    { return field()->initval_index() != 0; }
+  int initial_value_index()       const    { return field()->initval_index(); }
   constantTag initial_value_tag() const;  // The tag will return true on one of is_int(), is_long(), is_single(), is_double()
-  jint        int_initial_value() const;
-  jlong       long_initial_value() const;
-  jfloat      float_initial_value() const;
-  jdouble     double_initial_value() const;
-  oop         string_initial_value(TRAPS) const;
+  jint int_initial_value()        const;
+  jlong long_initial_value()      const;
+  jfloat float_initial_value()    const;
+  jdouble double_initial_value()  const;
+  oop string_initial_value(TRAPS) const;
 
   // Field signature type
-  BasicType field_type() const            { return FieldType::basic_type(signature()); }
+  BasicType field_type()          const    { return FieldType::basic_type(signature()); }
 
   // Access flags
-  bool is_public() const                  { return access_flags().is_public(); }
-  bool is_private() const                 { return access_flags().is_private(); }
-  bool is_protected() const               { return access_flags().is_protected(); }
-  bool is_package_private() const         { return !is_public() && !is_private() && !is_protected(); }
+  bool is_public()                const    { return access_flags().is_public(); }
+  bool is_private()               const    { return access_flags().is_private(); }
+  bool is_protected()             const    { return access_flags().is_protected(); }
+  bool is_package_private()       const    { return !is_public() && !is_private() && !is_protected(); }
 
-  bool is_static() const                  { return access_flags().is_static(); }
-  bool is_final() const                   { return access_flags().is_final(); }
-  bool is_volatile() const                { return access_flags().is_volatile(); }
-  bool is_transient() const               { return access_flags().is_transient(); }
+  bool is_static()                const    { return access_flags().is_static(); }
+  bool is_final()                 const    { return access_flags().is_final(); }
+  bool is_volatile()              const    { return access_flags().is_volatile(); }
+  bool is_transient()             const    { return access_flags().is_transient(); }
 
-  bool is_synthetic() const               { return access_flags().is_synthetic(); }
+  bool is_synthetic()             const    { return access_flags().is_synthetic(); }
 
-  bool is_field_access_watched() const    { return access_flags().is_field_access_watched(); }
+  bool is_field_access_watched()  const    { return access_flags().is_field_access_watched(); }
   bool is_field_modification_watched() const
-                                          { return access_flags().is_field_modification_watched(); }
-  bool has_generic_signature() const      { return access_flags().field_has_generic_signature(); }
+                                           { return access_flags().is_field_modification_watched(); }
+  bool has_generic_signature()    const    { return access_flags().field_has_generic_signature(); }
 
   void set_is_field_access_watched(const bool value) {
     _access_flags.set_is_field_access_watched(value);
