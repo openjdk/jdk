@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,10 @@
  * @library ..
  */
 
-import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.channels.spi.SelectorProvider;
-import java.nio.charset.*;
 import java.util.*;
 
 
@@ -44,52 +42,57 @@ import java.util.*;
 
 public class BasicConnect {
 
-    static final int PORT = 7;          // echo
-    static final String HOST = TestUtil.HOST;
-
     public static void main(String[] args) throws Exception {
         Selector connectSelector =
             SelectorProvider.provider().openSelector();
-        InetSocketAddress isa
-            = new InetSocketAddress(InetAddress.getByName(HOST), PORT);
-        SocketChannel sc = SocketChannel.open();
-        sc.configureBlocking(false);
-        boolean result = sc.connect(isa);
-        while (!result) {
-            SelectionKey connectKey = sc.register(connectSelector,
-                                                  SelectionKey.OP_CONNECT);
-            int keysAdded = connectSelector.select();
-            if (keysAdded > 0) {
-                Set readyKeys = connectSelector.selectedKeys();
-                Iterator i = readyKeys.iterator();
-                while (i.hasNext()) {
-                    SelectionKey sk = (SelectionKey)i.next();
-                    i.remove();
-                    SocketChannel nextReady = (SocketChannel)sk.channel();
-                    result = nextReady.finishConnect();
-                    if (result)
-                        sk.cancel();
+        try (TestServers.EchoServer echoServer
+                = TestServers.EchoServer.startNewServer(100)) {
+            InetSocketAddress isa
+                = new InetSocketAddress(echoServer.getAddress(),
+                                        echoServer.getPort());
+            SocketChannel sc = SocketChannel.open();
+            sc.configureBlocking(false);
+            boolean result = sc.connect(isa);
+            if (result) {
+                System.out.println("Socket immediately connected on "
+                        + System.getProperty("os.name")
+                        + ": " + sc);
+            }
+            while (!result) {
+                SelectionKey connectKey = sc.register(connectSelector,
+                                                      SelectionKey.OP_CONNECT);
+                int keysAdded = connectSelector.select();
+                if (keysAdded > 0) {
+                    Set readyKeys = connectSelector.selectedKeys();
+                    Iterator i = readyKeys.iterator();
+                    while (i.hasNext()) {
+                        SelectionKey sk = (SelectionKey)i.next();
+                        i.remove();
+                        SocketChannel nextReady = (SocketChannel)sk.channel();
+                        result = nextReady.finishConnect();
+                        if (result)
+                            sk.cancel();
+                    }
                 }
             }
+
+            byte[] bs = new byte[] { (byte)0xca, (byte)0xfe,
+                                     (byte)0xba, (byte)0xbe };
+            ByteBuffer bb = ByteBuffer.wrap(bs);
+            sc.configureBlocking(true);
+            sc.write(bb);
+            bb.rewind();
+
+            ByteBuffer bb2 = ByteBuffer.allocateDirect(100);
+            int n = sc.read(bb2);
+            bb2.flip();
+
+            sc.close();
+            connectSelector.close();
+
+            if (!bb.equals(bb2))
+                throw new Exception("Echoed bytes incorrect: Sent "
+                                    + bb + ", got " + bb2);
         }
-
-        byte[] bs = new byte[] { (byte)0xca, (byte)0xfe,
-                                 (byte)0xba, (byte)0xbe };
-        ByteBuffer bb = ByteBuffer.wrap(bs);
-        sc.configureBlocking(true);
-        sc.write(bb);
-        bb.rewind();
-
-        ByteBuffer bb2 = ByteBuffer.allocateDirect(100);
-        int n = sc.read(bb2);
-        bb2.flip();
-
-        sc.close();
-        connectSelector.close();
-
-        if (!bb.equals(bb2))
-            throw new Exception("Echoed bytes incorrect: Sent "
-                                + bb + ", got " + bb2);
     }
-
 }

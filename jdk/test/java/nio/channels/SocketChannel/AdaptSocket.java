@@ -35,19 +35,16 @@ public class AdaptSocket {
 
     static java.io.PrintStream out = System.out;
 
-    static final int ECHO_PORT = 7;
-    static final int DAYTIME_PORT = 13;
-    static final String REMOTE_HOST = TestUtil.HOST;
-    static final String VERY_REMOTE_HOST = TestUtil.FAR_HOST;
-
-    static void test(String hn, int timeout, boolean shouldTimeout)
+    static void test(TestServers.DayTimeServer dayTimeServer,
+                     int timeout,
+                     boolean shouldTimeout)
         throws Exception
     {
         out.println();
 
         InetSocketAddress isa
-            = new InetSocketAddress(InetAddress.getByName(hn),
-                                    DAYTIME_PORT);
+            = new InetSocketAddress(dayTimeServer.getAddress(),
+                                    dayTimeServer.getPort());
         SocketChannel sc = SocketChannel.open();
         Socket so = sc.socket();
         out.println("opened: " + so);
@@ -116,13 +113,16 @@ public class AdaptSocket {
         }
     }
 
-    static void testRead(String hn, int timeout, boolean shouldTimeout)
+    static void testRead(TestServers.EchoServer echoServer,
+                         int timeout,
+                         boolean shouldTimeout)
         throws Exception
     {
         out.println();
 
         InetSocketAddress isa
-            = new InetSocketAddress(InetAddress.getByName(hn), ECHO_PORT);
+            = new InetSocketAddress(echoServer.getAddress(),
+                                    echoServer.getPort());
         SocketChannel sc = SocketChannel.open();
         sc.connect(isa);
         Socket so = sc.socket();
@@ -134,22 +134,38 @@ public class AdaptSocket {
         out.println("timeout: " + so.getSoTimeout());
 
         testRead(so, shouldTimeout);
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 4; i++) {
             testRead(so, shouldTimeout);
+        }
 
         sc.close();
     }
 
     public static void main(String[] args) throws Exception {
 
-        test(REMOTE_HOST, 0, false);
-        test(REMOTE_HOST, 1000, false);
-        test(VERY_REMOTE_HOST, 10, true);
+        try (TestServers.DayTimeServer dayTimeServer
+                = TestServers.DayTimeServer.startNewServer()) {
+            test(dayTimeServer, 0, false);
+            test(dayTimeServer, 1000, false);
+        }
 
-        testRead(REMOTE_HOST, 0, false);
-        testRead(REMOTE_HOST, 8000, false);
-        testRead(VERY_REMOTE_HOST, 10, true);
+        try (TestServers.DayTimeServer lingerDayTimeServer
+                = TestServers.DayTimeServer.startNewServer(100)) {
+            // this test no longer really test the connection timeout
+            // since there is no way to prevent the server from eagerly
+            // accepting connection...
+            test(lingerDayTimeServer, 10, true);
+        }
 
+        try (TestServers.EchoServer echoServer
+                = TestServers.EchoServer.startNewServer()) {
+            testRead(echoServer, 0, false);
+            testRead(echoServer, 8000, false);
+        }
+
+        try (TestServers.EchoServer lingerEchoServer
+                = TestServers.EchoServer.startNewServer(100)) {
+            testRead(lingerEchoServer, 10, true);
+        }
     }
-
 }

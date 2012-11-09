@@ -100,8 +100,8 @@ Leap	2012	Jun	30	23:59:60	+	S
 #
 #
 # A positive leap second will be introduced at the end of June 2012.
-# The sequence of dates of the UTC second markers will be:		
-# 		
+# The sequence of dates of the UTC second markers will be:
+#
 #                          2012 June 30,     23h 59m 59s
 #                          2012 June 30,     23h 59m 60s
 #                          2012 July  1,      0h  0m  0s
@@ -118,6 +118,6 @@ Leap	2012	Jun	30	23:59:60	+	S
 #
 #
 # Daniel GAMBIS
-# Head		
+# Head
 # Earth Orientation Center of IERS
 # Observatoire de Paris, France

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,15 @@
  */
 
 import java.net.*;
-import java.io.*;
-import java.nio.*;
 import java.nio.channels.*;
-import java.nio.charset.*;
 import java.nio.channels.spi.SelectorProvider;
 
 public class KeysReady {
 
-    static final int DAYTIME_PORT = 13;
-    static final String DAYTIME_HOST = TestUtil.HOST;
-
-    static void test() throws Exception {
+    static void test(TestServers.DayTimeServer dayTimeServer) throws Exception {
         InetSocketAddress isa
-            = new InetSocketAddress(InetAddress.getByName(DAYTIME_HOST),
-                                    DAYTIME_PORT);
+            = new InetSocketAddress(dayTimeServer.getAddress(),
+                                    dayTimeServer.getPort());
         SocketChannel sc = SocketChannel.open();
         sc.configureBlocking(false);
         sc.connect(isa);
@@ -64,7 +58,10 @@ public class KeysReady {
     }
 
     public static void main(String[] args) throws Exception {
-        test();
+        try (TestServers.DayTimeServer daytimeServer
+                = TestServers.DayTimeServer.startNewServer(50)) {
+            test(daytimeServer);
+        }
     }
 
 }

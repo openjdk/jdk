@@ -302,12 +302,10 @@ public class FileChannelImpl
         }
     }
 
-    public FileChannel truncate(long size) throws IOException {
+    public FileChannel truncate(long newSize) throws IOException {
         ensureOpen();
-        if (size < 0)
-            throw new IllegalArgumentException();
-        if (size > size())
-            return this;
+        if (newSize < 0)
+            throw new IllegalArgumentException("Negative size");
         if (!writable)
             throw new NonWritableChannelException();
         synchronized (positionLock) {
@@ -320,6 +318,14 @@ public class FileChannelImpl
                 if (!isOpen())
                     return null;
 
+                // get current size
+                long size;
+                do {
+                    size = nd.size(fd);
+                } while ((size == IOStatus.INTERRUPTED) && isOpen());
+                if (!isOpen())
+                    return null;
+
                 // get current position
                 do {
                     p = position0(fd, -1);
@@ -328,16 +334,18 @@ public class FileChannelImpl
                     return null;
                 assert p >= 0;
 
-                // truncate file
-                do {
-                    rv = nd.truncate(fd, size);
-                } while ((rv == IOStatus.INTERRUPTED) && isOpen());
-                if (!isOpen())
-                    return null;
+                // truncate file if given size is less than the current size
+                if (newSize < size) {
+                    do {
+                        rv = nd.truncate(fd, newSize);
+                    } while ((rv == IOStatus.INTERRUPTED) && isOpen());
+                    if (!isOpen())
+                        return null;
+                }
 
-                // set position to size if greater than size
-                if (p > size)
-                    p = size;
+                // if position is beyond new size then adjust it
+                if (p > newSize)
+                    p = newSize;
                 do {
                     rv = (int)position0(fd, p);
                 } while ((rv == IOStatus.INTERRUPTED) && isOpen());
@@ -779,6 +787,8 @@ public class FileChannelImpl
         throws IOException
     {
         ensureOpen();
+        if (mode == null)
+            throw new NullPointerException("Mode is null");
         if (position < 0L)
             throw new IllegalArgumentException("Negative position");
         if (size < 0L)
@@ -787,6 +797,7 @@ public class FileChannelImpl
             throw new IllegalArgumentException("Position + size overflow");
         if (size > Integer.MAX_VALUE)
             throw new IllegalArgumentException("Size exceeds Integer.MAX_VALUE");
+
         int imode = -1;
         if (mode == MapMode.READ_ONLY)
             imode = MAP_RO;

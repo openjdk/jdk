@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package javax.sql.rowset.serial;
 
 import java.io.*;
 import java.lang.reflect.*;
+import java.util.Arrays;
+import java.util.Vector;
 import javax.sql.rowset.RowSetWarning;
 
 /**
@@ -49,7 +51,7 @@ public class SerialJavaObject implements Serializable, Cloneable {
     /**
      * Placeholder for object to be serialized.
      */
-    private final Object obj;
+    private Object obj;
 
 
    /**
@@ -82,18 +84,9 @@ public class SerialJavaObject implements Serializable, Cloneable {
         // any of these are static, this should invalidate
         // the action of attempting to persist these fields
         // in a serialized form
-
-        boolean anyStaticFields = false;
         fields = c.getFields();
 
-        for (int i = 0; i < fields.length; i++ ) {
-            if ( fields[i].getModifiers() == Modifier.STATIC ) {
-                anyStaticFields = true;
-            }
-        }
-
-
-        if (anyStaticFields) {
+        if (hasStaticFields(fields)) {
             throw new SerialException("Located static fields in " +
                 "object instance. Cannot serialize");
         }
@@ -132,7 +125,7 @@ public class SerialJavaObject implements Serializable, Cloneable {
     }
 
     /**
-         * The identifier that assists in the serialization of this
+     * The identifier that assists in the serialization of this
      * <code>SerialJavaObject</code> object.
      */
     static final long serialVersionUID = -1465795139032831023L;
@@ -142,15 +135,117 @@ public class SerialJavaObject implements Serializable, Cloneable {
      * object. When there are multiple warnings, each warning is chained to the
      * previous warning.
      */
-    java.util.Vector<RowSetWarning> chain;
+    Vector<RowSetWarning> chain;
+
+    /**
+     * Compares this SerialJavaObject to the specified object.
+     * The result is {@code true} if and only if the argument
+     * is not {@code null} and is a {@code SerialJavaObject}
+     * object that is identical to this object
+     *
+     * @param  o The object to compare this {@code SerialJavaObject} against
+     *
+     * @return  {@code true} if the given object represents a {@code SerialJavaObject}
+     *          equivalent to this SerialJavaObject, {@code false} otherwise
+     *
+     */
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof SerialJavaObject) {
+            SerialJavaObject sjo = (SerialJavaObject) o;
+            return obj.equals(sjo.obj);
+        }
+        return false;
+    }
+
+    /**
+     * Returns a hash code for this SerialJavaObject. The hash code for a
+     * {@code SerialJavaObject} object is taken as the hash code of
+     * the {@code Object} it stores
+     *
+     * @return  a hash code value for this object.
+     */
+    public int hashCode() {
+        return 31 + obj.hashCode();
+    }
+
+    /**
+     * Returns a clone of this {@code SerialJavaObject}.
+     *
+     * @return  a clone of this SerialJavaObject
+     */
+
+    public Object clone() {
+        try {
+            SerialJavaObject sjo = (SerialJavaObject) super.clone();
+            sjo.fields = Arrays.copyOf(fields, fields.length);
+            if (chain != null)
+                sjo.chain = new Vector<>(chain);
+            return sjo;
+        } catch (CloneNotSupportedException ex) {
+            // this shouldn't happen, since we are Cloneable
+            throw new InternalError();
+        }
+    }
 
     /**
      * Registers the given warning.
      */
     private void setWarning(RowSetWarning e) {
         if (chain == null) {
-            chain = new java.util.Vector<>();
+            chain = new Vector<>();
         }
         chain.add(e);
+    }
+
+    /**
+     * readObject is called to restore the state of the {@code SerialJavaObject}
+     * from a stream.
+     */
+    private void readObject(ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
+
+        ObjectInputStream.GetField fields1 = s.readFields();
+        @SuppressWarnings("unchecked")
+        Vector<RowSetWarning> tmp = (Vector<RowSetWarning>)fields1.get("chain", null);
+        if (tmp != null)
+            chain = new Vector<>(tmp);
+
+        obj = fields1.get("obj", null);
+        if (obj != null) {
+            fields = obj.getClass().getFields();
+            if(hasStaticFields(fields))
+                throw new IOException("Located static fields in " +
+                "object instance. Cannot serialize");
+        } else {
+            throw new IOException("Object cannot be null!");
+        }
+
+    }
+
+    /**
+     * writeObject is called to save the state of the {@code SerialJavaObject}
+     * to a stream.
+     */
+    private void writeObject(ObjectOutputStream s)
+            throws IOException {
+        ObjectOutputStream.PutField fields = s.putFields();
+        fields.put("obj", obj);
+        fields.put("chain", chain);
+        s.writeFields();
+    }
+
+    /*
+     * Check to see if there are any Static Fields in this object
+     */
+    private static boolean hasStaticFields(Field[] fields) {
+        for (Field field : fields) {
+            if ( field.getModifiers() == Modifier.STATIC) {
+                return true;
+            }
+        }
+        return false;
     }
 }

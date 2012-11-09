@@ -260,7 +260,7 @@ Rule	Egypt	2006	only	-	Sep	21	23:00s	0	-
 # I received a mail from an airline which says that the daylight
 # saving time in Egypt will end in the night of 2007-09-06 to 2007-09-07.
 # From Jesper Norgaard Welen (2007-08-15): [The following agree:]
-# http://www.nentjes.info/Bill/bill5.htm 
+# http://www.nentjes.info/Bill/bill5.htm
 # http://www.timeanddate.com/worldclock/city.html?n=53
 # From Steffen Thorsen (2007-09-04): The official information...:
 # http://www.sis.gov.eg/En/EgyptOnline/Miscellaneous/000002/0207000000000000001580.htm
@@ -314,18 +314,18 @@ Rule	Egypt	2007	only	-	Sep	Thu>=1	23:00s	0	-
 # in September.
 
 # From Steffen Thorsen (2009-08-11):
-# We have been able to confirm the August change with the Egyptian Cabinet 
+# We have been able to confirm the August change with the Egyptian Cabinet
 # Information and Decision Support Center:
 # <a href="http://www.timeanddate.com/news/time/egypt-dst-ends-2009.html">
 # http://www.timeanddate.com/news/time/egypt-dst-ends-2009.html
 # </a>
-# 
+#
 # The Middle East News Agency
 # <a href="http://www.mena.org.eg/index.aspx">
 # http://www.mena.org.eg/index.aspx
 # </a>
 # also reports "Egypt starts winter time on August 21"
-# today in article numbered "71, 11/08/2009 12:25 GMT." 
+# today in article numbered "71, 11/08/2009 12:25 GMT."
 # Only the title above is available without a subscription to their service,
 # and can be found by searching for "winter" in their search engine
 # (at least today).
@@ -504,7 +504,7 @@ Zone Africa/Nouakchott	-1:03:48 -	LMT	1912
 # From Steffen Thorsen (2008-06-25):
 # Mauritius plans to observe DST from 2008-11-01 to 2009-03-31 on a trial
 # basis....
-# It seems that Mauritius observed daylight saving time from 1982-10-10 to 
+# It seems that Mauritius observed daylight saving time from 1982-10-10 to
 # 1983-03-20 as well, but that was not successful....
 # http://www.timeanddate.com/news/time/mauritius-daylight-saving-time.html
 
@@ -528,12 +528,12 @@ Zone Africa/Nouakchott	-1:03:48 -	LMT	1912
 # than previously announced (2008-11-01 to 2009-03-31).  The new start
 # date is 2008-10-26 at 02:00 and the new end date is 2009-03-27 (no time
 # given, but it is probably at either 2 or 3 wall clock time).
-# 
-# A little strange though, since the article says that they moved the date 
-# to align itself with Europe and USA which also change time on that date, 
-# but that means they have not paid attention to what happened in 
-# USA/Canada last year (DST ends first Sunday in November). I also wonder 
-# why that they end on a Friday, instead of aligning with Europe which 
+#
+# A little strange though, since the article says that they moved the date
+# to align itself with Europe and USA which also change time on that date,
+# but that means they have not paid attention to what happened in
+# USA/Canada last year (DST ends first Sunday in November). I also wonder
+# why that they end on a Friday, instead of aligning with Europe which
 # changes two days later.
 
 # From Alex Krivenyshev (2008-07-11):
@@ -592,7 +592,7 @@ Zone Africa/Nouakchott	-1:03:48 -	LMT	1912
 # </a>
 
 # From Arthur David Olson (2009-07-11):
-# The "mauritius-dst-will-not-repeat" wrapup includes this: 
+# The "mauritius-dst-will-not-repeat" wrapup includes this:
 # "The trial ended on March 29, 2009, when the clocks moved back by one hour
 # at 2am (or 02:00) local time..."
 
@@ -686,8 +686,8 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # XXX--guess that it is only Morocco for now; guess only 2008 for now.
 
 # From Steffen Thorsen (2008-08-27):
-# Morocco will change the clocks back on the midnight between August 31 
-# and September 1. They originally planned to observe DST to near the end 
+# Morocco will change the clocks back on the midnight between August 31
+# and September 1. They originally planned to observe DST to near the end
 # of September:
 #
 # One article about it (in French):
@@ -821,6 +821,23 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # "...&agrave; partir du dernier dimance d'avril et non fins mars,
 # comme annonc&eacute; pr&eacute;c&eacute;demment."
 
+# From Milamber Space Network (2012-07-17):
+# The official return to GMT is announced by the Moroccan government:
+# <a href="http://www.mmsp.gov.ma/fr/actualites.aspx?id=288">
+# http://www.mmsp.gov.ma/fr/actualites.aspx?id=288 [in French]
+# </a>
+#
+# Google translation, lightly edited:
+# Back to the standard time of the Kingdom (GMT)
+# Pursuant to Decree No. 2-12-126 issued on 26 Jumada (I) 1433 (April 18,
+# 2012) and in accordance with the order of Mr. President of the
+# Government No. 3-47-12 issued on 24 Sha'ban (11 July 2012), the Ministry
+# of Public Service and Administration Modernization announces the return
+# of the legal time of the Kingdom (GMT) from Friday, July 20, 2012 until
+# Monday, August 20, 2012.  So the time will be delayed by 60 minutes from
+# 3:00 am Friday, July 20, 2012 and will again be advanced by 60 minutes
+# August 20, 2012 from 2:00 am.
+
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 
 Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	S
@@ -848,6 +865,8 @@ Rule	Morocco	2011	only	-	Apr	 3	 0:00	1:00	S
 Rule	Morocco	2011	only	-	Jul	 31	 0	0	-
 Rule	Morocco	2012	max	-	Apr	 lastSun 2:00	1:00	S
 Rule	Morocco	2012	max	-	Sep	 lastSun 3:00	0	-
+Rule	Morocco	2012	only	-	Jul	 20	 3:00	0	-
+Rule	Morocco	2012	only	-	Aug	 20	 2:00	1:00	S
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
@@ -876,7 +895,7 @@ Zone	Africa/Maputo	2:10:20 -	LMT	1903 Mar
 # Forecasting Riaan van Zyl explained that the far eastern parts of
 # the country are close to 40 minutes earlier in sunrise than the rest
 # of the country.
-# 
+#
 # From Paul Eggert (2007-03-31):
 # Apparently the Caprivi Strip informally observes Botswana time, but
 # we have no details.  In the meantime people there can use Africa/Gaborone.

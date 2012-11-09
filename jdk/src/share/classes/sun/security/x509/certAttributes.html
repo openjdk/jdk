@@ -6,7 +6,7 @@
 <h2><center>Certificate Attributes</center></h2>
 <font size=3><center>July 1998</font></center>
 <p>
-In JDK1.2 we provide an implementation of X.509 (version 3). 
+In JDK1.2 we provide an implementation of X.509 (version 3).
 The X509CertImpl class supports the following methods to
 manipulate the various attributes of a certificate:
 <pre>
@@ -86,9 +86,9 @@ AlgorithmId</td>
 <td>issuer</td>
 <td>x509.info.issuer<br>
 x509.info.issuer.dname</td>
-<td>CertificateIssuerName.IDENT<br>
+<td>none<br>
 X509CertImpl.ISSUER_DN</td>
-<td>CertificateIssuerName<br>
+<td>X500Name<br>
 X500Name</td>
 </tr>
 <tr>
@@ -109,9 +109,9 @@ java.util.Date</td>
 <td>subject</td>
 <td>x509.info.subject<br>
 x509.info.subject.dname</td>
-<td>CertificateSubjectName.IDENT<br>
+<td>none<br>
 X509CertImpl.SUBJECT_DN</td>
-<td>CertificateSubjectName<br>
+<td>X500Name<br>
 X500Name</td>
 </tr>
 <tr>
@@ -127,18 +127,18 @@ X509Key</td>
 <td>issuerUniqueID</td>
 <td>x509.info.issuerID<br>
 x509.info.issuerID.id</td>
-<td>CertificateIssuerUniqueIdentity.IDENT<br>
+<td>none<br>
 none</td>
-<td>CertificateIssuerUniqueIdentity<br>
+<td>UniqueIdentity<br>
 UniqueIdentity</td>
 </tr>
 <tr>
 <td>subjectUniqueID</td>
 <td>x509.info.subjectID<br>
 x509.info.subjectID.id</td>
-<td>CertificateSubjectUniqueIdentity.IDENT<br>
+<td>none<br>
 none</td>
-<td>CertificateSubjectUniqueIdentity<br>
+<td>UniqueIdentity<br>
 UniqueIdentity</td>
 </tr>
 <tr>

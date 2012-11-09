@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,15 @@ import javax.crypto.spec.*;
 import javax.crypto.interfaces.PBEKey;
 
 public class HmacSaltLengths {
+
+    private static final String[] ALGOS = {
+        "HmacPBESHA1",
+        "PBEWithHmacSHA1",
+        "PBEWithHmacSHA224",
+        "PBEWithHmacSHA256",
+        "PBEWithHmacSHA384",
+        "PBEWithHmacSHA512"
+    };
 
     private static void runTest(String alg, byte[] plaintext,
                                 char[] password, Provider p)
@@ -81,7 +90,9 @@ public class HmacSaltLengths {
         long start = System.currentTimeMillis();
         Provider p = Security.getProvider("SunJCE");
         System.out.println("Testing provider " + p.getName() + "...");
-        runTest("HmacPBESHA1", input, PASSWD, p);
+        for (String algo : ALGOS) {
+            runTest(algo, input, PASSWD, p);
+        }
         System.out.println("All tests passed");
         long stop = System.currentTimeMillis();
         System.out.println("Done (" + (stop - start) + " ms).");
