@@ -526,27 +526,35 @@ jlong Counter2Micros(jlong counts)
     }
     return (counts * 1000 * 1000)/counterFrequency.QuadPart;
 }
-
 /*
  * windows snprintf does not guarantee a null terminator in the buffer,
  * if the computed size is equal to or greater than the buffer size,
- * as well as error conditions, this function guarantees a null terminator
- * under all these conditions. An unreasonable buffer size will return
- * an error value.
+ * as well as error conditions. This function guarantees a null terminator
+ * under all these conditions. An unreasonable buffer or size will return
+ * an error value. Under all other conditions this function will return the
+ * size of the bytes actually written minus the null terminator, similar
+ * to ansi snprintf api. Thus when calling this function the caller must
+ * ensure storage for the null terminator.
  */
-size_t
-JLI_Snprintf(char* buffer, size_t size, const char* format, ...)
-{
-    size_t rc;
+int
+JLI_Snprintf(char* buffer, size_t size, const char* format, ...) {
+    int rc;
     va_list vl;
-    if (size <= 0)
+    if (size == 0 || buffer == NULL)
         return -1;
+    buffer[0] = '\0';
     va_start(vl, format);
-    rc = vsnprintf(buffer, size - 1, format, vl);
-    /* force a null terminator, if something is amiss */
-    if (rc < 0 || rc >= size)
-        buffer[size - 1] = '\0';
+    rc = vsnprintf(buffer, size, format, vl);
     va_end(vl);
+    /* force a null terminator, if something is amiss */
+    if (rc < 0) {
+        /* apply ansi semantics */
+        buffer[size - 1] = '\0';
+        return size;
+    } else if (rc == size) {
+        /* force a null terminator */
+        buffer[size - 1] = '\0';
+    }
     return rc;
 }
 
@@ -1441,7 +1449,10 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
         // we add the indicator
         tlen = 1 + JLI_StrLen(strv[i]) + 1;
         nargv[i] = (char *) JLI_MemAlloc(tlen);
-        JLI_Snprintf(nargv[i], tlen, "%c%s", arg_expand ? 'T' : 'F', strv[i]);
+        if (JLI_Snprintf(nargv[i], tlen, "%c%s", arg_expand ? 'T' : 'F',
+                         strv[i]) < 0) {
+            return NULL;
+        }
         JLI_TraceLauncher("%s\n", nargv[i]);
     }
 
