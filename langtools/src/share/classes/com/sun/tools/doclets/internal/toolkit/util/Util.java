@@ -555,7 +555,7 @@ public class Util {
      *
      * @param cd the ClassDoc to check.
      * @param lowerCaseOnly true if you want the name returned in lower case.
-     *                      If false, the first letter of the name is capatilized.
+     *                      If false, the first letter of the name is capitalized.
      * @return
      */
     public static String getTypeName(Configuration config,

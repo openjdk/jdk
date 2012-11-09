@@ -75,6 +75,7 @@ public class Types {
     final boolean allowBoxing;
     final boolean allowCovariantReturns;
     final boolean allowObjectToPrimitiveCast;
+    final boolean allowDefaultMethods;
     final ClassReader reader;
     final Check chk;
     JCDiagnostic.Factory diags;
@@ -98,6 +99,7 @@ public class Types {
         allowBoxing = source.allowBoxing();
         allowCovariantReturns = source.allowCovariantReturns();
         allowObjectToPrimitiveCast = source.allowObjectToPrimitiveCast();
+        allowDefaultMethods = source.allowDefaultMethods();
         reader = ClassReader.instance(context);
         chk = Check.instance(context);
         capturedName = names.fromString("<captured wildcard>");
@@ -2146,6 +2148,13 @@ public class Types {
                 return List.nil();
             }
         };
+
+    public boolean isDirectSuperInterface(Type t, TypeSymbol tsym) {
+        for (Type t2 : interfaces(tsym.type)) {
+            if (isSameType(t, t2)) return true;
+        }
+        return false;
+    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="isDerivedRaw">
@@ -2310,6 +2319,10 @@ public class Types {
         return false;
     }
 
+    public boolean overridesObjectMethod(Symbol msym) {
+        return ((MethodSymbol)msym).implementation(syms.objectType.tsym, this, true) != null;
+    }
+
     // <editor-fold defaultstate="collapsed" desc="Determining method implementation in given site">
     class ImplementationCache {
 
@@ -2453,6 +2466,70 @@ public class Types {
     public CompoundScope membersClosure(Type site, boolean skipInterface) {
         return membersCache.visit(site, skipInterface);
     }
+    // </editor-fold>
+
+
+    //where
+    public List<MethodSymbol> interfaceCandidates(Type site, MethodSymbol ms) {
+        return interfaceCandidates(site, ms, false);
+    }
+
+    public List<MethodSymbol> interfaceCandidates(Type site, MethodSymbol ms, boolean intfOnly) {
+        Filter<Symbol> filter = new MethodFilter(ms, site, intfOnly);
+        List<MethodSymbol> candidates = List.nil();
+        for (Symbol s : membersClosure(site, false).getElements(filter)) {
+            if (!site.tsym.isInterface() && !s.owner.isInterface()) {
+                return List.of((MethodSymbol)s);
+            } else if (!candidates.contains(s)) {
+                candidates = candidates.prepend((MethodSymbol)s);
+            }
+        }
+        return prune(candidates, ownerComparator);
+    }
+
+    public List<MethodSymbol> prune(List<MethodSymbol> methods, Comparator<MethodSymbol> cmp) {
+        ListBuffer<MethodSymbol> methodsMin = ListBuffer.lb();
+        for (MethodSymbol m1 : methods) {
+            boolean isMin_m1 = true;
+            for (MethodSymbol m2 : methods) {
+                if (m1 == m2) continue;
+                if (cmp.compare(m2, m1) < 0) {
+                    isMin_m1 = false;
+                    break;
+                }
+            }
+            if (isMin_m1)
+                methodsMin.append(m1);
+        }
+        return methodsMin.toList();
+    }
+
+    Comparator<MethodSymbol> ownerComparator = new Comparator<MethodSymbol>() {
+        public int compare(MethodSymbol s1, MethodSymbol s2) {
+            return s1.owner.isSubClass(s2.owner, Types.this) ? -1 : 1;
+        }
+    };
+    // where
+            private class MethodFilter implements Filter<Symbol> {
+
+                Symbol msym;
+                Type site;
+                boolean intfOnly;
+
+                MethodFilter(Symbol msym, Type site, boolean intfOnly) {
+                    this.msym = msym;
+                    this.site = site;
+                    this.intfOnly = intfOnly;
+                }
+
+                public boolean accepts(Symbol s) {
+                    return s.kind == Kinds.MTH &&
+                            (!intfOnly || s.owner.isInterface()) &&
+                            s.name == msym.name &&
+                            s.isInheritedIn(site.tsym, Types.this) &&
+                            overrideEquivalent(memberType(site, s), memberType(site, msym));
+                }
+            };
     // </editor-fold>
 
     /**

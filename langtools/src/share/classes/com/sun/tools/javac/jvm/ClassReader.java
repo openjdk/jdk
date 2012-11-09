@@ -115,6 +115,9 @@ public class ClassReader implements Completer {
      */
     boolean lintClassfile;
 
+    /** Switch: allow default methods
+     */
+    boolean allowDefaultMethods;
 
     /** Switch: preserve parameter names from the variable table.
      */
@@ -279,6 +282,7 @@ public class ClassReader implements Completer {
         allowVarargs     = source.allowVarargs();
         allowAnnotations = source.allowAnnotations();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
+        allowDefaultMethods = source.allowDefaultMethods();
         saveParameterNames = options.isSet("save-parameter-names");
         cacheCompletionFailure = options.isUnset("dev");
         preferSource = "source".equals(options.get("-Xprefer"));
@@ -937,6 +941,18 @@ public class ClassReader implements Completer {
 
             new AttributeReader(names.Code, V45_3, MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
+                    if (currentOwner.isInterface() &&
+                            (sym.flags_field & ABSTRACT) == 0 && !name.equals(names.clinit)) {
+                        if (majorVersion > Target.JDK1_8.majorVersion ||
+                                //todo replace with Target.Version when available
+                                (majorVersion == Target.JDK1_8.majorVersion && minorVersion >= Target.JDK1_8.minorVersion)) {
+                            currentOwner.flags_field |= DEFAULT;
+                            sym.flags_field |= DEFAULT | ABSTRACT;
+                        } else {
+                            //protect against ill-formed classfiles
+                            throw new CompletionFailure(currentOwner, "default method found in pre JDK 8 classfile");
+                        }
+                    }
                     if (readAllOfClassFile || saveParameterNames)
                         ((MethodSymbol)sym).code = readCode(sym);
                     else

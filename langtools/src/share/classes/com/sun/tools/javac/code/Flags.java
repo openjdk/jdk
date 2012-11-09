@@ -67,7 +67,6 @@ public class Flags {
         if ((mask&NATIVE) != 0) flags.add(Flag.NATIVE);
         if ((mask&INTERFACE) != 0) flags.add(Flag.INTERFACE);
         if ((mask&ABSTRACT) != 0) flags.add(Flag.ABSTRACT);
-        if ((mask&DEFAULT) != 0) flags.add(Flag.DEFAULT);
         if ((mask&STRICTFP) != 0) flags.add(Flag.STRICTFP);
         if ((mask&BRIDGE) != 0) flags.add(Flag.BRIDGE);
         if ((mask&SYNTHETIC) != 0) flags.add(Flag.SYNTHETIC);
