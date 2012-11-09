@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.catch.without.try
-// key: compiler.err.expected
-// key: compiler.err.not.stmt
-// key: compiler.err.lambda.not.supported.in.source
 
 class CatchWithoutTry {
     void m() {

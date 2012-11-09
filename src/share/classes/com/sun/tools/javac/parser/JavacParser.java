@@ -88,6 +88,15 @@ public class JavacParser implements Parser {
     /** End position mappings container */
     private final AbstractEndPosTable endPosTable;
 
+    interface ErrorRecoveryAction {
+        JCTree doRecover(JavacParser parser);
+    }
+
+    enum BasicErrorRecoveryAction implements ErrorRecoveryAction {
+        BLOCK_STMT {public JCTree doRecover(JavacParser parser) { return parser.parseStatementAsBlock(); }},
+        CATCH_CLAUSE {public JCTree doRecover(JavacParser parser) { return parser.catchClause(); }}
+    }
+
     /** Construct a parser from a given scanner, tree factory and log.
      */
     protected JavacParser(ParserFactory fac,
@@ -2102,11 +2111,15 @@ public class JavacParser implements Parser {
             nextToken();
             return toP(F.at(pos).Skip());
         case ELSE:
-            return toP(F.Exec(syntaxError("else.without.if")));
+            int elsePos = token.pos;
+            nextToken();
+            return doRecover(elsePos, BasicErrorRecoveryAction.BLOCK_STMT, "else.without.if");
         case FINALLY:
-            return toP(F.Exec(syntaxError("finally.without.try")));
+            int finallyPos = token.pos;
+            nextToken();
+            return doRecover(finallyPos, BasicErrorRecoveryAction.BLOCK_STMT, "finally.without.try");
         case CATCH:
-            return toP(F.Exec(syntaxError("catch.without.try")));
+            return doRecover(token.pos, BasicErrorRecoveryAction.CATCH_CLAUSE, "catch.without.try");
         case ASSERT: {
             if (allowAsserts && token.kind == ASSERT) {
                 nextToken();
@@ -2137,6 +2150,13 @@ public class JavacParser implements Parser {
                 return stat;
             }
         }
+    }
+
+    private JCStatement doRecover(int startPos, ErrorRecoveryAction action, String key) {
+        int errPos = S.errPos();
+        JCTree stm = action.doRecover(this);
+        S.errPos(errPos);
+        return toP(F.Exec(syntaxError(startPos, List.<JCTree>of(stm), key)));
     }
 
     /** CatchClause     = CATCH "(" FormalParameter ")" Block
