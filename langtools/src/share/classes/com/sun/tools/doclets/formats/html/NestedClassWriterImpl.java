@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,11 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Writes nested class documentation in HTML format.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Robert Field
  * @author Atul M Dambalkar
@@ -198,9 +203,8 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            return writer.getHyperLink("", (cd == null) ? "nested_class_summary":
-                "nested_classes_inherited_from_class_" +
-                cd.qualifiedName(),
+            return writer.getHyperLink((cd == null) ? "nested_class_summary":
+                "nested_classes_inherited_from_class_" + cd.qualifiedName(),
                 writer.getResource("doclet.navNested"));
         } else {
             return writer.getResource("doclet.navNested");

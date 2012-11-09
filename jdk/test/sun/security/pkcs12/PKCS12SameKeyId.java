@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 6958026
  * @summary Problem with PKCS12 keystore
+ * @compile -XDignore.symbol.file PKCS12SameKeyId.java
+ * @run main PKCS12SameKeyId
  */
 
 import java.io.File;
@@ -40,7 +42,6 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
-import sun.security.tools.KeyTool;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X500Name;
@@ -61,7 +62,7 @@ public class PKCS12SameKeyId {
             String cmd = "-keystore " + JKSFILE
                     + " -storepass changeit -keypass changeit "
                     + "-genkeypair -alias p" + i + " -dname CN=" + i;
-            KeyTool.main(cmd.split(" "));
+            sun.security.tools.keytool.Main.main(cmd.split(" "));
         }
 
         // Prepare EncryptedPrivateKeyInfo parameters, copied from various

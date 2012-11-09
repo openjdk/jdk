@@ -77,9 +77,8 @@ public class UnicodeReader {
      * that {@code inputLength < input.length} or
      * {@code input[input.length -1]} is a white space character.
      *
-     * @param fac the factory which created this Scanner
-     * @param input the input, might be modified
-     * @param inputLength the size of the input.
+     * @param sf the factory which created this Scanner
+     * @param buffer the input, might be modified
      * Must be positive and less than or equal to input.length.
      */
     protected UnicodeReader(ScannerFactory sf, CharBuffer buffer) {
@@ -255,16 +254,16 @@ public class UnicodeReader {
 
     /**
      * Returns a copy of a character array subset of the input buffer.
-     * The returned array begins at the <code>beginIndex</code> and
-     * extends to the character at index <code>endIndex - 1</code>.
-     * Thus the length of the substring is <code>endIndex-beginIndex</code>.
+     * The returned array begins at the {@code beginIndex} and
+     * extends to the character at index {@code endIndex - 1}.
+     * Thus the length of the substring is {@code endIndex-beginIndex}.
      * This behavior is like
-     * <code>String.substring(beginIndex, endIndex)</code>.
+     * {@code String.substring(beginIndex, endIndex)}.
      * Unicode escape sequences are not translated.
      *
      * @param beginIndex the beginning index, inclusive.
      * @param endIndex the ending index, exclusive.
-     * @throws IndexOutOfBounds if either offset is outside of the
+     * @throws ArrayIndexOutOfBoundsException if either offset is outside of the
      *         array bounds
      */
     public char[] getRawCharacters(int beginIndex, int endIndex) {

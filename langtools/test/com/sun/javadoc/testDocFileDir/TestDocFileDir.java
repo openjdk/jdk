@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,17 +77,19 @@ public class TestDocFileDir extends JavadocTester {
     //Output dir = Input Dir
     private static final String[] ARGS1 =
         new String[] {
-            "-d", BUG_ID + "-1", "-sourcepath",
-            "blah" + String.valueOf(File.pathSeparatorChar) +
-                BUG_ID + "-1" + String.valueOf(File.pathSeparatorChar) +
-                "blah", "pkg"};
+            "-d", BUG_ID + "-1",
+            "-sourcepath",
+                "blah" + File.pathSeparator + BUG_ID + "-1" + File.pathSeparator + "blah",
+            "pkg"};
 
     //Exercising -docfilessubdirs and -excludedocfilessubdir
     private static final String[] ARGS2 =
         new String[] {
-            "-d", BUG_ID + "-2", "-sourcepath", SRC_DIR,
-            "-docfilessubdirs", "-excludedocfilessubdir",
-            "subdir-excluded1:subdir-excluded2", "pkg"};
+            "-d", BUG_ID + "-2",
+            "-sourcepath", SRC_DIR,
+            "-docfilessubdirs",
+            "-excludedocfilessubdir", "subdir-excluded1:subdir-excluded2",
+            "pkg"};
 
     //Output dir = "", Input dir = ""
     private static final String[] ARGS0 =

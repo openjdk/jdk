@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,11 @@ public class DateFormatSymbolsProviderImpl extends DateFormatSymbolsProvider {
          */
         public void setAmPmStrings(String[] newAmpms) {
             ampms = newAmpms;
+        }
+
+        @Override
+        public String[][] getZoneStrings() {
+            return new String[0][0];
         }
     }
 }

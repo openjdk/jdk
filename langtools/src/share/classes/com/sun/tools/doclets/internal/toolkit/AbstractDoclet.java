@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,19 @@
 
 package com.sun.tools.doclets.internal.toolkit;
 
+import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.builders.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.javadoc.*;
-import java.util.*;
-import java.io.*;
+import java.io.File;
+import java.util.StringTokenizer;
 
 /**
  * An abstract implementation of a Doclet.
  *
- * This code is not part of an API.
- * It is implementation that is subject to change.
- * Do not use it as an API.
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Jamie Ho
  */
@@ -105,7 +106,7 @@ public abstract class AbstractDoclet {
 
     /**
      * Start the generation of files. Call generate methods in the individual
-     * writers, which will in turn genrate the documentation files. Call the
+     * writers, which will in turn generate the documentation files. Call the
      * TreeWriter generation first to ensure the Class Hierarchy is built
      * first and then can be used in the later generation.
      *
@@ -123,17 +124,7 @@ public abstract class AbstractDoclet {
         ClassTree classtree = new ClassTree(configuration, configuration.nodeprecated);
 
         generateClassFiles(root, classtree);
-        if (configuration.sourcepath != null && configuration.sourcepath.length() > 0) {
-            StringTokenizer pathTokens = new StringTokenizer(configuration.sourcepath,
-                String.valueOf(File.pathSeparatorChar));
-            boolean first = true;
-            while(pathTokens.hasMoreTokens()){
-                Util.copyDocFiles(configuration,
-                    pathTokens.nextToken() + File.separator,
-                    DocletConstants.DOC_FILES_DIR_NAME, first);
-                first = false;
-            }
-        }
+        Util.copyDocFiles(configuration, DocPaths.DOC_FILES);
 
         PackageListWriter.generate(configuration);
         generatePackageFiles(classtree);

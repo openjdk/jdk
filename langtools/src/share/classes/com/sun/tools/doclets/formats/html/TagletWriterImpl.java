@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,11 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 /**
  * The taglet writer that writes HTML.
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @since 1.5
  * @author Jamie Ho
  * @author Bhavesh Patel (Modified)
@@ -61,15 +66,17 @@ public class TagletWriterImpl extends TagletWriter {
     public TagletOutput getDocRootOutput() {
         if (htmlWriter.configuration.docrootparent.length() > 0)
             return new TagletOutputImpl(htmlWriter.configuration.docrootparent);
+        else if (htmlWriter.pathToRoot.isEmpty())
+            return new TagletOutputImpl(".");
         else
-            return new TagletOutputImpl(htmlWriter.relativepathNoSlash);
+            return new TagletOutputImpl(htmlWriter.pathToRoot.getPath());
     }
 
     /**
      * {@inheritDoc}
      */
     public TagletOutput deprecatedTagOutput(Doc doc) {
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
         Tag[] deprs = doc.tags("deprecated");
         if (doc instanceof ClassDoc) {
             if (Util.isDeprecated((ProgramElementDoc) doc)) {
@@ -120,9 +127,9 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public TagletOutput getParamHeader(String header) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append("<dt>");
-        result.append("<span class=\"strong\">" +  header + "</span></dt>");
+        result.append("<span class=\"strong\">").append(header).append("</span></dt>");
         return new TagletOutputImpl(result.toString());
     }
 
@@ -165,19 +172,24 @@ public class TagletWriterImpl extends TagletWriter {
                 htmlWriter instanceof ClassWriterImpl) {
             //Automatically add link to constant values page for constant fields.
             result = addSeeHeader(result);
-            result += htmlWriter.getHyperLinkString(htmlWriter.relativePath +
-                ConfigurationImpl.CONSTANTS_FILE_NAME
-                + "#" + ((ClassWriterImpl) htmlWriter).getClassDoc().qualifiedName()
-                + "." + ((FieldDoc) holder).name(),
-                htmlWriter.configuration.getText("doclet.Constants_Summary"));
+            DocPath constantsPath =
+                    htmlWriter.pathToRoot.resolve(DocPaths.CONSTANT_VALUES);
+            String whichConstant =
+                    ((ClassWriterImpl) htmlWriter).getClassDoc().qualifiedName() + "." + ((FieldDoc) holder).name();
+            DocLink link = constantsPath.fragment(whichConstant);
+            result += htmlWriter.getHyperLinkString(link,
+                    htmlWriter.configuration.getText("doclet.Constants_Summary"),
+                    false);
         }
         if (holder.isClass() && ((ClassDoc)holder).isSerializable()) {
             //Automatically add link to serialized form page for serializable classes.
             if ((SerializedFormBuilder.serialInclude(holder) &&
                       SerializedFormBuilder.serialInclude(((ClassDoc)holder).containingPackage()))) {
                 result = addSeeHeader(result);
-                result += htmlWriter.getHyperLinkString(htmlWriter.relativePath + "serialized-form.html",
-                        ((ClassDoc)holder).qualifiedName(), htmlWriter.configuration.getText("doclet.Serialized_Form"), false);
+                DocPath serialPath = htmlWriter.pathToRoot.resolve(DocPaths.SERIALIZED_FORM);
+                DocLink link = serialPath.fragment(((ClassDoc)holder).qualifiedName());
+                result += htmlWriter.getHyperLinkString(link,
+                        htmlWriter.configuration.getText("doclet.Serialized_Form"), false);
             }
         }
         return result.equals("") ? null : new TagletOutputImpl(result + "</dd>");

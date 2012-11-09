@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,11 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Writes enum constant documentation in HTML format.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Jamie Ho
  * @author Bhavesh Patel (Modified)
@@ -258,7 +263,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      */
     protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            return writer.getHyperLink("", (cd == null)?
+            return writer.getHyperLink((cd == null)?
                 "enum_constant_summary":
                 "enum_constants_inherited_from_class_" +
                 configuration().getClassName(cd),
@@ -273,7 +278,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      */
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(writer.getHyperLink("", "enum_constant_detail",
+            liNav.addContent(writer.getHyperLink("enum_constant_detail",
                     writer.getResource("doclet.navEnum")));
         } else {
             liNav.addContent(writer.getResource("doclet.navEnum"));

@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2012 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -55,7 +55,7 @@
 
 #include "lcms2_internal.h"
 
-// This module incorporates several interpolation routines, for 1, 3, 4, 5, 6, 7 and 8 channels on input and
+// This module incorporates several interpolation routines, for 1 to 8 channels on input and
 // up to 65535 channels on output. The user may change those by using the interpolation plug-in
 
 // Interpolation routines by default
@@ -83,7 +83,7 @@ cmsBool  _cmsRegisterInterpPlugin(cmsPluginBase* Data)
 
 
 // Set the interpolation method
-static
+
 cmsBool _cmsSetInterpolationRoutine(cmsInterpParams* p)
 {
     // Invoke factory, possibly in the Plug-in
@@ -318,6 +318,116 @@ void Eval1InputFloat(const cmsFloat32Number Value[],
        }
 }
 
+// Bilinear interpolation (16 bits) - cmsFloat32Number version
+static
+void BilinearInterpFloat(const cmsFloat32Number Input[],
+                         cmsFloat32Number Output[],
+                         const cmsInterpParams* p)
+
+{
+#   define LERP(a,l,h)    (cmsFloat32Number) ((l)+(((h)-(l))*(a)))
+#   define DENS(i,j)      (LutTable[(i)+(j)+OutChan])
+
+    const cmsFloat32Number* LutTable = (cmsFloat32Number*) p ->Table;
+    cmsFloat32Number      px, py;
+    int        x0, y0,
+               X0, Y0, X1, Y1;
+    int        TotalOut, OutChan;
+    cmsFloat32Number      fx, fy,
+        d00, d01, d10, d11,
+        dx0, dx1,
+        dxy;
+
+    TotalOut   = p -> nOutputs;
+    px = Input[0] * p->Domain[0];
+    py = Input[1] * p->Domain[1];
+
+    x0 = (int) _cmsQuickFloor(px); fx = px - (cmsFloat32Number) x0;
+    y0 = (int) _cmsQuickFloor(py); fy = py - (cmsFloat32Number) y0;
+
+    X0 = p -> opta[1] * x0;
+    X1 = X0 + (Input[0] >= 1.0 ? 0 : p->opta[1]);
+
+    Y0 = p -> opta[0] * y0;
+    Y1 = Y0 + (Input[1] >= 1.0 ? 0 : p->opta[0]);
+
+    for (OutChan = 0; OutChan < TotalOut; OutChan++) {
+
+        d00 = DENS(X0, Y0);
+        d01 = DENS(X0, Y1);
+        d10 = DENS(X1, Y0);
+        d11 = DENS(X1, Y1);
+
+        dx0 = LERP(fx, d00, d10);
+        dx1 = LERP(fx, d01, d11);
+
+        dxy = LERP(fy, dx0, dx1);
+
+        Output[OutChan] = dxy;
+    }
+
+
+#   undef LERP
+#   undef DENS
+}
+
+// Bilinear interpolation (16 bits) - optimized version
+static
+void BilinearInterp16(register const cmsUInt16Number Input[],
+                      register cmsUInt16Number Output[],
+                      register const cmsInterpParams* p)
+
+{
+#define DENS(i,j) (LutTable[(i)+(j)+OutChan])
+#define LERP(a,l,h)     (cmsUInt16Number) (l + ROUND_FIXED_TO_INT(((h-l)*a)))
+
+           const cmsUInt16Number* LutTable = (cmsUInt16Number*) p ->Table;
+           int        OutChan, TotalOut;
+           cmsS15Fixed16Number    fx, fy;
+  register int        rx, ry;
+           int        x0, y0;
+  register int        X0, X1, Y0, Y1;
+           int        d00, d01, d10, d11,
+                      dx0, dx1,
+                      dxy;
+
+    TotalOut   = p -> nOutputs;
+
+    fx = _cmsToFixedDomain((int) Input[0] * p -> Domain[0]);
+    x0  = FIXED_TO_INT(fx);
+    rx  = FIXED_REST_TO_INT(fx);    // Rest in 0..1.0 domain
+
+
+    fy = _cmsToFixedDomain((int) Input[1] * p -> Domain[1]);
+    y0  = FIXED_TO_INT(fy);
+    ry  = FIXED_REST_TO_INT(fy);
+
+
+    X0 = p -> opta[1] * x0;
+    X1 = X0 + (Input[0] == 0xFFFFU ? 0 : p->opta[1]);
+
+    Y0 = p -> opta[0] * y0;
+    Y1 = Y0 + (Input[1] == 0xFFFFU ? 0 : p->opta[0]);
+
+    for (OutChan = 0; OutChan < TotalOut; OutChan++) {
+
+        d00 = DENS(X0, Y0);
+        d01 = DENS(X0, Y1);
+        d10 = DENS(X1, Y0);
+        d11 = DENS(X1, Y1);
+
+        dx0 = LERP(rx, d00, d10);
+        dx1 = LERP(rx, d01, d11);
+
+        dxy = LERP(ry, dx0, dx1);
+
+        Output[OutChan] = (cmsUInt16Number) dxy;
+    }
+
+
+#   undef LERP
+#   undef DENS
+}
 
 
 // Trilinear interpolation (16 bits) - cmsFloat32Number version
@@ -343,9 +453,21 @@ void TrilinearInterpFloat(const cmsFloat32Number Input[],
 
     TotalOut   = p -> nOutputs;
 
-    px = Input[0] * p->Domain[0];
-    py = Input[1] * p->Domain[1];
-    pz = Input[2] * p->Domain[2];
+    // We need some clipping here
+    px = Input[0];
+    py = Input[1];
+    pz = Input[2];
+
+    if (px < 0) px = 0;
+    if (px > 1) px = 1;
+    if (py < 0) py = 0;
+    if (py > 1) py = 1;
+    if (pz < 0) pz = 0;
+    if (pz > 1) pz = 1;
+
+    px *= p->Domain[0];
+    py *= p->Domain[1];
+    pz *= p->Domain[2];
 
     x0 = (int) _cmsQuickFloor(px); fx = px - (cmsFloat32Number) x0;
     y0 = (int) _cmsQuickFloor(py); fy = py - (cmsFloat32Number) y0;
@@ -486,9 +608,21 @@ void TetrahedralInterpFloat(const cmsFloat32Number Input[],
 
     TotalOut   = p -> nOutputs;
 
-    px = Input[0] * p->Domain[0];
-    py = Input[1] * p->Domain[1];
-    pz = Input[2] * p->Domain[2];
+    // We need some clipping here
+    px = Input[0];
+    py = Input[1];
+    pz = Input[2];
+
+    if (px < 0) px = 0;
+    if (px > 1) px = 1;
+    if (py < 0) py = 0;
+    if (py > 1) py = 1;
+    if (pz < 0) pz = 0;
+    if (pz > 1) pz = 1;
+
+    px *= p->Domain[0];
+    py *= p->Domain[1];
+    pz *= p->Domain[2];
 
     x0 = (int) _cmsQuickFloor(px); rx = (px - (cmsFloat32Number) x0);
     y0 = (int) _cmsQuickFloor(py); ry = (py - (cmsFloat32Number) y0);
@@ -570,7 +704,6 @@ void TetrahedralInterpFloat(const cmsFloat32Number Input[],
 
 
 
-#define DENS(i,j,k) (LutTable[(i)+(j)+(k)+OutChan])
 
 static
 void TetrahedralInterp16(register const cmsUInt16Number Input[],
@@ -578,99 +711,131 @@ void TetrahedralInterp16(register const cmsUInt16Number Input[],
                          register const cmsInterpParams* p)
 {
     const cmsUInt16Number* LutTable = (cmsUInt16Number*) p -> Table;
-    cmsS15Fixed16Number    fx, fy, fz;
-    cmsS15Fixed16Number    rx, ry, rz;
-    int                    x0, y0, z0;
-    cmsS15Fixed16Number    c0, c1, c2, c3, Rest;
-    cmsUInt32Number        OutChan;
-    cmsS15Fixed16Number    X0, X1, Y0, Y1, Z0, Z1;
-    cmsUInt32Number        TotalOut = p -> nOutputs;
+    cmsS15Fixed16Number fx, fy, fz;
+    cmsS15Fixed16Number rx, ry, rz;
+    int x0, y0, z0;
+    cmsS15Fixed16Number c0, c1, c2, c3, Rest;
+    cmsS15Fixed16Number X0, X1, Y0, Y1, Z0, Z1;
+    cmsUInt32Number TotalOut = p -> nOutputs;
 
+    fx = _cmsToFixedDomain((int) Input[0] * p -> Domain[0]);
+    fy = _cmsToFixedDomain((int) Input[1] * p -> Domain[1]);
+    fz = _cmsToFixedDomain((int) Input[2] * p -> Domain[2]);
 
-    fx  = _cmsToFixedDomain((int) Input[0] * p -> Domain[0]);
-    fy  = _cmsToFixedDomain((int) Input[1] * p -> Domain[1]);
-    fz  = _cmsToFixedDomain((int) Input[2] * p -> Domain[2]);
+    x0 = FIXED_TO_INT(fx);
+    y0 = FIXED_TO_INT(fy);
+    z0 = FIXED_TO_INT(fz);
 
-    x0  = FIXED_TO_INT(fx);
-    y0  = FIXED_TO_INT(fy);
-    z0  = FIXED_TO_INT(fz);
-
-    rx  = FIXED_REST_TO_INT(fx);
-    ry  = FIXED_REST_TO_INT(fy);
-    rz  = FIXED_REST_TO_INT(fz);
+    rx = FIXED_REST_TO_INT(fx);
+    ry = FIXED_REST_TO_INT(fy);
+    rz = FIXED_REST_TO_INT(fz);
 
     X0 = p -> opta[2] * x0;
-    X1 = X0 + (Input[0] == 0xFFFFU ? 0 : p->opta[2]);
+    X1 = (Input[0] == 0xFFFFU ? 0 : p->opta[2]);
 
     Y0 = p -> opta[1] * y0;
-    Y1 = Y0 + (Input[1] == 0xFFFFU ? 0 : p->opta[1]);
+    Y1 = (Input[1] == 0xFFFFU ? 0 : p->opta[1]);
 
     Z0 = p -> opta[0] * z0;
-    Z1 = Z0 + (Input[2] == 0xFFFFU ? 0 : p->opta[0]);
+    Z1 = (Input[2] == 0xFFFFU ? 0 : p->opta[0]);
 
-    // These are the 6 Tetrahedral
-    for (OutChan=0; OutChan < TotalOut; OutChan++) {
+    LutTable = &LutTable[X0+Y0+Z0];
 
-        c0 = DENS(X0, Y0, Z0);
+    // Output should be computed as x = ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest))
+    // which expands as: x = (Rest + ((Rest+0x7fff)/0xFFFF) + 0x8000)>>16
+    // This can be replaced by: t = Rest+0x8001, x = (t + (t>>16))>>16
+    // at the cost of being off by one at 7fff and 17ffe.
 
-        if (rx >= ry && ry >= rz) {
-
-            c1 = DENS(X1, Y0, Z0) - c0;
-            c2 = DENS(X1, Y1, Z0) - DENS(X1, Y0, Z0);
-            c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
-
-        }
-        else
-            if (rx >= rz && rz >= ry) {
-
-                c1 = DENS(X1, Y0, Z0) - c0;
-                c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
-                c3 = DENS(X1, Y0, Z1) - DENS(X1, Y0, Z0);
-
+    if (rx >= ry) {
+        if (ry >= rz) {
+            Y1 += X1;
+            Z1 += Y1;
+            for (; TotalOut; TotalOut--) {
+                c1 = LutTable[X1];
+                c2 = LutTable[Y1];
+                c3 = LutTable[Z1];
+                c0 = *LutTable++;
+                c3 -= c2;
+                c2 -= c1;
+                c1 -= c0;
+                Rest = c1 * rx + c2 * ry + c3 * rz + 0x8001;
+                *Output++ = (cmsUInt16Number) c0 + ((Rest + (Rest>>16))>>16);
             }
-            else
-                if (rz >= rx && rx >= ry) {
-
-                    c1 = DENS(X1, Y0, Z1) - DENS(X0, Y0, Z1);
-                    c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
-                    c3 = DENS(X0, Y0, Z1) - c0;
-
-                }
-                else
-                    if (ry >= rx && rx >= rz) {
-
-                        c1 = DENS(X1, Y1, Z0) - DENS(X0, Y1, Z0);
-                        c2 = DENS(X0, Y1, Z0) - c0;
-                        c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
-
-                    }
-                    else
-                        if (ry >= rz && rz >= rx) {
-
-                            c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
-                            c2 = DENS(X0, Y1, Z0) - c0;
-                            c3 = DENS(X0, Y1, Z1) - DENS(X0, Y1, Z0);
-
-                        }
-                        else
-                            if (rz >= ry && ry >= rx) {
-
-                                c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
-                                c2 = DENS(X0, Y1, Z1) - DENS(X0, Y0, Z1);
-                                c3 = DENS(X0, Y0, Z1) - c0;
-
-                            }
-                            else  {
-                                c1 = c2 = c3 = 0;
-                            }
-
-                            Rest = c1 * rx + c2 * ry + c3 * rz;
-
-                            Output[OutChan] = (cmsUInt16Number) c0 + ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest));
+        } else if (rz >= rx) {
+            X1 += Z1;
+            Y1 += X1;
+            for (; TotalOut; TotalOut--) {
+                c1 = LutTable[X1];
+                c2 = LutTable[Y1];
+                c3 = LutTable[Z1];
+                c0 = *LutTable++;
+                c2 -= c1;
+                c1 -= c3;
+                c3 -= c0;
+                Rest = c1 * rx + c2 * ry + c3 * rz + 0x8001;
+                *Output++ = (cmsUInt16Number) c0 + ((Rest + (Rest>>16))>>16);
+            }
+        } else {
+            Z1 += X1;
+            Y1 += Z1;
+            for (; TotalOut; TotalOut--) {
+                c1 = LutTable[X1];
+                c2 = LutTable[Y1];
+                c3 = LutTable[Z1];
+                c0 = *LutTable++;
+                c2 -= c3;
+                c3 -= c1;
+                c1 -= c0;
+                Rest = c1 * rx + c2 * ry + c3 * rz + 0x8001;
+                *Output++ = (cmsUInt16Number) c0 + ((Rest + (Rest>>16))>>16);
+            }
+        }
+    } else {
+        if (rx >= rz) {
+            X1 += Y1;
+            Z1 += X1;
+            for (; TotalOut; TotalOut--) {
+                c1 = LutTable[X1];
+                c2 = LutTable[Y1];
+                c3 = LutTable[Z1];
+                c0 = *LutTable++;
+                c3 -= c1;
+                c1 -= c2;
+                c2 -= c0;
+                Rest = c1 * rx + c2 * ry + c3 * rz + 0x8001;
+                *Output++ = (cmsUInt16Number) c0 + ((Rest + (Rest>>16))>>16);
+            }
+        } else if (ry >= rz) {
+            Z1 += Y1;
+            X1 += Z1;
+            for (; TotalOut; TotalOut--) {
+                c1 = LutTable[X1];
+                c2 = LutTable[Y1];
+                c3 = LutTable[Z1];
+                c0 = *LutTable++;
+                c1 -= c3;
+                c3 -= c2;
+                c2 -= c0;
+                Rest = c1 * rx + c2 * ry + c3 * rz + 0x8001;
+                *Output++ = (cmsUInt16Number) c0 + ((Rest + (Rest>>16))>>16);
+            }
+        } else {
+            Y1 += Z1;
+            X1 += Y1;
+            for (; TotalOut; TotalOut--) {
+                c1 = LutTable[X1];
+                c2 = LutTable[Y1];
+                c3 = LutTable[Z1];
+                c0 = *LutTable++;
+                c1 -= c2;
+                c2 -= c3;
+                c3 -= c0;
+                Rest = c1 * rx + c2 * ry + c3 * rz + 0x8001;
+                *Output++ = (cmsUInt16Number) c0 + ((Rest + (Rest>>16))>>16);
+            }
+        }
     }
-
 }
-#undef DENS
 
 
 #define DENS(i,j,k) (LutTable[(i)+(j)+(k)+OutChan])
@@ -1102,7 +1267,7 @@ void Eval7Inputs(register const cmsUInt16Number Input[],
        K1 = p16 -> opta[6] * (k0 + (Input[0] != 0xFFFFU ? 1 : 0));
 
        p1 = *p16;
-       memmove(&p1.Domain[0], &p16 ->Domain[1], 5*sizeof(cmsUInt32Number));
+       memmove(&p1.Domain[0], &p16 ->Domain[1], 6*sizeof(cmsUInt32Number));
 
        T = LutTable + K0;
        p1.Table = T;
@@ -1285,6 +1450,12 @@ cmsInterpFunction DefaultInterpolatorsFactory(cmsUInt32Number nInputChannels, cm
                }
                break;
 
+           case 2: // Duotone
+               if (IsFloat)
+                      Interpolation.LerpFloat =  BilinearInterpFloat;
+               else
+                      Interpolation.Lerp16    =  BilinearInterp16;
+               break;
 
            case 3:  // RGB et al
 

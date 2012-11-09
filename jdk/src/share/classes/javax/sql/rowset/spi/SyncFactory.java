@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,11 +229,7 @@ public class SyncFactory {
      * The standard resource file name.
      */
     private static String ROWSET_PROPERTIES = "rowset.properties";
-    /**
-     * The RI Optimistic Provider.
-     */
-    private static String default_provider =
-            "com.sun.rowset.providers.RIOptimisticProvider";
+
     /**
      *  Permission required to invoke setJNDIContext and setLogger
      */
@@ -248,24 +244,13 @@ public class SyncFactory {
      * The <code>Logger</code> object to be used by the <code>SyncFactory</code>.
      */
     private static volatile Logger rsLogger;
-    /**
-     *
-     */
-    private static Level rsLevel;
+
     /**
      * The registry of available <code>SyncProvider</code> implementations.
      * See section 2.0 of the class comment for <code>SyncFactory</code> for an
      * explanation of how a provider can be added to this registry.
      */
     private static Hashtable<String, SyncProvider> implementations;
-    /**
-     * Internal sync object used to maintain the SPI as a singleton
-     */
-    private static Object logSync = new Object();
-    /**
-     * Internal PrintWriter field for logging facility
-     */
-    private static java.io.PrintWriter logWriter = null;
 
     /**
      * Adds the the given synchronization provider to the factory register. Guidelines

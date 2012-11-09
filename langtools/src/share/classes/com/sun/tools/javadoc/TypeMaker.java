@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,21 @@
 package com.sun.tools.javadoc;
 
 import com.sun.javadoc.*;
-
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Type.TypeVar;
-import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.util.List;
+import static com.sun.tools.javac.code.TypeTag.ARRAY;
 
-import static com.sun.tools.javac.code.TypeTags.*;
-
-
+/**
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ */
 public class TypeMaker {
 
     public static com.sun.javadoc.Type getType(DocEnv env, Type t) {
@@ -54,7 +57,7 @@ public class TypeMaker {
         if (env.legacyDoclet) {
             t = env.types.erasure(t);
         }
-        switch (t.tag) {
+        switch (t.getTag()) {
         case CLASS:
             if (ClassDocImpl.isGeneric((ClassSymbol)t.tsym)) {
                 return env.getParameterizedType((ClassType)t);
@@ -104,10 +107,10 @@ public class TypeMaker {
     }
 
     public static String getTypeName(Type t, boolean full) {
-        switch (t.tag) {
+        switch (t.getTag()) {
         case ARRAY:
             StringBuilder s = new StringBuilder();
-            while (t.tag == ARRAY) {
+            while (t.hasTag(ARRAY)) {
                 s.append("[]");
                 t = ((ArrayType)t).elemtype;
             }
@@ -126,10 +129,10 @@ public class TypeMaker {
      * Class names are qualified if "full" is true.
      */
     static String getTypeString(DocEnv env, Type t, boolean full) {
-        switch (t.tag) {
+        switch (t.getTag()) {
         case ARRAY:
             StringBuilder s = new StringBuilder();
-            while (t.tag == ARRAY) {
+            while (t.hasTag(ARRAY)) {
                 s.append("[]");
                 t = env.types.elemtype(t);
             }
@@ -200,7 +203,7 @@ public class TypeMaker {
         private com.sun.javadoc.Type skipArrays() {
             if (skipArraysCache == null) {
                 Type t;
-                for (t = arrayType; t.tag == ARRAY; t = env.types.elemtype(t)) { }
+                for (t = arrayType; t.hasTag(ARRAY); t = env.types.elemtype(t)) { }
                 skipArraysCache = TypeMaker.getType(env, t);
             }
             return skipArraysCache;
@@ -213,7 +216,7 @@ public class TypeMaker {
          */
         public String dimension() {
             StringBuilder dimension = new StringBuilder();
-            for (Type t = arrayType; t.tag == ARRAY; t = env.types.elemtype(t)) {
+            for (Type t = arrayType; t.hasTag(ARRAY); t = env.types.elemtype(t)) {
                 dimension.append("[]");
             }
             return dimension.toString();

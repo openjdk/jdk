@@ -768,8 +768,8 @@ ciMethod* ciEnv::get_method_by_index_impl(constantPoolHandle cpool,
       Method* m = lookup_method(accessor->get_instanceKlass(), lookup, name_sym, sig_sym, bc);
       if (m != NULL &&
           (bc == Bytecodes::_invokestatic
-           ?  InstanceKlass::cast(m->method_holder())->is_not_initialized()
-           : !InstanceKlass::cast(m->method_holder())->is_loaded())) {
+           ?  m->method_holder()->is_not_initialized()
+           : !m->method_holder()->is_loaded())) {
         m = NULL;
       }
       if (m != NULL) {
@@ -1056,7 +1056,7 @@ void ciEnv::register_method(ciMethod* target,
                         method_name,
                         entry_bci);
         }
-        InstanceKlass::cast(method->method_holder())->add_osr_nmethod(nm);
+        method->method_holder()->add_osr_nmethod(nm);
 
       }
     }

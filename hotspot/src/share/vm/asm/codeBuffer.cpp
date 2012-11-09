@@ -758,7 +758,7 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
     }
   }
 
-  if (dest->blob() == NULL) {
+  if (dest->blob() == NULL && dest_filled != NULL) {
     // Destination is a final resting place, not just another buffer.
     // Normalize uninitialized bytes in the final padding.
     Copy::fill_to_bytes(dest_filled, dest_end - dest_filled,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ public final class ServiceLoader<S>
 
     private ServiceLoader(Class<S> svc, ClassLoader cl) {
         service = Objects.requireNonNull(svc, "Service interface cannot be null");
-        loader = cl;
+        loader = (cl == null) ? ClassLoader.getSystemClassLoader() : cl;
         reload();
     }
 
@@ -358,14 +358,21 @@ public final class ServiceLoader<S>
             }
             String cn = nextName;
             nextName = null;
+            Class<?> c = null;
             try {
-                S p = service.cast(Class.forName(cn, true, loader)
-                                   .newInstance());
-                providers.put(cn, p);
-                return p;
+                c = Class.forName(cn, false, loader);
             } catch (ClassNotFoundException x) {
                 fail(service,
                      "Provider " + cn + " not found");
+            }
+            if (!service.isAssignableFrom(c)) {
+                fail(service,
+                     "Provider " + cn  + " not a subtype");
+            }
+            try {
+                S p = service.cast(c.newInstance());
+                providers.put(cn, p);
+                return p;
             } catch (Throwable x) {
                 fail(service,
                      "Provider " + cn + " could not be instantiated: " + x,

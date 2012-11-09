@@ -223,7 +223,7 @@ public class ScheduledThreadPoolExecutor
         }
 
         /**
-         * Creates a one-shot action with given nanoTime-based trigger.
+         * Creates a one-shot action with given nanoTime-based trigger time.
          */
         ScheduledFutureTask(Callable<V> callable, long ns) {
             super(callable);
@@ -237,7 +237,7 @@ public class ScheduledThreadPoolExecutor
         }
 
         public int compareTo(Delayed other) {
-            if (other == this) // compare zero ONLY if same object
+            if (other == this) // compare zero if same object
                 return 0;
             if (other instanceof ScheduledFutureTask) {
                 ScheduledFutureTask<?> x = (ScheduledFutureTask<?>)other;
@@ -251,9 +251,8 @@ public class ScheduledThreadPoolExecutor
                 else
                     return 1;
             }
-            long d = (getDelay(NANOSECONDS) -
-                      other.getDelay(NANOSECONDS));
-            return (d == 0) ? 0 : ((d < 0) ? -1 : 1);
+            long diff = getDelay(NANOSECONDS) - other.getDelay(NANOSECONDS);
+            return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
         }
 
         /**
@@ -862,7 +861,7 @@ public class ScheduledThreadPoolExecutor
         private final Condition available = lock.newCondition();
 
         /**
-         * Set f's heapIndex if it is a ScheduledFutureTask.
+         * Sets f's heapIndex if it is a ScheduledFutureTask.
          */
         private void setIndex(RunnableScheduledFuture<?> f, int idx) {
             if (f instanceof ScheduledFutureTask)
@@ -870,7 +869,7 @@ public class ScheduledThreadPoolExecutor
         }
 
         /**
-         * Sift element added at bottom up to its heap-ordered spot.
+         * Sifts element added at bottom up to its heap-ordered spot.
          * Call only when holding lock.
          */
         private void siftUp(int k, RunnableScheduledFuture<?> key) {
@@ -888,7 +887,7 @@ public class ScheduledThreadPoolExecutor
         }
 
         /**
-         * Sift element added at top down to its heap-ordered spot.
+         * Sifts element added at top down to its heap-ordered spot.
          * Call only when holding lock.
          */
         private void siftDown(int k, RunnableScheduledFuture<?> key) {
@@ -910,7 +909,7 @@ public class ScheduledThreadPoolExecutor
         }
 
         /**
-         * Resize the heap array.  Call only when holding lock.
+         * Resizes the heap array.  Call only when holding lock.
          */
         private void grow() {
             int oldCapacity = queue.length;
@@ -921,7 +920,7 @@ public class ScheduledThreadPoolExecutor
         }
 
         /**
-         * Find index of given object, or -1 if absent
+         * Finds index of given object, or -1 if absent.
          */
         private int indexOf(Object x) {
             if (x != null) {
@@ -1162,15 +1161,14 @@ public class ScheduledThreadPoolExecutor
         }
 
         /**
-         * Return and remove first element only if it is expired.
+         * Returns first element only if it is expired.
          * Used only by drainTo.  Call only when holding lock.
          */
-        private RunnableScheduledFuture<?> pollExpired() {
+        private RunnableScheduledFuture<?> peekExpired() {
             // assert lock.isHeldByCurrentThread();
             RunnableScheduledFuture<?> first = queue[0];
-            if (first == null || first.getDelay(NANOSECONDS) > 0)
-                return null;
-            return finishPoll(first);
+            return (first == null || first.getDelay(NANOSECONDS) > 0) ?
+                null : first;
         }
 
         public int drainTo(Collection<? super Runnable> c) {
@@ -1183,8 +1181,9 @@ public class ScheduledThreadPoolExecutor
             try {
                 RunnableScheduledFuture<?> first;
                 int n = 0;
-                while ((first = pollExpired()) != null) {
-                    c.add(first);
+                while ((first = peekExpired()) != null) {
+                    c.add(first);   // In this order, in case add() throws.
+                    finishPoll(first);
                     ++n;
                 }
                 return n;
@@ -1205,8 +1204,9 @@ public class ScheduledThreadPoolExecutor
             try {
                 RunnableScheduledFuture<?> first;
                 int n = 0;
-                while (n < maxElements && (first = pollExpired()) != null) {
-                    c.add(first);
+                while (n < maxElements && (first = peekExpired()) != null) {
+                    c.add(first);   // In this order, in case add() throws.
+                    finishPoll(first);
                     ++n;
                 }
                 return n;

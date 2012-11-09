@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,30 @@
 
 package javax.management.remote.rmi;
 
+import java.io.IOException;
+import java.rmi.MarshalledObject;
+import java.rmi.UnmarshalException;
+import java.rmi.server.Unreferenced;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.security.Permissions;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.security.ProtectionDomain;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+
+import javax.management.*;
+import javax.management.remote.JMXServerErrorException;
+import javax.management.remote.NotificationResult;
+import javax.management.remote.TargetedNotification;
+import javax.security.auth.Subject;
+
 import static com.sun.jmx.mbeanserver.Util.cast;
 import com.sun.jmx.remote.internal.ServerCommunicatorAdmin;
 import com.sun.jmx.remote.internal.ServerNotifForwarder;
@@ -34,44 +58,6 @@ import com.sun.jmx.remote.util.ClassLoaderWithRepository;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 import com.sun.jmx.remote.util.OrderClassLoaders;
-
-import java.io.IOException;
-import java.rmi.MarshalledObject;
-import java.rmi.UnmarshalException;
-import java.rmi.server.Unreferenced;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-
-import javax.management.Attribute;
-import javax.management.AttributeList;
-import javax.management.AttributeNotFoundException;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.IntrospectionException;
-import javax.management.InvalidAttributeValueException;
-import javax.management.ListenerNotFoundException;
-import javax.management.MBeanException;
-import javax.management.MBeanInfo;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.NotCompliantMBeanException;
-import javax.management.NotificationFilter;
-import javax.management.ObjectInstance;
-import javax.management.ObjectName;
-import javax.management.QueryExp;
-import javax.management.ReflectionException;
-import javax.management.RuntimeOperationsException;
-import javax.management.remote.JMXServerErrorException;
-import javax.management.remote.NotificationResult;
-import javax.management.remote.TargetedNotification;
-import javax.security.auth.Subject;
 
 /**
  * <p>Implementation of the {@link RMIConnection} interface.  User
@@ -143,6 +129,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         this.mbeanServer = rmiServer.getMBeanServer();
 
         final ClassLoader dcl = defaultClassLoader;
+
         this.classLoaderWithRepository =
             AccessController.doPrivileged(
                 new PrivilegedAction<ClassLoaderWithRepository>() {
@@ -151,11 +138,38 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                       mbeanServer.getClassLoaderRepository(),
                                       dcl);
                     }
+                },
+
+                withPermissions( new MBeanPermission("*", "getClassLoaderRepository"),
+                                 new RuntimePermission("createClassLoader"))
+            );
+
+
+        this.defaultContextClassLoader =
+            AccessController.doPrivileged(
+                new PrivilegedAction<ClassLoader>() {
+            @Override
+                    public ClassLoader run() {
+                        return new CombinedClassLoader(Thread.currentThread().getContextClassLoader(),
+                                dcl);
+                    }
                 });
+
         serverCommunicatorAdmin = new
           RMIServerCommunicatorAdmin(EnvHelp.getServerConnectionTimeout(env));
 
         this.env = env;
+    }
+
+    private static AccessControlContext withPermissions(Permission ... perms){
+        Permissions col = new Permissions();
+
+        for (Permission thePerm : perms ) {
+            col.add(thePerm);
+        }
+
+        final ProtectionDomain pd = new ProtectionDomain(null, col);
+        return new AccessControlContext( new ProtectionDomain[] { pd });
     }
 
     private synchronized ServerNotifForwarder getServerNotifFwd() {
@@ -507,7 +521,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  "connectionId=" + connectionId
                  +" unwrapping query with defaultClassLoader.");
 
-        queryValue = unwrap(query, defaultClassLoader, QueryExp.class);
+        queryValue = unwrap(query, defaultContextClassLoader, QueryExp.class);
 
         try {
             final Object params[] = new Object[] { name, queryValue };
@@ -542,7 +556,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  "connectionId=" + connectionId
                  +" unwrapping query with defaultClassLoader.");
 
-        queryValue = unwrap(query, defaultClassLoader, QueryExp.class);
+        queryValue = unwrap(query, defaultContextClassLoader, QueryExp.class);
 
         try {
             final Object params[] = new Object[] { name, queryValue };
@@ -1330,7 +1344,9 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                         public ClassLoader run() throws InstanceNotFoundException {
                             return mbeanServer.getClassLoader(name);
                         }
-                    });
+                    },
+                    withPermissions(new MBeanPermission("*", "getClassLoader"))
+            );
         } catch (PrivilegedActionException pe) {
             throw (InstanceNotFoundException) extractException(pe);
         }
@@ -1345,7 +1361,9 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                         public Object run() throws InstanceNotFoundException {
                             return mbeanServer.getClassLoaderFor(name);
                         }
-                    });
+                    },
+                    withPermissions(new MBeanPermission("*", "getClassLoaderFor"))
+            );
         } catch (PrivilegedActionException pe) {
             throw (InstanceNotFoundException) extractException(pe);
         }
@@ -1572,7 +1590,8 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             ClassLoader orderCL = AccessController.doPrivileged(
                 new PrivilegedExceptionAction<ClassLoader>() {
                     public ClassLoader run() throws Exception {
-                        return new OrderClassLoaders(cl1, cl2);
+                        return new CombinedClassLoader(Thread.currentThread().getContextClassLoader(),
+                                new OrderClassLoaders(cl1, cl2));
                     }
                 }
             );
@@ -1664,6 +1683,8 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
 
     private final ClassLoader defaultClassLoader;
 
+    private final ClassLoader defaultContextClassLoader;
+
     private final ClassLoaderWithRepository classLoaderWithRepository;
 
     private boolean terminated = false;
@@ -1746,4 +1767,43 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
 
     private static final ClassLogger logger =
         new ClassLogger("javax.management.remote.rmi", "RMIConnectionImpl");
+
+    private static final class CombinedClassLoader extends ClassLoader {
+
+        private final static class ClassLoaderWrapper extends ClassLoader {
+            ClassLoaderWrapper(ClassLoader cl) {
+                super(cl);
+            }
+
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve)
+                    throws ClassNotFoundException {
+                return super.loadClass(name, resolve);
+            }
+        };
+
+        final ClassLoaderWrapper defaultCL;
+
+        private CombinedClassLoader(ClassLoader parent, ClassLoader defaultCL) {
+            super(parent);
+            this.defaultCL = new ClassLoaderWrapper(defaultCL);
+        }
+
+        @Override
+        protected Class<?> loadClass(String name, boolean resolve)
+        throws ClassNotFoundException {
+            try {
+                super.loadClass(name, resolve);
+            } catch(Exception e) {
+                for(Throwable t = e; t != null; t = t.getCause()) {
+                    if(t instanceof SecurityException) {
+                        throw t==e?(SecurityException)t:new SecurityException(t.getMessage(), e);
+                    }
+                }
+            }
+            final Class<?> cl = defaultCL.loadClass(name, resolve);
+            return cl;
+        }
+
+    }
 }

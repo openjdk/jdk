@@ -348,15 +348,15 @@ TOOLS = \
 	sun/tools/serialver	\
 	sun/tools/tree		\
 	sun/tools/util		\
-	sun/security/tools/JarBASE64Encoder.class \
-	sun/security/tools/JarSigner.class \
-	sun/security/tools/JarSignerParameters.class \
-	sun/security/tools/JarSignerResources.class \
-	sun/security/tools/JarSignerResources_ja.class \
-	sun/security/tools/JarSignerResources_zh_CN.class \
-	sun/security/tools/SignatureFile\$$Block.class \
-	sun/security/tools/SignatureFile.class \
-	sun/security/tools/TimestampedSigner.class \
+	sun/security/tools/jarsigner/JarBASE64Encoder.class \
+	sun/security/tools/jarsigner/Main.class \
+	sun/security/tools/jarsigner/JarSignerParameters.class \
+	sun/security/tools/jarsigner/Resources.class \
+	sun/security/tools/jarsigner/Resources_ja.class \
+	sun/security/tools/jarsigner/Resources_zh_CN.class \
+	sun/security/tools/jarsigner/SignatureFile\$$Block.class \
+	sun/security/tools/jarsigner/SignatureFile.class \
+	sun/security/tools/jarsigner/TimestampedSigner.class \
 	sun/rmi/rmic		\
 	sun/applet		\
 	sun/jvmstat		\
@@ -572,15 +572,15 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "sun/tools/serialver/" >> $@
 	$(ECHO) "sun/tools/tree/" >> $@
 	$(ECHO) "sun/tools/util/" >> $@
-	$(ECHO) "sun/security/tools/JarBASE64Encoder.class" >> $@
-	$(ECHO) "sun/security/tools/JarSigner.class" >> $@
-	$(ECHO) "sun/security/tools/JarSignerParameters.class" >> $@
-	$(ECHO) "sun/security/tools/JarSignerResources.class" >> $@
-	$(ECHO) "sun/security/tools/JarSignerResources_ja.class" >> $@
-	$(ECHO) "sun/security/tools/JarSignerResources_zh_CN.class" >> $@
-	$(ECHO) "sun/security/tools/SignatureFile\$$Block.class" >> $@
-	$(ECHO) "sun/security/tools/SignatureFile.class" >> $@
-	$(ECHO) "sun/security/tools/TimestampedSigner.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/JarBASE64Encoder.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/Main.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/JarSignerParameters.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/Resources.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/Resources_ja.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/Resources_zh_CN.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/SignatureFile\$$Block.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/SignatureFile.class" >> $@
+	$(ECHO) "sun/security/tools/jarsigner/TimestampedSigner.class" >> $@
 	$(ECHO) "sun/security/provider/Sun.class" >> $@
 	$(ECHO) "sun/security/rsa/SunRsaSign.class" >> $@
 	$(ECHO) "sun/security/ssl/" >> $@

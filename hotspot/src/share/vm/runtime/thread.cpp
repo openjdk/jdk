@@ -1042,6 +1042,7 @@ static void call_initializeSystemClass(TRAPS) {
 }
 
 char java_runtime_name[128] = "";
+char java_runtime_version[128] = "";
 
 // extract the JRE name from sun.misc.Version.java_runtime_name
 static const char* get_java_runtime_name(TRAPS) {
@@ -1058,6 +1059,27 @@ static const char* get_java_runtime_name(TRAPS) {
     const char* name = java_lang_String::as_utf8_string(name_oop,
                                                         java_runtime_name,
                                                         sizeof(java_runtime_name));
+    return name;
+  } else {
+    return NULL;
+  }
+}
+
+// extract the JRE version from sun.misc.Version.java_runtime_version
+static const char* get_java_runtime_version(TRAPS) {
+  Klass* k = SystemDictionary::find(vmSymbols::sun_misc_Version(),
+                                      Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+  fieldDescriptor fd;
+  bool found = k != NULL &&
+               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_runtime_version_name(),
+                                                        vmSymbols::string_signature(), &fd);
+  if (found) {
+    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    if (name_oop == NULL)
+      return NULL;
+    const char* name = java_lang_String::as_utf8_string(name_oop,
+                                                        java_runtime_version,
+                                                        sizeof(java_runtime_version));
     return name;
   } else {
     return NULL;
@@ -1195,6 +1217,7 @@ void NamedThread::set_name(const char* format, ...) {
 // timer interrupts exists on the platform.
 
 WatcherThread* WatcherThread::_watcher_thread   = NULL;
+bool WatcherThread::_startable = false;
 volatile bool  WatcherThread::_should_terminate = false;
 
 WatcherThread::WatcherThread() : Thread() {
@@ -1215,6 +1238,55 @@ WatcherThread::WatcherThread() : Thread() {
   }
 }
 
+int WatcherThread::sleep() const {
+  MutexLockerEx ml(PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
+
+  // remaining will be zero if there are no tasks,
+  // causing the WatcherThread to sleep until a task is
+  // enrolled
+  int remaining = PeriodicTask::time_to_wait();
+  int time_slept = 0;
+
+  // we expect this to timeout - we only ever get unparked when
+  // we should terminate or when a new task has been enrolled
+  OSThreadWaitState osts(this->osthread(), false /* not Object.wait() */);
+
+  jlong time_before_loop = os::javaTimeNanos();
+
+  for (;;) {
+    bool timedout = PeriodicTask_lock->wait(Mutex::_no_safepoint_check_flag, remaining);
+    jlong now = os::javaTimeNanos();
+
+    if (remaining == 0) {
+        // if we didn't have any tasks we could have waited for a long time
+        // consider the time_slept zero and reset time_before_loop
+        time_slept = 0;
+        time_before_loop = now;
+    } else {
+        // need to recalulate since we might have new tasks in _tasks
+        time_slept = (int) ((now - time_before_loop) / 1000000);
+    }
+
+    // Change to task list or spurious wakeup of some kind
+    if (timedout || _should_terminate) {
+        break;
+    }
+
+    remaining = PeriodicTask::time_to_wait();
+    if (remaining == 0) {
+        // Last task was just disenrolled so loop around and wait until
+        // another task gets enrolled
+        continue;
+    }
+
+    remaining -= time_slept;
+    if (remaining <= 0)
+      break;
+  }
+
+  return time_slept;
+}
+
 void WatcherThread::run() {
   assert(this == watcher_thread(), "just checking");
 
@@ -1227,26 +1299,7 @@ void WatcherThread::run() {
 
     // Calculate how long it'll be until the next PeriodicTask work
     // should be done, and sleep that amount of time.
-    size_t time_to_wait = PeriodicTask::time_to_wait();
-
-    // we expect this to timeout - we only ever get unparked when
-    // we should terminate
-    {
-      OSThreadWaitState osts(this->osthread(), false /* not Object.wait() */);
-
-      jlong prev_time = os::javaTimeNanos();
-      for (;;) {
-        int res= _SleepEvent->park(time_to_wait);
-        if (res == OS_TIMEOUT || _should_terminate)
-          break;
-        // spurious wakeup of some kind
-        jlong now = os::javaTimeNanos();
-        time_to_wait -= (now - prev_time) / 1000000;
-        if (time_to_wait <= 0)
-          break;
-        prev_time = now;
-      }
-    }
+    int time_waited = sleep();
 
     if (is_error_reported()) {
       // A fatal error has happened, the error handler(VMError::report_and_die)
@@ -1276,13 +1329,7 @@ void WatcherThread::run() {
       }
     }
 
-    PeriodicTask::real_time_tick(time_to_wait);
-
-    // If we have no more tasks left due to dynamic disenrollment,
-    // shut down the thread since we don't currently support dynamic enrollment
-    if (PeriodicTask::num_tasks() == 0) {
-      _should_terminate = true;
-    }
+    PeriodicTask::real_time_tick(time_waited);
   }
 
   // Signal that it is terminated
@@ -1297,22 +1344,33 @@ void WatcherThread::run() {
 }
 
 void WatcherThread::start() {
-  if (watcher_thread() == NULL) {
+  assert(PeriodicTask_lock->owned_by_self(), "PeriodicTask_lock required");
+
+  if (watcher_thread() == NULL && _startable) {
     _should_terminate = false;
     // Create the single instance of WatcherThread
     new WatcherThread();
   }
 }
 
+void WatcherThread::make_startable() {
+  assert(PeriodicTask_lock->owned_by_self(), "PeriodicTask_lock required");
+  _startable = true;
+}
+
 void WatcherThread::stop() {
+  {
+    MutexLockerEx ml(PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
+    _should_terminate = true;
+    OrderAccess::fence();  // ensure WatcherThread sees update in main loop
+
+    WatcherThread* watcher = watcher_thread();
+    if (watcher != NULL)
+      watcher->unpark();
+  }
+
   // it is ok to take late safepoints here, if needed
   MutexLocker mu(Terminator_lock);
-  _should_terminate = true;
-  OrderAccess::fence();  // ensure WatcherThread sees update in main loop
-
-  Thread* watcher = watcher_thread();
-  if (watcher != NULL)
-    watcher->_SleepEvent->unpark();
 
   while(watcher_thread() != NULL) {
     // This wait should make safepoint checks, wait without a timeout,
@@ -1328,6 +1386,11 @@ void WatcherThread::stop() {
     Terminator_lock->wait(!Mutex::_no_safepoint_check_flag, 0,
                           Mutex::_as_suspend_equivalent_flag);
   }
+}
+
+void WatcherThread::unpark() {
+  MutexLockerEx ml(PeriodicTask_lock->owned_by_self() ? NULL : PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
+  PeriodicTask_lock->notify();
 }
 
 void WatcherThread::print_on(outputStream* st) const {
@@ -3473,6 +3536,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
       // get the Java runtime name after java.lang.System is initialized
       JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
+      JDK_Version::set_runtime_version(get_java_runtime_version(THREAD));
     } else {
       warning("java.lang.System not initialized");
     }
@@ -3635,12 +3699,18 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     }
   }
 
-  // Start up the WatcherThread if there are any periodic tasks
-  // NOTE:  All PeriodicTasks should be registered by now. If they
-  //   aren't, late joiners might appear to start slowly (we might
-  //   take a while to process their first tick).
-  if (PeriodicTask::num_tasks() > 0) {
-    WatcherThread::start();
+  {
+      MutexLockerEx ml(PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
+      // Make sure the watcher thread can be started by WatcherThread::start()
+      // or by dynamic enrollment.
+      WatcherThread::make_startable();
+      // Start up the WatcherThread if there are any periodic tasks
+      // NOTE:  All PeriodicTasks should be registered by now. If they
+      //   aren't, late joiners might appear to start slowly (we might
+      //   take a while to process their first tick).
+      if (PeriodicTask::num_tasks() > 0) {
+          WatcherThread::start();
+      }
   }
 
   // Give os specific code one last chance to start

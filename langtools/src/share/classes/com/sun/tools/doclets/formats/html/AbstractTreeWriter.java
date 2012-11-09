@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,22 @@ package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
 import java.util.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.formats.html.markup.*;
+
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Abstract class to print the class hierarchy page for all the Classes. This
  * is sub-classed by {@link PackageTreeWriter} and {@link TreeWriter} to
  * generate the Package Tree and global Tree(for all the classes and packages)
  * pages.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  */
@@ -50,42 +56,19 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     private static final String LI_CIRCLE  = "circle";
 
     /**
-     * Constructor initilises classtree variable. This constructor will be used
+     * Constructor initializes classtree variable. This constructor will be used
      * while generating global tree file "overview-tree.html".
      *
+     * @param configuration  The current configuration
      * @param filename   File to be generated.
      * @param classtree  Tree built by {@link ClassTree}.
      * @throws IOException
      * @throws DocletAbortException
      */
     protected AbstractTreeWriter(ConfigurationImpl configuration,
-                                 String filename, ClassTree classtree)
+                                 DocPath filename, ClassTree classtree)
                                  throws IOException {
         super(configuration, filename);
-        this.classtree = classtree;
-    }
-
-    /**
-     * Create appropriate directory for the package and also initilise the
-     * relative path from this generated file to the current or
-     * the destination directory. This constructor will be used while
-     * generating "package tree" file.
-     *
-     * @param path Directories in this path will be created if they are not
-     * already there.
-     * @param filename Name of the package tree file to be generated.
-     * @param classtree The tree built using {@link ClassTree}.
-     * for the package pkg.
-     * @param pkg PackageDoc for which tree file will be generated.
-     * @throws IOException
-     * @throws DocletAbortException
-     */
-    protected AbstractTreeWriter(ConfigurationImpl configuration,
-                                 String path, String filename,
-                                 ClassTree classtree, PackageDoc pkg)
-                                 throws IOException {
-        super(configuration,
-              path, filename, DirectoryManager.getRelativePath(pkg.name()));
         this.classtree = classtree;
     }
 

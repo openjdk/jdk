@@ -2322,7 +2322,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Pre-load a static method's oop into O1.  Used both by locking code and
   // the normal JNI call code.
   if (method->is_static() && !is_critical_native) {
-    __ set_oop_constant(JNIHandles::make_local(Klass::cast(method->method_holder())->java_mirror()), O1);
+    __ set_oop_constant(JNIHandles::make_local(method->method_holder()->java_mirror()), O1);
 
     // Now handlize the static class mirror in O1.  It's known not-null.
     __ st_ptr(O1, SP, klass_offset + STACK_BIAS);

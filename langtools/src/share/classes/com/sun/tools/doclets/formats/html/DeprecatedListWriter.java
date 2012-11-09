@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,19 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.util.DeprecatedAPIListBuilder;
-import com.sun.tools.doclets.internal.toolkit.util.*;
+
 import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Generate File to list all the deprecated classes and class members with the
  * appropriate links.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @see java.util.List
  * @author Atul M Dambalkar
@@ -90,7 +95,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @param filename the file to be generated.
      */
     public DeprecatedListWriter(ConfigurationImpl configuration,
-                                String filename) throws IOException {
+                                DocPath filename) throws IOException {
         super(configuration, filename);
         this.configuration = configuration;
         NestedClassWriterImpl classW = new NestedClassWriterImpl(this);
@@ -111,7 +116,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @param configuration the current configuration of the doclet.
      */
     public static void generate(ConfigurationImpl configuration) {
-        String filename = "deprecated-list.html";
+        DocPath filename = DocPaths.DEPRECATED_LIST;
         try {
             DeprecatedListWriter depr =
                    new DeprecatedListWriter(configuration, filename);
@@ -175,7 +180,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     private void addIndexLink(DeprecatedAPIListBuilder builder,
             int type, Content contentTree) {
         if (builder.hasDocumentation(type)) {
-            Content li = HtmlTree.LI(getHyperLink("#" + ANCHORS[type],
+            Content li = HtmlTree.LI(getHyperLink(ANCHORS[type],
                     getResource(HEADING_KEYS[type])));
             contentTree.addContent(li);
         }
@@ -208,7 +213,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      *
      * @param builder the deprecated list builder
      * @param type the type of list being documented
-     * @param contentTree the content tree to which the anchor will be added
+     * @param htmlTree the content tree to which the anchor will be added
      */
     private void addAnchor(DeprecatedAPIListBuilder builder, int type, Content htmlTree) {
         if (builder.hasDocumentation(type)) {
