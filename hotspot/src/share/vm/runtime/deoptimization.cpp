@@ -1191,12 +1191,12 @@ void Deoptimization::load_class_by_index(constantPoolHandle constant_pool, int i
 
   if (!constant_pool->tag_at(index).is_symbol()) return;
 
-  Handle class_loader (THREAD, InstanceKlass::cast(constant_pool->pool_holder())->class_loader());
+  Handle class_loader (THREAD, constant_pool->pool_holder()->class_loader());
   Symbol*  symbol  = constant_pool->symbol_at(index);
 
   // class name?
   if (symbol->byte_at(0) != '(') {
-    Handle protection_domain (THREAD, Klass::cast(constant_pool->pool_holder())->protection_domain());
+    Handle protection_domain (THREAD, constant_pool->pool_holder()->protection_domain());
     SystemDictionary::resolve_or_null(symbol, class_loader, protection_domain, CHECK);
     return;
   }
@@ -1206,7 +1206,7 @@ void Deoptimization::load_class_by_index(constantPoolHandle constant_pool, int i
   for (SignatureStream ss(symbol); !ss.is_done(); ss.next()) {
     if (ss.is_object()) {
       Symbol* class_name = ss.as_symbol(CHECK);
-      Handle protection_domain (THREAD, Klass::cast(constant_pool->pool_holder())->protection_domain());
+      Handle protection_domain (THREAD, constant_pool->pool_holder()->protection_domain());
       SystemDictionary::resolve_or_null(class_name, class_loader, protection_domain, CHECK);
     }
   }

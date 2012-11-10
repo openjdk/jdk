@@ -446,7 +446,7 @@ void ErrorContext::location_details(outputStream* ss, Method* method) const {
           bytecode_name = "<illegal>";
       }
     }
-    InstanceKlass* ik = InstanceKlass::cast(method->method_holder());
+    InstanceKlass* ik = method->method_holder();
     ss->indent().print_cr("Location:");
     streamIndentor si2(ss);
     ss->indent().print_cr("%s.%s%s @%d: %s",
@@ -1850,7 +1850,7 @@ void ClassVerifier::verify_cp_index(
   if ((index <= 0) || (index >= nconstants)) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
         "Illegal constant pool index %d in class %s",
-        index, InstanceKlass::cast(cp->pool_holder())->external_name());
+        index, cp->pool_holder()->external_name());
     return;
   }
 }
@@ -1869,7 +1869,7 @@ void ClassVerifier::verify_cp_type(
   if ((types & (1 << tag)) == 0) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
       "Illegal type at constant pool entry %d in class %s",
-      index, InstanceKlass::cast(cp->pool_holder())->external_name());
+      index, cp->pool_holder()->external_name());
     return;
   }
 }
@@ -1881,7 +1881,7 @@ void ClassVerifier::verify_cp_class_type(
   if (!tag.is_klass() && !tag.is_unresolved_klass()) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
         "Illegal type at constant pool entry %d in class %s",
-        index, InstanceKlass::cast(cp->pool_holder())->external_name());
+        index, cp->pool_holder()->external_name());
     return;
   }
 }
