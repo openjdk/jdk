@@ -154,6 +154,8 @@ class java_lang_String : AllStatic {
   static char*  as_utf8_string(oop java_string, int start, int len);
   static char*  as_platform_dependent_str(Handle java_string, TRAPS);
   static jchar* as_unicode_string(oop java_string, int& length);
+  // produce an ascii string with all other values quoted using \u####
+  static char*  as_quoted_ascii(oop java_string);
 
   // Compute the hash value for a java.lang.String object which would
   // contain the characters passed in.

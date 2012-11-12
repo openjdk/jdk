@@ -348,6 +348,22 @@ unsigned int java_lang_String::to_hash(oop java_string) {
   return java_lang_String::to_hash(value->char_at_addr(offset), length);
 }
 
+char* java_lang_String::as_quoted_ascii(oop java_string) {
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          offset = java_lang_String::offset(java_string);
+  int          length = java_lang_String::length(java_string);
+
+  jchar* base = (length == 0) ? NULL : value->char_at_addr(offset);
+  if (base == NULL) return NULL;
+
+  int result_length = UNICODE::quoted_ascii_length(base, length) + 1;
+  char* result = NEW_RESOURCE_ARRAY(char, result_length);
+  UNICODE::as_quoted_ascii(base, length, result, result_length);
+  assert(result_length >= length + 1, "must not be shorter");
+  assert(result_length == (int)strlen(result) + 1, "must match");
+  return result;
+}
+
 unsigned int java_lang_String::hash_string(oop java_string) {
   int          length = java_lang_String::length(java_string);
   // Zero length string doesn't hash necessarily hash to zero.

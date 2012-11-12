@@ -358,6 +358,25 @@ public class Method extends Metadata {
     buf.append(")");
     return buf.toString().replace('/', '.');
   }
+
+  public void dumpReplayData(PrintStream out) {
+      NMethod nm = getNativeMethod();
+      int code_size = 0;
+      if (nm != null) {
+        code_size = (int)nm.codeEnd().minus(nm.getVerifiedEntryPoint());
+      }
+      Klass holder = getMethodHolder();
+      out.println("ciMethod " +
+                  holder.getName().asString() + " " +
+                  OopUtilities.escapeString(getName().asString()) + " " +
+                  getSignature().asString() + " " +
+                  getInvocationCounter() + " " +
+                  getBackedgeCounter() + " " +
+                  interpreterInvocationCount() + " " +
+                  interpreterThrowoutCount() + " " +
+                  code_size);
+  }
+
   public int interpreterThrowoutCount() {
     return (int) interpreterThrowoutCountField.getValue(this);
   }
