@@ -552,7 +552,7 @@ void Dependencies::print_dependency(DepType dept, int nargs, DepArgument args[],
     }
     tty->print("  %s = %s", what, (put_star? "*": ""));
     if (arg.is_klass())
-      tty->print("%s", Klass::cast((Klass*)arg.metadata_value())->external_name());
+      tty->print("%s", ((Klass*)arg.metadata_value())->external_name());
     else if (arg.is_method())
       ((Method*)arg.metadata_value())->print_value();
     else
@@ -563,7 +563,7 @@ void Dependencies::print_dependency(DepType dept, int nargs, DepArgument args[],
     bool put_star = !Dependencies::is_concrete_klass(witness);
     tty->print_cr("  witness = %s%s",
                   (put_star? "*": ""),
-                  Klass::cast(witness)->external_name());
+                  witness->external_name());
   }
 }
 
@@ -808,7 +808,7 @@ class ClassHierarchyWalker {
     if (!(m->is_public() || m->is_protected()))
       // The override story is complex when packages get involved.
       return true;  // Must punt the assertion to true.
-    Klass* k = Klass::cast(ctxk);
+    Klass* k = ctxk;
     Method* lm = k->lookup_method(m->name(), m->signature());
     if (lm == NULL && k->oop_is_instance()) {
       // It might be an abstract interface method, devoid of mirandas.
@@ -835,7 +835,7 @@ class ClassHierarchyWalker {
     }
     ResourceMark rm;
     tty->print_cr("Dependency method not found in the associated context:");
-    tty->print_cr("  context = %s", Klass::cast(ctxk)->external_name());
+    tty->print_cr("  context = %s", ctxk->external_name());
     tty->print(   "  method = "); m->print_short_name(tty); tty->cr();
     if (lm != NULL) {
       tty->print( "  found = "); lm->print_short_name(tty); tty->cr();
@@ -1010,7 +1010,7 @@ Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
     for (int i = 0; i < num_participants(); i++) {
       Klass* part = participant(i);
       if (part == NULL)  continue;
-      assert(changes.involves_context(part) == Klass::cast(new_type)->is_subtype_of(part),
+      assert(changes.involves_context(part) == new_type->is_subtype_of(part),
              "correct marking of participants, b/c new_type is unique");
       if (changes.involves_context(part)) {
         // new guy is protected from this check by previous participant
@@ -1146,7 +1146,7 @@ Klass* ClassHierarchyWalker::find_witness_anywhere(Klass* context_type,
 
 
 bool Dependencies::is_concrete_klass(Klass* k) {
-  if (Klass::cast(k)->is_abstract())  return false;
+  if (k->is_abstract())  return false;
   // %%% We could treat classes which are concrete but
   // have not yet been instantiated as virtually abstract.
   // This would require a deoptimization barrier on first instantiation.
@@ -1705,12 +1705,12 @@ KlassDepChange::~KlassDepChange() {
 }
 
 bool KlassDepChange::involves_context(Klass* k) {
-  if (k == NULL || !Klass::cast(k)->oop_is_instance()) {
+  if (k == NULL || !k->oop_is_instance()) {
     return false;
   }
   InstanceKlass* ik = InstanceKlass::cast(k);
   bool is_contained = ik->is_marked_dependent();
-  assert(is_contained == Klass::cast(new_type())->is_subtype_of(k),
+  assert(is_contained == new_type()->is_subtype_of(k),
          "correct marking of potential context types");
   return is_contained;
 }

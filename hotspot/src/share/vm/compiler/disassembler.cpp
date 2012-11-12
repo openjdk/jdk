@@ -353,7 +353,7 @@ void decode_env::print_address(address adr) {
       obj->print_value_on(st);
       if (st->count() == c) {
         // No output.  (Can happen in product builds.)
-        st->print("(a %s)", Klass::cast(obj->klass())->external_name());
+        st->print("(a %s)", obj->klass()->external_name());
       }
       return;
     }

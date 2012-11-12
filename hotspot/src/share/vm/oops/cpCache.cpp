@@ -375,7 +375,7 @@ Method* ConstantPoolCacheEntry::method_if_resolved(constantPoolHandle cpool) {
         int holder_index = cpool->uncached_klass_ref_index_at(constant_pool_index());
         if (cpool->tag_at(holder_index).is_klass()) {
           Klass* klass = cpool->resolved_klass_at(holder_index);
-          if (!Klass::cast(klass)->oop_is_instance())
+          if (!klass->oop_is_instance())
             klass = SystemDictionary::Object_klass();
           return InstanceKlass::cast(klass)->method_at_vtable(f2_as_index());
         }
