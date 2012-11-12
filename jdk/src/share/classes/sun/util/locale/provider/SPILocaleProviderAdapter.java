@@ -28,11 +28,29 @@ package sun.util.locale.provider;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.text.*;
-import java.text.spi.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.spi.*;
+import java.text.BreakIterator;
+import java.text.Collator;
+import java.text.DateFormat;
+import java.text.DateFormatSymbols;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.text.spi.BreakIteratorProvider;
+import java.text.spi.CollatorProvider;
+import java.text.spi.DateFormatProvider;
+import java.text.spi.DateFormatSymbolsProvider;
+import java.text.spi.DecimalFormatSymbolsProvider;
+import java.text.spi.NumberFormatProvider;
+import java.util.Locale;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.spi.CalendarDataProvider;
+import java.util.spi.CalendarNameProvider;
+import java.util.spi.CurrencyNameProvider;
+import java.util.spi.LocaleNameProvider;
+import java.util.spi.LocaleServiceProvider;
+import java.util.spi.TimeZoneNameProvider;
 
 /**
  * LocaleProviderAdapter implementation for the installed SPI implementations.
@@ -411,12 +429,39 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
             assert cdp != null;
             return cdp.getMinimalDaysInFirstWeek(locale);
         }
+    }
+
+    static class CalendarNameProviderDelegate extends CalendarNameProvider
+                                       implements Delegate<CalendarNameProvider> {
+        private ConcurrentMap<Locale, CalendarNameProvider> map = new ConcurrentHashMap<>();
+
+        @Override
+        public void addImpl(CalendarNameProvider impl) {
+            for (Locale l : impl.getAvailableLocales()) {
+                map.put(l, impl);
+            }
+        }
+
+        @Override
+        public CalendarNameProvider getImpl(Locale locale) {
+            return SPILocaleProviderAdapter.getImpl(map, locale);
+        }
+
+        @Override
+        public Locale[] getAvailableLocales() {
+            return map.keySet().toArray(new Locale[0]);
+        }
+
+        @Override
+        public boolean isSupportedLocale(Locale locale) {
+            return map.containsKey(locale);
+        }
 
         @Override
         public String getDisplayName(String calendarType,
                                               int field, int value,
                                               int style, Locale locale) {
-            CalendarDataProvider cdp = getImpl(locale);
+            CalendarNameProvider cdp = getImpl(locale);
             assert cdp != null;
             return cdp.getDisplayName(calendarType, field, value, style, locale);
         }
@@ -425,7 +470,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         public Map<String, Integer> getDisplayNames(String calendarType,
                                                              int field, int style,
                                                              Locale locale) {
-            CalendarDataProvider cdp = getImpl(locale);
+            CalendarNameProvider cdp = getImpl(locale);
             assert cdp != null;
             return cdp.getDisplayNames(calendarType, field, style, locale);
         }
