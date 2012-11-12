@@ -300,6 +300,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX:=$(BUILD_LIBMLIB_LDLIBS) \
 				$(LDFLAGS_JDKLIB_SUFFIX),\
+		LDFLAGS_SUFFIX_solaris:=-lc, \
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=mlib_image.dll" \
@@ -428,6 +429,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE_V,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
                          $(BUILD_LIBMLIB_LDLIBS) -ljava -ljvm \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libmlib_image_v))
 
 $(BUILD_LIBMLIB_IMAGE_V): $(BUILD_LIBJAVA)
@@ -710,7 +712,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_solaris:=-R/usr/dt/lib$(OPENJDK_TARGET_CPU_ISADIR) -R$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR),\
 		LDFLAGS_SUFFIX_linux:=-ljvm $(LIBM) $(LIBDL) -ljava,\
-		LDFLAGS_SUFFIX_solaris:=-ljvm $(LIBM) $(LIBDL) -ljava,\
+		LDFLAGS_SUFFIX_solaris:=-ljvm $(LIBM) $(LIBDL) -ljava -lc,\
 		LDFLAGS_SUFFIX_macosx:=-lmlib_image -ljvm $(LIBM) \
 				       -framework Cocoa \
 				       -framework OpenGL \
@@ -966,7 +968,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP,\
                                 -export:ZIP_ReadEntry -export:ZIP_GetNextEntry jvm.lib \
                                 $(WIN_JAVA_LIB),\
 		LDFLAGS_SUFFIX_linux:=-ljvm -ljava $(LIBZ),\
-		LDFLAGS_SUFFIX_solaris:=-ljvm -ljava $(LIBZ),\
+		LDFLAGS_SUFFIX_solaris:=-ljvm -ljava $(LIBZ) -lc,\
 		LDFLAGS_SUFFIX_macosx:=$(LIBZ) -ljava -ljvm,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
@@ -1144,9 +1146,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX_linux:=$(LIBDL),\
-		LDFLAGS_SUFFIX_solaris:=$(LIBDL),\
+		LDFLAGS_SUFFIX_solaris:=$(LIBDL) -lc,\
 		LDFLAGS_SUFFIX_windows:=$(LDFLAGS_JDKLIB_SUFFIX),\
-		LDFLAGS_SUFFIX:=,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=jdwp.dll" \
@@ -1186,7 +1187,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAAS,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_windows:=netapi32.lib user32.lib mpr.lib advapi32.lib,\
 		LDFLAGS_SUFFIX_windows:=$(LDFLAGS_JDKLIB_SUFFIX),\
-		LDFLAGS_SUFFIX:=,\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		EXCLUDE_FILES:=$(LIBJAAS_EXCLUDE_FILES),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS) \
@@ -1217,7 +1218,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSDT,\
 		LDFLAGS_SUFFIX_linux:=$(LIBDL),\
 		LDFLAGS_SUFFIX_windows:=$(LDFLAGS_JDKLIB_SUFFIX) $(LIBDL),\
 		LDFLAGS_SUFFIX_macosx:=                         $(LIBDL),\
-		LDFLAGS_SUFFIX:=,\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=jsdt.dll" \
@@ -1259,7 +1260,7 @@ ifdef OPENJDK
                          $(call SET_SHARED_LIBRARY_ORIGIN), \
 		LDFLAGS_solaris:=/usr/lib$(OPENJDK_TARGET_CPU_ISADIR)/libm.so.2,\
 		LDFLAGS_windows:=$(WIN_AWT_LIB) $(WIN_JAVA_LIB),\
-		LDFLAGS_SUFFIX_solaris:=-lawt -ljava -ljvm,\
+		LDFLAGS_SUFFIX_solaris:=-lawt -ljava -ljvm -lc,\
 		LDFLAGS_SUFFIX_macosx:=$(LIBM) -lawt -ljava -ljvm,\
 		LDFLAGS_SUFFIX_linux:=-lm -lawt -ljava -ljvm,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
@@ -1626,7 +1627,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT,\
 				-framework Cocoa -framework Security -framework ApplicationServices,\
 		LDFLAGS_SUFFIX:=$(LIBINSTRUMENT_LDFLAGS_SUFFIX),\
 		LDFLAGS_SUFFIX_macosx:=-liconv $(LIBZ),\
-		LDFLAGS_SUFFIX_solaris:=$(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL),\
+		LDFLAGS_SUFFIX_solaris:=$(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL) -lc,\
 		LDFLAGS_SUFFIX_linux:=$(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
@@ -1716,19 +1717,11 @@ BUILD_LIBHPROF_CFLAGS:=-I$(JDK_TOPDIR)/src/share/demo/jvmti/hprof \
 
 BUILD_LIBHPROF_LDFLAGS:=
 
-ifeq ($(OPENJDK_TARGET_OS),solaris)
-     BUILD_LIBHPROF_LDFLAGS += -lsocket -lnsl -lc
-endif
-
 LIBHPROF_OPTIMIZATION:=HIGHEST
 ifneq ($(findstring $(OPENJDK_TARGET_OS),solaris linux),)
     ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
         LIBHPROF_OPTIMIZATION:=LOW
     endif
-endif
-
-ifneq ($(OPENJDK_TARGET_OS),windows)
-     BUILD_LIBHPROF_LDFLAGS += $(LIBDL)
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBHPROF,\
@@ -1744,7 +1737,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBHPROF,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_windows:=wsock32.lib winmm.lib advapi32.lib,\
-		LDFLAGS_SUFFIX:=$(BUILD_LIBHPROF_LDFLAGS),\
+		LDFLAGS_SUFFIX_linux:=$(LIBDL),\
+		LDFLAGS_SUFFIX_macosx:=$(LIBDL),\
+		LDFLAGS_SUFFIX_solaris:=-lsocket -lnsl $(LIBDL) -lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=hprof.dll" \
@@ -1768,6 +1763,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA_CRW_DEMO,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libjava_crw_demo/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=java_crw_demo.dll" \
@@ -2392,7 +2388,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_HEADLESS,\
 		LANG:=C,\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) $(LIBAWT_HEADLESS_CFLAGS),\
-		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libawt_headless/mapfile-vers, \
+		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libawt_headless/mapfile-vers,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_linux:=$(call SET_SHARED_LIBRARY_ORIGIN,/..),\
@@ -2402,8 +2398,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_HEADLESS,\
 		LDFLAGS_macosx:=$(call SET_SHARED_LIBRARY_ORIGIN).,\
 		REORDER:=$(LIBAWT_HEADLESS_REORDER), \
 		LDFLAGS_SUFFIX_linux:=-ljvm -lawt -lm $(LIBDL) -ljava,\
-		LDFLAGS_SUFFIX_solaris:=$(LIBDL) -ljvm -lawt -lm -ljava $(LIBCXX), \
-		LDFLAGS_SUFFIX_macosx:=-ljvm $(LIBCXX) -lawt $(LIBDL) -ljava, \
+		LDFLAGS_SUFFIX_solaris:=$(LIBDL) -ljvm -lawt -lm -ljava $(LIBCXX) -lc,\
+		LDFLAGS_SUFFIX_macosx:=-ljvm $(LIBCXX) -lawt $(LIBDL) -ljava,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt_headless))
 
 $(BUILD_LIBAWT_HEADLESS) : $(BUILD_LIBAWT)
@@ -2572,6 +2568,7 @@ $(eval $(call SetupNativeCompilation,LIBSPLASHSCREEN,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX:=$(LIBSPLASHSCREEN_LDFLAGS_SUFFIX) $(LIBZ),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=splashscreen.dll" \
@@ -2647,6 +2644,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX_posix:=$(LIBDL), \
 		LDFLAGS_SUFFIX_windows:=winscard.lib,\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=j2pcsc.dll" \
@@ -2673,7 +2671,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2GSS,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libj2gss/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
-		LDFLAGS_SUFFIX:=$(LIBDL), \
+		LDFLAGS_SUFFIX:=$(LIBDL),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2gss))
 
 BUILD_LIBRARIES += $(BUILD_LIBJ2GSS)
@@ -2767,7 +2766,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PKCS11,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libj2pkcs11/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
-		LDFLAGS_SUFFIX_posix:=$(LIBDL), \
+		LDFLAGS_SUFFIX_posix:=$(LIBDL),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=j2pkcs11.dll" \
