@@ -20,9 +20,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-#!/bin/sh
-#
+
 # @test
-# @bug 7058207 8000986
-# @summary CalendarDataProvider tests
-# @run shell ExecTest.sh bar CalendarDataProviderTest true
+# @bug 8000986
+# @summary CalendarNameProvider tests
+# @run shell ExecTest.sh bar CalendarNameProviderTest true
