@@ -94,11 +94,13 @@ jaxws-only: start-make
 	@($(CD) $(JAXWS_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJaxws.gmk)
 	@$(call TargetExit)
 
+ifeq ($(BUILD_HOTSPOT),true)
 hotspot: hotspot-only
 hotspot-only: start-make
 	@$(call TargetEnter)
 	@($(CD) $(SRC_ROOT)/common/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f HotspotWrapper.gmk)
 	@$(call TargetExit)
+endif
 
 jdk: langtools hotspot corba jaxp jaxws jdk-only
 jdk-only: start-make
