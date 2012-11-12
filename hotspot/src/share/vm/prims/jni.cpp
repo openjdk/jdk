@@ -233,13 +233,13 @@ bool jfieldIDWorkaround::is_valid_jfieldID(Klass* k, jfieldID id) {
 intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, intptr_t offset) {
   if (offset <= small_offset_mask) {
     Klass* field_klass = k;
-    Klass* super_klass = Klass::cast(field_klass)->super();
+    Klass* super_klass = field_klass->super();
     // With compressed oops the most super class with nonstatic fields would
     // be the owner of fields embedded in the header.
     while (InstanceKlass::cast(super_klass)->has_nonstatic_fields() &&
            InstanceKlass::cast(super_klass)->contains_field_offset(offset)) {
       field_klass = super_klass;   // super contains the field also
-      super_klass = Klass::cast(field_klass)->super();
+      super_klass = field_klass->super();
     }
     debug_only(No_Safepoint_Verifier nosafepoint;)
     uintptr_t klass_hash = field_klass->identity_hash();
@@ -249,7 +249,7 @@ intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, intptr_t offset) {
     #ifndef PRODUCT
     {
       ResourceMark rm;
-      warning("VerifyJNIFields: long offset %d in %s", offset, Klass::cast(k)->external_name());
+      warning("VerifyJNIFields: long offset %d in %s", offset, k->external_name());
     }
     #endif
 #endif
@@ -265,7 +265,7 @@ bool jfieldIDWorkaround::klass_hash_ok(Klass* k, jfieldID id) {
     // Could use a non-blocking query for identity_hash here...
     if ((k->identity_hash() & klass_mask) == klass_hash)
       return true;
-    k = Klass::cast(k)->super();
+    k = k->super();
   } while (k != NULL);
   return false;
 }
@@ -283,7 +283,7 @@ void jfieldIDWorkaround::verify_instance_jfieldID(Klass* k, jfieldID id) {
       #ifndef PRODUCT
       if (Verbose) {
   ResourceMark rm;
-  warning("VerifyJNIFields: unverified offset %d for %s", offset, Klass::cast(k)->external_name());
+  warning("VerifyJNIFields: unverified offset %d for %s", offset, k->external_name());
       }
       #endif
 #endif
@@ -415,7 +415,7 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
   }
 
   cls = (jclass)JNIHandles::make_local(
-    env, Klass::cast(k)->java_mirror());
+    env, k->java_mirror());
   return cls;
 JNI_END
 
@@ -536,7 +536,7 @@ JNI_ENTRY(jmethodID, jni_FromReflectedMethod(JNIEnv *env, jobject method))
 
   KlassHandle k1(THREAD, k);
   // Make sure class is initialized before handing id's out to methods
-  Klass::cast(k1())->initialize(CHECK_NULL);
+  k1()->initialize(CHECK_NULL);
   Method* m = InstanceKlass::cast(k1())->method_with_idnum(slot);
   ret = m==NULL? NULL : m->jmethod_id();  // return NULL if reflected method deleted
   return ret;
@@ -569,7 +569,7 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
 
   KlassHandle k1(THREAD, k);
   // Make sure class is initialized before handing id's out to fields
-  Klass::cast(k1())->initialize(CHECK_NULL);
+  k1()->initialize(CHECK_NULL);
 
   // First check if this is a static field
   if (modifiers & JVM_ACC_STATIC) {
@@ -648,17 +648,17 @@ JNI_ENTRY(jclass, jni_GetSuperclass(JNIEnv *env, jclass sub))
   // interfaces return NULL
   // proper classes return Klass::super()
   Klass* k = java_lang_Class::as_Klass(mirror);
-  if (Klass::cast(k)->is_interface()) return NULL;
+  if (k->is_interface()) return NULL;
 
   // return mirror for superclass
-  Klass* super = Klass::cast(k)->java_super();
+  Klass* super = k->java_super();
   // super2 is the value computed by the compiler's getSuperClass intrinsic:
-  debug_only(Klass* super2 = ( Klass::cast(k)->oop_is_array()
+  debug_only(Klass* super2 = ( k->oop_is_array()
                                  ? SystemDictionary::Object_klass()
-                                 : Klass::cast(k)->super() ) );
+                                 : k->super() ) );
   assert(super == super2,
          "java_super computation depends on interface, array, other super");
-  obj = (super == NULL) ? NULL : (jclass) JNIHandles::make_local(Klass::cast(super)->java_mirror());
+  obj = (super == NULL) ? NULL : (jclass) JNIHandles::make_local(super->java_mirror());
   return obj;
 JNI_END
 
@@ -686,7 +686,7 @@ JNI_QUICK_ENTRY(jboolean, jni_IsAssignableFrom(JNIEnv *env, jclass sub, jclass s
   Klass* sub_klass   = java_lang_Class::as_Klass(sub_mirror);
   Klass* super_klass = java_lang_Class::as_Klass(super_mirror);
   assert(sub_klass != NULL && super_klass != NULL, "invalid arguments to jni_IsAssignableFrom");
-  jboolean ret = Klass::cast(sub_klass)->is_subtype_of(super_klass) ?
+  jboolean ret = sub_klass->is_subtype_of(super_klass) ?
                    JNI_TRUE : JNI_FALSE;
 #ifndef USDT2
   DTRACE_PROBE1(hotspot_jni, IsAssignableFrom__return, ret);
@@ -820,7 +820,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
         ResourceMark rm(THREAD);
         jio_fprintf(defaultStream::error_stream(),
         ". Uncaught exception of type %s.",
-        Klass::cast(ex->klass())->external_name());
+        ex->klass()->external_name());
       }
     }
   }
@@ -1358,7 +1358,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
     Method* m = Method::resolve_jmethod_id(method_id);
     number_of_parameters = m->size_of_parameters();
     Klass* holder = m->method_holder();
-    if (!(Klass::cast(holder))->is_interface()) {
+    if (!(holder)->is_interface()) {
       // non-interface call -- for that little speed boost, don't handlize
       debug_only(No_Safepoint_Verifier nosafepoint;)
       if (call_type == JNI_VIRTUAL) {
@@ -1423,7 +1423,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
 
 static instanceOop alloc_object(jclass clazz, TRAPS) {
   KlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
-  Klass::cast(k())->check_valid_for_instantiation(false, CHECK_NULL);
+  k()->check_valid_for_instantiation(false, CHECK_NULL);
   InstanceKlass::cast(k())->initialize(CHECK_NULL);
   instanceOop ih = InstanceKlass::cast(k())->allocate_instance(THREAD);
   return ih;
@@ -1545,7 +1545,7 @@ JNI_ENTRY(jclass, jni_GetObjectClass(JNIEnv *env, jobject obj))
 #endif /* USDT2 */
   Klass* k = JNIHandles::resolve_non_null(obj)->klass();
   jclass ret =
-    (jclass) JNIHandles::make_local(env, Klass::cast(k)->java_mirror());
+    (jclass) JNIHandles::make_local(env, k->java_mirror());
 #ifndef USDT2
   DTRACE_PROBE1(hotspot_jni, GetObjectClass__return, ret);
 #else /* USDT2 */
@@ -1610,7 +1610,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
 
   // Make sure class is linked and initialized before handing id's out to
   // Method*s.
-  Klass::cast(klass())->initialize(CHECK_NULL);
+  klass()->initialize(CHECK_NULL);
 
   Method* m;
   if (name == vmSymbols::object_initializer_name() ||
@@ -2426,7 +2426,7 @@ JNI_ENTRY(ResultType, \
   JNI_ArgumentPusherVaArg ap(methodID, args); \
   /* Make sure class is initialized before trying to invoke its method */ \
   KlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls))); \
-  Klass::cast(k())->initialize(CHECK_0); \
+  k()->initialize(CHECK_0); \
   jni_invoke_static(env, &jvalue, NULL, JNI_STATIC, methodID, &ap, CHECK_0); \
   va_end(args); \
   ret = jvalue.get_##ResultType(); \
@@ -2611,10 +2611,10 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
   KlassHandle k(THREAD,
                 java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
   // Make sure class is initialized before handing id's out to fields
-  Klass::cast(k())->initialize(CHECK_NULL);
+  k()->initialize(CHECK_NULL);
 
   fieldDescriptor fd;
-  if (!Klass::cast(k())->oop_is_instance() ||
+  if (!k()->oop_is_instance() ||
       !InstanceKlass::cast(k())->find_field(fieldname, signame, false, &fd)) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
@@ -2976,10 +2976,10 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
   KlassHandle k(THREAD,
                 java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
   // Make sure class is initialized before handing id's out to static fields
-  Klass::cast(k())->initialize(CHECK_NULL);
+  k()->initialize(CHECK_NULL);
 
   fieldDescriptor fd;
-  if (!Klass::cast(k())->oop_is_instance() ||
+  if (!k()->oop_is_instance() ||
       !InstanceKlass::cast(k())->find_field(fieldname, signame, true, &fd)) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
@@ -3439,7 +3439,7 @@ JNI_ENTRY(jobjectArray, jni_NewObjectArray(JNIEnv *env, jsize length, jclass ele
   jobjectArray ret = NULL;
   DT_RETURN_MARK(NewObjectArray, jobjectArray, (const jobjectArray&)ret);
   KlassHandle ek(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(elementClass)));
-  Klass* ako = Klass::cast(ek())->array_klass(CHECK_NULL);
+  Klass* ako = ek()->array_klass(CHECK_NULL);
   KlassHandle ak = KlassHandle(THREAD, ako);
   ObjArrayKlass::cast(ak())->initialize(CHECK_NULL);
   objArrayOop result = ObjArrayKlass::cast(ak())->allocate(length, CHECK_NULL);
@@ -3970,7 +3970,7 @@ static Method* find_prefixed_native(KlassHandle k,
     if (trial_name == NULL) {
       continue; // no such symbol, so this prefix wasn't used, try the next prefix
     }
-    method = Klass::cast(k())->lookup_method(trial_name, signature);
+    method = k()->lookup_method(trial_name, signature);
     if (method == NULL) {
       continue; // signature doesn't match, try the next prefix
     }
@@ -3987,12 +3987,12 @@ static Method* find_prefixed_native(KlassHandle k,
 }
 
 static bool register_native(KlassHandle k, Symbol* name, Symbol* signature, address entry, TRAPS) {
-  Method* method = Klass::cast(k())->lookup_method(name, signature);
+  Method* method = k()->lookup_method(name, signature);
   if (method == NULL) {
     ResourceMark rm;
     stringStream st;
     st.print("Method %s name or signature does not match",
-             Method::name_and_sig_as_C_string(Klass::cast(k()), name, signature));
+             Method::name_and_sig_as_C_string(k(), name, signature));
     THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
   }
   if (!method->is_native()) {
@@ -4002,7 +4002,7 @@ static bool register_native(KlassHandle k, Symbol* name, Symbol* signature, addr
       ResourceMark rm;
       stringStream st;
       st.print("Method %s is not declared as native",
-               Method::name_and_sig_as_C_string(Klass::cast(k()), name, signature));
+               Method::name_and_sig_as_C_string(k(), name, signature));
       THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
     }
   }
@@ -4058,7 +4058,7 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
     if (name == NULL || signature == NULL) {
       ResourceMark rm;
       stringStream st;
-      st.print("Method %s.%s%s not found", Klass::cast(h_k())->external_name(), meth_name, meth_sig);
+      st.print("Method %s.%s%s not found", h_k()->external_name(), meth_name, meth_sig);
       // Must return negative value on failure
       THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), -1);
     }
@@ -4084,7 +4084,7 @@ JNI_ENTRY(jint, jni_UnregisterNatives(JNIEnv *env, jclass clazz))
 #endif /* USDT2 */
   Klass* k   = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
   //%note jni_2
-  if (Klass::cast(k)->oop_is_instance()) {
+  if (k->oop_is_instance()) {
     for (int index = 0; index < InstanceKlass::cast(k)->methods()->length(); index++) {
       Method* m = InstanceKlass::cast(k)->methods()->at(index);
       if (m->is_native()) {

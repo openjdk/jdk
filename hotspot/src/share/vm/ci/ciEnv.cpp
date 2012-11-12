@@ -426,7 +426,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     for (int i = cpool->length() - 1; i >= 1; i--) {
       if (cpool->tag_at(i).is_klass()) {
         Klass* kls = cpool->resolved_klass_at(i);
-        if (Klass::cast(kls)->name() == sym) {
+        if (kls->name() == sym) {
           found_klass = KlassHandle(THREAD, kls);
           break;
         }

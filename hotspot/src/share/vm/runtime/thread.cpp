@@ -1785,7 +1785,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
           jio_fprintf(defaultStream::error_stream(),
                 "\nException: %s thrown from the UncaughtExceptionHandler"
                 " in thread \"%s\"\n",
-                Klass::cast(pending_exception()->klass())->external_name(),
+                pending_exception()->klass()->external_name(),
                 get_thread_name());
           CLEAR_PENDING_EXCEPTION;
         }
