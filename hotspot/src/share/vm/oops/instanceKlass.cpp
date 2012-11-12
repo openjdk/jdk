@@ -1052,6 +1052,13 @@ Method* InstanceKlass::class_initializer() {
 }
 
 void InstanceKlass::call_class_initializer_impl(instanceKlassHandle this_oop, TRAPS) {
+  if (ReplayCompiles &&
+      (ReplaySuppressInitializers == 1 ||
+       ReplaySuppressInitializers >= 2 && this_oop->class_loader() != NULL)) {
+    // Hide the existence of the initializer for the purpose of replaying the compile
+    return;
+  }
+
   methodHandle h_method(THREAD, this_oop->class_initializer());
   assert(!this_oop->is_initialized(), "we cannot initialize twice");
   if (TraceClassInitialization) {

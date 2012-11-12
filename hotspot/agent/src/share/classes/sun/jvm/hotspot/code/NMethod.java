@@ -498,6 +498,42 @@ public class NMethod extends CodeBlob {
            method.getSignature().asString();
   }
 
+  public void dumpReplayData(PrintStream out) {
+    HashMap h = new HashMap();
+    for (int i = 1; i < getMetadataLength(); i++) {
+      Metadata meta = Metadata.instantiateWrapperFor(getMetadataAt(i));
+      System.err.println(meta);
+      if (h.get(meta) != null) continue;
+      h.put(meta, meta);
+      if (meta instanceof InstanceKlass) {
+        ((InstanceKlass)meta).dumpReplayData(out);
+      } else if (meta instanceof Method) {
+        ((Method)meta).dumpReplayData(out);
+        MethodData mdo = ((Method)meta).getMethodData();
+        if (mdo != null) {
+          mdo.dumpReplayData(out);
+        }
+      }
+    }
+    Method method = getMethod();
+    if (h.get(method) == null) {
+      method.dumpReplayData(out);
+      MethodData mdo = method.getMethodData();
+      if (mdo != null) {
+        mdo.dumpReplayData(out);
+      }
+    }
+    if (h.get(method.getMethodHolder()) == null) {
+      ((InstanceKlass)method.getMethodHolder()).dumpReplayData(out);
+    }
+    Klass holder = method.getMethodHolder();
+    out.println("compile " + holder.getName().asString() + " " +
+                OopUtilities.escapeString(method.getName().asString()) + " " +
+                method.getSignature().asString() + " " +
+                getEntryBCI());
+
+  }
+
   //--------------------------------------------------------------------------------
   // Internals only below this point
   //

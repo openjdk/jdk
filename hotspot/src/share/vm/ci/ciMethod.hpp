@@ -51,6 +51,7 @@ class ciMethod : public ciMetadata {
   friend class ciExceptionHandlerStream;
   friend class ciBytecodeStream;
   friend class ciMethodHandle;
+  friend class ciReplay;
 
  private:
   // General method information.
@@ -69,6 +70,7 @@ class ciMethod : public ciMetadata {
   int _handler_count;
   int _interpreter_invocation_count;
   int _interpreter_throwout_count;
+  int _instructions_size;
 
   bool _uses_monitors;
   bool _balanced_monitors;
@@ -252,7 +254,6 @@ class ciMethod : public ciMetadata {
   bool can_be_osr_compiled(int entry_bci);
   void set_not_compilable();
   bool has_compiled_code();
-  int  instructions_size(int comp_level = CompLevel_any);
   void log_nmethod_identity(xmlStream* log);
   bool is_not_reached(int bci);
   bool was_executed_more_than(int times);
@@ -260,6 +261,7 @@ class ciMethod : public ciMetadata {
   bool is_klass_loaded(int refinfo_index, bool must_be_resolved) const;
   bool check_call(int refinfo_index, bool is_static) const;
   bool ensure_method_data();  // make sure it exists in the VM also
+  int instructions_size();
   int scale_count(int count, float prof_factor = 1.);  // make MDO count commensurate with IIC
 
   // JSR 292 support
@@ -291,6 +293,7 @@ class ciMethod : public ciMetadata {
   bool is_accessor    () const;
   bool is_initializer () const;
   bool can_be_statically_bound() const           { return _can_be_statically_bound; }
+  void dump_replay_data(outputStream* st);
 
   // Print the bytecodes of this method.
   void print_codes_on(outputStream* st);

@@ -3189,6 +3189,26 @@ class CommandLineFlags {
   product(ccstrlist, CompileCommand, "",                                    \
           "Prepend to .hotspot_compiler; e.g. log,java/lang/String.<init>") \
                                                                             \
+  develop(bool, ReplayCompiles, false,                                      \
+          "Enable replay of compilations from ReplayDataFile")              \
+                                                                            \
+  develop(ccstr, ReplayDataFile, "replay.txt",                              \
+          "file containing compilation replay information")                 \
+                                                                            \
+  develop(intx, ReplaySuppressInitializers, 2,                              \
+          "Controls handling of class initialization during replay"         \
+          "0 - don't do anything special"                                   \
+          "1 - treat all class initializers as empty"                       \
+          "2 - treat class initializers for application classes as empty"   \
+          "3 - allow all class initializers to run during bootstrap but"    \
+          "    pretend they are empty after starting replay")               \
+                                                                            \
+  develop(bool, ReplayIgnoreInitErrors, false,                              \
+          "Ignore exceptions thrown during initialization for replay")      \
+                                                                            \
+  develop(bool, DumpReplayDataOnError, true,                                \
+          "record replay data for crashing compiler threads")               \
+                                                                            \
   product(bool, CICompilerCountPerCPU, false,                               \
           "1 compiler thread for log(N CPUs)")                              \
                                                                             \
