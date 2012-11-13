@@ -249,28 +249,25 @@ public class DeferredAttr extends JCTree.Visitor {
         JCTree newTree = new TreeCopier<Object>(make).copy(tree);
         Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared()));
         speculativeEnv.info.scope.owner = env.info.scope.owner;
-        Filter<JCDiagnostic> prevDeferDiagsFilter = log.deferredDiagFilter;
-        Queue<JCDiagnostic> prevDeferredDiags = log.deferredDiagnostics;
         final JavaFileObject currentSource = log.currentSourceFile();
+        Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
+                new Log.DeferredDiagnosticHandler(log, new Filter<JCDiagnostic>() {
+            public boolean accepts(JCDiagnostic t) {
+                return t.getDiagnosticSource().getFile().equals(currentSource);
+            }
+        });
         try {
-            log.deferredDiagnostics = new ListBuffer<JCDiagnostic>();
-            log.deferredDiagFilter = new Filter<JCDiagnostic>() {
-                public boolean accepts(JCDiagnostic t) {
-                    return t.getDiagnosticSource().getFile().equals(currentSource);
-                }
-            };
             attr.attribTree(newTree, speculativeEnv, resultInfo);
             unenterScanner.scan(newTree);
             return newTree;
         } catch (Abort ex) {
             //if some very bad condition occurred during deferred attribution
             //we should dump all errors before killing javac
-            log.reportDeferredDiagnostics();
+            deferredDiagnosticHandler.reportDeferredDiagnostics();
             throw ex;
         } finally {
             unenterScanner.scan(newTree);
-            log.deferredDiagFilter = prevDeferDiagsFilter;
-            log.deferredDiagnostics = prevDeferredDiags;
+            log.popDiagnosticHandler(deferredDiagnosticHandler);
         }
     }
     //where

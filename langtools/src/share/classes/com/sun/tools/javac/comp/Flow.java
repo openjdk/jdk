@@ -213,24 +213,21 @@ public class Flow {
     }
 
     public void analyzeLambda(Env<AttrContext> env, JCLambda that, TreeMaker make, boolean speculative) {
-        java.util.Queue<JCDiagnostic> prevDeferredDiagnostics = log.deferredDiagnostics;
-        Filter<JCDiagnostic> prevDeferDiagsFilter = log.deferredDiagFilter;
+        Log.DiagnosticHandler diagHandler = null;
         //we need to disable diagnostics temporarily; the problem is that if
         //a lambda expression contains e.g. an unreachable statement, an error
         //message will be reported and will cause compilation to skip the flow analyis
         //step - if we suppress diagnostics, we won't stop at Attr for flow-analysis
         //related errors, which will allow for more errors to be detected
         if (!speculative) {
-            log.deferAll();
-            log.deferredDiagnostics = ListBuffer.lb();
+            diagHandler = new Log.DiscardDiagnosticHandler(log);
         }
         try {
             new AliveAnalyzer().analyzeTree(env, that, make);
             new FlowAnalyzer().analyzeTree(env, that, make);
         } finally {
             if (!speculative) {
-                log.deferredDiagFilter = prevDeferDiagsFilter;
-                log.deferredDiagnostics = prevDeferredDiagnostics;
+                log.popDiagnosticHandler(diagHandler);
             }
         }
     }
