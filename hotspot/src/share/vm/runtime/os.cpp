@@ -576,7 +576,9 @@ void* os::malloc(size_t size, MEMFLAGS memflags, address caller) {
     // if NULL is returned the calling functions assume out of memory.
     size = 1;
   }
-
+  if (size > size + space_before + space_after) { // Check for rollover.
+    return NULL;
+  }
   NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
   u_char* ptr = (u_char*)::malloc(size + space_before + space_after);
 
