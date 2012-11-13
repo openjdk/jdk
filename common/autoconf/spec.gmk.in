@@ -246,12 +246,6 @@ ENABLE_SJAVAC:=@ENABLE_SJAVAC@
 # Store sjavac server synchronization files here, and
 # the sjavac server log files.
 SJAVAC_SERVER_DIR:=@SJAVAC_SERVER_DIR@
-# We can block the Javac server to never use more cores than this.
-# This is not for performance reasons, but for memory usage, since each
-# core requires its own JavaCompiler. We might have 64 cores and 4GB
-# of memory, 64 JavaCompilers will currently not fit in a 3GB heap.
-# Since there is no sharing of data between the JavaCompilers.
-SJAVAC_SERVER_CORES:=@SJAVAC_SERVER_CORES@
 
 # The OpenJDK makefiles should be changed to using the standard
 # configure output ..._CFLAGS and ..._LIBS. In the meantime we
@@ -496,7 +490,14 @@ FIXPATH:=@FIXPATH@
 # Where the build output is stored for your convenience.
 BUILD_LOG:=@BUILD_LOG@
 BUILD_LOG_PREVIOUS:=@BUILD_LOG_PREVIOUS@
-BUILD_LOG_WRAPPER:=@BUILD_LOG_WRAPPER@
+# Disable the build log wrapper on sjavac+winapi until
+# we have solved how to prevent the log wrapper to wait
+# for the background sjavac server process.
+ifeq (@ENABLE_SJAVAC@X@OPENJDK_BUILD_OS_API@,yesXwinapi)
+    BUILD_LOG_WRAPPER:=
+else
+    BUILD_LOG_WRAPPER:=@BUILD_LOG_WRAPPER@
+endif
 
 # Build setup
 ENABLE_JFR=@ENABLE_JFR@

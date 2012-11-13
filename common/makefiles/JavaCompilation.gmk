@@ -170,9 +170,10 @@ define SetupArchive
     # tells us what to remove from the jar-file.
     $1_CAPTURE_DELETES=$$(foreach src,$$($1_SRCS),($(FIND) $$(src) -name _the.package.deleted -newer $$@ -exec $(SED) 's|$$(src)||g' \{\} >> $$($1_DELETES_FILE) \;) $$(NEWLINE))
     # The update contents macro updates the jar file with the previously capture contents.
+    # xargs is used to trim the whitespace from the contents file, to see if it is empty.
     $1_UPDATE_CONTENTS=$$(foreach src,$$($1_SRCS),\
                     (cd $$(src) && \
-                     if [ -s _the.$$($1_JARNAME)_contents ]; then \
+                     if [ -n "`$(CAT) _the.$$($1_JARNAME)_contents | $(XARGS)`" ]; then \
                          $(ECHO) "  updating" `$(WC) -l _the.$$($1_JARNAME)_contents | $(AWK) '{ print $$$$1 }'` files && \
                          $(JAR) $$($1_JAR_UPDATE_OPTIONS) $$@ @_the.$$($1_JARNAME)_contents; \
                      fi) $$(NEWLINE))
