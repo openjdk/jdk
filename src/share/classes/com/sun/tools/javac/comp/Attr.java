@@ -1360,11 +1360,8 @@ public class Attr extends JCTree.Visitor {
             types.asSuper(resource, syms.autoCloseableType.tsym) != null &&
             !types.isSameType(resource, syms.autoCloseableType)) { // Don't emit warning for AutoCloseable itself
             Symbol close = syms.noSymbol;
-            Filter<JCDiagnostic> prevDeferDiagsFilter = log.deferredDiagFilter;
-            Queue<JCDiagnostic> prevDeferredDiags = log.deferredDiagnostics;
+            Log.DiagnosticHandler discardHandler = new Log.DiscardDiagnosticHandler(log);
             try {
-                log.deferAll();
-                log.deferredDiagnostics = ListBuffer.lb();
                 close = rs.resolveQualifiedMethod(pos,
                         env,
                         resource,
@@ -1373,8 +1370,7 @@ public class Attr extends JCTree.Visitor {
                         List.<Type>nil());
             }
             finally {
-                log.deferredDiagFilter = prevDeferDiagsFilter;
-                log.deferredDiagnostics = prevDeferredDiags;
+                log.popDiagnosticHandler(discardHandler);
             }
             if (close.kind == MTH &&
                     close.overrides(syms.autoCloseableClose, resource.tsym, types, true) &&
