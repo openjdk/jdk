@@ -271,7 +271,7 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
         RT_JAR_EXCLUDES += com/sun/nio/sctp \
-                           sun/nio/ch/sctp \
+                           sun/nio/ch/sctp
 endif
 
 # Find all files in the classes dir to use as dependencies. This could be more fine granular.
