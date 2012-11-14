@@ -740,7 +740,20 @@ public final class Double extends Number implements Comparable<Double> {
      *
      * @return  a {@code hash code} value for this object.
      */
+    @Override
     public int hashCode() {
+        return Double.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code double} value; compatible with
+     * {@code Double.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code double} value.
+     */
+    public static int hashCode(double value) {
         long bits = doubleToLongBits(value);
         return (int)(bits ^ (bits >>> 32));
     }

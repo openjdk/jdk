@@ -918,7 +918,20 @@ public final class Integer extends Number implements Comparable<Integer> {
      *          primitive {@code int} value represented by this
      *          {@code Integer} object.
      */
+    @Override
     public int hashCode() {
+        return Integer.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code int} value; compatible with
+     * {@code Integer.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code int} value.
+     */
+    public static int hashCode(int value) {
         return value;
     }
 
