@@ -3068,7 +3068,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1352916731
+DATE_WHEN_GENERATED=1352916966
 
 ###############################################################################
 #
@@ -33656,7 +33656,7 @@ fi
 #
 # Check whether --enable-precompiled-headers was given.
 if test "${enable_precompiled_headers+set}" = set; then
-  enableval=$enable_precompiled_headers; ENABLE_PRECOMPH=${enable_precompiled-headers}
+  enableval=$enable_precompiled_headers; ENABLE_PRECOMPH=${enable_precompiled_headers}
 else
   ENABLE_PRECOMPH=yes
 fi
@@ -33673,9 +33673,8 @@ if test "x$ENABLE_PRECOMPH" = xyes; then
          { $as_echo "$as_me:$LINENO: checking that precompiled headers work" >&5
 $as_echo_n "checking that precompiled headers work... " >&6; }
          echo "int alfa();" > conftest.h
-         $CXX -x c++-header conftest.h -o conftest.hpp.gch
+         $CXX -x c++-header conftest.h -o conftest.hpp.gch 2>&5 >&5
          if test ! -f conftest.hpp.gch; then
-             echo Precompiled header is not working!
              USE_PRECOMPILED_HEADER=0
              { $as_echo "$as_me:$LINENO: result: no" >&5
 $as_echo "no" >&6; }
@@ -33683,7 +33682,7 @@ $as_echo "no" >&6; }
              { $as_echo "$as_me:$LINENO: result: yes" >&5
 $as_echo "yes" >&6; }
          fi
-         rm -f conftest.h
+         rm -f conftest.h conftest.hpp.gch
     fi
 fi
 
