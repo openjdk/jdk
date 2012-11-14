@@ -3068,7 +3068,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1352916966
+DATE_WHEN_GENERATED=1352917083
 
 ###############################################################################
 #
@@ -7137,7 +7137,56 @@ fi
 
 
 # Test from where we are running configure, in or outside of src root.
-if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" || test "x$CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
+# To enable comparison of directories, CURDIR needs to be symlink free
+# just like SRC_ROOT already is
+NOSYM_CURDIR="$CURDIR"
+
+    if test "x$OPENJDK_BUILD_OS" != xwindows; then
+        # Follow a chain of symbolic links. Use readlink
+        # where it exists, else fall back to horribly
+        # complicated shell code.
+        if test "x$READLINK_TESTED" != yes; then
+            # On MacOSX there is a readlink tool with a different
+            # purpose than the GNU readlink tool. Check the found readlink.
+            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            if test "x$ISGNU" = x; then
+                 # A readlink that we do not know how to use.
+                 # Are there other non-GNU readlinks out there?
+                 READLINK_TESTED=yes
+                 READLINK=
+            fi
+        fi
+
+        if test "x$READLINK" != x; then
+            NOSYM_CURDIR=`$READLINK -f $NOSYM_CURDIR`
+        else
+            STARTDIR=$PWD
+            COUNTER=0
+            sym_link_dir=`$DIRNAME $NOSYM_CURDIR`
+            sym_link_file=`$BASENAME $NOSYM_CURDIR`
+            while test $COUNTER -lt 20; do
+                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+                if test "x$ISLINK" == x; then
+                    # This is not a symbolic link! We are done!
+                    break
+                fi
+                # The link might be relative! We have to use cd to travel safely.
+                cd $sym_link_dir
+                # ... and we must get the to the absolute path, not one using symbolic links.
+                cd `pwd -P`
+                cd `$DIRNAME $ISLINK`
+                sym_link_dir=`$THEPWDCMD`
+                sym_link_file=`$BASENAME $ISLINK`
+                let COUNTER=COUNTER+1
+            done
+            cd $STARTDIR
+            NOSYM_CURDIR=$sym_link_dir/$sym_link_file
+        fi
+    fi
+
+if test "x$NOSYM_CURDIR" = "x$SRC_ROOT" || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common" \
+        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/autoconf" \
+        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
