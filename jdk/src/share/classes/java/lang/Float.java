@@ -648,7 +648,20 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * @return a hash code value for this object.
      */
+    @Override
     public int hashCode() {
+        return Float.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code float} value; compatible with
+     * {@code Float.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code float} value.
+     */
+    public static int hashCode(float value) {
         return floatToIntBits(value);
     }
 

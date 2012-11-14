@@ -394,7 +394,20 @@ public final class Short extends Number implements Comparable<Short> {
      *
      * @return a hash code value for this {@code Short}
      */
+    @Override
     public int hashCode() {
+        return Short.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code short} value; compatible with
+     * {@code Short.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code short} value.
+     */
+    public static int hashCode(short value) {
         return (int)value;
     }
 

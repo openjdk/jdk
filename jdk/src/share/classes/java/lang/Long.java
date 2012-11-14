@@ -1021,7 +1021,20 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @return  a hash code value for this object.
      */
+    @Override
     public int hashCode() {
+        return Long.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code long} value; compatible with
+     * {@code Long.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code long} value.
+     */
+    public static int hashCode(long value) {
         return (int)(value ^ (value >>> 32));
     }
 

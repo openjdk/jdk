@@ -4588,7 +4588,20 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *
      * @return a hash code value for this {@code Character}
      */
+    @Override
     public int hashCode() {
+        return Character.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code char} value; compatible with
+     * {@code Character.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code char} value.
+     */
+    public static int hashCode(char value) {
         return (int)value;
     }
 
