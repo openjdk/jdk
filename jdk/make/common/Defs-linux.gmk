@@ -111,21 +111,18 @@ _JUNK_ := $(shell \
 # since objcopy is optional, we set ZIP_DEBUGINFO_FILES later
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-  # Default OBJCOPY comes from GNU Binutils on Linux:
-  DEF_OBJCOPY=/usr/bin/objcopy
-  ifdef CROSS_COMPILE_ARCH
-    # don't try to generate .debuginfo files when cross compiling
-    _JUNK_ := $(shell \
-      echo >&2 "INFO: cross compiling for ARCH $(CROSS_COMPILE_ARCH)," \
-        "skipping .debuginfo generation.")
-    OBJCOPY=
+  ifndef CROSS_COMPILE_ARCH
+    # Default OBJCOPY comes from GNU Binutils on Linux:
+    DEF_OBJCOPY=/usr/bin/objcopy
   else
-    OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
-    ifneq ($(ALT_OBJCOPY),)
-      _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
-      # disable .debuginfo support by setting ALT_OBJCOPY to a non-existent path
-      OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
-    endif
+    # Assume objcopy is part of the cross-compilation toolkit
+    DEF_OBJCOPY=$(COMPILER_PATH)/objcopy
+  endif
+  OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
+  ifneq ($(ALT_OBJCOPY),)
+    _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
+    # disable .debuginfo support by setting ALT_OBJCOPY to a non-existent path
+    OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
   endif
 
   # Setting ENABLE_FULL_DEBUG_SYMBOLS=1 (and OBJCOPY) above enables the
@@ -137,7 +134,7 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 
   ifeq ($(OBJCOPY),)
     _JUNK_ := $(shell \
-      echo >&2 "INFO: no objcopy cmd found so cannot create .debuginfo files.")
+      echo >&2 "INFO: no objcopy cmd found so cannot create .debuginfo files. You may need to set ALT_OBJCOPY.")
     ENABLE_FULL_DEBUG_SYMBOLS=0
   else
     _JUNK_ := $(shell \
