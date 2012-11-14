@@ -123,6 +123,13 @@ public final class Double extends Number implements Comparable<Double> {
     public static final int SIZE = 64;
 
     /**
+     * The number of bytes used to represent a {@code double} value.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
+
+    /**
      * The {@code Class} instance representing the primitive type
      * {@code double}.
      *

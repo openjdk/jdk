@@ -7171,6 +7171,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
     public static final int SIZE = 16;
 
     /**
+     * The number of bytes used to represent a {@code char} value in unsigned
+     * binary form.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
+
+    /**
      * Returns the value obtained by reversing the order of the bytes in the
      * specified <tt>char</tt> value.
      *

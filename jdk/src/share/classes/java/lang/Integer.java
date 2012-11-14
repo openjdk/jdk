@@ -1298,6 +1298,14 @@ public final class Integer extends Number implements Comparable<Integer> {
     public static final int SIZE = 32;
 
     /**
+     * The number of bytes used to represent a {@code int} value in two's
+     * complement binary form.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
+
+    /**
      * Returns an {@code int} value with at most a single one-bit, in the
      * position of the highest-order ("leftmost") one-bit in the specified
      * {@code int} value.  Returns zero if the specified value has no

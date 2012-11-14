@@ -1320,6 +1320,14 @@ public final class Long extends Number implements Comparable<Long> {
     public static final int SIZE = 64;
 
     /**
+     * The number of bytes used to represent a {@code long} value in two's
+     * complement binary form.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
+
+    /**
      * Returns a {@code long} value with at most a single one-bit, in the
      * position of the highest-order ("leftmost") one-bit in the specified
      * {@code long} value.  Returns zero if the specified value has no
