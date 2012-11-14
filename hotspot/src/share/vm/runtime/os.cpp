@@ -397,12 +397,16 @@ void* os::native_java_library() {
     // Try to load verify dll first. In 1.3 java dll depends on it and is not
     // always able to find it when the loading executable is outside the JDK.
     // In order to keep working with 1.2 we ignore any loading errors.
-    dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify");
-    dll_load(buffer, ebuf, sizeof(ebuf));
+    if (dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
+                       "verify")) {
+      dll_load(buffer, ebuf, sizeof(ebuf));
+    }
 
     // Load java dll
-    dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), "java");
-    _native_java_library = dll_load(buffer, ebuf, sizeof(ebuf));
+    if (dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
+                       "java")) {
+      _native_java_library = dll_load(buffer, ebuf, sizeof(ebuf));
+    }
     if (_native_java_library == NULL) {
       vm_exit_during_initialization("Unable to load native library", ebuf);
     }
@@ -410,8 +414,10 @@ void* os::native_java_library() {
 #if defined(__OpenBSD__)
     // Work-around OpenBSD's lack of $ORIGIN support by pre-loading libnet.so
     // ignore errors
-    dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), "net");
-    dll_load(buffer, ebuf, sizeof(ebuf));
+    if (dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
+                       "net")) {
+      dll_load(buffer, ebuf, sizeof(ebuf));
+    }
 #endif
   }
   static jboolean onLoaded = JNI_FALSE;
@@ -1156,7 +1162,7 @@ char** os::split_path(const char* path, int* n) {
   if (inpath == NULL) {
     return NULL;
   }
-  strncpy(inpath, path, strlen(path));
+  strcpy(inpath, path);
   int count = 1;
   char* p = strchr(inpath, psepchar);
   // Get a count of elements to allocate memory
