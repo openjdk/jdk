@@ -283,7 +283,7 @@ compare_general_files() {
         ! -name "*.debuginfo" ! -name "*.dylib" ! -name "jexec" \
         ! -name "ct.sym" ! -name "*.diz" ! -name "*.dll" \
         ! -name "*.pdb" ! -name "*.exp" ! -name "*.ilk" \
-        ! -name "*.lib" ! -name "*.war" \
+        ! -name "*.lib" ! -name "*.war" ! -name "JavaControlPanel" \
         | $GREP -v "./bin/"  | $SORT | $FILTER)
 
     echo General files...
@@ -611,10 +611,19 @@ compare_bin_file() {
         DIFF_SIZE_NUM=$($EXPR $THIS_SIZE - $OTHER_SIZE)
         DIFF_SIZE_REL=$($EXPR $THIS_SIZE \* 100 / $OTHER_SIZE)
         SIZE_MSG=$($PRINTF "%3d%% %4d" $DIFF_SIZE_REL $DIFF_SIZE_NUM)
-        if [[ "$ACCEPTED_SMALL_SIZE_DIFF" = *"$BIN_FILE"* ]] && [ "$DIFF_SIZE_REL" -gt 98 ] && [ "$DIFF_SIZE_REL" -lt 102 ]; then
+        if [[ "$ACCEPTED_SMALL_SIZE_DIFF" = *"$BIN_FILE"* ]] && [ "$DIFF_SIZE_REL" -gt 98 ] \
+	    && [ "$DIFF_SIZE_REL" -lt 102 ]; then
             SIZE_MSG="($SIZE_MSG)"
             DIFF_SIZE=
-        elif [[ "$ACCEPTED_SMALL_SIZE_DIFF" = *"$BIN_FILE"* ]] && [ "$DIFF_SIZE_NUM" = 512 ]; then
+        elif [ "$OPENJDK_TARGET_OS" = "windows" ] \
+	    && [[ "$ACCEPTED_SMALL_SIZE_DIFF" = *"$BIN_FILE"* ]] \
+	    && [ "$DIFF_SIZE_NUM" = 512 ]; then
+	    # On windows, size of binaries increase in 512 increments.
+            SIZE_MSG="($SIZE_MSG)"
+            DIFF_SIZE=
+        elif [ "$OPENJDK_TARGET_OS" = "windows" ] \
+	    && [[ "$ACCEPTED_SMALL_SIZE_DIFF" = *"$BIN_FILE"* ]] \
+	    && [ "$DIFF_SIZE_NUM" = -512 ]; then
 	    # On windows, size of binaries increase in 512 increments.
             SIZE_MSG="($SIZE_MSG)"
             DIFF_SIZE=
@@ -840,7 +849,7 @@ compare_all_libs() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    LIBS=$(cd $THIS_DIR && $FIND . -type f \( -name 'lib*.so' -o -name '*.dylib' -o -name '*.dll' \) | $SORT | $FILTER)
+    LIBS=$(cd $THIS_DIR && $FIND . -type f \( -name 'lib*.so' -o -name '*.dylib' -o -name '*.dll' -o -name 'JavaControlPanel' \) | $SORT | $FILTER)
 
     if [ -n "$LIBS" ]; then
         echo Libraries...
@@ -1218,7 +1227,12 @@ fi
 
 if [ "$CMP_LIBS" = "true" ]; then
     if [ -n "$THIS_J2SDK" ] && [ -n "$OTHER_J2SDK" ]; then
+        echo -n "J2SDK "
         compare_all_libs $THIS_J2SDK $OTHER_J2SDK $COMPARE_ROOT/j2sdk
+        if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
+            echo -n "J2RE  "
+            compare_all_libs $THIS_J2RE $OTHER_J2RE $COMPARE_ROOT/j2re
+        fi
     fi
     if [ -n "$THIS_J2SDK_OVERLAY" ] && [ -n "$OTHER_J2SDK_OVERLAY" ]; then
         echo -n "Bundle   "
