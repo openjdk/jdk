@@ -2177,7 +2177,7 @@ extern "C" {
 jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
   char ebuf[1024];
   char buffer[JVM_MAXPATHLEN];
-  void* library;
+  void* library = NULL;
   jint result = JNI_ERR;
 
   // get agent name and options
@@ -2196,13 +2196,16 @@ jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
     library = os::dll_load(agent, ebuf, sizeof ebuf);
   } else {
     // Try to load the agent from the standard dll directory
-    os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), agent);
-    library = os::dll_load(buffer, ebuf, sizeof ebuf);
+    if (os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
+                           agent)) {
+      library = os::dll_load(buffer, ebuf, sizeof ebuf);
+    }
     if (library == NULL) {
       // not found - try local path
       char ns[1] = {0};
-      os::dll_build_name(buffer, sizeof(buffer), ns, agent);
-      library = os::dll_load(buffer, ebuf, sizeof ebuf);
+      if (os::dll_build_name(buffer, sizeof(buffer), ns, agent)) {
+        library = os::dll_load(buffer, ebuf, sizeof ebuf);
+      }
     }
   }
 
