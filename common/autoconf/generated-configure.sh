@@ -1035,7 +1035,7 @@ with_alsa
 with_alsa_include
 with_alsa_lib
 with_zlib
-enable_static_link_stdc++
+with_stdc++lib
 with_num_cores
 with_memory_size
 with_sjavac_server_java
@@ -1712,9 +1712,6 @@ Optional Features:
   --disable-macosx-runtime-support
                           disable the use of MacOSX Java runtime support
                           framework [enabled]
-  --disable-static-link-stdc++
-                          disable static linking of the C++ runtime on Linux
-                          [enabled]
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
   --disable-precompiled-headers
@@ -1796,6 +1793,10 @@ Optional Packages:
   --with-alsa-lib         specify directory for the alsa library
   --with-zlib             use zlib from build system or OpenJDK source
                           (system, bundled) [bundled]
+  --with-stdc++lib=<static>,<dynamic>,<default>
+                          force linking of the C++ runtime on Linux to either
+                          static or dynamic, default is static with dynamic as
+                          fallback
   --with-num-cores        number of cores in the build system, e.g.
                           --with-num-cores=8 [probed]
   --with-memory-size      memory (in MB) available in the build system, e.g.
@@ -3067,7 +3068,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1352751880
+DATE_WHEN_GENERATED=1352916731
 
 ###############################################################################
 #
@@ -33006,12 +33007,19 @@ LIBS="$save_LIBS"
 # statically link libstdc++ before C++ ABI is stablized on Linux unless
 # dynamic build is configured on command line.
 #
-# Check whether --enable-static-link-stdc++ was given.
-if test "${enable_static_link_stdc+++set}" = set; then
-  enableval=$enable_static_link_stdc++;
-else
 
-		enable_static_link_stdc__=yes
+# Check whether --with-stdc++lib was given.
+if test "${with_stdc++lib+set}" = set; then
+  withval=$with_stdc++lib;
+    if test "x$with_stdc__lib" != xdynamic && test "x$with_stdc__lib" != xstatic \
+        && test "x$with_stdc__lib" != xdefault; then
+      { { $as_echo "$as_me:$LINENO: error: Bad parameter value --with-stdc++lib=$with_stdc__lib!" >&5
+$as_echo "$as_me: error: Bad parameter value --with-stdc++lib=$with_stdc__lib!" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+
+else
+  with_stdc__lib=default
 
 fi
 
@@ -33157,38 +33165,40 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     { $as_echo "$as_me:$LINENO: result: $has_static_libstdcxx" >&5
 $as_echo "$has_static_libstdcxx" >&6; }
 
-    if test "x$has_static_libcxx" = xno && test "x$has_dynamic_libcxx" = xno; then
-        { { $as_echo "$as_me:$LINENO: error: I cannot link to stdc++! Neither dynamically nor statically." >&5
-$as_echo "$as_me: error: I cannot link to stdc++! Neither dynamically nor statically." >&2;}
+    if test "x$has_static_libstdcxx" = xno && test "x$has_dynamic_libstdcxx" = xno; then
+        { { $as_echo "$as_me:$LINENO: error: Cannot link to stdc++, neither dynamically nor statically!" >&5
+$as_echo "$as_me: error: Cannot link to stdc++, neither dynamically nor statically!" >&2;}
    { (exit 1); exit 1; }; }
     fi
 
-    if test "x$enable_static_link_stdc__" = xyes && test "x$has_static_libstdcxx" = xno; then
-        { $as_echo "$as_me:$LINENO: Static linking of libstdc++ was not possible reverting to dynamic linking." >&5
-$as_echo "$as_me: Static linking of libstdc++ was not possible reverting to dynamic linking." >&6;}
-        enable_static_link_stdc__=no
+    if test "x$with_stdc__lib" = xstatic && test "x$has_static_libstdcxx" = xno; then
+        { { $as_echo "$as_me:$LINENO: error: Static linking of libstdc++ was not possible!" >&5
+$as_echo "$as_me: error: Static linking of libstdc++ was not possible!" >&2;}
+   { (exit 1); exit 1; }; }
     fi
 
-    if test "x$enable_static_link_stdc__" = xno && test "x$has_dynamic_libstdcxx" = xno; then
-        { $as_echo "$as_me:$LINENO: Dynamic linking of libstdc++ was not possible reverting to static linking." >&5
-$as_echo "$as_me: Dynamic linking of libstdc++ was not possible reverting to static linking." >&6;}
-        enable_static_link_stdc__=yes
+    if test "x$with_stdc__lib" = xdynamic && test "x$has_dynamic_libstdcxx" = xno; then
+        { { $as_echo "$as_me:$LINENO: error: Dynamic linking of libstdc++ was not possible!" >&5
+$as_echo "$as_me: error: Dynamic linking of libstdc++ was not possible!" >&2;}
+   { (exit 1); exit 1; }; }
     fi
 
     { $as_echo "$as_me:$LINENO: checking how to link with libstdc++" >&5
 $as_echo_n "checking how to link with libstdc++... " >&6; }
-    if test "x$enable_static_link_stdc__" = xyes; then
-        LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
-        LDCXX="$CC"
-        STATIC_CXX_SETTING="STATIC_CXX=true"
-        { $as_echo "$as_me:$LINENO: result: static" >&5
-$as_echo "static" >&6; }
-    else
+    # If dynamic was requested, it's available since it would fail above otherwise.
+    # If dynamic wasn't requested, go with static unless it isn't available.
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno; then
         LIBCXX="$LIBCXX -lstdc++"
         LDCXX="$CXX"
         STATIC_CXX_SETTING="STATIC_CXX=false"
         { $as_echo "$as_me:$LINENO: result: dynamic" >&5
 $as_echo "dynamic" >&6; }
+    else
+        LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
+        LDCXX="$CC"
+        STATIC_CXX_SETTING="STATIC_CXX=true"
+        { $as_echo "$as_me:$LINENO: result: static" >&5
+$as_echo "static" >&6; }
     fi
 fi
 
