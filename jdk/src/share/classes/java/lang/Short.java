@@ -471,6 +471,14 @@ public final class Short extends Number implements Comparable<Short> {
     public static final int SIZE = 16;
 
     /**
+     * The number of bytes used to represent a {@code short} value in two's
+     * complement binary form.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
+
+    /**
      * Returns the value obtained by reversing the order of the bytes in the
      * two's complement representation of the specified {@code short} value.
      *

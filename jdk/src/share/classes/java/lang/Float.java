@@ -121,6 +121,13 @@ public final class Float extends Number implements Comparable<Float> {
     public static final int SIZE = 32;
 
     /**
+     * The number of bytes used to represent a {@code float} value.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
+
+    /**
      * The {@code Class} instance representing the primitive type
      * {@code float}.
      *
