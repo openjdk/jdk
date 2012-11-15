@@ -523,7 +523,7 @@ public class Items {
         Item invoke() {
             MethodType mtype = (MethodType)member.externalType(types);
             int rescode = Code.typecode(mtype.restype);
-            if ((member.owner.flags() & Flags.INTERFACE) != 0) {
+            if ((member.owner.flags() & Flags.INTERFACE) != 0 && !nonvirtual) {
                 code.emitInvokeinterface(pool.put(member), mtype);
             } else if (nonvirtual) {
                 code.emitInvokespecial(pool.put(member), mtype);

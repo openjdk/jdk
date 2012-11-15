@@ -162,15 +162,7 @@ RT_JAR_EXCLUDES := \
 	sun/tools/serialver \
 	sun/tools/tree \
 	sun/tools/util \
-	sun/security/tools/jarsigner/JarBASE64Encoder.class \
-	sun/security/tools/jarsigner/Main.class \
-	sun/security/tools/jarsigner/JarSignerParameters.class \
-	sun/security/tools/jarsigner/Resources.class \
-	sun/security/tools/jarsigner/Resources_ja.class \
-	sun/security/tools/jarsigner/Resources_zh_CN.class \
-	sun/security/tools/jarsigner/SignatureFile\$$$$Block.class \
-	sun/security/tools/jarsigner/SignatureFile.class \
-	sun/security/tools/jarsigner/TimestampedSigner.class \
+	sun/security/tools/jarsigner \
 	sun/security/provider/Sun.class \
 	sun/security/rsa/SunRsaSign.class \
 	sun/security/ssl \
@@ -279,7 +271,7 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
         RT_JAR_EXCLUDES += com/sun/nio/sctp \
-                           sun/nio/ch/sctp \
+                           sun/nio/ch/sctp
 endif
 
 # Find all files in the classes dir to use as dependencies. This could be more fine granular.
@@ -701,14 +693,7 @@ TOOLS_JAR_INCLUDES := \
 	sun/tools/serialver	\
 	sun/tools/tree		\
 	sun/tools/util		\
-	sun/security/tools/JarBASE64Encoder.class \
-	sun/security/tools/JarSigner.class \
-	sun/security/tools/JarSignerParameters.class \
-	sun/security/tools/JarSignerResources.class \
-	sun/security/tools/JarSignerResources_ja.class \
-	sun/security/tools/JarSignerResources_zh_CN.class \
-	sun/security/tools/SignatureFile* \
-	sun/security/tools/TimestampedSigner.class \
+	sun/security/tools/jarsigner \
 	sun/rmi/rmic		\
 	sun/applet		\
 	sun/jvmstat		\

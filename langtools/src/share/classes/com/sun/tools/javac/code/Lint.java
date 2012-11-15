@@ -129,6 +129,13 @@ public class Lint
      */
     public enum LintCategory {
         /**
+         * Warn when code refers to a auxiliary class that is hidden in a source file (ie source file name is
+         * different from the class name, and the type is not properly nested) and the referring code
+         * is not located in the same source file.
+         */
+        AUXILIARYCLASS("auxiliaryclass"),
+
+        /**
          * Warn about use of unnecessary casts.
          */
         CAST("cast"),

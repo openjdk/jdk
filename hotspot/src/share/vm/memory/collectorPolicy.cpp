@@ -742,6 +742,8 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
   uint gc_count = 0;
   uint full_gc_count = 0;
 
+  assert(!Heap_lock->owned_by_self(), "Should not be holding the Heap_lock");
+
   do {
     MetaWord* result = NULL;
     if (GC_locker::is_active_and_needs_gc()) {
@@ -756,7 +758,6 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
       }
       JavaThread* jthr = JavaThread::current();
       if (!jthr->in_critical()) {
-        MutexUnlocker mul(Heap_lock);
         // Wait for JNI critical section to be exited
         GC_locker::stall_until_clear();
         // The GC invoked by the last thread leaving the critical

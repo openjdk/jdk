@@ -95,7 +95,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @param filename the file to be generated.
      */
     public DeprecatedListWriter(ConfigurationImpl configuration,
-                                String filename) throws IOException {
+                                DocPath filename) throws IOException {
         super(configuration, filename);
         this.configuration = configuration;
         NestedClassWriterImpl classW = new NestedClassWriterImpl(this);
@@ -116,7 +116,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @param configuration the current configuration of the doclet.
      */
     public static void generate(ConfigurationImpl configuration) {
-        String filename = "deprecated-list.html";
+        DocPath filename = DocPaths.DEPRECATED_LIST;
         try {
             DeprecatedListWriter depr =
                    new DeprecatedListWriter(configuration, filename);
@@ -180,7 +180,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     private void addIndexLink(DeprecatedAPIListBuilder builder,
             int type, Content contentTree) {
         if (builder.hasDocumentation(type)) {
-            Content li = HtmlTree.LI(getHyperLink("#" + ANCHORS[type],
+            Content li = HtmlTree.LI(getHyperLink(ANCHORS[type],
                     getResource(HEADING_KEYS[type])));
             contentTree.addContent(li);
         }

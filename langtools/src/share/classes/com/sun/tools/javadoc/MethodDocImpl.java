@@ -31,9 +31,10 @@ import com.sun.javadoc.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.util.Position;
+
+import static com.sun.tools.javac.code.TypeTag.CLASS;
 
 /**
  * Represents a method of a java class.
@@ -129,7 +130,7 @@ public class MethodDocImpl
 
         ClassSymbol origin = (ClassSymbol)sym.owner;
         for (Type t = env.types.supertype(origin.type);
-             t.tag == TypeTags.CLASS;
+             t.hasTag(CLASS);
              t = env.types.supertype(t)) {
             ClassSymbol c = (ClassSymbol)t.tsym;
             for (Scope.Entry e = c.members().lookup(sym.name); e.scope != null; e = e.next()) {
@@ -161,7 +162,7 @@ public class MethodDocImpl
 
         ClassSymbol origin = (ClassSymbol)sym.owner;
         for (Type t = env.types.supertype(origin.type);
-             t.tag == TypeTags.CLASS;
+             t.hasTag(CLASS);
              t = env.types.supertype(t)) {
             ClassSymbol c = (ClassSymbol)t.tsym;
             for (Scope.Entry e = c.members().lookup(sym.name); e.scope != null; e = e.next()) {

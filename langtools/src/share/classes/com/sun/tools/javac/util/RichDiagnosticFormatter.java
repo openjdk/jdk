@@ -39,7 +39,7 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Types;
 
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 import static com.sun.tools.javac.util.RichDiagnosticFormatter.RichConfiguration.*;
@@ -295,7 +295,7 @@ public class RichDiagnosticFormatter extends
                     conflicts.contains(s))) {
                     List<Name> l = List.nil();
                     Symbol s2 = s;
-                    while (s2.type.getEnclosingType().tag == CLASS
+                    while (s2.type.getEnclosingType().hasTag(CLASS)
                             && s2.owner.kind == Kinds.TYP) {
                         l = l.prepend(s2.getSimpleName());
                         s2 = s2.owner;
@@ -414,7 +414,7 @@ public class RichDiagnosticFormatter extends
                     ? ownerName
                     : s.name.toString();
                 if (s.type != null) {
-                    if (s.type.tag == FORALL) {
+                    if (s.type.hasTag(FORALL)) {
                         ms = "<" + visitTypes(s.type.getTypeArguments(), locale) + ">" + ms;
                     }
                     ms += "(" + printMethodArgs(
@@ -532,8 +532,8 @@ public class RichDiagnosticFormatter extends
                 nameSimplifier.addUsage(t.tsym);
 
                 boolean boundErroneous = bounds.head == null ||
-                                         bounds.head.tag == NONE ||
-                                         bounds.head.tag == ERROR;
+                                         bounds.head.hasTag(NONE) ||
+                                         bounds.head.hasTag(ERROR);
 
                 if ((t.tsym.flags() & SYNTHETIC) == 0) {
                     //this is a true typevar

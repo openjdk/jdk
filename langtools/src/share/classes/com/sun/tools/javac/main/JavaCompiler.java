@@ -63,6 +63,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Log.WriterKind;
 
+import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 import static com.sun.tools.javac.util.ListBuffer.lb;
@@ -270,6 +271,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     protected TransTypes transTypes;
 
+    /** The lambda translator.
+     */
+    protected LambdaToMethod lambdaToMethod;
+
     /** The syntactic sugar desweetener.
      */
     protected Lower lower;
@@ -367,6 +372,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         reader.sourceCompleter = this;
 
         options = Options.instance(context);
+
+        lambdaToMethod = LambdaToMethod.instance(context);
 
         verbose       = options.isSet(VERBOSE);
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
@@ -523,8 +530,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         ATTR(4),
         FLOW(5),
         TRANSTYPES(6),
-        LOWER(7),
-        GENERATE(8);
+        UNLAMBDA(7),
+        LOWER(8),
+        GENERATE(9);
+
         CompileState(int value) {
             this.value = value;
         }
@@ -1349,7 +1358,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             @Override
             public void visitClassDef(JCClassDecl node) {
                 Type st = types.supertype(node.sym.type);
-                if (st.tag == TypeTags.CLASS) {
+                if (st.hasTag(CLASS)) {
                     ClassSymbol c = st.tsym.outermostClass();
                     Env<AttrContext> stEnv = enter.getEnv(c);
                     if (stEnv != null && env != stEnv) {
@@ -1416,6 +1425,12 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
             env.tree = transTypes.translateTopLevelClass(env.tree, localMake);
             compileStates.put(env, CompileState.TRANSTYPES);
+
+            if (shouldStop(CompileState.UNLAMBDA))
+                return;
+
+            env.tree = lambdaToMethod.translateTopLevelClass(env, env.tree, localMake);
+            compileStates.put(env, CompileState.UNLAMBDA);
 
             if (shouldStop(CompileState.LOWER))
                 return;

@@ -29,6 +29,7 @@ import java.io.*;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.DocPaths;
 import com.sun.tools.doclets.internal.toolkit.util.DocletAbortException;
 
 /**
@@ -44,14 +45,12 @@ import com.sun.tools.doclets.internal.toolkit.util.DocletAbortException;
 public class SerializedFormWriterImpl extends SubWriterHolderWriter
     implements SerializedFormWriter {
 
-    private static final String FILE_NAME = "serialized-form.html";
-
     /**
      * @throws IOException
      * @throws DocletAbortException
      */
     public SerializedFormWriterImpl() throws IOException {
-        super(ConfigurationImpl.getInstance(), FILE_NAME);
+        super(ConfigurationImpl.getInstance(), DocPaths.SERIALIZED_FORM);
     }
 
     /**

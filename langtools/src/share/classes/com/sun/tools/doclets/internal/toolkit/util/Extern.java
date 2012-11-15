@@ -30,6 +30,8 @@ import java.net.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.tools.StandardLocation;
+
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 
@@ -138,21 +140,25 @@ public class Extern {
      *
      * @param pkgName The package name.
      * @param relativepath    The relative path.
-     * @param link    The link to convert.
+     * @param filename    The link to convert.
      * @return if external return converted link else return null
      */
-    public String getExternalLink(String pkgName,
-                                  String relativepath, String link) {
+    public DocLink getExternalLink(String pkgName,
+                                  DocPath relativepath, String filename) {
+        return getExternalLink(pkgName, relativepath, filename, null);
+    }
+
+    public DocLink getExternalLink(String pkgName,
+                                  DocPath relativepath, String filename, String memberName) {
         Item fnd = findPackageItem(pkgName);
-        if (fnd != null) {
-            String externlink = fnd.path + link;
-            if (fnd.relative) {  // it's a relative path.
-                return relativepath + externlink;
-            } else {
-                return externlink;
-            }
-        }
-        return null;
+        if (fnd == null)
+            return null;
+
+        DocPath p = fnd.relative ?
+                relativepath.resolve(fnd.path).resolve(filename) :
+                DocPath.create(fnd.path).resolve(filename);
+
+        return new DocLink(p, "is-external=true", memberName);
     }
 
     /**
@@ -163,17 +169,38 @@ public class Extern {
      * @param pkglisturl This can be another URL for "package-list" or ordinary
      *                   file.
      * @param reporter   The <code>DocErrorReporter</code> used to report errors.
-     * @param linkoffline True if -linkoffline isused and false if -link is used.
+     * @param linkoffline True if -linkoffline is used and false if -link is used.
      */
-    public boolean url(String url, String pkglisturl,
+    public boolean link(String url, String pkglisturl,
                               DocErrorReporter reporter, boolean linkoffline) {
         this.linkoffline = linkoffline;
-        String errMsg = composeExternPackageList(url, pkglisturl);
-        if (errMsg != null) {
-            reporter.printWarning(errMsg);
-            return false;
-        } else {
+        try {
+            url = adjustEndFileSeparator(url);
+            if (isUrl(pkglisturl)) {
+                readPackageListFromURL(url, toURL(pkglisturl));
+            } else {
+                readPackageListFromFile(url, DocFile.createFileForInput(configuration, pkglisturl));
+            }
             return true;
+        } catch (Fault f) {
+            reporter.printWarning(f.getMessage());
+            return false;
+        }
+    }
+
+    private URL toURL(String url) throws Fault {
+        try {
+            return new URL(url);
+        } catch (MalformedURLException e) {
+            throw new Fault(configuration.getText("doclet.MalformedURL", url), e);
+        }
+    }
+
+    private class Fault extends Exception {
+        private static final long serialVersionUID = 0;
+
+        Fault(String msg, Exception cause) {
+            super(msg, cause);
         }
     }
 
@@ -190,31 +217,10 @@ public class Extern {
     }
 
     /**
-     * Adjusts the end file separator if it is missing from the URL or the
-     * directory path and depending upon the URL or file path, fetch or
-     * read the "package-list" file.
-     *
-     * @param urlOrDirPath        URL or the directory path.
-     * @param pkgListUrlOrDirPath URL or directory path for the "package-list" file or the "package-list"
-     * file itself.
-     */
-    private String composeExternPackageList(String urlOrDirPath, String pkgListUrlOrDirPath) {
-        urlOrDirPath = adjustEndFileSeparator(urlOrDirPath);
-        pkgListUrlOrDirPath = adjustEndFileSeparator(pkgListUrlOrDirPath);
-        return isUrl(pkgListUrlOrDirPath) ?
-            fetchURLComposeExternPackageList(urlOrDirPath, pkgListUrlOrDirPath) :
-            readFileComposeExternPackageList(urlOrDirPath, pkgListUrlOrDirPath);
-    }
-
-    /**
      * If the URL or Directory path is missing end file separator, add that.
      */
     private String adjustEndFileSeparator(String url) {
-        String filesep = "/";
-        if (!url.endsWith(filesep)) {
-            url += filesep;
-        }
-        return url;
+        return url.endsWith("/") ? url : url + '/';
     }
 
     /**
@@ -223,17 +229,18 @@ public class Extern {
      * @param urlpath        Path to the packages.
      * @param pkglisturlpath URL or the path to the "package-list" file.
      */
-    private String fetchURLComposeExternPackageList(String urlpath,
-                                                   String pkglisturlpath) {
-        String link = pkglisturlpath + "package-list";
+    private void readPackageListFromURL(String urlpath, URL pkglisturlpath)
+            throws Fault {
         try {
-            readPackageList((new URL(link)).openStream(), urlpath, false);
+            URL link = pkglisturlpath.toURI().resolve(DocPaths.PACKAGE_LIST.getPath()).toURL();
+            readPackageList(link.openStream(), urlpath, false);
+        } catch (URISyntaxException exc) {
+            throw new Fault(configuration.getText("doclet.MalformedURL", pkglisturlpath.toString()), exc);
         } catch (MalformedURLException exc) {
-            return configuration.getText("doclet.MalformedURL", link);
+            throw new Fault(configuration.getText("doclet.MalformedURL", pkglisturlpath.toString()), exc);
         } catch (IOException exc) {
-            return configuration.getText("doclet.URL_error", link);
+            throw new Fault(configuration.getText("doclet.URL_error", pkglisturlpath.toString()), exc);
         }
-        return null;
     }
 
     /**
@@ -242,27 +249,24 @@ public class Extern {
      * @param path URL or directory path to the packages.
      * @param pkgListPath Path to the local "package-list" file.
      */
-    private String readFileComposeExternPackageList(String path,
-                                                   String pkgListPath) {
-
-        String link = pkgListPath + "package-list";
-        if (! ((new File(pkgListPath)).isAbsolute() || linkoffline)){
-            link = configuration.destDirName + link;
+    private void readPackageListFromFile(String path, DocFile pkgListPath)
+            throws Fault {
+        DocFile file = pkgListPath.resolve(DocPaths.PACKAGE_LIST);
+        if (! (file.isAbsolute() || linkoffline)){
+            file = file.resolveAgainst(StandardLocation.CLASS_OUTPUT);
         }
         try {
-            File file = new File(link);
             if (file.exists() && file.canRead()) {
-                readPackageList(new FileInputStream(file), path,
-                    ! ((new File(path)).isAbsolute() || isUrl(path)));
+                boolean pathIsRelative =
+                        !DocFile.createFileForInput(configuration, path).isAbsolute()
+                        && !isUrl(path);
+                readPackageList(file.openInputStream(), path, pathIsRelative);
             } else {
-                return configuration.getText("doclet.File_error", link);
+                throw new Fault(configuration.getText("doclet.File_error", file.getPath()), null);
             }
-        } catch (FileNotFoundException exc) {
-            return configuration.getText("doclet.File_error", link);
         } catch (IOException exc) {
-            return configuration.getText("doclet.File_error", link);
+           throw new Fault(configuration.getText("doclet.File_error", file.getPath()), exc);
         }
-        return null;
     }
 
     /**

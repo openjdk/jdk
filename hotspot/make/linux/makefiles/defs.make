@@ -170,68 +170,70 @@ ifeq ($(JDK6_OR_EARLIER),0)
   # overridden in some situations, e.g., a BUILD_FLAVOR != product
   # build.
 
-  ifeq ($(BUILD_FLAVOR), product)
-    FULL_DEBUG_SYMBOLS ?= 1
-    ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
-  else
-    # debug variants always get Full Debug Symbols (if available)
-    ENABLE_FULL_DEBUG_SYMBOLS = 1
-  endif
-  _JUNK_ := $(shell \
-    echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
-  # since objcopy is optional, we set ZIP_DEBUGINFO_FILES later
-
-  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-    # Default OBJCOPY comes from GNU Binutils on Linux:
-    DEF_OBJCOPY=/usr/bin/objcopy
-    ifdef CROSS_COMPILE_ARCH
-      # don't try to generate .debuginfo files when cross compiling
-      _JUNK_ := $(shell \
-        echo >&2 "INFO: cross compiling for ARCH $(CROSS_COMPILE_ARCH)," \
-          "skipping .debuginfo generation.")
-      OBJCOPY=
+  # Due to the multiple sub-make processes that occur this logic gets
+  # executed multiple times. We reduce the noise by at least checking that
+  # BUILD_FLAVOR has been set.
+  ifneq ($(BUILD_FLAVOR),)
+    ifeq ($(BUILD_FLAVOR), product)
+      FULL_DEBUG_SYMBOLS ?= 1
+      ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
     else
+      # debug variants always get Full Debug Symbols (if available)
+      ENABLE_FULL_DEBUG_SYMBOLS = 1
+    endif
+    _JUNK_ := $(shell \
+      echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
+    # since objcopy is optional, we set ZIP_DEBUGINFO_FILES later
+
+    ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+      # Default OBJCOPY comes from GNU Binutils on Linux
+      ifeq ($(CROSS_COMPILE_ARCH),)
+        DEF_OBJCOPY=/usr/bin/objcopy
+      else
+        # Assume objcopy is part of the cross-compilation toolset
+        ifneq ($(ALT_COMPILER_PATH),)
+          DEF_OBJCOPY=$(ALT_COMPILER_PATH)/objcopy
+        endif
+      endif
       OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
       ifneq ($(ALT_OBJCOPY),)
         _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
         OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
       endif
-    endif
-  else
-    OBJCOPY=
-  endif
 
-  ifeq ($(OBJCOPY),)
-    _JUNK_ := $(shell \
-      echo >&2 "INFO: no objcopy cmd found so cannot create .debuginfo files.")
-    ENABLE_FULL_DEBUG_SYMBOLS=0
-    _JUNK_ := $(shell \
-      echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
-  else
-    _JUNK_ := $(shell \
-      echo >&2 "INFO: $(OBJCOPY) cmd found so will create .debuginfo files.")
+      ifeq ($(OBJCOPY),)
+        _JUNK_ := $(shell \
+          echo >&2 "INFO: no objcopy cmd found so cannot create .debuginfo files. You may need to set ALT_OBJCOPY.")
+        ENABLE_FULL_DEBUG_SYMBOLS=0
+        _JUNK_ := $(shell \
+          echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
+      else
+        _JUNK_ := $(shell \
+          echo >&2 "INFO: $(OBJCOPY) cmd found so will create .debuginfo files.")
 
-    # Library stripping policies for .debuginfo configs:
-    #   all_strip - strips everything from the library
-    #   min_strip - strips most stuff from the library; leaves minimum symbols
-    #   no_strip  - does not strip the library at all
-    #
-    # Oracle security policy requires "all_strip". A waiver was granted on
-    # 2011.09.01 that permits using "min_strip" in the Java JDK and Java JRE.
-    #
-    # Currently, STRIP_POLICY is only used when Full Debug Symbols is enabled.
-    #
-    STRIP_POLICY ?= min_strip
+        # Library stripping policies for .debuginfo configs:
+        #   all_strip - strips everything from the library
+        #   min_strip - strips most stuff from the library; leaves minimum symbols
+        #   no_strip  - does not strip the library at all
+        #
+        # Oracle security policy requires "all_strip". A waiver was granted on
+        # 2011.09.01 that permits using "min_strip" in the Java JDK and Java JRE.
+        #
+        # Currently, STRIP_POLICY is only used when Full Debug Symbols is enabled.
+        #
+        STRIP_POLICY ?= min_strip
 
-    _JUNK_ := $(shell \
-      echo >&2 "INFO: STRIP_POLICY=$(STRIP_POLICY)")
+        _JUNK_ := $(shell \
+          echo >&2 "INFO: STRIP_POLICY=$(STRIP_POLICY)")
 
-    ZIP_DEBUGINFO_FILES ?= 1
+        ZIP_DEBUGINFO_FILES ?= 1
 
-    _JUNK_ := $(shell \
-      echo >&2 "INFO: ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)")
-  endif
-endif
+        _JUNK_ := $(shell \
+          echo >&2 "INFO: ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)")
+      endif
+    endif # ENABLE_FULL_DEBUG_SYMBOLS=1
+  endif # BUILD_FLAVOR
+endif # JDK_6_OR_EARLIER
 
 JDK_INCLUDE_SUBDIR=linux
 

@@ -52,7 +52,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * @param filename Name of the package index file to be generated.
      */
     public PackageIndexFrameWriter(ConfigurationImpl configuration,
-                                   String filename) throws IOException {
+                                   DocPath filename) throws IOException {
         super(configuration, filename);
     }
 
@@ -62,7 +62,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      */
     public static void generate(ConfigurationImpl configuration) {
         PackageIndexFrameWriter packgen;
-        String filename = "overview-frame.html";
+        DocPath filename = DocPaths.OVERVIEW_FRAME;
         try {
             packgen = new PackageIndexFrameWriter(configuration, filename);
             packgen.buildPackageIndexFile("doclet.Window_Overview", false);
@@ -109,12 +109,12 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         if (pd.name().length() > 0) {
             packageLabel = getPackageLabel(pd.name());
             packageLinkContent = getHyperLink(pathString(pd,
-                    "package-frame.html"), "", packageLabel, "",
+                     DocPaths.PACKAGE_FRAME), packageLabel, "",
                     "packageFrame");
         } else {
             packageLabel = new RawHtml("&lt;unnamed package&gt;");
-            packageLinkContent = getHyperLink("package-frame.html",
-                    "", packageLabel, "", "packageFrame");
+            packageLinkContent = getHyperLink(DocPaths.PACKAGE_FRAME,
+                    packageLabel, "", "packageFrame");
         }
         Content li = HtmlTree.LI(packageLinkContent);
         return li;
@@ -148,7 +148,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * @param body the Content object to which the all classes link should be added
      */
     protected void addAllClassesLink(Content body) {
-        Content linkContent = getHyperLink("allclasses-frame.html", "",
+        Content linkContent = getHyperLink(DocPaths.ALLCLASSES_FRAME,
                 allclassesLabel, "", "packageFrame");
         Content div = HtmlTree.DIV(HtmlStyle.indexHeader, linkContent);
         body.addContent(div);

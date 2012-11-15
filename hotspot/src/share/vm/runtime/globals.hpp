@@ -857,9 +857,6 @@ class CommandLineFlags {
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
                                                                             \
-  product_pd(bool, UseVectoredExceptions,                                   \
-          "Temp Flag - Use Vectored Exceptions rather than SEH (Windows Only)") \
-                                                                            \
   develop(bool, TraceVMOperation, false,                                    \
           "Trace vm operations")                                            \
                                                                             \
@@ -3598,6 +3595,15 @@ class CommandLineFlags {
                                                                             \
   product(uintx, StringTableSize, 1009,                                     \
           "Number of buckets in the interned String table")                 \
+                                                                            \
+  develop(bool, TraceDefaultMethods, false,                                 \
+          "Trace the default method processing steps")                      \
+                                                                            \
+  develop(bool, ParseAllGenericSignatures, false,                           \
+          "Parse all generic signatures while classloading")                \
+                                                                            \
+  develop(bool, VerifyGenericSignatures, false,                             \
+          "Abort VM on erroneous or inconsistent generic signatures")       \
                                                                             \
   product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
