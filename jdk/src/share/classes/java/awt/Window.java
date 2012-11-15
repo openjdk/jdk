@@ -1206,7 +1206,7 @@ public class Window extends Container implements Accessible {
         }
         else {
             try {
-                EventQueue.invokeAndWait(action);
+                EventQueue.invokeAndWait(this, action);
             }
             catch (InterruptedException e) {
                 System.err.println("Disposal was interrupted:");
