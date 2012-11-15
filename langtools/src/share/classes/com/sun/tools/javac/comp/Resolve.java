@@ -1731,7 +1731,7 @@ public class Resolve {
 
     /** Find an unqualified identifier which matches a specified kind set.
      *  @param env       The current environment.
-     *  @param name      The indentifier's name.
+     *  @param name      The identifier's name.
      *  @param kind      Indicates the possible symbol kinds
      *                   (a subset of VAL, TYP, PCK).
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.source.util;
 
 import java.lang.reflect.Method;
+
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -73,7 +74,7 @@ public abstract class Trees {
         return getJavacTrees(ProcessingEnvironment.class, env);
     }
 
-    private static Trees getJavacTrees(Class<?> argType, Object arg) {
+    static Trees getJavacTrees(Class<?> argType, Object arg) {
         try {
             ClassLoader cl = arg.getClass().getClassLoader();
             Class<?> c = Class.forName("com.sun.tools.javac.api.JavacTrees", false, cl);
@@ -168,6 +169,7 @@ public abstract class Trees {
     /**
      * Gets the doc comment, if any, for the Tree node identified by a given TreePath.
      * Returns null if no doc comment was found.
+     * @see DocTrees#getDocCommentTree(TreePath)
      */
     public abstract String getDocComment(TreePath path);
 

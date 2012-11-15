@@ -616,13 +616,13 @@ public class Attr extends JCTree.Visitor {
     /** Derived visitor method: attribute an expression tree with
      *  no constraints on the computed type.
      */
-    Type attribExpr(JCTree tree, Env<AttrContext> env) {
+    public Type attribExpr(JCTree tree, Env<AttrContext> env) {
         return attribTree(tree, env, unknownExprInfo);
     }
 
     /** Derived visitor method: attribute a type tree.
      */
-    Type attribType(JCTree tree, Env<AttrContext> env) {
+    public Type attribType(JCTree tree, Env<AttrContext> env) {
         Type result = attribType(tree, env, Type.noType);
         return result;
     }

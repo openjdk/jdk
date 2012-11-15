@@ -26,6 +26,8 @@
 package com.sun.tools.javac.api;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
@@ -40,19 +42,31 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 
+import com.sun.source.doctree.DocCommentTree;
+import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
+import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
-import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Type.ArrayType;
+import com.sun.tools.javac.code.Type.ClassType;
+import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.UnionClassType;
+import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.code.Types.TypeRelation;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Enter;
@@ -61,6 +75,9 @@ import com.sun.tools.javac.comp.MemberEnter;
 import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.tree.DCTree;
+import com.sun.tools.javac.tree.DCTree.DCDocComment;
+import com.sun.tools.javac.tree.DCTree.DCReference;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -71,8 +88,12 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Pair;
+import static com.sun.tools.javac.code.TypeTag.*;
 
 /**
  * Provides an implementation of Trees.
@@ -84,7 +105,7 @@ import com.sun.tools.javac.util.Pair;
  *
  * @author Peter von der Ah&eacute;
  */
-public class JavacTrees extends Trees {
+public class JavacTrees extends DocTrees {
 
     // in a world of a single context per compilation, these would all be final
     private Resolve resolve;
@@ -95,6 +116,8 @@ public class JavacTrees extends Trees {
     private TreeMaker treeMaker;
     private JavacElements elements;
     private JavacTaskImpl javacTaskImpl;
+    private Names names;
+    private Types types;
 
     // called reflectively from Trees.instance(CompilationTask task)
     public static JavacTrees instance(JavaCompiler.CompilationTask task) {
@@ -134,6 +157,8 @@ public class JavacTrees extends Trees {
         resolve = Resolve.instance(context);
         treeMaker = TreeMaker.instance(context);
         memberEnter = MemberEnter.instance(context);
+        names = Names.instance(context);
+        types = Types.instance(context);
 
         JavacTask t = context.get(JavacTask.class);
         if (t instanceof JavacTaskImpl)
@@ -229,6 +254,324 @@ public class JavacTrees extends Trees {
         return sym;
     }
 
+    @Override
+    public Element getElement(TreePath path, ReferenceTree reference) {
+        if (!(reference instanceof DCReference))
+            return null;
+        DCReference ref = (DCReference) reference;
+
+        Env<AttrContext> env = getAttrContext(path);
+
+        Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
+                new Log.DeferredDiagnosticHandler(log);
+        try {
+            final ClassSymbol tsym;
+            final Name memberName;
+            if (ref.qualifierExpression == null) {
+                tsym = env.enclClass.sym;
+                memberName = ref.memberName;
+            } else {
+                // See if the qualifierExpression is a type or package name.
+                // javac does not provide the exact method required, so
+                // we first check if qualifierExpression identifies a type,
+                // and if not, then we check to see if it identifies a package.
+                Type t = attr.attribType(ref.qualifierExpression, env);
+                if (t.isErroneous()) {
+                    if (ref.memberName == null) {
+                        // Attr/Resolve assume packages exist and create symbols as needed
+                        // so use getPackageElement to restrict search to existing packages
+                        PackageSymbol pck = elements.getPackageElement(ref.qualifierExpression.toString());
+                        if (pck != null) {
+                            return pck;
+                        } else if (ref.qualifierExpression.hasTag(JCTree.Tag.IDENT)) {
+                            // fixup:  allow "identifier" instead of "#identifier"
+                            // for compatibility with javadoc
+                            tsym = env.enclClass.sym;
+                            memberName = ((JCIdent) ref.qualifierExpression).name;
+                        } else
+                            return null;
+                    } else {
+                        return null;
+                    }
+                } else {
+                    tsym = (ClassSymbol) t.tsym;
+                    memberName = ref.memberName;
+                }
+            }
+
+            if (memberName == null)
+                return tsym;
+
+            final List<Type> paramTypes;
+            if (ref.paramTypes == null)
+                paramTypes = null;
+            else {
+                ListBuffer<Type> lb = new ListBuffer<Type>();
+                for (List<JCTree> l = ref.paramTypes; l.nonEmpty(); l = l.tail) {
+                    JCTree tree = l.head;
+                    Type t = attr.attribType(tree, env);
+                    lb.add(t);
+                }
+                paramTypes = lb.toList();
+            }
+
+            Symbol msym = (memberName == tsym.name)
+                    ? findConstructor(tsym, paramTypes)
+                    : findMethod(tsym, memberName, paramTypes);
+            if (paramTypes != null) {
+                // explicit (possibly empty) arg list given, so cannot be a field
+                return msym;
+            }
+
+            VarSymbol vsym = (ref.paramTypes != null) ? null : findField(tsym, memberName);
+            // prefer a field over a method with no parameters
+            if (vsym != null &&
+                    (msym == null ||
+                        types.isSubtypeUnchecked(vsym.enclClass().asType(), msym.enclClass().asType()))) {
+                return vsym;
+            } else {
+                return msym;
+            }
+        } finally {
+            log.popDiagnosticHandler(deferredDiagnosticHandler);
+        }
+    }
+
+    /** @see com.sun.tools.javadoc.ClassDocImpl#findField */
+    private VarSymbol findField(ClassSymbol tsym, Name fieldName) {
+        return searchField(tsym, fieldName, new HashSet<ClassSymbol>());
+    }
+
+    /** @see com.sun.tools.javadoc.ClassDocImpl#searchField */
+    private VarSymbol searchField(ClassSymbol tsym, Name fieldName, Set<ClassSymbol> searched) {
+        if (searched.contains(tsym)) {
+            return null;
+        }
+        searched.add(tsym);
+
+        for (com.sun.tools.javac.code.Scope.Entry e = tsym.members().lookup(fieldName);
+                e.scope != null; e = e.next()) {
+            if (e.sym.kind == Kinds.VAR) {
+                return (VarSymbol)e.sym;
+            }
+        }
+
+        //### If we found a VarSymbol above, but which did not pass
+        //### the modifier filter, we should return failure here!
+
+        ClassSymbol encl = tsym.owner.enclClass();
+        if (encl != null) {
+            VarSymbol vsym = searchField(encl, fieldName, searched);
+            if (vsym != null) {
+                return vsym;
+            }
+        }
+
+        // search superclass
+        Type superclass = tsym.getSuperclass();
+        if (superclass.tsym != null) {
+            VarSymbol vsym = searchField((ClassSymbol) superclass.tsym, fieldName, searched);
+            if (vsym != null) {
+                return vsym;
+            }
+        }
+
+        // search interfaces
+        List<Type> intfs = tsym.getInterfaces();
+        for (List<Type> l = intfs; l.nonEmpty(); l = l.tail) {
+            Type intf = l.head;
+            if (intf.isErroneous()) continue;
+            VarSymbol vsym = searchField((ClassSymbol) intf.tsym, fieldName, searched);
+            if (vsym != null) {
+                return vsym;
+            }
+        }
+
+        return null;
+    }
+
+    /** @see com.sun.tools.javadoc.ClassDocImpl#findConstructor */
+    MethodSymbol findConstructor(ClassSymbol tsym, List<Type> paramTypes) {
+        for (com.sun.tools.javac.code.Scope.Entry e = tsym.members().lookup(names.init);
+                e.scope != null; e = e.next()) {
+            if (e.sym.kind == Kinds.MTH) {
+                if (hasParameterTypes((MethodSymbol) e.sym, paramTypes)) {
+                    return (MethodSymbol) e.sym;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** @see com.sun.tools.javadoc.ClassDocImpl#findMethod */
+    private MethodSymbol findMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes) {
+        return searchMethod(tsym, methodName, paramTypes, new HashSet<ClassSymbol>());
+    }
+
+    /** @see com.sun.tools.javadoc.ClassDocImpl#searchMethod */
+    private MethodSymbol searchMethod(ClassSymbol tsym, Name methodName,
+                                       List<Type> paramTypes, Set<ClassSymbol> searched) {
+        //### Note that this search is not necessarily what the compiler would do!
+
+        // do not match constructors
+        if (methodName == names.init)
+            return null;
+
+        if (searched.contains(tsym))
+            return null;
+        searched.add(tsym);
+
+        // search current class
+        com.sun.tools.javac.code.Scope.Entry e = tsym.members().lookup(methodName);
+
+        //### Using modifier filter here isn't really correct,
+        //### but emulates the old behavior.  Instead, we should
+        //### apply the normal rules of visibility and inheritance.
+
+        if (paramTypes == null) {
+            // If no parameters specified, we are allowed to return
+            // any method with a matching name.  In practice, the old
+            // code returned the first method, which is now the last!
+            // In order to provide textually identical results, we
+            // attempt to emulate the old behavior.
+            MethodSymbol lastFound = null;
+            for (; e.scope != null; e = e.next()) {
+                if (e.sym.kind == Kinds.MTH) {
+                    if (e.sym.name == methodName) {
+                        lastFound = (MethodSymbol)e.sym;
+                    }
+                }
+            }
+            if (lastFound != null) {
+                return lastFound;
+            }
+        } else {
+            for (; e.scope != null; e = e.next()) {
+                if (e.sym != null &&
+                    e.sym.kind == Kinds.MTH) {
+                    if (hasParameterTypes((MethodSymbol) e.sym, paramTypes)) {
+                        return (MethodSymbol) e.sym;
+                    }
+                }
+            }
+        }
+
+        //### If we found a MethodSymbol above, but which did not pass
+        //### the modifier filter, we should return failure here!
+
+        // search superclass
+        Type superclass = tsym.getSuperclass();
+        if (superclass.tsym != null) {
+            MethodSymbol msym = searchMethod((ClassSymbol) superclass.tsym, methodName, paramTypes, searched);
+            if (msym != null) {
+                return msym;
+            }
+        }
+
+        // search interfaces
+        List<Type> intfs = tsym.getInterfaces();
+        for (List<Type> l = intfs; l.nonEmpty(); l = l.tail) {
+            Type intf = l.head;
+            if (intf.isErroneous()) continue;
+            MethodSymbol msym = searchMethod((ClassSymbol) intf.tsym, methodName, paramTypes, searched);
+            if (msym != null) {
+                return msym;
+            }
+        }
+
+        // search enclosing class
+        ClassSymbol encl = tsym.owner.enclClass();
+        if (encl != null) {
+            MethodSymbol msym = searchMethod(encl, methodName, paramTypes, searched);
+            if (msym != null) {
+                return msym;
+            }
+        }
+
+        return null;
+    }
+
+    /** @see com.sun.tools.javadoc.ClassDocImpl */
+    private boolean hasParameterTypes(MethodSymbol method, List<Type> paramTypes) {
+        if (paramTypes == null)
+            return true;
+
+        if (method.params().size() != paramTypes.size())
+            return false;
+
+        List<Type> methodParamTypes = types.erasureRecursive(method.asType()).getParameterTypes();
+
+        return (Type.isErroneous(paramTypes))
+            ? fuzzyMatch(paramTypes, methodParamTypes)
+            : types.isSameTypes(paramTypes, methodParamTypes);
+    }
+
+    boolean fuzzyMatch(List<Type> paramTypes, List<Type> methodParamTypes) {
+        List<Type> l1 = paramTypes;
+        List<Type> l2 = methodParamTypes;
+        while (l1.nonEmpty()) {
+            if (!fuzzyMatch(l1.head, l2.head))
+                return false;
+            l1 = l1.tail;
+            l2 = l2.tail;
+        }
+        return true;
+    }
+
+    boolean fuzzyMatch(Type paramType, Type methodParamType) {
+        Boolean b = fuzzyMatcher.visit(paramType, methodParamType);
+        return (b == Boolean.TRUE);
+    }
+
+    TypeRelation fuzzyMatcher = new TypeRelation() {
+        @Override
+        public Boolean visitType(Type t, Type s) {
+            if (t == s)
+                return true;
+
+            if (s.isPartial())
+                return visit(s, t);
+
+            switch (t.getTag()) {
+            case BYTE: case CHAR: case SHORT: case INT: case LONG: case FLOAT:
+            case DOUBLE: case BOOLEAN: case VOID: case BOT: case NONE:
+                return t.getTag() == s.getTag();
+
+            default:
+                throw new AssertionError("fuzzyMatcher " + t.getTag());
+            }
+        }
+
+        @Override
+        public Boolean visitArrayType(ArrayType t, Type s) {
+            if (t == s)
+                return true;
+
+            if (s.isPartial())
+                return visit(s, t);
+
+            return s.getTag() == ARRAY
+                && visit(t.elemtype, types.elemtype(s));
+        }
+
+        @Override
+        public Boolean visitClassType(ClassType t, Type s) {
+            if (t == s)
+                return true;
+
+            if (s.isPartial())
+                return visit(s, t);
+
+            return t.tsym == s.tsym;
+        }
+
+        @Override
+        public Boolean visitErrorType(ErrorType t, Type s) {
+            return s.getTag() == CLASS
+                    && t.tsym.name == ((ClassType) s).tsym.name;
+        }
+    };
+
     public TypeMirror getTypeMirror(TreePath path) {
         Tree t = path.getLeaf();
         return ((JCTree)t).type;
@@ -245,6 +588,18 @@ public class JavacTrees extends Trees {
             JCCompilationUnit cu = (JCCompilationUnit) t;
             if (cu.docComments != null) {
                 return cu.docComments.getCommentText((JCTree) leaf);
+            }
+        }
+        return null;
+    }
+
+    public DocCommentTree getDocCommentTree(TreePath path) {
+        CompilationUnitTree t = path.getCompilationUnit();
+        Tree leaf = path.getLeaf();
+        if (t instanceof JCTree.JCCompilationUnit && leaf instanceof JCTree) {
+            JCCompilationUnit cu = (JCCompilationUnit) t;
+            if (cu.docComments != null) {
+                return cu.docComments.getCommentTree((JCTree) leaf);
             }
         }
         return null;
@@ -418,14 +773,27 @@ public class JavacTrees extends Trees {
     public void printMessage(Diagnostic.Kind kind, CharSequence msg,
             com.sun.source.tree.Tree t,
             com.sun.source.tree.CompilationUnitTree root) {
+        printMessage(kind, msg, ((JCTree) t).pos(), root);
+    }
+
+    public void printMessage(Diagnostic.Kind kind, CharSequence msg,
+            com.sun.source.doctree.DocTree t,
+            com.sun.source.doctree.DocCommentTree c,
+            com.sun.source.tree.CompilationUnitTree root) {
+        printMessage(kind, msg, ((DCTree) t).pos((DCDocComment) c), root);
+    }
+
+    private void printMessage(Diagnostic.Kind kind, CharSequence msg,
+            JCDiagnostic.DiagnosticPosition pos,
+            com.sun.source.tree.CompilationUnitTree root) {
         JavaFileObject oldSource = null;
         JavaFileObject newSource = null;
-        JCDiagnostic.DiagnosticPosition pos = null;
 
         newSource = root.getSourceFile();
-        if (newSource != null) {
+        if (newSource == null) {
+            pos = null;
+        } else {
             oldSource = log.useSource(newSource);
-            pos = ((JCTree) t).pos();
         }
 
         try {
