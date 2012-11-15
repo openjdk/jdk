@@ -35,7 +35,7 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.TypeTags;
+import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
@@ -244,23 +244,23 @@ public class GenStubs {
                 else {
                     String t = tree.vartype.toString();
                     if (t.equals("boolean"))
-                        tree.init = new JCLiteral(TypeTags.BOOLEAN, 0) { };
+                        tree.init = new JCLiteral(TypeTag.BOOLEAN, 0) { };
                     else if (t.equals("byte"))
-                        tree.init = new JCLiteral(TypeTags.BYTE, 0) { };
+                        tree.init = new JCLiteral(TypeTag.BYTE, 0) { };
                     else if (t.equals("char"))
-                        tree.init = new JCLiteral(TypeTags.CHAR, 0) { };
+                        tree.init = new JCLiteral(TypeTag.CHAR, 0) { };
                     else if (t.equals("double"))
-                        tree.init = new JCLiteral(TypeTags.DOUBLE, 0.d) { };
+                        tree.init = new JCLiteral(TypeTag.DOUBLE, 0.d) { };
                     else if (t.equals("float"))
-                        tree.init = new JCLiteral(TypeTags.FLOAT, 0.f) { };
+                        tree.init = new JCLiteral(TypeTag.FLOAT, 0.f) { };
                     else if (t.equals("int"))
-                        tree.init = new JCLiteral(TypeTags.INT, 0) { };
+                        tree.init = new JCLiteral(TypeTag.INT, 0) { };
                     else if (t.equals("long"))
-                        tree.init = new JCLiteral(TypeTags.LONG, 0) { };
+                        tree.init = new JCLiteral(TypeTag.LONG, 0) { };
                     else if (t.equals("short"))
-                        tree.init = new JCLiteral(TypeTags.SHORT, 0) { };
+                        tree.init = new JCLiteral(TypeTag.SHORT, 0) { };
                     else
-                        tree.init = new JCLiteral(TypeTags.BOT, null) { };
+                        tree.init = new JCLiteral(TypeTag.BOT, null) { };
                 }
             }
             result = tree;

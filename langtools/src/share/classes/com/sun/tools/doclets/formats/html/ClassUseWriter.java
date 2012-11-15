@@ -82,7 +82,6 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final String methodUseTableSummary;
     final String constructorUseTableSummary;
 
-
     /**
      * Constructor.
      *
@@ -91,10 +90,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @throws DocletAbortException
      */
     public ClassUseWriter(ConfigurationImpl configuration,
-                          ClassUseMapper mapper, String path,
-                          String filename, String relpath,
+                          ClassUseMapper mapper, DocPath filename,
                           ClassDoc classdoc) throws IOException {
-        super(configuration, path, filename, relpath);
+        super(configuration, filename);
         this.classdoc = classdoc;
         if (mapper.classToPackageAnnotations.containsKey(classdoc.qualifiedName()))
                 pkgToPackageAnnotations = new HashSet<PackageDoc>(mapper.classToPackageAnnotations.get(classdoc.qualifiedName()));
@@ -199,23 +197,19 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     public static void generate(ConfigurationImpl configuration,
                                 ClassUseMapper mapper, ClassDoc classdoc) {
         ClassUseWriter clsgen;
-        String path = DirectoryManager.getDirectoryPath(classdoc.
-                                                            containingPackage());
-        path += "class-use" + DirectoryManager.URL_FILE_SEPARATOR;
-        String filename = classdoc.name() + ".html";
-        String pkgname = classdoc.containingPackage().name();
-        pkgname += (pkgname.length() > 0)? ".class-use": "class-use";
-        String relpath = DirectoryManager.getRelativePath(pkgname);
+        DocPath path = DocPath.forPackage(classdoc)
+                .resolve(DocPaths.CLASS_USE)
+                .resolve(DocPath.forName(classdoc));
         try {
             clsgen = new ClassUseWriter(configuration,
-                                        mapper, path, filename,
-                                        relpath, classdoc);
+                                        mapper, path,
+                                        classdoc);
             clsgen.generateClassUseFile();
             clsgen.close();
         } catch (IOException exc) {
             configuration.standardmessage.
                 error("doclet.exception_encountered",
-                      exc.toString(), filename);
+                      exc.toString(), path.getPath());
             throw new DocletAbortException();
         }
     }
@@ -359,7 +353,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageUse(PackageDoc pkg, Content contentTree) throws IOException {
         Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst,
-                getHyperLink("", pkg.name(), new StringContent(Util.getPackageName(pkg))));
+                getHyperLink(pkg.name(), new StringContent(Util.getPackageName(pkg))));
         contentTree.addContent(tdFirst);
         HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
         tdLast.addStyle(HtmlStyle.colLast);
@@ -470,8 +464,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @return a content tree for the package link
      */
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink("../package-summary.html", "",
-                packageLabel);
+        Content linkContent =
+                getHyperLink(DocPath.parent.resolve(DocPaths.PACKAGE_SUMMARY), packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -506,8 +500,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected Content getNavLinkTree() {
         Content linkContent = classdoc.containingPackage().isIncluded() ?
-            getHyperLink("../package-tree.html", "", treeLabel) :
-            getHyperLink(relativePath + "overview-tree.html", "", treeLabel);
+            getHyperLink(DocPath.parent.resolve(DocPaths.PACKAGE_TREE), treeLabel) :
+            getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE), treeLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }

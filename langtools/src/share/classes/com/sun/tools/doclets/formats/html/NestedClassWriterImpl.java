@@ -203,9 +203,8 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            return writer.getHyperLink("", (cd == null) ? "nested_class_summary":
-                "nested_classes_inherited_from_class_" +
-                cd.qualifiedName(),
+            return writer.getHyperLink((cd == null) ? "nested_class_summary":
+                "nested_classes_inherited_from_class_" + cd.qualifiedName(),
                 writer.getResource("doclet.navNested"));
         } else {
             return writer.getResource("doclet.navNested");

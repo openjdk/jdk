@@ -65,7 +65,7 @@ endef
 #    The \n argument means translate spaces into \n
 #    if instead , , (a space) is supplied, then spaces remain spaces.
 define ListPathsSafely
-    $(if $(word 10001,$($1)),$(error Cannot list safely more than 10000 paths. $1 has $(words $($1)) paths!))
+    $(if $(word 16001,$($1)),$(error Cannot list safely more than 16000 paths. $1 has $(words $($1)) paths!))
     $(call ListPathsSafely_If,$1,$2,1,250)
     $(call ListPathsSafely_If,$1,$2,251,500)
     $(call ListPathsSafely_If,$1,$2,501,750)
@@ -116,6 +116,36 @@ define ListPathsSafely
     $(call ListPathsSafely_If,$1,$2,9501,9750)
     $(call ListPathsSafely_If,$1,$2,9751,10000)
 
+    $(call ListPathsSafely_If,$1,$2,10001,10250)
+    $(call ListPathsSafely_If,$1,$2,10251,10500)
+    $(call ListPathsSafely_If,$1,$2,10501,10750)
+    $(call ListPathsSafely_If,$1,$2,10751,11000)
+
+    $(call ListPathsSafely_If,$1,$2,11001,11250)
+    $(call ListPathsSafely_If,$1,$2,11251,11500)
+    $(call ListPathsSafely_If,$1,$2,11501,11750)
+    $(call ListPathsSafely_If,$1,$2,11751,12000)
+
+    $(call ListPathsSafely_If,$1,$2,12001,12250)
+    $(call ListPathsSafely_If,$1,$2,12251,12500)
+    $(call ListPathsSafely_If,$1,$2,12501,12750)
+    $(call ListPathsSafely_If,$1,$2,12751,13000)
+
+    $(call ListPathsSafely_If,$1,$2,13001,13250)
+    $(call ListPathsSafely_If,$1,$2,13251,13500)
+    $(call ListPathsSafely_If,$1,$2,13501,13750)
+    $(call ListPathsSafely_If,$1,$2,13751,14000)
+
+    $(call ListPathsSafely_If,$1,$2,14001,14250)
+    $(call ListPathsSafely_If,$1,$2,14251,14500)
+    $(call ListPathsSafely_If,$1,$2,14501,14750)
+    $(call ListPathsSafely_If,$1,$2,14751,15000)
+
+    $(call ListPathsSafely_If,$1,$2,15001,15250)
+    $(call ListPathsSafely_If,$1,$2,15251,15500)
+    $(call ListPathsSafely_If,$1,$2,15501,15750)
+    $(call ListPathsSafely_If,$1,$2,15751,16000)
+
     $(call ListPathsSafely_Printf,$1,$2,$3,1)
     $(call ListPathsSafely_Printf,$1,$2,$3,251)
     $(call ListPathsSafely_Printf,$1,$2,$3,501)
@@ -165,6 +195,36 @@ define ListPathsSafely
     $(call ListPathsSafely_Printf,$1,$2,$3,9251)
     $(call ListPathsSafely_Printf,$1,$2,$3,9501)
     $(call ListPathsSafely_Printf,$1,$2,$3,9751)
+
+    $(call ListPathsSafely_Printf,$1,$2,$3,10001)
+    $(call ListPathsSafely_Printf,$1,$2,$3,10251)
+    $(call ListPathsSafely_Printf,$1,$2,$3,10501)
+    $(call ListPathsSafely_Printf,$1,$2,$3,10751)
+
+    $(call ListPathsSafely_Printf,$1,$2,$3,11001)
+    $(call ListPathsSafely_Printf,$1,$2,$3,11251)
+    $(call ListPathsSafely_Printf,$1,$2,$3,11501)
+    $(call ListPathsSafely_Printf,$1,$2,$3,11751)
+
+    $(call ListPathsSafely_Printf,$1,$2,$3,12001)
+    $(call ListPathsSafely_Printf,$1,$2,$3,12251)
+    $(call ListPathsSafely_Printf,$1,$2,$3,12501)
+    $(call ListPathsSafely_Printf,$1,$2,$3,12751)
+
+    $(call ListPathsSafely_Printf,$1,$2,$3,13001)
+    $(call ListPathsSafely_Printf,$1,$2,$3,13251)
+    $(call ListPathsSafely_Printf,$1,$2,$3,13501)
+    $(call ListPathsSafely_Printf,$1,$2,$3,13751)
+
+    $(call ListPathsSafely_Printf,$1,$2,$3,14001)
+    $(call ListPathsSafely_Printf,$1,$2,$3,14251)
+    $(call ListPathsSafely_Printf,$1,$2,$3,14501)
+    $(call ListPathsSafely_Printf,$1,$2,$3,14751)
+
+    $(call ListPathsSafely_Printf,$1,$2,$3,15001)
+    $(call ListPathsSafely_Printf,$1,$2,$3,15251)
+    $(call ListPathsSafely_Printf,$1,$2,$3,15501)
+    $(call ListPathsSafely_Printf,$1,$2,$3,15751)
 endef
 
 define ListPathsSafelyNow_IfPrintf

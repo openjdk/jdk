@@ -99,7 +99,7 @@ decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
                             unsigned char* buffer, uintptr_t length,
                             event_callback_t  event_callback_arg,  void* event_stream_arg,
                             printf_callback_t printf_callback_arg, void* printf_stream_arg,
-                            const char* options) {
+                            const char* options, int newline) {
   struct hsdis_app_data app_data;
   memset(&app_data, 0, sizeof(app_data));
   app_data.start_va    = start_va;
@@ -110,7 +110,7 @@ decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
   app_data.event_stream    = event_stream_arg;
   app_data.printf_callback = printf_callback_arg;
   app_data.printf_stream   = printf_stream_arg;
-  app_data.do_newline = false;
+  app_data.do_newline = newline == 0 ? false : true;
 
   return decode(&app_data, options);
 }
@@ -132,7 +132,7 @@ decode_instructions(void* start_pv, void* end_pv,
                              event_stream_arg,
                              printf_callback_arg,
                              printf_stream_arg,
-                             options);
+                             options, false);
 }
 
 static void* decode(struct hsdis_app_data* app_data, const char* options) {
@@ -173,7 +173,7 @@ static void* decode(struct hsdis_app_data* app_data, const char* options) {
       if (!app_data->losing) {
         const char* insn_close = format_insn_close("/insn", &app_data->dinfo,
                                                    buf, sizeof(buf));
-        (*event_callback)(event_stream, insn_close, (void*) p) != NULL;
+        (*event_callback)(event_stream, insn_close, (void*) p);
 
         if (app_data->do_newline) {
           /* follow each complete insn by a nice newline */
@@ -182,13 +182,14 @@ static void* decode(struct hsdis_app_data* app_data, const char* options) {
       }
     }
 
-    (*event_callback)(event_stream, "/insns", (void*) p);
+    if (app_data->losing) (*event_callback)(event_stream, "/insns", (void*) p);
     return (void*) p;
   }
 }
 
 /* take the address of the function, for luck, and also test the typedef: */
-const decode_instructions_ftype decode_instructions_address = &decode_instructions_virtual;
+const decode_func_vtype decode_func_virtual_address = &decode_instructions_virtual;
+const decode_func_stype decode_func_address = &decode_instructions;
 
 static const char* format_insn_close(const char* close,
                                      disassemble_info* dinfo,

@@ -69,7 +69,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      */
     public ConstantsSummaryWriterImpl(ConfigurationImpl configuration)
             throws IOException {
-        super(configuration, ConfigurationImpl.CONSTANTS_FILE_NAME);
+        super(configuration, DocPaths.CONSTANT_VALUES);
         this.configuration = configuration;
         constantsTableSummary = configuration.getText("doclet.Constants_Table_Summary",
                 configuration.getText("doclet.Constants_Summary"));
@@ -107,13 +107,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
         //add link to summary
         Content link;
         if (packageName.length() == 0) {
-            link = getHyperLink("#" + DocletConstants.UNNAMED_PACKAGE_ANCHOR,
-                    "", defaultPackageLabel, "", "");
+            link = getHyperLink(DocLink.fragment(DocletConstants.UNNAMED_PACKAGE_ANCHOR),
+                    defaultPackageLabel, "", "");
         } else {
             Content packageNameContent = getPackageLabel(parsedPackageName);
             packageNameContent.addContent(".*");
-            link = getHyperLink("#" + parsedPackageName,
-                    "", packageNameContent, "", "");
+            link = getHyperLink(DocLink.fragment(parsedPackageName),
+                    packageNameContent, "", "");
             printedPackageHeaders.add(parsedPackageName);
         }
         contentListTree.addContent(HtmlTree.LI(link));

@@ -393,7 +393,9 @@ else
             # AC_CHECK_LIB does not support use of cl.exe
             PREV_LDFLAGS="$LDFLAGS"
             LDFLAGS="$FREETYPE2_LIBS"
-            AC_CHECK_LIB(freetype, FT_Init_FreeType, [], AC_MSG_ERROR([Could not find freetype2! $HELP_MSG ]))
+            AC_CHECK_LIB(freetype, FT_Init_FreeType, 
+                         FREETYPE2_FOUND=true, 
+                         AC_MSG_ERROR([Could not find freetype2! $HELP_MSG ]))
             LDFLAGS="$PREV_LDFLAGS"
         fi
 fi

@@ -263,7 +263,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      */
     protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            return writer.getHyperLink("", (cd == null)?
+            return writer.getHyperLink((cd == null)?
                 "enum_constant_summary":
                 "enum_constants_inherited_from_class_" +
                 configuration().getClassName(cd),
@@ -278,7 +278,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      */
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(writer.getHyperLink("", "enum_constant_detail",
+            liNav.addContent(writer.getHyperLink("enum_constant_detail",
                     writer.getResource("doclet.navEnum")));
         } else {
             liNav.addContent(writer.getResource("doclet.navEnum"));

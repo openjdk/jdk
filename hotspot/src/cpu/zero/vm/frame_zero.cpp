@@ -351,7 +351,7 @@ void SharkFrame::identify_word(int   frame_index,
   switch (offset) {
   case pc_off:
     strncpy(fieldbuf, "pc", buflen);
-    if (method()->is_oop()) {
+    if (method()->is_method()) {
       nmethod *code = method()->code();
       if (code && code->pc_desc_at(pc())) {
         SimpleScopeDesc ssd(code, pc());
@@ -367,7 +367,7 @@ void SharkFrame::identify_word(int   frame_index,
 
   case method_off:
     strncpy(fieldbuf, "method", buflen);
-    if (method()->is_oop()) {
+    if (method()->is_method()) {
       method()->name_and_sig_as_C_string(valuebuf, buflen);
     }
     return;
@@ -378,7 +378,7 @@ void SharkFrame::identify_word(int   frame_index,
   }
 
   // Variable part
-  if (method()->is_oop()) {
+  if (method()->is_method()) {
     identify_vp_word(frame_index, addr_of_word(offset),
                      addr_of_word(header_words + 1),
                      unextended_sp() + method()->max_stack(),
@@ -430,4 +430,3 @@ intptr_t *frame::initial_deoptimization_info() {
   // unused... but returns fp() to minimize changes introduced by 7087445
   return fp();
 }
-

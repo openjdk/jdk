@@ -36,6 +36,8 @@ inline frame::frame() {
   _deopt_state = unknown;
 }
 
+inline address  frame::sender_pc()           const { ShouldNotCallThis();  }
+
 inline frame::frame(ZeroFrame* zf, intptr_t* sp) {
   _zeroframe = zf;
   _sp = sp;

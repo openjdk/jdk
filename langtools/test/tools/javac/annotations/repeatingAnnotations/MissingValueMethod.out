@@ -1,0 +1,4 @@
+MissingValueMethod.java:20:1: compiler.err.invalid.containedby.annotation.no.value: FooContainer
+MissingValueMethod.java:20:6: compiler.err.invalid.containedby.annotation.no.value: FooContainer
+MissingValueMethod.java:12:1: compiler.err.invalid.containedby.annotation.elem.nondefault: FooContainer, values()
+3 errors

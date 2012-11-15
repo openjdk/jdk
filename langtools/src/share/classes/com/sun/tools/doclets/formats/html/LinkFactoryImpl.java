@@ -78,11 +78,12 @@ public class LinkFactoryImpl extends LinkFactory {
         LinkOutputImpl linkOutput = new LinkOutputImpl();
         if (classDoc.isIncluded()) {
             if (configuration.isGeneratedDoc(classDoc)) {
-                String filename = pathString(classLinkInfo);
+                DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf ||
-                                !(linkInfo.classDoc.name() + ".html").equals(m_writer.filename)) {
-                        linkOutput.append(m_writer.getHyperLinkString(filename,
-                            classLinkInfo.where, label.toString(),
+                                !(DocPath.forName(classDoc)).equals(m_writer.filename)) {
+                        linkOutput.append(m_writer.getHyperLinkString(
+                                filename.fragment(classLinkInfo.where),
+                            label.toString(),
                             classLinkInfo.isStrong, classLinkInfo.styleName,
                             title, classLinkInfo.target));
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
@@ -161,16 +162,12 @@ public class LinkFactoryImpl extends LinkFactory {
      *
      * @param linkInfo the information about the link.
      */
-    private String pathString(LinkInfoImpl linkInfo) {
+    private DocPath getPath(LinkInfoImpl linkInfo) {
         if (linkInfo.context == LinkInfoImpl.PACKAGE_FRAME) {
             //Not really necessary to do this but we want to be consistent
             //with 1.4.2 output.
-            return linkInfo.classDoc.name() + ".html";
+            return DocPath.forName(linkInfo.classDoc);
         }
-        StringBuilder buf = new StringBuilder(m_writer.relativePath);
-        buf.append(DirectoryManager.getPathToPackage(
-            linkInfo.classDoc.containingPackage(),
-            linkInfo.classDoc.name() + ".html"));
-        return buf.toString();
+        return m_writer.pathToRoot.resolve(DocPath.forClass(linkInfo.classDoc));
     }
 }
