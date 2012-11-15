@@ -241,9 +241,6 @@ class ciMethod : public ciMetadata {
   int resolve_vtable_index(ciKlass* caller, ciKlass* receiver);
 
   // Compilation directives
-  bool will_link(ciKlass* accessing_klass,
-                 ciKlass* declared_method_holder,
-                 Bytecodes::Code bc);
   bool should_exclude();
   bool should_inline();
   bool should_not_inline();

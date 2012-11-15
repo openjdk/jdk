@@ -876,25 +876,6 @@ ciMethodData* ciMethod::method_data_or_null() {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::will_link
-//
-// Will this method link in a specific calling context?
-bool ciMethod::will_link(ciKlass* accessing_klass,
-                         ciKlass* declared_method_holder,
-                         Bytecodes::Code bc) {
-  if (!is_loaded()) {
-    // Method lookup failed.
-    return false;
-  }
-
-  // The link checks have been front-loaded into the get_method
-  // call.  This method (ciMethod::will_link()) will be removed
-  // in the future.
-
-  return true;
-}
-
-// ------------------------------------------------------------------
 // ciMethod::should_exclude
 //
 // Should this method be excluded from compilation?
