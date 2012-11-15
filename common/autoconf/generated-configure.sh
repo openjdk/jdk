@@ -1035,7 +1035,7 @@ with_alsa
 with_alsa_include
 with_alsa_lib
 with_zlib
-enable_static_link_stdc++
+with_stdc++lib
 with_num_cores
 with_memory_size
 with_sjavac_server_java
@@ -1712,9 +1712,6 @@ Optional Features:
   --disable-macosx-runtime-support
                           disable the use of MacOSX Java runtime support
                           framework [enabled]
-  --disable-static-link-stdc++
-                          disable static linking of the C++ runtime on Linux
-                          [enabled]
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
   --disable-precompiled-headers
@@ -1796,6 +1793,10 @@ Optional Packages:
   --with-alsa-lib         specify directory for the alsa library
   --with-zlib             use zlib from build system or OpenJDK source
                           (system, bundled) [bundled]
+  --with-stdc++lib=<static>,<dynamic>,<default>
+                          force linking of the C++ runtime on Linux to either
+                          static or dynamic, default is static with dynamic as
+                          fallback
   --with-num-cores        number of cores in the build system, e.g.
                           --with-num-cores=8 [probed]
   --with-memory-size      memory (in MB) available in the build system, e.g.
@@ -3067,7 +3068,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1352751880
+DATE_WHEN_GENERATED=1352917083
 
 ###############################################################################
 #
@@ -7136,7 +7137,56 @@ fi
 
 
 # Test from where we are running configure, in or outside of src root.
-if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" || test "x$CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
+# To enable comparison of directories, CURDIR needs to be symlink free
+# just like SRC_ROOT already is
+NOSYM_CURDIR="$CURDIR"
+
+    if test "x$OPENJDK_BUILD_OS" != xwindows; then
+        # Follow a chain of symbolic links. Use readlink
+        # where it exists, else fall back to horribly
+        # complicated shell code.
+        if test "x$READLINK_TESTED" != yes; then
+            # On MacOSX there is a readlink tool with a different
+            # purpose than the GNU readlink tool. Check the found readlink.
+            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            if test "x$ISGNU" = x; then
+                 # A readlink that we do not know how to use.
+                 # Are there other non-GNU readlinks out there?
+                 READLINK_TESTED=yes
+                 READLINK=
+            fi
+        fi
+
+        if test "x$READLINK" != x; then
+            NOSYM_CURDIR=`$READLINK -f $NOSYM_CURDIR`
+        else
+            STARTDIR=$PWD
+            COUNTER=0
+            sym_link_dir=`$DIRNAME $NOSYM_CURDIR`
+            sym_link_file=`$BASENAME $NOSYM_CURDIR`
+            while test $COUNTER -lt 20; do
+                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+                if test "x$ISLINK" == x; then
+                    # This is not a symbolic link! We are done!
+                    break
+                fi
+                # The link might be relative! We have to use cd to travel safely.
+                cd $sym_link_dir
+                # ... and we must get the to the absolute path, not one using symbolic links.
+                cd `pwd -P`
+                cd `$DIRNAME $ISLINK`
+                sym_link_dir=`$THEPWDCMD`
+                sym_link_file=`$BASENAME $ISLINK`
+                let COUNTER=COUNTER+1
+            done
+            cd $STARTDIR
+            NOSYM_CURDIR=$sym_link_dir/$sym_link_file
+        fi
+    fi
+
+if test "x$NOSYM_CURDIR" = "x$SRC_ROOT" || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common" \
+        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/autoconf" \
+        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -33006,12 +33056,19 @@ LIBS="$save_LIBS"
 # statically link libstdc++ before C++ ABI is stablized on Linux unless
 # dynamic build is configured on command line.
 #
-# Check whether --enable-static-link-stdc++ was given.
-if test "${enable_static_link_stdc+++set}" = set; then
-  enableval=$enable_static_link_stdc++;
-else
 
-		enable_static_link_stdc__=yes
+# Check whether --with-stdc++lib was given.
+if test "${with_stdc++lib+set}" = set; then
+  withval=$with_stdc++lib;
+    if test "x$with_stdc__lib" != xdynamic && test "x$with_stdc__lib" != xstatic \
+        && test "x$with_stdc__lib" != xdefault; then
+      { { $as_echo "$as_me:$LINENO: error: Bad parameter value --with-stdc++lib=$with_stdc__lib!" >&5
+$as_echo "$as_me: error: Bad parameter value --with-stdc++lib=$with_stdc__lib!" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+
+else
+  with_stdc__lib=default
 
 fi
 
@@ -33157,38 +33214,40 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     { $as_echo "$as_me:$LINENO: result: $has_static_libstdcxx" >&5
 $as_echo "$has_static_libstdcxx" >&6; }
 
-    if test "x$has_static_libcxx" = xno && test "x$has_dynamic_libcxx" = xno; then
-        { { $as_echo "$as_me:$LINENO: error: I cannot link to stdc++! Neither dynamically nor statically." >&5
-$as_echo "$as_me: error: I cannot link to stdc++! Neither dynamically nor statically." >&2;}
+    if test "x$has_static_libstdcxx" = xno && test "x$has_dynamic_libstdcxx" = xno; then
+        { { $as_echo "$as_me:$LINENO: error: Cannot link to stdc++, neither dynamically nor statically!" >&5
+$as_echo "$as_me: error: Cannot link to stdc++, neither dynamically nor statically!" >&2;}
    { (exit 1); exit 1; }; }
     fi
 
-    if test "x$enable_static_link_stdc__" = xyes && test "x$has_static_libstdcxx" = xno; then
-        { $as_echo "$as_me:$LINENO: Static linking of libstdc++ was not possible reverting to dynamic linking." >&5
-$as_echo "$as_me: Static linking of libstdc++ was not possible reverting to dynamic linking." >&6;}
-        enable_static_link_stdc__=no
+    if test "x$with_stdc__lib" = xstatic && test "x$has_static_libstdcxx" = xno; then
+        { { $as_echo "$as_me:$LINENO: error: Static linking of libstdc++ was not possible!" >&5
+$as_echo "$as_me: error: Static linking of libstdc++ was not possible!" >&2;}
+   { (exit 1); exit 1; }; }
     fi
 
-    if test "x$enable_static_link_stdc__" = xno && test "x$has_dynamic_libstdcxx" = xno; then
-        { $as_echo "$as_me:$LINENO: Dynamic linking of libstdc++ was not possible reverting to static linking." >&5
-$as_echo "$as_me: Dynamic linking of libstdc++ was not possible reverting to static linking." >&6;}
-        enable_static_link_stdc__=yes
+    if test "x$with_stdc__lib" = xdynamic && test "x$has_dynamic_libstdcxx" = xno; then
+        { { $as_echo "$as_me:$LINENO: error: Dynamic linking of libstdc++ was not possible!" >&5
+$as_echo "$as_me: error: Dynamic linking of libstdc++ was not possible!" >&2;}
+   { (exit 1); exit 1; }; }
     fi
 
     { $as_echo "$as_me:$LINENO: checking how to link with libstdc++" >&5
 $as_echo_n "checking how to link with libstdc++... " >&6; }
-    if test "x$enable_static_link_stdc__" = xyes; then
-        LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
-        LDCXX="$CC"
-        STATIC_CXX_SETTING="STATIC_CXX=true"
-        { $as_echo "$as_me:$LINENO: result: static" >&5
-$as_echo "static" >&6; }
-    else
+    # If dynamic was requested, it's available since it would fail above otherwise.
+    # If dynamic wasn't requested, go with static unless it isn't available.
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno; then
         LIBCXX="$LIBCXX -lstdc++"
         LDCXX="$CXX"
         STATIC_CXX_SETTING="STATIC_CXX=false"
         { $as_echo "$as_me:$LINENO: result: dynamic" >&5
 $as_echo "dynamic" >&6; }
+    else
+        LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
+        LDCXX="$CC"
+        STATIC_CXX_SETTING="STATIC_CXX=true"
+        { $as_echo "$as_me:$LINENO: result: static" >&5
+$as_echo "static" >&6; }
     fi
 fi
 
@@ -33646,7 +33705,7 @@ fi
 #
 # Check whether --enable-precompiled-headers was given.
 if test "${enable_precompiled_headers+set}" = set; then
-  enableval=$enable_precompiled_headers; ENABLE_PRECOMPH=${enable_precompiled-headers}
+  enableval=$enable_precompiled_headers; ENABLE_PRECOMPH=${enable_precompiled_headers}
 else
   ENABLE_PRECOMPH=yes
 fi
@@ -33663,9 +33722,8 @@ if test "x$ENABLE_PRECOMPH" = xyes; then
          { $as_echo "$as_me:$LINENO: checking that precompiled headers work" >&5
 $as_echo_n "checking that precompiled headers work... " >&6; }
          echo "int alfa();" > conftest.h
-         $CXX -x c++-header conftest.h -o conftest.hpp.gch
+         $CXX -x c++-header conftest.h -o conftest.hpp.gch 2>&5 >&5
          if test ! -f conftest.hpp.gch; then
-             echo Precompiled header is not working!
              USE_PRECOMPILED_HEADER=0
              { $as_echo "$as_me:$LINENO: result: no" >&5
 $as_echo "no" >&6; }
@@ -33673,7 +33731,7 @@ $as_echo "no" >&6; }
              { $as_echo "$as_me:$LINENO: result: yes" >&5
 $as_echo "yes" >&6; }
          fi
-         rm -f conftest.h
+         rm -f conftest.h conftest.hpp.gch
     fi
 fi
 

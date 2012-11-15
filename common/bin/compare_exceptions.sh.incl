@@ -881,6 +881,7 @@ ACCEPTED_JARZIP_CONTENTS="
 
 KNOWN_BIN_DIFF="
 ./jre/lib/libJObjC.dylib
+./lib/libJObjC.dylib
 "
 
 ACCEPTED_BIN_DIFF="
@@ -932,26 +933,34 @@ ACCEPTED_BIN_DIFF="
 ./jre/bin/tnameserv
 ./jre/lib/libsaproc.dylib
 ./jre/lib/server/libjvm.dylib
+./lib/libsaproc.dylib
+./lib/server/libjvm.dylib
+./lib/deploy/JavaControlPanel.prefPane/Contents/MacOS/JavaControlPanel
 "
 
 KNOWN_SIZE_DIFF="
 ./jre/lib/libJObjC.dylib
+./lib/libJObjC.dylib
 "
 
 SORT_SYMBOLS="
 ./jre/lib/libJObjC.dylib
+./lib/libJObjC.dylib
 "
 
 KNOWN_SYM_DIFF="
 ./jre/lib/libJObjC.dylib
+./lib/libJObjC.dylib
 "
 
 KNOWN_ELF_DIFF="
 ./jre/lib/libJObjC.dylib
+./lib/libJObjC.dylib
 "
 
 KNOWN_DIS_DIFF="
 ./jre/lib/libJObjC.dylib
+./lib/libJObjC.dylib
 "
 
 fi
