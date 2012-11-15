@@ -47,8 +47,8 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.EQ;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.GT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LT;
-import static com.sun.tools.javac.util.ListBuffer.lb;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import static com.sun.tools.javac.util.ListBuffer.lb;
 
 /** The parser maps a token sequence into an abstract syntax
  *  tree. It operates by recursive descent, with code derived
@@ -128,7 +128,7 @@ public class JavacParser implements Parser {
         this.allowDefaultMethods = source.allowDefaultMethods() &&
                 fac.options.isSet("allowDefaultMethods"); //pre-lambda guard
         this.keepDocComments = keepDocComments;
-        docComments = newDocCommentTable(keepDocComments);
+        docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
         this.errorTree = F.Erroneous();
         endPosTable = newEndPosTable(keepEndPositions);
@@ -140,8 +140,8 @@ public class JavacParser implements Parser {
                 : new EmptyEndPosTable();
     }
 
-    protected DocCommentTable newDocCommentTable(boolean keepDocComments) {
-        return keepDocComments ? new SimpleDocCommentTable() : null;
+    protected DocCommentTable newDocCommentTable(boolean keepDocComments, ParserFactory fac) {
+        return keepDocComments ? new LazyDocCommentTable(fac) : null;
     }
 
     /** Switch: Should generics be recognized?
@@ -232,7 +232,11 @@ public class JavacParser implements Parser {
 
     protected Token token;
 
-    protected void nextToken() {
+    public Token token() {
+        return token;
+    }
+
+    public void nextToken() {
         S.nextToken();
         token = S.token();
     }

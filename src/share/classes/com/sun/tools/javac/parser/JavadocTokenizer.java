@@ -234,10 +234,12 @@ public class JavadocTokenizer extends JavaTokenizer {
             // If we find an exact match for pos, the other item in the pair
             // gives the source pos; otherwise, compute the source position
             // relative to the best match found in the array.
+            if (pos == Position.NOPOS)
+                return Position.NOPOS;
             if (pos < 0 || pos >= docComment.length())
-                throw new StringIndexOutOfBoundsException();
+                throw new StringIndexOutOfBoundsException(String.valueOf(pos));
             if (docPosns == null)
-                return -1;
+                return Position.NOPOS;
             int start = 0;
             int end = docPosns.length;
             while (start < end - 2) {

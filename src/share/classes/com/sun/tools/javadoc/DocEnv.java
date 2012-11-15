@@ -102,6 +102,7 @@ public class DocEnv {
     Check chk;
     Types types;
     JavaFileManager fileManager;
+    Context context;
 
     /** Allow documenting from class files? */
     boolean docClasses = false;
@@ -122,6 +123,7 @@ public class DocEnv {
      */
     protected DocEnv(Context context) {
         context.put(docEnvKey, this);
+        this.context = context;
 
         messager = Messager.instance0(context);
         syms = Symtab.instance(context);

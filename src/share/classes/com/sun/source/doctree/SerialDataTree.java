@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,45 +23,18 @@
  * questions.
  */
 
-package com.sun.tools.javac.parser;
+package com.sun.source.doctree;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.tree.DocCommentTable;
-import com.sun.tools.javac.tree.JCTree;
-
+import java.util.List;
 
 /**
+ * A tree node for an @serialData block tag.
  *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * <p>
+ * &#064;serialData data-description
+ *
+ * @since 1.8
  */
-public class SimpleDocCommentTable implements DocCommentTable {
-    Map<JCTree, Comment> table;
-
-    SimpleDocCommentTable() {
-        table = new HashMap<JCTree, Comment>();
-    }
-
-    public boolean hasComment(JCTree tree) {
-        return table.containsKey(tree);
-    }
-
-    public Comment getComment(JCTree tree) {
-        return table.get(tree);
-    }
-
-    public String getCommentText(JCTree tree) {
-        Comment c = getComment(tree);
-        return (c == null) ? null : c.getText();
-    }
-
-    public void putComment(JCTree tree, Comment c) {
-        table.put(tree, c);
-    }
-
+public interface SerialDataTree extends BlockTagTree {
+    List<? extends DocTree> getDescription();
 }
