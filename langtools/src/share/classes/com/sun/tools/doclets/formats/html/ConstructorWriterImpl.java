@@ -60,7 +60,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
             ClassDoc classDoc) {
         super(writer, classDoc);
         VisibleMemberMap visibleMemberMap = new VisibleMemberMap(classDoc,
-            VisibleMemberMap.CONSTRUCTORS, configuration().nodeprecated);
+            VisibleMemberMap.CONSTRUCTORS, configuration.nodeprecated);
         List<ProgramElementDoc> constructors = new ArrayList<ProgramElementDoc>(visibleMemberMap.getMembersFor(classDoc));
         for (int i = 0; i < constructors.size(); i++) {
             if ((constructors.get(i)).isProtected() ||
@@ -130,7 +130,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         Content pre = new HtmlTree(HtmlTag.PRE);
         writer.addAnnotationInfo(constructor, pre);
         addModifiers(constructor, pre);
-        if (configuration().linksource) {
+        if (configuration.linksource) {
             Content constructorName = new StringContent(constructor.name());
             writer.addSrcLink(constructor, constructorName, pre);
         } else {
@@ -217,16 +217,16 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     public String getTableSummary() {
-        return configuration().getText("doclet.Member_Table_Summary",
-                configuration().getText("doclet.Constructor_Summary"),
-                configuration().getText("doclet.constructors"));
+        return configuration.getText("doclet.Member_Table_Summary",
+                configuration.getText("doclet.Constructor_Summary"),
+                configuration.getText("doclet.constructors"));
     }
 
     /**
      * {@inheritDoc}
      */
     public String getCaption() {
-        return configuration().getText("doclet.Constructors");
+        return configuration.getText("doclet.Constructors");
     }
 
     /**
@@ -236,17 +236,17 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         String[] header;
         if (foundNonPubConstructor) {
             header = new String[] {
-                configuration().getText("doclet.Modifier"),
-                configuration().getText("doclet.0_and_1",
-                        configuration().getText("doclet.Constructor"),
-                        configuration().getText("doclet.Description"))
+                configuration.getText("doclet.Modifier"),
+                configuration.getText("doclet.0_and_1",
+                        configuration.getText("doclet.Constructor"),
+                        configuration.getText("doclet.Description"))
             };
         }
         else {
             header = new String[] {
-                configuration().getText("doclet.0_and_1",
-                        configuration().getText("doclet.Constructor"),
-                        configuration().getText("doclet.Description"))
+                configuration.getText("doclet.0_and_1",
+                        configuration.getText("doclet.Constructor"),
+                        configuration.getText("doclet.Description"))
             };
         }
         return header;
@@ -313,7 +313,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 code.addContent(writer.getSpace());
             } else {
                 code.addContent(
-                        configuration().getText("doclet.Package_private"));
+                        configuration.getText("doclet.Package_private"));
             }
             tdSummaryType.addContent(code);
         }

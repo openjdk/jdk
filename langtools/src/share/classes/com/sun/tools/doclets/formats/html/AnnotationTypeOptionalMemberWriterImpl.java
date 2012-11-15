@@ -103,16 +103,16 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      * {@inheritDoc}
      */
     public String getTableSummary() {
-        return configuration().getText("doclet.Member_Table_Summary",
-                configuration().getText("doclet.Annotation_Type_Optional_Member_Summary"),
-                configuration().getText("doclet.annotation_type_optional_members"));
+        return configuration.getText("doclet.Member_Table_Summary",
+                configuration.getText("doclet.Annotation_Type_Optional_Member_Summary"),
+                configuration.getText("doclet.annotation_type_optional_members"));
     }
 
     /**
      * {@inheritDoc}
      */
     public String getCaption() {
-        return configuration().getText("doclet.Annotation_Type_Optional_Members");
+        return configuration.getText("doclet.Annotation_Type_Optional_Members");
     }
 
     /**
@@ -121,9 +121,9 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     public String[] getSummaryTableHeader(ProgramElementDoc member) {
         String[] header = new String[] {
             writer.getModifierTypeHeader(),
-            configuration().getText("doclet.0_and_1",
-                    configuration().getText("doclet.Annotation_Type_Optional_Member"),
-                    configuration().getText("doclet.Description"))
+            configuration.getText("doclet.0_and_1",
+                    configuration.getText("doclet.Annotation_Type_Optional_Member"),
+                    configuration.getText("doclet.Description"))
         };
         return header;
     }

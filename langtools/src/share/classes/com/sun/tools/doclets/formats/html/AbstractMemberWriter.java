@@ -49,15 +49,17 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  */
 public abstract class AbstractMemberWriter {
 
-    protected boolean printedSummaryHeader = false;
+    protected final ConfigurationImpl configuration;
     protected final SubWriterHolderWriter writer;
     protected final ClassDoc classdoc;
     public final boolean nodepr;
 
-    public AbstractMemberWriter(SubWriterHolderWriter writer,
-                             ClassDoc classdoc) {
+    protected boolean printedSummaryHeader = false;
+
+    public AbstractMemberWriter(SubWriterHolderWriter writer, ClassDoc classdoc) {
+        this.configuration = writer.configuration;
         this.writer = writer;
-        this.nodepr = configuration().nodeprecated;
+        this.nodepr = configuration.nodeprecated;
         this.classdoc = classdoc;
     }
 
@@ -281,11 +283,11 @@ public abstract class AbstractMemberWriter {
                     code.addContent(new HtmlTree(HtmlTag.BR));
                 }
                 code.addContent(new RawHtml(
-                        writer.getLink(new LinkInfoImpl(
+                        writer.getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type))));
             } else {
                 code.addContent(new RawHtml(
-                        writer.getLink(new LinkInfoImpl(
+                        writer.getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type))));
             }
 
@@ -305,7 +307,7 @@ public abstract class AbstractMemberWriter {
         } else if (member.isPrivate()) {
             code.addContent("private ");
         } else if (!member.isPublic()) { // Package private
-            code.addContent(configuration().getText("doclet.Package_private"));
+            code.addContent(configuration.getText("doclet.Package_private"));
             code.addContent(" ");
         }
         if (member.isMethod() && ((MethodDoc)member).isAbstract()) {
@@ -389,7 +391,7 @@ public abstract class AbstractMemberWriter {
             String tableSummary, String[] tableHeader, Content contentTree) {
         if (deprmembers.size() > 0) {
             Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
-                writer.getTableCaption(configuration().getText(headingKey)));
+                writer.getTableCaption(configuration.getText(headingKey)));
             table.addContent(writer.getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             for (int i = 0; i < deprmembers.size(); i++) {
@@ -507,17 +509,13 @@ public abstract class AbstractMemberWriter {
     }
 
     protected void serialWarning(SourcePosition pos, String key, String a1, String a2) {
-        if (configuration().serialwarn) {
-            ConfigurationImpl.getInstance().getDocletSpecificMsg().warning(pos, key, a1, a2);
+        if (configuration.serialwarn) {
+            configuration.getDocletSpecificMsg().warning(pos, key, a1, a2);
         }
     }
 
     public ProgramElementDoc[] eligibleMembers(ProgramElementDoc[] members) {
         return nodepr? Util.excludeDeprecatedMembers(members): members;
-    }
-
-    public ConfigurationImpl configuration() {
-        return writer.configuration;
     }
 
     /**
