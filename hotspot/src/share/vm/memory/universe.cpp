@@ -1304,6 +1304,8 @@ void Universe::verify(bool silent, VerifyOption option) {
   if (!silent) gclog_or_tty->print("cldg ");
   ClassLoaderDataGraph::verify();
 #endif
+  if (!silent) gclog_or_tty->print("metaspace chunks ");
+  MetaspaceAux::verify_free_chunks();
   if (!silent) gclog_or_tty->print("hand ");
   JNIHandles::verify();
   if (!silent) gclog_or_tty->print("C-heap ");
