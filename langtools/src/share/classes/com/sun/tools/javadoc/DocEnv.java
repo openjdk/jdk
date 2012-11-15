@@ -211,8 +211,8 @@ public class DocEnv {
     public void setLocale(String localeName) {
         // create locale specifics
         doclocale = new DocLocale(this, localeName, breakiterator);
-        // reset Messager if locale has changed.
-        messager.reset();
+        // update Messager if locale has changed.
+        messager.setLocale(doclocale.locale);
     }
 
     /** Check whether this member should be documented. */

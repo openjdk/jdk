@@ -38,7 +38,6 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
-import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -65,11 +64,9 @@ import com.sun.tools.javac.util.Position;
 public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     DocEnv docenv;
 
-    final Context context;
     final Messager messager;
-    final JavadocClassReader reader;
-    final JavadocEnter enter;
-    final Annotate annotate;
+    final JavadocClassReader javadocReader;
+    final JavadocEnter javadocEnter;
 
     /**
      * Construct a new JavaCompiler processor, using appropriately
@@ -77,11 +74,9 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
      */
     protected JavadocTool(Context context) {
         super(context);
-        this.context = context;
         messager = Messager.instance0(context);
-        reader = JavadocClassReader.instance0(context);
-        enter = JavadocEnter.instance0(context);
-        annotate = Annotate.instance(context);
+        javadocReader = JavadocClassReader.instance0(context);
+        javadocEnter = JavadocEnter.instance0(context);
     }
 
     /**
@@ -138,7 +133,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         docenv.setEncoding(encoding);
         docenv.docClasses = docClasses;
         docenv.legacyDoclet = legacyDoclet;
-        reader.sourceCompleter = docClasses ? null : this;
+        javadocReader.sourceCompleter = docClasses ? null : this;
 
         ListBuffer<String> names = new ListBuffer<String>();
         ListBuffer<JCCompilationUnit> classTrees = new ListBuffer<JCCompilationUnit>();
@@ -156,7 +151,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                 } else if (isValidPackageName(name)) {
                     names = names.append(name);
                 } else if (name.endsWith(".java")) {
-                    docenv.error(null, "main.file_not_found", name);
+                        docenv.error(null, "main.file_not_found", name);
                 } else {
                     docenv.error(null, "main.illegal_package_name", name);
                 }
@@ -179,7 +174,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
                 // Enter symbols for all files
                 docenv.notice("main.Building_tree");
-                enter.main(classTrees.toList().appendList(packTrees.toList()));
+                javadocEnter.main(classTrees.toList().appendList(packTrees.toList()));
             }
         } catch (Abort ex) {}
 
@@ -240,7 +235,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         }
 
         if (!hasFiles) {
-            messager.warning(null, "main.no_source_files_for_package",
+            messager.warning(Messager.NOPOS, "main.no_source_files_for_package",
                     name.replace(File.separatorChar, '.'));
         }
     }
