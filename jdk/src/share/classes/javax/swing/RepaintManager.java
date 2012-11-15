@@ -27,11 +27,12 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.peer.ComponentPeer;
-import java.awt.peer.ContainerPeer;
 import java.awt.image.VolatileImage;
+import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.applet.*;
 
 import sun.awt.AWTAccessor;
@@ -39,6 +40,8 @@ import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
 import sun.java2d.SunGraphicsEnvironment;
+import sun.misc.JavaSecurityAccess;
+import sun.misc.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 
 import com.sun.java.swing.SwingUtilities3;
@@ -175,6 +178,9 @@ public class RepaintManager
      * Runnable used to process all repaint/revalidate requests.
      */
     private final ProcessingRunnable processingRunnable;
+
+    private final static JavaSecurityAccess javaSecurityAccess =
+        SharedSecrets.getJavaSecurityAccess();
 
 
     static {
@@ -548,13 +554,26 @@ public class RepaintManager
     // This is called from the toolkit thread when awt needs to run a
     // Runnable before we paint.
     //
-    void nativeQueueSurfaceDataRunnable(AppContext appContext, Component c,
-                                        Runnable r) {
+    void nativeQueueSurfaceDataRunnable(AppContext appContext,
+                                        final Component c, final Runnable r)
+    {
         synchronized(this) {
             if (runnableList == null) {
                 runnableList = new LinkedList<Runnable>();
             }
-            runnableList.add(r);
+            runnableList.add(new Runnable() {
+                public void run() {
+                    AccessControlContext stack = AccessController.getContext();
+                    AccessControlContext acc =
+                        AWTAccessor.getComponentAccessor().getAccessControlContext(c);
+                    javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Void>() {
+                        public Void run() {
+                            r.run();
+                            return null;
+                        }
+                    }, stack, acc);
+                }
+            });
         }
         scheduleProcessingRunnable(appContext);
     }
@@ -652,9 +671,9 @@ public class RepaintManager
      * @see #addInvalidComponent
      */
     public void validateInvalidComponents() {
-        java.util.List<Component> ic;
+        final java.util.List<Component> ic;
         synchronized(this) {
-            if(invalidComponents == null) {
+            if (invalidComponents == null) {
                 return;
             }
             ic = invalidComponents;
@@ -662,7 +681,17 @@ public class RepaintManager
         }
         int n = ic.size();
         for(int i = 0; i < n; i++) {
-            ic.get(i).validate();
+            final Component c = ic.get(i);
+            AccessControlContext stack = AccessController.getContext();
+            AccessControlContext acc =
+                AWTAccessor.getComponentAccessor().getAccessControlContext(c);
+            javaSecurityAccess.doIntersectionPrivilege(
+                new PrivilegedAction<Void>() {
+                    public Void run() {
+                        c.validate();
+                        return null;
+                    }
+                }, stack, acc);
         }
     }
 
@@ -740,78 +769,78 @@ public class RepaintManager
         paintDirtyRegions(tmpDirtyComponents);
     }
 
-    private void paintDirtyRegions(Map<Component,Rectangle>
-                                   tmpDirtyComponents){
-        int i, count;
-        java.util.List<Component> roots;
-        Component dirtyComponent;
-
-        count = tmpDirtyComponents.size();
-        if (count == 0) {
+    private void paintDirtyRegions(
+        final Map<Component,Rectangle> tmpDirtyComponents)
+    {
+        if (tmpDirtyComponents.isEmpty()) {
             return;
         }
 
-        Rectangle rect;
-        int localBoundsX = 0;
-        int localBoundsY = 0;
-        int localBoundsH;
-        int localBoundsW;
-
-        roots = new ArrayList<Component>(count);
-
+        final java.util.List<Component> roots =
+            new ArrayList<Component>(tmpDirtyComponents.size());
         for (Component dirty : tmpDirtyComponents.keySet()) {
             collectDirtyComponents(tmpDirtyComponents, dirty, roots);
         }
 
-        count = roots.size();
+        final AtomicInteger count = new AtomicInteger(roots.size());
         painting = true;
         try {
-            for(i=0 ; i < count ; i++) {
-                dirtyComponent = roots.get(i);
-                rect = tmpDirtyComponents.get(dirtyComponent);
-                // Sometimes when RepaintManager is changed during the painting
-                // we may get null here, see #6995769 for details
-                if (rect == null) {
-                    continue;
-                }
-                localBoundsH = dirtyComponent.getHeight();
-                localBoundsW = dirtyComponent.getWidth();
-
-                SwingUtilities.computeIntersection(localBoundsX,
-                                                   localBoundsY,
-                                                   localBoundsW,
-                                                   localBoundsH,
-                                                   rect);
-                if (dirtyComponent instanceof JComponent) {
-                    ((JComponent)dirtyComponent).paintImmediately(
-                        rect.x,rect.y,rect.width, rect.height);
-                }
-                else if (dirtyComponent.isShowing()) {
-                    Graphics g = JComponent.safelyGetGraphics(
-                            dirtyComponent, dirtyComponent);
-                    // If the Graphics goes away, it means someone disposed of
-                    // the window, don't do anything.
-                    if (g != null) {
-                        g.setClip(rect.x, rect.y, rect.width, rect.height);
-                        try {
-                            dirtyComponent.paint(g);
-                        } finally {
-                            g.dispose();
+            for (int j=0 ; j < count.get(); j++) {
+                final int i = j;
+                final Component dirtyComponent = roots.get(j);
+                AccessControlContext stack = AccessController.getContext();
+                AccessControlContext acc =
+                    AWTAccessor.getComponentAccessor().getAccessControlContext(dirtyComponent);
+                javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Void>() {
+                    public Void run() {
+                        Rectangle rect = tmpDirtyComponents.get(dirtyComponent);
+                        // Sometimes when RepaintManager is changed during the painting
+                        // we may get null here, see #6995769 for details
+                        if (rect == null) {
+                            return null;
                         }
+
+                        int localBoundsH = dirtyComponent.getHeight();
+                        int localBoundsW = dirtyComponent.getWidth();
+                        SwingUtilities.computeIntersection(0,
+                                                           0,
+                                                           localBoundsW,
+                                                           localBoundsH,
+                                                           rect);
+                        if (dirtyComponent instanceof JComponent) {
+                            ((JComponent)dirtyComponent).paintImmediately(
+                                rect.x,rect.y,rect.width, rect.height);
+                        }
+                        else if (dirtyComponent.isShowing()) {
+                            Graphics g = JComponent.safelyGetGraphics(
+                                    dirtyComponent, dirtyComponent);
+                            // If the Graphics goes away, it means someone disposed of
+                            // the window, don't do anything.
+                            if (g != null) {
+                                g.setClip(rect.x, rect.y, rect.width, rect.height);
+                                try {
+                                    dirtyComponent.paint(g);
+                                } finally {
+                                    g.dispose();
+                                }
+                            }
+                        }
+                        // If the repaintRoot has been set, service it now and
+                        // remove any components that are children of repaintRoot.
+                        if (repaintRoot != null) {
+                            adjustRoots(repaintRoot, roots, i + 1);
+                            count.set(roots.size());
+                            paintManager.isRepaintingRoot = true;
+                            repaintRoot.paintImmediately(0, 0, repaintRoot.getWidth(),
+                                                         repaintRoot.getHeight());
+                            paintManager.isRepaintingRoot = false;
+                            // Only service repaintRoot once.
+                            repaintRoot = null;
+                        }
+
+                        return null;
                     }
-                }
-                // If the repaintRoot has been set, service it now and
-                // remove any components that are children of repaintRoot.
-                if (repaintRoot != null) {
-                    adjustRoots(repaintRoot, roots, i + 1);
-                    count = roots.size();
-                    paintManager.isRepaintingRoot = true;
-                    repaintRoot.paintImmediately(0, 0, repaintRoot.getWidth(),
-                                                 repaintRoot.getHeight());
-                    paintManager.isRepaintingRoot = false;
-                    // Only service repaintRoot once.
-                    repaintRoot = null;
-                }
+                }, stack, acc);
             }
         } finally {
             painting = false;
