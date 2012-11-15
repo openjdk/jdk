@@ -60,12 +60,12 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * The writer used to write the results.
      */
-    protected ConstantsSummaryWriter writer;
+    protected final ConstantsSummaryWriter writer;
 
     /**
      * The set of ClassDocs that have constant fields.
      */
-    protected Set<ClassDoc> classDocsWithConstFields;
+    protected final Set<ClassDoc> classDocsWithConstFields;
 
     /**
      * The set of printed package headers.
@@ -90,27 +90,25 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * Construct a new ConstantsSummaryBuilder.
      *
-     * @param configuration the current configuration of the
-     *                      doclet.
+     * @param context       the build context.
+     * @param writer        the writer for the summary.
      */
-    private ConstantsSummaryBuilder(Configuration configuration) {
-        super(configuration);
+    private ConstantsSummaryBuilder(Context context,
+            ConstantsSummaryWriter writer) {
+        super(context);
+        this.writer = writer;
+        this.classDocsWithConstFields = new HashSet<ClassDoc>();
     }
 
     /**
      * Construct a ConstantsSummaryBuilder.
      *
-     * @param configuration the configuration used in this run
-     *                      of the doclet.
+     * @param context       the build context.
      * @param writer        the writer for the summary.
      */
-    public static ConstantsSummaryBuilder getInstance(
-        Configuration configuration, ConstantsSummaryWriter writer) {
-        ConstantsSummaryBuilder builder = new ConstantsSummaryBuilder(
-            configuration);
-        builder.writer = writer;
-        builder.classDocsWithConstFields = new HashSet<ClassDoc>();
-        return builder;
+    public static ConstantsSummaryBuilder getInstance(Context context,
+            ConstantsSummaryWriter writer) {
+        return new ConstantsSummaryBuilder(context, writer);
     }
 
     /**
@@ -121,7 +119,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
             //Doclet does not support this output.
             return;
         }
-        build(LayoutParser.getInstance(configuration).parseXML(ROOT), contentTree);
+        build(layoutParser.parseXML(ROOT), contentTree);
     }
 
     /**

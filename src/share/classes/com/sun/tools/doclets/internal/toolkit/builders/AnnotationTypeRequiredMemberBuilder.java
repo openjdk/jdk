@@ -74,37 +74,40 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     /**
      * Construct a new AnnotationTypeRequiredMemberBuilder.
      *
-     * @param configuration the current configuration of the
-     *                      doclet.
+     * @param context  the build context.
+     * @param classDoc the class whose members are being documented.
+     * @param writer the doclet specific writer.
      */
-    protected AnnotationTypeRequiredMemberBuilder(Configuration configuration) {
-        super(configuration);
+    protected AnnotationTypeRequiredMemberBuilder(Context context,
+            ClassDoc classDoc,
+            AnnotationTypeRequiredMemberWriter writer,
+            int memberType) {
+        super(context);
+        this.classDoc = classDoc;
+        this.writer = writer;
+        this.visibleMemberMap = new VisibleMemberMap(classDoc, memberType,
+            configuration.nodeprecated);
+        this.members = new ArrayList<ProgramElementDoc>(
+            this.visibleMemberMap.getMembersFor(classDoc));
+        if (configuration.getMemberComparator() != null) {
+            Collections.sort(this.members, configuration.getMemberComparator());
+        }
     }
 
 
     /**
      * Construct a new AnnotationTypeMemberBuilder.
      *
-     * @param configuration the current configuration of the doclet.
-     * @param classDoc the class whoses members are being documented.
+     * @param context  the build context.
+     * @param classDoc the class whose members are being documented.
      * @param writer the doclet specific writer.
      */
     public static AnnotationTypeRequiredMemberBuilder getInstance(
-            Configuration configuration, ClassDoc classDoc,
+            Context context, ClassDoc classDoc,
             AnnotationTypeRequiredMemberWriter writer) {
-        AnnotationTypeRequiredMemberBuilder builder =
-            new AnnotationTypeRequiredMemberBuilder(configuration);
-        builder.classDoc = classDoc;
-        builder.writer = writer;
-        builder.visibleMemberMap = new VisibleMemberMap(classDoc,
-            VisibleMemberMap.ANNOTATION_TYPE_MEMBER_REQUIRED, configuration.nodeprecated);
-        builder.members = new ArrayList<ProgramElementDoc>(
-            builder.visibleMemberMap.getMembersFor(classDoc));
-        if (configuration.getMemberComparator() != null) {
-            Collections.sort(builder.members,
-                configuration.getMemberComparator());
-        }
-        return builder;
+        return new AnnotationTypeRequiredMemberBuilder(context, classDoc,
+                    writer,
+                    VisibleMemberMap.ANNOTATION_TYPE_MEMBER_REQUIRED);
     }
 
     /**

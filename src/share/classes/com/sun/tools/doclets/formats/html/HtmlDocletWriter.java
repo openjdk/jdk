@@ -82,7 +82,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * The global configuration information for this run.
      */
-    public ConfigurationImpl configuration;
+    public final ConfigurationImpl configuration;
 
     /**
      * To check whether annotation heading is printed or not.
@@ -302,7 +302,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public void printHtmlDocument(String[] metakeywords, boolean includeScript,
             Content body) throws IOException {
-        Content htmlDocType = DocType.Transitional();
+        Content htmlDocType = DocType.TRANSITIONAL;
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
         if (!configuration.notimestamp) {
@@ -835,7 +835,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             String tableSummary, String[] tableHeader, Content contentTree) {
         if (deprPkgs.size() > 0) {
             Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
-                    getTableCaption(configuration().getText(headingKey)));
+                    getTableCaption(configuration.getText(headingKey)));
             table.addContent(getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             for (int i = 0; i < deprPkgs.size(); i++) {
@@ -1079,7 +1079,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     public Content getQualifiedClassLink(int context, ClassDoc cd) {
-        return new RawHtml(getLink(new LinkInfoImpl(context, cd,
+        return new RawHtml(getLink(new LinkInfoImpl(configuration, context, cd,
                 configuration.getClassName(cd), "")));
     }
 
@@ -1110,7 +1110,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if(pd != null && ! configuration.shouldExcludeQualifier(pd.name())) {
             classlink = getPkgName(cd);
         }
-        classlink += getLink(new LinkInfoImpl(context, cd, cd.name(), isStrong));
+        classlink += getLink(new LinkInfoImpl(configuration,
+                context, cd, cd.name(), isStrong));
         return classlink;
     }
 
@@ -1130,7 +1131,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if(pd != null && ! configuration.shouldExcludeQualifier(pd.name())) {
             contentTree.addContent(getPkgName(cd));
         }
-        contentTree.addContent(new RawHtml(getLink(new LinkInfoImpl(
+        contentTree.addContent(new RawHtml(getLink(new LinkInfoImpl(configuration,
                 context, cd, cd.name(), isStrong))));
     }
 
@@ -1187,14 +1188,14 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public String getDocLink(int context, ClassDoc classDoc, MemberDoc doc,
         String label, boolean strong) {
         if (! (doc.isIncluded() ||
-            Util.isLinkable(classDoc, configuration()))) {
+            Util.isLinkable(classDoc, configuration))) {
             return label;
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
-            return getLink(new LinkInfoImpl(context, classDoc,
+            return getLink(new LinkInfoImpl(configuration, context, classDoc,
                 getAnchor(emd), label, strong));
         } else if (doc instanceof MemberDoc) {
-            return getLink(new LinkInfoImpl(context, classDoc,
+            return getLink(new LinkInfoImpl(configuration, context, classDoc,
                 doc.name(), label, strong));
         } else {
             return label;
@@ -1215,14 +1216,14 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getDocLink(int context, ClassDoc classDoc, MemberDoc doc,
         String label) {
         if (! (doc.isIncluded() ||
-            Util.isLinkable(classDoc, configuration()))) {
+            Util.isLinkable(classDoc, configuration))) {
             return new StringContent(label);
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
-            return new RawHtml(getLink(new LinkInfoImpl(context, classDoc,
+            return new RawHtml(getLink(new LinkInfoImpl(configuration, context, classDoc,
                 getAnchor(emd), label, false)));
         } else if (doc instanceof MemberDoc) {
-            return new RawHtml(getLink(new LinkInfoImpl(context, classDoc,
+            return new RawHtml(getLink(new LinkInfoImpl(configuration, context, classDoc,
                 doc.name(), label, false)));
         } else {
             return new StringContent(label);
@@ -1302,7 +1303,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             if (label.isEmpty()) {
                 label = plainOrCodeText(plain, refClass.name());
             }
-            return getLink(new LinkInfoImpl(refClass, label));
+            return getLink(new LinkInfoImpl(configuration, refClass, label));
         } else if (refMem == null) {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // However, refMem is null, so this referenced member does not exist.
@@ -1313,7 +1314,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             ClassDoc containing = refMem.containingClass();
             if (see.text().trim().startsWith("#") &&
                 ! (containing.isPublic() ||
-                Util.isLinkable(containing, configuration()))) {
+                Util.isLinkable(containing, configuration))) {
                 // Since the link is relative and the holder is not even being
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or
@@ -1502,7 +1503,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 StringBuilder textBuff = new StringBuilder();
                 while (lines.hasMoreTokens()) {
                     StringBuilder line = new StringBuilder(lines.nextToken());
-                    Util.replaceTabs(configuration.sourcetab, line);
+                    Util.replaceTabs(configuration, line);
                     textBuff.append(line.toString());
                 }
                 result.append(textBuff);
@@ -1784,7 +1785,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 continue;
             }
             annotation = new StringBuilder();
-            LinkInfoImpl linkInfo = new LinkInfoImpl(
+            LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.CONTEXT_ANNOTATION, annotationDoc);
             linkInfo.label = "@" + annotationDoc.name();
             annotation.append(getLink(linkInfo));
@@ -1835,7 +1836,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (annotationValue.value() instanceof Type) {
             Type type = (Type) annotationValue.value();
             if (type.asClassDoc() != null) {
-                LinkInfoImpl linkInfo = new LinkInfoImpl(
+                LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                     LinkInfoImpl.CONTEXT_ANNOTATION, type);
                     linkInfo.label = (type.asClassDoc().isIncluded() ?
                         type.typeName() :

@@ -138,7 +138,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
             for (int i = 0; i < interfaces.length; i++) {
                 if (parent != interfaces[i]) {
                     if (! (interfaces[i].isPublic() ||
-                            Util.isLinkable(interfaces[i], configuration()))) {
+                            Util.isLinkable(interfaces[i], configuration))) {
                         continue;
                     }
                     if (counter == 0) {

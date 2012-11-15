@@ -57,8 +57,6 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  */
 public class ConfigurationImpl extends Configuration {
 
-    private static ConfigurationImpl instance = new ConfigurationImpl();
-
     /**
      * The build date.  Note: For now, we will use
      * a version number instead of a date.
@@ -183,29 +181,15 @@ public class ConfigurationImpl extends Configuration {
     /**
      * The classdoc for the class file getting generated.
      */
-    public ClassDoc currentcd = null;  // Set this classdoc in the
-    // ClassWriter.
+    public ClassDoc currentcd = null;  // Set this classdoc in the ClassWriter.
 
     /**
      * Constructor. Initializes resource for the
      * {@link com.sun.tools.doclets.internal.toolkit.util.MessageRetriever MessageRetriever}.
      */
-    private ConfigurationImpl() {
+    public ConfigurationImpl() {
         standardmessage = new MessageRetriever(this,
             "com.sun.tools.doclets.formats.html.resources.standard");
-    }
-
-    /**
-     * Reset to a fresh new ConfigurationImpl, to allow multiple invocations
-     * of javadoc within a single VM. It would be better not to be using
-     * static fields at all, but .... (sigh).
-     */
-    public static void reset() {
-        instance = new ConfigurationImpl();
-    }
-
-    public static ConfigurationImpl getInstance() {
-        return instance;
     }
 
     /**

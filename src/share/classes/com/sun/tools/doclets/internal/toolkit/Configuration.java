@@ -84,7 +84,9 @@ public abstract class Configuration {
     /**
      * The specified amount of space between tab stops.
      */
-    public int sourcetab = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+    public int sourcetab;
+
+    public String tabSpaces;
 
     /**
      * True if we should generate browsable sources.
@@ -259,6 +261,7 @@ public abstract class Configuration {
             "com.sun.tools.doclets.internal.toolkit.resources.doclets");
         excludedDocFileDirs = new HashSet<String>();
         excludedQualifiers = new HashSet<String>();
+        setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
     }
 
     /**
@@ -382,7 +385,7 @@ public abstract class Configuration {
             } else if (opt.equals("-sourcetab")) {
                 linksource = true;
                 try {
-                    sourcetab = Integer.parseInt(os[1]);
+                    setTabWidth(Integer.parseInt(os[1]));
                 } catch (NumberFormatException e) {
                     //Set to -1 so that warning will be printed
                     //to indicate what is valid argument.
@@ -390,7 +393,7 @@ public abstract class Configuration {
                 }
                 if (sourcetab <= 0) {
                     message.warning("doclet.sourcetab_warning");
-                    sourcetab = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+                    setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
                 }
             } else if (opt.equals("-notimestamp")) {
                 notimestamp = true;
@@ -767,4 +770,9 @@ public abstract class Configuration {
      * @return the {@link java.util.Comparator} used to sort members.
      */
     public abstract Comparator<ProgramElementDoc> getMemberComparator();
+
+    private void setTabWidth(int n) {
+        sourcetab = n;
+        tabSpaces = String.format("%" + n + "s", "");
+    }
 }

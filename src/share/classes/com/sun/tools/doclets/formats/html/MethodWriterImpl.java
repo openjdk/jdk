@@ -123,7 +123,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         addModifiers(method, pre);
         addTypeParameters(method, pre);
         addReturnType(method, pre);
-        if (configuration().linksource) {
+        if (configuration.linksource) {
             Content methodName = new StringContent(method.name());
             writer.addSrcLink(method, methodName, pre);
         } else {
@@ -149,7 +149,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         if (method.inlineTags().length > 0) {
             if (holder.asClassDoc().equals(classdoc) ||
                     (! (holderClassDoc.isPublic() ||
-                    Util.isLinkable(holderClassDoc, configuration())))) {
+                    Util.isLinkable(holderClassDoc, configuration)))) {
                 writer.addInlineComment(method, methodDocTree);
             } else {
                 Content link = new RawHtml(
@@ -215,16 +215,16 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     public String getTableSummary() {
-        return configuration().getText("doclet.Member_Table_Summary",
-                configuration().getText("doclet.Method_Summary"),
-                configuration().getText("doclet.methods"));
+        return configuration.getText("doclet.Member_Table_Summary",
+                configuration.getText("doclet.Method_Summary"),
+                configuration.getText("doclet.methods"));
     }
 
     /**
      * {@inheritDoc}
      */
     public String getCaption() {
-        return configuration().getText("doclet.Methods");
+        return configuration.getText("doclet.Methods");
     }
 
     /**
@@ -233,9 +233,9 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public String[] getSummaryTableHeader(ProgramElementDoc member) {
         String[] header = new String[] {
             writer.getModifierTypeHeader(),
-            configuration().getText("doclet.0_and_1",
-                    configuration().getText("doclet.Method"),
-                    configuration().getText("doclet.Description"))
+            configuration.getText("doclet.0_and_1",
+                    configuration.getText("doclet.Method"),
+                    configuration.getText("doclet.Description"))
         };
         return header;
     }
@@ -253,7 +253,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public void addInheritedSummaryAnchor(ClassDoc cd, Content inheritedTree) {
         inheritedTree.addContent(writer.getMarkerAnchor(
                 "methods_inherited_from_class_" +
-                configuration().getClassName(cd)));
+                configuration.getClassName(cd)));
     }
 
     /**
@@ -263,8 +263,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         Content classLink = new RawHtml(writer.getPreQualifiedClassLink(
                 LinkInfoImpl.CONTEXT_MEMBER, cd, false));
         Content label = new StringContent(cd.isClass() ?
-            configuration().getText("doclet.Methods_Inherited_From_Class") :
-            configuration().getText("doclet.Methods_Inherited_From_Interface"));
+            configuration.getText("doclet.Methods_Inherited_From_Class") :
+            configuration.getText("doclet.Methods_Inherited_From_Interface"));
         Content labelHeading = HtmlTree.HEADING(HtmlConstants.INHERITED_SUMMARY_HEADING,
                 label);
         labelHeading.addContent(writer.getSpace());
@@ -285,12 +285,12 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     protected static void addOverridden(HtmlDocletWriter writer,
             Type overriddenType, MethodDoc method, Content dl) {
-        if(writer.configuration.nocomment){
+        if (writer.configuration.nocomment) {
             return;
         }
         ClassDoc holderClassDoc = overriddenType.asClassDoc();
         if (! (holderClassDoc.isPublic() ||
-            Util.isLinkable(holderClassDoc, writer.configuration()))) {
+            Util.isLinkable(holderClassDoc, writer.configuration))) {
             //This is an implementation detail that should not be documented.
             return;
         }
@@ -303,7 +303,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         int context = LinkInfoImpl.CONTEXT_METHOD_OVERRIDES;
 
         if (method != null) {
-            if(overriddenType.asClassDoc().isAbstract() && method.isAbstract()){
+            if (overriddenType.asClassDoc().isAbstract() && method.isAbstract()){
                 //Abstract method is implemented from abstract class,
                 //not overridden
                 label = writer.specifiedByLabel;
@@ -312,11 +312,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             Content dt = HtmlTree.DT(HtmlTree.STRONG(label));
             dl.addContent(dt);
             Content overriddenTypeLink = new RawHtml(
-                    writer.getLink(new LinkInfoImpl(context, overriddenType)));
+                    writer.getLink(new LinkInfoImpl(writer.configuration, context, overriddenType)));
             Content codeOverridenTypeLink = HtmlTree.CODE(overriddenTypeLink);
             String name = method.name();
             Content methlink = new RawHtml(writer.getLink(
-                    new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER,
+                    new LinkInfoImpl(writer.configuration, LinkInfoImpl.CONTEXT_MEMBER,
                     overriddenType.asClassDoc(),
                     writer.getAnchor(method), name, false)));
             Content codeMethLink = HtmlTree.CODE(methlink);
@@ -362,7 +362,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             MethodDoc implementedMeth = implementedMethods[i];
             Type intfac = implementedMethodsFinder.getMethodHolder(implementedMeth);
             Content intfaclink = new RawHtml(writer.getLink(new LinkInfoImpl(
-                    LinkInfoImpl.CONTEXT_METHOD_SPECIFIED_BY, intfac)));
+                    writer.configuration, LinkInfoImpl.CONTEXT_METHOD_SPECIFIED_BY, intfac)));
             Content codeIntfacLink = HtmlTree.CODE(intfaclink);
             Content dt = HtmlTree.DT(HtmlTree.STRONG(writer.specifiedByLabel));
             dl.addContent(dt);
@@ -389,7 +389,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         Type type = method.returnType();
         if (type != null) {
             Content linkContent = new RawHtml(writer.getLink(
-                    new LinkInfoImpl(LinkInfoImpl.CONTEXT_RETURN_TYPE, type)));
+                    new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_RETURN_TYPE, type)));
             htmltree.addContent(linkContent);
             htmltree.addContent(writer.getSpace());
         }
@@ -403,7 +403,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             return writer.getHyperLink((cd == null)?
                 "method_summary":
                 "methods_inherited_from_class_" +
-                configuration().getClassName(cd),
+                configuration.getClassName(cd),
                 writer.getResource("doclet.navMethod"));
         } else {
             return writer.getResource("doclet.navMethod");
