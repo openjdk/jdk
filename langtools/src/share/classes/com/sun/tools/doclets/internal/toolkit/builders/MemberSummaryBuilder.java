@@ -53,7 +53,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     /**
      * The visible members for the given class.
      */
-    private VisibleMemberMap[] visibleMemberMaps;
+    private final VisibleMemberMap[] visibleMemberMaps;
 
     /**
      * The member summary writers for the given class.
@@ -63,10 +63,27 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     /**
      * The type being documented.
      */
-    private ClassDoc classDoc;
+    private final ClassDoc classDoc;
 
-    private MemberSummaryBuilder(Configuration configuration) {
-        super(configuration);
+    /**
+     * Construct a new MemberSummaryBuilder.
+     *
+     * @param classWriter   the writer for the class whose members are being
+     *                      summarized.
+     * @param context       the build context.
+     */
+    private MemberSummaryBuilder(Context context, ClassDoc classDoc) {
+        super(context);
+        this.classDoc = classDoc;
+        visibleMemberMaps =
+                new VisibleMemberMap[VisibleMemberMap.NUM_MEMBER_TYPES];
+        for (int i = 0; i < VisibleMemberMap.NUM_MEMBER_TYPES; i++) {
+            visibleMemberMaps[i] =
+                    new VisibleMemberMap(
+                    classDoc,
+                    i,
+                    configuration.nodeprecated);
+        }
     }
 
     /**
@@ -74,14 +91,22 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      *
      * @param classWriter   the writer for the class whose members are being
      *                      summarized.
-     * @param configuration the current configuration of the doclet.
+     * @param context       the build context.
      */
     public static MemberSummaryBuilder getInstance(
-            ClassWriter classWriter, Configuration configuration)
+            ClassWriter classWriter, Context context)
             throws Exception {
-        MemberSummaryBuilder builder = new MemberSummaryBuilder(configuration);
-        builder.classDoc = classWriter.getClassDoc();
-        builder.init(classWriter);
+        MemberSummaryBuilder builder = new MemberSummaryBuilder(context,
+                classWriter.getClassDoc());
+        builder.memberSummaryWriters =
+                new MemberSummaryWriter[VisibleMemberMap.NUM_MEMBER_TYPES];
+        WriterFactory wf = context.configuration.getWriterFactory();
+        for (int i = 0; i < VisibleMemberMap.NUM_MEMBER_TYPES; i++) {
+                builder.memberSummaryWriters[i] =
+                    builder.visibleMemberMaps[i].noVisibleMembers() ?
+                        null :
+                        wf.getMemberSummaryWriter(classWriter, i);
+        }
         return builder;
     }
 
@@ -93,42 +118,21 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      * @param configuration the current configuration of the doclet.
      */
     public static MemberSummaryBuilder getInstance(
-            AnnotationTypeWriter annotationTypeWriter, Configuration configuration)
+            AnnotationTypeWriter annotationTypeWriter, Context context)
             throws Exception {
-        MemberSummaryBuilder builder = new MemberSummaryBuilder(configuration);
-        builder.classDoc = annotationTypeWriter.getAnnotationTypeDoc();
-        builder.init(annotationTypeWriter);
-        return builder;
-    }
-
-    private void init(Object writer) throws Exception {
-        visibleMemberMaps =
-                new VisibleMemberMap[VisibleMemberMap.NUM_MEMBER_TYPES];
-        for (int i = 0; i < VisibleMemberMap.NUM_MEMBER_TYPES; i++) {
-            visibleMemberMaps[i] =
-                    new VisibleMemberMap(
-                    classDoc,
-                    i,
-                    configuration.nodeprecated);
-        }
-        memberSummaryWriters =
+        MemberSummaryBuilder builder = new MemberSummaryBuilder(context,
+                annotationTypeWriter.getAnnotationTypeDoc());
+        builder.memberSummaryWriters =
                 new MemberSummaryWriter[VisibleMemberMap.NUM_MEMBER_TYPES];
+        WriterFactory wf = context.configuration.getWriterFactory();
         for (int i = 0; i < VisibleMemberMap.NUM_MEMBER_TYPES; i++) {
-            if (classDoc.isAnnotationType()) {
-                memberSummaryWriters[i] =
-                    visibleMemberMaps[i].noVisibleMembers()?
+                builder.memberSummaryWriters[i] =
+                    builder.visibleMemberMaps[i].noVisibleMembers()?
                         null :
-                        configuration.getWriterFactory().getMemberSummaryWriter(
-                        (AnnotationTypeWriter) writer, i);
-            } else {
-                memberSummaryWriters[i] =
-                    visibleMemberMaps[i].noVisibleMembers()?
-                        null :
-                        configuration.getWriterFactory().getMemberSummaryWriter(
-                        (ClassWriter) writer, i);
-            }
+                        wf.getMemberSummaryWriter(
+                        annotationTypeWriter, i);
         }
-
+        return builder;
     }
 
     /**
