@@ -59,6 +59,9 @@ class Constants {
     public final static Package.Version JAVA7_MAX_CLASS_VERSION =
             Package.Version.of(51, 00);
 
+    public final static Package.Version JAVA8_MAX_CLASS_VERSION =
+            Package.Version.of(52, 00);
+
     public final static int JAVA_PACKAGE_MAGIC = 0xCAFED00D;
 
     public final static Package.Version JAVA5_PACKAGE_VERSION =
@@ -72,7 +75,7 @@ class Constants {
 
     // upper limit, should point to the latest class version
     public final static Package.Version JAVA_MAX_CLASS_VERSION =
-            JAVA7_MAX_CLASS_VERSION;
+            JAVA8_MAX_CLASS_VERSION;
 
     // upper limit should point to the latest package version, for version info!.
     public final static Package.Version MAX_PACKAGE_VERSION =

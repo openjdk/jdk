@@ -2259,9 +2259,9 @@ class SignatureFile {
                 X509CertInfo tbsCert = new
                     X509CertInfo(certChain[0].getTBSCertificate());
                 issuerName = (Principal)
-                    tbsCert.get(CertificateIssuerName.NAME + "." +
-                                CertificateIssuerName.DN_NAME);
-            }
+                    tbsCert.get(X509CertInfo.ISSUER + "." +
+                                X509CertInfo.DN_NAME);
+                }
             BigInteger serial = certChain[0].getSerialNumber();
 
             String signatureAlgorithm;

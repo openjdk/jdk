@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,11 @@
  * @library ..
  */
 
-import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.util.*;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.*;
 
 public class Alias {
 
@@ -40,18 +39,26 @@ public class Alias {
     static int LIMIT = 20; // Hangs after just 1 if problem is present
 
     public static void main(String[] args) throws Exception {
-        test1();
+        try (TestServers.DayTimeServer daytimeServer
+                = TestServers.DayTimeServer.startNewServer(100)) {
+            test1(daytimeServer);
+        }
     }
 
-    public static void test1() throws Exception {
+    static void test1(TestServers.DayTimeServer daytimeServer) throws Exception {
         Selector selector = SelectorProvider.provider().openSelector();
-        InetAddress myAddress=InetAddress.getByName(TestUtil.HOST);
-        InetSocketAddress isa = new InetSocketAddress(myAddress,13);
+        InetAddress myAddress = daytimeServer.getAddress();
+        InetSocketAddress isa
+            = new InetSocketAddress(myAddress,
+                                    daytimeServer.getPort());
 
         for (int j=0; j<LIMIT; j++) {
             SocketChannel sc = SocketChannel.open();
             sc.configureBlocking(false);
             boolean result = sc.connect(isa);
+
+            // On some platforms - given that we're using a local server,
+            // we may not enter into the if () { } statement below...
             if (!result) {
                 SelectionKey key = sc.register(selector,
                                                SelectionKey.OP_CONNECT);

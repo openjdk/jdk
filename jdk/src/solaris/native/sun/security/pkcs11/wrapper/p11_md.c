@@ -79,7 +79,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
 {
     void *hModule;
     char *error;
-    CK_C_GetFunctionList C_GetFunctionList;
+    CK_C_GetFunctionList C_GetFunctionList=NULL;
     CK_RV rv;
     ModuleData *moduleData;
     jobject globalPKCS11ImplementationReference;

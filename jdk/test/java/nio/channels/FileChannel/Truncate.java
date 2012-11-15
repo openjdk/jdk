@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,16 @@
  */
 
 /* @test
- * @bug 6191269 6709457
+ * @bug 6191269 6709457 8000330
  * @summary Test truncate method of FileChannel
  */
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.channels.*;
+import java.nio.file.Files;
 import static java.nio.file.StandardOpenOption.*;
+import static java.nio.charset.StandardCharsets.*;
 import java.util.Random;
 
 
@@ -46,6 +48,7 @@ public class Truncate {
         try {
             basicTest(blah);
             appendTest(blah);
+            exceptionTests(blah);
         } finally {
             blah.delete();
         }
@@ -66,15 +69,22 @@ public class Truncate {
                     if (fc.size() != testSize)
                         throw new RuntimeException("Size failed");
 
-                    long position = generator.nextInt((int)testSize);
+                    long position = generator.nextInt((int)testSize*2);
                     fc.position(position);
 
-                    long newSize = generator.nextInt((int)testSize);
+                    long newSize = generator.nextInt((int)testSize*2);
                     fc.truncate(newSize);
 
-                    if (fc.size() != newSize)
-                        throw new RuntimeException("Truncate failed");
+                    // check new size
+                    if (newSize > testSize) {
+                        if (fc.size() != testSize)
+                            throw new RuntimeException("Attempt to expand file changed size");
+                    } else {
+                        if (fc.size() != newSize)
+                            throw new RuntimeException("Unexpected size after truncate");
+                    }
 
+                    // check new position
                     if (position > newSize) {
                         if (fc.position() != newSize)
                             throw new RuntimeException("Position greater than size");
@@ -115,20 +125,90 @@ public class Truncate {
     }
 
     /**
+     * Test exceptions specified by truncate method
+     */
+    static void exceptionTests(File blah) throws Exception {
+        // check exceptions when channel opened for read access
+        try (FileChannel fc = FileChannel.open(blah.toPath(), READ)) {
+            long size = fc.size();
+
+            // open channel
+            checkException(fc, 0L, NonWritableChannelException.class);
+
+            checkException(fc, -1L, NonWritableChannelException.class,
+                           IllegalArgumentException.class);
+
+            checkException(fc, size+1L, NonWritableChannelException.class);
+
+            // closed channel
+            fc.close();
+
+            checkException(fc, 0L, ClosedChannelException.class);
+
+            checkException(fc, -1L, ClosedChannelException.class,
+                           IllegalArgumentException.class);
+
+            checkException(fc, size+1L, ClosedChannelException.class);
+        }
+
+        // check exceptions when channel opened for write access
+        try (FileChannel fc = FileChannel.open(blah.toPath(), WRITE)) {
+            long size = fc.size();
+
+            // open channel
+            checkException(fc, -1L, IllegalArgumentException.class);
+
+            // closed channel
+            fc.close();
+
+            checkException(fc, 0L, ClosedChannelException.class);
+
+            checkException(fc, -1L, ClosedChannelException.class,
+                           IllegalArgumentException.class);
+
+            checkException(fc, size+1L, ClosedChannelException.class);
+        }
+    }
+
+    /**
+     * Checks that FileChannel truncate throws one of the expected exceptions
+     * when invoked with the given size.
+     */
+    private static void checkException(FileChannel fc, long size, Class<?>... expected)
+        throws IOException
+    {
+        Exception exc = null;
+        try {
+            fc.truncate(size);
+        } catch (Exception actual) {
+            exc = actual;
+        }
+        if (exc != null) {
+            for (Class<?> clazz: expected) {
+                if (clazz.isInstance(exc)) {
+                    return;
+                }
+            }
+        }
+        System.err.println("Expected one of");
+        for (Class<?> clazz: expected) {
+            System.err.println(clazz);
+        }
+        if (exc == null) {
+            throw new RuntimeException("No expection thrown");
+        } else {
+            throw new RuntimeException("Unexpected exception thrown", exc);
+        }
+    }
+
+    /**
      * Creates file blah of specified size in bytes.
-     *
      */
     private static void initTestFile(File blah, long size) throws Exception {
-        if (blah.exists())
-            blah.delete();
-        FileOutputStream fos = new FileOutputStream(blah);
-        BufferedWriter awriter
-            = new BufferedWriter(new OutputStreamWriter(fos, "8859_1"));
-
-        for(int i=0; i<size; i++) {
-            awriter.write("e");
+        try (BufferedWriter writer = Files.newBufferedWriter(blah.toPath(), ISO_8859_1)) {
+            for(int i=0; i<size; i++) {
+                writer.write("e");
+            }
         }
-        awriter.flush();
-        awriter.close();
     }
 }

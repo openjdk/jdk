@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,21 +36,25 @@ import java.util.*;
 
 public class FinishConnect {
 
-    static final int DAYTIME_PORT = 13;
-    static final String DAYTIME_HOST = TestUtil.HOST;
-
     public static void main(String[] args) throws Exception {
-        test1(true, true);
-        test1(true, false);
-        test1(false, true);
-        test1(false, false);
-        test2();
+        try (TestServers.DayTimeServer dayTimeServer
+                = TestServers.DayTimeServer.startNewServer(100)) {
+            test1(dayTimeServer, true, true);
+            test1(dayTimeServer, true, false);
+            test1(dayTimeServer, false, true);
+            test1(dayTimeServer, false, false);
+            test2(dayTimeServer);
+        }
     }
 
-    static void test1(boolean select, boolean setBlocking) throws Exception {
+    static void test1(TestServers.DayTimeServer daytimeServer,
+                      boolean select,
+                      boolean setBlocking)
+        throws Exception
+    {
         InetSocketAddress isa
-            = new InetSocketAddress(InetAddress.getByName(DAYTIME_HOST),
-                                    DAYTIME_PORT);
+            = new InetSocketAddress(daytimeServer.getAddress(),
+                                    daytimeServer.getPort());
         SocketChannel sc = SocketChannel.open();
         sc.configureBlocking(false);
         boolean connected = sc.connect(isa);
@@ -109,15 +113,27 @@ public class FinishConnect {
         sc.close();
     }
 
-    static void test2() throws Exception {
+    static void test2(TestServers.DayTimeServer daytimeServer) throws Exception {
         InetSocketAddress isa
-            = new InetSocketAddress(InetAddress.getByName(DAYTIME_HOST),
-                                    DAYTIME_PORT);
+            = new InetSocketAddress(daytimeServer.getAddress(),
+                                    daytimeServer.getPort());
         boolean done = false;
         int globalAttempts = 0;
+        int connectSuccess = 0;
         while (!done) {
-            if (globalAttempts++ > 50)
+            // When using a local daytime server it is not always possible
+            // to get a pending connection, as sc.connect(isa) may always
+            // return true.
+            // So we're going to throw the exception only if there was
+            // at least 1 case where we did not manage to connect.
+            if (globalAttempts++ > 50) {
+                if (globalAttempts == connectSuccess + 1) {
+                    System.out.println("Can't fully test on "
+                            + System.getProperty("os.name"));
+                    break;
+                }
                 throw new RuntimeException("Failed to connect");
+            }
             SocketChannel sc = SocketChannel.open();
             sc.configureBlocking(false);
             boolean connected = sc.connect(isa);
@@ -131,6 +147,9 @@ public class FinishConnect {
                     break;
                 }
                 Thread.sleep(10);
+            }
+            if (connected) {
+                connectSuccess++;
             }
             sc.close();
         }

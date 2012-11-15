@@ -34,7 +34,7 @@
 #include "j2secmod.h"
 
 void *findFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
-    void *hModule = (void*)jHandle;
+    void *hModule = (void*)jlong_to_ptr(jHandle);
     void *fAddress = dlsym(hModule, functionName);
     if (fAddress == NULL) {
         char errorMessage[256];
@@ -53,7 +53,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssGetLibraryHandle
     void *hModule = dlopen(libName, RTLD_NOLOAD);
     dprintf2("-handle for %s: %u\n", libName, hModule);
     (*env)->ReleaseStringUTFChars(env, jLibName, libName);
-    return (jlong)hModule;
+    return ptr_to_jlong(hModule);
 }
 
 JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssLoadLibrary
@@ -72,5 +72,5 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssLoadLibrary
         return 0;
     }
 
-    return (jlong)hModule;
+    return ptr_to_jlong(hModule);
 }

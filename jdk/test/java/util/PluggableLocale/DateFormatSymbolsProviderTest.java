@@ -48,9 +48,8 @@ public class DateFormatSymbolsProviderTest extends ProviderTest {
     }
 
     void availableLocalesTest() {
-        Set<Locale> localesFromAPI = new HashSet<Locale>(availloc);
-        Set<Locale> localesExpected = new HashSet<Locale>(jreimplloc);
-        localesExpected.remove(Locale.ROOT);
+        Set<Locale> localesFromAPI = new HashSet<>(availloc);
+        Set<Locale> localesExpected = new HashSet<>(jreloc);
         localesExpected.addAll(providerloc);
         if (localesFromAPI.equals(localesExpected)) {
             System.out.println("availableLocalesTest passed.");

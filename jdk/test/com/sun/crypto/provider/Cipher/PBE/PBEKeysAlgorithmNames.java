@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6341599
+ * @bug 6341599 6383200
  * @summary JCE Reference Guide has recommendations, not requirements,
  * for algorithm names
  * @author Brad R. Wetmore
@@ -38,8 +38,15 @@ public class PBEKeysAlgorithmNames {
         "PBEWithMD5AndDES",
         "PBEWithSHA1AndDESede",
         "PBEWithSHA1AndRC2_40",
+        "PBEWithSHA1AndRC2_128",
+        "PBEWithMD5AndTripleDES",
+        "PBEWithSHA1AndRC4_40",
+        "PBEWithSHA1AndRC4_128",
         "PBKDF2WithHmacSHA1",
-        "PBEWithMD5AndTripleDES"
+        "PBKDF2WithHmacSHA224",
+        "PBKDF2WithHmacSHA256",
+        "PBKDF2WithHmacSHA384",
+        "PBKDF2WithHmacSHA512"
     };
 
     public static void main(String[] argv) throws Exception {
