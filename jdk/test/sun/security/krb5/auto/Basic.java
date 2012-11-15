@@ -38,11 +38,13 @@ public class Basic {
 
         new OneKDC(null).writeJAASConf();
 
-        Context c, s;
+        Context c, s, s2, b;
         c = Context.fromJAAS("client");
         s = Context.fromJAAS("server");
+        b = Context.fromJAAS("backend");
 
         c.startAsClient(OneKDC.SERVER, GSSUtil.GSS_KRB5_MECH_OID);
+        c.x().requestCredDeleg(true);
         s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
 
         Context.handshake(c, s);
@@ -50,7 +52,13 @@ public class Basic {
         Context.transmit("i say high --", c, s);
         Context.transmit("   you say low", s, c);
 
+        s2 = s.delegated();
         s.dispose();
         c.dispose();
+
+        s2.startAsClient(OneKDC.BACKEND, GSSUtil.GSS_KRB5_MECH_OID);
+        b.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
+
+        Context.handshake(s2, b);
     }
 }

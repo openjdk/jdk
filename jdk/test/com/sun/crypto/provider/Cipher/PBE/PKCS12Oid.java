@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @bug 4898810
- * @summary ensure PBEWithSHA1AndDESede and PBEWithSHA1AndRC2_40
- * is registered under correct OID.
+ * @bug 4898810 6383200
+ * @summary ensure PBEWithSHA1AndDESede, PBEWithSHA1AndRC2_40/128
+ *          and PBEWithSHA1AndRC4_40/128 are registered under correct OID.
  * @author Valerie Peng
  */
 
@@ -37,12 +37,20 @@ import javax.crypto.spec.*;
 import javax.crypto.interfaces.PBEKey;
 
 public class PKCS12Oid {
-    private static String OID_PBEWithSHAAnd40BitRC2CBC = "1.2.840.113549.1.12.1.6";
-    private static String OID_PBEWithSHAAnd3KeyTripleDESCBC = "1.2.840.113549.1.12.1.3";
+    private static String OID_PKCS12 = "1.2.840.113549.1.12.1.";
+    private static String OID_PBEWithSHAAnd128BitRC4 = OID_PKCS12 + "1";
+    private static String OID_PBEWithSHAAnd40BitRC4 = OID_PKCS12 + "2";
+    private static String OID_PBEWithSHAAnd3KeyTripleDESCBC = OID_PKCS12 + "3";
+    private static String OID_PBEWithSHAAnd128BitRC2CBC = OID_PKCS12 + "5";
+    private static String OID_PBEWithSHAAnd40BitRC2CBC = OID_PKCS12 + "6";
 
     public static void main(String[] argv) throws Exception {
         Cipher c = Cipher.getInstance(OID_PBEWithSHAAnd40BitRC2CBC, "SunJCE");
         c = Cipher.getInstance(OID_PBEWithSHAAnd3KeyTripleDESCBC, "SunJCE");
+
+        c = Cipher.getInstance(OID_PBEWithSHAAnd128BitRC4, "SunJCE");
+        c = Cipher.getInstance(OID_PBEWithSHAAnd40BitRC4, "SunJCE");
+        c = Cipher.getInstance(OID_PBEWithSHAAnd128BitRC2CBC, "SunJCE");
         System.out.println("All tests passed");
     }
 }

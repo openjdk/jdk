@@ -31,6 +31,69 @@
 #include "services/memSnapshot.hpp"
 #include "services/memTracker.hpp"
 
+#ifdef ASSERT
+
+void decode_pointer_record(MemPointerRecord* rec) {
+  tty->print("Pointer: [" PTR_FORMAT " - " PTR_FORMAT  "] size = %d bytes", rec->addr(),
+    rec->addr() + rec->size(), (int)rec->size());
+  tty->print(" type = %s", MemBaseline::type2name(FLAGS_TO_MEMORY_TYPE(rec->flags())));
+  if (rec->is_vm_pointer()) {
+    if (rec->is_allocation_record()) {
+      tty->print_cr(" (reserve)");
+    } else if (rec->is_commit_record()) {
+      tty->print_cr(" (commit)");
+    } else if (rec->is_uncommit_record()) {
+      tty->print_cr(" (uncommit)");
+    } else if (rec->is_deallocation_record()) {
+      tty->print_cr(" (release)");
+    } else {
+      tty->print_cr(" (tag)");
+    }
+  } else {
+    if (rec->is_arena_size_record()) {
+      tty->print_cr(" (arena size)");
+    } else if (rec->is_allocation_record()) {
+      tty->print_cr(" (malloc)");
+    } else {
+      tty->print_cr(" (free)");
+    }
+  }
+  if (MemTracker::track_callsite()) {
+    char buf[1024];
+    address pc = ((MemPointerRecordEx*)rec)->pc();
+    if (pc != NULL && os::dll_address_to_function_name(pc, buf, sizeof(buf), NULL)) {
+      tty->print_cr("\tfrom %s", buf);
+    } else {
+      tty->print_cr("\tcould not decode pc = " PTR_FORMAT "", pc);
+    }
+  }
+}
+
+void decode_vm_region_record(VMMemRegion* rec) {
+  tty->print("VM Region [" PTR_FORMAT " - " PTR_FORMAT "]", rec->addr(),
+    rec->addr() + rec->size());
+  tty->print(" type = %s", MemBaseline::type2name(FLAGS_TO_MEMORY_TYPE(rec->flags())));
+  if (rec->is_allocation_record()) {
+    tty->print_cr(" (reserved)");
+  } else if (rec->is_commit_record()) {
+    tty->print_cr(" (committed)");
+  } else {
+    ShouldNotReachHere();
+  }
+  if (MemTracker::track_callsite()) {
+    char buf[1024];
+    address pc = ((VMMemRegionEx*)rec)->pc();
+    if (pc != NULL && os::dll_address_to_function_name(pc, buf, sizeof(buf), NULL)) {
+      tty->print_cr("\tfrom %s", buf);
+    } else {
+      tty->print_cr("\tcould not decode pc = " PTR_FORMAT "", pc);
+    }
+
+  }
+}
+
+#endif
+
 
 bool VMMemPointerIterator::insert_record(MemPointerRecord* rec) {
   VMMemRegionEx new_rec;
@@ -73,52 +136,61 @@ bool VMMemPointerIterator::add_reserved_region(MemPointerRecord* rec) {
     return true;
   }
   assert(cur->base() > rec->addr(), "Just check: locate()");
-  assert(rec->addr() + rec->size() <= cur->base(), "Can not overlap");
+  assert(!cur->overlaps_region(rec), "overlapping reserved regions");
   return insert_record(rec);
 }
 
 // we do consolidate committed regions
 bool VMMemPointerIterator::add_committed_region(MemPointerRecord* rec) {
   assert(rec->is_commit_record(), "Sanity check");
-  VMMemRegion* cur;
-  cur = (VMMemRegion*)current();
-  assert(cur->is_reserved_region() && cur->contains_region(rec),
+  VMMemRegion* reserved_rgn = (VMMemRegion*)current();
+  assert(reserved_rgn->is_reserved_region() && reserved_rgn->contains_region(rec),
     "Sanity check");
 
   // thread's native stack is always marked as "committed", ignore
   // the "commit" operation for creating stack guard pages
-  if (FLAGS_TO_MEMORY_TYPE(cur->flags()) == mtThreadStack &&
+  if (FLAGS_TO_MEMORY_TYPE(reserved_rgn->flags()) == mtThreadStack &&
       FLAGS_TO_MEMORY_TYPE(rec->flags()) != mtThreadStack) {
     return true;
   }
 
-  cur = (VMMemRegion*)next();
-  while (cur != NULL && cur->is_committed_region()) {
+  // if the reserved region has any committed regions
+  VMMemRegion* committed_rgn  = (VMMemRegion*)next();
+  while (committed_rgn != NULL && committed_rgn->is_committed_region()) {
     // duplicated commit records
-    if(cur->contains_region(rec)) {
+    if(committed_rgn->contains_region(rec)) {
       return true;
-    }
-    if (cur->base() > rec->addr()) {
-      // committed regions can not overlap
-      assert(rec->addr() + rec->size() <= cur->base(), "Can not overlap");
-      if (rec->addr() + rec->size() == cur->base()) {
-        cur->expand_region(rec->addr(), rec->size());
-        return true;
+    } else if (committed_rgn->overlaps_region(rec)) {
+      // overlaps front part
+      if (rec->addr() < committed_rgn->addr()) {
+        committed_rgn->expand_region(rec->addr(),
+          committed_rgn->addr() - rec->addr());
       } else {
-        return insert_record(rec);
+        // overlaps tail part
+        address committed_rgn_end = committed_rgn->addr() +
+              committed_rgn->size();
+        assert(committed_rgn_end < rec->addr() + rec->size(),
+             "overlap tail part");
+        committed_rgn->expand_region(committed_rgn_end,
+          (rec->addr() + rec->size()) - committed_rgn_end);
       }
-    } else if (cur->base() + cur->size() == rec->addr()) {
-      cur->expand_region(rec->addr(), rec->size());
+    } else if (committed_rgn->base() + committed_rgn->size() == rec->addr()) {
+      // adjunct each other
+      committed_rgn->expand_region(rec->addr(), rec->size());
       VMMemRegion* next_reg = (VMMemRegion*)next();
       // see if we can consolidate next committed region
       if (next_reg != NULL && next_reg->is_committed_region() &&
-        next_reg->base() == cur->base() + cur->size()) {
-          cur->expand_region(next_reg->base(), next_reg->size());
+        next_reg->base() == committed_rgn->base() + committed_rgn->size()) {
+          committed_rgn->expand_region(next_reg->base(), next_reg->size());
+          // delete merged region
           remove();
       }
       return true;
+    } else if (committed_rgn->base() > rec->addr()) {
+      // found the location, insert this committed region
+      return insert_record(rec);
     }
-    cur = (VMMemRegion*)next();
+    committed_rgn = (VMMemRegion*)next();
   }
   return insert_record(rec);
 }

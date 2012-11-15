@@ -1263,7 +1263,7 @@ void nmethod::invalidate_osr_method() {
   assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod");
   // Remove from list of active nmethods
   if (method() != NULL)
-    InstanceKlass::cast(method()->method_holder())->remove_osr_nmethod(this);
+    method()->method_holder()->remove_osr_nmethod(this);
   // Set entry as invalid
   _entry_bci = InvalidOSREntryBci;
 }

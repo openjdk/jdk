@@ -597,12 +597,12 @@ Rule	Russia	1996	2010	-	Oct	lastSun	 2:00s	0	-
 # According to Kremlin press service, Russian President Dmitry Medvedev
 # signed a federal law "On calculation of time" on June 9, 2011.
 # According to the law Russia is abolishing daylight saving time.
-# 
-# Medvedev signed a law "On the Calculation of Time" (in russian): 
+#
+# Medvedev signed a law "On the Calculation of Time" (in russian):
 # <a href="http://bmockbe.ru/events/?ID=7583">
 # http://bmockbe.ru/events/?ID=7583
 # </a>
-# 
+#
 # Medvedev signed a law on the calculation of the time (in russian):
 # <a href="http://www.regnum.ru/news/polit/1413906.html">
 # http://www.regnum.ru/news/polit/1413906.html
@@ -1710,7 +1710,7 @@ Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2 0:00s # Valletta
 # From Alexander Krivenyshev (2011-10-26)
 # NO need to divide Moldova into two timezones at this point.
 # As of today, Transnistria (Pridnestrovie)- Tiraspol reversed its own
-# decision to abolish DST this winter. 
+# decision to abolish DST this winter.
 # Following Moldova and neighboring Ukraine- Transnistria (Pridnestrovie)-
 # Tiraspol will go back to winter time on October 30, 2011.
 # News from Moldova (in russian):
@@ -2600,11 +2600,11 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1848 Sep 12
 # http://www.alomaliye.com/bkk_2002_3769.htm
 
 # From G&ouml;kdeniz Karada&#x011f; (2011-03-10):
-# 
+#
 # According to the articles linked below, Turkey will change into summer
 # time zone (GMT+3) on March 28, 2011 at 3:00 a.m. instead of March 27.
 # This change is due to a nationwide exam on 27th.
-# 
+#
 # <a href="http://www.worldbulletin.net/?aType=haber&ArticleID=70872">
 # http://www.worldbulletin.net/?aType=haber&ArticleID=70872
 # </a>
@@ -2721,7 +2721,7 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # time this year after all.
 #
 # From Udo Schwedt (2011-10-18):
-# As far as I understand, the recent change to the Ukranian time zone 
+# As far as I understand, the recent change to the Ukranian time zone
 # (Europe/Kiev) to introduce permanent daylight saving time (similar
 # to Russia) was reverted today:
 #

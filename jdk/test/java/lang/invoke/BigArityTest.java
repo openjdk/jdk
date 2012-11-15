@@ -26,7 +26,7 @@
 /* @test
  * @summary High arity invocations, up to the maximum of 255 arguments
  * @compile BigArityTest.java
- * @run junit/othervm -DBigArityTest.ITERATION_COUNT=1 test.java.lang.invoke.BigArityTest
+ * @run junit/othervm/timeout=2500 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -esa -DBigArityTest.ITERATION_COUNT=1 test.java.lang.invoke.BigArityTest
  */
 
 package test.java.lang.invoke;

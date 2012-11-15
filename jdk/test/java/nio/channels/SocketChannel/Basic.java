@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,10 @@ public class Basic {
 
     static java.io.PrintStream out = System.out;
 
-    static final int DAYTIME_PORT = 13;
-    static final String DAYTIME_HOST = TestUtil.HOST;
-
-    static void test() throws Exception {
+    static void test(TestServers.DayTimeServer daytimeServer) throws Exception {
         InetSocketAddress isa
-            = new InetSocketAddress(InetAddress.getByName(DAYTIME_HOST),
-                                    DAYTIME_PORT);
+            = new InetSocketAddress(daytimeServer.getAddress(),
+                                    daytimeServer.getPort());
         SocketChannel sc = SocketChannel.open(isa);
         out.println("opened: " + sc);
         /*
@@ -76,7 +73,10 @@ public class Basic {
     }
 
     public static void main(String[] args) throws Exception {
-        test();
+        try (TestServers.DayTimeServer dayTimeServer
+                = TestServers.DayTimeServer.startNewServer(100)) {
+            test(dayTimeServer);
+        }
     }
 
 }
