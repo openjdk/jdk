@@ -727,8 +727,8 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
 
   // Step 7
   Klass* super_klass = this_oop->super();
-  if (super_klass != NULL && !this_oop->is_interface() && Klass::cast(super_klass)->should_be_initialized()) {
-    Klass::cast(super_klass)->initialize(THREAD);
+  if (super_klass != NULL && !this_oop->is_interface() && super_klass->should_be_initialized()) {
+    super_klass->initialize(THREAD);
 
     if (HAS_PENDING_EXCEPTION) {
       Handle e(THREAD, PENDING_EXCEPTION);
@@ -924,7 +924,7 @@ GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slo
 }
 
 bool InstanceKlass::compute_is_subtype_of(Klass* k) {
-  if (Klass::cast(k)->is_interface()) {
+  if (k->is_interface()) {
     return implements_interface(k);
   } else {
     return Klass::compute_is_subtype_of(k);
@@ -933,7 +933,7 @@ bool InstanceKlass::compute_is_subtype_of(Klass* k) {
 
 bool InstanceKlass::implements_interface(Klass* k) const {
   if (this == k) return true;
-  assert(Klass::cast(k)->is_interface(), "should be an interface class");
+  assert(k->is_interface(), "should be an interface class");
   for (int i = 0; i < transitive_interfaces()->length(); i++) {
     if (transitive_interfaces()->at(i) == k) {
       return true;
@@ -1107,7 +1107,7 @@ Klass* InstanceKlass::find_interface_field(Symbol* name, Symbol* sig, fieldDescr
   const int n = local_interfaces()->length();
   for (int i = 0; i < n; i++) {
     Klass* intf1 = local_interfaces()->at(i);
-    assert(Klass::cast(intf1)->is_interface(), "just checking type");
+    assert(intf1->is_interface(), "just checking type");
     // search for field in current interface
     if (InstanceKlass::cast(intf1)->find_local_field(name, sig, fd)) {
       assert(fd->is_static(), "interface field must be static");
@@ -1178,7 +1178,7 @@ bool InstanceKlass::find_field_from_offset(int offset, bool is_static, fieldDesc
     if (InstanceKlass::cast(klass)->find_local_field_from_offset(offset, is_static, fd)) {
       return true;
     }
-    klass = Klass::cast(klass)->super();
+    klass = klass->super();
   }
   return false;
 }
@@ -2366,19 +2366,19 @@ const char* InstanceKlass::signature_name() const {
 bool InstanceKlass::is_same_class_package(Klass* class2) {
   Klass* class1 = this;
   oop classloader1 = InstanceKlass::cast(class1)->class_loader();
-  Symbol* classname1 = Klass::cast(class1)->name();
+  Symbol* classname1 = class1->name();
 
-  if (Klass::cast(class2)->oop_is_objArray()) {
+  if (class2->oop_is_objArray()) {
     class2 = ObjArrayKlass::cast(class2)->bottom_klass();
   }
   oop classloader2;
-  if (Klass::cast(class2)->oop_is_instance()) {
+  if (class2->oop_is_instance()) {
     classloader2 = InstanceKlass::cast(class2)->class_loader();
   } else {
-    assert(Klass::cast(class2)->oop_is_typeArray(), "should be type array");
+    assert(class2->oop_is_typeArray(), "should be type array");
     classloader2 = NULL;
   }
-  Symbol* classname2 = Klass::cast(class2)->name();
+  Symbol* classname2 = class2->name();
 
   return InstanceKlass::is_same_class_package(classloader1, classname1,
                                               classloader2, classname2);
@@ -2387,7 +2387,7 @@ bool InstanceKlass::is_same_class_package(Klass* class2) {
 bool InstanceKlass::is_same_class_package(oop classloader2, Symbol* classname2) {
   Klass* class1 = this;
   oop classloader1 = InstanceKlass::cast(class1)->class_loader();
-  Symbol* classname1 = Klass::cast(class1)->name();
+  Symbol* classname1 = class1->name();
 
   return InstanceKlass::is_same_class_package(classloader1, classname1,
                                               classloader2, classname2);
@@ -2478,7 +2478,7 @@ Klass* InstanceKlass::compute_enclosing_class_impl(instanceKlassHandle self,
 bool InstanceKlass::is_same_package_member_impl(instanceKlassHandle class1,
                                                 Klass* class2_oop, TRAPS) {
   if (class2_oop == class1())                       return true;
-  if (!Klass::cast(class2_oop)->oop_is_instance())  return false;
+  if (!class2_oop->oop_is_instance())  return false;
   instanceKlassHandle class2(THREAD, class2_oop);
 
   // must be in same package before we try anything else
@@ -3011,7 +3011,7 @@ void InstanceKlass::verify_on(outputStream* st) {
   if (im != NULL) {
     guarantee(is_interface(), "only interfaces should have implementor set");
     guarantee(im->is_klass(), "should be klass");
-    guarantee(!Klass::cast(im)->is_interface() || im == this,
+    guarantee(!im->is_interface() || im == this,
       "implementors cannot be interfaces");
   }
 
@@ -3020,7 +3020,7 @@ void InstanceKlass::verify_on(outputStream* st) {
     Array<Klass*>* local_interfaces = this->local_interfaces();
     for (int j = 0; j < local_interfaces->length(); j++) {
       Klass* e = local_interfaces->at(j);
-      guarantee(e->is_klass() && Klass::cast(e)->is_interface(), "invalid local interface");
+      guarantee(e->is_klass() && e->is_interface(), "invalid local interface");
     }
   }
 
@@ -3029,7 +3029,7 @@ void InstanceKlass::verify_on(outputStream* st) {
     Array<Klass*>* transitive_interfaces = this->transitive_interfaces();
     for (int j = 0; j < transitive_interfaces->length(); j++) {
       Klass* e = transitive_interfaces->at(j);
-      guarantee(e->is_klass() && Klass::cast(e)->is_interface(), "invalid transitive interface");
+      guarantee(e->is_klass() && e->is_interface(), "invalid transitive interface");
     }
   }
 

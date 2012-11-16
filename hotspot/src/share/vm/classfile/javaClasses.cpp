@@ -561,7 +561,7 @@ oop java_lang_Class::create_mirror(KlassHandle k, TRAPS) {
         assert(k->oop_is_objArray(), "Must be");
         Klass* element_klass = ObjArrayKlass::cast(k())->element_klass();
         assert(element_klass != NULL, "Must have an element klass");
-          comp_mirror = Klass::cast(element_klass)->java_mirror();
+          comp_mirror = element_klass->java_mirror();
       }
       assert(comp_mirror.not_null(), "must have a mirror");
 
@@ -644,8 +644,8 @@ void java_lang_Class::print_signature(oop java_class, outputStream* st) {
     name = vmSymbols::type_signature(primitive_type(java_class));
   } else {
     Klass* k = as_Klass(java_class);
-    is_instance = Klass::cast(k)->oop_is_instance();
-    name = Klass::cast(k)->name();
+    is_instance = k->oop_is_instance();
+    name = k->name();
   }
   if (name == NULL) {
     st->print("<null>");
@@ -667,12 +667,12 @@ Symbol* java_lang_Class::as_signature(oop java_class, bool intern_if_not_found, 
     name->increment_refcount();
   } else {
     Klass* k = as_Klass(java_class);
-    if (!Klass::cast(k)->oop_is_instance()) {
-      name = Klass::cast(k)->name();
+    if (!k->oop_is_instance()) {
+      name = k->name();
       name->increment_refcount();
     } else {
       ResourceMark rm;
-      const char* sigstr = Klass::cast(k)->signature_name();
+      const char* sigstr = k->signature_name();
       int         siglen = (int) strlen(sigstr);
       if (!intern_if_not_found) {
         name = SymbolTable::probe(sigstr, siglen);
@@ -687,13 +687,13 @@ Symbol* java_lang_Class::as_signature(oop java_class, bool intern_if_not_found, 
 
 Klass* java_lang_Class::array_klass(oop java_class) {
   Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
-  assert(k == NULL || k->is_klass() && Klass::cast(k)->oop_is_array(), "should be array klass");
+  assert(k == NULL || k->is_klass() && k->oop_is_array(), "should be array klass");
   return k;
 }
 
 
 void java_lang_Class::set_array_klass(oop java_class, Klass* klass) {
-  assert(klass->is_klass() && Klass::cast(klass)->oop_is_array(), "should be array klass");
+  assert(klass->is_klass() && klass->oop_is_array(), "should be array klass");
   java_class->metadata_field_put(_array_klass_offset, klass);
 }
 

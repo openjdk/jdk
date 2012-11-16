@@ -196,7 +196,7 @@ public:
   jobject to_jobject(oop obj) { return JNIHandles::make_local(_thread,obj); }
 #endif
 
-  jclass to_jclass(Klass* klass) { return (klass == NULL ? NULL : (jclass)to_jobject(Klass::cast(klass)->java_mirror())); }
+  jclass to_jclass(Klass* klass) { return (klass == NULL ? NULL : (jclass)to_jobject(klass->java_mirror())); }
 
   jmethodID to_jmethodID(methodHandle method) { return method->jmethod_id(); }
 
@@ -920,7 +920,7 @@ void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
     if (ets->is_enabled(JVMTI_EVENT_CLASS_LOAD)) {
       EVT_TRACE(JVMTI_EVENT_CLASS_LOAD, ("JVMTI [%s] Evt Class Load sent %s",
                                          JvmtiTrace::safe_get_thread_name(thread),
-                                         kh()==NULL? "NULL" : Klass::cast(kh())->external_name() ));
+                                         kh()==NULL? "NULL" : kh()->external_name() ));
 
       JvmtiEnv *env = ets->get_env();
       JvmtiClassEventMark jem(thread, kh());
@@ -949,7 +949,7 @@ void JvmtiExport::post_class_prepare(JavaThread *thread, Klass* klass) {
     if (ets->is_enabled(JVMTI_EVENT_CLASS_PREPARE)) {
       EVT_TRACE(JVMTI_EVENT_CLASS_PREPARE, ("JVMTI [%s] Evt Class Prepare sent %s",
                                             JvmtiTrace::safe_get_thread_name(thread),
-                                            kh()==NULL? "NULL" : Klass::cast(kh())->external_name() ));
+                                            kh()==NULL? "NULL" : kh()->external_name() ));
 
       JvmtiEnv *env = ets->get_env();
       JvmtiClassEventMark jem(thread, kh());
@@ -979,12 +979,12 @@ void JvmtiExport::post_class_unload(Klass* klass) {
     for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
       if (env->is_enabled((jvmtiEvent)EXT_EVENT_CLASS_UNLOAD)) {
         EVT_TRACE(EXT_EVENT_CLASS_UNLOAD, ("JVMTI [?] Evt Class Unload sent %s",
-                  kh()==NULL? "NULL" : Klass::cast(kh())->external_name() ));
+                  kh()==NULL? "NULL" : kh()->external_name() ));
 
         // do everything manually, since this is a proxy - needs special care
         JNIEnv* jni_env = real_thread->jni_environment();
         jthread jt = (jthread)JNIHandles::make_local(real_thread, real_thread->threadObj());
-        jclass jk = (jclass)JNIHandles::make_local(real_thread, Klass::cast(kh())->java_mirror());
+        jclass jk = (jclass)JNIHandles::make_local(real_thread, kh()->java_mirror());
 
         // Before we call the JVMTI agent, we have to set the state in the
         // thread for which we are proxying.
@@ -2121,7 +2121,7 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread,  oop object) {
     if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC)) {
       EVT_TRACE(JVMTI_EVENT_VM_OBJECT_ALLOC, ("JVMTI [%s] Evt vmobject alloc sent %s",
                                          JvmtiTrace::safe_get_thread_name(thread),
-                                         object==NULL? "NULL" : Klass::cast(java_lang_Class::as_Klass(object))->external_name()));
+                                         object==NULL? "NULL" : java_lang_Class::as_Klass(object)->external_name()));
 
       JvmtiVMObjectAllocEventMark jem(thread, h());
       JvmtiJavaThreadEventTransition jet(thread);
