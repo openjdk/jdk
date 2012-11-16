@@ -97,6 +97,9 @@ void CompilationPolicy::completed_vm_startup() {
 // This is intended to force compiles for methods (usually for
 // debugging) that would otherwise be interpreted for some reason.
 bool CompilationPolicy::must_be_compiled(methodHandle m, int comp_level) {
+  // Don't allow Xcomp to cause compiles in replay mode
+  if (ReplayCompiles) return false;
+
   if (m->has_compiled_code()) return false;       // already compiled
   if (!can_be_compiled(m, comp_level)) return false;
 
@@ -322,6 +325,16 @@ nmethod* NonTieredCompPolicy::event(methodHandle method, methodHandle inlinee, i
       return NULL;
     }
   }
+  if (CompileTheWorld || ReplayCompiles) {
+    // Don't trigger other compiles in testing mode
+    if (bci == InvocationEntryBci) {
+      reset_counter_for_invocation_event(method);
+    } else {
+      reset_counter_for_back_branch_event(method);
+    }
+    return NULL;
+  }
+
   if (bci == InvocationEntryBci) {
     // when code cache is full, compilation gets switched off, UseCompiler
     // is set to false
