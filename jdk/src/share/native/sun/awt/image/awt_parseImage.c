@@ -114,6 +114,62 @@ int awt_parseImage(JNIEnv *env, jobject jimage, BufImageS_t **imagePP,
     return status;
 }
 
+/* Verifies whether the channel offsets are sane and correspond to the type of
+ * the raster.
+ *
+ * Return value:
+ *     0: Failure: channel offsets are invalid
+ *     1: Success
+ */
+static int checkChannelOffsets(RasterS_t *rasterP, int dataArrayLength) {
+    int i, lastPixelOffset, lastScanOffset;
+    switch (rasterP->rasterType) {
+    case COMPONENT_RASTER_TYPE:
+        if (!SAFE_TO_MULT(rasterP->height, rasterP->scanlineStride)) {
+            return 0;
+        }
+        if (!SAFE_TO_MULT(rasterP->width, rasterP->pixelStride)) {
+            return 0;
+        }
+
+        lastScanOffset = (rasterP->height - 1) * rasterP->scanlineStride;
+        lastPixelOffset = (rasterP->width - 1) * rasterP->pixelStride;
+
+
+        if (!SAFE_TO_ADD(lastPixelOffset, lastScanOffset)) {
+            return 0;
+        }
+
+        lastPixelOffset += lastScanOffset;
+
+        for (i = 0; i < rasterP->numDataElements; i++) {
+            int off = rasterP->chanOffsets[i];
+            int size = lastPixelOffset + off;
+
+            if (off < 0 || !SAFE_TO_ADD(lastPixelOffset, off)) {
+                return 0;
+            }
+
+            if (size < lastPixelOffset || size >= dataArrayLength) {
+                // an overflow, or insufficient buffer capacity
+                return 0;
+            }
+        }
+        return 1;
+    case BANDED_RASTER_TYPE:
+        // NB:caller does not support the banded rasters yet,
+        // so this branch of the code must be re-defined in
+        // order to provide valid criteria for the data offsets
+        // verification, when/if banded rasters will be supported.
+        // At the moment, we prohibit banded rasters as well.
+        return 0;
+    default:
+        // PACKED_RASTER_TYPE: does not support channel offsets
+        // UNKNOWN_RASTER_TYPE: should not be used, likely indicates an error
+        return 0;
+    }
+}
+
 /* Parse the raster.  All of the raster information is returned in the
  * rasterP structure.
  *
@@ -125,7 +181,6 @@ int awt_parseImage(JNIEnv *env, jobject jimage, BufImageS_t **imagePP,
 int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
     jobject joffs = NULL;
     /* int status;*/
-    int isDiscrete = TRUE;
 
     if (JNU_IsNull(env, jraster)) {
         JNU_ThrowNullPointerException(env, "null Raster object");
@@ -154,6 +209,9 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
         JNU_ThrowNullPointerException(env, "null Raster object");
         return -1;
     }
+
+    // make sure that the raster type is initialized
+    rasterP->rasterType = UNKNOWN_RASTER_TYPE;
 
     if (rasterP->numBands <= 0 ||
         rasterP->numBands > MAX_NUMBANDS)
@@ -254,7 +312,6 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
         }
         rasterP->chanOffsets[0] = (*env)->GetIntField(env, jraster, g_BPRdataBitOffsetID);
         rasterP->dataType = BYTE_DATA_TYPE;
-        isDiscrete = FALSE;
     }
     else {
         rasterP->type = sun_awt_image_IntegerComponentRaster_TYPE_CUSTOM;
@@ -265,7 +322,19 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
         return 0;
     }
 
-    if (isDiscrete) {
+    // do basic validation of the raster structure
+    if (rasterP->width <= 0 || rasterP->height <= 0 ||
+        rasterP->pixelStride <= 0 || rasterP->scanlineStride <= 0)
+    {
+        // invalid raster
+        return -1;
+    }
+
+    // channel (data) offsets
+    switch (rasterP->rasterType) {
+    case COMPONENT_RASTER_TYPE:
+    case BANDED_RASTER_TYPE: // note that this routine does not support banded rasters at the moment
+        // get channel (data) offsets
         rasterP->chanOffsets = NULL;
         if (SAFE_TO_ALLOC_2(rasterP->numDataElements, sizeof(jint))) {
             rasterP->chanOffsets =
@@ -278,10 +347,21 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
         }
         (*env)->GetIntArrayRegion(env, joffs, 0, rasterP->numDataElements,
                                   rasterP->chanOffsets);
+        if (rasterP->jdata == NULL) {
+            // unable to verify the raster
+            return -1;
+        }
+        // verify whether channel offsets look sane
+        if (!checkChannelOffsets(rasterP, (*env)->GetArrayLength(env, rasterP->jdata))) {
+            return -1;
+        }
+        break;
+    default:
+        ; // PACKED_RASTER_TYPE does not use the channel offsets.
     }
 
-    /* additioanl check for sppsm fields validity: make sure that
-     * size of raster samples doesn't exceed the data type cpacity.
+    /* additional check for sppsm fields validity: make sure that
+     * size of raster samples doesn't exceed the data type capacity.
      */
     if (rasterP->dataType > UNKNOWN_DATA_TYPE && /* data type has been recognized */
         rasterP->sppsm.maxBitSize > 0 && /* raster has SPP sample model */
