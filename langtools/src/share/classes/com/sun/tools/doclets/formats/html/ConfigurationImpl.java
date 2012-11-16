@@ -28,9 +28,13 @@ package com.sun.tools.doclets.formats.html;
 import java.net.*;
 import java.util.*;
 
+import javax.tools.JavaFileManager;
+
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.util.Context;
 
 /**
  * Configure the output based on the command line options.
@@ -195,6 +199,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * Return the build date for the doclet.
      */
+    @Override
     public String getDocletSpecificBuildDate() {
         return BUILD_DATE;
     }
@@ -205,6 +210,7 @@ public class ConfigurationImpl extends Configuration {
      *
      * @param options The array of option names and values.
      */
+    @Override
     public void setSpecificDocletOptions(String[][] options) {
         for (int oi = 0; oi < options.length; ++oi) {
             String[] os = options[oi];
@@ -323,6 +329,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean validOptions(String options[][],
             DocErrorReporter reporter) {
         boolean helpfile = false;
@@ -411,6 +418,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public MessageRetriever getDocletSpecificMsg() {
         return standardmessage;
     }
@@ -480,6 +488,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public WriterFactory getWriterFactory() {
         return new WriterFactoryImpl(this);
     }
@@ -487,6 +496,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Comparator<ProgramElementDoc> getMemberComparator() {
         return null;
     }
@@ -494,10 +504,22 @@ public class ConfigurationImpl extends Configuration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Locale getLocale() {
         if (root instanceof com.sun.tools.javadoc.RootDocImpl)
             return ((com.sun.tools.javadoc.RootDocImpl)root).getLocale();
         else
             return Locale.getDefault();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public JavaFileManager getFileManager() {
+        if (root instanceof com.sun.tools.javadoc.RootDocImpl)
+            return ((com.sun.tools.javadoc.RootDocImpl)root).getFileManager();
+        else
+            return new JavacFileManager(new Context(), false, null);
     }
 }
