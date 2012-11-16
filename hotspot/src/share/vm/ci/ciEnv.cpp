@@ -30,6 +30,7 @@
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciNullObject.hpp"
+#include "ci/ciReplay.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -772,6 +773,11 @@ ciMethod* ciEnv::get_method_by_index_impl(constantPoolHandle cpool,
            : !m->method_holder()->is_loaded())) {
         m = NULL;
       }
+#ifdef ASSERT
+      if (m != NULL && ReplayCompiles && !ciReplay::is_loaded(m)) {
+        m = NULL;
+      }
+#endif
       if (m != NULL) {
         // We found the method.
         return get_method(m);
@@ -1143,4 +1149,44 @@ void ciEnv::record_method_not_compilable(const char* reason, bool all_tiers) {
 void ciEnv::record_out_of_memory_failure() {
   // If memory is low, we stop compiling methods.
   record_method_not_compilable("out of memory");
+}
+
+fileStream* ciEnv::_replay_data_stream = NULL;
+
+void ciEnv::dump_replay_data() {
+  VM_ENTRY_MARK;
+  MutexLocker ml(Compile_lock);
+  if (_replay_data_stream == NULL) {
+    _replay_data_stream = new (ResourceObj::C_HEAP, mtCompiler) fileStream(ReplayDataFile);
+    if (_replay_data_stream == NULL) {
+      fatal(err_msg("Can't open %s for replay data", ReplayDataFile));
+    }
+  }
+  dump_replay_data(_replay_data_stream);
+}
+
+
+void ciEnv::dump_replay_data(outputStream* out) {
+  ASSERT_IN_VM;
+
+#if INCLUDE_JVMTI
+  out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
+  out->print_cr("JvmtiExport can_hotswap_or_post_breakpoint %d", _jvmti_can_hotswap_or_post_breakpoint);
+  out->print_cr("JvmtiExport can_post_on_exceptions %d",         _jvmti_can_post_on_exceptions);
+#endif // INCLUDE_JVMTI
+
+  GrowableArray<ciMetadata*>* objects = _factory->get_ci_metadata();
+  out->print_cr("# %d ciObject found", objects->length());
+  for (int i = 0; i < objects->length(); i++) {
+    objects->at(i)->dump_replay_data(out);
+  }
+  Method* method = task()->method();
+  int entry_bci = task()->osr_bci();
+  // Klass holder = method->method_holder();
+  out->print_cr("compile %s %s %s %d",
+                method->klass_name()->as_quoted_ascii(),
+                method->name()->as_quoted_ascii(),
+                method->signature()->as_quoted_ascii(),
+                entry_bci);
+  out->flush();
 }
