@@ -33,6 +33,7 @@ import java.util.ResourceBundle;
 import com.sun.javadoc.*;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.Log;
 
@@ -174,6 +175,11 @@ public class Messager extends Log implements DocErrorReporter {
      * @param msg message to print
      */
     public void printError(SourcePosition pos, String msg) {
+        if (diagListener != null) {
+            report(DiagnosticType.ERROR, pos, msg);
+            return;
+        }
+
         if (nerrors < MaxErrors) {
             String prefix = (pos == null) ? programName : pos.toString();
             errWriter.println(prefix + ": " + getText("javadoc.error") + " - " + msg);
@@ -201,6 +207,11 @@ public class Messager extends Log implements DocErrorReporter {
      * @param msg message to print
      */
     public void printWarning(SourcePosition pos, String msg) {
+        if (diagListener != null) {
+            report(DiagnosticType.WARNING, pos, msg);
+            return;
+        }
+
         if (nwarnings < MaxWarnings) {
             String prefix = (pos == null) ? programName : pos.toString();
             warnWriter.println(prefix +  ": " + getText("javadoc.warning") +" - " + msg);
@@ -227,6 +238,11 @@ public class Messager extends Log implements DocErrorReporter {
      * @param msg message to print
      */
     public void printNotice(SourcePosition pos, String msg) {
+        if (diagListener != null) {
+            report(DiagnosticType.NOTE, pos, msg);
+            return;
+        }
+
         if (pos == null)
             noticeWriter.println(msg);
         else
@@ -294,5 +310,23 @@ public class Messager extends Log implements DocErrorReporter {
      */
     public void exit() {
         throw new ExitJavadoc();
+    }
+
+    private void report(DiagnosticType type, SourcePosition pos, String msg) {
+        switch (type) {
+            case ERROR:
+            case WARNING:
+                Object prefix = (pos == null) ? programName : pos;
+                report(javadocDiags.create(type, null, null, "msg", prefix, msg));
+                break;
+
+            case NOTE:
+                String key = (pos == null) ? "msg" : "pos.msg";
+                report(javadocDiags.create(type, null, null, key, pos, msg));
+                break;
+
+            default:
+                throw new IllegalArgumentException(type.toString());
+        }
     }
 }

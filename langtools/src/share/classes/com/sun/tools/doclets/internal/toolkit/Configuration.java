@@ -78,7 +78,7 @@ public abstract class Configuration {
 
     /**
      * This is true if option "-serialwarn" is used. Defualt value is false to
-     * supress excessive warnings about serial tag.
+     * suppress excessive warnings about serial tag.
      */
     public boolean serialwarn = false;
 
@@ -446,7 +446,7 @@ public abstract class Configuration {
     /**
      * Initialize the taglet manager.  The strings to initialize the simple custom tags should
      * be in the following format:  "[tag name]:[location str]:[heading]".
-     * @param customTagStrs the set two dimentional arrays of strings.  These arrays contain
+     * @param customTagStrs the set two dimensional arrays of strings.  These arrays contain
      * either -tag or -taglet arguments.
      */
     private void initTagletManager(Set<String[]> customTagStrs) {
@@ -457,11 +457,11 @@ public abstract class Configuration {
         for (Iterator<String[]> it = customTagStrs.iterator(); it.hasNext(); ) {
             args = it.next();
             if (args[0].equals("-taglet")) {
-                tagletManager.addCustomTag(args[1], tagletpath);
+                tagletManager.addCustomTag(args[1], getFileManager(), tagletpath);
                 continue;
             }
             String[] tokens = tokenize(args[1],
-                TagletManager.SIMPLE_TAGLET_OPT_SEPERATOR, 3);
+                TagletManager.SIMPLE_TAGLET_OPT_SEPARATOR, 3);
             if (tokens.length == 1) {
                 String tagName = args[1];
                 if (tagletManager.isKnownCustomTag(tagName)) {

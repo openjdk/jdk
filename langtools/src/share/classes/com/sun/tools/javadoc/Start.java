@@ -29,9 +29,16 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.main.CommandLine;
+import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -69,6 +76,12 @@ public class Start extends ToolOption.Helper {
     private final Messager messager;
 
     private DocletInvoker docletInvoker;
+
+    /**
+     * In API mode, exceptions thrown while calling the doclet are
+     * propagated using ClientCodeException.
+     */
+    private boolean apiMode;
 
     Start(String programName,
           PrintWriter errWriter,
@@ -121,6 +134,7 @@ public class Start extends ToolOption.Helper {
     public Start(Context context) {
         context.getClass(); // null check
         this.context = context;
+        apiMode = true;
         defaultDocletClassName = standardDocletClassName;
         docletParentClassLoader = null;
 
@@ -184,15 +198,29 @@ public class Start extends ToolOption.Helper {
      * Main program - external wrapper
      */
     int begin(String... argv) {
+        boolean ok = begin(null, argv, Collections.<JavaFileObject> emptySet());
+        return ok ? 0 : 1;
+    }
+
+    public boolean begin(Class<?> docletClass, Iterable<String> options, Iterable<? extends JavaFileObject> fileObjects) {
+        Collection<String> opts = new ArrayList<String>();
+        for (String opt: options) opts.add(opt);
+        return begin(docletClass, opts.toArray(new String[opts.size()]), fileObjects);
+    }
+
+    private boolean begin(Class<?> docletClass, String[] options, Iterable<? extends JavaFileObject> fileObjects) {
         boolean failed = false;
 
         try {
-            failed = !parseAndExecute(argv);
+            failed = !parseAndExecute(docletClass, options, fileObjects);
         } catch (Messager.ExitJavadoc exc) {
             // ignore, we just exit this way
         } catch (OutOfMemoryError ee) {
             messager.error(Messager.NOPOS, "main.out.of.memory");
             failed = true;
+        } catch (ClientCodeException e) {
+            // simply rethrow these exceptions, to be caught and handled by JavadocTaskImpl
+            throw e;
         } catch (Error ee) {
             ee.printStackTrace(System.err);
             messager.error(Messager.NOPOS, "main.fatal.error");
@@ -207,13 +235,16 @@ public class Start extends ToolOption.Helper {
         }
         failed |= messager.nerrors() > 0;
         failed |= rejectWarnings && messager.nwarnings() > 0;
-        return failed ? 1 : 0;
+        return !failed;
     }
 
     /**
      * Main program - internal
      */
-    private boolean parseAndExecute(String... argv) throws IOException {
+    private boolean parseAndExecute(
+            Class<?> docletClass,
+            String[] argv,
+            Iterable<? extends JavaFileObject> fileObjects) throws IOException {
         long tm = System.currentTimeMillis();
 
         ListBuffer<String> javaNames = new ListBuffer<String>();
@@ -229,7 +260,9 @@ public class Start extends ToolOption.Helper {
             exit();
         }
 
-        setDocletInvoker(argv);
+
+        JavaFileManager fileManager = context.get(JavaFileManager.class);
+        setDocletInvoker(docletClass, fileManager, argv);
 
         compOpts = Options.instance(context);
 
@@ -287,7 +320,7 @@ public class Start extends ToolOption.Helper {
         }
         compOpts.notifyListeners();
 
-        if (javaNames.isEmpty() && subPackages.isEmpty()) {
+        if (javaNames.isEmpty() && subPackages.isEmpty() && isEmpty(fileObjects)) {
             usageError("main.No_packages_or_classes_specified");
         }
 
@@ -310,6 +343,7 @@ public class Start extends ToolOption.Helper {
                 showAccess,
                 javaNames.toList(),
                 options.toList(),
+                fileObjects,
                 breakiterator,
                 subPackages.toList(),
                 excludedPackages.toList(),
@@ -334,21 +368,43 @@ public class Start extends ToolOption.Helper {
         return ok;
     }
 
-    private void setDocletInvoker(String[] argv) {
+    private <T> boolean isEmpty(Iterable<T> iter) {
+        return !iter.iterator().hasNext();
+    }
+
+    /**
+     * Init the doclet invoker.
+     * The doclet class may be given explicitly, or via the -doclet option in
+     * argv.
+     * If the doclet class is not given explicitly, it will be loaded from
+     * the file manager's DOCLET_PATH location, if available, or via the
+     * -doclet path option in argv.
+     * @param docletClass The doclet class. May be null.
+     * @param fileManager The file manager used to get the class loader to load
+     * the doclet class if required. May be null.
+     * @param argv Args containing -doclet and -docletpath, in case they are required.
+     */
+    private void setDocletInvoker(Class<?> docletClass, JavaFileManager fileManager, String[] argv) {
+        if (docletClass != null) {
+            docletInvoker = new DocletInvoker(messager, docletClass, apiMode);
+            // TODO, check no -doclet, -docletpath
+            return;
+        }
+
         String docletClassName = null;
         String docletPath = null;
 
         // Parse doclet specifying arguments
         for (int i = 0 ; i < argv.length ; i++) {
             String arg = argv[i];
-            if (arg.equals("-doclet")) {
+            if (arg.equals(ToolOption.DOCLET.opt)) {
                 oneArg(argv, i++);
                 if (docletClassName != null) {
                     usageError("main.more_than_one_doclet_specified_0_and_1",
                                docletClassName, argv[i]);
                 }
                 docletClassName = argv[i];
-            } else if (arg.equals("-docletpath")) {
+            } else if (arg.equals(ToolOption.DOCLETPATH.opt)) {
                 oneArg(argv, i++);
                 if (docletPath == null) {
                     docletPath = argv[i];
@@ -363,9 +419,10 @@ public class Start extends ToolOption.Helper {
         }
 
         // attempt to find doclet
-        docletInvoker = new DocletInvoker(messager,
-                                          docletClassName, docletPath,
-                                          docletParentClassLoader);
+        docletInvoker = new DocletInvoker(messager, fileManager,
+                docletClassName, docletPath,
+                docletParentClassLoader,
+                apiMode);
     }
 
     /**

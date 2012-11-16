@@ -74,7 +74,7 @@ public class JavacTaskImpl extends BasicJavacTask {
     private List<JavaFileObject> fileObjects;
     private Map<JavaFileObject, JCCompilationUnit> notYetEntered;
     private ListBuffer<Env<AttrContext>> genList;
-    private AtomicBoolean used = new AtomicBoolean();
+    private final AtomicBoolean used = new AtomicBoolean();
     private Iterable<? extends Processor> processors;
 
     private Main.Result result = null;
@@ -99,11 +99,11 @@ public class JavacTaskImpl extends BasicJavacTask {
     }
 
     JavacTaskImpl(Main compilerMain,
-                Iterable<String> flags,
+                Iterable<String> args,
                 Context context,
                 Iterable<String> classes,
                 Iterable<? extends JavaFileObject> fileObjects) {
-        this(compilerMain, toArray(flags), toArray(classes), context, toList(fileObjects));
+        this(compilerMain, toArray(args), toArray(classes), context, toList(fileObjects));
     }
 
     static private String[] toArray(Iterable<String> iter) {

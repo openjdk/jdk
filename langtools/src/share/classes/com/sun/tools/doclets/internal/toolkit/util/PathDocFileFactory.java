@@ -42,6 +42,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.tools.DocumentationTool;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
@@ -70,17 +71,17 @@ class PathDocFileFactory extends DocFileFactory {
         fileManager = (PathFileManager) configuration.getFileManager();
 
         if (!configuration.destDirName.isEmpty()
-                || !fileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
+                || !fileManager.hasLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT)) {
             try {
                 String dirName = configuration.destDirName.isEmpty() ? "." : configuration.destDirName;
                 Path dir = fileManager.getDefaultFileSystem().getPath(dirName);
-                fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(dir));
+                fileManager.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(dir));
             } catch (IOException e) {
                 throw new DocletAbortException();
             }
         }
 
-        destDir = fileManager.getLocation(StandardLocation.CLASS_OUTPUT).iterator().next();
+        destDir = fileManager.getLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT).iterator().next();
     }
 
     public DocFile createFileForDirectory(String file) {
@@ -92,7 +93,7 @@ class PathDocFileFactory extends DocFileFactory {
     }
 
     public DocFile createFileForOutput(DocPath path) {
-        return new StandardDocFile(StandardLocation.CLASS_OUTPUT, path);
+        return new StandardDocFile(DocumentationTool.Location.DOCUMENTATION_OUTPUT, path);
     }
 
     @Override
@@ -137,10 +138,10 @@ class PathDocFileFactory extends DocFileFactory {
         /**
          * Open an output stream for the file.
          * The file must have been created with a location of
-         * {@link StandardLocation#CLASS_OUTPUT} and a corresponding relative path.
+         * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} and a corresponding relative path.
          */
         public OutputStream openOutputStream() throws IOException, UnsupportedEncodingException {
-            if (location != StandardLocation.CLASS_OUTPUT)
+            if (location != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalStateException();
 
             OutputStream out = getFileObjectForOutput(path).openOutputStream();
@@ -151,10 +152,10 @@ class PathDocFileFactory extends DocFileFactory {
          * Open an writer for the file, using the encoding (if any) given in the
          * doclet configuration.
          * The file must have been created with a location of
-         * {@link StandardLocation#CLASS_OUTPUT} and a corresponding relative path.
+         * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} and a corresponding relative path.
          */
         public Writer openWriter() throws IOException, UnsupportedEncodingException {
-            if (location != StandardLocation.CLASS_OUTPUT)
+            if (location != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalStateException();
 
             OutputStream out = getFileObjectForOutput(path).openOutputStream();
@@ -262,10 +263,11 @@ class PathDocFileFactory extends DocFileFactory {
 
         /**
          * Resolve a relative file against the given output location.
-         * @param locn Currently, only SOURCE_OUTPUT is supported.
+         * @param locn Currently, only
+         * {@link DocumentationTool.Location.DOCUMENTATION_OUTPUT} is supported.
          */
-        public DocFile resolveAgainst(StandardLocation locn) {
-            if (locn != StandardLocation.CLASS_OUTPUT)
+        public DocFile resolveAgainst(Location locn) {
+            if (locn != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalArgumentException();
             return new StandardDocFile(destDir.resolve(file));
         }

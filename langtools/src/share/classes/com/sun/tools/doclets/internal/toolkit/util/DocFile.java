@@ -25,10 +25,14 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 
@@ -36,10 +40,6 @@ import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.doclets.internal.toolkit.Configuration;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 
 /**
  * Abstraction for handling files, which may be specified directly
@@ -115,7 +115,8 @@ public abstract class DocFile {
     /**
      * Open an output stream for the file.
      * The file must have been created with a location of
-     * {@link StandardLocation#CLASS_OUTPUT} and a corresponding relative path.
+     * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT}
+     * and a corresponding relative path.
      */
     public abstract OutputStream openOutputStream() throws IOException, UnsupportedEncodingException;
 
@@ -123,7 +124,7 @@ public abstract class DocFile {
      * Open an writer for the file, using the encoding (if any) given in the
      * doclet configuration.
      * The file must have been created with a location of
-     * {@link StandardLocation#CLASS_OUTPUT} and a corresponding relative path.
+     * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} and a corresponding relative path.
      */
     public abstract Writer openWriter() throws IOException, UnsupportedEncodingException;
 
@@ -251,7 +252,8 @@ public abstract class DocFile {
 
     /**
      * Resolve a relative file against the given output location.
-     * @param locn Currently, only SOURCE_OUTPUT is supported.
+     * @param locn Currently, only
+     * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} is supported.
      */
-    public abstract DocFile resolveAgainst(StandardLocation locn);
+    public abstract DocFile resolveAgainst(Location locn);
 }
