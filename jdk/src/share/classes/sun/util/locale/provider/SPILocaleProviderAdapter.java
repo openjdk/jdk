@@ -91,7 +91,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
                                       IllegalAccessException e) {
                                 LocaleServiceProviderPool.config(SPILocaleProviderAdapter.class, e.toString());
                                 return null;
-                    }
+                            }
                         }
 
                         ((Delegate)delegate).addImpl(provider);
@@ -112,7 +112,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
     interface Delegate<P extends LocaleServiceProvider> {
         public void addImpl(P impl);
         public P getImpl(Locale locale);
-}
+    }
 
     /*
      * Obtain the real SPI implementation, using locale fallback
@@ -137,7 +137,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public void addImpl(BreakIteratorProvider impl) {
             for (Locale l : impl.getAvailableLocales()) {
-                map.put(l, impl);
+                map.putIfAbsent(l, impl);
             }
         }
 
@@ -192,7 +192,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public void addImpl(CollatorProvider impl) {
             for (Locale l : impl.getAvailableLocales()) {
-                map.put(l, impl);
+                map.putIfAbsent(l, impl);
             }
         }
 
@@ -226,7 +226,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public void addImpl(DateFormatProvider impl) {
             for (Locale l : impl.getAvailableLocales()) {
-                map.put(l, impl);
+                map.putIfAbsent(l, impl);
             }
         }
 
@@ -274,7 +274,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public void addImpl(DateFormatSymbolsProvider impl) {
             for (Locale l : impl.getAvailableLocales()) {
-                map.put(l, impl);
+                map.putIfAbsent(l, impl);
             }
         }
 
@@ -308,7 +308,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public void addImpl(DecimalFormatSymbolsProvider impl) {
             for (Locale l : impl.getAvailableLocales()) {
-                map.put(l, impl);
+                map.putIfAbsent(l, impl);
             }
         }
 
@@ -342,7 +342,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public void addImpl(NumberFormatProvider impl) {
             for (Locale l : impl.getAvailableLocales()) {
-                map.put(l, impl);
+                map.putIfAbsent(l, impl);
             }
         }
 
@@ -397,7 +397,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public void addImpl(CalendarDataProvider impl) {
             for (Locale l : impl.getAvailableLocales()) {
-                map.put(l, impl);
+                map.putIfAbsent(l, impl);
             }
         }
 
@@ -438,7 +438,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public void addImpl(CalendarNameProvider impl) {
             for (Locale l : impl.getAvailableLocales()) {
-                map.put(l, impl);
+                map.putIfAbsent(l, impl);
             }
         }
 
@@ -483,7 +483,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public void addImpl(CurrencyNameProvider impl) {
             for (Locale l : impl.getAvailableLocales()) {
-                map.put(l, impl);
+                map.putIfAbsent(l, impl);
             }
         }
 
@@ -524,7 +524,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public void addImpl(LocaleNameProvider impl) {
             for (Locale l : impl.getAvailableLocales()) {
-                map.put(l, impl);
+                map.putIfAbsent(l, impl);
             }
         }
 
@@ -579,7 +579,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public void addImpl(TimeZoneNameProvider impl) {
             for (Locale l : impl.getAvailableLocales()) {
-                map.put(l, impl);
+                map.putIfAbsent(l, impl);
             }
         }
 
