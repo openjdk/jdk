@@ -189,6 +189,7 @@ class MetaspaceAux : AllStatic {
 
   static void print_waste(outputStream* out);
   static void dump(outputStream* out);
+  static void verify_free_chunks();
 };
 
 // Metaspace are deallocated when their class loader are GC'ed.

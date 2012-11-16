@@ -57,14 +57,13 @@ class ServiceUtil : public AllStatic {
       if (k->is_klass()) {
         // if it's a class for an object, an object array, or
         // primitive (type) array then it's visible.
-        Klass* klass = k;
-        if (Klass::cast(klass)->oop_is_instance()) {
+        if (k->oop_is_instance()) {
           return true;
         }
-        if (Klass::cast(klass)->oop_is_objArray()) {
+        if (k->oop_is_objArray()) {
           return true;
         }
-        if (Klass::cast(klass)->oop_is_typeArray()) {
+        if (k->oop_is_typeArray()) {
           return true;
         }
       }
