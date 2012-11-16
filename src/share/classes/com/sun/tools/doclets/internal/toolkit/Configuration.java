@@ -32,6 +32,7 @@ import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import javax.tools.JavaFileManager;
 
 /**
  * Configure the output based on the options. Doclets should sub-class
@@ -752,7 +753,7 @@ public abstract class Configuration {
      * @return the input steam to the builder XML.
      * @throws FileNotFoundException when the given XML file cannot be found.
      */
-    public InputStream getBuilderXML() throws FileNotFoundException {
+    public InputStream getBuilderXML() throws IOException {
         return builderXMLPath == null ?
             Configuration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
             DocFile.createFileForInput(this, builderXMLPath).openInputStream();
@@ -762,6 +763,11 @@ public abstract class Configuration {
      * Return the Locale for this document.
      */
     public abstract Locale getLocale();
+
+    /**
+     * Return the current file manager.
+     */
+    public abstract JavaFileManager getFileManager();
 
     /**
      * Return the comparator that will be used to sort member documentation.

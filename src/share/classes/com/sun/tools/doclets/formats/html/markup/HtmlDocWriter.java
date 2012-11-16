@@ -31,6 +31,7 @@ import java.util.*;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.ConfigurationImpl;
 import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.DocFile;
 import com.sun.tools.doclets.internal.toolkit.util.DocLink;
 import com.sun.tools.doclets.internal.toolkit.util.DocPath;
 import com.sun.tools.doclets.internal.toolkit.util.DocPaths;
@@ -63,7 +64,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
             throws IOException {
         super(configuration, filename);
         configuration.message.notice("doclet.Generating_0",
-            filename.resolveAgainst(configuration.destDirName));
+            DocFile.createFileForOutput(configuration, filename).getPath());
     }
 
     /**
