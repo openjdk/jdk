@@ -824,7 +824,7 @@ Array<Klass*>* ClassFileParser::parse_interfaces(constantPoolHandle cp,
       interf = KlassHandle(THREAD, k);
     }
 
-    if (!Klass::cast(interf())->is_interface()) {
+    if (!interf()->is_interface()) {
       THROW_MSG_(vmSymbols::java_lang_IncompatibleClassChangeError(), "Implementing class", NULL);
     }
     if (InstanceKlass::cast(interf())->has_default_methods()) {
@@ -3831,7 +3831,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     if (TraceClassResolution) {
       ResourceMark rm;
       // print out the superclass.
-      const char * from = Klass::cast(this_klass())->external_name();
+      const char * from = this_klass()->external_name();
       if (this_klass->java_super() != NULL) {
         tty->print("RESOLVE %s %s (super)\n", from, InstanceKlass::cast(this_klass->java_super())->external_name());
       }
@@ -3982,13 +3982,13 @@ void ClassFileParser::set_precomputed_flags(instanceKlassHandle k) {
     // java.lang.Object has empty default constructor
     k->set_has_vanilla_constructor();
   } else {
-    if (Klass::cast(super)->has_vanilla_constructor() &&
+    if (super->has_vanilla_constructor() &&
         _has_vanilla_constructor) {
       k->set_has_vanilla_constructor();
     }
 #ifdef ASSERT
     bool v = false;
-    if (Klass::cast(super)->has_vanilla_constructor()) {
+    if (super->has_vanilla_constructor()) {
       Method* constructor = k->find_method(vmSymbols::object_initializer_name(
 ), vmSymbols::void_method_signature());
       if (constructor != NULL && constructor->is_vanilla_constructor()) {
@@ -4130,7 +4130,7 @@ void ClassFileParser::check_super_interface_access(instanceKlassHandle this_klas
   int lng = local_interfaces->length();
   for (int i = lng - 1; i >= 0; i--) {
     Klass* k = local_interfaces->at(i);
-    assert (k != NULL && Klass::cast(k)->is_interface(), "invalid interface");
+    assert (k != NULL && k->is_interface(), "invalid interface");
     if (!Reflection::verify_class_access(this_klass(), k, false)) {
       ResourceMark rm(THREAD);
       Exceptions::fthrow(
