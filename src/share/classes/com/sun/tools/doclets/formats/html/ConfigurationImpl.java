@@ -517,9 +517,14 @@ public class ConfigurationImpl extends Configuration {
      */
     @Override
     public JavaFileManager getFileManager() {
-        if (root instanceof com.sun.tools.javadoc.RootDocImpl)
-            return ((com.sun.tools.javadoc.RootDocImpl)root).getFileManager();
-        else
-            return new JavacFileManager(new Context(), false, null);
+        if (fileManager == null) {
+            if (root instanceof com.sun.tools.javadoc.RootDocImpl)
+                fileManager = ((com.sun.tools.javadoc.RootDocImpl)root).getFileManager();
+            else
+                fileManager = new JavacFileManager(new Context(), false, null);
+        }
+        return fileManager;
     }
+
+    private JavaFileManager fileManager;
 }
