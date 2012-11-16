@@ -560,8 +560,7 @@ public final class ResourceManager {
                     }
                 } finally {
                     while (resources.hasMore()) {
-                        InputStream istream = (InputStream)resources.next();
-                        istream.close();
+                        resources.next().close();
                     }
                 }
 
