@@ -349,7 +349,7 @@ address NativeLookup::lookup_entry_prefixed(methodHandle method, bool& in_base_l
     TempNewSymbol wrapper_symbol = SymbolTable::probe(wrapper_name, wrapper_name_len);
     if (wrapper_symbol != NULL) {
       KlassHandle kh(method->method_holder());
-      Method* wrapper_method = Klass::cast(kh())->lookup_method(wrapper_symbol,
+      Method* wrapper_method = kh()->lookup_method(wrapper_symbol,
                                                                   method->signature());
       if (wrapper_method != NULL && !wrapper_method->is_native()) {
         // we found a wrapper method, use its native entry

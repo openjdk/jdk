@@ -3613,7 +3613,7 @@ class CommandLineFlags {
   diagnostic(bool, PrintDTraceDOF, false,                                   \
              "Print the DTrace DOF passed to the system for JSDT probes")   \
                                                                             \
-  product(uintx, StringTableSize, 1009,                                     \
+  product(uintx, StringTableSize, defaultStringTableSize,                   \
           "Number of buckets in the interned String table")                 \
                                                                             \
   develop(bool, TraceDefaultMethods, false,                                 \

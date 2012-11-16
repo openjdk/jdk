@@ -914,7 +914,7 @@ class java_lang_invoke_MethodHandle: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return Klass::cast(klass)->is_subclass_of(SystemDictionary::MethodHandle_klass());
+    return klass->is_subclass_of(SystemDictionary::MethodHandle_klass());
   }
   static bool is_instance(oop obj) {
     return obj != NULL && is_subclass(obj->klass());
@@ -944,7 +944,7 @@ class java_lang_invoke_LambdaForm: AllStatic {
   // Testers
   static bool is_subclass(Klass* klass) {
     return SystemDictionary::LambdaForm_klass() != NULL &&
-      Klass::cast(klass)->is_subclass_of(SystemDictionary::LambdaForm_klass());
+      klass->is_subclass_of(SystemDictionary::LambdaForm_klass());
   }
   static bool is_instance(oop obj) {
     return obj != NULL && is_subclass(obj->klass());
@@ -1006,7 +1006,7 @@ class java_lang_invoke_MemberName: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return Klass::cast(klass)->is_subclass_of(SystemDictionary::MemberName_klass());
+    return klass->is_subclass_of(SystemDictionary::MemberName_klass());
   }
   static bool is_instance(oop obj) {
     return obj != NULL && is_subclass(obj->klass());
@@ -1092,7 +1092,7 @@ public:
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return Klass::cast(klass)->is_subclass_of(SystemDictionary::CallSite_klass());
+    return klass->is_subclass_of(SystemDictionary::CallSite_klass());
   }
   static bool is_instance(oop obj) {
     return obj != NULL && is_subclass(obj->klass());
@@ -1162,7 +1162,7 @@ class java_lang_ClassLoader : AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return Klass::cast(klass)->is_subclass_of(SystemDictionary::ClassLoader_klass());
+    return klass->is_subclass_of(SystemDictionary::ClassLoader_klass());
   }
   static bool is_instance(oop obj) {
     return obj != NULL && is_subclass(obj->klass());

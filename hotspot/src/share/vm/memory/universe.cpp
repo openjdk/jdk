@@ -346,7 +346,7 @@ void Universe::genesis(TRAPS) {
   // ---
   // New
   // Have already been initialized.
-  Klass::cast(_objectArrayKlassObj)->append_to_sibling_list();
+  _objectArrayKlassObj->append_to_sibling_list();
 
   // Compute is_jdk version flags.
   // Only 1.3 or later has the java.lang.Shutdown class.
