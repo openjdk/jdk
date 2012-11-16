@@ -43,6 +43,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.tools.DocumentationTool;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
@@ -74,7 +75,7 @@ class SimpleDocFileFactory extends DocFileFactory {
     }
 
     public DocFile createFileForOutput(DocPath path) {
-        return new SimpleDocFile(StandardLocation.CLASS_OUTPUT, path);
+        return new SimpleDocFile(DocumentationTool.Location.DOCUMENTATION_OUTPUT, path);
     }
 
     @Override
@@ -121,10 +122,10 @@ class SimpleDocFileFactory extends DocFileFactory {
         /**
          * Open an output stream for the file.
          * The file must have been created with a location of
-         * {@link StandardLocation#CLASS_OUTPUT} and a corresponding relative path.
+         * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} and a corresponding relative path.
          */
         public OutputStream openOutputStream() throws IOException, UnsupportedEncodingException {
-            if (location != StandardLocation.CLASS_OUTPUT)
+            if (location != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalStateException();
 
             createDirectoryForFile(file);
@@ -135,10 +136,10 @@ class SimpleDocFileFactory extends DocFileFactory {
          * Open an writer for the file, using the encoding (if any) given in the
          * doclet configuration.
          * The file must have been created with a location of
-         * {@link StandardLocation#CLASS_OUTPUT} and a corresponding relative path.
+         * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} and a corresponding relative path.
          */
         public Writer openWriter() throws IOException, UnsupportedEncodingException {
-            if (location != StandardLocation.CLASS_OUTPUT)
+            if (location != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalStateException();
 
             createDirectoryForFile(file);
@@ -243,10 +244,11 @@ class SimpleDocFileFactory extends DocFileFactory {
 
         /**
          * Resolve a relative file against the given output location.
-         * @param locn Currently, only SOURCE_OUTPUT is supported.
+         * @param locn Currently, only
+         * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} is supported.
          */
-        public DocFile resolveAgainst(StandardLocation locn) {
-            if (locn != StandardLocation.CLASS_OUTPUT)
+        public DocFile resolveAgainst(Location locn) {
+            if (locn != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalArgumentException();
             return new SimpleDocFile(
                     new File(configuration.destDirName, file.getPath()));

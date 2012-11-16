@@ -41,6 +41,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.tools.DocumentationTool;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
@@ -62,24 +63,29 @@ import com.sun.tools.javac.util.Assert;
  */
 class StandardDocFileFactory extends DocFileFactory {
     private final StandardJavaFileManager fileManager;
-    private final File destDir;
+    private File destDir;
 
     public StandardDocFileFactory(Configuration configuration) {
         super(configuration);
         fileManager = (StandardJavaFileManager) configuration.getFileManager();
+    }
 
-        if (!configuration.destDirName.isEmpty()
-                || !fileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
-            try {
-                String dirName = configuration.destDirName.isEmpty() ? "." : configuration.destDirName;
-                File dir = new File(dirName);
-                fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(dir));
-            } catch (IOException e) {
-                throw new DocletAbortException();
+    private File getDestDir() {
+        if (destDir == null) {
+            if (!configuration.destDirName.isEmpty()
+                    || !fileManager.hasLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT)) {
+                try {
+                    String dirName = configuration.destDirName.isEmpty() ? "." : configuration.destDirName;
+                    File dir = new File(dirName);
+                    fileManager.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(dir));
+                } catch (IOException e) {
+                    throw new DocletAbortException();
+                }
             }
-        }
 
-        destDir = fileManager.getLocation(StandardLocation.CLASS_OUTPUT).iterator().next();
+            destDir = fileManager.getLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT).iterator().next();
+        }
+        return destDir;
     }
 
     public DocFile createFileForDirectory(String file) {
@@ -91,7 +97,7 @@ class StandardDocFileFactory extends DocFileFactory {
     }
 
     public DocFile createFileForOutput(DocPath path) {
-        return new StandardDocFile(StandardLocation.CLASS_OUTPUT, path);
+        return new StandardDocFile(DocumentationTool.Location.DOCUMENTATION_OUTPUT, path);
     }
 
     @Override
@@ -100,13 +106,13 @@ class StandardDocFileFactory extends DocFileFactory {
             throw new IllegalArgumentException();
 
         Set<DocFile> files = new LinkedHashSet<DocFile>();
-        if (fileManager.hasLocation(location)) {
-            for (File f: fileManager.getLocation(location)) {
-                if (f.isDirectory()) {
-                    f = new File(f, path.getPath());
-                    if (f.exists())
-                        files.add(new StandardDocFile(f));
-                }
+        Location l = fileManager.hasLocation(StandardLocation.SOURCE_PATH)
+                ? StandardLocation.SOURCE_PATH : StandardLocation.CLASS_PATH;
+        for (File f: fileManager.getLocation(l)) {
+            if (f.isDirectory()) {
+                f = new File(f, path.getPath());
+                if (f.exists())
+                    files.add(new StandardDocFile(f));
             }
         }
         return files;
@@ -129,8 +135,8 @@ class StandardDocFileFactory extends DocFileFactory {
         /** Create a StandardDocFile for a given location and relative path. */
         private StandardDocFile(Location location, DocPath path) {
             super(configuration, location, path);
-            Assert.check(location == StandardLocation.CLASS_OUTPUT);
-            this.file = newFile(destDir, path.getPath());
+            Assert.check(location == DocumentationTool.Location.DOCUMENTATION_OUTPUT);
+            this.file = newFile(getDestDir(), path.getPath());
         }
 
         /** Open an input stream for the file. */
@@ -142,10 +148,10 @@ class StandardDocFileFactory extends DocFileFactory {
         /**
          * Open an output stream for the file.
          * The file must have been created with a location of
-         * {@link StandardLocation#CLASS_OUTPUT} and a corresponding relative path.
+         * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} and a corresponding relative path.
          */
         public OutputStream openOutputStream() throws IOException, UnsupportedEncodingException {
-            if (location != StandardLocation.CLASS_OUTPUT)
+            if (location != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalStateException();
 
             OutputStream out = getFileObjectForOutput(path).openOutputStream();
@@ -156,10 +162,10 @@ class StandardDocFileFactory extends DocFileFactory {
          * Open an writer for the file, using the encoding (if any) given in the
          * doclet configuration.
          * The file must have been created with a location of
-         * {@link StandardLocation#CLASS_OUTPUT} and a corresponding relative path.
+         * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} and a corresponding relative path.
          */
         public Writer openWriter() throws IOException, UnsupportedEncodingException {
-            if (location != StandardLocation.CLASS_OUTPUT)
+            if (location != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalStateException();
 
             OutputStream out = getFileObjectForOutput(path).openOutputStream();
@@ -263,12 +269,13 @@ class StandardDocFileFactory extends DocFileFactory {
 
         /**
          * Resolve a relative file against the given output location.
-         * @param locn Currently, only SOURCE_OUTPUT is supported.
+         * @param locn Currently, only
+         * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} is supported.
          */
-        public DocFile resolveAgainst(StandardLocation locn) {
-            if (locn != StandardLocation.CLASS_OUTPUT)
+        public DocFile resolveAgainst(Location locn) {
+            if (locn != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalArgumentException();
-            return new StandardDocFile(newFile(destDir, file.getPath()));
+            return new StandardDocFile(newFile(getDestDir(), file.getPath()));
         }
 
         /** Return a string to identify the contents of this object,

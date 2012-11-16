@@ -69,6 +69,7 @@ abstract class DocFileFactory {
                     throw new IllegalStateException(t);
                 }
             }
+            factories.put(configuration, f);
         }
         return f;
     }

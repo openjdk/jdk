@@ -119,6 +119,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                                       ModifierFilter filter,
                                       List<String> javaNames,
                                       List<String[]> options,
+                                      Iterable<? extends JavaFileObject> fileObjects,
                                       boolean breakiterator,
                                       List<String> subPackages,
                                       List<String> excludedPackages,
@@ -140,10 +141,11 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         ListBuffer<JCCompilationUnit> packTrees = new ListBuffer<JCCompilationUnit>();
 
         try {
-            StandardJavaFileManager fm = (StandardJavaFileManager) docenv.fileManager;
+            StandardJavaFileManager fm = docenv.fileManager instanceof StandardJavaFileManager
+                    ? (StandardJavaFileManager) docenv.fileManager : null;
             for (List<String> it = javaNames; it.nonEmpty(); it = it.tail) {
                 String name = it.head;
-                if (!docClasses && name.endsWith(".java") && new File(name).exists()) {
+                if (!docClasses && fm != null && name.endsWith(".java") && new File(name).exists()) {
                     JavaFileObject fo = fm.getJavaFileObjects(name).iterator().next();
                     docenv.notice("main.Loading_source_file", name);
                     JCCompilationUnit tree = parse(fo);
@@ -151,10 +153,18 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                 } else if (isValidPackageName(name)) {
                     names = names.append(name);
                 } else if (name.endsWith(".java")) {
+                    if (fm == null)
+                        throw new IllegalArgumentException();
+                    else
                         docenv.error(null, "main.file_not_found", name);
                 } else {
                     docenv.error(null, "main.illegal_package_name", name);
                 }
+            }
+            for (JavaFileObject fo: fileObjects) {
+                docenv.notice("main.Loading_source_file", fo.getName());
+                JCCompilationUnit tree = parse(fo);
+                classTrees.append(tree);
             }
 
             if (!docClasses) {
