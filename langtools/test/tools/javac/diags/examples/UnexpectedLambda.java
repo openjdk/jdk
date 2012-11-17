@@ -22,7 +22,6 @@
  */
 
 // key: compiler.err.unexpected.lambda
-// options: -XDallowLambda
 
 class UnexpectedLambda {
     { (()-> { })++; }

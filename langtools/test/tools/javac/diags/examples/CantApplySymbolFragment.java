@@ -26,7 +26,6 @@
 // key: compiler.misc.no.conforming.assignment.exists
 // key: compiler.misc.cant.apply.symbol
 // key: compiler.misc.invalid.mref
-// options: -XDallowMethodReferences
 
 class CantApplySymbolFragment {
 

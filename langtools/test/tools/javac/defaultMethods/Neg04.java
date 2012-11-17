@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary check that default method must have most specific return type
- * @compile/fail/ref=Neg04.out -XDallowDefaultMethods -XDrawDiagnostics Neg04.java
+ * @compile/fail/ref=Neg04.out -XDrawDiagnostics Neg04.java
  */
 
 class Neg04 {

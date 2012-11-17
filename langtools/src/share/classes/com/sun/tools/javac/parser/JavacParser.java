@@ -121,12 +121,9 @@ public class JavacParser implements Parser {
         this.allowDiamond = source.allowDiamond();
         this.allowMulticatch = source.allowMulticatch();
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
-        this.allowLambda = source.allowLambda() &&
-                fac.options.isSet("allowLambda"); //pre-lambda guard
-        this.allowMethodReferences = source.allowMethodReferences() &&
-                fac.options.isSet("allowMethodReferences"); //pre-lambda guard
-        this.allowDefaultMethods = source.allowDefaultMethods() &&
-                fac.options.isSet("allowDefaultMethods"); //pre-lambda guard
+        this.allowLambda = source.allowLambda();
+        this.allowMethodReferences = source.allowMethodReferences();
+        this.allowDefaultMethods = source.allowDefaultMethods();
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
