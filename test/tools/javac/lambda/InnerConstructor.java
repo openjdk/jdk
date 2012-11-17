@@ -23,15 +23,20 @@
 
 /*
  * @test
- * @summary Regression test JDK-8003306 inner class constructor in lambda
+ * @bug 8003280
+ * @summary Add lambda tests
+ *  Regression test JDK-8003306 inner class constructor in lambda
  * @author  Robert Field
- * @compile -XDallowLambda InnerConstructor.java
  */
 
-class InnerConstructor {
+public class InnerConstructor {
 
-    public void testLambdaWithInnerConstructor() {
-        System.out.printf("%s should be %s\n", seq1().m().toString(), "Cbl:nada");
+    public static void main(String... args) {
+        InnerConstructor ic = new InnerConstructor();
+        String res = ic.seq1().m().toString();
+        if (!res.equals("Cbl.toString")) {
+            throw new AssertionError(String.format("Unexpected result: %s", res));
+        }
     }
 
     Ib1 seq1() {
@@ -40,6 +45,9 @@ class InnerConstructor {
 
     class Cbl {
         Cbl() {  }
+        public String toString() {
+            return "Cbl.toString";
+        }
     }
 
     interface Ib1 {

@@ -24,7 +24,6 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.not.def.access.class.intf.cant.access
 // key: compiler.misc.invalid.mref
-// options: -XDallowMethodReferences
 
 class NotDefAccessClassIntfCantAccessFragment {
 

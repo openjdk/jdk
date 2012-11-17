@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary check that default overrides are properly type-checked
- * @compile/fail/ref=Neg09.out -Werror -Xlint:unchecked -XDallowDefaultMethods -XDrawDiagnostics Neg09.java
+ * @compile/fail/ref=Neg09.out -Werror -Xlint:unchecked -XDrawDiagnostics Neg09.java
  */
 import java.util.List;
 

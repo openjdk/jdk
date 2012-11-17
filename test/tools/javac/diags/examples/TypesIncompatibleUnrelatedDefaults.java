@@ -22,7 +22,6 @@
  */
 
 // key: compiler.err.types.incompatible.unrelated.defaults
-// options: -XDallowDefaultMethods
 
 class TypesIncompatibleUnrelatedDefaults {
     interface A {

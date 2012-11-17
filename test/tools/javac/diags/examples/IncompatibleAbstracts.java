@@ -24,7 +24,6 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.not.a.functional.intf.1
 // key: compiler.misc.incompatible.abstracts
-// options: -XDallowLambda
 
 class IncompatibleAbstracts {
 
