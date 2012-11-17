@@ -25,7 +25,7 @@
  * @test
  * @summary check that indirectly inherited default methods are discovered during resolution
  * @author  Maurizio Cimadamore
- * @compile -XDallowDefaultMethods Pos05.java
+ * @compile Pos05.java
  */
 
 class Pos05  {

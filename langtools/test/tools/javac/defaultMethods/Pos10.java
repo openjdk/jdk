@@ -25,7 +25,7 @@
  * @test
  * @summary check that type-variables in generic extension decl can be accessed from default impl
  * @author  Maurizio Cimadamore
- * @compile -XDallowDefaultMethods Pos10.java
+ * @compile Pos10.java
  */
 
 class Pos10 {

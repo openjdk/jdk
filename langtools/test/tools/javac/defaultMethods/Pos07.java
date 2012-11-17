@@ -25,7 +25,7 @@
  * @test
  * @summary check that compilation order does not matter
  * @author  Maurizio Cimadamore
- * @compile -XDallowDefaultMethods Pos07.java
+ * @compile Pos07.java
  */
 
 class Pos07 {

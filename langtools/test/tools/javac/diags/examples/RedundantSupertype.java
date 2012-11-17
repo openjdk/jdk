@@ -23,7 +23,6 @@
 
 // key: compiler.err.illegal.default.super.call
 // key: compiler.misc.redundant.supertype
-// options: -XDallowDefaultMethods
 
 class RedundantSupertype {
     interface I { default void m() {  } }

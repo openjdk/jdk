@@ -25,8 +25,8 @@
  * @test
  * @summary smoke test for separate compilation of default methods
  * @author  Maurizio Cimadamore
- * @compile -XDallowDefaultMethods pkg1/A.java
- * @compile -XDallowDefaultMethods Separate.java
+ * @compile  pkg1/A.java
+ * @compile  Separate.java
  */
 
 import pkg1.A;

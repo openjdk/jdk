@@ -133,7 +133,7 @@ public class Attr extends JCTree.Visitor {
         allowCovariantReturns = source.allowCovariantReturns();
         allowAnonOuterThis = source.allowAnonOuterThis();
         allowStringsInSwitch = source.allowStringsInSwitch();
-        allowPoly = source.allowPoly() && options.isSet("allowPoly");
+        allowPoly = source.allowPoly();
         allowLambda = source.allowLambda();
         allowDefaultMethods = source.allowDefaultMethods();
         sourceName = source.name;
@@ -179,13 +179,13 @@ public class Attr extends JCTree.Visitor {
      */
     boolean allowCovariantReturns;
 
-    /** Switch: support default methods ?
-     */
-    boolean allowDefaultMethods;
-
     /** Switch: support lambda expressions ?
      */
     boolean allowLambda;
+
+    /** Switch: support default methods ?
+     */
+    boolean allowDefaultMethods;
 
     /** Switch: allow references to surrounding object from anonymous
      * objects during constructor call?
@@ -524,6 +524,10 @@ public class Attr extends JCTree.Visitor {
         protected ResultInfo dup(Type newPt) {
             return new ResultInfo(pkind, newPt, checkContext);
         }
+
+        protected ResultInfo dup(CheckContext newContext) {
+            return new ResultInfo(pkind, pt, newContext);
+        }
     }
 
     class RecoveryInfo extends ResultInfo {
@@ -540,7 +544,7 @@ public class Attr extends JCTree.Visitor {
                 }
                 @Override
                 public void report(DiagnosticPosition pos, JCDiagnostic details) {
-                    //do nothing
+                    chk.basicHandler.report(pos, details);
                 }
             });
         }
@@ -595,8 +599,10 @@ public class Attr extends JCTree.Visitor {
             this.env = env;
             this.resultInfo = resultInfo;
             tree.accept(this);
-            if (tree == breakTree)
+            if (tree == breakTree &&
+                    resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
                 throw new BreakAttr(env);
+            }
             return result;
         } catch (CompletionFailure ex) {
             tree.type = syms.errType;
@@ -903,7 +909,7 @@ public class Attr extends JCTree.Visitor {
 
             localEnv.info.lint = lint;
 
-            if (isDefaultMethod && types.overridesObjectMethod(m)) {
+            if (isDefaultMethod && types.overridesObjectMethod(m.enclClass(), m)) {
                 log.error(tree, "default.overrides.object.member", m.name, Kinds.kindName(m.location()), m.location());
             }
 
@@ -1390,13 +1396,14 @@ public class Attr extends JCTree.Visitor {
 
         if (!standaloneConditional && resultInfo.pt.hasTag(VOID)) {
             //cannot get here (i.e. it means we are returning from void method - which is already an error)
+            resultInfo.checkContext.report(tree, diags.fragment("conditional.target.cant.be.void"));
             result = tree.type = types.createErrorType(resultInfo.pt);
             return;
         }
 
         ResultInfo condInfo = standaloneConditional ?
                 unknownExprInfo :
-                new ResultInfo(VAL, pt(), new Check.NestedCheckContext(resultInfo.checkContext) {
+                resultInfo.dup(new Check.NestedCheckContext(resultInfo.checkContext) {
                     //this will use enclosing check context to check compatibility of
                     //subexpression against target type; if we are in a method check context,
                     //depending on whether boxing is allowed, we could have incompatibilities
@@ -1419,11 +1426,11 @@ public class Attr extends JCTree.Visitor {
         result = check(tree, owntype, VAL, resultInfo);
     }
     //where
-        @SuppressWarnings("fallthrough")
         private boolean isBooleanOrNumeric(Env<AttrContext> env, JCExpression tree) {
             switch (tree.getTag()) {
                 case LITERAL: return ((JCLiteral)tree).typetag.isSubRangeOf(DOUBLE) ||
-                              ((JCLiteral)tree).typetag == BOOLEAN;
+                              ((JCLiteral)tree).typetag == BOOLEAN ||
+                              ((JCLiteral)tree).typetag == BOT;
                 case LAMBDA: case REFERENCE: return false;
                 case PARENS: return isBooleanOrNumeric(env, ((JCParens)tree).expr);
                 case CONDEXPR:
@@ -1612,19 +1619,23 @@ public class Attr extends JCTree.Visitor {
             // it conforms to result type of enclosing method.
             if (tree.expr != null) {
                 if (env.info.returnResult.pt.hasTag(VOID)) {
-                    log.error(tree.expr.pos(),
-                              "cant.ret.val.from.meth.decl.void");
+                    env.info.returnResult.checkContext.report(tree.expr.pos(),
+                              diags.fragment("unexpected.ret.val"));
                 }
                 attribTree(tree.expr, env, env.info.returnResult);
             } else if (!env.info.returnResult.pt.hasTag(VOID)) {
-                log.error(tree.pos(), "missing.ret.val");
+                env.info.returnResult.checkContext.report(tree.pos(),
+                              diags.fragment("missing.ret.val"));
             }
         }
         result = null;
     }
 
     public void visitThrow(JCThrow tree) {
-        attribExpr(tree.expr, env, syms.throwableType);
+        Type owntype = attribExpr(tree.expr, env, allowPoly ? Type.noType : syms.throwableType);
+        if (allowPoly) {
+            chk.checkType(tree, owntype, syms.throwableType);
+        }
         result = null;
     }
 
@@ -2068,7 +2079,7 @@ public class Attr extends JCTree.Visitor {
                             resultInfo.checkContext.inferenceContext().free(resultInfo.pt) ? Type.noType : pt());
                     Type inferred = deferredAttr.attribSpeculative(tree, env, findDiamondResult).type;
                     if (!inferred.isErroneous() &&
-                        types.isAssignable(inferred, pt().hasTag(NONE) ? syms.objectType : pt(), Warner.noWarnings)) {
+                        types.isAssignable(inferred, pt().hasTag(NONE) ? syms.objectType : pt(), types.noWarnings)) {
                         String key = types.isSameType(clazztype, inferred) ?
                             "diamond.redundant.args" :
                             "diamond.redundant.args.1";
@@ -2172,7 +2183,7 @@ public class Attr extends JCTree.Visitor {
         }
         //create an environment for attribution of the lambda expression
         final Env<AttrContext> localEnv = lambdaEnv(that, env);
-        boolean needsRecovery = resultInfo.checkContext.deferredAttrContext() == deferredAttr.emptyDeferredAttrContext ||
+        boolean needsRecovery =
                 resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK;
         try {
             List<Type> explicitParamTypes = null;
@@ -2182,10 +2193,16 @@ public class Attr extends JCTree.Visitor {
                 explicitParamTypes = TreeInfo.types(that.params);
             }
 
-            Type target = infer.instantiateFunctionalInterface(that, pt(), explicitParamTypes, resultInfo.checkContext);
-            Type lambdaType = (target == Type.recoveryType) ?
-                    fallbackDescriptorType(that) :
-                    types.findDescriptorType(target);
+            Type target;
+            Type lambdaType;
+            if (pt() != Type.recoveryType) {
+                target = infer.instantiateFunctionalInterface(that, pt(), explicitParamTypes, resultInfo.checkContext);
+                lambdaType = types.findDescriptorType(target);
+                chk.checkFunctionalInterface(that, target);
+            } else {
+                target = Type.recoveryType;
+                lambdaType = fallbackDescriptorType(that);
+            }
 
             if (!TreeInfo.isExplicitLambda(that)) {
                 //add param type info in the AST
@@ -2250,7 +2267,7 @@ public class Attr extends JCTree.Visitor {
             checkLambdaCompatible(that, lambdaType, resultInfo.checkContext, isSpeculativeRound);
 
             if (!isSpeculativeRound) {
-                checkAccessibleFunctionalDescriptor(that, localEnv, resultInfo.checkContext.inferenceContext(), lambdaType);
+                checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), lambdaType, target);
             }
             result = check(that, target, VAL, resultInfo);
         } catch (Types.FunctionDescriptorLookupError ex) {
@@ -2285,17 +2302,22 @@ public class Attr extends JCTree.Visitor {
             return null;
         }
 
-        private void checkAccessibleFunctionalDescriptor(final DiagnosticPosition pos,
-                final Env<AttrContext> env, final InferenceContext inferenceContext, final Type desc) {
-            if (inferenceContext.free(desc)) {
-                inferenceContext.addFreeTypeListener(List.of(desc), new FreeTypeListener() {
+        private void checkAccessibleTypes(final DiagnosticPosition pos, final Env<AttrContext> env, final InferenceContext inferenceContext, final Type... ts) {
+            checkAccessibleTypes(pos, env, inferenceContext, List.from(ts));
+        }
+
+        private void checkAccessibleTypes(final DiagnosticPosition pos, final Env<AttrContext> env, final InferenceContext inferenceContext, final List<Type> ts) {
+            if (inferenceContext.free(ts)) {
+                inferenceContext.addFreeTypeListener(ts, new FreeTypeListener() {
                     @Override
                     public void typesInferred(InferenceContext inferenceContext) {
-                        checkAccessibleFunctionalDescriptor(pos, env, inferenceContext, inferenceContext.asInstType(desc, types));
+                        checkAccessibleTypes(pos, env, inferenceContext, inferenceContext.asInstTypes(ts, types));
                     }
                 });
             } else {
-                chk.checkAccessibleFunctionalDescriptor(pos, env, desc);
+                for (Type t : ts) {
+                    rs.checkAccessibleType(env, t);
+                }
             }
         }
 
@@ -2411,15 +2433,20 @@ public class Attr extends JCTree.Visitor {
                 typeargtypes = attribTypes(that.typeargs, localEnv);
             }
 
-            Type target = infer.instantiateFunctionalInterface(that, pt(), null, resultInfo.checkContext);
-            Type desc = (target == Type.recoveryType) ?
-                    fallbackDescriptorType(that) :
-                    types.findDescriptorType(target);
+            Type target;
+            Type desc;
+            if (pt() != Type.recoveryType) {
+                target = infer.instantiateFunctionalInterface(that, pt(), null, resultInfo.checkContext);
+                desc = types.findDescriptorType(target);
+                chk.checkFunctionalInterface(that, target);
+            } else {
+                target = Type.recoveryType;
+                desc = fallbackDescriptorType(that);
+            }
 
             List<Type> argtypes = desc.getParameterTypes();
 
             boolean allowBoxing =
-                    resultInfo.checkContext.deferredAttrContext() == deferredAttr.emptyDeferredAttrContext ||
                     resultInfo.checkContext.deferredAttrContext().phase.isBoxingRequired();
             Pair<Symbol, Resolve.ReferenceLookupHelper> refResult = rs.resolveMemberReference(that.pos(), localEnv, that,
                     that.expr.type, that.name, argtypes, typeargtypes, allowBoxing);
@@ -2455,18 +2482,25 @@ public class Attr extends JCTree.Visitor {
                 JCDiagnostic diag = diags.create(diagKind, log.currentSource(), that,
                         "invalid.mref", Kinds.kindName(that.getMode()), detailsDiag);
 
-                if (targetError) {
-                    resultInfo.checkContext.report(that, diag);
+                if (targetError && target == Type.recoveryType) {
+                    //a target error doesn't make sense during recovery stage
+                    //as we don't know what actual parameter types are
+                    result = that.type = target;
+                    return;
                 } else {
-                    log.report(diag);
+                    if (targetError) {
+                        resultInfo.checkContext.report(that, diag);
+                    } else {
+                        log.report(diag);
+                    }
+                    result = that.type = types.createErrorType(target);
+                    return;
                 }
-                result = that.type = types.createErrorType(target);
-                return;
             }
 
             if (desc.getReturnType() == Type.recoveryType) {
                 // stop here
-                result = that.type = types.createErrorType(target);
+                result = that.type = target;
                 return;
             }
 
@@ -2492,7 +2526,7 @@ public class Attr extends JCTree.Visitor {
                     resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.SPECULATIVE;
             checkReferenceCompatible(that, desc, refType, resultInfo.checkContext, isSpeculativeRound);
             if (!isSpeculativeRound) {
-                checkAccessibleFunctionalDescriptor(that, localEnv, resultInfo.checkContext.inferenceContext(), desc);
+                checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), desc, target);
             }
             result = check(that, target, VAL, resultInfo);
         } catch (Types.FunctionDescriptorLookupError ex) {
@@ -2526,7 +2560,7 @@ public class Attr extends JCTree.Visitor {
 
         if (!returnType.hasTag(VOID) && !resType.hasTag(VOID)) {
             if (resType.isErroneous() ||
-                    new LambdaReturnContext(checkContext).compatible(resType, returnType, Warner.noWarnings)) {
+                    new LambdaReturnContext(checkContext).compatible(resType, returnType, types.noWarnings)) {
                 incompatibleReturnType = null;
             }
         }
@@ -3039,15 +3073,52 @@ public class Attr extends JCTree.Visitor {
                      Symbol sym,
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
-            Type pt = resultInfo.pt.hasTag(FORALL) || resultInfo.pt.hasTag(METHOD) ?
-                    resultInfo.pt.map(deferredAttr.new DeferredTypeMap(AttrMode.SPECULATIVE, sym, env.info.pendingResolutionPhase)) :
-                    resultInfo.pt;
+            return (resultInfo.pt.hasTag(FORALL) || resultInfo.pt.hasTag(METHOD)) ?
+                    checkMethodId(tree, site, sym, env, resultInfo) :
+                    checkIdInternal(tree, site, sym, resultInfo.pt, env, resultInfo);
+        }
 
-            DeferredAttr.DeferredTypeMap recoveryMap =
-                    deferredAttr.new RecoveryDeferredTypeMap(AttrMode.CHECK, sym, env.info.pendingResolutionPhase);
+        Type checkMethodId(JCTree tree,
+                     Type site,
+                     Symbol sym,
+                     Env<AttrContext> env,
+                     ResultInfo resultInfo) {
+            boolean isPolymorhicSignature =
+                sym.kind == MTH && ((MethodSymbol)sym.baseSymbol()).isSignaturePolymorphic(types);
+            return isPolymorhicSignature ?
+                    checkSigPolyMethodId(tree, site, sym, env, resultInfo) :
+                    checkMethodIdInternal(tree, site, sym, env, resultInfo);
+        }
 
+        Type checkSigPolyMethodId(JCTree tree,
+                     Type site,
+                     Symbol sym,
+                     Env<AttrContext> env,
+                     ResultInfo resultInfo) {
+            //recover original symbol for signature polymorphic methods
+            checkMethodIdInternal(tree, site, sym.baseSymbol(), env, resultInfo);
+            env.info.pendingResolutionPhase = Resolve.MethodResolutionPhase.BASIC;
+            return sym.type;
+        }
+
+        Type checkMethodIdInternal(JCTree tree,
+                     Type site,
+                     Symbol sym,
+                     Env<AttrContext> env,
+                     ResultInfo resultInfo) {
+            Type pt = resultInfo.pt.map(deferredAttr.new RecoveryDeferredTypeMap(AttrMode.SPECULATIVE, sym, env.info.pendingResolutionPhase));
+            Type owntype = checkIdInternal(tree, site, sym, pt, env, resultInfo);
+            resultInfo.pt.map(deferredAttr.new RecoveryDeferredTypeMap(AttrMode.CHECK, sym, env.info.pendingResolutionPhase));
+            return owntype;
+        }
+
+        Type checkIdInternal(JCTree tree,
+                     Type site,
+                     Symbol sym,
+                     Type pt,
+                     Env<AttrContext> env,
+                     ResultInfo resultInfo) {
             if (pt.isErroneous()) {
-                Type.map(resultInfo.pt.getParameterTypes(), recoveryMap);
                 return types.createErrorType(site);
             }
             Type owntype; // The computed type of this identifier occurrence.
@@ -3132,7 +3203,6 @@ public class Attr extends JCTree.Visitor {
                 break;
             }
             case PCK: case ERR:
-                Type.map(resultInfo.pt.getParameterTypes(), recoveryMap);
                 owntype = sym.type;
                 break;
             default:
@@ -3288,21 +3358,21 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        if (env.info.defaultSuperCallSite != null &&
-                !types.interfaceCandidates(env.enclClass.type, (MethodSymbol)sym, true).contains(sym)) {
-            Symbol ovSym = null;
-            for (MethodSymbol msym : types.interfaceCandidates(env.enclClass.type, (MethodSymbol)sym, true)) {
-                if (msym.overrides(sym, msym.enclClass(), types, true)) {
-                    for (Type i : types.interfaces(env.enclClass.type)) {
-                        if (i.tsym.isSubClass(msym.owner, types)) {
-                            ovSym = i.tsym;
-                            break;
-                        }
-                    }
+        if (env.info.defaultSuperCallSite != null) {
+            for (Type sup : types.interfaces(env.enclClass.type).prepend(types.supertype((env.enclClass.type)))) {
+                if (!sup.tsym.isSubClass(sym.enclClass(), types) ||
+                        types.isSameType(sup, env.info.defaultSuperCallSite)) continue;
+                List<MethodSymbol> icand_sup =
+                        types.interfaceCandidates(sup, (MethodSymbol)sym);
+                if (icand_sup.nonEmpty() &&
+                        icand_sup.head != sym &&
+                        icand_sup.head.overrides(sym, icand_sup.head.enclClass(), types, true)) {
+                    log.error(env.tree.pos(), "illegal.default.super.call", env.info.defaultSuperCallSite,
+                        diags.fragment("overridden.default", sym, sup));
+                    break;
                 }
             }
-            log.error(env.tree.pos(), "illegal.default.super.call", env.info.defaultSuperCallSite,
-                    diags.fragment("overridden.default", sym, ovSym));
+            env.info.defaultSuperCallSite = null;
         }
 
         // Compute the identifier's instantiated type.

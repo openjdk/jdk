@@ -24,7 +24,6 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.incompatible.type.in.conditional
 // key: compiler.misc.inconvertible.types
-// options: -XDallowPoly
 
 class IncompatibleTypesInConditional {
 

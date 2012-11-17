@@ -272,9 +272,7 @@ public class Flow {
         Source source = Source.instance(context);
         allowImprovedRethrowAnalysis = source.allowImprovedRethrowAnalysis();
         allowImprovedCatchAnalysis = source.allowImprovedCatchAnalysis();
-        Options options = Options.instance(context);
-        allowEffectivelyFinalInInnerClasses = source.allowEffectivelyFinalInInnerClasses() &&
-                options.isSet("allowEffectivelyFinalInInnerClasses"); //pre-lambda guard
+        allowEffectivelyFinalInInnerClasses = source.allowEffectivelyFinalInInnerClasses();
     }
 
     /**

@@ -25,7 +25,7 @@
  * @test
  * @summary test for overriding with default method
  * @author  Maurizio Cimadamore
- * @compile -XDallowDefaultMethods Pos04.java
+ * @compile Pos04.java
  */
 
 class Pos04 {
