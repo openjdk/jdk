@@ -25,7 +25,6 @@
 
 package javax.net.ssl;
 
-import java.util.*;
 import java.security.*;
 
 /**

@@ -29,7 +29,6 @@ import java.util.EventObject;
 import java.security.cert.Certificate;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
-import javax.security.auth.x500.X500Principal;
 
 /**
  * This event indicates that an SSL handshake completed on a given
