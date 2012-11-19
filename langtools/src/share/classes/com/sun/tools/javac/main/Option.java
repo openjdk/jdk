@@ -393,6 +393,16 @@ public enum Option {
     /* -Xjcov produces tables to support the code coverage tool jcov. */
     XJCOV("-Xjcov", null, HIDDEN, BASIC),
 
+    PLUGIN("-Xplugin:", "opt.arg.plugin", "opt.plugin", EXTENDED, BASIC) {
+        @Override
+        public boolean process(OptionHelper helper, String option) {
+            String p = option.substring(option.indexOf(':') + 1);
+            String prev = helper.get(PLUGIN);
+            helper.put(PLUGIN.text, (prev == null) ? p : prev + '\0' + p.trim());
+            return false;
+        }
+    },
+
     /* This is a back door to the compiler's option table.
      * -XDx=y sets the option x to the value y.
      * -XDx sets the option x to the value x.

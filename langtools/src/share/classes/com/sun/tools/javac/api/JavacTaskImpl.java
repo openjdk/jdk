@@ -489,22 +489,6 @@ public class JavacTaskImpl extends BasicJavacTask {
      * For internal use only.  This method will be
      * removed without warning.
      */
-    public Context getContext() {
-        return context;
-    }
-
-    /**
-     * For internal use only.  This method will be
-     * removed without warning.
-     */
-    public void updateContext(Context newContext) {
-        context = newContext;
-    }
-
-    /**
-     * For internal use only.  This method will be
-     * removed without warning.
-     */
     public Type parseType(String expr, TypeElement scope) {
         if (expr == null || expr.equals(""))
             throw new IllegalArgumentException();

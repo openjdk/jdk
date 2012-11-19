@@ -58,7 +58,9 @@ public abstract class Trees {
      * @throws IllegalArgumentException if the task does not support the Trees API.
      */
     public static Trees instance(CompilationTask task) {
-        if (!task.getClass().getName().equals("com.sun.tools.javac.api.JavacTaskImpl"))
+        String taskClassName = task.getClass().getName();
+        if (!taskClassName.equals("com.sun.tools.javac.api.JavacTaskImpl")
+                && !taskClassName.equals("com.sun.tools.javac.api.BasicJavacTask"))
             throw new IllegalArgumentException();
         return getJavacTrees(CompilationTask.class, task);
     }
