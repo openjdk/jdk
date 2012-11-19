@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ public final class CGIHandler {
                     returnServerError(e.getMessage());
                 }
             else
-                returnClientError("invalid command: " + command);
+                returnClientError("invalid command.");
         } catch (Exception e) {
             returnServerError("internal error: " + e.getMessage());
         }
@@ -225,7 +225,7 @@ final class CGIForwardCommand implements CGICommandHandler {
         try {
             port = Integer.parseInt(param);
         } catch (NumberFormatException e) {
-            throw new CGIClientException("invalid port number: " + param);
+            throw new CGIClientException("invalid port number.");
         }
         if (port <= 0 || port > 0xFFFF)
             throw new CGIClientException("invalid port: " + port);
