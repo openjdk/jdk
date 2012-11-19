@@ -3068,7 +3068,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1352917083
+DATE_WHEN_GENERATED=1353361797
 
 ###############################################################################
 #
@@ -26313,6 +26313,8 @@ esac
   fi
 fi
 
+    # Only call fixup if objcopy was found.
+    if test -n "$OBJCOPY"; then
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
@@ -26576,6 +26578,7 @@ $as_echo "$as_me: error: Cannot locate the the path of OBJCOPY" >&2;}
 $as_echo "$as_me: Rewriting OBJCOPY to \"$new_complete\"" >&6;}
   fi
 
+    fi
 fi
 
 if test -n "$ac_tool_prefix"; then
