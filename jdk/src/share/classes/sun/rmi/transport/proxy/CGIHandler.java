@@ -293,11 +293,14 @@ final class CGIForwardCommand implements CGICommandHandler {
                     "unexpected EOF reading server response");
 
             if (line.toLowerCase().startsWith(key)) {
-                // if contentLengthFound is true
-                // we should probably do something here
-                responseContentLength =
-                    Integer.parseInt(line.substring(key.length()).trim());
-                contentLengthFound = true;
+                if (contentLengthFound) {
+                    throw new CGIServerException(
+                            "Multiple Content-length entries found.");
+                } else {
+                    responseContentLength =
+                        Integer.parseInt(line.substring(key.length()).trim());
+                    contentLengthFound = true;
+                }
             }
         } while ((line.length() != 0) &&
                  (line.charAt(0) != '\r') && (line.charAt(0) != '\n'));

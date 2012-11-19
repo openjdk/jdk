@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,11 +70,14 @@ class HttpInputStream extends FilterInputStream {
                 throw new EOFException();
 
             if (line.toLowerCase().startsWith(key)) {
-                // if contentLengthFound is true
-                // we should probably do something here
-                bytesLeft =
-                    Integer.parseInt(line.substring(key.length()).trim());
-                contentLengthFound = true;
+                if (contentLengthFound) {
+                    throw new IOException(
+                            "Multiple Content-length entries found.");
+                } else {
+                    bytesLeft =
+                        Integer.parseInt(line.substring(key.length()).trim());
+                    contentLengthFound = true;
+                }
             }
 
             // The idea here is to go past the first blank line.
