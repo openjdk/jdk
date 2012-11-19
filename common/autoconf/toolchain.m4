@@ -437,7 +437,10 @@ fi
 # full debug symbols are enabled.
 if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
     AC_CHECK_TOOLS(OBJCOPY, [gobjcopy objcopy])
-    BASIC_FIXUP_EXECUTABLE(OBJCOPY)
+    # Only call fixup if objcopy was found.
+    if test -n "$OBJCOPY"; then
+        BASIC_FIXUP_EXECUTABLE(OBJCOPY)
+    fi
 fi
 
 AC_CHECK_TOOLS(OBJDUMP, [gobjdump objdump])
