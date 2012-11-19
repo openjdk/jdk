@@ -133,6 +133,14 @@ public class JavaVM {
         return TestLibrary.getExtraProperty("jcov.options","");
     }
 
+    public void start(Runnable runnable) throws IOException {
+        if (runnable == null) {
+            throw new NullPointerException("Runnable cannot be null.");
+        }
+
+        start();
+        new JavaVMCallbackHandler(runnable).start();
+    }
 
     /**
      * Exec the VM as specified in this object's constructor.
@@ -234,5 +242,36 @@ public class JavaVM {
 
     protected Process getVM() {
         return vm;
+    }
+
+    /**
+     * Handles calling the callback.
+     */
+    private class JavaVMCallbackHandler extends Thread {
+        Runnable runnable;
+
+        JavaVMCallbackHandler(Runnable runnable) {
+            this.runnable = runnable;
+        }
+
+
+        /**
+         * Wait for the Process to terminate and notify the callback.
+         */
+        @Override
+        public void run() {
+            if (vm != null) {
+                try {
+                    vm.waitFor();
+                } catch(InterruptedException ie) {
+                    // Restore the interrupted status
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            if (runnable != null) {
+                runnable.run();
+            }
+        }
     }
 }
