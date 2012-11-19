@@ -1040,7 +1040,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         if (options.isSet(PROC, "none")) {
             processAnnotations = false;
         } else if (procEnvImpl == null) {
-            procEnvImpl = new JavacProcessingEnvironment(context, processors);
+            procEnvImpl = JavacProcessingEnvironment.instance(context);
+            procEnvImpl.setProcessors(processors);
             processAnnotations = procEnvImpl.atLeastOneProcessor();
 
             if (processAnnotations) {

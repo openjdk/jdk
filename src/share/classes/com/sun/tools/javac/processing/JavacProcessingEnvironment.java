@@ -145,6 +145,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     Source source;
 
     private ClassLoader processorClassLoader;
+    private SecurityException processorClassLoaderException;
 
     /**
      * JavacMessages object used for localization
@@ -155,7 +156,15 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
     private Context context;
 
-    public JavacProcessingEnvironment(Context context, Iterable<? extends Processor> processors) {
+    /** Get the JavacProcessingEnvironment instance for this context. */
+    public static JavacProcessingEnvironment instance(Context context) {
+        JavacProcessingEnvironment instance = context.get(JavacProcessingEnvironment.class);
+        if (instance == null)
+            instance = new JavacProcessingEnvironment(context);
+        return instance;
+    }
+
+    protected JavacProcessingEnvironment(Context context) {
         this.context = context;
         log = Log.instance(context);
         source = Source.instance(context);
@@ -184,6 +193,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         unmatchedProcessorOptions = initUnmatchedProcessorOptions();
         messages = JavacMessages.instance(context);
         taskListener = MultiTaskListener.instance(context);
+        initProcessorClassLoader();
+    }
+
+    public void setProcessors(Iterable<? extends Processor> processors) {
+        Assert.checkNull(discoveredProcs);
         initProcessorIterator(context, processors);
     }
 
@@ -197,6 +211,23 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         platformAnnotations.add("java.lang.annotation.Retention");
         platformAnnotations.add("java.lang.annotation.Target");
         return Collections.unmodifiableSet(platformAnnotations);
+    }
+
+    private void initProcessorClassLoader() {
+        JavaFileManager fileManager = context.get(JavaFileManager.class);
+        try {
+            // If processorpath is not explicitly set, use the classpath.
+            processorClassLoader = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
+                ? fileManager.getClassLoader(ANNOTATION_PROCESSOR_PATH)
+                : fileManager.getClassLoader(CLASS_PATH);
+
+            if (processorClassLoader != null && processorClassLoader instanceof Closeable) {
+                JavaCompiler compiler = JavaCompiler.instance(context);
+                compiler.closeables = compiler.closeables.prepend((Closeable) processorClassLoader);
+            }
+        } catch (SecurityException e) {
+            processorClassLoaderException = e;
+        }
     }
 
     private void initProcessorIterator(Context context, Iterable<? extends Processor> processors) {
@@ -217,18 +248,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             processorIterator = processors.iterator();
         } else {
             String processorNames = options.get(PROCESSOR);
-            JavaFileManager fileManager = context.get(JavaFileManager.class);
-            try {
-                // If processorpath is not explicitly set, use the classpath.
-                processorClassLoader = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
-                    ? fileManager.getClassLoader(ANNOTATION_PROCESSOR_PATH)
-                    : fileManager.getClassLoader(CLASS_PATH);
-
-                if (processorClassLoader != null && processorClassLoader instanceof Closeable) {
-                    JavaCompiler compiler = JavaCompiler.instance(context);
-                    compiler.closeables = compiler.closeables.prepend((Closeable) processorClassLoader);
-                }
-
+            if (processorClassLoaderException == null) {
                 /*
                  * If the "-processor" option is used, search the appropriate
                  * path for the named class.  Otherwise, use a service
@@ -239,14 +259,15 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 } else {
                     processorIterator = new ServiceIterator(processorClassLoader, log);
                 }
-            } catch (SecurityException e) {
+            } else {
                 /*
                  * A security exception will occur if we can't create a classloader.
                  * Ignore the exception if, with hindsight, we didn't need it anyway
                  * (i.e. no processor was specified either explicitly, or implicitly,
                  * in service configuration file.) Otherwise, we cannot continue.
                  */
-                processorIterator = handleServiceLoaderUnavailability("proc.cant.create.loader", e);
+                processorIterator = handleServiceLoaderUnavailability("proc.cant.create.loader",
+                        processorClassLoaderException);
             }
         }
         discoveredProcs = new DiscoveredProcessors(processorIterator);
@@ -1473,11 +1494,17 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     /**
-     * For internal use only.  This method will be
-     * removed without warning.
+     * For internal use only.  This method may be removed without warning.
      */
     public Context getContext() {
         return context;
+    }
+
+    /**
+     * For internal use only.  This method may be removed without warning.
+     */
+    public ClassLoader getProcessorClassLoader() {
+        return processorClassLoader;
     }
 
     public String toString() {
