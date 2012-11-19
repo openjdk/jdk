@@ -121,9 +121,9 @@ public class JavacTrees extends DocTrees {
 
     // called reflectively from Trees.instance(CompilationTask task)
     public static JavacTrees instance(JavaCompiler.CompilationTask task) {
-        if (!(task instanceof JavacTaskImpl))
+        if (!(task instanceof BasicJavacTask))
             throw new IllegalArgumentException();
-        return instance(((JavacTaskImpl)task).getContext());
+        return instance(((BasicJavacTask)task).getContext());
     }
 
     // called reflectively from Trees.instance(ProcessingEnvironment env)
