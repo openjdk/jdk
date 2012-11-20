@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,60 +23,46 @@
  * questions.
  */
 
-package com.sun.tools.doclets.formats.html.markup;
+package com.sun.tools.doclets.internal.toolkit.util;
 
 /**
- * Enum representing HTML styles. The name map to values in the CSS file.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * Enum representing method types.
  *
  * @author Bhavesh Patel
  */
-public enum HtmlStyle {
-    aboutLanguage,
-    activeTableTab,
-    altColor,
-    bar,
-    block,
-    blockList,
-    blockListLast,
-    bottomNav,
-    classUseContainer,
-    colFirst,
-    colLast,
-    colOne,
-    constantValuesContainer,
-    contentContainer,
-    description,
-    details,
-    docSummary,
-    header,
-    horizontal,
-    footer,
-    indexContainer,
-    indexHeader,
-    inheritance,
-    legalCopy,
-    nameValue,
-    navBarCell1Rev,
-    navList,
-    overviewSummary,
-    packageSummary,
-    rowColor,
-    serializedFormContainer,
-    sourceContainer,
-    sourceLineNo,
-    strong,
-    subNav,
-    subNavList,
-    subTitle,
-    summary,
-    deprecatedContent,
-    tabEnd,
-    tableTab,
-    title,
-    topNav;
+public enum MethodTypes {
+    ALL(0xffff, "All Methods", "t0", true),
+    STATIC(0x1, "Static Methods", "t1", false),
+    INSTANCE(0x2, "Instance Methods", "t2", false),
+    ABSTRACT(0x4, "Abstract Methods", "t3", false),
+    CONCRETE(0x8, "Concrete Methods", "t4", false),
+    DEPRECATED(0x10, "Deprecated Methods", "t5", false);
+
+    private final int value;
+    private final String text;
+    private final String tabId;
+    private final boolean isDefaultTab;
+
+    MethodTypes(int v, String t, String id, boolean dt) {
+        this.value = v;
+        this.text = t;
+        this.tabId = id;
+        this.isDefaultTab = dt;
+    }
+
+    public int value() {
+        return value;
+    }
+
+    public String text() {
+        return text;
+    }
+
+    public String tabId() {
+        return tabId;
+    }
+
+    public boolean isDefaultTab() {
+        return isDefaultTab;
+    }
 }
