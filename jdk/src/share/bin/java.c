@@ -105,6 +105,7 @@ static jboolean InitializeJVM(JavaVM **pvm, JNIEnv **penv,
                               InvocationFunctions *ifn);
 static jstring NewPlatformString(JNIEnv *env, char *s);
 static jclass LoadMainClass(JNIEnv *env, int mode, char *name);
+static jclass GetApplicationClass(JNIEnv *env);
 
 static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***pargv);
 static jboolean AddApplicationOptions(int cpathc, const char **cpathv);
@@ -346,6 +347,7 @@ JavaMain(void * _args)
     JavaVM *vm = 0;
     JNIEnv *env = 0;
     jclass mainClass = NULL;
+    jclass appClass = NULL; // actual application class being launched
     jmethodID mainID;
     jobjectArray mainArgs;
     int ret = 0;
@@ -419,10 +421,28 @@ JavaMain(void * _args)
      *          all environments,
      *     2)   Remove the vestages of maintaining main_class through
      *          the environment (and remove these comments).
+     *
+     * This method also correctly handles launching existing JavaFX
+     * applications that may or may not have a Main-Class manifest entry.
      */
     mainClass = LoadMainClass(env, mode, what);
     CHECK_EXCEPTION_NULL_LEAVE(mainClass);
-    PostJVMInit(env, mainClass, vm);
+    /*
+     * In some cases when launching an application that needs a helper, e.g., a
+     * JavaFX application with no main method, the mainClass will not be the
+     * applications own main class but rather a helper class. To keep things
+     * consistent in the UI we need to track and report the application main class.
+     */
+    appClass = GetApplicationClass(env);
+    NULL_CHECK(appClass);
+    /*
+     * PostJVMInit uses the class name as the application name for GUI purposes,
+     * for example, on OSX this sets the application name in the menu bar for
+     * both SWT and JavaFX. So we'll pass the actual application class here
+     * instead of mainClass as that may be a launcher or helper class instead
+     * of the application class.
+     */
+    PostJVMInit(env, appClass, vm);
     /*
      * The LoadMainClass not only loads the main class, it will also ensure
      * that the main method's signature is correct, therefore further checking
@@ -1213,6 +1233,20 @@ LoadMainClass(JNIEnv *env, int mode, char *name)
     }
 
     return (jclass)result;
+}
+
+static jclass
+GetApplicationClass(JNIEnv *env)
+{
+    jmethodID mid;
+    jobject result;
+    jclass cls = GetLauncherHelperClass(env);
+    NULL_CHECK0(cls);
+    NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,
+                "getApplicationClass",
+                "()Ljava/lang/Class;"));
+
+    return (*env)->CallStaticObjectMethod(env, cls, mid);
 }
 
 /*
