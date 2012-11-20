@@ -64,8 +64,9 @@ public class RunTest extends APITest {
             checkFiles(outDir, standardExpectFiles);
             String out = stdout.toString();
             for (String f: standardExpectFiles) {
-                if (f.endsWith(".html") && !out.contains(f))
-                    error("expected string not found: " + f);
+                String f1 = f.replace('/', File.separatorChar);
+                if (f1.endsWith(".html") && !out.contains(f1))
+                    error("expected string not found: " + f1);
             }
         } else {
             error("call failed");

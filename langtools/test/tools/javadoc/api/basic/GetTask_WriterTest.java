@@ -67,8 +67,9 @@ public class GetTask_WriterTest extends APITest {
             String out = sw.toString();
             System.err.println(">>" + out + "<<");
             for (String f: standardExpectFiles) {
-                if (f.endsWith(".html") && !out.contains(f))
-                    throw new Exception("expected string not found: " + f);
+                String f1 = f.replace('/', File.separatorChar);
+                if (f1.endsWith(".html") && !out.contains(f1))
+                    throw new Exception("expected string not found: " + f1);
             }
         } else {
             throw new Exception("task failed");
