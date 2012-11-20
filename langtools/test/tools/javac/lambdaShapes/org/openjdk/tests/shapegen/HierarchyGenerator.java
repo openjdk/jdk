@@ -23,9 +23,9 @@
  * questions.
  */
 
-package shapegen;
+package org.openjdk.tests.shapegen;
 
-import shapegen.ClassCase.Kind;
+import org.openjdk.tests.shapegen.ClassCase.Kind;
 
 import java.util.Collection;
 import java.util.Set;
@@ -34,7 +34,7 @@ import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 
-import static shapegen.ClassCase.Kind.*;
+import static org.openjdk.tests.shapegen.ClassCase.Kind.*;
 
 import static java.lang.Math.pow;
 
@@ -44,10 +44,10 @@ import static java.lang.Math.pow;
  */
 public final class HierarchyGenerator {
 
-    private static int okcnt = 0;
-    private static int errcnt = 0;
-    private static Set<Hierarchy> uniqueOK = new HashSet<>();
-    private static Set<Hierarchy> uniqueErr = new HashSet<>();
+    private int okcnt = 0;
+    private int errcnt = 0;
+    private Set<Hierarchy> uniqueOK = new HashSet<>();
+    private Set<Hierarchy> uniqueErr = new HashSet<>();
 
     /**
      * @param args the command line arguments
@@ -71,7 +71,7 @@ public final class HierarchyGenerator {
     }
 
     private void organize(String tname, List<Hierarchy> totest) {
-        System.out.printf("\nTesting %s....\n", tname);
+        System.out.printf("\nGenerating %s....\n", tname);
         int nodefault = 0;
         List<Hierarchy> ok = new ArrayList<>();
         List<Hierarchy> err = new ArrayList<>();
@@ -152,12 +152,14 @@ public final class HierarchyGenerator {
         return totest;
     }
 
+    public static final List<ClassCase> EMPTY_LIST = new ArrayList<>();
+
     private List<ClassCase> iList(Kind kind) {
         if (kind == null) {
-            return Collections.EMPTY_LIST;
+            return EMPTY_LIST;
         } else {
             List<ClassCase> itfs = new ArrayList<>();
-            itfs.add(new ClassCase(kind, null, Collections.EMPTY_LIST));
+            itfs.add(new ClassCase(kind, null, EMPTY_LIST));
             return itfs;
         }
     }
