@@ -23,14 +23,16 @@
  * questions.
  */
 
-package shapegen;
+package org.openjdk.tests.shapegen;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-import static shapegen.ClassCase.Kind.*;
+import static org.openjdk.tests.shapegen.ClassCase.Kind.*;
 
 /**
  *
@@ -67,15 +69,15 @@ public class Hierarchy {
     }
 
     private static void genInterfaceList(StringBuilder buf, String prefix, List<ClassCase> interfaces) {
-        if (!interfaces.isEmpty()) {
-            buf.append(" ");
-            buf.append(prefix);
-            buf.append(" ");
-            buf.append(interfaces.get(0));
-            for (int i = 1; i < interfaces.size(); ++i) {
-                buf.append(", " + interfaces.get(i));
+            if (!interfaces.isEmpty()) {
+                buf.append(" ");
+                buf.append(prefix);
+                buf.append(" ");
+                buf.append(interfaces.get(0));
+                for (int i = 1; i < interfaces.size(); ++i) {
+                    buf.append(", " + interfaces.get(i));
+                }
             }
-        }
     }
 
     public static void genClassDef(StringBuilder buf, ClassCase cc, String implClass, List<ClassCase> defaultRef) {
@@ -140,4 +142,68 @@ public class Hierarchy {
         return root.getName();
     }
 
+    private static String classNames[] = {
+        "C", "D", "E", "F", "G", "H", "S", "T", "U", "V"
+    };
+
+    private static String interfaceNames[] = {
+        "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R"
+    };
+
+    private static int CLASS_INDEX = 0;
+    private static int INTERFACE_INDEX = 1;
+    private static int NUM_INDICIES = 2;
+
+    public List<String> getDescription() {
+        Map<ClassCase,String> nameMap = new HashMap<>();
+        assignNames(root, new int[NUM_INDICIES], nameMap);
+
+        ArrayList<String> res = new ArrayList<>();
+        if (root.getSupertypes().size() == 0) {
+           res.add(nameMap.get(root) + root.kind.getPrefix() + "()");
+        } else {
+            genCaseDescription(root, res, new HashSet<ClassCase>(), nameMap);
+        }
+        return res;
+    }
+
+    private static void assignNames(
+            ClassCase cc, int indices[], Map<ClassCase,String> names) {
+        String name = names.get(cc);
+        if (name == null) {
+            if (cc.isInterface()) {
+                names.put(cc, interfaceNames[indices[INTERFACE_INDEX]++]);
+            } else {
+                names.put(cc, classNames[indices[CLASS_INDEX]++]);
+            }
+            for (int i = 0; i < cc.getSupertypes().size(); ++i) {
+                assignNames(cc.getSupertypes().get(i), indices, names);
+            }
+        }
+    }
+
+    private static void genCaseDescription(
+            ClassCase cc, List<String> res, Set<ClassCase> alreadyDone,
+            Map<ClassCase,String> nameMap) {
+        if (!alreadyDone.contains(cc)) {
+            if (cc.getSupertypes().size() > 0) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(nameMap.get(cc));
+                sb.append(cc.kind.getPrefix());
+                sb.append("(");
+                for (int i = 0; i < cc.getSupertypes().size(); ++i) {
+                    ClassCase supertype = cc.getSupertypes().get(i);
+                    if (i != 0) {
+                        sb.append(",");
+                    }
+                    genCaseDescription(supertype, res, alreadyDone, nameMap);
+                    sb.append(nameMap.get(supertype));
+                    sb.append(supertype.kind.getPrefix());
+                }
+                sb.append(")");
+                res.add(sb.toString());
+            }
+        }
+        alreadyDone.add(cc);
+    }
 }

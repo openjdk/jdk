@@ -21,14 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Automatic test for checking correctness of default resolution
- */
+package org.openjdk.tests.javac;
 
-import shapegen.*;
+import org.openjdk.tests.shapegen.*;
 
 import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.util.Pair;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -43,9 +41,14 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import org.testng.annotations.Test;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.DataProvider;
+import static org.testng.Assert.*;
+
 public class FDTest {
 
-    enum TestKind {
+    public enum TestKind {
         POSITIVE,
         NEGATIVE;
 
@@ -55,23 +58,66 @@ public class FDTest {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        //create default shared JavaCompiler - reused across multiple compilations
-        JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
+    public static JavaCompiler comp;
+    public static StandardJavaFileManager fm;
 
+    @BeforeSuite
+    static void init() {
+        // create default shared JavaCompiler - reused across multiple
+        // compilations
+
+        comp = ToolProvider.getSystemJavaCompiler();
+        fm = comp.getStandardFileManager(null, null, null);
+    }
+
+    public static void main(String[] args) throws Exception {
+        init();
+
+        for (Pair<TestKind,Hierarchy> fdtest : generateCases()) {
+            runTest(fdtest.fst, fdtest.snd, comp, fm);
+        }
+    }
+
+    @Test(dataProvider = "fdCases")
+    public void testOneCase(TestKind tk, Hierarchy hs)
+            throws Exception {
+        FDTest.runTest(tk, hs, comp, fm);
+    }
+
+    @DataProvider(name = "fdCases")
+    public Object[][] caseGenerator() {
+        List<Pair<TestKind, Hierarchy>> cases = generateCases();
+        Object[][] fdCases = new Object[cases.size()][];
+        for (int i = 0; i < cases.size(); ++i) {
+            fdCases[i] = new Object[2];
+            fdCases[i][0] = cases.get(i).fst;
+            fdCases[i][1] = cases.get(i).snd;
+        }
+        return fdCases;
+    }
+
+    public static List<Pair<TestKind, Hierarchy>> generateCases() {
+        ArrayList<Pair<TestKind,Hierarchy>> list = new ArrayList<>();
         HierarchyGenerator hg = new HierarchyGenerator();
         for (TestKind tk : TestKind.values()) {
             for (Hierarchy hs : tk.getHierarchy(hg)) {
-                new FDTest(tk, hs).run(comp, fm);
+                list.add(new Pair<>(tk, hs));
             }
         }
+        return list;
+    }
+
+    public static void runTest(TestKind tk, Hierarchy hs,
+            JavaCompiler comp, StandardJavaFileManager fm) throws Exception {
+        new FDTest(tk, hs).run(comp, fm);
     }
 
     TestKind tk;
     Hierarchy hs;
     DefenderTestSource source;
     DiagnosticChecker diagChecker;
+
+    public FDTest() {}
 
     FDTest(TestKind tk, Hierarchy hs) {
         this.tk = tk;
@@ -86,7 +132,7 @@ public class FDTest {
         try {
             ct.analyze();
         } catch (Throwable ex) {
-            throw new AssertionError("Error thrown when analyzing the following source:\n" + source.getCharContent(true));
+            fail("Error thrown when analyzing the following source:\n" + source.getCharContent(true));
         }
         check();
     }
@@ -94,11 +140,11 @@ public class FDTest {
     void check() {
         boolean errorExpected = tk == TestKind.NEGATIVE;
         if (errorExpected != diagChecker.errorFound) {
-            throw new AssertionError("problem in source: \n" +
-                    "\nerror found = " + diagChecker.errorFound +
-                    "\nerror expected = " + errorExpected +
-                    "\n" + dumpHierarchy() +
-                    "\n" + source.getCharContent(true));
+            fail("problem in source: \n" +
+                 "\nerror found = " + diagChecker.errorFound +
+                 "\nerror expected = " + errorExpected +
+                 "\n" + dumpHierarchy() +
+                 "\n" + source.getCharContent(true));
         }
     }
 
@@ -123,7 +169,7 @@ public class FDTest {
             StringBuilder buf = new StringBuilder();
             List<ClassCase> defaultRef = new ArrayList<>();
             for (ClassCase cc : hs.all) {
-                hs.genClassDef(buf, cc, null, defaultRef);
+                Hierarchy.genClassDef(buf, cc, null, defaultRef);
             }
             source = buf.toString();
         }

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package shapegen;
+package org.openjdk.tests.shapegen;
 
 import java.util.ArrayList;
 import java.util.HashSet;
