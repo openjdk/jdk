@@ -176,6 +176,7 @@ public class DocCommentTester {
      * Verify the structure of the DocTree AST by comparing it against golden text.
      */
     static class ASTChecker extends Checker {
+        static final String NEWLINE = System.getProperty("line.separator");
         Printer printer = new Printer();
         String source;
 
@@ -197,7 +198,7 @@ public class DocCommentTester {
             DocCommentTree dc = trees.getDocCommentTree(path);
             printer.print(dc, out);
             out.flush();
-            String found = out.toString();
+            String found = out.toString().replace(NEWLINE, "\n");
 
             // Look for the first block comment after the first occurrence of name
             int start = source.indexOf("\n/*\n", findName(source, name));
