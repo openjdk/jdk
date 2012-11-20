@@ -28,13 +28,11 @@ package javax.net.ssl;
 import java.security.AlgorithmConstraints;
 import java.util.Map;
 import java.util.List;
-import java.util.HashSet;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.regex.Pattern;
 
 /**
  * Encapsulates parameters for an SSL/TLS connection. The parameters

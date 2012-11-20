@@ -21,34 +21,18 @@
  * questions.
  */
 
-package com.bar;
+// See dns.sh.
+import sun.security.krb5.Config;
 
-import com.foobar.Utils;
-import java.util.Arrays;
-import static java.util.Calendar.*;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.spi.CalendarDataProvider;
-
-public class CalendarDataProviderImpl extends CalendarDataProvider {
-    static final char FULLWIDTH_ZERO = '\uff10';
-    static final Locale[] avail = {
-        new Locale("ja", "JP", "kids"),
-    };
-
-    @Override
-    public int getFirstDayOfWeek(Locale locale) {
-        return WEDNESDAY;
-    }
-
-    @Override
-    public int getMinimalDaysInFirstWeek(Locale locale) {
-        return 7;
-    }
-
-    @Override
-    public Locale[] getAvailableLocales() {
-        return avail.clone();
+public class DNS {
+    public static void main(String[] args) throws Exception {
+        System.setProperty("java.security.krb5.conf",
+                System.getProperty("test.src", ".") +"/nothing.conf");
+        Config config = Config.getInstance();
+        String kdcs = config.getKDCList("X");
+        if (!kdcs.equals("a.com.:88 b.com.:99") &&
+                !kdcs.equals("a.com. b.com.:99")) {
+            throw new Exception("Strange KDC: [" + kdcs + "]");
+        };
     }
 }
