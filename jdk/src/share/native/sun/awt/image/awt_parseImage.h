@@ -95,6 +95,7 @@ typedef struct {
     jint offsets[MAX_NUMBANDS];
     jint nBits[MAX_NUMBANDS];
     jint  maxBitSize;
+    jint isUsed; // flag to indicate whether the raster sample model is SPPSM
 } SPPSampleModelS_t;
 
 /* Struct that holds information for the Raster object */

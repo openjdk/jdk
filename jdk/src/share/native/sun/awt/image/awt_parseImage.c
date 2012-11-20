@@ -223,9 +223,14 @@ int awt_parseRaster(JNIEnv *env, jobject jraster, RasterS_t *rasterP) {
         return 0;
     }
 
+    rasterP->sppsm.isUsed = 0;
+
     if ((*env)->IsInstanceOf(env, rasterP->jsampleModel,
        (*env)->FindClass(env,"java/awt/image/SinglePixelPackedSampleModel"))) {
         jobject jmask, joffs, jnbits;
+
+        rasterP->sppsm.isUsed = 1;
+
         rasterP->sppsm.maxBitSize = (*env)->GetIntField(env,
                                                         rasterP->jsampleModel,
                                                         g_SPPSMmaxBitID);
@@ -711,6 +716,21 @@ setHints(JNIEnv *env, BufImageS_t *imageP) {
     }
     else if (cmodelP->cmType == DIRECT_CM_TYPE || cmodelP->cmType == PACKED_CM_TYPE) {
         int i;
+
+        /* do some sanity check first: make sure that
+         * - sample model is SinglePixelPackedSampleModel
+         * - number of bands in the raster corresponds to the number
+         *   of color components in the color model
+         */
+        if (!rasterP->sppsm.isUsed ||
+            rasterP->numBands != cmodelP->numComponents)
+        {
+            /* given raster is not compatible with the color model,
+             * so the operation has to be aborted.
+             */
+            return -1;
+        }
+
         if (cmodelP->maxNbits > 8) {
             hintP->needToExpand = TRUE;
             hintP->expandToNbits = cmodelP->maxNbits;
