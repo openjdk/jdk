@@ -69,7 +69,6 @@ import java.util.jar.Manifest;
 public enum LauncherHelper {
     INSTANCE;
     private static final String MAIN_CLASS = "Main-Class";
-
     private static StringBuilder outBuf = new StringBuilder();
 
     private static final String INDENT = "    ";
@@ -87,6 +86,9 @@ public enum LauncherHelper {
         private static final ResourceBundle RB =
                 ResourceBundle.getBundle(defaultBundleName);
     }
+    private static PrintStream ostream;
+    private static final ClassLoader scloader = ClassLoader.getSystemClassLoader();
+    private static Class<?> appClass; // application class, for GUI/reporting purposes
 
     /*
      * A method called by the launcher to print out the standard settings,
@@ -114,27 +116,27 @@ public enum LauncherHelper {
             long initialHeapSize, long maxHeapSize, long stackSize,
             boolean isServer) {
 
-        PrintStream ostream = (printToStderr) ? System.err : System.out;
+        initOutput(printToStderr);
         String opts[] = optionFlag.split(":");
         String optStr = (opts.length > 1 && opts[1] != null)
                 ? opts[1].trim()
                 : "all";
         switch (optStr) {
             case "vm":
-                printVmSettings(ostream, initialHeapSize, maxHeapSize,
-                        stackSize, isServer);
+                printVmSettings(initialHeapSize, maxHeapSize,
+                                stackSize, isServer);
                 break;
             case "properties":
-                printProperties(ostream);
+                printProperties();
                 break;
             case "locale":
-                printLocale(ostream);
+                printLocale();
                 break;
             default:
-                printVmSettings(ostream, initialHeapSize, maxHeapSize,
-                        stackSize, isServer);
-                printProperties(ostream);
-                printLocale(ostream);
+                printVmSettings(initialHeapSize, maxHeapSize, stackSize,
+                                isServer);
+                printProperties();
+                printLocale();
                 break;
         }
     }
@@ -142,7 +144,7 @@ public enum LauncherHelper {
     /*
      * prints the main vm settings subopt/section
      */
-    private static void printVmSettings(PrintStream ostream,
+    private static void printVmSettings(
             long initialHeapSize, long maxHeapSize,
             long stackSize, boolean isServer) {
 
@@ -172,14 +174,14 @@ public enum LauncherHelper {
     /*
      * prints the properties subopt/section
      */
-    private static void printProperties(PrintStream ostream) {
+    private static void printProperties() {
         Properties p = System.getProperties();
         ostream.println(PROP_SETTINGS);
         List<String> sortedPropertyKeys = new ArrayList<>();
         sortedPropertyKeys.addAll(p.stringPropertyNames());
         Collections.sort(sortedPropertyKeys);
         for (String x : sortedPropertyKeys) {
-            printPropertyValue(ostream, x, p.getProperty(x));
+            printPropertyValue(x, p.getProperty(x));
         }
         ostream.println();
     }
@@ -188,8 +190,7 @@ public enum LauncherHelper {
         return key.endsWith(".dirs") || key.endsWith(".path");
     }
 
-    private static void printPropertyValue(PrintStream ostream,
-            String key, String value) {
+    private static void printPropertyValue(String key, String value) {
         ostream.print(INDENT + key + " = ");
         if (key.equals("line.separator")) {
             for (byte b : value.getBytes()) {
@@ -229,7 +230,7 @@ public enum LauncherHelper {
     /*
      * prints the locale subopt/section
      */
-    private static void printLocale(PrintStream ostream) {
+    private static void printLocale() {
         Locale locale = Locale.getDefault();
         ostream.println(LOCALE_SETTINGS);
         ostream.println(INDENT + "default locale = " +
@@ -238,11 +239,11 @@ public enum LauncherHelper {
                 Locale.getDefault(Category.DISPLAY).getDisplayName());
         ostream.println(INDENT + "default format locale = " +
                 Locale.getDefault(Category.FORMAT).getDisplayName());
-        printLocales(ostream);
+        printLocales();
         ostream.println();
     }
 
-    private static void printLocales(PrintStream ostream) {
+    private static void printLocales() {
         Locale[] tlocales = Locale.getAvailableLocales();
         final int len = tlocales == null ? 0 : tlocales.length;
         if (len < 1 ) {
@@ -370,7 +371,7 @@ public enum LauncherHelper {
      * initHelpSystem must be called before using this method.
      */
     static void printHelpMessage(boolean printToStderr) {
-        PrintStream ostream = (printToStderr) ? System.err : System.out;
+        initOutput(printToStderr);
         outBuf = outBuf.append(getLocalizedMessage("java.launcher.opt.footer",
                 File.pathSeparator));
         ostream.println(outBuf.toString());
@@ -380,7 +381,7 @@ public enum LauncherHelper {
      * Prints the Xusage text to the desired output stream.
      */
     static void printXUsageMessage(boolean printToStderr) {
-        PrintStream ostream =  (printToStderr) ? System.err : System.out;
+        initOutput(printToStderr);
         ostream.println(getLocalizedMessage("java.launcher.X.usage",
                 File.pathSeparator));
         if (System.getProperty("os.name").contains("OS X")) {
@@ -389,35 +390,31 @@ public enum LauncherHelper {
         }
     }
 
-    static String getMainClassFromJar(PrintStream ostream, String jarname) {
-        try {
-            JarFile jarFile = null;
-            try {
-                jarFile = new JarFile(jarname);
-                Manifest manifest = jarFile.getManifest();
-                if (manifest == null) {
-                    abort(ostream, null, "java.launcher.jar.error2", jarname);
-                }
-                Attributes mainAttrs = manifest.getMainAttributes();
-                if (mainAttrs == null) {
-                    abort(ostream, null, "java.launcher.jar.error3", jarname);
-                }
-                String mainValue = mainAttrs.getValue(MAIN_CLASS);
-                if (mainValue == null) {
-                    abort(ostream, null, "java.launcher.jar.error3", jarname);
-                }
-                return mainValue.trim();
-            } finally {
-                if (jarFile != null) {
-                    jarFile.close();
-                }
+    static void initOutput(boolean printToStderr) {
+        ostream =  (printToStderr) ? System.err : System.out;
+    }
+
+    static String getMainClassFromJar(String jarname) {
+        String mainValue = null;
+        try (JarFile jarFile = new JarFile(jarname)) {
+            Manifest manifest = jarFile.getManifest();
+            if (manifest == null) {
+                abort(null, "java.launcher.jar.error2", jarname);
             }
+            Attributes mainAttrs = manifest.getMainAttributes();
+            if (mainAttrs == null) {
+                abort(null, "java.launcher.jar.error3", jarname);
+            }
+            mainValue = mainAttrs.getValue(MAIN_CLASS);
+            if (mainValue == null) {
+                abort(null, "java.launcher.jar.error3", jarname);
+            }
+            return mainValue.trim();
         } catch (IOException ioe) {
-            abort(ostream, ioe, "java.launcher.jar.error1", jarname);
+            abort(ioe, "java.launcher.jar.error1", jarname);
         }
         return null;
     }
-
 
     // From src/share/bin/java.c:
     //   enum LaunchMode { LM_UNKNOWN = 0, LM_CLASS, LM_JAR };
@@ -426,7 +423,7 @@ public enum LauncherHelper {
     private static final int LM_CLASS   = 1;
     private static final int LM_JAR     = 2;
 
-    static void abort(PrintStream ostream, Throwable t, String msgKey, Object... args) {
+    static void abort(Throwable t, String msgKey, Object... args) {
         if (msgKey != null) {
             ostream.println(getLocalizedMessage(msgKey, args));
         }
@@ -450,19 +447,22 @@ public enum LauncherHelper {
      *    b. is there a main
      *    c. is the main public
      *    d. is the main static
-     *    c. does the main take a String array for args
-     * 4. and off we go......
+     *    e. does the main take a String array for args
+     * 4. if no main method and if the class extends FX Application, then call
+     *    on FXHelper to determine the main class to launch
+     * 5. and off we go......
      *
-     * @param printToStderr
-     * @param isJar
-     * @param name
-     * @return
+     * @param printToStderr if set, all output will be routed to stderr
+     * @param mode LaunchMode as determined by the arguments passed on the
+     * command line
+     * @param what either the jar file to launch or the main class when using
+     * LM_CLASS mode
+     * @return the application's main class
      */
     public static Class<?> checkAndLoadMain(boolean printToStderr,
                                             int mode,
                                             String what) {
-        final PrintStream ostream = (printToStderr) ? System.err : System.out;
-        final ClassLoader ld = ClassLoader.getSystemClassLoader();
+        initOutput(printToStderr);
         // get the class name
         String cn = null;
         switch (mode) {
@@ -470,44 +470,75 @@ public enum LauncherHelper {
                 cn = what;
                 break;
             case LM_JAR:
-                cn = getMainClassFromJar(ostream, what);
+                cn = getMainClassFromJar(what);
                 break;
             default:
                 // should never happen
                 throw new InternalError("" + mode + ": Unknown launch mode");
         }
         cn = cn.replace('/', '.');
-        Class<?> c = null;
+        Class<?> mainClass = null;
         try {
-            c = ld.loadClass(cn);
-        } catch (ClassNotFoundException cnfe) {
-            abort(ostream, cnfe, "java.launcher.cls.error1", cn);
+            mainClass = scloader.loadClass(cn);
+        } catch (NoClassDefFoundError | ClassNotFoundException cnfe) {
+            abort(cnfe, "java.launcher.cls.error1", cn);
         }
-        getMainMethod(ostream, c);
-        return c;
+        // set to mainClass, FXHelper may return something else
+        appClass = mainClass;
+
+        Method m = getMainMethod(mainClass);
+        if (m != null) {
+            // this will abort if main method has the wrong signature
+            validateMainMethod(m);
+            return mainClass;
+        }
+
+        // Check if FXHelper can launch it using the FX launcher
+        Class<?> fxClass = FXHelper.getFXMainClass(mainClass);
+        if (fxClass != null) {
+            return fxClass;
+        }
+
+        // not an FX application either, abort with an error
+        abort(null, "java.launcher.cls.error4", mainClass.getName(),
+              FXHelper.JAVAFX_APPLICATION_CLASS_NAME);
+        return null; // avoid compiler error...
     }
 
-    static Method getMainMethod(PrintStream ostream, Class<?> clazz) {
-        String classname = clazz.getName();
-        Method method = null;
+    /*
+     * Accessor method called by the launcher after getting the main class via
+     * checkAndLoadMain(). The "application class" is the class that is finally
+     * executed to start the application and in this case is used to report
+     * the correct application name, typically for UI purposes.
+     */
+    public static Class<?> getApplicationClass() {
+        return appClass;
+    }
+
+    // Check for main method or return null if not found
+    static Method getMainMethod(Class<?> clazz) {
         try {
-            method = clazz.getMethod("main", String[].class);
-        } catch (NoSuchMethodException nsme) {
-            abort(ostream, null, "java.launcher.cls.error4", classname);
-        }
+            return clazz.getMethod("main", String[].class);
+        } catch (NoSuchMethodException nsme) {}
+        return null;
+    }
+
+    // Check the signature of main and abort if it's incorrect
+    static void validateMainMethod(Method mainMethod) {
         /*
          * getMethod (above) will choose the correct method, based
          * on its name and parameter type, however, we still have to
          * ensure that the method is static and returns a void.
          */
-        int mod = method.getModifiers();
+        int mod = mainMethod.getModifiers();
         if (!Modifier.isStatic(mod)) {
-            abort(ostream, null, "java.launcher.cls.error2", "static", classname);
+            abort(null, "java.launcher.cls.error2", "static",
+                  mainMethod.getDeclaringClass().getName());
         }
-        if (method.getReturnType() != java.lang.Void.TYPE) {
-            abort(ostream, null, "java.launcher.cls.error3", classname);
+        if (mainMethod.getReturnType() != java.lang.Void.TYPE) {
+            abort(null, "java.launcher.cls.error3",
+                  mainMethod.getDeclaringClass().getName());
         }
-        return method;
     }
 
     private static final String encprop = "sun.jnu.encoding";
@@ -519,7 +550,7 @@ public enum LauncherHelper {
      * previously implemented as a native method in the launcher.
      */
     static String makePlatformString(boolean printToStderr, byte[] inArray) {
-        final PrintStream ostream = (printToStderr) ? System.err : System.out;
+        initOutput(printToStderr);
         if (encoding == null) {
             encoding = System.getProperty(encprop);
             isCharsetSupported = Charset.isSupported(encoding);
@@ -530,7 +561,7 @@ public enum LauncherHelper {
                     : new String(inArray);
             return out;
         } catch (UnsupportedEncodingException uee) {
-            abort(ostream, uee, null);
+            abort(uee, null);
         }
         return null; // keep the compiler happy
     }
@@ -609,6 +640,66 @@ public enum LauncherHelper {
         }
         public String toString() {
             return "StdArg{" + "arg=" + arg + ", needsExpansion=" + needsExpansion + '}';
+        }
+    }
+
+    static final class FXHelper {
+        private static final String JAVAFX_APPLICATION_CLASS_NAME =
+                "javafx.application.Application";
+        private static final String JAVAFX_LAUNCHER_CLASS_NAME =
+                "com.sun.javafx.application.LauncherImpl";
+
+        /*
+         * FX application launcher and launch method, so we can launch
+         * applications with no main method.
+         */
+        private static Class<?> fxLauncherClass    = null;
+        private static Method   fxLauncherMethod   = null;
+
+        /*
+         * We can assume that the class does NOT have a main method or it would
+         * have been handled already. We do, however, need to check if the class
+         * extends Application and the launcher is available and abort with an
+         * error if it's not.
+         */
+        private static Class<?> getFXMainClass(Class<?> mainClass) {
+            // Check if mainClass extends Application
+            if (!doesExtendFXApplication(mainClass)) {
+                return null;
+            }
+
+            // Check for the FX launcher classes
+            try {
+                fxLauncherClass = scloader.loadClass(JAVAFX_LAUNCHER_CLASS_NAME);
+                fxLauncherMethod = fxLauncherClass.getMethod("launchApplication",
+                        Class.class, String[].class);
+            } catch (ClassNotFoundException | NoSuchMethodException ex) {
+                abort(ex, "java.launcher.cls.error5", ex);
+            }
+
+            // That's all, return this class so we can launch later
+            return FXHelper.class;
+        }
+
+        /*
+         * Check if the given class is a JavaFX Application class. This is done
+         * in a way that does not cause the Application class to load or throw
+         * ClassNotFoundException if the JavaFX runtime is not available.
+         */
+        private static boolean doesExtendFXApplication(Class<?> mainClass) {
+            for (Class<?> sc = mainClass.getSuperclass(); sc != null;
+                    sc = sc.getSuperclass()) {
+                if (sc.getName().equals(JAVAFX_APPLICATION_CLASS_NAME)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // preloader ?
+        public static void main(String... args) throws Exception {
+            // launch appClass via fxLauncherMethod
+            fxLauncherMethod.invoke(null, new Object[] {appClass, args});
         }
     }
 }
