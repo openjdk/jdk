@@ -52,7 +52,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * @param annotationType the AnnotationType that holds this member.
      */
     public AnnotationTypeRequiredMemberWriterImpl(SubWriterHolderWriter writer,
-        AnnotationTypeDoc annotationType) {
+            AnnotationTypeDoc annotationType) {
         super(writer, annotationType);
     }
 
@@ -106,11 +106,11 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
         writer.addAnnotationInfo(member, pre);
         addModifiers(member, pre);
         Content link = new RawHtml(
-                writer.getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER,
-                getType(member))));
+                writer.getLink(new LinkInfoImpl(configuration,
+                        LinkInfoImpl.CONTEXT_MEMBER, getType(member))));
         pre.addContent(link);
         pre.addContent(writer.getSpace());
-        if (configuration().linksource) {
+        if (configuration.linksource) {
             Content memberName = new StringContent(member.name());
             writer.addSrcLink(member, memberName, pre);
         } else {
@@ -175,16 +175,16 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public String getTableSummary() {
-        return configuration().getText("doclet.Member_Table_Summary",
-                configuration().getText("doclet.Annotation_Type_Required_Member_Summary"),
-                configuration().getText("doclet.annotation_type_required_members"));
+        return configuration.getText("doclet.Member_Table_Summary",
+                configuration.getText("doclet.Annotation_Type_Required_Member_Summary"),
+                configuration.getText("doclet.annotation_type_required_members"));
     }
 
     /**
      * {@inheritDoc}
      */
     public String getCaption() {
-        return configuration().getText("doclet.Annotation_Type_Required_Members");
+        return configuration.getText("doclet.Annotation_Type_Required_Members");
     }
 
     /**
@@ -193,9 +193,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     public String[] getSummaryTableHeader(ProgramElementDoc member) {
         String[] header = new String[] {
             writer.getModifierTypeHeader(),
-            configuration().getText("doclet.0_and_1",
-                    configuration().getText("doclet.Annotation_Type_Required_Member"),
-                    configuration().getText("doclet.Description"))
+            configuration.getText("doclet.0_and_1",
+                    configuration.getText("doclet.Annotation_Type_Required_Member"),
+                    configuration.getText("doclet.Description"))
         };
         return header;
     }

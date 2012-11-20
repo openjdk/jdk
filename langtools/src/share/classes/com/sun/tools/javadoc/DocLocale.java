@@ -49,7 +49,7 @@ class DocLocale {
     final String localeName;
 
     /**
-     * The locale to be used. If user doesen't provide this,
+     * The locale to be used. If user doesn't provide this,
      * then set it to default locale value.
      */
     final Locale locale;
@@ -98,7 +98,7 @@ class DocLocale {
         if (locale == null) {
             docenv.exit();
         } else {
-            Locale.setDefault(locale);
+            Locale.setDefault(locale); // NOTE: updating global state
         }
         collator = Collator.getInstance(locale);
         sentenceBreaker = BreakIterator.getSentenceInstance(locale);

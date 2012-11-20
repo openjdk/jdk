@@ -24,7 +24,6 @@
 // key: compiler.misc.cant.resolve.location.args.params
 // key: compiler.misc.location
 // key: compiler.err.invalid.mref
-// options: -XDallowMethodReferences
 
 class CantResolveLocationArgsParamsFragment {
 

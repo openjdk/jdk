@@ -24,7 +24,6 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.incompatible.ret.type.in.lambda
 // key: compiler.misc.missing.ret.val
-// options: -XDallowLambda
 
 class MissingReturnValueFragment {
     interface SAM {

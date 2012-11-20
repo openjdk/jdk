@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary check that default method overriding object members are flagged as error
- * @compile/fail/ref=Neg13.out -XDallowDefaultMethods -XDrawDiagnostics Neg13.java
+ * @compile/fail/ref=Neg13.out -XDrawDiagnostics Neg13.java
  */
 interface Neg13 {
     default protected Object clone() { return null; } //protected not allowed here

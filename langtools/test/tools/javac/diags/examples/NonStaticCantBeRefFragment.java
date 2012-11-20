@@ -24,7 +24,6 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.non-static.cant.be.ref
 // key: compiler.misc.invalid.mref
-// options: -XDallowMethodReferences
 
 class NonStaticCantBeRefFragment {
 

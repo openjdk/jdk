@@ -93,17 +93,21 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     private Content contentTree;
 
-    private SerializedFormBuilder(Configuration configuration) {
-        super(configuration);
+
+    /**
+     * Construct a new SerializedFormBuilder.
+     * @param context  the build context.
+     */
+    private SerializedFormBuilder(Context context) {
+        super(context);
     }
 
     /**
      * Construct a new SerializedFormBuilder.
-     * @param configuration the current configuration of the doclet.
+     * @param context  the build context.
      */
-    public static SerializedFormBuilder getInstance(Configuration configuration) {
-        SerializedFormBuilder builder = new SerializedFormBuilder(configuration);
-        return builder;
+    public static SerializedFormBuilder getInstance(Context context) {
+        return new SerializedFormBuilder(context);
     }
 
     /**
@@ -123,7 +127,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         } catch (Exception e) {
             throw new DocletAbortException();
         }
-        build(LayoutParser.getInstance(configuration).parseXML(NAME), contentTree);
+        build(layoutParser.parseXML(NAME), contentTree);
         writer.close();
     }
 

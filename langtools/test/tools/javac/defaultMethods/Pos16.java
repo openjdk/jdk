@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary 'class wins' should not short-circuit overload resolution
- * @compile -XDallowDefaultMethods Pos16.java
+ * @compile Pos16.java
  */
 
 class Pos16 {
