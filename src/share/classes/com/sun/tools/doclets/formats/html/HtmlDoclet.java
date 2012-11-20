@@ -117,6 +117,8 @@ public class HtmlDoclet extends AbstractDoclet {
         copyResourceFile("tab.gif");
         copyResourceFile("titlebar.gif");
         copyResourceFile("titlebar_end.gif");
+        copyResourceFile("activetitlebar.gif");
+        copyResourceFile("activetitlebar_end.gif");
         // do early to reduce memory footprint
         if (configuration.classuse) {
             ClassUseWriter.generate(configuration, classtree);
@@ -152,10 +154,13 @@ public class HtmlDoclet extends AbstractDoclet {
         }
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
+        DocFile f;
         if (configuration.stylesheetfile.length() == 0) {
-            DocFile f = DocFile.createFileForOutput(configuration, DocPaths.STYLESHEET);
+            f = DocFile.createFileForOutput(configuration, DocPaths.STYLESHEET);
             f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.STYLESHEET), false, true);
         }
+        f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
+        f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
     }
 
     /**
