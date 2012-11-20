@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary check that overload resolution selects most specific signature
- * @compile -XDallowDefaultMethods Pos14.java
+ * @compile Pos14.java
  */
 
 class Pos14 {

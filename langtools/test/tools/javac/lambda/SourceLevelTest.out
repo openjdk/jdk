@@ -1,0 +1,6 @@
+- compiler.warn.source.no.bootclasspath: 1.7
+SourceLevelTest.java:11:9: compiler.err.default.methods.not.supported.in.source: 1.7
+SourceLevelTest.java:18:17: compiler.err.lambda.not.supported.in.source: 1.7
+SourceLevelTest.java:19:20: compiler.err.method.references.not.supported.in.source: 1.7
+3 errors
+1 warning

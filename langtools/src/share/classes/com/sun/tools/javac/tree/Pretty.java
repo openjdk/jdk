@@ -1110,7 +1110,7 @@ public class Pretty extends JCTree.Visitor {
     public void visitReference(JCMemberReference tree) {
         try {
             printExpr(tree.expr);
-            print("#");
+            print("::");
             if (tree.typeargs != null) {
                 print("<");
                 printExprs(tree.typeargs);

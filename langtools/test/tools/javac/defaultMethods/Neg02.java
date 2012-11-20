@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary check that ill-formed MI hierarchies do not compile
- * @compile/fail/ref=Neg02.out -XDallowDefaultMethods -XDrawDiagnostics Neg02.java
+ * @compile/fail/ref=Neg02.out -XDrawDiagnostics Neg02.java
  */
 
 class Neg02 {

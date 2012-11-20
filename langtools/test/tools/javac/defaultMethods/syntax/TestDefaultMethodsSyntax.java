@@ -54,7 +54,7 @@ public class TestDefaultMethodsSyntax {
         }
 
         List<String> getOptions() {
-            return Arrays.asList("-XDallowDefaultMethods", "-source", versionString);
+            return Arrays.asList("-source", versionString);
         }
     }
 

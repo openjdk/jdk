@@ -1,0 +1,5 @@
+TargetType24.java:34:37: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, boolean)
+TargetType24.java:35:45: compiler.err.cant.apply.symbol: kindname.method, forAll2, TargetType24.FSub<java.lang.Character,java.lang.String>, @945, kindname.class, TargetType24.Array<A>, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.inconvertible.types: boolean, java.lang.String)))
+TargetType24.java:36:101: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.inconvertible.types: java.lang.String, java.lang.Boolean))
+TargetType24.java:37:104: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.inconvertible.types: boolean, java.lang.String))
+4 errors

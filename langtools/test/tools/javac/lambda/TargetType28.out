@@ -1,0 +1,3 @@
+TargetType28.java:20:32: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: TargetType28.SuperFoo<java.lang.Number>, TargetType28.SuperFoo<java.lang.String>)
+TargetType28.java:21:33: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: TargetType28.SuperFoo<java.lang.Number>, TargetType28.SuperFoo<java.lang.Integer>)
+2 errors

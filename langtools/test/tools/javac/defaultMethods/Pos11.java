@@ -25,7 +25,7 @@
  * @test
  * @summary complex test with conflict resolution via overriding
  * @author  Brian Goetz
- * @compile -XDallowDefaultMethods Pos11.java
+ * @compile Pos11.java
  */
 
 class Pos11 {

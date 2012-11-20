@@ -1120,10 +1120,10 @@ public class LambdaToMethod extends TreeTranslator {
             if (context != null
                     && tree.encl == null
                     && tree.def == null
-                    && tree.type.getEnclosingType().hasTag(NONE)) {
+                    && !tree.type.getEnclosingType().hasTag(NONE)) {
                 Type encl = tree.type.getEnclosingType();
                 Type current = context.owner.enclClass().type;
-                while (current.hasTag(NONE)) {
+                while (!current.hasTag(NONE)) {
                     if (current.tsym.isSubClass(encl.tsym, types)) {
                         return true;
                     }
