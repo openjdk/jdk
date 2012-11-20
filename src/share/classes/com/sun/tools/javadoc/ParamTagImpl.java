@@ -43,7 +43,7 @@ import com.sun.javadoc.*;
  */
 class ParamTagImpl extends TagImpl implements ParamTag {
 
-    private static Pattern typeParamRE = Pattern.compile("<([^<>]+)>");
+    private static final Pattern typeParamRE = Pattern.compile("<([^<>]+)>");
 
     private final String parameterName;
     private final String parameterComment;

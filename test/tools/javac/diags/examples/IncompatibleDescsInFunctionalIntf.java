@@ -26,7 +26,6 @@
 // key: compiler.misc.incompatible.descs.in.functional.intf
 // key: compiler.misc.descriptor
 // key: compiler.misc.descriptor.throws
-// options: -XDallowLambda
 
 class IncompatibleDescsInFunctionalIntf {
     interface A {

@@ -32,6 +32,7 @@ import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import javax.tools.JavaFileManager;
 
 /**
  * Configure the output based on the options. Doclets should sub-class
@@ -77,14 +78,16 @@ public abstract class Configuration {
 
     /**
      * This is true if option "-serialwarn" is used. Defualt value is false to
-     * supress excessive warnings about serial tag.
+     * suppress excessive warnings about serial tag.
      */
     public boolean serialwarn = false;
 
     /**
      * The specified amount of space between tab stops.
      */
-    public int sourcetab = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+    public int sourcetab;
+
+    public String tabSpaces;
 
     /**
      * True if we should generate browsable sources.
@@ -259,6 +262,7 @@ public abstract class Configuration {
             "com.sun.tools.doclets.internal.toolkit.resources.doclets");
         excludedDocFileDirs = new HashSet<String>();
         excludedQualifiers = new HashSet<String>();
+        setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
     }
 
     /**
@@ -382,7 +386,7 @@ public abstract class Configuration {
             } else if (opt.equals("-sourcetab")) {
                 linksource = true;
                 try {
-                    sourcetab = Integer.parseInt(os[1]);
+                    setTabWidth(Integer.parseInt(os[1]));
                 } catch (NumberFormatException e) {
                     //Set to -1 so that warning will be printed
                     //to indicate what is valid argument.
@@ -390,7 +394,7 @@ public abstract class Configuration {
                 }
                 if (sourcetab <= 0) {
                     message.warning("doclet.sourcetab_warning");
-                    sourcetab = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+                    setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
                 }
             } else if (opt.equals("-notimestamp")) {
                 notimestamp = true;
@@ -442,7 +446,7 @@ public abstract class Configuration {
     /**
      * Initialize the taglet manager.  The strings to initialize the simple custom tags should
      * be in the following format:  "[tag name]:[location str]:[heading]".
-     * @param customTagStrs the set two dimentional arrays of strings.  These arrays contain
+     * @param customTagStrs the set two dimensional arrays of strings.  These arrays contain
      * either -tag or -taglet arguments.
      */
     private void initTagletManager(Set<String[]> customTagStrs) {
@@ -453,11 +457,11 @@ public abstract class Configuration {
         for (Iterator<String[]> it = customTagStrs.iterator(); it.hasNext(); ) {
             args = it.next();
             if (args[0].equals("-taglet")) {
-                tagletManager.addCustomTag(args[1], tagletpath);
+                tagletManager.addCustomTag(args[1], getFileManager(), tagletpath);
                 continue;
             }
             String[] tokens = tokenize(args[1],
-                TagletManager.SIMPLE_TAGLET_OPT_SEPERATOR, 3);
+                TagletManager.SIMPLE_TAGLET_OPT_SEPARATOR, 3);
             if (tokens.length == 1) {
                 String tagName = args[1];
                 if (tagletManager.isKnownCustomTag(tagName)) {
@@ -749,7 +753,7 @@ public abstract class Configuration {
      * @return the input steam to the builder XML.
      * @throws FileNotFoundException when the given XML file cannot be found.
      */
-    public InputStream getBuilderXML() throws FileNotFoundException {
+    public InputStream getBuilderXML() throws IOException {
         return builderXMLPath == null ?
             Configuration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
             DocFile.createFileForInput(this, builderXMLPath).openInputStream();
@@ -761,10 +765,20 @@ public abstract class Configuration {
     public abstract Locale getLocale();
 
     /**
+     * Return the current file manager.
+     */
+    public abstract JavaFileManager getFileManager();
+
+    /**
      * Return the comparator that will be used to sort member documentation.
      * To no do any sorting, return null.
      *
      * @return the {@link java.util.Comparator} used to sort members.
      */
     public abstract Comparator<ProgramElementDoc> getMemberComparator();
+
+    private void setTabWidth(int n) {
+        sourcetab = n;
+        tabSpaces = String.format("%" + n + "s", "");
+    }
 }

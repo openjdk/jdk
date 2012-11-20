@@ -24,7 +24,6 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.cant.access.inner.cls.constr
 // key: compiler.misc.invalid.mref
-// options: -XDallowMethodReferences
 
 class CantAccessInnerClsConstructor {
 

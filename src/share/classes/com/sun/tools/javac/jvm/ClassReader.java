@@ -941,18 +941,6 @@ public class ClassReader implements Completer {
 
             new AttributeReader(names.Code, V45_3, MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
-                    if (currentOwner.isInterface() &&
-                            (sym.flags_field & ABSTRACT) == 0 && !name.equals(names.clinit)) {
-                        if (majorVersion > Target.JDK1_8.majorVersion ||
-                                //todo replace with Target.Version when available
-                                (majorVersion == Target.JDK1_8.majorVersion && minorVersion >= Target.JDK1_8.minorVersion)) {
-                            currentOwner.flags_field |= DEFAULT;
-                            sym.flags_field |= DEFAULT | ABSTRACT;
-                        } else {
-                            //protect against ill-formed classfiles
-                            throw new CompletionFailure(currentOwner, "default method found in pre JDK 8 classfile");
-                        }
-                    }
                     if (readAllOfClassFile || saveParameterNames)
                         ((MethodSymbol)sym).code = readCode(sym);
                     else
@@ -1753,6 +1741,17 @@ public class ClassReader implements Completer {
         long flags = adjustMethodFlags(nextChar());
         Name name = readName(nextChar());
         Type type = readType(nextChar());
+        if (currentOwner.isInterface() &&
+                (flags & ABSTRACT) == 0 && !name.equals(names.clinit)) {
+            if (majorVersion > Target.JDK1_8.majorVersion ||
+                    (majorVersion == Target.JDK1_8.majorVersion && minorVersion >= Target.JDK1_8.minorVersion)) {
+                currentOwner.flags_field |= DEFAULT;
+                flags |= DEFAULT | ABSTRACT;
+            } else {
+                //protect against ill-formed classfiles
+                throw new CompletionFailure(currentOwner, "default method found in pre JDK 8 classfile");
+            }
+        }
         if (name == names.init && currentOwner.hasOuterInstance()) {
             // Sometimes anonymous classes don't have an outer
             // instance, however, there is no reliable way to tell so

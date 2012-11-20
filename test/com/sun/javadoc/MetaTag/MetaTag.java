@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,6 @@
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import com.sun.tools.doclets.formats.html.ConfigurationImpl;
-import com.sun.tools.doclets.internal.toolkit.Configuration;
 
 /*
  * @test
@@ -135,13 +132,7 @@ public class MetaTag extends JavadocTester {
      */
     public static void main(String[] args) {
         MetaTag tester = new MetaTag();
-        Configuration config = ConfigurationImpl.getInstance();
-        boolean defaultKeywordsSetting = config.keywords;
-        boolean defaultTimestampSetting = config.notimestamp;
         run(tester, ARGS, TEST, NEGATED_TEST);
-        //Variable needs to be reset because Configuration is a singleton.
-        config.keywords = defaultKeywordsSetting;
-        config.notimestamp = defaultTimestampSetting;
         run(tester, ARGS_NO_TIMESTAMP_NO_KEYWORDS, TEST2, NEGATED_TEST2);
         tester.printSummary();
     }

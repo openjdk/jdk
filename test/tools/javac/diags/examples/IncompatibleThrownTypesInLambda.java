@@ -22,7 +22,6 @@
  */
 
 // key: compiler.err.incompatible.thrown.types.in.lambda
-// options: -XDallowLambda
 
 class IncompatibleThrownTypesInLambda {
     interface SAM {

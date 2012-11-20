@@ -23,7 +23,6 @@
 
 // key: compiler.err.prob.found.req
 // key: compiler.misc.no.suitable.functional.intf.inst
-// options: -XDallowLambda
 
 class NoSuitableFunctionalIntfInst {
 

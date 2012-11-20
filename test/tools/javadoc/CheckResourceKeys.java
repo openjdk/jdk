@@ -167,6 +167,13 @@ public class CheckResourceKeys {
                 results.add("doclet." + s.toLowerCase());
         }
 
+        // special handling for code strings synthesized in
+        // com.sun.tools.javadoc.Messager
+        results.add("javadoc.error.msg");
+        results.add("javadoc.note.msg");
+        results.add("javadoc.note.pos.msg");
+        results.add("javadoc.warning.msg");
+
         return results;
     }
 

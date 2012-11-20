@@ -109,6 +109,7 @@ public class AttrContext {
                 pendingResolutionPhase.isVarargsRequired();
     }
 
+    @Override
     public String toString() {
         return "AttrContext[" + scope.toString() + "]";
     }

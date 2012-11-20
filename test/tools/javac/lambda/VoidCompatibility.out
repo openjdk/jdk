@@ -1,0 +1,2 @@
+VoidCompatibility.java:23:9: compiler.err.ref.ambiguous: schedule, kindname.method, schedule(VoidCompatibility.Runnable), VoidCompatibility, kindname.method, schedule(VoidCompatibility.Thunk<?>), VoidCompatibility
+1 error
