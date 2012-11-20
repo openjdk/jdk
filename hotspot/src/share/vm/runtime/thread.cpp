@@ -3334,6 +3334,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   jint os_init_2_result = os::init_2();
   if (os_init_2_result != JNI_OK) return os_init_2_result;
 
+  jint adjust_after_os_result = Arguments::adjust_after_os();
+  if (adjust_after_os_result != JNI_OK) return adjust_after_os_result;
+
   // intialize TLS
   ThreadLocalStorage::init();
 
