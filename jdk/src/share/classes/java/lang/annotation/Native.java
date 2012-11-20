@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,34 +23,21 @@
  * questions.
  */
 
-package com.bar;
+package java.lang.annotation;
 
-import com.foobar.Utils;
-import java.util.Arrays;
-import static java.util.Calendar.*;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.spi.CalendarDataProvider;
 
-public class CalendarDataProviderImpl extends CalendarDataProvider {
-    static final char FULLWIDTH_ZERO = '\uff10';
-    static final Locale[] avail = {
-        new Locale("ja", "JP", "kids"),
-    };
-
-    @Override
-    public int getFirstDayOfWeek(Locale locale) {
-        return WEDNESDAY;
-    }
-
-    @Override
-    public int getMinimalDaysInFirstWeek(Locale locale) {
-        return 7;
-    }
-
-    @Override
-    public Locale[] getAvailableLocales() {
-        return avail.clone();
-    }
+/**
+ * Indicates that a field defining a constant value may be referenced
+ * from native code.
+ *
+ * The annotation may be used as a hint by tools that generate native
+ * header files to determine whether a header file is required, and
+ * if so, what declarations it should contain.
+ *
+ * @since 1.8
+ */
+@Documented
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.SOURCE)
+public @interface Native {
 }
