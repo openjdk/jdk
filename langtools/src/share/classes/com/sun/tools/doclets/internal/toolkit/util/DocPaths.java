@@ -72,6 +72,9 @@ public class DocPaths {
         return DocPath.create("index-" + n + ".html");
     }
 
+    /** The name of the default javascript file. */
+    public static final DocPath JAVASCRIPT = DocPath.create("script.js");
+
     /** The name of the file for the overview frame. */
     public static final DocPath OVERVIEW_FRAME = DocPath.create("overview-frame.html");
 

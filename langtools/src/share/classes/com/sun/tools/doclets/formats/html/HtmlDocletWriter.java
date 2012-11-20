@@ -327,6 +327,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             }
         }
         head.addContent(getStyleSheetProperties());
+        head.addContent(getScriptProperties());
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
                 head, body);
         Content htmlDocument = new HtmlDocument(htmlDocType,
@@ -1685,6 +1686,17 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 pathToRoot.resolve(stylesheet).getPath(),
                 "Style");
         return link;
+    }
+
+    /**
+     * Returns a link to the JavaScript file.
+     *
+     * @return an HtmlTree for the Script tag which provides the JavaScript location
+     */
+    public HtmlTree getScriptProperties() {
+        HtmlTree script = HtmlTree.SCRIPT("text/javascript",
+                pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath());
+        return script;
     }
 
     /**

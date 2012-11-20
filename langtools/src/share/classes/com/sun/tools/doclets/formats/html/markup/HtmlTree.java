@@ -494,6 +494,20 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Generates a SCRIPT tag with the type and src attributes.
+     *
+     * @param type type of link
+     * @param src the path for the script
+     * @return an HtmlTree object for the SCRIPT tag
+     */
+    public static HtmlTree SCRIPT(String type, String src) {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.SCRIPT);
+        htmltree.addAttr(HtmlAttr.TYPE, nullCheck(type));
+        htmltree.addAttr(HtmlAttr.SRC, nullCheck(src));
+        return htmltree;
+    }
+
+    /**
      * Generates a SMALL tag with some content.
      *
      * @param body content for the tag
@@ -534,6 +548,23 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree SPAN(HtmlStyle styleClass, Content body) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.SPAN, nullCheck(body));
+        if (styleClass != null)
+            htmltree.addStyle(styleClass);
+        return htmltree;
+    }
+
+    /**
+     * Generates a SPAN tag with id and style class attributes. It also encloses
+     * a content.
+     *
+     * @param id the id for the tag
+     * @param styleClass stylesheet class for the tag
+     * @param body content for the tag
+     * @return an HtmlTree object for the SPAN tag
+     */
+    public static HtmlTree SPAN(String id, HtmlStyle styleClass, Content body) {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.SPAN, nullCheck(body));
+        htmltree.addAttr(HtmlAttr.ID, nullCheck(id));
         if (styleClass != null)
             htmltree.addStyle(styleClass);
         return htmltree;
@@ -742,6 +773,9 @@ public class HtmlTree extends Content {
                 return (hasAttr(HtmlAttr.HREF) && !hasContent());
             case META :
                 return (hasAttr(HtmlAttr.CONTENT) && !hasContent());
+            case SCRIPT :
+                return ((hasAttr(HtmlAttr.TYPE) && hasAttr(HtmlAttr.SRC) && !hasContent()) ||
+                        (hasAttr(HtmlAttr.TYPE) && hasContent()));
             default :
                 return hasContent();
         }

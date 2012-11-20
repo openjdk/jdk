@@ -308,7 +308,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
                 configuration));
         if (members.size() > 0) {
             Collections.sort(members);
-            Content tableTree = writer.getSummaryTableTree(classDoc);
+            List<Content> tableContents = new LinkedList<Content>();
             for (int i = 0; i < members.size(); i++) {
                 ProgramElementDoc member = members.get(i);
                 Tag[] firstSentenceTags = member.firstSentenceTags();
@@ -317,14 +317,15 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
                     //necessary.
                     DocFinder.Output inheritedDoc =
                             DocFinder.search(new DocFinder.Input((MethodDoc) member));
-                    if (inheritedDoc.holder != null &&
-                            inheritedDoc.holder.firstSentenceTags().length > 0) {
+                    if (inheritedDoc.holder != null
+                            && inheritedDoc.holder.firstSentenceTags().length > 0) {
                         firstSentenceTags = inheritedDoc.holder.firstSentenceTags();
                     }
                 }
-                writer.addMemberSummary(classDoc, member, firstSentenceTags, tableTree, i);
+                writer.addMemberSummary(classDoc, member, firstSentenceTags,
+                        tableContents, i);
             }
-            summaryTreeList.add(tableTree);
+            summaryTreeList.add(writer.getSummaryTableTree(classDoc, tableContents));
         }
     }
 
