@@ -85,7 +85,7 @@ public class Abort {
         }
 
         SimpleJavaFileObject asJFO(java.io.File dir) {
-            return new SimpleJavaFileObject(URI.create(dir.getAbsolutePath() + "/" + filename), JavaFileObject.Kind.SOURCE) {
+            return new SimpleJavaFileObject(new java.io.File(dir, filename).toURI(), JavaFileObject.Kind.SOURCE) {
                 @Override
                 public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
                     return contents;
