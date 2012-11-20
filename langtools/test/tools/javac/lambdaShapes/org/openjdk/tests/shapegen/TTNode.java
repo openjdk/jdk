@@ -23,15 +23,15 @@
  * questions.
  */
 
-package shapegen;
+package org.openjdk.tests.shapegen;
 
-import shapegen.ClassCase.Kind;
+import org.openjdk.tests.shapegen.ClassCase.Kind;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static shapegen.ClassCase.Kind.*;
+import static org.openjdk.tests.shapegen.ClassCase.Kind.*;
 
 /**
  * Type Template Node

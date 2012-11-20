@@ -23,7 +23,7 @@
  * questions.
  */
 
-package shapegen;
+package org.openjdk.tests.shapegen;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -52,6 +52,8 @@ public class ClassCase {
             this.isInterface = isInterface;
             this.prefix = prefix;
         }
+
+        public String getPrefix() { return prefix; }
     }
 
     public final Kind kind;
@@ -67,7 +69,7 @@ public class ClassCase {
     private ClassCase _mres;
     private ClassCase _mdefend;
 
-    private Set<RuleGroup> executed = new HashSet<RuleGroup>() {};
+    private Set<RuleGroup> executed = new HashSet<RuleGroup>();
 
     public ClassCase(Kind kind, ClassCase superclass, List<ClassCase> interfaces) {
         this.kind = kind;

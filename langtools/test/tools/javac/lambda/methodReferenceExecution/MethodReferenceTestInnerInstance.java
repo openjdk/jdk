@@ -23,26 +23,73 @@
  * questions.
  */
 
-package shapegen;
+/**
+ * @test
+ * @bug 8003639
+ * @summary convert lambda testng tests to jtreg and add them
+ * @run testng MethodReferenceTestInnerInstance
+ */
+
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertEquals;
 
 /**
- *
  * @author Robert Field
  */
-public abstract class Rule {
 
-    public final String name;
+@Test
+public class MethodReferenceTestInnerInstance {
 
-    public Rule(String name) {
-        this.name = name;
+    public void testMethodReferenceInnerInstance() {
+        cia().cib().testMethodReferenceInstance();
     }
 
-    abstract boolean guard(ClassCase cc);
+    public void testMethodReferenceInnerExternal() {
+        cia().cib().testMethodReferenceExternal();
+    }
 
-    abstract void eval(ClassCase cc);
+    interface SI {
+        String m(Integer a);
+    }
 
-    @Override
-    public String toString() {
-        return name;
+    class CIA {
+
+        String xI(Integer i) {
+            return "xI:" + i;
+        }
+
+        public class CIB {
+
+            public void testMethodReferenceInstance() {
+                SI q;
+
+                q = CIA.this::xI;
+                assertEquals(q.m(55), "xI:55");
+            }
+
+            public void testMethodReferenceExternal() {
+                SI q;
+
+                q = (new E())::xI;
+                assertEquals(q.m(77), "ExI:77");
+            }
+        }
+
+        CIB cib() {
+            return new CIB();
+        }
+
+        class E {
+
+            String xI(Integer i) {
+                return "ExI:" + i;
+            }
+        }
+
+    }
+
+    CIA cia() {
+        return new CIA();
     }
 }
