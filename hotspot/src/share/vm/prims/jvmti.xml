@@ -2370,11 +2370,11 @@ jint count;
 jvmtiError err;
 
 err = (*jvmti)-&gt;GetStackTrace(jvmti, aThread, 0, 5, 
-                               &amp;frames, &amp;count);
+                               frames, &amp;count);
 if (err == JVMTI_ERROR_NONE &amp;&amp; count &gt;= 1) {
    char *methodName;
    err = (*jvmti)-&gt;GetMethodName(jvmti, frames[0].method, 
-                       &amp;methodName, NULL);
+                       &amp;methodName, NULL, NULL);
    if (err == JVMTI_ERROR_NONE) {
       printf("Executing method: %s", methodName);
    }
