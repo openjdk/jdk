@@ -198,8 +198,8 @@ public abstract class SSLSocketFactory extends SocketFactory
      * (RFC6066)</A>).  Data that has been already removed from the
      * underlying {@link InputStream} should be loaded into the
      * {@code consumed} stream before this method is called, perhaps
-     * using a {@link ByteArrayInputStream}.  When this {@link Socket}
-     * begins handshaking, it will read all of the data in
+     * using a {@link java.io.ByteArrayInputStream}.  When this
+     * {@link Socket} begins handshaking, it will read all of the data in
      * {@code consumed} until it reaches {@code EOF}, then all further
      * data is read from the underlying {@link InputStream} as
      * usual.
