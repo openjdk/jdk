@@ -166,6 +166,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      * @return the certificate chain (ordered with the user's certificate first
      * and the root certificate authority last)
      */
+    @Override
     public X509Certificate[] getCertificateChain(String alias) {
         if (alias == null) {
             return null;
@@ -181,6 +182,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
     /*
      * Returns the key associated with the given alias
      */
+    @Override
     public PrivateKey getPrivateKey(String alias) {
         if (alias == null) {
             return null;
@@ -198,6 +200,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      * socket given the public key type and the list of
      * certificate issuer authorities recognized by the peer (if any).
      */
+    @Override
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers,
             Socket socket) {
         /*
@@ -228,6 +231,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      *
      * @since 1.5
      */
+    @Override
     public String chooseEngineClientAlias(String[] keyType,
             Principal[] issuers, SSLEngine engine) {
         /*
@@ -242,6 +246,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      * socket given the public key type and the list of
      * certificate issuer authorities recognized by the peer (if any).
      */
+    @Override
     public String chooseServerAlias(String keyType,
             Principal[] issuers, Socket socket) {
         /*
@@ -283,6 +288,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      *
      * @since 1.5
      */
+    @Override
     public String chooseEngineServerAlias(String keyType,
             Principal[] issuers, SSLEngine engine) {
         /*
@@ -297,6 +303,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      * socket given the public key type and the list of
      * certificate issuer authorities recognized by the peer (if any).
      */
+    @Override
     public String[] getClientAliases(String keyType, Principal[] issuers) {
         return getAliases(keyType, issuers);
     }
@@ -306,6 +313,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      * socket given the public key type and the list of
      * certificate issuer authorities recognized by the peer (if any).
      */
+    @Override
     public String[] getServerAliases(String keyType, Principal[] issuers) {
         return getAliases(keyType, issuers);
     }

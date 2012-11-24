@@ -28,9 +28,6 @@ package sun.security.ssl;
 
 import java.io.ByteArrayOutputStream;
 import java.security.*;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -391,11 +388,13 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         // }
     }
 
+    @Override
     protected int engineGetDigestLength() {
         checkState();
         return digests[0].getDigestLength();
     }
 
+    @Override
     protected void engineUpdate(byte b) {
         checkState();
         for (int i = 0; (i < digests.length) && (digests[i] != null); i++) {
@@ -403,6 +402,7 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         }
     }
 
+    @Override
     protected void engineUpdate(byte[] b, int offset, int len) {
         checkState();
         for (int i = 0; (i < digests.length) && (digests[i] != null); i++) {
@@ -410,6 +410,7 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         }
     }
 
+    @Override
     protected byte[] engineDigest() {
         checkState();
         byte[] digest = digests[0].digest();
@@ -417,6 +418,7 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         return digest;
     }
 
+    @Override
     protected int engineDigest(byte[] buf, int offset, int len)
             throws DigestException {
         checkState();
@@ -436,6 +438,7 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         }
     }
 
+    @Override
     protected void engineReset() {
         checkState();
         for (int i = 0; (i < digests.length) && (digests[i] != null); i++) {
@@ -443,6 +446,7 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         }
     }
 
+    @Override
     public Object clone() {
         checkState();
         for (int i = digests.length - 1; i >= 0; i--) {

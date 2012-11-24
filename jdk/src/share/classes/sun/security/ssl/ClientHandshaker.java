@@ -45,7 +45,6 @@ import javax.net.ssl.*;
 import javax.security.auth.Subject;
 
 import sun.security.ssl.HandshakeMessage.*;
-import sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 
 /**
@@ -128,6 +127,7 @@ final class ClientHandshaker extends Handshaker {
      * is processed, and writes responses as needed using the connection
      * in the constructor.
      */
+    @Override
     void processMessage(byte type, int messageLen) throws IOException {
         if (state > type
                 && (type != HandshakeMessage.ht_hello_request
@@ -505,6 +505,7 @@ final class ClientHandshaker extends Handshaker {
                     try {
                         subject = AccessController.doPrivileged(
                             new PrivilegedExceptionAction<Subject>() {
+                            @Override
                             public Subject run() throws Exception {
                                 return Krb5Helper.getClientSubject(getAccSE());
                             }});
@@ -1104,6 +1105,7 @@ final class ClientHandshaker extends Handshaker {
     /*
      * Returns a ClientHello message to kickstart renegotiations
      */
+    @Override
     HandshakeMessage getKickstartMessage() throws SSLException {
         // session ID of the ClientHello message
         SessionId sessionId = SSLSessionImpl.nullSession.getSessionId();
@@ -1279,6 +1281,7 @@ final class ClientHandshaker extends Handshaker {
     /*
      * Fault detected during handshake.
      */
+    @Override
     void handshakeAlert(byte description) throws SSLProtocolException {
         String message = Alerts.alertDescription(description);
 

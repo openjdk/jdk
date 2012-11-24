@@ -28,7 +28,6 @@ package sun.security.ssl;
 
 import java.net.Socket;
 import javax.net.ssl.SSLSession;
-import java.nio.charset.StandardCharsets;
 
 import java.util.*;
 import java.security.*;
