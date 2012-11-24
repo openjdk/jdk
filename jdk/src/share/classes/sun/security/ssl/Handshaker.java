@@ -820,6 +820,7 @@ abstract class Handshaker {
             processLoop();
         } else {
             delegateTask(new PrivilegedExceptionAction<Void>() {
+                @Override
                 public Void run() throws Exception {
                     processLoop();
                     return null;

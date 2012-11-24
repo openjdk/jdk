@@ -28,7 +28,6 @@ package sun.security.ssl;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.SSLSocket;
 
 
 /**
@@ -69,6 +68,7 @@ final public class SSLSocketFactoryImpl extends SSLSocketFactory {
      * @return the unconnected socket
      * @see java.net.Socket#connect(java.net.SocketAddress, int)
      */
+    @Override
     public Socket createSocket() {
         return new SSLSocketImpl(context);
     }
@@ -82,6 +82,7 @@ final public class SSLSocketFactoryImpl extends SSLSocketFactory {
      * @param host name of the host with which to connect
      * @param port number of the server's port
      */
+    @Override
     public Socket createSocket(String host, int port)
     throws IOException, UnknownHostException
     {
@@ -104,6 +105,7 @@ final public class SSLSocketFactoryImpl extends SSLSocketFactory {
      * @exception IOException if the connection can't be established
      * @exception UnknownHostException if the host is not known
      */
+    @Override
     public Socket createSocket(Socket s, String host, int port,
             boolean autoClose) throws IOException {
         return new SSLSocketImpl(context, s, host, port, autoClose);
@@ -129,6 +131,7 @@ final public class SSLSocketFactoryImpl extends SSLSocketFactory {
      * @param address the server's host
      * @param port its port
      */
+    @Override
     public Socket createSocket(InetAddress address, int port)
     throws IOException
     {
@@ -143,6 +146,7 @@ final public class SSLSocketFactoryImpl extends SSLSocketFactory {
      * has been configured. The socket will also bind() to the local
      * address and port supplied.
      */
+    @Override
     public Socket createSocket(String host, int port,
         InetAddress clientAddress, int clientPort)
     throws IOException
@@ -158,6 +162,7 @@ final public class SSLSocketFactoryImpl extends SSLSocketFactory {
      * context which has been configured. The socket will also bind() to
      * the local address and port supplied.
      */
+    @Override
     public Socket createSocket(InetAddress address, int port,
         InetAddress clientAddress, int clientPort)
     throws IOException
@@ -174,6 +179,7 @@ final public class SSLSocketFactoryImpl extends SSLSocketFactory {
      * (preventing person-in-the-middle attacks) and where traffic
      * is encrypted to provide confidentiality.
      */
+    @Override
     public String[] getDefaultCipherSuites() {
         return context.getDefaultCipherSuiteList(false).toStringArray();
     }
@@ -186,6 +192,7 @@ final public class SSLSocketFactoryImpl extends SSLSocketFactory {
      * which do not protect data confidentiality.  Servers may also need
      * certain kinds of certificates to use certain cipher suites.
      */
+    @Override
     public String[] getSupportedCipherSuites() {
         return context.getSupportedCipherSuiteList().toStringArray();
     }
