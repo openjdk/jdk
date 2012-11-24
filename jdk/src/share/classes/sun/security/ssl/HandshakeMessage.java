@@ -394,8 +394,6 @@ class ServerHello extends HandshakeMessage
             s.print("RandomCookie:  ");
             svr_random.print(s);
 
-            int i;
-
             s.print("Session ID:  ");
             s.println(sessionId);
 
