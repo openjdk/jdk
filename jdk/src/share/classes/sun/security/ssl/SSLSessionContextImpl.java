@@ -44,8 +44,6 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     private int cacheLimit;             // the max cache size
     private int timeout;                // timeout in seconds
 
-    private static final Debug debug = Debug.getInstance("ssl");
-
     // package private
     SSLSessionContextImpl() {
         cacheLimit = getDefaultCacheLimit();    // default cache size

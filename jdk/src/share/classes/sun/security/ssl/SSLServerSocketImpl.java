@@ -82,9 +82,6 @@ class SSLServerSocketImpl extends SSLServerSocket
     /* which protocol to use by default */
     private ProtocolList        enabledProtocols = null;
 
-    /* could enabledCipherSuites ever complete handshaking? */
-    private boolean             checkedEnabled = false;
-
     // the endpoint identification protocol to use by default
     private String              identificationProtocol = null;
 
@@ -195,7 +192,6 @@ class SSLServerSocketImpl extends SSLServerSocket
     @Override
     synchronized public void setEnabledCipherSuites(String[] suites) {
         enabledCipherSuites = new CipherSuiteList(suites);
-        checkedEnabled = false;
     }
 
     @Override

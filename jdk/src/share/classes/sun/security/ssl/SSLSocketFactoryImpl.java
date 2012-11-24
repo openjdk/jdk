@@ -43,7 +43,6 @@ import javax.net.ssl.SSLSocketFactory;
  */
 final public class SSLSocketFactoryImpl extends SSLSocketFactory {
 
-    private static SSLContextImpl defaultContext;
     private SSLContextImpl context;
 
     /**

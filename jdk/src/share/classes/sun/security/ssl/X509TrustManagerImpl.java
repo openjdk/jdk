@@ -346,7 +346,6 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 } catch (IllegalArgumentException iae) {
                     // unlikely to happen, just in case ...
                     if ((debug != null) && Debug.isOn("trustmanager")) {
-                        byte[] encoded = hostname.getEncoded();
                         System.out.println("Illegal server name: " + sniName);
                     }
                 }

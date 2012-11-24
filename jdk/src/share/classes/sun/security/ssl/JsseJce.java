@@ -54,8 +54,6 @@ import static sun.security.ssl.SunJSSE.cryptoProvider;
  */
 final class JsseJce {
 
-    private final static Debug debug = Debug.getInstance("ssl");
-
     private final static ProviderList fipsProviderList;
 
     // Flag indicating whether EC crypto is available.
