@@ -37,7 +37,7 @@ import org.xml.sax.helpers.*;
 public class LogCompilation extends DefaultHandler implements ErrorHandler, Constants {
 
     public static void usage(int exitcode) {
-        System.out.println("Usage: LogCompilation [ -v ] [ -c ] [ -s ] [ -e | -N ] file1 ...");
+        System.out.println("Usage: LogCompilation [ -v ] [ -c ] [ -s ] [ -e | -n ] file1 ...");
         System.out.println("  -c:   clean up malformed 1.5 xml");
         System.out.println("  -i:   print inlining decisions");
         System.out.println("  -S:   print compilation statistics");

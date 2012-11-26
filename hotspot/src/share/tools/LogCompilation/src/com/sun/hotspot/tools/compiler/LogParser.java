@@ -224,7 +224,6 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         throw new InternalError("can't find " + name);
     }
     int indent = 0;
-    String compile_id;
 
     String type(String id) {
         String result = types.get(id);
@@ -268,7 +267,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         if (qname.equals("phase")) {
             Phase p = new Phase(search(atts, "name"),
                     Double.parseDouble(search(atts, "stamp")),
-                    Integer.parseInt(search(atts, "nodes")),
+                    Integer.parseInt(search(atts, "nodes", "0")),
                     Integer.parseInt(search(atts, "live")));
             phaseStack.push(p);
         } else if (qname.equals("phase_done")) {
@@ -278,7 +277,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
                 throw new InternalError("phase name mismatch");
             }
             p.setEnd(Double.parseDouble(search(atts, "stamp")));
-            p.setEndNodes(Integer.parseInt(search(atts, "nodes")));
+            p.setEndNodes(Integer.parseInt(search(atts, "nodes", "0")));
             p.setEndLiveNodes(Integer.parseInt(search(atts, "live")));
             compile.getPhases().add(p);
         } else if (qname.equals("task")) {
@@ -323,13 +322,16 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             m.setName(search(atts, "name"));
             m.setReturnType(type(search(atts, "return")));
             m.setArguments(search(atts, "arguments", "void"));
-            m.setBytes(search(atts, "bytes"));
-            m.setIICount(search(atts, "iicount"));
-            m.setFlags(search(atts, "flags"));
+
+            if (search(atts, "unloaded", "0").equals("0")) {
+               m.setBytes(search(atts, "bytes"));
+               m.setIICount(search(atts, "iicount"));
+               m.setFlags(search(atts, "flags"));
+            }
             methods.put(id, m);
         } else if (qname.equals("call")) {
             site = new CallSite(bci, method(search(atts, "method")));
-            site.setCount(Integer.parseInt(search(atts, "count")));
+            site.setCount(Integer.parseInt(search(atts, "count", "0")));
             String receiver = atts.getValue("receiver");
             if (receiver != null) {
                 site.setReceiver(type(receiver));
