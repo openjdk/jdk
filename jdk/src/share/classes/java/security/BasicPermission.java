@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ import java.io.IOException;
  * convention follows the  hierarchical property naming convention.
  * An asterisk may appear by itself, or if immediately preceded by a "."
  * may appear at the end of the name, to signify a wildcard match.
- * For example, "*" and "java.*" are valid, while "*java", "a*b",
- * and "java*" are not valid.
+ * For example, "*" and "java.*" signify a wildcard match, while "*java", "a*b",
+ * and "java*" do not.
  * <P>
  * The action string (inherited from Permission) is unused.
  * Thus, BasicPermission is commonly used as the base class for
