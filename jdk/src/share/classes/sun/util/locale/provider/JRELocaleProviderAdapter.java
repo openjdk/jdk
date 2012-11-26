@@ -41,6 +41,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.spi.CalendarDataProvider;
+import java.util.spi.CalendarNameProvider;
 import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
@@ -101,6 +102,8 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
             return (P) getTimeZoneNameProvider();
         case "CalendarDataProvider":
             return (P) getCalendarDataProvider();
+        case "CalendarNameProvider":
+            return (P) getCalendarNameProvider();
         default:
             throw new InternalError("should not come down here");
         }
@@ -117,6 +120,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     private volatile LocaleNameProvider localeNameProvider = null;
     private volatile TimeZoneNameProvider timeZoneNameProvider = null;
     private volatile CalendarDataProvider calendarDataProvider = null;
+    private volatile CalendarNameProvider calendarNameProvider = null;
 
     /*
      * Getter methods for java.text.spi.* providers
@@ -252,11 +256,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     @Override
     public CalendarDataProvider getCalendarDataProvider() {
         if (calendarDataProvider == null) {
-            Set<String> set = new HashSet<>();
-            set.addAll(getLanguageTagSet("FormatData"));
-            set.addAll(getLanguageTagSet("CalendarData"));
-            CalendarDataProvider provider = new CalendarDataProviderImpl(getAdapterType(),
-                                                                         set);
+            CalendarDataProvider provider;
+            provider = new CalendarDataProviderImpl(getAdapterType(),
+                                                    getLanguageTagSet("CalendarData"));
             synchronized (this) {
                 if (calendarDataProvider == null) {
                     calendarDataProvider = provider;
@@ -264,6 +266,21 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
             }
         }
         return calendarDataProvider;
+    }
+
+    @Override
+    public CalendarNameProvider getCalendarNameProvider() {
+        if (calendarNameProvider == null) {
+            CalendarNameProvider provider;
+            provider = new CalendarNameProviderImpl(getAdapterType(),
+                                                    getLanguageTagSet("FormatData"));
+            synchronized (this) {
+                if (calendarNameProvider == null) {
+                    calendarNameProvider = provider;
+                }
+            }
+        }
+        return calendarNameProvider;
     }
 
     @Override
@@ -321,16 +338,13 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
         while (tokens.hasMoreTokens()) {
             String token = tokens.nextToken();
             if (token.equals("|")) {
-                if (isNonEuroLangSupported()) {
+                if (isNonUSLangSupported()) {
                     continue;
                 }
                 break;
             }
             tagset.add(token);
         }
-
-        // ensure en-US is there (mandated by the spec, e.g. Collator.getAvailableLocales())
-        tagset.add("en-US");
 
         return tagset;
     }
@@ -361,7 +375,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
          */
         int barIndex = supportedLocaleString.indexOf('|');
         StringTokenizer localeStringTokenizer;
-        if (isNonEuroLangSupported()) {
+        if (isNonUSLangSupported()) {
             localeStringTokenizer = new StringTokenizer(supportedLocaleString.substring(0, barIndex)
                     + supportedLocaleString.substring(barIndex + 1));
         } else {
@@ -390,17 +404,17 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
         return locales;
     }
 
-    private static volatile Boolean isNonEuroSupported = null;
+    private static volatile Boolean isNonUSSupported = null;
 
     /*
-     * Returns true if the non European resources jar file exists in jre
+     * Returns true if the non US resources jar file exists in jre
      * extension directory. @returns true if the jar file is there. Otherwise,
      * returns false.
      */
-    private static boolean isNonEuroLangSupported() {
-        if (isNonEuroSupported == null) {
+    private static boolean isNonUSLangSupported() {
+        if (isNonUSSupported == null) {
             synchronized (JRELocaleProviderAdapter.class) {
-                if (isNonEuroSupported == null) {
+                if (isNonUSSupported == null) {
                     final String sep = File.separator;
                     String localeDataJar =
                             java.security.AccessController.doPrivileged(
@@ -412,7 +426,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
                      * localedata.jar is installed or not.
                      */
                     final File f = new File(localeDataJar);
-                    isNonEuroSupported =
+                    isNonUSSupported =
                         AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
                             @Override
                             public Boolean run() {
@@ -422,6 +436,6 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
                }
             }
         }
-        return isNonEuroSupported;
+        return isNonUSSupported;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,14 @@ package com.sun.tools.javac.nio;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
 /**
- *  File manager based on {@linkplain File java.nio.file.Path}.
+ *  File manager based on {@link java.nio.file.Path}.
  *
  *  Eventually, this should be moved to javax.tools.
  *  Also, JavaCompiler might reasonably provide a method getPathFileManager,

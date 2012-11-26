@@ -84,11 +84,11 @@ class klassVtable : public ResourceObj {
   bool is_initialized();
 
   // computes vtable length (in words) and the number of miranda methods
-  static void compute_vtable_size_and_num_mirandas(int &vtable_length, int &num_miranda_methods,
-                                                   Klass* super, Array<Method*>* methods,
-                                                   AccessFlags class_flags, Handle classloader,
-                                                   Symbol* classname, Array<Klass*>* local_interfaces,
-                                                   TRAPS);
+  static void compute_vtable_size_and_num_mirandas(
+      int* vtable_length, int* num_new_mirandas,
+      GrowableArray<Method*>* all_mirandas, Klass* super,
+      Array<Method*>* methods, AccessFlags class_flags, Handle classloader,
+      Symbol* classname, Array<Klass*>* local_interfaces, TRAPS);
 
   // RedefineClasses() API support:
   // If any entry of this vtable points to any of old_methods,
@@ -125,12 +125,17 @@ class klassVtable : public ResourceObj {
 
   // support for miranda methods
   bool is_miranda_entry_at(int i);
-  void fill_in_mirandas(int& initialized);
+  void fill_in_mirandas(int* initialized);
   static bool is_miranda(Method* m, Array<Method*>* class_methods, Klass* super);
-  static void add_new_mirandas_to_list(GrowableArray<Method*>* list_of_current_mirandas, Array<Method*>* current_interface_methods, Array<Method*>* class_methods, Klass* super);
-  static void get_mirandas(GrowableArray<Method*>* mirandas, Klass* super, Array<Method*>* class_methods, Array<Klass*>* local_interfaces);
-  static int get_num_mirandas(Klass* super, Array<Method*>* class_methods, Array<Klass*>* local_interfaces);
-
+  static void add_new_mirandas_to_lists(
+      GrowableArray<Method*>* new_mirandas,
+      GrowableArray<Method*>* all_mirandas,
+      Array<Method*>* current_interface_methods, Array<Method*>* class_methods,
+      Klass* super);
+  static void get_mirandas(
+      GrowableArray<Method*>* new_mirandas,
+      GrowableArray<Method*>* all_mirandas, Klass* super,
+      Array<Method*>* class_methods, Array<Klass*>* local_interfaces);
 
   void verify_against(outputStream* st, klassVtable* vt, int index);
   inline InstanceKlass* ik() const;

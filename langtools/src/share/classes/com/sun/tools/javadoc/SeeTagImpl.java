@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,17 @@
 
 package com.sun.tools.javadoc;
 
-import com.sun.tools.javac.util.*;
-
 import com.sun.javadoc.*;
+import com.sun.tools.javac.util.*;
 
 /**
  * Represents a see also documentation tag.
  * The @see tag can be plain text, or reference a class or member.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Kaiyang Liu (original)
  * @author Robert Field (rewrite)
@@ -263,8 +267,6 @@ class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
             }
 
             if (referencedClass == null) { /* may just not be in this run */
-//                docenv().warning(holder, "tag.see.class_not_found",
-//                                 where, text);
                 // check if it's a package name
                 referencedPackage = docenv().lookupPackage(where);
                 return;

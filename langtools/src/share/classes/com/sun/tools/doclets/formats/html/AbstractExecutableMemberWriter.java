@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,11 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Print method and constructor info.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Robert Field
  * @author Atul M Dambalkar
@@ -81,7 +86,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * Add the summary link for the member.
      *
      * @param context the id of the context where the link will be printed
-     * @param classDoc the classDoc that we should link to
+     * @param cd the classDoc that we should link to
      * @param member the member being linked to
      * @param tdSummary the content tree to which the link will be added
      */
@@ -101,7 +106,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     /**
      * Add the inherited summary link for the member.
      *
-     * @param classDoc the classDoc that we should link to
+     * @param cd the classDoc that we should link to
      * @param member the member being linked to
      * @param linksTree the content tree to which the link will be added
      */
@@ -138,7 +143,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * Add all the parameters for the executable member.
      *
      * @param member the member to write parameters for.
-     * @param tree the content tree to which the parameters information will be added.
+     * @param htmltree the content tree to which the parameters information will be added.
      */
     protected void addParameters(ExecutableMemberDoc member, Content htmltree) {
         addParameters(member, true, htmltree);
@@ -149,7 +154,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      *
      * @param member the member to write parameters for.
      * @param includeAnnotations true if annotation information needs to be added.
-     * @param tree the content tree to which the parameters information will be added.
+     * @param htmltree the content tree to which the parameters information will be added.
      */
     protected void addParameters(ExecutableMemberDoc member,
             boolean includeAnnotations, Content htmltree) {
@@ -276,7 +281,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @return the 1.4.x style anchor for the ExecutableMemberDoc.
      */
     protected String getErasureAnchor(ExecutableMemberDoc emd) {
-        StringBuffer buf = new StringBuffer(emd.name() + "(");
+        StringBuilder buf = new StringBuilder(emd.name() + "(");
         Parameter[] params = emd.parameters();
         boolean foundTypeVariable = false;
         for (int i = 0; i < params.length; i++) {

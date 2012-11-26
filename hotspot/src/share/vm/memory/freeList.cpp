@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "memory/freeBlockDictionary.hpp"
 #include "memory/freeList.hpp"
+#include "memory/metablock.hpp"
+#include "memory/metachunk.hpp"
 #include "memory/sharedHeap.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutex.hpp"
@@ -49,8 +51,6 @@ FreeList<Chunk>::FreeList() :
 {
   _size         = 0;
   _count        = 0;
-  _hint         = 0;
-  init_statistics();
 }
 
 template <class Chunk>
@@ -62,34 +62,50 @@ FreeList<Chunk>::FreeList(Chunk* fc) :
 {
   _size         = fc->size();
   _count        = 1;
-  _hint         = 0;
-  init_statistics();
-#ifndef PRODUCT
-  _allocation_stats.set_returned_bytes(size() * HeapWordSize);
-#endif
 }
 
 template <class Chunk>
-void FreeList<Chunk>::reset(size_t hint) {
+void FreeList<Chunk>::link_head(Chunk* v) {
+  assert_proper_lock_protection();
+  set_head(v);
+  // If this method is not used (just set the head instead),
+  // this check can be avoided.
+  if (v != NULL) {
+    v->link_prev(NULL);
+  }
+}
+
+
+
+template <class Chunk>
+void FreeList<Chunk>::reset() {
+  // Don't set the _size to 0 because this method is
+  // used with a existing list that has a size but which has
+  // been emptied.
+  // Don't clear the _protecting_lock of an existing list.
   set_count(0);
   set_head(NULL);
   set_tail(NULL);
-  set_hint(hint);
 }
 
 template <class Chunk>
-void FreeList<Chunk>::init_statistics(bool split_birth) {
-  _allocation_stats.initialize(split_birth);
+void FreeList<Chunk>::initialize() {
+#ifdef ASSERT
+  // Needed early because it might be checked in other initializing code.
+  set_protecting_lock(NULL);
+#endif
+  reset();
+  set_size(0);
 }
 
-template <class Chunk>
-Chunk* FreeList<Chunk>::get_chunk_at_head() {
+template <class Chunk_t>
+Chunk_t* FreeList<Chunk_t>::get_chunk_at_head() {
   assert_proper_lock_protection();
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
-  Chunk* fc = head();
+  Chunk_t* fc = head();
   if (fc != NULL) {
-    Chunk* nextFC = fc->next();
+    Chunk_t* nextFC = fc->next();
     if (nextFC != NULL) {
       // The chunk fc being removed has a "next".  Set the "next" to the
       // "prev" of fc.
@@ -197,11 +213,6 @@ void FreeList<Chunk>::return_chunk_at_head(Chunk* chunk, bool record_return) {
     link_tail(chunk);
   }
   increment_count(); // of # of chunks in list
-  DEBUG_ONLY(
-    if (record_return) {
-      increment_returned_bytes_by(size()*HeapWordSize);
-    }
-  )
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
   assert(head() == NULL || head()->size() == size(), "wrong item on list");
@@ -233,11 +244,6 @@ void FreeList<Chunk>::return_chunk_at_tail(Chunk* chunk, bool record_return) {
   }
   link_tail(chunk);
   increment_count();  // of # of chunks in list
-  DEBUG_ONLY(
-    if (record_return) {
-      increment_returned_bytes_by(size()*HeapWordSize);
-    }
-  )
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
   assert(head() == NULL || head()->size() == size(), "wrong item on list");
@@ -273,7 +279,7 @@ void FreeList<Chunk>::prepend(FreeList<Chunk>* fl) {
   }
 }
 
-// verify_chunk_in_free_list() is used to verify that an item is in this free list.
+// verify_chunk_in_free_lists() is used to verify that an item is in this free list.
 // It is used as a debugging aid.
 template <class Chunk>
 bool FreeList<Chunk>::verify_chunk_in_free_list(Chunk* fc) const {
@@ -294,40 +300,14 @@ bool FreeList<Chunk>::verify_chunk_in_free_list(Chunk* fc) const {
 
 #ifndef PRODUCT
 template <class Chunk>
-void FreeList<Chunk>::verify_stats() const {
-  // The +1 of the LH comparand is to allow some "looseness" in
-  // checking: we usually call this interface when adding a block
-  // and we'll subsequently update the stats; we cannot update the
-  // stats beforehand because in the case of the large-block BT
-  // dictionary for example, this might be the first block and
-  // in that case there would be no place that we could record
-  // the stats (which are kept in the block itself).
-  assert((_allocation_stats.prev_sweep() + _allocation_stats.split_births()
-          + _allocation_stats.coal_births() + 1)   // Total Production Stock + 1
-         >= (_allocation_stats.split_deaths() + _allocation_stats.coal_deaths()
-             + (ssize_t)count()),                // Total Current Stock + depletion
-         err_msg("FreeList " PTR_FORMAT " of size " SIZE_FORMAT
-                 " violates Conservation Principle: "
-                 "prev_sweep(" SIZE_FORMAT ")"
-                 " + split_births(" SIZE_FORMAT ")"
-                 " + coal_births(" SIZE_FORMAT ") + 1 >= "
-                 " split_deaths(" SIZE_FORMAT ")"
-                 " coal_deaths(" SIZE_FORMAT ")"
-                 " + count(" SSIZE_FORMAT ")",
-                 this, _size, _allocation_stats.prev_sweep(), _allocation_stats.split_births(),
-                 _allocation_stats.split_births(), _allocation_stats.split_deaths(),
-                 _allocation_stats.coal_deaths(), count()));
-}
-
-template <class Chunk>
 void FreeList<Chunk>::assert_proper_lock_protection_work() const {
-  assert(_protecting_lock != NULL, "Don't call this directly");
+  assert(protecting_lock() != NULL, "Don't call this directly");
   assert(ParallelGCThreads > 0, "Don't call this directly");
   Thread* thr = Thread::current();
   if (thr->is_VM_thread() || thr->is_ConcurrentGC_thread()) {
     // assert that we are holding the freelist lock
   } else if (thr->is_GC_task_thread()) {
-    assert(_protecting_lock->owned_by_self(), "FreeList RACE DETECTED");
+    assert(protecting_lock()->owned_by_self(), "FreeList RACE DETECTED");
   } else if (thr->is_Java_thread()) {
     assert(!SafepointSynchronize::is_at_safepoint(), "Should not be executing");
   } else {
@@ -350,21 +330,17 @@ void FreeList<Chunk>::print_labels_on(outputStream* st, const char* c) {
 // to the call is a non-null string, it is printed in the first column;
 // otherwise, if the argument is null (the default), then the size of the
 // (free list) block is printed in the first column.
-template <class Chunk>
-void FreeList<Chunk>::print_on(outputStream* st, const char* c) const {
+template <class Chunk_t>
+void FreeList<Chunk_t>::print_on(outputStream* st, const char* c) const {
   if (c != NULL) {
     st->print("%16s", c);
   } else {
     st->print(SIZE_FORMAT_W(16), size());
   }
-  st->print("\t"
-           SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t"
-           SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\n",
-           bfr_surp(),             surplus(),             desired(),             prev_sweep(),           before_sweep(),
-           count(),               coal_births(),          coal_deaths(),          split_births(),         split_deaths());
 }
 
+template class FreeList<Metablock>;
+template class FreeList<Metachunk>;
 #ifndef SERIALGC
-// Needs to be after the definitions have been seen.
 template class FreeList<FreeChunk>;
 #endif // SERIALGC

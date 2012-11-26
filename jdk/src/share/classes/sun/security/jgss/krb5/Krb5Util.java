@@ -206,7 +206,7 @@ public class Krb5Util {
      * identity, which can be:
      *   1. Some KerberosKeys (generated from password)
      *   2. A KeyTab (for a typical service)
-     *   3. A TGT (for a user2user service. Not supported yet)
+     *   3. A TGT (for S4U2proxy extension)
      *
      * Note that some creds can coexist. For example, a user2user service
      * can use its keytab (or keys) if the client can successfully obtain a
@@ -219,7 +219,7 @@ public class Krb5Util {
         private List<KeyTab> ktabs;
         private List<KerberosKey> kk;
         private Subject subj;
-        //private KerberosTicket tgt;   // user2user, not supported yet
+        private KerberosTicket tgt;
 
         private static ServiceCreds getInstance(
                 Subject subj, String serverPrincipal) {
@@ -255,6 +255,8 @@ public class Krb5Util {
                         subj, null, null, KeyTab.class);
             sc.kk = SubjectComber.findMany(
                         subj, serverPrincipal, null, KerberosKey.class);
+            sc.tgt = SubjectComber.find(subj, null, null, KerberosTicket.class);
+
             if (sc.ktabs.isEmpty() && sc.kk.isEmpty()) {
                 return null;
             }
@@ -310,10 +312,22 @@ public class Krb5Util {
             return ekeys;
         }
 
+        public Credentials getInitCred() {
+            if (tgt == null) {
+                return null;
+            }
+            try {
+                return ticketToCreds(tgt);
+            } catch (KrbException | IOException e) {
+                return null;
+            }
+        }
+
         public void destroy() {
             kp = null;
             ktabs = null;
             kk = null;
+            tgt = null;
         }
     }
     /**
@@ -357,7 +371,7 @@ public class Krb5Util {
     };
 
     public static Credentials ticketToCreds(KerberosTicket kerbTicket)
-        throws KrbException, IOException {
+            throws KrbException, IOException {
         return new Credentials(
             kerbTicket.getEncoded(),
             kerbTicket.getClient().getName(),

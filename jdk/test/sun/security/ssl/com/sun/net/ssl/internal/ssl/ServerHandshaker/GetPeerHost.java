@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /**
  * @test
  * @bug 4302026
  * @run main/othervm GetPeerHost
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
  * @summary make sure the server side doesn't do DNS lookup.
  */
 import javax.net.*;
@@ -41,7 +43,8 @@ public class GetPeerHost {
                             + "/../../../../../../../etc/truststore");
         GetPeerHostServer server = new GetPeerHostServer();
         server.start();
-        GetPeerHostClient client = new GetPeerHostClient();
+        GetPeerHostClient client =
+            new GetPeerHostClient(server.getServerPort());
         client.start();
         server.join ();
         if (!server.getPassStatus ()) {

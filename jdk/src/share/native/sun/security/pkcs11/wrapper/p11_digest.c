@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -51,6 +51,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "jlong.h"
 
 #include "sun_security_pkcs11_wrapper_PKCS11.h"
 
@@ -178,7 +179,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestUpdate
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     if (directIn != 0) {
-        rv = (*ckpFunctions->C_DigestUpdate)(ckSessionHandle, (CK_BYTE_PTR)directIn, jInLen);
+        rv = (*ckpFunctions->C_DigestUpdate)(ckSessionHandle, (CK_BYTE_PTR)jlong_to_ptr(directIn), jInLen);
         ckAssertReturnValueOK(env, rv);
         return;
     }

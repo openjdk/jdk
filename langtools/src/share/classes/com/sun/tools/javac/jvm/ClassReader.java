@@ -55,7 +55,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.jvm.ClassFile.*;
 import static com.sun.tools.javac.jvm.ClassFile.Version.*;
 
@@ -115,6 +115,9 @@ public class ClassReader implements Completer {
      */
     boolean lintClassfile;
 
+    /** Switch: allow default methods
+     */
+    boolean allowDefaultMethods;
 
     /** Switch: preserve parameter names from the variable table.
      */
@@ -279,6 +282,7 @@ public class ClassReader implements Completer {
         allowVarargs     = source.allowVarargs();
         allowAnnotations = source.allowAnnotations();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
+        allowDefaultMethods = source.allowDefaultMethods();
         saveParameterNames = options.isSet("save-parameter-names");
         cacheCompletionFailure = options.isUnset("dev");
         preferSource = "source".equals(options.get("-Xprefer"));
@@ -937,6 +941,18 @@ public class ClassReader implements Completer {
 
             new AttributeReader(names.Code, V45_3, MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
+                    if (currentOwner.isInterface() &&
+                            (sym.flags_field & ABSTRACT) == 0 && !name.equals(names.clinit)) {
+                        if (majorVersion > Target.JDK1_8.majorVersion ||
+                                //todo replace with Target.Version when available
+                                (majorVersion == Target.JDK1_8.majorVersion && minorVersion >= Target.JDK1_8.minorVersion)) {
+                            currentOwner.flags_field |= DEFAULT;
+                            sym.flags_field |= DEFAULT | ABSTRACT;
+                        } else {
+                            //protect against ill-formed classfiles
+                            throw new CompletionFailure(currentOwner, "default method found in pre JDK 8 classfile");
+                        }
+                    }
                     if (readAllOfClassFile || saveParameterNames)
                         ((MethodSymbol)sym).code = readCode(sym);
                     else
@@ -1018,6 +1034,15 @@ public class ClassReader implements Completer {
                     ClassSymbol c = (ClassSymbol) sym;
                     Name n = readName(nextChar());
                     c.sourcefile = new SourceFileObject(n, c.flatname);
+                    // If the class is a toplevel class, originating from a Java source file,
+                    // but the class name does not match the file name, then it is
+                    // an auxiliary class.
+                    String sn = n.toString();
+                    if (c.owner.kind == Kinds.PCK &&
+                        sn.endsWith(".java") &&
+                        !sn.equals(c.name.toString()+".java")) {
+                        c.flags_field |= AUXILIARY;
+                    }
                 }
             },
 
@@ -1870,7 +1895,7 @@ public class ClassReader implements Completer {
      *  `typevars'.
      */
     protected void enterTypevars(Type t) {
-        if (t.getEnclosingType() != null && t.getEnclosingType().tag == CLASS)
+        if (t.getEnclosingType() != null && t.getEnclosingType().hasTag(CLASS))
             enterTypevars(t.getEnclosingType());
         for (List<Type> xs = t.getTypeArguments(); xs.nonEmpty(); xs = xs.tail)
             typevars.enter(xs.head.tsym);
@@ -1895,7 +1920,7 @@ public class ClassReader implements Completer {
 
         // prepare type variable table
         typevars = typevars.dup(currentOwner);
-        if (ct.getEnclosingType().tag == CLASS)
+        if (ct.getEnclosingType().hasTag(CLASS))
             enterTypevars(ct.getEnclosingType());
 
         // read flags, or skip if this is an inner class

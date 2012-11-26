@@ -86,8 +86,8 @@ class ConstantPool : public Metadata {
   friend class Universe;             // For null constructor
  private:
   Array<u1>*           _tags;        // the tag array describing the constant pool's contents
-  ConstantPoolCache* _cache;       // the cache holding interpreter runtime information
-  Klass*               _pool_holder; // the corresponding class
+  ConstantPoolCache*   _cache;       // the cache holding interpreter runtime information
+  InstanceKlass*       _pool_holder; // the corresponding class
   Array<u2>*           _operands;    // for variable-sized (InvokeDynamic) nodes, usually empty
 
   // Array of resolved objects from the constant pool and map from resolved
@@ -193,9 +193,9 @@ class ConstantPool : public Metadata {
   void set_on_stack(const bool value);
 
   // Klass holding pool
-  Klass* pool_holder() const              { return _pool_holder; }
-  void set_pool_holder(Klass* k)          { _pool_holder = k; }
-  Klass** pool_holder_addr()              { return &_pool_holder; }
+  InstanceKlass* pool_holder() const      { return _pool_holder; }
+  void set_pool_holder(InstanceKlass* k)  { _pool_holder = k; }
+  InstanceKlass** pool_holder_addr()      { return &_pool_holder; }
 
   // Interpreter runtime support
   ConstantPoolCache* cache() const        { return _cache; }

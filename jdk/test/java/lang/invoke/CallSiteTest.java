@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *
  * @build indify.Indify
  * @compile CallSiteTest.java
- * @run main/othervm
+ * @run main/othervm/timeout=3600 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
  *      indify.Indify
  *      --expand-properties --classpath ${test.classes}
  *      --java test.java.lang.invoke.CallSiteTest

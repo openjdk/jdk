@@ -41,7 +41,9 @@ SQUOTE:='
 #'
 DQUOTE:="
 #"
-define NEWLINE:=
+define NEWLINE
+
+
 endef
 
 # A self-referential reference to this file.
@@ -50,11 +52,7 @@ SPEC:=@SPEC@
 # Specify where the spec file is.
 MAKE_ARGS="SPEC=$(SPEC)"
 
-# TODO The logic for finding and setting MAKE is currently not working 
-# well on windows. Disable it TEMPORARILY there for now.
-ifneq (@OPENJDK_TARGET_OS@,windows)
-    MAKE:=@MAKE@
-endif
+MAKE:=@MAKE@
 
 # Pass along the verbosity setting.
 ifeq (,$(findstring VERBOSE=,$(MAKE)))
@@ -77,6 +75,7 @@ CONF_NAME:=@CONF_NAME@
 # The built jdk will run in this target system.
 OPENJDK_TARGET_OS:=@OPENJDK_TARGET_OS@
 OPENJDK_TARGET_OS_API:=@OPENJDK_TARGET_OS_API@
+OPENJDK_TARGET_OS_ENV:=@OPENJDK_TARGET_OS_ENV@
 
 OPENJDK_TARGET_CPU:=@OPENJDK_TARGET_CPU@
 OPENJDK_TARGET_CPU_ARCH:=@OPENJDK_TARGET_CPU_ARCH@
@@ -109,16 +108,21 @@ REQUIRED_OS_NAME:=@REQUIRED_OS_NAME@
 REQUIRED_OS_VERSION:=@REQUIRED_OS_VERSION@
 
 @SET_OPENJDK@
-JIGSAW:=@JIGSAW@
 LIBM:=-lm
 LIBDL:=@LIBDL@
 
 # colon or semicolon
 PATH_SEP:=@PATH_SEP@
 
-# Set special env variables, to be passed to external tools.
-# Used for cygwin setups.
-@SETUPDEVENV@
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  # On Windows, the Visual Studio toolchain needs the LIB and INCLUDE
+  # environment variables (in Windows path style), and the PATH needs to
+  # be adjusted to include Visual Studio tools (but this needs to be in
+  # cygwin/msys style).
+  export PATH:=@VS_PATH@
+  export INCLUDE:=@VS_INCLUDE@
+  export LIB:=@VS_LIB@
+endif
 
 # The sys root where standard headers and libraries are found.
 # Usually not needed since the configure script should have
@@ -131,7 +135,6 @@ ADD_SRC_ROOT:=@ADD_SRC_ROOT@
 OVERRIDE_SRC_ROOT:=@OVERRIDE_SRC_ROOT@
 TOPDIR:=@SRC_ROOT@
 OUTPUT_ROOT:=@OUTPUT_ROOT@
-JDK_MAKE_SHARED_DIR:=@JDK_TOPDIR@/makefiles/common/shared
 JDK_TOPDIR:=@JDK_TOPDIR@
 LANGTOOLS_TOPDIR:=@LANGTOOLS_TOPDIR@
 CORBA_TOPDIR:=@CORBA_TOPDIR@
@@ -155,6 +158,8 @@ PRODUCT_NAME:=@PRODUCT_NAME@
 PRODUCT_SUFFIX:=@PRODUCT_SUFFIX@
 JDK_RC_PLATFORM_NAME:=@JDK_RC_PLATFORM_NAME@
 COMPANY_NAME:=@COMPANY_NAME@
+MACOSX_BUNDLE_NAME_BASE=@MACOSX_BUNDLE_NAME_BASE@
+MACOSX_BUNDLE_ID_BASE=@MACOSX_BUNDLE_ID_BASE@
 
 # Different version strings generated from the above information.
 JDK_VERSION:=@JDK_VERSION@
@@ -219,7 +224,9 @@ LANGTOOLS_DIST=$(LANGTOOLS_OUTPUTDIR)/dist
 CORBA_DIST=$(CORBA_OUTPUTDIR)/dist
 JAXP_DIST=$(JAXP_OUTPUTDIR)/dist
 JAXWS_DIST=$(JAXWS_OUTPUTDIR)/dist
-HOTSPOT_DIST=$(HOTSPOT_OUTPUTDIR)/dist
+HOTSPOT_DIST=@HOTSPOT_DIST@
+
+BUILD_HOTSPOT=@BUILD_HOTSPOT@
 
 # The boot jdk to use
 BOOT_JDK:=@BOOT_JDK@
@@ -239,12 +246,6 @@ ENABLE_SJAVAC:=@ENABLE_SJAVAC@
 # Store sjavac server synchronization files here, and
 # the sjavac server log files.
 SJAVAC_SERVER_DIR:=@SJAVAC_SERVER_DIR@
-# We can block the Javac server to never use more cores than this.
-# This is not for performance reasons, but for memory usage, since each
-# core requires its own JavaCompiler. We might have 64 cores and 4GB
-# of memory, 64 JavaCompilers will currently not fit in a 3GB heap.
-# Since there is no sharing of data between the JavaCompilers.
-SJAVAC_SERVER_CORES:=@SJAVAC_SERVER_CORES@
 
 # The OpenJDK makefiles should be changed to using the standard
 # configure output ..._CFLAGS and ..._LIBS. In the meantime we
@@ -259,6 +260,9 @@ PACKAGE_PATH=@PACKAGE_PATH@
 
 # Source file for cacerts
 CACERTS_FILE=@CACERTS_FILE@
+
+# Enable unlimited crypto policy
+UNLIMITED_CRYPTO=@UNLIMITED_CRYPTO@
 
 # Necessary additional compiler flags to compile X11 
 X_CFLAGS:=@X_CFLAGS@
@@ -289,7 +293,7 @@ C_FLAG_DEPS:=@C_FLAG_DEPS@
 CXX_FLAG_DEPS:=@CXX_FLAG_DEPS@
 
 # Tools that potentially need to be cross compilation aware.
-CC:=@UNCYGDRIVE@ @CCACHE@ @CC@
+CC:=@FIXPATH@ @CCACHE@ @CC@
 
 # CFLAGS used to compile the jdk native libraries (C-code)
 CFLAGS_JDKLIB:=@CFLAGS_JDKLIB@
@@ -299,17 +303,17 @@ CXXFLAGS_JDKLIB:=@CXXFLAGS_JDKLIB@
 CFLAGS_JDKEXE:=@CFLAGS_JDKEXE@
 CXXFLAGS_JDKEXE:=@CXXFLAGS_JDKEXE@
 
-CXX:=@UNCYGDRIVE@ @CCACHE@ @CXX@
+CXX:=@FIXPATH@ @CCACHE@ @CXX@
 #CXXFLAGS:=@CXXFLAGS@
 
 OBJC:=@CCACHE@ @OBJC@
 #OBJCFLAGS:=@OBJCFLAGS@
 
-CPP:=@UNCYGDRIVE@ @CPP@
+CPP:=@FIXPATH@ @CPP@
 #CPPFLAGS:=@CPPFLAGS@
 
 # The linker can be gcc or ld on posix systems, or link.exe on windows systems.
-LD:=@UNCYGDRIVE@ @LD@
+LD:=@FIXPATH@ @LD@
 
 # LDFLAGS used to link the jdk native libraries (C-code)
 LDFLAGS_JDKLIB:=@LDFLAGS_JDKLIB@
@@ -317,7 +321,7 @@ LDFLAGS_JDKLIB_SUFFIX:=@LDFLAGS_JDKLIB_SUFFIX@
 
 # On some platforms the linker cannot be used to create executables, thus
 # the need for a separate LDEXE command.
-LDEXE:=@UNCYGDRIVE@ @LDEXE@
+LDEXE:=@FIXPATH@ @LDEXE@
 
 # LDFLAGS used to link the jdk native launchers (C-code)
 LDFLAGS_JDKEXE:=@LDFLAGS_JDKEXE@
@@ -327,22 +331,22 @@ LDFLAGS_JDKEXE_SUFFIX:=@LDFLAGS_JDKEXE_SUFFIX@
 LDFLAGS_CXX_JDK:=@LDFLAGS_CXX_JDK@
 
 # Sometimes a different linker is needed for c++ libs
-LDCXX:=@UNCYGDRIVE@ @LDCXX@
+LDCXX:=@FIXPATH@ @LDCXX@
 # The flags for linking libstdc++ linker.
 LIBCXX:=@LIBCXX@
 
 # Sometimes a different linker is needed for c++ executables
-LDEXECXX:=@UNCYGDRIVE@ @LDEXECXX@
+LDEXECXX:=@FIXPATH@ @LDEXECXX@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.
-BUILD_CC:=@UNCYGDRIVE@ @BUILD_CC@
-BUILD_LD:=@UNCYGDRIVE@ @BUILD_LD@
+BUILD_CC:=@FIXPATH@ @BUILD_CC@
+BUILD_LD:=@FIXPATH@ @BUILD_LD@
 
-AS:=@UNCYGDRIVE@ @AS@
+AS:=@FIXPATH@ @AS@
 
 # AR is used to create a static library (is ar in posix, lib.exe in windows)
-AR:=@UNCYGDRIVE@ @AR@
+AR:=@FIXPATH@ @AR@
 ARFLAGS:=@ARFLAGS@
 
 NM:=@NM@
@@ -400,20 +404,20 @@ POST_MCS_CMD:=@POST_MCS_CMD@
 
 JAVA_FLAGS:=@BOOT_JDK_JVMARGS@
 
-JAVA=@UNCYGDRIVE@ $(BOOT_JDK)/bin/java $(JAVA_FLAGS)
+JAVA=@FIXPATH@ $(BOOT_JDK)/bin/java $(JAVA_FLAGS)
 
-JAVAC=@UNCYGDRIVE@ $(BOOT_JDK)/bin/javac
+JAVAC=@FIXPATH@ $(BOOT_JDK)/bin/javac
 # Hotspot sets this variable before reading the SPEC when compiling sa-jdi.jar. Avoid
 # overriding that value by using ?=.
 JAVAC_FLAGS?=@JAVAC_FLAGS@
 
-JAVAH=@UNCYGDRIVE@ $(BOOT_JDK)/bin/javah
+JAVAH=@FIXPATH@ $(BOOT_JDK)/bin/javah
 
-JAR=@UNCYGDRIVE@ $(BOOT_JDK)/bin/jar
+JAR=@FIXPATH@ $(BOOT_JDK)/bin/jar
 
-RMIC=@UNCYGDRIVE@ $(BOOT_JDK)/bin/rmic
+RMIC=@FIXPATH@ $(BOOT_JDK)/bin/rmic
 
-NATIVE2ASCII=@UNCYGDRIVE@ $(BOOT_JDK)/bin/native2ascii
+NATIVE2ASCII=@FIXPATH@ $(BOOT_JDK)/bin/native2ascii
 
 # Base flags for RC
 # Guarding this against resetting value. Legacy make files include spec multiple
@@ -424,21 +428,20 @@ endif
 
 # A specific java binary with specific options can be used to run
 # the long running background sjavac servers and other long running tasks.
-SJAVAC_SERVER_JAVA:=@UNCYGDRIVE@ @SJAVAC_SERVER_JAVA@
+SJAVAC_SERVER_JAVA:=@FIXPATH@ @SJAVAC_SERVER_JAVA@
 
 # Tools adhering to a minimal and common standard of posix compliance.
 AWK:=@AWK@
 BASENAME:=@BASENAME@
+BASH:=@BASH@
 CAT:=@CAT@
 CCACHE:=@CCACHE@
 # CD is going away, but remains to cater for legacy makefiles.
 CD:=cd
 CHMOD:=@CHMOD@
 CP:=@CP@
-CPIO:=@CPIO@
 CUT:=@CUT@
 DATE:=@DATE@
-DF:=@DF@
 DIFF:=@DIFF@
 FIND:=@FIND@
 FIND_DELETE:=@FIND_DELETE@
@@ -461,6 +464,7 @@ SORT:=@SORT@
 TAR:=@TAR@
 TAIL:=@TAIL@
 TEE:=@TEE@
+TIME:=@TIME@
 TR:=@TR@
 TOUCH:=@TOUCH@
 WC:=@WC@
@@ -468,9 +472,9 @@ XARGS:=@XARGS@
 ZIPEXE:=@ZIP@
 ZIP:=@ZIP@
 UNZIP:=@UNZIP@
-MT:=@UNCYGDRIVE@ @MT@
-RC:=@UNCYGDRIVE@ @RC@
-DUMPBIN:=@UNCYGDRIVE@ @DUMPBIN@
+MT:=@FIXPATH@ @MT@
+RC:=@FIXPATH@ @RC@
+DUMPBIN:=@FIXPATH@ @DUMPBIN@
 CYGPATH:=@CYGPATH@
 LDD:=@LDD@
 OTOOL:=@OTOOL@
@@ -479,23 +483,29 @@ EXPR:=@EXPR@
 FILE:=@FILE@
 HG:=@HG@
 OBJCOPY:=@OBJCOPY@
+SETFILE:=@SETFILE@
 
-UNCYGDRIVE:=@UNCYGDRIVE@
+FIXPATH:=@FIXPATH@
 
 # Where the build output is stored for your convenience.
 BUILD_LOG:=@BUILD_LOG@
 BUILD_LOG_PREVIOUS:=@BUILD_LOG_PREVIOUS@
-BUILD_LOG_WRAPPER:=@BUILD_LOG_WRAPPER@
+# Disable the build log wrapper on sjavac+winapi until
+# we have solved how to prevent the log wrapper to wait
+# for the background sjavac server process.
+ifeq (@ENABLE_SJAVAC@X@OPENJDK_BUILD_OS_API@,yesXwinapi)
+    BUILD_LOG_WRAPPER:=
+else
+    BUILD_LOG_WRAPPER:=@BUILD_LOG_WRAPPER@
+endif
 
 # Build setup
-DISABLE_NIMBUS:=@DISABLE_NIMBUS@
 ENABLE_JFR=@ENABLE_JFR@
 USE_EXTERNAL_LIBJPEG:=@USE_EXTERNAL_LIBJPEG@
 USE_EXTERNAL_LIBGIF:=@USE_EXTERNAL_LIBGIF@
 USE_EXTERNAL_LIBZ:=@USE_EXTERNAL_LIBZ@
 LIBZIP_CAN_USE_MMAP:=@LIBZIP_CAN_USE_MMAP@
-CHECK_FOR_VCINSTALLDIR=@CHECK_FOR_VCINSTALLDIR@
-MSVCRNN_DLL:=@MSVCR100DLL@
+MSVCR_DLL:=@MSVCR_DLL@
 
 
 # ADD_SRCS takes a single argument with source roots

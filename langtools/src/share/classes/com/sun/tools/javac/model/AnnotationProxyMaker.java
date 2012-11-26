@@ -25,9 +25,8 @@
 
 package com.sun.tools.javac.model;
 
-import com.sun.tools.javac.util.*;
-import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.lang.annotation.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -35,12 +34,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import sun.reflect.annotation.*;
 
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.MirroredTypesException;
+import javax.lang.model.type.TypeMirror;
+
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.ArrayType;
+import com.sun.tools.javac.util.*;
 
 
 /**

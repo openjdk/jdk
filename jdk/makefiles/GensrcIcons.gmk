@@ -23,84 +23,109 @@
 # questions.
 #
 
-GENSRC_ICONS :=
-GENSRC_ICONS_SRC :=
-GENSRC_ICONS_TMP := $(JDK_OUTPUTDIR)/gensrc_icons
-GENSRC_ICONS_DST := $(GENSRC_ICONS_TMP)/sun/awt/X11
+GENSRC_X11_ICONS :=
+GENSRC_X11_ICONS_SRC :=
+GENSRC_X11_ICONS_TMP := $(JDK_OUTPUTDIR)/gensrc
+GENSRC_X11_ICONS_DST := $(GENSRC_X11_ICONS_TMP)/sun/awt/X11
 
 ifdef OPENJDK
-	ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)
+  X11_ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)
 else
-	ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/closed/solaris
+  X11_ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/closed/solaris
 endif
 
-GENSRC_ICONS_SRC += \
-    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon16.png \
-    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon24.png \
-    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon32.png \
-    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon48.png
+GENSRC_X11_ICONS_SRC += \
+    $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon16.png \
+    $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon24.png \
+    $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon32.png \
+    $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon48.png
 
 
-ICONPATH := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes/sun/awt/X11
+X11_ICONPATH := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes/sun/awt/X11
 
-GENSRC_ICONS_SRC += \
-   $(ICONPATH)/security-icon-bw16.png \
-   $(ICONPATH)/security-icon-interim16.png \
-   $(ICONPATH)/security-icon-yellow16.png \
-   $(ICONPATH)/security-icon-bw24.png \
-   $(ICONPATH)/security-icon-interim24.png \
-   $(ICONPATH)/security-icon-yellow24.png \
-   $(ICONPATH)/security-icon-bw32.png \
-   $(ICONPATH)/security-icon-interim32.png \
-   $(ICONPATH)/security-icon-yellow32.png \
-   $(ICONPATH)/security-icon-bw48.png \
-   $(ICONPATH)/security-icon-interim48.png \
-   $(ICONPATH)/security-icon-yellow48.png
+GENSRC_X11_ICONS_SRC += \
+   $(X11_ICONPATH)/security-icon-bw16.png \
+   $(X11_ICONPATH)/security-icon-interim16.png \
+   $(X11_ICONPATH)/security-icon-yellow16.png \
+   $(X11_ICONPATH)/security-icon-bw24.png \
+   $(X11_ICONPATH)/security-icon-interim24.png \
+   $(X11_ICONPATH)/security-icon-yellow24.png \
+   $(X11_ICONPATH)/security-icon-bw32.png \
+   $(X11_ICONPATH)/security-icon-interim32.png \
+   $(X11_ICONPATH)/security-icon-yellow32.png \
+   $(X11_ICONPATH)/security-icon-bw48.png \
+   $(X11_ICONPATH)/security-icon-interim48.png \
+   $(X11_ICONPATH)/security-icon-yellow48.png
 
-GENSRC_ICONS_FILES := $(notdir $(GENSRC_ICONS_SRC))
+GENSRC_X11_ICONS_FILES := $(notdir $(GENSRC_X11_ICONS_SRC))
 
-GENSRC_ICONS_SHORT_NAME = $(subst .,_,$(subst -,_,$(1)))
-GENSRC_ICONS_DST_NAME = XAWTIcon$(2)_$(subst .,_,$(subst -,_,$(1)))
+GENSRC_X11_ICONS_SHORT_NAME = $(subst .,_,$(subst -,_,$(1)))
+GENSRC_X11_ICONS_DST_NAME = XAWTIcon$(2)_$(subst .,_,$(subst -,_,$(1)))
 
 ###
 
-$(GENSRC_ICONS_TMP)/_the.dir :
+$(GENSRC_X11_ICONS_TMP)/_the.icons.dir :
 	$(ECHO) Generating icon classes
-	$(MKDIR) -p $(GENSRC_ICONS_DST)
+	$(MKDIR) -p $(GENSRC_X11_ICONS_DST)
 	$(TOUCH) $@
 
 ###
 
-define SetupGensrcIcon
+define SetupGensrcX11Icon
         # param 1 is for src-file
         # param 2 is for src-dir
-	$1_SHORTNAME := $(call GENSRC_ICONS_SHORT_NAME,$1)
-	$1_NAME32 := $(call GENSRC_ICONS_DST_NAME,$1,32)
-	$1_TARGET32 := $(GENSRC_ICONS_DST)/$$($1_NAME32).java
-	$1_NAME64 := $(call GENSRC_ICONS_DST_NAME,$1,64)
-	$1_TARGET64 := $(GENSRC_ICONS_DST)/$$($1_NAME64).java
+	$1_SHORTNAME := $(call GENSRC_X11_ICONS_SHORT_NAME,$1)
+	$1_NAME32 := $(call GENSRC_X11_ICONS_DST_NAME,$1,32)
+	$1_TARGET32 := $(GENSRC_X11_ICONS_DST)/$$($1_NAME32).java
+	$1_NAME64 := $(call GENSRC_X11_ICONS_DST_NAME,$1,64)
+	$1_TARGET64 := $(GENSRC_X11_ICONS_DST)/$$($1_NAME64).java
 
-$$($1_TARGET32) : $2/$1 $(GENSRC_ICONS_TMP)/_the.dir
+$$($1_TARGET32) : $2/$1 $(GENSRC_X11_ICONS_TMP)/_the.icons.dir
 	$(RM) $$@ $$@.tmp
 	$(ECHO) "package sun.awt.X11;" > $$@.tmp
 	$(ECHO) "public class $$($1_NAME32) {" >> $$@.tmp
 	$(ECHO) "public static int[] $$($1_SHORTNAME) = { " >> $$@.tmp
-	$(CAT) $$< | $(TOOL_TOBIN) >> $$@.tmp
+	$(CAT) $$< | $(TOOL_X11_TOBIN) >> $$@.tmp
 	$(ECHO) "}; }" >> $$@.tmp
 	$(MV) $$@.tmp $$@
 
-GENSRC_ICONS += $$($1_TARGET32)
+GENSRC_X11_ICONS += $$($1_TARGET32)
 
-$$($1_TARGET64) : $2/$1 $(GENSRC_ICONS_TMP)/_the.dir
+$$($1_TARGET64) : $2/$1 $(GENSRC_X11_ICONS_TMP)/_the.icons.dir
 	$(RM) $$@ $$@.tmp
 	$(ECHO) "package sun.awt.X11;" > $$@.tmp
 	$(ECHO) "public class $$($1_NAME64) {" >> $$@.tmp
 	$(ECHO) "public static long[] $$($1_SHORTNAME) = { " >> $$@.tmp
-	$(CAT) $$< | $(TOOL_TOBIN) >> $$@.tmp
+	$(CAT) $$< | $(TOOL_X11_TOBIN) >> $$@.tmp
 	$(ECHO) "}; }" >> $$@.tmp
 	$(MV) $$@.tmp $$@
 
-GENSRC_ICONS += $$($1_TARGET64)
+GENSRC_X11_ICONS += $$($1_TARGET64)
 endef
 
-$(foreach I,$(GENSRC_ICONS_SRC), $(eval $(call SetupGensrcIcon,$(notdir $(I)),$(dir $(I)))))
+$(foreach I,$(GENSRC_X11_ICONS_SRC), $(eval $(call SetupGensrcX11Icon,$(notdir $(I)),$(dir $(I)))))
+
+###
+
+ifeq ($(OPENJDK_TARGET_OS),macosx)
+
+  GENSRC_OSX_ICONS_TMP  := $(JDK_OUTPUTDIR)/gensrc
+  GENSRC_OSX_ICONS_DST  := $(GENSRC_OSX_ICONS_TMP)/sun/osxapp
+  GENSRC_OSX_ICONS      := $(GENSRC_OSX_ICONS_DST)/AWTIconData.h
+
+  ifdef OPENJDK
+    GENSRC_OSX_ICONS_SRC := $(JDK_TOPDIR)/src/macosx/native/sun/osxapp/resource/icons/JavaApp.icns
+  else
+    GENSRC_OSX_ICONS_SRC := $(JDK_TOPDIR)/src/closed/macosx/native/sun/osxapp/resource/icons/JavaApp.icns
+  endif
+
+$(GENSRC_OSX_ICONS_DST)/AWTIconData.h: $(GENSRC_OSX_ICONS_SRC)
+	$(RM) $@ $@.tmp
+	$(MKDIR) -p $(dir $@)
+	$(ECHO) "static unsigned char sAWTIconData[] = { " >> $@.tmp
+	$(CAT) $< | $(TOOL_OSX_TOBIN) >> $@.tmp
+	$(ECHO) "};" >> $@.tmp
+	$(MV) $@.tmp $@
+
+endif
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /* @test
  * @summary unit tests for java.lang.invoke.MethodHandles
  * @compile MethodHandlesTest.java remote/RemoteExample.java
- * @run junit/othervm test.java.lang.invoke.MethodHandlesTest
+ * @run junit/othervm/timeout=2500 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -esa test.java.lang.invoke.MethodHandlesTest
  */
 
 package test.java.lang.invoke;

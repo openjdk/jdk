@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 
 package java.lang.invoke;
 
-import sun.invoke.util.VerifyType;
-
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
+import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleStatics.*;
@@ -478,7 +479,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                     .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
             NF_checkSpreadArgument.resolve();
         } catch (ReflectiveOperationException ex) {
-            throw new InternalError(ex);
+            throw newInternalError(ex);
         }
     }
 
@@ -781,4 +782,168 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return mh;
     }
 
+    /**
+     * Create an alias for the method handle which, when called,
+     * appears to be called from the same class loader and protection domain
+     * as hostClass.
+     * This is an expensive no-op unless the method which is called
+     * is sensitive to its caller.  A small number of system methods
+     * are in this category, including Class.forName and Method.invoke.
+     */
+    static
+    MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
+        return BindCaller.bindCaller(mh, hostClass);
+    }
+
+    // Put the whole mess into its own nested class.
+    // That way we can lazily load the code and set up the constants.
+    private static class BindCaller {
+        static
+        MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
+            // Do not use this function to inject calls into system classes.
+            if (hostClass == null) {
+                hostClass = C_Trampoline;
+            } else if (hostClass.isArray() ||
+                       hostClass.isPrimitive() ||
+                       hostClass.getName().startsWith("java.") ||
+                       hostClass.getName().startsWith("sun.")) {
+                throw new InternalError();  // does not happen, and should not anyway
+            }
+            // For simplicity, convert mh to a varargs-like method.
+            MethodHandle vamh = prepareForInvoker(mh);
+            // Cache the result of makeInjectedInvoker once per argument class.
+            MethodHandle bccInvoker = CV_makeInjectedInvoker.get(hostClass);
+            return restoreToType(bccInvoker.bindTo(vamh), mh.type());
+        }
+
+        // This class ("Trampoline") is known to be inside a dead-end class loader.
+        // Inject all doubtful calls into this class.
+        private static Class<?> C_Trampoline;
+        static {
+            Class<?> tramp = null;
+            try {
+                final int FRAME_COUNT_ARG = 1;  // [0] Reflection [1] Trampoline
+                java.lang.reflect.Method gcc = sun.reflect.Reflection.class.getMethod("getCallerClass", int.class);
+                tramp = (Class<?>) sun.reflect.misc.MethodUtil.invoke(gcc, null, new Object[]{ FRAME_COUNT_ARG });
+                if (tramp.getClassLoader() == BindCaller.class.getClassLoader())
+                    throw new RuntimeException(tramp.getName()+" class loader");
+            } catch (Throwable ex) {
+                throw new InternalError(ex);
+            }
+            C_Trampoline = tramp;
+        }
+
+        private static MethodHandle makeInjectedInvoker(Class<?> hostClass) {
+            Class<?> bcc = UNSAFE.defineAnonymousClass(hostClass, T_BYTES, null);
+            if (hostClass.getClassLoader() != bcc.getClassLoader())
+                throw new InternalError(hostClass.getName()+" (CL)");
+            try {
+                if (hostClass.getProtectionDomain() != bcc.getProtectionDomain())
+                    throw new InternalError(hostClass.getName()+" (PD)");
+            } catch (SecurityException ex) {
+                // Self-check was blocked by security manager.  This is OK.
+                // In fact the whole try body could be turned into an assertion.
+            }
+            try {
+                MethodHandle init = IMPL_LOOKUP.findStatic(bcc, "init", MethodType.methodType(void.class));
+                init.invokeExact();  // force initialization of the class
+            } catch (Throwable ex) {
+                throw uncaughtException(ex);
+            }
+            MethodHandle bccInvoker;
+            try {
+                MethodType invokerMT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
+                bccInvoker = IMPL_LOOKUP.findStatic(bcc, "invoke_V", invokerMT);
+            } catch (ReflectiveOperationException ex) {
+                throw uncaughtException(ex);
+            }
+            // Test the invoker, to ensure that it really injects into the right place.
+            try {
+                MethodHandle vamh = prepareForInvoker(MH_checkCallerClass);
+                Object ok = bccInvoker.invokeExact(vamh, new Object[]{hostClass, bcc});
+            } catch (Throwable ex) {
+                throw new InternalError(ex);
+            }
+            return bccInvoker;
+        }
+        private static ClassValue<MethodHandle> CV_makeInjectedInvoker = new ClassValue<MethodHandle>() {
+            @Override protected MethodHandle computeValue(Class<?> hostClass) {
+                return makeInjectedInvoker(hostClass);
+            }
+        };
+
+        // Adapt mh so that it can be called directly from an injected invoker:
+        private static MethodHandle prepareForInvoker(MethodHandle mh) {
+            mh = mh.asFixedArity();
+            MethodType mt = mh.type();
+            int arity = mt.parameterCount();
+            MethodHandle vamh = mh.asType(mt.generic());
+            vamh.internalForm().compileToBytecode();  // eliminate LFI stack frames
+            vamh = vamh.asSpreader(Object[].class, arity);
+            vamh.internalForm().compileToBytecode();  // eliminate LFI stack frames
+            return vamh;
+        }
+
+        // Undo the adapter effect of prepareForInvoker:
+        private static MethodHandle restoreToType(MethodHandle vamh, MethodType type) {
+            return vamh.asCollector(Object[].class, type.parameterCount()).asType(type);
+        }
+
+        private static final MethodHandle MH_checkCallerClass;
+        static {
+            final Class<?> THIS_CLASS = BindCaller.class;
+            assert(checkCallerClass(THIS_CLASS, THIS_CLASS));
+            try {
+                MH_checkCallerClass = IMPL_LOOKUP
+                    .findStatic(THIS_CLASS, "checkCallerClass",
+                                MethodType.methodType(boolean.class, Class.class, Class.class));
+                assert((boolean) MH_checkCallerClass.invokeExact(THIS_CLASS, THIS_CLASS));
+            } catch (Throwable ex) {
+                throw new InternalError(ex);
+            }
+        }
+
+        private static boolean checkCallerClass(Class<?> expected, Class<?> expected2) {
+            final int FRAME_COUNT_ARG = 2;  // [0] Reflection [1] BindCaller [2] Expected
+            Class<?> actual = sun.reflect.Reflection.getCallerClass(FRAME_COUNT_ARG);
+            if (actual != expected && actual != expected2)
+                throw new InternalError("found "+actual.getName()+", expected "+expected.getName()
+                                        +(expected == expected2 ? "" : ", or else "+expected2.getName()));
+            return true;
+        }
+
+        private static final byte[] T_BYTES;
+        static {
+            final Object[] values = {null};
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    public Void run() {
+                        try {
+                            Class<T> tClass = T.class;
+                            String tName = tClass.getName();
+                            String tResource = tName.substring(tName.lastIndexOf('.')+1)+".class";
+                            java.net.URLConnection uconn = tClass.getResource(tResource).openConnection();
+                            int len = uconn.getContentLength();
+                            byte[] bytes = new byte[len];
+                            try (java.io.InputStream str = uconn.getInputStream()) {
+                                int nr = str.read(bytes);
+                                if (nr != len)  throw new java.io.IOException(tResource);
+                            }
+                            values[0] = bytes;
+                        } catch (java.io.IOException ex) {
+                            throw new InternalError(ex);
+                        }
+                        return null;
+                    }
+                });
+            T_BYTES = (byte[]) values[0];
+        }
+
+        // The following class is used as a template for Unsafe.defineAnonymousClass:
+        private static class T {
+            static void init() { }  // side effect: initializes this class
+            static Object invoke_V(MethodHandle vamh, Object[] args) throws Throwable {
+                return vamh.invokeExact(args);
+            }
+        }
+    }
 }

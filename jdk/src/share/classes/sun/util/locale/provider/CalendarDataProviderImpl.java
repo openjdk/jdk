@@ -24,10 +24,9 @@
  */
 package sun.util.locale.provider;
 
+import java.util.Calendar;
 import static java.util.Calendar.*;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.spi.CalendarDataProvider;
@@ -59,112 +58,8 @@ public class CalendarDataProviderImpl extends CalendarDataProvider implements Av
     }
 
     @Override
-    public String getDisplayName(String calendarType, int field, int value, int style, Locale locale) {
-        String name = null;
-        String key = getKey(calendarType, field, style);
-        if (key != null) {
-            ResourceBundle rb = LocaleProviderAdapter.forType(type).getLocaleData().getDateFormatData(locale);
-            if (rb.containsKey(key)) {
-                String[] strings = rb.getStringArray(key);
-                if (strings.length > 0) {
-                    if (field == DAY_OF_WEEK || field == YEAR) {
-                        --value;
-                    }
-                    name = strings[value];
-                    // If name is empty in standalone, try its `format' style.
-                    if (name.length() == 0
-                            && (style == SHORT_STANDALONE || style == LONG_STANDALONE)) {
-                        name = getDisplayName(calendarType, field, value,
-                                              style == SHORT_STANDALONE ? SHORT_FORMAT : LONG_FORMAT,
-                                              locale);
-                    }
-                }
-            }
-        }
-        return name;
-    }
-
-    @Override
-    public Map<String, Integer> getDisplayNames(String calendarType, int field, int style, Locale locale) {
-        Map<String, Integer> names;
-        if (style == ALL_STYLES) {
-            names = getDisplayNamesImpl(calendarType, field, SHORT_FORMAT, locale);
-            if (field != AM_PM) {
-                for (int st : new int[] { SHORT_STANDALONE, LONG_FORMAT, LONG_STANDALONE }) {
-                    names.putAll(getDisplayNamesImpl(calendarType, field, st, locale));
-                }
-            }
-        } else {
-            // specific style
-            names = getDisplayNamesImpl(calendarType, field, style, locale);
-        }
-        return names.isEmpty() ? null : names;
-    }
-
-    private Map<String, Integer> getDisplayNamesImpl(String calendarType, int field,
-                                                     int style, Locale locale) {
-        String key = getKey(calendarType, field, style);
-        Map<String, Integer> map = new HashMap<>();
-        if (key != null) {
-            ResourceBundle rb = LocaleProviderAdapter.forType(type).getLocaleData().getDateFormatData(locale);
-            if (rb.containsKey(key)) {
-                String[] strings = rb.getStringArray(key);
-                if (field == YEAR) {
-                    if (strings.length > 0) {
-                        map.put(strings[0], 1);
-                    }
-                } else {
-                    int base = (field == DAY_OF_WEEK) ? 1 : 0;
-                    for (int i = 0; i < strings.length; i++) {
-                        String name = strings[i];
-                        // Ignore any empty string (some standalone month names
-                        // are not defined)
-                        if (name.length() == 0) {
-                            continue;
-                        }
-                        map.put(name, base + i);
-                    }
-                }
-            }
-        }
-        return map;
-    }
-
-    @Override
     public Locale[] getAvailableLocales() {
         return LocaleProviderAdapter.toLocaleArray(langtags);
-    }
-
-    @Override
-    public boolean isSupportedLocale(Locale locale) {
-        if (Locale.ROOT.equals(locale)) {
-            return true;
-        }
-        String calendarType = null;
-        if (locale.hasExtensions()) {
-            calendarType = locale.getUnicodeLocaleType("ca");
-            locale = locale.stripExtensions();
-        }
-
-        if (calendarType != null) {
-            switch (calendarType) {
-            case "buddhist":
-            case "japanese":
-            case "gregory":
-                break;
-            default:
-                // Unknown calendar type
-                return false;
-            }
-        }
-        if (langtags.contains(locale.toLanguageTag())) {
-            return true;
-        }
-        if (type == LocaleProviderAdapter.Type.JRE) {
-            String oldname = locale.toString().replace('_', '-');
-            return langtags.contains(oldname);
-        }
-        return false;
     }
 
     @Override
@@ -178,49 +73,6 @@ public class CalendarDataProviderImpl extends CalendarDataProvider implements Av
             String firstday = rb.getString(key);
             return Integer.parseInt(firstday);
         }
-        // Note that the base bundle of CLDR doesn't have the Calendar week parameters.
         return 0;
-    }
-
-    private String getKey(String type, int field, int style) {
-        boolean standalone = (style & 0x8000) != 0;
-        style &= ~0x8000;
-
-        if ("gregory".equals(type)) {
-            type = null;
-        }
-
-        StringBuilder key = new StringBuilder();
-        switch (field) {
-        case ERA:
-            if (type != null) {
-                key.append(type).append('.');
-            }
-            if (style == SHORT) {
-                key.append("short.");
-            }
-            key.append("Eras");
-            break;
-
-        case YEAR:
-            key.append(type).append(".FirstYear");
-            break;
-
-        case MONTH:
-            if (standalone) {
-                key.append("standalone.");
-            }
-            key.append(style == SHORT ? "MonthAbbreviations" : "MonthNames");
-            break;
-
-        case DAY_OF_WEEK:
-            key.append(style == SHORT ? "DayAbbreviations" : "DayNames");
-            break;
-
-        case AM_PM:
-            key.append("AmPmMarkers");
-            break;
-        }
-        return key.length() > 0 ? key.toString() : null;
     }
 }

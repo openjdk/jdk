@@ -811,6 +811,48 @@ const TypeFunc* OptoRuntime::array_fill_Type() {
   return TypeFunc::make(domain, range);
 }
 
+// for aescrypt encrypt/decrypt operations, just three pointers returning void (length is constant)
+const TypeFunc* OptoRuntime::aescrypt_block_Type() {
+  // create input type (domain)
+  int num_args      = 3;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // src
+  fields[argp++] = TypePtr::NOTNULL;    // dest
+  fields[argp++] = TypePtr::NOTNULL;    // k array
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = NULL; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+// for cipherBlockChaining calls of aescrypt encrypt/decrypt, four pointers and a length, returning void
+const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
+  // create input type (domain)
+  int num_args      = 5;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // src
+  fields[argp++] = TypePtr::NOTNULL;    // dest
+  fields[argp++] = TypePtr::NOTNULL;    // k array
+  fields[argp++] = TypePtr::NOTNULL;    // r array
+  fields[argp++] = TypeInt::INT;        // src len
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = NULL; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
 //------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {
   // create input type (domain)

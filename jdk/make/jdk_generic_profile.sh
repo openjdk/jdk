@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -176,17 +176,38 @@ else
   else
     windows_arch=i586
   fi
+
+  repo=`hg root | sed -e 's@\\\\@/@g'`
   # We need to check if we are running a CYGWIN shell
-  if [ "$(uname -a | fgrep Cygwin)" != "" -a -f /bin/cygpath ] ; then
+  if [ "$(echo ${osname} | fgrep Cygwin)" != "" -a -f /bin/cygpath ] ; then
     # For CYGWIN, uname will have "Cygwin" in it, and /bin/cygpath should exist
     # Utility to convert to short pathnames without spaces
     cygpath="/usr/bin/cygpath -a -m -s"
+    cygpathp="/usr/bin/cygpath -p"
     # Most unix utilities are in the /usr/bin
     unixcommand_path="/usr/bin"
     # Make the prompt tell you CYGWIN
     export PS1="CYGWIN:${COMPUTERNAME}:${USERNAME}[\!] "
+  elif [ "$(echo ${osname} | fgrep MINGW)" != "" ] ; then
+    # Utility to convert to short pathnames without spaces
+    cygpath="${repo}/make/tools/msys_build_scripts/dospath.sh"
+    if [ ! -f ${cygpath} ] ; then
+        echo "ERROR: Cannot find cygpath or equivalent on this machine"
+        exit 1
+    fi
+    # Utility to fix a path to MinGW/MSYS format - the equivalent of 'cygpath -p'
+    for tfile in "${repo}/make/scripts/fixpath.pl" "${repo}/../make/scripts/fixpath.pl"; do
+        if [ -f ${tfile} ] ; then
+            cygpathp="/bin/perl ${tfile} -m"
+        fi
+    done;
+    if [ -z "${cygpathp}" ] ; then
+        echo "ERROR: Cannot find make/scripts/fixpath.pl on this machine"
+        exit 1
+    fi
+    unixcommand_path="/usr/bin"
   else
-    echo "ERROR: Cannot find CYGWIN on this machine"
+    echo "ERROR: Cannot find CYGWIN or MinGW/MSYS on this machine"
     exit 1
   fi
   if [ "${ALT_UNIXCOMMAND_PATH}" != "" ] ; then
@@ -204,17 +225,18 @@ else
   else
     sys_root=$(${cygpath} "C:/WINNT")
   fi
-  path4sdk="${unixcommand_path};${sys_root}/system32;${sys_root};${sys_root}/System32/Wbem"
   if [ ! -d "${sys_root}" ] ; then
     echo "WARNING: No system root found at: ${sys_root}"
   fi
+
+  # Build a : separated path making sure each segment is acceptable to ${osname}
+  path4sdk="${unixcommand_path}:"`${cygpathp} "${sys_root}/system32;${sys_root};${sys_root}/System32/Wbem"`
 
   # Compiler setup (nasty part)
   #   NOTE: You can use vcvars32.bat to set PATH, LIB, and INCLUDE.
   #   NOTE: CYGWIN has a link.exe too, make sure the compilers are first
 
   # Use supplied vsvars.sh
-  repo=`hg root`
   if [ -f "${repo}/make/scripts/vsvars.sh" ] ; then
     eval `sh ${repo}/make/scripts/vsvars.sh -v10`
   elif [ -f "${repo}/../make/scripts/vsvars.sh" ] ; then

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /* @test
  * @summary unit tests for recursive method handles
- * @run junit/othervm -DRicochetTest.MAX_ARITY=50 test.java.lang.invoke.RicochetTest
+ * @run junit/othervm/timeout=3600 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -DRicochetTest.MAX_ARITY=10 test.java.lang.invoke.RicochetTest
  */
 /*
  * @ignore The following test creates an unreasonable number of adapters in -Xcomp mode (7049122)

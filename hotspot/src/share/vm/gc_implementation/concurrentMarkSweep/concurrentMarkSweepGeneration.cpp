@@ -2395,7 +2395,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
 
   if (VerifyBeforeGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    Universe::verify(true);
+    Universe::verify();
   }
 
   // Snapshot the soft reference policy to be used in this collection cycle.
@@ -2419,7 +2419,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
           gclog_or_tty->print("Verify before initial mark: ");
-          Universe::verify(true);
+          Universe::verify();
         }
         {
           bool res = markFromRoots(false);
@@ -2431,7 +2431,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
           gclog_or_tty->print("Verify before re-mark: ");
-          Universe::verify(true);
+          Universe::verify();
         }
         checkpointRootsFinal(false, clear_all_soft_refs,
                              init_mark_was_synchronous);
@@ -2443,7 +2443,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
           gclog_or_tty->print("Verify before sweep: ");
-          Universe::verify(true);
+          Universe::verify();
         }
         sweep(false);
         assert(_collectorState == Resizing, "Incorrect state");
@@ -2459,7 +2459,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
           gclog_or_tty->print("Verify before reset: ");
-          Universe::verify(true);
+          Universe::verify();
         }
         reset(false);
         assert(_collectorState == Idling, "Collector state should "
@@ -2486,7 +2486,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
 
   if (VerifyAfterGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    Universe::verify(true);
+    Universe::verify();
   }
   if (TraceCMSState) {
     gclog_or_tty->print_cr("CMS Thread " INTPTR_FORMAT
@@ -5668,7 +5668,7 @@ void CMSCollector::do_remark_non_parallel() {
   if (VerifyDuringGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
-    Universe::verify(true);
+    Universe::verify();
   }
   {
     TraceTime t("root rescan", PrintGCDetails, false, gclog_or_tty);
@@ -9143,7 +9143,7 @@ void ASConcurrentMarkSweepGeneration::shrink_by(size_t desired_bytes) {
     size_t shrinkable_size_in_bytes = chunk_at_end->size();
     size_t aligned_shrinkable_size_in_bytes =
       align_size_down(shrinkable_size_in_bytes, os::vm_page_size());
-    assert(unallocated_start <= chunk_at_end->end(),
+    assert(unallocated_start <= (HeapWord*) chunk_at_end->end(),
       "Inconsistent chunk at end of space");
     size_t bytes = MIN2(desired_bytes, aligned_shrinkable_size_in_bytes);
     size_t word_size_before = heap_word_size(_virtual_space.committed_size());
@@ -9210,7 +9210,7 @@ void ASConcurrentMarkSweepGeneration::shrink_by(size_t desired_bytes) {
 
     assert(_cmsSpace->unallocated_block() <= _cmsSpace->end(),
       "Inconsistency at end of space");
-    assert(chunk_at_end->end() == _cmsSpace->end(),
+    assert(chunk_at_end->end() == (uintptr_t*) _cmsSpace->end(),
       "Shrinking is inconsistent");
     return;
   }

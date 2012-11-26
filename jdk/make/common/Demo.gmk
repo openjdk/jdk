@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -292,9 +292,9 @@ endif
 
 ifeq ($(PLATFORM),windows)
 # JDK name required here
-RC_FLAGS += /D "JDK_FNAME=$(LIBRARY).dll" \
-            /D "JDK_INTERNAL_NAME=$(LIBRARY)" \
-            /D "JDK_FTYPE=0x2L"
+RC_FLAGS += -D "JDK_FNAME=$(LIBRARY).dll" \
+            -D "JDK_INTERNAL_NAME=$(LIBRARY)" \
+            -D "JDK_FTYPE=0x2L"
 endif
 
 # Native library building

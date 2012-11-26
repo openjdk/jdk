@@ -28,9 +28,6 @@ package javax.net.ssl;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.Enumeration;
-import java.util.Vector;
-
 
 /**
  * This class extends <code>Socket</code>s and provides secure

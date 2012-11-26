@@ -22,7 +22,7 @@
  *
  */
 
-// Must be at least Windows 2000 or XP to use VectoredExceptions and IsDebuggerPresent
+// Must be at least Windows 2000 or XP to use IsDebuggerPresent
 #define _WIN32_WINNT 0x500
 
 // no precompiled headers
@@ -110,10 +110,6 @@ static FILETIME process_exit_time;
 static FILETIME process_user_time;
 static FILETIME process_kernel_time;
 
-#ifdef _WIN64
-PVOID  topLevelVectoredExceptionHandler = NULL;
-#endif
-
 #ifdef _M_IA64
 #define __CPU__ ia64
 #elif _M_AMD64
@@ -136,12 +132,6 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
     case DLL_PROCESS_DETACH:
       if(ForceTimeHighResolution)
         timeEndPeriod(1L);
-#ifdef _WIN64
-      if (topLevelVectoredExceptionHandler != NULL) {
-        RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
-        topLevelVectoredExceptionHandler = NULL;
-      }
-#endif
       break;
     default:
       break;
@@ -408,20 +398,14 @@ static unsigned __stdcall java_start(Thread* thread) {
   }
 
 
-  if (UseVectoredExceptions) {
-    // If we are using vectored exception we don't need to set a SEH
-    thread->run();
-  }
-  else {
-    // Install a win32 structured exception handler around every thread created
-    // by VM, so VM can genrate error dump when an exception occurred in non-
-    // Java thread (e.g. VM thread).
-    __try {
-       thread->run();
-    } __except(topLevelExceptionFilter(
-               (_EXCEPTION_POINTERS*)_exception_info())) {
-        // Nothing to do.
-    }
+  // Install a win32 structured exception handler around every thread created
+  // by VM, so VM can genrate error dump when an exception occurred in non-
+  // Java thread (e.g. VM thread).
+  __try {
+     thread->run();
+  } __except(topLevelExceptionFilter(
+             (_EXCEPTION_POINTERS*)_exception_info())) {
+      // Nothing to do.
   }
 
   // One less thread is executing
@@ -2489,16 +2473,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 #endif
 
-#ifdef _WIN64
-      // Windows will sometimes generate an access violation
-      // when we call malloc.  Since we use VectoredExceptions
-      // on 64 bit platforms, we see this exception.  We must
-      // pass this exception on so Windows can recover.
-      // We check to see if the pc of the fault is in NTDLL.DLL
-      // if so, we pass control on to Windows for handling.
-      if (UseVectoredExceptions && _addr_in_ntdll(pc)) return EXCEPTION_CONTINUE_SEARCH;
-#endif
-
       // Stack overflow or null pointer exception in native code.
       report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
                    exceptionInfo->ContextRecord);
@@ -2527,30 +2501,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   }
 
   if (exception_code != EXCEPTION_BREAKPOINT) {
-#ifndef _WIN64
     report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
                  exceptionInfo->ContextRecord);
-#else
-    // Itanium Windows uses a VectoredExceptionHandler
-    // Which means that C++ programatic exception handlers (try/except)
-    // will get here.  Continue the search for the right except block if
-    // the exception code is not a fatal code.
-    switch ( exception_code ) {
-      case EXCEPTION_ACCESS_VIOLATION:
-      case EXCEPTION_STACK_OVERFLOW:
-      case EXCEPTION_ILLEGAL_INSTRUCTION:
-      case EXCEPTION_ILLEGAL_INSTRUCTION_2:
-      case EXCEPTION_INT_OVERFLOW:
-      case EXCEPTION_INT_DIVIDE_BY_ZERO:
-      case EXCEPTION_UNCAUGHT_CXX_EXCEPTION:
-      {  report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
-                       exceptionInfo->ContextRecord);
-      }
-        break;
-      default:
-        break;
-    }
-#endif
   }
   return EXCEPTION_CONTINUE_SEARCH;
 }
@@ -3705,18 +3657,6 @@ jint os::init_2(void) {
   os::large_page_init();
 
   // Setup Windows Exceptions
-
-  // On Itanium systems, Structured Exception Handling does not
-  // work since stack frames must be walkable by the OS.  Since
-  // much of our code is dynamically generated, and we do not have
-  // proper unwind .xdata sections, the system simply exits
-  // rather than delivering the exception.  To work around
-  // this we use VectorExceptions instead.
-#ifdef _WIN64
-  if (UseVectoredExceptions) {
-    topLevelVectoredExceptionHandler = AddVectoredExceptionHandler( 1, topLevelExceptionFilter);
-  }
-#endif
 
   // for debugging float code generation bugs
   if (ForceFloatExceptions) {

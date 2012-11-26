@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,8 +287,9 @@ public class KrbApReq {
         cusec = authenticator.cusec;
         authenticator.ctime.setMicroSeconds(authenticator.cusec);
 
-        if (!authenticator.cname.equals(enc_ticketPart.cname))
+        if (!authenticator.cname.equals(enc_ticketPart.cname)) {
             throw new KrbApErrException(Krb5.KRB_AP_ERR_BADMATCH);
+        }
 
         KerberosTime currTime = new KerberosTime(KerberosTime.NOW);
         if (!authenticator.ctime.inClockSkew(currTime))

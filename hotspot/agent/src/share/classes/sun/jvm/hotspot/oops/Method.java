@@ -177,7 +177,7 @@ public class Method extends Metadata {
       bci. It is required that there is currently a bytecode at this
       bci. */
   public int getOrigBytecodeAt(int bci) {
-    BreakpointInfo bp = ((InstanceKlass) getMethodHolder()).getBreakpoints();
+    BreakpointInfo bp = getMethodHolder().getBreakpoints();
     for (; bp != null; bp = bp.getNext()) {
       if (bp.match(this, bci)) {
         return bp.getOrigBytecode();
@@ -238,7 +238,7 @@ public class Method extends Metadata {
   }
 
   // Method holder (the Klass holding this method)
-  public Klass   getMethodHolder()  { return getConstants().getPoolHolder();                           }
+  public InstanceKlass   getMethodHolder()  { return getConstants().getPoolHolder();                   }
 
   // Access flags
   public boolean isPublic()         { return getAccessFlagsObj().isPublic();                           }

@@ -34,6 +34,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
 import static com.sun.tools.javac.tree.JCTree.Tag.SYNCHRONIZED;
@@ -300,7 +301,7 @@ public class TreeInfo {
         if (!tree.hasTag(LITERAL))
             return false;
         JCLiteral lit = (JCLiteral) tree;
-        return (lit.typetag == TypeTags.BOT);
+        return (lit.typetag == BOT);
     }
 
     public static String getCommentText(Env<?> env, JCTree tree) {
@@ -790,8 +791,8 @@ public class TreeInfo {
      *  pre: flags != 0
      */
     public static long firstFlag(long flags) {
-        int flag = 1;
-        while ((flag & StandardFlags) != 0 && (flag & flags) == 0)
+        long flag = 1;
+        while ((flag & flags & ExtendedStandardFlags) == 0)
             flag = flag << 1;
         return flag;
     }
@@ -799,7 +800,7 @@ public class TreeInfo {
     /** Return flags as a string, separated by " ".
      */
     public static String flagNames(long flags) {
-        return Flags.toString(flags & StandardFlags).trim();
+        return Flags.toString(flags & ExtendedStandardFlags).trim();
     }
 
     /** Operator precedences values.

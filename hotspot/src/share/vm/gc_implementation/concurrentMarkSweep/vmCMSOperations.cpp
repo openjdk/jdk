@@ -64,7 +64,7 @@ void VM_CMS_Operation::verify_before_gc() {
     FreelistLocker x(_collector);
     MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
     Universe::heap()->prepare_for_verify();
-    Universe::verify(true);
+    Universe::verify();
   }
 }
 
@@ -74,7 +74,7 @@ void VM_CMS_Operation::verify_after_gc() {
     HandleMark hm;
     FreelistLocker x(_collector);
     MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
-    Universe::verify(true);
+    Universe::verify();
   }
 }
 

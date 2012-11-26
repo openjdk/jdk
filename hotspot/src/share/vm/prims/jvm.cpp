@@ -125,7 +125,7 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
   int line_number = -1;
   const char * source_file = NULL;
   const char * trace = "explicit";
-  Klass* caller = NULL;
+  InstanceKlass* caller = NULL;
   JavaThread* jthread = JavaThread::current();
   if (jthread->has_last_Java_frame()) {
     vframeStream vfst(jthread);
@@ -153,17 +153,17 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
     // that caller, otherwise keep quiet since this should be picked up elsewhere.
     bool found_it = false;
     if (!vfst.at_end() &&
-        InstanceKlass::cast(vfst.method()->method_holder())->name() == vmSymbols::java_lang_Class() &&
+        vfst.method()->method_holder()->name() == vmSymbols::java_lang_Class() &&
         vfst.method()->name() == vmSymbols::forName0_name()) {
       vfst.next();
       if (!vfst.at_end() &&
-          InstanceKlass::cast(vfst.method()->method_holder())->name() == vmSymbols::java_lang_Class() &&
+          vfst.method()->method_holder()->name() == vmSymbols::java_lang_Class() &&
           vfst.method()->name() == vmSymbols::forName_name()) {
         vfst.next();
         found_it = true;
       }
     } else if (last_caller != NULL &&
-               InstanceKlass::cast(last_caller->method_holder())->name() ==
+               last_caller->method_holder()->name() ==
                vmSymbols::java_lang_ClassLoader() &&
                (last_caller->name() == vmSymbols::loadClassInternal_name() ||
                 last_caller->name() == vmSymbols::loadClass_name())) {
@@ -182,7 +182,7 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
         // show method name if it's a native method
         trace = vfst.method()->name_and_sig_as_C_string();
       }
-      Symbol* s = InstanceKlass::cast(caller)->source_file_name();
+      Symbol* s = caller->source_file_name();
       if (s != NULL) {
         source_file = s->as_C_string();
       }
@@ -190,8 +190,8 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
   }
   if (caller != NULL) {
     if (to_class != caller) {
-      const char * from = Klass::cast(caller)->external_name();
-      const char * to = Klass::cast(to_class)->external_name();
+      const char * from = caller->external_name();
+      const char * to = to_class->external_name();
       // print in a single call to reduce interleaving between threads
       if (source_file != NULL) {
         tty->print("RESOLVE %s %s %s:%d (%s)\n", from, to, source_file, line_number, trace);
@@ -1228,7 +1228,7 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
       privileged_context = Handle(thread, thread->privileged_stack_top()->privileged_context());
       protection_domain  = thread->privileged_stack_top()->protection_domain();
     } else {
-      protection_domain = InstanceKlass::cast(method->method_holder())->protection_domain();
+      protection_domain = method->method_holder()->protection_domain();
     }
 
     if ((previous_protection_domain != protection_domain) && (protection_domain != NULL)) {
@@ -3048,10 +3048,10 @@ JVM_ENTRY(jclass, JVM_CurrentLoadedClass(JNIEnv *env))
 
     Method* m = vfst.method();
     if (!m->is_native()) {
-      Klass* holder = m->method_holder();
-      oop      loader = InstanceKlass::cast(holder)->class_loader();
+      InstanceKlass* holder = m->method_holder();
+      oop loader = holder->class_loader();
       if (loader != NULL && !java_lang_ClassLoader::is_trusted_loader(loader)) {
-        return (jclass) JNIHandles::make_local(env, Klass::cast(holder)->java_mirror());
+        return (jclass) JNIHandles::make_local(env, holder->java_mirror());
       }
     }
   }
@@ -3071,9 +3071,9 @@ JVM_ENTRY(jobject, JVM_CurrentClassLoader(JNIEnv *env))
 
     Method* m = vfst.method();
     if (!m->is_native()) {
-      Klass* holder = m->method_holder();
+      InstanceKlass* holder = m->method_holder();
       assert(holder->is_klass(), "just checking");
-      oop loader = InstanceKlass::cast(holder)->class_loader();
+      oop loader = holder->class_loader();
       if (loader != NULL && !java_lang_ClassLoader::is_trusted_loader(loader)) {
         return JNIHandles::make_local(env, loader);
       }
@@ -3148,9 +3148,9 @@ JVM_ENTRY(jint, JVM_ClassDepth(JNIEnv *env, jstring name))
 
   for(vframeStream vfst(thread); !vfst.at_end(); vfst.next()) {
     if (!vfst.method()->is_native()) {
-      Klass* holder = vfst.method()->method_holder();
+      InstanceKlass* holder = vfst.method()->method_holder();
       assert(holder->is_klass(), "just checking");
-      if (InstanceKlass::cast(holder)->name() == class_name_sym) {
+      if (holder->name() == class_name_sym) {
         return depth;
       }
       depth++;
@@ -3171,9 +3171,9 @@ JVM_ENTRY(jint, JVM_ClassLoaderDepth(JNIEnv *env))
 
     Method* m = vfst.method();
     if (!m->is_native()) {
-      Klass* holder = m->method_holder();
+      InstanceKlass* holder = m->method_holder();
       assert(holder->is_klass(), "just checking");
-      oop loader = InstanceKlass::cast(holder)->class_loader();
+      oop loader = holder->class_loader();
       if (loader != NULL && !java_lang_ClassLoader::is_trusted_loader(loader)) {
         return depth;
       }
@@ -3322,8 +3322,7 @@ JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
   for (vframeStream vfst(thread); !vfst.at_end(); vfst.next()) {
     // UseNewReflection
     vfst.skip_reflection_related_frames(); // Only needed for 1.4 reflection
-    Klass* holder = vfst.method()->method_holder();
-    oop loader = InstanceKlass::cast(holder)->class_loader();
+    oop loader = vfst.method()->method_holder()->class_loader();
     if (loader != NULL) {
       return JNIHandles::make_local(env, loader);
     }
@@ -3365,9 +3364,9 @@ JVM_ENTRY(jclass, JVM_LoadClass0(JNIEnv *env, jobject receiver,
          !vfst.at_end() && loader == NULL;
          vfst.next()) {
       if (!vfst.method()->is_native()) {
-        Klass* holder = vfst.method()->method_holder();
-        loader             = InstanceKlass::cast(holder)->class_loader();
-        protection_domain  = InstanceKlass::cast(holder)->protection_domain();
+        InstanceKlass* holder = vfst.method()->method_holder();
+        loader             = holder->class_loader();
+        protection_domain  = holder->protection_domain();
       }
     }
   } else {

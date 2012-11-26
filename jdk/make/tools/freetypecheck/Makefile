@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,11 @@ ifeq ($(OPENJDK),true)
 
 # Start with CFLAGS (which gets us the required -xarch setting on solaris)
 ifeq ($(PLATFORM), windows)
-  FT_OPTIONS  = /nologo /c
+  FT_OPTIONS  = -nologo -c
   FREETYPE_DLL = $(FREETYPE_LIB_PATH)/freetype.dll
   FT_LD_OPTIONS  = $(FREETYPE_LIB_PATH)/freetype.lib
   ifdef MT
-    FT_LD_OPTIONS += /manifest
+    FT_LD_OPTIONS += -manifest
   endif
 else
   FT_OPTIONS  = $(CFLAGS)
@@ -72,11 +72,11 @@ $(FT_TEST): freetypecheck.c
 	$(prep-target)
 ifeq ($(PLATFORM), windows)
 	$(CC) $(FT_OPTIONS) $(CC_OBJECT_OUTPUT_FLAG)$(FT_OBJ) $<
-	$(LINK) $(FT_LD_OPTIONS) /OUT:$(FT_TEST) $(FT_OBJ)
+	$(LINK) $(FT_LD_OPTIONS) -OUT:$(FT_TEST) $(FT_OBJ)
 	$(CP) $(FREETYPE_DLL) $(@D)/
   ifdef MT
 	$(CP) $(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL) $(@D)/
-	$(MT) /manifest $(FT_TEST).manifest /outputresource:$(FT_TEST);#1
+	$(MT) -manifest $(FT_TEST).manifest -outputresource:$(FT_TEST);#1
   endif
 else
 	@$(CC) $(FT_OPTIONS) -o $@ $< $(FT_LD_OPTIONS)

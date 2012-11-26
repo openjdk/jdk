@@ -45,7 +45,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(JAVAC_JARS),\
      JAVAH:=$(JAVAH_JARS),\
-     FLAGS:=-bootclasspath $(JDK_OUTPUTDIR)/classes -source 7 -target 7 -encoding ascii -XDignore.symbol.file=true $(DISABLE_WARNINGS),\
+     FLAGS:=-bootclasspath $(JDK_OUTPUTDIR)/classes -source 8 -target 8 -encoding ascii -XDignore.symbol.file=true $(DISABLE_WARNINGS),\
      SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
      SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 

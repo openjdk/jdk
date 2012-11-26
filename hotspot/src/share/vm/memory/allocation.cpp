@@ -92,6 +92,26 @@ void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flag
   return res;
 }
 
+void* ResourceObj::operator new(size_t size, const std::nothrow_t&  nothrow_constant,
+    allocation_type type, MEMFLAGS flags) {
+  //should only call this with std::nothrow, use other operator new() otherwise
+  address res;
+  switch (type) {
+   case C_HEAP:
+    res = (address)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);
+    DEBUG_ONLY(if (res!= NULL) set_allocation_type(res, C_HEAP);)
+    break;
+   case RESOURCE_AREA:
+    // new(size) sets allocation type RESOURCE_AREA.
+    res = (address)operator new(size, std::nothrow);
+    break;
+   default:
+    ShouldNotReachHere();
+  }
+  return res;
+}
+
+
 void ResourceObj::operator delete(void* p) {
   assert(((ResourceObj *)p)->allocated_on_C_heap(),
          "delete only allowed for C_HEAP objects");
@@ -413,19 +433,18 @@ Arena::Arena() {
   NOT_PRODUCT(Atomic::inc(&_instance_count);)
 }
 
-Arena::Arena(Arena *a) : _chunk(a->_chunk), _hwm(a->_hwm), _max(a->_max), _first(a->_first) {
-  set_size_in_bytes(a->size_in_bytes());
-  NOT_PRODUCT(Atomic::inc(&_instance_count);)
-}
-
-
 Arena *Arena::move_contents(Arena *copy) {
   copy->destruct_contents();
   copy->_chunk = _chunk;
   copy->_hwm   = _hwm;
   copy->_max   = _max;
   copy->_first = _first;
-  copy->set_size_in_bytes(size_in_bytes());
+
+  // workaround rare racing condition, which could double count
+  // the arena size by native memory tracking
+  size_t size = size_in_bytes();
+  set_size_in_bytes(0);
+  copy->set_size_in_bytes(size);
   // Destroy original arena
   reset();
   return copy;            // Return Arena with contents
@@ -477,6 +496,9 @@ void Arena::destruct_contents() {
     char* end = _first->next() ? _first->top() : _hwm;
     free_malloced_objects(_first, _first->bottom(), end, _hwm);
   }
+  // reset size before chop to avoid a rare racing condition
+  // that can have total arena memory exceed total chunk memory
+  set_size_in_bytes(0);
   _first->chop();
   reset();
 }
@@ -506,7 +528,7 @@ void Arena::signal_out_of_memory(size_t sz, const char* whence) const {
 }
 
 // Grow a new Chunk
-void* Arena::grow( size_t x ) {
+void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
   size_t len = MAX2(x, (size_t) Chunk::size);
 
@@ -514,7 +536,10 @@ void* Arena::grow( size_t x ) {
   _chunk = new (len) Chunk(len);
 
   if (_chunk == NULL) {
-    signal_out_of_memory(len * Chunk::aligned_overhead_size(), "Arena::grow");
+    if (alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+      signal_out_of_memory(len * Chunk::aligned_overhead_size(), "Arena::grow");
+    }
+    return NULL;
   }
   if (k) k->set_next(_chunk);   // Append new chunk to end of linked list
   else _first = _chunk;
@@ -529,13 +554,16 @@ void* Arena::grow( size_t x ) {
 
 
 // Reallocate storage in Arena.
-void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size) {
+void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFailType alloc_failmode) {
   assert(new_size >= 0, "bad size");
   if (new_size == 0) return NULL;
 #ifdef ASSERT
   if (UseMallocOnly) {
     // always allocate a new object  (otherwise we'll free this one twice)
-    char* copy = (char*)Amalloc(new_size);
+    char* copy = (char*)Amalloc(new_size, alloc_failmode);
+    if (copy == NULL) {
+      return NULL;
+    }
     size_t n = MIN2(old_size, new_size);
     if (n > 0) memcpy(copy, old_ptr, n);
     Afree(old_ptr,old_size);    // Mostly done to keep stats accurate
@@ -561,7 +589,10 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size) {
   }
 
   // Oops, got to relocate guts
-  void *new_ptr = Amalloc(new_size);
+  void *new_ptr = Amalloc(new_size, alloc_failmode);
+  if (new_ptr == NULL) {
+    return NULL;
+  }
   memcpy( new_ptr, c_old, old_size );
   Afree(c_old,old_size);        // Mostly done to keep stats accurate
   return new_ptr;

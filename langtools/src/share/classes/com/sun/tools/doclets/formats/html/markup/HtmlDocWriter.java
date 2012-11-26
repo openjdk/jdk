@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,11 @@ import java.io.*;
 import java.util.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.ConfigurationImpl;
 import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.DocLink;
+import com.sun.tools.doclets.internal.toolkit.util.DocPath;
+import com.sun.tools.doclets.internal.toolkit.util.DocPaths;
 
 
 /**
@@ -37,6 +41,11 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * This Class contains methods related to the Html Code Generation which
  * are used by the Sub-Classes in the package com.sun.tools.doclets.standard
  * and com.sun.tools.doclets.oneone.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @since 1.2
  * @author Atul M Dambalkar
@@ -50,25 +59,11 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      *
      * @param filename String file name.
      */
-    public HtmlDocWriter(Configuration configuration,
-                         String filename) throws IOException {
-        super(configuration,
-              null, configuration.destDirName + filename,
-              configuration.docencoding);
-        // use File to normalize file separators
+    public HtmlDocWriter(Configuration configuration, DocPath filename)
+            throws IOException {
+        super(configuration, filename);
         configuration.message.notice("doclet.Generating_0",
-            new File(configuration.destDirName, filename));
-    }
-
-    public HtmlDocWriter(Configuration configuration,
-                         String path, String filename) throws IOException {
-        super(configuration,
-              configuration.destDirName + path, filename,
-              configuration.docencoding);
-        // use File to normalize file separators
-        configuration.message.notice("doclet.Generating_0",
-            new File(configuration.destDirName,
-                    ((path.length() > 0)? path + File.separator: "") + filename));
+            filename.resolveAgainst(configuration.destDirName));
     }
 
     /**
@@ -77,122 +72,102 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     public abstract Configuration configuration();
 
     /**
-     * Print Html Hyper Link.
-     *
-     * @param link String name of the file.
-     * @param where Position of the link in the file. Character '#' is not
-     * needed.
-     * @param label Tag for the link.
-     * @param strong  Boolean that sets label to strong.
-     */
-    public void printHyperLink(String link, String where,
-                               String label, boolean strong) {
-        print(getHyperLinkString(link, where, label, strong, "", "", ""));
-    }
-
-    /**
-     * Print Html Hyper Link.
-     *
-     * @param link String name of the file.
-     * @param where Position of the link in the file. Character '#' is not
-     * needed.
-     * @param label Tag for the link.
-     */
-    public void printHyperLink(String link, String where, String label) {
-        printHyperLink(link, where, label, false);
-    }
-
-    /**
-     * Print Html Hyper Link.
-     *
-     * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     * needed.
-     * @param label      Tag for the link.
-     * @param strong       Boolean that sets label to strong.
-     * @param stylename  String style of text defined in style sheet.
-     */
-    public void printHyperLink(String link, String where,
-                               String label, boolean strong,
-                               String stylename) {
-        print(getHyperLinkString(link, where, label, strong, stylename, "", ""));
-    }
-
-    /**
      * Return Html Hyper Link string.
      *
      * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     * needed.
      * @param label      Tag for the link.
      * @param strong       Boolean that sets label to strong.
      * @return String    Hyper Link.
      */
-    public String getHyperLinkString(String link, String where,
+    public String getHyperLinkString(DocPath link,
                                String label, boolean strong) {
-        return getHyperLinkString(link, where, label, strong, "", "", "");
+        return getHyperLinkString(link, label, strong, "", "", "");
+    }
+
+    public String getHyperLinkString(DocLink link,
+                               String label, boolean strong) {
+        return getHyperLinkString(link, label, strong, "", "", "");
     }
 
     /**
      * Get Html Hyper Link string.
      *
      * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     *                   needed.
      * @param label      Tag for the link.
      * @param strong       Boolean that sets label to strong.
      * @param stylename  String style of text defined in style sheet.
      * @return String    Hyper Link.
      */
-    public String getHyperLinkString(String link, String where,
+    public String getHyperLinkString(DocPath link,
                                String label, boolean strong,
                                String stylename) {
-        return getHyperLinkString(link, where, label, strong, stylename, "", "");
+        return getHyperLinkString(link, label, strong, stylename, "", "");
+    }
+
+    public String getHyperLinkString(DocLink link,
+                               String label, boolean strong,
+                               String stylename) {
+        return getHyperLinkString(link, label, strong, stylename, "", "");
     }
 
     /**
      * Get Html Hyper Link string.
      *
-     * @param link       String name of the file.
      * @param where      Position of the link in the file. Character '#' is not
      *                   needed.
      * @param label      Tag for the link.
      * @return a content tree for the hyper link
      */
-    public Content getHyperLink(String link, String where,
+    public Content getHyperLink(String where,
                                Content label) {
-        return getHyperLink(link, where, label, "", "");
+        return getHyperLink(DocLink.fragment(where), label, "", "");
     }
 
     /**
      * Get Html Hyper Link string.
      *
      * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     *                   needed.
+     * @param label      Tag for the link.
+     * @return a content tree for the hyper link
+     */
+    public Content getHyperLink(DocPath link,
+                               Content label) {
+        return getHyperLink(link, label, "", "");
+    }
+
+    public Content getHyperLink(DocLink link,
+                               Content label) {
+        return getHyperLink(link, label, "", "");
+    }
+
+    /**
+     * Get Html Hyper Link string.
+     *
+     * @param link       String name of the file.
      * @param label      Tag for the link.
      * @param strong       Boolean that sets label to strong.
      * @param stylename  String style of text defined in style sheet.
-     * @param title      String that describes the link's content for accessibility.
+     * @param title      String that describes the links content for accessibility.
      * @param target     Target frame.
      * @return String    Hyper Link.
      */
-    public String getHyperLinkString(String link, String where,
+    public String getHyperLinkString(DocPath link,
                                String label, boolean strong,
                                String stylename, String title, String target) {
-        StringBuffer retlink = new StringBuffer();
-        retlink.append("<a href=\"");
-        retlink.append(link);
-        if (where != null && where.length() != 0) {
-            retlink.append("#");
-            retlink.append(where);
-        }
-        retlink.append("\"");
+        return getHyperLinkString(new DocLink(link), label, strong,
+                stylename, title, target);
+    }
+
+    public String getHyperLinkString(DocLink link,
+                               String label, boolean strong,
+                               String stylename, String title, String target) {
+        StringBuilder retlink = new StringBuilder();
+        retlink.append("<a href=\"").append(link).append('"');
         if (title != null && title.length() != 0) {
-            retlink.append(" title=\"" + title + "\"");
+            retlink.append(" title=\"").append(title).append('"');
         }
         if (target != null && target.length() != 0) {
-            retlink.append(" target=\"" + target + "\"");
+            retlink.append(" target=\"").append(target).append('"');
         }
         retlink.append(">");
         if (stylename != null && stylename.length() != 0) {
@@ -218,19 +193,19 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Get Html Hyper Link.
      *
      * @param link       String name of the file.
-     * @param where      Position of the link in the file. Character '#' is not
-     *                   needed.
      * @param label      Tag for the link.
      * @param title      String that describes the link's content for accessibility.
      * @param target     Target frame.
      * @return a content tree for the hyper link.
      */
-    public Content getHyperLink(String link, String where,
+    public Content getHyperLink(DocPath link,
             Content label, String title, String target) {
-        if (where != null && where.length() != 0) {
-            link += "#" + where;
-        }
-        HtmlTree anchor = HtmlTree.A(link, label);
+        return getHyperLink(new DocLink(link), label, title, target);
+    }
+
+    public Content getHyperLink(DocLink link,
+            Content label, String title, String target) {
+        HtmlTree anchor = HtmlTree.A(link.toString(), label);
         if (title != null && title.length() != 0) {
             anchor.addAttr(HtmlAttr.TITLE, title);
         }
@@ -241,34 +216,14 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     }
 
     /**
-     * Get a hyperlink to a file.
-     *
-     * @param link String name of the file
-     * @param label Label for the link
-     * @return a content for the hyperlink to the file
-     */
-    public Content getHyperLink(String link, Content label) {
-        return getHyperLink(link, "", label);
-    }
-
-    /**
      * Get link string without positioning in the file.
      *
      * @param link       String name of the file.
      * @param label      Tag for the link.
      * @return Strign    Hyper link.
      */
-    public String getHyperLinkString(String link, String label) {
-        return getHyperLinkString(link, "", label, false);
-    }
-
-    /**
-     * Print the name of the package, this class is in.
-     *
-     * @param cd    ClassDoc.
-     */
-    public void printPkgName(ClassDoc cd) {
-        print(getPkgName(cd));
+    public String getHyperLinkString(DocPath link, String label) {
+        return getHyperLinkString(link, label, false);
     }
 
     /**
@@ -285,27 +240,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         return "";
     }
 
-    /**
-     * Keep track of member details list. Print the definition list start tag
-     * if it is not printed yet.
-     */
-    public void printMemberDetailsListStartTag () {
-        if (!getMemberDetailsListPrinted()) {
-            dl();
-            memberDetailsListPrinted = true;
-        }
-    }
-
-    /**
-     * Print the definition list end tag if the list start tag was printed.
-     */
-    public void printMemberDetailsListEndTag () {
-        if (getMemberDetailsListPrinted()) {
-            dlEnd();
-            memberDetailsListPrinted = false;
-        }
-    }
-
     public boolean getMemberDetailsListPrinted() {
         return memberDetailsListPrinted;
     }
@@ -319,12 +253,12 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param frameset the frameset to be added to the HTML document
      */
     public void printFramesetDocument(String title, boolean noTimeStamp,
-            Content frameset) {
+            Content frameset) throws IOException {
         Content htmlDocType = DocType.Frameset();
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
         if (! noTimeStamp) {
-            Content headComment = new Comment("Generated by javadoc on " + today());
+            Content headComment = new Comment(getGeneratedByString());
             head.addContent(headComment);
         }
         if (configuration.charset.length() > 0) {
@@ -339,7 +273,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
                 head, frameset);
         Content htmlDocument = new HtmlDocument(htmlDocType,
                 htmlComment, htmlTree);
-        print(htmlDocument.toString());
+        write(htmlDocument);
     }
 
     /**
@@ -356,46 +290,9 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         return space;
     }
 
-    /**
-     * Print the closing &lt;/body&gt; and &lt;/html&gt; tags.
-     */
-    public void printBodyHtmlEnd() {
-        println();
-        bodyEnd();
-        htmlEnd();
-    }
-
-    /**
-     * Calls {@link #printBodyHtmlEnd()} method.
-     */
-    public void printFooter() {
-        printBodyHtmlEnd();
-    }
-
-    /**
-     * Print closing &lt;/html&gt; tag.
-     */
-    public void printFrameFooter() {
-        htmlEnd();
-    }
-
-    /**
-     * Print ten non-breaking spaces("&#38;nbsp;").
-     */
-    public void printNbsps() {
-        print("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
-    }
-
-    /**
-     * Get the day and date information for today, depending upon user option.
-     *
-     * @return String Today.
-     * @see java.util.Calendar
-     * @see java.util.GregorianCalendar
-     * @see java.util.TimeZone
-     */
-    public String today() {
+    protected String getGeneratedByString() {
         Calendar calendar = new GregorianCalendar(TimeZone.getDefault());
-        return calendar.getTime().toString();
+        Date today = calendar.getTime();
+        return "Generated by javadoc ("+ ConfigurationImpl.BUILD_DATE + ") on " + today;
     }
 }

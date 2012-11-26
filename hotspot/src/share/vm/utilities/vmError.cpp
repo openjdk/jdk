@@ -453,7 +453,9 @@ void VMError::report(outputStream* st) {
      JDK_Version::current().to_string(buf, sizeof(buf));
      const char* runtime_name = JDK_Version::runtime_name() != NULL ?
                                   JDK_Version::runtime_name() : "";
-     st->print_cr("# JRE version: %s (%s)", runtime_name, buf);
+     const char* runtime_version = JDK_Version::runtime_version() != NULL ?
+                                  JDK_Version::runtime_version() : "";
+     st->print_cr("# JRE version: %s (%s) (build %s)", runtime_name, buf, runtime_version);
      st->print_cr("# Java VM: %s (%s %s %s %s)",
                    Abstract_VM_Version::vm_name(),
                    Abstract_VM_Version::vm_release(),

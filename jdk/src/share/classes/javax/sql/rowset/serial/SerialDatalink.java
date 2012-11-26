@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,10 +100,64 @@ public class SerialDatalink implements Serializable, Cloneable {
         return aURL;
     }
 
+    /**
+     * Compares this {@code SerialDatalink} to the specified object.
+     * The result is {@code true} if and only if the argument is not
+     * {@code null} and is a {@code SerialDatalink} object whose URL is
+     * identical to this object's URL
+     *
+     * @param  obj The object to compare this {@code SerialDatalink} against
+     *
+     * @return  {@code true} if the given object represents a {@code SerialDatalink}
+     *          equivalent to this SerialDatalink, {@code false} otherwise
+     *
+     */
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof SerialDatalink) {
+            SerialDatalink sdl = (SerialDatalink) obj;
+            return url.equals(sdl.url);
+        }
+        return false;
+    }
 
     /**
-         * The identifier that assists in the serialization of this <code>SerialDatalink</code>
-     * object.
+     * Returns a hash code for this {@code SerialDatalink}. The hash code for a
+     * {@code SerialDatalink} object is taken as the hash code of
+     * the {@code URL} it stores
+     *
+     * @return  a hash code value for this object.
+     */
+    public int hashCode() {
+        return 31 + url.hashCode();
+    }
+
+    /**
+     * Returns a clone of this {@code SerialDatalink}.
+     *
+     * @return  a clone of this SerialDatalink
+     */
+    public Object clone() {
+        try {
+            SerialDatalink sdl = (SerialDatalink) super.clone();
+            return sdl;
+        } catch (CloneNotSupportedException ex) {
+            // this shouldn't happen, since we are Cloneable
+            throw new InternalError();
+        }
+    }
+
+    /**
+     * readObject and writeObject are called to restore the state
+     * of the {@code SerialDatalink}
+     * from a stream. Note: we leverage the default Serialized form
+     */
+
+    /**
+     * The identifier that assists in the serialization of this
+     *  {@code SerialDatalink} object.
      */
     static final long serialVersionUID = 2826907821828733626L;
 }

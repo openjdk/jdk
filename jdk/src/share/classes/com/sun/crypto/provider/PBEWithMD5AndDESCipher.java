@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import javax.crypto.spec.*;
 public final class PBEWithMD5AndDESCipher extends CipherSpi {
 
     // the encapsulated DES cipher
-    private PBECipherCore core;
+    private PBES1Core core;
 
     /**
      * Creates an instance of this cipher, and initializes its mode (CBC) and
@@ -58,7 +58,7 @@ public final class PBEWithMD5AndDESCipher extends CipherSpi {
      */
     public PBEWithMD5AndDESCipher()
         throws NoSuchAlgorithmException, NoSuchPaddingException {
-        core = new PBECipherCore("DES");
+        core = new PBES1Core("DES");
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,21 @@ package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
 import java.util.*;
+
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Generate the package index page "overview-summary.html" for the right-hand
  * frame. A click on the package name on this page will update the same frame
- * with the "pacakge-summary.html" file for the clicked package.
+ * with the "package-summary.html" file for the clicked package.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Atul M Dambalkar
  * @author Bhavesh Patel (Modified)
@@ -67,7 +73,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * @see Group
      */
     public PackageIndexWriter(ConfigurationImpl configuration,
-                              String filename)
+                              DocPath filename)
                        throws IOException {
         super(configuration, filename);
         this.root = configuration.root;
@@ -82,7 +88,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     public static void generate(ConfigurationImpl configuration) {
         PackageIndexWriter packgen;
-        String filename = "overview-summary.html";
+        DocPath filename = DocPaths.OVERVIEW_SUMMARY;
         try {
             packgen = new PackageIndexWriter(configuration, filename);
             packgen.buildPackageIndexFile("doclet.Window_Overview_Summary", true);
@@ -172,7 +178,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             Content see = seeLabel;
             see.addContent(" ");
             Content descPara = HtmlTree.P(see);
-            Content descLink = getHyperLink("", "overview_description",
+            Content descLink = getHyperLink(DocLink.fragment("overview_description"),
                 descriptionLabel, "", "");
             descPara.addContent(descLink);
             div.addContent(descPara);
@@ -228,7 +234,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * Adds the lower navigation bar and the bottom text
      * (from the -bottom option) at the bottom of page.
      *
-     * @param the documentation tree to which the navigation bar footer will be added
+     * @param body the documentation tree to which the navigation bar footer will be added
      */
     protected void addNavigationBarFooter(Content body) {
         addNavLinks(false, body);

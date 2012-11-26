@@ -464,3 +464,11 @@ void AbstractInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
     }
   }
 }
+
+void AbstractInterpreterGenerator::initialize_method_handle_entries() {
+  // method handle entry kinds are generated later in MethodHandlesAdapterGenerator::generate:
+  for (int i = Interpreter::method_handle_invoke_FIRST; i <= Interpreter::method_handle_invoke_LAST; i++) {
+    Interpreter::MethodKind kind = (Interpreter::MethodKind) i;
+    Interpreter::_entry_table[kind] = Interpreter::_entry_table[Interpreter::abstract];
+  }
+}

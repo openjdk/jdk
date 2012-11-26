@@ -25,6 +25,7 @@
 
 #include "NativeUtil.h"
 #include "NativeFunc.h"
+#include "jlong.h"
 
 const int JAVA_DUPLICATE_TOKEN_CODE = 19; /* DUPLICATE_TOKEN */
 const int JAVA_OLD_TOKEN_CODE = 20; /* OLD_TOKEN */
@@ -412,7 +413,7 @@ OM_uint32 getGSSTime(jint jtime) {
   OM_uint32 result;
 
   /* special handle values equal to JAVA_MAX */
-  if (jtime == JAVA_MAX) {
+  if (jtime == (jint)JAVA_MAX) {
     result = GSS_C_INDEFINITE;
   } else {
     result = jtime;
@@ -482,7 +483,7 @@ jstring getMinorMessage(JNIEnv *env, jobject jstub, OM_uint32 statusValue) {
 
   messageContext = 0;
   if (jstub != NULL) {
-    mech = (gss_OID) (*env)->GetLongField(env, jstub, FID_GSSLibStub_pMech);
+    mech = (gss_OID) jlong_to_ptr((*env)->GetLongField(env, jstub, FID_GSSLibStub_pMech));
   } else {
     mech = GSS_C_NO_OID;
   }

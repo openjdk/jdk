@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package com.sun.source.util;
 
-import com.sun.source.tree.CompilationUnitTree;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
+
+import com.sun.source.tree.CompilationUnitTree;
 
 /**
  * Provides details about work that has been done by the JDK Java Compiler, javac.
