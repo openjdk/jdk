@@ -25,7 +25,6 @@
 
 package javax.net.ssl;
 
-import java.net.InetAddress;
 import java.security.Principal;
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,19 @@ package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
 import java.util.*;
+
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.formats.html.markup.*;
 
 /**
  * Write the Constants Summary Page in HTML format.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @author Jamie Ho
  * @author Bhavesh Patel (Modified)
@@ -63,7 +69,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      */
     public ConstantsSummaryWriterImpl(ConfigurationImpl configuration)
             throws IOException {
-        super(configuration, ConfigurationImpl.CONSTANTS_FILE_NAME);
+        super(configuration, DocPaths.CONSTANT_VALUES);
         this.configuration = configuration;
         constantsTableSummary = configuration.getText("doclet.Constants_Table_Summary",
                 configuration.getText("doclet.Constants_Summary"));
@@ -101,13 +107,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
         //add link to summary
         Content link;
         if (packageName.length() == 0) {
-            link = getHyperLink("#" + DocletConstants.UNNAMED_PACKAGE_ANCHOR,
-                    "", defaultPackageLabel, "", "");
+            link = getHyperLink(DocLink.fragment(DocletConstants.UNNAMED_PACKAGE_ANCHOR),
+                    defaultPackageLabel, "", "");
         } else {
             Content packageNameContent = getPackageLabel(parsedPackageName);
             packageNameContent.addContent(".*");
-            link = getHyperLink("#" + parsedPackageName,
-                    "", packageNameContent, "", "");
+            link = getHyperLink(DocLink.fragment(parsedPackageName),
+                    packageNameContent, "", "");
             printedPackageHeaders.add(parsedPackageName);
         }
         contentListTree.addContent(HtmlTree.LI(link));
@@ -297,7 +303,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
-    public void printDocument(Content contentTree) {
+    public void printDocument(Content contentTree) throws IOException {
         printHtmlDocument(null, true, contentTree);
     }
 }

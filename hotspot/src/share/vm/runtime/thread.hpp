@@ -110,7 +110,7 @@ class Thread: public ThreadShadow {
   void*       _real_malloc_address;
  public:
   void* operator new(size_t size) { return allocate(size, true); }
-  void* operator new(size_t size, std::nothrow_t& nothrow_constant) { return allocate(size, false); }
+  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) { return allocate(size, false); }
   void  operator delete(void* p);
 
  protected:
@@ -722,6 +722,7 @@ class WatcherThread: public Thread {
  private:
   static WatcherThread* _watcher_thread;
 
+  static bool _startable;
   volatile static bool _should_terminate; // updated without holding lock
  public:
   enum SomeConstants {
@@ -738,6 +739,7 @@ class WatcherThread: public Thread {
   char* name() const { return (char*)"VM Periodic Task Thread"; }
   void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
+  void unpark();
 
   // Returns the single instance of WatcherThread
   static WatcherThread* watcher_thread()         { return _watcher_thread; }
@@ -745,6 +747,12 @@ class WatcherThread: public Thread {
   // Create and start the single instance of WatcherThread, or stop it on shutdown
   static void start();
   static void stop();
+  // Only allow start once the VM is sufficiently initialized
+  // Otherwise the first task to enroll will trigger the start
+  static void make_startable();
+
+ private:
+  int sleep() const;
 };
 
 

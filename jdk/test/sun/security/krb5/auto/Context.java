@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,10 @@ import org.ietf.jgss.Oid;
 import com.sun.security.jgss.ExtendedGSSContext;
 import com.sun.security.jgss.InquireType;
 import com.sun.security.jgss.AuthorizationDataEntry;
+import com.sun.security.jgss.ExtendedGSSCredential;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import javax.security.auth.kerberos.KeyTab;
+import java.security.Principal;
 
 /**
  * Context of a JGSS subject, encapsulating Subject and GSSContext.
@@ -90,7 +91,21 @@ public class Context {
     public Context delegated() throws Exception {
         Context out = new Context();
         out.s = s;
-        out.cred = x.getDelegCred();
+        try {
+            out.cred = Subject.doAs(s, new PrivilegedExceptionAction<GSSCredential>() {
+                @Override
+                public GSSCredential run() throws Exception {
+                    GSSCredential cred = x.getDelegCred();
+                    if (cred == null && x.getCredDelegState() ||
+                            cred != null && !x.getCredDelegState()) {
+                        throw new Exception("getCredDelegState not match");
+                    }
+                    return cred;
+                }
+            });
+        } catch (PrivilegedActionException pae) {
+            throw pae.getException();
+        }
         out.name = name + " as " + out.cred.getName().toString();
         return out;
     }
@@ -212,28 +227,34 @@ public class Context {
      * @throws java.lang.Exception
      */
     public void startAsServer(final Oid mech) throws Exception {
-        startAsServer(null, mech);
+        startAsServer(null, mech, false);
     }
 
+    public void startAsServer(final String name, final Oid mech) throws Exception {
+        startAsServer(name, mech, false);
+    }
     /**
      * Starts as a server with the specified service name
      * @param name the service name
      * @param mech GSS mech
      * @throws java.lang.Exception
      */
-    public void startAsServer(final String name, final Oid mech) throws Exception {
+    public void startAsServer(final String name, final Oid mech, final boolean asInitiator) throws Exception {
         doAs(new Action() {
             @Override
             public byte[] run(Context me, byte[] dummy) throws Exception {
                 GSSManager m = GSSManager.getInstance();
-                me.x = (ExtendedGSSContext)m.createContext(m.createCredential(
+                me.cred = m.createCredential(
                         name == null ? null :
                           (name.indexOf('@') < 0 ?
                             m.createName(name, null) :
                             m.createName(name, GSSName.NT_HOSTBASED_SERVICE)),
                         GSSCredential.INDEFINITE_LIFETIME,
                         mech,
-                        GSSCredential.ACCEPT_ONLY));
+                        asInitiator?
+                                GSSCredential.INITIATE_AND_ACCEPT:
+                                GSSCredential.ACCEPT_ONLY);
+                me.x = (ExtendedGSSContext)m.createContext(me.cred);
                 return null;
             }
         }, null);
@@ -331,27 +352,38 @@ public class Context {
         } catch (Exception e) {
             ;// Don't care
         }
-        System.out.println("====== Private Credentials Set ======");
-        for (Object o : s.getPrivateCredentials()) {
-            System.out.println("    " + o.getClass());
-            if (o instanceof KerberosTicket) {
-                KerberosTicket kt = (KerberosTicket) o;
-                System.out.println("        " + kt.getServer() + " for " + kt.getClient());
-            } else if (o instanceof KerberosKey) {
-                KerberosKey kk = (KerberosKey) o;
-                System.out.print("        " + kk.getKeyType() + " " + kk.getVersionNumber() + " " + kk.getAlgorithm() + " ");
-                for (byte b : kk.getEncoded()) {
-                    System.out.printf("%02X", b & 0xff);
-                }
-                System.out.println();
-            } else if (o instanceof Map) {
-                Map map = (Map) o;
-                for (Object k : map.keySet()) {
-                    System.out.println("        " + k + ": " + map.get(k));
-                }
-            } else {
+        if (s != null) {
+            System.out.println("====== START SUBJECT CONTENT =====");
+            for (Principal p: s.getPrincipals()) {
+                System.out.println("    Principal: " + p);
+            }
+            for (Object o : s.getPublicCredentials()) {
+                System.out.println("    " + o.getClass());
                 System.out.println("        " + o);
             }
+            System.out.println("====== Private Credentials Set ======");
+            for (Object o : s.getPrivateCredentials()) {
+                System.out.println("    " + o.getClass());
+                if (o instanceof KerberosTicket) {
+                    KerberosTicket kt = (KerberosTicket) o;
+                    System.out.println("        " + kt.getServer() + " for " + kt.getClient());
+                } else if (o instanceof KerberosKey) {
+                    KerberosKey kk = (KerberosKey) o;
+                    System.out.print("        " + kk.getKeyType() + " " + kk.getVersionNumber() + " " + kk.getAlgorithm() + " ");
+                    for (byte b : kk.getEncoded()) {
+                        System.out.printf("%02X", b & 0xff);
+                    }
+                    System.out.println();
+                } else if (o instanceof Map) {
+                    Map map = (Map) o;
+                    for (Object k : map.keySet()) {
+                        System.out.println("        " + k + ": " + map.get(k));
+                    }
+                } else {
+                    System.out.println("        " + o);
+                }
+            }
+            System.out.println("====== END SUBJECT CONTENT =====");
         }
         if (x != null && x instanceof ExtendedGSSContext) {
             if (x.isEstablished()) {
@@ -510,6 +542,29 @@ public class Context {
         return sb.toString();
     }
 
+    public Context impersonate(final String someone) throws Exception {
+        try {
+            GSSCredential creds = Subject.doAs(s, new PrivilegedExceptionAction<GSSCredential>() {
+                @Override
+                public GSSCredential run() throws Exception {
+                    GSSManager m = GSSManager.getInstance();
+                    GSSName other = m.createName(someone, GSSName.NT_USER_NAME);
+                    if (Context.this.cred == null) {
+                        Context.this.cred = m.createCredential(GSSCredential.INITIATE_ONLY);
+                    }
+                    return ((ExtendedGSSCredential)Context.this.cred).impersonate(other);
+                }
+            });
+            Context out = new Context();
+            out.s = s;
+            out.cred = creds;
+            out.name = name + " as " + out.cred.getName().toString();
+            return out;
+        } catch (PrivilegedActionException pae) {
+            throw pae.getException();
+        }
+    }
+
     public byte[] take(final byte[] in) throws Exception {
         return doAs(new Action() {
             @Override
@@ -522,10 +577,11 @@ public class Context {
                     }
                     return null;
                 } else {
-                    System.out.println(name + " call initSecContext");
                     if (me.x.isInitiator()) {
+                        System.out.println(name + " call initSecContext");
                         return me.x.initSecContext(input, 0, input.length);
                     } else {
+                        System.out.println(name + " call acceptSecContext");
                         return me.x.acceptSecContext(input, 0, input.length);
                     }
                 }

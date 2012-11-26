@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,37 @@
 
 package com.sun.tools.javadoc;
 
-import com.sun.javadoc.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.StringTokenizer;
 
+import com.sun.javadoc.*;
 import com.sun.tools.javac.main.CommandLine;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
-
-import java.io.IOException;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-
-import java.util.StringTokenizer;
-
 import static com.sun.tools.javac.code.Flags.*;
 
 /**
  * Main program of Javadoc.
  * Previously named "Main".
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @since 1.2
  * @author Robert Field
  * @author Neal Gafter (rewrite)
  */
 class Start {
+    /** Context for this invocation. */
+    private final Context context;
 
     private final String defaultDocletClassName;
     private final ClassLoader docletParentClassLoader;
@@ -67,7 +71,7 @@ class Start {
 
     private long defaultFilter = PUBLIC | PROTECTED;
 
-    private Messager messager;
+    private final Messager messager;
 
     String docLocale = "";
 
@@ -94,8 +98,8 @@ class Start {
           PrintWriter noticeWriter,
           String defaultDocletClassName,
           ClassLoader docletParentClassLoader) {
-        Context tempContext = new Context(); // interim context until option decoding completed
-        messager = new Messager(tempContext, programName, errWriter, warnWriter, noticeWriter);
+        context = new Context();
+        messager = new Messager(context, programName, errWriter, warnWriter, noticeWriter);
         this.defaultDocletClassName = defaultDocletClassName;
         this.docletParentClassLoader = docletParentClassLoader;
     }
@@ -106,8 +110,8 @@ class Start {
 
     Start(String programName, String defaultDocletClassName,
           ClassLoader docletParentClassLoader) {
-        Context tempContext = new Context(); // interim context until option decoding completed
-        messager = new Messager(tempContext, programName);
+        context = new Context();
+        messager = new Messager(context, programName);
         this.defaultDocletClassName = defaultDocletClassName;
         this.docletParentClassLoader = docletParentClassLoader;
     }
@@ -216,16 +220,6 @@ class Start {
         setDocletInvoker(argv);
         ListBuffer<String> subPackages = new ListBuffer<String>();
         ListBuffer<String> excludedPackages = new ListBuffer<String>();
-
-        Context context = new Context();
-        // Setup a new Messager, using the same initial parameters as the
-        // existing Messager, except that this one will be able to use any
-        // options that may be set up below.
-        Messager.preRegister(context,
-                messager.programName,
-                messager.getWriter(Log.WriterKind.ERROR),
-                messager.getWriter(Log.WriterKind.WARNING),
-                messager.getWriter(Log.WriterKind.NOTICE));
 
         Options compOpts = Options.instance(context);
         boolean docClasses = false;
@@ -366,6 +360,7 @@ class Start {
                 javaNames.append(arg);
             }
         }
+        compOpts.notifyListeners();
 
         if (javaNames.isEmpty() && subPackages.isEmpty()) {
             usageError("main.No_packages_or_classes_specified");
@@ -392,13 +387,12 @@ class Start {
                 // legacy?
                 languageVersion == null || languageVersion == LanguageVersion.JAVA_1_1, quiet);
 
+        // release resources
+        comp = null;
+
         // pass off control to the doclet
         boolean ok = root != null;
         if (ok) ok = docletInvoker.start(root);
-
-        Messager docletMessager = Messager.instance0(context);
-        messager.nwarnings += docletMessager.nwarnings;
-        messager.nerrors += docletMessager.nerrors;
 
         // We're done.
         if (compOpts.get("-verbose") != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,12 @@ import sun.misc.Unsafe;
     }
 
     // handy shared exception makers (they simplify the common case code)
+    /*non-public*/ static InternalError newInternalError(String message, Throwable cause) {
+        return new InternalError(message, cause);
+    }
+    /*non-public*/ static InternalError newInternalError(Throwable cause) {
+        return new InternalError(cause);
+    }
     /*non-public*/ static RuntimeException newIllegalStateException(String message) {
         return new IllegalStateException(message);
     }
@@ -108,8 +114,8 @@ import sun.misc.Unsafe;
     /*non-public*/ static RuntimeException newIllegalArgumentException(String message, Object obj, Object obj2) {
         return new IllegalArgumentException(message(message, obj, obj2));
     }
-    /*non-public*/ static Error uncaughtException(Exception ex) {
-        throw new InternalError("uncaught exception", ex);
+    /*non-public*/ static Error uncaughtException(Throwable ex) {
+        throw newInternalError("uncaught exception", ex);
     }
     static Error NYI() {
         throw new AssertionError("NYI");

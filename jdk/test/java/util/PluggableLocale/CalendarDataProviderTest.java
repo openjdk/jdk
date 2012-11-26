@@ -36,17 +36,11 @@ import com.bar.CalendarDataProviderImpl;
  *
  * Test strategy:
  * com.bar.CalendarDataProviderImpl supports only ja_JP_kids locale. It returns
- * month names only in full-width digits, followed by "gatsu" in Hiragana if
- * it's a long style, and also returns unusual week parameter values, WEDNESDAY
- * - first day of week, 7 - minimal days in the first week.  The standalone
- * styles are used because DateFormatSymbols has precedence for the format
- * styles.
+ * unusual week parameter values, WEDNESDAY - first day of week, 7 - minimal
+ * days in the first week.
  *
  * A Calendar instance created with ja_JP_kids should use the week parameters
- * provided by com.bar.CalendarDataProviderImpl. Calendar.getDisplayName(s)
- * should be called with kids to get the month names provided by
- * com.bar.CalendarDataProviderImpl. Other display names should be the same as
- * what a Calendar constructed with ja_JP returns.
+ * provided by com.bar.CalendarDataProviderImpl.
  */
 public class CalendarDataProviderTest {
 
@@ -62,45 +56,6 @@ public class CalendarDataProviderTest {
         // check the week parameters
         checkResult("firstDayOfWeek", kcal.getFirstDayOfWeek(), WEDNESDAY);
         checkResult("minimalDaysInFirstWeek", kcal.getMinimalDaysInFirstWeek(), 7);
-
-        // check month names and week day names
-        Map<String, Integer> mapAllStyles = new HashMap<>();
-        for (int style : new int[] { SHORT_STANDALONE, LONG_STANDALONE }) {
-            // Check month names provided by com.bar.CalendarDataProviderImpl
-            Map<String, Integer> map = new HashMap<>();
-            for (int month = JANUARY; month <= DECEMBER; month++) {
-                kcal.set(DAY_OF_MONTH, 1);
-                kcal.set(MONTH, month);
-                kcal.set(HOUR_OF_DAY, 12); // avoid any standard-daylight transitions...
-                kcal.getTimeInMillis();
-                String name = kcal.getDisplayName(MONTH, style, kids);
-                checkResult("Month name",
-                            name,
-                            CalendarDataProviderImpl.toMonthName(kcal.get(MONTH) + 1, style));
-
-                // Builds the map with name to its integer value.
-                map.put(name, kcal.get(MONTH));
-            }
-            checkResult((style == SHORT_STANDALONE ? "Short" : "Long") + " month names map",
-                        kcal.getDisplayNames(MONTH, style, kids), map);
-            mapAllStyles.putAll(map);
-            if (style == LONG_STANDALONE) {
-                checkResult("Short and long month names map",
-                            kcal.getDisplayNames(MONTH, ALL_STYLES, kids), mapAllStyles);
-            }
-
-            // Check week names: kcal and jcal should return the same names and maps.
-            for (int dow = SUNDAY; dow <= SATURDAY; dow++) {
-                kcal.set(DAY_OF_WEEK, dow);
-                jcal.setTimeInMillis(kcal.getTimeInMillis());
-                String name = kcal.getDisplayName(DAY_OF_WEEK, style, kids);
-                checkResult("Day of week name", name,
-                                                jcal.getDisplayName(DAY_OF_WEEK, style, Locale.JAPAN));
-            }
-            checkResult("Short day of week names", kcal.getDisplayNames(DAY_OF_WEEK, style, kids),
-                                                   jcal.getDisplayNames(DAY_OF_WEEK, style, Locale.JAPAN));
-        }
-
     }
 
     private <T> void checkResult(String msg, T got, T expected) {

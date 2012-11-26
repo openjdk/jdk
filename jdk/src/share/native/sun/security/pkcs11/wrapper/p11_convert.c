@@ -422,6 +422,7 @@ CK_ATTRIBUTE jAttributeToCKAttribute(JNIEnv *env, jobject jAttribute)
     jfieldID jFieldID;
     jlong jType;
     jobject jPValue;
+    memset(&ckAttribute, 0, sizeof(CK_ATTRIBUTE));
 
     // TBD: what if jAttribute == NULL?!
 
@@ -1577,6 +1578,7 @@ CK_RSA_PKCS_PSS_PARAMS jRsaPkcsPssParamToCKRsaPkcsPssParam(JNIEnv *env, jobject 
     CK_RSA_PKCS_PSS_PARAMS ckParam;
     jfieldID fieldID;
     jlong jHashAlg, jMgf, jSLen;
+    memset(&ckParam, 0, sizeof(CK_RSA_PKCS_PSS_PARAMS));
 
     /* get hashAlg */
     jRsaPkcsPssParamsClass = (*env)->FindClass(env, CLASS_RSA_PKCS_PSS_PARAMS);
@@ -1617,6 +1619,7 @@ CK_ECDH1_DERIVE_PARAMS jEcdh1DeriveParamToCKEcdh1DeriveParam(JNIEnv *env, jobjec
     jfieldID fieldID;
     jlong jLong;
     jobject jSharedData, jPublicData;
+    memset(&ckParam, 0, sizeof(CK_ECDH1_DERIVE_PARAMS));
 
     /* get kdf */
     jEcdh1DeriveParamsClass = (*env)->FindClass(env, CLASS_ECDH1_DERIVE_PARAMS);
@@ -1663,6 +1666,7 @@ CK_ECDH2_DERIVE_PARAMS jEcdh2DeriveParamToCKEcdh2DeriveParam(JNIEnv *env, jobjec
     jfieldID fieldID;
     jlong jKdf, jPrivateDataLen, jPrivateData;
     jobject jSharedData, jPublicData, jPublicData2;
+    memset(&ckParam, 0, sizeof(CK_ECDH2_DERIVE_PARAMS));
 
     /* get kdf */
     jEcdh2DeriveParamsClass = (*env)->FindClass(env, CLASS_ECDH2_DERIVE_PARAMS);

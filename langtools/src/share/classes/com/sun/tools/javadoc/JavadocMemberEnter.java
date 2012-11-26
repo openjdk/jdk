@@ -37,6 +37,12 @@ import com.sun.tools.javac.util.Position;
 /**
  *  Javadoc's own memberEnter phase does a few things above and beyond that
  *  done by javac.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  *  @author Neal Gafter
  */
 public class JavadocMemberEnter extends MemberEnter {
@@ -75,6 +81,9 @@ public class JavadocMemberEnter extends MemberEnter {
             docenv.makeAnnotationTypeElementDoc(meth, docComment, tree, lineMap);
         else
             docenv.makeMethodDoc(meth, docComment, tree, lineMap);
+
+        // release resources
+        tree.body = null;
     }
 
     @Override

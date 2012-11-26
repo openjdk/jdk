@@ -44,7 +44,7 @@ import java.util.*;
  * instance method that is overridden in extended components.  A base
  * phase supporting extension would look something like this:
  *
- * <p><pre>
+ * <p><pre>{@code
  * public class Phase {
  *     protected static final Context.Key<Phase> phaseKey =
  *         new Context.Key<Phase>();
@@ -62,7 +62,7 @@ import java.util.*;
  *         // other intitialization follows...
  *     }
  * }
- * </pre>
+ * }</pre>
  *
  * <p>In the compiler, we simply use Phase.instance(context) to get
  * the reference to the phase.  But in extensions of the compiler, we
@@ -70,7 +70,7 @@ import java.util.*;
  * and this must be done before any reference to the phase is accessed
  * using Phase.instance().  An extended phase might be declared thus:
  *
- * <p><pre>
+ * <p><pre>{@code
  * public class NewPhase extends Phase {
  *     protected NewPhase(Context context) {
  *         super(context);
@@ -83,7 +83,7 @@ import java.util.*;
  *         });
  *     }
  * }
- * </pre>
+ * }</pre>
  *
  * <p>And is registered early in the extended compiler like this
  *

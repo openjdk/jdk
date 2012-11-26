@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -253,10 +253,12 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetInfo
 (JNIEnv *env, jobject obj)
 {
     CK_INFO ckLibInfo;
-    jobject jInfoObject;
+    jobject jInfoObject=NULL;
     CK_RV rv;
+    CK_FUNCTION_LIST_PTR ckpFunctions;
+    memset(&ckLibInfo, 0, sizeof(CK_INFO));
 
-    CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
+    ckpFunctions = getFunctionList(env, obj);
     if (ckpFunctions == NULL) { return NULL; }
 
     rv = (*ckpFunctions->C_GetInfo)(&ckLibInfo);
@@ -384,7 +386,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSlotInfo
 {
     CK_SLOT_ID ckSlotID;
     CK_SLOT_INFO ckSlotInfo;
-    jobject jSlotInfoObject;
+    jobject jSlotInfoObject=NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -396,7 +398,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSlotInfo
     if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
         jSlotInfoObject = ckSlotInfoPtrToJSlotInfo(env, &ckSlotInfo);
     }
-    return jSlotInfoObject ;
+    return jSlotInfoObject;
 }
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -79,7 +79,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
 {
     void *hModule;
     char *error;
-    CK_C_GetFunctionList C_GetFunctionList;
+    CK_C_GetFunctionList C_GetFunctionList=NULL;
     CK_RV rv;
     ModuleData *moduleData;
     jobject globalPKCS11ImplementationReference;

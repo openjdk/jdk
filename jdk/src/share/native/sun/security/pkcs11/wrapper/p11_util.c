@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -106,7 +106,7 @@ void putModuleEntry(JNIEnv *env, jobject pkcs11Implementation, ModuleData *modul
     if (moduleData == NULL) {
         return ;
     }
-    (*env)->SetLongField(env, pkcs11Implementation, pNativeDataID, (jlong)moduleData);
+    (*env)->SetLongField(env, pkcs11Implementation, pNativeDataID, ptr_to_jlong(moduleData));
 }
 
 
@@ -120,7 +120,7 @@ ModuleData * getModuleEntry(JNIEnv *env, jobject pkcs11Implementation) {
         return NULL;
     }
     jData = (*env)->GetLongField(env, pkcs11Implementation, pNativeDataID);
-    return (ModuleData*)jData;
+    return (ModuleData*)jlong_to_ptr(jData);
 }
 
 CK_FUNCTION_LIST_PTR getFunctionList(JNIEnv *env, jobject pkcs11Implementation) {

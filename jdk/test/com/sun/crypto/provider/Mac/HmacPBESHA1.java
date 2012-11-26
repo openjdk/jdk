@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,34 +36,45 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 public class HmacPBESHA1 {
-    private static final String MAC_ALGO = "HmacPBESHA1";
+    private static final String[] MAC_ALGOS = {
+        "HmacPBESHA1",
+        "PBEWithHmacSHA1",
+        "PBEWithHmacSHA224",
+        "PBEWithHmacSHA256",
+        "PBEWithHmacSHA384",
+        "PBEWithHmacSHA512"
+    };
+    private static final int[] MAC_LENGTHS = { 20, 20, 28, 32, 48, 64 };
     private static final String KEY_ALGO = "PBE";
     private static final String PROVIDER = "SunJCE";
 
-    private SecretKey key = null;
+    private static SecretKey key = null;
 
     public static void main(String argv[]) throws Exception {
-        HmacPBESHA1 test = new HmacPBESHA1();
-        test.run();
-        System.out.println("Test Passed");
+        for (int i = 0; i < MAC_ALGOS.length; i++) {
+            runtest(MAC_ALGOS[i], MAC_LENGTHS[i]);
+        }
+        System.out.println("\nTest Passed");
     }
 
-    public void run() throws Exception {
+    private static void runtest(String algo, int length) throws Exception {
+        System.out.println("Testing: " + algo);
         if (key == null) {
             char[] password = { 't', 'e', 's', 't' };
             PBEKeySpec keySpec = new PBEKeySpec(password);
-            SecretKeyFactory kf = SecretKeyFactory.getInstance(KEY_ALGO, PROVIDER);
+            SecretKeyFactory kf =
+                SecretKeyFactory.getInstance(KEY_ALGO, PROVIDER);
             key = kf.generateSecret(keySpec);
         }
-        Mac mac = Mac.getInstance(MAC_ALGO, PROVIDER);
+        Mac mac = Mac.getInstance(algo, PROVIDER);
         byte[] plainText = new byte[30];
 
         mac.init(key);
         mac.update(plainText);
         byte[] value1 = mac.doFinal();
-        if (value1.length != 20) {
-            throw new Exception("incorrect MAC output length, " +
-                                "expected 20, got " + value1.length);
+        if (value1.length != length) {
+            throw new Exception("incorrect MAC output length, expected " +
+                length + ", got " + value1.length);
         }
         mac.update(plainText);
         byte[] value2 = mac.doFinal();

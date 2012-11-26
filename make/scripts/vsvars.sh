@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,6 @@
 #   variables normally set by the vcvars32.bat or vcvars64.bat file or
 #   SetEnv.cmd for older SDKs.
 
-# Use cygpath?
-isCygwin="`uname -s | grep CYGWIN`"
-if [ "${isCygwin}" != "" ] ; then
-  cygpath="/usr/bin/cygpath"
-  cygpath_short="${cygpath} -m -s"
-  cygpath_windows="${cygpath} -w -s"
-  cygpath_path="${cygpath} -p"
-  pathsep=':'
-else
-  cygpath="dosname"
-  cygpath_short="${cygpath} -s"
-  cygpath_windows="${cygpath} -s"
-  cygpath_path="echo"
-  pathsep=';'
-fi
-
 ########################################################################
 # Error functions
 msg() # message
@@ -60,8 +44,8 @@ warning() # message
 }
 envpath() # path
 {
-  if [ "${cygpath_short}" != "" -a -d "$1" ] ; then
-    ${cygpath_short} "$1"
+  if [ "${fixpath}" != "" -a -d "$1" ] ; then
+    ${fixpath} "$1"
   else
     echo "$1"
   fi
@@ -72,13 +56,64 @@ envpath() # path
 # Defaults settings
 debug="false"
 verbose="false"
-shellStyle="sh"
-parentCsh="` ps -p ${PPID} 2> /dev/null | grep csh `"
-if [ "${parentCsh}" != "" ] ; then
-  shellStyle="csh"
-fi
 
 set -e
+
+CYGWIN="nodosfilewarning ntsec"
+export CYGWIN
+
+# pathsepIn is always ; because the input strings are coming from
+# vcvarsxx.bat.  This is true under all of MKS, Cygwin, MINGW/msys
+pathsepIn=';'
+
+OS="`uname -s`"
+case "${OS}" in
+  CYGWIN*)
+    pathflag='-c'
+    devnull=/dev/null
+    pathsepOut=':'
+  ;;
+
+  MINGW*)
+    pathflag='-m'
+    devnull=/dev/null
+    pathsepOut=':'
+  ;;
+
+  *)
+    # MKS?
+    # Continue using dosname -s
+    pathflag='-s'
+    fixpath="dosname ${pathflag}"
+    fixpath_windows="${fixpath}"
+    fixpath_path="echo"
+    devnull=NUL
+    pathsepOut=';'
+  ;;
+esac
+
+case "${OS}" in
+  CYGWIN*|MINGW*)
+    t=`dirname ${0}`
+    wd=`cd ${t} 2> ${devnull} && pwd`
+    fixpath_script="${wd}/fixpath.pl"
+    if [ ! -f "${fixpath_script}" ] ; then
+        error "Does not exist: ${fixpath_script}"
+    fi
+    fixpath="perl ${fixpath_script} ${pathflag}"
+    fixpath_windows="perl ${fixpath_script} -d"
+    fixpath_path="${fixpath_windows}"
+  ;;
+esac
+
+shellStyle="sh"
+## As far as I can tell from hg history, this has not worked
+## for a long time because PPID is unset.  When run under Cygwin
+## the script quits due to the 1 return from grep.
+##parentCsh="` ps -p ${PPID} 2> ${devnull} | grep csh `"
+##if [ "${parentCsh}" != "" ] ; then
+##  shellStyle="csh"
+##fi
 
 # Check environment first
 if [ "${PROGRAMFILES}" != "" ] ; then
@@ -96,15 +131,19 @@ fi
 # Arch data model
 if [ "${PROCESSOR_IDENTIFIER}" != "" ] ; then
   arch=`echo "${PROCESSOR_IDENTIFIER}" | cut -d' ' -f1`
-elif [ "${MACHTYPE}" != "" ] ; then
-  if [ "`echo ${MACHTYPE} | grep 64`" != "" ] ; then
-    # Assume this is X64, not IA64
-    arch="x64"
-  else
-    arch="x86"
-  fi
 else
- arch="`uname -m`"
+  if [ "${MACHTYPE}" != "" ] ; then
+    if [ "`echo ${MACHTYPE} | grep 64`" != "" ] ; then
+      # Assume this is X64, not IA64
+      arch="x64"
+    else
+      arch="x86"
+    fi
+  else
+   arch="`uname -m`"
+  fi
+  PROCESSOR_IDENTIFIER="${arch}"
+  export PROCESSOR_IDENTIFIER
 fi
 if [ "${arch}" = "X86" -o \
      "${arch}" = "386" -o "${arch}" = "i386" -o \
@@ -121,11 +160,11 @@ if [ "${arch}" = "X64"     -o \
      "${arch}" = "intel64" -o "${arch}" = "Intel64" -o \
      "${arch}" = "64" ] ; then
   arch="x64"
-  binarch64="/amd64"
+  binarch64="\\amd64"
 fi
 if [ "${arch}" = "IA64" ] ; then
   arch="ia64"
-  binarch64="/ia64"
+  binarch64="\\ia64"
 fi
 if [ "${arch}" != "x86" -a "${arch}" != "x64" -a "${arch}" != "ia64" ] ; then
  error "No PROCESSOR_IDENTIFIER or MACHTYPE environment variables and uname -m is not helping"
@@ -143,6 +182,16 @@ else
     progfiles64=`envpath "C:/Program Files"`
   fi
 fi
+
+# VS2012 (VC11)
+if [ "${VS110COMNTOOLS}" = "" ] ; then
+  VS110COMNTOOLS="${progfiles32}/Microsoft Visual Studio 11.0/Common7/Tools/"
+  export VS110COMNTOOLS
+fi
+vc11Bin32Dir=`envpath "${VS110COMNTOOLS}"`/../../VC/Bin
+vc11Bin64Dir="${vc11Bin32Dir}"
+vc11vars32Bat="vcvars32.bat"
+vc11vars64Bat="vcvars64.bat"
 
 # VS2010 (VC10)
 if [ "${VS100COMNTOOLS}" = "" ] ; then
@@ -188,7 +237,7 @@ vc7vars64Bat="SetEnv.cmd /X64"
 vcSelection=""
 
 # Parse options
-usage="Usage: $0 [-help] [-debug] [-v] [-c] [-s] [-p] [-v10] [-v9] [-v8] [-v7] [-32] [-64]"
+usage="Usage: $0 [-help] [-debug] [-v] [-c] [-s] [-p] [-v11] [-v10] [-v9] [-v8] [-v7] [-32] [-64]"
 while [ $# -gt 0 ] ; do
   if [ "$1" = "-help" ] ; then
     msg "${usage}"
@@ -198,6 +247,7 @@ while [ $# -gt 0 ] ; do
     msg "  -c       Print out csh style output"
     msg "  -s       Print out sh style output"
     msg "  -p       Print out properties style output"
+    msg "  -v11     Use Visual Studio 11 VS2012"
     msg "  -v10     Use Visual Studio 10 VS2010"
     msg "  -v9      Use Visual Studio 9 VS2008"
     msg "  -v8      Use Visual Studio 8 VS2005"
@@ -219,6 +269,13 @@ while [ $# -gt 0 ] ; do
     shift
   elif [ "$1" = "-p" ] ; then
     shellStyle="props"
+    shift
+  elif [ "$1" = "-v11" ] ; then
+    vcBin32Dir="${vc11Bin32Dir}"
+    vcBin64Dir="${vc11Bin64Dir}"
+    vcvars32Bat="${vc11vars32Bat}"
+    vcvars64Bat="${vc11vars64Bat}"
+    vcSelection="11"
     shift
   elif [ "$1" = "-v10" ] ; then
     vcBin32Dir="${vc10Bin32Dir}"
@@ -324,25 +381,26 @@ checkPaths() # var path sep
 }
 
 # Remove all duplicate entries
-removeDeadDups() # string sep
+removeDeadDups() # string sepIn sepOut
 {
   set -e
-  sep="$2"
+  sepIn="$2"
+  sepOut="$3"
   pathlist="${tmp}/pathlist"
   printf "%s\n" "$1" | \
     sed -e 's@\\@/@g' | \
     sed -e 's@//@/@g' | \
-    ${awk} -F"${sep}" '{for(i=1;i<=NF;i++){printf "%s\n",$i;}}'  \
+    ${awk} -F"${sepIn}" '{for(i=1;i<=NF;i++){printf "%s\n",$i;}}'  \
       > ${pathlist}
   upaths="${tmp}/upaths"
   cat ${pathlist} | while read orig; do
     p="${orig}"
-    if [ "${cygpath_short}" != "" ] ; then
+    if [ "${fixpath}" != "" ] ; then
       if [ "${p}" != "" ] ; then
         if [ -d "${p}" ] ; then
-          short=`${cygpath_short} "${p}"`
+          short=`${fixpath} "${p}"`
           if [ "${short}" != "" -a -d "${short}" ] ; then
-            p=`${cygpath} "${short}"`
+            p="${short}"
           fi
           echo "${p}" >> ${upaths}
         fi
@@ -356,11 +414,11 @@ removeDeadDups() # string sep
     if [ "${newpaths}" = "" ] ; then
       newpaths="${i}"
     else
-      newpaths="${newpaths}${sep}${i}"
+      newpaths="${newpaths}${sepOut}${i}"
     fi
   done
   printf "%s\n" "${newpaths}" | \
-    ${awk} -F"${sep}" \
+    ${awk} -F"${sepOut}" \
        '{a[$1];printf "%s",$1;for(i=2;i<=NF;i++){if(!($i in a)){a[$i];printf "%s%s",FS,$i;}};printf "\n";}'
 }
 
@@ -388,7 +446,7 @@ set VCINSTALLDIR=
 set VSINSTALLDIR=
 set WindowsSdkDir=
 REM Run the vcvars bat file, send all output to stderr
-call `${cygpath_windows} ${bdir}`\\${command} > `${cygpath_windows} "${stdout}"`
+call `${fixpath_windows} ${bdir}`\\${command} > `${fixpath_windows} "${stdout}"`
 REM Echo out env var settings
 echo VS_VS71COMNTOOLS="%VS71COMNTOOLS%"
 echo export VS_VS71COMNTOOLS
@@ -398,6 +456,8 @@ echo VS_VS90COMNTOOLS="%VS90COMNTOOLS%"
 echo export VS_VS90COMNTOOLS
 echo VS_VS100COMNTOOLS="%VS100COMNTOOLS%"
 echo export VS_VS100COMNTOOLS
+echo VS_VS110COMNTOOLS="%VS110COMNTOOLS%"
+echo export VS_VS110COMNTOOLS
 echo VS_VCINSTALLDIR="%VCINSTALLDIR%"
 echo export VS_VCINSTALLDIR
 echo VS_VSINSTALLDIR="%VSINSTALLDIR%"
@@ -427,9 +487,18 @@ EOF
 # Create env file
 createEnv() # batfile envfile
 {
-  rm -f ${1}.stdout
-  cmd.exe /Q /C `${cygpath_short} $1` | \
-    sed -e 's@\\@/@g' | \
+  rm -f ${1}.stdout ${1}.temp1 ${1}.temp2
+  batfile=`${fixpath} ${1}`
+  cmd.exe -Q -C < "$batfile" 1> ${1}.temp1 2> ${1}.temp2
+  cat ${1}.temp1 | \
+    sed -e 's@^Microsoft.*@@' \
+        -e 's@^.*Copyright.*@@' \
+        -e 's@^.*>REM.*@@' \
+        -e 's@^.*>set.*@@' \
+        -e 's@^.*>echo.*@@' \
+        -e 's@^.*>call.*@@' \
+        -e 's@^.*>$@@' \
+        -e 's@\\@/@g' | \
     sed -e 's@//@/@g' > $2
   if [ -f "${1}.stdout" ] ; then
     cat ${1}.stdout 1>&2
@@ -465,7 +534,7 @@ printEnv() # name pname vsname val
 #############################################################################
 
 # Get Visual Studio settings
-if [ "${cygpath}" != "" ] ; then
+if [ "${fixpath}" != "" ] ; then
 
   # Create bat file to run
   batfile="${tmp}/vs-to-env.bat"
@@ -485,11 +554,11 @@ if [ "${cygpath}" != "" ] ; then
   . ${envfile}
 
   # Derive unix style path, save old, and define new (remove dups)
-  VS_UPATH=`${cygpath_path} "${VS_WPATH}"`
+  VS_UPATH=`${fixpath_path} "${VS_WPATH}"`
   export VS_UPATH
   VS_OPATH=`printf "%s" "${PATH}" | sed -e 's@\\\\@/@g'`
   export VS_OPATH
-  VS_PATH=`removeDeadDups "${VS_UPATH}${pathsep}${VS_OPATH}" "${pathsep}"`
+  VS_PATH=`removeDeadDups "${VS_UPATH}${pathsepIn}${VS_OPATH}" "${pathsepIn}" "${pathsepOut}"`
   export VS_PATH
 
 fi
@@ -521,7 +590,9 @@ printEnv MSSDK         mssdk         VS_MSSDK         "${VS_MSSDK}"
 printEnv MSTOOLS       mstools       VS_MSTOOLS       "${VS_MSTOOLS}"
 printEnv DEVENVDIR     devenvdir     VS_DEVENVDIR     "${VS_DEVENVDIR}"
 printEnv WINDOWSSDKDIR windowssdkdir VS_WINDOWSSDKDIR "${VS_WINDOWSSDKDIR}"
-if [ "${vcSelection}" = "10" ] ; then
+if [ "${vcSelection}" = "11" ] ; then
+  printEnv VS110COMNTOOLS vs110comntools VS_VS110COMNTOOLS "${VS_VS110COMNTOOLS}"
+elif [ "${vcSelection}" = "10" ] ; then
   printEnv VS100COMNTOOLS vs100comntools VS_VS100COMNTOOLS "${VS_VS100COMNTOOLS}"
 elif [ "${vcSelection}" = "9" ] ; then
   printEnv VS90COMNTOOLS vs90comntools VS_VS90COMNTOOLS "${VS_VS90COMNTOOLS}"
@@ -536,11 +607,13 @@ if [ "${verbose}" = "true" ] ; then
   checkPaths "Windows PATH" "${VS_WPATH}" ";"
   checkPaths LIB "${VS_LIB}" ";"
   checkPaths INCLUDE "${VS_INCLUDE}" ";"
-  checkPaths PATH "${VS_PATH}" "${pathsep}"
+  checkPaths PATH "${VS_PATH}" "${pathsepIn}"
 fi
 
 # Remove all temp files
-rm -f -r ${tmp}
+if [ "${debug}" != "true" ] ; then
+  rm -f -r ${tmp}
+fi
 
 exit 0
 

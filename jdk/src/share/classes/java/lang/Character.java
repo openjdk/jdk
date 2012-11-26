@@ -40,7 +40,7 @@ import java.util.Locale;
  * a character's category (lowercase letter, digit, etc.) and for converting
  * characters from uppercase to lowercase and vice versa.
  * <p>
- * Character information is based on the Unicode Standard, version 6.1.0.
+ * Character information is based on the Unicode Standard, version 6.2.0.
  * <p>
  * The methods and data of class {@code Character} are defined by
  * the information in the <i>UnicodeData</i> file that is part of the
@@ -3758,8 +3758,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x0640,   // 0640..0640; COMMON
             0x0641,   // 0641..064A; ARABIC
             0x064B,   // 064B..0655; INHERITED
-            0x0656,   // 0656..065E; ARABIC
-            0x065F,   // 065F..065F; INHERITED
+            0x0656,   // 0656..065F; ARABIC
             0x0660,   // 0660..0669; COMMON
             0x066A,   // 066A..066F; ARABIC
             0x0670,   // 0670..0670; INHERITED
@@ -4081,7 +4080,6 @@ class Character implements java.io.Serializable, Comparable<Character> {
             ARABIC,
             INHERITED,
             ARABIC,
-            INHERITED,
             COMMON,
             ARABIC,
             INHERITED,
@@ -4590,7 +4588,20 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *
      * @return a hash code value for this {@code Character}
      */
+    @Override
     public int hashCode() {
+        return Character.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code char} value; compatible with
+     * {@code Character.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code char} value.
+     */
+    public static int hashCode(char value) {
         return (int)value;
     }
 
@@ -7158,6 +7169,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @since 1.5
      */
     public static final int SIZE = 16;
+
+    /**
+     * The number of bytes used to represent a {@code char} value in unsigned
+     * binary form.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
 
     /**
      * Returns the value obtained by reversing the order of the bytes in the

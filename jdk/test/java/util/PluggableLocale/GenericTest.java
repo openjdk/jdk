@@ -38,9 +38,11 @@ public class GenericTest {
     com.foo.DecimalFormatSymbolsProviderImpl decimalFSP = new com.foo.DecimalFormatSymbolsProviderImpl();
     com.foo.NumberFormatProviderImpl numberFP = new com.foo.NumberFormatProviderImpl();
     com.bar.CurrencyNameProviderImpl currencyNP = new com.bar.CurrencyNameProviderImpl();
+    com.bar.CurrencyNameProviderImpl2 currencyNP2 = new com.bar.CurrencyNameProviderImpl2();
     com.bar.LocaleNameProviderImpl localeNP = new com.bar.LocaleNameProviderImpl();
     com.bar.TimeZoneNameProviderImpl tzNP = new com.bar.TimeZoneNameProviderImpl();
     com.bar.CalendarDataProviderImpl calDataP = new com.bar.CalendarDataProviderImpl();
+    com.bar.CalendarNameProviderImpl calNameP = new com.bar.CalendarNameProviderImpl();
 
     public static void main(String[] s) {
         new GenericTest();
@@ -68,10 +70,11 @@ public class GenericTest {
         expected.addAll(Arrays.asList(decimalFSP.getAvailableLocales()));
         expected.addAll(Arrays.asList(numberFP.getAvailableLocales()));
         expected.addAll(Arrays.asList(currencyNP.getAvailableLocales()));
+        expected.addAll(Arrays.asList(currencyNP2.getAvailableLocales()));
         expected.addAll(Arrays.asList(localeNP.getAvailableLocales()));
         expected.addAll(Arrays.asList(tzNP.getAvailableLocales()));
         expected.addAll(Arrays.asList(calDataP.getAvailableLocales()));
-        expected.remove(Locale.ROOT);
+        expected.addAll(Arrays.asList(calNameP.getAvailableLocales()));
         if (!result.equals(expected)) {
             throw new RuntimeException("Locale.getAvailableLocales() does not return the union of locales: diff="
                                        + getDiff(result, expected));

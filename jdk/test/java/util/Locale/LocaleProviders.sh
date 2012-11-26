@@ -23,7 +23,7 @@
 #!/bin/sh
 #
 # @test
-# @bug 6336885 7196799 7197573 7198834 8000245 8000615
+# @bug 6336885 7196799 7197573 7198834 8000245 8000615 8001440
 # @summary tests for "java.locale.providers" system property
 # @compile -XDignore.symbol.file LocaleProviders.java
 # @run shell/timeout=600 LocaleProviders.sh
@@ -241,6 +241,14 @@ runTest
 METHODNAME=tzNameTest
 PREFLIST="JRE -Djava.ext.dirs=${SPIDIR}"
 PARAM1=America/Los_Angeles
+PARAM2=
+PARAM3=
+runTest
+
+# testing 8001440 fix.
+METHODNAME=bug8001440Test
+PREFLIST=CLDR
+PARAM1=
 PARAM2=
 PARAM3=
 runTest

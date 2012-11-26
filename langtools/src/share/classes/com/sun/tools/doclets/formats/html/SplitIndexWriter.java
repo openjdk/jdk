@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,20 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
+
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Generate Separate Index Files for all the member names with Indexing in
  * Unicode Order. This will create "index-files" directory in the current or
  * destination directory and will generate separate file for each unicode index.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  *
  * @see java.lang.Character
  * @author Atul M Dambalkar
@@ -56,15 +62,13 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * from this file.
      *
      * @param path       Path to the file which is getting generated.
-     * @param filename   Name of the file which is getting genrated.
-     * @param relpath    Relative path from this file to the current directory.
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      */
     public SplitIndexWriter(ConfigurationImpl configuration,
-                            String path, String filename,
-                            String relpath, IndexBuilder indexbuilder,
+                            DocPath path,
+                            IndexBuilder indexbuilder,
                             int prev, int next) throws IOException {
-        super(configuration, path, filename, relpath, indexbuilder);
+        super(configuration, path, indexbuilder);
         this.prev = prev;
         this.next = next;
     }
@@ -79,17 +83,16 @@ public class SplitIndexWriter extends AbstractIndexWriter {
     public static void generate(ConfigurationImpl configuration,
                                 IndexBuilder indexbuilder) {
         SplitIndexWriter indexgen;
-        String filename = "";
-        String path = DirectoryManager.getPath("index-files");
-        String relpath = DirectoryManager.getRelativePath("index-files");
+        DocPath filename = DocPath.empty;
+        DocPath path = DocPaths.INDEX_FILES;
         try {
             for (int i = 0; i < indexbuilder.elements().length; i++) {
                 int j = i + 1;
                 int prev = (j == 1)? -1: i;
                 int next = (j == indexbuilder.elements().length)? -1: j + 1;
-                filename = "index-" + j +".html";
+                filename = DocPaths.indexN(j);
                 indexgen = new SplitIndexWriter(configuration,
-                                                path, filename, relpath,
+                                                path.resolve(filename),
                                                 indexbuilder, prev, next);
                 indexgen.generateIndexFile((Character)indexbuilder.
                                                                  elements()[i]);
@@ -98,7 +101,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         } catch (IOException exc) {
             configuration.standardmessage.error(
                         "doclet.exception_encountered",
-                        exc.toString(), filename);
+                        exc.toString(), filename.getPath());
             throw new DocletAbortException();
         }
     }
@@ -136,7 +139,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         Object[] unicodeChars = indexbuilder.elements();
         for (int i = 0; i < unicodeChars.length; i++) {
             int j = i + 1;
-            contentTree.addContent(getHyperLink("index-" + j + ".html",
+            contentTree.addContent(getHyperLink(DocPaths.indexN(j),
                     new StringContent(unicodeChars[i].toString())));
             contentTree.addContent(getSpace());
         }
@@ -153,7 +156,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             return HtmlTree.LI(prevletterLabel);
         }
         else {
-            Content prevLink = getHyperLink("index-" + prev + ".html", "",
+            Content prevLink = getHyperLink(DocPaths.indexN(prev),
                     prevletterLabel);
             return HtmlTree.LI(prevLink);
         }
@@ -170,7 +173,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             return HtmlTree.LI(nextletterLabel);
         }
         else {
-            Content nextLink = getHyperLink("index-" + next + ".html","",
+            Content nextLink = getHyperLink(DocPaths.indexN(next),
                     nextletterLabel);
             return HtmlTree.LI(nextLink);
         }

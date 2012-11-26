@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,21 +34,25 @@ import java.nio.channels.*;
 
 public class IsBound {
     public static void main(String argv[]) throws Exception {
-        InetSocketAddress isa = new InetSocketAddress(
-            InetAddress.getByName(TestUtil.HOST), 13);
-        ByteBuffer bb = ByteBuffer.allocateDirect(256);
-        bb.put("hello".getBytes());
-        bb.flip();
+        try (TestServers.UdpDayTimeServer daytimeServer
+                = TestServers.UdpDayTimeServer.startNewServer(100)) {
+            InetSocketAddress isa = new InetSocketAddress(
+                daytimeServer.getAddress(),
+                daytimeServer.getPort());
+            ByteBuffer bb = ByteBuffer.allocateDirect(256);
+            bb.put("hello".getBytes());
+            bb.flip();
 
-        DatagramChannel dc = DatagramChannel.open();
-        dc.send(bb, isa);
-        if(!dc.socket().isBound())
-            throw new Exception("Test failed");
-        dc.close();
+            DatagramChannel dc = DatagramChannel.open();
+            dc.send(bb, isa);
+            if(!dc.socket().isBound())
+                throw new Exception("Test failed");
+            dc.close();
 
-        dc = DatagramChannel.open();
-        if(dc.socket().isBound())
-            throw new Exception("Test failed");
-        dc.close();
+            dc = DatagramChannel.open();
+            if(dc.socket().isBound())
+                throw new Exception("Test failed");
+            dc.close();
+        }
     }
 }

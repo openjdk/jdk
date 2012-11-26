@@ -36,7 +36,6 @@
   static int native_entry(Method* method, intptr_t UNUSED, TRAPS);
   static int accessor_entry(Method* method, intptr_t UNUSED, TRAPS);
   static int empty_entry(Method* method, intptr_t UNUSED, TRAPS);
-  static int method_handle_entry(Method* method, intptr_t UNUSED, TRAPS);
 
  public:
   // Main loop of normal_entry
@@ -44,7 +43,6 @@
 
  private:
   // Helpers for method_handle_entry
-  static void process_method_handle(oop method_handle, TRAPS);
   static void insert_vmslots(int insert_before, int num_slots, TRAPS);
   static void remove_vmslots(int first_slot, int num_slots, TRAPS);
   static BasicType result_type_of_handle(oop method_handle);

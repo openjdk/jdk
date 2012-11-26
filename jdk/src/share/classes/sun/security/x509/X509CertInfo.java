@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,12 +68,13 @@ public class X509CertInfo implements CertAttrSet<String> {
     public static final String IDENT = "x509.info";
     // Certificate attribute names
     public static final String NAME = "info";
+    public static final String DN_NAME = "dname";
     public static final String VERSION = CertificateVersion.NAME;
     public static final String SERIAL_NUMBER = CertificateSerialNumber.NAME;
     public static final String ALGORITHM_ID = CertificateAlgorithmId.NAME;
-    public static final String ISSUER = CertificateIssuerName.NAME;
+    public static final String ISSUER = "issuer";
+    public static final String SUBJECT = "subject";
     public static final String VALIDITY = CertificateValidity.NAME;
-    public static final String SUBJECT = CertificateSubjectName.NAME;
     public static final String KEY = CertificateX509Key.NAME;
     public static final String ISSUER_ID = "issuerID";
     public static final String SUBJECT_ID = "subjectID";
@@ -83,9 +84,9 @@ public class X509CertInfo implements CertAttrSet<String> {
     protected CertificateVersion version = new CertificateVersion();
     protected CertificateSerialNumber   serialNum = null;
     protected CertificateAlgorithmId    algId = null;
-    protected CertificateIssuerName     issuer = null;
+    protected X500Name                  issuer = null;
+    protected X500Name                  subject = null;
     protected CertificateValidity       interval = null;
-    protected CertificateSubjectName    subject = null;
     protected CertificateX509Key        pubKey = null;
 
     // X509.v2 & v3 extensions
@@ -399,11 +400,7 @@ public class X509CertInfo implements CertAttrSet<String> {
             break;
 
         case ATTR_ISSUER:
-            if (suffix == null) {
-                setIssuer(val);
-            } else {
-                issuer.set(suffix, val);
-            }
+            setIssuer(val);
             break;
 
         case ATTR_VALIDITY:
@@ -415,11 +412,7 @@ public class X509CertInfo implements CertAttrSet<String> {
             break;
 
         case ATTR_SUBJECT:
-            if (suffix == null) {
-                setSubject(val);
-            } else {
-                subject.set(suffix, val);
-            }
+            setSubject(val);
             break;
 
         case ATTR_KEY:
@@ -493,11 +486,7 @@ public class X509CertInfo implements CertAttrSet<String> {
             }
             break;
         case (ATTR_ISSUER):
-            if (suffix == null) {
-                issuer = null;
-            } else {
-                issuer.delete(suffix);
-            }
+            issuer = null;
             break;
         case (ATTR_VALIDITY):
             if (suffix == null) {
@@ -507,11 +496,7 @@ public class X509CertInfo implements CertAttrSet<String> {
             }
             break;
         case (ATTR_SUBJECT):
-            if (suffix == null) {
-                subject = null;
-            } else {
-                subject.delete(suffix);
-            }
+            subject = null;
             break;
         case (ATTR_KEY):
             if (suffix == null) {
@@ -571,13 +556,13 @@ public class X509CertInfo implements CertAttrSet<String> {
             if (suffix == null) {
                 return(subject);
             } else {
-                return(subject.get(suffix));
+                return(getX500Name(suffix, false));
             }
         case (ATTR_ISSUER):
             if (suffix == null) {
                 return(issuer);
             } else {
-                return(issuer.get(suffix));
+                return(getX500Name(suffix, true));
             }
         case (ATTR_KEY):
             if (suffix == null) {
@@ -618,6 +603,21 @@ public class X509CertInfo implements CertAttrSet<String> {
     }
 
     /*
+     * Get the Issuer or Subject name
+     */
+    private Object getX500Name(String name, boolean getIssuer)
+        throws IOException {
+        if (name.equalsIgnoreCase(X509CertInfo.DN_NAME)) {
+            return getIssuer ? issuer : subject;
+        } else if (name.equalsIgnoreCase("x500principal")) {
+            return getIssuer ? issuer.asX500Principal()
+                             : subject.asX500Principal();
+        } else {
+            throw new IOException("Attribute name not recognized.");
+        }
+    }
+
+    /*
      * This routine unmarshals the certificate information.
      */
     private void parse(DerValue val)
@@ -646,9 +646,8 @@ public class X509CertInfo implements CertAttrSet<String> {
         algId = new CertificateAlgorithmId(in);
 
         // Issuer name
-        issuer = new CertificateIssuerName(in);
-        X500Name issuerDN = (X500Name)issuer.get(CertificateIssuerName.DN_NAME);
-        if (issuerDN.isEmpty()) {
+        issuer = new X500Name(in);
+        if (issuer.isEmpty()) {
             throw new CertificateParsingException(
                 "Empty issuer DN not allowed in X509Certificates");
         }
@@ -657,10 +656,9 @@ public class X509CertInfo implements CertAttrSet<String> {
         interval = new CertificateValidity(in);
 
         // subject name
-        subject = new CertificateSubjectName(in);
-        X500Name subjectDN = (X500Name)subject.get(CertificateSubjectName.DN_NAME);
+        subject = new X500Name(in);
         if ((version.compare(CertificateVersion.V1) == 0) &&
-                subjectDN.isEmpty()) {
+                subject.isEmpty()) {
             throw new CertificateParsingException(
                       "Empty subject DN not allowed in v1 certificate");
         }
@@ -712,13 +710,12 @@ public class X509CertInfo implements CertAttrSet<String> {
     /*
      * Verify if X.509 V3 Certificate is compliant with RFC 3280.
      */
-    private void verifyCert(CertificateSubjectName subject,
+    private void verifyCert(X500Name subject,
         CertificateExtensions extensions)
         throws CertificateParsingException, IOException {
 
         // if SubjectName is empty, check for SubjectAlternativeNameExtension
-        X500Name subjectDN = (X500Name)subject.get(CertificateSubjectName.DN_NAME);
-        if (subjectDN.isEmpty()) {
+        if (subject.isEmpty()) {
             if (extensions == null) {
                 throw new CertificateParsingException("X.509 Certificate is " +
                         "incomplete: subject field is empty, and certificate " +
@@ -859,11 +856,11 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @exception CertificateException on invalid data.
      */
     private void setIssuer(Object val) throws CertificateException {
-        if (!(val instanceof CertificateIssuerName)) {
+        if (!(val instanceof X500Name)) {
             throw new CertificateException(
                              "Issuer class type invalid.");
         }
-        issuer = (CertificateIssuerName)val;
+        issuer = (X500Name)val;
     }
 
     /**
@@ -887,11 +884,11 @@ public class X509CertInfo implements CertAttrSet<String> {
      * @exception CertificateException on invalid data.
      */
     private void setSubject(Object val) throws CertificateException {
-        if (!(val instanceof CertificateSubjectName)) {
+        if (!(val instanceof X500Name)) {
             throw new CertificateException(
                              "Subject class type invalid.");
         }
-        subject = (CertificateSubjectName)val;
+        subject = (X500Name)val;
     }
 
     /**

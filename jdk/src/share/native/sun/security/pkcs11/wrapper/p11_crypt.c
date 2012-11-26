@@ -180,14 +180,14 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     if (directIn != 0) {
-      inBufP = (CK_BYTE_PTR) directIn;
+      inBufP = (CK_BYTE_PTR) jlong_to_ptr(directIn);
     } else {
       inBufP = (*env)->GetPrimitiveArrayCritical(env, jIn, NULL);
       if (inBufP == NULL) { return 0; }
     }
 
     if (directOut != 0) {
-      outBufP = (CK_BYTE_PTR) directOut;
+      outBufP = (CK_BYTE_PTR) jlong_to_ptr(directOut);
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) {
@@ -249,7 +249,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptFinal
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     if (directOut != 0) {
-      outBufP = (CK_BYTE_PTR) directOut;
+      outBufP = (CK_BYTE_PTR) jlong_to_ptr(directOut);
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) { return 0; }
@@ -401,14 +401,14 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     if (directIn != 0) {
-      inBufP = (CK_BYTE_PTR) directIn;
+      inBufP = (CK_BYTE_PTR) jlong_to_ptr(directIn);
     } else {
       inBufP = (*env)->GetPrimitiveArrayCritical(env, jIn, NULL);
       if (inBufP == NULL) { return 0; }
     }
 
     if (directOut != 0) {
-      outBufP = (CK_BYTE_PTR) directOut;
+      outBufP = (CK_BYTE_PTR) jlong_to_ptr(directOut);
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) {
@@ -465,7 +465,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptFinal
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     if (directOut != 0) {
-      outBufP = (CK_BYTE_PTR) directOut;
+      outBufP = (CK_BYTE_PTR) jlong_to_ptr(directOut);
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) { return 0; }

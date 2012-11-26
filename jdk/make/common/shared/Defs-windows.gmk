@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,15 @@ define OptFullPath
 $(shell if [ "$1" != "" -a -d "$1" ]; then $(CYGPATH_CMD) "$1" 2> $(DEV_NULL); else echo "$1"; fi)
 endef
 else
+ifdef USING_MSYS
+DOSPATH_CMD:=$(shell cd $(JDK_TOPDIR) 2> $(DEV_NULL) && pwd)/make/tools/msys_build_scripts/dospath.sh
+define FullPath
+$(subst \,/,$(shell $(DOSPATH_CMD) $1))
+endef
+define OptFullPath
+$(shell if [ "$1" != "" -a -d "$1" ]; then (cd $1 && pwd); else echo "$1"; fi)
+endef
+else
 # Temporary until we upgrade to MKS 8.7, MKS pwd returns mixed mode path
 define FullPath
 $(shell cd $1 2> $(DEV_NULL) && pwd)
@@ -119,6 +128,7 @@ endef
 define OptFullPath
 $(shell if [ "$1" != "" -a -d "$1" ]; then (cd $1 && pwd); else echo "$1"; fi)
 endef
+endif
 endif
 
 # System drive
@@ -146,43 +156,47 @@ else
   ifdef USING_CYGWIN
     UNIXCOMMAND_PATH :=$(call PrefixPath,/usr/bin)
   else
-    ifdef ROOTDIR
-      xROOTDIR :="$(subst \,/,$(ROOTDIR))"
-      _rootdir :=$(call FullPath,$(xROOTDIR))
+    ifdef USING_MSYS
+      UNIXCOMMAND_PATH :=$(call PrefixPath,/bin)
     else
-      xROOTDIR :="$(_system_drive)/mksnt"
-      _rootdir :=$(call FullPath,$(xROOTDIR))
-    endif
-    ifneq ($(_rootdir),)
-      UNIXCOMMAND_PATH :=$(call PrefixPath,$(_rootdir)/mksnt)
-    endif
-  endif
+      ifdef ROOTDIR
+        xROOTDIR :="$(subst \,/,$(ROOTDIR))"
+        _rootdir :=$(call FullPath,$(xROOTDIR))
+      else
+        xROOTDIR :="$(_system_drive)/mksnt"
+        _rootdir :=$(call FullPath,$(xROOTDIR))
+      endif
+      ifneq ($(_rootdir),)
+        UNIXCOMMAND_PATH :=$(call PrefixPath,$(_rootdir)/mksnt)
+      endif
+    endif # USING_MSYS
+  endif # USING_CYGWIN
 endif
 UNIXCOMMAND_PATH:=$(call AltCheckSpaces,UNIXCOMMAND_PATH)
 
 # Get version of MKS or CYGWIN
-ifndef USING_CYGWIN
-_MKS_VER :=$(shell $(MKSINFO) 2>&1 | $(GREP) Release | $(TAIL) -1 | $(SED) -e 's@.*\(Release.*\)@\1@')
-MKS_VER  :=$(call GetVersion,$(_MKS_VER))
-# At this point, we can re-define FullPath to use DOSNAME_CMD
-CHECK_MKS87:=$(call CheckVersions,$(MKS_VER),8.7)
-TRY_DOSNAME:=false
-ifeq ($(CHECK_MKS87),same)
-TRY_DOSNAME:=true
-endif
-# Newer should be ok
-ifeq ($(CHECK_MKS87),newer)
-TRY_DOSNAME:=true
-endif
-ifeq ($(TRY_DOSNAME),true)
-ifeq ($(shell $(UNIXCOMMAND_PATH)dosname -s $(_system_drive)/ 2> $(DEV_NULL)),$(_system_drive)/)
-_DOSNAME=$(UNIXCOMMAND_PATH)dosname
-DOSNAME_CMD:=$(_DOSNAME) -s
+ifdef USING_MKS
+  _MKS_VER :=$(shell $(MKSINFO) 2>&1 | $(GREP) Release | $(TAIL) -1 | $(SED) -e 's@.*\(Release.*\)@\1@')
+  MKS_VER  :=$(call GetVersion,$(_MKS_VER))
+  # At this point, we can re-define FullPath to use DOSNAME_CMD
+  CHECK_MKS87:=$(call CheckVersions,$(MKS_VER),8.7)
+  TRY_DOSNAME:=false
+  ifeq ($(CHECK_MKS87),same)
+    TRY_DOSNAME:=true
+  endif
+  # Newer should be ok
+  ifeq ($(CHECK_MKS87),newer)
+    TRY_DOSNAME:=true
+  endif
+  ifeq ($(TRY_DOSNAME),true)
+    ifeq ($(shell $(UNIXCOMMAND_PATH)dosname -s $(_system_drive)/ 2> $(DEV_NULL)),$(_system_drive)/)
+      _DOSNAME=$(UNIXCOMMAND_PATH)dosname
+      DOSNAME_CMD:=$(_DOSNAME) -s
 define FullPath
 $(subst //,/,$(shell echo $1 | $(DOSNAME_CMD) 2> $(DEV_NULL)))
 endef
-endif # test dosname -s
-endif # TRY_DOSNAME
+    endif # test dosname -s
+  endif # TRY_DOSNAME
 endif # MKS
 
 # We try to get references to what we need via the default component
@@ -440,10 +454,14 @@ else
   ifdef USING_CYGWIN
     DEVTOOLS_PATH :=$(UNIXCOMMAND_PATH)
   else
-    xDEVTOOLS_PATH  :="$(_system_drive)/utils"
-    fxDEVTOOLS_PATH :=$(call FullPath,$(xDEVTOOLS_PATH))
-    DEVTOOLS_PATH  :=$(call PrefixPath,$(fxDEVTOOLS_PATH))
-  endif
+    ifdef USING_MSYS
+      DEVTOOLS_PATH :=$(UNIXCOMMAND_PATH)
+    else
+      xDEVTOOLS_PATH  :="$(_system_drive)/utils"
+      fxDEVTOOLS_PATH :=$(call FullPath,$(xDEVTOOLS_PATH))
+      DEVTOOLS_PATH  :=$(call PrefixPath,$(fxDEVTOOLS_PATH))
+    endif # USING_MSYS
+  endif # USING_CYGWIN
 endif
 DEVTOOLS_PATH:=$(call AltCheckSpaces,DEVTOOLS_PATH)
 
@@ -636,7 +654,7 @@ HOTSPOT_LIB_PATH:=$(call AltCheckValue,HOTSPOT_LIB_PATH)
 
 # Special define for checking the binaries
 
-# All windows dll and exe files should have been built with /NXCOMPAT
+# All windows dll and exe files should have been built with -NXCOMPAT
 #   and be setup for dynamic base addresses.
 #   In addition, we should not be dependent on certain dll files that
 #   we do not or cannot redistribute.
@@ -648,37 +666,37 @@ else
   BANNED_DLLS=msvcp100[.]dll|msvcr100d[.]dll|msvcrtd[.]dll
 endif
 
-# Check for /safeseh (only used on 32bit)
+# Check for -safeseh (only used on 32bit)
 define binary_file_safeseh_verification # binary_file
 ( \
-  $(ECHO) "Checking for /SAFESEH usage in: $1" && \
-  if [ "`$(DUMPBIN) /loadconfig $1 | $(EGREP) -i 'Safe Exception Handler Table'`" = "" ] ; then \
+  $(ECHO) "Checking for -SAFESEH usage in: $1" && \
+  if [ "`$(DUMPBIN) -loadconfig $1 | $(EGREP) -i 'Safe Exception Handler Table'`" = "" ] ; then \
     $(ECHO) "ERROR: Did not find 'Safe Exception Handler Table' in loadconfig: $1" ; \
-    $(DUMPBIN) /loadconfig $1 ; \
+    $(DUMPBIN) -loadconfig $1 ; \
     exit 6 ; \
   fi ; \
 )
 endef
 
-# Check for /NXCOMPAT usage
+# Check for -NXCOMPAT usage
 define binary_file_nxcompat_verification # binary_file
 ( \
-  $(ECHO) "Checking for /NXCOMPAT usage in: $1" && \
-  if [ "`$(DUMPBIN) /headers $1 | $(EGREP) -i 'NX compatible'`" = "" ] ; then \
+  $(ECHO) "Checking for -NXCOMPAT usage in: $1" && \
+  if [ "`$(DUMPBIN) -headers $1 | $(EGREP) -i 'NX compatible'`" = "" ] ; then \
     $(ECHO) "ERROR: Did not find 'NX compatible' in headers: $1" ; \
-    $(DUMPBIN) /headers $1 ; \
+    $(DUMPBIN) -headers $1 ; \
     exit 7 ; \
   fi ; \
 )
 endef
 
-# Check for /DYNAMICBASE usage
+# Check for -DYNAMICBASE usage
 define binary_file_dynamicbase_verification # binary_file
 ( \
-  $(ECHO) "Checking for /DYNAMICBASE usage in: $1" && \
-  if [ "`$(DUMPBIN) /headers $1 | $(EGREP) -i 'Dynamic base'`" = "" ] ; then \
+  $(ECHO) "Checking for -DYNAMICBASE usage in: $1" && \
+  if [ "`$(DUMPBIN) -headers $1 | $(EGREP) -i 'Dynamic base'`" = "" ] ; then \
     $(ECHO) "ERROR: Did not find 'Dynamic base' in headers: $1" ; \
-    $(DUMPBIN) /headers $1 ; \
+    $(DUMPBIN) -headers $1 ; \
     exit 8 ; \
   fi ; \
 )
@@ -688,9 +706,9 @@ endef
 define binary_file_dll_verification # binary_file
 ( \
   $(ECHO) "Checking for banned dependencies in: $1" && \
-  if [ "`$(DUMPBIN) /dependents $1 | $(EGREP) -i '$(BANNED_DLLS)'`" != "" ] ; then \
+  if [ "`$(DUMPBIN) -dependents $1 | $(EGREP) -i '$(BANNED_DLLS)'`" != "" ] ; then \
     $(ECHO) "ERROR: Found use of $(BANNED_DLLS)"; \
-    $(DUMPBIN) /dependents $1 ; \
+    $(DUMPBIN) -dependents $1 ; \
     exit 9 ; \
   fi ; \
 )

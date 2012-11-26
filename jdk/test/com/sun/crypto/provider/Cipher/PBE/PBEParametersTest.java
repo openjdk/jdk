@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4944783
+ * @bug 4944783 6383200
  * @summary ensure that the AlgorithmParameters object returned by
  * PBE ciphers have the matching algorithm name.
  * @author Valerie Peng
@@ -37,8 +37,20 @@ public class PBEParametersTest {
 
     private static final char[] PASSWORD = { 'p', 'a', 's', 's' };
     private static final String[] PBE_ALGOS = {
-        "PBEWithMD5AndDES", "PBEWithSHA1AndDESede", "PBEWithSHA1AndRC2_40"
+        "PBEWithMD5AndDES",
+        "PBEWithSHA1AndDESede",
+        "PBEWithSHA1AndRC2_40",
+        "PBEWithSHA1AndRC2_128",
+        "PBEWithSHA1AndRC4_40",
+        "PBEWithSHA1AndRC4_128",
         // skip "PBEWithMD5AndTripleDES" since it requires Unlimited
+        // version of JCE jurisdiction policy files.
+        "PBEWithHmacSHA1AndAES_128",
+        "PBEWithHmacSHA224AndAES_128",
+        "PBEWithHmacSHA256AndAES_128",
+        "PBEWithHmacSHA384AndAES_128",
+        "PBEWithHmacSHA512AndAES_128"
+        // skip "PBEWithHmacSHAxxxAndAES_256" since they require Unlimited
         // version of JCE jurisdiction policy files.
     };
     public static void main(String[] args) throws Exception {

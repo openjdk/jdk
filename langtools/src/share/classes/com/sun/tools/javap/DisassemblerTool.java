@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,13 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Locale;
 import java.util.concurrent.Callable;
+import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.OptionChecker;
 import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 import javax.tools.Tool;
 
 /**
@@ -69,9 +71,7 @@ public interface DisassemblerTool extends Tool, OptionChecker {
      * @param options compiler options, {@code null} means no options
      * @param classes class names (for annotation processing), {@code
      * null} means no class names
-     * @param compilationUnits the compilation units to compile, {@code
-     * null} means no compilation units
-     * @return an object representing the compilation
+     * @return a task to perform the disassembly
      * @throws RuntimeException if an unrecoverable error
      * occurred in a user supplied component.  The
      * {@linkplain Throwable#getCause() cause} will be the error in

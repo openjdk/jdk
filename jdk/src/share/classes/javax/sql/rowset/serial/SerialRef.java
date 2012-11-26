@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,85 @@ public class SerialRef implements Ref, Serializable, Cloneable {
     }
 
     /**
-         * The identifier that assists in the serialization of this <code>SerialRef</code>
+     * Compares this SerialRef to the specified object.  The result is {@code
+     * true} if and only if the argument is not {@code null} and is a {@code
+     * SerialRef} object that represents the same object as this
+     * object.
+     *
+     * @param  obj The object to compare this {@code SerialRef} against
+     *
+     * @return  {@code true} if the given object represents a {@code SerialRef}
+     *          equivalent to this SerialRef, {@code false} otherwise
+     *
+     */
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if(obj instanceof SerialRef) {
+            SerialRef ref = (SerialRef)obj;
+            return baseTypeName.equals(ref.baseTypeName) &&
+                    object.equals(ref.object);
+        }
+        return false;
+    }
+
+    /**
+     * Returns a hash code for this {@code SerialRef}.
+     * @return  a hash code value for this object.
+     */
+    public int hashCode() {
+        return (31 + object.hashCode()) * 31 + baseTypeName.hashCode();
+    }
+
+    /**
+     * Returns a clone of this {@code SerialRef}. .
+     * The underlying {@code Ref} object will be set to null.
+     *
+     * @return  a clone of this SerialRef
+     */
+    public Object clone() {
+        try {
+            SerialRef ref = (SerialRef) super.clone();
+            ref.reference = null;
+            return ref;
+        } catch (CloneNotSupportedException ex) {
+            // this shouldn't happen, since we are Cloneable
+            throw new InternalError();
+        }
+
+    }
+
+    /**
+     * readObject is called to restore the state of the SerialRef from
+     * a stream.
+     */
+    private void readObject(ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField fields = s.readFields();
+        object = fields.get("object", null);
+        baseTypeName = (String) fields.get("baseTypeName", null);
+        reference = (Ref) fields.get("reference", null);
+    }
+
+    /**
+     * writeObject is called to save the state of the SerialRef
+     * to a stream.
+     */
+    private void writeObject(ObjectOutputStream s)
+            throws IOException, ClassNotFoundException {
+
+        ObjectOutputStream.PutField fields = s.putFields();
+        fields.put("baseTypeName", baseTypeName);
+        fields.put("object", object);
+        // Note: this check to see if it is an instance of Serializable
+        // is for backwards compatibiity
+        fields.put("reference", reference instanceof Serializable ? reference : null);
+        s.writeFields();
+    }
+
+    /**
+     * The identifier that assists in the serialization of this <code>SerialRef</code>
      * object.
      */
     static final long serialVersionUID = -4727123500609662274L;

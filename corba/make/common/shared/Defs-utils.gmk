@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -151,16 +151,26 @@ CD             = cd # intrinsic unix command
 ifeq ($(PLATFORM),windows)
   ifdef USING_CYGWIN
     # Intrinsic unix command, with backslash-escaped character interpretation
-    ECHO = $(UNIXCOMMAND_PATH)echo -e
-    ZIPEXE = $(UNIXCOMMAND_PATH)zip
-    UNZIP  = $(UNIXCOMMAND_PATH)unzip
+    ECHO     = $(UNIXCOMMAND_PATH)echo -e
+    ZIPEXE   = $(UNIXCOMMAND_PATH)zip
+    UNZIP    = $(UNIXCOMMAND_PATH)unzip
+    # Some CYGWIN nawk versions require BINMODE=w for proper '\r' interpretation
+    NAWK     = $(UNIXCOMMAND_PATH)awk -v BINMODE=w
   else
-    ZIPEXE = $(UTILS_DEVTOOL_PATH)zip
-    UNZIP  = $(UTILS_DEVTOOL_PATH)unzip
+    ifdef USING_MSYS
+      ECHO   = $(UTILS_COMMAND_PATH)echo -e
+      ZIPEXE = $(UTILS_DEVTOOL_PATH)zip
+      UNZIP  = $(UTILS_DEVTOOL_PATH)unzip
+      NAWK   = $(UNIXCOMMAND_PATH)awk
+    else
+      ZIPEXE = $(UTILS_DEVTOOL_PATH)zip
+      UNZIP  = $(UTILS_DEVTOOL_PATH)unzip
+      NAWK   = $(UNIXCOMMAND_PATH)awk
+    endif
   endif
   # Re-define some utilities
   LEX            =# override GNU Make intrinsic: no lex on windows
-  NAWK           = $(UNIXCOMMAND_PATH)awk
+  SHA1SUM        = $(UNIXCOMMAND_PATH)openssl sha1
 endif
 
 # Linux specific

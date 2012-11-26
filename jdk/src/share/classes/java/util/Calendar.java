@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2699,12 +2699,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         /* try to get the Locale data from the cache */
         int[] data = cachedLocaleData.get(desiredLocale);
         if (data == null) {  /* cache miss */
-            LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(CalendarDataProvider.class, desiredLocale);
-            CalendarDataProvider provider = adapter.getCalendarDataProvider();
             data = new int[2];
-            data[0] = provider.getFirstDayOfWeek(desiredLocale);
-            data[1] = provider.getMinimalDaysInFirstWeek(desiredLocale);
-            assert data[0] != 0 && data[1] != 0;
+            data[0] = CalendarDataUtility.retrieveFirstDayOfWeek(desiredLocale);
+            data[1] = CalendarDataUtility.retrieveMinimalDaysInFirstWeek(desiredLocale);
             cachedLocaleData.putIfAbsent(desiredLocale, data);
         }
         firstDayOfWeek = data[0];

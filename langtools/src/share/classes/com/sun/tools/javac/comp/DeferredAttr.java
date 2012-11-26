@@ -44,9 +44,9 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.code.TypeTag.DEFERRED;
+import static com.sun.tools.javac.code.TypeTag.NONE;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /**
  * This is an helper class that is used to perform deferred type-analysis.
@@ -204,7 +204,7 @@ public class DeferredAttr extends JCTree.Visitor {
                         case SPECULATIVE:
                             Assert.check(mode == null ||
                                     (mode == AttrMode.SPECULATIVE &&
-                                    speculativeType(deferredAttrContext.msym, deferredAttrContext.phase).tag == NONE));
+                                    speculativeType(deferredAttrContext.msym, deferredAttrContext.phase).hasTag(NONE)));
                             JCTree speculativeTree = attribSpeculative(tree, env, resultInfo);
                             speculativeCache.put(deferredAttrContext.msym, speculativeTree, deferredAttrContext.phase);
                             return speculativeTree.type;
@@ -443,7 +443,7 @@ public class DeferredAttr extends JCTree.Visitor {
 
         @Override
         public Type apply(Type t) {
-            if (t.tag != DEFERRED) {
+            if (!t.hasTag(DEFERRED)) {
                 return t.map(this);
             } else {
                 DeferredType dt = (DeferredType)t;
@@ -480,7 +480,7 @@ public class DeferredAttr extends JCTree.Visitor {
         @Override
         protected Type typeOf(DeferredType dt) {
             Type owntype = super.typeOf(dt);
-            return owntype.tag == NONE ?
+            return owntype.hasTag(NONE) ?
                         recover(dt) : owntype;
         }
 
@@ -517,7 +517,7 @@ public class DeferredAttr extends JCTree.Visitor {
      */
     @SuppressWarnings("fallthrough")
     List<Type> stuckVars(JCTree tree, ResultInfo resultInfo) {
-        if (resultInfo.pt.tag == NONE || resultInfo.pt.isErroneous()) {
+        if (resultInfo.pt.hasTag(NONE) || resultInfo.pt.isErroneous()) {
             return List.nil();
         } else {
             StuckChecker sc = new StuckChecker(resultInfo);

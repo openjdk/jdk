@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,6 +279,9 @@ public class KeyTab implements KeyTabConstants {
         EncryptionKey key;
         int size = entries.size();
         ArrayList<EncryptionKey> keys = new ArrayList<>(size);
+        if (DEBUG) {
+            System.out.println("Looking for keys for: " + service);
+        }
         for (int i = size-1; i >= 0; i--) {
             entry = entries.elementAt(i);
             if (entry.service.match(service)) {

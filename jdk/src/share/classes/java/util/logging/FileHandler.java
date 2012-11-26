@@ -25,10 +25,19 @@
 
 package java.util.logging;
 
-import java.io.*;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.WRITE;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.security.*;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Simple file logging <tt>Handler</tt>.
@@ -137,14 +146,16 @@ public class FileHandler extends StreamHandler {
     private int count;
     private String pattern;
     private String lockFileName;
-    private FileOutputStream lockStream;
+    private FileChannel lockFileChannel;
     private File files[];
     private static final int MAX_LOCKS = 100;
     private static java.util.HashMap<String, String> locks = new java.util.HashMap<>();
 
-    // A metered stream is a subclass of OutputStream that
-    //   (a) forwards all its output to a target stream
-    //   (b) keeps track of how many bytes have been written
+    /**
+     * A metered stream is a subclass of OutputStream that
+     * (a) forwards all its output to a target stream
+     * (b) keeps track of how many bytes have been written
+     */
     private class MeteredStream extends OutputStream {
         OutputStream out;
         int written;
@@ -189,9 +200,10 @@ public class FileHandler extends StreamHandler {
         setOutputStream(meter);
     }
 
-    // Private method to configure a FileHandler from LogManager
-    // properties and/or default values as specified in the class
-    // javadoc.
+    /**
+     * Configure a FileHandler from LogManager properties and/or default values
+     * as specified in the class javadoc.
+     */
     private void configure() {
         LogManager manager = LogManager.getLogManager();
 
@@ -233,7 +245,7 @@ public class FileHandler extends StreamHandler {
      * @exception  NullPointerException if pattern property is an empty String.
      */
     public FileHandler() throws IOException, SecurityException {
-        checkAccess();
+        checkPermission();
         configure();
         openFiles();
     }
@@ -259,7 +271,7 @@ public class FileHandler extends StreamHandler {
         if (pattern.length() < 1 ) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = 0;
@@ -287,11 +299,12 @@ public class FileHandler extends StreamHandler {
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      * @exception  IllegalArgumentException if pattern is an empty string
      */
-    public FileHandler(String pattern, boolean append) throws IOException, SecurityException {
+    public FileHandler(String pattern, boolean append) throws IOException,
+            SecurityException {
         if (pattern.length() < 1 ) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = 0;
@@ -328,7 +341,7 @@ public class FileHandler extends StreamHandler {
         if (limit < 0 || count < 1 || pattern.length() < 1) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = limit;
@@ -367,7 +380,7 @@ public class FileHandler extends StreamHandler {
         if (limit < 0 || count < 1 || pattern.length() < 1) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
+        checkPermission();
         configure();
         this.pattern = pattern;
         this.limit = limit;
@@ -376,11 +389,13 @@ public class FileHandler extends StreamHandler {
         openFiles();
     }
 
-    // Private method to open the set of output files, based on the
-    // configured instance variables.
+    /**
+     * Open the set of output files, based on the configured
+     * instance variables.
+     */
     private void openFiles() throws IOException {
         LogManager manager = LogManager.getLogManager();
-        manager.checkAccess();
+        manager.checkPermission();
         if (count < 1) {
            throw new IllegalArgumentException("file count = " + count);
         }
@@ -413,18 +428,18 @@ public class FileHandler extends StreamHandler {
                     // object.  Try again.
                     continue;
                 }
-                FileChannel fc;
+
                 try {
-                    lockStream = new FileOutputStream(lockFileName);
-                    fc = lockStream.getChannel();
-                } catch (IOException ix) {
-                    // We got an IOException while trying to open the file.
-                    // Try the next file.
+                    lockFileChannel = FileChannel.open(Paths.get(lockFileName),
+                            CREATE_NEW, WRITE);
+                } catch (FileAlreadyExistsException ix) {
+                    // try the next lock file name in the sequence
                     continue;
                 }
+
                 boolean available;
                 try {
-                    available = fc.tryLock() != null;
+                    available = lockFileChannel.tryLock() != null;
                     // We got the lock OK.
                 } catch (IOException ix) {
                     // We got an IOException while trying to get the lock.
@@ -440,7 +455,7 @@ public class FileHandler extends StreamHandler {
                 }
 
                 // We failed to get the lock.  Try next file.
-                fc.close();
+                lockFileChannel.close();
             }
         }
 
@@ -472,8 +487,17 @@ public class FileHandler extends StreamHandler {
         setErrorManager(new ErrorManager());
     }
 
-    // Generate a filename from a pattern.
-    private File generate(String pattern, int generation, int unique) throws IOException {
+    /**
+     * Generate a file based on a user-supplied pattern, generation number,
+     * and an integer uniqueness suffix
+     * @param pattern the pattern for naming the output file
+     * @param generation the generation number to distinguish rotated logs
+     * @param unique a unique number to resolve conflicts
+     * @return the generated File
+     * @throws IOException
+     */
+    private File generate(String pattern, int generation, int unique)
+            throws IOException {
         File file = null;
         String word = "";
         int ix = 0;
@@ -548,7 +572,9 @@ public class FileHandler extends StreamHandler {
         return file;
     }
 
-    // Rotate the set of output files
+    /**
+     * Rotate the set of output files
+     */
     private synchronized void rotate() {
         Level oldLevel = getLevel();
         setLevel(Level.OFF);
@@ -615,9 +641,8 @@ public class FileHandler extends StreamHandler {
             return;
         }
         try {
-            // Closing the lock file's FileOutputStream will close
-            // the underlying channel and free any locks.
-            lockStream.close();
+            // Close the lock file channel (which also will free any locks)
+            lockFileChannel.close();
         } catch (Exception ex) {
             // Problems closing the stream.  Punt.
         }
@@ -626,7 +651,7 @@ public class FileHandler extends StreamHandler {
         }
         new File(lockFileName).delete();
         lockFileName = null;
-        lockStream = null;
+        lockFileChannel = null;
     }
 
     private static class InitializationErrorManager extends ErrorManager {
@@ -636,6 +661,8 @@ public class FileHandler extends StreamHandler {
         }
     }
 
-    // Private native method to check if we are in a set UID program.
+    /**
+     * check if we are in a set UID program.
+     */
     private static native boolean isSetUID();
 }

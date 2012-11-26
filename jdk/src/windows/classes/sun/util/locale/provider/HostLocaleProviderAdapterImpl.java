@@ -25,7 +25,12 @@
 package sun.util.locale.provider;
 
 import java.lang.ref.SoftReference;
-import java.text.*;
+import java.text.DateFormat;
+import java.text.DateFormatSymbols;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.text.spi.DateFormatProvider;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
@@ -34,12 +39,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.ResourceBundle.Control;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.spi.CalendarDataProvider;
+import java.util.spi.CalendarNameProvider;
 
 /**
  * LocaleProviderdapter implementation for the Windows locale data.
@@ -88,7 +94,7 @@ public class HostLocaleProviderAdapterImpl {
 
     private static final Set<Locale> supportedLocaleSet;
     static {
-        Set<Locale> tmpSet = new HashSet<Locale>();
+        Set<Locale> tmpSet = new HashSet<>();
         if (initialize()) {
             // Assuming the default locales do not include any extensions, so
             // no stripping is needed here.
@@ -258,7 +264,7 @@ public class HostLocaleProviderAdapterImpl {
 
                 if (ref == null || (patterns = ref.get()) == null) {
                     String langtag = locale.toLanguageTag();
-                    patterns = new AtomicReferenceArray<String>(NF_MAX+1);
+                    patterns = new AtomicReferenceArray<>(NF_MAX+1);
                     for (int i = 0; i <= NF_MAX; i++) {
                         patterns.compareAndSet(i, null, getNumberPattern(i, langtag));
                     }
@@ -330,18 +336,6 @@ public class HostLocaleProviderAdapterImpl {
             }
 
             @Override
-            public String getDisplayName(String calType, int field, int value,
-                                         int style, Locale locale) {
-                return null;
-            }
-
-            @Override
-            public Map<String, Integer> getDisplayNames(String calType,
-                                         int field, int style, Locale locale) {
-                return null;
-            }
-
-            @Override
             public int getFirstDayOfWeek(Locale locale) {
                 int first = getCalendarDataValue(
                                  removeExtensions(locale).toLanguageTag(),
@@ -356,6 +350,32 @@ public class HostLocaleProviderAdapterImpl {
             @Override
             public int getMinimalDaysInFirstWeek(Locale locale) {
                 return 0;
+            }
+        };
+    }
+
+    public static CalendarNameProvider getCalendarNameProvider() {
+        return new CalendarNameProvider() {
+            @Override
+            public Locale[] getAvailableLocales() {
+                return getSupportedCalendarLocales();
+            }
+
+            @Override
+            public boolean isSupportedLocale(Locale locale) {
+                return isSupportedCalendarLocale(locale);
+            }
+
+            @Override
+            public String getDisplayName(String calType, int field, int value,
+                                         int style, Locale locale) {
+                return null;
+            }
+
+            @Override
+            public Map<String, Integer> getDisplayNames(String calType,
+                                         int field, int style, Locale locale) {
+                return null;
             }
         };
     }
