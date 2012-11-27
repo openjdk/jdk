@@ -668,8 +668,8 @@ void VMThread::execute(VM_Operation* op) {
 }
 
 
-void VMThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
-  Thread::oops_do(f, cf);
+void VMThread::oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf) {
+  Thread::oops_do(f, cld_f, cf);
   _vm_queue->oops_do(f);
 }
 
@@ -701,5 +701,5 @@ void VMOperationQueue::verify_queue(int prio) {
 #endif
 
 void VMThread::verify() {
-  oops_do(&VerifyOopClosure::verify_oop, NULL);
+  oops_do(&VerifyOopClosure::verify_oop, NULL, NULL);
 }

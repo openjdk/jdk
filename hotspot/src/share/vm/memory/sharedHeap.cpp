@@ -154,10 +154,12 @@ void SharedHeap::process_strong_roots(bool activate_scope,
   if (!_process_strong_tasks->is_task_claimed(SH_PS_JNIHandles_oops_do))
     JNIHandles::oops_do(roots);
   // All threads execute this; the individual threads are task groups.
+  CLDToOopClosure roots_from_clds(roots);
+  CLDToOopClosure* roots_from_clds_p = (is_scavenging ? NULL : &roots_from_clds);
   if (ParallelGCThreads > 0) {
-    Threads::possibly_parallel_oops_do(roots, code_roots);
+    Threads::possibly_parallel_oops_do(roots, roots_from_clds_p ,code_roots);
   } else {
-    Threads::oops_do(roots, code_roots);
+    Threads::oops_do(roots, roots_from_clds_p, code_roots);
   }
   if (!_process_strong_tasks-> is_task_claimed(SH_PS_ObjectSynchronizer_oops_do))
     ObjectSynchronizer::oops_do(roots);
