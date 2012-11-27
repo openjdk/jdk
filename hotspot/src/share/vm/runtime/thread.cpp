@@ -3667,7 +3667,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // initialize compiler(s)
-#if defined(COMPILER1) || defined(COMPILER2)
+#if defined(COMPILER1) || defined(COMPILER2) || defined(SHARK)
   CompileBroker::compilation_init();
 #endif
 
