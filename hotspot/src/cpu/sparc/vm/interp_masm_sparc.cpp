@@ -523,7 +523,8 @@ void InterpreterMacroAssembler::empty_expression_stack() {
   delayed()->nop();
 
   // Compute max expression stack+register save area
-  lduh(Lmethod, in_bytes(Method::max_stack_offset()), Gframe_size);  // Load max stack.
+  ld_ptr(Lmethod, in_bytes(Method::const_offset()), Gframe_size);
+  lduh(Gframe_size, in_bytes(ConstMethod::max_stack_offset()), Gframe_size);  // Load max stack.
   add( Gframe_size, frame::memory_parameter_word_sp_offset, Gframe_size );
 
   //
