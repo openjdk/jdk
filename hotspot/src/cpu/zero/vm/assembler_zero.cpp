@@ -80,6 +80,11 @@ void MacroAssembler::store_oop(jobject obj) {
   emit_address((address) obj);
 }
 
+void MacroAssembler::store_Metadata(Metadata* md) {
+  code_section()->relocate(pc(), metadata_Relocation::spec_for_immediate());
+  emit_address((address) md);
+}
+
 static void should_not_call() {
   report_should_not_call(__FILE__, __LINE__);
 }
