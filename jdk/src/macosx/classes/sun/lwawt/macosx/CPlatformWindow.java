@@ -869,7 +869,8 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         responder.handleWindowFocusEvent(gained, oppositePeer);
     }
 
-    private void deliverMoveResizeEvent(int x, int y, int width, int height) {
+    private void deliverMoveResizeEvent(int x, int y, int width, int height,
+                                        boolean byUser) {
         // when the content view enters the full-screen mode, the native
         // move/resize notifications contain a bounds smaller than
         // the whole screen and therefore we ignore the native notifications
@@ -881,7 +882,7 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         final Rectangle oldB = nativeBounds;
         nativeBounds = new Rectangle(x, y, width, height);
         peer.notifyReshape(x, y, width, height);
-        if (!oldB.getSize().equals(nativeBounds.getSize()) ) {
+        if (byUser && !oldB.getSize().equals(nativeBounds.getSize())) {
             flushBuffers();
         }
         //TODO validateSurface already called from notifyReshape

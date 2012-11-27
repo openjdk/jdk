@@ -449,12 +449,13 @@ AWT_ASSERT_APPKIT_THREAD;
 
     NSRect frame = ConvertNSScreenRect(env, [self.nsWindow frame]);
 
-    static JNF_MEMBER_CACHE(jm_deliverMoveResizeEvent, jc_CPlatformWindow, "deliverMoveResizeEvent", "(IIII)V");
+    static JNF_MEMBER_CACHE(jm_deliverMoveResizeEvent, jc_CPlatformWindow, "deliverMoveResizeEvent", "(IIIIZ)V");
     JNFCallVoidMethod(env, platformWindow, jm_deliverMoveResizeEvent,
                       (jint)frame.origin.x,
                       (jint)frame.origin.y,
                       (jint)frame.size.width,
-                      (jint)frame.size.height);
+                      (jint)frame.size.height,
+                      (jboolean)[self.nsWindow inLiveResize]);
     (*env)->DeleteLocalRef(env, platformWindow);
 }
 
