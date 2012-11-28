@@ -489,11 +489,7 @@ abstract class Handshaker {
         // We accumulate digests of the handshake messages so that
         // we can read/write CertificateVerify and Finished messages,
         // getting assurance against some particular active attacks.
-        Set<String> localSupportedHashAlgorithms =
-            SignatureAndHashAlgorithm.getHashAlgorithmNames(
-                getLocalSupportedSignAlgs());
-        handshakeHash = new HandshakeHash(!isClient, needCertVerify,
-            localSupportedHashAlgorithms);
+        handshakeHash = new HandshakeHash(needCertVerify);
 
         // Generate handshake input/output stream.
         input = new HandshakeInStream(handshakeHash);

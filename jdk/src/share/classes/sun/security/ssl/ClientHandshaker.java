@@ -557,10 +557,6 @@ final class ClientHandshaker extends Handshaker {
         }
 
         if (resumingSession && session != null) {
-            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-                handshakeHash.setCertificateVerifyAlg(null);
-            }
-
             setHandshakeSessionSE(session);
             return;
         }
@@ -975,8 +971,6 @@ final class ClientHandshaker extends Handshaker {
                         throw new SSLHandshakeException(
                                 "No supported hash algorithm");
                     }
-
-                    handshakeHash.setCertificateVerifyAlg(hashAlg);
                 }
 
                 m3 = new CertificateVerify(protocolVersion, handshakeHash,
@@ -994,10 +988,6 @@ final class ClientHandshaker extends Handshaker {
             }
             m3.write(output);
             output.doHashes();
-        } else {
-            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-                handshakeHash.setCertificateVerifyAlg(null);
-            }
         }
 
         /*

@@ -670,9 +670,6 @@ final class ServerHandshaker extends Handshaker {
         }
 
         if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-            if (resumingSession) {
-                handshakeHash.setCertificateVerifyAlg(null);
-            }
             handshakeHash.setFinishedAlg(cipherSuite.prfAlg.getPRFHashAlg());
         }
 
@@ -882,7 +879,6 @@ final class ServerHandshaker extends Handshaker {
                     throw new SSLHandshakeException(
                             "No supported signature algorithm");
                 }
-                handshakeHash.restrictCertificateVerifyAlgs(localHashAlgs);
             }
 
             caCerts = sslContext.getX509TrustManager().getAcceptedIssuers();
@@ -893,10 +889,6 @@ final class ServerHandshaker extends Handshaker {
                 m4.print(System.out);
             }
             m4.write(output);
-        } else {
-            if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-                handshakeHash.setCertificateVerifyAlg(null);
-            }
         }
 
         /*
@@ -1456,8 +1448,6 @@ final class ServerHandshaker extends Handshaker {
                 throw new SSLHandshakeException(
                         "No supported hash algorithm");
             }
-
-            handshakeHash.setCertificateVerifyAlg(hashAlg);
         }
 
         try {
@@ -1672,11 +1662,6 @@ final class ServerHandshaker extends Handshaker {
              * not *REQUIRED*, this is an acceptable condition.)
              */
             if (doClientAuth == SSLEngineImpl.clauth_requested) {
-                // Smart (aka stupid) to forecast that no CertificateVerify
-                // message will be received.
-                if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-                    handshakeHash.setCertificateVerifyAlg(null);
-                }
                 return;
             } else {
                 fatalSE(Alerts.alert_bad_certificate,

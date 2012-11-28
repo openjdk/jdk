@@ -58,9 +58,6 @@ final class MAC {
     // Value of the null MAC is fixed
     private static final byte nullMAC[] = new byte[0];
 
-    // internal identifier for the MAC algorithm
-    private final MacAlg        macAlg;
-
     // stuff defined by the kind of MAC algorithm
     private final int           macSize;
 
@@ -85,7 +82,6 @@ final class MAC {
 
     private MAC() {
         macSize = 0;
-        macAlg = M_NULL;
         mac = null;
         block = null;
     }
@@ -95,7 +91,6 @@ final class MAC {
      */
     MAC(MacAlg macAlg, ProtocolVersion protocolVersion, SecretKey key)
             throws NoSuchAlgorithmException, InvalidKeyException {
-        this.macAlg = macAlg;
         this.macSize = macAlg.size;
 
         String algorithm;
