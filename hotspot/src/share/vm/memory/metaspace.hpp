@@ -135,11 +135,7 @@ class Metaspace : public CHeapObj<mtClass> {
 
   static bool is_initialized() { return _class_space_list != NULL; }
 
-#ifndef PRODUCT
-  bool contains(const void *ptr) const;
-  bool contains_class(const void *ptr) const;
-#endif
-
+  static bool contains(const void *ptr);
   void dump(outputStream* const out) const;
 
   void print_on(outputStream* st) const;

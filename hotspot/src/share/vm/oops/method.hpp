@@ -169,7 +169,8 @@ class Method : public Metadata {
                           ConstMethod::MethodType method_type,
                           TRAPS);
 
-  Method() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  // CDS and vtbl checking can create an empty Method to get vtbl pointer.
+  Method(){}
 
   // The Method vtable is restored by this call when the Method is in the
   // shared archive.  See patch_klass_vtables() in metaspaceShared.cpp for
@@ -811,6 +812,9 @@ class Method : public Metadata {
   void print_value_on(outputStream* st) const;
 
   const char* internal_name() const { return "{method}"; }
+
+  // Check for valid method pointer
+  bool is_valid_method() const;
 
   // Verify
   void verify() { verify_on(tty); }

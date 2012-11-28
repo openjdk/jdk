@@ -1814,6 +1814,23 @@ void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
   loader_data->jmethod_ids()->clear_all_methods();
 }
 
+
+// Check that this pointer is valid by checking that the vtbl pointer matches
+bool Method::is_valid_method() const {
+  if (this == NULL) {
+    return false;
+  } else if (!is_metaspace_object()) {
+    return false;
+  } else {
+    Method m;
+    // This assumes that the vtbl pointer is the first word of a C++ object.
+    // This assumption is also in universe.cpp patch_klass_vtble
+    void* vtbl2 = dereference_vptr((void*)&m);
+    void* this_vtbl = dereference_vptr((void*)this);
+    return vtbl2 == this_vtbl;
+  }
+}
+
 #ifndef PRODUCT
 void Method::print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) {
   out->print_cr("jni_method_id count = %d", loader_data->jmethod_ids()->count_methods());
@@ -1935,7 +1952,7 @@ void Method::verify_on(outputStream* st) {
   guarantee(constMethod()->is_metadata(), "should be metadata");
   MethodData* md = method_data();
   guarantee(md == NULL ||
-      md->is_metadata(), "should be in permspace");
+      md->is_metadata(), "should be metadata");
   guarantee(md == NULL ||
       md->is_methodData(), "should be method data");
 }
