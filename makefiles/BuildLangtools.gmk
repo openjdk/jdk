@@ -38,6 +38,9 @@ $(eval $(call SetupJavaCompiler,BOOT_JAVAC,\
         SERVER_JVM:=$(SJAVAC_SERVER_JAVA),\
         FLAGS:=-XDignore.symbol.file=true -g -Xlint:all$(COMMA)-deprecation -Werror))
 
+# javax.tools.JavaCompilerTool isn't really a suffix but this gets the file copied.
+RESOURCE_SUFFIXES:=.gif .xml .css .js javax.tools.JavaCompilerTool
+
 # Now setup the compilation of the properties compilation tool. You can depend
 # upon $(BUILD_TOOLS) to trigger a compilation of the tools. Note that we
 # add src/share/classes to the sourcepath. This is necessary since the GenStubs
@@ -99,6 +102,7 @@ ifeq ($(PROPS_ARE_CREATED),yes)
 		DISABLE_SJAVAC:=true,\
 		SRC:=$(LANGTOOLS_TOPDIR)/src/share/classes $(LANGTOOLS_OUTPUTDIR)/gensrc,\
 		EXCLUDES:=com/sun/tools/javac/nio,\
+		COPY:=$(RESOURCE_SUFFIXES),\
 		BIN:=$(LANGTOOLS_OUTPUTDIR)/btclasses/bootstrap))
 
         $(eval $(call SetupArchive,ARCHIVE_BOOTSTRAP_JAVAC,$(BUILD_BOOTSTRAP_LANGTOOLS),\
@@ -119,6 +123,7 @@ ifeq ($(PROPS_ARE_CREATED),yes)
         $(eval $(call SetupArchive,ARCHIVE_BOOTSTRAP_JAVADOC,$(BUILD_BOOTSTRAP_LANGTOOLS),\
 		SRCS:=$(LANGTOOLS_OUTPUTDIR)/btclasses/bootstrap,\
 		JAR:=$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javadoc.jar,\
+		SUFFIXES:=.class $(RESOURCE_SUFFIXES),\
 		JARMAIN:=com.sun.tools.javadoc.Main))
 
         # GenStubs is used to bootstrap any dependencies from javac to the new JDK that is not 
@@ -171,9 +176,6 @@ ifeq ($(PROPS_ARE_CREATED),yes)
                   FLAGS:=-XDignore.symbol.file=true -Xlint:all$(COMMA)-deprecation -Werror,\
                   SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
                   SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
-
-                # javax.tools.JavaCompilerTool isn't really a suffix but this gets the file copied.
-		RESOURCE_SUFFIXES:=.gif .xml .css javax.tools.JavaCompilerTool
 
                 $(eval $(call SetupJavaCompilation,BUILD_FULL_JAVAC,\
 			SETUP:=GENERATE_NEWBYTECODE,\
