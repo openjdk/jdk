@@ -104,7 +104,7 @@ void AbstractAssembler::end_a_stub() {
 address AbstractAssembler::start_a_const(int required_space, int required_align) {
   CodeBuffer*  cb = code();
   CodeSection* cs = cb->consts();
-  assert(_code_section == cb->insts(), "not in insts?");
+  assert(_code_section == cb->insts() || _code_section == cb->stubs(), "not in insts/stubs?");
   sync();
   address end = cs->end();
   int pad = -(intptr_t)end & (required_align-1);
@@ -121,13 +121,12 @@ address AbstractAssembler::start_a_const(int required_space, int required_align)
 }
 
 // Inform CodeBuffer that incoming code and relocation will be code
-// Should not be called if start_a_const() returned NULL
-void AbstractAssembler::end_a_const() {
+// in section cs (insts or stubs).
+void AbstractAssembler::end_a_const(CodeSection* cs) {
   assert(_code_section == code()->consts(), "not in consts?");
   sync();
-  set_code_section(code()->insts());
+  set_code_section(cs);
 }
-
 
 void AbstractAssembler::flush() {
   sync();
