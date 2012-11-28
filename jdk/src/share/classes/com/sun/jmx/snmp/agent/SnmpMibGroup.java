@@ -29,20 +29,13 @@ package com.sun.jmx.snmp.agent;
 //
 import java.io.Serializable;
 import java.util.Hashtable;
-import java.util.Enumeration;
 import java.util.Vector;
 
 // jmx imports
 //
-import com.sun.jmx.snmp.SnmpOid;
-import com.sun.jmx.snmp.SnmpValue;
 import com.sun.jmx.snmp.SnmpVarBind;
 import com.sun.jmx.snmp.SnmpStatusException;
 
-// SNMP Runtime imports
-//
-import com.sun.jmx.snmp.agent.SnmpMibOid;
-import com.sun.jmx.snmp.agent.SnmpMibNode;
 
 /**
  * Represents a node in an SNMP MIB which corresponds to a group.
@@ -174,6 +167,7 @@ public abstract class SnmpMibGroup extends SnmpMibOid
      * @exception SnmpStatusException An error occurred while accessing
      *  the MIB node.
      */
+    @Override
     abstract public void get(SnmpMibSubRequest req, int depth)
         throws SnmpStatusException;
 
@@ -203,6 +197,7 @@ public abstract class SnmpMibGroup extends SnmpMibOid
      * @exception SnmpStatusException An error occurred while accessing
      *  the MIB node.
      */
+    @Override
     abstract public void set(SnmpMibSubRequest req, int depth)
         throws SnmpStatusException;
 
@@ -234,6 +229,7 @@ public abstract class SnmpMibGroup extends SnmpMibOid
      * @exception SnmpStatusException An error occurred while accessing
      *  the MIB node.
      */
+    @Override
     abstract public void check(SnmpMibSubRequest req, int depth)
         throws SnmpStatusException;
 
@@ -241,8 +237,8 @@ public abstract class SnmpMibGroup extends SnmpMibOid
     // If we reach this node, we are below the root OID, so we just
     // return.
     // --------------------------------------------------------------------
-    public void getRootOid(Vector result) {
-        return;
+    @Override
+    public void getRootOid(Vector<Integer> result) {
     }
 
     // -------------------------------------------------------------------
@@ -264,7 +260,7 @@ public abstract class SnmpMibGroup extends SnmpMibOid
      */
     void registerNestedArc(long arc) {
         Long obj = new Long(arc);
-        if (subgroups == null) subgroups = new Hashtable<Long, Long>();
+        if (subgroups == null) subgroups = new Hashtable<>();
         // registers the arc in the hashtable.
         subgroups.put(obj,obj);
     }
@@ -312,6 +308,7 @@ public abstract class SnmpMibGroup extends SnmpMibOid
      * @param node The node being registered.
      *
      */
+    @Override
     void registerNode(long[] oid, int cursor ,SnmpMibNode node)
         throws IllegalAccessException {
         super.registerNode(oid,cursor,node);
@@ -325,13 +322,13 @@ public abstract class SnmpMibGroup extends SnmpMibOid
     // -------------------------------------------------------------------
     // see comments in SnmpMibNode
     // -------------------------------------------------------------------
+    @Override
     void findHandlingNode(SnmpVarBind varbind,
                           long[] oid, int depth,
                           SnmpRequestTree handlers)
         throws SnmpStatusException {
 
         int length = oid.length;
-        SnmpMibNode node = null;
 
         if (handlers == null)
             throw new SnmpStatusException(SnmpStatusException.snmpRspGenErr);
@@ -349,7 +346,6 @@ public abstract class SnmpMibGroup extends SnmpMibOid
             // This arc leads to a subgroup: delegates the search to the
             // method defined in SnmpMibOid
             super.findHandlingNode(varbind,oid,depth,handlers);
-            return;
         } else if (isTable(arc)) {
             // This arc leads to a table: forward the search to the table.
 
@@ -384,6 +380,7 @@ public abstract class SnmpMibGroup extends SnmpMibOid
     // -------------------------------------------------------------------
     // See comments in SnmpMibNode.
     // -------------------------------------------------------------------
+    @Override
     long[] findNextHandlingNode(SnmpVarBind varbind,
                                 long[] oid, int pos, int depth,
                                 SnmpRequestTree handlers, AcmChecker checker)

@@ -27,14 +27,7 @@ package com.sun.jmx.snmp.agent;
 // java imports
 //
 import java.io.Serializable;
-import java.util.Hashtable;
 import java.util.Enumeration;
-import java.util.Vector;
-
-// jmx imports
-//
-import com.sun.jmx.snmp.SnmpOid;
-import com.sun.jmx.snmp.SnmpValue;
 import com.sun.jmx.snmp.SnmpVarBind;
 import com.sun.jmx.snmp.SnmpStatusException;
 
@@ -121,8 +114,8 @@ public class SnmpStandardObjectServer implements Serializable {
 
         final Object data = req.getUserData();
 
-        for (Enumeration e= req.getElements(); e.hasMoreElements();) {
-            final SnmpVarBind var= (SnmpVarBind) e.nextElement();
+        for (Enumeration<SnmpVarBind> e= req.getElements(); e.hasMoreElements();) {
+            final SnmpVarBind var= e.nextElement();
             try {
                 final long id = var.oid.getOidArc(depth);
                 var.value = meta.get(id, data);
@@ -182,9 +175,8 @@ public class SnmpStandardObjectServer implements Serializable {
 
         final Object data = req.getUserData();
 
-        for (Enumeration e= req.getElements(); e.hasMoreElements();) {
-            SnmpVarBind var = null;
-            var = (SnmpVarBind) e.nextElement();
+        for (Enumeration<SnmpVarBind> e= req.getElements(); e.hasMoreElements();) {
+            SnmpVarBind var = e.nextElement();
             try {
                 // This method will generate a SnmpStatusException
                 // if `depth' is out of bounds.
@@ -248,8 +240,8 @@ public class SnmpStandardObjectServer implements Serializable {
 
         final Object data = req.getUserData();
 
-        for (Enumeration e= req.getElements(); e.hasMoreElements();) {
-            final SnmpVarBind var = (SnmpVarBind) e.nextElement();
+        for (Enumeration<SnmpVarBind> e= req.getElements(); e.hasMoreElements();) {
+            final SnmpVarBind var = e.nextElement();
             try {
                 // This method will generate a SnmpStatusException
                 // if `depth' is out of bounds.
