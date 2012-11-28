@@ -266,6 +266,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
      * <p>
      *
      */
+    @Override
     public void get(SnmpMibSubRequest req, int depth)
         throws SnmpStatusException {
 
@@ -276,9 +277,9 @@ public abstract class SnmpMibTable extends SnmpMibNode
         // each varbind involved (nb: should not happen, the error
         // should have been registered earlier)
         if (isnew) {
-            SnmpVarBind     var = null;
-            for (Enumeration e= r.getElements(); e.hasMoreElements();) {
-                var      = (SnmpVarBind) e.nextElement();
+            SnmpVarBind var;
+            for (Enumeration<SnmpVarBind> e= r.getElements(); e.hasMoreElements();) {
+                var = e.nextElement();
                 r.registerGetException(var,noSuchInstanceException);
             }
         }
@@ -329,6 +330,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
      * <p>
      *
      */
+    @Override
     public void check(SnmpMibSubRequest req, int depth)
         throws SnmpStatusException {
         final SnmpOid     oid    = req.getEntryOid();
@@ -389,6 +391,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
      * <p>
      *
      */
+    @Override
     public void set(SnmpMibSubRequest req, int depth)
         throws SnmpStatusException {
 
@@ -755,6 +758,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
      *
      * @exception IllegalArgumentException Listener parameter is null.
      */
+    @Override
     public synchronized void
         addNotificationListener(NotificationListener listener,
                                 NotificationFilter filter, Object handback)  {
@@ -768,13 +772,11 @@ public abstract class SnmpMibTable extends SnmpMibNode
 
         // looking for listener in handbackTable
         //
-        Vector<Object> handbackList =
-            handbackTable.get(listener) ;
-        Vector<NotificationFilter> filterList =
-            filterTable.get(listener) ;
+        Vector<Object> handbackList = handbackTable.get(listener) ;
+        Vector<NotificationFilter> filterList = filterTable.get(listener) ;
         if ( handbackList == null ) {
-            handbackList = new Vector<Object>() ;
-            filterList = new Vector<NotificationFilter>() ;
+            handbackList = new Vector<>() ;
+            filterList = new Vector<>() ;
             handbackTable.put(listener, handbackList) ;
             filterTable.put(listener, filterList) ;
         }
@@ -797,16 +799,14 @@ public abstract class SnmpMibTable extends SnmpMibNode
      * @exception ListenerNotFoundException The listener is not registered
      *    in the MBean.
      */
+    @Override
     public synchronized void
         removeNotificationListener(NotificationListener listener)
         throws ListenerNotFoundException {
 
         // looking for listener in handbackTable
         //
-        java.util.Vector handbackList =
-            (java.util.Vector) handbackTable.get(listener) ;
-        java.util.Vector filterList =
-            (java.util.Vector) filterTable.get(listener) ;
+        java.util.Vector<?> handbackList = handbackTable.get(listener) ;
         if ( handbackList == null ) {
             throw new ListenerNotFoundException("listener");
         }
@@ -822,6 +822,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
      * notification class and the notification type sent by the
      * <CODE>SnmpMibTable</CODE>.
      */
+    @Override
     public MBeanNotificationInfo[] getNotificationInfo() {
 
         String[] types = {SnmpTableEntryNotification.SNMP_ENTRY_ADDED,
@@ -1813,9 +1814,9 @@ public abstract class SnmpMibTable extends SnmpMibNode
     //
     // ---------------------------------------------------------------------
 
-    final static void checkRowStatusFail(SnmpMibSubRequest req,
-                                         int errorStatus)
+    static void checkRowStatusFail(SnmpMibSubRequest req, int errorStatus)
         throws SnmpStatusException {
+
         final SnmpVarBind statusvb  = req.getRowStatusVarBind();
         final SnmpStatusException x = new SnmpStatusException(errorStatus);
         req.registerCheckException(statusvb,x);
@@ -1827,9 +1828,9 @@ public abstract class SnmpMibTable extends SnmpMibNode
     //
     // ---------------------------------------------------------------------
 
-    final static void setRowStatusFail(SnmpMibSubRequest req,
-                                       int errorStatus)
+    static void setRowStatusFail(SnmpMibSubRequest req, int errorStatus)
         throws SnmpStatusException {
+
         final SnmpVarBind statusvb  = req.getRowStatusVarBind();
         final SnmpStatusException x = new SnmpStatusException(errorStatus);
         req.registerSetException(statusvb,x);
@@ -1840,6 +1841,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
     // Implements the method defined in SnmpMibNode.
     //
     // ---------------------------------------------------------------------
+    @Override
     final synchronized void findHandlingNode(SnmpVarBind varbind,
                                              long[] oid, int depth,
                                              SnmpRequestTree handlers)
@@ -1909,11 +1911,15 @@ public abstract class SnmpMibTable extends SnmpMibNode
     // largely inspired from the original getNext() method.
     //
     // ---------------------------------------------------------------------
+    @Override
     final synchronized long[] findNextHandlingNode(SnmpVarBind varbind,
-                                      long[] oid, int pos, int depth,
-                                      SnmpRequestTree handlers,
-                                      AcmChecker checker)
+                                                   long[] oid,
+                                                   int pos,
+                                                   int depth,
+                                                   SnmpRequestTree handlers,
+                                                   AcmChecker checker)
         throws SnmpStatusException {
+
             int length = oid.length;
 
             if (handlers == null)
@@ -1974,7 +1980,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
             }
 
             // Now that we've got everything right we can begin.
-            SnmpOid entryoid = null ;
+            SnmpOid entryoid;
 
             if (pos == (length - 1)) {
                 // pos points to the last arc in the oid, and this arc is
@@ -2200,28 +2206,25 @@ public abstract class SnmpMibTable extends SnmpMibNode
 
         // loop on listener
         //
-        for(java.util.Enumeration k = handbackTable.keys();
+        for(java.util.Enumeration<NotificationListener> k = handbackTable.keys();
             k.hasMoreElements(); ) {
 
-            NotificationListener listener =
-                (NotificationListener) k.nextElement();
+            NotificationListener listener = k.nextElement();
 
             // Get the associated handback list and the associated filter list
             //
-            java.util.Vector handbackList =
-                (java.util.Vector) handbackTable.get(listener) ;
-            java.util.Vector filterList =
-                (java.util.Vector) filterTable.get(listener) ;
+            java.util.Vector<?> handbackList = handbackTable.get(listener) ;
+            java.util.Vector<NotificationFilter> filterList =
+                filterTable.get(listener) ;
 
             // loop on handback
             //
-            java.util.Enumeration f = filterList.elements();
-            for(java.util.Enumeration h = handbackList.elements();
+            java.util.Enumeration<NotificationFilter> f = filterList.elements();
+            for(java.util.Enumeration<?> h = handbackList.elements();
                 h.hasMoreElements(); ) {
 
                 Object handback = h.nextElement();
-                NotificationFilter filter =
-                    (NotificationFilter)f.nextElement();
+                NotificationFilter filter = f.nextElement();
 
                 if ((filter == null) ||
                      (filter.isNotificationEnabled(notification))) {
@@ -2300,7 +2303,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
      *         OID was not found.
      *
      **/
-    private final int findObject(SnmpOid oid) {
+    private int findObject(SnmpOid oid) {
         int low= 0;
         int max= size - 1;
         SnmpOid pos;
@@ -2339,25 +2342,6 @@ public abstract class SnmpMibTable extends SnmpMibNode
      * <p>
      * @param oid The OID we would like to insert.
      *
-     * @return The position at which the OID should be inserted in
-     *         the table.
-     *
-     * @exception SnmpStatusException if the OID is already present in the
-     *            table.
-     *
-     **/
-    private final int getInsertionPoint(SnmpOid oid)
-        throws SnmpStatusException {
-        return getInsertionPoint(oid, true);
-    }
-
-    /**
-     * Search the position at which the given oid should be inserted
-     * in the OID table (tableoids).
-     *
-     * <p>
-     * @param oid The OID we would like to insert.
-     *
      * @param fail Tells whether a SnmpStatusException must be generated
      *             if the given OID is already present in the table.
      *
@@ -2371,7 +2355,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
      *            table and <code>fail</code> is <code>true</code>.
      *
      **/
-    private final int getInsertionPoint(SnmpOid oid, boolean fail)
+    private int getInsertionPoint(SnmpOid oid, boolean fail)
         throws SnmpStatusException {
 
         final int failStatus = SnmpStatusException.snmpRspNotWritable;
@@ -2413,7 +2397,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
      * @param pos The position at which the OID to be removed is located.
      *
      **/
-    private final void removeOid(int pos) {
+    private void removeOid(int pos) {
         if (pos >= tablecount) return;
         if (pos < 0) return;
         final int l1 = --tablecount-pos;
@@ -2431,7 +2415,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
      * @param pos The position at which the OID to be added is located.
      *
      **/
-    private final void insertOid(int pos, SnmpOid oid) {
+    private void insertOid(int pos, SnmpOid oid) {
         if (pos >= tablesize || tablecount == tablesize) {
                 // Vector must be enlarged
 
@@ -2534,13 +2518,13 @@ public abstract class SnmpMibTable extends SnmpMibNode
      * The list of entries.
      * @serial
      */
-    private final Vector<Object> entries= new Vector<Object>();
+    private final Vector<Object> entries= new Vector<>();
 
     /**
      * The list of object names.
      * @serial
      */
-    private final Vector<ObjectName> entrynames= new Vector<ObjectName>();
+    private final Vector<ObjectName> entrynames= new Vector<>();
 
     /**
      * Callback handlers
@@ -2548,17 +2532,16 @@ public abstract class SnmpMibTable extends SnmpMibNode
     // final Vector callbacks = new Vector();
 
     /**
-     * Listener hastable containing the hand-back objects.
+     * Listener hashtable containing the hand-back objects.
      */
     private Hashtable<NotificationListener, Vector<Object>> handbackTable =
-            new Hashtable<NotificationListener, Vector<Object>>();
+            new Hashtable<>();
 
     /**
-     * Listener hastable containing the filter objects.
+     * Listener hashtable containing the filter objects.
      */
     private Hashtable<NotificationListener, Vector<NotificationFilter>>
-            filterTable =
-            new Hashtable<NotificationListener, Vector<NotificationFilter>>();
+            filterTable = new Hashtable<>();
 
     // PACKAGE VARIABLES
     //------------------
