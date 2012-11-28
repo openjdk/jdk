@@ -240,7 +240,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN), \
 		LDFLAGS_SUFFIX_posix:=-ljvm -lverify, \
-		LDFLAGS_SUFFIX_solaris:=-lnsl -lsocket -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc,\
+		LDFLAGS_SUFFIX_solaris:=-lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc,\
 		LDFLAGS_SUFFIX_linux:=$(LIBDL) $(BUILD_LIBFDLIBM),\
 		LDFLAGS_SUFFIX_macosx:=-L$(JDK_OUTPUTDIR)/objs/ -lfdlibm \
                                          -framework CoreFoundation \
