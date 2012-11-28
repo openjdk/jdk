@@ -36,6 +36,7 @@
 #include "memory/universe.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/orderAccess.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
@@ -1007,6 +1008,8 @@ bool VirtualSpaceList::grow_vs(size_t vs_word_size) {
     delete new_entry;
     return false;
   } else {
+    // ensure lock-free iteration sees fully initialized node
+    OrderAccess::storestore();
     link_vs(new_entry, vs_word_size);
     return true;
   }
@@ -1096,7 +1099,6 @@ void VirtualSpaceList::print_on(outputStream* st) const {
   }
 }
 
-#ifndef PRODUCT
 bool VirtualSpaceList::contains(const void *ptr) {
   VirtualSpaceNode* list = virtual_space_list();
   VirtualSpaceListIterator iter(list);
@@ -1108,7 +1110,6 @@ bool VirtualSpaceList::contains(const void *ptr) {
   }
   return false;
 }
-#endif // PRODUCT
 
 
 // MetaspaceGC methods
@@ -2739,15 +2740,17 @@ void Metaspace::print_on(outputStream* out) const {
   }
 }
 
-#ifndef PRODUCT
-bool Metaspace::contains(const void * ptr) const {
+bool Metaspace::contains(const void * ptr) {
   if (MetaspaceShared::is_in_shared_space(ptr)) {
     return true;
   }
-  MutexLockerEx cl(SpaceManager::expand_lock(), Mutex::_no_safepoint_check_flag);
+  // This is checked while unlocked.  As long as the virtualspaces are added
+  // at the end, the pointer will be in one of them.  The virtual spaces
+  // aren't deleted presently.  When they are, some sort of locking might
+  // be needed.  Note, locking this can cause inversion problems with the
+  // caller in MetaspaceObj::is_metadata() function.
   return space_list()->contains(ptr) || class_space_list()->contains(ptr);
 }
-#endif
 
 void Metaspace::verify() {
   vsm()->verify();
