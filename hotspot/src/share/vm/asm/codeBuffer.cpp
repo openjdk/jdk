@@ -749,7 +749,18 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
 
     // Make the new code copy use the old copy's relocations:
     dest_cs->initialize_locs_from(cs);
+  }
 
+  // Do relocation after all sections are copied.
+  // This is necessary if the code uses constants in stubs, which are
+  // relocated when the corresponding instruction in the code (e.g., a
+  // call) is relocated. Stubs are placed behind the main code
+  // section, so that section has to be copied before relocating.
+  for (int n = (int) SECT_FIRST; n < (int)SECT_LIMIT; n++) {
+    // pull code out of each section
+    const CodeSection* cs = code_section(n);
+    if (cs->is_empty()) continue;  // skip trivial section
+    CodeSection* dest_cs = dest->code_section(n);
     { // Repair the pc relative information in the code after the move
       RelocIterator iter(dest_cs);
       while (iter.next()) {

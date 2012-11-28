@@ -348,52 +348,60 @@ class AbstractAssembler : public ResourceObj  {
   void       end_a_stub();
   // Ditto for constants.
   address    start_a_const(int required_space, int required_align = sizeof(double));
-  void       end_a_const();
+  void       end_a_const(CodeSection* cs);  // Pass the codesection to continue in (insts or stubs?).
 
   // constants support
+  //
+  // We must remember the code section (insts or stubs) in c1
+  // so we can reset to the proper section in end_a_const().
   address long_constant(jlong c) {
+    CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
       *(jlong*)ptr = c;
       _code_pos = ptr + sizeof(c);
-      end_a_const();
+      end_a_const(c1);
     }
     return ptr;
   }
   address double_constant(jdouble c) {
+    CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
       *(jdouble*)ptr = c;
       _code_pos = ptr + sizeof(c);
-      end_a_const();
+      end_a_const(c1);
     }
     return ptr;
   }
   address float_constant(jfloat c) {
+    CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
       *(jfloat*)ptr = c;
       _code_pos = ptr + sizeof(c);
-      end_a_const();
+      end_a_const(c1);
     }
     return ptr;
   }
   address address_constant(address c) {
+    CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
       *(address*)ptr = c;
       _code_pos = ptr + sizeof(c);
-      end_a_const();
+      end_a_const(c1);
     }
     return ptr;
   }
   address address_constant(address c, RelocationHolder const& rspec) {
+    CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
       relocate(rspec);
       *(address*)ptr = c;
       _code_pos = ptr + sizeof(c);
-      end_a_const();
+      end_a_const(c1);
     }
     return ptr;
   }
