@@ -601,8 +601,8 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   set_map(entry_map);
   do_exits();
 
-  if (log)  log->done("parse nodes='%d' memory='%d'",
-                      C->unique(), C->node_arena()->used());
+  if (log)  log->done("parse nodes='%d' live='%d' memory='%d'",
+                      C->unique(), C->live_nodes(), C->node_arena()->used());
 }
 
 //---------------------------do_all_blocks-------------------------------------
