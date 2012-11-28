@@ -2107,8 +2107,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_toplevel_type(FreeList<Metablock>*)                             \
   declare_toplevel_type(FreeList<Metablock>)                              \
   declare_toplevel_type(MetablockTreeDictionary*)                         \
-  declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)   \
-              declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)
+           declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)
 
 
   /* NOTE that we do not use the last_entry() macro here; it is used  */
@@ -3215,3 +3214,17 @@ VMStructs::findType(const char* typeName) {
 void vmStructs_init() {
   debug_only(VMStructs::init());
 }
+
+#ifndef PRODUCT
+void VMStructs::test() {
+  // Check for duplicate entries in type array
+  for (int i = 0; localHotSpotVMTypes[i].typeName != NULL; i++) {
+    for (int j = i + 1; localHotSpotVMTypes[j].typeName != NULL; j++) {
+      if (strcmp(localHotSpotVMTypes[i].typeName, localHotSpotVMTypes[j].typeName) == 0) {
+        tty->print_cr("Duplicate entries for '%s'", localHotSpotVMTypes[i].typeName);
+        assert(false, "Duplicate types in localHotSpotVMTypes array");
+      }
+    }
+  }
+}
+#endif
