@@ -104,7 +104,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM,\
 		LANG:=C,\
 		CFLAGS:=$(CFLAGS_JDKLIB) \
 			-I$(JDK_TOPDIR)/src/share/native/java/lang/fdlibm/include,\
-		LDFLAGS:=-nostdlib -r -arch i386 -arch x86_64,\
+		LDFLAGS:=-nostdlib -r -arch x86_64,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libfdlibm))
 
 $(JDK_OUTPUTDIR)/objs/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX) : $(BUILD_LIBFDLIBM)
