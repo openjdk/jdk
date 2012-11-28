@@ -43,7 +43,7 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler, Cons
         System.out.println("  -S:   print compilation statistics");
         System.out.println("  -s:   sort events by start time");
         System.out.println("  -e:   sort events by elapsed time");
-        System.out.println("  -N:   sort events by name and start");
+        System.out.println("  -n:   sort events by name and start");
         System.exit(exitcode);
     }
 
@@ -137,7 +137,11 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler, Cons
                         v2 = Integer.valueOf(0);
                     }
                     phaseNodes.put(phase.getName(), Integer.valueOf(v2.intValue() + phase.getNodes()));
-                    out.printf("\t%s %6.4f %d %d\n", phase.getName(), phase.getElapsedTime(), phase.getStartNodes(), phase.getNodes());
+                    /* Print phase name, elapsed time, nodes at the start of the phase,
+                       nodes created in the phase, live nodes at the start of the phase,
+                       live nodes added in the phase.
+                    */
+                    out.printf("\t%s %6.4f %d %d %d %d\n", phase.getName(), phase.getElapsedTime(), phase.getStartNodes(), phase.getNodes(), phase.getStartLiveNodes(), phase.getLiveNodes());
                 }
             } else if (e instanceof MakeNotEntrantEvent) {
                 MakeNotEntrantEvent mne = (MakeNotEntrantEvent) e;

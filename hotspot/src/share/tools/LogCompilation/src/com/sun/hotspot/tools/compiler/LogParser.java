@@ -268,12 +268,18 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         if (qname.equals("phase")) {
             Phase p = new Phase(search(atts, "name"),
                     Double.parseDouble(search(atts, "stamp")),
-                    Integer.parseInt(search(atts, "nodes")));
+                    Integer.parseInt(search(atts, "nodes")),
+                    Integer.parseInt(search(atts, "live")));
             phaseStack.push(p);
         } else if (qname.equals("phase_done")) {
             Phase p = phaseStack.pop();
-            p.setEndNodes(Integer.parseInt(search(atts, "nodes")));
+            if (! p.getId().equals(search(atts, "name"))) {
+                System.out.println("phase: " + p.getId());
+                throw new InternalError("phase name mismatch");
+            }
             p.setEnd(Double.parseDouble(search(atts, "stamp")));
+            p.setEndNodes(Integer.parseInt(search(atts, "nodes")));
+            p.setEndLiveNodes(Integer.parseInt(search(atts, "live")));
             compile.getPhases().add(p);
         } else if (qname.equals("task")) {
             compile = new Compilation(Integer.parseInt(search(atts, "compile_id", "-1")));
@@ -406,6 +412,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         } else if (qname.equals("parse_done")) {
             CallSite call = scopes.pop();
             call.setEndNodes(Integer.parseInt(search(atts, "nodes", "1")));
+            call.setEndLiveNodes(Integer.parseInt(search(atts, "live", "1")));
             call.setTimeStamp(Double.parseDouble(search(atts, "stamp")));
             scopes.push(call);
         }

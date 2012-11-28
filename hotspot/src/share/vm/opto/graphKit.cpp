@@ -153,7 +153,7 @@ void GraphKit::verify_exception_state(SafePointNode* ex_map) {
 void GraphKit::stop_and_kill_map() {
   SafePointNode* dead_map = stop();
   if (dead_map != NULL) {
-    dead_map->disconnect_inputs(NULL); // Mark the map as killed.
+    dead_map->disconnect_inputs(NULL, C); // Mark the map as killed.
     assert(dead_map->is_killed(), "must be so marked");
   }
 }
@@ -1811,7 +1811,7 @@ void GraphKit::replace_call(CallNode* call, Node* result) {
   }
 
   // Disconnect the call from the graph
-  call->disconnect_inputs(NULL);
+  call->disconnect_inputs(NULL, C);
   C->gvn_replace_by(call, C->top());
 
   // Clean up any MergeMems that feed other MergeMems since the
