@@ -3672,7 +3672,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1354104798
+DATE_WHEN_GENERATED=1354106772
 
 ###############################################################################
 #
@@ -27585,9 +27585,11 @@ else
                     -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}"
 
     # On some platforms (mac) the linker warns about non existing -L dirs.
-    # Only add client dir if client is being built. Otherwise server should
-    # be enough
-    if test "x$JVM_VARIANT_CLIENT" = xtrue; then
+    # Add server first if available. Linking aginst client does not always produce the same results.
+    # Only add client dir if client is being built. Default to server for other variants.
+    if test "x$JVM_VARIANT_SERVER" = xtrue; then
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server"
+    elif test "x$JVM_VARIANT_CLIENT" = xtrue; then
         LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/client"
     else
         LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server"

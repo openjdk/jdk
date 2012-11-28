@@ -291,6 +291,14 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/plugin/i386/ns4/libjavaplugin.so
 ./jre/plugin/i386/ns7/libjavaplugin_oji.so
 ./jre/lib/i386/server/libjvm.so
+./jre/lib/i386/client/64/libjvm_db.so
+./jre/lib/i386/client/64/libjvm_dtrace.so
+./jre/lib/i386/client/libjvm_db.so
+./jre/lib/i386/client/libjvm_dtrace.so
+./jre/lib/i386/server/64/libjvm_db.so
+./jre/lib/i386/server/64/libjvm_dtrace.so
+./jre/lib/i386/server/libjvm_db.so
+./jre/lib/i386/server/libjvm_dtrace.so
 ./bin/appletviewer
 ./bin/extcheck
 ./bin/idlj
@@ -348,7 +356,9 @@ ACCEPTED_SMALL_SIZE_DIFF="
 SKIP_FULLDUMP_DIFF="true"
 
 # Filter random C++ symbol strings.
-DIS_DIFF_FILTER="$SED -e s/\.[a-zA-Z0-9_\$]\{15,15\}/<SYM>/g"
+# Some numbers differ randomly.
+# Can't use space in these expressions as the shell will mess with them.
+DIS_DIFF_FILTER="$SED -e s/\.[a-zA-Z0-9_\$]\{15,15\}/<SYM>/g -e s/\([0-9a-f][0-9a-f].\)\{2,8\}[0-9a-f][0-9a-f]/<NUMS>/g -e s/\(0x\)[0-9a-f]*\([,(>]\)/\1<HEX>\2/g -e s/\(0x\)[0-9a-f]*$/\1<HEX>/g -e s/\(\#.\)[0-9a-f]*\(.<\)/\1<HEX>\2/g -e s/[\.A-Za-z0-9%]\{16,16\}$/<BIN>/g"
 
 fi
 
@@ -426,6 +436,9 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/lib/amd64/libzip.so
 ./jre/lib/amd64/server/64/libjvm_db.so
 ./jre/lib/amd64/server/64/libjvm_dtrace.so
+./jre/lib/amd64/server/libjvm.so
+./jre/lib/amd64/server/libjvm_db.so
+./jre/lib/amd64/server/libjvm_dtrace.so
 ./bin/amd64/appletviewer
 ./bin/amd64/extcheck
 ./bin/amd64/idlj
@@ -480,7 +493,9 @@ ACCEPTED_SMALL_SIZE_DIFF="
 SKIP_FULLDUMP_DIFF="true"
 
 # Filter random C++ symbol strings.
-DIS_DIFF_FILTER="$SED -e s/\.[a-zA-Z0-9_\$]\{15,15\}/<SYM>/g"
+# Some numbers differ randomly.
+# Can't use space in these expressions as the shell will mess with them.
+DIS_DIFF_FILTER="$SED -e s/\.[a-zA-Z0-9_\$]\{15,15\}/<SYM>/g -e s/\([0-9a-f][0-9a-f].\)\{2,8\}[0-9a-f][0-9a-f]/<NUMS>/g -e s/\(0x\)[0-9a-f]*\([,(>]\)/\1<HEX>\2/g -e s/\(0x\)[0-9a-f]*$/\1<HEX>/g -e s/\(\#.\)[0-9a-f]*\(.<\)/\1<HEX>\2/g -e s/[\.A-Za-z0-9%]\{16,16\}$/<BIN>/g"
 
 fi
 
