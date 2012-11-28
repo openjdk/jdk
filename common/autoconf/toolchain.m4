@@ -938,9 +938,16 @@ else
         fi
     fi
     LDFLAGS_JDKLIB="${LDFLAGS_JDK} $SHARED_LIBRARY_FLAGS \
-                    -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server \
-                    -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/client \
                     -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}"
+
+    # On some platforms (mac) the linker warns about non existing -L dirs.
+    # Only add client dir if client is being built. Otherwise server should
+    # be enough
+    if test "x$JVM_VARIANT_CLIENT" = xtrue; then
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/client"
+    else
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server"
+    fi
 
     LDFLAGS_JDKLIB_SUFFIX="-ljava -ljvm"
     if test "x$COMPILER_NAME" = xossc; then
