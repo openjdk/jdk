@@ -996,7 +996,7 @@ UNSAFE_END
 // not just a literal string.  For such ldc instructions, the verifier uses the
 // type Object instead of String, if the loaded constant is not in fact a String.
 
-static oop
+static instanceKlassHandle
 Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
                                  jclass host_class, jbyteArray data, jobjectArray cp_patches_jh,
                                  HeapWord* *temp_alloc,
@@ -1073,31 +1073,38 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
     anon_klass = instanceKlassHandle(THREAD, anonk);
   }
 
-  // let caller initialize it as needed...
-
-  return anon_klass->java_mirror();
+  return anon_klass;
 }
 
 UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass(JNIEnv *env, jobject unsafe, jclass host_class, jbyteArray data, jobjectArray cp_patches_jh))
 {
+  instanceKlassHandle anon_klass;
+  jobject res_jh = NULL;
+
   UnsafeWrapper("Unsafe_DefineAnonymousClass");
   ResourceMark rm(THREAD);
 
   HeapWord* temp_alloc = NULL;
 
-  jobject res_jh = NULL;
-
-  { oop res_oop = Unsafe_DefineAnonymousClass_impl(env,
-                                                   host_class, data, cp_patches_jh,
+  anon_klass = Unsafe_DefineAnonymousClass_impl(env, host_class, data,
+                                                cp_patches_jh,
                                                    &temp_alloc, THREAD);
-    if (res_oop != NULL)
-      res_jh = JNIHandles::make_local(env, res_oop);
-  }
+  if (anon_klass() != NULL)
+    res_jh = JNIHandles::make_local(env, anon_klass->java_mirror());
 
   // try/finally clause:
   if (temp_alloc != NULL) {
     FREE_C_HEAP_ARRAY(HeapWord, temp_alloc, mtInternal);
   }
+
+  // The anonymous class loader data has been artificially been kept alive to
+  // this point.   The mirror and any instances of this class have to keep
+  // it alive afterwards.
+  if (anon_klass() != NULL) {
+    anon_klass->class_loader_data()->set_keep_alive(false);
+  }
+
+  // let caller initialize it as needed...
 
   return (jclass) res_jh;
 }

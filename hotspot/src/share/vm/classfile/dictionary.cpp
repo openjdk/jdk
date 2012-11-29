@@ -580,7 +580,7 @@ void Dictionary::verify() {
       // class loader must be present;  a null class loader is the
       // boostrap loader
       guarantee(loader_data != NULL || DumpSharedSpaces ||
-                loader_data->is_the_null_class_loader_data() ||
+                loader_data->class_loader() == NULL ||
                 loader_data->class_loader()->is_instance(),
                 "checking type of class_loader");
       e->verify();

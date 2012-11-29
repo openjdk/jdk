@@ -106,9 +106,9 @@ void SystemDictionary::compute_java_system_loader(TRAPS) {
 }
 
 
-ClassLoaderData* SystemDictionary::register_loader(Handle class_loader) {
+ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, TRAPS) {
   if (class_loader() == NULL) return ClassLoaderData::the_null_class_loader_data();
-  return ClassLoaderDataGraph::find_or_create(class_loader);
+  return ClassLoaderDataGraph::find_or_create(class_loader, CHECK_NULL);
 }
 
 // ----------------------------------------------------------------------------
@@ -591,7 +591,7 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
   // UseNewReflection
   // Fix for 4474172; see evaluation for more details
   class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
-  ClassLoaderData *loader_data = register_loader(class_loader);
+  ClassLoaderData *loader_data = register_loader(class_loader, CHECK_NULL);
 
   // Do lookup to see if class already exist and the protection domain
   // has the right access
@@ -888,7 +888,7 @@ Klass* SystemDictionary::find(Symbol* class_name,
   // of the call to resolve_instance_class_or_null().
   // See evaluation 6790209 and 4474172 for more details.
   class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
-  ClassLoaderData* loader_data = register_loader(class_loader);
+  ClassLoaderData* loader_data = register_loader(class_loader, CHECK_NULL);
 
   unsigned int d_hash = dictionary()->compute_hash(class_name, loader_data);
   int d_index = dictionary()->hash_to_index(d_hash);
@@ -948,6 +948,18 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
                                       TRAPS) {
   TempNewSymbol parsed_name = NULL;
 
+  ClassLoaderData* loader_data;
+  if (host_klass.not_null()) {
+    // Create a new CLD for anonymous class, that uses the same class loader
+    // as the host_klass
+    assert(EnableInvokeDynamic, "");
+    guarantee(host_klass->class_loader() == class_loader(), "should be the same");
+    loader_data = ClassLoaderData::anonymous_class_loader_data(class_loader(), CHECK_NULL);
+    loader_data->record_dependency(host_klass(), CHECK_NULL);
+  } else {
+    loader_data = ClassLoaderData::class_loader_data(class_loader());
+  }
+
   // Parse the stream. Note that we do this even though this klass might
   // already be present in the SystemDictionary, otherwise we would not
   // throw potential ClassFormatErrors.
@@ -959,7 +971,7 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
   //   java.lang.Object through resolve_or_fail, not this path.
 
   instanceKlassHandle k = ClassFileParser(st).parseClassFile(class_name,
-                                                             class_loader,
+                                                             loader_data,
                                                              protection_domain,
                                                              host_klass,
                                                              cp_patches,
@@ -973,8 +985,6 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
   // Parsed name could be null if we threw an error before we got far
   // enough along to parse it -- in that case, there is nothing to clean up.
   if (parsed_name != NULL) {
-    ClassLoaderData* loader_data = class_loader_data(class_loader);
-
     unsigned int p_hash = placeholders()->compute_hash(parsed_name,
                                                        loader_data);
     int p_index = placeholders()->hash_to_index(p_hash);
@@ -987,9 +997,8 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
 
   if (host_klass.not_null() && k.not_null()) {
     assert(EnableInvokeDynamic, "");
-    // If it's anonymous, initialize it now, since nobody else will.
-    k->class_loader_data()->record_dependency(host_klass(), CHECK_NULL);
     k->set_host_klass(host_klass());
+    // If it's anonymous, initialize it now, since nobody else will.
 
     {
       MutexLocker mu_r(Compile_lock, THREAD);
@@ -1002,11 +1011,11 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
     }
 
     // Rewrite and patch constant pool here.
-    k->link_class(THREAD);
+    k->link_class(CHECK_NULL);
     if (cp_patches != NULL) {
       k->constants()->patch_resolved_references(cp_patches);
     }
-    k->eager_initialize(THREAD);
+    k->eager_initialize(CHECK_NULL);
 
     // notify jvmti
     if (JvmtiExport::should_post_class_load()) {
@@ -1039,7 +1048,7 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
     DoObjectLock = false;
   }
 
-  ClassLoaderData* loader_data = register_loader(class_loader);
+  ClassLoaderData* loader_data = register_loader(class_loader, CHECK_NULL);
 
   // Make sure we are synchronized on the class loader before we proceed
   Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
@@ -1059,7 +1068,7 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   //   java.lang.Object through resolve_or_fail, not this path.
 
   instanceKlassHandle k = ClassFileParser(st).parseClassFile(class_name,
-                                                             class_loader,
+                                                             loader_data,
                                                              protection_domain,
                                                              parsed_name,
                                                              verify,
@@ -2343,6 +2352,7 @@ methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
 static methodHandle unpack_method_and_appendix(Handle mname,
+                                               KlassHandle accessing_klass,
                                                objArrayHandle appendix_box,
                                                Handle* appendix_result,
                                                TRAPS) {
@@ -2361,6 +2371,12 @@ static methodHandle unpack_method_and_appendix(Handle mname,
     #endif //PRODUCT
       }
       (*appendix_result) = Handle(THREAD, appendix);
+      // the target is stored in the cpCache and if a reference to this
+      // MethodName is dropped we need a way to make sure the
+      // class_loader containing this method is kept alive.
+      // FIXME: the appendix might also preserve this dependency.
+      ClassLoaderData* this_key = InstanceKlass::cast(accessing_klass())->class_loader_data();
+      this_key->record_dependency(m->method_holder(), CHECK_NULL); // Can throw OOM
       return methodHandle(THREAD, m);
     }
   }
@@ -2405,7 +2421,7 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
                          &args, CHECK_(empty));
   Handle mname(THREAD, (oop) result.get_jobject());
   (*method_type_result) = method_type;
-  return unpack_method_and_appendix(mname, appendix_box, appendix_result, THREAD);
+  return unpack_method_and_appendix(mname, accessing_klass, appendix_box, appendix_result, THREAD);
 }
 
 
@@ -2596,7 +2612,7 @@ methodHandle SystemDictionary::find_dynamic_call_site_invoker(KlassHandle caller
                          &args, CHECK_(empty));
   Handle mname(THREAD, (oop) result.get_jobject());
   (*method_type_result) = method_type;
-  return unpack_method_and_appendix(mname, appendix_box, appendix_result, THREAD);
+  return unpack_method_and_appendix(mname, caller, appendix_box, appendix_result, THREAD);
 }
 
 // Since the identity hash code for symbols changes when the symbols are

@@ -108,7 +108,6 @@ size_t Metablock::_min_block_byte_size = sizeof(Metablock);
   size_t Metablock::_overhead = 0;
 #endif
 
-
 // Pointer to list of Metachunks.
 class ChunkList VALUE_OBJ_CLASS_SPEC {
   // List of free chunks
@@ -325,10 +324,12 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   bool expand_by(size_t words, bool pre_touch = false);
   bool shrink_by(size_t words);
 
+#ifdef ASSERT
   // Debug support
   static void verify_virtual_space_total();
   static void verify_virtual_space_count();
   void mangle();
+#endif
 
   void print_on(outputStream* st) const;
 };
@@ -621,8 +622,8 @@ class SpaceManager : public CHeapObj<mtClass> {
   void locked_print_chunks_in_use_on(outputStream* st) const;
 
   void verify();
+  NOT_PRODUCT(void mangle_freed_chunks();)
 #ifdef ASSERT
-  void mangle_freed_chunks();
   void verify_allocation_total();
 #endif
 };
@@ -711,7 +712,7 @@ void Metachunk::print_on(outputStream* st) const {
                bottom(), top(), end(), word_size());
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 void Metachunk::mangle() {
   // Mangle the payload of the chunk and not the links that
   // maintain list of chunks.
@@ -719,7 +720,7 @@ void Metachunk::mangle() {
   size_t word_size = capacity_word_size() - overhead();
   Copy::fill_to_words(start, word_size, metadata_chunk_initialize);
 }
-#endif // ASSERT
+#endif // PRODUCT
 
 void Metachunk::verify() {
 #ifdef ASSERT
@@ -917,10 +918,12 @@ void VirtualSpaceNode::print_on(outputStream* st) const {
            vs->high_boundary());
 }
 
+#ifdef ASSERT
 void VirtualSpaceNode::mangle() {
   size_t word_size = capacity_words_in_vs();
   Copy::fill_to_words((HeapWord*) low(), word_size, 0xf1f1f1f1);
 }
+#endif // ASSERT
 
 // VirtualSpaceList methods
 // Space allocated from the VirtualSpace
@@ -1985,15 +1988,13 @@ SpaceManager::~SpaceManager() {
     locked_print_chunks_in_use_on(gclog_or_tty);
   }
 
+  // Mangle freed memory.
+  NOT_PRODUCT(mangle_freed_chunks();)
+
   // Have to update before the chunks_in_use lists are emptied
   // below.
   chunk_manager->inc_free_chunks_total(sum_capacity_in_chunks_in_use(),
                                        sum_count_in_chunks_in_use());
-
-#ifdef ASSERT
-  // Mangle freed memory.
-  mangle_freed_chunks();
-#endif // ASSERT
 
   // Add all the chunks in use by this space manager
   // to the global list of free chunks.
@@ -2273,7 +2274,7 @@ void SpaceManager::dump(outputStream* const out) const {
                 " waste " SIZE_FORMAT, curr_total, used, free, capacity, waste);
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 void SpaceManager::mangle_freed_chunks() {
   for (ChunkIndex index = SmallIndex;
        index < NumberOfInUseLists;
@@ -2291,10 +2292,15 @@ void SpaceManager::mangle_freed_chunks() {
     }
   }
 }
-#endif // ASSERT
+#endif // PRODUCT
 
 
 // MetaspaceAux
+
+size_t MetaspaceAux::used_in_bytes() {
+  return (Metaspace::class_space_list()->used_words_sum() +
+          Metaspace::space_list()->used_words_sum()) * BytesPerWord;
+}
 
 size_t MetaspaceAux::used_in_bytes(Metaspace::MetadataType mdtype) {
   size_t used = 0;
@@ -2324,6 +2330,11 @@ size_t MetaspaceAux::free_in_bytes(Metaspace::MetadataType mdtype) {
 // The total words available for metadata allocation.  This
 // uses Metaspace capacity_words() which is the total words
 // in chunks allocated for a Metaspace.
+size_t MetaspaceAux::capacity_in_bytes() {
+  return (Metaspace::class_space_list()->capacity_words_sum() +
+          Metaspace::space_list()->capacity_words_sum()) * BytesPerWord;
+}
+
 size_t MetaspaceAux::capacity_in_bytes(Metaspace::MetadataType mdtype) {
   size_t capacity = free_chunks_total(mdtype);
   ClassLoaderDataGraphMetaspaceIterator iter;
@@ -2334,6 +2345,11 @@ size_t MetaspaceAux::capacity_in_bytes(Metaspace::MetadataType mdtype) {
     }
   }
   return capacity * BytesPerWord;
+}
+
+size_t MetaspaceAux::reserved_in_bytes() {
+  return (Metaspace::class_space_list()->virtual_space_total() +
+          Metaspace::space_list()->virtual_space_total()) * BytesPerWord;
 }
 
 size_t MetaspaceAux::reserved_in_bytes(Metaspace::MetadataType mdtype) {
