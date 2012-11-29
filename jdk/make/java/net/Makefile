@@ -77,6 +77,7 @@ ifeq ($(PLATFORM), windows)
     FILES_export += java/net/DualStackPlainSocketImpl.java
     FILES_export += java/net/TwoStacksPlainDatagramSocketImpl.java
     FILES_export += java/net/DualStackPlainDatagramSocketImpl.java
+    FILES_export += sun/net/www/protocol/http/ntlm/NTLMAuthSequence.java
 else
     FILES_export += java/net/PlainDatagramSocketImpl.java
 endif
