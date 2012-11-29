@@ -2184,7 +2184,7 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   Method* m = Method::allocate(
       loader_data, code_length, access_flags, linenumber_table_length,
       total_lvt_length, exception_table_length, checked_exceptions_length,
-      ConstMethod::NORMAL, CHECK_(nullHandle));
+      generic_signature_index, ConstMethod::NORMAL, CHECK_(nullHandle));
 
   ClassLoadingService::add_class_method_size(m->size()*HeapWordSize);
 
@@ -2192,7 +2192,6 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   m->set_constants(cp());
   m->set_name_index(name_index);
   m->set_signature_index(signature_index);
-  m->set_generic_signature_index(generic_signature_index);
 #ifdef CC_INTERP
   // hmm is there a gc issue here??
   ResultTypeFinder rtf(cp->symbol_at(signature_index));
