@@ -2544,8 +2544,8 @@ Metadata* java_lang_invoke_MemberName::vmtarget(oop mname) {
 
 void java_lang_invoke_MemberName::set_vmtarget(oop mname, Metadata* ref) {
   assert(is_instance(mname), "wrong type");
-#ifdef ASSERT
   // check the type of the vmtarget
+  oop dependency = NULL;
   if (ref != NULL) {
     switch (flags(mname) & (MN_IS_METHOD |
                             MN_IS_CONSTRUCTOR |
@@ -2553,28 +2553,21 @@ void java_lang_invoke_MemberName::set_vmtarget(oop mname, Metadata* ref) {
     case MN_IS_METHOD:
     case MN_IS_CONSTRUCTOR:
       assert(ref->is_method(), "should be a method");
+      dependency = ((Method*)ref)->method_holder()->java_mirror();
       break;
     case MN_IS_FIELD:
       assert(ref->is_klass(), "should be a class");
+      dependency = ((Klass*)ref)->java_mirror();
       break;
     default:
       ShouldNotReachHere();
     }
   }
-#endif //ASSERT
   mname->address_field_put(_vmtarget_offset, (address)ref);
-  oop loader = NULL;
-  if (ref != NULL) {
-    if (ref->is_klass()) {
-      loader = ((Klass*)ref)->class_loader();
-    } else if (ref->is_method()) {
-      loader = ((Method*)ref)->method_holder()->class_loader();
-    } else {
-      ShouldNotReachHere();
-    }
-  }
-  // Add a reference to the loader to ensure the metadata is kept alive
-  mname->obj_field_put(_vmloader_offset, loader);
+  // Add a reference to the loader (actually mirror because anonymous classes will not have
+  // distinct loaders) to ensure the metadata is kept alive
+  // This mirror may be different than the one in clazz field.
+  mname->obj_field_put(_vmloader_offset, dependency);
 }
 
 intptr_t java_lang_invoke_MemberName::vmindex(oop mname) {
@@ -2739,7 +2732,6 @@ oop java_security_AccessControlContext::create(objArrayHandle context, bool isPr
 
 bool java_lang_ClassLoader::offsets_computed = false;
 int  java_lang_ClassLoader::_loader_data_offset = -1;
-int  java_lang_ClassLoader::_dependencies_offset = -1;
 int  java_lang_ClassLoader::parallelCapable_offset = -1;
 
 ClassLoaderData** java_lang_ClassLoader::loader_data_addr(oop loader) {
@@ -2749,18 +2741,6 @@ ClassLoaderData** java_lang_ClassLoader::loader_data_addr(oop loader) {
 
 ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
   return *java_lang_ClassLoader::loader_data_addr(loader);
-}
-
-oop java_lang_ClassLoader::dependencies(oop loader) {
-  return loader->obj_field(_dependencies_offset);
-}
-
-HeapWord* java_lang_ClassLoader::dependencies_addr(oop loader) {
-  if (UseCompressedOops) {
-    return (HeapWord*)loader->obj_field_addr<narrowOop>(_dependencies_offset);
-  } else {
-    return (HeapWord*)loader->obj_field_addr<oop>(_dependencies_offset);
-  }
 }
 
 void java_lang_ClassLoader::compute_offsets() {

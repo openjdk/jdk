@@ -88,11 +88,6 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
       }
       if (!supers_exist) {
         // Oops.  Not allocated yet.  Back out, allocate it, and retry.
-#ifndef PRODUCT
-        if (WizardMode) {
-          tty->print_cr("Must retry array klass creation for depth %d",n);
-        }
-#endif
         KlassHandle ek;
         {
           MutexUnlocker mu(MultiArray_lock);
