@@ -26,22 +26,19 @@
 #include "precompiled.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/events.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "mutex_linux.inline.hpp"
-# include "thread_linux.inline.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_solaris
 # include "mutex_solaris.inline.hpp"
-# include "thread_solaris.inline.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "mutex_windows.inline.hpp"
-# include "thread_windows.inline.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "mutex_bsd.inline.hpp"
-# include "thread_bsd.inline.hpp"
 #endif
 
 // o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o

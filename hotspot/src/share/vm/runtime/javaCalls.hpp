@@ -29,6 +29,7 @@
 #include "oops/method.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/javaFrameAnchor.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #ifdef TARGET_ARCH_x86
 # include "jniTypes_x86.hpp"
@@ -44,18 +45,6 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "jniTypes_ppc.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
 #endif
 
 // A JavaCallWrapper is constructed before each JavaCall and destructed after the call.
