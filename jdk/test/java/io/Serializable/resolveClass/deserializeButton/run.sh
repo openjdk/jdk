@@ -26,7 +26,7 @@
 # @summary Verify that class loaded outside of application class loader is
 #          correctly resolved during deserialization when read in by custom
 #          readObject() method of a bootstrap class (in this case,
-#          java.awt.Button).
+#          java.util.Vector).
 
 if [ "${TESTJAVA}" = "" ]
 then

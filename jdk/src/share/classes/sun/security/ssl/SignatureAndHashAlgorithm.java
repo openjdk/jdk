@@ -77,9 +77,6 @@ final class SignatureAndHashAlgorithm {
     // the hash algorithm
     private HashAlgorithm hash;
 
-    // the signature algorithm
-    private SignatureAlgorithm signature;
-
     // id in 16 bit MSB format, i.e. 0x0603 for SHA512withECDSA
     private int id;
 
@@ -96,7 +93,6 @@ final class SignatureAndHashAlgorithm {
     private SignatureAndHashAlgorithm(HashAlgorithm hash,
             SignatureAlgorithm signature, String algorithm, int priority) {
         this.hash = hash;
-        this.signature = signature;
         this.algorithm = algorithm;
         this.id = ((hash.value & 0xFF) << 8) | (signature.value & 0xFF);
         this.priority = priority;
@@ -105,11 +101,10 @@ final class SignatureAndHashAlgorithm {
     // constructor for unsupported algorithm
     private SignatureAndHashAlgorithm(String algorithm, int id, int sequence) {
         this.hash = HashAlgorithm.valueOf((id >> 8) & 0xFF);
-        this.signature = SignatureAlgorithm.valueOf(id & 0xFF);
         this.algorithm = algorithm;
         this.id = id;
 
-        // add one more to the sequece number, in case that the number is zero
+        // add one more to the sequence number, in case that the number is zero
         this.priority = SUPPORTED_ALG_PRIORITY_MAX_NUM + sequence + 1;
     }
 

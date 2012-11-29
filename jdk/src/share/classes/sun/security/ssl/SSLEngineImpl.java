@@ -553,6 +553,7 @@ final public class SSLEngineImpl extends SSLEngine {
     /*
      * Is a handshake currently underway?
      */
+    @Override
     public SSLEngineResult.HandshakeStatus getHandshakeStatus() {
         return getHSStatus(null);
     }
@@ -736,6 +737,7 @@ final public class SSLEngineImpl extends SSLEngine {
     /*
      * Start a SSLEngine handshake
      */
+    @Override
     public void beginHandshake() throws SSLException {
         try {
             kickstartHandshake();
@@ -755,6 +757,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * Unwraps a buffer.  Does a variety of checks before grabbing
      * the unwrapLock, which blocks multiple unwraps from occuring.
      */
+    @Override
     public SSLEngineResult unwrap(ByteBuffer netData, ByteBuffer [] appData,
             int offset, int length) throws SSLException {
 
@@ -1155,6 +1158,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * Wraps a buffer.  Does a variety of checks before grabbing
      * the wrapLock, which blocks multiple wraps from occuring.
      */
+    @Override
     public SSLEngineResult wrap(ByteBuffer [] appData,
             int offset, int length, ByteBuffer netData) throws SSLException {
 
@@ -1476,6 +1480,7 @@ final public class SSLEngineImpl extends SSLEngine {
         connectionState = cs_CLOSED;
     }
 
+    @Override
     synchronized public void closeOutbound() {
         /*
          * Dump out a close_notify to the remote side
@@ -1491,6 +1496,7 @@ final public class SSLEngineImpl extends SSLEngine {
     /**
      * Returns the outbound application data closure state
      */
+    @Override
     public boolean isOutboundDone() {
         return writer.isOutboundDone();
     }
@@ -1527,6 +1533,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * lock here, and do the real work in the internal verison.
      * We do check for truncation attacks.
      */
+    @Override
     synchronized public void closeInbound() throws SSLException {
         /*
          * Currently closes the outbound side as well.  The IETF TLS
@@ -1559,6 +1566,7 @@ final public class SSLEngineImpl extends SSLEngine {
     /**
      * Returns the network inbound data closure state
      */
+    @Override
     synchronized public boolean isInboundDone() {
         return inboundDone;
     }
@@ -1576,6 +1584,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * These can be long lived, and frequently correspond to an
      * entire login session for some user.
      */
+    @Override
     synchronized public SSLSession getSession() {
         return sess;
     }
@@ -1593,6 +1602,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * Returns a delegated <code>Runnable</code> task for
      * this <code>SSLEngine</code>.
      */
+    @Override
     synchronized public Runnable getDelegatedTask() {
         if (handshaker != null) {
             return handshaker.getTask();
@@ -1847,6 +1857,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * whether we enable session creations.  Otherwise,
      * we will need to wait for the next handshake.
      */
+    @Override
     synchronized public void setEnableSessionCreation(boolean flag) {
         enableSessionCreation = flag;
 
@@ -1859,6 +1870,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * Returns true if new connections may cause creation of new SSL
      * sessions.
      */
+    @Override
     synchronized public boolean getEnableSessionCreation() {
         return enableSessionCreation;
     }
@@ -1872,6 +1884,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * whether client authentication is needed.  Otherwise,
      * we will need to wait for the next handshake.
      */
+    @Override
     synchronized public void setNeedClientAuth(boolean flag) {
         doClientAuth = (flag ?
             SSLEngineImpl.clauth_required : SSLEngineImpl.clauth_none);
@@ -1883,6 +1896,7 @@ final public class SSLEngineImpl extends SSLEngine {
         }
     }
 
+    @Override
     synchronized public boolean getNeedClientAuth() {
         return (doClientAuth == SSLEngineImpl.clauth_required);
     }
@@ -1895,6 +1909,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * whether client authentication is requested.  Otherwise,
      * we will need to wait for the next handshake.
      */
+    @Override
     synchronized public void setWantClientAuth(boolean flag) {
         doClientAuth = (flag ?
             SSLEngineImpl.clauth_requested : SSLEngineImpl.clauth_none);
@@ -1906,6 +1921,7 @@ final public class SSLEngineImpl extends SSLEngine {
         }
     }
 
+    @Override
     synchronized public boolean getWantClientAuth() {
         return (doClientAuth == SSLEngineImpl.clauth_requested);
     }
@@ -1916,6 +1932,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * client or server mode.  Must be called before any SSL
      * traffic has started.
      */
+    @Override
     @SuppressWarnings("fallthrough")
     synchronized public void setUseClientMode(boolean flag) {
         switch (connectionState) {
@@ -1979,6 +1996,7 @@ final public class SSLEngineImpl extends SSLEngine {
         }
     }
 
+    @Override
     synchronized public boolean getUseClientMode() {
         return !roleIsServer;
     }
@@ -1994,6 +2012,7 @@ final public class SSLEngineImpl extends SSLEngine {
      *
      * @return an array of cipher suite names
      */
+    @Override
     public String[] getSupportedCipherSuites() {
         return sslContext.getSupportedCipherSuiteList().toStringArray();
     }
@@ -2007,6 +2026,7 @@ final public class SSLEngineImpl extends SSLEngine {
      *
      * @param suites Names of all the cipher suites to enable.
      */
+    @Override
     synchronized public void setEnabledCipherSuites(String[] suites) {
         enabledCipherSuites = new CipherSuiteList(suites);
         if ((handshaker != null) && !handshaker.activated()) {
@@ -2024,6 +2044,7 @@ final public class SSLEngineImpl extends SSLEngine {
      *
      * @return an array of cipher suite names
      */
+    @Override
     synchronized public String[] getEnabledCipherSuites() {
         return enabledCipherSuites.toStringArray();
     }
@@ -2034,6 +2055,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * A subset of the supported protocols may be enabled for this connection
      * @return an array of protocol names.
      */
+    @Override
     public String[] getSupportedProtocols() {
         return sslContext.getSuportedProtocolList().toStringArray();
     }
@@ -2047,6 +2069,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * @exception IllegalArgumentException when one of the protocols
      *  named by the parameter is not supported.
      */
+    @Override
     synchronized public void setEnabledProtocols(String[] protocols) {
         enabledProtocols = new ProtocolList(protocols);
         if ((handshaker != null) && !handshaker.activated()) {
@@ -2054,6 +2077,7 @@ final public class SSLEngineImpl extends SSLEngine {
         }
     }
 
+    @Override
     synchronized public String[] getEnabledProtocols() {
         return enabledProtocols.toStringArray();
     }
@@ -2061,6 +2085,7 @@ final public class SSLEngineImpl extends SSLEngine {
     /**
      * Returns the SSLParameters in effect for this SSLEngine.
      */
+    @Override
     synchronized public SSLParameters getSSLParameters() {
         SSLParameters params = super.getSSLParameters();
 
@@ -2076,6 +2101,7 @@ final public class SSLEngineImpl extends SSLEngine {
     /**
      * Applies SSLParameters to this engine.
      */
+    @Override
     synchronized public void setSSLParameters(SSLParameters params) {
         super.setSSLParameters(params);
 
@@ -2107,6 +2133,7 @@ final public class SSLEngineImpl extends SSLEngine {
     /**
      * Returns a printable representation of this end of the connection.
      */
+    @Override
     public String toString() {
         StringBuilder retval = new StringBuilder(80);
 

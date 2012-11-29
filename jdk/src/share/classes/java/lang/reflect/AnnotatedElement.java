@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,11 @@ import java.lang.annotation.Annotation;
  * a {@link EnumConstantNotPresentException} if the enum constant in the
  * annotation is no longer present in the enum type.
  *
+ * <p>Attempting to read annotations of a repeatable annotation type T
+ * that are contained in an annotation whose type is not, in fact, the
+ * containing annotation type of T will result in an
+ * InvalidContainerAnnotationError.
+ *
  * <p>Finally, Attempting to read a member whose definition has evolved
  * incompatibly will result in a {@link
  * java.lang.annotation.AnnotationTypeMismatchException} or an
@@ -55,6 +60,7 @@ import java.lang.annotation.Annotation;
  * @see java.lang.annotation.AnnotationFormatError
  * @see java.lang.annotation.AnnotationTypeMismatchException
  * @see java.lang.annotation.IncompleteAnnotationException
+ * @see java.lang.annotation.InvalidContainerAnnotationError
  * @since 1.5
  * @author Josh Bloch
  */
@@ -87,6 +93,23 @@ public interface AnnotatedElement {
     <T extends Annotation> T getAnnotation(Class<T> annotationClass);
 
     /**
+     * Returns an array of all this element's annotations for the
+     * specified type if one or more of such annotation is present,
+     * else an array of length zero.
+     *
+     * The caller of this method is free to modify the returned array;
+     * it will have no effect on the arrays returned to other callers.
+     *
+     * @param annotationClass the Class object corresponding to the
+     *        annotation type
+     * @return all this element's annotations for the specified annotation type if
+     *     present on this element, else an array of length zero
+     * @throws NullPointerException if the given annotation class is null
+     * @since 1.8
+     */
+    <T extends Annotation> T[] getAnnotations(Class<T> annotationClass);
+
+    /**
      * Returns all annotations present on this element.  (Returns an array
      * of length zero if this element has no annotations.)  The caller of
      * this method is free to modify the returned array; it will have no
@@ -98,12 +121,48 @@ public interface AnnotatedElement {
     Annotation[] getAnnotations();
 
     /**
+     * Returns this element's annotation for the specified type if
+     * such an annotation is present, else null.
+     *
+     * This method ignores inherited annotations. (Returns null if no
+     * annotations are directly present on this element.)
+     *
+     * @param annotationClass the Class object corresponding to the
+     *        annotation type
+     * @return this element's annotation for the specified annotation type if
+     *     present on this element, else null
+     * @throws NullPointerException if the given annotation class is null
+     * @since 1.8
+     */
+    <T extends Annotation> T getDeclaredAnnotation(Class<T> annotationClass);
+
+   /**
+     * Returns an array of all this element's annotations for the
+     * specified type if one or more of such annotation is directly
+     * present, else an array of length zero.
+     *
+     * This method ignores inherited annotations. (Returns
+     * an array of length zero if no annotations are directly present
+     * on this element.)  The caller of this method is free to modify
+     * the returned array; it will have no effect on the arrays
+     * returned to other callers.
+     *
+     * @param annotationClass the Class object corresponding to the
+     *        annotation type
+     * @return all this element's annotations for the specified annotation type if
+     *     present on this element, else an array of length zero
+     * @throws NullPointerException if the given annotation class is null
+     * @since 1.8
+     */
+    <T extends Annotation> T[] getDeclaredAnnotations(Class<T> annotationClass);
+
+    /**
      * Returns all annotations that are directly present on this
-     * element.  Unlike the other methods in this interface, this method
-     * ignores inherited annotations.  (Returns an array of length zero if
-     * no annotations are directly present on this element.)  The caller of
-     * this method is free to modify the returned array; it will have no
-     * effect on the arrays returned to other callers.
+     * element. This method ignores inherited annotations. (Returns
+     * an array of length zero if no annotations are directly present
+     * on this element.)  The caller of this method is free to modify
+     * the returned array; it will have no effect on the arrays
+     * returned to other callers.
      *
      * @return All annotations directly present on this element
      * @since 1.5
