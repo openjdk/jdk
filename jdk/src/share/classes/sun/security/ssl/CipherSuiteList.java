@@ -177,6 +177,7 @@ final class CipherSuiteList {
         return suiteNames.clone();
     }
 
+    @Override
     public String toString() {
         return cipherSuites.toString();
     }

@@ -31,7 +31,6 @@ package com.sun.jmx.snmp.daemon;
 // java import
 //
 import java.util.Enumeration;
-import java.util.Vector;
 import java.util.logging.Level;
 // jmx imports
 //
@@ -46,9 +45,6 @@ import com.sun.jmx.snmp.SnmpEngine;
 //
 import static com.sun.jmx.defaults.JmxProperties.SNMP_ADAPTOR_LOGGER;
 import com.sun.jmx.snmp.agent.SnmpMibAgent;
-import com.sun.jmx.snmp.agent.SnmpMibRequest;
-import com.sun.jmx.snmp.ThreadContext;
-import com.sun.jmx.snmp.daemon.SnmpAdaptorServer;
 import com.sun.jmx.snmp.internal.SnmpIncomingRequest;
 import com.sun.jmx.snmp.ThreadContext;
 
@@ -85,6 +81,7 @@ class SnmpSubBulkRequestHandler extends SnmpSubRequestHandler {
         init(server, req, nonRepeat, maxRepeat, R);
     }
 
+    @Override
     public void run() {
 
         size= varBind.size();
@@ -259,11 +256,12 @@ class SnmpSubBulkRequestHandler extends SnmpSubRequestHandler {
      * successful. As such the method getErrorIndex or getErrorStatus should be
      * called.
      */
+    @Override
     protected void updateResult(SnmpVarBind[] result) {
         // we can assume that the run method is over ...
         //
 
-        final Enumeration e= varBind.elements();
+        final Enumeration<SnmpVarBind> e= varBind.elements();
         final int max= result.length;
 
         // First go through all the values once ...
@@ -284,7 +282,7 @@ class SnmpSubBulkRequestHandler extends SnmpSubRequestHandler {
                 continue;
             }
 
-            final SnmpVarBind element= (SnmpVarBind) e.nextElement();
+            final SnmpVarBind element= e.nextElement();
 
             if (element == null) continue;
             if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINER)) {
@@ -309,7 +307,7 @@ class SnmpSubBulkRequestHandler extends SnmpSubRequestHandler {
                     return;
                 if (e.hasMoreElements() ==false)
                     return;
-                final SnmpVarBind element= (SnmpVarBind) e.nextElement();
+                final SnmpVarBind element= e.nextElement();
 
                 if (element == null) continue;
                 if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINER)) {

@@ -162,26 +162,6 @@ javax/management/remote/mandatory/notif/DiffHBTest.java 	generic-all
 # 6988950
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
-# 7162111
-demo/jvmti/mtrace/TraceJFrame.java                              macosx-all
-javax/script/CauseExceptionTest.java                            macosx-all
-javax/script/GetInterfaceTest.java                              macosx-all
-javax/script/JavaScriptScopeTest.java                           macosx-all
-javax/script/NullUndefinedVarTest.java                          macosx-all
-javax/script/PluggableContextTest.java                          macosx-all
-javax/script/ProviderTest.sh                                    macosx-all
-javax/script/RhinoExceptionTest.java                            macosx-all
-javax/script/StringWriterPrintTest.java                         macosx-all
-javax/script/Test1.java                                         macosx-all
-javax/script/Test2.java                                         macosx-all
-javax/script/Test3.java                                         macosx-all
-javax/script/Test4.java                                         macosx-all
-javax/script/Test5.java                                         macosx-all
-javax/script/Test6.java                                         macosx-all
-javax/script/Test7.java                                         macosx-all
-javax/script/Test8.java                                         macosx-all
-javax/script/UnescapedBracketRegExTest.java                     macosx-all
-javax/script/VersionTest.java                                   macosx-all
 ############################################################################
 
 # jdk_net
@@ -223,11 +203,6 @@ java/net/CookieHandler/CookieManagerTest.java                   macosx-all
 ############################################################################
 
 # jdk_io
-
-# 7162111 - these tests need to be updated to run headless
-java/io/Serializable/resolveClass/deserializeButton/run.sh      macosx-all
-java/io/Serializable/serialver/classpath/run.sh                 macosx-all
-java/io/Serializable/serialver/nested/run.sh                    macosx-all
 
 ############################################################################
 
@@ -363,9 +338,6 @@ com/sun/jdi/ProcessAttachTest.sh                                generic-all
 ############################################################################
 
 # jdk_util
-
-# 7162111 - test needs to be changed to run headless
-java/util/ResourceBundle/Control/Bug6530694.java		macosx-all
 
 # Filed 6933803
 java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all

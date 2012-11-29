@@ -28,7 +28,6 @@ package sun.security.ssl;
 
 import java.io.InputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
 
 import javax.net.ssl.SSLException;
 
@@ -74,6 +73,7 @@ public class HandshakeInStream extends InputStream {
      * Note that this returns the bytes remaining in the buffer, not
      * the bytes remaining in the current handshake message.
      */
+    @Override
     public int available() {
         return r.available();
     }
@@ -81,6 +81,7 @@ public class HandshakeInStream extends InputStream {
     /*
      * Get a byte of handshake data.
      */
+    @Override
     public int read() throws IOException {
         int n = r.read();
         if (n == -1) {
@@ -92,6 +93,7 @@ public class HandshakeInStream extends InputStream {
     /*
      * Get a bunch of bytes of handshake data.
      */
+    @Override
     public int read(byte b [], int off, int len) throws IOException {
         // we read from a ByteArrayInputStream, it always returns the
         // data in a single read if enough is available
@@ -105,6 +107,7 @@ public class HandshakeInStream extends InputStream {
     /*
      * Skip some handshake data.
      */
+    @Override
     public long skip(long n) throws IOException {
         return r.skip(n);
     }
@@ -117,6 +120,7 @@ public class HandshakeInStream extends InputStream {
      * read, data that has already been consumed is lost even if marked).
      */
 
+    @Override
     public void mark(int readlimit) {
         r.mark(readlimit);
     }
@@ -126,6 +130,7 @@ public class HandshakeInStream extends InputStream {
         r.reset();
     }
 
+    @Override
     public boolean markSupported() {
         return true;
     }
