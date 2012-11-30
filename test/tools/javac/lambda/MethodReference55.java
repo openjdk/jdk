@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,23 @@
 
 /*
  * @test
- * @bug 8003280
- * @summary Add lambda tests
- *  check that non-static qualifier of static method reference is eagerly evaluated
+ * @bug 8004101
+ * @summary Add checks for method reference well-formedness
+ * @compile/fail/ref=MethodReference55.out -XDrawDiagnostics MethodReference55.java
  */
+class MethodReference55<X> {
 
-public class MethodReference30 {
-
-    static int assertionCount = 0;
-
-    static void assertTrue(boolean cond) {
-        assertionCount++;
-        if (!cond)
-            throw new AssertionError();
+    interface V {
+        void m(Object o);
     }
 
-    interface SAM {
-       void m();
+    V v = new MethodReference55<String>()::m;
+
+    void test() {
+        g(new MethodReference55<String>()::m);
     }
 
-    MethodReference30() {
-        assertTrue(true);
-    }
+    void g(V v) { }
 
-   void m() { }
-
-   public static void main(String[] args) {
-      SAM s = new MethodReference30()::m;
-      assertTrue(assertionCount == 1);
-   }
+    static void m(Object o) { };
 }
