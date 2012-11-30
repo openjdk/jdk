@@ -2458,7 +2458,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             //attrib type-arguments
-            List<Type> typeargtypes = null;
+            List<Type> typeargtypes = List.nil();
             if (that.typeargs != null) {
                 typeargtypes = attribTypes(that.typeargs, localEnv);
             }
@@ -2523,6 +2523,26 @@ public class Attr extends JCTree.Visitor {
                     } else {
                         log.report(diag);
                     }
+                    result = that.type = types.createErrorType(target);
+                    return;
+                }
+            }
+
+            if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
+                if (refSym.isStatic() && TreeInfo.isStaticSelector(that.expr, names) &&
+                        exprType.getTypeArguments().nonEmpty()) {
+                    //static ref with class type-args
+                    log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
+                            diags.fragment("static.mref.with.targs"));
+                    result = that.type = types.createErrorType(target);
+                    return;
+                }
+
+                if (refSym.isStatic() && !TreeInfo.isStaticSelector(that.expr, names) &&
+                        !lookupHelper.referenceKind(refSym).isUnbound()) {
+                    //no static bound mrefs
+                    log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
+                            diags.fragment("static.bound.mref"));
                     result = that.type = types.createErrorType(target);
                     return;
                 }

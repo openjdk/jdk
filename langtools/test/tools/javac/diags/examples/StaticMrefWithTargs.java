@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8003280
- * @summary Add lambda tests
- *  check that non-static qualifier of static method reference is eagerly evaluated
- */
+// key: compiler.err.invalid.mref
+// key: compiler.misc.static.mref.with.targs
 
-public class MethodReference30 {
+class StaticMrefWithTargs<X> {
 
-    static int assertionCount = 0;
+    Runnable r = StaticMrefWithTargs<String>::m;
 
-    static void assertTrue(boolean cond) {
-        assertionCount++;
-        if (!cond)
-            throw new AssertionError();
-    }
-
-    interface SAM {
-       void m();
-    }
-
-    MethodReference30() {
-        assertTrue(true);
-    }
-
-   void m() { }
-
-   public static void main(String[] args) {
-      SAM s = new MethodReference30()::m;
-      assertTrue(assertionCount == 1);
-   }
+    static void m() { }
 }
