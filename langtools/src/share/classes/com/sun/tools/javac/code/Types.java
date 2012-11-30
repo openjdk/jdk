@@ -437,23 +437,8 @@ public class Types {
                 throw failure("not.a.functional.intf.1",
                             diags.fragment("no.abstracts", Kinds.kindName(origin), origin));
             } else if (abstracts.size() == 1) {
-                if (abstracts.first().type.tag == FORALL) {
-                    throw failure("invalid.generic.desc.in.functional.intf",
-                            abstracts.first(),
-                            Kinds.kindName(origin),
-                            origin);
-                } else {
-                    return new FunctionDescriptor(abstracts.first());
-                }
+                return new FunctionDescriptor(abstracts.first());
             } else { // size > 1
-                for (Symbol msym : abstracts) {
-                    if (msym.type.tag == FORALL) {
-                        throw failure("invalid.generic.desc.in.functional.intf",
-                                abstracts.first(),
-                                Kinds.kindName(origin),
-                                origin);
-                    }
-                }
                 FunctionDescriptor descRes = mergeDescriptors(origin, abstracts.toList());
                 if (descRes == null) {
                     //we can get here if the functional interface is ill-formed
