@@ -87,12 +87,6 @@ inline void Assembler::prefixq(Address adr, Register reg) {}
 
 inline void Assembler::prefix(Address adr, XMMRegister reg) {}
 inline void Assembler::prefixq(Address adr, XMMRegister reg) {}
-#else
-inline void Assembler::emit_long64(jlong x) {
-  *(jlong*) _code_pos = x;
-  _code_pos += sizeof(jlong);
-  code_section()->set_end(_code_pos);
-}
 #endif // _LP64
 
 #endif // CPU_X86_VM_ASSEMBLER_X86_INLINE_HPP

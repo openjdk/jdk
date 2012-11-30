@@ -30,48 +30,26 @@
 #include "compiler/disassembler.hpp"
 #include "runtime/threadLocalStorage.hpp"
 
-inline void AbstractAssembler::sync() {
-  CodeSection* cs = code_section();
-  guarantee(cs->start() == _code_begin, "must not shift code buffer");
-  cs->set_end(_code_pos);
+inline address AbstractAssembler::addr_at(int pos) const {
+  return code_section()->start() + pos;
 }
 
-inline void AbstractAssembler::emit_byte(int x) {
-  assert(isByte(x), "not a byte");
-  *(unsigned char*)_code_pos = (unsigned char)x;
-  _code_pos += sizeof(unsigned char);
-  sync();
-}
+void AbstractAssembler::emit_int8(int8_t x)     { code_section()->emit_int8 (x); }
+void AbstractAssembler::emit_int16(int16_t x)   { code_section()->emit_int16(x); }
+void AbstractAssembler::emit_int32(int32_t x)   { code_section()->emit_int32(x); }
+void AbstractAssembler::emit_int64(int64_t x)   { code_section()->emit_int64(x); }
 
-
-inline void AbstractAssembler::emit_word(int x) {
-  *(short*)_code_pos = (short)x;
-  _code_pos += sizeof(short);
-  sync();
-}
-
-
-inline void AbstractAssembler::emit_long(jint x) {
-  *(jint*)_code_pos = x;
-  _code_pos += sizeof(jint);
-  sync();
-}
-
-inline void AbstractAssembler::emit_address(address x) {
-  *(address*)_code_pos = x;
-  _code_pos += sizeof(address);
-  sync();
-}
+void AbstractAssembler::emit_float(jfloat  x)   { code_section()->emit_float(x); }
+void AbstractAssembler::emit_double(jdouble x)  { code_section()->emit_double(x); }
+void AbstractAssembler::emit_address(address x) { code_section()->emit_address(x); }
 
 inline address AbstractAssembler::inst_mark() const {
   return code_section()->mark();
 }
 
-
 inline void AbstractAssembler::set_inst_mark() {
   code_section()->set_mark();
 }
-
 
 inline void AbstractAssembler::clear_inst_mark() {
   code_section()->clear_mark();
@@ -80,9 +58,9 @@ inline void AbstractAssembler::clear_inst_mark() {
 
 inline void AbstractAssembler::relocate(RelocationHolder const& rspec, int format) {
   assert(!pd_check_instruction_mark()
-         || inst_mark() == NULL || inst_mark() == _code_pos,
+         || inst_mark() == NULL || inst_mark() == code_section()->end(),
          "call relocate() between instructions");
-  code_section()->relocate(_code_pos, rspec, format);
+  code_section()->relocate(code_section()->end(), rspec, format);
 }
 
 
@@ -92,6 +70,14 @@ inline CodeBuffer* AbstractAssembler::code() const {
 
 inline int AbstractAssembler::sect() const {
   return code_section()->index();
+}
+
+inline address AbstractAssembler::pc() const {
+  return code_section()->end();
+}
+
+inline int AbstractAssembler::offset() const {
+  return code_section()->size();
 }
 
 inline int AbstractAssembler::locator() const {

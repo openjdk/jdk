@@ -1154,7 +1154,7 @@ void Assembler::call_literal(address entry, RelocationHolder const& rspec) {
   assert(entry != NULL, "call most probably wrong");
   InstructionMark im(this);
   emit_byte(0xE8);
-  intptr_t disp = entry - (_code_pos + sizeof(int32_t));
+  intptr_t disp = entry - (pc() + sizeof(int32_t));
   assert(is_simm32(disp), "must be 32bit offset (call2)");
   // Technically, should use call32_operand, but this format is
   // implied by the fact that we're emitting a call instruction.
@@ -1417,7 +1417,7 @@ void Assembler::jcc(Condition cc, Label& L, bool maybe_short) {
 
     const int short_size = 2;
     const int long_size = 6;
-    intptr_t offs = (intptr_t)dst - (intptr_t)_code_pos;
+    intptr_t offs = (intptr_t)dst - (intptr_t)pc();
     if (maybe_short && is8bit(offs - short_size)) {
       // 0111 tttn #8-bit disp
       emit_byte(0x70 | cc);
@@ -1447,14 +1447,14 @@ void Assembler::jccb(Condition cc, Label& L) {
     const int short_size = 2;
     address entry = target(L);
 #ifdef ASSERT
-    intptr_t dist = (intptr_t)entry - ((intptr_t)_code_pos + short_size);
+    intptr_t dist = (intptr_t)entry - ((intptr_t)pc() + short_size);
     intptr_t delta = short_branch_delta();
     if (delta != 0) {
       dist += (dist < 0 ? (-delta) :delta);
     }
     assert(is8bit(dist), "Dispacement too large for a short jmp");
 #endif
-    intptr_t offs = (intptr_t)entry - (intptr_t)_code_pos;
+    intptr_t offs = (intptr_t)entry - (intptr_t)pc();
     // 0111 tttn #8-bit disp
     emit_byte(0x70 | cc);
     emit_byte((offs - short_size) & 0xFF);
@@ -1480,7 +1480,7 @@ void Assembler::jmp(Label& L, bool maybe_short) {
     InstructionMark im(this);
     const int short_size = 2;
     const int long_size = 5;
-    intptr_t offs = entry - _code_pos;
+    intptr_t offs = entry - pc();
     if (maybe_short && is8bit(offs - short_size)) {
       emit_byte(0xEB);
       emit_byte((offs - short_size) & 0xFF);
@@ -1510,7 +1510,7 @@ void Assembler::jmp_literal(address dest, RelocationHolder const& rspec) {
   InstructionMark im(this);
   emit_byte(0xE9);
   assert(dest != NULL, "must have a target");
-  intptr_t disp = dest - (_code_pos + sizeof(int32_t));
+  intptr_t disp = dest - (pc() + sizeof(int32_t));
   assert(is_simm32(disp), "must be 32bit offset (jmp)");
   emit_data(disp, rspec.reloc(), call32_operand);
 }
@@ -1521,14 +1521,14 @@ void Assembler::jmpb(Label& L) {
     address entry = target(L);
     assert(entry != NULL, "jmp most probably wrong");
 #ifdef ASSERT
-    intptr_t dist = (intptr_t)entry - ((intptr_t)_code_pos + short_size);
+    intptr_t dist = (intptr_t)entry - ((intptr_t)pc() + short_size);
     intptr_t delta = short_branch_delta();
     if (delta != 0) {
       dist += (dist < 0 ? (-delta) :delta);
     }
     assert(is8bit(dist), "Dispacement too large for a short jmp");
 #endif
-    intptr_t offs = entry - _code_pos;
+    intptr_t offs = entry - pc();
     emit_byte(0xEB);
     emit_byte((offs - short_size) & 0xFF);
   } else {
@@ -4361,7 +4361,7 @@ bool Assembler::reachable(AddressLiteral adr) {
   disp = (int64_t)adr._target - ((int64_t)CodeCache::high_bound() + sizeof(int));
   if (!is_simm32(disp)) return false;
 
-  disp = (int64_t)adr._target - ((int64_t)_code_pos + sizeof(int));
+  disp = (int64_t)adr._target - ((int64_t)pc() + sizeof(int));
 
   // Because rip relative is a disp + address_of_next_instruction and we
   // don't know the value of address_of_next_instruction we apply a fudge factor
@@ -4392,7 +4392,7 @@ void Assembler::emit_data64(jlong data,
                             relocInfo::relocType rtype,
                             int format) {
   if (rtype == relocInfo::none) {
-    emit_long64(data);
+    emit_int64(data);
   } else {
     emit_data64(data, Relocation::spec_simple(rtype), format);
   }
@@ -4410,7 +4410,7 @@ void Assembler::emit_data64(jlong data,
 #ifdef ASSERT
   check_relocation(rspec, format);
 #endif
-  emit_long64(data);
+  emit_int64(data);
 }
 
 int Assembler::prefix_and_encode(int reg_enc, bool byteinst) {
@@ -4943,7 +4943,7 @@ void Assembler::mov64(Register dst, int64_t imm64) {
   InstructionMark im(this);
   int encode = prefixq_and_encode(dst->encoding());
   emit_byte(0xB8 | encode);
-  emit_long64(imm64);
+  emit_int64(imm64);
 }
 
 void Assembler::mov_literal64(Register dst, intptr_t imm64, RelocationHolder const& rspec) {
@@ -7891,7 +7891,7 @@ void MacroAssembler::jump_cc(Condition cc, AddressLiteral dst) {
     relocate(dst.reloc());
     const int short_size = 2;
     const int long_size = 6;
-    int offs = (intptr_t)dst.target() - ((intptr_t)_code_pos);
+    int offs = (intptr_t)dst.target() - ((intptr_t)pc());
     if (dst.reloc() == relocInfo::none && is8bit(offs - short_size)) {
       // 0111 tttn #8-bit disp
       emit_byte(0x70 | cc);

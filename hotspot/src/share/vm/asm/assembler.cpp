@@ -56,16 +56,13 @@ AbstractAssembler::AbstractAssembler(CodeBuffer* code) {
   if (code == NULL)  return;
   CodeSection* cs = code->insts();
   cs->clear_mark();   // new assembler kills old mark
-  _code_section = cs;
-  _code_begin  = cs->start();
-  _code_limit  = cs->limit();
-  _code_pos    = cs->end();
-  _oop_recorder= code->oop_recorder();
-  DEBUG_ONLY( _short_branch_delta = 0; )
-  if (_code_begin == NULL)  {
+  if (cs->start() == NULL)  {
     vm_exit_out_of_memory(0, err_msg("CodeCache: no room for %s",
                                      code->name()));
   }
+  _code_section = cs;
+  _oop_recorder= code->oop_recorder();
+  DEBUG_ONLY( _short_branch_delta = 0; )
 }
 
 void AbstractAssembler::set_code_section(CodeSection* cs) {
@@ -73,9 +70,6 @@ void AbstractAssembler::set_code_section(CodeSection* cs) {
   assert(cs->is_allocated(), "need to pre-allocate this section");
   cs->clear_mark();  // new assembly into this section kills old mark
   _code_section = cs;
-  _code_begin  = cs->start();
-  _code_limit  = cs->limit();
-  _code_pos    = cs->end();
 }
 
 // Inform CodeBuffer that incoming code and relocation will be for stubs
@@ -83,7 +77,6 @@ address AbstractAssembler::start_a_stub(int required_space) {
   CodeBuffer*  cb = code();
   CodeSection* cs = cb->stubs();
   assert(_code_section == cb->insts(), "not in insts?");
-  sync();
   if (cs->maybe_expand_to_ensure_remaining(required_space)
       && cb->blob() == NULL) {
     return NULL;
@@ -96,7 +89,6 @@ address AbstractAssembler::start_a_stub(int required_space) {
 // Should not be called if start_a_stub() returned NULL
 void AbstractAssembler::end_a_stub() {
   assert(_code_section == code()->stubs(), "not in stubs?");
-  sync();
   set_code_section(code()->insts());
 }
 
@@ -105,7 +97,6 @@ address AbstractAssembler::start_a_const(int required_space, int required_align)
   CodeBuffer*  cb = code();
   CodeSection* cs = cb->consts();
   assert(_code_section == cb->insts() || _code_section == cb->stubs(), "not in insts/stubs?");
-  sync();
   address end = cs->end();
   int pad = -(intptr_t)end & (required_align-1);
   if (cs->maybe_expand_to_ensure_remaining(pad + required_space)) {
@@ -124,12 +115,10 @@ address AbstractAssembler::start_a_const(int required_space, int required_align)
 // in section cs (insts or stubs).
 void AbstractAssembler::end_a_const(CodeSection* cs) {
   assert(_code_section == code()->consts(), "not in consts?");
-  sync();
   set_code_section(cs);
 }
 
 void AbstractAssembler::flush() {
-  sync();
   ICache::invalidate_range(addr_at(0), offset());
 }
 
