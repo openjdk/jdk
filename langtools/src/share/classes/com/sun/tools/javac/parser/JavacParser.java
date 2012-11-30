@@ -3171,21 +3171,12 @@ public class JavacParser implements Parser {
     /** Check that given tree is a legal expression statement.
      */
     protected JCExpression checkExprStat(JCExpression t) {
-        switch(t.getTag()) {
-        case PREINC: case PREDEC:
-        case POSTINC: case POSTDEC:
-        case ASSIGN:
-        case BITOR_ASG: case BITXOR_ASG: case BITAND_ASG:
-        case SL_ASG: case SR_ASG: case USR_ASG:
-        case PLUS_ASG: case MINUS_ASG:
-        case MUL_ASG: case DIV_ASG: case MOD_ASG:
-        case APPLY: case NEWCLASS:
-        case ERRONEOUS:
-            return t;
-        default:
+        if (!TreeInfo.isExpressionStatement(t)) {
             JCExpression ret = F.at(t.pos).Erroneous(List.<JCTree>of(t));
             error(ret, "not.stmt");
             return ret;
+        } else {
+            return t;
         }
     }
 
