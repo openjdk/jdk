@@ -389,28 +389,6 @@ public class Types {
         }
 
         /**
-         * Scope filter used to skip methods that should be ignored during
-         * function interface conversion (such as methods overridden by
-         * j.l.Object)
-         */
-        class DescriptorFilter implements Filter<Symbol> {
-
-            TypeSymbol origin;
-
-            DescriptorFilter(TypeSymbol origin) {
-                this.origin = origin;
-            }
-
-            @Override
-            public boolean accepts(Symbol sym) {
-                return sym.kind == Kinds.MTH &&
-                        (sym.flags() & (ABSTRACT | DEFAULT)) == ABSTRACT &&
-                        !overridesObjectMethod(origin, sym) &&
-                        (interfaceCandidates(origin.type, (MethodSymbol)sym).head.flags() & DEFAULT) == 0;
-            }
-        };
-
-        /**
          * Compute the function descriptor associated with a given functional interface
          */
         public FunctionDescriptor findDescriptorInternal(TypeSymbol origin, CompoundScope membersCache) throws FunctionDescriptorLookupError {
@@ -574,6 +552,85 @@ public class Types {
         } catch (FunctionDescriptorLookupError ex) {
             return false;
         }
+    }
+    // </editor-fold>
+
+   /**
+    * Scope filter used to skip methods that should be ignored (such as methods
+    * overridden by j.l.Object) during function interface conversion/marker interface checks
+    */
+    class DescriptorFilter implements Filter<Symbol> {
+
+       TypeSymbol origin;
+
+       DescriptorFilter(TypeSymbol origin) {
+           this.origin = origin;
+       }
+
+       @Override
+       public boolean accepts(Symbol sym) {
+           return sym.kind == Kinds.MTH &&
+                   (sym.flags() & (ABSTRACT | DEFAULT)) == ABSTRACT &&
+                   !overridesObjectMethod(origin, sym) &&
+                   (interfaceCandidates(origin.type, (MethodSymbol)sym).head.flags() & DEFAULT) == 0;
+       }
+    };
+
+    // <editor-fold defaultstate="collapsed" desc="isMarker">
+
+    /**
+     * A cache that keeps track of marker interfaces
+     */
+    class MarkerCache {
+
+        private WeakHashMap<TypeSymbol, Entry> _map = new WeakHashMap<TypeSymbol, Entry>();
+
+        class Entry {
+            final boolean isMarkerIntf;
+            final int prevMark;
+
+            public Entry(boolean isMarkerIntf,
+                    int prevMark) {
+                this.isMarkerIntf = isMarkerIntf;
+                this.prevMark = prevMark;
+            }
+
+            boolean matches(int mark) {
+                return  this.prevMark == mark;
+            }
+        }
+
+        boolean get(TypeSymbol origin) throws FunctionDescriptorLookupError {
+            Entry e = _map.get(origin);
+            CompoundScope members = membersClosure(origin.type, false);
+            if (e == null ||
+                    !e.matches(members.getMark())) {
+                boolean isMarkerIntf = isMarkerInterfaceInternal(origin, members);
+                _map.put(origin, new Entry(isMarkerIntf, members.getMark()));
+                return isMarkerIntf;
+            }
+            else {
+                return e.isMarkerIntf;
+            }
+        }
+
+        /**
+         * Is given symbol a marker interface
+         */
+        public boolean isMarkerInterfaceInternal(TypeSymbol origin, CompoundScope membersCache) throws FunctionDescriptorLookupError {
+            return !origin.isInterface() ?
+                    false :
+                    !membersCache.getElements(new DescriptorFilter(origin)).iterator().hasNext();
+        }
+    }
+
+    private MarkerCache markerCache = new MarkerCache();
+
+    /**
+     * Is given type a marker interface?
+     */
+    public boolean isMarkerInterface(Type site) {
+        return markerCache.get(site.tsym);
     }
     // </editor-fold>
 
@@ -1955,45 +2012,28 @@ public class Types {
      * @param supertype         is objectType if all bounds are interfaces,
      *                          null otherwise.
      */
-    public Type makeCompoundType(List<Type> bounds,
-                                 Type supertype) {
+    public Type makeCompoundType(List<Type> bounds) {
+        return makeCompoundType(bounds, bounds.head.tsym.isInterface());
+    }
+    public Type makeCompoundType(List<Type> bounds, boolean allInterfaces) {
+        Assert.check(bounds.nonEmpty());
+        Type firstExplicitBound = bounds.head;
+        if (allInterfaces) {
+            bounds = bounds.prepend(syms.objectType);
+        }
         ClassSymbol bc =
             new ClassSymbol(ABSTRACT|PUBLIC|SYNTHETIC|COMPOUND|ACYCLIC,
                             Type.moreInfo
                                 ? names.fromString(bounds.toString())
                                 : names.empty,
+                            null,
                             syms.noSymbol);
-        if (bounds.head.tag == TYPEVAR)
-            // error condition, recover
-                bc.erasure_field = syms.objectType;
-            else
-                bc.erasure_field = erasure(bounds.head);
-            bc.members_field = new Scope(bc);
-        ClassType bt = (ClassType)bc.type;
-        bt.allparams_field = List.nil();
-        if (supertype != null) {
-            bt.supertype_field = supertype;
-            bt.interfaces_field = bounds;
-        } else {
-            bt.supertype_field = bounds.head;
-            bt.interfaces_field = bounds.tail;
-        }
-        Assert.check(bt.supertype_field.tsym.completer != null
-                || !bt.supertype_field.isInterface(),
-            bt.supertype_field);
-        return bt;
-    }
-
-    /**
-     * Same as {@link #makeCompoundType(List,Type)}, except that the
-     * second parameter is computed directly. Note that this might
-     * cause a symbol completion.  Hence, this version of
-     * makeCompoundType may not be called during a classfile read.
-     */
-    public Type makeCompoundType(List<Type> bounds) {
-        Type supertype = (bounds.head.tsym.flags() & INTERFACE) != 0 ?
-            supertype(bounds.head) : null;
-        return makeCompoundType(bounds, supertype);
+        bc.type = new IntersectionClassType(bounds, bc, allInterfaces);
+        bc.erasure_field = (bounds.head.tag == TYPEVAR) ?
+                syms.objectType : // error condition, recover
+                erasure(firstExplicitBound);
+        bc.members_field = new Scope(bc);
+        return bc.type;
     }
 
     /**
@@ -2183,12 +2223,8 @@ public class Types {
      * @param supertype         is objectType if all bounds are interfaces,
      *                          null otherwise.
      */
-    public void setBounds(TypeVar t, List<Type> bounds, Type supertype) {
-        if (bounds.tail.isEmpty())
-            t.bound = bounds.head;
-        else
-            t.bound = makeCompoundType(bounds, supertype);
-        t.rank_field = -1;
+    public void setBounds(TypeVar t, List<Type> bounds) {
+        setBounds(t, bounds, bounds.head.tsym.isInterface());
     }
 
     /**
@@ -2200,10 +2236,10 @@ public class Types {
      * Note that this check might cause a symbol completion. Hence, this version of
      * setBounds may not be called during a classfile read.
      */
-    public void setBounds(TypeVar t, List<Type> bounds) {
-        Type supertype = (bounds.head.tsym.flags() & INTERFACE) != 0 ?
-            syms.objectType : null;
-        setBounds(t, bounds, supertype);
+    public void setBounds(TypeVar t, List<Type> bounds, boolean allInterfaces) {
+        t.bound = bounds.tail.isEmpty() ?
+                bounds.head :
+                makeCompoundType(bounds, allInterfaces);
         t.rank_field = -1;
     }
     // </editor-fold>
@@ -2213,7 +2249,7 @@ public class Types {
      * Return list of bounds of the given type variable.
      */
     public List<Type> getBounds(TypeVar t) {
-                if (t.bound.hasTag(NONE))
+        if (t.bound.hasTag(NONE))
             return List.nil();
         else if (t.bound.isErroneous() || !t.bound.isCompound())
             return List.of(t.bound);
@@ -3312,8 +3348,7 @@ public class Types {
                     if (arraySuperType == null) {
                         // JLS 10.8: all arrays implement Cloneable and Serializable.
                         arraySuperType = makeCompoundType(List.of(syms.serializableType,
-                                                                  syms.cloneableType),
-                                                          syms.objectType);
+                                                                  syms.cloneableType), true);
                     }
                 }
             }

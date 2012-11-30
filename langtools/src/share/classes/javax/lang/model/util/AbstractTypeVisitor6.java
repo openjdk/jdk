@@ -111,6 +111,20 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
     }
 
     /**
+     * Visits an {@code IntersectionType} element by calling {@code
+     * visitUnknown}.
+
+     * @param t  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     *
+     * @since 1.8
+     */
+    public R visitIntersection(IntersectionType t, P p) {
+        return visitUnknown(t, p);
+    }
+
+    /**
      * {@inheritDoc}
      *
      * <p> The default implementation of this method in {@code
