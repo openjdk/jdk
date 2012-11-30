@@ -407,6 +407,10 @@ void Universe::genesis(TRAPS) {
     assert(i == _fullgc_alot_dummy_array->length(), "just checking");
   }
   #endif
+
+  // Initialize dependency array for null class loader
+  ClassLoaderData::the_null_class_loader_data()->init_dependencies(CHECK);
+
 }
 
 // CDS support for patching vtables in metadata in the shared archive.
