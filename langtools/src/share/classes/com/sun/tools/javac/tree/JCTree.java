@@ -1829,8 +1829,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             STATIC(ReferenceMode.INVOKE, false),
             /** Expr # instMethod */
             BOUND(ReferenceMode.INVOKE, false),
-            /** Expr # staticMethod */
-            STATIC_EVAL(ReferenceMode.INVOKE, false),
             /** Inner # new */
             IMPLICIT_INNER(ReferenceMode.NEW, false),
             /** Toplevel # new */
