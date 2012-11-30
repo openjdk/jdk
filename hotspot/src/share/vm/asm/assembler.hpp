@@ -201,13 +201,10 @@ class AbstractAssembler : public ResourceObj  {
 
  protected:
   CodeSection* _code_section;          // section within the code buffer
-  address      _code_begin;            // first byte of code buffer
-  address      _code_limit;            // first byte after code buffer
-  address      _code_pos;              // current code generation position
   OopRecorder* _oop_recorder;          // support for relocInfo::oop_type
 
   // Code emission & accessing
-  address addr_at(int pos) const       { return _code_begin + pos; }
+  inline address addr_at(int pos) const;
 
   // This routine is called with a label is used for an address.
   // Labels and displacements truck in offsets, but target must return a PC.
@@ -217,10 +214,18 @@ class AbstractAssembler : public ResourceObj  {
   bool isByte(int x) const             { return 0 <= x && x < 0x100; }
   bool isShiftCount(int x) const       { return 0 <= x && x < 32; }
 
-  void emit_byte(int x);  // emit a single byte
-  void emit_word(int x);  // emit a 16-bit word (not a wordSize word!)
-  void emit_long(jint x); // emit a 32-bit word (not a longSize word!)
-  void emit_address(address x); // emit an address (not a longSize word!)
+  void emit_byte(int x)  { emit_int8 (x); }  // deprecated
+  void emit_word(int x)  { emit_int16(x); }  // deprecated
+  void emit_long(jint x) { emit_int32(x); }  // deprecated
+
+  inline void emit_int8(  int8_t  x);
+  inline void emit_int16( int16_t x);
+  inline void emit_int32( int32_t x);
+  inline void emit_int64( int64_t x);
+
+  inline void emit_float( jfloat  x);
+  inline void emit_double(jdouble x);
+  inline void emit_address(address x);
 
   // Instruction boundaries (required when emitting relocatable values).
   class InstructionMark: public StackObj {
@@ -278,9 +283,6 @@ class AbstractAssembler : public ResourceObj  {
   // Creation
   AbstractAssembler(CodeBuffer* code);
 
-  // save end pointer back to code buf.
-  void sync();
-
   // ensure buf contains all code (call this before using/copying the code)
   void flush();
 
@@ -308,12 +310,13 @@ class AbstractAssembler : public ResourceObj  {
   static bool is_simm32(intptr_t x) { return is_simm(x, 32); }
 
   // Accessors
-  CodeBuffer*   code() const;          // _code_section->outer()
   CodeSection*  code_section() const   { return _code_section; }
-  int           sect() const;          // return _code_section->index()
-  address       pc() const             { return _code_pos; }
-  int           offset() const         { return _code_pos - _code_begin; }
-  int           locator() const;       // CodeBuffer::locator(offset(), sect())
+  inline CodeBuffer*   code() const;
+  inline int           sect() const;
+  inline address       pc() const;
+  inline int           offset() const;
+  inline int           locator() const;       // CodeBuffer::locator(offset(), sect())
+
   OopRecorder*  oop_recorder() const   { return _oop_recorder; }
   void      set_oop_recorder(OopRecorder* r) { _oop_recorder = r; }
 
@@ -358,8 +361,7 @@ class AbstractAssembler : public ResourceObj  {
     CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
-      *(jlong*)ptr = c;
-      _code_pos = ptr + sizeof(c);
+      emit_int64(c);
       end_a_const(c1);
     }
     return ptr;
@@ -368,8 +370,7 @@ class AbstractAssembler : public ResourceObj  {
     CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
-      *(jdouble*)ptr = c;
-      _code_pos = ptr + sizeof(c);
+      emit_double(c);
       end_a_const(c1);
     }
     return ptr;
@@ -378,8 +379,7 @@ class AbstractAssembler : public ResourceObj  {
     CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
-      *(jfloat*)ptr = c;
-      _code_pos = ptr + sizeof(c);
+      emit_float(c);
       end_a_const(c1);
     }
     return ptr;
@@ -388,8 +388,7 @@ class AbstractAssembler : public ResourceObj  {
     CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
-      *(address*)ptr = c;
-      _code_pos = ptr + sizeof(c);
+      emit_address(c);
       end_a_const(c1);
     }
     return ptr;
@@ -399,8 +398,7 @@ class AbstractAssembler : public ResourceObj  {
     address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != NULL) {
       relocate(rspec);
-      *(address*)ptr = c;
-      _code_pos = ptr + sizeof(c);
+      emit_address(c);
       end_a_const(c1);
     }
     return ptr;

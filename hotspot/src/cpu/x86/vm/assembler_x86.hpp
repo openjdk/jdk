@@ -706,8 +706,6 @@ private:
   void check_relocation(RelocationHolder const& rspec, int format);
   #endif
 
-  inline void emit_long64(jlong x);
-
   void emit_data(jint data, relocInfo::relocType    rtype, int format);
   void emit_data(jint data, RelocationHolder const& rspec, int format);
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
