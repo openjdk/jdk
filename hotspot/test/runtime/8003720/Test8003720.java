@@ -26,7 +26,7 @@
  * @test
  * @bug 8003720
  * @summary Method in interpreter stack frame can be deallocated
- * @compile -XDignore.symbol.file Victim.java
+ * @compile -XDignore.symbol.file -source 1.7 -target 1.7 Victim.java
  * @run main/othervm -Xverify:all -Xint Test8003720
  */
 
