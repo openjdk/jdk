@@ -846,17 +846,17 @@ public class ClassReader implements Completer {
             tvar = (TypeVar)findTypeVar(name);
         }
         List<Type> bounds = List.nil();
-        Type st = null;
+        boolean allInterfaces = false;
         if (signature[sigp] == ':' && signature[sigp+1] == ':') {
             sigp++;
-            st = syms.objectType;
+            allInterfaces = true;
         }
         while (signature[sigp] == ':') {
             sigp++;
             bounds = bounds.prepend(sigToType());
         }
         if (!sigEnterPhase) {
-            types.setBounds(tvar, bounds.reverse(), st);
+            types.setBounds(tvar, bounds.reverse(), allInterfaces);
         }
         return tvar;
     }
