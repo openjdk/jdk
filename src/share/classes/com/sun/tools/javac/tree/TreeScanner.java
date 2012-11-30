@@ -286,6 +286,10 @@ public class TreeScanner extends Visitor {
         scan(tree.alternatives);
     }
 
+    public void visitTypeIntersection(JCTypeIntersection tree) {
+        scan(tree.bounds);
+    }
+
     public void visitTypeParameter(JCTypeParameter tree) {
         scan(tree.bounds);
     }
