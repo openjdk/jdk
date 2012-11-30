@@ -2244,9 +2244,13 @@ public class Attr extends JCTree.Visitor {
             //with the target-type, it will be recovered anyway in Attr.checkId
             needsRecovery = false;
 
+            FunctionalReturnContext funcContext = that.getBodyKind() == JCLambda.BodyKind.EXPRESSION ?
+                    new ExpressionLambdaReturnContext((JCExpression)that.getBody(), resultInfo.checkContext) :
+                    new FunctionalReturnContext(resultInfo.checkContext);
+
             ResultInfo bodyResultInfo = lambdaType.getReturnType() == Type.recoveryType ?
                 recoveryInfo :
-                new ResultInfo(VAL, lambdaType.getReturnType(), new LambdaReturnContext(resultInfo.checkContext));
+                new ResultInfo(VAL, lambdaType.getReturnType(), funcContext);
             localEnv.info.returnResult = bodyResultInfo;
 
             if (that.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
@@ -2327,8 +2331,9 @@ public class Attr extends JCTree.Visitor {
          * type according to both the inherited context and the assignment
          * context.
          */
-        class LambdaReturnContext extends Check.NestedCheckContext {
-            public LambdaReturnContext(CheckContext enclosingContext) {
+        class FunctionalReturnContext extends Check.NestedCheckContext {
+
+            FunctionalReturnContext(CheckContext enclosingContext) {
                 super(enclosingContext);
             }
 
@@ -2341,6 +2346,23 @@ public class Attr extends JCTree.Visitor {
             @Override
             public void report(DiagnosticPosition pos, JCDiagnostic details) {
                 enclosingContext.report(pos, diags.fragment("incompatible.ret.type.in.lambda", details));
+            }
+        }
+
+        class ExpressionLambdaReturnContext extends FunctionalReturnContext {
+
+            JCExpression expr;
+
+            ExpressionLambdaReturnContext(JCExpression expr, CheckContext enclosingContext) {
+                super(enclosingContext);
+                this.expr = expr;
+            }
+
+            @Override
+            public boolean compatible(Type found, Type req, Warner warn) {
+                //a void return is compatible with an expression statement lambda
+                return TreeInfo.isExpressionStatement(expr) && req.hasTag(VOID) ||
+                        super.compatible(found, req, warn);
             }
         }
 
@@ -2560,7 +2582,7 @@ public class Attr extends JCTree.Visitor {
 
         if (!returnType.hasTag(VOID) && !resType.hasTag(VOID)) {
             if (resType.isErroneous() ||
-                    new LambdaReturnContext(checkContext).compatible(resType, returnType, types.noWarnings)) {
+                    new FunctionalReturnContext(checkContext).compatible(resType, returnType, types.noWarnings)) {
                 incompatibleReturnType = null;
             }
         }
