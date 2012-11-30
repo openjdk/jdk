@@ -254,6 +254,10 @@ address CodeBuffer::locator_address(int locator) const {
   return start + locator_pos(locator);
 }
 
+bool CodeBuffer::is_backward_branch(Label& L) {
+  return L.is_bound() && insts_end() <= locator_address(L.loc());
+}
+
 address CodeBuffer::decode_begin() {
   address begin = _insts.start();
   if (_decode_begin != NULL && _decode_begin > begin)

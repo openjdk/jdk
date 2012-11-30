@@ -36,36 +36,8 @@
 #ifdef TARGET_OS_FAMILY_bsd
 # include "os_bsd.inline.hpp"
 #endif
-#ifdef TARGET_OS_ARCH_linux_x86
-# include "atomic_linux_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_sparc
-# include "atomic_linux_sparc.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_zero
-# include "atomic_linux_zero.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_x86
-# include "atomic_solaris_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_solaris_sparc
-# include "atomic_solaris_sparc.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_windows_x86
-# include "atomic_windows_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "atomic_linux_arm.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "atomic_linux_ppc.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_x86
-# include "atomic_bsd_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_zero
-# include "atomic_bsd_zero.inline.hpp"
-#endif
+
+#include "runtime/atomic.inline.hpp"
 
 jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value) {
   assert(sizeof(jbyte) == 1, "assumption.");
