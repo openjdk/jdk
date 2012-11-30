@@ -25,12 +25,14 @@
 #ifndef SHARE_VM_ASM_ASSEMBLER_HPP
 #define SHARE_VM_ASM_ASSEMBLER_HPP
 
+#include "asm/codeBuffer.hpp"
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/top.hpp"
+
 #ifdef TARGET_ARCH_x86
 # include "register_x86.hpp"
 # include "vm_version_x86.hpp"
@@ -54,7 +56,6 @@
 
 // This file contains platform-independent assembler declarations.
 
-class CodeBuffer;
 class MacroAssembler;
 class AbstractAssembler;
 class Label;
@@ -122,7 +123,7 @@ class Label VALUE_OBJ_CLASS_SPEC {
     assert(_loc == -1, "already bound");
     _loc = loc;
   }
-  void bind_loc(int pos, int sect);  // = bind_loc(locator(pos, sect))
+  void bind_loc(int pos, int sect) { bind_loc(CodeBuffer::locator(pos, sect)); }
 
 #ifndef PRODUCT
   // Iterates over all unresolved instructions for printing
@@ -137,8 +138,8 @@ class Label VALUE_OBJ_CLASS_SPEC {
     assert(_loc >= 0, "unbound label");
     return _loc;
   }
-  int loc_pos() const;   // == locator_pos(loc())
-  int loc_sect() const;  // == locator_sect(loc())
+  int loc_pos()  const { return CodeBuffer::locator_pos(loc()); }
+  int loc_sect() const { return CodeBuffer::locator_sect(loc()); }
 
   bool is_bound() const    { return _loc >=  0; }
   bool is_unbound() const  { return _loc == -1 && _patch_index > 0; }
@@ -204,28 +205,29 @@ class AbstractAssembler : public ResourceObj  {
   OopRecorder* _oop_recorder;          // support for relocInfo::oop_type
 
   // Code emission & accessing
-  inline address addr_at(int pos) const;
+  address addr_at(int pos) const { return code_section()->start() + pos; }
+
 
   // This routine is called with a label is used for an address.
   // Labels and displacements truck in offsets, but target must return a PC.
-  address target(Label& L);            // return _code_section->target(L)
+  address target(Label& L)             { return code_section()->target(L, pc()); }
 
   bool is8bit(int x) const             { return -0x80 <= x && x < 0x80; }
   bool isByte(int x) const             { return 0 <= x && x < 0x100; }
   bool isShiftCount(int x) const       { return 0 <= x && x < 32; }
 
+  void emit_int8(   int8_t  x) { code_section()->emit_int8(   x); }
+  void emit_int16(  int16_t x) { code_section()->emit_int16(  x); }
+  void emit_int32(  int32_t x) { code_section()->emit_int32(  x); }
+  void emit_int64(  int64_t x) { code_section()->emit_int64(  x); }
+
+  void emit_float(  jfloat  x) { code_section()->emit_float(  x); }
+  void emit_double( jdouble x) { code_section()->emit_double( x); }
+  void emit_address(address x) { code_section()->emit_address(x); }
+
   void emit_byte(int x)  { emit_int8 (x); }  // deprecated
   void emit_word(int x)  { emit_int16(x); }  // deprecated
   void emit_long(jint x) { emit_int32(x); }  // deprecated
-
-  inline void emit_int8(  int8_t  x);
-  inline void emit_int16( int16_t x);
-  inline void emit_int32( int32_t x);
-  inline void emit_int64( int64_t x);
-
-  inline void emit_float( jfloat  x);
-  inline void emit_double(jdouble x);
-  inline void emit_address(address x);
 
   // Instruction boundaries (required when emitting relocatable values).
   class InstructionMark: public StackObj {
@@ -242,7 +244,7 @@ class AbstractAssembler : public ResourceObj  {
     }
   };
   friend class InstructionMark;
-  #ifdef ASSERT
+#ifdef ASSERT
   // Make it return true on platforms which need to verify
   // instruction boundaries for some operations.
   inline static bool pd_check_instruction_mark();
@@ -267,13 +269,13 @@ class AbstractAssembler : public ResourceObj  {
       _assm->clear_short_branch_delta();
     }
   };
-  #else
+#else
   // Dummy in product.
   class ShortBranchVerifier: public StackObj {
    public:
     ShortBranchVerifier(AbstractAssembler* assm) {}
   };
-  #endif
+#endif
 
   // Label functions
   void print(Label& L);
@@ -311,26 +313,30 @@ class AbstractAssembler : public ResourceObj  {
 
   // Accessors
   CodeSection*  code_section() const   { return _code_section; }
-  inline CodeBuffer*   code() const;
-  inline int           sect() const;
-  inline address       pc() const;
-  inline int           offset() const;
-  inline int           locator() const;       // CodeBuffer::locator(offset(), sect())
+  CodeBuffer*   code()         const   { return code_section()->outer(); }
+  int           sect()         const   { return code_section()->index(); }
+  address       pc()           const   { return code_section()->end();   }
+  int           offset()       const   { return code_section()->size();  }
+  int           locator()      const   { return CodeBuffer::locator(offset(), sect()); }
 
   OopRecorder*  oop_recorder() const   { return _oop_recorder; }
   void      set_oop_recorder(OopRecorder* r) { _oop_recorder = r; }
 
-  address  inst_mark() const;
-  void set_inst_mark();
-  void clear_inst_mark();
+  address       inst_mark() const { return code_section()->mark();       }
+  void      set_inst_mark()       {        code_section()->set_mark();   }
+  void    clear_inst_mark()       {        code_section()->clear_mark(); }
 
   // Constants in code
   void a_byte(int x);
   void a_long(jint x);
-  void relocate(RelocationHolder const& rspec, int format = 0);
+  void relocate(RelocationHolder const& rspec, int format = 0) {
+    assert(!pd_check_instruction_mark()
+        || inst_mark() == NULL || inst_mark() == code_section()->end(),
+        "call relocate() between instructions");
+    code_section()->relocate(code_section()->end(), rspec, format);
+  }
   void relocate(   relocInfo::relocType rtype, int format = 0) {
-    if (rtype != relocInfo::none)
-      relocate(Relocation::spec_simple(rtype), format);
+    code_section()->relocate(code_section()->end(), rtype, format);
   }
 
   static int code_fill_byte();         // used to pad out odd-sized code buffers

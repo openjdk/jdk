@@ -23,25 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
+#include "code/codeCache.hpp"
 #include "compiler/disassembler.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
 #include "runtime/stubCodeGenerator.hpp"
-#ifdef TARGET_ARCH_x86
-# include "assembler_x86.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "assembler_sparc.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "assembler_zero.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "assembler_arm.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "assembler_ppc.inline.hpp"
-#endif
 
 
 // Implementation of StubCodeDesc

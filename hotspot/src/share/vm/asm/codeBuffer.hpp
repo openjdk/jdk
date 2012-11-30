@@ -25,15 +25,15 @@
 #ifndef SHARE_VM_ASM_CODEBUFFER_HPP
 #define SHARE_VM_ASM_CODEBUFFER_HPP
 
-#include "asm/assembler.hpp"
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 
-class  CodeComments;
-class  PhaseCFG;
-class  Compile;
-class  BufferBlob;
-class  CodeBuffer;
+class CodeComments;
+class PhaseCFG;
+class Compile;
+class BufferBlob;
+class CodeBuffer;
+class Label;
 
 class CodeOffsets: public StackObj {
 public:
@@ -452,6 +452,9 @@ class CodeBuffer: public StackObj {
   static int locator(int pos, int sect) { return (pos << sect_bits) | sect; }
   int        locator(address addr) const;
   address    locator_address(int locator) const;
+
+  // Heuristic for pre-packing the taken/not-taken bit of a predicted branch.
+  bool is_backward_branch(Label& L);
 
   // Properties
   const char* name() const                  { return _name; }

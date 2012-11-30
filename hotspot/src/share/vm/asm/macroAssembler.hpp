@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,25 @@
  *
  */
 
-#include "precompiled.hpp"
-#ifdef COMPILER2
-#include "asm/macroAssembler.hpp"
-#include "asm/macroAssembler.inline.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/vmreg.hpp"
-#include "interpreter/interpreter.hpp"
-#include "opto/runtime.hpp"
-#include "runtime/interfaceSupport.hpp"
-#include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
-#include "runtime/vframeArray.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "vmreg_x86.inline.hpp"
+#ifndef SHARE_VM_ASM_MACROASSEMBLER_HPP
+#define SHARE_VM_ASM_MACROASSEMBLER_HPP
+
+#include "asm/assembler.hpp"
+
+#ifdef TARGET_ARCH_x86
+# include "macroAssembler_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "assembler_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "assembler_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "assembler_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "assembler_ppc.hpp"
 #endif
 
-
-// This file should really contain the code for generating the OptoRuntime
-// exception_blob. However that code uses SimpleRuntimeFrame which only
-// exists in sharedRuntime_x86_64.cpp. When there is a sharedRuntime_<arch>.hpp
-// file and SimpleRuntimeFrame is able to move there then the exception_blob
-// code will move here where it belongs.
+#endif // SHARE_VM_ASM_MACROASSEMBLER_HPP
