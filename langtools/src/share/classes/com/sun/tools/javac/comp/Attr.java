@@ -2204,6 +2204,14 @@ public class Attr extends JCTree.Visitor {
                 lambdaType = fallbackDescriptorType(that);
             }
 
+            if (lambdaType.hasTag(FORALL)) {
+                //lambda expression target desc cannot be a generic method
+                resultInfo.checkContext.report(that, diags.fragment("invalid.generic.lambda.target",
+                        lambdaType, kindName(target.tsym), target.tsym));
+                result = that.type = types.createErrorType(pt());
+                return;
+            }
+
             if (!TreeInfo.isExplicitLambda(that)) {
                 //add param type info in the AST
                 List<Type> actuals = lambdaType.getParameterTypes();

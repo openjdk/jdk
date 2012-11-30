@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /**
  * @test
- * @bug 8003280
+ * @bug 8003280 8004102
  * @summary Add lambda tests
  *  perform several automated checks in lambda conversion, esp. around accessibility
  * @author  Maurizio Cimadamore
- * @run main LambdaConversionTest
+ * @run main FunctionalInterfaceConversionTest
  */
 
 import com.sun.source.util.JavacTask;
@@ -37,9 +37,10 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
-public class LambdaConversionTest {
+public class FunctionalInterfaceConversionTest {
 
     enum PackageKind {
         NO_PKG(""),
@@ -108,10 +109,21 @@ public class LambdaConversionTest {
         }
     }
 
+    enum ExprKind {
+        LAMBDA("x -> null"),
+        MREF("this::m");
+
+        String exprStr;
+
+        private ExprKind(String exprStr) {
+            this.exprStr = exprStr;
+        }
+    }
+
     enum MethodKind {
         NONE(""),
-        NON_GENERIC("public #R m(#ARG s) throws #T;"),
-        GENERIC("public <X> #R m(#ARG s) throws #T;");
+        NON_GENERIC("public abstract #R m(#ARG s) throws #T;"),
+        GENERIC("public abstract <X> #R m(#ARG s) throws #T;");
 
         String methodTemplate;
 
@@ -127,15 +139,21 @@ public class LambdaConversionTest {
     }
 
     public static void main(String[] args) throws Exception {
+        final JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
+        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
         for (PackageKind samPkg : PackageKind.values()) {
             for (ModifierKind modKind : ModifierKind.values()) {
                 for (SamKind samKind : SamKind.values()) {
-                    for (MethodKind meth : MethodKind.values()) {
-                        for (TypeKind retType : TypeKind.values()) {
-                            for (TypeKind argType : TypeKind.values()) {
-                                for (TypeKind thrownType : TypeKind.values()) {
-                                    new LambdaConversionTest(samPkg, modKind, samKind,
-                                            meth, retType, argType, thrownType).test();
+                    for (MethodKind samMeth : MethodKind.values()) {
+                        for (MethodKind clientMeth : MethodKind.values()) {
+                            for (TypeKind retType : TypeKind.values()) {
+                                for (TypeKind argType : TypeKind.values()) {
+                                    for (TypeKind thrownType : TypeKind.values()) {
+                                        for (ExprKind exprKind : ExprKind.values()) {
+                                            new FunctionalInterfaceConversionTest(samPkg, modKind, samKind,
+                                                    samMeth, clientMeth, retType, argType, thrownType, exprKind).test(comp, fm);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -148,15 +166,18 @@ public class LambdaConversionTest {
     PackageKind samPkg;
     ModifierKind modKind;
     SamKind samKind;
-    MethodKind meth;
+    MethodKind samMeth;
+    MethodKind clientMeth;
     TypeKind retType;
     TypeKind argType;
     TypeKind thrownType;
+    ExprKind exprKind;
+    DiagnosticChecker dc;
 
     SourceFile samSourceFile = new SourceFile("Sam.java", "#P \n #C") {
         public String toString() {
             return template.replaceAll("#P", samPkg.getPkgDecl()).
-                    replaceAll("#C", samKind.getSam(meth.getMethod(retType, argType, thrownType)));
+                    replaceAll("#C", samKind.getSam(samMeth.getMethod(retType, argType, thrownType)));
         }
     };
 
@@ -169,27 +190,33 @@ public class LambdaConversionTest {
     };
 
     SourceFile clientSourceFile = new SourceFile("Client.java",
-                                                 "#I\n class Client { Sam s = x -> null; }") {
+                                                 "#I\n abstract class Client { \n" +
+                                                 "  Sam s = #E;\n" +
+                                                 "  #M \n }") {
         public String toString() {
-            return template.replaceAll("#I", samPkg.getImportStat());
+            return template.replaceAll("#I", samPkg.getImportStat())
+                    .replaceAll("#E", exprKind.exprStr)
+                    .replaceAll("#M", clientMeth.getMethod(retType, argType, thrownType));
         }
     };
 
-    LambdaConversionTest(PackageKind samPkg, ModifierKind modKind, SamKind samKind,
-            MethodKind meth, TypeKind retType, TypeKind argType, TypeKind thrownType) {
+    FunctionalInterfaceConversionTest(PackageKind samPkg, ModifierKind modKind, SamKind samKind,
+            MethodKind samMeth, MethodKind clientMeth, TypeKind retType, TypeKind argType,
+            TypeKind thrownType, ExprKind exprKind) {
         this.samPkg = samPkg;
         this.modKind = modKind;
         this.samKind = samKind;
-        this.meth = meth;
+        this.samMeth = samMeth;
+        this.clientMeth = clientMeth;
         this.retType = retType;
         this.argType = argType;
         this.thrownType = thrownType;
+        this.exprKind = exprKind;
+        this.dc = new DiagnosticChecker();
     }
 
-    void test() throws Exception {
-        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        DiagnosticChecker dc = new DiagnosticChecker();
-        JavacTask ct = (JavacTask)tool.getTask(null, null, dc,
+    void test(JavaCompiler comp, StandardJavaFileManager fm) throws Exception {
+        JavacTask ct = (JavacTask)comp.getTask(null, fm, dc,
                 null, null, Arrays.asList(samSourceFile, pkgClassSourceFile, clientSourceFile));
         ct.analyze();
         if (dc.errorFound == checkSamConversion()) {
@@ -201,8 +228,15 @@ public class LambdaConversionTest {
         if (samKind != SamKind.INTERFACE) {
             //sam type must be an interface
             return false;
-        } else if (meth != MethodKind.NON_GENERIC) {
-            //target method must be non-generic
+        } else if (samMeth == MethodKind.NONE) {
+            //interface must have at least a method
+            return false;
+        } else if (exprKind == ExprKind.LAMBDA &&
+                samMeth != MethodKind.NON_GENERIC) {
+            //target method for lambda must be non-generic
+            return false;
+        } else if (exprKind == ExprKind.MREF &&
+                clientMeth == MethodKind.NONE) {
             return false;
         } else if (samPkg != PackageKind.NO_PKG &&
                 modKind != ModifierKind.PUBLIC &&
