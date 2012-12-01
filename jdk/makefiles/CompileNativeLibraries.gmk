@@ -104,7 +104,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM,\
 		LANG:=C,\
 		CFLAGS:=$(CFLAGS_JDKLIB) \
 			-I$(JDK_TOPDIR)/src/share/native/java/lang/fdlibm/include,\
-		LDFLAGS:=-nostdlib -r -arch i386 -arch x86_64,\
+		LDFLAGS:=-nostdlib -r -arch x86_64,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libfdlibm))
 
 $(JDK_OUTPUTDIR)/objs/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX) : $(BUILD_LIBFDLIBM)
@@ -240,7 +240,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN), \
 		LDFLAGS_SUFFIX_posix:=-ljvm -lverify, \
-		LDFLAGS_SUFFIX_solaris:=-lnsl -lsocket -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc,\
+		LDFLAGS_SUFFIX_solaris:=-lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc,\
 		LDFLAGS_SUFFIX_linux:=$(LIBDL) $(BUILD_LIBFDLIBM),\
 		LDFLAGS_SUFFIX_macosx:=-L$(JDK_OUTPUTDIR)/objs/ -lfdlibm \
                                          -framework CoreFoundation \
@@ -300,6 +300,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX:=$(BUILD_LIBMLIB_LDLIBS) \
 				$(LDFLAGS_JDKLIB_SUFFIX),\
+		LDFLAGS_SUFFIX_solaris:=-lc, \
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=mlib_image.dll" \
@@ -428,6 +429,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE_V,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
                          $(BUILD_LIBMLIB_LDLIBS) -ljava -ljvm \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libmlib_image_v))
 
 $(BUILD_LIBMLIB_IMAGE_V): $(BUILD_LIBJAVA)
@@ -710,7 +712,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_solaris:=-R/usr/dt/lib$(OPENJDK_TARGET_CPU_ISADIR) -R$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR),\
 		LDFLAGS_SUFFIX_linux:=-ljvm $(LIBM) $(LIBDL) -ljava,\
-		LDFLAGS_SUFFIX_solaris:=-ljvm $(LIBM) $(LIBDL) -ljava,\
+		LDFLAGS_SUFFIX_solaris:=-ljvm $(LIBM) $(LIBDL) -ljava -lc,\
 		LDFLAGS_SUFFIX_macosx:=-lmlib_image -ljvm $(LIBM) \
 				       -framework Cocoa \
 				       -framework OpenGL \
@@ -903,57 +905,34 @@ endif
 
 ##########################################################################################
 
-BUILD_LIBZIP_FILES:=\
-        CRC32.c \
-	Adler32.c \
-	Deflater.c \
-	Inflater.c \
-	ZipFile.c \
-	zip_util.c
-
+BUILD_LIBZIP_EXCLUDES :=
 ifeq ($(USE_EXTERNAL_LIBZ),true)
-	LIBZ:=-lz
+    LIBZ := -lz
+    LIBZIP_EXCLUDES += zlib-1.2.5
 else
-BUILD_LIBZIP_FILES += \
-	compress.c \
-	deflate.c \
-	gzclose.c \
-	gzlib.c \
-	gzread.c \
-	gzwrite.c \
-	infback.c \
-	inffast.c \
-	inflate.c \
-	inftrees.c \
-	trees.c \
-	uncompr.c \
-	zadler32.c \
-	zcrc32.c \
-	zutil.c
-LIBZ_INCLUDE:=-I$(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.5
+    ZLIB_CPPFLAGS := -I$(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.5
 endif
 
-BUILD_LIBZIP_REORDER:=
+BUILD_LIBZIP_REORDER :=
 ifeq ($(OPENJDK_TARGET_OS), solaris)
     ifneq ($(OPENJDK_TARGET_CPU), x86_64)
-        BUILD_LIBZIP_REORDER:=$(JDK_TOPDIR)/makefiles/mapfiles/libzip/reorder-$(OPENJDK_TARGET_CPU)
+        BUILD_LIBZIP_REORDER := $(JDK_TOPDIR)/makefiles/mapfiles/libzip/reorder-$(OPENJDK_TARGET_CPU)
     endif
 endif
 
 ifeq ($(LIBZIP_CAN_USE_MMAP), true)
-     BUILD_LIBZIP_MMAP:=-DUSE_MMAP
+     BUILD_LIBZIP_MMAP := -DUSE_MMAP
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBZIP,\
                 LIBRARY:=zip,\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
-                SRC:=$(JDK_TOPDIR)/src/share/native/java/util/zip \
-                     $(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.5,\
-		INCLUDE_FILES:=$(BUILD_LIBZIP_FILES), \
 		LANG:=C,\
 		OPTIMIZATION:=LOW, \
+		SRC:=$(JDK_TOPDIR)/src/share/native/java/util/zip,\
+		EXCLUDES:=$(LIBZIP_EXCLUDES),\
 		CFLAGS:=$(CFLAGS_JDKLIB) \
-                        $(LIBZ_INCLUDE) \
+                        $(ZLIB_CPPFLAGS) \
 		        -I$(JDK_TOPDIR)/src/share/native/java/io \
                         -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/io,\
 		CFLAGS_posix:=$(BUILD_LIBZIP_MMAP) -UDEBUG,\
@@ -966,7 +945,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP,\
                                 -export:ZIP_ReadEntry -export:ZIP_GetNextEntry jvm.lib \
                                 $(WIN_JAVA_LIB),\
 		LDFLAGS_SUFFIX_linux:=-ljvm -ljava $(LIBZ),\
-		LDFLAGS_SUFFIX_solaris:=-ljvm -ljava $(LIBZ),\
+		LDFLAGS_SUFFIX_solaris:=-ljvm -ljava $(LIBZ) -lc,\
 		LDFLAGS_SUFFIX_macosx:=$(LIBZ) -ljava -ljvm,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
@@ -1144,9 +1123,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX_linux:=$(LIBDL),\
-		LDFLAGS_SUFFIX_solaris:=$(LIBDL),\
+		LDFLAGS_SUFFIX_solaris:=$(LIBDL) -lc,\
 		LDFLAGS_SUFFIX_windows:=$(LDFLAGS_JDKLIB_SUFFIX),\
-		LDFLAGS_SUFFIX:=,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=jdwp.dll" \
@@ -1186,7 +1164,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAAS,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_windows:=netapi32.lib user32.lib mpr.lib advapi32.lib,\
 		LDFLAGS_SUFFIX_windows:=$(LDFLAGS_JDKLIB_SUFFIX),\
-		LDFLAGS_SUFFIX:=,\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		EXCLUDE_FILES:=$(LIBJAAS_EXCLUDE_FILES),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS) \
@@ -1217,7 +1195,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSDT,\
 		LDFLAGS_SUFFIX_linux:=$(LIBDL),\
 		LDFLAGS_SUFFIX_windows:=$(LDFLAGS_JDKLIB_SUFFIX) $(LIBDL),\
 		LDFLAGS_SUFFIX_macosx:=                         $(LIBDL),\
-		LDFLAGS_SUFFIX:=,\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=jsdt.dll" \
@@ -1237,15 +1215,7 @@ ifdef OPENJDK
     $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS,\
                 LIBRARY:=lcms,\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
-                SRC:=$(JDK_TOPDIR)/src/share/native/sun/java2d/cmm/lcms \
-		     $(JDK_TOPDIR)/src/share/native/sun/java2d/,\
-		INCLUDE_FILES:=cmscam02.c cmscgats.c cmscnvrt.c cmserr.c \
-			       cmsgamma.c cmsgmt.c cmsintrp.c cmsio0.c \
-			       cmsio1.c cmslut.c cmsmd5.c cmsmtrx.c \
-			       cmsnamed.c cmsopt.c cmspack.c cmspcs.c \
-			       cmsplugin.c cmsps2.c cmssamp.c cmssm.c \
-			       cmstypes.c cmsvirt.c cmswtpnt.c cmsxform.c \
-			       LCMS.c,\
+                SRC:=$(JDK_TOPDIR)/src/share/native/sun/java2d/cmm/lcms,\
 		LANG:=C,\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(filter-out -xc99=%none,$(CFLAGS_JDKLIB)) \
@@ -1259,7 +1229,7 @@ ifdef OPENJDK
                          $(call SET_SHARED_LIBRARY_ORIGIN), \
 		LDFLAGS_solaris:=/usr/lib$(OPENJDK_TARGET_CPU_ISADIR)/libm.so.2,\
 		LDFLAGS_windows:=$(WIN_AWT_LIB) $(WIN_JAVA_LIB),\
-		LDFLAGS_SUFFIX_solaris:=-lawt -ljava -ljvm,\
+		LDFLAGS_SUFFIX_solaris:=-lawt -ljava -ljvm -lc,\
 		LDFLAGS_SUFFIX_macosx:=$(LIBM) -lawt -ljava -ljvm,\
 		LDFLAGS_SUFFIX_linux:=-lm -lawt -ljava -ljvm,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
@@ -1626,7 +1596,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT,\
 				-framework Cocoa -framework Security -framework ApplicationServices,\
 		LDFLAGS_SUFFIX:=$(LIBINSTRUMENT_LDFLAGS_SUFFIX),\
 		LDFLAGS_SUFFIX_macosx:=-liconv $(LIBZ),\
-		LDFLAGS_SUFFIX_solaris:=$(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL),\
+		LDFLAGS_SUFFIX_solaris:=$(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL) -lc,\
 		LDFLAGS_SUFFIX_linux:=$(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL),\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
@@ -1716,19 +1686,11 @@ BUILD_LIBHPROF_CFLAGS:=-I$(JDK_TOPDIR)/src/share/demo/jvmti/hprof \
 
 BUILD_LIBHPROF_LDFLAGS:=
 
-ifeq ($(OPENJDK_TARGET_OS),solaris)
-     BUILD_LIBHPROF_LDFLAGS += -lsocket -lnsl -lc
-endif
-
 LIBHPROF_OPTIMIZATION:=HIGHEST
 ifneq ($(findstring $(OPENJDK_TARGET_OS),solaris linux),)
     ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
         LIBHPROF_OPTIMIZATION:=LOW
     endif
-endif
-
-ifneq ($(OPENJDK_TARGET_OS),windows)
-     BUILD_LIBHPROF_LDFLAGS += $(LIBDL)
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBHPROF,\
@@ -1744,7 +1706,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBHPROF,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_windows:=wsock32.lib winmm.lib advapi32.lib,\
-		LDFLAGS_SUFFIX:=$(BUILD_LIBHPROF_LDFLAGS),\
+		LDFLAGS_SUFFIX_linux:=$(LIBDL),\
+		LDFLAGS_SUFFIX_macosx:=$(LIBDL),\
+		LDFLAGS_SUFFIX_solaris:=-lsocket -lnsl $(LIBDL) -lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=hprof.dll" \
@@ -1768,6 +1732,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA_CRW_DEMO,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libjava_crw_demo/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=java_crw_demo.dll" \
@@ -2010,7 +1975,7 @@ $(BUILD_LIBNIO) : $(BUILD_LIBNET)
 ##########################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS_API),posix)
-  # TODO make this work on macosx
+
   ifneq ($(OPENJDK_TARGET_OS),macosx)
 
     SCTP_WERROR := -Werror
@@ -2038,7 +2003,6 @@ ifeq ($(OPENJDK_TARGET_OS_API),posix)
 		LDFLAGS_SUFFIX_posix:=-lnio -lnet,\
 		LDFLAGS_SUFFIX_solaris:=-lsocket -ljava -ljvm -lc,\
 		LDFLAGS_SUFFIX_macosx:=-ljava -ljvm,\
-		INCLUDE_FILES:=SctpNet.c SctpChannelImpl.c SctpServerChannelImpl.c,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsctp))
 
     BUILD_LIBRARIES += $(BUILD_LIBSCTP)
@@ -2109,7 +2073,7 @@ endif
 
 ifneq ($(USE_EXTERNAL_LIBZ),true)
 	BUILD_LIBJLI_SRC_DIRS += $(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.5
-	LIBJLI_CFLAGS += $(LIBZ_INCLUDE)
+	LIBJLI_CFLAGS += $(ZLIB_CPPFLAGS)
 	BUILD_LIBJLI_FILES += \
 		inflate.c \
 		inftrees.c \
@@ -2392,7 +2356,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_HEADLESS,\
 		LANG:=C,\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) $(LIBAWT_HEADLESS_CFLAGS),\
-		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libawt_headless/mapfile-vers, \
+		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libawt_headless/mapfile-vers,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_linux:=$(call SET_SHARED_LIBRARY_ORIGIN,/..),\
@@ -2402,8 +2366,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_HEADLESS,\
 		LDFLAGS_macosx:=$(call SET_SHARED_LIBRARY_ORIGIN).,\
 		REORDER:=$(LIBAWT_HEADLESS_REORDER), \
 		LDFLAGS_SUFFIX_linux:=-ljvm -lawt -lm $(LIBDL) -ljava,\
-		LDFLAGS_SUFFIX_solaris:=$(LIBDL) -ljvm -lawt -lm -ljava $(LIBCXX), \
-		LDFLAGS_SUFFIX_macosx:=-ljvm $(LIBCXX) -lawt $(LIBDL) -ljava, \
+		LDFLAGS_SUFFIX_solaris:=$(LIBDL) -ljvm -lawt -lm -ljava $(LIBCXX) -lc,\
+		LDFLAGS_SUFFIX_macosx:=-ljvm $(LIBCXX) -lawt $(LIBDL) -ljava,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt_headless))
 
 $(BUILD_LIBAWT_HEADLESS) : $(BUILD_LIBAWT)
@@ -2420,8 +2384,14 @@ LIBSPLASHSCREEN_DIRS:=\
 	$(JDK_TOPDIR)/src/share/native/sun/awt/giflib \
 	$(JDK_TOPDIR)/src/share/native/sun/awt/image/jpeg \
 	$(JDK_TOPDIR)/src/share/native/sun/awt/libpng \
-	$(JDK_TOPDIR)/src/share/native/sun/awt/splashscreen \
-        $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/awt/splashscreen
+	$(JDK_TOPDIR)/src/share/native/sun/awt/splashscreen
+
+ifneq ($(OPENJDK_TARGET_OS), macosx)
+    LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/awt/splashscreen
+else
+    LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/macosx/native/sun/awt/splashscreen
+endif
+
 
 LIBSPLASHSCREEN_CFLAGS:=-DSPLASHSCREEN -DPNG_NO_MMX_CODE \
 	$(foreach dir,$(LIBSPLASHSCREEN_DIRS),-I$(dir))
@@ -2447,104 +2417,11 @@ else
 	LIBSPLASHSCREEN_CFLAGS += -DWITH_WIN32
 endif
 
-LIBSPLASHSCREEN_FILES:=\
-	java_awt_SplashScreen.c \
-	splashscreen_gfx_impl.c \
-	splashscreen_gif.c \
-	splashscreen_impl.c \
-	splashscreen_jpeg.c \
-	splashscreen_png.c \
-	png.c \
-	pngerror.c \
-	pngget.c \
-	pngmem.c  \
-	pngpread.c \
-	pngread.c \
-	pngrio.c \
-	pngrtran.c \
-	pngrutil.c \
-	pngset.c \
-	pngtrans.c \
-	pngwio.c \
-	pngwrite.c \
-	pngwtran.c \
-	pngwutil.c \
-	dgif_lib.c \
-	gif_err.c \
-	gifalloc.c \
-	jcomapi.c \
-	jdapimin.c \
-	jdapistd.c \
-	jdcoefct.c \
-	jdcolor.c \
-	jddctmgr.c \
-	jdhuff.c \
-	jdinput.c \
-	jdmainct.c \
-	jdmarker.c \
-	jdmaster.c \
-	jdmerge.c \
-	jdphuff.c \
-	jdpostct.c \
-	jdsample.c \
-	jerror.c \
-	jidctflt.c \
-	jidctfst.c \
-	jidctint.c \
-	jidctred.c \
-	jmemmgr.c \
-	jmemnobs.c \
-	jquant1.c \
-	jquant2.c \
-	jutils.c \
-	jcapimin.c \
-	jcapistd.c \
-	jccoefct.c \
-	jccolor.c \
-	jcdctmgr.c \
-	jchuff.c \
-	jcinit.c \
-	jcmainct.c \
-	jcmarker.c \
-	jcmaster.c \
-	jcparam.c \
-	jcphuff.c \
-	jcprepct.c \
-	jcsample.c \
-	jctrans.c \
-	jdtrans.c \
-	jfdctflt.c \
-	jfdctfst.c \
-	jfdctint.c
-
-ifneq ($(OPENJDK_TARGET_OS), macosx)
-LIBSPLASHSCREEN_FILES += splashscreen_sys.c
-else
-LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/macosx/native/sun/awt/splashscreen
-LIBSPLASHSCREEN_FILES += splashscreen_sys.m
-endif
-
 LIBSPLASHSCREEN_LDFLAGS_SUFFIX:=
 
 ifneq ($(USE_EXTERNAL_LIBZ),true)
 	LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.5
-	LIBSPLASHSCREEN_CFLAGS += $(LIBZ_INCLUDE)
-	LIBSPLASHSCREEN_FILES += \
-		compress.c \
-		deflate.c \
-		gzclose.c \
-		gzlib.c \
-		gzread.c \
-		gzwrite.c \
-		infback.c \
-		inffast.c \
-		inflate.c \
-		inftrees.c \
-		trees.c \
-		uncompr.c \
-		zadler32.c \
-		zcrc32.c \
-		zutil.c
+	LIBSPLASHSCREEN_CFLAGS += $(ZLIB_CPPFLAGS)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
@@ -2564,7 +2441,7 @@ $(eval $(call SetupNativeCompilation,LIBSPLASHSCREEN,\
 		LIBRARY:=splashscreen,\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
 		SRC:=$(LIBSPLASHSCREEN_DIRS),\
-		INCLUDE_FILES:=$(LIBSPLASHSCREEN_FILES),\
+		EXCLUDE_FILES:=imageioJPEG.c jpegdecoder.c pngtest.c,\
 		LANG:=C,\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB),\
@@ -2572,6 +2449,7 @@ $(eval $(call SetupNativeCompilation,LIBSPLASHSCREEN,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX:=$(LIBSPLASHSCREEN_LDFLAGS_SUFFIX) $(LIBZ),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=splashscreen.dll" \
@@ -2647,6 +2525,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX_posix:=$(LIBDL), \
 		LDFLAGS_SUFFIX_windows:=winscard.lib,\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=j2pcsc.dll" \
@@ -2673,7 +2552,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2GSS,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libj2gss/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
-		LDFLAGS_SUFFIX:=$(LIBDL), \
+		LDFLAGS_SUFFIX:=$(LIBDL),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2gss))
 
 BUILD_LIBRARIES += $(BUILD_LIBJ2GSS)
@@ -2684,14 +2564,13 @@ endif
 BUILD_LIBKRB5_NAME:=
 ifeq ($(OPENJDK_TARGET_OS), windows)
      BUILD_LIBKRB5_NAME:=w2k_lsa_auth
-     BUILD_LIBKRB5_FILES:=NativeCreds.c WindowsDirectory.c
      BUILD_LIBKRB5_SRC:=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/security/krb5
      BUILD_LIBKRB5_LIBS:=advapi32.lib Secur32.lib netapi32.lib kernel32.lib user32.lib \
 			 gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib \
 			 ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib
 else ifeq ($(OPENJDK_TARGET_OS), macosx)
      BUILD_LIBKRB5_NAME:=osxkrb5
-     BUILD_LIBKRB5_FILES:=nativeccache.c
+     BUILD_LIBKRB5_SRC:=$(JDK_TOPDIR)/src/share/native/sun/security/krb5
      BUILD_LIBKRB5_LIBS:=-framework Kerberos
 endif
 
@@ -2699,9 +2578,7 @@ ifneq ($(BUILD_LIBKRB5_NAME),)
 $(eval $(call SetupNativeCompilation,BUILD_LIBKRB5,\
 		LIBRARY:=$(BUILD_LIBKRB5_NAME),\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
-		SRC:=$(JDK_TOPDIR)/src/share/native/sun/security/krb5 \
-                     $(BUILD_LIBKRB5_SRC) ,\
-		INCLUDE_FILES:=$(BUILD_LIBKRB5_FILES),\
+		SRC:=$(BUILD_LIBKRB5_SRC),\
 		LANG:=C,\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) \
@@ -2767,7 +2644,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PKCS11,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libj2pkcs11/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
-		LDFLAGS_SUFFIX_posix:=$(LIBDL), \
+		LDFLAGS_SUFFIX_posix:=$(LIBDL),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=j2pkcs11.dll" \
@@ -3071,18 +2949,11 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
-LIBAPPLESCRIPTENGINE_FILES:=\
-	AppleScriptEngine.m \
-        AppleScriptExecutionContext.m \
-        AS_NS_ConversionUtils.m \
-        NS_Java_ConversionUtils.m
-
 $(eval $(call SetupNativeCompilation,BUILD_LIBAPPLESCRIPTENGINE,\
 		LIBRARY:=AppleScriptEngine,\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
 		SRC:=$(JDK_TOPDIR)/src/macosx/native/apple/applescript,\
 		LANG:=C,\
-		INCLUDE_FILES:=$(LIBAPPLESCRIPTENGINE_FILES),\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) \
 			-I$(JDK_TOPDIR)/src/macosx/native/apple/applescript \
@@ -3107,18 +2978,11 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
-LIBOSXAPP_FILES:=\
-	NSApplicationAWT.m \
-	QueuingApplicationDelegate.m \
-	PropertiesUtilities.m \
-	ThreadUtilities.m
-
 $(eval $(call SetupNativeCompilation,BUILD_LIBOSXAPP,\
 		LIBRARY:=osxapp,\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
 		SRC:=$(JDK_TOPDIR)/src/macosx/native/sun/osxapp,\
 		LANG:=C,\
-		INCLUDE_FILES:=$(LIBOSXAPP_FILES),\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) \
 			-I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
@@ -3151,14 +3015,6 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
-LIBOSX_FILES:=\
-    Dispatch.m \
-    CFileManager.m \
-    KeystoreImpl.m \
-    JavaAppLauncher.m \
-    MacOSXPreferencesFile.m \
-    SCDynamicStoreConfig.m
-
 LIBOSX_DIRS:=\
   $(JDK_TOPDIR)/src/macosx/native/com/apple/concurrent \
   $(JDK_TOPDIR)/src/macosx/native/java/util \
@@ -3171,7 +3027,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBOSX,\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
 		SRC:=$(LIBOSX_DIRS),\
 		LANG:=C,\
-		INCLUDE_FILES:=$(LIBOSX_FILES),\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) \
                         $(foreach dir,$(LIBOSX_DIRS),-I$(dir)) \
@@ -3341,22 +3196,11 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
-LIBOSXUI_FILES:=\
-        AquaFileView.m \
-        AquaLookAndFeel.m \
-        AquaNativeResources.m \
-        JRSUIConstantSync.m \
-        JRSUIController.m \
-        JRSUIFocus.m \
-        ScreenPopupFactory.m \
-        ScreenMenu.m
-
 $(eval $(call SetupNativeCompilation,BUILD_LIBOSXUI,\
 		LIBRARY:=osxui,\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
 		SRC:=$(JDK_TOPDIR)/src/macosx/native/com/apple/laf,\
 		LANG:=C,\
-		INCLUDE_FILES:=$(LIBOSXUI_FILES),\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) \
                         -I$(JDK_TOPDIR)/src/macosx/native/com/apple/laf \

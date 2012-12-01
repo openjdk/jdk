@@ -266,7 +266,7 @@ public interface JavaCompiler extends Tool, OptionChecker {
      * Gets a new instance of the standard file manager implementation
      * for this tool.  The file manager will use the given diagnostic
      * listener for producing any non-fatal diagnostics.  Fatal errors
-     * will be signalled with the appropriate exceptions.
+     * will be signaled with the appropriate exceptions.
      *
      * <p>The standard file manager will be automatically reopened if
      * it is accessed after calls to {@code flush} or {@code close}.

@@ -45,7 +45,7 @@ ciType::ciType(BasicType basic_type) : ciMetadata() {
 }
 
 ciType::ciType(KlassHandle k) : ciMetadata(k()) {
-  _basic_type = Klass::cast(k())->oop_is_array() ? T_ARRAY : T_OBJECT;
+  _basic_type = k()->oop_is_array() ? T_ARRAY : T_OBJECT;
 }
 
 

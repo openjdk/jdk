@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7150368
+ * @bug 7150368 8003412
  * @summary javac should include basic ability to generate native headers
  */
 

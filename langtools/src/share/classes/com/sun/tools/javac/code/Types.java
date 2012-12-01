@@ -75,12 +75,15 @@ public class Types {
     final boolean allowBoxing;
     final boolean allowCovariantReturns;
     final boolean allowObjectToPrimitiveCast;
+    final boolean allowDefaultMethods;
     final ClassReader reader;
     final Check chk;
     JCDiagnostic.Factory diags;
     List<Warner> warnStack = List.nil();
     final Name capturedName;
     private final FunctionDescriptorLookupError functionDescriptorLookupError;
+
+    public final Warner noWarnings;
 
     // <editor-fold defaultstate="collapsed" desc="Instantiating">
     public static Types instance(Context context) {
@@ -98,12 +101,14 @@ public class Types {
         allowBoxing = source.allowBoxing();
         allowCovariantReturns = source.allowCovariantReturns();
         allowObjectToPrimitiveCast = source.allowObjectToPrimitiveCast();
+        allowDefaultMethods = source.allowDefaultMethods();
         reader = ClassReader.instance(context);
         chk = Check.instance(context);
         capturedName = names.fromString("<captured wildcard>");
         messages = JavacMessages.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         functionDescriptorLookupError = new FunctionDescriptorLookupError();
+        noWarnings = new Warner(null);
     }
     // </editor-fold>
 
@@ -294,7 +299,7 @@ public class Types {
      * convertions to s?
      */
     public boolean isConvertible(Type t, Type s) {
-        return isConvertible(t, s, Warner.noWarnings);
+        return isConvertible(t, s, noWarnings);
     }
     // </editor-fold>
 
@@ -392,15 +397,10 @@ public class Types {
 
             @Override
             public boolean accepts(Symbol sym) {
-                    return sym.kind == Kinds.MTH &&
-                            (sym.flags() & ABSTRACT) != 0 &&
-                            !overridesObjectMethod(origin, sym) &&
-                            notOverridden(sym);
-            }
-
-            private boolean notOverridden(Symbol msym) {
-                Symbol impl = ((MethodSymbol)msym).implementation(origin, Types.this, false);
-                return impl == null || (impl.flags() & ABSTRACT) != 0;
+                return sym.kind == Kinds.MTH &&
+                        (sym.flags() & (ABSTRACT | DEFAULT)) == ABSTRACT &&
+                        !overridesObjectMethod(origin, sym) &&
+                        (interfaceCandidates(origin.type, (MethodSymbol)sym).head.flags() & DEFAULT) == 0;
             }
         };
 
@@ -591,7 +591,7 @@ public class Types {
      * Is t an unchecked subtype of s?
      */
     public boolean isSubtypeUnchecked(Type t, Type s) {
-        return isSubtypeUnchecked(t, s, Warner.noWarnings);
+        return isSubtypeUnchecked(t, s, noWarnings);
     }
     /**
      * Is t an unchecked subtype of s?
@@ -1194,7 +1194,7 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="isCastable">
     public boolean isCastable(Type t, Type s) {
-        return isCastable(t, s, Warner.noWarnings);
+        return isCastable(t, s, noWarnings);
     }
 
     /**
@@ -1257,7 +1257,7 @@ public class Types {
                     return true;
 
                 if (s.tag == TYPEVAR) {
-                    if (isCastable(t, s.getUpperBound(), Warner.noWarnings)) {
+                    if (isCastable(t, s.getUpperBound(), noWarnings)) {
                         warnStack.head.warn(LintCategory.UNCHECKED);
                         return true;
                     } else {
@@ -1267,7 +1267,7 @@ public class Types {
 
                 if (t.isCompound()) {
                     Warner oldWarner = warnStack.head;
-                    warnStack.head = Warner.noWarnings;
+                    warnStack.head = noWarnings;
                     if (!visit(supertype(t), s))
                         return false;
                     for (Type intf : interfaces(t)) {
@@ -1366,7 +1366,7 @@ public class Types {
                 case BOT:
                     return true;
                 case TYPEVAR:
-                    if (isCastable(s, t, Warner.noWarnings)) {
+                    if (isCastable(s, t, noWarnings)) {
                         warnStack.head.warn(LintCategory.UNCHECKED);
                         return true;
                     } else {
@@ -1394,7 +1394,7 @@ public class Types {
                 case TYPEVAR:
                     if (isSubtype(t, s)) {
                         return true;
-                    } else if (isCastable(t.bound, s, Warner.noWarnings)) {
+                    } else if (isCastable(t.bound, s, noWarnings)) {
                         warnStack.head.warn(LintCategory.UNCHECKED);
                         return true;
                     } else {
@@ -1533,7 +1533,7 @@ public class Types {
             TypeVar tv = (TypeVar) t;
             return !isCastable(tv.bound,
                                relaxBound(s),
-                               Warner.noWarnings);
+                               noWarnings);
         }
         if (s.tag != WILDCARD)
             s = upperBound(s);
@@ -1836,7 +1836,7 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="isAssignable">
     public boolean isAssignable(Type t, Type s) {
-        return isAssignable(t, s, Warner.noWarnings);
+        return isAssignable(t, s, noWarnings);
     }
 
     /**
@@ -2146,6 +2146,13 @@ public class Types {
                 return List.nil();
             }
         };
+
+    public boolean isDirectSuperInterface(TypeSymbol isym, TypeSymbol origin) {
+        for (Type i2 : interfaces(origin.type)) {
+            if (isym == i2.tsym) return true;
+        }
+        return false;
+    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="isDerivedRaw">
@@ -2215,7 +2222,9 @@ public class Types {
      * Return list of bounds of the given type variable.
      */
     public List<Type> getBounds(TypeVar t) {
-        if (t.bound.isErroneous() || !t.bound.isCompound())
+                if (t.bound.hasTag(NONE))
+            return List.nil();
+        else if (t.bound.isErroneous() || !t.bound.isCompound())
             return List.of(t.bound);
         else if ((erasure(t).tsym.flags() & INTERFACE) == 0)
             return interfaces(t).prepend(supertype(t));
@@ -2453,6 +2462,63 @@ public class Types {
     public CompoundScope membersClosure(Type site, boolean skipInterface) {
         return membersCache.visit(site, skipInterface);
     }
+    // </editor-fold>
+
+
+    //where
+    public List<MethodSymbol> interfaceCandidates(Type site, MethodSymbol ms) {
+        Filter<Symbol> filter = new MethodFilter(ms, site);
+        List<MethodSymbol> candidates = List.nil();
+        for (Symbol s : membersClosure(site, false).getElements(filter)) {
+            if (!site.tsym.isInterface() && !s.owner.isInterface()) {
+                return List.of((MethodSymbol)s);
+            } else if (!candidates.contains(s)) {
+                candidates = candidates.prepend((MethodSymbol)s);
+            }
+        }
+        return prune(candidates, ownerComparator);
+    }
+
+    public List<MethodSymbol> prune(List<MethodSymbol> methods, Comparator<MethodSymbol> cmp) {
+        ListBuffer<MethodSymbol> methodsMin = ListBuffer.lb();
+        for (MethodSymbol m1 : methods) {
+            boolean isMin_m1 = true;
+            for (MethodSymbol m2 : methods) {
+                if (m1 == m2) continue;
+                if (cmp.compare(m2, m1) < 0) {
+                    isMin_m1 = false;
+                    break;
+                }
+            }
+            if (isMin_m1)
+                methodsMin.append(m1);
+        }
+        return methodsMin.toList();
+    }
+
+    Comparator<MethodSymbol> ownerComparator = new Comparator<MethodSymbol>() {
+        public int compare(MethodSymbol s1, MethodSymbol s2) {
+            return s1.owner.isSubClass(s2.owner, Types.this) ? -1 : 1;
+        }
+    };
+    // where
+            private class MethodFilter implements Filter<Symbol> {
+
+                Symbol msym;
+                Type site;
+
+                MethodFilter(Symbol msym, Type site) {
+                    this.msym = msym;
+                    this.site = site;
+                }
+
+                public boolean accepts(Symbol s) {
+                    return s.kind == Kinds.MTH &&
+                            s.name == msym.name &&
+                            s.isInheritedIn(site.tsym, Types.this) &&
+                            overrideEquivalent(memberType(site, s), memberType(site, msym));
+                }
+            };
     // </editor-fold>
 
     /**
@@ -3385,11 +3451,11 @@ public class Types {
      */
     public boolean returnTypeSubstitutable(Type r1, Type r2) {
         if (hasSameArgs(r1, r2))
-            return resultSubtype(r1, r2, Warner.noWarnings);
+            return resultSubtype(r1, r2, noWarnings);
         else
             return covariantReturnType(r1.getReturnType(),
                                        erasure(r2.getReturnType()),
-                                       Warner.noWarnings);
+                                       noWarnings);
     }
 
     public boolean returnTypeSubstitutable(Type r1,

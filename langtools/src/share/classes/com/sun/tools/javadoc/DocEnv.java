@@ -102,6 +102,7 @@ public class DocEnv {
     Check chk;
     Types types;
     JavaFileManager fileManager;
+    Context context;
 
     /** Allow documenting from class files? */
     boolean docClasses = false;
@@ -122,6 +123,7 @@ public class DocEnv {
      */
     protected DocEnv(Context context) {
         context.put(docEnvKey, this);
+        this.context = context;
 
         messager = Messager.instance0(context);
         syms = Symtab.instance(context);
@@ -209,8 +211,8 @@ public class DocEnv {
     public void setLocale(String localeName) {
         // create locale specifics
         doclocale = new DocLocale(this, localeName, breakiterator);
-        // reset Messager if locale has changed.
-        messager.reset();
+        // update Messager if locale has changed.
+        messager.setLocale(doclocale.locale);
     }
 
     /** Check whether this member should be documented. */

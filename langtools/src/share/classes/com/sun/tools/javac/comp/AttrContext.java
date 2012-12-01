@@ -72,6 +72,10 @@ public class AttrContext {
      */
     Attr.ResultInfo returnResult = null;
 
+    /** Symbol corresponding to the site of a qualified default super call
+     */
+    Type defaultSuperCallSite = null;
+
     /** Duplicate this context, replacing scope field and copying all others.
      */
     AttrContext dup(Scope scope) {
@@ -84,6 +88,7 @@ public class AttrContext {
         info.lint = lint;
         info.enclVar = enclVar;
         info.returnResult = returnResult;
+        info.defaultSuperCallSite = defaultSuperCallSite;
         return info;
     }
 
@@ -104,6 +109,7 @@ public class AttrContext {
                 pendingResolutionPhase.isVarargsRequired();
     }
 
+    @Override
     public String toString() {
         return "AttrContext[" + scope.toString() + "]";
     }

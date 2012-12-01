@@ -23,7 +23,6 @@
 
 // key: compiler.err.prob.found.req
 // key: compiler.misc.not.a.functional.intf
-// options: -XDallowLambda
 
 class NotAFunctionalIntf {
 

@@ -25,9 +25,10 @@
  * @test
  * @bug 6968063 7127924
  * @summary provide examples of code that generate diagnostics
- * @build Example CheckExamples
+ * @build Example CheckExamples DocCommentProcessor
  * @run main/othervm CheckExamples
  */
+
 /*
  *      See CR 7127924 for info on why othervm is used.
  */

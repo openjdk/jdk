@@ -1323,7 +1323,7 @@ ObjectMonitor * ATTR ObjectSynchronizer::inflate (Thread * Self, oop object) {
               ResourceMark rm;
               tty->print_cr("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
                 (intptr_t) object, (intptr_t) object->mark(),
-                Klass::cast(object->klass())->external_name());
+                object->klass()->external_name());
             }
           }
           return m ;
@@ -1373,7 +1373,7 @@ ObjectMonitor * ATTR ObjectSynchronizer::inflate (Thread * Self, oop object) {
           ResourceMark rm;
           tty->print_cr("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
             (intptr_t) object, (intptr_t) object->mark(),
-            Klass::cast(object->klass())->external_name());
+            object->klass()->external_name());
         }
       }
       return m ;
@@ -1440,7 +1440,7 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
        if (obj->is_instance()) {
          ResourceMark rm;
            tty->print_cr("Deflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-                (intptr_t) obj, (intptr_t) obj->mark(), Klass::cast(obj->klass())->external_name());
+                (intptr_t) obj, (intptr_t) obj->mark(), obj->klass()->external_name());
        }
      }
 

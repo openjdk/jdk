@@ -47,6 +47,9 @@
    where tag is a simple identifier, signifying (as in XML) a element start,
    element end, and standalone element.  (To render as XML, add angle brackets.)
 */
+#ifndef SHARED_TOOLS_HSDIS_H
+#define SHARED_TOOLS_HSDIS_H
+
 extern
 #ifdef DLL_EXPORT
   DLL_EXPORT
@@ -57,16 +60,37 @@ void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
                                   void* event_stream,
                                   int (*printf_callback)(void*, const char*, ...),
                                   void* printf_stream,
-                                  const char* options);
+                                  const char* options,
+                                  int newline /* bool value for nice new line */);
+
+/* This is the compatability interface for older versions of hotspot */
+extern
+#ifdef DLL_ENTRY
+  DLL_ENTRY
+#endif
+void* decode_instructions(void* start_pv, void* end_pv,
+                    void* (*event_callback)(void*, const char*, void*),
+                    void* event_stream,
+                    int   (*printf_callback)(void*, const char*, ...),
+                    void* printf_stream,
+                    const char* options);
 
 /* convenience typedefs */
 
 typedef void* (*decode_instructions_event_callback_ftype)  (void*, const char*, void*);
 typedef int   (*decode_instructions_printf_callback_ftype) (void*, const char*, ...);
-typedef void* (*decode_instructions_ftype) (uintptr_t start_va, uintptr_t end_va,
-                                            unsigned char* buffer, uintptr_t length,
-                                            decode_instructions_event_callback_ftype event_callback,
-                                            void* event_stream,
-                                            decode_instructions_printf_callback_ftype printf_callback,
-                                            void* printf_stream,
-                                            const char* options);
+typedef void* (*decode_func_vtype) (uintptr_t start_va, uintptr_t end_va,
+                                    unsigned char* buffer, uintptr_t length,
+                                    decode_instructions_event_callback_ftype event_callback,
+                                    void* event_stream,
+                                    decode_instructions_printf_callback_ftype printf_callback,
+                                    void* printf_stream,
+                                    const char* options,
+                                    int newline);
+typedef void* (*decode_func_stype) (void* start_pv, void* end_pv,
+                                    decode_instructions_event_callback_ftype event_callback,
+                                    void* event_stream,
+                                    decode_instructions_printf_callback_ftype printf_callback,
+                                    void* printf_stream,
+                                    const char* options);
+#endif /* SHARED_TOOLS_HSDIS_H */

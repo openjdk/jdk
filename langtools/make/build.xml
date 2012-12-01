@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -277,7 +277,7 @@
         <!-- transform the output to a simple html -->
         <xslt  in="${dist.checkstyle.dir}/checkstyle_report.xml"
                out="${dist.checkstyle.dir}/checkstyle_report.html"
-               style="${checkstyle.home}/contrib/checkstyle-simple.xsl"/>            
+               style="${checkstyle.home}/contrib/checkstyle-simple.xsl"/>
         <!-- transform the output to a very simple emacs friendly text file -->
         <xslt  in="${dist.checkstyle.dir}/checkstyle_report.xml"
                out="${dist.checkstyle.dir}/checkstyle_report.tmp"
@@ -297,9 +297,9 @@
     <target name="checkstyle-ide" depends="checkstyle">
         <concat>
             <fileset file="${dist.checkstyle.dir}/checkstyle_report.emacs.txt"/>
-        </concat>  
+        </concat>
     </target>
-    
+
     <target name="findbugs" depends="-def-findbugs,build-all-tools">
         <property name="findbugs.reportLevel" value="medium"/>
         <mkdir dir="${dist.findbugs.dir}"/>
@@ -368,7 +368,7 @@
             executable="${dist.bin.dir}/javac"
             srcdir="test/tools/javac/diags"
             destdir="${build.dir}/diag-examples/classes"
-            includes="ArgTypeCompilerFactory.java,Example.java,FileManager.java,HTMLWriter.java,RunExamples.java"
+            includes="ArgTypeCompilerFactory.java,Example.java,FileManager.java,HTMLWriter.java,RunExamples.java,DocCommentProcessor.java"
             sourcepath=""
             classpath="${dist.lib.dir}/javac.jar"
             includeAntRuntime="no"
@@ -381,6 +381,7 @@
             dir="test/tools/javac/diags"
             classpath="${build.dir}/diag-examples/classes;${dist.lib.dir}/javac.jar"
             classname="RunExamples">
+            <jvmarg value="-Dtest.classes=${build.dir}/diag-examples/classes"/>
             <arg value="-examples"/>
             <arg value="examples"/>
             <arg value="-o"/>
@@ -695,7 +696,7 @@
     <target name="-check-checkstyle.home" depends="-def-check">
         <check name="checkstyle" property="checkstyle.home" marker="${checkstyle.name.version}.jar"/>
     </target>
-    
+
     <target name="-check-jtreg.home" depends="-def-check">
         <check name="jtreg" property="jtreg.home" marker="lib/jtreg.jar"/>
     </target>
@@ -1005,7 +1006,7 @@
         </taskdef>
         <property name="checkstyle.defined" value="true"/>
     </target>
-    
+
     <target name="-def-findbugs" unless="findbugs.defined"
         depends="-check-findbugs.home,-check-target.java.home">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask">

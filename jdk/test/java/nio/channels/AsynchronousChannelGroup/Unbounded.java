@@ -36,6 +36,12 @@ public class Unbounded {
     // number of concurrent completion handlers
     static final int CONCURRENCY_COUNT = 256;
 
+    // set to true if an I/O operation fails
+    static volatile boolean failed;
+
+    // set to true when the test is done
+    static volatile boolean finished;
+
     public static void main(String[] args) throws Exception {
         // all accepted connections are added to a queue
         final ArrayBlockingQueue<AsynchronousSocketChannel> queue =
@@ -51,6 +57,10 @@ public class Unbounded {
                 listener.accept((Void)null, this);
             }
             public void failed(Throwable exc, Void att) {
+                if (!finished) {
+                    failed = true;
+                    System.err.println("accept failed: " + exc);
+                }
             }
         });
         System.out.println("Listener created.");
@@ -94,6 +104,9 @@ public class Unbounded {
                         }
                     }
                     public void failed(Throwable exc, AsynchronousSocketChannel ch) {
+                        failed = true;
+                        System.err.println("read failed: " + exc);
+                        completed(0, ch);
                     }
                 });
         }
@@ -104,6 +117,7 @@ public class Unbounded {
         while (remaining > 0) {
             AsynchronousSocketChannel ch = queue.take();
             ch.write(ByteBuffer.wrap("welcome".getBytes())).get();
+            ch.shutdownOutput();
             ch.close();
             remaining--;
         }
@@ -111,6 +125,11 @@ public class Unbounded {
         // wait for all threads to reach the barrier
         System.out.println("Waiting for all threads to reach barrier");
         barrier.await();
+
+        // finish up
+        finished = true;
         listener.close();
+        if (failed)
+            throw new RuntimeException("I/O operation failed, see log for details");
     }
 }

@@ -605,8 +605,10 @@ void ClassLoader::load_zip_library() {
   // Load zip library
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
-  os::dll_build_name(path, sizeof(path), Arguments::get_dll_dir(), "zip");
-  void* handle = os::dll_load(path, ebuf, sizeof ebuf);
+  void* handle = NULL;
+  if (os::dll_build_name(path, sizeof(path), Arguments::get_dll_dir(), "zip")) {
+    handle = os::dll_load(path, ebuf, sizeof ebuf);
+  }
   if (handle == NULL) {
     vm_exit_during_initialization("Unable to load ZIP library", path);
   }

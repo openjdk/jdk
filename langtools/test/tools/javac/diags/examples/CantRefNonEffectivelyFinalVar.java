@@ -24,7 +24,6 @@
 // key: compiler.err.cant.ref.non.effectively.final.var
 // key: compiler.misc.inner.cls
 // key: compiler.misc.lambda
-// options: -XDallowLambda -XDallowEffectivelyFinalInInnerClasses
 
 class CantRefNonEffectivelyFinalVar {
     void test() {
