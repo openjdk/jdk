@@ -839,8 +839,8 @@ class Main {
 
     void replaceFSC(String files[]) {
         if (files != null) {
-            for (String file : files) {
-                file = file.replace(File.separatorChar, '/');
+            for (int i = 0; i < files.length; i++) {
+                files[i] = files[i].replace(File.separatorChar, '/');
             }
         }
     }

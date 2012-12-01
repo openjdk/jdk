@@ -262,7 +262,7 @@ public class Flags {
      * Flag that marks class as auxiliary, ie a non-public class following
      * the public class in a source file, that could block implicit compilation.
      */
-    public static final long AUXILIARY = 1L<<43;
+    public static final long AUXILIARY = 1L<<44;
 
     /** Modifier masks.
      */

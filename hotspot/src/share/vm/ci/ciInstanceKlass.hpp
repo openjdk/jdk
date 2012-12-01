@@ -230,6 +230,9 @@ public:
   // What kind of ciObject is this?
   bool is_instance_klass() const { return true; }
   bool is_java_klass() const     { return true; }
+
+  // Dump the current state of this klass for compilation replay.
+  virtual void dump_replay_data(outputStream* out);
 };
 
 #endif // SHARE_VM_CI_CIINSTANCEKLASS_HPP

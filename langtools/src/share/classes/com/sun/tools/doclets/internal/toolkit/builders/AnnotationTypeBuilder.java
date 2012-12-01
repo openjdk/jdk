@@ -54,12 +54,12 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     /**
      * The annotation type being documented.
      */
-    private AnnotationTypeDoc annotationTypeDoc;
+    private final AnnotationTypeDoc annotationTypeDoc;
 
     /**
      * The doclet specific writer.
      */
-    private AnnotationTypeWriter writer;
+    private final AnnotationTypeWriter writer;
 
     /**
      * The content tree for the annotation documentation.
@@ -69,38 +69,37 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     /**
      * Construct a new ClassBuilder.
      *
-     * @param configuration the current configuration of the
-     *                      doclet.
+     * @param context           the build context.
+     * @param annotationTypeDoc the class being documented.
+     * @param writer            the doclet specific writer.
      */
-    private AnnotationTypeBuilder(Configuration configuration) {
-        super(configuration);
+    private AnnotationTypeBuilder(Context context,
+            AnnotationTypeDoc annotationTypeDoc,
+            AnnotationTypeWriter writer) {
+        super(context);
+        this.annotationTypeDoc = annotationTypeDoc;
+        this.writer = writer;
     }
 
     /**
      * Construct a new ClassBuilder.
      *
-     * @param configuration     the current configuration of the doclet.
+     * @param context           the build context.
      * @param annotationTypeDoc the class being documented.
      * @param writer            the doclet specific writer.
      */
-    public static AnnotationTypeBuilder getInstance(Configuration configuration,
-        AnnotationTypeDoc annotationTypeDoc, AnnotationTypeWriter writer)
-    throws Exception {
-        AnnotationTypeBuilder builder = new AnnotationTypeBuilder(configuration);
-        builder.configuration = configuration;
-        builder.annotationTypeDoc = annotationTypeDoc;
-        builder.writer = writer;
-        if(containingPackagesSeen == null) {
-            containingPackagesSeen = new HashSet<String>();
-        }
-        return builder;
+    public static AnnotationTypeBuilder getInstance(Context context,
+            AnnotationTypeDoc annotationTypeDoc,
+            AnnotationTypeWriter writer)
+            throws Exception {
+        return new AnnotationTypeBuilder(context, annotationTypeDoc, writer);
     }
 
     /**
      * {@inheritDoc}
      */
     public void build() throws IOException {
-        build(LayoutParser.getInstance(configuration).parseXML(ROOT), contentTree);
+        build(layoutParser.parseXML(ROOT), contentTree);
     }
 
     /**

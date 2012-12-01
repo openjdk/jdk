@@ -142,7 +142,7 @@ endef
 define TargetExit
     $(call RecordEndTime,$(patsubst %-only,%,$@))
     $(BUILD_LOG_WRAPPER) $(PRINTF) "## Finished $(patsubst %-only,%,$@) (build time %s)\n\n" \
-        "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_$(patsubst %-only,%,$@) | $(CUT) -f 1 -d " "`"
+        "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_$(patsubst %-only,%,$@) | $(CUT) -f 1 -d ' '`"
     $(call CheckIfMakeAtEnd)
 endef
 
@@ -157,7 +157,7 @@ endef
 
 # Hook to be called as the very last thing for targets that are "top level" targets
 define AtMakeEnd
-    $(if $(SJAVAC_SERVER_DIR),@$(RM) -rf $(SJAVAC_SERVER_DIR)/*.port)
+    [ -f $(SJAVAC_SERVER_DIR)/server.port ] && echo Stopping sjavac server && $(TOUCH) $(SJAVAC_SERVER_DIR)/server.port.stop; true
     $(call StopGlobalTimer)
     $(call ReportBuildTimes)
     @$(PRINTF) "Finished building $(PRODUCT_NAME) for target '$(call GetRealTarget)'\n"
@@ -174,8 +174,8 @@ endef
 define ParseLogLevel
     ifeq ($$(origin VERBOSE),undefined)
         # Setup logging according to LOG (but only if VERBOSE is not given)
-        
-       # If the "nofile" argument is given, act on it and strip it away
+
+        # If the "nofile" argument is given, act on it and strip it away
         ifneq ($$(findstring nofile,$$(LOG)),)
           # Reset the build log wrapper, regardless of other values
           override BUILD_LOG_WRAPPER=

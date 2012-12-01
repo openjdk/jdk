@@ -42,6 +42,7 @@ public class GenericTest {
     com.bar.LocaleNameProviderImpl localeNP = new com.bar.LocaleNameProviderImpl();
     com.bar.TimeZoneNameProviderImpl tzNP = new com.bar.TimeZoneNameProviderImpl();
     com.bar.CalendarDataProviderImpl calDataP = new com.bar.CalendarDataProviderImpl();
+    com.bar.CalendarNameProviderImpl calNameP = new com.bar.CalendarNameProviderImpl();
 
     public static void main(String[] s) {
         new GenericTest();
@@ -73,6 +74,7 @@ public class GenericTest {
         expected.addAll(Arrays.asList(localeNP.getAvailableLocales()));
         expected.addAll(Arrays.asList(tzNP.getAvailableLocales()));
         expected.addAll(Arrays.asList(calDataP.getAvailableLocales()));
+        expected.addAll(Arrays.asList(calNameP.getAvailableLocales()));
         if (!result.equals(expected)) {
             throw new RuntimeException("Locale.getAvailableLocales() does not return the union of locales: diff="
                                        + getDiff(result, expected));

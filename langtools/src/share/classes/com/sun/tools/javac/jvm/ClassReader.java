@@ -115,6 +115,9 @@ public class ClassReader implements Completer {
      */
     boolean lintClassfile;
 
+    /** Switch: allow default methods
+     */
+    boolean allowDefaultMethods;
 
     /** Switch: preserve parameter names from the variable table.
      */
@@ -279,6 +282,7 @@ public class ClassReader implements Completer {
         allowVarargs     = source.allowVarargs();
         allowAnnotations = source.allowAnnotations();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
+        allowDefaultMethods = source.allowDefaultMethods();
         saveParameterNames = options.isSet("save-parameter-names");
         cacheCompletionFailure = options.isUnset("dev");
         preferSource = "source".equals(options.get("-Xprefer"));
@@ -1737,6 +1741,17 @@ public class ClassReader implements Completer {
         long flags = adjustMethodFlags(nextChar());
         Name name = readName(nextChar());
         Type type = readType(nextChar());
+        if (currentOwner.isInterface() &&
+                (flags & ABSTRACT) == 0 && !name.equals(names.clinit)) {
+            if (majorVersion > Target.JDK1_8.majorVersion ||
+                    (majorVersion == Target.JDK1_8.majorVersion && minorVersion >= Target.JDK1_8.minorVersion)) {
+                currentOwner.flags_field |= DEFAULT;
+                flags |= DEFAULT | ABSTRACT;
+            } else {
+                //protect against ill-formed classfiles
+                throw new CompletionFailure(currentOwner, "default method found in pre JDK 8 classfile");
+            }
+        }
         if (name == names.init && currentOwner.hasOuterInstance()) {
             // Sometimes anonymous classes don't have an outer
             // instance, however, there is no reliable way to tell so

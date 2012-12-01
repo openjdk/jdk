@@ -121,7 +121,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      * @param contentTree the content tree to which the listing will be added
      */
     protected void addClassListing(Content contentTree) {
-        Configuration config = configuration();
+        Configuration config = configuration;
         if (packageDoc.isIncluded()) {
             addClassKindListing(packageDoc.interfaces(),
                 getResource("doclet.Interfaces"), contentTree);
@@ -181,7 +181,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
                     contentTree.addContent(heading);
                     printedHeader = true;
                 }
-                Content link = new RawHtml (getLink(new LinkInfoImpl(
+                Content link = new RawHtml (getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.PACKAGE_FRAME, arr[i],
                         (arr[i].isInterface() ? italicsText(arr[i].name()) :
                             arr[i].name()),"classFrame")));

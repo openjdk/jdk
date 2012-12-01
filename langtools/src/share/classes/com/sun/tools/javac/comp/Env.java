@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,7 @@ public class Env<A> implements Iterable<Env<A>> {
         return env1;
     }
 
+    @Override
     public String toString() {
         return "Env[" + info + (outer == null ? "" : ",outer=" + outer) + "]";
     }

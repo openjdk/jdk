@@ -140,6 +140,14 @@ public class BasicJavacTask extends JavacTask {
      * For internal use only.  This method will be
      * removed without warning.
      */
+    public Context getContext() {
+        return context;
+    }
+
+    /**
+     * For internal use only.  This method will be
+     * removed without warning.
+     */
     public void updateContext(Context newContext) {
         context = newContext;
     }

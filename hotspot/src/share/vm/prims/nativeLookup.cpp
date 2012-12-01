@@ -165,8 +165,7 @@ address NativeLookup::lookup_style(methodHandle method, char* pure_name, const c
   // Note: It is critical for bootstrapping that Java_java_lang_ClassLoader_00024NativeLibrary_find
   // gets found the first time around - otherwise an infinite loop can occure. This is
   // another VM/library dependency
-  Handle loader(THREAD,
-                InstanceKlass::cast(method->method_holder())->class_loader());
+  Handle loader(THREAD, method->method_holder()->class_loader());
   if (loader.is_null()) {
     entry = lookup_special_native(jni_name);
     if (entry == NULL) {
@@ -350,7 +349,7 @@ address NativeLookup::lookup_entry_prefixed(methodHandle method, bool& in_base_l
     TempNewSymbol wrapper_symbol = SymbolTable::probe(wrapper_name, wrapper_name_len);
     if (wrapper_symbol != NULL) {
       KlassHandle kh(method->method_holder());
-      Method* wrapper_method = Klass::cast(kh())->lookup_method(wrapper_symbol,
+      Method* wrapper_method = kh()->lookup_method(wrapper_symbol,
                                                                   method->signature());
       if (wrapper_method != NULL && !wrapper_method->is_native()) {
         // we found a wrapper method, use its native entry
@@ -393,7 +392,7 @@ address NativeLookup::lookup(methodHandle method, bool& in_base_library, TRAPS) 
     if (PrintJNIResolving) {
       ResourceMark rm(THREAD);
       tty->print_cr("[Dynamic-linking native method %s.%s ... JNI]",
-        Klass::cast(method->method_holder())->external_name(),
+        method->method_holder()->external_name(),
         method->name()->as_C_string());
     }
   }

@@ -131,6 +131,7 @@ public:
   // Is this a type or value which has no associated class?
   // It is true of primitive types and null objects.
   virtual bool is_classless() const         { return false; }
+  virtual void dump_replay_data(outputStream* st) { /* do nothing */ }
 
   // Note: some ciObjects refer to oops which have yet to be created.
   // We refer to these as "unloaded".  Specifically, there are

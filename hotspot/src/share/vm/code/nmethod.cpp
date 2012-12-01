@@ -1263,7 +1263,7 @@ void nmethod::invalidate_osr_method() {
   assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod");
   // Remove from list of active nmethods
   if (method() != NULL)
-    InstanceKlass::cast(method()->method_holder())->remove_osr_nmethod(this);
+    method()->method_holder()->remove_osr_nmethod(this);
   // Set entry as invalid
   _entry_bci = InvalidOSREntryBci;
 }
@@ -2568,9 +2568,8 @@ void nmethod::print_dependencies() {
     deps.print_dependency();
     Klass* ctxk = deps.context_type();
     if (ctxk != NULL) {
-      Klass* k = Klass::cast(ctxk);
-      if (k->oop_is_instance() && ((InstanceKlass*)k)->is_dependent_nmethod(this)) {
-        tty->print_cr("   [nmethod<=klass]%s", k->external_name());
+      if (ctxk->oop_is_instance() && ((InstanceKlass*)ctxk)->is_dependent_nmethod(this)) {
+        tty->print_cr("   [nmethod<=klass]%s", ctxk->external_name());
       }
     }
     deps.log_dependency();  // put it into the xml log also
