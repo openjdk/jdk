@@ -22,7 +22,6 @@
  */
 
 // key: compiler.err.types.incompatible.abstract.default
-// options: -XDallowDefaultMethods
 
 class TypesIncompatibleAbstractDefault {
     interface A {

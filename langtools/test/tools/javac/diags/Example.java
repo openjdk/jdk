@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,13 @@ class Example implements Comparable<Example> {
             opts.add("-classpath"); // avoid using -processorpath for now
             opts.add(classesDir.getPath());
             createAnnotationServicesFile(classesDir, procFiles);
+        } else if (options != null) {
+            int i = options.indexOf("-processor");
+            // check for built-in anno-processor(s)
+            if (i != -1 && options.get(i + 1).equals("DocCommentProcessor")) {
+                opts.add("-classpath");
+                opts.add(System.getProperty("test.classes"));
+            }
         }
 
         if (srcPathDir != null) {

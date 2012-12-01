@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary check that default overrides are properly type-checked
- * @compile/fail/ref=Neg10.out -Werror -Xlint:unchecked -XDallowDefaultMethods -XDrawDiagnostics Neg10.java
+ * @compile/fail/ref=Neg10.out -Werror -Xlint:unchecked -XDrawDiagnostics Neg10.java
  */
 class Neg10 {
     interface I<X extends Exception> {

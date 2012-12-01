@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,22 +32,32 @@
 
 class UTF8 : AllStatic {
  public:
-  // returns the unicode length of a 0-terminated uft8 string
-  static int unicode_length(const char* uft8_str);
+  // returns the unicode length of a 0-terminated utf8 string
+  static int unicode_length(const char* utf8_str);
 
-  // returns the unicode length of a non-0-terminated uft8 string
-  static int unicode_length(const char* uft8_str, int len);
+  // returns the unicode length of a non-0-terminated utf8 string
+  static int unicode_length(const char* utf8_str, int len);
 
-  // converts a uft8 string to a unicode string
+  // converts a utf8 string to a unicode string
   static void convert_to_unicode(const char* utf8_str, jchar* unicode_buffer, int unicode_length);
 
+  // returns the quoted ascii length of a utf8 string
+  static int quoted_ascii_length(const char* utf8_str, int utf8_length);
+
+  // converts a utf8 string to quoted ascii
+  static void as_quoted_ascii(const char* utf8_str, char* buf, int buflen);
+
+  // converts a quoted ascii string to utf8 string.  returns the original
+  // string unchanged if nothing needs to be done.
+  static const char* from_quoted_ascii(const char* quoted_ascii_string);
+
   // decodes the current utf8 character, stores the result in value,
-  // and returns the end of the current uft8 chararacter.
+  // and returns the end of the current utf8 chararacter.
   static char* next(const char* str, jchar* value);
 
   // decodes the current utf8 character, gets the supplementary character instead of
   // the surrogate pair when seeing a supplementary character in string,
-  // stores the result in value, and returns the end of the current uft8 chararacter.
+  // stores the result in value, and returns the end of the current utf8 chararacter.
   static char* next_character(const char* str, jint* value);
 
   // Utility methods
@@ -79,6 +89,12 @@ class UNICODE : AllStatic {
   // in resource area unless a buffer is provided.
   static char* as_utf8(jchar* base, int length);
   static char* as_utf8(jchar* base, int length, char* buf, int buflen);
+
+  // returns the quoted ascii length of a unicode string
+  static int quoted_ascii_length(jchar* base, int length);
+
+  // converts a utf8 string to quoted ascii
+  static void as_quoted_ascii(const jchar* base, int length, char* buf, int buflen);
 };
 
 #endif // SHARE_VM_UTILITIES_UTF8_HPP

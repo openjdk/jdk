@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Configuration;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
@@ -104,7 +105,7 @@ public class InheritDocTaglet extends BaseInlineTaglet {
 
     /**
      * Given a <code>MethodDoc</code> item, a <code>Tag</code> in the
-     * <code>MethodDoc</code> item and a String, replace all occurances
+     * <code>MethodDoc</code> item and a String, replace all occurrences
      * of @inheritDoc with documentation from it's superclass or superinterface.
      *
      * @param writer the writer that is writing the output.
@@ -116,12 +117,13 @@ public class InheritDocTaglet extends BaseInlineTaglet {
             MethodDoc md, Tag holderTag, boolean isFirstSentence) {
         TagletOutput replacement = writer.getTagletOutputInstance();
 
+        Configuration configuration = writer.configuration();
         Taglet inheritableTaglet = holderTag == null ?
-            null : writer.configuration().tagletManager.getTaglet(holderTag.name());
+            null : configuration.tagletManager.getTaglet(holderTag.name());
         if (inheritableTaglet != null &&
             !(inheritableTaglet instanceof InheritableTaglet)) {
                 //This tag does not support inheritence.
-                writer.configuration().message.warning(md.position(),
+                configuration.message.warning(md.position(),
                 "doclet.noInheritedDoc", md.name() + md.flatSignature());
          }
         DocFinder.Output inheritedDoc =
@@ -129,7 +131,7 @@ public class InheritDocTaglet extends BaseInlineTaglet {
                 (InheritableTaglet) inheritableTaglet, holderTag,
                 isFirstSentence, true));
         if (inheritedDoc.isValidInheritDocTag == false) {
-            writer.configuration().message.warning(md.position(),
+            configuration.message.warning(md.position(),
                 "doclet.noInheritedDoc", md.name() + md.flatSignature());
         } else if (inheritedDoc.inlineTags.length > 0) {
             replacement = writer.commentTagsToOutput(inheritedDoc.holderTag,

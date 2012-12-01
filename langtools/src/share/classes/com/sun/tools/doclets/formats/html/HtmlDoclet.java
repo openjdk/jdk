@@ -46,14 +46,17 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  */
 public class HtmlDoclet extends AbstractDoclet {
+    // An instance will be created by validOptions, and used by start.
+    private static HtmlDoclet docletToStart = null;
+
     public HtmlDoclet() {
-        configuration = (ConfigurationImpl) configuration();
+        configuration = new ConfigurationImpl();
     }
 
     /**
      * The global configuration information for this run.
      */
-    public ConfigurationImpl configuration;
+    public final ConfigurationImpl configuration;
 
     /**
      * The "start" method as required by Javadoc.
@@ -63,12 +66,16 @@ public class HtmlDoclet extends AbstractDoclet {
      * @return true if the doclet ran without encountering any errors.
      */
     public static boolean start(RootDoc root) {
-        try {
-            HtmlDoclet doclet = new HtmlDoclet();
-            return doclet.start(doclet, root);
-        } finally {
-            ConfigurationImpl.reset();
+        // In typical use, options will have been set up by calling validOptions,
+        // which will create an HtmlDoclet for use here.
+        HtmlDoclet doclet;
+        if (docletToStart != null) {
+            doclet = docletToStart;
+            docletToStart = null;
+        } else {
+            doclet = new HtmlDoclet();
         }
+        return doclet.start(doclet, root);
     }
 
     /**
@@ -77,7 +84,7 @@ public class HtmlDoclet extends AbstractDoclet {
      * configuration.
      */
     public Configuration configuration() {
-        return ConfigurationImpl.getInstance();
+        return configuration;
     }
 
     /**
@@ -110,6 +117,8 @@ public class HtmlDoclet extends AbstractDoclet {
         copyResourceFile("tab.gif");
         copyResourceFile("titlebar.gif");
         copyResourceFile("titlebar_end.gif");
+        copyResourceFile("activetitlebar.gif");
+        copyResourceFile("activetitlebar_end.gif");
         // do early to reduce memory footprint
         if (configuration.classuse) {
             ClassUseWriter.generate(configuration, classtree);
@@ -145,10 +154,13 @@ public class HtmlDoclet extends AbstractDoclet {
         }
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
+        DocFile f;
         if (configuration.stylesheetfile.length() == 0) {
-            DocFile f = DocFile.createFileForOutput(configuration, DocPaths.STYLESHEET);
+            f = DocFile.createFileForOutput(configuration, DocPaths.STYLESHEET);
             f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.STYLESHEET), false, true);
         }
+        f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
+        f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
     }
 
     /**
@@ -220,6 +232,9 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
+    public static final ConfigurationImpl sharedInstanceForOptions =
+            new ConfigurationImpl();
+
     /**
      * Check for doclet added options here.
      *
@@ -228,7 +243,7 @@ public class HtmlDoclet extends AbstractDoclet {
      */
     public static int optionLength(String option) {
         // Construct temporary configuration for check
-        return (ConfigurationImpl.getInstance()).optionLength(option);
+        return sharedInstanceForOptions.optionLength(option);
     }
 
     /**
@@ -244,8 +259,8 @@ public class HtmlDoclet extends AbstractDoclet {
      */
     public static boolean validOptions(String options[][],
             DocErrorReporter reporter) {
-        // Construct temporary configuration for check
-        return (ConfigurationImpl.getInstance()).validOptions(options, reporter);
+        docletToStart = new HtmlDoclet();
+        return docletToStart.configuration.validOptions(options, reporter);
     }
 
     /**

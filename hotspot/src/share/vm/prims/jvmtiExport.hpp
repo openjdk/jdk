@@ -64,6 +64,8 @@ class AttachOperation;
 //
 class JvmtiExport : public AllStatic {
   friend class VMStructs;
+  friend class CompileReplay;
+
  private:
 
 #if INCLUDE_JVMTI

@@ -23,7 +23,6 @@
 
 // key: compiler.err.prob.found.req
 // key: compiler.misc.invalid.generic.desc.in.functional.intf
-// options: -XDallowLambda
 
 class InvalidGenericDescInFunctionalIntf {
 

@@ -1009,6 +1009,15 @@ void VMError::report_and_die() {
     OnError = NULL;
   }
 
+  static bool skip_replay = false;
+  if (DumpReplayDataOnError && _thread && _thread->is_Compiler_thread() && !skip_replay) {
+    skip_replay = true;
+    ciEnv* env = ciEnv::current();
+    if (env != NULL) {
+      env->dump_replay_data();
+    }
+  }
+
   static bool skip_bug_url = !should_report_bug(first_error->_id);
   if (!skip_bug_url) {
     skip_bug_url = true;
