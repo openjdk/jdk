@@ -49,15 +49,20 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  */
 public abstract class AbstractMemberWriter {
 
-    protected boolean printedSummaryHeader = false;
+    protected final ConfigurationImpl configuration;
     protected final SubWriterHolderWriter writer;
     protected final ClassDoc classdoc;
+    protected Map<String,Integer> typeMap = new LinkedHashMap<String,Integer>();
+    protected Set<MethodTypes> methodTypes = EnumSet.noneOf(MethodTypes.class);
+    private int methodTypesOr = 0;
     public final boolean nodepr;
 
-    public AbstractMemberWriter(SubWriterHolderWriter writer,
-                             ClassDoc classdoc) {
+    protected boolean printedSummaryHeader = false;
+
+    public AbstractMemberWriter(SubWriterHolderWriter writer, ClassDoc classdoc) {
+        this.configuration = writer.configuration;
         this.writer = writer;
-        this.nodepr = configuration().nodeprecated;
+        this.nodepr = configuration.nodeprecated;
         this.classdoc = classdoc;
     }
 
@@ -281,11 +286,11 @@ public abstract class AbstractMemberWriter {
                     code.addContent(new HtmlTree(HtmlTag.BR));
                 }
                 code.addContent(new RawHtml(
-                        writer.getLink(new LinkInfoImpl(
+                        writer.getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type))));
             } else {
                 code.addContent(new RawHtml(
-                        writer.getLink(new LinkInfoImpl(
+                        writer.getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type))));
             }
 
@@ -305,7 +310,7 @@ public abstract class AbstractMemberWriter {
         } else if (member.isPrivate()) {
             code.addContent("private ");
         } else if (!member.isPublic()) { // Package private
-            code.addContent(configuration().getText("doclet.Package_private"));
+            code.addContent(configuration.getText("doclet.Package_private"));
             code.addContent(" ");
         }
         if (member.isMethod() && ((MethodDoc)member).isAbstract()) {
@@ -389,7 +394,7 @@ public abstract class AbstractMemberWriter {
             String tableSummary, String[] tableHeader, Content contentTree) {
         if (deprmembers.size() > 0) {
             Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
-                writer.getTableCaption(configuration().getText(headingKey)));
+                writer.getTableCaption(configuration.getText(headingKey)));
             table.addContent(writer.getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             for (int i = 0; i < deprmembers.size(); i++) {
@@ -507,17 +512,13 @@ public abstract class AbstractMemberWriter {
     }
 
     protected void serialWarning(SourcePosition pos, String key, String a1, String a2) {
-        if (configuration().serialwarn) {
-            ConfigurationImpl.getInstance().getDocletSpecificMsg().warning(pos, key, a1, a2);
+        if (configuration.serialwarn) {
+            configuration.getDocletSpecificMsg().warning(pos, key, a1, a2);
         }
     }
 
     public ProgramElementDoc[] eligibleMembers(ProgramElementDoc[] members) {
         return nodepr? Util.excludeDeprecatedMembers(members): members;
-    }
-
-    public ConfigurationImpl configuration() {
-        return writer.configuration;
     }
 
     /**
@@ -526,11 +527,11 @@ public abstract class AbstractMemberWriter {
      * @param classDoc the class that is being documented
      * @param member the member being documented
      * @param firstSentenceTags the first sentence tags to be added to the summary
-     * @param tableTree the content tree to which the documentation will be added
-     * @param counter the counter for determing style for the table row
+     * @param tableContents the list of contents to which the documentation will be added
+     * @param counter the counter for determining id and style for the table row
      */
     public void addMemberSummary(ClassDoc classDoc, ProgramElementDoc member,
-            Tag[] firstSentenceTags, Content tableTree, int counter) {
+            Tag[] firstSentenceTags, List<Content> tableContents, int counter) {
         HtmlTree tdSummaryType = new HtmlTree(HtmlTag.TD);
         tdSummaryType.addStyle(HtmlStyle.colFirst);
         writer.addSummaryType(this, member, tdSummaryType);
@@ -540,11 +541,46 @@ public abstract class AbstractMemberWriter {
         writer.addSummaryLinkComment(this, member, firstSentenceTags, tdSummary);
         HtmlTree tr = HtmlTree.TR(tdSummaryType);
         tr.addContent(tdSummary);
+        if (member instanceof MethodDoc && !member.isAnnotationTypeElement()) {
+            int methodType = (member.isStatic()) ? MethodTypes.STATIC.value() :
+                    MethodTypes.INSTANCE.value();
+            methodType = (classdoc.isInterface() || ((MethodDoc)member).isAbstract()) ?
+                    methodType | MethodTypes.ABSTRACT.value() :
+                    methodType | MethodTypes.CONCRETE.value();
+            if (Util.isDeprecated(member) || Util.isDeprecated(classdoc)) {
+                methodType = methodType | MethodTypes.DEPRECATED.value();
+            }
+            methodTypesOr = methodTypesOr | methodType;
+            String tableId = "i" + counter;
+            typeMap.put(tableId, methodType);
+            tr.addAttr(HtmlAttr.ID, tableId);
+        }
         if (counter%2 == 0)
             tr.addStyle(HtmlStyle.altColor);
         else
             tr.addStyle(HtmlStyle.rowColor);
-        tableTree.addContent(tr);
+        tableContents.add(tr);
+    }
+
+    /**
+     * Generate the method types set and return true if the method summary table
+     * needs to show tabs.
+     *
+     * @return true if the table should show tabs
+     */
+    public boolean showTabs() {
+        int value;
+        for (MethodTypes type : EnumSet.allOf(MethodTypes.class)) {
+            value = type.value();
+            if ((value & methodTypesOr) == value) {
+                methodTypes.add(type);
+            }
+        }
+        boolean showTabs = methodTypes.size() > 1;
+        if (showTabs) {
+            methodTypes.add(MethodTypes.ALL);
+        }
+        return showTabs;
     }
 
     /**
@@ -597,10 +633,11 @@ public abstract class AbstractMemberWriter {
      * Get the summary table tree for the given class.
      *
      * @param classDoc the class for which the summary table is generated
+     * @param tableContents list of contents to be displayed in the summary table
      * @return a content tree for the summary table
      */
-    public Content getSummaryTableTree(ClassDoc classDoc) {
-        return writer.getSummaryTableTree(this, classDoc);
+    public Content getSummaryTableTree(ClassDoc classDoc, List<Content> tableContents) {
+        return writer.getSummaryTableTree(this, classDoc, tableContents, showTabs());
     }
 
     /**

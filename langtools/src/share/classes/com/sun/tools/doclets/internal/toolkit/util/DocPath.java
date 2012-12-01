@@ -27,7 +27,6 @@ package com.sun.tools.doclets.internal.toolkit.util;
 
 import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.PackageDoc;
-import java.io.File;
 
 /**
  * Abstraction for immutable relative paths.
@@ -156,15 +155,6 @@ public class DocPath {
         if (path.isEmpty())
             return p;
         return new DocPath(path + "/" + p.getPath());
-    }
-
-    /**
-     * Get the file created by evaluating the path against a specified directory.
-     */
-    // Temporary: this signature should not use String for dir.
-    // Eventually, this should involve javax.tools.Location.
-    public File resolveAgainst(String dir) {
-        return dir.isEmpty() ? new File(path) : new File(dir, path);
     }
 
     /**

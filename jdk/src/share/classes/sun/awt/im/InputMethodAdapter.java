@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,6 @@ public abstract class InputMethodAdapter implements InputMethod {
 
     /**
      * Informs the input method adapter not to listen to the native events.
-     * This method is called when a Java input method is active.
      */
     protected void stopListening() {
         // ignore - adapters can override if needed

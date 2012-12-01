@@ -239,7 +239,7 @@ TreeList<Chunk_t, FreeList_t>* TreeList<Chunk_t, FreeList_t>::remove_chunk_repla
   } else {
     if (nextTC == NULL) {
       // Removing chunk at tail of list
-      link_tail(prevFC);
+      this->link_tail(prevFC);
     }
     // Chunk is interior to the list
     prevFC->link_after(nextTC);
@@ -296,7 +296,7 @@ void TreeList<Chunk_t, FreeList_t>::return_chunk_at_tail(TreeChunk<Chunk_t, Free
 
   Chunk_t* fc = tail();
   fc->link_after(chunk);
-  link_tail(chunk);
+  this->link_tail(chunk);
 
   assert(!tail() || size() == tail()->size(), "Wrong sized chunk in list");
   FreeList_t<Chunk_t>::increment_count();
@@ -323,7 +323,7 @@ void TreeList<Chunk_t, FreeList_t>::return_chunk_at_head(TreeChunk<Chunk_t, Free
     chunk->link_after(fc);
   } else {
     assert(tail() == NULL, "List is inconsistent");
-    link_tail(chunk);
+    this->link_tail(chunk);
   }
   head()->link_after(chunk);
   assert(!head() || size() == head()->size(), "Wrong sized chunk in list");
@@ -940,7 +940,7 @@ class AscendTreeCensusClosure : public TreeCensusClosure<Chunk_t, FreeList_t> {
   void do_tree(TreeList<Chunk_t, FreeList_t>* tl) {
     if (tl != NULL) {
       do_tree(tl->left());
-      do_list(tl);
+      this->do_list(tl);
       do_tree(tl->right());
     }
   }
@@ -952,7 +952,7 @@ class DescendTreeCensusClosure : public TreeCensusClosure<Chunk_t, FreeList_t> {
   void do_tree(TreeList<Chunk_t, FreeList_t>* tl) {
     if (tl != NULL) {
       do_tree(tl->right());
-      do_list(tl);
+      this->do_list(tl);
       do_tree(tl->left());
     }
   }
@@ -1022,7 +1022,7 @@ class DescendTreeSearchClosure : public TreeSearchClosure<Chunk_t, FreeList_t> {
   bool do_tree(TreeList<Chunk_t, FreeList_t>* tl) {
     if (tl != NULL) {
       if (do_tree(tl->right())) return true;
-      if (do_list(tl)) return true;
+      if (this->do_list(tl)) return true;
       if (do_tree(tl->left())) return true;
     }
     return false;

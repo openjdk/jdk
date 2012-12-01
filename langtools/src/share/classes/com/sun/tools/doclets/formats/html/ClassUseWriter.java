@@ -256,9 +256,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageList(Content contentTree) throws IOException {
         Content table = HtmlTree.TABLE(0, 3, 0, useTableSummary,
-                getTableCaption(configuration().getText(
+                getTableCaption(configuration.getText(
                 "doclet.ClassUse_Packages.that.use.0",
-                getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc,
+                getLink(new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc,
                 false)))));
         table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
@@ -287,14 +287,14 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     protected void addPackageAnnotationList(Content contentTree) throws IOException {
         if ((!classdoc.isAnnotationType()) ||
                 pkgToPackageAnnotations == null ||
-                pkgToPackageAnnotations.size() == 0) {
+                pkgToPackageAnnotations.isEmpty()) {
             return;
         }
         Content table = HtmlTree.TABLE(0, 3, 0, useTableSummary,
-                getTableCaption(configuration().getText(
+                getTableCaption(configuration.getText(
                 "doclet.ClassUse_PackageAnnotation",
-                getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc,
-                false)))));
+                getLink(new LinkInfoImpl(configuration,
+                        LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc, false)))));
         table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         Iterator<PackageDoc> it = pkgToPackageAnnotations.iterator();
@@ -333,7 +333,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(pkg.name()));
             Content link = new RawHtml(
                     configuration.getText("doclet.ClassUse_Uses.of.0.in.1",
-                    getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CLASS_USE_HEADER,
+                    getLink(new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_CLASS_USE_HEADER,
                     classdoc, false)),
                     getPackageLinkString(pkg, Util.getPackageName(pkg), false)));
             Content heading = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING, link);
@@ -368,7 +368,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the class use information will be added
      */
     protected void addClassUse(PackageDoc pkg, Content contentTree) throws IOException {
-        String classLink = getLink(new LinkInfoImpl(
+        String classLink = getLink(new LinkInfoImpl(configuration,
             LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc, false));
         String pkgLink = getPackageLinkString(pkg, Util.getPackageName(pkg), false);
         classSubWriter.addUseInfo(pkgToClassAnnotations.get(pkg.name()),
@@ -477,8 +477,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected Content getNavLinkClass() {
         Content linkContent = new RawHtml(getLink(new LinkInfoImpl(
-                LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc, "",
-                configuration.getText("doclet.Class"), false)));
+                configuration, LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc,
+                "", configuration.getText("doclet.Class"), false)));
         Content li = HtmlTree.LI(linkContent);
         return li;
     }

@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary check that re-abstraction works properly
- * @compile/fail/ref=Neg03.out -XDallowDefaultMethods -XDrawDiagnostics Neg03.java
+ * @compile/fail/ref=Neg03.out -XDrawDiagnostics Neg03.java
  */
 
 class Neg03 {

@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary check that level skipping in default super calls is correctly rejected
- * @compile/fail/ref=Neg15.out -XDallowDefaultMethods -XDrawDiagnostics Neg15.java
+ * @compile/fail/ref=Neg15.out -XDrawDiagnostics Neg15.java
  */
 class Neg15 {
     interface I { default void m() {  } }
