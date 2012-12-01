@@ -64,6 +64,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                          int localvariable_table_length,
                          int exception_table_length,
                          int checked_exceptions_length,
+                         u2  generic_signature_index,
                          ConstMethod::MethodType method_type,
                          TRAPS) {
   assert(!access_flags.is_native() || byte_code_size == 0,
@@ -74,6 +75,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                                           localvariable_table_length,
                                           exception_table_length,
                                           checked_exceptions_length,
+                                          generic_signature_index,
                                           method_type,
                                           CHECK_NULL);
 
@@ -152,11 +154,11 @@ address Method::get_c2i_unverified_entry() {
 }
 
 char* Method::name_and_sig_as_C_string() const {
-  return name_and_sig_as_C_string(Klass::cast(constants()->pool_holder()), name(), signature());
+  return name_and_sig_as_C_string(constants()->pool_holder(), name(), signature());
 }
 
 char* Method::name_and_sig_as_C_string(char* buf, int size) const {
-  return name_and_sig_as_C_string(Klass::cast(constants()->pool_holder()), name(), signature(), buf, size);
+  return name_and_sig_as_C_string(constants()->pool_holder(), name(), signature(), buf, size);
 }
 
 char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature) {
@@ -578,8 +580,8 @@ objArrayHandle Method::resolved_checked_exceptions_impl(Method* this_oop, TRAPS)
     for (int i = 0; i < length; i++) {
       CheckedExceptionElement* table = h_this->checked_exceptions_start(); // recompute on each iteration, not gc safe
       Klass* k = h_this->constants()->klass_at(table[i].class_cp_index, CHECK_(objArrayHandle()));
-      assert(Klass::cast(k)->is_subclass_of(SystemDictionary::Throwable_klass()), "invalid exception class");
-      mirrors->obj_at_put(i, Klass::cast(k)->java_mirror());
+      assert(k->is_subclass_of(SystemDictionary::Throwable_klass()), "invalid exception class");
+      mirrors->obj_at_put(i, k->java_mirror());
     }
     return mirrors;
   }
@@ -618,7 +620,7 @@ bool Method::is_klass_loaded_by_klass_index(int klass_index) const {
     Thread *thread = Thread::current();
     Symbol* klass_name = constants()->klass_name_at(klass_index);
     Handle loader(thread, method_holder()->class_loader());
-    Handle prot  (thread, Klass::cast(method_holder())->protection_domain());
+    Handle prot  (thread, method_holder()->protection_domain());
     return SystemDictionary::find(klass_name, loader, prot, thread) != NULL;
   } else {
     return true;
@@ -1034,7 +1036,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   methodHandle m;
   {
     Method* m_oop = Method::allocate(loader_data, 0, accessFlags_from(flags_bits),
-            0, 0, 0, 0, ConstMethod::NORMAL, CHECK_(empty));
+             0, 0, 0, 0, 0, ConstMethod::NORMAL, CHECK_(empty));
     m = methodHandle(THREAD, m_oop);
   }
   m->set_constants(cp());
@@ -1067,8 +1069,8 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
 }
 
 Klass* Method::check_non_bcp_klass(Klass* klass) {
-  if (klass != NULL && Klass::cast(klass)->class_loader() != NULL) {
-    if (Klass::cast(klass)->oop_is_objArray())
+  if (klass != NULL && klass->class_loader() != NULL) {
+    if (klass->oop_is_objArray())
       klass = ObjArrayKlass::cast(klass)->bottom_klass();
     return klass;
   }
@@ -1082,6 +1084,7 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
   assert(!m->is_native(), "cannot rewrite native methods");
   // Allocate new Method*
   AccessFlags flags = m->access_flags();
+  u2  generic_signature_index = m->generic_signature_index();
   int checked_exceptions_len = m->checked_exceptions_length();
   int localvariable_len = m->localvariable_table_length();
   int exception_table_len = m->exception_table_length();
@@ -1094,6 +1097,7 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
                                       localvariable_len,
                                       exception_table_len,
                                       checked_exceptions_len,
+                                      generic_signature_index,
                                       m->method_type(),
                                       CHECK_(methodHandle()));
   methodHandle newm (THREAD, newm_oop);
@@ -1814,6 +1818,23 @@ void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
   loader_data->jmethod_ids()->clear_all_methods();
 }
 
+
+// Check that this pointer is valid by checking that the vtbl pointer matches
+bool Method::is_valid_method() const {
+  if (this == NULL) {
+    return false;
+  } else if (!is_metaspace_object()) {
+    return false;
+  } else {
+    Method m;
+    // This assumes that the vtbl pointer is the first word of a C++ object.
+    // This assumption is also in universe.cpp patch_klass_vtble
+    void* vtbl2 = dereference_vptr((void*)&m);
+    void* this_vtbl = dereference_vptr((void*)this);
+    return vtbl2 == this_vtbl;
+  }
+}
+
 #ifndef PRODUCT
 void Method::print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) {
   out->print_cr("jni_method_id count = %d", loader_data->jmethod_ids()->count_methods());
@@ -1935,7 +1956,7 @@ void Method::verify_on(outputStream* st) {
   guarantee(constMethod()->is_metadata(), "should be metadata");
   MethodData* md = method_data();
   guarantee(md == NULL ||
-      md->is_metadata(), "should be in permspace");
+      md->is_metadata(), "should be metadata");
   guarantee(md == NULL ||
       md->is_methodData(), "should be method data");
 }

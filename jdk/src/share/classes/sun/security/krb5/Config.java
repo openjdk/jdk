@@ -1123,7 +1123,7 @@ public class Config {
      */
     private String getKDCFromDNS(String realm) throws KrbException {
         // use DNS to locate KDC
-        String kdcs = null;
+        String kdcs = "";
         String[] srvs = null;
         // locate DNS SRV record using UDP
         if (DEBUG) {
@@ -1133,7 +1133,7 @@ public class Config {
         if (srvs == null) {
             // locate DNS SRV record using TCP
             if (DEBUG) {
-                System.out.println("getKDCFromDNS using UDP");
+                System.out.println("getKDCFromDNS using TCP");
             }
             srvs = KrbServiceLocator.getKerberosService(realm, "_tcp");
         }
@@ -1142,14 +1142,15 @@ public class Config {
             throw new KrbException(Krb5.KRB_ERR_GENERIC,
                 "Unable to locate KDC for realm " + realm);
         }
+        if (srvs.length == 0) {
+            return null;
+        }
         for (int i = 0; i < srvs.length; i++) {
-            String value = srvs[i];
-            for (int j = 0; j < srvs[i].length(); j++) {
-                // filter the KDC name
-                if (value.charAt(j) == ':') {
-                    kdcs = (value.substring(0, j)).trim();
-                }
-            }
+            kdcs += srvs[i].trim() + " ";
+        }
+        kdcs = kdcs.trim();
+        if (kdcs.equals("")) {
+            return null;
         }
         return kdcs;
     }

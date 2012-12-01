@@ -312,7 +312,7 @@ IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* thread, char* name, oopDesc* obj))
   ResourceMark rm(thread);
-  const char* klass_name = Klass::cast(obj->klass())->external_name();
+  const char* klass_name = obj->klass()->external_name();
   // lookup exception klass
   TempNewSymbol s = SymbolTable::new_symbol(name, CHECK);
   if (ProfileTraps) {
@@ -341,7 +341,7 @@ IRT_ENTRY(void, InterpreterRuntime::throw_ClassCastException(
 
   ResourceMark rm(thread);
   char* message = SharedRuntime::generate_class_cast_message(
-    thread, Klass::cast(obj->klass())->external_name());
+    thread, obj->klass()->external_name());
 
   if (ProfileTraps) {
     note_trap(thread, Deoptimization::Reason_class_check, CHECK);

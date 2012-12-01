@@ -148,9 +148,6 @@ java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
 # 6959636
 javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
 
-# 7144846
-javax/management/remote/mandatory/connection/ReconnectTest.java	generic-all
-
 # 7120365
 javax/management/remote/mandatory/notif/DiffHBTest.java 	generic-all
 
@@ -375,6 +372,9 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
+
+# 8003596
+java/util/logging/CheckLockLocationTest.java			windows-all
 
 # 7041639, Solaris DSA keypair generation bug
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all

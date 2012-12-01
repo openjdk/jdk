@@ -43,19 +43,8 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
-#endif
 
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of FieldAccessInfo
@@ -203,7 +192,7 @@ void LinkResolver::lookup_instance_method_in_klasses(methodHandle& result, Klass
   Method* result_oop = klass->uncached_lookup_method(name, signature);
   result = methodHandle(THREAD, result_oop);
   while (!result.is_null() && result->is_static()) {
-    klass = KlassHandle(THREAD, Klass::cast(result->method_holder())->super());
+    klass = KlassHandle(THREAD, result->method_holder()->super());
     result = methodHandle(THREAD, klass->uncached_lookup_method(name, signature));
   }
 }
@@ -428,7 +417,7 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
       // 3. method lookup failed
       ResourceMark rm(THREAD);
       THROW_MSG_CAUSE(vmSymbols::java_lang_NoSuchMethodError(),
-                      Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
+                      Method::name_and_sig_as_C_string(resolved_klass(),
                                                               method_name,
                                                               method_signature),
                       nested_exception);
@@ -448,7 +437,7 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
   if (resolved_method->is_abstract() && !resolved_klass->is_abstract()) {
     ResourceMark rm(THREAD);
     THROW_MSG(vmSymbols::java_lang_AbstractMethodError(),
-              Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
+              Method::name_and_sig_as_C_string(resolved_klass(),
                                                       method_name,
                                                       method_signature));
   }
@@ -477,7 +466,7 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
           " \"%s\" the class loader (instance of %s) of the current class, %s,"
           " and the class loader (instance of %s) for resolved class, %s, have"
           " different Class objects for the type %s used in the signature";
-        char* sig = Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),method_name,method_signature);
+        char* sig = Method::name_and_sig_as_C_string(resolved_klass(),method_name,method_signature);
         const char* loader1 = SystemDictionary::loader_name(loader());
         char* current = InstanceKlass::cast(current_klass())->name()->as_C_string();
         const char* loader2 = SystemDictionary::loader_name(class_loader());
@@ -505,7 +494,7 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
   if (!resolved_klass->is_interface()) {
     ResourceMark rm(THREAD);
     char buf[200];
-    jio_snprintf(buf, sizeof(buf), "Found class %s, but interface was expected", Klass::cast(resolved_klass())->external_name());
+    jio_snprintf(buf, sizeof(buf), "Found class %s, but interface was expected", resolved_klass()->external_name());
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
@@ -519,7 +508,7 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
       // no method found
       ResourceMark rm(THREAD);
       THROW_MSG(vmSymbols::java_lang_NoSuchMethodError(),
-                Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
+                Method::name_and_sig_as_C_string(resolved_klass(),
                                                         method_name,
                                                         method_signature));
     }
@@ -540,7 +529,7 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
           "current class, %s, and the class loader (instance of %s) for "
           "resolved class, %s, have different Class objects for the type %s "
           "used in the signature";
-        char* sig = Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),method_name,method_signature);
+        char* sig = Method::name_and_sig_as_C_string(resolved_klass(),method_name,method_signature);
         const char* loader1 = SystemDictionary::loader_name(loader());
         char* current = InstanceKlass::cast(current_klass())->name()->as_C_string();
         const char* loader2 = SystemDictionary::loader_name(class_loader());
@@ -627,7 +616,7 @@ void LinkResolver::resolve_field(FieldAccessInfo& result, constantPoolHandle poo
   if (is_static != fd.is_static()) {
     ResourceMark rm(THREAD);
     char msg[200];
-    jio_snprintf(msg, sizeof(msg), "Expected %s field %s.%s", is_static ? "static" : "non-static", Klass::cast(resolved_klass())->external_name(), fd.name()->as_C_string());
+    jio_snprintf(msg, sizeof(msg), "Expected %s field %s.%s", is_static ? "static" : "non-static", resolved_klass()->external_name(), fd.name()->as_C_string());
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), msg);
   }
 
@@ -701,7 +690,7 @@ void LinkResolver::resolve_static_call(CallInfo& result, KlassHandle& resolved_k
                                        bool check_access, bool initialize_class, TRAPS) {
   methodHandle resolved_method;
   linktime_resolve_static_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, check_access, CHECK);
-  resolved_klass = KlassHandle(THREAD, Klass::cast(resolved_method->method_holder()));
+  resolved_klass = KlassHandle(THREAD, resolved_method->method_holder());
 
   // Initialize klass (this should only happen if everything is ok)
   if (initialize_class && resolved_klass->should_be_initialized()) {
@@ -725,7 +714,7 @@ void LinkResolver::linktime_resolve_static_method(methodHandle& resolved_method,
   if (!resolved_method->is_static()) {
     ResourceMark rm(THREAD);
     char buf[200];
-    jio_snprintf(buf, sizeof(buf), "Expected static method %s", Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
+    jio_snprintf(buf, sizeof(buf), "Expected static method %s", Method::name_and_sig_as_C_string(resolved_klass(),
                                                       resolved_method->name(),
                                                       resolved_method->signature()));
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
@@ -789,7 +778,7 @@ void LinkResolver::linktime_resolve_special_method(methodHandle& resolved_method
     char buf[200];
     jio_snprintf(buf, sizeof(buf),
                  "Expecting non-static method %s",
-                 Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
+                 Method::name_and_sig_as_C_string(resolved_klass(),
                                                          resolved_method->name(),
                                                          resolved_method->signature()));
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
@@ -829,7 +818,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result, methodHandle
       if (sel_method.is_null()) {
         ResourceMark rm(THREAD);
         THROW_MSG(vmSymbols::java_lang_AbstractMethodError(),
-                  Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
+                  Method::name_and_sig_as_C_string(resolved_klass(),
                                             resolved_method->name(),
                                             resolved_method->signature()));
       }
@@ -840,7 +829,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result, methodHandle
   if (sel_method->is_static()) {
     ResourceMark rm(THREAD);
     char buf[200];
-    jio_snprintf(buf, sizeof(buf), "Expecting non-static method %s", Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
+    jio_snprintf(buf, sizeof(buf), "Expecting non-static method %s", Method::name_and_sig_as_C_string(resolved_klass(),
                                                                                                              resolved_method->name(),
                                                                                                              resolved_method->signature()));
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
@@ -850,7 +839,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result, methodHandle
   if (sel_method->is_abstract()) {
     ResourceMark rm(THREAD);
     THROW_MSG(vmSymbols::java_lang_AbstractMethodError(),
-              Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
+              Method::name_and_sig_as_C_string(resolved_klass(),
                                                       sel_method->name(),
                                                       sel_method->signature()));
   }
@@ -881,7 +870,7 @@ void LinkResolver::linktime_resolve_virtual_method(methodHandle &resolved_method
   if (resolved_method->is_static()) {
     ResourceMark rm(THREAD);
     char buf[200];
-    jio_snprintf(buf, sizeof(buf), "Expecting non-static method %s", Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
+    jio_snprintf(buf, sizeof(buf), "Expecting non-static method %s", Method::name_and_sig_as_C_string(resolved_klass(),
                                                                                                              resolved_method->name(),
                                                                                                              resolved_method->signature()));
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
@@ -950,7 +939,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
   if (selected_method.is_null()) {
     ResourceMark rm(THREAD);
     THROW_MSG(vmSymbols::java_lang_AbstractMethodError(),
-              Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
+              Method::name_and_sig_as_C_string(resolved_klass(),
                                                       resolved_method->name(),
                                                       resolved_method->signature()));
   }
@@ -959,7 +948,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
   if (check_null_and_abstract && selected_method->is_abstract()) {
     ResourceMark rm(THREAD);
     THROW_MSG(vmSymbols::java_lang_AbstractMethodError(),
-              Method::name_and_sig_as_C_string(Klass::cast(resolved_klass()),
+              Method::name_and_sig_as_C_string(resolved_klass(),
                                                       selected_method->name(),
                                                       selected_method->signature()));
   }
@@ -999,8 +988,8 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
     ResourceMark rm(THREAD);
     char buf[200];
     jio_snprintf(buf, sizeof(buf), "Class %s does not implement the requested interface %s",
-                 (Klass::cast(recv_klass()))->external_name(),
-                 (Klass::cast(resolved_klass()))->external_name());
+                 recv_klass()->external_name(),
+                 resolved_klass()->external_name());
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
   // do lookup based on receiver klass
@@ -1012,7 +1001,7 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
   if (sel_method.is_null()) {
     ResourceMark rm(THREAD);
     THROW_MSG(vmSymbols::java_lang_AbstractMethodError(),
-              Method::name_and_sig_as_C_string(Klass::cast(recv_klass()),
+              Method::name_and_sig_as_C_string(recv_klass(),
                                                       resolved_method->name(),
                                                       resolved_method->signature()));
   }
@@ -1020,7 +1009,7 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
   if (!sel_method->is_public()) {
     ResourceMark rm(THREAD);
     THROW_MSG(vmSymbols::java_lang_IllegalAccessError(),
-              Method::name_and_sig_as_C_string(Klass::cast(recv_klass()),
+              Method::name_and_sig_as_C_string(recv_klass(),
                                                       sel_method->name(),
                                                       sel_method->signature()));
   }
@@ -1028,7 +1017,7 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
   if (check_null_and_abstract && sel_method->is_abstract()) {
     ResourceMark rm(THREAD);
     THROW_MSG(vmSymbols::java_lang_AbstractMethodError(),
-              Method::name_and_sig_as_C_string(Klass::cast(recv_klass()),
+              Method::name_and_sig_as_C_string(recv_klass(),
                                                       sel_method->name(),
                                                       sel_method->signature()));
   }

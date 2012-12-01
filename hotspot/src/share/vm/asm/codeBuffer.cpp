@@ -492,6 +492,26 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   dest->verify_section_allocation();
 }
 
+// Anonymous classes need mirror to keep the metadata alive but
+// for regular classes, the class_loader is sufficient.
+static void append_oop_references(GrowableArray<oop>* oops, Klass* k) {
+  if (k->oop_is_instance()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->is_anonymous()) {
+      oop o = ik->java_mirror();
+      assert (o != NULL, "should have a mirror");
+      if (!oops->contains(o)) {
+        oops->append(o);
+      }
+      return;  // only need the mirror
+    }
+  }
+  oop cl = k->class_loader();
+  if (cl != NULL && !oops->contains(cl)) {
+    oops->append(cl);
+  }
+}
+
 void CodeBuffer::finalize_oop_references(methodHandle mh) {
   No_Safepoint_Verifier nsv;
 
@@ -509,7 +529,6 @@ void CodeBuffer::finalize_oop_references(methodHandle mh) {
         if (md->metadata_is_immediate()) {
           Metadata* m = md->metadata_value();
           if (oop_recorder()->is_real(m)) {
-            oop o = NULL;
             if (m->is_methodData()) {
               m = ((MethodData*)m)->method();
             }
@@ -517,15 +536,12 @@ void CodeBuffer::finalize_oop_references(methodHandle mh) {
               m = ((Method*)m)->method_holder();
             }
             if (m->is_klass()) {
-              o = ((Klass*)m)->class_loader();
+              append_oop_references(&oops, (Klass*)m);
             } else {
               // XXX This will currently occur for MDO which don't
               // have a backpointer.  This has to be fixed later.
               m->print();
               ShouldNotReachHere();
-            }
-            if (o != NULL && oops.find(o) == -1) {
-              oops.append(o);
             }
           }
         }
@@ -537,7 +553,6 @@ void CodeBuffer::finalize_oop_references(methodHandle mh) {
     for (int i = 0; i < oop_recorder()->metadata_count(); i++) {
       Metadata* m = oop_recorder()->metadata_at(i);
       if (oop_recorder()->is_real(m)) {
-        oop o = NULL;
         if (m->is_methodData()) {
           m = ((MethodData*)m)->method();
         }
@@ -545,13 +560,10 @@ void CodeBuffer::finalize_oop_references(methodHandle mh) {
           m = ((Method*)m)->method_holder();
         }
         if (m->is_klass()) {
-          o = ((Klass*)m)->class_loader();
+          append_oop_references(&oops, (Klass*)m);
         } else {
           m->print();
           ShouldNotReachHere();
-        }
-        if (o != NULL && oops.find(o) == -1) {
-          oops.append(o);
         }
       }
     }
@@ -559,10 +571,7 @@ void CodeBuffer::finalize_oop_references(methodHandle mh) {
   }
 
   // Add the class loader of Method* for the nmethod itself
-  oop cl = mh->method_holder()->class_loader();
-  if (cl != NULL) {
-    oops.append(cl);
-  }
+  append_oop_references(&oops, mh->method_holder());
 
   // Add any oops that we've found
   Thread* thread = Thread::current();

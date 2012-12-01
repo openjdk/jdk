@@ -346,7 +346,7 @@ void Dictionary::add_klass(Symbol* class_name, ClassLoaderData* loader_data,
                            KlassHandle obj) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(obj() != NULL, "adding NULL obj");
-  assert(Klass::cast(obj())->name() == class_name, "sanity check on name");
+  assert(obj()->name() == class_name, "sanity check on name");
 
   unsigned int hash = compute_hash(class_name, loader_data);
   int index = hash_to_index(hash);
@@ -553,7 +553,7 @@ void Dictionary::print() {
       bool is_defining_class =
          (loader_data == InstanceKlass::cast(e)->class_loader_data());
       tty->print("%s%s", is_defining_class ? " " : "^",
-                   Klass::cast(e)->external_name());
+                   e->external_name());
 
         tty->print(", loader ");
       loader_data->print_value();
@@ -575,12 +575,12 @@ void Dictionary::verify() {
                           probe = probe->next()) {
       Klass* e = probe->klass();
       ClassLoaderData* loader_data = probe->loader_data();
-      guarantee(Klass::cast(e)->oop_is_instance(),
+      guarantee(e->oop_is_instance(),
                               "Verify of system dictionary failed");
       // class loader must be present;  a null class loader is the
       // boostrap loader
       guarantee(loader_data != NULL || DumpSharedSpaces ||
-                loader_data->is_the_null_class_loader_data() ||
+                loader_data->class_loader() == NULL ||
                 loader_data->class_loader()->is_instance(),
                 "checking type of class_loader");
       e->verify();

@@ -1836,7 +1836,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   // check if we could do inlining
   if (!PatchALot && Inline && klass->is_loaded() &&
       (klass->is_initialized() || klass->is_interface() && target->holder()->is_initialized())
-      && target->will_link(klass, callee_holder, code)) {
+      && target->is_loaded()) {
     // callee is known => check if we have static binding
     assert(target->is_loaded(), "callee must be known");
     if (code == Bytecodes::_invokestatic  ||
