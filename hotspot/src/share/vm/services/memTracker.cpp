@@ -69,15 +69,12 @@ NOT_PRODUCT(volatile jint       MemTracker::_pending_recorder_count = 0;)
 
 void MemTracker::init_tracking_options(const char* option_line) {
   _tracking_level = NMT_off;
-  if (strncmp(option_line, "=summary", 8) == 0) {
+  if (strcmp(option_line, "=summary") == 0) {
     _tracking_level = NMT_summary;
-  } else if (strncmp(option_line, "=detail", 7) == 0) {
+  } else if (strcmp(option_line, "=detail") == 0) {
     _tracking_level = NMT_detail;
-  } else {
-    char msg[255];
-    //+1 to remove the '=' character
-    jio_snprintf(msg, 255, "Unknown option given to XX:NativeMemoryTracking: %s", option_line+1);
-    vm_exit_during_initialization(msg, NULL);
+  } else if (strcmp(option_line, "=off") != 0) {
+    vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
   }
 }
 

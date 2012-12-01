@@ -243,19 +243,21 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
 
   #ifndef FLOAT_ARCH
     #if defined(__SOFTFP__)
-      #define FLOAT_ARCH "-sflt"
+      #define FLOAT_ARCH_STR "-sflt"
     #elif defined(E500V2)
-      #define FLOAT_ARCH "-e500v2"
+      #define FLOAT_ARCH_STR "-e500v2"
     #elif defined(ARM)
-      #define FLOAT_ARCH "-vfp"
+      #define FLOAT_ARCH_STR "-vfp"
     #elif defined(PPC)
-      #define FLOAT_ARCH "-hflt"
+      #define FLOAT_ARCH_STR "-hflt"
     #else
-      #define FLOAT_ARCH ""
+      #define FLOAT_ARCH_STR ""
     #endif
+  #else
+    #define FLOAT_ARCH_STR XSTR(FLOAT_ARCH)
   #endif
 
-  return VMNAME " (" VM_RELEASE ") for " OS "-" CPU FLOAT_ARCH
+  return VMNAME " (" VM_RELEASE ") for " OS "-" CPU FLOAT_ARCH_STR
          " JRE (" JRE_RELEASE_VERSION "), built on " __DATE__ " " __TIME__
          " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER;
 }
