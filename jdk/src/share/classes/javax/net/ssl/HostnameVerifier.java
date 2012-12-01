@@ -40,6 +40,7 @@ package javax.net.ssl;
  * verification fail.
  *
  * @author Brad R. Wetmore
+ * @see HostnameVerifierFactory
  * @since 1.4
  */
 

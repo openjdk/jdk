@@ -41,6 +41,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.spi.CalendarDataProvider;
+import java.util.spi.CalendarNameProvider;
 import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
@@ -101,6 +102,8 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
             return (P) getTimeZoneNameProvider();
         case "CalendarDataProvider":
             return (P) getCalendarDataProvider();
+        case "CalendarNameProvider":
+            return (P) getCalendarNameProvider();
         default:
             throw new InternalError("should not come down here");
         }
@@ -117,6 +120,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     private volatile LocaleNameProvider localeNameProvider = null;
     private volatile TimeZoneNameProvider timeZoneNameProvider = null;
     private volatile CalendarDataProvider calendarDataProvider = null;
+    private volatile CalendarNameProvider calendarNameProvider = null;
 
     /*
      * Getter methods for java.text.spi.* providers
@@ -252,11 +256,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     @Override
     public CalendarDataProvider getCalendarDataProvider() {
         if (calendarDataProvider == null) {
-            Set<String> set = new HashSet<>();
-            set.addAll(getLanguageTagSet("FormatData"));
-            set.addAll(getLanguageTagSet("CalendarData"));
-            CalendarDataProvider provider = new CalendarDataProviderImpl(getAdapterType(),
-                                                                         set);
+            CalendarDataProvider provider;
+            provider = new CalendarDataProviderImpl(getAdapterType(),
+                                                    getLanguageTagSet("CalendarData"));
             synchronized (this) {
                 if (calendarDataProvider == null) {
                     calendarDataProvider = provider;
@@ -264,6 +266,21 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
             }
         }
         return calendarDataProvider;
+    }
+
+    @Override
+    public CalendarNameProvider getCalendarNameProvider() {
+        if (calendarNameProvider == null) {
+            CalendarNameProvider provider;
+            provider = new CalendarNameProviderImpl(getAdapterType(),
+                                                    getLanguageTagSet("FormatData"));
+            synchronized (this) {
+                if (calendarNameProvider == null) {
+                    calendarNameProvider = provider;
+                }
+            }
+        }
+        return calendarNameProvider;
     }
 
     @Override

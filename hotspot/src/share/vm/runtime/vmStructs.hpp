@@ -123,6 +123,11 @@ public:
   // the data structure (debug build only)
   static void init();
 
+#ifndef PRODUCT
+  // Execute unit tests
+  static void test();
+#endif
+
 private:
   // Look up a type in localHotSpotVMTypes using strcmp() (debug build only).
   // Returns 1 if found, 0 if not.

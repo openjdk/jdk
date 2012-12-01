@@ -26,7 +26,6 @@
 package javax.net.ssl;
 
 import java.security.*;
-import java.util.*;
 
 import sun.security.jca.GetInstance;
 

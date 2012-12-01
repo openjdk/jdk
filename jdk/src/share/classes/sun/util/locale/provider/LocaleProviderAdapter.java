@@ -38,6 +38,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.spi.CalendarDataProvider;
+import java.util.spi.CalendarNameProvider;
 import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
@@ -386,6 +387,14 @@ public abstract class LocaleProviderAdapter {
      * @return a CalendarDataProvider
      */
     public abstract CalendarDataProvider getCalendarDataProvider();
+
+    /**
+     * Returns a CalendarNameProvider for this LocaleProviderAdapter, or null if no
+     * CalendarNameProvider is available.
+     *
+     * @return a CalendarNameProvider
+     */
+    public abstract CalendarNameProvider getCalendarNameProvider();
 
     public abstract LocaleResources getLocaleResources(Locale locale);
 

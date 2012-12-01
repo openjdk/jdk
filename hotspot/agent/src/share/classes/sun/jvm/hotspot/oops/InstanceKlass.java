@@ -278,7 +278,7 @@ public class InstanceKlass extends Klass {
   }
 
   public short getFieldGenericSignatureIndex(int index) {
-     int len = getFields().length();
+    // int len = getFields().length();
     int allFieldsCount = getAllFieldsCount();
     int generic_signature_slot = allFieldsCount * FIELD_SLOTS;
     for (int i = 0; i < allFieldsCount; i++) {
@@ -325,7 +325,7 @@ public class InstanceKlass extends Klass {
   public KlassArray   getTransitiveInterfaces() { return new KlassArray(transitiveInterfaces.getValue(getAddress())); }
   public int       getJavaFieldsCount()     { return                (int) javaFieldsCount.getValue(this); }
   public int       getAllFieldsCount()      {
-     int len = getFields().length();
+    int len = getFields().length();
     int allFieldsCount = 0;
     for (; allFieldsCount*FIELD_SLOTS < len; allFieldsCount++) {
       short flags = getFieldAccessFlags(allFieldsCount);
@@ -579,6 +579,19 @@ public class InstanceKlass extends Klass {
       this.field = field;
       this.flags = flags;
     }
+  }
+
+  public Field[] getStaticFields() {
+    U2Array fields = getFields();
+    int length = getJavaFieldsCount();
+    ArrayList result = new ArrayList();
+    for (int index = 0; index < length; index++) {
+      Field f = newField(index);
+      if (f.isStatic()) {
+        result.add(f);
+      }
+    }
+    return (Field[])result.toArray(new Field[result.size()]);
   }
 
   public void iterateNonStaticFields(OopVisitor visitor, Oop obj) {
@@ -978,5 +991,85 @@ public class InstanceKlass extends Klass {
       }
     }
     return -1;
+  }
+
+  public void dumpReplayData(PrintStream out) {
+    ConstantPool cp = getConstants();
+
+    // Try to record related loaded classes
+    Klass sub = getSubklassKlass();
+    while (sub != null) {
+        if (sub instanceof InstanceKlass) {
+            out.println("instanceKlass " + sub.getName().asString());
+        }
+        sub = sub.getNextSiblingKlass();
+    }
+
+    final int length = (int) cp.getLength();
+    out.print("ciInstanceKlass " + getName().asString() + " " + (isLinked() ? 1 : 0) + " " + (isInitialized() ? 1 : 0) + " " + length);
+    for (int index = 1; index < length; index++) {
+      out.print(" " + cp.getTags().at(index));
+    }
+    out.println();
+    if (isInitialized()) {
+      Field[] staticFields = getStaticFields();
+      for (int i = 0; i < staticFields.length; i++) {
+        Field f = staticFields[i];
+        Oop mirror = getJavaMirror();
+        if (f.isFinal() && !f.hasInitialValue()) {
+          out.print("staticfield " + getName().asString() + " " +
+                    OopUtilities.escapeString(f.getID().getName()) + " " +
+                    f.getFieldType().getSignature().asString() + " ");
+          if (f instanceof ByteField) {
+            ByteField bf = (ByteField)f;
+            out.println(bf.getValue(mirror));
+          } else if (f instanceof BooleanField) {
+            BooleanField bf = (BooleanField)f;
+            out.println(bf.getValue(mirror) ? 1 : 0);
+          } else if (f instanceof ShortField) {
+            ShortField bf = (ShortField)f;
+            out.println(bf.getValue(mirror));
+          } else if (f instanceof CharField) {
+            CharField bf = (CharField)f;
+            out.println(bf.getValue(mirror) & 0xffff);
+          } else if (f instanceof IntField) {
+            IntField bf = (IntField)f;
+            out.println(bf.getValue(mirror));
+          } else  if (f instanceof LongField) {
+            LongField bf = (LongField)f;
+            out.println(bf.getValue(mirror));
+          } else if (f instanceof FloatField) {
+            FloatField bf = (FloatField)f;
+            out.println(Float.floatToRawIntBits(bf.getValue(mirror)));
+          } else if (f instanceof DoubleField) {
+            DoubleField bf = (DoubleField)f;
+            out.println(Double.doubleToRawLongBits(bf.getValue(mirror)));
+          } else if (f instanceof OopField) {
+            OopField bf = (OopField)f;
+
+            Oop value = bf.getValue(mirror);
+            if (value == null) {
+              out.println("null");
+            } else if (value.isInstance()) {
+              Instance inst = (Instance)value;
+              if (inst.isA(SystemDictionary.getStringKlass())) {
+                out.println("\"" + OopUtilities.stringOopToEscapedString(inst) + "\"");
+              } else {
+                out.println(inst.getKlass().getName().asString());
+              }
+            } else if (value.isObjArray()) {
+              ObjArray oa = (ObjArray)value;
+              Klass ek = (ObjArrayKlass)oa.getKlass();
+              out.println(oa.getLength() + " " + ek.getName().asString());
+            } else if (value.isTypeArray()) {
+              TypeArray ta = (TypeArray)value;
+              out.println(ta.getLength());
+            } else {
+              out.println(value);
+            }
+          }
+        }
+      }
+    }
   }
 }

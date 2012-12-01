@@ -149,7 +149,7 @@ define SetupArchive
 			  $$($1_GREP_INCLUDES) $$($1_GREP_EXCLUDES)) \
 		 $$(subst \,,$$(foreach src,$$($1_SRCS),$$(addprefix $$(src)/,$$($1_EXTRA_FILES))))
         ifeq (,$$($1_SKIP_METAINF))
-            $1_DEPS+=$$(shell $(FIND) $$(addsuffix /META-INF,$$($1_SRCS)) -type f 2> /dev/null))
+            $1_DEPS+=$$(shell $(FIND) $$(addsuffix /META-INF,$$($1_SRCS)) -type f 2> /dev/null)
         endif
     endif
 

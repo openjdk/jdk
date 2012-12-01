@@ -26,6 +26,7 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -605,8 +606,10 @@ void ClassLoader::load_zip_library() {
   // Load zip library
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
-  os::dll_build_name(path, sizeof(path), Arguments::get_dll_dir(), "zip");
-  void* handle = os::dll_load(path, ebuf, sizeof ebuf);
+  void* handle = NULL;
+  if (os::dll_build_name(path, sizeof(path), Arguments::get_dll_dir(), "zip")) {
+    handle = os::dll_load(path, ebuf, sizeof ebuf);
+  }
   if (handle == NULL) {
     vm_exit_during_initialization("Unable to load ZIP library", path);
   }
@@ -908,11 +911,11 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
 
     // class file found, parse it
     ClassFileParser parser(stream);
-    Handle class_loader;
+    ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     Handle protection_domain;
     TempNewSymbol parsed_name = NULL;
     instanceKlassHandle result = parser.parseClassFile(h_name,
-                                                       class_loader,
+                                                       loader_data,
                                                        protection_domain,
                                                        parsed_name,
                                                        false,

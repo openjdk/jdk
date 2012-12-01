@@ -561,3 +561,114 @@ ciInstanceKlass* ciInstanceKlass::implementor() {
   }
   return impl;
 }
+
+// Utility class for printing of the contents of the static fields for
+// use by compilation replay.  It only prints out the information that
+// could be consumed by the compiler, so for primitive types it prints
+// out the actual value.  For Strings it's the actual string value.
+// For array types it it's first level array size since that's the
+// only value which statically unchangeable.  For all other reference
+// types it simply prints out the dynamic type.
+
+class StaticFinalFieldPrinter : public FieldClosure {
+  outputStream* _out;
+  const char*   _holder;
+ public:
+  StaticFinalFieldPrinter(outputStream* out, const char* holder) :
+    _out(out),
+    _holder(holder) {
+  }
+  void do_field(fieldDescriptor* fd) {
+    if (fd->is_final() && !fd->has_initial_value()) {
+      oop mirror = fd->field_holder()->java_mirror();
+      _out->print("staticfield %s %s %s ", _holder, fd->name()->as_quoted_ascii(), fd->signature()->as_quoted_ascii());
+      switch (fd->field_type()) {
+        case T_BYTE:    _out->print_cr("%d", mirror->byte_field(fd->offset()));   break;
+        case T_BOOLEAN: _out->print_cr("%d", mirror->bool_field(fd->offset()));   break;
+        case T_SHORT:   _out->print_cr("%d", mirror->short_field(fd->offset()));  break;
+        case T_CHAR:    _out->print_cr("%d", mirror->char_field(fd->offset()));   break;
+        case T_INT:     _out->print_cr("%d", mirror->int_field(fd->offset()));    break;
+        case T_LONG:    _out->print_cr(INT64_FORMAT, mirror->long_field(fd->offset()));   break;
+        case T_FLOAT: {
+          float f = mirror->float_field(fd->offset());
+          _out->print_cr("%d", *(int*)&f);
+          break;
+        }
+        case T_DOUBLE: {
+          double d = mirror->double_field(fd->offset());
+          _out->print_cr(INT64_FORMAT, *(jlong*)&d);
+          break;
+        }
+        case T_ARRAY: {
+          oop value =  mirror->obj_field_acquire(fd->offset());
+          if (value == NULL) {
+            _out->print_cr("null");
+          } else {
+            typeArrayOop ta = (typeArrayOop)value;
+            _out->print("%d", ta->length());
+            if (value->is_objArray()) {
+              objArrayOop oa = (objArrayOop)value;
+              const char* klass_name  = value->klass()->name()->as_quoted_ascii();
+              _out->print(" %s", klass_name);
+            }
+            _out->cr();
+          }
+          break;
+        }
+        case T_OBJECT: {
+          oop value =  mirror->obj_field_acquire(fd->offset());
+          if (value == NULL) {
+            _out->print_cr("null");
+          } else if (value->is_instance()) {
+            if (value->is_a(SystemDictionary::String_klass())) {
+              _out->print("\"");
+              _out->print_raw(java_lang_String::as_quoted_ascii(value));
+              _out->print_cr("\"");
+            } else {
+              const char* klass_name  = value->klass()->name()->as_quoted_ascii();
+              _out->print_cr(klass_name);
+            }
+          } else {
+            ShouldNotReachHere();
+          }
+          break;
+        }
+        default:
+          ShouldNotReachHere();
+        }
+    }
+  }
+};
+
+
+void ciInstanceKlass::dump_replay_data(outputStream* out) {
+  ASSERT_IN_VM;
+  InstanceKlass* ik = get_instanceKlass();
+  ConstantPool*  cp = ik->constants();
+
+  // Try to record related loaded classes
+  Klass* sub = ik->subklass();
+  while (sub != NULL) {
+    if (sub->oop_is_instance()) {
+      out->print_cr("instanceKlass %s", sub->name()->as_quoted_ascii());
+    }
+    sub = sub->next_sibling();
+  }
+
+  // Dump out the state of the constant pool tags.  During replay the
+  // tags will be validated for things which shouldn't change and
+  // classes will be resolved if the tags indicate that they were
+  // resolved at compile time.
+  out->print("ciInstanceKlass %s %d %d %d", ik->name()->as_quoted_ascii(),
+             is_linked(), is_initialized(), cp->length());
+  for (int index = 1; index < cp->length(); index++) {
+    out->print(" %d", cp->tags()->at(index));
+  }
+  out->cr();
+  if (is_initialized()) {
+    //  Dump out the static final fields in case the compilation relies
+    //  on their value for correct replay.
+    StaticFinalFieldPrinter sffp(out, ik->name()->as_quoted_ascii());
+    ik->do_local_static_fields(&sffp);
+  }
+}

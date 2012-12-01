@@ -29,7 +29,6 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
-import javax.security.auth.x500.X500Principal;
 
 /**
  * <code>HttpsURLConnection</code> extends <code>HttpURLConnection</code>
@@ -196,6 +195,7 @@ class HttpsURLConnection extends HttpURLConnection
      */
     private static class DefaultHostnameVerifier
             implements HostnameVerifier {
+        @Override
         public boolean verify(String hostname, SSLSession session) {
             return false;
         }

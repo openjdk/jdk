@@ -354,7 +354,7 @@ oop SignatureStream::as_java_mirror(Handle class_loader, Handle protection_domai
     return Universe::java_mirror(type());
   Klass* klass = as_klass(class_loader, protection_domain, failure_mode, CHECK_NULL);
   if (klass == NULL)  return NULL;
-  return Klass::cast(klass)->java_mirror();
+  return klass->java_mirror();
 }
 
 Symbol* SignatureStream::as_symbol_or_null() {
