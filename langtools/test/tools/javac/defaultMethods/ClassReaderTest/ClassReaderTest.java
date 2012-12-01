@@ -25,7 +25,7 @@
  * @test
  * @summary check that default methods don't cause ClassReader to complete classes recursively
  * @author  Maurizio Cimadamore
- * @compile -XDallowDefaultMethods pkg/Foo.java
+ * @compile pkg/Foo.java
  * @compile ClassReaderTest.java
  */
 

@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.spi.CalendarDataProvider;
+import java.util.spi.CalendarNameProvider;
 import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.TimeZoneNameProvider;
@@ -324,6 +325,30 @@ public class HostLocaleProviderAdapterImpl {
             }
 
             @Override
+            public int getFirstDayOfWeek(Locale locale) {
+                return getCalendarInt(locale.toLanguageTag(), CD_FIRSTDAYOFWEEK);
+            }
+
+            @Override
+            public int getMinimalDaysInFirstWeek(Locale locale) {
+                return getCalendarInt(locale.toLanguageTag(), CD_MINIMALDAYSINFIRSTWEEK);
+            }
+        };
+    }
+
+    public static CalendarNameProvider getCalendarNameProvider() {
+        return new CalendarNameProvider() {
+            @Override
+            public Locale[] getAvailableLocales() {
+                return getSupportedCalendarLocales();
+            }
+
+            @Override
+            public boolean isSupportedLocale(Locale locale) {
+                return isSupportedCalendarLocale(locale);
+            }
+
+            @Override
             public String getDisplayName(String calType, int field, int value,
                                          int style, Locale locale) {
                 return null;
@@ -333,16 +358,6 @@ public class HostLocaleProviderAdapterImpl {
             public Map<String, Integer> getDisplayNames(String calType,
                                          int field, int style, Locale locale) {
                 return null;
-            }
-
-            @Override
-            public int getFirstDayOfWeek(Locale locale) {
-                return getCalendarInt(locale.toLanguageTag(), CD_FIRSTDAYOFWEEK);
-            }
-
-            @Override
-            public int getMinimalDaysInFirstWeek(Locale locale) {
-                return getCalendarInt(locale.toLanguageTag(), CD_MINIMALDAYSINFIRSTWEEK);
             }
         };
     }

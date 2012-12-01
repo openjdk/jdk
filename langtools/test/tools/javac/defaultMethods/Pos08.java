@@ -25,7 +25,7 @@
  * @test
  * @summary check that common overrider solves default method conflicts
  * @author  Maurizio Cimadamore
- * @compile -XDallowDefaultMethods Pos08.java
+ * @compile Pos08.java
  */
 
 class Pos08 {

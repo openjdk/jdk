@@ -68,6 +68,7 @@ public class KeyManagerFactory {
     public final static String getDefaultAlgorithm() {
         String type;
         type = AccessController.doPrivileged(new PrivilegedAction<String>() {
+            @Override
             public String run() {
                 return Security.getProperty(
                     "ssl.KeyManagerFactory.algorithm");

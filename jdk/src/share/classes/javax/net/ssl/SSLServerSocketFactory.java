@@ -160,23 +160,27 @@ class DefaultSSLServerSocketFactory extends SSLServerSocketFactory {
             new SocketException(reason.toString()).initCause(reason);
     }
 
+    @Override
     public ServerSocket createServerSocket() throws IOException {
         return throwException();
     }
 
 
+    @Override
     public ServerSocket createServerSocket(int port)
     throws IOException
     {
         return throwException();
     }
 
+    @Override
     public ServerSocket createServerSocket(int port, int backlog)
     throws IOException
     {
         return throwException();
     }
 
+    @Override
     public ServerSocket
     createServerSocket(int port, int backlog, InetAddress ifAddress)
     throws IOException
@@ -184,10 +188,12 @@ class DefaultSSLServerSocketFactory extends SSLServerSocketFactory {
         return throwException();
     }
 
+    @Override
     public String [] getDefaultCipherSuites() {
         return new String[0];
     }
 
+    @Override
     public String [] getSupportedCipherSuites() {
         return new String[0];
     }

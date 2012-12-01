@@ -179,7 +179,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     continue;
                 }
                 Content classContent = new RawHtml(getLink(new LinkInfoImpl(
-                        LinkInfoImpl.CONTEXT_PACKAGE, classes[i], false)));
+                        configuration, LinkInfoImpl.CONTEXT_PACKAGE, classes[i],
+                        false)));
                 Content tdClass = HtmlTree.TD(HtmlStyle.colFirst, classContent);
                 HtmlTree tr = HtmlTree.TR(tdClass);
                 if (i%2 == 0)

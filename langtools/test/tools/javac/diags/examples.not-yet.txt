@@ -3,6 +3,7 @@ compiler.err.already.defined.this.unit                  # seems to be masked by 
 compiler.err.annotation.value.not.allowable.type        # cannot happen: precluded by complete type-specific tests
 compiler.err.cant.read.file                             # (apt.JavaCompiler?)
 compiler.err.cant.select.static.class.from.param.type
+compiler.err.dc.unterminated.string                     # cannot happen
 compiler.err.illegal.char.for.encoding
 compiler.err.invalid.containedby.annotation             # should not happen
 compiler.err.invalid.containedby.annotation.invalid.value # "can't" happen
@@ -105,3 +106,4 @@ compiler.warn.unchecked.cast.to.type                    # DEAD, replaced by comp
 compiler.warn.unexpected.archive.file                   # Paths: zip file with unknown extn
 compiler.warn.unknown.enum.constant                     # in bad class file
 compiler.warn.unknown.enum.constant.reason              # in bad class file
+

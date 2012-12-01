@@ -23,7 +23,6 @@
 
 // key: compiler.err.prob.found.req
 // key: compiler.misc.incompatible.arg.types.in.lambda
-// options: -XDallowLambda -XDallowPoly
 
 class IncompatibleArgTypesInLambda {
     interface SAM {

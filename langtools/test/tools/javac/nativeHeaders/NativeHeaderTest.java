@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7150368
+ * @bug 7150368 8003412
  * @summary javac should include basic ability to generate native headers
  */
 
@@ -125,7 +125,7 @@ public class NativeHeaderTest {
     }
 
     @Test
-    void annoTest(RunKind rk, GenKind gk) throws Exception {
+    void oldAnnoTest(RunKind rk, GenKind gk) throws Exception {
         List<File> files = new ArrayList<File>();
         files.add(createFile("p/C.java",
                 "@javax.tools.annotation.GenerateNativeHeader class C { }"));
@@ -136,10 +136,33 @@ public class NativeHeaderTest {
     }
 
     @Test
-    void annoNestedClassTest(RunKind rk, GenKind gk) throws Exception {
+    void annoTest(RunKind rk, GenKind gk) throws Exception {
+        List<File> files = new ArrayList<File>();
+        files.add(createFile("p/C.java",
+                "class C { @java.lang.annotation.Native public static final int i = 1907; }"));
+
+        Set<String> expect = createSet("C.h");
+
+        test(rk, gk, files, expect);
+    }
+
+    @Test
+    void oldAnnoNestedClassTest(RunKind rk, GenKind gk) throws Exception {
         List<File> files = new ArrayList<File>();
         files.add(createFile("p/C.java",
                 "class C { @javax.tools.annotation.GenerateNativeHeader class Inner { } }"));
+
+        Set<String> expect = createSet("C_Inner.h");
+        if (gk == GenKind.FULL) expect.add("C.h");
+
+        test(rk, gk, files, expect);
+    }
+
+    @Test
+    void annoNestedClassTest(RunKind rk, GenKind gk) throws Exception {
+        List<File> files = new ArrayList<File>();
+        files.add(createFile("p/C.java",
+                "class C { class Inner { @java.lang.annotation.Native public static final int i = 1907; } }"));
 
         Set<String> expect = createSet("C_Inner.h");
         if (gk == GenKind.FULL) expect.add("C.h");

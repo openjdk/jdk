@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary negative test for ambiguous defaults
- * @compile/fail/ref=Neg01.out -XDallowDefaultMethods -XDrawDiagnostics Neg01.java
+ * @compile/fail/ref=Neg01.out -XDrawDiagnostics Neg01.java
  */
 
 class Neg01 {
