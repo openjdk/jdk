@@ -137,6 +137,7 @@ public:
 
   ciReturnAddress* get_return_address(int bci);
 
+  GrowableArray<ciMetadata*>* get_ci_metadata() const { return _ci_metadata; }
   // RedefineClasses support
   void metadata_do(void f(Metadata*));
 

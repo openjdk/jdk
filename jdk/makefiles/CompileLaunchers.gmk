@@ -238,7 +238,7 @@ $(eval $(call SetupLauncher,jar,\
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.jar.Main"$(COMMA) }'))
 
 $(eval $(call SetupLauncher,jarsigner,\
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.jarSigner.Main"$(COMMA) }'))
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.jarsigner.Main"$(COMMA) }'))
 
 $(eval $(call SetupLauncher,javac,\
     -DEXPAND_CLASSPATH_WILDCARDS \

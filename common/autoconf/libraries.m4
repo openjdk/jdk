@@ -601,11 +601,16 @@ AC_DEFUN_ONCE([LIB_SETUP_STATIC_LINK_LIBSTDCPP],
 # statically link libstdc++ before C++ ABI is stablized on Linux unless 
 # dynamic build is configured on command line.
 #
-AC_ARG_ENABLE([static-link-stdc++], [AS_HELP_STRING([--disable-static-link-stdc++],
-	[disable static linking of the C++ runtime on Linux @<:@enabled@:>@])],,
-	[
-		enable_static_link_stdc__=yes
-    ])
+AC_ARG_WITH([stdc++lib], [AS_HELP_STRING([--with-stdc++lib=<static>,<dynamic>,<default>],
+  [force linking of the C++ runtime on Linux to either static or dynamic, default is static with dynamic as fallback])],
+  [
+    if test "x$with_stdc__lib" != xdynamic && test "x$with_stdc__lib" != xstatic \
+        && test "x$with_stdc__lib" != xdefault; then
+      AC_MSG_ERROR([Bad parameter value --with-stdc++lib=$with_stdc__lib!])
+    fi
+  ],
+  [with_stdc__lib=default]
+)
 
 if test "x$OPENJDK_TARGET_OS" = xlinux; then
     # Test if -lstdc++ works.
@@ -636,31 +641,31 @@ if test "x$OPENJDK_TARGET_OS" = xlinux; then
     AC_LANG_POP(C++)
     AC_MSG_RESULT([$has_static_libstdcxx])
 
-    if test "x$has_static_libcxx" = xno && test "x$has_dynamic_libcxx" = xno; then
-        AC_MSG_ERROR([I cannot link to stdc++! Neither dynamically nor statically.])
+    if test "x$has_static_libstdcxx" = xno && test "x$has_dynamic_libstdcxx" = xno; then
+        AC_MSG_ERROR([Cannot link to stdc++, neither dynamically nor statically!])
     fi
 
-    if test "x$enable_static_link_stdc__" = xyes && test "x$has_static_libstdcxx" = xno; then
-        AC_MSG_NOTICE([Static linking of libstdc++ was not possible reverting to dynamic linking.])
-        enable_static_link_stdc__=no
+    if test "x$with_stdc__lib" = xstatic && test "x$has_static_libstdcxx" = xno; then
+        AC_MSG_ERROR([Static linking of libstdc++ was not possible!])
     fi
 
-    if test "x$enable_static_link_stdc__" = xno && test "x$has_dynamic_libstdcxx" = xno; then
-        AC_MSG_NOTICE([Dynamic linking of libstdc++ was not possible reverting to static linking.])
-        enable_static_link_stdc__=yes
+    if test "x$with_stdc__lib" = xdynamic && test "x$has_dynamic_libstdcxx" = xno; then
+        AC_MSG_ERROR([Dynamic linking of libstdc++ was not possible!])
     fi
 
     AC_MSG_CHECKING([how to link with libstdc++])
-    if test "x$enable_static_link_stdc__" = xyes; then
-        LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
-        LDCXX="$CC"
-        STATIC_CXX_SETTING="STATIC_CXX=true"
-        AC_MSG_RESULT([static])
-    else
+    # If dynamic was requested, it's available since it would fail above otherwise.
+    # If dynamic wasn't requested, go with static unless it isn't available.
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno; then
         LIBCXX="$LIBCXX -lstdc++"
         LDCXX="$CXX"
         STATIC_CXX_SETTING="STATIC_CXX=false"
         AC_MSG_RESULT([dynamic])
+    else
+        LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
+        LDCXX="$CC"
+        STATIC_CXX_SETTING="STATIC_CXX=true"
+        AC_MSG_RESULT([static])
     fi
 fi
 AC_SUBST(STATIC_CXX_SETTING)

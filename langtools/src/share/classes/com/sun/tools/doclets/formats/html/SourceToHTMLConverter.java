@@ -60,16 +60,24 @@ public class SourceToHTMLConverter {
      */
     private static final Content NEW_LINE = new RawHtml(DocletConstants.NL);
 
+    private final ConfigurationImpl configuration;
+
+    private final RootDoc rootDoc;
+
+    private DocPath outputdir;
+
     /**
      * Relative path from the documentation root to the file that is being
      * generated.
      */
-    private static DocPath relativePath = DocPath.empty;
+    private DocPath relativePath = DocPath.empty;
 
-    /**
-     * Source is converted to HTML using static methods below.
-     */
-    private SourceToHTMLConverter() {}
+    private SourceToHTMLConverter(ConfigurationImpl configuration, RootDoc rd,
+            DocPath outputdir) {
+        this.configuration  = configuration;
+        this.rootDoc = rd;
+        this.outputdir = outputdir;
+    }
 
     /**
      * Convert the Classes in the given RootDoc to an HTML.
@@ -80,36 +88,38 @@ public class SourceToHTMLConverter {
      */
     public static void convertRoot(ConfigurationImpl configuration, RootDoc rd,
             DocPath outputdir) {
-        if (rd == null || outputdir == null) {
+        new SourceToHTMLConverter(configuration, rd, outputdir).generate();
+    }
+
+    void generate() {
+        if (rootDoc == null || outputdir == null) {
             return;
         }
-        PackageDoc[] pds = rd.specifiedPackages();
+        PackageDoc[] pds = rootDoc.specifiedPackages();
         for (int i = 0; i < pds.length; i++) {
             // If -nodeprecated option is set and the package is marked as deprecated,
             // do not convert the package files to HTML.
             if (!(configuration.nodeprecated && Util.isDeprecated(pds[i])))
-                convertPackage(configuration, pds[i], outputdir);
+                convertPackage(pds[i], outputdir);
         }
-        ClassDoc[] cds = rd.specifiedClasses();
+        ClassDoc[] cds = rootDoc.specifiedClasses();
         for (int i = 0; i < cds.length; i++) {
             // If -nodeprecated option is set and the class is marked as deprecated
             // or the containing package is deprecated, do not convert the
             // package files to HTML.
             if (!(configuration.nodeprecated &&
                     (Util.isDeprecated(cds[i]) || Util.isDeprecated(cds[i].containingPackage()))))
-                convertClass(configuration, cds[i], outputdir);
+                convertClass(cds[i], outputdir);
         }
     }
 
     /**
      * Convert the Classes in the given Package to an HTML.
      *
-     * @param configuration the configuration.
      * @param pd the Package to convert.
      * @param outputdir the name of the directory to output to.
      */
-    public static void convertPackage(ConfigurationImpl configuration, PackageDoc pd,
-            DocPath outputdir) {
+    public void convertPackage(PackageDoc pd, DocPath outputdir) {
         if (pd == null) {
             return;
         }
@@ -120,19 +130,17 @@ public class SourceToHTMLConverter {
             // containing package deprecation since it is already check in
             // the calling method above.
             if (!(configuration.nodeprecated && Util.isDeprecated(cds[i])))
-                convertClass(configuration, cds[i], outputdir);
+                convertClass(cds[i], outputdir);
         }
     }
 
     /**
      * Convert the given Class to an HTML.
      *
-     * @param configuration the configuration.
      * @param cd the class to convert.
      * @param outputdir the name of the directory to output to.
      */
-    public static void convertClass(ConfigurationImpl configuration, ClassDoc cd,
-            DocPath outputdir) {
+    public void convertClass(ClassDoc cd, DocPath outputdir) {
         if (cd == null) {
             return;
         }
@@ -164,7 +172,7 @@ public class SourceToHTMLConverter {
             try {
                 while ((line = reader.readLine()) != null) {
                     addLineNo(pre, lineno);
-                    addLine(pre, line, configuration.sourcetab, lineno);
+                    addLine(pre, line, lineno);
                     lineno++;
                 }
             } finally {
@@ -173,7 +181,7 @@ public class SourceToHTMLConverter {
             addBlankLines(pre);
             Content div = HtmlTree.DIV(HtmlStyle.sourceContainer, pre);
             body.addContent(div);
-            writeToFile(body, outputdir.resolve(DocPath.forClass(cd)), configuration);
+            writeToFile(body, outputdir.resolve(DocPath.forClass(cd)));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -184,15 +192,13 @@ public class SourceToHTMLConverter {
      *
      * @param body the documentation content to be written to the file.
      * @param path the path for the file.
-     * @param configuration the Doclet configuration to pass notices to.
      */
-    private static void writeToFile(Content body, DocPath path,
-            ConfigurationImpl configuration) throws IOException {
-        Content htmlDocType = DocType.Transitional();
+    private void writeToFile(Content body, DocPath path) throws IOException {
+        Content htmlDocType = DocType.TRANSITIONAL;
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(HtmlTree.TITLE(new StringContent(
                 configuration.getText("doclet.Window_Source_title"))));
-        head.addContent(getStyleSheetProperties(configuration));
+        head.addContent(getStyleSheetProperties());
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
                 head, body);
         Content htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
@@ -210,10 +216,9 @@ public class SourceToHTMLConverter {
     /**
      * Returns a link to the stylesheet file.
      *
-     * @param configuration the doclet configuration for the current run of javadoc
      * @return an HtmlTree for the lINK tag which provides the stylesheet location
      */
-    public static HtmlTree getStyleSheetProperties(ConfigurationImpl configuration) {
+    public HtmlTree getStyleSheetProperties() {
         String filename = configuration.stylesheetfile;
         DocPath stylesheet;
         if (filename.length() > 0) {
@@ -260,14 +265,13 @@ public class SourceToHTMLConverter {
      *
      * @param pre the content tree to which the line will be added.
      * @param line the string to format.
-     * @param tabLength the number of spaces for each tab.
      * @param currentLineNo the current number.
      */
-    private static void addLine(Content pre, String line, int tabLength,
-            int currentLineNo) {
+    private void addLine(Content pre, String line, int currentLineNo) {
         if (line != null) {
-            StringBuilder lineBuffer = new StringBuilder(Util.escapeHtmlChars(line));
-            Util.replaceTabs(tabLength, lineBuffer);
+            StringBuilder lineBuffer = new StringBuilder(line);
+            Util.replaceTabs(configuration, lineBuffer);
+            Util.escapeHtmlChars(lineBuffer);
             pre.addContent(new RawHtml(lineBuffer.toString()));
             Content anchor = HtmlTree.A_NAME("line." + Integer.toString(currentLineNo));
             pre.addContent(anchor);

@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary qualified 'this' inside default method causes StackOverflowException
- * @compile -XDallowDefaultMethods Pos13.java
+ * @compile Pos13.java
  */
 
 public class Pos13 {

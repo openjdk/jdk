@@ -54,22 +54,22 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * The class being documented.
      */
-    private ClassDoc classDoc;
+    private final ClassDoc classDoc;
 
     /**
      * The doclet specific writer.
      */
-    private ClassWriter writer;
+    private final ClassWriter writer;
 
     /**
      * Keep track of whether or not this classdoc is an interface.
      */
-    private boolean isInterface = false;
+    private final boolean isInterface;
 
     /**
      * Keep track of whether or not this classdoc is an enum.
      */
-    private boolean isEnum = false;
+    private final boolean isEnum;
 
     /**
      * The content tree for the class documentation.
@@ -79,44 +79,45 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * Construct a new ClassBuilder.
      *
-     * @param configuration the current configuration of the
-     *                      doclet.
+     * @param context  the build context
+     * @param classDoc the class being documented.
+     * @param writer the doclet specific writer.
      */
-    private ClassBuilder(Configuration configuration) {
-        super(configuration);
+    private ClassBuilder(Context context,
+            ClassDoc classDoc, ClassWriter writer) {
+        super(context);
+        this.classDoc = classDoc;
+        this.writer = writer;
+        if (classDoc.isInterface()) {
+            isInterface = true;
+            isEnum = false;
+        } else if (classDoc.isEnum()) {
+            isInterface = false;
+            isEnum = true;
+            Util.setEnumDocumentation(configuration, classDoc);
+        } else {
+            isInterface = false;
+            isEnum = false;
+        }
     }
 
     /**
      * Construct a new ClassBuilder.
      *
-     * @param configuration the current configuration of the doclet.
+     * @param context  the build context
      * @param classDoc the class being documented.
      * @param writer the doclet specific writer.
      */
-    public static ClassBuilder getInstance(Configuration configuration,
-        ClassDoc classDoc, ClassWriter writer)
-    throws Exception {
-        ClassBuilder builder = new ClassBuilder(configuration);
-        builder.configuration = configuration;
-        builder.classDoc = classDoc;
-        builder.writer = writer;
-        if (classDoc.isInterface()) {
-            builder.isInterface = true;
-        } else if (classDoc.isEnum()) {
-            builder.isEnum = true;
-            Util.setEnumDocumentation(configuration, classDoc);
-        }
-        if(containingPackagesSeen == null) {
-            containingPackagesSeen = new HashSet<String>();
-        }
-        return builder;
+    public static ClassBuilder getInstance(Context context,
+            ClassDoc classDoc, ClassWriter writer) {
+        return new ClassBuilder(context, classDoc, writer);
     }
 
     /**
      * {@inheritDoc}
      */
     public void build() throws IOException {
-        build(LayoutParser.getInstance(configuration).parseXML(ROOT), contentTree);
+        build(layoutParser.parseXML(ROOT), contentTree);
     }
 
     /**

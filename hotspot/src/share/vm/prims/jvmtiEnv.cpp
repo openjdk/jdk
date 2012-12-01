@@ -2116,7 +2116,7 @@ JvmtiEnv::GetClassSignature(oop k_mirror, char** signature_ptr, char** generic_p
       result[0] = tchar;
       result[1] = '\0';
     } else {
-      const char* class_sig = Klass::cast(k)->signature_name();
+      const char* class_sig = k->signature_name();
       result = (char *) jvmtiMalloc(strlen(class_sig)+1);
       strcpy(result, class_sig);
     }
@@ -2124,7 +2124,7 @@ JvmtiEnv::GetClassSignature(oop k_mirror, char** signature_ptr, char** generic_p
   }
   if (generic_ptr != NULL) {
     *generic_ptr = NULL;
-    if (!isPrimitive && Klass::cast(k)->oop_is_instance()) {
+    if (!isPrimitive && k->oop_is_instance()) {
       Symbol* soo = InstanceKlass::cast(k)->generic_signature();
       if (soo != NULL) {
         const char *gen_sig = soo->as_C_string();
@@ -2155,7 +2155,7 @@ JvmtiEnv::GetClassStatus(oop k_mirror, jint* status_ptr) {
   } else {
     Klass* k = java_lang_Class::as_Klass(k_mirror);
     NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
-    result = Klass::cast(k)->jvmti_class_status();
+    result = k->jvmti_class_status();
   }
   *status_ptr = result;
 
@@ -2173,7 +2173,7 @@ JvmtiEnv::GetSourceFileName(oop k_mirror, char** source_name_ptr) {
   Klass* k_klass = java_lang_Class::as_Klass(k_mirror);
   NULL_CHECK(k_klass, JVMTI_ERROR_INVALID_CLASS);
 
-  if (!Klass::cast(k_klass)->oop_is_instance()) {
+  if (!k_klass->oop_is_instance()) {
     return JVMTI_ERROR_ABSENT_INFORMATION;
   }
 
@@ -2200,7 +2200,7 @@ JvmtiEnv::GetClassModifiers(oop k_mirror, jint* modifiers_ptr) {
   if (!java_lang_Class::is_primitive(k_mirror)) {
     Klass* k = java_lang_Class::as_Klass(k_mirror);
     NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
-    result = Klass::cast(k)->compute_modifier_flags(current_thread);
+    result = k->compute_modifier_flags(current_thread);
     JavaThread* THREAD = current_thread; // pass to macros
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
@@ -2208,7 +2208,7 @@ JvmtiEnv::GetClassModifiers(oop k_mirror, jint* modifiers_ptr) {
     };
 
     // Reset the deleted  ACC_SUPER bit ( deleted in compute_modifier_flags()).
-    if(Klass::cast(k)->is_super()) {
+    if(k->is_super()) {
       result |= JVM_ACC_SUPER;
     }
   } else {
@@ -2237,11 +2237,11 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
   NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
 
   // Return CLASS_NOT_PREPARED error as per JVMTI spec.
-  if (!(Klass::cast(k)->jvmti_class_status() & (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY) )) {
+  if (!(k->jvmti_class_status() & (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY) )) {
     return JVMTI_ERROR_CLASS_NOT_PREPARED;
   }
 
-  if (!Klass::cast(k)->oop_is_instance()) {
+  if (!k->oop_is_instance()) {
     *method_count_ptr = 0;
     *methods_ptr = (jmethodID*) jvmtiMalloc(0 * sizeof(jmethodID));
     return JVMTI_ERROR_NONE;
@@ -2293,11 +2293,11 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
   NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
 
   // Return CLASS_NOT_PREPARED error as per JVMTI spec.
-  if (!(Klass::cast(k)->jvmti_class_status() & (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY) )) {
+  if (!(k->jvmti_class_status() & (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY) )) {
     return JVMTI_ERROR_CLASS_NOT_PREPARED;
   }
 
-  if (!Klass::cast(k)->oop_is_instance()) {
+  if (!k->oop_is_instance()) {
     *field_count_ptr = 0;
     *fields_ptr = (jfieldID*) jvmtiMalloc(0 * sizeof(jfieldID));
     return JVMTI_ERROR_NONE;
@@ -2348,10 +2348,10 @@ JvmtiEnv::GetImplementedInterfaces(oop k_mirror, jint* interface_count_ptr, jcla
     NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
 
     // Return CLASS_NOT_PREPARED error as per JVMTI spec.
-    if (!(Klass::cast(k)->jvmti_class_status() & (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY) ))
+    if (!(k->jvmti_class_status() & (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY) ))
       return JVMTI_ERROR_CLASS_NOT_PREPARED;
 
-    if (!Klass::cast(k)->oop_is_instance()) {
+    if (!k->oop_is_instance()) {
       *interface_count_ptr = 0;
       *interfaces_ptr = (jclass*) jvmtiMalloc(0 * sizeof(jclass));
       return JVMTI_ERROR_NONE;
@@ -2363,8 +2363,8 @@ JvmtiEnv::GetImplementedInterfaces(oop k_mirror, jint* interface_count_ptr, jcla
     for (int i_index = 0; i_index < result_length; i_index += 1) {
       Klass* klass_at = interface_list->at(i_index);
       assert(klass_at->is_klass(), "interfaces must be Klass*s");
-      assert(Klass::cast(klass_at)->is_interface(), "interfaces must be interfaces");
-      oop mirror_at = Klass::cast(klass_at)->java_mirror();
+      assert(klass_at->is_interface(), "interfaces must be interfaces");
+      oop mirror_at = klass_at->java_mirror();
       Handle handle_at = Handle(current_thread, mirror_at);
       result_list[i_index] = (jclass) jni_reference(handle_at);
     }
@@ -2468,7 +2468,7 @@ JvmtiEnv::IsInterface(oop k_mirror, jboolean* is_interface_ptr) {
     bool result = false;
     if (!java_lang_Class::is_primitive(k_mirror)) {
       Klass* k = java_lang_Class::as_Klass(k_mirror);
-      if (k != NULL && Klass::cast(k)->is_interface()) {
+      if (k != NULL && k->is_interface()) {
         result = true;
       }
     }
@@ -2487,7 +2487,7 @@ JvmtiEnv::IsArrayClass(oop k_mirror, jboolean* is_array_class_ptr) {
     bool result = false;
     if (!java_lang_Class::is_primitive(k_mirror)) {
       Klass* k = java_lang_Class::as_Klass(k_mirror);
-      if (k != NULL && Klass::cast(k)->oop_is_array()) {
+      if (k != NULL && k->oop_is_array()) {
         result = true;
       }
     }
@@ -2512,7 +2512,7 @@ JvmtiEnv::GetClassLoader(oop k_mirror, jobject* classloader_ptr) {
     Klass* k = java_lang_Class::as_Klass(k_mirror);
     NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
 
-    oop result_oop = Klass::cast(k)->class_loader();
+    oop result_oop = k->class_loader();
     if (result_oop == NULL) {
       *classloader_ptr = (jclass) jni_reference(Handle());
       return JVMTI_ERROR_NONE;
@@ -2535,7 +2535,7 @@ JvmtiEnv::GetSourceDebugExtension(oop k_mirror, char** source_debug_extension_pt
     }
     Klass* k = java_lang_Class::as_Klass(k_mirror);
     NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
-    if (!Klass::cast(k)->oop_is_instance()) {
+    if (!k->oop_is_instance()) {
       return JVMTI_ERROR_ABSENT_INFORMATION;
     }
     char* sde = InstanceKlass::cast(k)->source_debug_extension();

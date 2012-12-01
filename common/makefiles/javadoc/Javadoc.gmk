@@ -50,17 +50,12 @@ BUILD_NUMBER=$(JDK_BUILD_NUMBER)
 
 BOOT_JAVA_CMD=$(JAVA)
 
-# Langtools
-JAVAC_JAR   = $(LANGTOOLS_DIST)/bootstrap/lib/javac.jar
 JAVADOC_JAR = $(LANGTOOLS_DIST)/bootstrap/lib/javadoc.jar
-DOCLETS_JAR = $(LANGTOOLS_DIST)/bootstrap/lib/doclets.jar
 JAVADOC_CMD = $(BOOT_JAVA_CMD) \
               -Xmx1024m \
 	      -Djava.awt.headless=true \
-              "-Xbootclasspath/p:$(JAVADOC_JAR)$(CLASSPATH_SEPARATOR)$(JAVAC_JAR)$(CLASSPATH_SEPARATOR)$(DOCLETS_JAR)" \
-              -jar $(JAVADOC_JAR)
-
-JAVADOC_CMD = javadoc 
+              "-Xbootclasspath/p:$(JAVADOC_JAR)" \
+              -jar $(JAVADOC_JAR) -bootclasspath $(JDK_OUTPUTDIR)/classes
 
 # Copyright year for beginning of Java and some of the apis
 #   (Needed when creating the javadocs)
@@ -113,7 +108,8 @@ DOCSDIR_URL = {@docroot}/$(GET2DOCSDIR)
 
 # Url to copyright html file
 COPYRIGHT_URL-7 = $(DOCSDIR_URL)/legal/cpyr.html
-COPYRIGHT_URL-8 = $(DOCSDIR_URL)/legal/cpyr.html
+# This isn't added in old build yet.
+#COPYRIGHT_URL-8 = $(DOCSDIR_URL)/legal/cpyr.html
 COPYRIGHT_URL = $(COPYRIGHT_URL-$(JDK_MINOR_VERSION))
 
 # Url to bug filing site
@@ -125,7 +121,8 @@ BUG_SUBMIT_LINE = <a href="$(BUG_SUBMIT_URL)">Submit a bug or feature</a>
 # Url to devdocs page
 #   Was: http://java.sun.com/javase/6/webnotes/devdocs-vs-specs.html
 DEV_DOCS_URL-7 = http://download.oracle.com/javase/7/docs/index.html
-DEV_DOCS_URL-8 = http://download.oracle.com/javase/7/docs/index.html
+# This isn't added in old build yet.
+#DEV_DOCS_URL-8 = http://download.oracle.com/javase/7/docs/index.html
 DEV_DOCS_URL = $(DEV_DOCS_URL-$(JDK_MINOR_VERSION))
 DOCS_BASE_URL = http://download.oracle.com/javase/7/docs
 
@@ -142,9 +139,10 @@ $(FULL_COMPANY_NAME) in the US and other countries.
 #          Otherwise, you get "No packages or classes specified." due 
 #          to $(CLASSPATH_SEPARATOR) being interpreted as an end of 
 #          command (newline or shell ; character)
-ALL_SOURCE_DIRS = $(JDK_IMPSRC) \
+ALL_SOURCE_DIRS = $(JDK_SHARE_CLASSES) \
+                  $(JDK_IMPSRC) \
                   $(JDK_GENSRC) \
-                  $(JDK_SHARE_CLASSES) \
+		  $(JDK_OUTPUTDIR)/gendocsrc_rmic \
                   $(JDK_TOPDIR)/src/solaris/classes \
                   $(JDK_TOPDIR)/src/windows/classes \
 		  $(JDK_SHARE_SRC)/doc/stub
@@ -440,7 +438,7 @@ docletapidocs: $(DOCLETAPI_INDEX_FILE)
 $(DOCLETAPI_INDEX_FILE): GET2DOCSDIR=$(DOCLETAPI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(DOCLETAPI_INDEX_FILE): $(DOCLETAPI_OPTIONS_FILE) $(DOCLETAPI_PACKAGES_FILE)
+$(DOCLETAPI_INDEX_FILE): $(DOCLETAPI_OPTIONS_FILE) $(DOCLETAPI_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(call JavadocSummary,$(DOCLETAPI_OPTIONS_FILE),$(DOCLETAPI_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -481,7 +479,7 @@ TAGLETAPI_BOTTOM   := $(call CommonTrademarkBottom,$(TAGLETAPI_FIRST_COPYRIGHT_Y
 TAGLETAPI_TEMPDIR       = $(DOCSTMPDIR)/taglets_temp
 
 # The index.html, options, and packages files
-TAGLETAPI_INDEX_FILE    = $(TAGLETAPI_DOCDIR)/com/sun/tools/doclets/Taglet.html
+TAGLETAPI_INDEX_FILE    = $(TAGLETAPI_DOCDIR)/index.html
 TAGLETAPI_OPTIONS_FILE  = $(DOCSTMPDIR)/tagletapi.options
 TAGLETAPI_PACKAGES_FILE = $(DOCSTMPDIR)/tagletapi.packages
 
@@ -491,7 +489,7 @@ tagletapidocs: $(TAGLETAPI_INDEX_FILE)
 $(TAGLETAPI_INDEX_FILE): GET2DOCSDIR=$(TAGLETAPI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(TAGLETAPI_INDEX_FILE): $(TAGLETAPI_OPTIONS_FILE) $(TAGLETAPI_PACKAGES_FILE)
+$(TAGLETAPI_INDEX_FILE): $(TAGLETAPI_OPTIONS_FILE) $(TAGLETAPI_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(RM) -r $(TAGLETAPI_TEMPDIR)
 	$(MKDIR) -p $(TAGLETAPI_TEMPDIR)
@@ -517,9 +515,7 @@ $(TAGLETAPI_OPTIONS_FILE):
 # Create a file with the package names in it
 $(TAGLETAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(TAGLETAPI_PKGS))
 	$(prep-target)
-	$(call PackageFilter,$(TAGLETAPI_PKGS))
-	$(GREP) "$(TAGLETAPI_FILE)" $@ > $@.tmp
-	$(MV) $@.tmp $@
+	@($(ECHO) "$(JDK_IMPSRC)/$(TAGLETAPI_FILE)" ) > $@
 
 #############################################################
 #
@@ -549,7 +545,7 @@ domapidocs: $(DOMAPI_INDEX_FILE)
 $(DOMAPI_INDEX_FILE): GET2DOCSDIR=$(DOMAPI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(DOMAPI_INDEX_FILE): $(DOMAPI_OPTIONS_FILE) $(DOMAPI_PACKAGES_FILE)
+$(DOMAPI_INDEX_FILE): $(DOMAPI_OPTIONS_FILE) $(DOMAPI_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(call JavadocSummary,$(DOMAPI_OPTIONS_FILE),$(DOMAPI_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -611,7 +607,7 @@ jdidocs: $(JDI_INDEX_FILE)
 $(JDI_INDEX_FILE): GET2DOCSDIR=$(JDI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(JDI_INDEX_FILE): $(JDI_OPTIONS_FILE) $(JDI_PACKAGES_FILE)
+$(JDI_INDEX_FILE): $(JDI_OPTIONS_FILE) $(JDI_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(call JavadocSummary,$(JDI_OPTIONS_FILE),$(JDI_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -698,7 +694,7 @@ jaasdocs: $(JAAS_INDEX_FILE)
 $(JAAS_INDEX_FILE): GET2DOCSDIR=$(JAAS2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(JAAS_INDEX_FILE): $(JAAS_OPTIONS_FILE) $(JAAS_PACKAGES_FILE)
+$(JAAS_INDEX_FILE): $(JAAS_OPTIONS_FILE) $(JAAS_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(call JavadocSummary,$(JAAS_OPTIONS_FILE),$(JAAS_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -750,7 +746,7 @@ jgssdocs: $(JGSS_INDEX_FILE)
 $(JGSS_INDEX_FILE): GET2DOCSDIR=$(JGSS2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(JGSS_INDEX_FILE): $(JGSS_OPTIONS_FILE) $(JGSS_PACKAGES_FILE)
+$(JGSS_INDEX_FILE): $(JGSS_OPTIONS_FILE) $(JGSS_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(call JavadocSummary,$(JGSS_OPTIONS_FILE),$(JGSS_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -802,7 +798,7 @@ smartcardiodocs: $(SMARTCARDIO_INDEX_FILE)
 $(SMARTCARDIO_INDEX_FILE): GET2DOCSDIR=$(SMARTCARDIO2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(SMARTCARDIO_INDEX_FILE): $(SMARTCARDIO_OPTIONS_FILE) $(SMARTCARDIO_PACKAGES_FILE)
+$(SMARTCARDIO_INDEX_FILE): $(SMARTCARDIO_OPTIONS_FILE) $(SMARTCARDIO_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(call JavadocSummary,$(SMARTCARDIO_OPTIONS_FILE),$(SMARTCARDIO_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -852,7 +848,7 @@ httpserverdocs: $(HTTPSERVER_INDEX_HTML)
 $(HTTPSERVER_INDEX_HTML): GET2DOCSDIR=$(HTTPSERVER2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(HTTPSERVER_INDEX_HTML): $(HTTPSERVER_OPTIONS_FILE) $(HTTPSERVER_PACKAGES_FILE)
+$(HTTPSERVER_INDEX_HTML): $(HTTPSERVER_OPTIONS_FILE) $(HTTPSERVER_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(call JavadocSummary,$(HTTPSERVER_OPTIONS_FILE),$(HTTPSERVER_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -887,7 +883,7 @@ ALL_OTHER_TARGETS += mgmtdocs
 MGMT_DOCDIR	 := $(JRE_API_DOCSDIR)/management/extension
 MGMT2COREAPI     := ../../$(JDKJRE2COREAPI)
 JVM_MIB_NAME     := JVM-MANAGEMENT-MIB.mib
-JVM_MIB_SRC      := $(CLOSED_SRC)/share/classes/sun/management/snmp/$(JVM_MIB_NAME)
+JVM_MIB_SRC      := $(JDK_TOPDIR)/src/closed/share/classes/sun/management/snmp/$(JVM_MIB_NAME)
 MGMT_DOCTITLE    := Monitoring and Management Interface for the Java$(TRADEMARK) Platform
 MGMT_WINDOWTITLE := Monitoring and Management Interface for the Java Platform
 MGMT_HEADER      := <strong>Monitoring and Management Interface for the Java Platform</strong>
@@ -906,7 +902,7 @@ mgmtdocs: $(MGMT_INDEX_FILE)
 $(MGMT_INDEX_FILE): GET2DOCSDIR=$(MGMT2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(MGMT_INDEX_FILE): $(MGMT_OPTIONS_FILE) $(MGMT_PACKAGES_FILE)
+$(MGMT_INDEX_FILE): $(MGMT_OPTIONS_FILE) $(MGMT_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	@if [ -f $(JVM_MIB_SRC) ] ; then 				\
 	  $(ECHO) "$(CP) $(JVM_MIB_SRC) $(@D)/.."; 			\
@@ -963,7 +959,7 @@ attachdocs: $(ATTACH_INDEX_HTML)
 $(ATTACH_INDEX_HTML): GET2DOCSDIR=$(ATTACH2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(ATTACH_INDEX_HTML): $(ATTACH_OPTIONS_FILE) $(ATTACH_PACKAGES_FILE)
+$(ATTACH_INDEX_HTML): $(ATTACH_OPTIONS_FILE) $(ATTACH_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(call JavadocSummary,$(ATTACH_OPTIONS_FILE),$(ATTACH_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -1013,7 +1009,7 @@ jconsoledocs: $(JCONSOLE_INDEX_HTML)
 $(JCONSOLE_INDEX_HTML): GET2DOCSDIR=$(JCONSOLE2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(JCONSOLE_INDEX_HTML): $(JCONSOLE_OPTIONS_FILE) $(JCONSOLE_PACKAGES_FILE)
+$(JCONSOLE_INDEX_HTML): $(JCONSOLE_OPTIONS_FILE) $(JCONSOLE_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(call JavadocSummary,$(JCONSOLE_OPTIONS_FILE),$(JCONSOLE_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -1065,7 +1061,7 @@ treeapidocs: $(TREEAPI_INDEX_HTML)
 $(TREEAPI_INDEX_HTML): GET2DOCSDIR=$(TREEAPI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(TREEAPI_INDEX_HTML): $(TREEAPI_OPTIONS_FILE) $(TREEAPI_PACKAGES_FILE)
+$(TREEAPI_INDEX_HTML): $(TREEAPI_OPTIONS_FILE) $(TREEAPI_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(call JavadocSummary,$(TREEAPI_OPTIONS_FILE),$(TREEAPI_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \
@@ -1116,7 +1112,7 @@ sctpdocs: $(SCTPAPI_INDEX_HTML)
 $(SCTPAPI_INDEX_HTML): GET2DOCSDIR=$(SCTPAPI2COREAPI)/..
 
 # Run javadoc if the index file is out of date or missing
-$(SCTPAPI_INDEX_HTML): $(SCTPAPI_OPTIONS_FILE) $(SCTPAPI_PACKAGES_FILE)
+$(SCTPAPI_INDEX_HTML): $(SCTPAPI_OPTIONS_FILE) $(SCTPAPI_PACKAGES_FILE) coredocs
 	$(prep-javadoc)
 	$(call JavadocSummary,$(SCTPAPI_OPTIONS_FILE),$(SCTPAPI_PACKAGES_FILE))
 	$(JAVADOC_CMD) -d $(@D) \

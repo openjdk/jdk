@@ -135,7 +135,7 @@ public:
     // The spec is unclear at this point to count array klasses or not
     // and also indirect creation of array of super class and secondaries
     //
-    // for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+    // for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
     //  KlassHandle h(_current_thread, l);
     //  _loaded_classes->append(h);
     // }

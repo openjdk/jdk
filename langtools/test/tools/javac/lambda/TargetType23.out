@@ -1,0 +1,2 @@
+TargetType23.java:35:9: compiler.err.ref.ambiguous: call, kindname.method, call(TargetType23.Sam2), TargetType23, kindname.method, <Z>call(TargetType23.Sam3<Z>), TargetType23
+1 error

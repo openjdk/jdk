@@ -25,7 +25,7 @@
  * @test
  * @bug 6968063 7127924
  * @summary provide examples of code that generate diagnostics
- * @build ArgTypeCompilerFactory Example HTMLWriter RunExamples
+ * @build ArgTypeCompilerFactory Example HTMLWriter RunExamples DocCommentProcessor
  * @run main/othervm RunExamples
  */
 /*

@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary check that 'this' can be used from within an extension method
- * @compile -XDallowDefaultMethods Pos12.java
+ * @compile Pos12.java
  */
 
 interface Pos12 {

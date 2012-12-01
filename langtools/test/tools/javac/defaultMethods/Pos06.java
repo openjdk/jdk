@@ -25,7 +25,7 @@
  * @test
  * @summary check that well-formed MI hierarchies behaves well w.r.t. method resolution (i.e. no ambiguities)
  * @author  Maurizio Cimadamore
- * @compile -XDallowDefaultMethods Pos06.java
+ * @compile Pos06.java
  */
 
 class Pos06 {

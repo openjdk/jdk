@@ -22,7 +22,6 @@
  */
 
 // key: compiler.err.unexpected.mref
-// options: -XDallowMethodReferences
 
 class UnexpectedLambda {
     { (Foo::bar)++; }

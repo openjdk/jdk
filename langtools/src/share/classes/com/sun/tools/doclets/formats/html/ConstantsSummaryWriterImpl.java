@@ -184,9 +184,9 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      */
     public Content getConstantMembersHeader(ClassDoc cd) {
         //generate links backward only to public classes.
-        String classlink = (cd.isPublic() || cd.isProtected())?
-            getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, cd,
-                false)) :
+        String classlink = (cd.isPublic() || cd.isProtected()) ?
+            getLink(new LinkInfoImpl(configuration,
+                    LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, cd, false)) :
             cd.qualifiedName();
         String name = cd.containingPackage().name();
         if (name.length() > 0) {
@@ -260,7 +260,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
             code.addContent(modifier);
             code.addContent(getSpace());
         }
-        Content type = new RawHtml(getLink(new LinkInfoImpl(
+        Content type = new RawHtml(getLink(new LinkInfoImpl(configuration,
                 LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, member.type())));
         code.addContent(type);
         tdType.addContent(code);

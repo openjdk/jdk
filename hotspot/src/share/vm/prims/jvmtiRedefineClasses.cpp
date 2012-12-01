@@ -222,7 +222,7 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
   }
   Klass* the_class_oop = java_lang_Class::as_Klass(klass_mirror);
   // classes for arrays cannot be redefined
-  if (the_class_oop == NULL || !Klass::cast(the_class_oop)->oop_is_instance()) {
+  if (the_class_oop == NULL || !the_class_oop->oop_is_instance()) {
     return false;
   }
   return true;
@@ -573,8 +573,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   // Check for NULL superclass first since this might be java.lang.Object
   if (the_class->super() != scratch_class->super() &&
       (the_class->super() == NULL || scratch_class->super() == NULL ||
-       Klass::cast(the_class->super())->name() !=
-       Klass::cast(scratch_class->super())->name())) {
+       the_class->super()->name() !=
+       scratch_class->super()->name())) {
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_HIERARCHY_CHANGED;
   }
 
@@ -592,8 +592,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_HIERARCHY_CHANGED;
   }
   for (i = 0; i < n_intfs; i++) {
-    if (Klass::cast(k_interfaces->at(i))->name() !=
-        Klass::cast(k_new_interfaces->at(i))->name()) {
+    if (k_interfaces->at(i)->name() !=
+        k_new_interfaces->at(i)->name()) {
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_HIERARCHY_CHANGED;
     }
   }
@@ -2684,7 +2684,7 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(Klass* k_oop,
     // interface, then we have to call adjust_method_entries() for
     // every InstanceKlass that has an itable since there isn't a
     // subclass relationship between an interface and an InstanceKlass.
-    if (ik->itable_length() > 0 && (Klass::cast(_the_class_oop)->is_interface()
+    if (ik->itable_length() > 0 && (_the_class_oop->is_interface()
         || ik->is_subclass_of(_the_class_oop))) {
       // ik->itable() creates a wrapper object; rm cleans it up
       ResourceMark rm(THREAD);
@@ -2929,7 +2929,7 @@ class TransferNativeFunctionRegistration {
                                      Symbol* signature) {
     TempNewSymbol name_symbol = SymbolTable::probe(name_str, (int)name_len);
     if (name_symbol != NULL) {
-      Method* method = Klass::cast(the_class())->lookup_method(name_symbol, signature);
+      Method* method = the_class()->lookup_method(name_symbol, signature);
       if (method != NULL) {
         // Even if prefixed, intermediate methods must exist.
         if (method->is_native()) {

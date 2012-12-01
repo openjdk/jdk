@@ -30,7 +30,7 @@ import java.net.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.tools.StandardLocation;
+import javax.tools.DocumentationTool;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
@@ -253,7 +253,7 @@ public class Extern {
             throws Fault {
         DocFile file = pkgListPath.resolve(DocPaths.PACKAGE_LIST);
         if (! (file.isAbsolute() || linkoffline)){
-            file = file.resolveAgainst(StandardLocation.CLASS_OUTPUT);
+            file = file.resolveAgainst(DocumentationTool.Location.DOCUMENTATION_OUTPUT);
         }
         try {
             if (file.exists() && file.canRead()) {
