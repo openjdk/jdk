@@ -901,7 +901,7 @@ public class Base64 {
                     shiftto -= 6;
                     if (shiftto < 0) {
                         if (dl < dp + 3)
-                            return dp;
+                            return dp - dp0;
                         da[dp++] = (byte)(bits >> 16);
                         da[dp++] = (byte)(bits >>  8);
                         da[dp++] = (byte)(bits);
@@ -912,7 +912,7 @@ public class Base64 {
                 }
                 if (shiftto == 6) {
                     if (dl - dp < 1)
-                        return dp;
+                        return dp - dp0;
                     if (padding && (sp + 1 != sl || sa[sp++] != '='))
                         throw new IllegalArgumentException(
                             "Input buffer has wrong 4-byte ending unit");
@@ -920,7 +920,7 @@ public class Base64 {
                     mark = sp;
                 } else if (shiftto == 0) {
                     if (dl - dp < 2)
-                        return dp;
+                        return dp - dp0;
                     if (padding && sp != sl)
                         throw new IllegalArgumentException(
                             "Input buffer has wrong 4-byte ending unit");
@@ -969,7 +969,7 @@ public class Base64 {
                     shiftto -= 6;
                     if (shiftto < 0) {
                         if (dl < dp + 3)
-                            return dp;
+                            return dp - dp0;
                         dst.put(dp++, (byte)(bits >> 16));
                         dst.put(dp++, (byte)(bits >>  8));
                         dst.put(dp++, (byte)(bits));
@@ -980,7 +980,7 @@ public class Base64 {
                 }
                 if (shiftto == 6) {
                     if (dl - dp < 1)
-                        return dp;
+                        return dp - dp0;
                     if (padding && (sp + 1 != sl || src.get(sp++) != '='))
                         throw new IllegalArgumentException(
                             "Input buffer has wrong 4-byte ending unit");
@@ -988,7 +988,7 @@ public class Base64 {
                      mark = sp;
                 } else if (shiftto == 0) {
                     if (dl - dp < 2)
-                        return dp;
+                        return dp - dp0;
                     if (padding && sp != sl)
                         throw new IllegalArgumentException(
                             "Input buffer has wrong 4-byte ending unit");

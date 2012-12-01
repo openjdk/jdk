@@ -22,7 +22,7 @@
  */
 
 /**
- * @test 4235519
+ * @test 4235519 8004212
  * @summary tests java.util.Base64
  */
 
@@ -106,6 +106,9 @@ public class TestBase64 {
             Base64.getDecoder().decode(ByteBuffer.wrap(decoded), ByteBuffer.allocate(1024)); }});
         checkIAE(new Runnable() { public void run() {
             Base64.getDecoder().decode(ByteBuffer.wrap(decoded), ByteBuffer.allocateDirect(1024)); }});
+
+        // test return value from decode(ByteBuffer, ByteBuffer)
+        testDecBufRet();
     }
 
     private static sun.misc.BASE64Encoder sunmisc = new sun.misc.BASE64Encoder();
@@ -349,6 +352,52 @@ public class TestBase64 {
             r.run();
             throw new RuntimeException("IAE is not thrown as expected");
         } catch (IllegalArgumentException iae) {}
+    }
+
+
+    private static void testDecBufRet() throws Throwable {
+        Random rnd = new java.util.Random();
+        Base64.Encoder encoder = Base64.getEncoder();
+        Base64.Decoder decoder = Base64.getDecoder();
+        //                src   pos, len  expected
+        int[][] tests = { { 6,    3,   3,   3},   // xxx xxx    -> yyyy yyyy
+                          { 6,    3,   4,   3},
+                          { 6,    3,   5,   3},
+                          { 6,    3,   6,   6},
+                          { 6,   11,   4,   3},
+                          { 6,   11,   4,   3},
+                          { 6,   11,   5,   3},
+                          { 6,   11,   6,   6},
+                          { 7,    3,   6,   6},   // xxx xxx x  -> yyyy yyyy yy==
+                          { 7,    3,   7,   7},
+                          { 7,   11,   6,   6},
+                          { 7,   11,   7,   7},
+                          { 8,    3,   6,   6},   // xxx xxx xx -> yyyy yyyy yyy=
+                          { 8,    3,   7,   6},
+                          { 8,    3,   8,   8},
+                          { 8,   13,   6,   6},
+                          { 8,   13,   7,   6},
+                          { 8,   13,   8,   8},
+
+        };
+        ByteBuffer dstBuf = ByteBuffer.allocate(100);
+        for (boolean direct : new boolean[] { false, true}) {
+            for (int[] test : tests) {
+                byte[] src = new byte[test[0]];
+                rnd.nextBytes(src);
+                ByteBuffer srcBuf = direct ? ByteBuffer.allocate(100)
+                                           : ByteBuffer.allocateDirect(100);
+                srcBuf.put(encoder.encode(src)).flip();
+                dstBuf.clear().position(test[1]).limit(test[1]+ test[2]);
+                int ret = decoder.decode(srcBuf, dstBuf);
+                if (ret != test[3]) {
+                    System.out.printf(" [%6s] src=%d, pos=%d, len=%d, expected=%d, ret=%d%n",
+                                      direct?"direct":"",
+                                      test[0], test[1], test[2], test[3], ret);
+                    throw new RuntimeException("ret != expected");
+                }
+            }
+        }
     }
 
     private static final void testEncode(Base64.Encoder enc, ByteBuffer bin, byte[] expected)
