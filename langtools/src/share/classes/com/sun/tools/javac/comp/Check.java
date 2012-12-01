@@ -119,6 +119,8 @@ public class Check {
         allowAnnotations = source.allowAnnotations();
         allowCovariantReturns = source.allowCovariantReturns();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
+        allowDefaultMethods = source.allowDefaultMethods();
+        allowStrictMethodClashCheck = source.allowStrictMethodClashCheck();
         complexInference = options.isSet("complexinference");
         warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
         suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
@@ -161,6 +163,14 @@ public class Check {
     /** Switch: simplified varargs enabled?
      */
     boolean allowSimplifiedVarargs;
+
+    /** Switch: default methods enabled?
+     */
+    boolean allowDefaultMethods;
+
+    /** Switch: should unrelated return types trigger a method clash?
+     */
+    boolean allowStrictMethodClashCheck;
 
     /** Switch: -complexinference option set?
      */
@@ -440,8 +450,6 @@ public class Check {
         public Infer.InferenceContext inferenceContext();
 
         public DeferredAttr.DeferredAttrContext deferredAttrContext();
-
-        public boolean allowBoxing();
     }
 
     /**
@@ -476,10 +484,6 @@ public class Check {
         public DeferredAttrContext deferredAttrContext() {
             return enclosingContext.deferredAttrContext();
         }
-
-        public boolean allowBoxing() {
-            return enclosingContext.allowBoxing();
-        }
     }
 
     /**
@@ -503,10 +507,6 @@ public class Check {
 
         public DeferredAttrContext deferredAttrContext() {
             return deferredAttr.emptyDeferredAttrContext;
-        }
-
-        public boolean allowBoxing() {
-            return true;
         }
     };
 
@@ -614,7 +614,7 @@ public class Check {
              a = types.upperBound(a);
              return types.isSubtype(a, bound);
          } else if (a.isExtendsBound()) {
-             return types.isCastable(bound, types.upperBound(a), Warner.noWarnings);
+             return types.isCastable(bound, types.upperBound(a), types.noWarnings);
          } else if (a.isSuperBound()) {
              return !types.notSoftSubtype(types.lowerBound(a), bound);
          }
@@ -898,19 +898,21 @@ public class Check {
                                   "unchecked.generic.array.creation",
                                   argtype);
             }
-            Type elemtype = types.elemtype(argtype);
-            switch (tree.getTag()) {
-                case APPLY:
-                    ((JCMethodInvocation) tree).varargsElement = elemtype;
-                    break;
-                case NEWCLASS:
-                    ((JCNewClass) tree).varargsElement = elemtype;
-                    break;
-                case REFERENCE:
-                    ((JCMemberReference) tree).varargsElement = elemtype;
-                    break;
-                default:
-                    throw new AssertionError(""+tree);
+            if (!((MethodSymbol)sym.baseSymbol()).isSignaturePolymorphic(types)) {
+                Type elemtype = types.elemtype(argtype);
+                switch (tree.getTag()) {
+                    case APPLY:
+                        ((JCMethodInvocation) tree).varargsElement = elemtype;
+                        break;
+                    case NEWCLASS:
+                        ((JCNewClass) tree).varargsElement = elemtype;
+                        break;
+                    case REFERENCE:
+                        ((JCMemberReference) tree).varargsElement = elemtype;
+                        break;
+                    default:
+                        throw new AssertionError(""+tree);
+                }
             }
          }
          return owntype;
@@ -926,65 +928,6 @@ public class Check {
                 return;
         }
 
-        void checkAccessibleFunctionalDescriptor(DiagnosticPosition pos, Env<AttrContext> env, Type desc) {
-            AccessChecker accessChecker = new AccessChecker(env);
-            //check args accessibility (only if implicit parameter types)
-            for (Type arg : desc.getParameterTypes()) {
-                if (!accessChecker.visit(arg)) {
-                    log.error(pos, "cant.access.arg.type.in.functional.desc", arg);
-                    return;
-                }
-            }
-            //check return type accessibility
-            if (!accessChecker.visit(desc.getReturnType())) {
-                log.error(pos, "cant.access.return.in.functional.desc", desc.getReturnType());
-                return;
-            }
-            //check thrown types accessibility
-            for (Type thrown : desc.getThrownTypes()) {
-                if (!accessChecker.visit(thrown)) {
-                    log.error(pos, "cant.access.thrown.in.functional.desc", thrown);
-                    return;
-                }
-            }
-        }
-
-        class AccessChecker extends Types.UnaryVisitor<Boolean> {
-
-            Env<AttrContext> env;
-
-            AccessChecker(Env<AttrContext> env) {
-                this.env = env;
-            }
-
-            Boolean visit(List<Type> ts) {
-                for (Type t : ts) {
-                    if (!visit(t))
-                        return false;
-                }
-                return true;
-            }
-
-            public Boolean visitType(Type t, Void s) {
-                return true;
-            }
-
-            @Override
-            public Boolean visitArrayType(ArrayType t, Void s) {
-                return visit(t.elemtype);
-            }
-
-            @Override
-            public Boolean visitClassType(ClassType t, Void s) {
-                return rs.isAccessible(env, t, true) &&
-                        visit(t.getTypeArguments());
-            }
-
-            @Override
-            public Boolean visitWildcardType(WildcardType t, Void s) {
-                return visit(t.type);
-            }
-        };
     /**
      * Check that type 't' is a valid instantiation of a generic class
      * (see JLS 4.5)
@@ -1114,7 +1057,7 @@ public class Check {
             }  else if ((sym.owner.flags_field & INTERFACE) != 0) {
                 if ((flags & DEFAULT) != 0) {
                     mask = InterfaceDefaultMethodMask;
-                    implicit = PUBLIC;
+                    implicit = PUBLIC | ABSTRACT;
                 } else {
                     mask = implicit = InterfaceMethodFlags;
                 }
@@ -1908,8 +1851,8 @@ public class Check {
                         types.isSameType(rt1, rt2) ||
                         !rt1.isPrimitiveOrVoid() &&
                         !rt2.isPrimitiveOrVoid() &&
-                        (types.covariantReturnType(rt1, rt2, Warner.noWarnings) ||
-                         types.covariantReturnType(rt2, rt1, Warner.noWarnings)) ||
+                        (types.covariantReturnType(rt1, rt2, types.noWarnings) ||
+                         types.covariantReturnType(rt2, rt1, types.noWarnings)) ||
                          checkCommonOverriderIn(s1,s2,site);
                     if (!compat) {
                         log.error(pos, "types.incompatible.diff.ret",
@@ -1954,8 +1897,8 @@ public class Check {
                     boolean compat =
                         !rt13.isPrimitiveOrVoid() &&
                         !rt23.isPrimitiveOrVoid() &&
-                        (types.covariantReturnType(rt13, rt1, Warner.noWarnings) &&
-                         types.covariantReturnType(rt23, rt2, Warner.noWarnings));
+                        (types.covariantReturnType(rt13, rt1, types.noWarnings) &&
+                         types.covariantReturnType(rt23, rt2, types.noWarnings));
                     if (compat)
                         return true;
                 }
@@ -2047,11 +1990,21 @@ public class Check {
                      undef == null && e != null;
                      e = e.sibling) {
                     if (e.sym.kind == MTH &&
-                        (e.sym.flags() & (ABSTRACT|IPROXY)) == ABSTRACT) {
+                        (e.sym.flags() & (ABSTRACT|IPROXY|DEFAULT)) == ABSTRACT) {
                         MethodSymbol absmeth = (MethodSymbol)e.sym;
                         MethodSymbol implmeth = absmeth.implementation(impl, types, true);
-                        if (implmeth == null || implmeth == absmeth)
+                        if (implmeth == null || implmeth == absmeth) {
+                            //look for default implementations
+                            if (allowDefaultMethods) {
+                                MethodSymbol prov = types.interfaceCandidates(impl.type, absmeth).head;
+                                if (prov != null && prov.overrides(absmeth, impl, types, true)) {
+                                    implmeth = prov;
+                                }
+                            }
+                        }
+                        if (implmeth == null || implmeth == absmeth) {
                             undef = absmeth;
+                        }
                     }
                 }
                 if (undef == null) {
@@ -2259,19 +2212,33 @@ public class Check {
         c.flags_field |= ACYCLIC;
     }
 
+    /**
+     * Check that functional interface methods would make sense when seen
+     * from the perspective of the implementing class
+     */
+    void checkFunctionalInterface(JCTree tree, Type funcInterface) {
+        ClassType c = new ClassType(Type.noType, List.<Type>nil(), null);
+        ClassSymbol csym = new ClassSymbol(0, names.empty, c, syms.noSymbol);
+        c.interfaces_field = List.of(funcInterface);
+        c.supertype_field = syms.objectType;
+        c.tsym = csym;
+        csym.members_field = new Scope(csym);
+        csym.completer = null;
+        checkImplementations(tree, csym, csym);
+    }
+
     /** Check that all methods which implement some
      *  method conform to the method they implement.
      *  @param tree         The class definition whose members are checked.
      */
     void checkImplementations(JCClassDecl tree) {
-        checkImplementations(tree, tree.sym);
+        checkImplementations(tree, tree.sym, tree.sym);
     }
 //where
         /** Check that all methods which implement some
          *  method in `ic' conform to the method they implement.
          */
-        void checkImplementations(JCClassDecl tree, ClassSymbol ic) {
-            ClassSymbol origin = tree.sym;
+        void checkImplementations(JCTree tree, ClassSymbol origin, ClassSymbol ic) {
             for (List<Type> l = types.closure(ic.type); l.nonEmpty(); l = l.tail) {
                 ClassSymbol lc = (ClassSymbol)l.head.tsym;
                 if ((allowGenerics || origin != lc) && (lc.flags() & ABSTRACT) != 0) {
@@ -2354,7 +2321,7 @@ public class Check {
                 if (m2 == m1) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
-                if (!types.isSubSignature(sym.type, types.memberType(site, m2), false) &&
+                if (!types.isSubSignature(sym.type, types.memberType(site, m2), allowStrictMethodClashCheck) &&
                         types.hasSameArgs(m2.erasure(types), m1.erasure(types))) {
                     sym.flags_field |= CLASH;
                     String key = m1 == sym ?
@@ -2386,7 +2353,7 @@ public class Check {
         for (Symbol s : types.membersClosure(site, true).getElementsByName(sym.name, cf)) {
             //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
             //a member of 'site') and (ii) 'sym' has the same erasure as m1, issue an error
-            if (!types.isSubSignature(sym.type, types.memberType(site, s), false) &&
+            if (!types.isSubSignature(sym.type, types.memberType(site, s), allowStrictMethodClashCheck) &&
                     types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
                 log.error(pos,
                         "name.clash.same.erasure.no.hide",
@@ -2415,6 +2382,62 @@ public class Check {
              return s.kind == MTH &&
                      (s.flags() & SYNTHETIC) == 0 &&
                      !shouldSkip(s) &&
+                     s.isInheritedIn(site.tsym, types) &&
+                     !s.isConstructor();
+         }
+     }
+
+    void checkDefaultMethodClashes(DiagnosticPosition pos, Type site) {
+        DefaultMethodClashFilter dcf = new DefaultMethodClashFilter(site);
+        for (Symbol m : types.membersClosure(site, false).getElements(dcf)) {
+            Assert.check(m.kind == MTH);
+            List<MethodSymbol> prov = types.interfaceCandidates(site, (MethodSymbol)m);
+            if (prov.size() > 1) {
+                ListBuffer<Symbol> abstracts = ListBuffer.lb();
+                ListBuffer<Symbol> defaults = ListBuffer.lb();
+                for (MethodSymbol provSym : prov) {
+                    if ((provSym.flags() & DEFAULT) != 0) {
+                        defaults = defaults.append(provSym);
+                    } else if ((provSym.flags() & ABSTRACT) != 0) {
+                        abstracts = abstracts.append(provSym);
+                    }
+                    if (defaults.nonEmpty() && defaults.size() + abstracts.size() >= 2) {
+                        //strong semantics - issue an error if two sibling interfaces
+                        //have two override-equivalent defaults - or if one is abstract
+                        //and the other is default
+                        String errKey;
+                        Symbol s1 = defaults.first();
+                        Symbol s2;
+                        if (defaults.size() > 1) {
+                            errKey = "types.incompatible.unrelated.defaults";
+                            s2 = defaults.toList().tail.head;
+                        } else {
+                            errKey = "types.incompatible.abstract.default";
+                            s2 = abstracts.first();
+                        }
+                        log.error(pos, errKey,
+                                Kinds.kindName(site.tsym), site,
+                                m.name, types.memberType(site, m).getParameterTypes(),
+                                s1.location(), s2.location());
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    //where
+     private class DefaultMethodClashFilter implements Filter<Symbol> {
+
+         Type site;
+
+         DefaultMethodClashFilter(Type site) {
+             this.site = site;
+         }
+
+         public boolean accepts(Symbol s) {
+             return s.kind == MTH &&
+                     (s.flags() & DEFAULT) != 0 &&
                      s.isInheritedIn(site.tsym, types) &&
                      !s.isConstructor();
          }

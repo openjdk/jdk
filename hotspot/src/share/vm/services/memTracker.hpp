@@ -284,14 +284,14 @@ class MemTracker : AllStatic {
     }
   }
 
-  // record arena size
+  // record arena memory size
   static inline void record_arena_size(address addr, size_t size) {
-    // we add a positive offset to arena address, so we can have arena size record
+    // we add a positive offset to arena address, so we can have arena memory record
     // sorted after arena record
     if (is_on() && !UseMallocOnly) {
       assert(addr != NULL, "Sanity check");
       create_memory_record((addr + sizeof(void*)), MemPointerRecord::arena_size_tag(), size,
-        0, NULL);
+        DEBUG_CALLER_PC, NULL);
     }
   }
 

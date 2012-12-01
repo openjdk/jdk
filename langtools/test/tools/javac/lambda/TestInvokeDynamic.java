@@ -25,7 +25,9 @@
  * @test
  * @bug 7194586
  *
- * @summary Add back-end support for invokedynamic
+ * @bug 8003280
+ * @summary Add lambda tests
+ *  Add back-end support for invokedynamic
  *
  */
 

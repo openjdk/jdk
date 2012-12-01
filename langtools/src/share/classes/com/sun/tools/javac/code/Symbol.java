@@ -438,7 +438,8 @@ public abstract class Symbol implements Element {
     }
 
     public Set<Modifier> getModifiers() {
-        return Flags.asModifierSet(flags());
+        long flags = flags();
+        return Flags.asModifierSet((flags & DEFAULT) != 0 ? flags & ~ABSTRACT : flags);
     }
 
     public Name getSimpleName() {
@@ -475,6 +476,7 @@ public abstract class Symbol implements Element {
         public String toString() { return other.toString(); }
         public Symbol location() { return other.location(); }
         public Symbol location(Type site, Types types) { return other.location(site, types); }
+        public Symbol baseSymbol() { return other; }
         public Type erasure(Types types) { return other.erasure(types); }
         public Type externalType(Types types) { return other.externalType(types); }
         public boolean isLocal() { return other.isLocal(); }
@@ -1192,9 +1194,9 @@ public abstract class Symbol implements Element {
 
             // check for an inherited implementation
             if ((flags() & ABSTRACT) != 0 ||
-                (other.flags() & ABSTRACT) == 0 ||
-                !other.isOverridableIn(origin) ||
-                !this.isMemberOf(origin, types))
+                    ((other.flags() & ABSTRACT) == 0 && (other.flags() & DEFAULT) == 0) ||
+                    !other.isOverridableIn(origin) ||
+                    !this.isMemberOf(origin, types))
                 return false;
 
             // assert types.asSuper(origin.type, other.owner) != null;
@@ -1202,7 +1204,7 @@ public abstract class Symbol implements Element {
             Type ot = types.memberType(origin.type, other);
             return
                 types.isSubSignature(mt, ot) &&
-                (!checkResult || types.resultSubtype(mt, ot, Warner.noWarnings));
+                (!checkResult || types.resultSubtype(mt, ot, types.noWarnings));
         }
 
         private boolean isOverridableIn(TypeSymbol origin) {

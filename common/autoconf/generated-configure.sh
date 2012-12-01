@@ -730,6 +730,8 @@ AR_OUT_OPTION
 LD_OUT_OPTION
 EXE_OUT_OPTION
 CC_OUT_OPTION
+BUILD_HOTSPOT
+HOTSPOT_DIST
 BUILD_OUTPUT
 OVERRIDE_SRC_ROOT
 ADD_SRC_ROOT
@@ -975,6 +977,7 @@ with_override_jaxp
 with_override_jaxws
 with_override_hotspot
 with_override_jdk
+with_import_hotspot
 with_msvcr_dll
 with_extra_cflags
 with_extra_cxxflags
@@ -990,7 +993,7 @@ with_alsa
 with_alsa_include
 with_alsa_lib
 with_zlib
-enable_static_link_stdc__
+with_stdc__lib
 with_num_cores
 with_memory_size
 with_sjavac_server_java
@@ -1657,9 +1660,6 @@ Optional Features:
   --disable-macosx-runtime-support
                           disable the use of MacOSX Java runtime support
                           framework [enabled]
-  --disable-static-link-stdc++
-                          disable static linking of the C++ runtime on Linux
-                          [enabled]
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
   --disable-precompiled-headers
@@ -1719,6 +1719,9 @@ Optional Packages:
   --with-override-jaxws   use this jaxws dir for the build
   --with-override-hotspot use this hotspot dir for the build
   --with-override-jdk     use this jdk dir for the build
+  --with-import-hotspot   import hotspot binaries from this jdk image or
+                          hotspot build dist dir instead of building from
+                          source
   --with-msvcr-dll        copy this msvcr100.dll into the built JDK (Windows
                           only) [probed]
   --with-extra-cflags     extra flags to be used when compiling jdk c-files
@@ -1738,6 +1741,10 @@ Optional Packages:
   --with-alsa-lib         specify directory for the alsa library
   --with-zlib             use zlib from build system or OpenJDK source
                           (system, bundled) [bundled]
+  --with-stdc++lib=<static>,<dynamic>,<default>
+                          force linking of the C++ runtime on Linux to either
+                          static or dynamic, default is static with dynamic as
+                          fallback
   --with-num-cores        number of cores in the build system, e.g.
                           --with-num-cores=8 [probed]
   --with-memory-size      memory (in MB) available in the build system, e.g.
@@ -3665,7 +3672,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1351854415
+DATE_WHEN_GENERATED=1354106772
 
 ###############################################################################
 #
@@ -7575,7 +7582,56 @@ fi
 
 
 # Test from where we are running configure, in or outside of src root.
-if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" || test "x$CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
+# To enable comparison of directories, CURDIR needs to be symlink free
+# just like SRC_ROOT already is
+NOSYM_CURDIR="$CURDIR"
+
+    if test "x$OPENJDK_BUILD_OS" != xwindows; then
+        # Follow a chain of symbolic links. Use readlink
+        # where it exists, else fall back to horribly
+        # complicated shell code.
+        if test "x$READLINK_TESTED" != yes; then
+            # On MacOSX there is a readlink tool with a different
+            # purpose than the GNU readlink tool. Check the found readlink.
+            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            if test "x$ISGNU" = x; then
+                 # A readlink that we do not know how to use.
+                 # Are there other non-GNU readlinks out there?
+                 READLINK_TESTED=yes
+                 READLINK=
+            fi
+        fi
+
+        if test "x$READLINK" != x; then
+            NOSYM_CURDIR=`$READLINK -f $NOSYM_CURDIR`
+        else
+            STARTDIR=$PWD
+            COUNTER=0
+            sym_link_dir=`$DIRNAME $NOSYM_CURDIR`
+            sym_link_file=`$BASENAME $NOSYM_CURDIR`
+            while test $COUNTER -lt 20; do
+                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+                if test "x$ISLINK" == x; then
+                    # This is not a symbolic link! We are done!
+                    break
+                fi
+                # The link might be relative! We have to use cd to travel safely.
+                cd $sym_link_dir
+                # ... and we must get the to the absolute path, not one using symbolic links.
+                cd `pwd -P`
+                cd `$DIRNAME $ISLINK`
+                sym_link_dir=`$THEPWDCMD`
+                sym_link_file=`$BASENAME $ISLINK`
+                let COUNTER=COUNTER+1
+            done
+            cd $STARTDIR
+            NOSYM_CURDIR=$sym_link_dir/$sym_link_file
+        fi
+    fi
+
+if test "x$NOSYM_CURDIR" = "x$SRC_ROOT" || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common" \
+        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/autoconf" \
+        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -15581,6 +15637,31 @@ fi
 
 BUILD_OUTPUT="$OUTPUT_ROOT"
 
+
+HOTSPOT_DIST="$OUTPUT_ROOT/hotspot/dist"
+BUILD_HOTSPOT=true
+
+
+
+# Check whether --with-import-hotspot was given.
+if test "${with_import_hotspot+set}" = set; then :
+  withval=$with_import_hotspot;
+fi
+
+if test "x$with_import_hotspot" != x; then
+    CURDIR="$PWD"
+    cd "$with_import_hotspot"
+    HOTSPOT_DIST="`pwd`"
+    cd "$CURDIR"
+    if ! (test -d $HOTSPOT_DIST/lib && test -d $HOTSPOT_DIST/jre/lib); then
+        as_fn_error $? "You have to import hotspot from a full jdk image or hotspot build dist dir!" "$LINENO" 5
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if hotspot should be imported" >&5
+$as_echo_n "checking if hotspot should be imported... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes from $HOTSPOT_DIST" >&5
+$as_echo "yes from $HOTSPOT_DIST" >&6; }
+    BUILD_HOTSPOT=false
+fi
 
 JDK_OUTPUTDIR="$OUTPUT_ROOT/jdk"
 
@@ -25583,6 +25664,8 @@ esac
   fi
 fi
 
+    # Only call fixup if objcopy was found.
+    if test -n "$OBJCOPY"; then
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
@@ -25838,6 +25921,7 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
 $as_echo "$as_me: Rewriting OBJCOPY to \"$new_complete\"" >&6;}
   fi
 
+    fi
 fi
 
 if test -n "$ac_tool_prefix"; then
@@ -27498,9 +27582,18 @@ else
         fi
     fi
     LDFLAGS_JDKLIB="${LDFLAGS_JDK} $SHARED_LIBRARY_FLAGS \
-                    -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server \
-                    -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/client \
                     -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}"
+
+    # On some platforms (mac) the linker warns about non existing -L dirs.
+    # Add server first if available. Linking aginst client does not always produce the same results.
+    # Only add client dir if client is being built. Default to server for other variants.
+    if test "x$JVM_VARIANT_SERVER" = xtrue; then
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server"
+    elif test "x$JVM_VARIANT_CLIENT" = xtrue; then
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/client"
+    else
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server"
+    fi
 
     LDFLAGS_JDKLIB_SUFFIX="-ljava -ljvm"
     if test "x$COMPILER_NAME" = xossc; then
@@ -30159,12 +30252,17 @@ LIBS="$save_LIBS"
 # statically link libstdc++ before C++ ABI is stablized on Linux unless
 # dynamic build is configured on command line.
 #
-# Check whether --enable-static-link-stdc++ was given.
-if test "${enable_static_link_stdc__+set}" = set; then :
-  enableval=$enable_static_link_stdc__;
-else
 
-		enable_static_link_stdc__=yes
+# Check whether --with-stdc++lib was given.
+if test "${with_stdc__lib+set}" = set; then :
+  withval=$with_stdc__lib;
+    if test "x$with_stdc__lib" != xdynamic && test "x$with_stdc__lib" != xstatic \
+        && test "x$with_stdc__lib" != xdefault; then
+      as_fn_error $? "Bad parameter value --with-stdc++lib=$with_stdc__lib!" "$LINENO" 5
+    fi
+
+else
+  with_stdc__lib=default
 
 fi
 
@@ -30252,36 +30350,34 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $has_static_libstdcxx" >&5
 $as_echo "$has_static_libstdcxx" >&6; }
 
-    if test "x$has_static_libcxx" = xno && test "x$has_dynamic_libcxx" = xno; then
-        as_fn_error $? "I cannot link to stdc++! Neither dynamically nor statically." "$LINENO" 5
+    if test "x$has_static_libstdcxx" = xno && test "x$has_dynamic_libstdcxx" = xno; then
+        as_fn_error $? "Cannot link to stdc++, neither dynamically nor statically!" "$LINENO" 5
     fi
 
-    if test "x$enable_static_link_stdc__" = xyes && test "x$has_static_libstdcxx" = xno; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Static linking of libstdc++ was not possible reverting to dynamic linking." >&5
-$as_echo "$as_me: Static linking of libstdc++ was not possible reverting to dynamic linking." >&6;}
-        enable_static_link_stdc__=no
+    if test "x$with_stdc__lib" = xstatic && test "x$has_static_libstdcxx" = xno; then
+        as_fn_error $? "Static linking of libstdc++ was not possible!" "$LINENO" 5
     fi
 
-    if test "x$enable_static_link_stdc__" = xno && test "x$has_dynamic_libstdcxx" = xno; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Dynamic linking of libstdc++ was not possible reverting to static linking." >&5
-$as_echo "$as_me: Dynamic linking of libstdc++ was not possible reverting to static linking." >&6;}
-        enable_static_link_stdc__=yes
+    if test "x$with_stdc__lib" = xdynamic && test "x$has_dynamic_libstdcxx" = xno; then
+        as_fn_error $? "Dynamic linking of libstdc++ was not possible!" "$LINENO" 5
     fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link with libstdc++" >&5
 $as_echo_n "checking how to link with libstdc++... " >&6; }
-    if test "x$enable_static_link_stdc__" = xyes; then
-        LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
-        LDCXX="$CC"
-        STATIC_CXX_SETTING="STATIC_CXX=true"
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: static" >&5
-$as_echo "static" >&6; }
-    else
+    # If dynamic was requested, it's available since it would fail above otherwise.
+    # If dynamic wasn't requested, go with static unless it isn't available.
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno; then
         LIBCXX="$LIBCXX -lstdc++"
         LDCXX="$CXX"
         STATIC_CXX_SETTING="STATIC_CXX=false"
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: dynamic" >&5
 $as_echo "dynamic" >&6; }
+    else
+        LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
+        LDCXX="$CC"
+        STATIC_CXX_SETTING="STATIC_CXX=true"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: static" >&5
+$as_echo "static" >&6; }
     fi
 fi
 
@@ -30733,7 +30829,7 @@ fi
 #
 # Check whether --enable-precompiled-headers was given.
 if test "${enable_precompiled_headers+set}" = set; then :
-  enableval=$enable_precompiled_headers; ENABLE_PRECOMPH=${enable_precompiled-headers}
+  enableval=$enable_precompiled_headers; ENABLE_PRECOMPH=${enable_precompiled_headers}
 else
   ENABLE_PRECOMPH=yes
 fi
@@ -30750,9 +30846,8 @@ if test "x$ENABLE_PRECOMPH" = xyes; then
          { $as_echo "$as_me:${as_lineno-$LINENO}: checking that precompiled headers work" >&5
 $as_echo_n "checking that precompiled headers work... " >&6; }
          echo "int alfa();" > conftest.h
-         $CXX -x c++-header conftest.h -o conftest.hpp.gch
+         $CXX -x c++-header conftest.h -o conftest.hpp.gch 2>&5 >&5
          if test ! -f conftest.hpp.gch; then
-             echo Precompiled header is not working!
              USE_PRECOMPILED_HEADER=0
              { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -30760,7 +30855,7 @@ $as_echo "no" >&6; }
              { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
          fi
-         rm -f conftest.h
+         rm -f conftest.h conftest.hpp.gch
     fi
 fi
 

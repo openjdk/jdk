@@ -24,7 +24,6 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.not.a.functional.intf.1
 // key: compiler.misc.no.abstracts
-// options: -XDallowLambda
 
 class NoAbstracts {
 

@@ -590,7 +590,7 @@ JvmtiEnvBase::vframeFor(JavaThread* java_thread, jint depth) {
 jclass
 JvmtiEnvBase::get_jni_class_non_null(Klass* k) {
   assert(k != NULL, "k != NULL");
-  return (jclass)jni_reference(Klass::cast(k)->java_mirror());
+  return (jclass)jni_reference(k->java_mirror());
 }
 
 #ifndef JVMTI_KERNEL
@@ -1365,7 +1365,7 @@ JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_threa
     // Method return type signature.
     char* ty_sign = 1 + strchr(signature->as_C_string(), ')');
 
-    if (!VM_GetOrSetLocal::is_assignable(ty_sign, Klass::cast(ob_kh()), current_thread)) {
+    if (!VM_GetOrSetLocal::is_assignable(ty_sign, ob_kh(), current_thread)) {
       return JVMTI_ERROR_TYPE_MISMATCH;
     }
     *ret_ob_h = ob_h;

@@ -28,7 +28,6 @@
 // key: compiler.misc.inapplicable.method
 // key: compiler.misc.cant.apply.symbols
 // key: compiler.misc.invalid.mref
-// options: -XDallowMethodReferences
 
 class CantApplySymbolsFragment {
 

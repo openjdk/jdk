@@ -46,13 +46,6 @@ import javax.tools.StandardLocation;
 public class Util {
 
     /**
-     * A mapping between characters and their
-     * corresponding HTML escape character.
-     */
-    public static final String[][] HTML_ESCAPE_CHARS =
-    {{"&", "&amp;"}, {"<", "&lt;"}, {">", "&gt;"}};
-
-    /**
      * Return array of class members whose documentation is to be generated.
      * If the member is deprecated do not include such a member in the
      * returned array.
@@ -424,18 +417,44 @@ public class Util {
      * return the result.
      *
      * @param s The string to check.
-     * @return the original string with all of the HTML characters
-     * escaped.
-     *
-     * @see #HTML_ESCAPE_CHARS
+     * @return the original string with all of the HTML characters escaped.
      */
     public static String escapeHtmlChars(String s) {
-        String result = s;
-        for (int i = 0; i < HTML_ESCAPE_CHARS.length; i++) {
-            result = Util.replaceText(result,
-                    HTML_ESCAPE_CHARS[i][0], HTML_ESCAPE_CHARS[i][1]);
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            switch (ch) {
+                // only start building a new string if we need to
+                case '<': case '>': case '&':
+                    StringBuilder sb = new StringBuilder(s.substring(0, i));
+                    for ( ; i < s.length(); i++) {
+                        ch = s.charAt(i);
+                        switch (ch) {
+                            case '<': sb.append("&lt;");  break;
+                            case '>': sb.append("&gt;");  break;
+                            case '&': sb.append("&amp;"); break;
+                            default:  sb.append(ch);      break;
+                        }
+                    }
+                    return sb.toString();
+            }
         }
-        return result;
+        return s;
+    }
+
+    /**
+     * Escape all special html characters in a string buffer.
+     *
+     * @param sb The string buffer to update
+     */
+    public static void escapeHtmlChars(StringBuilder sb) {
+        // scan backwards, replacing characters as needed.
+        for (int i = sb.length() - 1; i >= 0; i--) {
+            switch (sb.charAt(i)) {
+                case '<': sb.replace(i, i+1, "&lt;"); break;
+                case '>': sb.replace(i, i+1, "&gt;"); break;
+                case '&': sb.replace(i, i+1, "&amp;"); break;
+            }
+        }
     }
 
     /**
@@ -555,7 +574,7 @@ public class Util {
      *
      * @param cd the ClassDoc to check.
      * @param lowerCaseOnly true if you want the name returned in lower case.
-     *                      If false, the first letter of the name is capatilized.
+     *                      If false, the first letter of the name is capitalized.
      * @return
      */
     public static String getTypeName(Configuration config,
@@ -579,22 +598,21 @@ public class Util {
     }
 
     /**
-     * Given a string, replace all tabs with the appropriate
-     * number of spaces.
-     * @param tabLength the length of each tab.
-     * @param s the String to scan.
+     * Replace all tabs with the appropriate number of spaces.
+     * @param configuration the doclet configuration defining the setting for the
+     *                      tab length.
+     * @param sb the StringBuilder in which to replace the tabs
      */
-    public static void replaceTabs(int tabLength, StringBuilder s) {
-        if (whitespace == null || whitespace.length() < tabLength)
-            whitespace = String.format("%" + tabLength + "s", " ");
+    public static void replaceTabs(Configuration configuration, StringBuilder sb) {
+        int tabLength = configuration.sourcetab;
+        String whitespace = configuration.tabSpaces;
         int index = 0;
-        while ((index = s.indexOf("\t", index)) != -1) {
+        while ((index = sb.indexOf("\t", index)) != -1) {
             int spaceCount = tabLength - index % tabLength;
-            s.replace(index, index+1, whitespace.substring(0, spaceCount));
+            sb.replace(index, index+1, whitespace.substring(0, spaceCount));
             index += spaceCount;
         }
     }
-    private static String whitespace;
 
     /**
      * The documentation for values() and valueOf() in Enums are set by the

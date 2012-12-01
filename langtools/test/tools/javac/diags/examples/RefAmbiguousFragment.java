@@ -24,7 +24,6 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.ref.ambiguous
 // key: compiler.misc.invalid.mref
-// options: -XDallowMethodReferences
 
 class RefAmbiguousFragment {
 

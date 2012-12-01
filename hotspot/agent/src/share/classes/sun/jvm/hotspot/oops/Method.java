@@ -177,7 +177,7 @@ public class Method extends Metadata {
       bci. It is required that there is currently a bytecode at this
       bci. */
   public int getOrigBytecodeAt(int bci) {
-    BreakpointInfo bp = ((InstanceKlass) getMethodHolder()).getBreakpoints();
+    BreakpointInfo bp = getMethodHolder().getBreakpoints();
     for (; bp != null; bp = bp.getNext()) {
       if (bp.match(this, bci)) {
         return bp.getOrigBytecode();
@@ -238,7 +238,7 @@ public class Method extends Metadata {
   }
 
   // Method holder (the Klass holding this method)
-  public Klass   getMethodHolder()  { return getConstants().getPoolHolder();                           }
+  public InstanceKlass   getMethodHolder()  { return getConstants().getPoolHolder();                   }
 
   // Access flags
   public boolean isPublic()         { return getAccessFlagsObj().isPublic();                           }
@@ -358,6 +358,25 @@ public class Method extends Metadata {
     buf.append(")");
     return buf.toString().replace('/', '.');
   }
+
+  public void dumpReplayData(PrintStream out) {
+      NMethod nm = getNativeMethod();
+      int code_size = 0;
+      if (nm != null) {
+        code_size = (int)nm.codeEnd().minus(nm.getVerifiedEntryPoint());
+      }
+      Klass holder = getMethodHolder();
+      out.println("ciMethod " +
+                  holder.getName().asString() + " " +
+                  OopUtilities.escapeString(getName().asString()) + " " +
+                  getSignature().asString() + " " +
+                  getInvocationCounter() + " " +
+                  getBackedgeCounter() + " " +
+                  interpreterInvocationCount() + " " +
+                  interpreterThrowoutCount() + " " +
+                  code_size);
+  }
+
   public int interpreterThrowoutCount() {
     return (int) interpreterThrowoutCountField.getValue(this);
   }

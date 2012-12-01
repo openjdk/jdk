@@ -25,13 +25,16 @@
 
 package com.sun.tools.javadoc;
 
-import java.io.PrintWriter;  // Access to 'javac' output streams
+import java.io.PrintWriter;
 import java.text.MessageFormat;
-import java.util.MissingResourceException;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
+import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.Log;
 
 /**
@@ -51,6 +54,7 @@ import com.sun.tools.javac.util.Log;
  * @author Neal Gafter (rewrite)
  */
 public class Messager extends Log implements DocErrorReporter {
+    public static final SourcePosition NOPOS = null;
 
     /** Get the current messager, which is also the compiler log. */
     public static Messager instance0(Context context) {
@@ -91,7 +95,9 @@ public class Messager extends Log implements DocErrorReporter {
 
     final String programName;
 
-    private ResourceBundle messageRB = null;
+    private Locale locale;
+    private final JavacMessages messages;
+    private final JCDiagnostic.Factory javadocDiags;
 
     /** The default writer for diagnostics
      */
@@ -121,6 +127,9 @@ public class Messager extends Log implements DocErrorReporter {
                        PrintWriter warnWriter,
                        PrintWriter noticeWriter) {
         super(context, errWriter, warnWriter, noticeWriter);
+        messages = JavacMessages.instance(context);
+        messages.add("com.sun.tools.javadoc.resources.javadoc");
+        javadocDiags = new JCDiagnostic.Factory(messages, "javadoc");
         this.programName = programName;
     }
 
@@ -134,94 +143,18 @@ public class Messager extends Log implements DocErrorReporter {
         return Integer.MAX_VALUE;
     }
 
-    /**
-     * Reset resource bundle, eg. locale has changed.
-     */
-    public void reset() {
-        messageRB = null;
-    }
-
-    /**
-     * Get string from ResourceBundle, initialize ResourceBundle
-     * if needed.
-     */
-    private String getString(String key) {
-        if (messageRB == null) {
-            try {
-                messageRB = ResourceBundle.getBundle(
-                          "com.sun.tools.javadoc.resources.javadoc");
-            } catch (MissingResourceException e) {
-                throw new Error("Fatal: Resource for javadoc is missing");
-            }
-        }
-        return messageRB.getString(key);
+    public void setLocale(Locale locale) {
+        this.locale = locale;
     }
 
     /**
      * get and format message string from resource
      *
      * @param key selects message from resource
+     * @param args arguments for the message
      */
-    String getText(String key) {
-        return getText(key, (String)null);
-    }
-
-    /**
-     * get and format message string from resource
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     */
-    String getText(String key, String a1) {
-        return getText(key, a1, null);
-    }
-
-    /**
-     * get and format message string from resource
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     * @param a2 second argument
-     */
-    String getText(String key, String a1, String a2) {
-        return getText(key, a1, a2, null);
-    }
-
-    /**
-     * get and format message string from resource
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     * @param a2 second argument
-     * @param a3 third argument
-     */
-    String getText(String key, String a1, String a2, String a3) {
-        return getText(key, a1, a2, a3, null);
-    }
-
-    /**
-     * get and format message string from resource
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     * @param a2 second argument
-     * @param a3 third argument
-     * @param a4 fourth argument
-     */
-    String getText(String key, String a1, String a2, String a3,
-                          String a4) {
-        try {
-            String message = getString(key);
-            String[] args = new String[4];
-            args[0] = a1;
-            args[1] = a2;
-            args[2] = a3;
-            args[3] = a4;
-            return MessageFormat.format(message, (Object[])args);
-        } catch (MissingResourceException e) {
-            return "********** Resource for javadoc is broken. There is no " +
-                key + " key in resource.";
-        }
+    String getText(String key, Object... args) {
+        return messages.getLocalizedString(locale, key, args);
     }
 
     /**
@@ -242,6 +175,11 @@ public class Messager extends Log implements DocErrorReporter {
      * @param msg message to print
      */
     public void printError(SourcePosition pos, String msg) {
+        if (diagListener != null) {
+            report(DiagnosticType.ERROR, pos, msg);
+            return;
+        }
+
         if (nerrors < MaxErrors) {
             String prefix = (pos == null) ? programName : pos.toString();
             errWriter.println(prefix + ": " + getText("javadoc.error") + " - " + msg);
@@ -269,6 +207,11 @@ public class Messager extends Log implements DocErrorReporter {
      * @param msg message to print
      */
     public void printWarning(SourcePosition pos, String msg) {
+        if (diagListener != null) {
+            report(DiagnosticType.WARNING, pos, msg);
+            return;
+        }
+
         if (nwarnings < MaxWarnings) {
             String prefix = (pos == null) ? programName : pos.toString();
             warnWriter.println(prefix +  ": " + getText("javadoc.warning") +" - " + msg);
@@ -295,6 +238,11 @@ public class Messager extends Log implements DocErrorReporter {
      * @param msg message to print
      */
     public void printNotice(SourcePosition pos, String msg) {
+        if (diagListener != null) {
+            report(DiagnosticType.NOTE, pos, msg);
+            return;
+        }
+
         if (pos == null)
             noticeWriter.println(msg);
         else
@@ -307,41 +255,8 @@ public class Messager extends Log implements DocErrorReporter {
      *
      * @param key selects message from resource
      */
-    public void error(SourcePosition pos, String key) {
-        printError(pos, getText(key));
-    }
-
-    /**
-     * Print error message, increment error count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     */
-    public void error(SourcePosition pos, String key, String a1) {
-        printError(pos, getText(key, a1));
-    }
-
-    /**
-     * Print error message, increment error count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     * @param a2 second argument
-     */
-    public void error(SourcePosition pos, String key, String a1, String a2) {
-        printError(pos, getText(key, a1, a2));
-    }
-
-    /**
-     * Print error message, increment error count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     * @param a2 second argument
-     * @param a3 third argument
-     */
-    public void error(SourcePosition pos, String key, String a1, String a2, String a3) {
-        printError(pos, getText(key, a1, a2, a3));
+    public void error(SourcePosition pos, String key, Object... args) {
+        printError(pos, getText(key, args));
     }
 
     /**
@@ -349,54 +264,8 @@ public class Messager extends Log implements DocErrorReporter {
      *
      * @param key selects message from resource
      */
-    public void warning(SourcePosition pos, String key) {
-        printWarning(pos, getText(key));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     */
-    public void warning(SourcePosition pos, String key, String a1) {
-        printWarning(pos, getText(key, a1));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     * @param a2 second argument
-     */
-    public void warning(SourcePosition pos, String key, String a1, String a2) {
-        printWarning(pos, getText(key, a1, a2));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     * @param a2 second argument
-     * @param a3 third argument
-     */
-    public void warning(SourcePosition pos, String key, String a1, String a2, String a3) {
-        printWarning(pos, getText(key, a1, a2, a3));
-    }
-
-    /**
-     * Print warning message, increment warning count.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     * @param a2 second argument
-     * @param a3 third argument
-     */
-    public void warning(SourcePosition pos, String key, String a1, String a2, String a3,
-                        String a4) {
-        printWarning(pos, getText(key, a1, a2, a3, a4));
+    public void warning(SourcePosition pos, String key, Object... args) {
+        printWarning(pos, getText(key, args));
     }
 
     /**
@@ -404,41 +273,8 @@ public class Messager extends Log implements DocErrorReporter {
      *
      * @param key selects message from resource
      */
-    public void notice(String key) {
-        printNotice(getText(key));
-    }
-
-    /**
-     * Print a message.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     */
-    public void notice(String key, String a1) {
-        printNotice(getText(key, a1));
-    }
-
-    /**
-     * Print a message.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     * @param a2 second argument
-     */
-    public void notice(String key, String a1, String a2) {
-        printNotice(getText(key, a1, a2));
-    }
-
-    /**
-     * Print a message.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     * @param a2 second argument
-     * @param a3 third argument
-     */
-    public void notice(String key, String a1, String a2, String a3) {
-        printNotice(getText(key, a1, a2, a3));
+    public void notice(String key, Object... args) {
+        printNotice(getText(key, args));
     }
 
     /**
@@ -476,4 +312,21 @@ public class Messager extends Log implements DocErrorReporter {
         throw new ExitJavadoc();
     }
 
+    private void report(DiagnosticType type, SourcePosition pos, String msg) {
+        switch (type) {
+            case ERROR:
+            case WARNING:
+                Object prefix = (pos == null) ? programName : pos;
+                report(javadocDiags.create(type, null, null, "msg", prefix, msg));
+                break;
+
+            case NOTE:
+                String key = (pos == null) ? "msg" : "pos.msg";
+                report(javadocDiags.create(type, null, null, key, pos, msg));
+                break;
+
+            default:
+                throw new IllegalArgumentException(type.toString());
+        }
+    }
 }

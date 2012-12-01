@@ -27,6 +27,7 @@ package com.sun.tools.javadoc;
 
 import java.io.IOException;
 import java.util.Locale;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
@@ -367,5 +368,12 @@ public class RootDocImpl extends DocImpl implements RootDoc {
      */
     public Locale getLocale() {
         return env.doclocale.locale;
+    }
+
+    /**
+     * Return the current file manager.
+     */
+    public JavaFileManager getFileManager() {
+        return env.fileManager;
     }
 }

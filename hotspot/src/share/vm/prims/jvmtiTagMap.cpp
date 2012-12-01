@@ -2774,7 +2774,7 @@ inline bool VM_HeapWalkOperation::iterate_over_array(oop o) {
 // a type array references its class
 inline bool VM_HeapWalkOperation::iterate_over_type_array(oop o) {
   Klass* k = o->klass();
-  oop mirror = Klass::cast(k)->java_mirror();
+  oop mirror = k->java_mirror();
   if (!CallbackInvoker::report_class_reference(o, mirror)) {
     return false;
   }
@@ -2823,7 +2823,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
     // super (only if something more interesting than java.lang.Object)
     Klass* java_super = ik->java_super();
     if (java_super != NULL && java_super != SystemDictionary::Object_klass()) {
-      oop super = Klass::cast(java_super)->java_mirror();
+      oop super = java_super->java_mirror();
       if (!CallbackInvoker::report_superclass_reference(mirror, super)) {
         return false;
       }
@@ -2865,7 +2865,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
             // If the entry is non-null it is resolved.
             if (entry == NULL) continue;
           } else {
-            entry = Klass::cast(pool->resolved_klass_at(i))->java_mirror();
+            entry = pool->resolved_klass_at(i)->java_mirror();
           }
           if (!CallbackInvoker::report_constant_pool_reference(mirror, entry, (jint)i)) {
             return false;
@@ -2879,7 +2879,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
     //  but are specified by IterateOverReachableObjects and must be reported).
     Array<Klass*>* interfaces = ik->local_interfaces();
     for (i = 0; i < interfaces->length(); i++) {
-      oop interf = Klass::cast((Klass*)interfaces->at(i))->java_mirror();
+      oop interf = ((Klass*)interfaces->at(i))->java_mirror();
       if (interf == NULL) {
         continue;
       }
@@ -2928,7 +2928,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
 // references from the class).
 inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
   // reference to the class
-  if (!CallbackInvoker::report_class_reference(o, Klass::cast(o->klass())->java_mirror())) {
+  if (!CallbackInvoker::report_class_reference(o, o->klass()->java_mirror())) {
     return false;
   }
 

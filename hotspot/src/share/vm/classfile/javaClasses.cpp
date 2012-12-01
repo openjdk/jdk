@@ -348,6 +348,22 @@ unsigned int java_lang_String::to_hash(oop java_string) {
   return java_lang_String::to_hash(value->char_at_addr(offset), length);
 }
 
+char* java_lang_String::as_quoted_ascii(oop java_string) {
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          offset = java_lang_String::offset(java_string);
+  int          length = java_lang_String::length(java_string);
+
+  jchar* base = (length == 0) ? NULL : value->char_at_addr(offset);
+  if (base == NULL) return NULL;
+
+  int result_length = UNICODE::quoted_ascii_length(base, length) + 1;
+  char* result = NEW_RESOURCE_ARRAY(char, result_length);
+  UNICODE::as_quoted_ascii(base, length, result, result_length);
+  assert(result_length >= length + 1, "must not be shorter");
+  assert(result_length == (int)strlen(result) + 1, "must match");
+  return result;
+}
+
 unsigned int java_lang_String::hash_string(oop java_string) {
   int          length = java_lang_String::length(java_string);
   // Zero length string doesn't hash necessarily hash to zero.
@@ -545,7 +561,7 @@ oop java_lang_Class::create_mirror(KlassHandle k, TRAPS) {
         assert(k->oop_is_objArray(), "Must be");
         Klass* element_klass = ObjArrayKlass::cast(k())->element_klass();
         assert(element_klass != NULL, "Must have an element klass");
-          comp_mirror = Klass::cast(element_klass)->java_mirror();
+          comp_mirror = element_klass->java_mirror();
       }
       assert(comp_mirror.not_null(), "must have a mirror");
 
@@ -628,8 +644,8 @@ void java_lang_Class::print_signature(oop java_class, outputStream* st) {
     name = vmSymbols::type_signature(primitive_type(java_class));
   } else {
     Klass* k = as_Klass(java_class);
-    is_instance = Klass::cast(k)->oop_is_instance();
-    name = Klass::cast(k)->name();
+    is_instance = k->oop_is_instance();
+    name = k->name();
   }
   if (name == NULL) {
     st->print("<null>");
@@ -651,12 +667,12 @@ Symbol* java_lang_Class::as_signature(oop java_class, bool intern_if_not_found, 
     name->increment_refcount();
   } else {
     Klass* k = as_Klass(java_class);
-    if (!Klass::cast(k)->oop_is_instance()) {
-      name = Klass::cast(k)->name();
+    if (!k->oop_is_instance()) {
+      name = k->name();
       name->increment_refcount();
     } else {
       ResourceMark rm;
-      const char* sigstr = Klass::cast(k)->signature_name();
+      const char* sigstr = k->signature_name();
       int         siglen = (int) strlen(sigstr);
       if (!intern_if_not_found) {
         name = SymbolTable::probe(sigstr, siglen);
@@ -671,13 +687,13 @@ Symbol* java_lang_Class::as_signature(oop java_class, bool intern_if_not_found, 
 
 Klass* java_lang_Class::array_klass(oop java_class) {
   Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
-  assert(k == NULL || k->is_klass() && Klass::cast(k)->oop_is_array(), "should be array klass");
+  assert(k == NULL || k->is_klass() && k->oop_is_array(), "should be array klass");
   return k;
 }
 
 
 void java_lang_Class::set_array_klass(oop java_class, Klass* klass) {
-  assert(klass->is_klass() && Klass::cast(klass)->oop_is_array(), "should be array klass");
+  assert(klass->is_klass() && klass->oop_is_array(), "should be array klass");
   java_class->metadata_field_put(_array_klass_offset, klass);
 }
 
@@ -1156,7 +1172,7 @@ void java_lang_Throwable::print(Handle throwable, outputStream* st) {
 // Print stack trace element to resource allocated buffer
 char* java_lang_Throwable::print_stack_element_to_buffer(Method* method, int bci) {
   // Get strings and string lengths
-  InstanceKlass* klass = InstanceKlass::cast(method->method_holder());
+  InstanceKlass* klass = method->method_holder();
   const char* klass_name  = klass->external_name();
   int buf_len = (int)strlen(klass_name);
   char* source_file_name;
@@ -1747,14 +1763,14 @@ oop java_lang_StackTraceElement::create(methodHandle method, int bci, TRAPS) {
   Handle element = ik->allocate_instance_handle(CHECK_0);
   // Fill in class name
   ResourceMark rm(THREAD);
-  const char* str = InstanceKlass::cast(method->method_holder())->external_name();
+  const char* str = method->method_holder()->external_name();
   oop classname = StringTable::intern((char*) str, CHECK_0);
   java_lang_StackTraceElement::set_declaringClass(element(), classname);
   // Fill in method name
   oop methodname = StringTable::intern(method->name(), CHECK_0);
   java_lang_StackTraceElement::set_methodName(element(), methodname);
   // Fill in source file name
-  Symbol* source = InstanceKlass::cast(method->method_holder())->source_file_name();
+  Symbol* source = method->method_holder()->source_file_name();
   if (ShowHiddenFrames && source == NULL)
     source = vmSymbols::unknown_class_name();
   oop filename = StringTable::intern(source, CHECK_0);

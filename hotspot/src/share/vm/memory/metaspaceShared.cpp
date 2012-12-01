@@ -431,7 +431,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 }
 
 static void link_shared_classes(Klass* obj, TRAPS) {
-  Klass* k = Klass::cast(obj);
+  Klass* k = obj;
   if (k->oop_is_instance()) {
     InstanceKlass* ik = (InstanceKlass*) k;
     // Link the class to cause the bytecodes to be rewritten and the

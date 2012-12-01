@@ -28,9 +28,13 @@ package com.sun.tools.doclets.formats.html;
 import java.net.*;
 import java.util.*;
 
+import javax.tools.JavaFileManager;
+
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.util.Context;
 
 /**
  * Configure the output based on the command line options.
@@ -56,8 +60,6 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Bhavesh Patel (Modified)
  */
 public class ConfigurationImpl extends Configuration {
-
-    private static ConfigurationImpl instance = new ConfigurationImpl();
 
     /**
      * The build date.  Note: For now, we will use
@@ -183,34 +185,21 @@ public class ConfigurationImpl extends Configuration {
     /**
      * The classdoc for the class file getting generated.
      */
-    public ClassDoc currentcd = null;  // Set this classdoc in the
-    // ClassWriter.
+    public ClassDoc currentcd = null;  // Set this classdoc in the ClassWriter.
 
     /**
      * Constructor. Initializes resource for the
      * {@link com.sun.tools.doclets.internal.toolkit.util.MessageRetriever MessageRetriever}.
      */
-    private ConfigurationImpl() {
+    public ConfigurationImpl() {
         standardmessage = new MessageRetriever(this,
             "com.sun.tools.doclets.formats.html.resources.standard");
     }
 
     /**
-     * Reset to a fresh new ConfigurationImpl, to allow multiple invocations
-     * of javadoc within a single VM. It would be better not to be using
-     * static fields at all, but .... (sigh).
-     */
-    public static void reset() {
-        instance = new ConfigurationImpl();
-    }
-
-    public static ConfigurationImpl getInstance() {
-        return instance;
-    }
-
-    /**
      * Return the build date for the doclet.
      */
+    @Override
     public String getDocletSpecificBuildDate() {
         return BUILD_DATE;
     }
@@ -221,6 +210,7 @@ public class ConfigurationImpl extends Configuration {
      *
      * @param options The array of option names and values.
      */
+    @Override
     public void setSpecificDocletOptions(String[][] options) {
         for (int oi = 0; oi < options.length; ++oi) {
             String[] os = options[oi];
@@ -339,6 +329,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean validOptions(String options[][],
             DocErrorReporter reporter) {
         boolean helpfile = false;
@@ -427,6 +418,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public MessageRetriever getDocletSpecificMsg() {
         return standardmessage;
     }
@@ -496,6 +488,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public WriterFactory getWriterFactory() {
         return new WriterFactoryImpl(this);
     }
@@ -503,6 +496,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Comparator<ProgramElementDoc> getMemberComparator() {
         return null;
     }
@@ -510,10 +504,27 @@ public class ConfigurationImpl extends Configuration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Locale getLocale() {
         if (root instanceof com.sun.tools.javadoc.RootDocImpl)
             return ((com.sun.tools.javadoc.RootDocImpl)root).getLocale();
         else
             return Locale.getDefault();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public JavaFileManager getFileManager() {
+        if (fileManager == null) {
+            if (root instanceof com.sun.tools.javadoc.RootDocImpl)
+                fileManager = ((com.sun.tools.javadoc.RootDocImpl)root).getFileManager();
+            else
+                fileManager = new JavacFileManager(new Context(), false, null);
+        }
+        return fileManager;
+    }
+
+    private JavaFileManager fileManager;
 }

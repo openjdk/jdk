@@ -33,24 +33,29 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.ServiceLoader;
 import java.util.Set;
+
+import javax.annotation.processing.Processor;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
-import javax.annotation.processing.Processor;
 
+import com.sun.source.util.JavacTask;
+import com.sun.source.util.Plugin;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.Log.WriterKind;
-import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
-
+import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Log.PrefixKind;
+import com.sun.tools.javac.util.Log.WriterKind;
 import static com.sun.tools.javac.main.Option.*;
 
-/** This class provides a commandline interface to the GJC compiler.
+/** This class provides a command line interface to the javac compiler.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -423,6 +428,42 @@ public class Main {
             if (batchMode)
                 CacheFSInfo.preRegister(context);
 
+            // invoke any available plugins
+            String plugins = options.get(PLUGIN);
+            if (plugins != null) {
+                JavacProcessingEnvironment pEnv = JavacProcessingEnvironment.instance(context);
+                ClassLoader cl = pEnv.getProcessorClassLoader();
+                ServiceLoader<Plugin> sl = ServiceLoader.load(Plugin.class, cl);
+                Set<List<String>> pluginsToCall = new LinkedHashSet<List<String>>();
+                for (String plugin: plugins.split("\\x00")) {
+                    pluginsToCall.add(List.from(plugin.split("\\s+")));
+                }
+                JavacTask task = null;
+                Iterator<Plugin> iter = sl.iterator();
+                while (iter.hasNext()) {
+                    Plugin plugin = iter.next();
+                    for (List<String> p: pluginsToCall) {
+                        if (plugin.getName().equals(p.head)) {
+                            pluginsToCall.remove(p);
+                            try {
+                                if (task == null)
+                                    task = JavacTask.instance(pEnv);
+                                plugin.call(task, p.tail.toArray(new String[p.tail.size()]));
+                            } catch (Throwable ex) {
+                                if (apiMode)
+                                    throw new RuntimeException(ex);
+                                pluginMessage(ex);
+                                return Result.SYSERR;
+                            }
+
+                        }
+                    }
+                }
+                for (List<String> p: pluginsToCall) {
+                    log.printLines(PrefixKind.JAVAC, "msg.plugin.not.found", p.head);
+                }
+            }
+
             fileManager = context.get(JavaFileManager.class);
 
             comp = JavaCompiler.instance(context);
@@ -533,8 +574,16 @@ public class Main {
      * annotation processor.
      */
     void apMessage(AnnotationProcessingError ex) {
-        log.printLines("msg.proc.annotation.uncaught.exception");
+        log.printLines(PrefixKind.JAVAC, "msg.proc.annotation.uncaught.exception");
         ex.getCause().printStackTrace(log.getWriter(WriterKind.NOTICE));
+    }
+
+    /** Print a message reporting an uncaught exception from an
+     * annotation processor.
+     */
+    void pluginMessage(Throwable ex) {
+        log.printLines(PrefixKind.JAVAC, "msg.plugin.uncaught.exception");
+        ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
     }
 
     /** Display the location and checksum of a class. */

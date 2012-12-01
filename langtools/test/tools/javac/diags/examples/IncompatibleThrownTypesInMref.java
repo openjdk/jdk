@@ -22,7 +22,6 @@
  */
 
 // key: compiler.err.incompatible.thrown.types.in.mref
-// options: -XDallowMethodReferences
 
 class IncompatibleThrownTypesInMref {
     interface SAM {

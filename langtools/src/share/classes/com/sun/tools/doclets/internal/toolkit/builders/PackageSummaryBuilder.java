@@ -52,40 +52,47 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * The package being documented.
      */
-    private PackageDoc packageDoc;
+    private final PackageDoc packageDoc;
 
     /**
      * The doclet specific writer that will output the result.
      */
-    private PackageSummaryWriter packageWriter;
+    private final PackageSummaryWriter packageWriter;
 
     /**
      * The content that will be added to the package summary documentation tree.
      */
     private Content contentTree;
 
-    private PackageSummaryBuilder(Configuration configuration) {
-        super(configuration);
+    /**
+     * Construct a new PackageSummaryBuilder.
+     *
+     * @param context  the build context.
+     * @param pkg the package being documented.
+     * @param packageWriter the doclet specific writer that will output the
+     *        result.
+     */
+    private PackageSummaryBuilder(Context context,
+            PackageDoc pkg,
+            PackageSummaryWriter packageWriter) {
+        super(context);
+        this.packageDoc = pkg;
+        this.packageWriter = packageWriter;
     }
 
     /**
      * Construct a new PackageSummaryBuilder.
-     * @param configuration the current configuration of the doclet.
+     *
+     * @param context  the build context.
      * @param pkg the package being documented.
      * @param packageWriter the doclet specific writer that will output the
      *        result.
      *
      * @return an instance of a PackageSummaryBuilder.
      */
-    public static PackageSummaryBuilder getInstance(
-        Configuration configuration,
-        PackageDoc pkg,
-        PackageSummaryWriter packageWriter) {
-        PackageSummaryBuilder builder =
-                new PackageSummaryBuilder(configuration);
-        builder.packageDoc = pkg;
-        builder.packageWriter = packageWriter;
-        return builder;
+    public static PackageSummaryBuilder getInstance(Context context,
+            PackageDoc pkg, PackageSummaryWriter packageWriter) {
+        return new PackageSummaryBuilder(context, pkg, packageWriter);
     }
 
     /**
@@ -96,7 +103,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
             //Doclet does not support this output.
             return;
         }
-        build(LayoutParser.getInstance(configuration).parseXML(ROOT), contentTree);
+        build(layoutParser.parseXML(ROOT), contentTree);
     }
 
     /**

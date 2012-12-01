@@ -231,8 +231,8 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
 
 
 void ConstantPoolCacheEntry::set_interface_call(methodHandle method, int index) {
-  Klass* interf = method->method_holder();
-  assert(InstanceKlass::cast(interf)->is_interface(), "must be an interface");
+  InstanceKlass* interf = method->method_holder();
+  assert(interf->is_interface(), "must be an interface");
   assert(!method->is_final_method(), "interfaces do not have final methods; cannot link to one here");
   set_f1(interf);
   set_f2(index);
@@ -243,25 +243,17 @@ void ConstantPoolCacheEntry::set_interface_call(methodHandle method, int index) 
 }
 
 
-void ConstantPoolCacheEntry::set_method_handle(constantPoolHandle cpool,
-                                               methodHandle adapter,
-                                               Handle appendix, Handle method_type,
-                                               objArrayHandle resolved_references) {
-  set_method_handle_common(cpool, Bytecodes::_invokehandle, adapter, appendix, method_type, resolved_references);
+void ConstantPoolCacheEntry::set_method_handle(constantPoolHandle cpool, const CallInfo &call_info) {
+  set_method_handle_common(cpool, Bytecodes::_invokehandle, call_info);
 }
 
-void ConstantPoolCacheEntry::set_dynamic_call(constantPoolHandle cpool,
-                                              methodHandle adapter,
-                                              Handle appendix, Handle method_type,
-                                              objArrayHandle resolved_references) {
-  set_method_handle_common(cpool, Bytecodes::_invokedynamic, adapter, appendix, method_type, resolved_references);
+void ConstantPoolCacheEntry::set_dynamic_call(constantPoolHandle cpool, const CallInfo &call_info) {
+  set_method_handle_common(cpool, Bytecodes::_invokedynamic, call_info);
 }
 
 void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
                                                       Bytecodes::Code invoke_code,
-                                                      methodHandle adapter,
-                                                      Handle appendix, Handle method_type,
-                                                      objArrayHandle resolved_references) {
+                                                      const CallInfo &call_info) {
   // NOTE: This CPCE can be the subject of data races.
   // There are three words to update: flags, refs[f2], f1 (in that order).
   // Writers must store all other values before f1.
@@ -276,6 +268,9 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
     return;
   }
 
+  const methodHandle adapter = call_info.resolved_method();
+  const Handle appendix      = call_info.resolved_appendix();
+  const Handle method_type   = call_info.resolved_method_type();
   const bool has_appendix    = appendix.not_null();
   const bool has_method_type = method_type.not_null();
 
@@ -315,6 +310,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   // This allows us to create fewer method oops, while keeping type safety.
   //
 
+  objArrayHandle resolved_references = cpool->resolved_references();
   // Store appendix, if any.
   if (has_appendix) {
     const int appendix_index = f2_as_index() + _indy_resolved_references_appendix_offset;
@@ -375,7 +371,7 @@ Method* ConstantPoolCacheEntry::method_if_resolved(constantPoolHandle cpool) {
         int holder_index = cpool->uncached_klass_ref_index_at(constant_pool_index());
         if (cpool->tag_at(holder_index).is_klass()) {
           Klass* klass = cpool->resolved_klass_at(holder_index);
-          if (!Klass::cast(klass)->oop_is_instance())
+          if (!klass->oop_is_instance())
             klass = SystemDictionary::Object_klass();
           return InstanceKlass::cast(klass)->method_at_vtable(f2_as_index());
         }
@@ -421,7 +417,7 @@ bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
         if (!(*trace_name_printed)) {
           // RC_TRACE_MESG macro has an embedded ResourceMark
           RC_TRACE_MESG(("adjust: name=%s",
-            Klass::cast(old_method->method_holder())->external_name()));
+            old_method->method_holder()->external_name()));
           *trace_name_printed = true;
         }
         // RC_TRACE macro has an embedded ResourceMark
@@ -449,7 +445,7 @@ bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
       if (!(*trace_name_printed)) {
         // RC_TRACE_MESG macro has an embedded ResourceMark
         RC_TRACE_MESG(("adjust: name=%s",
-          Klass::cast(old_method->method_holder())->external_name()));
+          old_method->method_holder()->external_name()));
         *trace_name_printed = true;
       }
       // RC_TRACE macro has an embedded ResourceMark

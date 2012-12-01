@@ -422,12 +422,6 @@ class Klass : public Metadata {
   // if not, throw either an Error or an Exception.
   virtual void check_valid_for_instantiation(bool throwError, TRAPS);
 
-  // Casting
-  static Klass* cast(Klass* k) {
-    assert(k->is_klass(), "cast to Klass");
-    return k;
-  }
-
   // array copying
   virtual void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
 
