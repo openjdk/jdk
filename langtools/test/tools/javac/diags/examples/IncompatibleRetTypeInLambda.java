@@ -24,7 +24,6 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.inconvertible.types
 // key: compiler.misc.incompatible.ret.type.in.lambda
-// options: -XDallowLambda -XDallowPoly
 
 class IncompatibleRetTypeInLambda {
     interface SAM {

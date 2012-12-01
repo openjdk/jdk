@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
+import java.util.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
@@ -77,13 +78,68 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      *
      * @param mw the writer for the member being documented
      * @param cd the classdoc to be documented
+     * @param tableContents list of summary table contents
+     * @param showTabs true if the table needs to show tabs
      * @return the content tree for the summary table
      */
-    public Content getSummaryTableTree(AbstractMemberWriter mw, ClassDoc cd) {
+    public Content getSummaryTableTree(AbstractMemberWriter mw, ClassDoc cd,
+            List<Content> tableContents, boolean showTabs) {
+        Content caption;
+        if (showTabs) {
+            caption = getTableCaption(mw.methodTypes);
+            generateMethodTypesScript(mw.typeMap, mw.methodTypes);
+        }
+        else {
+            caption = getTableCaption(mw.getCaption());
+        }
         Content table = HtmlTree.TABLE(HtmlStyle.overviewSummary, 0, 3, 0,
-                mw.getTableSummary(), getTableCaption(mw.getCaption()));
+                mw.getTableSummary(), caption);
         table.addContent(getSummaryTableHeader(mw.getSummaryTableHeader(cd), "col"));
+        for (int i = 0; i < tableContents.size(); i++) {
+            table.addContent(tableContents.get(i));
+        }
         return table;
+    }
+
+    /**
+     * Get the summary table caption.
+     *
+     * @param methodTypes set comprising of method types to show as table caption
+     * @return the caption for the summary table
+     */
+    public Content getTableCaption(Set<MethodTypes> methodTypes) {
+        Content tabbedCaption = new HtmlTree(HtmlTag.CAPTION);
+        for (MethodTypes type : methodTypes) {
+            Content captionSpan;
+            Content span;
+            if (type.isDefaultTab()) {
+                captionSpan = HtmlTree.SPAN(new StringContent(type.text()));
+                span = HtmlTree.SPAN(type.tabId(),
+                        HtmlStyle.activeTableTab, captionSpan);
+            } else {
+                captionSpan = HtmlTree.SPAN(getMethodTypeLinks(type));
+                span = HtmlTree.SPAN(type.tabId(),
+                        HtmlStyle.tableTab, captionSpan);
+            }
+            Content tabSpan = HtmlTree.SPAN(HtmlStyle.tabEnd, getSpace());
+            span.addContent(tabSpan);
+            tabbedCaption.addContent(span);
+        }
+        return tabbedCaption;
+    }
+
+    /**
+     * Get the method type links for the table caption.
+     *
+     * @param methodType the method type to be displayed as link
+     * @return the content tree for the method type link
+     */
+    public Content getMethodTypeLinks(MethodTypes methodType) {
+        StringBuilder jsShow = new StringBuilder("javascript:show(");
+        jsShow.append(methodType.value()).append(");");
+        HtmlTree link = HtmlTree.A(jsShow.toString(),
+                new StringContent(methodType.text()));
+        return link;
     }
 
     /**

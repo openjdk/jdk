@@ -46,11 +46,13 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 
 public class TagletWriterImpl extends TagletWriter {
 
-    private HtmlDocletWriter htmlWriter;
+    private final HtmlDocletWriter htmlWriter;
+    private final ConfigurationImpl configuration;
 
     public TagletWriterImpl(HtmlDocletWriter htmlWriter, boolean isFirstSentence) {
+        super(isFirstSentence);
         this.htmlWriter = htmlWriter;
-        this.isFirstSentence = isFirstSentence;
+        configuration = htmlWriter.configuration;
     }
 
     /**
@@ -64,8 +66,8 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public TagletOutput getDocRootOutput() {
-        if (htmlWriter.configuration.docrootparent.length() > 0)
-            return new TagletOutputImpl(htmlWriter.configuration.docrootparent);
+        if (configuration.docrootparent.length() > 0)
+            return new TagletOutputImpl(configuration.docrootparent);
         else if (htmlWriter.pathToRoot.isEmpty())
             return new TagletOutputImpl(".");
         else
@@ -81,7 +83,7 @@ public class TagletWriterImpl extends TagletWriter {
         if (doc instanceof ClassDoc) {
             if (Util.isDeprecated((ProgramElementDoc) doc)) {
                 output.append("<span class=\"strong\">" +
-                    ConfigurationImpl.getInstance().
+                    configuration.
                         getText("doclet.Deprecated") + "</span>&nbsp;");
                 if (deprs.length > 0) {
                     Tag[] commentTags = deprs[0].inlineTags();
@@ -97,7 +99,7 @@ public class TagletWriterImpl extends TagletWriter {
             MemberDoc member = (MemberDoc) doc;
             if (Util.isDeprecated((ProgramElementDoc) doc)) {
                 output.append("<span class=\"strong\">" +
-                    ConfigurationImpl.getInstance().
+                    configuration.
                             getText("doclet.Deprecated") + "</span>&nbsp;");
                 if (deprs.length > 0) {
                     output.append("<i>");
@@ -108,7 +110,7 @@ public class TagletWriterImpl extends TagletWriter {
             } else {
                 if (Util.isDeprecated(member.containingClass())) {
                     output.append("<span class=\"strong\">" +
-                    ConfigurationImpl.getInstance().
+                    configuration.
                             getText("doclet.Deprecated") + "</span>&nbsp;");
                 }
             }
@@ -120,7 +122,7 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public MessageRetriever getMsgRetriever() {
-        return htmlWriter.configuration.message;
+        return configuration.message;
     }
 
     /**
@@ -147,7 +149,7 @@ public class TagletWriterImpl extends TagletWriter {
      */
     public TagletOutput returnTagOutput(Tag returnTag) {
         TagletOutput result = new TagletOutputImpl(DocletConstants.NL + "<dt>" +
-            "<span class=\"strong\">" + htmlWriter.configuration.getText("doclet.Returns") +
+            "<span class=\"strong\">" + configuration.getText("doclet.Returns") +
             "</span>" + "</dt>" + "<dd>" +
             htmlWriter.commentTagsToString(returnTag, null, returnTag.inlineTags(),
             false) + "</dd>");
@@ -178,7 +180,7 @@ public class TagletWriterImpl extends TagletWriter {
                     ((ClassWriterImpl) htmlWriter).getClassDoc().qualifiedName() + "." + ((FieldDoc) holder).name();
             DocLink link = constantsPath.fragment(whichConstant);
             result += htmlWriter.getHyperLinkString(link,
-                    htmlWriter.configuration.getText("doclet.Constants_Summary"),
+                    configuration.getText("doclet.Constants_Summary"),
                     false);
         }
         if (holder.isClass() && ((ClassDoc)holder).isSerializable()) {
@@ -189,7 +191,7 @@ public class TagletWriterImpl extends TagletWriter {
                 DocPath serialPath = htmlWriter.pathToRoot.resolve(DocPaths.SERIALIZED_FORM);
                 DocLink link = serialPath.fragment(((ClassDoc)holder).qualifiedName());
                 result += htmlWriter.getHyperLinkString(link,
-                        htmlWriter.configuration.getText("doclet.Serialized_Form"), false);
+                        configuration.getText("doclet.Serialized_Form"), false);
             }
         }
         return result.equals("") ? null : new TagletOutputImpl(result + "</dd>");
@@ -200,7 +202,7 @@ public class TagletWriterImpl extends TagletWriter {
             return result + ", " + DocletConstants.NL;
         } else {
             return "<dt><span class=\"strong\">" +
-                    htmlWriter.configuration().getText("doclet.See_Also") + "</span></dt><dd>";
+                    configuration.getText("doclet.See_Also") + "</span></dt><dd>";
         }
      }
 
@@ -234,7 +236,7 @@ public class TagletWriterImpl extends TagletWriter {
      */
     public TagletOutput getThrowsHeader() {
         return new TagletOutputImpl(DocletConstants.NL + "<dt>" + "<span class=\"strong\">" +
-            htmlWriter.configuration().getText("doclet.Throws") + "</span></dt>");
+            configuration.getText("doclet.Throws") + "</span></dt>");
     }
 
     /**
@@ -245,7 +247,7 @@ public class TagletWriterImpl extends TagletWriter {
         result += throwsTag.exceptionType() == null ?
             htmlWriter.codeText(throwsTag.exceptionName()) :
             htmlWriter.codeText(
-                htmlWriter.getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER,
+                htmlWriter.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_MEMBER,
                 throwsTag.exceptionType())));
         TagletOutput text = new TagletOutputImpl(
             htmlWriter.commentTagsToString(throwsTag, null,
@@ -263,7 +265,7 @@ public class TagletWriterImpl extends TagletWriter {
     public TagletOutput throwsTagOutput(Type throwsType) {
         return new TagletOutputImpl(DocletConstants.NL + "<dd>" +
             htmlWriter.codeText(htmlWriter.getLink(
-                new LinkInfoImpl(LinkInfoImpl.CONTEXT_MEMBER, throwsType))) + "</dd>");
+                new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_MEMBER, throwsType))) + "</dd>");
     }
 
     /**
@@ -303,7 +305,7 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public Configuration configuration() {
-        return htmlWriter.configuration();
+        return configuration;
     }
 
     /**

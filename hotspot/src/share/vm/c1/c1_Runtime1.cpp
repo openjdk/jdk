@@ -374,7 +374,7 @@ JRT_END
 
 JRT_ENTRY(void, Runtime1::throw_array_store_exception(JavaThread* thread, oopDesc* obj))
   ResourceMark rm(thread);
-  const char* klass_name = Klass::cast(obj->klass())->external_name();
+  const char* klass_name = obj->klass()->external_name();
   SharedRuntime::throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_ArrayStoreException(), klass_name);
 JRT_END
 
@@ -631,7 +631,7 @@ JRT_ENTRY(void, Runtime1::throw_class_cast_exception(JavaThread* thread, oopDesc
   NOT_PRODUCT(_throw_class_cast_exception_count++;)
   ResourceMark rm(thread);
   char* message = SharedRuntime::generate_class_cast_message(
-    thread, Klass::cast(object->klass())->external_name());
+    thread, object->klass()->external_name());
   SharedRuntime::throw_and_post_jvmti_exception(
     thread, vmSymbols::java_lang_ClassCastException(), message);
 JRT_END
@@ -876,7 +876,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
       case Bytecodes::_anewarray:
         { Bytecode_anewarray anew(caller_method(), caller_method->bcp_from(bci));
           Klass* ek = caller_method->constants()->klass_at(anew.index(), CHECK);
-          k = Klass::cast(ek)->array_klass(CHECK);
+          k = ek->array_klass(CHECK);
         }
         break;
       case Bytecodes::_ldc:
@@ -1236,7 +1236,7 @@ template <class T> int obj_arraycopy_work(oopDesc* src, T* src_addr,
   } else {
     Klass* bound = ObjArrayKlass::cast(dst->klass())->element_klass();
     Klass* stype = ObjArrayKlass::cast(src->klass())->element_klass();
-    if (stype == bound || Klass::cast(stype)->is_subtype_of(bound)) {
+    if (stype == bound || stype->is_subtype_of(bound)) {
       // Elements are guaranteed to be subtypes, so no check necessary
       bs->write_ref_array_pre(dst_addr, length);
       Copy::conjoint_oops_atomic(src_addr, dst_addr, length);

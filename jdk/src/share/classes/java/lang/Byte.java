@@ -389,7 +389,20 @@ public final class Byte extends Number implements Comparable<Byte> {
      *
      * @return a hash code value for this {@code Byte}
      */
+    @Override
     public int hashCode() {
+        return Byte.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code byte} value; compatible with
+     * {@code Byte.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code byte} value.
+     */
+    public static int hashCode(byte value) {
         return (int)value;
     }
 
@@ -493,6 +506,14 @@ public final class Byte extends Number implements Comparable<Byte> {
      * @since 1.5
      */
     public static final int SIZE = 8;
+
+    /**
+     * The number of bytes used to represent a {@code byte} value in two's
+     * complement binary form.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
     private static final long serialVersionUID = -7183698231559129828L;

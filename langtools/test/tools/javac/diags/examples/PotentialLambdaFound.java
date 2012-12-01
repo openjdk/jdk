@@ -22,7 +22,7 @@
  */
 
 // key: compiler.note.potential.lambda.found
-// options: -XDallowLambda -XDidentifyLambdaCandidate=true
+// options: -XDidentifyLambdaCandidate=true
 
 class PotentialLambdaFound {
 

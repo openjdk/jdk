@@ -502,7 +502,7 @@ public class Lower extends TreeTranslator {
         JCNewClass tree = make.NewClass(null,
             null, make.QualIdent(ctype.tsym), args, null);
         tree.constructor = rs.resolveConstructor(
-            make_pos, attrEnv, ctype, TreeInfo.types(args), null, false, false);
+            make_pos, attrEnv, ctype, TreeInfo.types(args), List.<Type>nil());
         tree.type = ctype;
         return tree;
     }
@@ -682,7 +682,7 @@ public class Lower extends TreeTranslator {
     /** Look up a method in a given scope.
      */
     private MethodSymbol lookupMethod(DiagnosticPosition pos, Name name, Type qual, List<Type> args) {
-        return rs.resolveInternalMethod(pos, attrEnv, qual, name, args, null);
+        return rs.resolveInternalMethod(pos, attrEnv, qual, name, args, List.<Type>nil());
     }
 
     /** Look up a constructor.
@@ -3631,15 +3631,26 @@ public class Lower extends TreeTranslator {
 
     public void visitSelect(JCFieldAccess tree) {
         // need to special case-access of the form C.super.x
-        // these will always need an access method.
+        // these will always need an access method, unless C
+        // is a default interface subclassed by the current class.
         boolean qualifiedSuperAccess =
             tree.selected.hasTag(SELECT) &&
-            TreeInfo.name(tree.selected) == names._super;
+            TreeInfo.name(tree.selected) == names._super &&
+            !types.isDirectSuperInterface(((JCFieldAccess)tree.selected).selected.type.tsym, currentClass);
         tree.selected = translate(tree.selected);
-        if (tree.name == names._class)
+        if (tree.name == names._class) {
             result = classOf(tree.selected);
-        else if (tree.name == names._this || tree.name == names._super)
+        }
+        else if (tree.name == names._super &&
+                types.isDirectSuperInterface(tree.selected.type.tsym, currentClass)) {
+            //default super call!! Not a classic qualified super call
+            TypeSymbol supSym = tree.selected.type.tsym;
+            Assert.checkNonNull(types.asSuper(currentClass.type, supSym));
+            result = tree;
+        }
+        else if (tree.name == names._this || tree.name == names._super) {
             result = makeThis(tree.pos(), tree.selected.type.tsym);
+        }
         else
             result = access(tree.sym, tree, enclOp, qualifiedSuperAccess);
     }

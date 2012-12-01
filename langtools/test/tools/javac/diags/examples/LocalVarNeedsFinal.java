@@ -22,6 +22,7 @@
  */
 
 // key: compiler.err.local.var.accessed.from.icls.needs.final
+// options: -Xlint:-options -source 7
 
 class LocalVarNeedsFinal {
     Runnable m() {

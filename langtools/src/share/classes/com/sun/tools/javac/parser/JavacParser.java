@@ -47,8 +47,8 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.EQ;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.GT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LT;
-import static com.sun.tools.javac.util.ListBuffer.lb;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import static com.sun.tools.javac.util.ListBuffer.lb;
 
 /** The parser maps a token sequence into an abstract syntax
  *  tree. It operates by recursive descent, with code derived
@@ -88,6 +88,15 @@ public class JavacParser implements Parser {
     /** End position mappings container */
     private final AbstractEndPosTable endPosTable;
 
+    interface ErrorRecoveryAction {
+        JCTree doRecover(JavacParser parser);
+    }
+
+    enum BasicErrorRecoveryAction implements ErrorRecoveryAction {
+        BLOCK_STMT {public JCTree doRecover(JavacParser parser) { return parser.parseStatementAsBlock(); }},
+        CATCH_CLAUSE {public JCTree doRecover(JavacParser parser) { return parser.catchClause(); }}
+    }
+
     /** Construct a parser from a given scanner, tree factory and log.
      */
     protected JavacParser(ParserFactory fac,
@@ -112,14 +121,11 @@ public class JavacParser implements Parser {
         this.allowDiamond = source.allowDiamond();
         this.allowMulticatch = source.allowMulticatch();
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
-        this.allowLambda = source.allowLambda() &&
-                fac.options.isSet("allowLambda"); //pre-lambda guard
-        this.allowMethodReferences = source.allowMethodReferences() &&
-                fac.options.isSet("allowMethodReferences"); //pre-lambda guard
-        this.allowDefaultMethods = source.allowDefaultMethods() &&
-                fac.options.isSet("allowDefaultMethods"); //pre-lambda guard
+        this.allowLambda = source.allowLambda();
+        this.allowMethodReferences = source.allowMethodReferences();
+        this.allowDefaultMethods = source.allowDefaultMethods();
         this.keepDocComments = keepDocComments;
-        docComments = newDocCommentTable(keepDocComments);
+        docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
         this.errorTree = F.Erroneous();
         endPosTable = newEndPosTable(keepEndPositions);
@@ -131,8 +137,8 @@ public class JavacParser implements Parser {
                 : new EmptyEndPosTable();
     }
 
-    protected DocCommentTable newDocCommentTable(boolean keepDocComments) {
-        return keepDocComments ? new SimpleDocCommentTable() : null;
+    protected DocCommentTable newDocCommentTable(boolean keepDocComments, ParserFactory fac) {
+        return keepDocComments ? new LazyDocCommentTable(fac) : null;
     }
 
     /** Switch: Should generics be recognized?
@@ -223,7 +229,11 @@ public class JavacParser implements Parser {
 
     protected Token token;
 
-    protected void nextToken() {
+    public Token token() {
+        return token;
+    }
+
+    public void nextToken() {
         S.nextToken();
         token = S.token();
     }
@@ -2102,11 +2112,15 @@ public class JavacParser implements Parser {
             nextToken();
             return toP(F.at(pos).Skip());
         case ELSE:
-            return toP(F.Exec(syntaxError("else.without.if")));
+            int elsePos = token.pos;
+            nextToken();
+            return doRecover(elsePos, BasicErrorRecoveryAction.BLOCK_STMT, "else.without.if");
         case FINALLY:
-            return toP(F.Exec(syntaxError("finally.without.try")));
+            int finallyPos = token.pos;
+            nextToken();
+            return doRecover(finallyPos, BasicErrorRecoveryAction.BLOCK_STMT, "finally.without.try");
         case CATCH:
-            return toP(F.Exec(syntaxError("catch.without.try")));
+            return doRecover(token.pos, BasicErrorRecoveryAction.CATCH_CLAUSE, "catch.without.try");
         case ASSERT: {
             if (allowAsserts && token.kind == ASSERT) {
                 nextToken();
@@ -2137,6 +2151,13 @@ public class JavacParser implements Parser {
                 return stat;
             }
         }
+    }
+
+    private JCStatement doRecover(int startPos, ErrorRecoveryAction action, String key) {
+        int errPos = S.errPos();
+        JCTree stm = action.doRecover(this);
+        S.errPos(errPos);
+        return toP(F.Exec(syntaxError(startPos, List.<JCTree>of(stm), key)));
     }
 
     /** CatchClause     = CATCH "(" FormalParameter ")" Block

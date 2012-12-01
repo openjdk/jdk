@@ -228,7 +228,7 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
 
   write_attribute_name_index("Code");
   write_u4(size);
-  write_u2(method->max_stack());
+  write_u2(method->verifier_max_stack());
   write_u2(method->max_locals());
   write_u4(code_size);
   copy_bytecodes(method, (unsigned char*)writeable_address(code_size));
@@ -753,7 +753,7 @@ void JvmtiClassFileReconstituter::copy_bytecodes(methodHandle mh,
 
   unsigned char* p = bytecodes;
   Bytecodes::Code code;
-  bool is_rewritten = InstanceKlass::cast(mh->method_holder())->is_rewritten();
+  bool is_rewritten = mh->method_holder()->is_rewritten();
 
   while ((code = bs.next()) >= 0) {
     assert(Bytecodes::is_java_code(code), "sanity check");

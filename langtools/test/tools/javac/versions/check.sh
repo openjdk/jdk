@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 4981566 5028634 5094412 6304984 7025786 7025789
+# @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112
 # @summary Check interpretation of -target and -source options
 # @build CheckClassFileVersion
 # @run shell check.sh 
@@ -47,32 +47,39 @@ check() {
   "$JC" ${TESTTOOLVMOPTS} -d $TC $* $TC/X.java && "$J" $CFV $TC/X.class $V || exit 2
 }
 
+# check for all combinations of target values
+check_target() {
+  check $1 -source $2 -target $3
+  check $1 -source $2 -target 1.${3}
+}
+# check for all combinations of source and target values
+check_source_target() {
+  check_target $1 $2     $3
+  check_target $1 1.${2} $3
+}
+
 check 48.0 -source 1.4
 
 check 49.0 -source 1.4 -target 1.5
 check 49.0 -source 1.5 -target 1.5
 
-check 50.0 -source 1.4 -target 1.6
-check 50.0 -source 1.5 -target 1.6
-check 50.0 -source 1.6 -target 1.6
-check 50.0 -source 1.6 -target 6
-check 50.0 -source 6 -target 1.6
-check 50.0 -source 6 -target 6
+check_target        50.0 1.4 6
+check_target        50.0 1.5 6
+check_source_target 50.0 6   6
 
-check 51.0
-check 51.0 -source 1.5
-check 51.0 -source 1.6
-check 51.0 -source 6
-check 51.0 -source 1.7
-check 51.0 -source 7
-check 51.0 -source 7 -target 1.7
-check 51.0 -source 7 -target 7
+check_target        51.0 1.4 7
+check_target        51.0 1.5 7
+check_source_target 51.0 6   7
+check_source_target 51.0 7   7
 
-# Update when class file version is revved
-check 51.0 -source 1.8
-check 51.0 -source 8
-check 51.0 -target 1.8
-check 51.0 -target 8
+check_target        52.0 1.4 8
+check_target        52.0 1.5 8
+check_source_target 52.0 6   8
+check_source_target 52.0 7   8
+check_source_target 52.0 8   8
+
+# and finally the default with no options
+check 52.0
 
 # Check source versions
 
