@@ -1148,12 +1148,11 @@ static Method* new_method(
   int code_length = bytecodes->length();
 
   Method* m = Method::allocate(cp->pool_holder()->class_loader_data(),
-      code_length, flags, 0, 0, 0, 0, mt, CHECK_NULL);
+      code_length, flags, 0, 0, 0, 0, 0, mt, CHECK_NULL);
 
   m->set_constants(NULL); // This will get filled in later
   m->set_name_index(cp->utf8(name));
   m->set_signature_index(cp->utf8(sig));
-  m->set_generic_signature_index(0);
 #ifdef CC_INTERP
   ResultTypeFinder rtf(sig);
   m->set_result_index(rtf.type());

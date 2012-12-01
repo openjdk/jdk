@@ -27,6 +27,6 @@
 
 #include "os_windows.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
-#include "thread_windows.inline.hpp"
+#include "runtime/thread.inline.hpp"
 
 #endif // OS_WINDOWS_VM_MUTEX_WINDOWS_INLINE_HPP
