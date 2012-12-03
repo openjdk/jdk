@@ -3672,7 +3672,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1354106772
+DATE_WHEN_GENERATED=1354526713
 
 ###############################################################################
 #
@@ -16434,8 +16434,9 @@ $as_echo "present but broken" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      VS_INCLUDE="$INCLUDE"
-      VS_LIB="$LIB"
+      # Remove any trailing \ from INCLUDE and LIB to avoid trouble in spec.gmk.
+      VS_INCLUDE=`$ECHO "$INCLUDE" | $SED 's/\\\\$//'`
+      VS_LIB=`$ECHO "$LIB" | $SED 's/\\\\$//'`
       VS_PATH="$PATH"
 
 
