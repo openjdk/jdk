@@ -200,8 +200,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       AC_MSG_ERROR([Your VC command prompt seems broken, INCLUDE and/or LIB is missing.])
     else
       AC_MSG_RESULT([ok])
-      VS_INCLUDE="$INCLUDE"
-      VS_LIB="$LIB"
+      # Remove any trailing \ from INCLUDE and LIB to avoid trouble in spec.gmk.
+      VS_INCLUDE=`$ECHO "$INCLUDE" | $SED 's/\\\\$//'`
+      VS_LIB=`$ECHO "$LIB" | $SED 's/\\\\$//'`
       VS_PATH="$PATH"
       AC_SUBST(VS_INCLUDE)
       AC_SUBST(VS_LIB)
