@@ -777,6 +777,15 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
                                        full_gc_count,
                                        GCCause::_metadata_GC_threshold);
     VMThread::execute(&op);
+
+    // If GC was locked out, try again.  Check
+    // before checking success because the prologue
+    // could have succeeded and the GC still have
+    // been locked out.
+    if (op.gc_locked()) {
+      continue;
+    }
+
     if (op.prologue_succeeded()) {
       return op.result();
     }

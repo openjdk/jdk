@@ -2217,7 +2217,8 @@ class CommandLineFlags {
   develop(bool, TraceClassLoaderData, false,                                \
           "Trace class loader loader_data lifetime")                        \
                                                                             \
-  product(uintx, InitialBootClassLoaderMetaspaceSize, 3*M,                  \
+  product(uintx, InitialBootClassLoaderMetaspaceSize,                       \
+          NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
           "Initial size of the boot class loader data metaspace")           \
                                                                             \
   product(bool, TraceGen0Time, false,                                       \
