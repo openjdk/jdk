@@ -1,0 +1,2 @@
+RepeatingTargetNotAllowed.java:44:5: compiler.err.invalid.containedby.annotation.incompatible.target: Foos, Foo
+1 error

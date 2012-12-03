@@ -2892,39 +2892,54 @@ public class Check {
     }
 
     /** Check an annotation value.
+     *
+     * @param a The annotation tree to check
+     * @return true if this annotation tree is valid, otherwise false
      */
-    public void validateAnnotation(JCAnnotation a) {
-        // collect an inventory of the members (sorted alphabetically)
-        Set<MethodSymbol> members = new TreeSet<MethodSymbol>(new Comparator<Symbol>() {
-            public int compare(Symbol t, Symbol t1) {
-                return t.name.compareTo(t1.name);
-            }
-        });
+    public boolean validateAnnotationDeferErrors(JCAnnotation a) {
+        boolean res = false;
+        final Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
+        try {
+            res = validateAnnotation(a);
+        } finally {
+            log.popDiagnosticHandler(diagHandler);
+        }
+        return res;
+    }
+
+    private boolean validateAnnotation(JCAnnotation a) {
+        boolean isValid = true;
+        // collect an inventory of the annotation elements
+        Set<MethodSymbol> members = new LinkedHashSet<MethodSymbol>();
         for (Scope.Entry e = a.annotationType.type.tsym.members().elems;
              e != null;
              e = e.sibling)
             if (e.sym.kind == MTH)
                 members.add((MethodSymbol) e.sym);
 
-        // count them off as they're annotated
+        // remove the ones that are assigned values
         for (JCTree arg : a.args) {
             if (!arg.hasTag(ASSIGN)) continue; // recovery
             JCAssign assign = (JCAssign) arg;
             Symbol m = TreeInfo.symbol(assign.lhs);
             if (m == null || m.type.isErroneous()) continue;
-            if (!members.remove(m))
+            if (!members.remove(m)) {
+                isValid = false;
                 log.error(assign.lhs.pos(), "duplicate.annotation.member.value",
                           m.name, a.type);
+            }
         }
 
         // all the remaining ones better have default values
-        ListBuffer<Name> missingDefaults = ListBuffer.lb();
+        List<Name> missingDefaults = List.nil();
         for (MethodSymbol m : members) {
             if (m.defaultValue == null && !m.type.isErroneous()) {
-                missingDefaults.append(m.name);
+                missingDefaults = missingDefaults.append(m.name);
             }
         }
+        missingDefaults = missingDefaults.reverse();
         if (missingDefaults.nonEmpty()) {
+            isValid = false;
             String key = (missingDefaults.size() > 1)
                     ? "annotation.missing.default.value.1"
                     : "annotation.missing.default.value";
@@ -2935,21 +2950,23 @@ public class Check {
         // repeated values in its value member
         if (a.annotationType.type.tsym != syms.annotationTargetType.tsym ||
             a.args.tail == null)
-            return;
+            return isValid;
 
-        if (!a.args.head.hasTag(ASSIGN)) return; // error recovery
+        if (!a.args.head.hasTag(ASSIGN)) return false; // error recovery
         JCAssign assign = (JCAssign) a.args.head;
         Symbol m = TreeInfo.symbol(assign.lhs);
-        if (m.name != names.value) return;
+        if (m.name != names.value) return false;
         JCTree rhs = assign.rhs;
-        if (!rhs.hasTag(NEWARRAY)) return;
+        if (!rhs.hasTag(NEWARRAY)) return false;
         JCNewArray na = (JCNewArray) rhs;
         Set<Symbol> targets = new HashSet<Symbol>();
         for (JCTree elem : na.elems) {
             if (!targets.add(TreeInfo.symbol(elem))) {
+                isValid = false;
                 log.error(elem.pos(), "repeated.annotation.target");
             }
         }
+        return isValid;
     }
 
     void checkDeprecatedAnnotation(DiagnosticPosition pos, Symbol s) {
