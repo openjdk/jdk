@@ -79,14 +79,19 @@ class LibraryCallKit : public GraphKit {
       _intrinsic(intrinsic),
       _result(NULL)
   {
-    // Find out how many arguments the interpreter needs when deoptimizing
-    // and save the stack pointer value so it can used by uncommon_trap.
-    // We find the argument count by looking at the declared signature.
-    bool ignored_will_link;
-    ciSignature* declared_signature = NULL;
-    ciMethod* ignored_callee = caller()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
-    const int nargs = declared_signature->arg_size_for_bc(caller()->java_code_at_bci(bci()));
-    _reexecute_sp = sp() + nargs;  // "push" arguments back on stack
+    // Check if this is a root compile.  In that case we don't have a caller.
+    if (!jvms->has_method()) {
+      _reexecute_sp = sp();
+    } else {
+      // Find out how many arguments the interpreter needs when deoptimizing
+      // and save the stack pointer value so it can used by uncommon_trap.
+      // We find the argument count by looking at the declared signature.
+      bool ignored_will_link;
+      ciSignature* declared_signature = NULL;
+      ciMethod* ignored_callee = caller()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
+      const int nargs = declared_signature->arg_size_for_bc(caller()->java_code_at_bci(bci()));
+      _reexecute_sp = sp() + nargs;  // "push" arguments back on stack
+    }
   }
 
   virtual LibraryCallKit* is_LibraryCallKit() const { return (LibraryCallKit*)this; }
