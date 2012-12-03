@@ -21,14 +21,25 @@
  * questions.
  */
 
-// key: compiler.err.invalid.containedby.annotation.elem.nondefault
+/**
+ * @test
+ * @summary Container annotation is not checked for semantic correctness
+ * @bug 8001114
+ *
+ * @compile/fail/ref=RepeatingTargetNotAllowed.out -XDrawDiagnostics RepeatingTargetNotAllowed.java
+ */
 
 import java.lang.annotation.*;
 
-@ContainedBy(Annos.class)
-@interface Anno { }
+@ContainedBy(Foos.class)
+@interface Foo {}
 
-@ContainerFor(Anno.class)
-@interface Annos { Anno[] value(); String foo(); }
+@ContainerFor(Foo.class)
+@Target(ElementType.ANNOTATION_TYPE)
+@interface Foos {
+    Foo[] value();
+}
 
-class ContainedByNonDefault { }
+public class RepeatingTargetNotAllowed {
+    @Foo @Foo int f = 0;
+}
