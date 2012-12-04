@@ -31,12 +31,9 @@ import sun.lwawt.LWWindowPeer;
 import sun.java2d.opengl.CGLLayer;
 import sun.java2d.SurfaceData;
 
-import sun.awt.CGraphicsConfig;
-import sun.awt.CGraphicsDevice;
 import sun.awt.CausedFocusEvent;
 
 import java.awt.*;
-import java.awt.BufferCapabilities.FlipContents;
 
 import sun.util.logging.PlatformLogger;
 
@@ -110,22 +107,6 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
     @Override
     public SurfaceData replaceSurfaceData() {
         return windowLayer.replaceSurfaceData();
-    }
-
-    @Override
-    public Image createBackBuffer() {
-        Rectangle r = peer.getBounds();
-        Image im = null;
-        if (!r.isEmpty()) {
-            int transparency = peer.isTranslucent() ? Transparency.TRANSLUCENT : Transparency.OPAQUE;
-            im = peer.getGraphicsConfiguration().createCompatibleImage(r.width, r.height, transparency);
-        }
-        return im;
-    }
-
-    @Override
-    public void flip(int x1, int y1, int x2, int y2, FlipContents flipAction) {
-        throw new RuntimeException("Not implemented");
     }
 
     @Override
