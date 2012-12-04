@@ -363,9 +363,6 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
 
-# 8003596
-java/util/logging/CheckLockLocationTest.java			windows-all
-
 # 7041639, Solaris DSA keypair generation bug
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all
 
