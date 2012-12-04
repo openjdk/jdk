@@ -23,23 +23,26 @@
  * questions.
  */
 
-package sun.awt;
+import java.awt.Frame;
 
-/**
- * A GraphicsConfiguration implements the TextureSizeConstraining
- * interface to indicate that it imposes certain limitations on the
- * maximum size of supported textures.
- */
-public interface TextureSizeConstraining {
+/*
+  @test
+  @bug 7177173
+  @summary setBounds can cause StackOverflow in case of the considerable loading
+  @author Sergey Bylokhov
+*/
+public final class FrameSetSizeStressTest {
 
-    /**
-     * Returns the maximum width of any texture image.
-     */
-    public int getMaxTextureWidth();
-
-    /**
-     * Returns the maximum height of any texture image.
-     */
-    public int getMaxTextureHeight();
-
+    public static void main(final String[] args) {
+        final Frame frame = new Frame();
+        frame.setSize(200, 200);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+        for (int i = 0; i < 1000; ++i) {
+            frame.setSize(100, 100);
+            frame.setSize(200, 200);
+            frame.setSize(300, 300);
+        }
+        frame.dispose();
+    }
 }
