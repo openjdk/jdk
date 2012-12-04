@@ -4479,27 +4479,28 @@ public class BasicTreeUI extends TreeUI
                     }
                 }
                 Rectangle            newRect = ui.getPathBounds(tree, newPath);
+                if (newRect != null) {
+                    newRect.x = visRect.x;
+                    newRect.width = visRect.width;
+                    if(direction == -1) {
+                        newRect.height = visRect.height;
+                    }
+                    else {
+                        newRect.y -= (visRect.height - newRect.height);
+                        newRect.height = visRect.height;
+                    }
 
-                newRect.x = visRect.x;
-                newRect.width = visRect.width;
-                if(direction == -1) {
-                    newRect.height = visRect.height;
+                    if(addToSelection) {
+                        ui.extendSelection(newPath);
+                    }
+                    else if(changeSelection) {
+                        tree.setSelectionPath(newPath);
+                    }
+                    else {
+                        ui.setLeadSelectionPath(newPath, true);
+                    }
+                    tree.scrollRectToVisible(newRect);
                 }
-                else {
-                    newRect.y -= (visRect.height - newRect.height);
-                    newRect.height = visRect.height;
-                }
-
-                if(addToSelection) {
-                    ui.extendSelection(newPath);
-                }
-                else if(changeSelection) {
-                    tree.setSelectionPath(newPath);
-                }
-                else {
-                    ui.setLeadSelectionPath(newPath, true);
-                }
-                tree.scrollRectToVisible(newRect);
             }
         }
 
