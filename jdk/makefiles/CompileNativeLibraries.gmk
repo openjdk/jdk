@@ -1897,6 +1897,7 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
 		UnixAsynchronousServerSocketChannelImpl.c \
 		UnixAsynchronousSocketChannelImpl.c \
 		GnomeFileTypeDetector.c \
+		MagicFileTypeDetector.c \
 		LinuxNativeDispatcher.c \
 		LinuxWatchService.c \
 		UnixCopyFile.c \
