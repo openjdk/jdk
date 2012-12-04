@@ -37,6 +37,8 @@ SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
 JAVAC_MAX_WARNINGS=true
 include $(BUILDDIR)/common/Defs.gmk
 
+AUTO_FILES_JAVA_DIRS = java/util/function
+
 # windows compiler flags
 ifeq ($(PLATFORM),windows)
   OTHER_CFLAGS =
