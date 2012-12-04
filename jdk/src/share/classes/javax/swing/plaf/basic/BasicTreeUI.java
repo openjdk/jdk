@@ -1941,6 +1941,9 @@ public class BasicTreeUI extends TreeUI
                     for(int counter = beginRow + 1; counter <= endRow; counter++) {
                             testRect = getPathBounds(tree,
                                     getPathForRow(tree, counter));
+                        if (testRect == null) {
+                            return;
+                        }
                         if((testRect.y + testRect.height) > maxY)
                                 counter = endRow;
                             }
@@ -2069,7 +2072,7 @@ public class BasicTreeUI extends TreeUI
                 treeState.invalidatePathBounds(oldPath);
                 updateSize();
             }
-            else {
+            else if (editingBounds != null) {
                 editingBounds.x = 0;
                 editingBounds.width = tree.getSize().width;
                 tree.repaint(editingBounds);
@@ -2114,6 +2117,9 @@ public class BasicTreeUI extends TreeUI
                        tree.isPathSelected(path), tree.isExpanded(path),
                        treeModel.isLeaf(path.getLastPathComponent()), row);
                 Rectangle           nodeBounds = getPathBounds(tree, path);
+                if (nodeBounds == null) {
+                    return false;
+                }
 
                 editingRow = row;
 
@@ -2134,6 +2140,9 @@ public class BasicTreeUI extends TreeUI
                     // To make sure x/y are updated correctly, fetch
                     // the bounds again.
                     nodeBounds = getPathBounds(tree, path);
+                    if (nodeBounds == null) {
+                        return false;
+                    }
                 }
                 else
                     editorHasDifferentSize = false;
@@ -3570,7 +3579,7 @@ public class BasicTreeUI extends TreeUI
             if(pressedPath != null) {
                 Rectangle bounds = getPathBounds(tree, pressedPath);
 
-                if(e.getY() >= (bounds.y + bounds.height)) {
+                if (bounds == null || e.getY() >= (bounds.y + bounds.height)) {
                     return;
                 }
 
@@ -3832,6 +3841,10 @@ public class BasicTreeUI extends TreeUI
 
                     // And repaint
                     Rectangle newMinBounds = getPathBounds(tree, minPath);
+                    if (minBounds == null || newMinBounds == null) {
+                        return;
+                    }
+
                     if (indices.length == 1 &&
                             newMinBounds.height == minBounds.height) {
                         tree.repaint(0, minBounds.y, tree.getWidth(),
