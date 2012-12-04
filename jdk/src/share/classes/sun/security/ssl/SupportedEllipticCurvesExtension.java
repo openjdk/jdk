@@ -94,10 +94,12 @@ final class SupportedEllipticCurvesExtension extends HelloExtension {
         return curveIds;
     }
 
+    @Override
     int length() {
         return 6 + (curveIds.length << 1);
     }
 
+    @Override
     void send(HandshakeOutStream s) throws IOException {
         s.putInt16(type.id);
         int k = curveIds.length << 1;
@@ -108,6 +110,7 @@ final class SupportedEllipticCurvesExtension extends HelloExtension {
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Extension " + type + ", curve names: {");

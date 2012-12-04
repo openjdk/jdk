@@ -147,6 +147,7 @@ final class ProtocolList {
         return protocolNames.clone();
     }
 
+    @Override
     public String toString() {
         return protocols.toString();
     }

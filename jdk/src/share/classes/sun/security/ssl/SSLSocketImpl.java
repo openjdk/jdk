@@ -36,7 +36,6 @@ import java.security.AlgorithmConstraints;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
-import java.nio.charset.StandardCharsets;
 
 import javax.crypto.BadPaddingException;
 import javax.net.ssl.*;
@@ -626,6 +625,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * @throws  IOException if an error occurs during the connection
      * @throws  SocketTimeoutException if timeout expires before connecting
      */
+    @Override
     public void connect(SocketAddress endpoint, int timeout)
             throws IOException {
 
@@ -1357,6 +1357,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     /**
      * Starts an SSL handshake on this connection.
      */
+    @Override
     public void startHandshake() throws IOException {
         // start an ssl handshake that could be resumed from timeout exception
         startHandshake(true);
@@ -1481,6 +1482,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     /**
      * Return whether the socket has been explicitly closed by the application.
      */
+    @Override
     public boolean isClosed() {
         return getConnectionState() == cs_APP_CLOSED;
     }
@@ -1567,6 +1569,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * rather than leaving it for finalization, so that your remote
      * peer does not experience a protocol error.
      */
+    @Override
     public void close() throws IOException {
         if ((debug != null) && Debug.isOn("ssl")) {
             System.out.println(Thread.currentThread().getName() +
@@ -2155,6 +2158,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * Data read from this stream was always integrity protected in
      * transit, and will usually have been confidentiality protected.
      */
+    @Override
     synchronized public InputStream getInputStream() throws IOException {
         if (isClosed()) {
             throw new SocketException("Socket is closed");
@@ -2176,6 +2180,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * Data written on this stream is always integrity protected, and
      * will usually be confidentiality protected.
      */
+    @Override
     synchronized public OutputStream getOutputStream() throws IOException {
         if (isClosed()) {
             throw new SocketException("Socket is closed");
@@ -2197,6 +2202,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * be long lived, and frequently correspond to an entire login session
      * for some user.
      */
+    @Override
     public SSLSession getSession() {
         /*
          * Force a synchronous handshake, if appropriate.
@@ -2235,6 +2241,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * whether we enable session creations.  Otherwise,
      * we will need to wait for the next handshake.
      */
+    @Override
     synchronized public void setEnableSessionCreation(boolean flag) {
         enableSessionCreation = flag;
 
@@ -2247,6 +2254,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * Returns true if new connections may cause creation of new SSL
      * sessions.
      */
+    @Override
     synchronized public boolean getEnableSessionCreation() {
         return enableSessionCreation;
     }
@@ -2260,6 +2268,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * whether client authentication is needed.  Otherwise,
      * we will need to wait for the next handshake.
      */
+    @Override
     synchronized public void setNeedClientAuth(boolean flag) {
         doClientAuth = (flag ?
             SSLEngineImpl.clauth_required : SSLEngineImpl.clauth_none);
@@ -2271,6 +2280,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         }
     }
 
+    @Override
     synchronized public boolean getNeedClientAuth() {
         return (doClientAuth == SSLEngineImpl.clauth_required);
     }
@@ -2283,6 +2293,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * whether client authentication is requested.  Otherwise,
      * we will need to wait for the next handshake.
      */
+    @Override
     synchronized public void setWantClientAuth(boolean flag) {
         doClientAuth = (flag ?
             SSLEngineImpl.clauth_requested : SSLEngineImpl.clauth_none);
@@ -2294,6 +2305,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         }
     }
 
+    @Override
     synchronized public boolean getWantClientAuth() {
         return (doClientAuth == SSLEngineImpl.clauth_requested);
     }
@@ -2304,6 +2316,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * client or server mode.  Must be called before any SSL
      * traffic has started.
      */
+    @Override
     @SuppressWarnings("fallthrough")
     synchronized public void setUseClientMode(boolean flag) {
         switch (connectionState) {
@@ -2359,6 +2372,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         }
     }
 
+    @Override
     synchronized public boolean getUseClientMode() {
         return !roleIsServer;
     }
@@ -2374,6 +2388,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      *
      * @return an array of cipher suite names
      */
+    @Override
     public String[] getSupportedCipherSuites() {
         return sslContext.getSupportedCipherSuiteList().toStringArray();
     }
@@ -2387,6 +2402,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      *
      * @param suites Names of all the cipher suites to enable.
      */
+    @Override
     synchronized public void setEnabledCipherSuites(String[] suites) {
         enabledCipherSuites = new CipherSuiteList(suites);
         if ((handshaker != null) && !handshaker.activated()) {
@@ -2404,6 +2420,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      *
      * @return an array of cipher suite names
      */
+    @Override
     synchronized public String[] getEnabledCipherSuites() {
         return enabledCipherSuites.toStringArray();
     }
@@ -2414,6 +2431,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * A subset of the supported protocols may be enabled for this connection
      * @return an array of protocol names.
      */
+    @Override
     public String[] getSupportedProtocols() {
         return sslContext.getSuportedProtocolList().toStringArray();
     }
@@ -2427,6 +2445,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * @exception IllegalArgumentException when one of the protocols
      *  named by the parameter is not supported.
      */
+    @Override
     synchronized public void setEnabledProtocols(String[] protocols) {
         enabledProtocols = new ProtocolList(protocols);
         if ((handshaker != null) && !handshaker.activated()) {
@@ -2434,6 +2453,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         }
     }
 
+    @Override
     synchronized public String[] getEnabledProtocols() {
         return enabledProtocols.toStringArray();
     }
@@ -2442,6 +2462,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * Assigns the socket timeout.
      * @see java.net.Socket#setSoTimeout
      */
+    @Override
     public void setSoTimeout(int timeout) throws SocketException {
         if ((debug != null) && Debug.isOn("ssl")) {
             System.out.println(Thread.currentThread().getName() +
@@ -2455,6 +2476,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * Registers an event listener to receive notifications that an
      * SSL handshake has completed on this connection.
      */
+    @Override
     public synchronized void addHandshakeCompletedListener(
             HandshakeCompletedListener listener) {
         if (listener == null) {
@@ -2471,6 +2493,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     /**
      * Removes a previously registered handshake completion listener.
      */
+    @Override
     public synchronized void removeHandshakeCompletedListener(
             HandshakeCompletedListener listener) {
         if (handshakeListeners == null) {
@@ -2487,6 +2510,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     /**
      * Returns the SSLParameters in effect for this SSLSocket.
      */
+    @Override
     synchronized public SSLParameters getSSLParameters() {
         SSLParameters params = super.getSSLParameters();
 
@@ -2502,6 +2526,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     /**
      * Applies SSLParameters to this socket.
      */
+    @Override
     synchronized public void setSSLParameters(SSLParameters params) {
         super.setSSLParameters(params);
 
@@ -2550,6 +2575,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             event = e;
         }
 
+        @Override
         public void run() {
             // Don't need to synchronize, as it only runs in one thread.
             for (Map.Entry<HandshakeCompletedListener,AccessControlContext>
@@ -2558,6 +2584,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                 final HandshakeCompletedListener l = entry.getKey();
                 AccessControlContext acc = entry.getValue();
                 AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    @Override
                     public Void run() {
                         l.handshakeCompleted(event);
                         return null;
@@ -2570,6 +2597,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     /**
      * Returns a printable representation of this end of the connection.
      */
+    @Override
     public String toString() {
         StringBuffer retval = new StringBuffer(80);
 
