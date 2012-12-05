@@ -3672,7 +3672,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1354526713
+DATE_WHEN_GENERATED=1354696609
 
 ###############################################################################
 #
@@ -6903,7 +6903,7 @@ SCRIPT="$0"
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -6915,20 +6915,24 @@ SCRIPT="$0"
         if test "x$READLINK" != x; then
             SCRIPT=`$READLINK -f $SCRIPT`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $SCRIPT`
             sym_link_file=`$BASENAME $SCRIPT`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -6944,7 +6948,7 @@ AUTOCONF_DIR=`cd \`$DIRNAME $SCRIPT\`; $THEPWDCMD`
 # Where is the source? It is located two levels above the configure script.
 CURDIR="$PWD"
 cd "$AUTOCONF_DIR/../.."
-SRC_ROOT="`pwd`"
+SRC_ROOT="`$THEPWDCMD`"
 
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   PATH_SEP=";"
@@ -7593,7 +7597,7 @@ NOSYM_CURDIR="$CURDIR"
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -7605,20 +7609,24 @@ NOSYM_CURDIR="$CURDIR"
         if test "x$READLINK" != x; then
             NOSYM_CURDIR=`$READLINK -f $NOSYM_CURDIR`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $NOSYM_CURDIR`
             sym_link_file=`$BASENAME $NOSYM_CURDIR`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -11707,7 +11715,7 @@ fi
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -11719,20 +11727,24 @@ fi
         if test "x$READLINK" != x; then
             BINARY=`$READLINK -f $BINARY`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $BINARY`
             sym_link_file=`$BASENAME $BINARY`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -18083,7 +18095,7 @@ $as_echo_n "checking resolved symbolic links for CC... " >&6; }
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -18095,20 +18107,24 @@ $as_echo_n "checking resolved symbolic links for CC... " >&6; }
         if test "x$READLINK" != x; then
             TEST_COMPILER=`$READLINK -f $TEST_COMPILER`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $TEST_COMPILER`
             sym_link_file=`$BASENAME $TEST_COMPILER`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -18505,7 +18521,7 @@ $as_echo_n "checking for resolved symbolic links for CC... " >&6; }
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -18517,20 +18533,24 @@ $as_echo_n "checking for resolved symbolic links for CC... " >&6; }
         if test "x$READLINK" != x; then
             PROPER_COMPILER_CC=`$READLINK -f $PROPER_COMPILER_CC`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $PROPER_COMPILER_CC`
             sym_link_file=`$BASENAME $PROPER_COMPILER_CC`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -19566,7 +19586,7 @@ $as_echo_n "checking resolved symbolic links for CXX... " >&6; }
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -19578,20 +19598,24 @@ $as_echo_n "checking resolved symbolic links for CXX... " >&6; }
         if test "x$READLINK" != x; then
             TEST_COMPILER=`$READLINK -f $TEST_COMPILER`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $TEST_COMPILER`
             sym_link_file=`$BASENAME $TEST_COMPILER`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -19988,7 +20012,7 @@ $as_echo_n "checking for resolved symbolic links for CXX... " >&6; }
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -20000,20 +20024,24 @@ $as_echo_n "checking for resolved symbolic links for CXX... " >&6; }
         if test "x$READLINK" != x; then
             PROPER_COMPILER_CXX=`$READLINK -f $PROPER_COMPILER_CXX`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $PROPER_COMPILER_CXX`
             sym_link_file=`$BASENAME $PROPER_COMPILER_CXX`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
