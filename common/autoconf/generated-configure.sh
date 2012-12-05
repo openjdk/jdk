@@ -3672,7 +3672,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1354696609
+DATE_WHEN_GENERATED=1354721616
 
 ###############################################################################
 #
@@ -15839,7 +15839,14 @@ $as_echo "$as_me: Please point to the VC/bin directory within the Visual Studio 
   fi
 
     if test -d "$WIN_SDK_BASE"; then
-      if test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      # There have been cases of partial or broken SDK installations. A missing
+      # lib dir is not going to work.
+      if test ! -d "$WIN_SDK_BASE/../lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
+$as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
+      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
@@ -15874,7 +15881,14 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
   fi
 
     if test -d "$WIN_SDK_BASE"; then
-      if test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      # There have been cases of partial or broken SDK installations. A missing
+      # lib dir is not going to work.
+      if test ! -d "$WIN_SDK_BASE/../lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
+$as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
+      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
@@ -15909,7 +15923,14 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
   fi
 
     if test -d "$WIN_SDK_BASE"; then
-      if test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      # There have been cases of partial or broken SDK installations. A missing
+      # lib dir is not going to work.
+      if test ! -d "$WIN_SDK_BASE/../lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
+$as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
+      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
@@ -15943,7 +15964,14 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
   fi
 
     if test -d "$WIN_SDK_BASE"; then
-      if test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      # There have been cases of partial or broken SDK installations. A missing
+      # lib dir is not going to work.
+      if test ! -d "$WIN_SDK_BASE/../lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
+$as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
+      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
@@ -15976,7 +16004,14 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
   fi
 
     if test -d "$WIN_SDK_BASE"; then
-      if test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      # There have been cases of partial or broken SDK installations. A missing
+      # lib dir is not going to work.
+      if test ! -d "$WIN_SDK_BASE/../lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
+$as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
+      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
