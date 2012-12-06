@@ -54,6 +54,10 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 
+#ifdef ASSERT
+bool AbstractAssembler::pd_check_instruction_mark() { return true; }
+#endif
+
 static Assembler::Condition reverse[] = {
     Assembler::noOverflow     /* overflow      = 0x0 */ ,
     Assembler::overflow       /* noOverflow    = 0x1 */ ,
