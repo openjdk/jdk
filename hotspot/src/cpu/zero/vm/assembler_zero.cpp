@@ -46,6 +46,12 @@ int AbstractAssembler::code_fill_byte() {
   return 0;
 }
 
+#ifdef ASSERT
+bool AbstractAssembler::pd_check_instruction_mark() {
+  ShouldNotCallThis();
+}
+#endif
+
 void Assembler::pd_patch_instruction(address branch, address target) {
   ShouldNotCallThis();
 }

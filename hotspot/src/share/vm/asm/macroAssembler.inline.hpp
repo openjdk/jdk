@@ -25,11 +25,13 @@
 #ifndef SHARE_VM_ASM_MACROASSEMBLER_INLINE_HPP
 #define SHARE_VM_ASM_MACROASSEMBLER_INLINE_HPP
 
+#include "asm/macroAssembler.hpp"
+
 #ifdef TARGET_ARCH_x86
 // no macroAssembler_x86.inline.hpp
 #endif
 #ifdef TARGET_ARCH_sparc
-# include "assembler_sparc.inline.hpp"
+# include "macroAssembler_sparc.inline.hpp"
 #endif
 #ifdef TARGET_ARCH_zero
 # include "assembler_zero.inline.hpp"

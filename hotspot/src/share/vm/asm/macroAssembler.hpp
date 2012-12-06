@@ -31,7 +31,7 @@
 # include "macroAssembler_x86.hpp"
 #endif
 #ifdef TARGET_ARCH_sparc
-# include "assembler_sparc.hpp"
+# include "macroAssembler_sparc.hpp"
 #endif
 #ifdef TARGET_ARCH_zero
 # include "assembler_zero.hpp"

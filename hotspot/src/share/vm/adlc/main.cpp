@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "adfiles", get_basename(AD._VM_file._name));
   AD.addInclude(AD._CPP_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_file, "memory/allocation.inline.hpp");
-  AD.addInclude(AD._CPP_file, "asm/assembler.hpp");
+  AD.addInclude(AD._CPP_file, "asm/macroAssembler.inline.hpp");
   AD.addInclude(AD._CPP_file, "code/vmreg.hpp");
   AD.addInclude(AD._CPP_file, "gc_interface/collectedHeap.inline.hpp");
   AD.addInclude(AD._CPP_file, "oops/compiledICHolder.hpp");
@@ -231,17 +231,14 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "runtime/stubRoutines.hpp");
   AD.addInclude(AD._CPP_file, "utilities/growableArray.hpp");
 #ifdef TARGET_ARCH_x86
-  AD.addInclude(AD._CPP_file, "assembler_x86.inline.hpp");
   AD.addInclude(AD._CPP_file, "nativeInst_x86.hpp");
   AD.addInclude(AD._CPP_file, "vmreg_x86.inline.hpp");
 #endif
 #ifdef TARGET_ARCH_sparc
-  AD.addInclude(AD._CPP_file, "assembler_sparc.inline.hpp");
   AD.addInclude(AD._CPP_file, "nativeInst_sparc.hpp");
   AD.addInclude(AD._CPP_file, "vmreg_sparc.inline.hpp");
 #endif
 #ifdef TARGET_ARCH_arm
-  AD.addInclude(AD._CPP_file, "assembler_arm.inline.hpp");
   AD.addInclude(AD._CPP_file, "nativeInst_arm.hpp");
   AD.addInclude(AD._CPP_file, "vmreg_arm.inline.hpp");
 #endif

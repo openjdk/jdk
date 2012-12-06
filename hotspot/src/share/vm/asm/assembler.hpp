@@ -247,7 +247,7 @@ class AbstractAssembler : public ResourceObj  {
 #ifdef ASSERT
   // Make it return true on platforms which need to verify
   // instruction boundaries for some operations.
-  inline static bool pd_check_instruction_mark();
+  static bool pd_check_instruction_mark();
 
   // Add delta to short branch distance to verify that it still fit into imm8.
   int _short_branch_delta;
