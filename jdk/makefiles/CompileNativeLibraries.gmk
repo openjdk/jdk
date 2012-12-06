@@ -2235,7 +2235,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBKCMS,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX_linux:=-lc -lpthread,\
 		LDFLAGS_SUFFIX_windows:=$(WIN_JAVA_LIB) advapi32.lib user32.lib version.lib, \
-		LDFLAGS_SUFFIX:=-lm $(LDFLAGS_JDKLIB_SUFFIX),\
+		LDFLAGS_SUFFIX_posix:=-lm -ljava -ljvm,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/closed/share/native/sun/java2d/cmm/kcms/cmm.rc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/closed/share/native/sun/java2d/cmm/kcms/cmm.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
