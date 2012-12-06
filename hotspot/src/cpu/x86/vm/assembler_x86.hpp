@@ -437,10 +437,6 @@ class ArrayAddress VALUE_OBJ_CLASS_SPEC {
 
 const int FPUStateSizeInWords = NOT_LP64(27) LP64_ONLY( 512 / wordSize);
 
-#ifdef ASSERT
-inline bool AbstractAssembler::pd_check_instruction_mark() { return true; }
-#endif
-
 // The Intel x86/Amd64 Assembler: Pure assembler doing NO optimizations on the instruction
 // level (e.g. mov rax, 0 is not translated into xor rax, rax!); i.e., what you write
 // is what you get. The Assembler is generating code into a CodeBuffer.

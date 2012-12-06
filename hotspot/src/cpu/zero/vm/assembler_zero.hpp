@@ -58,12 +58,6 @@ class MacroAssembler : public Assembler {
   void store_Metadata(Metadata* obj);
 };
 
-#ifdef ASSERT
-inline bool AbstractAssembler::pd_check_instruction_mark() {
-  ShouldNotCallThis();
-}
-#endif
-
 address ShouldNotCallThisStub();
 address ShouldNotCallThisEntry();
 
