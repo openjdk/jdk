@@ -2262,7 +2262,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   Node *slow_ctrl = _fallthroughproj->clone();
   transform_later(slow_ctrl);
   _igvn.hash_delete(_fallthroughproj);
-  _fallthroughproj->disconnect_inputs(NULL);
+  _fallthroughproj->disconnect_inputs(NULL, C);
   region->init_req(1, slow_ctrl);
   // region inputs are now complete
   transform_later(region);
@@ -2327,7 +2327,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   Node *slow_ctrl = _fallthroughproj->clone();
   transform_later(slow_ctrl);
   _igvn.hash_delete(_fallthroughproj);
-  _fallthroughproj->disconnect_inputs(NULL);
+  _fallthroughproj->disconnect_inputs(NULL, C);
   region->init_req(1, slow_ctrl);
   // region inputs are now complete
   transform_later(region);

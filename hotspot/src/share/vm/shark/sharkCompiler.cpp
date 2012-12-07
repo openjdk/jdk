@@ -48,7 +48,6 @@
 
 using namespace llvm;
 
-#if SHARK_LLVM_VERSION >= 27
 namespace {
   cl::opt<std::string>
   MCPU("mcpu");
@@ -57,7 +56,6 @@ namespace {
   MAttrs("mattr",
          cl::CommaSeparated);
 }
-#endif
 
 SharkCompiler::SharkCompiler()
   : AbstractCompiler() {
@@ -72,6 +70,9 @@ SharkCompiler::SharkCompiler()
   // Initialize the native target
   InitializeNativeTarget();
 
+  // MCJIT require a native AsmPrinter
+  InitializeNativeTargetAsmPrinter();
+
   // Create the two contexts which we'll use
   _normal_context = new SharkContext("normal");
   _native_context = new SharkContext("native");
@@ -79,7 +80,6 @@ SharkCompiler::SharkCompiler()
   // Create the memory manager
   _memory_manager = new SharkMemoryManager();
 
-#if SHARK_LLVM_VERSION >= 27
   // Finetune LLVM for the current host CPU.
   StringMap<bool> Features;
   bool gotCpuFeatures = llvm::sys::getHostCPUFeatures(Features);
@@ -113,6 +113,16 @@ SharkCompiler::SharkCompiler()
   builder.setJITMemoryManager(memory_manager());
   builder.setEngineKind(EngineKind::JIT);
   builder.setErrorStr(&ErrorMsg);
+  if (! fnmatch(SharkOptimizationLevel, "None", 0)) {
+    tty->print_cr("Shark optimization level set to: None");
+    builder.setOptLevel(llvm::CodeGenOpt::None);
+  } else if (! fnmatch(SharkOptimizationLevel, "Less", 0)) {
+    tty->print_cr("Shark optimization level set to: Less");
+    builder.setOptLevel(llvm::CodeGenOpt::Less);
+  } else if (! fnmatch(SharkOptimizationLevel, "Aggressive", 0)) {
+    tty->print_cr("Shark optimization level set to: Aggressive");
+    builder.setOptLevel(llvm::CodeGenOpt::Aggressive);
+  } // else Default is selected by, well, default :-)
   _execution_engine = builder.create();
 
   if (!execution_engine()) {
@@ -125,13 +135,6 @@ SharkCompiler::SharkCompiler()
 
   execution_engine()->addModule(
     _native_context->module());
-#else
-  _execution_engine = ExecutionEngine::createJIT(
-    _normal_context->module_provider(),
-    NULL, memory_manager(), CodeGenOpt::Default);
-  execution_engine()->addModuleProvider(
-    _native_context->module_provider());
-#endif
 
   // All done
   mark_initialized();
@@ -261,6 +264,12 @@ void SharkCompiler::generate_native_code(SharkEntry* entry,
       function->dump();
   }
 
+  if (SharkVerifyFunction != NULL) {
+    if (!fnmatch(SharkVerifyFunction, name, 0)) {
+      verifyFunction(*function);
+    }
+  }
+
   // Compile to native code
   address code = NULL;
   context()->add_function(function);
@@ -268,33 +277,28 @@ void SharkCompiler::generate_native_code(SharkEntry* entry,
     MutexLocker locker(execution_engine_lock());
     free_queued_methods();
 
-    if (SharkPrintAsmOf != NULL) {
-#if SHARK_LLVM_VERSION >= 27
 #ifndef NDEBUG
+#if SHARK_LLVM_VERSION <= 31
+#define setCurrentDebugType SetCurrentDebugType
+#endif
+    if (SharkPrintAsmOf != NULL) {
       if (!fnmatch(SharkPrintAsmOf, name, 0)) {
-        llvm::SetCurrentDebugType(X86_ONLY("x86-emitter") NOT_X86("jit"));
+        llvm::setCurrentDebugType(X86_ONLY("x86-emitter") NOT_X86("jit"));
         llvm::DebugFlag = true;
       }
       else {
-        llvm::SetCurrentDebugType("");
+        llvm::setCurrentDebugType("");
         llvm::DebugFlag = false;
       }
-#endif // !NDEBUG
-#else
-      // NB you need to patch LLVM with http://tinyurl.com/yf3baln for this
-      std::vector<const char*> args;
-      args.push_back(""); // program name
-      if (!fnmatch(SharkPrintAsmOf, name, 0))
-        args.push_back("-debug-only=x86-emitter");
-      else
-        args.push_back("-debug-only=none");
-      args.push_back(0);  // terminator
-      cl::ParseCommandLineOptions(args.size() - 1, (char **) &args[0]);
-#endif // SHARK_LLVM_VERSION
     }
+#ifdef setCurrentDebugType
+#undef setCurrentDebugType
+#endif
+#endif // !NDEBUG
     memory_manager()->set_entry_for_function(function, entry);
     code = (address) execution_engine()->getPointerToFunction(function);
   }
+  assert(code != NULL, "code must be != NULL");
   entry->set_entry_point(code);
   entry->set_function(function);
   entry->set_context(context());
@@ -319,8 +323,8 @@ void SharkCompiler::free_compiled_method(address code) {
   // finish with the exception of the VM thread, so we can consider
   // ourself the owner of the execution engine lock even though we
   // can't actually acquire it at this time.
-  assert(Thread::current()->is_VM_thread(), "must be called by VM thread");
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  assert(Thread::current()->is_Compiler_thread(), "must be called by compiler thread");
+  assert_locked_or_safepoint(CodeCache_lock);
 
   SharkEntry *entry = (SharkEntry *) code;
   entry->context()->push_to_free_queue(entry->function());
