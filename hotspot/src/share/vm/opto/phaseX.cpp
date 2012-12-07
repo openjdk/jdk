@@ -383,6 +383,8 @@ PhaseRemoveUseless::PhaseRemoveUseless( PhaseGVN *gvn, Unique_Node_List *worklis
 
   // Identify nodes that are reachable from below, useful.
   C->identify_useful_nodes(_useful);
+  // Update dead node list
+  C->update_dead_node_list(_useful);
 
   // Remove all useless nodes from PhaseValues' recorded types
   // Must be done before disconnecting nodes to preserve hash-table-invariant
@@ -1190,7 +1192,7 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
             }
           }
         }
-
+        C->record_dead_node(dead->_idx);
         if (dead->is_macro()) {
           C->remove_macro_node(dead);
         }
@@ -1199,6 +1201,11 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
           continue;
         }
       }
+      // Constant node that has no out-edges and has only one in-edge from
+      // root is usually dead. However, sometimes reshaping walk makes
+      // it reachable by adding use edges. So, we will NOT count Con nodes
+      // as dead to be conservative about the dead node count at any
+      // given time.
     }
 
     // Aggressively kill globally dead uses

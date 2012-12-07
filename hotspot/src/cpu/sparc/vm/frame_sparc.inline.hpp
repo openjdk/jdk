@@ -25,6 +25,8 @@
 #ifndef CPU_SPARC_VM_FRAME_SPARC_INLINE_HPP
 #define CPU_SPARC_VM_FRAME_SPARC_INLINE_HPP
 
+#include "asm/macroAssembler.hpp"
+
 // Inline functions for SPARC frames:
 
 // Constructors
@@ -183,6 +185,13 @@ inline intptr_t* frame::interpreter_frame_expression_stack() const {
 // top of expression stack (lowest address)
 inline intptr_t* frame::interpreter_frame_tos_address() const {
   return *interpreter_frame_esp_addr() + 1;
+}
+
+inline BasicObjectLock** frame::interpreter_frame_monitors_addr() const {
+  return (BasicObjectLock**) sp_addr_at(Lmonitors->sp_offset_in_saved_window());
+}
+inline intptr_t** frame::interpreter_frame_esp_addr() const {
+  return (intptr_t**)sp_addr_at(Lesp->sp_offset_in_saved_window());
 }
 
 inline void frame::interpreter_frame_set_tos_address( intptr_t* x ) {
