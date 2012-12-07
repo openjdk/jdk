@@ -75,6 +75,8 @@ class TypeFunc;
 class Unique_Node_List;
 class nmethod;
 class WarmCallInfo;
+class Node_Stack;
+struct Final_Reshape_Counts;
 
 //------------------------------Compile----------------------------------------
 // This class defines a top-level Compiler invocation.
@@ -98,6 +100,8 @@ class Compile : public Phase {
    private:
     Compile*    C;
     CompileLog* _log;
+    const char* _phase_name;
+    bool _dolog;
    public:
     TracePhase(const char* name, elapsedTimer* accumulator, bool dolog);
     ~TracePhase();
@@ -313,6 +317,9 @@ class Compile : public Phase {
 
   // Node management
   uint                  _unique;                // Counter for unique Node indices
+  VectorSet             _dead_node_list;        // Set of dead nodes
+  uint                  _dead_node_count;       // Number of dead nodes; VectorSet::Size() is O(N).
+                                                // So use this to keep count and make the call O(1).
   debug_only(static int _debug_idx;)            // Monotonic counter (not reset), use -XX:BreakAtNode=<idx>
   Arena                 _node_arena;            // Arena for new-space Nodes
   Arena                 _old_arena;             // Arena for old-space Nodes, lifetime during xform
@@ -534,7 +541,7 @@ class Compile : public Phase {
   ciEnv*            env() const                 { return _env; }
   CompileLog*       log() const                 { return _log; }
   bool              failing() const             { return _env->failing() || _failure_reason != NULL; }
-  const char* failure_reason() { return _failure_reason; }
+  const char*       failure_reason() { return _failure_reason; }
   bool              failure_reason_is(const char* r) { return (r==_failure_reason) || (r!=NULL && _failure_reason!=NULL && strcmp(r, _failure_reason)==0); }
 
   void record_failure(const char* reason);
@@ -549,7 +556,7 @@ class Compile : public Phase {
     record_method_not_compilable(reason, true);
   }
   bool check_node_count(uint margin, const char* reason) {
-    if (unique() + margin > (uint)MaxNodeLimit) {
+    if (live_nodes() + margin > (uint)MaxNodeLimit) {
       record_method_not_compilable(reason);
       return true;
     } else {
@@ -558,25 +565,41 @@ class Compile : public Phase {
   }
 
   // Node management
-  uint              unique() const              { return _unique; }
-  uint         next_unique()                    { return _unique++; }
-  void          set_unique(uint i)              { _unique = i; }
-  static int        debug_idx()                 { return debug_only(_debug_idx)+0; }
-  static void   set_debug_idx(int i)            { debug_only(_debug_idx = i); }
-  Arena*            node_arena()                { return &_node_arena; }
-  Arena*            old_arena()                 { return &_old_arena; }
-  RootNode*         root() const                { return _root; }
-  void          set_root(RootNode* r)           { _root = r; }
-  StartNode*        start() const;              // (Derived from root.)
+  uint         unique() const              { return _unique; }
+  uint         next_unique()               { return _unique++; }
+  void         set_unique(uint i)          { _unique = i; }
+  static int   debug_idx()                 { return debug_only(_debug_idx)+0; }
+  static void  set_debug_idx(int i)        { debug_only(_debug_idx = i); }
+  Arena*       node_arena()                { return &_node_arena; }
+  Arena*       old_arena()                 { return &_old_arena; }
+  RootNode*    root() const                { return _root; }
+  void         set_root(RootNode* r)       { _root = r; }
+  StartNode*   start() const;              // (Derived from root.)
   void         init_start(StartNode* s);
-  Node*             immutable_memory();
+  Node*        immutable_memory();
 
-  Node*             recent_alloc_ctl() const    { return _recent_alloc_ctl; }
-  Node*             recent_alloc_obj() const    { return _recent_alloc_obj; }
-  void          set_recent_alloc(Node* ctl, Node* obj) {
+  Node*        recent_alloc_ctl() const    { return _recent_alloc_ctl; }
+  Node*        recent_alloc_obj() const    { return _recent_alloc_obj; }
+  void         set_recent_alloc(Node* ctl, Node* obj) {
                                                   _recent_alloc_ctl = ctl;
                                                   _recent_alloc_obj = obj;
-                                                }
+                                           }
+  void         record_dead_node(uint idx)  { if (_dead_node_list.test_set(idx)) return;
+                                             _dead_node_count++;
+                                           }
+  uint         dead_node_count()           { return _dead_node_count; }
+  void         reset_dead_node_list()      { _dead_node_list.Reset();
+                                             _dead_node_count = 0;
+                                           }
+  uint          live_nodes()               {
+    int  val = _unique - _dead_node_count;
+    assert (val >= 0, err_msg_res("number of tracked dead nodes %d more than created nodes %d", _unique, _dead_node_count));
+            return (uint) val;
+                                           }
+#ifdef ASSERT
+  uint         count_live_nodes_by_graph_walk();
+  void         print_missing_nodes();
+#endif
 
   // Constant table
   ConstantTable&   constant_table() { return _constant_table; }
@@ -678,6 +701,7 @@ class Compile : public Phase {
 
 
   void              identify_useful_nodes(Unique_Node_List &useful);
+  void              update_dead_node_list(Unique_Node_List &useful);
   void              remove_useless_nodes  (Unique_Node_List &useful);
 
   WarmCallInfo*     warm_calls() const          { return _warm_calls; }
@@ -892,6 +916,11 @@ class Compile : public Phase {
   static juint  _intrinsic_hist_count[vmIntrinsics::ID_LIMIT];
   static jubyte _intrinsic_hist_flags[vmIntrinsics::ID_LIMIT];
 #endif
+  // Function calls made by the public function final_graph_reshaping.
+  // No need to be made public as they are not called elsewhere.
+  void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc);
+  void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc );
+  void eliminate_redundant_card_marks(Node* n);
 
  public:
 
