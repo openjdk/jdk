@@ -342,6 +342,7 @@ void Matcher::match( ) {
   // Reset node counter so MachNodes start with _idx at 0
   int nodes = C->unique(); // save value
   C->set_unique(0);
+  C->reset_dead_node_list();
 
   // Recursively match trees from old space into new space.
   // Correct leaves of new-space Nodes; they point to old-space.
