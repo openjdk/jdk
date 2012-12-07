@@ -25,17 +25,15 @@
 #ifndef SHARE_VM_ASM_CODEBUFFER_HPP
 #define SHARE_VM_ASM_CODEBUFFER_HPP
 
-#include "asm/assembler.hpp"
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 
-class  CodeComments;
-class  AbstractAssembler;
-class  MacroAssembler;
-class  PhaseCFG;
-class  Compile;
-class  BufferBlob;
-class  CodeBuffer;
+class CodeComments;
+class PhaseCFG;
+class Compile;
+class BufferBlob;
+class CodeBuffer;
+class Label;
 
 class CodeOffsets: public StackObj {
 public:
@@ -194,10 +192,14 @@ class CodeSection VALUE_OBJ_CLASS_SPEC {
   }
 
   // Code emission
-  void emit_int8 (int8_t  x) { *((int8_t*)  end()) = x; set_end(end() + 1); }
-  void emit_int16(int16_t x) { *((int16_t*) end()) = x; set_end(end() + 2); }
-  void emit_int32(int32_t x) { *((int32_t*) end()) = x; set_end(end() + 4); }
-  void emit_int64(int64_t x) { *((int64_t*) end()) = x; set_end(end() + 8); }
+  void emit_int8 ( int8_t  x)  { *((int8_t*)  end()) = x; set_end(end() + sizeof(int8_t)); }
+  void emit_int16( int16_t x)  { *((int16_t*) end()) = x; set_end(end() + sizeof(int16_t)); }
+  void emit_int32( int32_t x)  { *((int32_t*) end()) = x; set_end(end() + sizeof(int32_t)); }
+  void emit_int64( int64_t x)  { *((int64_t*) end()) = x; set_end(end() + sizeof(int64_t)); }
+
+  void emit_float( jfloat  x)  { *((jfloat*)  end()) = x; set_end(end() + sizeof(jfloat)); }
+  void emit_double(jdouble x)  { *((jdouble*) end()) = x; set_end(end() + sizeof(jdouble)); }
+  void emit_address(address x) { *((address*) end()) = x; set_end(end() + sizeof(address)); }
 
   // Share a scratch buffer for relocinfo.  (Hacky; saves a resource allocation.)
   void initialize_shared_locs(relocInfo* buf, int length);
@@ -450,6 +452,9 @@ class CodeBuffer: public StackObj {
   static int locator(int pos, int sect) { return (pos << sect_bits) | sect; }
   int        locator(address addr) const;
   address    locator_address(int locator) const;
+
+  // Heuristic for pre-packing the taken/not-taken bit of a predicted branch.
+  bool is_backward_branch(Label& L);
 
   // Properties
   const char* name() const                  { return _name; }
