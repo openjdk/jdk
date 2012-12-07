@@ -23,8 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_sparc.inline.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_sparc.hpp"
 #include "memory/resourceArea.hpp"

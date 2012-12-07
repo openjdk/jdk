@@ -139,7 +139,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   if (!is_static) {
     // Make an explicit receiver null_check as part of this call.
     // Since we share a map with the caller, his JVMS gets adjusted.
-    kit.null_check_receiver(method());
+    kit.null_check_receiver_before_call(method());
     if (kit.stopped()) {
       // And dump it back to the caller, decorated with any exceptions:
       return kit.transfer_exceptions_into_jvms();
@@ -207,7 +207,7 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
        >= (uint)ImplicitNullCheckThreshold))) {
     // Make an explicit receiver null_check as part of this call.
     // Since we share a map with the caller, his JVMS gets adjusted.
-    receiver = kit.null_check_receiver(method());
+    receiver = kit.null_check_receiver_before_call(method());
     if (kit.stopped()) {
       // And dump it back to the caller, decorated with any exceptions:
       return kit.transfer_exceptions_into_jvms();
@@ -491,7 +491,7 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
               jvms->bci(), log->identify(_predicted_receiver));
   }
 
-  receiver = kit.null_check_receiver(method());
+  receiver = kit.null_check_receiver_before_call(method());
   if (kit.stopped()) {
     return kit.transfer_exceptions_into_jvms();
   }
@@ -597,7 +597,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
   switch (iid) {
   case vmIntrinsics::_invokeBasic:
     {
-      // get MethodHandle receiver
+      // Get MethodHandle receiver:
       Node* receiver = kit.argument(0);
       if (receiver->Opcode() == Op_ConP) {
         const TypeOopPtr* oop_ptr = receiver->bottom_type()->is_oopptr();
@@ -618,7 +618,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
   case vmIntrinsics::_linkToSpecial:
   case vmIntrinsics::_linkToInterface:
     {
-      // pop MemberName argument
+      // Get MemberName argument:
       Node* member_name = kit.argument(callee->arg_size() - 1);
       if (member_name->Opcode() == Op_ConP) {
         const TypeOopPtr* oop_ptr = member_name->bottom_type()->is_oopptr();

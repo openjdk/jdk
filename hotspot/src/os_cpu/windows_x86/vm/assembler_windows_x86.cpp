@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_x86.inline.hpp"
+#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadLocalStorage.hpp"
 
