@@ -72,8 +72,7 @@ void MacroAssembler::bang_stack_with_offset(int offset) {
 }
 
 void MacroAssembler::advance(int bytes) {
-  _code_pos += bytes;
-  sync();
+  code_section()->set_end(code_section()->end() + bytes);
 }
 
 RegisterOrConstant MacroAssembler::delayed_value_impl(
