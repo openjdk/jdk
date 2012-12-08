@@ -53,22 +53,37 @@ class SharkBuilder : public llvm::IRBuilder<> {
     return _code_buffer;
   }
 
+ public:
+  llvm::LoadInst* CreateAtomicLoad(llvm::Value* ptr,
+                                   unsigned align = HeapWordSize,
+                                   llvm::AtomicOrdering ordering = llvm::SequentiallyConsistent,
+                                   llvm::SynchronizationScope synchScope = llvm::CrossThread,
+                                   bool isVolatile = true,
+                                   const char *name = "");
+  llvm::StoreInst* CreateAtomicStore(llvm::Value *val,
+                                     llvm::Value *ptr,
+                                     unsigned align = HeapWordSize,
+                                     llvm::AtomicOrdering ordering = llvm::SequentiallyConsistent,
+                                     llvm::SynchronizationScope SynchScope = llvm::CrossThread,
+                                     bool isVolatile = true,
+                                     const char *name = "");
+
   // Helpers for accessing structures.
  public:
   llvm::Value* CreateAddressOfStructEntry(llvm::Value* base,
                                           ByteSize offset,
-                                          const llvm::Type* type,
+                                          llvm::Type* type,
                                           const char *name = "");
   llvm::LoadInst* CreateValueOfStructEntry(llvm::Value* base,
                                            ByteSize offset,
-                                           const llvm::Type* type,
+                                           llvm::Type* type,
                                            const char *name = "");
 
   // Helpers for accessing arrays.
  public:
   llvm::LoadInst* CreateArrayLength(llvm::Value* arrayoop);
   llvm::Value* CreateArrayAddress(llvm::Value*      arrayoop,
-                                  const llvm::Type* element_type,
+                                  llvm::Type* element_type,
                                   int               element_bytes,
                                   ByteSize          base_offset,
                                   llvm::Value*      index,
@@ -85,8 +100,8 @@ class SharkBuilder : public llvm::IRBuilder<> {
 
   // Helpers for creating intrinsics and external functions.
  private:
-  static const llvm::Type* make_type(char type, bool void_ok);
-  static const llvm::FunctionType* make_ftype(const char* params,
+  static llvm::Type* make_type(char type, bool void_ok);
+  static llvm::FunctionType* make_ftype(const char* params,
                                               const char* ret);
   llvm::Value* make_function(const char* name,
                              const char* params,
@@ -165,7 +180,6 @@ class SharkBuilder : public llvm::IRBuilder<> {
   llvm::Value* cmpxchg_int();
   llvm::Value* cmpxchg_ptr();
   llvm::Value* frame_address();
-  llvm::Value* memory_barrier();
   llvm::Value* memset();
   llvm::Value* unimplemented();
   llvm::Value* should_not_reach_here();
@@ -173,14 +187,7 @@ class SharkBuilder : public llvm::IRBuilder<> {
 
   // Public interface to low-level non-VM calls.
  public:
-  llvm::CallInst* CreateCmpxchgInt(llvm::Value* exchange_value,
-                                   llvm::Value* dst,
-                                   llvm::Value* compare_value);
-  llvm::CallInst* CreateCmpxchgPtr(llvm::Value* exchange_value,
-                                   llvm::Value* dst,
-                                   llvm::Value* compare_value);
   llvm::CallInst* CreateGetFrameAddress();
-  llvm::CallInst* CreateMemoryBarrier(int flags);
   llvm::CallInst* CreateMemset(llvm::Value* dst,
                                llvm::Value* value,
                                llvm::Value* len,
@@ -188,15 +195,6 @@ class SharkBuilder : public llvm::IRBuilder<> {
   llvm::CallInst* CreateUnimplemented(const char* file, int line);
   llvm::CallInst* CreateShouldNotReachHere(const char* file, int line);
   NOT_PRODUCT(llvm::CallInst* CreateDump(llvm::Value* value));
-
-  // Flags for CreateMemoryBarrier.
- public:
-  enum BarrierFlags {
-    BARRIER_LOADLOAD   = 1,
-    BARRIER_LOADSTORE  = 2,
-    BARRIER_STORELOAD  = 4,
-    BARRIER_STORESTORE = 8
-  };
 
   // HotSpot memory barriers
  public:
@@ -209,9 +207,14 @@ class SharkBuilder : public llvm::IRBuilder<> {
   llvm::Value* CreateInlineOop(ciObject* object, const char* name = "") {
     return CreateInlineOop(object->constant_encoding(), name);
   }
+
+  llvm::Value* CreateInlineMetadata(Metadata* metadata, llvm::PointerType* type, const char* name = "");
+  llvm::Value* CreateInlineMetadata(ciMetadata* metadata, llvm::PointerType* type, const char* name = "") {
+    return CreateInlineMetadata(metadata->constant_encoding(), type, name);
+  }
   llvm::Value* CreateInlineData(void*             data,
                                 size_t            size,
-                                const llvm::Type* type,
+                                llvm::Type* type,
                                 const char*       name = "");
 
   // Helpers for creating basic blocks.
@@ -222,5 +225,4 @@ class SharkBuilder : public llvm::IRBuilder<> {
   llvm::BasicBlock* CreateBlock(llvm::BasicBlock* ip,
                                 const char*       name="") const;
 };
-
-#endif // SHARE_VM_SHARK_SHARKBUILDER_HPP
+  #endif // SHARE_VM_SHARK_SHARKBUILDER_HPP

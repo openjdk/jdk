@@ -129,7 +129,15 @@ void Compilation::build_hir() {
   CHECK_BAILOUT();
 
   // setup ir
+  CompileLog* log = this->log();
+  if (log != NULL) {
+    log->begin_head("parse method='%d' ",
+                    log->identify(_method));
+    log->stamp();
+    log->end_head();
+  }
   _hir = new IR(this, method(), osr_bci());
+  if (log)  log->done("parse");
   if (!_hir->is_valid()) {
     bailout("invalid parsing");
     return;

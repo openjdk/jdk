@@ -171,7 +171,7 @@ void SharkIntrinsics::do_Math_minmax(ICmpInst::Predicate p) {
   builder()->CreateBr(done);
 
   builder()->SetInsertPoint(done);
-  PHINode *phi = builder()->CreatePHI(a->getType(), "result");
+  PHINode *phi = builder()->CreatePHI(a->getType(), 0, "result");
   phi->addIncoming(a, return_a);
   phi->addIncoming(b, return_b);
 
@@ -210,7 +210,7 @@ void SharkIntrinsics::do_Object_getClass() {
   Value *klass = builder()->CreateValueOfStructEntry(
     state()->pop()->jobject_value(),
     in_ByteSize(oopDesc::klass_offset_in_bytes()),
-    SharkType::oop_type(),
+    SharkType::klass_type(),
     "klass");
 
   state()->push(
@@ -265,8 +265,7 @@ void SharkIntrinsics::do_Unsafe_compareAndSwapInt() {
     "addr");
 
   // Perform the operation
-  Value *result = builder()->CreateCmpxchgInt(x, addr, e);
-
+  Value *result = builder()->CreateAtomicCmpXchg(addr, e, x, llvm::SequentiallyConsistent);
   // Push the result
   state()->push(
     SharkValue::create_jint(

@@ -84,7 +84,7 @@ void Parse::do_checkcast() {
                        C->log()->identify(tp->klass()));
       }
     }
-    do_null_assert(obj, T_OBJECT);
+    null_assert(obj);
     assert( stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null" );
     if (!stopped()) {
       profile_null_checkcast();
@@ -116,7 +116,7 @@ void Parse::do_instanceof() {
       C->log()->elem("assert_null reason='instanceof' klass='%d'",
                      C->log()->identify(klass));
     }
-    do_null_assert(peek(), T_OBJECT);
+    null_assert(peek());
     assert( stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null" );
     if (!stopped()) {
       // The object is now known to be null.
@@ -139,10 +139,10 @@ void Parse::do_instanceof() {
 // pull array from stack and check that the store is valid
 void Parse::array_store_check() {
 
-  // Shorthand access to array store elements
-  Node *obj = stack(_sp-1);
-  Node *idx = stack(_sp-2);
-  Node *ary = stack(_sp-3);
+  // Shorthand access to array store elements without popping them.
+  Node *obj = peek(0);
+  Node *idx = peek(1);
+  Node *ary = peek(2);
 
   if (_gvn.type(obj) == TypePtr::NULL_PTR) {
     // There's never a type check on null values.

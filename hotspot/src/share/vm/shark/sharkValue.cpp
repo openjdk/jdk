@@ -233,7 +233,7 @@ SharkValue* SharkNormalValue::merge(SharkBuilder* builder,
   assert(type() == other->type(), "should be");
   assert(zero_checked() == other->zero_checked(), "should be");
 
-  PHINode *phi = builder->CreatePHI(SharkType::to_stackType(type()), name);
+  PHINode *phi = builder->CreatePHI(SharkType::to_stackType(type()), 0, name);
   phi->addIncoming(this->generic_value(), this_block);
   phi->addIncoming(other->generic_value(), other_block);
   return SharkValue::create_generic(type(), phi, zero_checked());

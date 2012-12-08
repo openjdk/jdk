@@ -135,7 +135,8 @@ public final class SNIHostName extends SNIServerName {
      * <A HREF="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</A>,
      * <A HREF="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</A>,
      * <A HREF="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</A>)
-     * for {@code encoded} argument, or use {@link SNIHostName(String)} instead.
+     * for {@code encoded} argument, or use
+     * {@link SNIHostName#SNIHostName(String)} instead.
      * <P>
      * The {@code encoded} argument is illegal if it:
      * <ul>
