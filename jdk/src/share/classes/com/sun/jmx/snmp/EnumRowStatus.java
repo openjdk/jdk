@@ -28,10 +28,6 @@ package com.sun.jmx.snmp;
 import java.io.Serializable;
 import java.util.Hashtable;
 
-import com.sun.jmx.snmp.SnmpValue;
-import com.sun.jmx.snmp.SnmpInt;
-
-import com.sun.jmx.snmp.Enumerated;
 
 /**
  * This class is an internal class which is used to represent RowStatus
@@ -263,30 +259,30 @@ public class EnumRowStatus extends Enumerated implements Serializable {
 
     // Documented in Enumerated
     //
-    protected Hashtable getIntTable() {
+    @Override
+    protected Hashtable<Integer, String> getIntTable() {
         return EnumRowStatus.getRSIntTable();
     }
 
     // Documented in Enumerated
     //
-    protected Hashtable getStringTable() {
+    @Override
+    protected Hashtable<String, Integer> getStringTable() {
         return  EnumRowStatus.getRSStringTable();
     }
 
-    static final Hashtable getRSIntTable() {
+    static Hashtable<Integer, String> getRSIntTable() {
         return intTable ;
     }
 
-    static final Hashtable getRSStringTable() {
+    static Hashtable<String, Integer> getRSStringTable() {
         return stringTable ;
     }
 
     // Initialize the mapping tables.
     //
-    final static Hashtable<Integer, String> intTable =
-            new Hashtable<Integer, String>();
-    final static Hashtable<String, Integer> stringTable =
-            new Hashtable<String, Integer>();
+    final static Hashtable<Integer, String> intTable = new Hashtable<>();
+    final static Hashtable<String, Integer> stringTable = new Hashtable<>();
     static  {
         intTable.put(new Integer(0), "unspecified");
         intTable.put(new Integer(3), "notReady");

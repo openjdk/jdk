@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,23 +21,26 @@
  * questions.
  */
 
-package sun.awt;
-
-/**
- * A GraphicsConfiguration implements the TextureSizeConstraining
- * interface to indicate that it imposes certain limitations on the
- * maximum size of supported textures.
+/*
+ * @test
+ * @bug 8004102
+ * @summary Add support for generic functional descriptors
+ * @compile/fail/ref=MethodReference58.out -XDrawDiagnostics MethodReference58.java
  */
-public interface TextureSizeConstraining {
+class MethodReference58 {
 
-    /**
-     * Returns the maximum width of any texture image.
-     */
-    public int getMaxTextureWidth();
+    interface F_Object {
+        <X> void m(X x);
+    }
 
-    /**
-     * Returns the maximum height of any texture image.
-     */
-    public int getMaxTextureHeight();
+    interface F_Integer {
+        <X extends Integer> void m(X x);
+    }
 
+    void test() {
+        F_Object f1 = this::g; //incompatible bounds
+        F_Integer f2 = this::g; //ok
+    }
+
+    <Z extends Number> void g(Z z) { }
 }

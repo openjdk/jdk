@@ -25,8 +25,10 @@
 #ifndef CPU_X86_VM_INTERP_MASM_X86_32_HPP
 #define CPU_X86_VM_INTERP_MASM_X86_32_HPP
 
-#include "assembler_x86.inline.hpp"
+#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "runtime/frame.hpp"
 
 // This file specializes the assember with interpreter-specific macros
 

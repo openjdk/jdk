@@ -45,8 +45,17 @@ public class NTLMAuthSequence {
     private long ctxHandle;
 
     static {
-        initFirst();
+        initFirst(Status.class);
     }
+
+    // Used by native code to indicate when a particular protocol sequence is completed
+    // and must not be re-used.
+
+    class Status {
+        boolean sequenceComplete;
+    }
+
+    Status status;
 
     NTLMAuthSequence (String username, String password, String ntdomain)
     throws IOException
@@ -54,6 +63,7 @@ public class NTLMAuthSequence {
         this.username = username;
         this.password = password;
         this.ntdomain = ntdomain;
+        this.status = new Status();
         state = 0;
         crdHandle = getCredentialsHandle (username, ntdomain, password);
         if (crdHandle == 0) {
@@ -63,19 +73,26 @@ public class NTLMAuthSequence {
 
     public String getAuthHeader (String token) throws IOException {
         byte[] input = null;
+
+        assert !status.sequenceComplete;
+
         if (token != null)
             input = (new BASE64Decoder()).decodeBuffer(token);
-        byte[] b = getNextToken (crdHandle, input);
+        byte[] b = getNextToken (crdHandle, input, status);
         if (b == null)
             throw new IOException ("Internal authentication error");
         return (new B64Encoder()).encode (b);
     }
 
-    private native static void initFirst ();
+    public boolean isComplete() {
+        return status.sequenceComplete;
+    }
+
+    private native static void initFirst (Class<NTLMAuthSequence.Status> clazz);
 
     private native long getCredentialsHandle (String user, String domain, String password);
 
-    private native byte[] getNextToken (long crdHandle, byte[] lastToken);
+    private native byte[] getNextToken (long crdHandle, byte[] lastToken, Status returned);
 }
 
 class B64Encoder extends BASE64Encoder {

@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Objects;
 import sun.misc.Unsafe;
 import sun.reflect.ConstantPool;
 import sun.reflect.Reflection;
@@ -3044,34 +3045,62 @@ public final
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
-    @SuppressWarnings("unchecked")
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
-        if (annotationClass == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(annotationClass);
 
         initAnnotationsIfNecessary();
-        return (A) annotations.get(annotationClass);
+        return AnnotationSupport.getOneAnnotation(annotations, annotationClass);
     }
 
     /**
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
-    public boolean isAnnotationPresent(
-        Class<? extends Annotation> annotationClass) {
-        if (annotationClass == null)
-            throw new NullPointerException();
+    public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
+        Objects.requireNonNull(annotationClass);
 
         return getAnnotation(annotationClass) != null;
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     * @since 1.8
+     */
+    public <A extends Annotation> A[] getAnnotations(Class<A> annotationClass) {
+        Objects.requireNonNull(annotationClass);
+
+        initAnnotationsIfNecessary();
+        return AnnotationSupport.getMultipleAnnotations(annotations, annotationClass);
+    }
 
     /**
      * @since 1.5
      */
     public Annotation[] getAnnotations() {
         initAnnotationsIfNecessary();
-        return AnnotationParser.toArray(annotations);
+        return AnnotationSupport.unpackToArray(annotations);
+    }
+
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     * @since 1.8
+     */
+    public <A extends Annotation> A getDeclaredAnnotation(Class<A> annotationClass) {
+        Objects.requireNonNull(annotationClass);
+
+        initAnnotationsIfNecessary();
+        return AnnotationSupport.getOneAnnotation(declaredAnnotations, annotationClass);
+    }
+
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     * @since 1.8
+     */
+    public <A extends Annotation> A[] getDeclaredAnnotations(Class<A> annotationClass) {
+        Objects.requireNonNull(annotationClass);
+
+        initAnnotationsIfNecessary();
+        return AnnotationSupport.getMultipleAnnotations(declaredAnnotations, annotationClass);
     }
 
     /**
@@ -3079,7 +3108,17 @@ public final
      */
     public Annotation[] getDeclaredAnnotations()  {
         initAnnotationsIfNecessary();
-        return AnnotationParser.toArray(declaredAnnotations);
+        return AnnotationSupport.unpackToArray(declaredAnnotations);
+    }
+
+    /** Returns one "directly" present annotation or null */
+    <A extends Annotation> A getDirectDeclaredAnnotation(Class<A> annotationClass) {
+        Objects.requireNonNull(annotationClass);
+
+        initAnnotationsIfNecessary();
+        @SuppressWarnings("unchecked") // TODO check safe
+        A ret = (A)declaredAnnotations.get(annotationClass);
+        return ret;
     }
 
     // Annotations cache

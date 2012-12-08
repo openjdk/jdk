@@ -23,8 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.inline.hpp"
-#include "assembler_sparc.inline.hpp"
+#include "asm/assembler.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_sparc.hpp"
 #include "oops/oop.inline.hpp"

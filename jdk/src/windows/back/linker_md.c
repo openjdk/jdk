@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,41 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <io.h>
 
 #include "sys.h"
 
 #include "path_md.h"
+
+static void dll_build_name(char* buffer, size_t buflen,
+                           const char* pname, const char* fname) {
+    // Based on os_windows.cpp
+
+    char *path_sep = PATH_SEPARATOR;
+    char *pathname = (char *)pname;
+    while (strlen(pathname) > 0) {
+        char *p = strchr(pathname, *path_sep);
+        if (p == NULL) {
+            p = pathname + strlen(pathname);
+        }
+        /* check for NULL path */
+        if (p == pathname) {
+            continue;
+        }
+        if (*(p-1) == ':' || *(p-1) == '\\') {
+            (void)_snprintf(buffer, buflen, "%.*s%s.dll", (p - pathname),
+                            pathname, fname);
+        } else {
+            (void)_snprintf(buffer, buflen, "%.*s\\%s.dll", (p - pathname),
+                            pathname, fname);
+        }
+        if (_access(buffer, 0) == 0) {
+            break;
+        }
+        pathname = p + 1;
+        *buffer = '\0';
+    }
+}
 
 /*
  * From system_md.c v1.54
@@ -80,20 +111,17 @@ void
 dbgsysBuildLibName(char *holder, int holderlen, char *pname, char *fname)
 {
     const int pnamelen = pname ? (int)strlen(pname) : 0;
-    const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
 
+    *holder = '\0';
     /* Quietly truncates on buffer overflow. Should be an error. */
     if (pnamelen + (int)strlen(fname) + 10 > holderlen) {
-        *holder = '\0';
         return;
     }
 
     if (pnamelen == 0) {
         sprintf(holder, "%s.dll", fname);
-    } else if (c == ':' || c == '\\') {
-        sprintf(holder, "%s%s.dll", pname, fname);
     } else {
-        sprintf(holder, "%s\\%s.dll", pname, fname);
+      dll_build_name(holder, holderlen, pname, fname);
     }
 }
 
