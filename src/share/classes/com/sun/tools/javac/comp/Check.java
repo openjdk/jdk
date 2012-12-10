@@ -1833,13 +1833,15 @@ public class Check {
         for (Scope.Entry e1 = t1.tsym.members().elems; e1 != null; e1 = e1.sibling) {
             Symbol s1 = e1.sym;
             Type st1 = null;
-            if (s1.kind != MTH || !s1.isInheritedIn(site.tsym, types)) continue;
+            if (s1.kind != MTH || !s1.isInheritedIn(site.tsym, types) ||
+                    (s1.flags() & SYNTHETIC) != 0) continue;
             Symbol impl = ((MethodSymbol)s1).implementation(site.tsym, types, false);
             if (impl != null && (impl.flags() & ABSTRACT) == 0) continue;
             for (Scope.Entry e2 = t2.tsym.members().lookup(s1.name); e2.scope != null; e2 = e2.next()) {
                 Symbol s2 = e2.sym;
                 if (s1 == s2) continue;
-                if (s2.kind != MTH || !s2.isInheritedIn(site.tsym, types)) continue;
+                if (s2.kind != MTH || !s2.isInheritedIn(site.tsym, types) ||
+                        (s2.flags() & SYNTHETIC) != 0) continue;
                 if (st1 == null) st1 = types.memberType(t1, s1);
                 Type st2 = types.memberType(t2, s2);
                 if (types.overrideEquivalent(st1, st2)) {
