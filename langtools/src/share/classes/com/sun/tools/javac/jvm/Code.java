@@ -1825,7 +1825,7 @@ public class Code {
         }
     }
 
-    static Type jsrReturnValue = new Type(INT, null);
+    static final Type jsrReturnValue = new Type(INT, null);
 
 
 /* **************************************************************************

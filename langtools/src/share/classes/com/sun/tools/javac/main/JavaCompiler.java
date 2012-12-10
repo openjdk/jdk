@@ -189,7 +189,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         }
     }
 
-    private static CompilePolicy DEFAULT_COMPILE_POLICY = CompilePolicy.BY_TODO;
+    private static final CompilePolicy DEFAULT_COMPILE_POLICY = CompilePolicy.BY_TODO;
 
     protected static enum ImplicitSourcePolicy {
         /** Don't generate or process implicitly read source files. */
@@ -543,7 +543,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         public static CompileState max(CompileState a, CompileState b) {
             return a.value > b.value ? a : b;
         }
-        private int value;
+        private final int value;
     };
     /** Partial map to record which compiler phases have been executed
      * for each compilation unit. Used for ATTR and FLOW phases.

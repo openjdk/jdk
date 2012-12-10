@@ -83,7 +83,7 @@ public class ZipFileIndex {
     public final static long NOT_MODIFIED = Long.MIN_VALUE;
 
 
-    private static boolean NON_BATCH_MODE = System.getProperty("nonBatchMode") != null;// TODO: Use -XD compiler switch for this.
+    private static final boolean NON_BATCH_MODE = System.getProperty("nonBatchMode") != null;// TODO: Use -XD compiler switch for this.
 
     private Map<RelativeDirectory, DirectoryEntry> directories =
             Collections.<RelativeDirectory, DirectoryEntry>emptyMap();
