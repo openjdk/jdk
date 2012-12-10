@@ -124,6 +124,17 @@ public class FormatData_da extends ListResourceBundle {
                     "l\u00f8" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "S",
+                    "M",
+                    "T",
+                    "O",
+                    "T",
+                    "F",
+                    "L",
+                }
+            },
             { "NumberElements",
                 new String[] {
                     ",", // decimal separator
