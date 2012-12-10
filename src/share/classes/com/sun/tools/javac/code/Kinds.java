@@ -110,7 +110,7 @@ public class Kinds {
         INSTANCE_INIT("kindname.instance.init"),
         PACKAGE("kindname.package");
 
-        private String name;
+        private final String name;
 
         KindName(String name) {
             this.name = name;
