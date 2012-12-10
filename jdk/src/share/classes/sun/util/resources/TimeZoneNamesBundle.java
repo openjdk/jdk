@@ -42,6 +42,9 @@ package sun.util.resources;
 
 import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.MissingResourceException;
+import java.util.Set;
 
 /**
  * Subclass of <code>ResourceBundle</code> with special
@@ -58,6 +61,26 @@ import java.util.LinkedHashMap;
 public abstract class TimeZoneNamesBundle extends OpenListResourceBundle {
 
     /**
+     * Returns a String array containing time zone names. The String array has
+     * at most size elements.
+     *
+     * @param key  the time zone ID for which names are obtained
+     * @param size the requested size of array for names
+     * @return a String array containing names
+     */
+    public String[] getStringArray(String key, int size) {
+        String[] names = handleGetObject(key, size);
+        if ((names == null || names.length != size) && parent != null) {
+            names = ((TimeZoneNamesBundle)parent).getStringArray(key, size);
+        }
+        if (names == null) {
+            throw new MissingResourceException("no time zone names", getClass().getName(), key);
+        }
+        return names;
+
+    }
+
+    /**
      * Maps time zone IDs to locale-specific names.
      * The value returned is an array of five strings:
      * <ul>
@@ -71,13 +94,17 @@ public abstract class TimeZoneNamesBundle extends OpenListResourceBundle {
      * <code>getContents</code> implementations, while the time zone
      * ID is inserted into the returned array by this method.
      */
+    @Override
     public Object handleGetObject(String key) {
+        return handleGetObject(key, 5);
+    }
+
+    private String[] handleGetObject(String key, int n) {
         String[] contents = (String[]) super.handleGetObject(key);
         if (contents == null) {
             return null;
         }
-
-        int clen = contents.length;
+        int clen = Math.min(n, contents.length);
         String[] tmpobj = new String[clen+1];
         tmpobj[0] = key;
         System.arraycopy(contents, 0, tmpobj, 1, clen);
@@ -85,11 +112,21 @@ public abstract class TimeZoneNamesBundle extends OpenListResourceBundle {
     }
 
     /**
-     * Use LinkedHashMap to preserve order of bundle entries.
+     * Use LinkedHashMap to preserve the order of bundle entries.
      */
     @Override
-    protected Map<String, Object> createMap(int size) {
+    protected <K, V> Map<K, V> createMap(int size) {
         return new LinkedHashMap<>(size);
+    }
+
+    /**
+     * Use LinkedHashSet to preserve the key order.
+     * @param <E> the type of elements
+     * @return a Set
+     */
+    @Override
+    protected <E> Set<E> createSet() {
+        return new LinkedHashSet<>();
     }
 
     /**

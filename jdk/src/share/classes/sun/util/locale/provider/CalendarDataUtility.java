@@ -25,7 +25,6 @@
 
 package sun.util.locale.provider;
 
-import java.util.Calendar;
 import static java.util.Calendar.*;
 import java.util.Locale;
 import java.util.Map;
