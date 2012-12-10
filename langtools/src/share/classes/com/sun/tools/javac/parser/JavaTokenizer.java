@@ -44,7 +44,7 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
  */
 public class JavaTokenizer {
 
-    private static boolean scannerDebug = false;
+    private static final boolean scannerDebug = false;
 
     /** Allow hex floating-point literals.
      */

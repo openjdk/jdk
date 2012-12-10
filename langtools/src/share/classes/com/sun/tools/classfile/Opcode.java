@@ -448,10 +448,10 @@ public enum Opcode {
 
     }
 
-    private static Opcode[] stdOpcodes = new Opcode[256];
-    private static Opcode[] wideOpcodes = new Opcode[256];
-    private static Opcode[] nonPrivOpcodes = new Opcode[256];
-    private static Opcode[] privOpcodes = new Opcode[256];
+    private static final Opcode[] stdOpcodes = new Opcode[256];
+    private static final Opcode[] wideOpcodes = new Opcode[256];
+    private static final Opcode[] nonPrivOpcodes = new Opcode[256];
+    private static final Opcode[] privOpcodes = new Opcode[256];
     static {
         for (Opcode o: values())
             getOpcodeBlock(o.opcode >> 8)[o.opcode & 0xff] = o;
