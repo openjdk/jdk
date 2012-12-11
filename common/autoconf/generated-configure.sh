@@ -3674,7 +3674,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1355221697
+DATE_WHEN_GENERATED=1355221914
 
 ###############################################################################
 #
@@ -27820,34 +27820,34 @@ esac
 # ENABLE_DEBUG_SYMBOLS
 # This must be done after the toolchain is setup, since we're looking at objcopy.
 #
-ENABLE_DEBUG_SYMBOLS=default
-
-# default on macosx is no...
-if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-   ENABLE_DEBUG_SYMBOLS=no
-fi
-
 # Check whether --enable-debug-symbols was given.
 if test "${enable_debug_symbols+set}" = set; then :
-  enableval=$enable_debug_symbols; ENABLE_DEBUG_SYMBOLS=${enable_debug_symbols}
+  enableval=$enable_debug_symbols;
 fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we should generate debug symbols" >&5
 $as_echo_n "checking if we should generate debug symbols... " >&6; }
 
-if test "x$ENABLE_DEBUG_SYMBOLS" = "xyes" && test "x$OBJCOPY" = x; then
+if test "x$enable_debug_symbols" = "xyes" && test "x$OBJCOPY" = x; then
    # explicit enabling of enable-debug-symbols and can't find objcopy
    #   this is an error
    as_fn_error $? "Unable to find objcopy, cannot enable debug-symbols" "$LINENO" 5
 fi
 
-if test "x$ENABLE_DEBUG_SYMBOLS" = "xdefault"; then
+if test "x$enable_debug_symbols" = "xyes"; then
+  ENABLE_DEBUG_SYMBOLS=true
+elif test "x$enable_debug_symbols" = "xno"; then
+  ENABLE_DEBUG_SYMBOLS=false
+else
+  # default on macosx is false
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    ENABLE_DEBUG_SYMBOLS=false
   # Default is on if objcopy is found, otherwise off
-  if test "x$OBJCOPY" != x || test "x$OPENJDK_TARGET_OS" = xwindows; then
-     ENABLE_DEBUG_SYMBOLS=yes
+  elif test "x$OBJCOPY" != x || test "x$OPENJDK_TARGET_OS" = xwindows; then
+    ENABLE_DEBUG_SYMBOLS=true
   else
-     ENABLE_DEBUG_SYMBOLS=no
+    ENABLE_DEBUG_SYMBOLS=false
   fi
 fi
 
@@ -27857,25 +27857,21 @@ $as_echo "$ENABLE_DEBUG_SYMBOLS" >&6; }
 #
 # ZIP_DEBUGINFO_FILES
 #
-ZIP_DEBUGINFO_FILES=yes
-
 # Check whether --enable-zip-debug-info was given.
 if test "${enable_zip_debug_info+set}" = set; then :
-  enableval=$enable_zip_debug_info; ZIP_DEBUGINFO_FILES=${enable_zip_debug_info}
+  enableval=$enable_zip_debug_info;
 fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we should zip debug-info files" >&5
 $as_echo_n "checking if we should zip debug-info files... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP_DEBUGINFO_FILES" >&5
-$as_echo "$ZIP_DEBUGINFO_FILES" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${enable_zip_debug_info}" >&5
+$as_echo "${enable_zip_debug_info}" >&6; }
 
-# Hotspot wants ZIP_DEBUGINFO_FILES to be 1 for yes
-#   use that...
-if test "x$ZIP_DEBUGINFO_FILES" = "xyes"; then
-   ZIP_DEBUGINFO_FILES=1
+if test "x${enable_zip_debug_info}" = "xno"; then
+   ZIP_DEBUGINFO_FILES=false
 else
-   ZIP_DEBUGINFO_FILES=0
+   ZIP_DEBUGINFO_FILES=true
 fi
 
 
