@@ -27,10 +27,9 @@ package com.sun.tools.javadoc;
 
 import com.sun.javadoc.*;
 
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
-import com.sun.tools.javac.util.Position;
 
 /**
  * Represents a constructor of a java class.
@@ -58,9 +57,8 @@ public class ConstructorDocImpl
     /**
      * constructor.
      */
-    public ConstructorDocImpl(DocEnv env, MethodSymbol sym,
-                              String docComment, JCMethodDecl tree, Position.LineMap lineMap) {
-        super(env, sym, docComment, tree, lineMap);
+    public ConstructorDocImpl(DocEnv env, MethodSymbol sym, TreePath treePath) {
+        super(env, sym, treePath);
     }
 
     /**

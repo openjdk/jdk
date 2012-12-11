@@ -25,14 +25,13 @@
 
 package com.sun.tools.javadoc;
 
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.MemberEnter;
 import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Position;
 
 /**
  *  Javadoc's own memberEnter phase does a few things above and beyond that
@@ -73,14 +72,13 @@ public class JavadocMemberEnter extends MemberEnter {
         super.visitMethodDef(tree);
         MethodSymbol meth = tree.sym;
         if (meth == null || meth.kind != Kinds.MTH) return;
-        String docComment = TreeInfo.getCommentText(env, tree);
-        Position.LineMap lineMap = env.toplevel.lineMap;
+        TreePath treePath = docenv.getTreePath(env.toplevel, tree);
         if (meth.isConstructor())
-            docenv.makeConstructorDoc(meth, docComment, tree, lineMap);
+            docenv.makeConstructorDoc(meth, treePath);
         else if (isAnnotationTypeElement(meth))
-            docenv.makeAnnotationTypeElementDoc(meth, docComment, tree, lineMap);
+            docenv.makeAnnotationTypeElementDoc(meth, treePath);
         else
-            docenv.makeMethodDoc(meth, docComment, tree, lineMap);
+            docenv.makeMethodDoc(meth, treePath);
 
         // release resources
         tree.body = null;
@@ -92,9 +90,7 @@ public class JavadocMemberEnter extends MemberEnter {
         if (tree.sym != null &&
                 tree.sym.kind == Kinds.VAR &&
                 !isParameter(tree.sym)) {
-            String docComment = TreeInfo.getCommentText(env, tree);
-            Position.LineMap lineMap = env.toplevel.lineMap;
-            docenv.makeFieldDoc(tree.sym, docComment, tree, lineMap);
+            docenv.makeFieldDoc(tree.sym, docenv.getTreePath(env.toplevel, tree));
         }
     }
 

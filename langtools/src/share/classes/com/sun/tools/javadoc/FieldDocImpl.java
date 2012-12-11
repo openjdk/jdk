@@ -25,6 +25,7 @@
 
 package com.sun.tools.javadoc;
 
+import com.sun.source.util.TreePath;
 import java.lang.reflect.Modifier;
 
 import com.sun.javadoc.*;
@@ -61,9 +62,8 @@ public class FieldDocImpl extends MemberDocImpl implements FieldDoc {
     /**
      * Constructor.
      */
-    public FieldDocImpl(DocEnv env, VarSymbol sym,
-                        String rawDocs, JCVariableDecl tree, Position.LineMap lineMap) {
-        super(env, sym, rawDocs, tree, lineMap);
+    public FieldDocImpl(DocEnv env, VarSymbol sym, TreePath treePath) {
+        super(env, sym, treePath);
         this.sym = sym;
     }
 
@@ -71,7 +71,7 @@ public class FieldDocImpl extends MemberDocImpl implements FieldDoc {
      * Constructor.
      */
     public FieldDocImpl(DocEnv env, VarSymbol sym) {
-        this(env, sym, null, null, null);
+        this(env, sym, null);
     }
 
     /**
