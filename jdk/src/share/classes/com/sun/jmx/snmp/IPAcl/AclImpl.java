@@ -66,7 +66,7 @@ class AclImpl extends OwnerImpl implements Acl, Serializable {
    */
   public AclImpl (PrincipalImpl owner, String name) {
         super(owner);
-        entryList = new Vector<AclEntry>();
+        entryList = new Vector<>();
         aclName = name;
   }
 
@@ -81,6 +81,7 @@ class AclImpl extends OwnerImpl implements Acl, Serializable {
    *            of this ACL.
    * @see java.security.Principal
    */
+  @Override
   public void setName(Principal caller, String name)
         throws NotOwnerException {
           if (!isOwner(caller))
@@ -93,6 +94,7 @@ class AclImpl extends OwnerImpl implements Acl, Serializable {
    *
    * @return the name of this ACL.
    */
+  @Override
   public String getName(){
         return aclName;
   }
@@ -113,6 +115,7 @@ class AclImpl extends OwnerImpl implements Acl, Serializable {
    *       this ACL.
    * @see java.security.Principal
    */
+  @Override
   public boolean addEntry(Principal caller, AclEntry entry)
         throws NotOwnerException {
           if (!isOwner(caller))
@@ -144,6 +147,7 @@ class AclImpl extends OwnerImpl implements Acl, Serializable {
    * @see java.security.Principal
    * @see java.security.acl.AclEntry
    */
+  @Override
   public boolean removeEntry(Principal caller, AclEntry entry)
         throws NotOwnerException {
           if (!isOwner(caller))
@@ -185,8 +189,9 @@ class AclImpl extends OwnerImpl implements Acl, Serializable {
    *     is allowed.
    * @see java.security.Principal
    */
+  @Override
   public Enumeration<Permission> getPermissions(Principal user){
-        Vector<Permission> empty = new Vector<Permission>();
+        Vector<Permission> empty = new Vector<>();
         for (Enumeration<AclEntry> e = entryList.elements();e.hasMoreElements();){
           AclEntry ent = e.nextElement();
           if (ent.getPrincipal().equals(user))
@@ -201,6 +206,7 @@ class AclImpl extends OwnerImpl implements Acl, Serializable {
    *
    * @return an enumeration of the entries in this ACL.
    */
+  @Override
   public Enumeration<AclEntry> entries(){
         return entryList.elements();
   }
@@ -221,10 +227,11 @@ class AclImpl extends OwnerImpl implements Acl, Serializable {
    * @see java.security.Principal
    * @see java.security.Permission
    */
+  @Override
   public boolean checkPermission(Principal user,
                                  java.security.acl.Permission perm) {
-        for (Enumeration e = entryList.elements();e.hasMoreElements();){
-          AclEntry ent = (AclEntry) e.nextElement();
+        for (Enumeration<AclEntry> e = entryList.elements();e.hasMoreElements();){
+          AclEntry ent = e.nextElement();
           if (ent.getPrincipal().equals(user))
                 if (ent.checkPermission(perm)) return true;
         }
@@ -250,7 +257,7 @@ class AclImpl extends OwnerImpl implements Acl, Serializable {
    */
   public boolean checkPermission(Principal user, String community,
                                  java.security.acl.Permission perm) {
-        for (Enumeration e = entryList.elements();e.hasMoreElements();){
+        for (Enumeration<AclEntry> e = entryList.elements();e.hasMoreElements();){
           AclEntryImpl ent = (AclEntryImpl) e.nextElement();
           if (ent.getPrincipal().equals(user))
                 if (ent.checkPermission(perm) && ent.checkCommunity(community)) return true;
@@ -269,7 +276,7 @@ class AclImpl extends OwnerImpl implements Acl, Serializable {
    * @see java.security.Permission
    */
   public boolean checkCommunity(String community) {
-        for (Enumeration e = entryList.elements();e.hasMoreElements();){
+        for (Enumeration<AclEntry> e = entryList.elements();e.hasMoreElements();){
           AclEntryImpl ent = (AclEntryImpl) e.nextElement();
           if (ent.checkCommunity(community)) return true;
         }
@@ -281,6 +288,7 @@ class AclImpl extends OwnerImpl implements Acl, Serializable {
    *
    * @return a string representation of the ACL contents.
    */
+  @Override
   public String toString(){
         return ("AclImpl: "+ getName());
   }

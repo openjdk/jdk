@@ -147,6 +147,7 @@ JAVA_JAVA_java = \
 	java/lang/ref/PhantomReference.java \
     java/lang/ref/ReferenceQueue.java \
     java/lang/ref/Finalizer.java \
+    java/util/Base64.java \
     java/util/BitSet.java \
     java/util/Calendar.java \
         java/util/GregorianCalendar.java \

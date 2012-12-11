@@ -40,6 +40,7 @@ abstract class HelloExtension {
 
     abstract void send(HandshakeOutStream s) throws IOException;
 
+    @Override
     public abstract String toString();
 
 }

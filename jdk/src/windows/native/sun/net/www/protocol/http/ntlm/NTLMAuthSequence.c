@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,18 +41,20 @@
 #define SECURITY_WIN32
 #include "sspi.h"
 
-static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle);
+static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle, JNIEnv *env, jobject status);
 
 static jfieldID ntlm_ctxHandleID;
 static jfieldID ntlm_crdHandleID;
+static jfieldID status_seqCompleteID;
 
 static HINSTANCE lib = NULL;
 
 JNIEXPORT void JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_initFirst
-(JNIEnv *env, jclass clazz)
+(JNIEnv *env, jclass authseq_clazz, jclass status_clazz)
 {
-    ntlm_ctxHandleID = (*env)->GetFieldID(env, clazz, "ctxHandle", "J");
-    ntlm_crdHandleID = (*env)->GetFieldID(env, clazz, "crdHandle", "J");
+    ntlm_ctxHandleID = (*env)->GetFieldID(env, authseq_clazz, "ctxHandle", "J");
+    ntlm_crdHandleID = (*env)->GetFieldID(env, authseq_clazz, "crdHandle", "J");
+    status_seqCompleteID = (*env)->GetFieldID(env, status_clazz, "sequenceComplete", "Z");
 }
 
 /*
@@ -145,8 +147,14 @@ JNIEXPORT jlong JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_get
     }
 }
 
+
+/*
+ * Class:     sun_net_www_protocol_http_ntlm_NTLMAuthSequence
+ * Method:    getNextToken
+ * Signature: (J[BLsun/net/www/protocol/http/ntlm/NTLMAuthSequence/Status;)[B
+ */
 JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_getNextToken
-(JNIEnv *env, jobject this, jlong crdHandle, jbyteArray lastToken)
+(JNIEnv *env, jobject this, jlong crdHandle, jbyteArray lastToken, jobject status)
 {
 
     VOID        *pInput = 0;
@@ -217,7 +225,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
     }
 
     if (ss < 0) {
-        endSequence (pCred, pCtx);
+        endSequence (pCred, pCtx, env, status);
         return 0;
     }
 
@@ -225,7 +233,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
         ss = CompleteAuthToken( pCtx, &OutBuffDesc );
 
         if (ss < 0) {
-            endSequence (pCred, pCtx);
+            endSequence (pCred, pCtx, env, status);
             return 0;
         }
     }
@@ -235,18 +243,18 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
         (*env)->SetByteArrayRegion(env, ret, 0, OutSecBuff.cbBuffer,
                 OutSecBuff.pvBuffer);
         if (lastToken != 0) // 2nd stage
-            endSequence (pCred, pCtx);
+            endSequence (pCred, pCtx, env, status);
         result = ret;
     }
 
     if ((ss != SEC_I_CONTINUE_NEEDED) && (ss == SEC_I_COMPLETE_AND_CONTINUE)) {
-        endSequence (pCred, pCtx);
+        endSequence (pCred, pCtx, env, status);
     }
 
     return result;
 }
 
-static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle) {
+static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle, JNIEnv *env, jobject status) {
     if (credHand != 0) {
         FreeCredentialsHandle(credHand);
         free(credHand);
@@ -256,4 +264,7 @@ static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle) {
         DeleteSecurityContext(ctxHandle);
         free(ctxHandle);
     }
+
+    /* Sequence is complete so set flag */
+    (*env)->SetBooleanField(env, status, status_seqCompleteID, JNI_TRUE);
 }

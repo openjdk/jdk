@@ -121,6 +121,7 @@ ifneq ($(OPENJDK_TARGET_OS),linux)
 	     sun/nio/fs/LinuxFileStore.java \
 	     sun/nio/fs/LinuxFileSystem.java \
 	     sun/nio/fs/LinuxFileSystemProvider.java \
+	     sun/nio/fs/MagicFileTypeDetector.java \
 	     sun/nio/fs/LinuxNativeDispatcher.java \
 	     sun/nio/fs/LinuxUserDefinedFileAttributeView.java \
 	     sun/nio/fs/LinuxWatchService.java

@@ -1025,7 +1025,8 @@ public abstract class PathGraphics extends ProxyGraphics2D {
                 continue;
             }
             glyph = font2D.charToGlyph(c);
-            if (glyph != missingGlyph && glyph < numGlyphs &&
+            if (glyph != missingGlyph &&
+                glyph >= 0 && glyph < numGlyphs &&
                 (glyphToCharMap[glyph] ==
                  CharToGlyphMapper.INVISIBLE_GLYPH_ID)) {
                 glyphToCharMap[glyph] = c;
