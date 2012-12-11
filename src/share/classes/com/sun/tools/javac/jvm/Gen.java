@@ -71,6 +71,7 @@ public class Gen extends JCTree.Visitor {
     private final Map<Type,Symbol> stringBufferAppend;
     private Name accessDollar;
     private final Types types;
+    private final Lower lower;
 
     /** Switch: GJ mode?
      */
@@ -112,6 +113,7 @@ public class Gen extends JCTree.Visitor {
         stringBufferAppend = new HashMap<Type,Symbol>();
         accessDollar = names.
             fromString("access" + target.syntheticNameChar());
+        lower = Lower.instance(context);
 
         Options options = Options.instance(context);
         lineDebugInfo =
@@ -816,6 +818,62 @@ public class Gen extends JCTree.Visitor {
         }
     }
 
+    /** Visitor class for expressions which might be constant expressions.
+     *  This class is a subset of TreeScanner. Intended to visit trees pruned by
+     *  Lower as long as constant expressions looking for references to any
+     *  ClassSymbol. Any such reference will be added to the constant pool so
+     *  automated tools can detect class dependencies better.
+     */
+    class ClassReferenceVisitor extends JCTree.Visitor {
+
+        @Override
+        public void visitTree(JCTree tree) {}
+
+        @Override
+        public void visitBinary(JCBinary tree) {
+            tree.lhs.accept(this);
+            tree.rhs.accept(this);
+        }
+
+        @Override
+        public void visitSelect(JCFieldAccess tree) {
+            if (tree.selected.type.hasTag(CLASS)) {
+                makeRef(tree.selected.pos(), tree.selected.type);
+            }
+        }
+
+        @Override
+        public void visitIdent(JCIdent tree) {
+            if (tree.sym.owner instanceof ClassSymbol) {
+                pool.put(tree.sym.owner);
+            }
+        }
+
+        @Override
+        public void visitConditional(JCConditional tree) {
+            tree.cond.accept(this);
+            tree.truepart.accept(this);
+            tree.falsepart.accept(this);
+        }
+
+        @Override
+        public void visitUnary(JCUnary tree) {
+            tree.arg.accept(this);
+        }
+
+        @Override
+        public void visitParens(JCParens tree) {
+            tree.expr.accept(this);
+        }
+
+        @Override
+        public void visitTypeCast(JCTypeCast tree) {
+            tree.expr.accept(this);
+        }
+    }
+
+    private ClassReferenceVisitor classReferenceVisitor = new ClassReferenceVisitor();
+
     /** Visitor method: generate code for an expression, catching and reporting
      *  any completion failures.
      *  @param tree    The expression to be visited.
@@ -826,6 +884,7 @@ public class Gen extends JCTree.Visitor {
         try {
             if (tree.type.constValue() != null) {
                 // Short circuit any expressions which are constants
+                tree.accept(classReferenceVisitor);
                 checkStringConstant(tree.pos(), tree.type.constValue());
                 result = items.makeImmediateItem(tree.type, tree.type.constValue());
             } else {
@@ -2205,6 +2264,15 @@ public class Gen extends JCTree.Visitor {
         code.endScopes(limit);
     }
 
+    private void generateReferencesToPrunedTree(ClassSymbol classSymbol, Pool pool) {
+        List<JCTree> prunedInfo = lower.prunedTree.get(classSymbol);
+        if (prunedInfo != null) {
+            for (JCTree prunedTree: prunedInfo) {
+                prunedTree.accept(classReferenceVisitor);
+            }
+        }
+    }
+
 /* ************************************************************************
  * main method
  *************************************************************************/
@@ -2232,6 +2300,7 @@ public class Gen extends JCTree.Visitor {
             cdef.defs = normalizeDefs(cdef.defs, c);
             c.pool = pool;
             pool.reset();
+            generateReferencesToPrunedTree(c, pool);
             Env<GenContext> localEnv =
                 new Env<GenContext>(cdef, new GenContext());
             localEnv.toplevel = env.toplevel;
