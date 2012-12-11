@@ -74,6 +74,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
     public Element asElement(TypeMirror t) {
         switch (t.getKind()) {
             case DECLARED:
+            case INTERSECTION:
             case ERROR:
             case TYPEVAR:
                 Type type = cast(Type.class, t);
