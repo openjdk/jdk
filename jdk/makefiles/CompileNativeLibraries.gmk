@@ -125,7 +125,7 @@ endif
 
 LIBVERIFY_OPTIMIZATION:=HIGH
 ifneq ($(findstring $(OPENJDK_TARGET_OS),solaris linux),)
-    ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+    ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
         LIBVERIFY_OPTIMIZATION:=LOW
     endif
 endif
@@ -1645,7 +1645,7 @@ endif
 
 LIBMANAGEMENT_OPTIMIZATION:=HIGH
 ifneq ($(findstring $(OPENJDK_TARGET_OS),solaris linux),)
-    ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+    ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
         LIBMANAGEMENT_OPTIMIZATION:=LOW
     endif
 endif
@@ -1688,7 +1688,7 @@ BUILD_LIBHPROF_LDFLAGS:=
 
 LIBHPROF_OPTIMIZATION:=HIGHEST
 ifneq ($(findstring $(OPENJDK_TARGET_OS),solaris linux),)
-    ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+    ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
         LIBHPROF_OPTIMIZATION:=LOW
     endif
 endif
