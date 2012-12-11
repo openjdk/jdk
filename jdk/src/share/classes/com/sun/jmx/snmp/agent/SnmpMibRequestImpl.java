@@ -87,6 +87,7 @@ final class SnmpMibRequestImpl implements SnmpMibRequest {
      * Returns the local engine. This parameter is returned only if <CODE> SnmpV3AdaptorServer </CODE> is the adaptor receiving this request. Otherwise null is returned.
      * @return the local engine.
      */
+    @Override
     public SnmpEngine getEngine() {
         return engine;
     }
@@ -95,6 +96,7 @@ final class SnmpMibRequestImpl implements SnmpMibRequest {
      * Gets the incoming request principal. This parameter is returned only if <CODE> SnmpV3AdaptorServer </CODE> is the adaptor receiving this request. Otherwise null is returned.
      * @return The request principal.
      **/
+    @Override
     public String getPrincipal() {
         return principal;
     }
@@ -103,6 +105,7 @@ final class SnmpMibRequestImpl implements SnmpMibRequest {
      * Gets the incoming request security level. This level is defined in {@link com.sun.jmx.snmp.SnmpEngine SnmpEngine}. This parameter is returned only if <CODE> SnmpV3AdaptorServer </CODE> is the adaptor receiving this request. Otherwise -1 is returned.
      * @return The security level.
      */
+    @Override
     public int getSecurityLevel() {
         return securityLevel;
     }
@@ -110,6 +113,7 @@ final class SnmpMibRequestImpl implements SnmpMibRequest {
      * Gets the incoming request security model. This parameter is returned only if <CODE> SnmpV3AdaptorServer </CODE> is the adaptor receiving this request. Otherwise -1 is returned.
      * @return The security model.
      */
+    @Override
     public int getSecurityModel() {
         return securityModel;
     }
@@ -117,6 +121,7 @@ final class SnmpMibRequestImpl implements SnmpMibRequest {
      * Gets the incoming request context name. This parameter is returned only if <CODE> SnmpV3AdaptorServer </CODE> is the adaptor receiving this request. Otherwise null is returned.
      * @return The context name.
      */
+    @Override
     public byte[] getContextName() {
         return contextName;
     }
@@ -125,6 +130,7 @@ final class SnmpMibRequestImpl implements SnmpMibRequest {
      * Gets the incoming request context name used by Access Control Model in order to allow or deny the access to OIDs. This parameter is returned only if <CODE> SnmpV3AdaptorServer </CODE> is the adaptor receiving this request. Otherwise null is returned.
      * @return The checked context.
      */
+    @Override
     public byte[] getAccessContextName() {
         return accessContextName;
     }
@@ -133,6 +139,7 @@ final class SnmpMibRequestImpl implements SnmpMibRequest {
     // Implements the method defined in SnmpMibRequest interface.
     // See SnmpMibRequest for the java doc.
     // -------------------------------------------------------------------
+    @Override
     public final SnmpPdu getPdu() {
         return reqPdu;
     }
@@ -141,18 +148,21 @@ final class SnmpMibRequestImpl implements SnmpMibRequest {
     // Implements the method defined in SnmpMibRequest interface.
     // See SnmpMibRequest for the java doc.
     // -------------------------------------------------------------------
-    public final Enumeration getElements()  {return varbinds.elements();}
+    @Override
+    public final Enumeration<SnmpVarBind> getElements()  {return varbinds.elements();}
 
     // -------------------------------------------------------------------
     // Implements the method defined in SnmpMibRequest interface.
     // See SnmpMibRequest for the java doc.
     // -------------------------------------------------------------------
+    @Override
     public final Vector<SnmpVarBind> getSubList()  {return varbinds;}
 
     // -------------------------------------------------------------------
     // Implements the method defined in SnmpMibRequest interface.
     // See SnmpMibRequest for the java doc.
     // -------------------------------------------------------------------
+    @Override
     public final int getSize()  {
         if (varbinds == null) return 0;
         return varbinds.size();
@@ -162,24 +172,28 @@ final class SnmpMibRequestImpl implements SnmpMibRequest {
     // Implements the method defined in SnmpMibRequest interface.
     // See SnmpMibRequest for the java doc.
     // -------------------------------------------------------------------
+    @Override
     public final int         getVersion()  {return version;}
 
     // -------------------------------------------------------------------
     // Implements the method defined in SnmpMibRequest interface.
     // See SnmpMibRequest for the java doc.
     // -------------------------------------------------------------------
+    @Override
     public final int         getRequestPduVersion()  {return reqPdu.version;}
 
     // -------------------------------------------------------------------
     // Implements the method defined in SnmpMibRequest interface.
     // See SnmpMibRequest for the java doc.
     // -------------------------------------------------------------------
+    @Override
     public final Object      getUserData() {return data;}
 
     // -------------------------------------------------------------------
     // Implements the method defined in SnmpMibRequest interface.
     // See SnmpMibRequest for the java doc.
     // -------------------------------------------------------------------
+    @Override
     public final int getVarIndex(SnmpVarBind varbind) {
         return varbinds.indexOf(varbind);
     }
@@ -188,6 +202,7 @@ final class SnmpMibRequestImpl implements SnmpMibRequest {
     // Implements the method defined in SnmpMibRequest interface.
     // See SnmpMibRequest for the java doc.
     // -------------------------------------------------------------------
+    @Override
     public void addVarBind(SnmpVarBind varbind) {
         varbinds.addElement(varbind);
     }
@@ -218,7 +233,7 @@ final class SnmpMibRequestImpl implements SnmpMibRequest {
     // Returns the underlying vector of SNMP varbinds (used for algorithm
     // optimization).
     // -------------------------------------------------------------------
-    final Vector getVarbinds() {return varbinds;}
+    final Vector<SnmpVarBind> getVarbinds() {return varbinds;}
 
     // -------------------------------------------------------------------
     // Private variables

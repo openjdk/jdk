@@ -22,24 +22,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package sun.awt;
+package java.util.function;
 
 /**
- * A GraphicsConfiguration implements the TextureSizeConstraining
- * interface to indicate that it imposes certain limitations on the
- * maximum size of supported textures.
+ * Apply a function to the input object yielding an appropriate {@code double}
+ * value; this is the {@code double}-bearing specialization for {@link Function}.
+ *
+ * @param <T> the type of input objects to the function
+ *
+ * @since 1.8
  */
-public interface TextureSizeConstraining {
+public interface DoubleFunction<T> {
 
     /**
-     * Returns the maximum width of any texture image.
+     * Apply a function to the input object yielding an appropriate
+     * {@code double} value.
+     *
+     * @param t the input object
+     * @return the function result value
      */
-    public int getMaxTextureWidth();
-
-    /**
-     * Returns the maximum height of any texture image.
-     */
-    public int getMaxTextureHeight();
-
+    public double applyAsDouble(T t);
 }

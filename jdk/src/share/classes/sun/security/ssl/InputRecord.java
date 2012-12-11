@@ -28,8 +28,6 @@ package sun.security.ssl;
 
 import java.io.*;
 import java.nio.*;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 
 import javax.crypto.BadPaddingException;
 
@@ -285,6 +283,7 @@ class InputRecord extends ByteArrayInputStream implements Record {
      * Prevent any more data from being read into this record,
      * and flag the record as holding no data.
      */
+    @Override
     public void close() {
         appDataValid = false;
         isClosed = true;

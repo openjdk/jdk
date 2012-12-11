@@ -99,7 +99,7 @@ public interface InetAddressAcl {
      *
      * @return An enumeration of the trap destinations (enumeration of <CODE>InetAddress</CODE>).
      */
-    public Enumeration getTrapDestinations();
+    public Enumeration<InetAddress> getTrapDestinations();
 
     /**
      * Returns an enumeration of trap communities for a given host.
@@ -108,14 +108,14 @@ public interface InetAddressAcl {
      *
      * @return An enumeration of trap communities for a given host (enumeration of <CODE>String</CODE>).
      */
-    public Enumeration getTrapCommunities(InetAddress address);
+    public Enumeration<String> getTrapCommunities(InetAddress address);
 
     /**
      * Returns an enumeration of inform destinations.
      *
      * @return An enumeration of the inform destinations (enumeration of <CODE>InetAddress</CODE>).
      */
-    public Enumeration getInformDestinations();
+    public Enumeration<InetAddress> getInformDestinations();
 
     /**
      * Returns an enumeration of inform communities for a given host.
@@ -124,5 +124,5 @@ public interface InetAddressAcl {
      *
      * @return An enumeration of inform communities for a given host (enumeration of <CODE>String</CODE>).
      */
-    public Enumeration getInformCommunities(InetAddress address);
+    public Enumeration<String> getInformCommunities(InetAddress address);
 }

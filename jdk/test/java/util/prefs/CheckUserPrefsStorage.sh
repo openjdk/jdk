@@ -22,10 +22,10 @@
 #
 
 # @test
-# @bug 7198073
+# @bug 7198073 7197662
 # @build CheckUserPrefFirst CheckUserPrefLater
 # @run shell CheckUserPrefsStorage.sh
-# @summary Tests that user preferences are stored in the 
+# @summary Tests that user preferences are stored in the
 #          permanent storage
 #
 
@@ -50,14 +50,14 @@ case "$OS" in
 esac
 
 # run CheckUserPrefFirst - creates and stores a user pref
-${TESTJAVA}${FS}bin${FS}java -cp ${TESTCLASSES} CheckUserPrefFirst
+${TESTJAVA}${FS}bin${FS}java -cp ${TESTCLASSES} -Djava.util.prefs.userRoot=. CheckUserPrefFirst
 result=$?
 if [ "$result" -ne "0" ]; then
     exit 1
 fi
 
 # run CheckUserPrefLater - Looks for the stored pref
-${TESTJAVA}${FS}bin${FS}java -cp ${TESTCLASSES} CheckUserPrefLater
+${TESTJAVA}${FS}bin${FS}java -cp ${TESTCLASSES} -Djava.util.prefs.userRoot=. CheckUserPrefLater
 result=$?
 if [ "$result" -ne "0" ]; then
     exit 1

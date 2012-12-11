@@ -28,7 +28,6 @@ package com.sun.jmx.snmp.agent;
 
 // java imports
 //
-import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Iterator;
 
@@ -149,8 +148,8 @@ public class SnmpGenericObjectServer {
         final long[]        idList   = new long[size];
         int   i = 0;
 
-        for (Enumeration e=req.getElements(); e.hasMoreElements();) {
-            final SnmpVarBind var= (SnmpVarBind) e.nextElement();
+        for (Enumeration<SnmpVarBind> e=req.getElements(); e.hasMoreElements();) {
+            final SnmpVarBind var= e.nextElement();
             try {
                 final long id = var.oid.getOidArc(depth);
                 nameList[i]   = meta.getAttributeName(id);
@@ -190,7 +189,7 @@ public class SnmpGenericObjectServer {
         }
 
 
-        final Iterator it = result.iterator();
+        final Iterator<?> it = result.iterator();
 
         for (int j=0; j < i; j++) {
             if (!it.hasNext()) {
@@ -312,8 +311,8 @@ public class SnmpGenericObjectServer {
         final long[]        idList   = new long[size];
         int   i = 0;
 
-        for (Enumeration e=req.getElements(); e.hasMoreElements();) {
-            final SnmpVarBind var= (SnmpVarBind) e.nextElement();
+        for (Enumeration<SnmpVarBind> e=req.getElements(); e.hasMoreElements();) {
+            final SnmpVarBind var= e.nextElement();
             try {
                 final long id = var.oid.getOidArc(depth);
                 final String attname = meta.getAttributeName(id);
@@ -330,7 +329,7 @@ public class SnmpGenericObjectServer {
             }
         }
 
-        AttributeList result = null;
+        AttributeList result;
         int errorCode = SnmpStatusException.noAccess;
 
         try {
@@ -345,7 +344,7 @@ public class SnmpGenericObjectServer {
             result = new AttributeList();
         }
 
-        final Iterator it = result.iterator();
+        final Iterator<?> it = result.iterator();
 
         for (int j=0; j < i; j++) {
             if (!it.hasNext()) {
@@ -469,8 +468,8 @@ public class SnmpGenericObjectServer {
 
         final Object data = req.getUserData();
 
-        for (Enumeration e=req.getElements(); e.hasMoreElements();) {
-            final SnmpVarBind var= (SnmpVarBind) e.nextElement();
+        for (Enumeration<SnmpVarBind> e=req.getElements(); e.hasMoreElements();) {
+            final SnmpVarBind var= e.nextElement();
             try {
                 final long id = var.oid.getOidArc(depth);
                 // call meta.check() here, and meta.check will call check()

@@ -127,13 +127,13 @@ public final class AdaptorBootstrap {
             if (log.isDebugOn())
                 log.debug("getTargetList",Agent.getText("jmxremote.AdaptorBootstrap.getTargetList.processing"));
 
-            final Enumeration td = acl.getTrapDestinations();
+            final Enumeration<InetAddress> td = acl.getTrapDestinations();
             for (; td.hasMoreElements() ;) {
-                final InetAddress targetAddr = (InetAddress)td.nextElement();
-                final Enumeration tc =
+                final InetAddress targetAddr = td.nextElement();
+                final Enumeration<String> tc =
                     acl.getTrapCommunities(targetAddr);
                 for (;tc.hasMoreElements() ;) {
-                    final String community = (String)tc.nextElement();
+                    final String community = tc.nextElement();
                     final NotificationTarget target =
                         new NotificationTargetImpl(targetAddr,
                                                    defaultTrapPort,

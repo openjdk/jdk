@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,9 @@ loadTransport(char *name, jdwpTransportEnv **transportPtr)
     /* First, look in sun.boot.library.path. This should find the standard
      *  dt_socket and dt_shmem transport libraries, or any library
      *  that was delivered with the J2SE.
-     *  Note: Java property sun.boot.library.path contains a single directory.
+     *  Note: Since 6819213 fixed, Java property sun.boot.library.path can
+     *  contain multiple paths. Dll_dir is the first entry and
+     *  -Dsun.boot.library.path entries are appended.
      */
     libdir = gdata->property_sun_boot_library_path;
     if (libdir == NULL) {
