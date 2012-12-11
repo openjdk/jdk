@@ -708,6 +708,7 @@ CXX
 ac_ct_PROPER_COMPILER_CXX
 PROPER_COMPILER_CXX
 POTENTIAL_CXX
+TOOLS_DIR_CXX
 OBJEXT
 EXEEXT
 ac_ct_CC
@@ -718,6 +719,7 @@ CC
 ac_ct_PROPER_COMPILER_CC
 PROPER_COMPILER_CC
 POTENTIAL_CC
+TOOLS_DIR_CC
 BUILD_LD
 BUILD_CXX
 BUILD_CC
@@ -3672,7 +3674,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1354721616
+DATE_WHEN_GENERATED=1355221697
 
 ###############################################################################
 #
@@ -17786,10 +17788,65 @@ fi
 
   COMPILER_NAME=C
 
-  # Do a first initial attempt at searching the list of compiler names.
+  CC=
+  # If TOOLS_DIR is set, check for all compiler names in there first
+  # before checking the rest of the PATH.
+  if test -n "$TOOLS_DIR"; then
+    PATH_save="$PATH"
+    PATH="$TOOLS_DIR"
+    for ac_prog in $COMPILER_CHECK_LIST
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_TOOLS_DIR_CC+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TOOLS_DIR_CC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TOOLS_DIR_CC="$TOOLS_DIR_CC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_TOOLS_DIR_CC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TOOLS_DIR_CC=$ac_cv_path_TOOLS_DIR_CC
+if test -n "$TOOLS_DIR_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CC" >&5
+$as_echo "$TOOLS_DIR_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TOOLS_DIR_CC" && break
+done
+
+    CC=$TOOLS_DIR_CC
+    PATH="$PATH_save"
+  fi
+
   # AC_PATH_PROGS can't be run multiple times with the same variable,
   # so create a new name for this run.
-  for ac_prog in $COMPILER_CHECK_LIST
+  if test "x$CC" = x; then
+    for ac_prog in $COMPILER_CHECK_LIST
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -17834,9 +17891,10 @@ fi
   test -n "$POTENTIAL_CC" && break
 done
 
-  CC=$POTENTIAL_CC
+    CC=$POTENTIAL_CC
+  fi
 
-  if test "x$$CC" = x; then
+  if test "x$CC" = x; then
 
     # Print a helpful message on how to acquire the necessary build dependency.
     # devkit is the help tag: freetyp2, cups, pulse, alsa etc
@@ -19277,10 +19335,65 @@ fi
 
   COMPILER_NAME=C++
 
-  # Do a first initial attempt at searching the list of compiler names.
+  CXX=
+  # If TOOLS_DIR is set, check for all compiler names in there first
+  # before checking the rest of the PATH.
+  if test -n "$TOOLS_DIR"; then
+    PATH_save="$PATH"
+    PATH="$TOOLS_DIR"
+    for ac_prog in $COMPILER_CHECK_LIST
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_TOOLS_DIR_CXX+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TOOLS_DIR_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TOOLS_DIR_CXX="$TOOLS_DIR_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_TOOLS_DIR_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TOOLS_DIR_CXX=$ac_cv_path_TOOLS_DIR_CXX
+if test -n "$TOOLS_DIR_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CXX" >&5
+$as_echo "$TOOLS_DIR_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TOOLS_DIR_CXX" && break
+done
+
+    CXX=$TOOLS_DIR_CXX
+    PATH="$PATH_save"
+  fi
+
   # AC_PATH_PROGS can't be run multiple times with the same variable,
   # so create a new name for this run.
-  for ac_prog in $COMPILER_CHECK_LIST
+  if test "x$CXX" = x; then
+    for ac_prog in $COMPILER_CHECK_LIST
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -19325,9 +19438,10 @@ fi
   test -n "$POTENTIAL_CXX" && break
 done
 
-  CXX=$POTENTIAL_CXX
+    CXX=$POTENTIAL_CXX
+  fi
 
-  if test "x$$CXX" = x; then
+  if test "x$CXX" = x; then
 
     # Print a helpful message on how to acquire the necessary build dependency.
     # devkit is the help tag: freetyp2, cups, pulse, alsa etc
