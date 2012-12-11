@@ -70,9 +70,6 @@ public class MethodRef1 {
         b = MethodRef1::foo; //static reference to foo(int)
         b.m(1);
 
-        b = new MethodRef1()::foo; //instance reference to static methods, supported for now
-        b.m(1);
-
         b = MethodRef1::bar; //static reference to bar(int)
         b.m(2);
 

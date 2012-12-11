@@ -379,6 +379,11 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
+    public void visitTypeIntersection(JCTypeIntersection tree) {
+        tree.bounds = translate(tree.bounds);
+        result = tree;
+    }
+
     public void visitTypeParameter(JCTypeParameter tree) {
         tree.bounds = translate(tree.bounds);
         result = tree;

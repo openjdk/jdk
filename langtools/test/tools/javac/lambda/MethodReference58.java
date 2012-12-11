@@ -21,14 +21,26 @@
  * questions.
  */
 
-// key: compiler.err.prob.found.req
-// key: compiler.misc.invalid.generic.desc.in.functional.intf
+/*
+ * @test
+ * @bug 8004102
+ * @summary Add support for generic functional descriptors
+ * @compile/fail/ref=MethodReference58.out -XDrawDiagnostics MethodReference58.java
+ */
+class MethodReference58 {
 
-class InvalidGenericDescInFunctionalIntf {
-
-    interface SAM {
-        <Z> void m();
+    interface F_Object {
+        <X> void m(X x);
     }
 
-    SAM s = x-> { };
+    interface F_Integer {
+        <X extends Integer> void m(X x);
+    }
+
+    void test() {
+        F_Object f1 = this::g; //incompatible bounds
+        F_Integer f2 = this::g; //ok
+    }
+
+    <Z extends Number> void g(Z z) { }
 }
