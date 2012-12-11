@@ -30,13 +30,12 @@ import java.text.CollationKey;
 
 import com.sun.javadoc.*;
 
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Position;
 
 /**
  * Represents a method or constructor of a java class.
@@ -60,9 +59,8 @@ public abstract class ExecutableMemberDocImpl
     /**
      * Constructor.
      */
-    public ExecutableMemberDocImpl(DocEnv env, MethodSymbol sym,
-                                   String rawDocs, JCMethodDecl tree, Position.LineMap lineMap) {
-        super(env, sym, rawDocs, tree, lineMap);
+    public ExecutableMemberDocImpl(DocEnv env, MethodSymbol sym, TreePath treePath) {
+        super(env, sym, treePath);
         this.sym = sym;
     }
 
@@ -70,7 +68,7 @@ public abstract class ExecutableMemberDocImpl
      * Constructor.
      */
     public ExecutableMemberDocImpl(DocEnv env, MethodSymbol sym) {
-        this(env, sym, null, null, null);
+        this(env, sym, null);
     }
 
     /**
