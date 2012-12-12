@@ -41,13 +41,15 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Bhavesh Patel
  */
-public class DocType extends Content{
+public class DocType extends Content {
 
     private String docType;
 
-    private static DocType transitional;
+    public static final DocType TRANSITIONAL =
+            new DocType("Transitional", "http://www.w3.org/TR/html4/loose.dtd");
 
-    private static DocType frameset;
+    public static final DocType FRAMESET =
+            new DocType("Frameset", "http://www.w3.org/TR/html4/frameset.dtd");
 
     /**
      * Constructor to construct a DocType object.
@@ -57,28 +59,6 @@ public class DocType extends Content{
     private DocType(String type, String dtd) {
         docType = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 " + type +
                 "//EN\" \"" + dtd + "\">" + DocletConstants.NL;
-    }
-
-     /**
-     * Construct and return a HTML 4.01 transitional DocType content
-     *
-     * @return a content tree for transitional DocType
-     */
-    public static DocType Transitional() {
-        if (transitional == null)
-            transitional = new DocType("Transitional", "http://www.w3.org/TR/html4/loose.dtd");
-        return transitional;
-    }
-
-    /**
-     * Construct and return a HTML 4.01 frameset DocType content
-     *
-     * @return a content tree for frameset DocType
-     */
-    public static DocType Frameset() {
-        if (frameset == null)
-            frameset = new DocType("Frameset", "http://www.w3.org/TR/html4/frameset.dtd");
-        return frameset;
     }
 
     /**

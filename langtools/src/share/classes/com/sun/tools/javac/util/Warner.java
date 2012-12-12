@@ -39,7 +39,6 @@ import java.util.EnumSet;
  * deletion without notice.</b>
  */
 public class Warner {
-    public static final Warner noWarnings = new Warner();
 
     private DiagnosticPosition pos = null;
     protected boolean warned = false;

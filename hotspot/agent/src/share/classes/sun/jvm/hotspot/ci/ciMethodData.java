@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -174,4 +174,52 @@ public class ciMethodData extends ciMetadata {
     }
   }
 
+  public void dumpReplayData(PrintStream out) {
+    MethodData mdo = (MethodData)getMetadata();
+    Method method = mdo.getMethod();
+    Klass holder = method.getMethodHolder();
+    out.print("ciMethodData " +
+              holder.getName().asString() + " " +
+              OopUtilities.escapeString(method.getName().asString()) + " " +
+              method.getSignature().asString() + " " +
+              state() + " " + currentMileage());
+    byte[] orig = orig();
+    out.print(" orig " + orig.length);
+    for (int i = 0; i < orig.length; i++) {
+      out.print(" " + (orig[i] & 0xff));
+    }
+
+    long[] data = data();
+    out.print(" data " +  data.length);
+    for (int i = 0; i < data.length; i++) {
+      out.print(" 0x" + Long.toHexString(data[i]));
+    }
+    int count = 0;
+    for (int round = 0; round < 2; round++) {
+      if (round == 1) out.print(" oops " + count);
+      ProfileData pdata = firstData();
+      for ( ; isValid(pdata); pdata = nextData(pdata)) {
+        if (pdata instanceof ciReceiverTypeData) {
+          ciReceiverTypeData vdata = (ciReceiverTypeData)pdata;
+          for (int i = 0; i < vdata.rowLimit(); i++) {
+            ciKlass k = vdata.receiverAt(i);
+            if (k != null) {
+              if (round == 0) count++;
+              else out.print(" " + ((vdata.dp() + vdata.cellOffset(vdata.receiverCellIndex(i))) / MethodData.cellSize) + " " + k.name());
+            }
+          }
+        } else if (pdata instanceof ciVirtualCallData) {
+          ciVirtualCallData vdata = (ciVirtualCallData)pdata;
+          for (int i = 0; i < vdata.rowLimit(); i++) {
+            ciKlass k = vdata.receiverAt(i);
+            if (k != null) {
+              if (round == 0) count++;
+              else out.print(" " + ((vdata.dp() + vdata.cellOffset(vdata.receiverCellIndex(i))) / MethodData.cellSize + " " + k.name()));
+            }
+          }
+        }
+      }
+    }
+    out.println();
+  }
 }

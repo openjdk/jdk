@@ -46,7 +46,11 @@ public abstract class TagletWriter {
     /**
      * True if we only want to write the first sentence.
      */
-    protected boolean isFirstSentence = false;
+    protected final boolean isFirstSentence;
+
+    protected TagletWriter(boolean isFirstSentence) {
+        this.isFirstSentence = isFirstSentence;
+    }
 
     /**
      * @return an instance of the output object.

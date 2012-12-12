@@ -149,7 +149,7 @@ static void print_locked_object_class_name(outputStream* st, Handle obj, const c
       Klass* target_klass = java_lang_Class::as_Klass(obj());
       st->print_cr("(a java.lang.Class for %s)", InstanceKlass::cast(target_klass)->external_name());
     } else {
-      Klass* k = Klass::cast(obj->klass());
+      Klass* k = obj->klass();
       st->print_cr("(a %s)", k->external_name());
     }
   }
@@ -172,7 +172,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       }
     } else if (thread()->current_park_blocker() != NULL) {
       oop obj = thread()->current_park_blocker();
-      Klass* k = Klass::cast(obj->klass());
+      Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", (address)obj, k->external_name());
     }
   }
@@ -550,7 +550,7 @@ void javaVFrame::print_value() const {
   InstanceKlass*     k = m->method_holder();
   tty->print_cr("frame( sp=" INTPTR_FORMAT ", unextended_sp=" INTPTR_FORMAT ", fp=" INTPTR_FORMAT ", pc=" INTPTR_FORMAT ")",
                 _fr.sp(),  _fr.unextended_sp(), _fr.fp(), _fr.pc());
-  tty->print("%s.%s", Klass::cast(k)->internal_name(), m->name()->as_C_string());
+  tty->print("%s.%s", k->internal_name(), m->name()->as_C_string());
 
   if (!m->is_native()) {
     Symbol*  source_name = k->source_file_name();

@@ -28,14 +28,16 @@ package build.tools.cldrconverter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Formatter;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 
 class ResourceBundleGenerator implements BundleGenerator {
-
     @Override
     public void generateBundle(String packageName, String baseName, String localeID, boolean useJava,
-                               Map<String, ?> map, boolean open) throws IOException {
+                               Map<String, ?> map, BundleType type) throws IOException {
         String suffix = useJava ? ".java" : ".properties";
         String lang = CLDRConverter.getLanguageCode(localeID);
         String dirName = CLDRConverter.DESTINATION_DIR + File.separator + "sun" + File.separator
@@ -67,6 +69,28 @@ class ResourceBundleGenerator implements BundleGenerator {
             encoding = "iso-8859-1";
         }
 
+        Formatter fmt = null;
+        if (type == BundleType.TIMEZONE) {
+            fmt = new Formatter();
+            Set<String> metaKeys = new HashSet<>();
+            for (String key : map.keySet()) {
+                if (key.startsWith(CLDRConverter.METAZONE_ID_PREFIX)) {
+                    String meta = key.substring(CLDRConverter.METAZONE_ID_PREFIX.length());
+                    String[] value;
+                    value = (String[]) map.get(key);
+                    fmt.format("        final String[] %s = new String[] {\n", meta);
+                    for (String s : value) {
+                        fmt.format("               \"%s\",\n", CLDRConverter.saveConvert(s, useJava));
+                    }
+                    fmt.format("            };\n");
+                    metaKeys.add(key);
+                }
+            }
+            for (String key : metaKeys) {
+                map.remove(key);
+            }
+        }
+
         try (PrintWriter out = new PrintWriter(file, encoding)) {
             // Output copyright headers
             out.println(CopyrightHeaders.getOpenJDKCopyright());
@@ -74,16 +98,15 @@ class ResourceBundleGenerator implements BundleGenerator {
 
             if (useJava) {
                 out.println("package sun." + packageName + ";\n");
-                if (open) {
-                    out.println("import sun.util.resources.OpenListResourceBundle;\n");
-                    out.println("public class " + baseName + ("root".equals(localeID) ? "" : "_" + localeID) + " extends OpenListResourceBundle {");
-                } else {
-                    out.println("import java.util.ListResourceBundle;\n");
-                    out.println("public class " + baseName + ("root".equals(localeID) ? "" : "_" + localeID) + " extends ListResourceBundle {");
-                }
+                out.printf("import %s;\n\n", type.getPathName());
+                out.printf("public class %s%s extends %s {\n", baseName, "root".equals(localeID) ? "" : "_" + localeID, type.getClassName());
+
                 out.println("    @Override\n" +
-                            "    protected final Object[][] getContents() {\n" +
-                            "        final Object[][] data = new Object[][] {");
+                            "    protected final Object[][] getContents() {");
+                if (fmt != null) {
+                    out.print(fmt.toString());
+                }
+                out.println("        final Object[][] data = new Object[][] {");
             }
             for (String key : map.keySet()) {
                 if (useJava) {
@@ -91,7 +114,11 @@ class ResourceBundleGenerator implements BundleGenerator {
                     if (value == null) {
                         CLDRConverter.warning("null value for " + key);
                     } else if (value instanceof String) {
-                        out.println("            { \"" + key + "\", \"" + CLDRConverter.saveConvert((String) value, useJava) + "\" },");
+                        if (type == BundleType.TIMEZONE) {
+                            out.printf("            { \"%s\", %s },\n", key, CLDRConverter.saveConvert((String) value, useJava));
+                        } else {
+                            out.printf("            { \"%s\", \"%s\" },\n", key, CLDRConverter.saveConvert((String) value, useJava));
+                        }
                     } else if (value instanceof String[]) {
                         String[] values = (String[]) value;
                         out.println("            { \"" + key + "\",\n                new String[] {");

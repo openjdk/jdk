@@ -37,7 +37,7 @@ import sun.reflect.Reflection;
 import sun.misc.JavaLangAccess;
 
 public final class AnnotationSupport {
-    private static JavaLangAccess javaLangAccess = sun.misc.SharedSecrets.getJavaLangAccess();
+    private static final JavaLangAccess javaLangAccess = sun.misc.SharedSecrets.getJavaLangAccess();
 
     /**
      * Finds and returns _one_ annotation of the type indicated by
@@ -104,7 +104,7 @@ public final class AnnotationSupport {
     /**
      * Unpacks the {@code annotationMap} parameter into an array of
      * {@code Annotation}s. This method will unpack all repeating
-     * annotaions containers (once). An annotation type is marked as a
+     * annotations containers (once). An annotation type is marked as a
      * container by meta-annotating it the with the {@code
      * ContainerFor} annotation.
      *
@@ -175,7 +175,6 @@ public final class AnnotationSupport {
                  IllegalArgumentException | // parameters doesn't match
                  InvocationTargetException | // the value method threw an exception
                  ClassCastException e) { // well, a cast failed ...
-            e.getCause().printStackTrace();
             throw new InvalidContainerAnnotationError(containerInstance + " is an invalid container for repeating annotations",
                                                       e,
                                                       containerInstance,

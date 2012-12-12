@@ -240,7 +240,7 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
                                                          protection_domain,
                                                          CHECK_NULL);
     if (k != NULL) {
-      k = Klass::cast(k)->array_klass(fd.dimension(), CHECK_NULL);
+      k = k->array_klass(fd.dimension(), CHECK_NULL);
     }
   } else {
     k = Universe::typeArrayKlassObj(t);
@@ -328,8 +328,8 @@ Klass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
     if ((childk != NULL ) && (is_superclass) &&
        ((quicksuperk = InstanceKlass::cast(childk)->super()) != NULL) &&
 
-         ((Klass::cast(quicksuperk)->name() == class_name) &&
-            (Klass::cast(quicksuperk)->class_loader()  == class_loader()))) {
+         ((quicksuperk->name() == class_name) &&
+            (quicksuperk->class_loader()  == class_loader()))) {
            return quicksuperk;
     } else {
       PlaceholderEntry* probe = placeholders()->get_entry(p_index, p_hash, child_name, loader_data);
@@ -928,7 +928,7 @@ Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
       k = SystemDictionary::find(fd.object_key(), class_loader, protection_domain, THREAD);
     }
     if (k != NULL) {
-      k = Klass::cast(k)->array_klass_or_null(fd.dimension());
+      k = k->array_klass_or_null(fd.dimension());
     }
   } else {
     k = find(class_name, class_loader, protection_domain, THREAD);
@@ -1537,7 +1537,7 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(Symbol* clas
     // Only special cases allow parallel defines and can use other thread's results
     // Other cases fall through, and may run into duplicate defines
     // caught by finding an entry in the SystemDictionary
-    if ((UnsyncloadClass || is_parallelDefine(class_loader)) && (probe->InstanceKlass() != NULL)) {
+    if ((UnsyncloadClass || is_parallelDefine(class_loader)) && (probe->instance_klass() != NULL)) {
         probe->remove_seen_thread(THREAD, PlaceholderTable::DEFINE_CLASS);
         placeholders()->find_and_remove(p_index, p_hash, name_h, loader_data, THREAD);
         SystemDictionary_lock->notify_all();
@@ -1545,7 +1545,7 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(Symbol* clas
         Klass* check = find_class(d_index, d_hash, name_h, loader_data);
         assert(check != NULL, "definer missed recording success");
 #endif
-        return(instanceKlassHandle(THREAD, probe->InstanceKlass()));
+        return(instanceKlassHandle(THREAD, probe->instance_klass()));
     } else {
       // This thread will define the class (even if earlier thread tried and had an error)
       probe->set_definer(THREAD);
@@ -1566,7 +1566,7 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(Symbol* clas
         linkage_exception = Handle(THREAD,PENDING_EXCEPTION);
         CLEAR_PENDING_EXCEPTION;
       } else {
-        probe->set_instanceKlass(k());
+        probe->set_instance_klass(k());
       }
       probe->set_definer(NULL);
       probe->remove_seen_thread(THREAD, PlaceholderTable::DEFINE_CLASS);
@@ -2149,7 +2149,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
     }
     // If element class already loaded, allocate array klass
     if (klass != NULL) {
-      klass = Klass::cast(klass)->array_klass_or_null(fd.dimension());
+      klass = klass->array_klass_or_null(fd.dimension());
     }
   } else {
     MutexLocker mu(SystemDictionary_lock, THREAD);
@@ -2466,9 +2466,9 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
       Klass* sel_klass = java_lang_Class::as_Klass(mirror);
       mirror = NULL;  // safety
       // Emulate ConstantPool::verify_constant_pool_resolve.
-      if (Klass::cast(sel_klass)->oop_is_objArray())
+      if (sel_klass->oop_is_objArray())
         sel_klass = ObjArrayKlass::cast(sel_klass)->bottom_klass();
-      if (Klass::cast(sel_klass)->oop_is_instance()) {
+      if (sel_klass->oop_is_instance()) {
         KlassHandle sel_kh(THREAD, sel_klass);
         LinkResolver::check_klass_accessability(accessing_klass, sel_kh, CHECK_(empty));
       }

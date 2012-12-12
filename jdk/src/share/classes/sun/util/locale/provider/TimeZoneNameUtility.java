@@ -26,28 +26,28 @@
 package sun.util.locale.provider;
 
 import java.lang.ref.SoftReference;
-import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.TimeZoneNameProvider;
 import sun.util.calendar.ZoneInfo;
 import sun.util.resources.OpenListResourceBundle;
+import sun.util.resources.TimeZoneNamesBundle;
 
 /**
  * Utility class that deals with the localized time zone names
  *
  * @author Naoto Sato
+ * @author Masayoshi Okutsu
  */
 public final class TimeZoneNameUtility {
 
     /**
      * cache to hold time zone resource bundles. Keyed by Locale
      */
-    private static ConcurrentHashMap<Locale, SoftReference<OpenListResourceBundle>> cachedBundles =
+    private static ConcurrentHashMap<Locale, SoftReference<TimeZoneNamesBundle>> cachedBundles =
         new ConcurrentHashMap<>();
 
     /**
@@ -73,15 +73,19 @@ public final class TimeZoneNameUtility {
     }
 
     private static String[][] loadZoneStrings(Locale locale) {
+        // If the provider is a TimeZoneNameProviderImpl, call its getZoneStrings
+        // in order to avoid per-ID retrieval.
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(TimeZoneNameProvider.class, locale);
+        TimeZoneNameProvider provider = adapter.getTimeZoneNameProvider();
+        if (provider instanceof TimeZoneNameProviderImpl) {
+            return ((TimeZoneNameProviderImpl)provider).getZoneStrings(locale);
+        }
+
+        // Performs per-ID retrieval.
         List<String[]> zones = new LinkedList<>();
         OpenListResourceBundle rb = getBundle(locale);
-        Enumeration<String> keys = rb.getKeys();
-        String[] names;
-
-        while(keys.hasMoreElements()) {
-            String key = keys.nextElement();
-
-            names = retrieveDisplayNames(rb, key, locale);
+        for (String key : rb.keySet()) {
+            String[] names = retrieveDisplayNamesImpl(key, locale);
             if (names != null) {
                 zones.add(names);
             }
@@ -95,24 +99,50 @@ public final class TimeZoneNameUtility {
      * Retrieve display names for a time zone ID.
      */
     public static String[] retrieveDisplayNames(String id, Locale locale) {
-        OpenListResourceBundle rb = getBundle(locale);
-        return retrieveDisplayNames(rb, id, locale);
-    }
-
-    private static String[] retrieveDisplayNames(OpenListResourceBundle rb,
-                                                String id, Locale locale) {
         if (id == null || locale == null) {
             throw new NullPointerException();
         }
-
-        LocaleServiceProviderPool pool =
-            LocaleServiceProviderPool.getPool(TimeZoneNameProvider.class);
-        return pool.getLocalizedObject(TimeZoneNameGetter.INSTANCE, locale, id);
+        return retrieveDisplayNamesImpl(id, locale);
     }
 
-    private static OpenListResourceBundle getBundle(Locale locale) {
-        OpenListResourceBundle rb;
-        SoftReference<OpenListResourceBundle> data = cachedBundles.get(locale);
+    /**
+     * Retrieves a generic time zone display name for a time zone ID.
+     *
+     * @param id     time zone ID
+     * @param style  TimeZone.LONG or TimeZone.SHORT
+     * @param locale desired Locale
+     * @return the requested generic time zone display name, or null if not found.
+     */
+    public static String retrieveGenericDisplayName(String id, int style, Locale locale) {
+        LocaleServiceProviderPool pool =
+            LocaleServiceProviderPool.getPool(TimeZoneNameProvider.class);
+        return pool.getLocalizedObject(TimeZoneNameGetter.INSTANCE, locale, "generic", style, id);
+    }
+
+    /**
+     * Retrieves a standard or daylight-saving time name for the given time zone ID.
+     *
+     * @param id       time zone ID
+     * @param daylight true for a daylight saving time name, or false for a standard time name
+     * @param style    TimeZone.LONG or TimeZone.SHORT
+     * @param locale   desired Locale
+     * @return the requested time zone name, or null if not found.
+     */
+    public static String retrieveDisplayName(String id, boolean daylight, int style, Locale locale) {
+        LocaleServiceProviderPool pool =
+            LocaleServiceProviderPool.getPool(TimeZoneNameProvider.class);
+        return pool.getLocalizedObject(TimeZoneNameGetter.INSTANCE, locale, daylight ? "dst" : "std", style, id);
+    }
+
+    private static String[] retrieveDisplayNamesImpl(String id, Locale locale) {
+        LocaleServiceProviderPool pool =
+            LocaleServiceProviderPool.getPool(TimeZoneNameProvider.class);
+        return pool.getLocalizedObject(TimeZoneNameArrayGetter.INSTANCE, locale, id);
+    }
+
+    private static TimeZoneNamesBundle getBundle(Locale locale) {
+        TimeZoneNamesBundle rb;
+        SoftReference<TimeZoneNamesBundle> data = cachedBundles.get(locale);
 
         if (data == null || ((rb = data.get()) == null)) {
             rb = LocaleProviderAdapter.forJRE().getLocaleData().getTimeZoneNames(locale);
@@ -127,19 +157,18 @@ public final class TimeZoneNameUtility {
      * Obtains a localized time zone strings from a TimeZoneNameProvider
      * implementation.
      */
-    private static class TimeZoneNameGetter
+    private static class TimeZoneNameArrayGetter
         implements LocaleServiceProviderPool.LocalizedObjectGetter<TimeZoneNameProvider,
                                                                    String[]>{
-        private static final TimeZoneNameGetter INSTANCE =
-            new TimeZoneNameGetter();
+        private static final TimeZoneNameArrayGetter INSTANCE =
+            new TimeZoneNameArrayGetter();
 
         @Override
         public String[] getObject(TimeZoneNameProvider timeZoneNameProvider,
-                                Locale locale,
-                                String requestID,
-                                Object... params) {
+                                  Locale locale,
+                                  String requestID,
+                                  Object... params) {
             assert params.length == 0;
-            String queryID = requestID;
 
             // First, try to get names with the request ID
             String[] names = buildZoneStrings(timeZoneNameProvider, locale, requestID);
@@ -150,21 +179,15 @@ public final class TimeZoneNameUtility {
                 if (aliases != null) {
                     // Check whether this id is an alias, if so,
                     // look for the standard id.
-                    if (aliases.containsKey(queryID)) {
-                        String prevID = queryID;
-                        while ((queryID = aliases.get(queryID)) != null) {
-                            prevID = queryID;
-                        }
-                        queryID = prevID;
+                    String canonicalID = aliases.get(requestID);
+                    if (canonicalID != null) {
+                        names = buildZoneStrings(timeZoneNameProvider, locale, canonicalID);
                     }
-
-                    names = buildZoneStrings(timeZoneNameProvider, locale, queryID);
-
                     if (names == null) {
                         // There may be a case that a standard id has become an
                         // alias.  so, check the aliases backward.
                         names = examineAliases(timeZoneNameProvider, locale,
-                                               queryID, aliases, aliases.entrySet());
+                                   canonicalID == null ? requestID : canonicalID, aliases);
                     }
                 }
             }
@@ -178,20 +201,18 @@ public final class TimeZoneNameUtility {
 
         private static String[] examineAliases(TimeZoneNameProvider tznp, Locale locale,
                                                String id,
-                                               Map<String, String> aliases,
-                                               Set<Map.Entry<String, String>> aliasesSet) {
+                                               Map<String, String> aliases) {
             if (aliases.containsValue(id)) {
-                for (Map.Entry<String, String> entry : aliasesSet) {
+                for (Map.Entry<String, String> entry : aliases.entrySet()) {
                     if (entry.getValue().equals(id)) {
                         String alias = entry.getKey();
                         String[] names = buildZoneStrings(tznp, locale, alias);
                         if (names != null) {
                             return names;
-                        } else {
-                            names = examineAliases(tznp, locale, alias, aliases, aliasesSet);
-                            if (names != null) {
-                                return names;
-                            }
+                        }
+                        names = examineAliases(tznp, locale, alias, aliases);
+                        if (names != null) {
+                            return names;
                         }
                     }
                 }
@@ -201,7 +222,7 @@ public final class TimeZoneNameUtility {
         }
 
         private static String[] buildZoneStrings(TimeZoneNameProvider tznp,
-                                    Locale locale, String id) {
+                                                 Locale locale, String id) {
             String[] names = new String[5];
 
             for (int i = 1; i <= 4; i ++) {
@@ -217,6 +238,77 @@ public final class TimeZoneNameUtility {
             }
 
             return names;
+        }
+    }
+
+    private static class TimeZoneNameGetter
+        implements LocaleServiceProviderPool.LocalizedObjectGetter<TimeZoneNameProvider,
+                                                                   String> {
+        private static final TimeZoneNameGetter INSTANCE =
+            new TimeZoneNameGetter();
+
+        @Override
+        public String getObject(TimeZoneNameProvider timeZoneNameProvider,
+                                Locale locale,
+                                String requestID,
+                                Object... params) {
+            assert params.length == 2;
+            int style = (int) params[0];
+            String tzid = (String) params[1];
+            String value = getName(timeZoneNameProvider, locale, requestID, style, tzid);
+            if (value == null) {
+                Map<String, String> aliases = ZoneInfo.getAliasTable();
+                if (aliases != null) {
+                    String canonicalID = aliases.get(tzid);
+                    if (canonicalID != null) {
+                        value = getName(timeZoneNameProvider, locale, requestID, style, canonicalID);
+                    }
+                    if (value == null) {
+                        value = examineAliases(timeZoneNameProvider, locale, requestID,
+                                     canonicalID != null ? canonicalID : tzid, style, aliases);
+                    }
+                }
+            }
+
+            return value;
+        }
+
+        private static String examineAliases(TimeZoneNameProvider tznp, Locale locale,
+                                             String requestID, String tzid, int style,
+                                             Map<String, String> aliases) {
+            if (aliases.containsValue(tzid)) {
+                for (Map.Entry<String, String> entry : aliases.entrySet()) {
+                    if (entry.getValue().equals(tzid)) {
+                        String alias = entry.getKey();
+                        String name = getName(tznp, locale, requestID, style, alias);
+                        if (name != null) {
+                            return name;
+                        }
+                        name = examineAliases(tznp, locale, requestID, alias, style, aliases);
+                        if (name != null) {
+                            return name;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        private static String getName(TimeZoneNameProvider timeZoneNameProvider,
+                                      Locale locale, String requestID, int style, String tzid) {
+            String value = null;
+            switch (requestID) {
+            case "std":
+                value = timeZoneNameProvider.getDisplayName(tzid, false, style, locale);
+                break;
+            case "dst":
+                value = timeZoneNameProvider.getDisplayName(tzid, true, style, locale);
+                break;
+            case "generic":
+                value = timeZoneNameProvider.getGenericDisplayName(tzid, style, locale);
+                break;
+            }
+            return value;
         }
     }
 

@@ -24,7 +24,9 @@
 /*
  * @test
  * @bug 7115052
- * @summary Add parser support for method references
+ * @bug 8003280
+ * @summary Add lambda tests
+ *  Add parser support for method references
  */
 
 import com.sun.source.util.JavacTask;
@@ -227,7 +229,7 @@ public class MethodReferenceParserTest {
 
     void run(JavaCompiler tool, StandardJavaFileManager fm) throws Exception {
         JavacTask ct = (JavacTask)tool.getTask(null, fm, diagChecker,
-                Arrays.asList("-XDallowMethodReferences"), null, Arrays.asList(source));
+                null, null, Arrays.asList(source));
         try {
             ct.parse();
         } catch (Throwable ex) {

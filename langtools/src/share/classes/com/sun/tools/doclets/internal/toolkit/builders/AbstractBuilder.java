@@ -52,18 +52,46 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  */
 
 public abstract class AbstractBuilder {
+    public static class Context {
+        /**
+         * The configuration used in this run of the doclet.
+         */
+        final Configuration configuration;
+
+        /**
+         * Keep track of which packages we have seen for
+         * efficiency purposes.  We don't want to copy the
+         * doc files multiple times for a single package.
+         */
+        final Set<String> containingPackagesSeen;
+
+        /**
+         * Shared parser for the builder XML file
+         */
+        final LayoutParser layoutParser;
+
+        Context(Configuration configuration,
+                Set<String> containingPackagesSeen,
+                LayoutParser layoutParser) {
+            this.configuration = configuration;
+            this.containingPackagesSeen = containingPackagesSeen;
+            this.layoutParser = layoutParser;
+        }
+    }
 
     /**
      * The configuration used in this run of the doclet.
      */
-    protected Configuration configuration;
+    protected final Configuration configuration;
 
     /**
      * Keep track of which packages we have seen for
      * efficiency purposes.  We don't want to copy the
      * doc files multiple times for a single package.
      */
-    protected static Set<String> containingPackagesSeen;
+    protected final Set<String> containingPackagesSeen;
+
+    protected final LayoutParser layoutParser;
 
     /**
      * True if we want to print debug output.
@@ -75,8 +103,10 @@ public abstract class AbstractBuilder {
      * @param configuration the configuration used in this run
      *        of the doclet.
      */
-    public AbstractBuilder(Configuration configuration) {
-        this.configuration = configuration;
+    public AbstractBuilder(Context c) {
+        this.configuration = c.configuration;
+        this.containingPackagesSeen = c.containingPackagesSeen;
+        this.layoutParser = c.layoutParser;
     }
 
     /**

@@ -65,10 +65,10 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      * @param prevType the previous class that was documented.
      * @param nextType the next class being documented.
      */
-    public AnnotationTypeWriterImpl(AnnotationTypeDoc annotationType,
-            Type prevType, Type nextType)
+    public AnnotationTypeWriterImpl(ConfigurationImpl configuration,
+            AnnotationTypeDoc annotationType, Type prevType, Type nextType)
             throws Exception {
-        super(ConfigurationImpl.getInstance(), DocPath.forClass(annotationType));
+        super(configuration, DocPath.forClass(annotationType));
         this.annotationType = annotationType;
         configuration.currentcd = annotationType.asClassDoc();
         this.prev = prevType;
@@ -116,7 +116,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     public Content getNavLinkPrevious() {
         Content li;
         if (prev != null) {
-            Content prevLink = new RawHtml(getLink(new LinkInfoImpl(
+            Content prevLink = new RawHtml(getLink(new LinkInfoImpl(configuration,
                     LinkInfoImpl.CONTEXT_CLASS, prev.asClassDoc(), "",
                     configuration.getText("doclet.Prev_Class"), true)));
             li = HtmlTree.LI(prevLink);
@@ -134,7 +134,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     public Content getNavLinkNext() {
         Content li;
         if (next != null) {
-            Content nextLink = new RawHtml(getLink(new LinkInfoImpl(
+            Content nextLink = new RawHtml(getLink(new LinkInfoImpl(configuration,
                     LinkInfoImpl.CONTEXT_CLASS, next.asClassDoc(), "",
                     configuration.getText("doclet.Next_Class"), true)));
             li = HtmlTree.LI(nextLink);
@@ -162,7 +162,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
             Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, pkgNameContent);
             div.addContent(pkgNameDiv);
         }
-        LinkInfoImpl linkInfo = new LinkInfoImpl(
+        LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.CONTEXT_CLASS_HEADER, annotationType, false);
         Content headerContent = new StringContent(header);
         Content heading = HtmlTree.HEADING(HtmlConstants.CLASS_PAGE_HEADING, true,
@@ -219,11 +219,11 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         Content pre = new HtmlTree(HtmlTag.PRE);
         addAnnotationInfo(annotationType, pre);
         pre.addContent(modifiers);
-        LinkInfoImpl linkInfo = new LinkInfoImpl(
+        LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.CONTEXT_CLASS_SIGNATURE, annotationType, false);
         Content annotationName = new StringContent(annotationType.name());
         Content parameterLinks = new RawHtml(getTypeParameterLinks(linkInfo));
-        if (configuration().linksource) {
+        if (configuration.linksource) {
             addSrcLink(annotationType, annotationName, pre);
             pre.addContent(parameterLinks);
         } else {

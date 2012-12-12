@@ -25,8 +25,6 @@
  * @test
  * @ignore awaits for VM support
  * @summary  check that javac does not generate bridge methods for defaults
- * @compile -XDallowDefaultMethods TestNoBridgeOnDefaults.java
- * @run main TestNoBridgeOnDefaults
  */
 
 import com.sun.tools.classfile.ClassFile;

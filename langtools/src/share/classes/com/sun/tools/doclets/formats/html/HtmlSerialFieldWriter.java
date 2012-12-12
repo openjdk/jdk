@@ -130,7 +130,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
             pre.addContent(fieldTypeStr);
         } else {
             Content fieldContent = new RawHtml(writer.getLink(new LinkInfoImpl(
-                    LinkInfoImpl.CONTEXT_SERIAL_MEMBER, fieldType)));
+                    configuration, LinkInfoImpl.CONTEXT_SERIAL_MEMBER, fieldType)));
             pre.addContent(fieldContent);
         }
         pre.addContent(fieldDimensions + " ");
@@ -187,8 +187,8 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     public void addMemberTags(FieldDoc field, Content contentTree) {
         TagletOutputImpl output = new TagletOutputImpl("");
-        TagletWriter.genTagOuput(configuration().tagletManager, field,
-                configuration().tagletManager.getCustomTags(field),
+        TagletWriter.genTagOuput(configuration.tagletManager, field,
+                configuration.tagletManager.getCustomTags(field),
                 writer.getTagletWriterInstance(false), output);
         String outputString = output.toString().trim();
         Content dlTags = new HtmlTree(HtmlTag.DL);
@@ -208,7 +208,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @return true if overview details need to be printed
      */
     public boolean shouldPrintOverview(FieldDoc field) {
-        if (!configuration().nocomment) {
+        if (!configuration.nocomment) {
             if(!field.commentText().isEmpty() ||
                     writer.hasSerializationOverviewTags(field))
                 return true;
