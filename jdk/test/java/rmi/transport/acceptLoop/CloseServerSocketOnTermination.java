@@ -31,7 +31,6 @@
  * exception for which it doesn't even consult the RMIFailureHandler.
  * @author Peter Jones
  *
- * @build CloseServerSocketOnTermination
  * @run main/othervm CloseServerSocketOnTermination
  */
 

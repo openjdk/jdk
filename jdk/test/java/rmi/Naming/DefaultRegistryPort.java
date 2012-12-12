@@ -28,7 +28,6 @@
  * @author Dana Burns
  * @library ../testlibrary
  * @build TestLibrary
- * @build DefaultRegistryPort
  * @run main DefaultRegistryPort
  */
 

@@ -25,9 +25,7 @@
  * @bug 4094891
  * @summary unable to retry call if cached connection to server is used
  * @library ../../../../java/rmi/testlibrary
- * @build DeadCachedConnection
- * @build JavaVM
- * @build TestLibrary
+ * @build TestLibrary JavaVM
  * @run main/othervm DeadCachedConnection
  */
 

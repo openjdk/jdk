@@ -26,8 +26,6 @@
  * @summary retryServerSocket should not retry on BindException
  * @author Ann Wollrath
  *
- * @library ../../testlibrary
- * @build AddrInUse
  * @run main/othervm AddrInUse
  */
 

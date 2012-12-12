@@ -25,7 +25,7 @@
 # @bug 7102369 7094468 7100592
 # @library ../../testlibrary
 # @build TestLibrary
-# @summary remove java.rmi.server.codebase property parsing from registyimpl
+# @summary remove java.rmi.server.codebase property parsing from RegistryImpl
 # @run shell readTest.sh
 
 OS=`uname -s`

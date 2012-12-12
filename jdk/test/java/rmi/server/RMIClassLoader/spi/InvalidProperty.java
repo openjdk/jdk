@@ -29,9 +29,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build InvalidProperty
- * @build ServiceConfiguration
+ * @build TestLibrary ServiceConfiguration
  * @run main/othervm/policy=security.policy InvalidProperty
  */
 

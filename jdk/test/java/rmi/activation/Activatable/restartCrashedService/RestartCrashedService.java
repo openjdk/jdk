@@ -28,10 +28,7 @@
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID JavaVM StreamPipe
- * @build ActivateMe
- * @build RestartCrashedService
- * @build RestartCrashedService_Stub
+ * @build TestLibrary RMID ActivateMe RestartCrashedService_Stub
  * @run main/othervm/policy=security.policy/timeout=240 RestartCrashedService
  */
 
