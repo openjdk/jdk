@@ -27,22 +27,22 @@
 #          used to run the test under JTREG.
 #
 # @build bench.BenchInfo bench.HtmlReporter bench.Util bench.Benchmark 
-# @build bench.Reporter bench.XmlReporter bench.ConfigFormatException 
-# @build bench.Harness bench.TextReporter
-# @build bench.serial.BooleanArrays bench.serial.Booleans
-# @build bench.serial.ByteArrays bench.serial.Bytes bench.serial.CharArrays
-# @build bench.serial.Chars bench.serial.ClassDesc bench.serial.Cons
-# @build bench.serial.CustomDefaultObjTrees bench.serial.CustomObjTrees
-# @build bench.serial.DoubleArrays bench.serial.Doubles
-# @build bench.serial.ExternObjTrees bench.serial.FloatArrays
-# @build bench.serial.Floats bench.serial.GetPutFieldTrees
-# @build bench.serial.IntArrays bench.serial.Ints bench.serial.LongArrays
-# @build bench.serial.Longs bench.serial.Main bench.serial.ObjArrays
-# @build bench.serial.ObjTrees bench.serial.ProxyArrays
-# @build bench.serial.ProxyClassDesc bench.serial.RepeatObjs
-# @build bench.serial.ReplaceTrees bench.serial.ShortArrays
-# @build bench.serial.Shorts bench.serial.SmallObjTrees
-# @build bench.serial.StreamBuffer bench.serial.Strings
+#     bench.Reporter bench.XmlReporter bench.ConfigFormatException 
+#     bench.Harness bench.TextReporter
+#     bench.serial.BooleanArrays bench.serial.Booleans
+#     bench.serial.ByteArrays bench.serial.Bytes bench.serial.CharArrays
+#     bench.serial.Chars bench.serial.ClassDesc bench.serial.Cons
+#     bench.serial.CustomDefaultObjTrees bench.serial.CustomObjTrees
+#     bench.serial.DoubleArrays bench.serial.Doubles
+#     bench.serial.ExternObjTrees bench.serial.FloatArrays
+#     bench.serial.Floats bench.serial.GetPutFieldTrees
+#     bench.serial.IntArrays bench.serial.Ints bench.serial.LongArrays
+#     bench.serial.Longs bench.serial.Main bench.serial.ObjArrays
+#     bench.serial.ObjTrees bench.serial.ProxyArrays
+#     bench.serial.ProxyClassDesc bench.serial.RepeatObjs
+#     bench.serial.ReplaceTrees bench.serial.ShortArrays
+#     bench.serial.Shorts bench.serial.SmallObjTrees
+#     bench.serial.StreamBuffer bench.serial.Strings
 #
 # @run shell/timeout=1800 runSerialBench.sh
 #

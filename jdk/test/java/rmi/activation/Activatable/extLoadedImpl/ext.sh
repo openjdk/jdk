@@ -28,7 +28,7 @@
 # set to the impl's class loader) when the impl is activated.
 # @library ../../../testlibrary
 # @build TestLibrary RMID ActivationLibrary
-# @build ExtLoadedImplTest ExtLoadedImpl ExtLoadedImpl_Stub CheckLoader
+#     ExtLoadedImplTest ExtLoadedImpl ExtLoadedImpl_Stub CheckLoader
 # @run shell ext.sh
 
 OS=`uname -s`

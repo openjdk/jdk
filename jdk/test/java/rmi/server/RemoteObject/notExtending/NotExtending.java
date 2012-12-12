@@ -29,9 +29,7 @@
  *          (specifically: stubs) that contain the instance's RemoteRef.
  * @author Peter Jones
  *
- * @build NotExtending
- * @build NotExtending_Stub
- * @build NotExtending_Skel
+ * @build NotExtending_Stub NotExtending_Skel
  * @run main/othervm/timeout=240 NotExtending
  */
 
