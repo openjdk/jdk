@@ -501,10 +501,10 @@ public class Infer {
                 }
                 for (Type t : funcInterfaceContext.undetvars) {
                     UndetVar uv = (UndetVar)t;
-                    minimizeInst(uv, Warner.noWarnings);
+                    minimizeInst(uv, types.noWarnings);
                     if (uv.inst == null &&
                             Type.filter(uv.getBounds(InferenceBound.UPPER), boundFilter).nonEmpty()) {
-                        maximizeInst(uv, Warner.noWarnings);
+                        maximizeInst(uv, types.noWarnings);
                     }
                 }
 
@@ -801,7 +801,7 @@ public class Infer {
             for (Type t : varsToSolve) {
                 UndetVar uv = (UndetVar)asFree(t, types);
                 if (uv.inst == null) {
-                    infer.minimizeInst(uv, Warner.noWarnings);
+                    infer.minimizeInst(uv, types.noWarnings);
                     if (uv.inst != null) {
                         progress = true;
                     }

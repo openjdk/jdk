@@ -73,6 +73,95 @@ public class Log extends AbstractLog {
         final String value;
     }
 
+    /**
+     * DiagnosticHandler's provide the initial handling for diagnostics.
+     * When a diagnostic handler is created and has been initialized, it
+     * should install itself as the current diagnostic handler. When a
+     * client has finished using a handler, the client should call
+     * {@code log.removeDiagnosticHandler();}
+     *
+     * Note that javax.tools.DiagnosticListener (if set) is called later in the
+     * diagnostic pipeline.
+     */
+    public static abstract class DiagnosticHandler {
+        /**
+         * The previously installed diagnostic handler.
+         */
+        protected DiagnosticHandler prev;
+
+        /**
+         * Install this diagnostic handler as the current one,
+         * recording the previous one.
+         */
+        protected void install(Log log) {
+            prev = log.diagnosticHandler;
+            log.diagnosticHandler = this;
+        }
+
+        /**
+         * Handle a diagnostic.
+         */
+        public abstract void report(JCDiagnostic diag);
+    }
+
+    /**
+     * A DiagnosticHandler that discards all diagnostics.
+     */
+    public static class DiscardDiagnosticHandler extends DiagnosticHandler {
+        public DiscardDiagnosticHandler(Log log) {
+            install(log);
+        }
+
+        public void report(JCDiagnostic diag) { }
+    }
+
+    /**
+     * A DiagnosticHandler that can defer some or all diagnostics,
+     * by buffering them for later examination and/or reporting.
+     * If a diagnostic is not deferred, or is subsequently reported
+     * with reportAllDiagnostics(), it will be reported to the previously
+     * active diagnostic handler.
+     */
+    public static class DeferredDiagnosticHandler extends DiagnosticHandler {
+        private Queue<JCDiagnostic> deferred = ListBuffer.lb();
+        private final Filter<JCDiagnostic> filter;
+
+        public DeferredDiagnosticHandler(Log log) {
+            this(log, null);
+        }
+
+        public DeferredDiagnosticHandler(Log log, Filter<JCDiagnostic> filter) {
+            this.filter = filter;
+            install(log);
+        }
+
+        public void report(JCDiagnostic diag) {
+            if (filter == null || filter.accepts(diag))
+                deferred.add(diag);
+            else
+                prev.report(diag);
+        }
+
+        public Queue<JCDiagnostic> getDiagnostics() {
+            return deferred;
+        }
+
+        /** Report all deferred diagnostics. */
+        public void reportDeferredDiagnostics() {
+            reportDeferredDiagnostics(EnumSet.allOf(JCDiagnostic.Kind.class));
+        }
+
+        /** Report selected deferred diagnostics. */
+        public void reportDeferredDiagnostics(Set<JCDiagnostic.Kind> kinds) {
+            JCDiagnostic d;
+            while ((d = deferred.poll()) != null) {
+                if (kinds.contains(d.getKind()))
+                    prev.report(d);
+            }
+            deferred = null; // prevent accidental ongoing use
+        }
+    }
+
     public enum WriterKind { NOTICE, WARNING, ERROR };
 
     protected PrintWriter errWriter;
@@ -128,10 +217,9 @@ public class Log extends AbstractLog {
     private JavacMessages messages;
 
     /**
-     * Deferred diagnostics
++     * Handler for initial dispatch of diagnostics.
      */
-    public Filter<JCDiagnostic> deferredDiagFilter;
-    public Queue<JCDiagnostic> deferredDiagnostics = new ListBuffer<JCDiagnostic>();
+    private DiagnosticHandler diagnosticHandler;
 
     /** Construct a log with given I/O redirections.
      */
@@ -146,6 +234,8 @@ public class Log extends AbstractLog {
         DiagnosticListener<? super JavaFileObject> dl =
             context.get(DiagnosticListener.class);
         this.diagListener = dl;
+
+        diagnosticHandler = new DefaultDiagnosticHandler();
 
         messages = JavacMessages.instance(context);
         messages.add(Main.javacBundleName);
@@ -305,6 +395,17 @@ public class Log extends AbstractLog {
         this.sourceMap = other.sourceMap;
     }
 
+    /**
+     * Replace the specified diagnostic handler with the
+     * handler that was current at the time this handler was created.
+     * The given handler must be the currently installed handler;
+     * it must be specified explicitly for clarity and consistency checking.
+     */
+    public void popDiagnosticHandler(DiagnosticHandler h) {
+        Assert.check(diagnosticHandler == h);
+        diagnosticHandler = h.prev;
+    }
+
     /** Flush the logs
      */
     public void flush() {
@@ -443,64 +544,54 @@ public class Log extends AbstractLog {
         nwarnings++;
     }
 
-    /** Report all deferred diagnostics, and clear the deferDiagnostics flag. */
-    public void reportDeferredDiagnostics() {
-        reportDeferredDiagnostics(EnumSet.allOf(JCDiagnostic.Kind.class));
-    }
-
-    /** Report selected deferred diagnostics, and clear the deferDiagnostics flag. */
-    public void reportDeferredDiagnostics(Set<JCDiagnostic.Kind> kinds) {
-        deferredDiagFilter = null;
-        JCDiagnostic d;
-        while ((d = deferredDiagnostics.poll()) != null) {
-            if (kinds.contains(d.getKind()))
-                report(d);
-        }
-    }
+    /**
+     * Primary method to report a diagnostic.
+     * @param diagnostic
+     */
+    public void report(JCDiagnostic diagnostic) {
+        diagnosticHandler.report(diagnostic);
+     }
 
     /**
      * Common diagnostic handling.
      * The diagnostic is counted, and depending on the options and how many diagnostics have been
      * reported so far, the diagnostic may be handed off to writeDiagnostic.
      */
-    public void report(JCDiagnostic diagnostic) {
-        if (deferredDiagFilter != null && deferredDiagFilter.accepts(diagnostic)) {
-            deferredDiagnostics.add(diagnostic);
-            return;
-        }
+    private class DefaultDiagnosticHandler extends DiagnosticHandler {
+        public void report(JCDiagnostic diagnostic) {
+            if (expectDiagKeys != null)
+                expectDiagKeys.remove(diagnostic.getCode());
 
-        if (expectDiagKeys != null)
-            expectDiagKeys.remove(diagnostic.getCode());
+            switch (diagnostic.getType()) {
+            case FRAGMENT:
+                throw new IllegalArgumentException();
 
-        switch (diagnostic.getType()) {
-        case FRAGMENT:
-            throw new IllegalArgumentException();
-
-        case NOTE:
-            // Print out notes only when we are permitted to report warnings
-            // Notes are only generated at the end of a compilation, so should be small
-            // in number.
-            if ((emitWarnings || diagnostic.isMandatory()) && !suppressNotes) {
-                writeDiagnostic(diagnostic);
-            }
-            break;
-
-        case WARNING:
-            if (emitWarnings || diagnostic.isMandatory()) {
-                if (nwarnings < MaxWarnings) {
+            case NOTE:
+                // Print out notes only when we are permitted to report warnings
+                // Notes are only generated at the end of a compilation, so should be small
+                // in number.
+                if ((emitWarnings || diagnostic.isMandatory()) && !suppressNotes) {
                     writeDiagnostic(diagnostic);
-                    nwarnings++;
                 }
-            }
-            break;
+                break;
 
-        case ERROR:
-            if (nerrors < MaxErrors
-                && shouldReport(diagnostic.getSource(), diagnostic.getIntPosition())) {
-                writeDiagnostic(diagnostic);
-                nerrors++;
+            case WARNING:
+                if (emitWarnings || diagnostic.isMandatory()) {
+                    if (nwarnings < MaxWarnings) {
+                        writeDiagnostic(diagnostic);
+                        nwarnings++;
+                    }
+                }
+                break;
+
+            case ERROR:
+                if (nerrors < MaxErrors
+                    && shouldReport(diagnostic.getSource(), diagnostic.getIntPosition())) {
+                    writeDiagnostic(diagnostic);
+                    nerrors++;
+                }
+                break;
             }
-            break;
         }
     }
 
@@ -549,18 +640,6 @@ public class Log extends AbstractLog {
         default:
             throw new Error();
         }
-    }
-
-    public void deferAll() {
-        deferredDiagFilter = new Filter<JCDiagnostic>() {
-            public boolean accepts(JCDiagnostic t) {
-                return true;
-            }
-        };
-    }
-
-    public void deferNone() {
-        deferredDiagFilter = null;
     }
 
     /** Find a localized string in the resource bundle.

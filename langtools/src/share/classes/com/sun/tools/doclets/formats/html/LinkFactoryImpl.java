@@ -74,7 +74,7 @@ public class LinkFactoryImpl extends LinkFactory {
         StringBuilder label = new StringBuilder(
             classLinkInfo.getClassLinkLabel(m_writer.configuration));
         classLinkInfo.displayLength += label.length();
-        Configuration configuration = ConfigurationImpl.getInstance();
+        Configuration configuration = m_writer.configuration;
         LinkOutputImpl linkOutput = new LinkOutputImpl();
         if (classDoc.isIncluded()) {
             if (configuration.isGeneratedDoc(classDoc)) {
@@ -118,8 +118,8 @@ public class LinkFactoryImpl extends LinkFactory {
      */
     protected LinkOutput getTypeParameterLink(LinkInfo linkInfo,
         Type typeParam) {
-        LinkInfoImpl typeLinkInfo = new LinkInfoImpl(linkInfo.getContext(),
-            typeParam);
+        LinkInfoImpl typeLinkInfo = new LinkInfoImpl(m_writer.configuration,
+                linkInfo.getContext(), typeParam);
         typeLinkInfo.excludeTypeBounds = linkInfo.excludeTypeBounds;
         typeLinkInfo.excludeTypeParameterLinks = linkInfo.excludeTypeParameterLinks;
         typeLinkInfo.linkToSelf = linkInfo.linkToSelf;
@@ -135,10 +135,10 @@ public class LinkFactoryImpl extends LinkFactory {
      * @return the tool tip for the appropriate class.
      */
     private String getClassToolTip(ClassDoc classDoc, boolean isTypeLink) {
-        Configuration configuration = ConfigurationImpl.getInstance();
+        Configuration configuration = m_writer.configuration;
         if (isTypeLink) {
             return configuration.getText("doclet.Href_Type_Param_Title",
-            classDoc.name());
+                classDoc.name());
         } else if (classDoc.isInterface()){
             return configuration.getText("doclet.Href_Interface_Title",
                 Util.getPackageName(classDoc.containingPackage()));

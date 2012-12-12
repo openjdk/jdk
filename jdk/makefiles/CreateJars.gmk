@@ -420,6 +420,23 @@ $(eval $(call SetupArchive,BUILD_JSSE_JAR,,\
 JARS+=$(IMAGES_OUTPUTDIR)/lib/jsse.jar
 
 ##########################################################################################
+# Create manifest for security jars
+
+#
+# Include these extra attributes for now, should probably take out.
+#
+JCE_MANIFEST := $(IMAGES_OUTPUTDIR)/lib/_the.security.manifest.mf
+$(JCE_MANIFEST): $(MAINMANIFEST)
+	$(MKDIR) -p $(@D)
+	$(RM) $@ $@.tmp
+	$(SED) -e "s#@@RELEASE@@#$(JDK_VERSION)#"       \
+               -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
+               $(MAINMANIFEST) >> $@.tmp
+	$(ECHO) "Extension-Name: javax.crypto" >> $@.tmp
+	$(ECHO) "Implementation-Vendor-Id: com.sun" >> $@.tmp
+	$(MV) $@.tmp $@
+
+##########################################################################################
 
 SUNPKCS11_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunpkcs11.jar
 
@@ -440,7 +457,10 @@ else
 	SUFFIXES:=.class,\
 	INCLUDES:=sun/security/pkcs11,\
 	JAR:=$(SUNPKCS11_JAR_DST), \
+        MANIFEST:=$(JCE_MANIFEST), \
 	SKIP_METAINF := true))
+
+    $(SUNPKCS11_JAR_DST): $(JCE_MANIFEST)
 
 endif
 
@@ -452,9 +472,9 @@ SUNEC_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunec.jar
 
 ifndef OPENJDK
 
-SUNEC_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ec/sunec.jar
+    SUNEC_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ec/sunec.jar
 
-$(SUNEC_JAR_DST) : $(SUNEC_JAR_SRC)
+    $(SUNEC_JAR_DST) : $(SUNEC_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunEC provider..."
 	$(MKDIR) -p $(@D)
 	$(RM) $@
@@ -462,12 +482,15 @@ $(SUNEC_JAR_DST) : $(SUNEC_JAR_SRC)
 
 else
 
-$(eval $(call SetupArchive,BUILD_SUNEC_JAR,,\
+    $(eval $(call SetupArchive,BUILD_SUNEC_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:=sun/security/ec,\
 		JAR:=$(SUNEC_JAR_DST), \
+                MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF := true))
+
+    $(SUNEC_JAR_DST): $(JCE_MANIFEST)
 
 endif
 
@@ -505,9 +528,11 @@ else
 		SUFFIXES:=.class,\
 		INCLUDES:= com/sun/crypto/provider,\
 		JAR:=$(SUNJCE_PROVIDER_JAR_DST), \
-		MANIFEST := $(JDK_TOPDIR)/make/tools/manifest.mf, \
-		EXTRA_MANIFEST_ATTR := Extension-Name: javax.crypto\nImplementation-Vendor-Id: com.sun, \
+                MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF := true))
+
+    $(SUNJCE_PROVIDER_JAR_DST): $(JCE_MANIFEST)
+
 endif
 
 JARS += $(SUNJCE_PROVIDER_JAR_DST)
@@ -516,9 +541,9 @@ JCE_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/jce.jar
 
 ifndef OPENJDK
 
-JCE_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
+    JCE_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
 
-$(JCE_JAR_DST) : $(JCE_JAR_SRC)
+    $(JCE_JAR_DST) : $(JCE_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt jce.jar..."
 	$(MKDIR) -p $(@D)
 	$(RM) $@
@@ -526,14 +551,16 @@ $(JCE_JAR_DST) : $(JCE_JAR_SRC)
 
 else
 
-$(eval $(call SetupArchive,BUILD_JCE_JAR,,\
+    $(eval $(call SetupArchive,BUILD_JCE_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:= javax/crypto sun/security/internal,\
 		JAR:=$(JCE_JAR_DST), \
-		MANIFEST := $(JDK_TOPDIR)/make/tools/manifest.mf, \
-		EXTRA_MANIFEST_ATTR := Extension-Name: javax.crypto\nImplementation-Vendor-Id: com.sun, \
+                MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF := true))
+
+    $(JCE_JAR_DST): $(JCE_MANIFEST)
+
 endif
 
 JARS += $(JCE_JAR_DST)

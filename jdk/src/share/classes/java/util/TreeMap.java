@@ -1759,7 +1759,7 @@ public class TreeMap<K,V>
 
         public Set<Map.Entry<K,V>> entrySet() {
             EntrySetView es = entrySetView;
-            return (es != null) ? es : new AscendingEntrySetView();
+            return (es != null) ? es : (entrySetView = new AscendingEntrySetView());
         }
 
         TreeMap.Entry<K,V> subLowest()       { return absLowest(); }
@@ -1840,7 +1840,7 @@ public class TreeMap<K,V>
 
         public Set<Map.Entry<K,V>> entrySet() {
             EntrySetView es = entrySetView;
-            return (es != null) ? es : new DescendingEntrySetView();
+            return (es != null) ? es : (entrySetView = new DescendingEntrySetView());
         }
 
         TreeMap.Entry<K,V> subLowest()       { return absHighest(); }

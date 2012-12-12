@@ -46,11 +46,13 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     implements SerializedFormWriter {
 
     /**
+     * @param configuration the configuration data for the doclet
      * @throws IOException
      * @throws DocletAbortException
      */
-    public SerializedFormWriterImpl() throws IOException {
-        super(ConfigurationImpl.getInstance(), DocPaths.SERIALIZED_FORM);
+    public SerializedFormWriterImpl(ConfigurationImpl configuration)
+            throws IOException {
+        super(configuration, DocPaths.SERIALIZED_FORM);
     }
 
     /**
@@ -126,15 +128,16 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     public Content getClassHeader(ClassDoc classDoc) {
         String classLink = (classDoc.isPublic() || classDoc.isProtected())?
-            getLink(new LinkInfoImpl(classDoc,
+            getLink(new LinkInfoImpl(configuration, classDoc,
             configuration.getClassName(classDoc))):
             classDoc.qualifiedName();
         Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(
                 classDoc.qualifiedName()));
         String superClassLink =
             classDoc.superclassType() != null ?
-                getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_SERIALIZED_FORM,
-                classDoc.superclassType())) :
+                getLink(new LinkInfoImpl(configuration,
+                        LinkInfoImpl.CONTEXT_SERIALIZED_FORM,
+                        classDoc.superclassType())) :
                 null;
 
         //Print the heading.

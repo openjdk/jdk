@@ -42,17 +42,22 @@ public class CheckLockLocationTest {
     private static final String NOT_A_DIR = "not-a-dir";
     private static final String WRITABLE_DIR = "writable-dir";
     private static final String NON_EXISTENT_DIR = "non-existent-dir";
+    private static boolean runNonWritableDirTest;
 
     public static void main(String... args) throws IOException {
         // we'll base all file creation attempts on the system temp directory,
         // %t and also try specifying non-existent directories and plain files
         // that should be directories, and non-writable directories,
         // to exercise all code paths of checking the lock location
+        // Note that on platforms like Windows that don't support
+        // setWritable() on a directory, we'll skip the non-writable
+        // directory test if setWritable(false) returns false.
+        //
         File writableDir = setup();
         // we now have three files/directories to work with:
         //    writableDir
         //    notAdir
-        //    nonWritableDir
+        //    nonWritableDir (may not be possible on some platforms)
         //    nonExistentDir (which doesn't exist)
         runTests(writableDir);
     }
@@ -79,15 +84,19 @@ public class CheckLockLocationTest {
         }
 
         // Test 2: creating FileHandler in non-writable directory should fail
-        try {
-            new FileHandler("%t/" + NON_WRITABLE_DIR + "/log.log");
-            throw new RuntimeException("Test failed: should not have been able"
-                    + " to create FileHandler for " + "%t/" + NON_WRITABLE_DIR
-                    + "/log.log in non-writable directory.");
-        } catch (IOException ex) {
-            // check for the right exception
-            if (!(ex instanceof AccessDeniedException)) {
-                throw new RuntimeException("Test failed: Expected exception was not an AccessDeniedException", ex);
+        if (runNonWritableDirTest) {
+            try {
+                new FileHandler("%t/" + NON_WRITABLE_DIR + "/log.log");
+                throw new RuntimeException("Test failed: should not have been able"
+                        + " to create FileHandler for " + "%t/" + NON_WRITABLE_DIR
+                        + "/log.log in non-writable directory.");
+            } catch (IOException ex) {
+                // check for the right exception
+                if (!(ex instanceof AccessDeniedException)) {
+                    throw new RuntimeException(
+                        "Test failed: Expected exception was not an "
+                                + "AccessDeniedException", ex);
+                }
             }
         }
 
@@ -99,8 +108,11 @@ public class CheckLockLocationTest {
                     + "/log.log in non-directory.");
         } catch (IOException ex) {
             // check for the right exception
-            if (!(ex instanceof FileSystemException && ex.getMessage().contains("Not a directory"))) {
-                throw new RuntimeException("Test failed: Expected exception was not a FileSystemException", ex);
+            if (!(ex instanceof FileSystemException
+                    && ex.getMessage().contains("Not a directory"))) {
+                throw new RuntimeException(
+                        "Test failed: Expected exception was not a "
+                        + "FileSystemException", ex);
             }
         }
 
@@ -113,7 +125,8 @@ public class CheckLockLocationTest {
         } catch (IOException ex) {
             // check for the right exception
             if (!(ex instanceof NoSuchFileException)) {
-                throw new RuntimeException("Test failed: Expected exception was not a NoSuchFileException", ex);
+                throw new RuntimeException("Test failed: Expected exception "
+                        + "was not a NoSuchFileException", ex);
             }
         }
     }
@@ -162,10 +175,14 @@ public class CheckLockLocationTest {
         nonWritableDir.deleteOnExit();
 
         // make it non-writable
-        if (!nonWritableDir.setWritable(false)) {
-            throw new RuntimeException("Test setup failed: unable to make"
+        if (nonWritableDir.setWritable(false)) {
+            runNonWritableDirTest = true;
+        } else {
+            runNonWritableDirTest = false;
+            System.out.println( "Test Setup WARNING: unable to make"
                     + " working directory " + nonWritableDir.getAbsolutePath()
-                    + " non-writable.");
+                    + " non-writable on platform " + System.getProperty("os.name"));
+
         }
 
         // make sure non-existent directory really doesn't exist

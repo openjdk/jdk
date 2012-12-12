@@ -22,7 +22,6 @@
  */
 
 // key: compiler.err.default.overrides.object.member
-// options: -XDallowDefaultMethods
 
 interface DefaultOverridesObjectMember {
     default String toString() { return ""; }

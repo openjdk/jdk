@@ -48,22 +48,22 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     /**
      * The class whose enum constants are being documented.
      */
-    private ClassDoc classDoc;
+    private final ClassDoc classDoc;
 
     /**
      * The visible enum constantss for the given class.
      */
-    private VisibleMemberMap visibleMemberMap;
+    private final VisibleMemberMap visibleMemberMap;
 
     /**
      * The writer to output the enum constants documentation.
      */
-    private EnumConstantWriter writer;
+    private final EnumConstantWriter writer;
 
     /**
      * The list of enum constants being documented.
      */
-    private List<ProgramElementDoc> enumConstants;
+    private final List<ProgramElementDoc> enumConstants;
 
     /**
      * The index of the current enum constant that is being documented at this point
@@ -74,40 +74,37 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     /**
      * Construct a new EnumConstantsBuilder.
      *
-     * @param configuration the current configuration of the
-     *                      doclet.
+     * @param context  the build context.
+     * @param classDoc the class whoses members are being documented.
+     * @param writer the doclet specific writer.
      */
-    private EnumConstantBuilder(Configuration configuration) {
-        super(configuration);
+    private EnumConstantBuilder(Context context,
+            ClassDoc classDoc, EnumConstantWriter writer) {
+        super(context);
+        this.classDoc = classDoc;
+        this.writer = writer;
+        visibleMemberMap =
+                new VisibleMemberMap(
+                classDoc,
+                VisibleMemberMap.ENUM_CONSTANTS,
+                configuration.nodeprecated);
+        enumConstants =
+                new ArrayList<ProgramElementDoc>(visibleMemberMap.getMembersFor(classDoc));
+        if (configuration.getMemberComparator() != null) {
+            Collections.sort(enumConstants, configuration.getMemberComparator());
+        }
     }
 
     /**
      * Construct a new EnumConstantsBuilder.
      *
-     * @param configuration the current configuration of the doclet.
+     * @param context  the build context.
      * @param classDoc the class whoses members are being documented.
      * @param writer the doclet specific writer.
      */
-    public static EnumConstantBuilder getInstance(
-            Configuration configuration,
-            ClassDoc classDoc,
-            EnumConstantWriter writer) {
-        EnumConstantBuilder builder = new EnumConstantBuilder(configuration);
-        builder.classDoc = classDoc;
-        builder.writer = writer;
-        builder.visibleMemberMap =
-                new VisibleMemberMap(
-                classDoc,
-                VisibleMemberMap.ENUM_CONSTANTS,
-                configuration.nodeprecated);
-        builder.enumConstants =
-                new ArrayList<ProgramElementDoc>(builder.visibleMemberMap.getMembersFor(classDoc));
-        if (configuration.getMemberComparator() != null) {
-            Collections.sort(
-                    builder.enumConstants,
-                    configuration.getMemberComparator());
-        }
-        return builder;
+    public static EnumConstantBuilder getInstance(Context context,
+            ClassDoc classDoc, EnumConstantWriter writer) {
+        return new EnumConstantBuilder(context, classDoc, writer);
     }
 
     /**

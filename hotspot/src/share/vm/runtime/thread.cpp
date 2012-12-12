@@ -1785,7 +1785,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
           jio_fprintf(defaultStream::error_stream(),
                 "\nException: %s thrown from the UncaughtExceptionHandler"
                 " in thread \"%s\"\n",
-                Klass::cast(pending_exception()->klass())->external_name(),
+                pending_exception()->klass()->external_name(),
                 get_thread_name());
           CLEAR_PENDING_EXCEPTION;
         }
@@ -3753,8 +3753,10 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
       }
     } else {
       // Try to load the agent from the standard dll directory
-      os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), name);
-      library = os::dll_load(buffer, ebuf, sizeof ebuf);
+      if (os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
+                             name)) {
+        library = os::dll_load(buffer, ebuf, sizeof ebuf);
+      }
 #ifdef KERNEL
       // Download instrument dll
       if (library == NULL && strcmp(name, "instrument") == 0) {
@@ -3779,8 +3781,9 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
 #endif // KERNEL
       if (library == NULL) { // Try the local directory
         char ns[1] = {0};
-        os::dll_build_name(buffer, sizeof(buffer), ns, name);
-        library = os::dll_load(buffer, ebuf, sizeof ebuf);
+        if (os::dll_build_name(buffer, sizeof(buffer), ns, name)) {
+          library = os::dll_load(buffer, ebuf, sizeof ebuf);
+        }
         if (library == NULL) {
           const char *sub_msg = " on the library path, with error: ";
           size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;

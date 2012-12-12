@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary check that default overrides are properly type-checked
- * @compile/fail/ref=Neg11.out -XDallowDefaultMethods -XDrawDiagnostics Neg11.java
+ * @compile/fail/ref=Neg11.out -XDrawDiagnostics Neg11.java
  */
 class Neg11 {
     interface I {

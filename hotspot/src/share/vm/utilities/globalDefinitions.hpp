@@ -328,6 +328,12 @@ const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (
 
 
 //----------------------------------------------------------------------------------------------------
+// Minimum StringTableSize value
+
+const int defaultStringTableSize=1009;
+
+
+//----------------------------------------------------------------------------------------------------
 // HotSwap - for JVMTI   aka Class File Replacement and PopFrame
 //
 // Determines whether on-the-fly class replacement and frame popping are enabled.

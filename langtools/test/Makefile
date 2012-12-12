@@ -146,10 +146,15 @@ ifdef TESTBOOTCLASSPATH
 endif
 
 # Concurrency is the number of tests that can execute at once. 
-# Supported for JCK, not supported for jtreg.
 # On an otherwise empty machine, suggest setting to (#cpus + 2)
 # If unset, the default is (#cpus)
 ### RFE: determine and use #cpus
+ifdef CONCURRENCY
+  JTREG_OPTIONS += -agentvm -concurrency:$(CONCURRENCY)
+else
+  JTREG_OPTIONS += -samevm
+endif
+
 ifdef JCK_CONCURRENCY
   JCK_OPTIONS += -concurrency:$(JCK_CONCURRENCY)
 endif
@@ -266,7 +271,7 @@ jtreg-tests: check-jtreg FRC
 	@mkdir -p $(JTREG_OUTPUT_DIR)
 	JT_JAVA=$(JT_JAVA) $(JTREG) \
 	  -J-Xmx512m \
-	  -a -samevm -ignore:quiet -v:fail,error,nopass \
+	  -a -ignore:quiet -v:fail,error,nopass \
           -r:$(JTREG_OUTPUT_DIR)/JTreport \
           -w:$(JTREG_OUTPUT_DIR)/JTwork \
           -jdk:$(TESTJAVA) \

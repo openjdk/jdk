@@ -24,14 +24,12 @@
 /*
  * @test
  * @summary basic test for default methods
- * @ignore awaits lambda support
  * @author  Maurizio Cimadamore
- * @compile -XDallowLambda -XDallowPoly -XDallowDefaultMethods Pos01.java
  */
 
 import java.util.*;
 
-class Pos01 {
+public class Pos01 {
 
     interface Mapper<T> {
         T map(T in);

@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.formats.html.markup;
 
 import java.io.*;
+import java.util.*;
 
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
@@ -143,6 +144,8 @@ public class HtmlWriter {
     public final Content descfrmInterfaceLabel;
 
     private final Writer writer;
+
+    private Content script;
 
     /**
      * Constructor.
@@ -301,12 +304,60 @@ public class HtmlWriter {
         // Don't print windowtitle script for overview-frame, allclasses-frame
         // and package-frame
         if (includeScript) {
-            body.addContent(getWinTitleScript());
+            this.script = getWinTitleScript();
+            body.addContent(script);
             Content noScript = HtmlTree.NOSCRIPT(
                     HtmlTree.DIV(getResource("doclet.No_Script_Message")));
             body.addContent(noScript);
         }
         return body;
+    }
+
+    /**
+     * Generated javascript variables for the document.
+     *
+     * @param typeMap map comprising of method and type relationship
+     * @param methodTypes set comprising of all methods types for this class
+     */
+    public void generateMethodTypesScript(Map<String,Integer> typeMap,
+            Set<MethodTypes> methodTypes) {
+        String sep = "";
+        StringBuilder vars = new StringBuilder("var methods = {");
+        for (Map.Entry<String,Integer> entry : typeMap.entrySet()) {
+            vars.append(sep);
+            sep = ",";
+            vars.append("\"");
+            vars.append(entry.getKey());
+            vars.append("\":");
+            vars.append(entry.getValue());
+        }
+        vars.append("};").append(DocletConstants.NL);
+        sep = "";
+        vars.append("var tabs = {");
+        for (MethodTypes entry : methodTypes) {
+            vars.append(sep);
+            sep = ",";
+            vars.append(entry.value()).append(":");
+            vars.append("[").append("\"").append(entry.tabId());
+            vars.append("\"").append(sep).append("\"").append(entry.text()).append("\"]");
+        }
+        vars.append("};").append(DocletConstants.NL);
+        addStyles(HtmlStyle.altColor, vars);
+        addStyles(HtmlStyle.rowColor, vars);
+        addStyles(HtmlStyle.tableTab, vars);
+        addStyles(HtmlStyle.activeTableTab, vars);
+        script.addContent(new RawHtml(vars.toString()));
+    }
+
+    /**
+     * Adds javascript style variables to the document.
+     *
+     * @param style style to be added as a javascript variable
+     * @param vars variable string to which the style variable will be added
+     */
+    public void addStyles(HtmlStyle style, StringBuilder vars) {
+        vars.append("var ").append(style).append(" = \"").append(style)
+                .append("\";").append(DocletConstants.NL);
     }
 
     /**

@@ -104,6 +104,17 @@ public class FormatData_hu extends ListResourceBundle {
                     "Szo" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "V",
+                    "H",
+                    "K",
+                    "Sz",
+                    "Cs",
+                    "P",
+                    "Sz",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "DE", // am marker

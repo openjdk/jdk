@@ -1018,6 +1018,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     boolean processAnnotations = false;
 
+    Log.DeferredDiagnosticHandler deferredDiagnosticHandler;
+
     /**
      * Object to handle annotation processing.
      */
@@ -1038,7 +1040,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         if (options.isSet(PROC, "none")) {
             processAnnotations = false;
         } else if (procEnvImpl == null) {
-            procEnvImpl = new JavacProcessingEnvironment(context, processors);
+            procEnvImpl = JavacProcessingEnvironment.instance(context);
+            procEnvImpl.setProcessors(processors);
             processAnnotations = procEnvImpl.atLeastOneProcessor();
 
             if (processAnnotations) {
@@ -1048,7 +1051,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 genEndPos = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-                log.deferAll();
+                deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
             } else { // free resources
                 procEnvImpl.close();
             }
@@ -1079,7 +1082,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             // or other errors during enter which cannot be fixed by running
             // any annotation processors.
             if (unrecoverableError()) {
-                log.reportDeferredDiagnostics();
+                deferredDiagnosticHandler.reportDeferredDiagnostics();
+                log.popDiagnosticHandler(deferredDiagnosticHandler);
                 return this;
             }
         }
@@ -1102,9 +1106,11 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 log.error("proc.no.explicit.annotation.processing.requested",
                           classnames);
             }
-            log.reportDeferredDiagnostics();
+            Assert.checkNull(deferredDiagnosticHandler);
             return this; // continue regular compilation
         }
+
+        Assert.checkNonNull(deferredDiagnosticHandler);
 
         try {
             List<ClassSymbol> classSymbols = List.nil();
@@ -1115,7 +1121,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 if (!explicitAnnotationProcessingRequested()) {
                     log.error("proc.no.explicit.annotation.processing.requested",
                               classnames);
-                    log.reportDeferredDiagnostics();
+                    deferredDiagnosticHandler.reportDeferredDiagnostics();
+                    log.popDiagnosticHandler(deferredDiagnosticHandler);
                     return this; // TODO: Will this halt compilation?
                 } else {
                     boolean errors = false;
@@ -1148,33 +1155,36 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                         }
                     }
                     if (errors) {
-                        log.reportDeferredDiagnostics();
+                        deferredDiagnosticHandler.reportDeferredDiagnostics();
+                        log.popDiagnosticHandler(deferredDiagnosticHandler);
                         return this;
                     }
                 }
             }
             try {
-                JavaCompiler c = procEnvImpl.doProcessing(context, roots, classSymbols, pckSymbols);
+                JavaCompiler c = procEnvImpl.doProcessing(context, roots, classSymbols, pckSymbols,
+                        deferredDiagnosticHandler);
                 if (c != this)
                     annotationProcessingOccurred = c.annotationProcessingOccurred = true;
                 // doProcessing will have handled deferred diagnostics
-                Assert.check(c.log.deferredDiagFilter == null
-                        && c.log.deferredDiagnostics.size() == 0);
                 return c;
             } finally {
                 procEnvImpl.close();
             }
         } catch (CompletionFailure ex) {
             log.error("cant.access", ex.sym, ex.getDetailValue());
-            log.reportDeferredDiagnostics();
+            deferredDiagnosticHandler.reportDeferredDiagnostics();
+            log.popDiagnosticHandler(deferredDiagnosticHandler);
             return this;
         }
     }
 
     private boolean unrecoverableError() {
-        for (JCDiagnostic d: log.deferredDiagnostics) {
-            if (d.getKind() == JCDiagnostic.Kind.ERROR && !d.isFlagSet(RECOVERABLE))
-                return true;
+        if (deferredDiagnosticHandler != null) {
+            for (JCDiagnostic d: deferredDiagnosticHandler.getDiagnostics()) {
+                if (d.getKind() == JCDiagnostic.Kind.ERROR && !d.isFlagSet(RECOVERABLE))
+                    return true;
+            }
         }
         return false;
     }
