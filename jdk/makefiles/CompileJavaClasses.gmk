@@ -221,24 +221,10 @@ endif
 EXFILES+=-linux-arm.java \
 	 -linux-ppc.java
 
-# TODO: Is this necessary?
 ifeq ($(OPENJDK_TARGET_OS), windows)
     EXFILES+=sun/nio/ch/AbstractPollSelectorImpl.java \
-	sun/nio/ch/DevPollArrayWrapper.java \
-	sun/nio/ch/DevPollSelectorImpl.java \
-        sun/nio/ch/DevPollSelectorProvider.java \
-	sun/nio/ch/InheritedChannel.java \
         sun/nio/ch/PollSelectorProvider.java \
-        sun/nio/ch/PollSelectorImpl.java \
-	sun/nio/ch/Port.java \
-	sun/nio/ch/SimpleAsynchronousFileChannelImpl.java \
-	sun/nio/ch/SolarisAsynchronousChannelProvider.java \
-	sun/nio/ch/SolarisEventPort.java \
-	sun/nio/ch/UnixAsynchronousServerSocketChannelImpl.java \
-	sun/nio/ch/UnixAsynchronousSocketChannelImpl.java
-    EXFILES+=sun/net/sdp/SdpProvider.java
-else
-    EXFILES+=sun/net/www/protocol/http/ntlm/NTLMAuthSequence.java
+	sun/nio/ch/SimpleAsynchronousFileChannelImpl.java
 endif
 
 # Exclude nimbus files from rt.jar
