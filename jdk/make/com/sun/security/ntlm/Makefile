@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,17 @@
 # questions.
 #
 
-# 
-# Makefile for com.sun.security packages.
-#
-
-BUILDDIR = ../../..
-SUBDIRS_MAKEFLAGS += JAVAC_MAX_WARNINGS=false
-# TODO: Workaround for CR 7063027. Remove -path eventually.
-SUBDIRS_MAKEFLAGS += JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation,-path
-SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
+BUILDDIR = ../../../..
+PACKAGE = com.sun.security.ntlm
+PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = auth
-SUBDIRS_misc = jgss sasl auth/module ntlm
-include $(BUILDDIR)/common/Subdirs.gmk
+#
+# Files
+#
+AUTO_FILES_JAVA_DIRS = com/sun/security/ntlm
 
-all build clean clobber::
-	$(SUBDIRS-loop)
-
-clean clobber::
-	$(RM) -r $(CLASSDESTDIR)/com/sun/security
+#
+# Rules
+#
+include $(BUILDDIR)/common/Classes.gmk
