@@ -30,7 +30,6 @@
  * @run  main/othervm CheckLockLocationTest
  */
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileSystemException;
@@ -90,13 +89,12 @@ public class CheckLockLocationTest {
                 throw new RuntimeException("Test failed: should not have been able"
                         + " to create FileHandler for " + "%t/" + NON_WRITABLE_DIR
                         + "/log.log in non-writable directory.");
+            } catch (AccessDeniedException ex) {
+                // the right exception was thrown, so continue.
             } catch (IOException ex) {
-                // check for the right exception
-                if (!(ex instanceof AccessDeniedException)) {
-                    throw new RuntimeException(
+                throw new RuntimeException(
                         "Test failed: Expected exception was not an "
                                 + "AccessDeniedException", ex);
-                }
             }
         }
 
@@ -106,14 +104,11 @@ public class CheckLockLocationTest {
             throw new RuntimeException("Test failed: should not have been able"
                     + " to create FileHandler for " + "%t/" + NOT_A_DIR
                     + "/log.log in non-directory.");
+        } catch (FileSystemException ex) {
+            // the right exception was thrown, so continue.
         } catch (IOException ex) {
-            // check for the right exception
-            if (!(ex instanceof FileSystemException
-                    && ex.getMessage().contains("Not a directory"))) {
-                throw new RuntimeException(
-                        "Test failed: Expected exception was not a "
-                        + "FileSystemException", ex);
-            }
+            throw new RuntimeException("Test failed: exception thrown was not a "
+                    + "FileSystemException", ex);
         }
 
         // Test 4: make sure we can't create a FileHandler in a non-existent dir
@@ -122,12 +117,11 @@ public class CheckLockLocationTest {
             throw new RuntimeException("Test failed: should not have been able"
                     + " to create FileHandler for " + "%t/" + NON_EXISTENT_DIR
                     + "/log.log in a non-existent directory.");
+        } catch (NoSuchFileException ex) {
+            // the right exception was thrown, so continue.
         } catch (IOException ex) {
-            // check for the right exception
-            if (!(ex instanceof NoSuchFileException)) {
-                throw new RuntimeException("Test failed: Expected exception "
-                        + "was not a NoSuchFileException", ex);
-            }
+            throw new RuntimeException("Test failed: Expected exception "
+                    + "was not a NoSuchFileException", ex);
         }
     }
 
@@ -216,12 +210,14 @@ public class CheckLockLocationTest {
     /*
      * Recursively delete all files starting at specified file
      */
-    private static void delete(File f) throws IOException {
+    private static void delete(File f) {
         if (f != null && f.isDirectory()) {
             for (File c : f.listFiles())
                 delete(c);
         }
         if (!f.delete())
-            throw new FileNotFoundException("Failed to delete file: " + f);
-    }
+            System.err.println(
+                    "WARNING: unable to delete/cleanup writable test directory: "
+                    + f );
+        }
 }
