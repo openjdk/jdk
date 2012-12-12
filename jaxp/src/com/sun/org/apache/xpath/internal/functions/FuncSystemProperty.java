@@ -165,7 +165,7 @@ public class FuncSystemProperty extends FunctionOneArg
    * should already be fully qualified as path/filename
    * @param target The target property bag the file will be placed into.
    */
-  public void loadPropertyFile(String file, Properties target)
+  private void loadPropertyFile(String file, Properties target)
   {
     try
     {
