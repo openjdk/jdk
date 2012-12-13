@@ -84,7 +84,7 @@ ${TESTJAVA}${FILESEP}bin${FILESEP}javac \
 
 # run the test
 cd ${TESTSRC}${FILESEP}
-${TESTJAVA}${FILESEP}bin${FILESEP}java \
+${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} \
         -classpath "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}exp.jar" \
         -Djava.security.properties=file:${TESTSRC}${FILESEP}Static.props \
         StaticSignedProvFirst
