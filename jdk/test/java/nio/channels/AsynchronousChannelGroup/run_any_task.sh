@@ -46,7 +46,7 @@ $JAR -cf "${TESTCLASSES}/Privileged.jar" \
     -C "${TESTCLASSES}" Attack.class
 
 echo "Running test ..."
-$JAVA -XX:-UseVMInterruptibleIO \
-    -Xbootclasspath/a:"${TESTCLASSES}/Privileged.jar" \
-    -classpath "${TESTCLASSES}" \
-    AsExecutor
+$JAVA ${TESTVMOPTS} \
+      -Xbootclasspath/a:"${TESTCLASSES}/Privileged.jar" \
+      -classpath "${TESTCLASSES}" \
+      AsExecutor

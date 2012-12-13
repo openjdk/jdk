@@ -33,5 +33,5 @@ if [ x"$TESTCLASSES" = x ]; then TESTCLASSES=.; fi
 if [ x"$TESTSRC" = x ]; then TESTSRC=.; fi
 
 # now start the test
-${TESTJAVA}/bin/java -Djava.ext.dirs=$TESTSRC -cp $TESTCLASSES GetContentType
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.ext.dirs=$TESTSRC -cp $TESTCLASSES GetContentType
 

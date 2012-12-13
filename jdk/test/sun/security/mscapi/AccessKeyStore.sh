@@ -42,13 +42,13 @@ case "$OS" in
 	${TESTJAVA}/bin/javac -d . ${TESTSRC}\\AccessKeyStore.java
 
 	echo "Using access.policy..."
-	${TESTJAVA}/bin/java \
+	${TESTJAVA}/bin/java ${TESTVMOPTS} \
 	    -Djava.security.manager \
 	    -Djava.security.policy==${TESTSRC}\\access.policy \
 	    AccessKeyStore
 
 	echo "Using noaccess.policy..."
-	${TESTJAVA}/bin/java \
+	${TESTJAVA}/bin/java ${TESTVMOPTS} \
 	    -Djava.security.manager \
 	    -Djava.security.policy==${TESTSRC}\\noaccess.policy \
 	    AccessKeyStore -deny

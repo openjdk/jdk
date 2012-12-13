@@ -94,7 +94,7 @@ $COPYPLUS
 COPYSEMICOLON="cp ${TESTSRC}/classes/semicolon.class ${TESTCLASSES}/;.class"
 $COPYSEMICOLON
 
-JAVA="$TESTJAVA/bin/java -classpath ${TESTSRC}/classes${SEP}${TESTCLASSES}"
+JAVA="$TESTJAVA/bin/java ${TESTVMOPTS} -classpath ${TESTSRC}/classes${SEP}${TESTCLASSES}"
 
 $JAVA NonJavaNames
 RESULT=$?
