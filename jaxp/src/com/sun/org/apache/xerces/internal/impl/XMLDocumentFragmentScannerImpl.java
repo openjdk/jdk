@@ -193,9 +193,12 @@ public class XMLDocumentFragmentScannerImpl
                 null,
     };
 
-    protected static final char [] cdata = {'[','C','D','A','T','A','['};
-    protected static final char [] xmlDecl = {'<','?','x','m','l'};
-    protected static final char [] endTag = {'<','/'};
+    private static final char [] cdata = {'[','C','D','A','T','A','['};
+    private static final char [] endTag = {'<','/'};
+
+    //this variable is also used by XMLDocumentScannerImpl in the same package
+    static final char [] xmlDecl = {'<','?','x','m','l'};
+
     // debugging
 
     /** Debug scanner state. */
