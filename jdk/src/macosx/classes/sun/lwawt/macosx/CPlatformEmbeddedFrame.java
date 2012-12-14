@@ -25,16 +25,13 @@
 
 package sun.lwawt.macosx;
 
-import sun.lwawt.PlatformWindow;
-import sun.lwawt.LWWindowPeer;
-
-import sun.java2d.opengl.CGLLayer;
-import sun.java2d.SurfaceData;
-
-import sun.awt.CausedFocusEvent;
-
 import java.awt.*;
-
+import sun.awt.CausedFocusEvent;
+import sun.java2d.SurfaceData;
+import sun.java2d.opengl.CGLLayer;
+import sun.lwawt.LWWindowPeer;
+import sun.lwawt.LWWindowPeer.PeerType;
+import sun.lwawt.PlatformWindow;
 import sun.util.logging.PlatformLogger;
 
 /*
@@ -134,6 +131,7 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
 
     // This method should be properly implemented for applets.
     // It returns null just as a stub.
+    @Override
     public PlatformWindow getTopmostPlatformWindowUnderMouse() { return null; }
 
     @Override
@@ -192,4 +190,13 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
 
     @Override
     public void setModalBlocked(boolean blocked) {}
+
+    /*
+     * The method could not be implemented due to CALayer restrictions.
+     * The exeption enforce clients not to use it.
+     */
+    @Override
+    public boolean isUnderMouse() {
+        throw new RuntimeException("Not implemented");
+    }
 }
