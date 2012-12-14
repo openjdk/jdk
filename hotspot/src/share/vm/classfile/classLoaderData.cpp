@@ -167,16 +167,18 @@ void ClassLoaderData::add_dependency(Handle dependency, TRAPS) {
     ok = (objArrayOop)ok->obj_at(1);
   }
 
+  // Must handle over GC points
+  assert (last != NULL, "dependencies should be initialized");
+  objArrayHandle last_handle(THREAD, last);
+
   // Create a new dependency node with fields for (class_loader or mirror, next)
   objArrayOop deps = oopFactory::new_objectArray(2, CHECK);
   deps->obj_at_put(0, dependency());
 
-  // Must handle over more GC points
+  // Must handle over GC points
   objArrayHandle new_dependency(THREAD, deps);
 
   // Add the dependency under lock
-  assert (last != NULL, "dependencies should be initialized");
-  objArrayHandle last_handle(THREAD, last);
   locked_add_dependency(last_handle, new_dependency);
 }
 
