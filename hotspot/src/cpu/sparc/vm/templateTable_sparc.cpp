@@ -3040,7 +3040,8 @@ void TemplateTable::invokevfinal_helper(Register Rscratch, Register Rret) {
   Register Rtemp = G4_scratch;
 
   // Load receiver from stack slot
-  __ lduh(G5_method, in_bytes(Method::size_of_parameters_offset()), G4_scratch);
+  __ ld_ptr(G5_method, in_bytes(Method::const_offset()), G4_scratch);
+  __ lduh(G4_scratch, in_bytes(ConstMethod::size_of_parameters_offset()), G4_scratch);
   __ load_receiver(G4_scratch, O0);
 
   // receiver NULL check
