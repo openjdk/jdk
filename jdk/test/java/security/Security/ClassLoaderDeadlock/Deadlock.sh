@@ -62,5 +62,5 @@ esac
 
 JAVA="${TESTJAVA}${FILESEP}bin${FILESEP}java"
 
-${JAVA} -cp "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}Deadlock.jar" Deadlock
+${JAVA} ${TESTVMOPTS} -cp "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}Deadlock.jar" Deadlock
 

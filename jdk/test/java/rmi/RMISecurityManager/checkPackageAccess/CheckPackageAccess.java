@@ -28,10 +28,9 @@
  * as when the default java.lang.SecurityManager is set, which with the
  * default "java.security" file in the JDK means that access to packages in
  * the sun.* package hierarchy is denied (without explicit runtime permission
- * "accessClassInPackge.*").
+ * "accessClassInPackage.*").
  * @author Peter Jones
  *
- * @build CheckPackageAccess
  * @run main/othervm CheckPackageAccess
  */
 

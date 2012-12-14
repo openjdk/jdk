@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,14 +126,9 @@ import sun.security.util.Debug;
  * are rejected.  Such permission must be listed in the
  * <code>java.security.Policy</code>.
  *
- * <p> The default <code>Policy</code> implementation can be changed by
- * setting the value of the "auth.policy.provider" security property
- * (in the Java security properties file) to the fully qualified name of
- * the desired <code>Policy</code> implementation class.
- * The Java security properties file is located in the file named
- * &lt;JAVA_HOME&gt;/lib/security/java.security.
- * &lt;JAVA_HOME&gt; refers to the value of the java.home system property,
- * and specifies the directory where the JRE is installed.
+ * <p> The default {@code Policy} implementation can be changed by
+ * setting the value of the {@code auth.policy.provider} security property to
+ * the fully qualified name of the desired {@code Policy} implementation class.
  *
  * @deprecated  as of JDK version 1.4 -- Replaced by java.security.Policy.
  *              java.security.Policy has a method:
@@ -154,7 +149,7 @@ import sun.security.util.Debug;
  * These two APIs provide callers the means to query the
  * Policy for Principal-based Permission entries.
  *
- *
+ * @see java.security.Security security properties
  */
 @Deprecated
 public abstract class Policy {

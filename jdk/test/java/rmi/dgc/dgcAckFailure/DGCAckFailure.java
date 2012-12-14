@@ -30,8 +30,7 @@
  * rather than pinning it indefinitely.
  * @author Peter Jones
  *
- * @build DGCAckFailure
- * @build DGCAckFailure_Stub
+ * @build DGCAckFailure DGCAckFailure_Stub
  * @run main/othervm DGCAckFailure
  */
 

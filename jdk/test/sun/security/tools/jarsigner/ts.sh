@@ -87,5 +87,5 @@ $KT -alias tsbad3 -certreq | \
         $KT -alias tsbad3 -importcert
 
 $JAVAC -d . ${TESTSRC}/TimestampCheck.java
-$JAVA TimestampCheck
+$JAVA ${TESTVMOPTS} TimestampCheck
 

@@ -138,6 +138,28 @@ public class FormatData_ru extends ListResourceBundle {
                     "\u0421\u0431" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "\u0412",
+                    "\u041f\u043d",
+                    "\u0412\u0442",
+                    "\u0421",
+                    "\u0427",
+                    "\u041f",
+                    "\u0421", // contributed item in CLDR
+                }
+            },
+            { "standalone.DayNarrows",
+                new String[] {
+                    "\u0412",
+                    "\u041f",
+                    "\u0412",
+                    "\u0421",
+                    "\u0427",
+                    "\u041f",
+                    "\u0421",
+                }
+            },
             { "Eras",
                 new String[] { // era strings
                     "\u0434\u043e \u043d.\u044d.",

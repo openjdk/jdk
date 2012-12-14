@@ -59,7 +59,7 @@ fi
 runOne()
 {
    echo "runOne $@"
-   $TESTJAVA/bin/java -classpath $TESTCLASSES $@  || exit 3
+   $TESTJAVA/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES $@  || exit 3
 }
 
 solaris_swap_size()

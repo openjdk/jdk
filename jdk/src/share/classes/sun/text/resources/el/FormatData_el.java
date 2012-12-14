@@ -124,6 +124,17 @@ public class FormatData_el extends ListResourceBundle {
                     "\u03a3\u03b1\u03b2" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "\u039a",
+                    "\u0394",
+                    "\u03a4",
+                    "\u03a4",
+                    "\u03a0",
+                    "\u03a0",
+                    "\u03a3",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "\u03c0\u03bc", // am marker

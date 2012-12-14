@@ -31,11 +31,7 @@
  * 4180392
  *
  * @library ../../testlibrary
- * @build UseCustomRef
- * @build Ping
- * @build UseCustomRef_Stub
- * @build UseCustomRef_Skel
- * @build TestLibrary
+ * @build TestLibrary Ping UseCustomRef_Stub UseCustomRef_Skel
  * @run main/othervm/policy=security.policy/secure=java.rmi.RMISecurityManager/timeout=120 UseCustomRef
  *
  * This test was failing to run because the synthetic access

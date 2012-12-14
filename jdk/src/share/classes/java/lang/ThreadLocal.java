@@ -25,19 +25,21 @@
 
 package java.lang;
 import java.lang.ref.*;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 /**
  * This class provides thread-local variables.  These variables differ from
  * their normal counterparts in that each thread that accesses one (via its
- * <tt>get</tt> or <tt>set</tt> method) has its own, independently initialized
- * copy of the variable.  <tt>ThreadLocal</tt> instances are typically private
+ * {@code get} or {@code set} method) has its own, independently initialized
+ * copy of the variable.  {@code ThreadLocal} instances are typically private
  * static fields in classes that wish to associate state with a thread (e.g.,
  * a user ID or Transaction ID).
  *
  * <p>For example, the class below generates unique identifiers local to each
  * thread.
- * A thread's id is assigned the first time it invokes <tt>ThreadId.get()</tt>
+ * A thread's id is assigned the first time it invokes {@code ThreadId.get()}
  * and remains unchanged on subsequent calls.
  * <pre>
  * import java.util.concurrent.atomic.AtomicInteger;
@@ -61,7 +63,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * }
  * </pre>
  * <p>Each thread holds an implicit reference to its copy of a thread-local
- * variable as long as the thread is alive and the <tt>ThreadLocal</tt>
+ * variable as long as the thread is alive and the {@code ThreadLocal}
  * instance is accessible; after a thread goes away, all of its copies of
  * thread-local instances are subject to garbage collection (unless other
  * references to these copies exist).
@@ -108,14 +110,14 @@ public class ThreadLocal<T> {
      * thread-local variable.  This method will be invoked the first
      * time a thread accesses the variable with the {@link #get}
      * method, unless the thread previously invoked the {@link #set}
-     * method, in which case the <tt>initialValue</tt> method will not
+     * method, in which case the {@code initialValue} method will not
      * be invoked for the thread.  Normally, this method is invoked at
      * most once per thread, but it may be invoked again in case of
      * subsequent invocations of {@link #remove} followed by {@link #get}.
      *
-     * <p>This implementation simply returns <tt>null</tt>; if the
+     * <p>This implementation simply returns {@code null}; if the
      * programmer desires thread-local variables to have an initial
-     * value other than <tt>null</tt>, <tt>ThreadLocal</tt> must be
+     * value other than {@code null}, {@code ThreadLocal} must be
      * subclassed, and this method overridden.  Typically, an
      * anonymous inner class will be used.
      *
@@ -126,7 +128,21 @@ public class ThreadLocal<T> {
     }
 
     /**
+     * Creates a thread local variable. The initial value of the variable is
+     * determined by invoking the {@code get} method on the {@code Supplier}.
+     *
+     * @param supplier the supplier to be used to determine the initial value
+     * @return a new thread local variable
+     * @throws NullPointerException if the specified supplier is null
+     * @since 1.8
+     */
+    public static <T> ThreadLocal<T> withInitial(Supplier<? extends T> supplier) {
+        return new SuppliedThreadLocal<>(supplier);
+    }
+
+    /**
      * Creates a thread local variable.
+     * @see #withInitial(java.util.function.Supplier)
      */
     public ThreadLocal() {
     }
@@ -195,7 +211,7 @@ public class ThreadLocal<T> {
      * reinitialized by invoking its {@link #initialValue} method,
      * unless its value is {@linkplain #set set} by the current thread
      * in the interim.  This may result in multiple invocations of the
-     * <tt>initialValue</tt> method in the current thread.
+     * {@code initialValue} method in the current thread.
      *
      * @since 1.5
      */
@@ -248,6 +264,24 @@ public class ThreadLocal<T> {
      */
     T childValue(T parentValue) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * An extension of ThreadLocal that obtains its initial value from
+     * the specified {@code Supplier}.
+     */
+    static final class SuppliedThreadLocal<T> extends ThreadLocal<T> {
+
+        private final Supplier<? extends T> supplier;
+
+        SuppliedThreadLocal(Supplier<? extends T> supplier) {
+            this.supplier = Objects.requireNonNull(supplier);
+        }
+
+        @Override
+        protected T initialValue() {
+            return supplier.get();
+        }
     }
 
     /**
@@ -599,9 +633,9 @@ public class ThreadLocal<T> {
          * @param i a position known NOT to hold a stale entry. The
          * scan starts at the element after i.
          *
-         * @param n scan control: <tt>log2(n)</tt> cells are scanned,
+         * @param n scan control: {@code log2(n)} cells are scanned,
          * unless a stale entry is found, in which case
-         * <tt>log2(table.length)-1</tt> additional cells are scanned.
+         * {@code log2(table.length)-1} additional cells are scanned.
          * When called from insertions, this parameter is the number
          * of elements, but when from replaceStaleEntry, it is the
          * table length. (Note: all this could be changed to be either
