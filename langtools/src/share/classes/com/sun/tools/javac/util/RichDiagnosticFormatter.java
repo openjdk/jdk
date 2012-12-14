@@ -249,7 +249,7 @@ public class RichDiagnosticFormatter extends
         INTERSECTION("where.description.intersection");
 
         /** resource key for this where clause kind */
-        private String key;
+        private final String key;
 
         WhereClauseKind(String key) {
             this.key = key;

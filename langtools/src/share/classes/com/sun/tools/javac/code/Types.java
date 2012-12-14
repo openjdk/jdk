@@ -2849,7 +2849,7 @@ public class Types {
         }
         return tvars1;
     }
-    static private Mapping newInstanceFun = new Mapping("newInstanceFun") {
+    private static final Mapping newInstanceFun = new Mapping("newInstanceFun") {
             public Type apply(Type t) { return new TypeVar(t.tsym, t.getUpperBound(), t.getLowerBound()); }
         };
     // </editor-fold>

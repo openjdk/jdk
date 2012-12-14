@@ -87,7 +87,7 @@ public enum Source {
 
     public final String name;
 
-    private static Map<String,Source> tab = new HashMap<String,Source>();
+    private static final Map<String,Source> tab = new HashMap<String,Source>();
     static {
         for (Source s : values()) {
             tab.put(s.name, s);

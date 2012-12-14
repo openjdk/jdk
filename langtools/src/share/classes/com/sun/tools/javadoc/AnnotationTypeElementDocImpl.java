@@ -27,9 +27,9 @@ package com.sun.tools.javadoc;
 
 import com.sun.javadoc.*;
 
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.util.Position;
 
 /**
  * Represents an element of an annotation type.
@@ -50,9 +50,8 @@ public class AnnotationTypeElementDocImpl
         super(env, sym);
     }
 
-    public AnnotationTypeElementDocImpl(DocEnv env, MethodSymbol sym,
-                                 String doc, JCMethodDecl tree, Position.LineMap lineMap) {
-        super(env, sym, doc, tree, lineMap);
+    public AnnotationTypeElementDocImpl(DocEnv env, MethodSymbol sym, TreePath treePath) {
+        super(env, sym, treePath);
     }
 
     /**

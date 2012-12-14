@@ -1545,10 +1545,10 @@ public class Code {
     public void compressCatchTable() {
         ListBuffer<char[]> compressedCatchInfo = ListBuffer.lb();
         List<Integer> handlerPcs = List.nil();
-        for (char[] catchEntry : catchInfo.elems) {
+        for (char[] catchEntry : catchInfo) {
             handlerPcs = handlerPcs.prepend((int)catchEntry[2]);
         }
-        for (char[] catchEntry : catchInfo.elems) {
+        for (char[] catchEntry : catchInfo) {
             int startpc = catchEntry[0];
             int endpc = catchEntry[1];
             if (startpc == endpc ||
@@ -1825,7 +1825,7 @@ public class Code {
         }
     }
 
-    static Type jsrReturnValue = new Type(INT, null);
+    static final Type jsrReturnValue = new Type(INT, null);
 
 
 /* **************************************************************************
