@@ -27,9 +27,7 @@
  * @author Ann Wollrath
  *
  * @library ../../testlibrary
- * @build RMID ActivationLibrary
- * @build RmidViaInheritedChannel
- * @build TestLibrary
+ * @build TestLibrary RMID ActivationLibrary
  * @run main/othervm/timeout=240 RmidViaInheritedChannel
  */
 

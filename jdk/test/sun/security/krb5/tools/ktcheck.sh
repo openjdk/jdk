@@ -58,7 +58,7 @@ ${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}KtabCheck.java
 
 EXTRA_OPTIONS="-Djava.security.krb5.conf=${TESTSRC}${FS}onlythree.conf"
 KTAB="${TESTJAVA}${FS}bin${FS}ktab -J${EXTRA_OPTIONS} -k $KEYTAB -f"
-CHECK="${TESTJAVA}${FS}bin${FS}java ${EXTRA_OPTIONS} KtabCheck $KEYTAB"
+CHECK="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${EXTRA_OPTIONS} KtabCheck $KEYTAB"
 
 echo ${EXTRA_OPTIONS}
 

@@ -505,7 +505,7 @@ jdk_other: $(call TestDirs, \
           demo/jvmti demo/zipfs sample \
           javax/naming com/sun/jndi \
           javax/script \
-	  javax/sql \
+	  java/sql javax/sql \
           javax/smartcardio \
 	  javax/xml/ws com/sun/internal/ws \
 	  jdk/asm \

@@ -25,9 +25,7 @@
  * @bug 4120329
  * @summary RMI registry creation is impossible if first attempt fails.
  * @library ../../testlibrary
- * @build StreamPipe TestParams TestLibrary JavaVM
- * @build RegistryRunner RegistryRunner_Stub
- * @build Reexport
+ * @build TestLibrary JavaVM RegistryRunner RegistryRunner_Stub
  * @run main/othervm Reexport
  */
 
