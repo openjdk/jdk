@@ -1336,7 +1336,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return nodes;
     }
 
-    private static TreeScanner treeCleaner = new TreeScanner() {
+    private static final TreeScanner treeCleaner = new TreeScanner() {
             public void scan(JCTree node) {
                 super.scan(node);
                 if (node != null)

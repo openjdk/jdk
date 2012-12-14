@@ -21,14 +21,12 @@
  * questions.
  */
 
-// key: compiler.err.invalid.containedby.annotation.elem.nondefault
+/*
+ * @test
+ * @bug 8004094
+ * @summary Javac compiler error - synthetic method accessor generated with duplicate name
+ *
+ * @compile B.java T8004094.java
+ */
 
-import java.lang.annotation.*;
-
-@ContainedBy(Annos.class)
-@interface Anno { }
-
-@ContainerFor(Anno.class)
-@interface Annos { Anno[] value(); String foo(); }
-
-class ContainedByNonDefault { }
+public class T8004094 extends B<Object> { }

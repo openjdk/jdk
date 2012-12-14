@@ -20,15 +20,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+abstract class A {
 
-// key: compiler.err.invalid.containedby.annotation.elem.nondefault
+    private static String s = null;
 
-import java.lang.annotation.*;
+    static void test() {
+        new Object() {
+            void m() {
+                Object o = s;
+            }
+        };
+    }
+}
 
-@ContainedBy(Annos.class)
-@interface Anno { }
+public abstract class B<T> extends A {
 
-@ContainerFor(Anno.class)
-@interface Annos { Anno[] value(); String foo(); }
+    private static Integer i = null;
 
-class ContainedByNonDefault { }
+    static void test() {
+        new Object() {
+            void m() {
+                Object o = i;
+            }
+        };
+    }
+}
