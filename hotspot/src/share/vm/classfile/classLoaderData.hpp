@@ -109,6 +109,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   Mutex* _metaspace_lock;  // Locks the metaspace for allocations and setup.
   bool _unloading;         // true if this class loader goes away
   bool _keep_alive;        // if this CLD can be unloaded for anonymous loaders
+  bool _is_anonymous;      // if this CLD is for an anonymous class
   volatile int _claimed;   // true if claimed, for example during GC traces.
                            // To avoid applying oop closure more than once.
                            // Has to be an int because we cas it.
@@ -139,7 +140,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void set_next(ClassLoaderData* next) { _next = next; }
   ClassLoaderData* next() const        { return _next; }
 
-  ClassLoaderData(Handle h_class_loader);
+  ClassLoaderData(Handle h_class_loader, bool is_anonymous);
   ~ClassLoaderData();
 
   void set_metaspace(Metaspace* m) { _metaspace = m; }
@@ -174,12 +175,12 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     return _the_null_class_loader_data;
   }
 
-  bool is_anonymous() const;
+  bool is_anonymous() const { return _is_anonymous; }
 
   static void init_null_class_loader_data() {
     assert(_the_null_class_loader_data == NULL, "cannot initialize twice");
     assert(ClassLoaderDataGraph::_head == NULL, "cannot initialize twice");
-    _the_null_class_loader_data = new ClassLoaderData((oop)NULL);
+    _the_null_class_loader_data = new ClassLoaderData((oop)NULL, false);
     ClassLoaderDataGraph::_head = _the_null_class_loader_data;
     assert(_the_null_class_loader_data->is_the_null_class_loader_data(), "Must be");
     if (DumpSharedSpaces) {
