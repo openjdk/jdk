@@ -412,16 +412,16 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
 
   case vmIntrinsics::_reverseBytes_c:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesUS)) return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesUS)) return NULL;
     break;
   case vmIntrinsics::_reverseBytes_s:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesS))  return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesS))  return NULL;
     break;
   case vmIntrinsics::_reverseBytes_i:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesI))  return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesI))  return NULL;
     break;
   case vmIntrinsics::_reverseBytes_l:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesL))  return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesL))  return NULL;
     break;
 
   case vmIntrinsics::_Reference_get:
