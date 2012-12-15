@@ -50,6 +50,7 @@ import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.Pool;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
@@ -151,7 +152,7 @@ public class TestInvokeDynamic {
 
         abstract boolean check(CPInfo cpInfo) throws Exception;
 
-        Object getValue(Symtab syms, Names names) {
+        Object getValue(Symtab syms, Names names, Types types) {
             switch (this) {
                 case STRING:
                 case INTEGER:
@@ -162,7 +163,7 @@ public class TestInvokeDynamic {
                 case CLASS:
                     return syms.stringType.tsym;
                 case METHOD_HANDLE:
-                    return new Pool.MethodHandle(REF_invokeVirtual, syms.arrayCloneMethod);
+                    return new Pool.MethodHandle(REF_invokeVirtual, syms.arrayCloneMethod, types);
                 case METHOD_TYPE:
                     return syms.arrayCloneMethod.type;
                 default:
@@ -231,7 +232,8 @@ public class TestInvokeDynamic {
         Context context = ct.getContext();
         Symtab syms = Symtab.instance(context);
         Names names = Names.instance(context);
-        ct.addTaskListener(new Indifier(syms, names));
+        Types types = Types.instance(context);
+        ct.addTaskListener(new Indifier(syms, names, types));
         try {
             ct.generate();
         } catch (Throwable t) {
@@ -378,10 +380,12 @@ public class TestInvokeDynamic {
         MethodSymbol bsm;
         Symtab syms;
         Names names;
+        Types types;
 
-        Indifier(Symtab syms, Names names) {
+        Indifier(Symtab syms, Names names, Types types) {
             this.syms = syms;
             this.names = names;
+            this.types = types;
         }
 
         @Override
@@ -405,7 +409,7 @@ public class TestInvokeDynamic {
             if (!oldSym.isConstructor()) {
                 Object[] staticArgs = new Object[arity.arity];
                 for (int i = 0; i < arity.arity ; i++) {
-                    staticArgs[i] = saks[i].getValue(syms, names);
+                    staticArgs[i] = saks[i].getValue(syms, names, types);
                 }
                 ident.sym = new Symbol.DynamicMethodSymbol(oldSym.name, oldSym.owner, REF_invokeStatic, bsm, oldSym.type, staticArgs);
             }
