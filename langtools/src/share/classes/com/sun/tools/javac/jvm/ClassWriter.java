@@ -39,7 +39,12 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.code.Types.UniqueType;
 import com.sun.tools.javac.file.BaseFileObject;
+import com.sun.tools.javac.jvm.Pool.DynamicMethod;
+import com.sun.tools.javac.jvm.Pool.Method;
+import com.sun.tools.javac.jvm.Pool.MethodHandle;
+import com.sun.tools.javac.jvm.Pool.Variable;
 import com.sun.tools.javac.util.*;
 
 import static com.sun.tools.javac.code.BoundKind.*;
@@ -142,7 +147,7 @@ public class ClassWriter extends ClassFile {
     /** The bootstrap methods to be written in the corresponding class attribute
      *  (one for each invokedynamic)
      */
-    Map<MethodSymbol, Pool.MethodHandle> bootstrapMethods;
+    Map<DynamicMethod, MethodHandle> bootstrapMethods;
 
     /** The log to use for verbose output.
      */
@@ -477,10 +482,10 @@ public class ClassWriter extends ClassFile {
         while (i < pool.pp) {
             Object value = pool.pool[i];
             Assert.checkNonNull(value);
-            if (value instanceof Pool.Method)
-                value = ((Pool.Method)value).m;
-            else if (value instanceof Pool.Variable)
-                value = ((Pool.Variable)value).v;
+            if (value instanceof Method)
+                value = ((Method)value).m;
+            else if (value instanceof Variable)
+                value = ((Variable)value).v;
 
             if (value instanceof MethodSymbol) {
                 MethodSymbol m = (MethodSymbol)value;
@@ -493,8 +498,9 @@ public class ClassWriter extends ClassFile {
                 } else {
                     //invokedynamic
                     DynamicMethodSymbol dynSym = (DynamicMethodSymbol)m;
-                    Pool.MethodHandle handle = new Pool.MethodHandle(dynSym.bsmKind, dynSym.bsm);
-                    bootstrapMethods.put(dynSym, handle);
+                    MethodHandle handle = new MethodHandle(dynSym.bsmKind, dynSym.bsm, types);
+                    DynamicMethod dynMeth = new DynamicMethod(dynSym, types);
+                    bootstrapMethods.put(dynMeth, handle);
                     //init cp entries
                     pool.put(names.BootstrapMethods);
                     pool.put(handle);
@@ -531,7 +537,7 @@ public class ClassWriter extends ClassFile {
                 NameAndType nt = (NameAndType)value;
                 poolbuf.appendByte(CONSTANT_NameandType);
                 poolbuf.appendChar(pool.put(nt.name));
-                poolbuf.appendChar(pool.put(typeSig(nt.type)));
+                poolbuf.appendChar(pool.put(typeSig(nt.uniqueType.type)));
             } else if (value instanceof Integer) {
                 poolbuf.appendByte(CONSTANT_Integer);
                 poolbuf.appendInt(((Integer)value).intValue());
@@ -549,17 +555,18 @@ public class ClassWriter extends ClassFile {
             } else if (value instanceof String) {
                 poolbuf.appendByte(CONSTANT_String);
                 poolbuf.appendChar(pool.put(names.fromString((String)value)));
-            } else if (value instanceof MethodType) {
-                MethodType mtype = (MethodType)value;
-                poolbuf.appendByte(CONSTANT_MethodType);
-                poolbuf.appendChar(pool.put(typeSig(mtype)));
-            } else if (value instanceof Type) {
-                Type type = (Type)value;
-                if (type.hasTag(CLASS)) enterInner((ClassSymbol)type.tsym);
-                poolbuf.appendByte(CONSTANT_Class);
-                poolbuf.appendChar(pool.put(xClassName(type)));
-            } else if (value instanceof Pool.MethodHandle) {
-                Pool.MethodHandle ref = (Pool.MethodHandle)value;
+            } else if (value instanceof UniqueType) {
+                Type type = ((UniqueType)value).type;
+                if (type instanceof MethodType) {
+                    poolbuf.appendByte(CONSTANT_MethodType);
+                    poolbuf.appendChar(pool.put(typeSig((MethodType)type)));
+                } else {
+                    if (type.hasTag(CLASS)) enterInner((ClassSymbol)type.tsym);
+                    poolbuf.appendByte(CONSTANT_Class);
+                    poolbuf.appendChar(pool.put(xClassName(type)));
+                }
+            } else if (value instanceof MethodHandle) {
+                MethodHandle ref = (MethodHandle)value;
                 poolbuf.appendByte(CONSTANT_MethodHandle);
                 poolbuf.appendByte(ref.refKind);
                 poolbuf.appendChar(pool.put(ref.refSym));
@@ -589,7 +596,7 @@ public class ClassWriter extends ClassFile {
         return new NameAndType(fieldName(sym),
                                retrofit
                                ? sym.erasure(types)
-                               : sym.externalType(types));
+                               : sym.externalType(types), types);
         // if we retrofit, then the NameAndType has been read in as is
         // and no change is necessary. If we compile normally, the
         // NameAndType is generated from a symbol reference, and the
@@ -951,14 +958,16 @@ public class ClassWriter extends ClassFile {
     void writeBootstrapMethods() {
         int alenIdx = writeAttr(names.BootstrapMethods);
         databuf.appendChar(bootstrapMethods.size());
-        for (Map.Entry<MethodSymbol, Pool.MethodHandle> entry : bootstrapMethods.entrySet()) {
-            DynamicMethodSymbol dsym = (DynamicMethodSymbol)entry.getKey();
+        for (Map.Entry<DynamicMethod, MethodHandle> entry : bootstrapMethods.entrySet()) {
+            DynamicMethod dmeth = entry.getKey();
+            DynamicMethodSymbol dsym = (DynamicMethodSymbol)dmeth.baseSymbol();
             //write BSM handle
             databuf.appendChar(pool.get(entry.getValue()));
             //write static args length
             databuf.appendChar(dsym.staticArgs.length);
             //write static args array
-            for (Object o : dsym.staticArgs) {
+            Object[] uniqueArgs = dmeth.uniqueStaticArgs;
+            for (Object o : uniqueArgs) {
                 databuf.appendChar(pool.get(o));
             }
         }
@@ -1534,7 +1543,7 @@ public class ClassWriter extends ClassFile {
         pool = c.pool;
         innerClasses = null;
         innerClassesQueue = null;
-        bootstrapMethods = new LinkedHashMap<MethodSymbol, Pool.MethodHandle>();
+        bootstrapMethods = new LinkedHashMap<DynamicMethod, MethodHandle>();
 
         Type supertype = types.supertype(c.type);
         List<Type> interfaces = types.interfaces(c.type);

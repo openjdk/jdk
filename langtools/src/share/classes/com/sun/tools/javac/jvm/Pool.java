@@ -28,6 +28,9 @@ package com.sun.tools.javac.jvm;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.code.Types.UniqueType;
 
 import com.sun.tools.javac.util.ArrayUtils;
 import com.sun.tools.javac.util.Assert;
@@ -60,11 +63,14 @@ public class Pool {
      */
     Map<Object,Integer> indices;
 
+    Types types;
+
     /** Construct a pool with given number of elements and element array.
      */
-    public Pool(int pp, Object[] pool) {
+    public Pool(int pp, Object[] pool, Types types) {
         this.pp = pp;
         this.pool = pool;
+        this.types = types;
         this.indices = new HashMap<Object,Integer>(pool.length);
         for (int i = 1; i < pp; i++) {
             if (pool[i] != null) indices.put(pool[i], i);
@@ -73,8 +79,8 @@ public class Pool {
 
     /** Construct an empty pool.
      */
-    public Pool() {
-        this(1, new Object[64]);
+    public Pool(Types types) {
+        this(1, new Object[64], types);
     }
 
     /** Return the number of entries in the constant pool.
@@ -114,11 +120,13 @@ public class Pool {
 
     Object makePoolValue(Object o) {
         if (o instanceof DynamicMethodSymbol) {
-            return new DynamicMethod((DynamicMethodSymbol)o);
+            return new DynamicMethod((DynamicMethodSymbol)o, types);
         } else if (o instanceof MethodSymbol) {
-            return new Method((MethodSymbol)o);
+            return new Method((MethodSymbol)o, types);
         } else if (o instanceof VarSymbol) {
-            return new Variable((VarSymbol)o);
+            return new Variable((VarSymbol)o, types);
+        } else if (o instanceof Type) {
+            return new UniqueType((Type)o, types);
         } else {
             return o;
         }
@@ -134,9 +142,11 @@ public class Pool {
 
     static class Method extends DelegatedSymbol {
         MethodSymbol m;
-        Method(MethodSymbol m) {
+        UniqueType uniqueType;
+        Method(MethodSymbol m, Types types) {
             super(m);
             this.m = m;
+            this.uniqueType = new UniqueType(m.type, types);
         }
         public boolean equals(Object other) {
             if (!(other instanceof Method)) return false;
@@ -144,20 +154,22 @@ public class Pool {
             return
                 o.name == m.name &&
                 o.owner == m.owner &&
-                o.type.equals(m.type);
+                ((Method)other).uniqueType.equals(uniqueType);
         }
         public int hashCode() {
             return
                 m.name.hashCode() * 33 +
                 m.owner.hashCode() * 9 +
-                m.type.hashCode();
+                uniqueType.hashCode();
         }
     }
 
     static class DynamicMethod extends Method {
+        public Object[] uniqueStaticArgs;
 
-        DynamicMethod(DynamicMethodSymbol m) {
-            super(m);
+        DynamicMethod(DynamicMethodSymbol m, Types types) {
+            super(m, types);
+            uniqueStaticArgs = getUniqueTypeArray(m.staticArgs, types);
         }
 
         @Override
@@ -168,7 +180,8 @@ public class Pool {
             DynamicMethodSymbol dm2 = (DynamicMethodSymbol)((DynamicMethod)other).m;
             return dm1.bsm == dm2.bsm &&
                         dm1.bsmKind == dm2.bsmKind &&
-                        Arrays.equals(dm1.staticArgs, dm2.staticArgs);
+                        Arrays.equals(uniqueStaticArgs,
+                            ((DynamicMethod)other).uniqueStaticArgs);
         }
 
         @Override
@@ -178,17 +191,31 @@ public class Pool {
             hash += dm.bsmKind * 7 +
                     dm.bsm.hashCode() * 11;
             for (int i = 0; i < dm.staticArgs.length; i++) {
-                hash += (dm.staticArgs[i].hashCode() * 23);
+                hash += (uniqueStaticArgs[i].hashCode() * 23);
             }
             return hash;
+        }
+
+        private Object[] getUniqueTypeArray(Object[] objects, Types types) {
+            Object[] result = new Object[objects.length];
+            for (int i = 0; i < objects.length; i++) {
+                if (objects[i] instanceof Type) {
+                    result[i] = new UniqueType((Type)objects[i], types);
+                } else {
+                    result[i] = objects[i];
+                }
+            }
+            return result;
         }
     }
 
     static class Variable extends DelegatedSymbol {
         VarSymbol v;
-        Variable(VarSymbol v) {
+        UniqueType uniqueType;
+        Variable(VarSymbol v, Types types) {
             super(v);
             this.v = v;
+            this.uniqueType = new UniqueType(v.type, types);
         }
         public boolean equals(Object other) {
             if (!(other instanceof Variable)) return false;
@@ -196,13 +223,13 @@ public class Pool {
             return
                 o.name == v.name &&
                 o.owner == v.owner &&
-                o.type.equals(v.type);
+                ((Variable)other).uniqueType.equals(uniqueType);
         }
         public int hashCode() {
             return
                 v.name.hashCode() * 33 +
                 v.owner.hashCode() * 9 +
-                v.type.hashCode();
+                uniqueType.hashCode();
         }
     }
 
@@ -214,9 +241,12 @@ public class Pool {
         /** Reference symbol */
         Symbol refSym;
 
-        public MethodHandle(int refKind, Symbol refSym) {
+        UniqueType uniqueType;
+
+        public MethodHandle(int refKind, Symbol refSym, Types types) {
             this.refKind = refKind;
             this.refSym = refSym;
+            this.uniqueType = new UniqueType(this.refSym.type, types);
             checkConsistent();
         }
         public boolean equals(Object other) {
@@ -227,14 +257,14 @@ public class Pool {
             return
                 o.name == refSym.name &&
                 o.owner == refSym.owner &&
-                o.type.equals(refSym.type);
+                ((MethodHandle)other).uniqueType.equals(uniqueType);
         }
         public int hashCode() {
             return
                 refKind * 65 +
                 refSym.name.hashCode() * 33 +
                 refSym.owner.hashCode() * 9 +
-                refSym.type.hashCode();
+                uniqueType.hashCode();
         }
 
         /**
