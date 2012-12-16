@@ -721,7 +721,7 @@ public class ClassWriter extends ClassFile {
             endAttr(alenIdx);
             acount++;
         }
-        acount += writeJavaAnnotations(sym.getAnnotationMirrors());
+        acount += writeJavaAnnotations(sym.getRawAttributes());
         return acount;
     }
 
@@ -732,7 +732,7 @@ public class ClassWriter extends ClassFile {
         boolean hasVisible = false;
         boolean hasInvisible = false;
         if (m.params != null) for (VarSymbol s : m.params) {
-            for (Attribute.Compound a : s.getAnnotationMirrors()) {
+            for (Attribute.Compound a : s.getRawAttributes()) {
                 switch (types.getRetention(a)) {
                 case SOURCE: break;
                 case CLASS: hasInvisible = true; break;
@@ -748,7 +748,7 @@ public class ClassWriter extends ClassFile {
             databuf.appendByte(m.params.length());
             for (VarSymbol s : m.params) {
                 ListBuffer<Attribute.Compound> buf = new ListBuffer<Attribute.Compound>();
-                for (Attribute.Compound a : s.getAnnotationMirrors())
+                for (Attribute.Compound a : s.getRawAttributes())
                     if (types.getRetention(a) == RetentionPolicy.RUNTIME)
                         buf.append(a);
                 databuf.appendChar(buf.length());
@@ -763,7 +763,7 @@ public class ClassWriter extends ClassFile {
             databuf.appendByte(m.params.length());
             for (VarSymbol s : m.params) {
                 ListBuffer<Attribute.Compound> buf = new ListBuffer<Attribute.Compound>();
-                for (Attribute.Compound a : s.getAnnotationMirrors())
+                for (Attribute.Compound a : s.getRawAttributes())
                     if (types.getRetention(a) == RetentionPolicy.CLASS)
                         buf.append(a);
                 databuf.appendChar(buf.length());
@@ -1636,7 +1636,7 @@ public class ClassWriter extends ClassFile {
         }
 
         acount += writeFlagAttrs(c.flags());
-        acount += writeJavaAnnotations(c.getAnnotationMirrors());
+        acount += writeJavaAnnotations(c.getRawAttributes());
         acount += writeEnclosingMethodAttribute(c);
         acount += writeExtraClassAttributes(c);
 
