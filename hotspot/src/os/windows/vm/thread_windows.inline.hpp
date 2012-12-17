@@ -25,6 +25,10 @@
 #ifndef OS_WINDOWS_VM_THREAD_WINDOWS_INLINE_HPP
 #define OS_WINDOWS_VM_THREAD_WINDOWS_INLINE_HPP
 
+#ifndef SHARE_VM_RUNTIME_THREAD_INLINE_HPP_SCOPE
+#error "This file should only be included from thread.inline.hpp"
+#endif
+
 #include "runtime/atomic.hpp"
 #include "runtime/prefetch.hpp"
 #include "runtime/thread.hpp"

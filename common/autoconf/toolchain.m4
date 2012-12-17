@@ -114,13 +114,25 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
 [
   COMPILER_NAME=$2
 
-  # Do a first initial attempt at searching the list of compiler names.
+  $1=
+  # If TOOLS_DIR is set, check for all compiler names in there first
+  # before checking the rest of the PATH.
+  if test -n "$TOOLS_DIR"; then
+    PATH_save="$PATH"
+    PATH="$TOOLS_DIR"
+    AC_PATH_PROGS(TOOLS_DIR_$1, $3)
+    $1=$TOOLS_DIR_$1
+    PATH="$PATH_save"
+  fi
+
   # AC_PATH_PROGS can't be run multiple times with the same variable,
   # so create a new name for this run.
-  AC_PATH_PROGS(POTENTIAL_$1, $3)
-  $1=$POTENTIAL_$1
+  if test "x[$]$1" = x; then
+    AC_PATH_PROGS(POTENTIAL_$1, $3)
+    $1=$POTENTIAL_$1
+  fi
 
-  if test "x$[$]$1" = x; then
+  if test "x[$]$1" = x; then
       HELP_MSG_MISSING_DEPENDENCY([devkit])
       AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
   fi

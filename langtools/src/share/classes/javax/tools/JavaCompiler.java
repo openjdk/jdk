@@ -108,8 +108,8 @@ import javax.annotation.processing.Processor;
  *     example a recommended coding pattern:
  *
  *     <pre>
- *       Files[] files1 = ... ; // input for first compilation task
- *       Files[] files2 = ... ; // input for second compilation task
+ *       File[] files1 = ... ; // input for first compilation task
+ *       File[] files2 = ... ; // input for second compilation task
  *
  *       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
  *       StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
@@ -165,7 +165,7 @@ import javax.annotation.processing.Processor;
  *       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
  *       StandardJavaFileManager stdFileManager = compiler.getStandardFileManager(null, null, null);
  *       JavaFileManager fileManager = new ForwardingJavaFileManager(stdFileManager) {
- *           public void flush() {
+ *           public void flush() throws IOException {
  *               logger.entering(StandardJavaFileManager.class.getName(), "flush");
  *               super.flush();
  *               logger.exiting(StandardJavaFileManager.class.getName(), "flush");

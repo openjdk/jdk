@@ -25,7 +25,7 @@
 
 package java.lang.invoke;
 
-import static com.sun.xml.internal.ws.org.objectweb.asm.Opcodes.*;
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static java.lang.invoke.LambdaForm.basicTypes;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
 import static java.lang.invoke.MethodHandleStatics.*;
@@ -40,9 +40,9 @@ import java.util.HashMap;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.Wrapper;
 
-import com.sun.xml.internal.ws.org.objectweb.asm.ClassWriter;
-import com.sun.xml.internal.ws.org.objectweb.asm.MethodVisitor;
-import com.sun.xml.internal.ws.org.objectweb.asm.Type;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.Type;
 
 /**
  * The flavor of method handle which emulates an invoke instruction

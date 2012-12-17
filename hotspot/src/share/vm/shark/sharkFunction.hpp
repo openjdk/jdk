@@ -91,7 +91,7 @@ class SharkFunction : public SharkTargetInvariants {
   bool is_osr() const {
     return flow()->is_osr_flow();
   }
-  const llvm::FunctionType* entry_point_type() const {
+  llvm::FunctionType* entry_point_type() const {
     if (is_osr())
       return SharkType::osr_entry_point_type();
     else

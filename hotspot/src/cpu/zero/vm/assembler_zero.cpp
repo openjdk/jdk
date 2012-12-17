@@ -46,6 +46,12 @@ int AbstractAssembler::code_fill_byte() {
   return 0;
 }
 
+#ifdef ASSERT
+bool AbstractAssembler::pd_check_instruction_mark() {
+  ShouldNotCallThis();
+}
+#endif
+
 void Assembler::pd_patch_instruction(address branch, address target) {
   ShouldNotCallThis();
 }
@@ -78,6 +84,11 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(
 void MacroAssembler::store_oop(jobject obj) {
   code_section()->relocate(pc(), oop_Relocation::spec_for_immediate());
   emit_address((address) obj);
+}
+
+void MacroAssembler::store_Metadata(Metadata* md) {
+  code_section()->relocate(pc(), metadata_Relocation::spec_for_immediate());
+  emit_address((address) md);
 }
 
 static void should_not_call() {

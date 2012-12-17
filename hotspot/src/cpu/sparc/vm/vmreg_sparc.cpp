@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
 
 

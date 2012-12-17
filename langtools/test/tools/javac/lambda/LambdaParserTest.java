@@ -90,9 +90,14 @@ public class LambdaParserTest {
     enum LambdaParameterKind {
         IMPLICIT(""),
         EXPLIICT_SIMPLE("A"),
+        EXPLIICT_SIMPLE_ARR1("A[]"),
+        EXPLIICT_SIMPLE_ARR2("A[][]"),
         EXPLICIT_VARARGS("A..."),
         EXPLICIT_GENERIC1("A<X>"),
-        EXPLICIT_GENERIC3("A<? extends X, ? super Y>");
+        EXPLICIT_GENERIC2("A<? extends X, ? super Y>"),
+        EXPLICIT_GENERIC2_VARARGS("A<? extends X, ? super Y>..."),
+        EXPLICIT_GENERIC2_ARR1("A<? extends X, ? super Y>[]"),
+        EXPLICIT_GENERIC2_ARR2("A<? extends X, ? super Y>[][]");
 
         String parameterType;
 
@@ -102,6 +107,11 @@ public class LambdaParserTest {
 
         boolean explicit() {
             return this != IMPLICIT;
+        }
+
+        boolean isVarargs() {
+            return this == EXPLICIT_VARARGS ||
+                    this == EXPLICIT_GENERIC2_VARARGS;
         }
     }
 
@@ -253,7 +263,7 @@ public class LambdaParserTest {
 
         if (lk.arity() == 2 &&
                 (pk1.explicit() != pk2.explicit() ||
-                pk1 == LambdaParameterKind.EXPLICIT_VARARGS)) {
+                pk1.isVarargs())) {
             errorExpected = true;
         }
 

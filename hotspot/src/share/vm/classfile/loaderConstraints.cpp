@@ -118,7 +118,7 @@ void LoaderConstraintTable::purge_loader_constraints() {
                      probe->name()->as_C_string());
           for (int i = 0; i < probe->num_loaders(); i++) {
             tty->print_cr("[   [%d]: %s", i,
-                          SystemDictionary::loader_name(probe->loader_data(i)));
+                          probe->loader_data(i)->loader_name());
           }
         }
       }
@@ -129,7 +129,7 @@ void LoaderConstraintTable::purge_loader_constraints() {
             if (TraceLoaderConstraints) {
               ResourceMark rm;
               tty->print_cr("[Purging loader %s from constraint for name %s",
-                          SystemDictionary::loader_name(probe->loader_data(n)),
+                            probe->loader_data(n)->loader_name(),
                             probe->name()->as_C_string()
                             );
             }
@@ -145,7 +145,7 @@ void LoaderConstraintTable::purge_loader_constraints() {
               tty->print_cr("[New loader list:");
               for (int i = 0; i < probe->num_loaders(); i++) {
                 tty->print_cr("[   [%d]: %s", i,
-                            SystemDictionary::loader_name(probe->loader_data(i)));
+                              probe->loader_data(i)->loader_name());
               }
             }
 
@@ -400,7 +400,7 @@ void LoaderConstraintTable::merge_loader_constraints(
 
     for (int i = 0; i < p1->num_loaders(); i++) {
       tty->print_cr("[   [%d]: %s", i,
-                    SystemDictionary::loader_name(p1->loader_data(i)));
+                    p1->loader_data(i)->loader_name());
     }
     if (p1->klass() == NULL) {
       tty->print_cr("[... and setting class object]");

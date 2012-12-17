@@ -149,7 +149,7 @@ define SetupArchive
 			  $$($1_GREP_INCLUDES) $$($1_GREP_EXCLUDES)) \
 		 $$(subst \,,$$(foreach src,$$($1_SRCS),$$(addprefix $$(src)/,$$($1_EXTRA_FILES))))
         ifeq (,$$($1_SKIP_METAINF))
-            $1_DEPS+=$$(shell $(FIND) $$(addsuffix /META-INF,$$($1_SRCS)) -type f 2> /dev/null))
+            $1_DEPS+=$$(shell $(FIND) $$(addsuffix /META-INF,$$($1_SRCS)) -type f 2> /dev/null)
         endif
     endif
 
@@ -275,10 +275,12 @@ define SetupZipArchive
     # Explicitly excluded files can be given with absolute path. The patsubst solution
     # isn't perfect but the likelyhood of an absolute path to match something in a src
     # dir is very small.
+    # If zip has nothing to do, it returns 12 and would fail the build. Check for 12
+    # and only fail if it's not.
     $$($1_ZIP) : $$($1_ALL_SRCS) $$($1_EXTRA_DEPS)
 		$(MKDIR) -p $$(@D)
 		$(ECHO) Updating $$($1_NAME)
-		$$(foreach i,$$($1_SRC),(cd $$i && $(ZIP) -qru $$@ . $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* $$(addprefix -x$(SPACE),$$(patsubst $$i/%,%,$$($1_EXCLUDE_FILES))))$$(NEWLINE)) true
+		$$(foreach i,$$($1_SRC),(cd $$i && $(ZIP) -qru $$@ . $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* $$(addprefix -x$(SPACE),$$(patsubst $$i/%,%,$$($1_EXCLUDE_FILES))) || test "$$$$?" = "12" )$$(NEWLINE)) true
 		$(TOUCH) $$@
 endef
 

@@ -36,6 +36,7 @@
 #include "memory/universe.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/orderAccess.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
@@ -51,7 +52,6 @@ const bool metaspace_slow_verify = false;
 const uint metadata_deallocate_a_lot_block = 10;
 const uint metadata_deallocate_a_lock_chunk = 3;
 size_t const allocation_from_dictionary_limit = 64 * K;
-const size_t metadata_chunk_initialize = 0xf7f7f7f7;
 const size_t metadata_deallocate = 0xf5f5f5f5;
 
 MetaWord* last_allocated = 0;
@@ -91,23 +91,6 @@ bool MetaspaceGC::_should_concurrent_collect = false;
 // chunk is the chunk from which allocations are done.  Space freed in
 // a chunk is placed on the free list of blocks (BlockFreelist) and
 // reused from there.
-//
-// Future modification
-//
-// The Metachunk can conceivable be replaced by the Chunk in
-// allocation.hpp.  Note that the latter Chunk is the space for
-// allocation (allocations from the chunk are out of the space in
-// the Chunk after the header for the Chunk) where as Metachunks
-// point to space in a VirtualSpace.  To replace Metachunks with
-// Chunks, change Chunks so that they can be allocated out of a VirtualSpace.
-size_t Metablock::_min_block_byte_size = sizeof(Metablock);
-#ifdef ASSERT
-  size_t Metablock::_overhead =
-    Chunk::aligned_overhead_size(sizeof(Metablock)) / BytesPerWord;
-#else
-  size_t Metablock::_overhead = 0;
-#endif
-
 
 // Pointer to list of Metachunks.
 class ChunkList VALUE_OBJ_CLASS_SPEC {
@@ -325,10 +308,12 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   bool expand_by(size_t words, bool pre_touch = false);
   bool shrink_by(size_t words);
 
+#ifdef ASSERT
   // Debug support
   static void verify_virtual_space_total();
   static void verify_virtual_space_count();
   void mangle();
+#endif
 
   void print_on(outputStream* st) const;
 };
@@ -621,15 +606,14 @@ class SpaceManager : public CHeapObj<mtClass> {
   void locked_print_chunks_in_use_on(outputStream* st) const;
 
   void verify();
+  void verify_chunk_size(Metachunk* chunk);
+  NOT_PRODUCT(void mangle_freed_chunks();)
 #ifdef ASSERT
-  void mangle_freed_chunks();
   void verify_allocation_total();
 #endif
 };
 
 uint const SpaceManager::_small_chunk_limit = 4;
-
-
 
 const char* SpaceManager::_expand_lock_name =
   "SpaceManager chunk allocation lock";
@@ -638,103 +622,6 @@ Mutex* const SpaceManager::_expand_lock =
   new Mutex(SpaceManager::_expand_lock_rank,
             SpaceManager::_expand_lock_name,
             Mutex::_allow_vm_block_flag);
-
-size_t Metachunk::_overhead =
-  Chunk::aligned_overhead_size(sizeof(Metachunk)) / BytesPerWord;
-
-// New blocks returned by the Metaspace are zero initialized.
-// We should fix the constructors to not assume this instead.
-Metablock* Metablock::initialize(MetaWord* p, size_t word_size) {
-  if (p == NULL) {
-    return NULL;
-  }
-
-  Metablock* result = (Metablock*) p;
-
-  // Clear the memory
-  Copy::fill_to_aligned_words((HeapWord*)result, word_size);
-#ifdef ASSERT
-  result->set_word_size(word_size);
-#endif
-  return result;
-}
-
-// Metachunk methods
-
-Metachunk* Metachunk::initialize(MetaWord* ptr, size_t word_size) {
-  // Set bottom, top, and end.  Allow space for the Metachunk itself
-  Metachunk* chunk = (Metachunk*) ptr;
-
-  MetaWord* chunk_bottom = ptr + _overhead;
-  chunk->set_bottom(ptr);
-  chunk->set_top(chunk_bottom);
-  MetaWord* chunk_end = ptr + word_size;
-  assert(chunk_end > chunk_bottom, "Chunk must be too small");
-  chunk->set_end(chunk_end);
-  chunk->set_next(NULL);
-  chunk->set_word_size(word_size);
-#ifdef ASSERT
-  size_t data_word_size = pointer_delta(chunk_end, chunk_bottom, sizeof(MetaWord));
-  Copy::fill_to_words((HeapWord*) chunk_bottom, data_word_size, metadata_chunk_initialize);
-#endif
-  return chunk;
-}
-
-
-MetaWord* Metachunk::allocate(size_t word_size) {
-  MetaWord* result = NULL;
-  // If available, bump the pointer to allocate.
-  if (free_word_size() >= word_size) {
-    result = _top;
-    _top = _top + word_size;
-  }
-  return result;
-}
-
-// _bottom points to the start of the chunk including the overhead.
-size_t Metachunk::used_word_size() {
-  return pointer_delta(_top, _bottom, sizeof(MetaWord));
-}
-
-size_t Metachunk::free_word_size() {
-  return pointer_delta(_end, _top, sizeof(MetaWord));
-}
-
-size_t Metachunk::capacity_word_size() {
-  return pointer_delta(_end, _bottom, sizeof(MetaWord));
-}
-
-void Metachunk::print_on(outputStream* st) const {
-  st->print_cr("Metachunk:"
-               " bottom " PTR_FORMAT " top " PTR_FORMAT
-               " end " PTR_FORMAT " size " SIZE_FORMAT,
-               bottom(), top(), end(), word_size());
-}
-
-#ifdef ASSERT
-void Metachunk::mangle() {
-  // Mangle the payload of the chunk and not the links that
-  // maintain list of chunks.
-  HeapWord* start = (HeapWord*)(bottom() + overhead());
-  size_t word_size = capacity_word_size() - overhead();
-  Copy::fill_to_words(start, word_size, metadata_chunk_initialize);
-}
-#endif // ASSERT
-
-void Metachunk::verify() {
-#ifdef ASSERT
-  // Cannot walk through the blocks unless the blocks have
-  // headers with sizes.
-  assert(_bottom <= _top &&
-         _top <= _end,
-         "Chunk has been smashed");
-  assert(SpaceManager::is_humongous(_word_size) ||
-         _word_size == SpaceManager::MediumChunk ||
-         _word_size == SpaceManager::SmallChunk,
-         "Chunk size is wrong");
-#endif
-  return;
-}
 
 // BlockFreelist methods
 
@@ -917,10 +804,12 @@ void VirtualSpaceNode::print_on(outputStream* st) const {
            vs->high_boundary());
 }
 
+#ifdef ASSERT
 void VirtualSpaceNode::mangle() {
   size_t word_size = capacity_words_in_vs();
   Copy::fill_to_words((HeapWord*) low(), word_size, 0xf1f1f1f1);
 }
+#endif // ASSERT
 
 // VirtualSpaceList methods
 // Space allocated from the VirtualSpace
@@ -1007,6 +896,8 @@ bool VirtualSpaceList::grow_vs(size_t vs_word_size) {
     delete new_entry;
     return false;
   } else {
+    // ensure lock-free iteration sees fully initialized node
+    OrderAccess::storestore();
     link_vs(new_entry, vs_word_size);
     return true;
   }
@@ -1096,7 +987,6 @@ void VirtualSpaceList::print_on(outputStream* st) const {
   }
 }
 
-#ifndef PRODUCT
 bool VirtualSpaceList::contains(const void *ptr) {
   VirtualSpaceNode* list = virtual_space_list();
   VirtualSpaceListIterator iter(list);
@@ -1108,7 +998,6 @@ bool VirtualSpaceList::contains(const void *ptr) {
   }
   return false;
 }
-#endif // PRODUCT
 
 
 // MetaspaceGC methods
@@ -1985,15 +1874,13 @@ SpaceManager::~SpaceManager() {
     locked_print_chunks_in_use_on(gclog_or_tty);
   }
 
+  // Mangle freed memory.
+  NOT_PRODUCT(mangle_freed_chunks();)
+
   // Have to update before the chunks_in_use lists are emptied
   // below.
   chunk_manager->inc_free_chunks_total(sum_capacity_in_chunks_in_use(),
                                        sum_count_in_chunks_in_use());
-
-#ifdef ASSERT
-  // Mangle freed memory.
-  mangle_freed_chunks();
-#endif // ASSERT
 
   // Add all the chunks in use by this space manager
   // to the global list of free chunks.
@@ -2212,10 +2099,19 @@ void SpaceManager::verify() {
       Metachunk* curr = chunks_in_use(i);
       while (curr != NULL) {
         curr->verify();
+        verify_chunk_size(curr);
         curr = curr->next();
       }
     }
   }
+}
+
+void SpaceManager::verify_chunk_size(Metachunk* chunk) {
+  assert(is_humongous(chunk->word_size()) ||
+         chunk->word_size() == MediumChunk ||
+         chunk->word_size() == SmallChunk,
+         "Chunk size is wrong");
+  return;
 }
 
 #ifdef ASSERT
@@ -2273,7 +2169,7 @@ void SpaceManager::dump(outputStream* const out) const {
                 " waste " SIZE_FORMAT, curr_total, used, free, capacity, waste);
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 void SpaceManager::mangle_freed_chunks() {
   for (ChunkIndex index = SmallIndex;
        index < NumberOfInUseLists;
@@ -2291,10 +2187,15 @@ void SpaceManager::mangle_freed_chunks() {
     }
   }
 }
-#endif // ASSERT
+#endif // PRODUCT
 
 
 // MetaspaceAux
+
+size_t MetaspaceAux::used_in_bytes() {
+  return (Metaspace::class_space_list()->used_words_sum() +
+          Metaspace::space_list()->used_words_sum()) * BytesPerWord;
+}
 
 size_t MetaspaceAux::used_in_bytes(Metaspace::MetadataType mdtype) {
   size_t used = 0;
@@ -2324,6 +2225,11 @@ size_t MetaspaceAux::free_in_bytes(Metaspace::MetadataType mdtype) {
 // The total words available for metadata allocation.  This
 // uses Metaspace capacity_words() which is the total words
 // in chunks allocated for a Metaspace.
+size_t MetaspaceAux::capacity_in_bytes() {
+  return (Metaspace::class_space_list()->capacity_words_sum() +
+          Metaspace::space_list()->capacity_words_sum()) * BytesPerWord;
+}
+
 size_t MetaspaceAux::capacity_in_bytes(Metaspace::MetadataType mdtype) {
   size_t capacity = free_chunks_total(mdtype);
   ClassLoaderDataGraphMetaspaceIterator iter;
@@ -2334,6 +2240,11 @@ size_t MetaspaceAux::capacity_in_bytes(Metaspace::MetadataType mdtype) {
     }
   }
   return capacity * BytesPerWord;
+}
+
+size_t MetaspaceAux::reserved_in_bytes() {
+  return (Metaspace::class_space_list()->virtual_space_total() +
+          Metaspace::space_list()->virtual_space_total()) * BytesPerWord;
 }
 
 size_t MetaspaceAux::reserved_in_bytes(Metaspace::MetadataType mdtype) {
@@ -2739,15 +2650,17 @@ void Metaspace::print_on(outputStream* out) const {
   }
 }
 
-#ifndef PRODUCT
-bool Metaspace::contains(const void * ptr) const {
+bool Metaspace::contains(const void * ptr) {
   if (MetaspaceShared::is_in_shared_space(ptr)) {
     return true;
   }
-  MutexLockerEx cl(SpaceManager::expand_lock(), Mutex::_no_safepoint_check_flag);
+  // This is checked while unlocked.  As long as the virtualspaces are added
+  // at the end, the pointer will be in one of them.  The virtual spaces
+  // aren't deleted presently.  When they are, some sort of locking might
+  // be needed.  Note, locking this can cause inversion problems with the
+  // caller in MetaspaceObj::is_metadata() function.
   return space_list()->contains(ptr) || class_space_list()->contains(ptr);
 }
-#endif
 
 void Metaspace::verify() {
   vsm()->verify();
