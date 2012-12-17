@@ -1,0 +1,5 @@
+EmptyAuthorTest.java:8: warning: no description for @author
+/** @author */
+    ^
+1 warning
+
