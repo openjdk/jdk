@@ -31,21 +31,9 @@
 #include "oops/arrayOop.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "utilities/copy.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
-#endif
 
 // Inline allocation implementations.
 
@@ -240,36 +228,6 @@ oop CollectedHeap::array_allocate_nozero(KlassHandle klass,
   Universe::heap()->check_for_non_bad_heap_word_value(obj+hs, size-hs);
 #endif
   return (oop)obj;
-}
-
-// Returns "TRUE" if "p" is a method oop in the
-// current heap with high probability. NOTE: The main
-// current consumers of this interface are Forte::
-// and ThreadProfiler::. In these cases, the
-// interpreter frame from which "p" came, may be
-// under construction when sampled asynchronously, so
-// the clients want to check that it represents a
-// valid method before using it. Nonetheless since
-// the clients do not typically lock out GC, the
-// predicate is_valid_method() is not stable, so
-// it is possible that by the time "p" is used, it
-// is no longer valid.
-inline bool CollectedHeap::is_valid_method(Method* p) const {
-  return
-    p != NULL &&
-
-    // Check whether "method" is metadata
-    p->is_metadata() &&
-
-    // See if GC is active; however, there is still an
-    // apparently unavoidable window after this call
-    // and before the client of this interface uses "p".
-    // If the client chooses not to lock out GC, then
-    // it's a risk the client must accept.
-    !is_gc_active() &&
-
-    // Check that p is a Method*.
-    p->is_method();
 }
 
 inline void CollectedHeap::oop_iterate_no_header(OopClosure* cl) {

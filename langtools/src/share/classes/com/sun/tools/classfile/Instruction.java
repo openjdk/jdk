@@ -71,11 +71,16 @@ public class Instruction {
         SHORT(3),
         /** Wide opcode is not followed by any operands. */
         WIDE_NO_OPERANDS(2),
+        /** Wide opcode is followed by a 2-byte index into the local variables array. */
+        WIDE_LOCAL(4),
         /** Wide opcode is followed by a 2-byte index into the constant pool. */
         WIDE_CPREF_W(4),
         /** Wide opcode is followed by a 2-byte index into the constant pool,
          *  and a signed short value. */
         WIDE_CPREF_W_SHORT(6),
+        /** Wide opcode is followed by a 2-byte reference to a local variable,
+         *  and a signed short value. */
+        WIDE_LOCAL_SHORT(6),
         /** Opcode was not recognized. */
         UNKNOWN(1);
 
@@ -101,7 +106,7 @@ public class Instruction {
         R visitConstantPoolRef(Instruction instr, int index, P p);
         /** See {@link Kind#CPREF_W_UBYTE}, {@link Kind#CPREF_W_UBYTE_ZERO}, {@link Kind#WIDE_CPREF_W_SHORT}. */
         R visitConstantPoolRefAndValue(Instruction instr, int index, int value, P p);
-        /** See {@link Kind#LOCAL}. */
+        /** See {@link Kind#LOCAL}, {@link Kind#WIDE_LOCAL}. */
         R visitLocal(Instruction instr, int index, P p);
         /** See {@link Kind#LOCAL_BYTE}. */
         R visitLocalAndValue(Instruction instr, int index, int value, P p);
@@ -315,12 +320,19 @@ public class Instruction {
             case WIDE_NO_OPERANDS:
                 return visitor.visitNoOperands(this, p);
 
+            case WIDE_LOCAL:
+                return visitor.visitLocal(this, getUnsignedShort(2), p);
+
             case WIDE_CPREF_W:
                 return visitor.visitConstantPoolRef(this, getUnsignedShort(2), p);
 
             case WIDE_CPREF_W_SHORT:
                 return visitor.visitConstantPoolRefAndValue(
                         this, getUnsignedShort(2), getUnsignedByte(4), p);
+
+            case WIDE_LOCAL_SHORT:
+                return visitor.visitLocalAndValue(
+                        this, getUnsignedShort(2), getShort(4), p);
 
             case UNKNOWN:
                 return visitor.visitUnknown(this, p);

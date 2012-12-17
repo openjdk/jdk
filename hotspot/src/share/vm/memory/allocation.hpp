@@ -245,6 +245,7 @@ class ClassLoaderData;
 class MetaspaceObj {
  public:
   bool is_metadata() const;
+  bool is_metaspace_object() const;  // more specific test but slower
   bool is_shared() const;
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
 

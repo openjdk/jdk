@@ -31,8 +31,7 @@
  *
  * @author Ann Wollrath
  *
- * @build ChangeHostName
- * @build ChangeHostName_Stub
+ * @build ChangeHostName ChangeHostName_Stub
  * @run main/othervm ChangeHostName
  */
 

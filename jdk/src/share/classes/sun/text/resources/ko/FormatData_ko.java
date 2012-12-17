@@ -104,6 +104,17 @@ public class FormatData_ko extends ListResourceBundle {
                     "\ud1a0" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "\uc77c",
+                    "\uc6d4",
+                    "\ud654",
+                    "\uc218",
+                    "\ubaa9",
+                    "\uae08",
+                    "\ud1a0",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "\uc624\uc804", // am marker

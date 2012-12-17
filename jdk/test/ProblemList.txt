@@ -263,10 +263,6 @@ sun/rmi/transport/proxy/EagerHttpFallback.java                  generic-all
 # 7164518: no PortUnreachableException on Mac
 sun/security/krb5/auto/Unreachable.java                         macosx-all
 
-# 7193792
-sun/security/pkcs11/ec/TestECDSA.java				solaris-all
-sun/security/pkcs11/ec/TestECDSA.java				linux-all
-
 # 7193793
 sun/security/pkcs11/ec/TestECDH.java				linux-all
 

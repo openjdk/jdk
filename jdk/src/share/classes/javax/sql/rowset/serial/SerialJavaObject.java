@@ -44,6 +44,12 @@ import javax.sql.rowset.RowSetWarning;
  * Static or transient fields cannot be serialized; an attempt to serialize
  * them will result in a <code>SerialException</code> object being thrown.
  *
+ * <h4> Thread safety </h4>
+ *
+ * A SerialJavaObject is not safe for use by multiple concurrent threads.  If a
+ * SerialJavaObject is to be used by more than one thread then access to the
+ * SerialJavaObject should be controlled by appropriate synchronization.
+ *
  * @author Jonathan Bruce
  */
 public class SerialJavaObject implements Serializable, Cloneable {

@@ -22,12 +22,11 @@
  */
 
 /* @test
+ * @summary Ensure that java.rmi.Naming.lookup can handle URLs containing
+ *          IPv6 addresses.
  * @bug 4402708
  *
  * @run main/othervm -Djava.net.preferIPv6Addresses=true LookupIPv6
- *
- * @summary Ensure that java.rmi.Naming.lookup can handle URLs containing
- *          IPv6 addresses.
  */
 
 import java.net.InetAddress;

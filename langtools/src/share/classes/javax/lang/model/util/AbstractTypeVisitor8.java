@@ -66,4 +66,13 @@ public abstract class AbstractTypeVisitor8<R, P> extends AbstractTypeVisitor7<R,
     protected AbstractTypeVisitor8() {
         super();
     }
+
+    /**
+     * Visits an {@code IntersectionType} in a manner defined by a subclass.
+     *
+     * @param t  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of the visit as defined by a subclass
+     */
+    public abstract R visitIntersection(IntersectionType t, P p);
 }

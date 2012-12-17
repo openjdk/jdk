@@ -49,8 +49,8 @@
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
-#include "thread_linux.inline.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 

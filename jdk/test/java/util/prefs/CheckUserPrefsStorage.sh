@@ -50,14 +50,14 @@ case "$OS" in
 esac
 
 # run CheckUserPrefFirst - creates and stores a user pref
-${TESTJAVA}${FS}bin${FS}java -cp ${TESTCLASSES} -Djava.util.prefs.userRoot=. CheckUserPrefFirst
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} -Djava.util.prefs.userRoot=. CheckUserPrefFirst
 result=$?
 if [ "$result" -ne "0" ]; then
     exit 1
 fi
 
 # run CheckUserPrefLater - Looks for the stored pref
-${TESTJAVA}${FS}bin${FS}java -cp ${TESTCLASSES} -Djava.util.prefs.userRoot=. CheckUserPrefLater
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} -Djava.util.prefs.userRoot=. CheckUserPrefLater
 result=$?
 if [ "$result" -ne "0" ]; then
     exit 1

@@ -41,4 +41,4 @@ verify_os
 JAVA="${TESTJAVA}/bin/java"
 CP=${TESTJAVA}${FS}lib${FS}tools.jar${PS}${TESTCLASSES}
 
-${JAVA} -classpath ${CP} MonitorVmStartTerminate
+${JAVA} ${TESTVMOPTS} -classpath ${CP} MonitorVmStartTerminate

@@ -76,6 +76,7 @@ public class OGLSurfaceDataProxy extends SurfaceDataProxy {
                                         CompositeType comp,
                                         Color bgColor)
     {
-        return (bgColor == null || transparency == Transparency.OPAQUE);
+        return comp.isDerivedFrom(CompositeType.AnyAlpha) &&
+               (bgColor == null || transparency == Transparency.OPAQUE);
     }
 }

@@ -1,0 +1,3 @@
+MethodReference55.java:36:11: compiler.err.invalid.mref: kindname.method, (compiler.misc.static.bound.mref)
+MethodReference55.java:39:11: compiler.err.invalid.mref: kindname.method, (compiler.misc.static.bound.mref)
+2 errors

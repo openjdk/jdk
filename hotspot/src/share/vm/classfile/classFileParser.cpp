@@ -2184,7 +2184,7 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   Method* m = Method::allocate(
       loader_data, code_length, access_flags, linenumber_table_length,
       total_lvt_length, exception_table_length, checked_exceptions_length,
-      ConstMethod::NORMAL, CHECK_(nullHandle));
+      generic_signature_index, ConstMethod::NORMAL, CHECK_(nullHandle));
 
   ClassLoadingService::add_class_method_size(m->size()*HeapWordSize);
 
@@ -2192,7 +2192,6 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   m->set_constants(cp());
   m->set_name_index(name_index);
   m->set_signature_index(signature_index);
-  m->set_generic_signature_index(generic_signature_index);
 #ifdef CC_INTERP
   // hmm is there a gc issue here??
   ResultTypeFinder rtf(cp->symbol_at(signature_index));
@@ -2950,7 +2949,7 @@ static void parseAndPrintGenericSignatures(
 
 
 instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
-                                                    Handle class_loader,
+                                                    ClassLoaderData* loader_data,
                                                     Handle protection_domain,
                                                     KlassHandle host_klass,
                                                     GrowableArray<Handle>* cp_patches,
@@ -2964,7 +2963,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   // original class bytes.
   unsigned char *cached_class_file_bytes = NULL;
   jint cached_class_file_length;
-  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
+  Handle class_loader(THREAD, loader_data->class_loader());
   bool has_default_methods = false;
   ResourceMark rm(THREAD);
 
@@ -3005,7 +3004,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     unsigned char* ptr = cfs->buffer();
     unsigned char* end_ptr = cfs->buffer() + cfs->length();
 
-    JvmtiExport::post_class_file_load_hook(name, class_loader, protection_domain,
+    JvmtiExport::post_class_file_load_hook(name, class_loader(), protection_domain,
                                            &ptr, &end_ptr,
                                            &cached_class_file_bytes,
                                            &cached_class_file_length);
@@ -4004,8 +4003,7 @@ void ClassFileParser::set_precomputed_flags(instanceKlassHandle k) {
   assert(k->size_helper() > 0, "layout_helper is initialized");
   if ((!RegisterFinalizersAtInit && k->has_finalizer())
       || k->is_abstract() || k->is_interface()
-      || (k->name() == vmSymbols::java_lang_Class()
-          && k->class_loader_data()->is_the_null_class_loader_data())
+      || (k->name() == vmSymbols::java_lang_Class() && k->class_loader() == NULL)
       || k->size_helper() >= FastAllocateSizeLimit) {
     // Forbid fast-path allocation.
     jint lh = Klass::instance_layout_helper(k->size_helper(), true);

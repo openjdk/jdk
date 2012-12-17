@@ -46,9 +46,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import sun.util.locale.provider.LocaleDataMetaInfo;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import static sun.util.locale.provider.LocaleProviderAdapter.Type.JRE;
-import sun.util.locale.provider.LocaleDataMetaInfo;
 
 /**
  * Provides information about and access to resource bundles in the
@@ -94,8 +94,8 @@ public class LocaleData {
      * Gets a time zone names resource bundle, using privileges
      * to allow accessing a sun.* package.
      */
-    public OpenListResourceBundle getTimeZoneNames(Locale locale) {
-        return (OpenListResourceBundle) getBundle(type.getUtilResourcesPackage() + ".TimeZoneNames", locale);
+    public TimeZoneNamesBundle getTimeZoneNames(Locale locale) {
+        return (TimeZoneNamesBundle) getBundle(type.getUtilResourcesPackage() + ".TimeZoneNames", locale);
     }
 
     /**
@@ -158,30 +158,33 @@ public class LocaleData {
             /* Get the locale string list from LocaleDataMetaInfo class. */
             String localeString = LocaleDataMetaInfo.getSupportedLocaleString(baseName);
 
-            if (localeString == null || localeString.length() == 0) {
-                return candidates;
-            }
-
-            for (Iterator<Locale> l = candidates.iterator(); l.hasNext(); ) {
-                Locale loc = l.next();
-                String lstr;
-                if (loc.getScript().length() > 0) {
-                    lstr = loc.toLanguageTag().replace('-', '_');
-                } else {
-                    lstr = loc.toString();
-                    int idx = lstr.indexOf("_#");
-                    if (idx >= 0) {
-                        lstr = lstr.substring(0, idx);
+            if (localeString != null && localeString.length() != 0) {
+                for (Iterator<Locale> l = candidates.iterator(); l.hasNext();) {
+                    Locale loc = l.next();
+                    String lstr;
+                    if (loc.getScript().length() > 0) {
+                        lstr = loc.toLanguageTag().replace('-', '_');
+                    } else {
+                        lstr = loc.toString();
+                        int idx = lstr.indexOf("_#");
+                        if (idx >= 0) {
+                            lstr = lstr.substring(0, idx);
+                        }
+                    }
+                    /* Every locale string in the locale string list returned from
+                     the above getSupportedLocaleString is enclosed
+                     within two white spaces so that we could check some locale
+                     such as "en".
+                     */
+                    if (lstr.length() != 0 && localeString.indexOf(" " + lstr + " ") == -1) {
+                        l.remove();
                     }
                 }
-                /* Every locale string in the locale string list returned from
-                   the above getSupportedLocaleString is enclosed
-                   within two white spaces so that we could check some locale
-                   such as "en".
-                */
-                if (lstr.length() != 0 && localeString.indexOf(" " + lstr + " ") == -1) {
-                    l.remove();
-                }
+            }
+            // Force fallback to Locale.ENGLISH for CLDR time zone names support
+            if (locale.getLanguage() != "en"
+                    && baseName.contains(CLDR) && baseName.endsWith("TimeZoneNames")) {
+                candidates.add(candidates.size() - 1, Locale.ENGLISH);
             }
             return candidates;
         }

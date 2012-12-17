@@ -69,6 +69,7 @@
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/runtimeService.hpp"
 #include "trace/tracing.hpp"
@@ -79,19 +80,15 @@
 #include "utilities/histogram.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
-# include "thread_linux.inline.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_solaris
 # include "os_solaris.inline.hpp"
-# include "thread_solaris.inline.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
-# include "thread_windows.inline.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "os_bsd.inline.hpp"
-# include "thread_bsd.inline.hpp"
 #endif
 
 static jint CurrentVersion = JNI_VERSION_1_6;
@@ -5044,6 +5041,9 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 
 #include "gc_interface/collectedHeap.hpp"
 #include "utilities/quickSort.hpp"
+#if INCLUDE_VM_STRUCTS
+#include "runtime/vmStructs.hpp"
+#endif
 
 #define run_unit_test(unit_test_function_call)              \
   tty->print_cr("Running test: " #unit_test_function_call); \
@@ -5056,6 +5056,9 @@ void execute_internal_vm_tests() {
     run_unit_test(CollectedHeap::test_is_in());
     run_unit_test(QuickSort::test_quick_sort());
     run_unit_test(AltHashing::test_alt_hash());
+#if INCLUDE_VM_STRUCTS
+    run_unit_test(VMStructs::test());
+#endif
     tty->print_cr("All internal VM tests passed");
   }
 }
