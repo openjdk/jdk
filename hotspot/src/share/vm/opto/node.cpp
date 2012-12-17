@@ -1839,15 +1839,16 @@ uint Node::match_edge(uint idx) const {
   return idx;                   // True for other than index 0 (control)
 }
 
+static RegMask _not_used_at_all;
 // Register classes are defined for specific machines
 const RegMask &Node::out_RegMask() const {
   ShouldNotCallThis();
-  return *(new RegMask());
+  return _not_used_at_all;
 }
 
 const RegMask &Node::in_RegMask(uint) const {
   ShouldNotCallThis();
-  return *(new RegMask());
+  return _not_used_at_all;
 }
 
 //=============================================================================
