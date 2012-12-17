@@ -56,9 +56,9 @@ public interface Plugin {
     String getName();
 
     /**
-     * Invoke the plug-in for a given compilation task.
+     * Initialize the plug-in for a given compilation task.
      * @param task The compilation task that has just been started
      * @param args Arguments, if any, for the plug-in
      */
-    void call(JavacTask task, String... args);
+    void init(JavacTask task, String... args);
 }
