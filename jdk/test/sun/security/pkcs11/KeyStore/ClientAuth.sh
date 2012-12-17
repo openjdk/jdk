@@ -128,7 +128,7 @@ ${TESTJAVA}${FS}bin${FS}javac \
 
 # run test
 echo "Run ClientAuth ..."
-${TESTJAVA}${FS}bin${FS}java \
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
 	-classpath ${TESTCLASSES}${PS}${TESTSRC}${FS}loader.jar \
 	-DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
 	-DCUSTOM_DB_DIR=${TESTCLASSES} \
@@ -149,7 +149,7 @@ fi
 
 # run test with specified TLS protocol and cipher suite
 echo "Run ClientAuth TLSv1.2 TLS_DHE_RSA_WITH_AES_128_CBC_SHA"
-${TESTJAVA}${FS}bin${FS}java \
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
 	-classpath ${TESTCLASSES}${PS}${TESTSRC}${FS}loader.jar \
 	-DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
 	-DCUSTOM_DB_DIR=${TESTCLASSES} \

@@ -28,11 +28,7 @@
  * @author Laird Dornin
  *
  * @library ../../../../../java/rmi/testlibrary
- * @build TestLibrary
- * @build TestParams
- * @build TestFailedException
- * @build CheckLogging
- * @build CheckLogStreams
+ * @build TestLibrary CheckLogging
  * @run main/othervm -Dsun.rmi.log.useOld=true CheckLogStreams
  */
 

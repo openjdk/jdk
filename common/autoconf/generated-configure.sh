@@ -708,6 +708,7 @@ CXX
 ac_ct_PROPER_COMPILER_CXX
 PROPER_COMPILER_CXX
 POTENTIAL_CXX
+TOOLS_DIR_CXX
 OBJEXT
 EXEEXT
 ac_ct_CC
@@ -718,6 +719,7 @@ CC
 ac_ct_PROPER_COMPILER_CC
 PROPER_COMPILER_CC
 POTENTIAL_CC
+TOOLS_DIR_CC
 BUILD_LD
 BUILD_CXX
 BUILD_CC
@@ -3672,7 +3674,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1354106772
+DATE_WHEN_GENERATED=1355221914
 
 ###############################################################################
 #
@@ -6903,7 +6905,7 @@ SCRIPT="$0"
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -6915,20 +6917,24 @@ SCRIPT="$0"
         if test "x$READLINK" != x; then
             SCRIPT=`$READLINK -f $SCRIPT`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $SCRIPT`
             sym_link_file=`$BASENAME $SCRIPT`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -6944,7 +6950,7 @@ AUTOCONF_DIR=`cd \`$DIRNAME $SCRIPT\`; $THEPWDCMD`
 # Where is the source? It is located two levels above the configure script.
 CURDIR="$PWD"
 cd "$AUTOCONF_DIR/../.."
-SRC_ROOT="`pwd`"
+SRC_ROOT="`$THEPWDCMD`"
 
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   PATH_SEP=";"
@@ -7593,7 +7599,7 @@ NOSYM_CURDIR="$CURDIR"
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -7605,20 +7611,24 @@ NOSYM_CURDIR="$CURDIR"
         if test "x$READLINK" != x; then
             NOSYM_CURDIR=`$READLINK -f $NOSYM_CURDIR`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $NOSYM_CURDIR`
             sym_link_file=`$BASENAME $NOSYM_CURDIR`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -11707,7 +11717,7 @@ fi
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -11719,20 +11729,24 @@ fi
         if test "x$READLINK" != x; then
             BINARY=`$READLINK -f $BINARY`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $BINARY`
             sym_link_file=`$BASENAME $BINARY`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -15827,7 +15841,14 @@ $as_echo "$as_me: Please point to the VC/bin directory within the Visual Studio 
   fi
 
     if test -d "$WIN_SDK_BASE"; then
-      if test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      # There have been cases of partial or broken SDK installations. A missing
+      # lib dir is not going to work.
+      if test ! -d "$WIN_SDK_BASE/../lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
+$as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
+      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
@@ -15862,7 +15883,14 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
   fi
 
     if test -d "$WIN_SDK_BASE"; then
-      if test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      # There have been cases of partial or broken SDK installations. A missing
+      # lib dir is not going to work.
+      if test ! -d "$WIN_SDK_BASE/../lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
+$as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
+      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
@@ -15897,7 +15925,14 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
   fi
 
     if test -d "$WIN_SDK_BASE"; then
-      if test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      # There have been cases of partial or broken SDK installations. A missing
+      # lib dir is not going to work.
+      if test ! -d "$WIN_SDK_BASE/../lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
+$as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
+      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
@@ -15931,7 +15966,14 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
   fi
 
     if test -d "$WIN_SDK_BASE"; then
-      if test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      # There have been cases of partial or broken SDK installations. A missing
+      # lib dir is not going to work.
+      if test ! -d "$WIN_SDK_BASE/../lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
+$as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
+      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
@@ -15964,7 +16006,14 @@ $as_echo "$as_me: Warning: Installation is broken, SetEnv.Cmd is missing. Ignori
   fi
 
     if test -d "$WIN_SDK_BASE"; then
-      if test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      # There have been cases of partial or broken SDK installations. A missing
+      # lib dir is not going to work.
+      if test ! -d "$WIN_SDK_BASE/../lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
+$as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: Installation is broken, lib dir is missing. Ignoring" >&5
+$as_echo "$as_me: Warning: Installation is broken, lib dir is missing. Ignoring" >&6;}
+      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Windows SDK installation at $WIN_SDK_BASE using $METHOD" >&6;}
         VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
@@ -16434,8 +16483,9 @@ $as_echo "present but broken" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-      VS_INCLUDE="$INCLUDE"
-      VS_LIB="$LIB"
+      # Remove any trailing \ from INCLUDE and LIB to avoid trouble in spec.gmk.
+      VS_INCLUDE=`$ECHO "$INCLUDE" | $SED 's/\\\\$//'`
+      VS_LIB=`$ECHO "$LIB" | $SED 's/\\\\$//'`
       VS_PATH="$PATH"
 
 
@@ -17738,10 +17788,65 @@ fi
 
   COMPILER_NAME=C
 
-  # Do a first initial attempt at searching the list of compiler names.
+  CC=
+  # If TOOLS_DIR is set, check for all compiler names in there first
+  # before checking the rest of the PATH.
+  if test -n "$TOOLS_DIR"; then
+    PATH_save="$PATH"
+    PATH="$TOOLS_DIR"
+    for ac_prog in $COMPILER_CHECK_LIST
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_TOOLS_DIR_CC+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TOOLS_DIR_CC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TOOLS_DIR_CC="$TOOLS_DIR_CC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_TOOLS_DIR_CC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TOOLS_DIR_CC=$ac_cv_path_TOOLS_DIR_CC
+if test -n "$TOOLS_DIR_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CC" >&5
+$as_echo "$TOOLS_DIR_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TOOLS_DIR_CC" && break
+done
+
+    CC=$TOOLS_DIR_CC
+    PATH="$PATH_save"
+  fi
+
   # AC_PATH_PROGS can't be run multiple times with the same variable,
   # so create a new name for this run.
-  for ac_prog in $COMPILER_CHECK_LIST
+  if test "x$CC" = x; then
+    for ac_prog in $COMPILER_CHECK_LIST
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -17786,9 +17891,10 @@ fi
   test -n "$POTENTIAL_CC" && break
 done
 
-  CC=$POTENTIAL_CC
+    CC=$POTENTIAL_CC
+  fi
 
-  if test "x$$CC" = x; then
+  if test "x$CC" = x; then
 
     # Print a helpful message on how to acquire the necessary build dependency.
     # devkit is the help tag: freetyp2, cups, pulse, alsa etc
@@ -18082,7 +18188,7 @@ $as_echo_n "checking resolved symbolic links for CC... " >&6; }
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -18094,20 +18200,24 @@ $as_echo_n "checking resolved symbolic links for CC... " >&6; }
         if test "x$READLINK" != x; then
             TEST_COMPILER=`$READLINK -f $TEST_COMPILER`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $TEST_COMPILER`
             sym_link_file=`$BASENAME $TEST_COMPILER`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -18504,7 +18614,7 @@ $as_echo_n "checking for resolved symbolic links for CC... " >&6; }
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -18516,20 +18626,24 @@ $as_echo_n "checking for resolved symbolic links for CC... " >&6; }
         if test "x$READLINK" != x; then
             PROPER_COMPILER_CC=`$READLINK -f $PROPER_COMPILER_CC`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $PROPER_COMPILER_CC`
             sym_link_file=`$BASENAME $PROPER_COMPILER_CC`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -19221,10 +19335,65 @@ fi
 
   COMPILER_NAME=C++
 
-  # Do a first initial attempt at searching the list of compiler names.
+  CXX=
+  # If TOOLS_DIR is set, check for all compiler names in there first
+  # before checking the rest of the PATH.
+  if test -n "$TOOLS_DIR"; then
+    PATH_save="$PATH"
+    PATH="$TOOLS_DIR"
+    for ac_prog in $COMPILER_CHECK_LIST
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_TOOLS_DIR_CXX+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TOOLS_DIR_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TOOLS_DIR_CXX="$TOOLS_DIR_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_TOOLS_DIR_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TOOLS_DIR_CXX=$ac_cv_path_TOOLS_DIR_CXX
+if test -n "$TOOLS_DIR_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CXX" >&5
+$as_echo "$TOOLS_DIR_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TOOLS_DIR_CXX" && break
+done
+
+    CXX=$TOOLS_DIR_CXX
+    PATH="$PATH_save"
+  fi
+
   # AC_PATH_PROGS can't be run multiple times with the same variable,
   # so create a new name for this run.
-  for ac_prog in $COMPILER_CHECK_LIST
+  if test "x$CXX" = x; then
+    for ac_prog in $COMPILER_CHECK_LIST
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -19269,9 +19438,10 @@ fi
   test -n "$POTENTIAL_CXX" && break
 done
 
-  CXX=$POTENTIAL_CXX
+    CXX=$POTENTIAL_CXX
+  fi
 
-  if test "x$$CXX" = x; then
+  if test "x$CXX" = x; then
 
     # Print a helpful message on how to acquire the necessary build dependency.
     # devkit is the help tag: freetyp2, cups, pulse, alsa etc
@@ -19565,7 +19735,7 @@ $as_echo_n "checking resolved symbolic links for CXX... " >&6; }
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -19577,20 +19747,24 @@ $as_echo_n "checking resolved symbolic links for CXX... " >&6; }
         if test "x$READLINK" != x; then
             TEST_COMPILER=`$READLINK -f $TEST_COMPILER`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $TEST_COMPILER`
             sym_link_file=`$BASENAME $TEST_COMPILER`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -19987,7 +20161,7 @@ $as_echo_n "checking for resolved symbolic links for CXX... " >&6; }
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -19999,20 +20173,24 @@ $as_echo_n "checking for resolved symbolic links for CXX... " >&6; }
         if test "x$READLINK" != x; then
             PROPER_COMPILER_CXX=`$READLINK -f $PROPER_COMPILER_CXX`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME $PROPER_COMPILER_CXX`
             sym_link_file=`$BASENAME $PROPER_COMPILER_CXX`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -27642,34 +27820,34 @@ esac
 # ENABLE_DEBUG_SYMBOLS
 # This must be done after the toolchain is setup, since we're looking at objcopy.
 #
-ENABLE_DEBUG_SYMBOLS=default
-
-# default on macosx is no...
-if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-   ENABLE_DEBUG_SYMBOLS=no
-fi
-
 # Check whether --enable-debug-symbols was given.
 if test "${enable_debug_symbols+set}" = set; then :
-  enableval=$enable_debug_symbols; ENABLE_DEBUG_SYMBOLS=${enable_debug_symbols}
+  enableval=$enable_debug_symbols;
 fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we should generate debug symbols" >&5
 $as_echo_n "checking if we should generate debug symbols... " >&6; }
 
-if test "x$ENABLE_DEBUG_SYMBOLS" = "xyes" && test "x$OBJCOPY" = x; then
+if test "x$enable_debug_symbols" = "xyes" && test "x$OBJCOPY" = x; then
    # explicit enabling of enable-debug-symbols and can't find objcopy
    #   this is an error
    as_fn_error $? "Unable to find objcopy, cannot enable debug-symbols" "$LINENO" 5
 fi
 
-if test "x$ENABLE_DEBUG_SYMBOLS" = "xdefault"; then
+if test "x$enable_debug_symbols" = "xyes"; then
+  ENABLE_DEBUG_SYMBOLS=true
+elif test "x$enable_debug_symbols" = "xno"; then
+  ENABLE_DEBUG_SYMBOLS=false
+else
+  # default on macosx is false
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    ENABLE_DEBUG_SYMBOLS=false
   # Default is on if objcopy is found, otherwise off
-  if test "x$OBJCOPY" != x || test "x$OPENJDK_TARGET_OS" = xwindows; then
-     ENABLE_DEBUG_SYMBOLS=yes
+  elif test "x$OBJCOPY" != x || test "x$OPENJDK_TARGET_OS" = xwindows; then
+    ENABLE_DEBUG_SYMBOLS=true
   else
-     ENABLE_DEBUG_SYMBOLS=no
+    ENABLE_DEBUG_SYMBOLS=false
   fi
 fi
 
@@ -27679,25 +27857,21 @@ $as_echo "$ENABLE_DEBUG_SYMBOLS" >&6; }
 #
 # ZIP_DEBUGINFO_FILES
 #
-ZIP_DEBUGINFO_FILES=yes
-
 # Check whether --enable-zip-debug-info was given.
 if test "${enable_zip_debug_info+set}" = set; then :
-  enableval=$enable_zip_debug_info; ZIP_DEBUGINFO_FILES=${enable_zip_debug_info}
+  enableval=$enable_zip_debug_info;
 fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we should zip debug-info files" >&5
 $as_echo_n "checking if we should zip debug-info files... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP_DEBUGINFO_FILES" >&5
-$as_echo "$ZIP_DEBUGINFO_FILES" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${enable_zip_debug_info}" >&5
+$as_echo "${enable_zip_debug_info}" >&6; }
 
-# Hotspot wants ZIP_DEBUGINFO_FILES to be 1 for yes
-#   use that...
-if test "x$ZIP_DEBUGINFO_FILES" = "xyes"; then
-   ZIP_DEBUGINFO_FILES=1
+if test "x${enable_zip_debug_info}" = "xno"; then
+   ZIP_DEBUGINFO_FILES=false
 else
-   ZIP_DEBUGINFO_FILES=0
+   ZIP_DEBUGINFO_FILES=true
 fi
 
 

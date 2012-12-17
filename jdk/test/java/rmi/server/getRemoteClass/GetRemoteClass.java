@@ -28,7 +28,7 @@
  * @author Laird Dornin
  *
  * @library ../../testlibrary
- * @build GetRemoteClass TestLibrary TestParams
+ * @build TestLibrary
  * @run main/othervm GetRemoteClass
  */
 

@@ -26,7 +26,7 @@
 #include "mutex_windows.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/mutex.hpp"
-#include "thread_windows.inline.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/events.hpp"
 
 // put OS-includes here

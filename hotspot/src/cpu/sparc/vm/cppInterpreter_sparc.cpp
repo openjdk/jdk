@@ -1048,7 +1048,6 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
   const Address constMethod       (G5_method, 0, in_bytes(Method::const_offset()));
   const Address access_flags      (G5_method, 0, in_bytes(Method::access_flags_offset()));
   const Address size_of_parameters(G5_method, 0, in_bytes(Method::size_of_parameters_offset()));
-  const Address max_stack         (G5_method, 0, in_bytes(Method::max_stack_offset()));
   const Address size_of_locals    (G5_method, 0, in_bytes(Method::size_of_locals_offset()));
 
   // slop factor is two extra slots on the expression stack so that
@@ -1070,7 +1069,9 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
     __ lduh( size_of_parameters, Gtmp );
     __ calc_mem_param_words(Gtmp, Gtmp);     // space for native call parameters passed on the stack in words
   } else {
-    __ lduh(max_stack, Gtmp);                // Full size expression stack
+    // Full size expression stack
+    __ ld_ptr(constMethod, Gtmp);
+    __ lduh(Gtmp, in_bytes(ConstMethod::max_stack_offset()), Gtmp);
   }
   __ add(Gtmp, fixed_size, Gtmp);           // plus the fixed portion
 
@@ -1206,7 +1207,9 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
   __ sub(O2, wordSize, O2);                    // prepush
   __ st_ptr(O2, XXX_STATE(_stack));                // PREPUSH
 
-  __ lduh(max_stack, O3);                      // Full size expression stack
+  // Full size expression stack
+  __ ld_ptr(constMethod, O3);
+  __ lduh(O3, in_bytes(ConstMethod::max_stack_offset()), O3);
   guarantee(!EnableInvokeDynamic, "no support yet for java.lang.invoke.MethodHandle"); //6815692
   //6815692//if (EnableInvokeDynamic)
   //6815692//  __ inc(O3, Method::extra_stack_entries());
@@ -1539,7 +1542,6 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   const Address constMethod       (G5_method, 0, in_bytes(Method::const_offset()));
   const Address access_flags      (G5_method, 0, in_bytes(Method::access_flags_offset()));
   const Address size_of_parameters(G5_method, 0, in_bytes(Method::size_of_parameters_offset()));
-  const Address max_stack         (G5_method, 0, in_bytes(Method::max_stack_offset()));
   const Address size_of_locals    (G5_method, 0, in_bytes(Method::size_of_locals_offset()));
 
   address entry_point = __ pc();

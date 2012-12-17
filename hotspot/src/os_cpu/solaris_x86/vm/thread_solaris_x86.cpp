@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/frame.inline.hpp"
-#include "thread_solaris.inline.hpp"
+#include "runtime/thread.inline.hpp"
 
 // For Forte Analyzer AsyncGetCallTrace profiling support - thread is
 // currently interrupted by SIGPROF

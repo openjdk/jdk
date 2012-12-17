@@ -27,7 +27,6 @@
  * @summary MarshalledObject with null throws NullPointerException
  * @author Ken Arnold
  *
- * @build HashCode
  * @run main HashCode 11 annotatedRef
  */
 

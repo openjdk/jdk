@@ -1006,7 +1006,7 @@ static void catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, Bloc
 //------------------------------call_catch_cleanup-----------------------------
 // If we inserted any instructions between a Call and his CatchNode,
 // clone the instructions on all paths below the Catch.
-void Block::call_catch_cleanup(Block_Array &bbs) {
+void Block::call_catch_cleanup(Block_Array &bbs, Compile* C) {
 
   // End of region to clone
   uint end = end_idx();
@@ -1068,7 +1068,7 @@ void Block::call_catch_cleanup(Block_Array &bbs) {
 
   // Remove the now-dead cloned ops
   for(uint i3 = beg; i3 < end; i3++ ) {
-    _nodes[beg]->disconnect_inputs(NULL);
+    _nodes[beg]->disconnect_inputs(NULL, C);
     _nodes.remove(beg);
   }
 
@@ -1081,7 +1081,7 @@ void Block::call_catch_cleanup(Block_Array &bbs) {
       Node *n = sb->_nodes[j];
       if (n->outcnt() == 0 &&
           (!n->is_Proj() || n->as_Proj()->in(0)->outcnt() == 1) ){
-        n->disconnect_inputs(NULL);
+        n->disconnect_inputs(NULL, C);
         sb->_nodes.remove(j);
         new_cnt--;
       }

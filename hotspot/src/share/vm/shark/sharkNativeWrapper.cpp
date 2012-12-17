@@ -59,7 +59,6 @@ void SharkNativeWrapper::initialize(const char *name) {
   OopMap *oopmap = new OopMap(
     SharkStack::oopmap_slot_munge(stack()->oopmap_frame_size()),
     SharkStack::oopmap_slot_munge(arg_size()));
-  oopmap->set_oop(SharkStack::slot2reg(stack()->method_slot_offset()));
 
   // Set up the oop_tmp slot if required:
   //  - For static methods we use it to handlize the class argument
@@ -83,9 +82,9 @@ void SharkNativeWrapper::initialize(const char *name) {
   }
 
   // Start building the argument list
-  std::vector<const Type*> param_types;
+  std::vector<Type*> param_types;
   std::vector<Value*> param_values;
-  const PointerType *box_type = PointerType::getUnqual(SharkType::oop_type());
+  PointerType *box_type = PointerType::getUnqual(SharkType::oop_type());
 
   // First argument is the JNIEnv
   param_types.push_back(SharkType::jniEnv_type());
@@ -149,7 +148,7 @@ void SharkNativeWrapper::initialize(const char *name) {
       builder()->CreateBr(merge);
 
       builder()->SetInsertPoint(merge);
-      phi = builder()->CreatePHI(box_type, "boxed_object");
+      phi = builder()->CreatePHI(box_type, 0, "boxed_object");
       phi->addIncoming(ConstantPointerNull::get(box_type), null);
       phi->addIncoming(box, not_null);
       box = phi;
@@ -170,7 +169,7 @@ void SharkNativeWrapper::initialize(const char *name) {
       // fall through
 
     default:
-      const Type *param_type = SharkType::to_stackType(arg_type(i));
+      Type *param_type = SharkType::to_stackType(arg_type(i));
 
       param_types.push_back(param_type);
       param_values.push_back(
@@ -201,7 +200,7 @@ void SharkNativeWrapper::initialize(const char *name) {
 
   // Make the call
   BasicType result_type = target()->result_type();
-  const Type* return_type;
+  Type* return_type;
   if (result_type == T_VOID)
     return_type = SharkType::void_type();
   else if (is_returning_oop())
@@ -213,7 +212,7 @@ void SharkNativeWrapper::initialize(const char *name) {
      PointerType::getUnqual(
        FunctionType::get(return_type, param_types, false)));
   Value *result = builder()->CreateCall(
-    native_function, param_values.begin(), param_values.end());
+    native_function, llvm::makeArrayRef(param_values));
 
   // Start the transition back to _thread_in_Java
   CreateSetThreadState(_thread_in_native_trans);
@@ -221,7 +220,7 @@ void SharkNativeWrapper::initialize(const char *name) {
   // Make sure new state is visible in the GC thread
   if (os::is_MP()) {
     if (UseMembar)
-      builder()->CreateMemoryBarrier(SharkBuilder::BARRIER_STORELOAD);
+      builder()->CreateFence(llvm::SequentiallyConsistent, llvm::CrossThread);
     else
       CreateWriteMemorySerializePage();
   }
@@ -305,7 +304,7 @@ void SharkNativeWrapper::initialize(const char *name) {
     builder()->CreateBr(merge);
 
     builder()->SetInsertPoint(merge);
-    PHINode *phi = builder()->CreatePHI(SharkType::oop_type(), "result");
+    PHINode *phi = builder()->CreatePHI(SharkType::oop_type(), 0, "result");
     phi->addIncoming(LLVMValue::null(), null);
     phi->addIncoming(unboxed_result, not_null);
     result = phi;

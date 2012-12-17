@@ -344,17 +344,26 @@ public:
   OopMap *oop_map() const { return _oop_map; }
   void set_oop_map(OopMap *om) { _oop_map = om; }
 
+ private:
+  void verify_input(JVMState* jvms, uint idx) const {
+    assert(verify_jvms(jvms), "jvms must match");
+    Node* n = in(idx);
+    assert((!n->bottom_type()->isa_long() && !n->bottom_type()->isa_double()) ||
+           in(idx + 1)->is_top(), "2nd half of long/double");
+  }
+
+ public:
   // Functionality from old debug nodes which has changed
   Node *local(JVMState* jvms, uint idx) const {
-    assert(verify_jvms(jvms), "jvms must match");
+    verify_input(jvms, jvms->locoff() + idx);
     return in(jvms->locoff() + idx);
   }
   Node *stack(JVMState* jvms, uint idx) const {
-    assert(verify_jvms(jvms), "jvms must match");
+    verify_input(jvms, jvms->stkoff() + idx);
     return in(jvms->stkoff() + idx);
   }
   Node *argument(JVMState* jvms, uint idx) const {
-    assert(verify_jvms(jvms), "jvms must match");
+    verify_input(jvms, jvms->argoff() + idx);
     return in(jvms->argoff() + idx);
   }
   Node *monitor_box(JVMState* jvms, uint idx) const {

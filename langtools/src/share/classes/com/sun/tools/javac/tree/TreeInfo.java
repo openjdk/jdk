@@ -267,6 +267,25 @@ public class TreeInfo {
         return lambda.params.isEmpty() ||
                 lambda.params.head.vartype != null;
     }
+
+    /** Return true if the tree corresponds to an expression statement */
+    public static boolean isExpressionStatement(JCExpression tree) {
+        switch(tree.getTag()) {
+            case PREINC: case PREDEC:
+            case POSTINC: case POSTDEC:
+            case ASSIGN:
+            case BITOR_ASG: case BITXOR_ASG: case BITAND_ASG:
+            case SL_ASG: case SR_ASG: case USR_ASG:
+            case PLUS_ASG: case MINUS_ASG:
+            case MUL_ASG: case DIV_ASG: case MOD_ASG:
+            case APPLY: case NEWCLASS:
+            case ERRONEOUS:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     /**
      * Return true if the AST corresponds to a static select of the kind A.B
      */

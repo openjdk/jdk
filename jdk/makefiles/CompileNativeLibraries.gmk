@@ -125,7 +125,7 @@ endif
 
 LIBVERIFY_OPTIMIZATION:=HIGH
 ifneq ($(findstring $(OPENJDK_TARGET_OS),solaris linux),)
-    ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+    ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
         LIBVERIFY_OPTIMIZATION:=LOW
     endif
 endif
@@ -1645,7 +1645,7 @@ endif
 
 LIBMANAGEMENT_OPTIMIZATION:=HIGH
 ifneq ($(findstring $(OPENJDK_TARGET_OS),solaris linux),)
-    ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+    ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
         LIBMANAGEMENT_OPTIMIZATION:=LOW
     endif
 endif
@@ -1688,7 +1688,7 @@ BUILD_LIBHPROF_LDFLAGS:=
 
 LIBHPROF_OPTIMIZATION:=HIGHEST
 ifneq ($(findstring $(OPENJDK_TARGET_OS),solaris linux),)
-    ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+    ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
         LIBHPROF_OPTIMIZATION:=LOW
     endif
 endif
@@ -2236,7 +2236,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBKCMS,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX_linux:=-lc -lpthread,\
 		LDFLAGS_SUFFIX_windows:=$(WIN_JAVA_LIB) advapi32.lib user32.lib version.lib, \
-		LDFLAGS_SUFFIX:=-lm $(LDFLAGS_JDKLIB_SUFFIX),\
+		LDFLAGS_SUFFIX_posix:=-lm -ljava -ljvm,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/closed/share/native/sun/java2d/cmm/kcms/cmm.rc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/closed/share/native/sun/java2d/cmm/kcms/cmm.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
@@ -2540,6 +2540,7 @@ BUILD_LIBRARIES += $(BUILD_LIBJ2PCSC)
 ##########################################################################################
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
+ifneq ($(OPENJDK_TARGET_OS), macosx)
 $(eval $(call SetupNativeCompilation,BUILD_LIBJ2GSS,\
 		LIBRARY:=j2gss,\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
@@ -2558,6 +2559,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2GSS,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2gss))
 
 BUILD_LIBRARIES += $(BUILD_LIBJ2GSS)
+endif
 endif
 
 ##########################################################################################

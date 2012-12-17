@@ -25,7 +25,6 @@
 
 package sun.lwawt.macosx;
 
-import java.awt.BufferCapabilities.FlipContents;
 import java.awt.*;
 import java.awt.Dialog.ModalityType;
 import java.awt.event.*;
@@ -258,7 +257,7 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         validateSurface();
     }
 
-    protected int getInitialStyleBits() {
+    private int getInitialStyleBits() {
         // defaults style bits
         int styleBits = DECORATED | HAS_SHADOW | CLOSEABLE | MINIMIZABLE | ZOOMABLE | RESIZABLE;
 
@@ -285,7 +284,6 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
             final boolean resizable = isFrame ? ((Frame)target).isResizable() : (isDialog ? ((Dialog)target).isResizable() : false);
             styleBits = SET(styleBits, RESIZABLE, resizable);
             if (!resizable) {
-                styleBits = SET(styleBits, RESIZABLE, false);
                 styleBits = SET(styleBits, ZOOMABLE, false);
             }
         }
@@ -380,7 +378,7 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
     }
 
     // this is the counter-point to -[CWindow _nativeSetStyleBit:]
-    protected void setStyleBits(final int mask, final boolean value) {
+    private void setStyleBits(final int mask, final boolean value) {
         nativeSetNSWindowStyleBits(getNSWindowPtr(), mask, value ? mask : 0);
     }
 
@@ -402,11 +400,6 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
     }
 
     @Override // PlatformWindow
-    public Image createBackBuffer() {
-        return contentView.createBackBuffer();
-    }
-
-    @Override // PlatformWindow
     public void dispose() {
         if (owner != null) {
             CWrapper.NSWindow.removeChildWindow(owner.getNSWindowPtr(), getNSWindowPtr());
@@ -414,12 +407,6 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         contentView.dispose();
         nativeDispose(getNSWindowPtr());
         CPlatformWindow.super.dispose();
-    }
-
-    @Override // PlatformWindow
-    public void flip(int x1, int y1, int x2, int y2, FlipContents flipAction) {
-        // TODO: not implemented
-        (new RuntimeException("unimplemented")).printStackTrace();
     }
 
     @Override // PlatformWindow
@@ -668,15 +655,8 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
     }
 
     @Override
-    public void setResizable(boolean resizable) {
+    public void setResizable(final boolean resizable) {
         setStyleBits(RESIZABLE, resizable);
-
-        // Re-apply the size constraints and the size to ensure the space
-        // occupied by the grow box is counted properly
-        peer.updateMinimumSize();
-
-        Rectangle bounds = peer.getBounds();
-        setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
     @Override
@@ -889,7 +869,8 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         responder.handleWindowFocusEvent(gained, oppositePeer);
     }
 
-    private void deliverMoveResizeEvent(int x, int y, int width, int height) {
+    private void deliverMoveResizeEvent(int x, int y, int width, int height,
+                                        boolean byUser) {
         // when the content view enters the full-screen mode, the native
         // move/resize notifications contain a bounds smaller than
         // the whole screen and therefore we ignore the native notifications
@@ -901,7 +882,7 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         final Rectangle oldB = nativeBounds;
         nativeBounds = new Rectangle(x, y, width, height);
         peer.notifyReshape(x, y, width, height);
-        if (!oldB.getSize().equals(nativeBounds.getSize()) ) {
+        if (byUser && !oldB.getSize().equals(nativeBounds.getSize())) {
             flushBuffers();
         }
         //TODO validateSurface already called from notifyReshape

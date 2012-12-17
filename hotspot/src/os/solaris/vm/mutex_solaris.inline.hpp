@@ -27,6 +27,6 @@
 
 #include "os_solaris.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
-#include "thread_solaris.inline.hpp"
+#include "runtime/thread.inline.hpp"
 
 #endif // OS_SOLARIS_VM_MUTEX_SOLARIS_INLINE_HPP

@@ -211,10 +211,11 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
 endif
 
 # Find all files to copy from $(JDK_OUTPUTDIR)/lib
+# Jar files are not expected to be here
 ALL_JDKOUT_LIB_LIST := $(shell $(FIND) $(JDK_OUTPUTDIR)/lib \( -type f -o -type l \) -a ! \
-                       \( -name "_the*" -o -name "javac_state " \) )
+                       \( -name "_the*" -o -name "javac_state " -o -name "*.jar" \) )
 # Find all files to copy from $(IMAGES_OUTPUTDIR)/lib
-# This might not exist if building overlay-images
+# This is were the jar files are and might not exist if building overlay-images
 ifneq ($(wildcard $(IMAGES_OUTPUTDIR)/lib),)
     ALL_IMAGES_LIB_LIST := $(shell $(FIND) $(IMAGES_OUTPUTDIR)/lib \( -type f -o -type l \) -a ! \
                        \( -name "_the*" -o -name "javac_state " \) )

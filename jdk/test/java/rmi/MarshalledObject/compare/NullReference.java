@@ -27,7 +27,6 @@
  * @summary MarshalledObject with null throws NullPointerException
  * @author Ken Arnold
  *
- * @build NullReference
  * @run main NullReference
  */
 

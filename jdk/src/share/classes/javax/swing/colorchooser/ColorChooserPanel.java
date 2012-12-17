@@ -135,6 +135,7 @@ final class ColorChooserPanel extends AbstractColorChooserPanel implements Prope
         String label = this.model.getText(this, "HexCode"); // NON-NLS: suffix
         boolean visible = label != null;
         this.text.setVisible(visible);
+        this.text.getAccessibleContext().setAccessibleDescription(label);
         this.label.setVisible(visible);
         if (visible) {
             this.label.setText(label);

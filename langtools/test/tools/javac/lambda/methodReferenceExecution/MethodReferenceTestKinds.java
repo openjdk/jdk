@@ -119,20 +119,6 @@ public class MethodReferenceTestKinds extends MethodReferenceTestKindsSup {
         assertEquals(var.get(inst("arg")), "SM:1-MethodReferenceTestKinds(arg)");
     }
 
-    public void testMRStaticEval() {
-        MethodReferenceTestKinds evalCheck;
-        S0 var = (evalCheck = inst("discard"))::staticMethod0;
-        assertEquals(evalCheck.toString(), "MethodReferenceTestKinds(discard)");
-        assertEquals(var.get(), "SM:0");
-    }
-
-    public void testMRStaticEvalArg() {
-        MethodReferenceTestKinds evalCheck;
-        S1 var = (evalCheck = inst("discard"))::staticMethod1;
-        assertEquals(evalCheck.toString(), "MethodReferenceTestKinds(discard)");
-        assertEquals(var.get(inst("arg")), "SM:1-MethodReferenceTestKinds(arg)");
-    }
-
     public void testMRTopLevel() {
         SN0 var = MethodReferenceTestKindsBase::new;
         assertEquals(var.make().toString(), "MethodReferenceTestKindsBase(blank)");
@@ -142,17 +128,7 @@ public class MethodReferenceTestKinds extends MethodReferenceTestKindsSup {
         SN1 var = MethodReferenceTestKindsBase::new;
         assertEquals(var.make("name").toString(), "MethodReferenceTestKindsBase(name)");
     }
-/* unbound inner case not supported anymore (dropped by EG)
-    public void testMRUnboundInner() {
-        SXN0 var = MethodReferenceTestKinds.In::new;
-        assertEquals(var.make(inst("out")).toString(), "In(blank)");
-    }
 
-   public void testMRUnboundInnerArg() {
-        SXN1 var = MethodReferenceTestKinds.In::new;
-        assertEquals(var.make(inst("out"), "name").toString(), "In(name)");
-    }
-*/
     public void testMRImplicitInner() {
         SN0 var = MethodReferenceTestKinds.In::new;
         assertEquals(var.make().toString(), "In(blank)");
