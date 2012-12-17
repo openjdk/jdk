@@ -46,7 +46,7 @@ public class MethodReference30 {
         assertTrue(true);
     }
 
-   static void m() { }
+   void m() { }
 
    public static void main(String[] args) {
       SAM s = new MethodReference30()::m;

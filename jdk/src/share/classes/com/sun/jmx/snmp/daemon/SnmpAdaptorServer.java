@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import java.io.InterruptedIOException;
 import javax.management.MBeanServer;
 import javax.management.MBeanRegistration;
 import javax.management.ObjectName;
-import javax.management.InstanceAlreadyExistsException;
 import static com.sun.jmx.defaults.JmxProperties.SNMP_ADAPTOR_LOGGER;
 import com.sun.jmx.snmp.SnmpIpAddress;
 import com.sun.jmx.snmp.SnmpMessage;
@@ -157,7 +156,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
     /**
      * The IP address based ACL used by this SNMP protocol adaptor.
      */
-    private Object ipacl = null;
+    private InetAddressAcl ipacl = null;
 
     /**
      * The factory object.
@@ -199,7 +198,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
     transient DatagramSocket          trapSocket      = null;
     private transient SnmpSession     informSession   = null;
     private transient DatagramPacket  packet          = null;
-    transient Vector<SnmpMibAgent>    mibs            = new Vector<SnmpMibAgent>();
+    transient Vector<SnmpMibAgent>    mibs            = new Vector<>();
     private transient SnmpMibTree     root;
 
     /**
@@ -482,8 +481,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
         //
         if (acl == null && forceAcl) {
             try {
-                acl = (InetAddressAcl)
-                    new SnmpAcl("SNMP protocol adaptor IP ACL");
+                acl = new SnmpAcl("SNMP protocol adaptor IP ACL");
             } catch (UnknownHostException e) {
                 if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINEST)) {
                     SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, dbgTag,
@@ -508,6 +506,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * since its creation. This counter is not reset by the <CODE>stop</CODE>
      * method.
      */
+    @Override
     public int getServedClientCount() {
         return super.getServedClientCount();
     }
@@ -519,6 +518,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @return The number of managers currently being processed by this
      * SNMP protocol adaptor.
      */
+    @Override
     public int getActiveClientCount() {
         return super.getActiveClientCount();
     }
@@ -530,6 +530,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @return The maximum number of managers that this SNMP protocol adaptor
      *         can process concurrently.
      */
+    @Override
     public int getMaxActiveClientCount() {
         return super.getMaxActiveClientCount();
     }
@@ -543,6 +544,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @exception java.lang.IllegalStateException This method has been invoked
      * while the communicator was <CODE>ONLINE</CODE> or <CODE>STARTING</CODE>.
      */
+    @Override
     public void setMaxActiveClientCount(int c)
         throws java.lang.IllegalStateException {
         super.setMaxActiveClientCount(c);
@@ -554,8 +556,9 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public InetAddressAcl getInetAddressAcl() {
-        return (InetAddressAcl)ipacl;
+        return ipacl;
     }
 
     /**
@@ -564,6 +567,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The port number for sending SNMP traps.
      */
+    @Override
     public Integer getTrapPort() {
         return new Integer(trapPort) ;
     }
@@ -573,6 +577,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @param port The port number for sending SNMP traps.
      */
+    @Override
     public void setTrapPort(Integer port) {
         setTrapPort(port.intValue());
     }
@@ -595,6 +600,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The port number for sending SNMP inform requests.
      */
+    @Override
     public int getInformPort() {
         return informPort;
     }
@@ -605,6 +611,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @param port The port number for sending SNMP inform requests.
      */
+    @Override
     public void setInformPort(int port) {
         if (port < 0)
             throw new IllegalArgumentException("Inform request port "+
@@ -617,6 +624,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The string "snmp".
      */
+    @Override
     public String getProtocol() {
         return "snmp";
     }
@@ -629,6 +637,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The buffer size.
      */
+    @Override
     public Integer getBufferSize() {
         return new Integer(bufferSize) ;
     }
@@ -643,6 +652,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @exception java.lang.IllegalStateException This method has been invoked
      * while the communicator was <CODE>ONLINE</CODE> or <CODE>STARTING</CODE>.
      */
+    @Override
     public void setBufferSize(Integer s)
         throws java.lang.IllegalStateException {
         if ((state == ONLINE) || (state == STARTING)) {
@@ -658,6 +668,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * By default, a maximum of 3 tries is used.
      * @return The maximun number of tries.
      */
+    @Override
     final public int getMaxTries() {
         return maxTries;
     }
@@ -667,6 +678,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * request before giving up.
      * @param newMaxTries The maximun number of tries.
      */
+    @Override
     final public synchronized void setMaxTries(int newMaxTries) {
         if (newMaxTries < 0)
             throw new IllegalArgumentException();
@@ -678,6 +690,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * By default, a timeout of 3 seconds is used.
      * @return The value of the timeout property.
      */
+    @Override
     final public int getTimeout() {
         return timeout;
     }
@@ -686,6 +699,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * Changes the timeout to wait for an inform response from the manager.
      * @param newTimeout The timeout (in milliseconds).
      */
+    @Override
     final public synchronized void setTimeout(int newTimeout) {
         if (newTimeout < 0)
             throw new IllegalArgumentException();
@@ -697,6 +711,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The factory object.
      */
+    @Override
     public SnmpPduFactory getPduFactory() {
         return pduFactory ;
     }
@@ -706,6 +721,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @param factory The factory object (null means the default factory).
      */
+    @Override
     public void setPduFactory(SnmpPduFactory factory) {
         if (factory == null)
             pduFactory = new SnmpPduFactoryBER() ;
@@ -719,6 +735,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @param factory The factory object (null means no factory).
      * @see com.sun.jmx.snmp.agent.SnmpUserDataFactory
      */
+    @Override
     public void setUserDataFactory(SnmpUserDataFactory factory) {
         userDataFactory = factory ;
     }
@@ -729,6 +746,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @return The factory object (null means no factory).
      * @see com.sun.jmx.snmp.agent.SnmpUserDataFactory
      */
+    @Override
     public SnmpUserDataFactory getUserDataFactory() {
         return userDataFactory;
     }
@@ -745,6 +763,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @return <CODE>true</CODE> if authentication traps are enabled,
      *         <CODE>false</CODE> otherwise.
      */
+    @Override
     public boolean getAuthTrapEnabled() {
         return authTrapEnabled ;
     }
@@ -755,6 +774,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @param enabled Flag indicating if traps need to be sent.
      */
+    @Override
     public void setAuthTrapEnabled(boolean enabled) {
         authTrapEnabled = enabled ;
     }
@@ -772,6 +792,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return <CODE>true</CODE> if responses are sent.
      */
+    @Override
     public boolean getAuthRespEnabled() {
         return authRespEnabled ;
     }
@@ -782,6 +803,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @param enabled Flag indicating if responses need to be sent.
      */
+    @Override
     public void setAuthRespEnabled(boolean enabled) {
         authRespEnabled = enabled ;
     }
@@ -793,6 +815,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The OID in string format "x.x.x.x".
      */
+    @Override
     public String getEnterpriseOid() {
         return enterpriseOid.toString() ;
     }
@@ -804,6 +827,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @exception IllegalArgumentException The string format is incorrect
      */
+    @Override
     public void setEnterpriseOid(String oid) throws IllegalArgumentException {
         enterpriseOid = new SnmpOid(oid) ;
     }
@@ -813,11 +837,12 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return An array of MIB names.
      */
+    @Override
     public String[] getMibs() {
         String[] result = new String[mibs.size()] ;
         int i = 0 ;
-        for (Enumeration e = mibs.elements() ; e.hasMoreElements() ;) {
-            SnmpMibAgent mib = (SnmpMibAgent)e.nextElement() ;
+        for (Enumeration<SnmpMibAgent> e = mibs.elements() ; e.hasMoreElements() ;) {
+            SnmpMibAgent mib = e.nextElement() ;
             result[i++] = mib.getMibName();
         }
         return result ;
@@ -831,6 +856,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpOutTraps</CODE> value.
      */
+    @Override
     public Long getSnmpOutTraps() {
         return new Long(snmpOutTraps);
     }
@@ -840,6 +866,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpOutGetResponses</CODE> value.
      */
+    @Override
     public Long getSnmpOutGetResponses() {
         return new Long(snmpOutGetResponses);
     }
@@ -849,6 +876,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpOutGenErrs</CODE> value.
      */
+    @Override
     public Long getSnmpOutGenErrs() {
         return new Long(snmpOutGenErrs);
     }
@@ -858,6 +886,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpOutBadValues</CODE> value.
      */
+    @Override
     public Long getSnmpOutBadValues() {
         return new Long(snmpOutBadValues);
     }
@@ -867,6 +896,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpOutNoSuchNames</CODE> value.
      */
+    @Override
     public Long getSnmpOutNoSuchNames() {
         return new Long(snmpOutNoSuchNames);
     }
@@ -876,6 +906,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpOutTooBigs</CODE> value.
      */
+    @Override
     public Long getSnmpOutTooBigs() {
         return new Long(snmpOutTooBigs);
     }
@@ -885,6 +916,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpInASNParseErrs</CODE> value.
      */
+    @Override
     public Long getSnmpInASNParseErrs() {
         return new Long(snmpInASNParseErrs);
     }
@@ -894,6 +926,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpInBadCommunityUses</CODE> value.
      */
+    @Override
     public Long getSnmpInBadCommunityUses() {
         return new Long(snmpInBadCommunityUses);
     }
@@ -904,6 +937,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpInBadCommunityNames</CODE> value.
      */
+    @Override
     public Long getSnmpInBadCommunityNames() {
         return new Long(snmpInBadCommunityNames);
     }
@@ -913,6 +947,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpInBadVersions</CODE> value.
      */
+    @Override
     public Long getSnmpInBadVersions() {
         return new Long(snmpInBadVersions);
     }
@@ -922,6 +957,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpOutPkts</CODE> value.
      */
+    @Override
     public Long getSnmpOutPkts() {
         return new Long(snmpOutPkts);
     }
@@ -931,6 +967,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpInPkts</CODE> value.
      */
+    @Override
     public Long getSnmpInPkts() {
         return new Long(snmpInPkts);
     }
@@ -940,6 +977,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpInGetRequests</CODE> value.
      */
+    @Override
     public Long getSnmpInGetRequests() {
         return new Long(snmpInGetRequests);
     }
@@ -949,6 +987,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpInGetNexts</CODE> value.
      */
+    @Override
     public Long getSnmpInGetNexts() {
         return new Long(snmpInGetNexts);
     }
@@ -958,6 +997,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpInSetRequests</CODE> value.
      */
+    @Override
     public Long getSnmpInSetRequests() {
         return new Long(snmpInSetRequests);
     }
@@ -967,6 +1007,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpInTotalSetVars</CODE> value.
      */
+    @Override
     public Long getSnmpInTotalSetVars() {
         return new Long(snmpInTotalSetVars);
     }
@@ -976,6 +1017,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @return The <CODE>snmpInTotalReqVars</CODE> value.
      */
+    @Override
     public Long getSnmpInTotalReqVars() {
         return new Long(snmpInTotalReqVars);
     }
@@ -988,6 +1030,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public Long getSnmpSilentDrops() {
         return new Long(snmpSilentDrops);
     }
@@ -1000,6 +1043,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public Long getSnmpProxyDrops() {
         return new Long(0);
     }
@@ -1027,6 +1071,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @exception java.lang.Exception
      */
+    @Override
     public ObjectName preRegister(MBeanServer server, ObjectName name)
         throws java.lang.Exception {
 
@@ -1040,6 +1085,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
     /**
      * Not used in this context.
      */
+    @Override
     public void postRegister (Boolean registrationDone) {
         super.postRegister(registrationDone);
     }
@@ -1047,6 +1093,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
     /**
      * Not used in this context.
      */
+    @Override
     public void preDeregister() throws java.lang.Exception {
         super.preDeregister();
     }
@@ -1054,6 +1101,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
     /**
      * Not used in this context.
      */
+    @Override
     public void postDeregister() {
         super.postDeregister();
     }
@@ -1067,6 +1115,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @exception IllegalArgumentException If the parameter is null.
      */
+    @Override
     public SnmpMibHandler addMib(SnmpMibAgent mib)
         throws IllegalArgumentException {
         if (mib == null) {
@@ -1097,6 +1146,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public SnmpMibHandler addMib(SnmpMibAgent mib, SnmpOid[] oids)
         throws IllegalArgumentException {
         if (mib == null) {
@@ -1129,6 +1179,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public SnmpMibHandler addMib(SnmpMibAgent mib, String contextName)
         throws IllegalArgumentException {
         return addMib(mib);
@@ -1150,10 +1201,12 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public SnmpMibHandler addMib(SnmpMibAgent mib,
                                  String contextName,
                                  SnmpOid[] oids)
         throws IllegalArgumentException {
+
         return addMib(mib, oids);
     }
 
@@ -1171,6 +1224,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public boolean removeMib(SnmpMibAgent mib, String contextName) {
         return removeMib(mib);
     }
@@ -1183,6 +1237,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @return <CODE>true</CODE> if the specified <CODE>mib</CODE> was a MIB
      *         included in the SNMP MIB handler, <CODE>false</CODE> otherwise.
      */
+    @Override
     public boolean removeMib(SnmpMibAgent mib) {
         root.unregister(mib);
         return (mibs.removeElement(mib)) ;
@@ -1199,6 +1254,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public boolean removeMib(SnmpMibAgent mib, SnmpOid[] oids) {
         root.unregister(mib, oids);
         return (mibs.removeElement(mib)) ;
@@ -1216,6 +1272,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public boolean removeMib(SnmpMibAgent mib,
                              String contextName,
                              SnmpOid[] oids) {
@@ -1228,6 +1285,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
     /**
      * Creates the datagram socket.
      */
+    @Override
     protected void doBind()
         throws CommunicationException, InterruptedException {
 
@@ -1255,6 +1313,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * that port number was 0.
      * @return the actual port to which the adaptor is bound.
      **/
+    @Override
     public int getPort() {
         synchronized (this) {
             if (socket != null) return socket.getLocalPort();
@@ -1265,6 +1324,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
     /**
      * Closes the datagram socket.
      */
+    @Override
     protected void doUnbind()
         throws CommunicationException, InterruptedException {
         if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINER)) {
@@ -1282,12 +1342,17 @@ public class SnmpAdaptorServer extends CommunicatorServer
         closeInformSocketIfNeeded() ;
     }
 
-    void createSnmpRequestHandler(SnmpAdaptorServer server, int id,
-                                  DatagramSocket s, DatagramPacket p,
-                                  SnmpMibTree tree, Vector m, Object a,
-                                  SnmpPduFactory factory,
-                                  SnmpUserDataFactory dataFactory,
-                                  MBeanServer f, ObjectName n) {
+    private void createSnmpRequestHandler(SnmpAdaptorServer server,
+                                          int id,
+                                          DatagramSocket s,
+                                          DatagramPacket p,
+                                          SnmpMibTree tree,
+                                          Vector<SnmpMibAgent> m,
+                                          InetAddressAcl a,
+                                          SnmpPduFactory factory,
+                                          SnmpUserDataFactory dataFactory,
+                                          MBeanServer f,
+                                          ObjectName n) {
         final SnmpRequestHandler handler =
             new SnmpRequestHandler(this, id, s, p, tree, m, a, factory,
                                    dataFactory, f, n);
@@ -1298,6 +1363,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * Reads a packet from the datagram socket and creates a request
      * handler which decodes and processes the request.
      */
+    @Override
     protected void doReceive()
         throws CommunicationException, InterruptedException {
 
@@ -1339,13 +1405,14 @@ public class SnmpAdaptorServer extends CommunicatorServer
         }
     }
 
+    @Override
     protected void doError(Exception e) throws CommunicationException {
-        return;
     }
 
     /**
      * Not used in this context.
      */
+    @Override
     protected void doProcess()
         throws CommunicationException, InterruptedException {
     }
@@ -1357,6 +1424,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * We attempt only once...
      * @return 1
      **/
+    @Override
     protected int getBindTries() {
         return 1;
     }
@@ -1368,6 +1436,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * Has no effect if this SNMP protocol adaptor is <CODE>OFFLINE</CODE> or
      * <CODE>STOPPING</CODE>.
      */
+    @Override
     public void stop(){
 
         final int port = getPort();
@@ -1424,6 +1493,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @exception SnmpStatusException If the trap exceeds the limit defined
      *            by <CODE>bufferSize</CODE>.
      */
+    @Override
     public void snmpV1Trap(int generic, int specific,
                            SnmpVarBindList varBindList)
         throws IOException, SnmpStatusException {
@@ -1499,6 +1569,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @exception SnmpStatusException If the trap exceeds the limit defined
      *            by <CODE>bufferSize</CODE>.
      */
+    @Override
     public void snmpV1Trap(InetAddress addr, String cs, int generic,
                            int specific, SnmpVarBindList varBindList)
         throws IOException, SnmpStatusException {
@@ -1617,6 +1688,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public void snmpV1Trap(SnmpPeer peer,
                            SnmpIpAddress agentAddr,
                            SnmpOid enterpOid,
@@ -1625,6 +1697,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
                            SnmpVarBindList varBindList,
                            SnmpTimeticks time)
         throws IOException, SnmpStatusException {
+
         SnmpParameters p = (SnmpParameters) peer.getParams();
         snmpV1Trap(peer.getDestAddr(),
                    peer.getDestPort(),
@@ -1745,11 +1818,13 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public void snmpV2Trap(SnmpPeer peer,
                            SnmpOid trapOid,
                            SnmpVarBindList varBindList,
                            SnmpTimeticks time)
         throws IOException, SnmpStatusException {
+
         SnmpParameters p = (SnmpParameters) peer.getParams();
         snmpV2Trap(peer.getDestAddr(),
                    peer.getDestPort(),
@@ -1781,6 +1856,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @exception SnmpStatusException If the trap exceeds the limit defined
      *            by <CODE>bufferSize</CODE>.
      */
+    @Override
     public void snmpV2Trap(SnmpOid trapOid, SnmpVarBindList varBindList)
         throws IOException, SnmpStatusException {
 
@@ -1801,7 +1877,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
 
         SnmpVarBindList fullVbl ;
         if (varBindList != null)
-            fullVbl = (SnmpVarBindList)varBindList.clone() ;
+            fullVbl = varBindList.clone() ;
         else
             fullVbl = new SnmpVarBindList(2) ;
         SnmpTimeticks sysUpTimeValue = new SnmpTimeticks(getSysUpTime()) ;
@@ -1840,6 +1916,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @exception SnmpStatusException If the trap exceeds the limit
      *            defined by <CODE>bufferSize</CODE>.
      */
+    @Override
     public void snmpV2Trap(InetAddress addr, String cs, SnmpOid trapOid,
                            SnmpVarBindList varBindList)
         throws IOException, SnmpStatusException {
@@ -1865,7 +1942,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
 
         SnmpVarBindList fullVbl ;
         if (varBindList != null)
-            fullVbl = (SnmpVarBindList)varBindList.clone() ;
+            fullVbl = varBindList.clone() ;
         else
             fullVbl = new SnmpVarBindList(2) ;
         SnmpTimeticks sysUpTimeValue = new SnmpTimeticks(getSysUpTime()) ;
@@ -1964,12 +2041,12 @@ public class SnmpAdaptorServer extends CommunicatorServer
 
         SnmpVarBindList fullVbl ;
         if (varBindList != null)
-            fullVbl = (SnmpVarBindList)varBindList.clone() ;
+            fullVbl = varBindList.clone() ;
         else
             fullVbl = new SnmpVarBindList(2) ;
 
         // Only difference with other
-        SnmpTimeticks sysUpTimeValue = null;
+        SnmpTimeticks sysUpTimeValue;
         if(time != null)
             sysUpTimeValue = time;
         else
@@ -2002,6 +2079,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public void snmpPduTrap(InetAddress address, SnmpPduPacket pdu)
             throws IOException, SnmpStatusException {
 
@@ -2021,6 +2099,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * by <CODE>bufferSize</CODE>.
      * @since 1.5
      */
+    @Override
     public void snmpPduTrap(SnmpPeer peer,
                             SnmpPduPacket pdu)
         throws IOException, SnmpStatusException {
@@ -2066,13 +2145,12 @@ public class SnmpAdaptorServer extends CommunicatorServer
         int sendingCount = 0 ;
         openTrapSocketIfNeeded() ;
         if (ipacl != null) {
-            Enumeration ed = ((InetAddressAcl)ipacl).getTrapDestinations() ;
+            Enumeration<InetAddress> ed = ipacl.getTrapDestinations() ;
             while (ed.hasMoreElements()) {
-                msg.address = (InetAddress)ed.nextElement() ;
-                Enumeration ec = ((InetAddressAcl)ipacl).
-                    getTrapCommunities(msg.address) ;
+                msg.address = ed.nextElement() ;
+                Enumeration<String> ec = ipacl.getTrapCommunities(msg.address) ;
                 while (ec.hasMoreElements()) {
-                    msg.community = ((String)ec.nextElement()).getBytes() ;
+                    msg.community = ec.nextElement().getBytes() ;
                     try {
                         sendTrapMessage(msg) ;
                         sendingCount++ ;
@@ -2164,6 +2242,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     private void sendTrapMessage(SnmpMessage msg)
         throws IOException, SnmpTooBigException {
+
         byte[] buffer = new byte[bufferSize] ;
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length) ;
         int encodingLength = msg.encodeMessage(buffer) ;
@@ -2245,8 +2324,10 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @exception SnmpStatusException If the inform request exceeds the
      *            limit defined by <CODE>bufferSize</CODE>.
      */
-    public Vector snmpInformRequest(SnmpInformHandler cb, SnmpOid trapOid,
-                                    SnmpVarBindList varBindList)
+    @Override
+    public Vector<SnmpInformRequest> snmpInformRequest(SnmpInformHandler cb,
+                                                       SnmpOid trapOid,
+                                                       SnmpVarBindList varBindList)
         throws IllegalStateException, IOException, SnmpStatusException {
 
         if (!isActive()) {
@@ -2263,7 +2344,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
         //
         SnmpVarBindList fullVbl ;
         if (varBindList != null)
-            fullVbl = (SnmpVarBindList)varBindList.clone() ;
+            fullVbl = varBindList.clone() ;
         else
             fullVbl = new SnmpVarBindList(2) ;
         SnmpTimeticks sysUpTimeValue = new SnmpTimeticks(getSysUpTime()) ;
@@ -2277,17 +2358,16 @@ public class SnmpAdaptorServer extends CommunicatorServer
 
         // Now send the SNMP message to each destination
         //
-        Vector<SnmpInformRequest> informReqList = new Vector<SnmpInformRequest>();
-        InetAddress addr = null;
-        String cs = null;
+        Vector<SnmpInformRequest> informReqList = new Vector<>();
+        InetAddress addr;
+        String cs;
         if (ipacl != null) {
-            Enumeration ed = ((InetAddressAcl)ipacl).getInformDestinations() ;
+            Enumeration<InetAddress> ed = ipacl.getInformDestinations() ;
             while (ed.hasMoreElements()) {
-                addr = (InetAddress)ed.nextElement() ;
-                Enumeration ec = ((InetAddressAcl)ipacl).
-                    getInformCommunities(addr) ;
+                addr = ed.nextElement() ;
+                Enumeration<String> ec = ipacl.getInformCommunities(addr) ;
                 while (ec.hasMoreElements()) {
-                    cs = (String)ec.nextElement() ;
+                    cs = ec.nextElement() ;
                     informReqList.addElement(
                        informSession.makeAsyncRequest(addr, cs, cb,
                                               fullVbl,getInformPort())) ;
@@ -2330,6 +2410,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @exception SnmpStatusException If the inform request exceeds the
      *            limit defined by <CODE>bufferSize</CODE>.
      */
+    @Override
     public SnmpInformRequest snmpInformRequest(InetAddress addr,
                                                String cs,
                                                SnmpInformHandler cb,
@@ -2380,11 +2461,13 @@ public class SnmpAdaptorServer extends CommunicatorServer
      *
      * @since 1.5
      */
+    @Override
     public SnmpInformRequest snmpInformRequest(SnmpPeer peer,
                                                SnmpInformHandler cb,
                                                SnmpOid trapOid,
                                                SnmpVarBindList varBindList)
         throws IllegalStateException, IOException, SnmpStatusException {
+
         SnmpParameters p = (SnmpParameters) peer.getParams();
         return snmpInformRequest(peer.getDestAddr(),
                                  peer.getDestPort(),
@@ -2401,9 +2484,9 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * @param protocolVersion The protocol version.
      * @param reqPduType The pdu type.
      */
-    public static final int mapErrorStatus(int errorStatus,
-                                           int protocolVersion,
-                                           int reqPduType) {
+    public static int mapErrorStatus(int errorStatus,
+                                     int protocolVersion,
+                                     int reqPduType) {
         return SnmpSubRequestHandler.mapErrorStatus(errorStatus,
                                                     protocolVersion,
                                                     reqPduType);
@@ -2416,6 +2499,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
                                                 SnmpOid trapOid,
                                                 SnmpVarBindList varBindList)
         throws IllegalStateException, IOException, SnmpStatusException {
+
         if (!isActive()) {
             throw new IllegalStateException(
               "Start SNMP adaptor server before carrying out this operation");
@@ -2430,7 +2514,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
         //
         SnmpVarBindList fullVbl ;
         if (varBindList != null)
-            fullVbl = (SnmpVarBindList)varBindList.clone() ;
+            fullVbl = varBindList.clone() ;
         else
             fullVbl = new SnmpVarBindList(2) ;
         SnmpTimeticks sysUpTimeValue = new SnmpTimeticks(getSysUpTime()) ;
@@ -2489,6 +2573,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      * references to the object.
      * <P>Closes the datagram socket associated to this SNMP protocol adaptor.
      */
+    @Override
     protected void finalize() {
         try {
             if (socket != null) {
@@ -2511,6 +2596,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
     /**
      * Returns the string used in debug traces.
      */
+    @Override
     String makeDebugTag() {
         return "SnmpAdaptorServer["+ getProtocol() + ":" + getPort() + "]";
     }
@@ -2615,13 +2701,13 @@ public class SnmpAdaptorServer extends CommunicatorServer
         // This is for transient structures to be initialized to specific
         // default values.
         //
-        mibs      = new Vector<SnmpMibAgent>() ;
+        mibs      = new Vector<>() ;
     }
 
     /**
      * Common initializations.
      */
-    private void init(Object acl, int p, InetAddress a) {
+    private void init(InetAddressAcl acl, int p, InetAddress a) {
 
         root= new SnmpMibTree();
 
@@ -2650,6 +2736,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
         return root.getAgentMib(oid);
     }
 
+    @Override
     protected Thread createMainThread() {
         final Thread t = super.createMainThread();
         t.setDaemon(true);

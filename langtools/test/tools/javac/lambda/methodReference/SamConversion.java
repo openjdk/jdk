@@ -133,15 +133,6 @@ public class SamConversion {
         } catch (Exception e) {
             assertTrue(false);
         }
-
-        bar = new A()::method6;
-        try {
-            bar.m(1);
-            assertTrue(false);
-        } catch (MyException e) {
-        } catch (Exception e) {
-            assertTrue(false);
-        }
     }
 
     /**

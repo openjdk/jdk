@@ -31,7 +31,6 @@ import java.security.spec.*;
 
 import javax.crypto.SecretKey;
 import javax.crypto.KeyAgreement;
-import javax.crypto.spec.*;
 
 /**
  * Helper class for the ECDH key exchange. It generates the appropriate

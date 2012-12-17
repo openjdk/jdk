@@ -30,8 +30,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 import jdk.internal.org.objectweb.asm.*;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import sun.misc.Unsafe;
@@ -192,7 +191,7 @@ import sun.misc.Unsafe;
             try (FileOutputStream fos = new FileOutputStream(lambdaClassName.replace('/', '.') + ".class")) {
                 fos.write(classBytes);
             } catch (IOException ex) {
-                Logger.getLogger(InnerClassLambdaMetafactory.class.getName()).log(Level.SEVERE, null, ex);
+                PlatformLogger.getLogger(InnerClassLambdaMetafactory.class.getName()).severe(ex.getMessage(), ex);
             }
         }
 

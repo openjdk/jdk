@@ -45,6 +45,7 @@ abstract class KeyManagerFactoryImpl extends KeyManagerFactorySpi {
     /**
      * Returns one key manager for each type of key material.
      */
+    @Override
     protected KeyManager[] engineGetKeyManagers() {
         if (!isInitialized) {
             throw new IllegalStateException(
@@ -56,6 +57,7 @@ abstract class KeyManagerFactoryImpl extends KeyManagerFactorySpi {
     // Factory for the SunX509 keymanager
     public static final class SunX509 extends KeyManagerFactoryImpl {
 
+        @Override
         protected void engineInit(KeyStore ks, char[] password) throws
                 KeyStoreException, NoSuchAlgorithmException,
                 UnrecoverableKeyException {
@@ -69,6 +71,7 @@ abstract class KeyManagerFactoryImpl extends KeyManagerFactorySpi {
             isInitialized = true;
         }
 
+        @Override
         protected void engineInit(ManagerFactoryParameters spec) throws
                 InvalidAlgorithmParameterException {
             throw new InvalidAlgorithmParameterException(
@@ -80,6 +83,7 @@ abstract class KeyManagerFactoryImpl extends KeyManagerFactorySpi {
     // Factory for the X509 keymanager
     public static final class X509 extends KeyManagerFactoryImpl {
 
+        @Override
         protected void engineInit(KeyStore ks, char[] password) throws
                 KeyStoreException, NoSuchAlgorithmException,
                 UnrecoverableKeyException {
@@ -102,6 +106,7 @@ abstract class KeyManagerFactoryImpl extends KeyManagerFactorySpi {
             isInitialized = true;
         }
 
+        @Override
         protected void engineInit(ManagerFactoryParameters params) throws
                 InvalidAlgorithmParameterException {
             if (params instanceof KeyStoreBuilderParameters == false) {

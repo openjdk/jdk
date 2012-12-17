@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,9 @@ public class SimpleFormatterFormat {
         System.out.println("Checking log records in file: " + log);
         Pattern p = Pattern.compile("([\\.a-zA-Z:]+) (.*) \\[.*\\] source: (.*)");
 
-        try (FileInputStream in = new FileInputStream(log)) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        try (FileInputStream in = new FileInputStream(log);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                ) {
             String line;
             int i = 0;
             while (i < messages.length &&

@@ -26,18 +26,7 @@
 #define SHARE_VM_UTILITIES_PRESERVEEXCEPTION_HPP
 
 #include "runtime/handles.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
-#endif
+#include "runtime/thread.inline.hpp"
 
 // This file provides more support for exception handling; see also exceptions.hpp
 class PreserveExceptionMark {
