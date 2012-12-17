@@ -56,12 +56,6 @@ void Assembler::pd_patch_instruction(address branch, address target) {
   ShouldNotCallThis();
 }
 
-#ifndef PRODUCT
-void Assembler::pd_print_patched_instruction(address branch) {
-  ShouldNotCallThis();
-}
-#endif // PRODUCT
-
 void MacroAssembler::align(int modulus) {
   while (offset() % modulus != 0)
     emit_byte(AbstractAssembler::code_fill_byte());
