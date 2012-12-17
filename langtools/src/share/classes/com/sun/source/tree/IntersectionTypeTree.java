@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,14 +23,17 @@
  * questions.
  */
 
-// key: compiler.err.prob.found.req
-// key: compiler.misc.invalid.generic.desc.in.functional.intf
+package com.sun.source.tree;
 
-class InvalidGenericDescInFunctionalIntf {
+import java.util.List;
 
-    interface SAM {
-        <Z> void m();
-    }
-
-    SAM s = x-> { };
+/**
+ * A tree node for an intersection type in a cast expression.
+ *
+ * @author Maurizio Cimadamore
+ *
+ * @since 1.8
+ */
+public interface IntersectionTypeTree extends Tree {
+    List<? extends Tree> getBounds();
 }

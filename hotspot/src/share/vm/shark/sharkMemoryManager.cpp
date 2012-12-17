@@ -79,7 +79,6 @@ void SharkMemoryManager::setMemoryExecutable() {
   mm()->setMemoryExecutable();
 }
 
-#if SHARK_LLVM_VERSION >= 27
 void SharkMemoryManager::deallocateExceptionTable(void *ptr) {
   mm()->deallocateExceptionTable(ptr);
 }
@@ -87,26 +86,23 @@ void SharkMemoryManager::deallocateExceptionTable(void *ptr) {
 void SharkMemoryManager::deallocateFunctionBody(void *ptr) {
   mm()->deallocateFunctionBody(ptr);
 }
-#else
-void SharkMemoryManager::deallocateMemForFunction(const Function* F) {
-  return mm()->deallocateMemForFunction(F);
-}
-#endif
 
 uint8_t* SharkMemoryManager::allocateGlobal(uintptr_t Size,
                                             unsigned int Alignment) {
   return mm()->allocateGlobal(Size, Alignment);
 }
 
-#if SHARK_LLVM_VERSION < 27
-void* SharkMemoryManager::getDlsymTable() const {
-  return mm()->getDlsymTable();
+void* SharkMemoryManager::getPointerToNamedFunction(const std::string &Name, bool AbortOnFailure) {
+  return mm()->getPointerToNamedFunction(Name, AbortOnFailure);
 }
 
-void SharkMemoryManager::SetDlsymTable(void *ptr) {
-  mm()->SetDlsymTable(ptr);
+uint8_t* SharkMemoryManager::allocateCodeSection(uintptr_t Size, unsigned Alignment, unsigned SectionID) {
+  return mm()->allocateCodeSection(Size, Alignment, SectionID);
 }
-#endif
+
+uint8_t* SharkMemoryManager::allocateDataSection(uintptr_t Size, unsigned Alignment, unsigned SectionID) {
+  return mm()->allocateDataSection(Size, Alignment, SectionID);
+}
 
 void SharkMemoryManager::setPoisonMemory(bool poison) {
   mm()->setPoisonMemory(poison);

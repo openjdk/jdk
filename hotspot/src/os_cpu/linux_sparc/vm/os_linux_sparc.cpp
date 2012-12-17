@@ -23,7 +23,7 @@
  */
 
 // no precompiled headers
-#include "assembler_sparc.inline.hpp"
+#include "asm/macroAssembler.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -48,8 +48,8 @@
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
-#include "thread_linux.inline.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 

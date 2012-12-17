@@ -135,11 +135,7 @@ class Metaspace : public CHeapObj<mtClass> {
 
   static bool is_initialized() { return _class_space_list != NULL; }
 
-#ifndef PRODUCT
-  bool contains(const void *ptr) const;
-  bool contains_class(const void *ptr) const;
-#endif
-
+  static bool contains(const void *ptr);
   void dump(outputStream* const out) const;
 
   void print_on(outputStream* st) const;
@@ -160,25 +156,16 @@ class MetaspaceAux : AllStatic {
 
  public:
   // Total of space allocated to metadata in all Metaspaces
-  static size_t used_in_bytes() {
-    return used_in_bytes(Metaspace::ClassType) +
-           used_in_bytes(Metaspace::NonClassType);
-  }
+  static size_t used_in_bytes();
 
   // Total of available space in all Metaspaces
   // Total of capacity allocated to all Metaspaces.  This includes
   // space in Metachunks not yet allocated and in the Metachunk
   // freelist.
-  static size_t capacity_in_bytes() {
-    return capacity_in_bytes(Metaspace::ClassType) +
-           capacity_in_bytes(Metaspace::NonClassType);
-  }
+  static size_t capacity_in_bytes();
 
   // Total space reserved in all Metaspaces
-  static size_t reserved_in_bytes() {
-    return reserved_in_bytes(Metaspace::ClassType) +
-           reserved_in_bytes(Metaspace::NonClassType);
-  }
+  static size_t reserved_in_bytes();
 
   static size_t min_chunk_size();
 

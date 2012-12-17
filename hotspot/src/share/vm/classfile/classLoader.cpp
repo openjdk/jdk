@@ -26,6 +26,7 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -910,11 +911,11 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
 
     // class file found, parse it
     ClassFileParser parser(stream);
-    Handle class_loader;
+    ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     Handle protection_domain;
     TempNewSymbol parsed_name = NULL;
     instanceKlassHandle result = parser.parseClassFile(h_name,
-                                                       class_loader,
+                                                       loader_data,
                                                        protection_domain,
                                                        parsed_name,
                                                        false,

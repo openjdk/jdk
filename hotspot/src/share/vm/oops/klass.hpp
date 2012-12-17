@@ -267,7 +267,6 @@ class Klass : public Metadata {
   Klass* subklass() const;
   Klass* next_sibling() const;
   void append_to_sibling_list();           // add newly created receiver to superklass' subklass list
-  void remove_from_sibling_list();         // remove receiver from sibling list
 
   void set_next_link(Klass* k) { _next_link = k; }
   Klass* next_link() const { return _next_link; }   // The next klass defined by the class loader.
@@ -581,8 +580,8 @@ class Klass : public Metadata {
   // garbage collection support
   virtual void oops_do(OopClosure* cl);
 
-  // Checks if the class loader is alive.
-  // Iff the class loader is alive the Klass is considered alive.
+  // Iff the class loader (or mirror for anonymous classes) is alive the
+  // Klass is considered alive.
   // The is_alive closure passed in depends on the Garbage Collector used.
   bool is_loader_alive(BoolObjectClosure* is_alive);
 

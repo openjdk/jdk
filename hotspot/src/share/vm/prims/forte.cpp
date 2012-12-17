@@ -216,10 +216,7 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
     // not yet valid.
 
     *method_p = method;
-
-    // See if gc may have invalidated method since we validated frame
-
-    if (!Universe::heap()->is_valid_method(method)) return false;
+    if (!method->is_valid_method()) return false;
 
     intptr_t bcx = fr->interpreter_frame_bcx();
 
@@ -394,19 +391,11 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
   bool fully_decipherable = find_initial_Java_frame(thd, &top_frame, &initial_Java_frame, &method, &bci);
 
   // The frame might not be walkable but still recovered a method
-  // (e.g. an nmethod with no scope info for the pc
+  // (e.g. an nmethod with no scope info for the pc)
 
   if (method == NULL) return;
 
-  CollectedHeap* ch = Universe::heap();
-
-  // The method is not stored GC safe so see if GC became active
-  // after we entered AsyncGetCallTrace() and before we try to
-  // use the Method*.
-  // Yes, there is still a window after this check and before
-  // we use Method* below, but we can't lock out GC so that
-  // has to be an acceptable risk.
-  if (!ch->is_valid_method(method)) {
+  if (!method->is_valid_method()) {
     trace->num_frames = ticks_GC_active; // -2
     return;
   }
@@ -440,13 +429,7 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
     bci = st.bci();
     method = st.method();
 
-    // The method is not stored GC safe so see if GC became active
-    // after we entered AsyncGetCallTrace() and before we try to
-    // use the Method*.
-    // Yes, there is still a window after this check and before
-    // we use Method* below, but we can't lock out GC so that
-    // has to be an acceptable risk.
-    if (!ch->is_valid_method(method)) {
+    if (!method->is_valid_method()) {
       // we throw away everything we've gathered in this sample since
       // none of it is safe
       trace->num_frames = ticks_GC_active; // -2

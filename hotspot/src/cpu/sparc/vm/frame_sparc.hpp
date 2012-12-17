@@ -204,25 +204,6 @@
   intptr_t*     out_register_addr(Register reg) const {
     return younger_sp_addr_at(reg->after_save()->sp_offset_in_saved_window());
   }
-  intptr_t* memory_param_addr(int param_ix, bool is_in) const {
-    int offset = callee_register_argument_save_area_sp_offset + param_ix;
-    if (is_in)
-      return fp_addr_at(offset);
-    else
-      return sp_addr_at(offset);
-  }
-  intptr_t*        param_addr(int param_ix, bool is_in) const {
-    if (param_ix >= callee_register_argument_save_area_words)
-      return memory_param_addr(param_ix, is_in);
-    else if (is_in)
-      return register_addr(Argument(param_ix, true).as_register());
-    else {
-      // the registers are stored in the next younger frame
-      // %%% is this really necessary?
-      ShouldNotReachHere();
-      return NULL;
-    }
-  }
 
 
   // Interpreter frames
@@ -269,12 +250,8 @@
 #ifndef CC_INTERP
 
   // where Lmonitors is saved:
-  BasicObjectLock**  interpreter_frame_monitors_addr() const {
-    return (BasicObjectLock**) sp_addr_at(Lmonitors->sp_offset_in_saved_window());
-  }
-  intptr_t** interpreter_frame_esp_addr() const {
-    return (intptr_t**)sp_addr_at(Lesp->sp_offset_in_saved_window());
-  }
+  inline BasicObjectLock** interpreter_frame_monitors_addr() const;
+  inline intptr_t** interpreter_frame_esp_addr() const;
 
   inline void interpreter_frame_set_tos_address(intptr_t* x);
 

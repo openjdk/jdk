@@ -73,12 +73,10 @@
 // |------------------------------------------------------|
 // | result_index (C++ interpreter only)                  |
 // |------------------------------------------------------|
-// | method_size             | max_stack                  |
-// | max_locals              | size_of_parameters         |
+// | method_size             |   max_locals               |
+// | size_of_parameters      |   intrinsic_id|   flags    |
 // |------------------------------------------------------|
-// |intrinsic_id|   flags    |  throwout_count            |
-// |------------------------------------------------------|
-// | num_breakpoints         |  (unused)                  |
+// | throwout_count          |   num_breakpoints          |
 // |------------------------------------------------------|
 // | invocation_counter                                   |
 // | backedge_counter                                     |
@@ -118,7 +116,6 @@ class Method : public Metadata {
   int               _result_index;               // C++ interpreter needs for converting results to/from stack
 #endif
   u2                _method_size;                // size of this object
-  u2                _max_stack;                  // Maximum number of entries on the expression stack
   u2                _max_locals;                 // Number of local variables used by this method
   u2                _size_of_parameters;         // size of the parameter block (receiver + arguments) in words
   u1                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
@@ -166,10 +163,12 @@ class Method : public Metadata {
                           int localvariable_table_length,
                           int exception_table_length,
                           int checked_exceptions_length,
+                          u2 generic_signature_index,
                           ConstMethod::MethodType method_type,
                           TRAPS);
 
-  Method() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  // CDS and vtbl checking can create an empty Method to get vtbl pointer.
+  Method(){}
 
   // The Method vtable is restored by this call when the Method is in the
   // shared archive.  See patch_klass_vtables() in metaspaceShared.cpp for
@@ -288,9 +287,9 @@ class Method : public Metadata {
 
   // max stack
   // return original max stack size for method verification
-  int  verifier_max_stack() const                { return _max_stack; }
-  int           max_stack() const                { return _max_stack + extra_stack_entries(); }
-  void      set_max_stack(int size)              {        _max_stack = size; }
+  int  verifier_max_stack() const                { return constMethod()->max_stack(); }
+  int           max_stack() const                { return constMethod()->max_stack() + extra_stack_entries(); }
+  void      set_max_stack(int size)              {        constMethod()->set_max_stack(size); }
 
   // max locals
   int  max_locals() const                        { return _max_locals; }
@@ -606,7 +605,6 @@ class Method : public Metadata {
   static ByteSize from_interpreted_offset()      { return byte_offset_of(Method, _from_interpreted_entry ); }
   static ByteSize interpreter_entry_offset()     { return byte_offset_of(Method, _i2i_entry ); }
   static ByteSize signature_handler_offset()     { return in_ByteSize(sizeof(Method) + wordSize);      }
-  static ByteSize max_stack_offset()             { return byte_offset_of(Method, _max_stack         ); }
 
   // for code generation
   static int method_data_offset_in_bytes()       { return offset_of(Method, _method_data); }
@@ -811,6 +809,9 @@ class Method : public Metadata {
   void print_value_on(outputStream* st) const;
 
   const char* internal_name() const { return "{method}"; }
+
+  // Check for valid method pointer
+  bool is_valid_method() const;
 
   // Verify
   void verify() { verify_on(tty); }

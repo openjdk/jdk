@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/threadLocalStorage.hpp"
-#include "thread_solaris.inline.hpp"
 
 #ifdef AMD64
 extern "C" Thread*  fs_load(ptrdiff_t tlsOffset);

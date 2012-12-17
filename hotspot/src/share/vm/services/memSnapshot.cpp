@@ -261,17 +261,19 @@ bool VMMemPointerIterator::remove_released_region(MemPointerRecord* rec) {
   VMMemRegion* cur = (VMMemRegion*)current();
   assert(cur->is_reserved_region() && cur->contains_region(rec),
     "Sanity check");
-#ifdef ASSERT
-  VMMemRegion* next_reg = (VMMemRegion*)peek_next();
-  // should not have any committed memory in this reserved region
-  assert(next_reg == NULL || !next_reg->is_committed_region(), "Sanity check");
-#endif
   if (rec->is_same_region(cur)) {
+    // release whole reserved region
+#ifdef ASSERT
+    VMMemRegion* next_region = (VMMemRegion*)peek_next();
+    // should not have any committed memory in this reserved region
+    assert(next_region == NULL || !next_region->is_committed_region(), "Sanity check");
+#endif
     remove();
   } else if (rec->addr() == cur->addr() ||
     rec->addr() + rec->size() == cur->addr() + cur->size()) {
     // released region is at either end of this region
     cur->exclude_region(rec->addr(), rec->size());
+    assert(check_reserved_region(), "Integrity check");
   } else { // split the reserved region and release the middle
     address high_addr = cur->addr() + cur->size();
     size_t sz = high_addr - rec->addr();
@@ -280,10 +282,14 @@ bool VMMemPointerIterator::remove_released_region(MemPointerRecord* rec) {
     if (MemTracker::track_callsite()) {
       MemPointerRecordEx tmp(rec->addr() + rec->size(), cur->flags(), sz,
         ((VMMemRegionEx*)cur)->pc());
-      return insert_reserved_region(&tmp);
+      bool ret = insert_reserved_region(&tmp);
+      assert(!ret || check_reserved_region(), "Integrity check");
+      return ret;
     } else {
       MemPointerRecord tmp(rec->addr() + rec->size(), cur->flags(), sz);
-      return insert_reserved_region(&tmp);
+      bool ret = insert_reserved_region(&tmp);
+      assert(!ret || check_reserved_region(), "Integrity check");
+      return ret;
     }
   }
   return true;
