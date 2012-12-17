@@ -24,9 +24,10 @@
 
 /*
  * @test
- * @bug 4387136 4947349
+ * @bug 4387136 4947349 7197662
  * @summary Due to a bug in XMLSupport.putPreferencesInXml(...),
  *          node's keys would not get exported.
+ * @run main/othervm -Djava.util.prefs.userRoot=. ExportNode
  * @author Konstantin Kladko
  */
 import java.util.prefs.*;

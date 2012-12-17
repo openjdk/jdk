@@ -148,6 +148,7 @@ public abstract class SunJSSE extends java.security.Provider {
 
     private void registerAlgorithms(final boolean isfips) {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            @Override
             public Object run() {
                 doRegister(isfips);
                 return null;

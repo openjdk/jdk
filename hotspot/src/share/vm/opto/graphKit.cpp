@@ -93,6 +93,16 @@ JVMState* GraphKit::sync_jvms() const {
   return jvms;
 }
 
+//--------------------------------sync_jvms_for_reexecute---------------------
+// Make sure our current jvms agrees with our parse state.  This version
+// uses the reexecute_sp for reexecuting bytecodes.
+JVMState* GraphKit::sync_jvms_for_reexecute() {
+  JVMState* jvms = this->jvms();
+  jvms->set_bci(bci());          // Record the new bci in the JVMState
+  jvms->set_sp(reexecute_sp());  // Record the new sp in the JVMState
+  return jvms;
+}
+
 #ifdef ASSERT
 bool GraphKit::jvms_in_sync() const {
   Parse* parse = is_Parse();
@@ -143,7 +153,7 @@ void GraphKit::verify_exception_state(SafePointNode* ex_map) {
 void GraphKit::stop_and_kill_map() {
   SafePointNode* dead_map = stop();
   if (dead_map != NULL) {
-    dead_map->disconnect_inputs(NULL); // Mark the map as killed.
+    dead_map->disconnect_inputs(NULL, C); // Mark the map as killed.
     assert(dead_map->is_killed(), "must be so marked");
   }
 }
@@ -826,7 +836,16 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
   // Walk the inline list to fill in the correct set of JVMState's
   // Also fill in the associated edges for each JVMState.
 
-  JVMState* youngest_jvms = sync_jvms();
+  // If the bytecode needs to be reexecuted we need to put
+  // the arguments back on the stack.
+  const bool should_reexecute = jvms()->should_reexecute();
+  JVMState* youngest_jvms = should_reexecute ? sync_jvms_for_reexecute() : sync_jvms();
+
+  // NOTE: set_bci (called from sync_jvms) might reset the reexecute bit to
+  // undefined if the bci is different.  This is normal for Parse but it
+  // should not happen for LibraryCallKit because only one bci is processed.
+  assert(!is_LibraryCallKit() || (jvms()->should_reexecute() == should_reexecute),
+         "in LibraryCallKit the reexecute bit should not change");
 
   // If we are guaranteed to throw, we can prune everything but the
   // input to the current bytecode.
@@ -860,7 +879,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
   }
 
   // Presize the call:
-  debug_only(uint non_debug_edges = call->req());
+  DEBUG_ONLY(uint non_debug_edges = call->req());
   call->add_req_batch(top(), youngest_jvms->debug_depth());
   assert(call->req() == non_debug_edges + youngest_jvms->debug_depth(), "");
 
@@ -965,7 +984,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
   assert(call->jvms()->debug_depth() == call->req() - non_debug_edges, "");
 }
 
-bool GraphKit::compute_stack_effects(int& inputs, int& depth, bool for_parse) {
+bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   Bytecodes::Code code = java_bc();
   if (code == Bytecodes::_wide) {
     code = method()->java_code_at_bci(bci() + 1);
@@ -1005,14 +1024,11 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth, bool for_parse) {
   case Bytecodes::_getfield:
   case Bytecodes::_putfield:
     {
-      bool is_get = (depth >= 0), is_static = (depth & 1);
-      ciBytecodeStream iter(method());
-      iter.reset_to_bci(bci());
-      iter.next();
       bool ignored_will_link;
-      ciField* field = iter.get_field(ignored_will_link);
+      ciField* field = method()->get_field_at_bci(bci(), ignored_will_link);
       int      size  = field->type()->size();
-      inputs  = (is_static ? 0 : 1);
+      bool is_get = (depth >= 0), is_static = (depth & 1);
+      inputs = (is_static ? 0 : 1);
       if (is_get) {
         depth = size - inputs;
       } else {
@@ -1028,26 +1044,11 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth, bool for_parse) {
   case Bytecodes::_invokedynamic:
   case Bytecodes::_invokeinterface:
     {
-      ciBytecodeStream iter(method());
-      iter.reset_to_bci(bci());
-      iter.next();
       bool ignored_will_link;
       ciSignature* declared_signature = NULL;
-      ciMethod* callee = iter.get_method(ignored_will_link, &declared_signature);
+      ciMethod* ignored_callee = method()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
       assert(declared_signature != NULL, "cannot be null");
-      // (Do not use ciMethod::arg_size(), because
-      // it might be an unloaded method, which doesn't
-      // know whether it is static or not.)
-      if (for_parse) {
-        // Case 1: When called from parse we are *before* the invoke (in the
-        //         caller) and need to to adjust the inputs by an appendix
-        //         argument that will be pushed implicitly.
-        inputs = callee->invoke_arg_size(code) - (iter.has_appendix() ? 1 : 0);
-      } else {
-        // Case 2: Here we are *after* the invoke (in the callee) and need to
-        //         remove any appendix arguments that were popped.
-        inputs = callee->invoke_arg_size(code) - (callee->has_member_arg() ? 1 : 0);
-      }
+      inputs   = declared_signature->arg_size_for_bc(code);
       int size = declared_signature->return_type()->size();
       depth = size - inputs;
     }
@@ -1178,7 +1179,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
   Node *chk = NULL;
   switch(type) {
     case T_LONG   : chk = new (C) CmpLNode(value, _gvn.zerocon(T_LONG)); break;
-    case T_INT    : chk = new (C) CmpINode( value, _gvn.intcon(0)); break;
+    case T_INT    : chk = new (C) CmpINode(value, _gvn.intcon(0)); break;
     case T_ARRAY  : // fall through
       type = T_OBJECT;  // simplify further tests
     case T_OBJECT : {
@@ -1229,7 +1230,8 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
       break;
     }
 
-    default      : ShouldNotReachHere();
+    default:
+      fatal(err_msg_res("unexpected type: %s", type2name(type)));
   }
   assert(chk != NULL, "sanity check");
   chk = _gvn.transform(chk);
@@ -1809,7 +1811,7 @@ void GraphKit::replace_call(CallNode* call, Node* result) {
   }
 
   // Disconnect the call from the graph
-  call->disconnect_inputs(NULL);
+  call->disconnect_inputs(NULL, C);
   C->gvn_replace_by(call, C->top());
 
   // Clean up any MergeMems that feed other MergeMems since the
@@ -1861,15 +1863,17 @@ void GraphKit::uncommon_trap(int trap_request,
   // occurs here, the runtime will make sure an MDO exists.  There is
   // no need to call method()->ensure_method_data() at this point.
 
+  // Set the stack pointer to the right value for reexecution:
+  set_sp(reexecute_sp());
+
 #ifdef ASSERT
   if (!must_throw) {
     // Make sure the stack has at least enough depth to execute
     // the current bytecode.
-    int inputs, ignore;
-    if (compute_stack_effects(inputs, ignore)) {
-      assert(sp() >= inputs, "must have enough JVMS stack to execute");
-      // It is a frequent error in library_call.cpp to issue an
-      // uncommon trap with the _sp value already popped.
+    int inputs, ignored_depth;
+    if (compute_stack_effects(inputs, ignored_depth)) {
+      assert(sp() >= inputs, err_msg_res("must have enough JVMS stack to execute %s: sp=%d, inputs=%d",
+             Bytecodes::name(java_bc()), sp(), inputs));
     }
   }
 #endif
@@ -1900,7 +1904,8 @@ void GraphKit::uncommon_trap(int trap_request,
   case Deoptimization::Action_make_not_compilable:
     break;
   default:
-    assert(false, "bad action");
+    fatal(err_msg_res("unknown action %d: %s", action, Deoptimization::trap_action_name(action)));
+    break;
 #endif
   }
 
@@ -2667,7 +2672,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
       case SSC_always_false:
         // It needs a null check because a null will *pass* the cast check.
         // A non-null value will always produce an exception.
-        return do_null_assert(obj, T_OBJECT);
+        return null_assert(obj);
       }
     }
   }
@@ -2786,7 +2791,7 @@ Node* GraphKit::insert_mem_bar(int opcode, Node* precedent) {
   mb->init_req(TypeFunc::Control, control());
   mb->init_req(TypeFunc::Memory,  reset_memory());
   Node* membar = _gvn.transform(mb);
-  set_control(_gvn.transform(new (C) ProjNode(membar,TypeFunc::Control) ));
+  set_control(_gvn.transform(new (C) ProjNode(membar, TypeFunc::Control)));
   set_all_memory_call(membar);
   return membar;
 }
@@ -3148,7 +3153,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     Node* cmp_lh = _gvn.transform( new(C) CmpINode(layout_val, intcon(layout_con)) );
     Node* bol_lh = _gvn.transform( new(C) BoolNode(cmp_lh, BoolTest::eq) );
     { BuildCutout unless(this, bol_lh, PROB_MAX);
-      _sp += nargs;
+      inc_sp(nargs);
       uncommon_trap(Deoptimization::Reason_class_check,
                     Deoptimization::Action_maybe_recompile);
     }
@@ -3391,7 +3396,7 @@ void GraphKit::add_predicate_impl(Deoptimization::DeoptReason reason, int nargs)
   {
     PreserveJVMState pjvms(this);
     set_control(iffalse);
-    _sp += nargs;
+    inc_sp(nargs);
     uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
   }
   Node* iftrue = _gvn.transform(new (C) IfTrueNode(iff));

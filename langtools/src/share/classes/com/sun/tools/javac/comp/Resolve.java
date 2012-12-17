@@ -156,7 +156,7 @@ public class Resolve {
         OBJECT_INIT("object-init"),
         INTERNAL("internal");
 
-        String opt;
+        final String opt;
 
         private VerboseResolutionMode(String opt) {
             this.opt = opt;
@@ -2617,8 +2617,7 @@ public class Resolve {
         @Override
         ReferenceKind referenceKind(Symbol sym) {
             if (sym.isStatic()) {
-                return TreeInfo.isStaticSelector(referenceTree.expr, names) ?
-                        ReferenceKind.STATIC : ReferenceKind.STATIC_EVAL;
+                return ReferenceKind.STATIC;
             } else {
                 Name selName = TreeInfo.name(referenceTree.getQualifierExpression());
                 return selName != null && selName == names._super ?
@@ -3382,8 +3381,8 @@ public class Resolve {
             }
         };
 
-        boolean isBoxingRequired;
-        boolean isVarargsRequired;
+        final boolean isBoxingRequired;
+        final boolean isVarargsRequired;
 
         MethodResolutionPhase(boolean isBoxingRequired, boolean isVarargsRequired) {
            this.isBoxingRequired = isBoxingRequired;

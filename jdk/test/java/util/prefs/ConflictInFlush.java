@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 4703132
+ * @bug 4703132 7197662
  * @summary flush() throws an IllegalStateException on a removed node
+ * @run main/othervm -Djava.util.prefs.userRoot=. ConflictInFlush
  * @author Sucheta Dambalkar
  */
 

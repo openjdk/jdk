@@ -27,9 +27,8 @@ package com.sun.tools.javadoc;
 
 import com.sun.javadoc.*;
 
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.util.Position;
 
 /**
  * Represents a member of a java class: field, constructor, or method.
@@ -57,8 +56,8 @@ public abstract class MemberDocImpl
     /**
      * constructor.
      */
-    public MemberDocImpl(DocEnv env, Symbol sym, String doc, JCTree tree, Position.LineMap lineMap) {
-        super(env, sym, doc, tree, lineMap);
+    public MemberDocImpl(DocEnv env, Symbol sym, TreePath treePath) {
+        super(env, sym, treePath);
     }
 
     /**

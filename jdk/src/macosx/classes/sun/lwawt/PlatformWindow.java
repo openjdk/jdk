@@ -97,17 +97,6 @@ public interface PlatformWindow {
      */
     public SurfaceData replaceSurfaceData();
 
-    /*
-     * Creates a new image to serve as a back buffer.
-     */
-    public Image createBackBuffer();
-
-    /*
-     * Move the given part of the back buffer to the front buffer.
-     */
-    public void flip(int x1, int y1, int x2, int y2,
-                     BufferCapabilities.FlipContents flipAction);
-
     public void setModalBlocked(boolean blocked);
 
     public void toFront();
@@ -162,4 +151,6 @@ public interface PlatformWindow {
     public long getLayerPtr();
 
     public LWWindowPeer getPeer();
+
+    public boolean isUnderMouse();
 }

@@ -302,7 +302,7 @@ define SetupNativeCompilation
     endif
 
     ifneq (,$$($1_DEBUG_SYMBOLS))	
-        ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+        ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
             # Programs don't get the debug symbols added in the old build. It's not clear if
             # this is intentional.
             ifeq ($$($1_PROGRAM),)
@@ -394,7 +394,7 @@ define SetupNativeCompilation
         endif
 
         ifneq (,$$($1_DEBUG_SYMBOLS))
-            ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+            ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
                 ifeq ($(OPENJDK_TARGET_OS), windows)
                     $1_EXTRA_LDFLAGS+="-pdb:$$($1_OBJECT_DIR)/$$($1_LIBRARY).pdb" \
 				      "-map:$$($1_OBJECT_DIR)/$$($1_LIBRARY).map"
@@ -429,7 +429,7 @@ define SetupNativeCompilation
                 endif # Touch to not retrigger rule on rebuild
 			$(TOUCH) $$@
 
-                ifeq ($(ZIP_DEBUGINFO_FILES), 1)
+                ifeq ($(ZIP_DEBUGINFO_FILES), true)
                     $1 += $$($1_OUTPUT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).diz
 
                     ifeq ($(OPENJDK_TARGET_OS), windows)
@@ -472,7 +472,7 @@ define SetupNativeCompilation
     ifneq (,$$($1_PROGRAM))
         # A executable binary has been specified, setup the target for it.
         ifneq (,$$($1_DEBUG_SYMBOLS))
-            ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+            ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
                 ifeq ($(OPENJDK_TARGET_OS), windows)
                     $1_EXTRA_LDFLAGS+="-pdb:$$($1_OBJECT_DIR)/$$($1_PROGRAM).pdb" \
 				      "-map:$$($1_OBJECT_DIR)/$$($1_PROGRAM).map"
@@ -507,7 +507,7 @@ define SetupNativeCompilation
                 endif
 			$(TOUCH) $$@
 
-                ifeq ($(ZIP_DEBUGINFO_FILES), 1)
+                ifeq ($(ZIP_DEBUGINFO_FILES), true)
                     $1 += $$($1_OUTPUT_DIR)/$$($1_PROGRAM).diz
 
                     ifeq ($(OPENJDK_TARGET_OS), windows)

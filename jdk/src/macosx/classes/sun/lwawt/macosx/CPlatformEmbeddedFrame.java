@@ -25,19 +25,13 @@
 
 package sun.lwawt.macosx;
 
-import sun.lwawt.PlatformWindow;
-import sun.lwawt.LWWindowPeer;
-
-import sun.java2d.opengl.CGLLayer;
-import sun.java2d.SurfaceData;
-
-import sun.awt.CGraphicsConfig;
-import sun.awt.CGraphicsDevice;
-import sun.awt.CausedFocusEvent;
-
 import java.awt.*;
-import java.awt.BufferCapabilities.FlipContents;
-
+import sun.awt.CausedFocusEvent;
+import sun.java2d.SurfaceData;
+import sun.java2d.opengl.CGLLayer;
+import sun.lwawt.LWWindowPeer;
+import sun.lwawt.LWWindowPeer.PeerType;
+import sun.lwawt.PlatformWindow;
 import sun.util.logging.PlatformLogger;
 
 /*
@@ -113,22 +107,6 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
     }
 
     @Override
-    public Image createBackBuffer() {
-        Rectangle r = peer.getBounds();
-        Image im = null;
-        if (!r.isEmpty()) {
-            int transparency = peer.isTranslucent() ? Transparency.TRANSLUCENT : Transparency.OPAQUE;
-            im = peer.getGraphicsConfiguration().createCompatibleImage(r.width, r.height, transparency);
-        }
-        return im;
-    }
-
-    @Override
-    public void flip(int x1, int y1, int x2, int y2, FlipContents flipAction) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    @Override
     public void setVisible(boolean visible) {}
 
     @Override
@@ -153,6 +131,7 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
 
     // This method should be properly implemented for applets.
     // It returns null just as a stub.
+    @Override
     public PlatformWindow getTopmostPlatformWindowUnderMouse() { return null; }
 
     @Override
@@ -211,4 +190,13 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
 
     @Override
     public void setModalBlocked(boolean blocked) {}
+
+    /*
+     * The method could not be implemented due to CALayer restrictions.
+     * The exeption enforce clients not to use it.
+     */
+    @Override
+    public boolean isUnderMouse() {
+        throw new RuntimeException("Not implemented");
+    }
 }

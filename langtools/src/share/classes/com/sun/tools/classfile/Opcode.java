@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,18 +246,18 @@ public enum Opcode {
     // impdep 0xff: Picojava priv
 
     // wide opcodes
-    ILOAD_W(0xc415, WIDE_CPREF_W),
-    LLOAD_W(0xc416, WIDE_CPREF_W),
-    FLOAD_W(0xc417, WIDE_CPREF_W),
-    DLOAD_W(0xc418, WIDE_CPREF_W),
-    ALOAD_W(0xc419, WIDE_CPREF_W),
-    ISTORE_W(0xc436, WIDE_CPREF_W),
-    LSTORE_W(0xc437, WIDE_CPREF_W),
-    FSTORE_W(0xc438, WIDE_CPREF_W),
-    DSTORE_W(0xc439, WIDE_CPREF_W),
-    ASTORE_W(0xc43a, WIDE_CPREF_W),
-    IINC_W(0xc484, WIDE_CPREF_W_SHORT),
-    RET_W(0xc4a9, WIDE_CPREF_W),
+    ILOAD_W(0xc415, WIDE_LOCAL),
+    LLOAD_W(0xc416, WIDE_LOCAL),
+    FLOAD_W(0xc417, WIDE_LOCAL),
+    DLOAD_W(0xc418, WIDE_LOCAL),
+    ALOAD_W(0xc419, WIDE_LOCAL),
+    ISTORE_W(0xc436, WIDE_LOCAL),
+    LSTORE_W(0xc437, WIDE_LOCAL),
+    FSTORE_W(0xc438, WIDE_LOCAL),
+    DSTORE_W(0xc439, WIDE_LOCAL),
+    ASTORE_W(0xc43a, WIDE_LOCAL),
+    IINC_W(0xc484, WIDE_LOCAL_SHORT),
+    RET_W(0xc4a9, WIDE_LOCAL),
 
     // PicoJava nonpriv instructions
     LOAD_UBYTE(PICOJAVA, 0xfe00),
@@ -448,10 +448,10 @@ public enum Opcode {
 
     }
 
-    private static Opcode[] stdOpcodes = new Opcode[256];
-    private static Opcode[] wideOpcodes = new Opcode[256];
-    private static Opcode[] nonPrivOpcodes = new Opcode[256];
-    private static Opcode[] privOpcodes = new Opcode[256];
+    private static final Opcode[] stdOpcodes = new Opcode[256];
+    private static final Opcode[] wideOpcodes = new Opcode[256];
+    private static final Opcode[] nonPrivOpcodes = new Opcode[256];
+    private static final Opcode[] privOpcodes = new Opcode[256];
     static {
         for (Opcode o: values())
             getOpcodeBlock(o.opcode >> 8)[o.opcode & 0xff] = o;

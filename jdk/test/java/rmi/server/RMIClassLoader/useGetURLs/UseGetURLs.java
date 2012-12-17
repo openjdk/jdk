@@ -30,8 +30,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build UseGetURLs Dummy
+ * @build TestLibrary Dummy
  * @run main/othervm/policy=security.policy/timeout=120 UseGetURLs
  */
 

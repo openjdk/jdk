@@ -27,7 +27,6 @@
  * ActivationGroupDesc.CommandEnvironment
  * @author  Ann Wollrath
  *
- * @build NullOptions
  * @run main/othervm/timeout=240 NullOptions
  */
 

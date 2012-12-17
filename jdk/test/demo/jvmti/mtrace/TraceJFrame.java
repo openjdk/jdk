@@ -32,21 +32,26 @@
  * @run main TraceJFrame JFrameCreateTime
  */
 
+import java.awt.GraphicsEnvironment;
+
 public class TraceJFrame {
-
     public static void main(String args[]) throws Exception {
-        DemoRun demo;
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
+            System.out.println("JFrame test was skipped due to headless mode");
+        } else {
+            DemoRun demo;
 
-        /* Run demo that uses JVMTI mtrace agent (no options) */
-        demo = new DemoRun("mtrace", "" /* options to mtrace */ );
-        demo.runit(args[0]);
+            /* Run demo that uses JVMTI mtrace agent (no options) */
+            demo = new DemoRun("mtrace", "" /* options to mtrace */ );
+            demo.runit(args[0]);
 
-        /* Make sure patterns in output look ok */
-        if (demo.output_contains("ERROR")) {
-            throw new RuntimeException("Test failed - ERROR seen in output");
+            /* Make sure patterns in output look ok */
+            if (demo.output_contains("ERROR")) {
+                throw new RuntimeException("Test failed - ERROR seen in output");
+            }
+
+            /* Must be a pass. */
+            System.out.println("Test passed - cleanly terminated");
         }
-
-        /* Must be a pass. */
-        System.out.println("Test passed - cleanly terminated");
     }
 }

@@ -380,6 +380,31 @@ md_ntohl(unsigned l)
     return ntohl(l);
 }
 
+static void dll_build_name(char* buffer, size_t buflen,
+                           const char* pname, const char* fname) {
+    // Loosely based on os_solaris.cpp
+
+      char *pathname = (char *)pname;
+      while (strlen(pathname) > 0) {
+          char *p = strchr(pathname, ':');
+          if (p == NULL) {
+              p = pathname + strlen(pathname);
+          }
+          /* check for NULL path */
+          if (p == pathname) {
+              continue;
+          }
+          (void)snprintf(buffer, buflen, "%.*s/lib%s" JNI_LIB_SUFFIX,
+                         (p - pathname), pathname, fname);
+
+          if (access(buffer, F_OK) == 0) {
+            break;
+          }
+          pathname = p + 1;
+          *buffer = '\0';
+      }
+}
+
 /* Create the actual fill filename for a dynamic library.  */
 void
 md_build_library_name(char *holder, int holderlen, char *pname, char *fname)
@@ -389,9 +414,9 @@ md_build_library_name(char *holder, int holderlen, char *pname, char *fname)
     /* Length of options directory location. */
     pnamelen = pname ? strlen(pname) : 0;
 
+    *holder = '\0';
     /* Quietly truncate on buffer overflow.  Should be an error. */
     if (pnamelen + (int)strlen(fname) + 10 > holderlen) {
-        *holder = '\0';
         return;
     }
 
@@ -399,7 +424,7 @@ md_build_library_name(char *holder, int holderlen, char *pname, char *fname)
     if (pnamelen == 0) {
         (void)snprintf(holder, holderlen, "lib%s" JNI_LIB_SUFFIX, fname);
     } else {
-        (void)snprintf(holder, holderlen, "%s/lib%s" JNI_LIB_SUFFIX, pname, fname);
+      dll_build_name(holder, holderlen, pname, fname);
     }
 }
 

@@ -68,8 +68,8 @@ if [ ! -x ${LIBUMEM} ]; then
 fi
 
 BADFILE=newbadjar.jar
-${JAVA_EXE} -version
-${JAVA_EXE} -cp ${TESTCLASSES} CreateBadJar ${BADFILE} "META-INF/MANIFEST.MF"
+${JAVA_EXE} ${TESTVMOPTS} -version
+${JAVA_EXE} ${TESTVMOPTS} -cp ${TESTCLASSES} CreateBadJar ${BADFILE} "META-INF/MANIFEST.MF"
 LD_PRELOAD=${LIBUMEM} ${JAVA_EXE} -jar ${BADFILE} > test.out 2>&1
 
 grep "Invalid or corrupt jarfile" test.out

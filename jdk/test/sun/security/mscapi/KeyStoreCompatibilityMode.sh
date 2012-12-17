@@ -43,15 +43,15 @@ case "$OS" in
 	${TESTJAVA}/bin/javac -d . ${TESTSRC}\\KeyStoreCompatibilityMode.java
 
     # mode implicitly enabled
-	${TESTJAVA}/bin/java KeyStoreCompatibilityMode
+	${TESTJAVA}/bin/java ${TESTVMOPTS} KeyStoreCompatibilityMode
 
     # mode explicitly enabled
-	${TESTJAVA}/bin/java \
+	${TESTJAVA}/bin/java ${TESTVMOPTS} \
 	    -Dsun.security.mscapi.keyStoreCompatibilityMode="true" \
 	    KeyStoreCompatibilityMode
 
     # mode explicitly disabled
-	${TESTJAVA}/bin/java \
+	${TESTJAVA}/bin/java ${TESTVMOPTS} \
 	    -Dsun.security.mscapi.keyStoreCompatibilityMode="false" \
 	    KeyStoreCompatibilityMode -disable
 

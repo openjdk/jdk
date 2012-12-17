@@ -164,11 +164,12 @@ public class SnmpIndex implements Serializable {
      *
      * @return A string representation of the index.
      */
+    @Override
     public String toString() {
-        StringBuffer msg= new StringBuffer();
-        for(Enumeration e= oids.elements(); e.hasMoreElements(); ) {
-            SnmpOid val= (SnmpOid) e.nextElement();
-            msg.append( "//" + val.toString());
+        final StringBuilder msg= new StringBuilder();
+        for(Enumeration<SnmpOid> e= oids.elements(); e.hasMoreElements(); ) {
+            SnmpOid val= e.nextElement();
+            msg.append("//").append( val.toString());
         }
         return msg.toString();
     }
@@ -180,7 +181,7 @@ public class SnmpIndex implements Serializable {
      * The list of OIDs.
      * @serial
      */
-    private Vector<SnmpOid> oids = new Vector<SnmpOid>();
+    private Vector<SnmpOid> oids = new Vector<>();
 
     /**
      * The number of elements in the index.

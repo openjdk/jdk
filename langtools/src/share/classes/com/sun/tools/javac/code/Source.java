@@ -87,7 +87,7 @@ public enum Source {
 
     public final String name;
 
-    private static Map<String,Source> tab = new HashMap<String,Source>();
+    private static final Map<String,Source> tab = new HashMap<String,Source>();
     static {
         for (Source s : values()) {
             tab.put(s.name, s);
@@ -213,6 +213,9 @@ public enum Source {
         return compareTo(JDK1_8) >= 0;
     }
     public boolean allowRepeatedAnnotations() {
+        return compareTo(JDK1_8) >= 0;
+    }
+    public boolean allowIntersectionTypesInCast() {
         return compareTo(JDK1_8) >= 0;
     }
     public static SourceVersion toSourceVersion(Source source) {

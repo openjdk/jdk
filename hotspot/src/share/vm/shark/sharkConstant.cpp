@@ -37,10 +37,8 @@ SharkConstant* SharkConstant::for_ldc(ciBytecodeStream *iter) {
   ciType *type = NULL;
   if (constant.basic_type() == T_OBJECT) {
     ciEnv *env = ciEnv::current();
-    if (constant.as_object()->is_klass())
-      type = env->Class_klass();
-    else
-      type = env->String_klass();
+    assert(constant.as_object()->klass() == env->String_klass() || constant.as_object()->klass() == env->Class_klass(), "should be");
+    type = constant.as_object()->klass();
   }
   return new SharkConstant(constant, type);
 }
@@ -108,17 +106,16 @@ SharkConstant::SharkConstant(ciConstant constant, ciType *type) {
   // objects (which differ between ldc* and get*, thanks!)
   ciObject *object = constant.as_object();
   assert(type != NULL, "shouldn't be");
-  if (object->is_klass()) {
-    // The constant returned for a klass is the ciKlass
-    // for the entry, but we want the java_mirror.
-    ciKlass *klass = object->as_klass();
-    if (!klass->is_loaded()) {
+
+  if ((! object->is_null_object()) && object->klass() == ciEnv::current()->Class_klass()) {
+    ciKlass *klass = object->klass();
+    if (! klass->is_loaded()) {
       _is_loaded = false;
       return;
     }
-    object = klass->java_mirror();
   }
-  if (object->is_null_object() || !object->can_be_constant()) {
+
+  if (object->is_null_object() || ! object->can_be_constant() || ! object->is_loaded()) {
     _is_loaded = false;
     return;
   }

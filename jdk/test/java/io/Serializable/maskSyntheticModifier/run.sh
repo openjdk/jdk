@@ -41,5 +41,5 @@ fi
 set -ex
 cp ${TESTSRC}/Foo.class .
 ${TESTJAVA}/bin/javac -d . ${TESTSRC}/Test.java
-${TESTJAVA}/bin/java Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} Test
 rm -f *.class

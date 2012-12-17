@@ -247,6 +247,11 @@ public interface Tree {
         UNION_TYPE(UnionTypeTree.class),
 
         /**
+         * Used for instances of {@link IntersectionTypeTree}.
+         */
+        INTERSECTION_TYPE(IntersectionTypeTree.class),
+
+        /**
          * Used for instances of {@link TypeCastTree}.
          */
         TYPE_CAST(TypeCastTree.class),

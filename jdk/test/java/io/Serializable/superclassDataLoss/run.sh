@@ -46,5 +46,5 @@ cp cb1.jar cb2.jar
 rm -f A.class B.class
 
 ${TESTJAVA}/bin/javac -d . ${TESTSRC}/Test.java
-${TESTJAVA}/bin/java Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} Test
 rm -f *.class *.jar

@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,15 +22,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package java.util.function;
 
-// key: compiler.err.prob.found.req
-// key: compiler.misc.invalid.generic.desc.in.functional.intf
+/**
+ * Apply a function to the input object yielding an appropriate {@code double}
+ * value; this is the {@code double}-bearing specialization for {@link Function}.
+ *
+ * @param <T> the type of input objects to the function
+ *
+ * @since 1.8
+ */
+public interface DoubleFunction<T> {
 
-class InvalidGenericDescInFunctionalIntf {
-
-    interface SAM {
-        <Z> void m();
-    }
-
-    SAM s = x-> { };
+    /**
+     * Apply a function to the input object yielding an appropriate
+     * {@code double} value.
+     *
+     * @param t the input object
+     * @return the function result value
+     */
+    public double applyAsDouble(T t);
 }
