@@ -64,8 +64,10 @@
 
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = NULL;
 
-ClassLoaderData::ClassLoaderData(Handle h_class_loader) : _class_loader(h_class_loader()),
-  _metaspace(NULL), _unloading(false), _keep_alive(false), _klasses(NULL),
+ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous) :
+  _class_loader(h_class_loader()),
+  _is_anonymous(is_anonymous), _keep_alive(is_anonymous), // initially
+  _metaspace(NULL), _unloading(false), _klasses(NULL),
   _claimed(0), _jmethod_ids(NULL), _handles(NULL), _deallocate_list(NULL),
   _next(NULL), _dependencies(NULL),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true)) {
@@ -257,13 +259,6 @@ void ClassLoaderData::remove_class(Klass* scratch_class) {
   ShouldNotReachHere();   // should have found this class!!
 }
 
-
-bool ClassLoaderData::is_anonymous() const {
-  Klass* k = _klasses;
-  return (_keep_alive || (k != NULL && k->oop_is_instance() &&
-          InstanceKlass::cast(k)->is_anonymous()));
-}
-
 void ClassLoaderData::unload() {
   _unloading = true;
 
@@ -396,8 +391,7 @@ void ClassLoaderData::free_deallocate_list() {
 // These anonymous class loaders are to contain classes used for JSR292
 ClassLoaderData* ClassLoaderData::anonymous_class_loader_data(oop loader, TRAPS) {
   // Add a new class loader data to the graph.
-  ClassLoaderData* cld = ClassLoaderDataGraph::add(NULL, loader, CHECK_NULL);
-  return cld;
+  return ClassLoaderDataGraph::add(NULL, loader, CHECK_NULL);
 }
 
 const char* ClassLoaderData::loader_name() {
@@ -475,7 +469,9 @@ ClassLoaderData* ClassLoaderDataGraph::add(ClassLoaderData** cld_addr, Handle lo
   // Create one.
   ClassLoaderData* *list_head = &_head;
   ClassLoaderData* next = _head;
-  ClassLoaderData* cld = new ClassLoaderData(loader);
+
+  bool is_anonymous = (cld_addr == NULL);
+  ClassLoaderData* cld = new ClassLoaderData(loader, is_anonymous);
 
   if (cld_addr != NULL) {
     // First, Atomically set it
@@ -485,10 +481,6 @@ ClassLoaderData* ClassLoaderDataGraph::add(ClassLoaderData** cld_addr, Handle lo
       // Returns the data.
       return old;
     }
-  } else {
-    // Disallow unloading for this CLD during initialization if there is no
-    // class_loader oop to link this to.
-    cld->set_keep_alive(true);
   }
 
   // We won the race, and therefore the task of adding the data to the list of
