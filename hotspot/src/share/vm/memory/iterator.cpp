@@ -30,6 +30,10 @@ void KlassToOopClosure::do_klass(Klass* k) {
   k->oops_do(_oop_closure);
 }
 
+void CLDToOopClosure::do_cld(ClassLoaderData* cld) {
+  cld->oops_do(_oop_closure, &_klass_closure, _must_claim_cld);
+}
+
 void ObjectToOopClosure::do_object(oop obj) {
   obj->oop_iterate(_cl);
 }

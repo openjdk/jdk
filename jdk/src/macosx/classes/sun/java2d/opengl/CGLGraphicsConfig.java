@@ -27,7 +27,6 @@ package sun.java2d.opengl;
 
 import java.awt.AWTException;
 import java.awt.BufferCapabilities;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -48,13 +47,10 @@ import java.awt.image.WritableRaster;
 
 import sun.awt.CGraphicsConfig;
 import sun.awt.CGraphicsDevice;
-import sun.awt.TextureSizeConstraining;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
-import sun.awt.image.SurfaceManager;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
-import sun.java2d.SunGraphics2D;
 import sun.java2d.Surface;
 import sun.java2d.SurfaceData;
 import sun.java2d.opengl.OGLContext.OGLContextCaps;
@@ -63,18 +59,19 @@ import sun.java2d.pipe.hw.AccelTypedVolatileImage;
 import sun.java2d.pipe.hw.ContextCapabilities;
 import static sun.java2d.opengl.OGLSurfaceData.*;
 import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
-import sun.java2d.opengl.CGLSurfaceData.CGLVSyncOffScreenSurfaceData;
 import sun.java2d.pipe.hw.AccelDeviceEventListener;
 import sun.java2d.pipe.hw.AccelDeviceEventNotifier;
 
+import sun.lwawt.LWComponentPeer;
 import sun.lwawt.macosx.CPlatformView;
 
-public class CGLGraphicsConfig extends CGraphicsConfig
-    implements OGLGraphicsConfig, TextureSizeConstraining
+public final class CGLGraphicsConfig extends CGraphicsConfig
+    implements OGLGraphicsConfig
 {
-    //private static final int kOpenGLSwapInterval = RuntimeOptions.getCurrentOptions().OpenGLSwapInterval;
+    //private static final int kOpenGLSwapInterval =
+    // RuntimeOptions.getCurrentOptions().OpenGLSwapInterval;
     private static final int kOpenGLSwapInterval = 0; // TODO
-    protected static boolean cglAvailable;
+    private static boolean cglAvailable;
     private static ImageCapabilities imageCaps = new CGLImageCaps();
 
     private int pixfmt;
@@ -82,7 +79,7 @@ public class CGLGraphicsConfig extends CGraphicsConfig
     private long pConfigInfo;
     private ContextCapabilities oglCaps;
     private OGLContext context;
-    private Object disposerReferent = new Object();
+    private final Object disposerReferent = new Object();
 
     public static native int getDefaultPixFmt(int screennum);
     private static native boolean initCGL();
@@ -94,7 +91,7 @@ public class CGLGraphicsConfig extends CGraphicsConfig
         cglAvailable = initCGL();
     }
 
-    protected CGLGraphicsConfig(CGraphicsDevice device, int pixfmt,
+    private CGLGraphicsConfig(CGraphicsDevice device, int pixfmt,
                                 long configInfo, ContextCapabilities oglCaps)
     {
         super(device);
@@ -170,11 +167,13 @@ public class CGLGraphicsConfig extends CGraphicsConfig
      * Returns true if the provided capability bit is present for this config.
      * See OGLContext.java for a list of supported capabilities.
      */
-    public final boolean isCapPresent(int cap) {
+    @Override
+    public boolean isCapPresent(int cap) {
         return ((oglCaps.getCaps() & cap) != 0);
     }
 
-    public final long getNativeConfigInfo() {
+    @Override
+    public long getNativeConfigInfo() {
         return pConfigInfo;
     }
 
@@ -183,7 +182,8 @@ public class CGLGraphicsConfig extends CGraphicsConfig
      *
      * @see sun.java2d.pipe.hw.BufferedContextProvider#getContext
      */
-    public final OGLContext getContext() {
+    @Override
+    public OGLContext getContext() {
         return context;
     }
 
@@ -257,145 +257,83 @@ public class CGLGraphicsConfig extends CGraphicsConfig
         return ("CGLGraphicsConfig[dev="+screen+",pixfmt="+pixfmt+"]");
     }
 
-
-    /**
-     * The following methods are invoked from ComponentModel.java rather
-     * than having the Mac OS X-dependent implementations hardcoded in that
-     * class.  This way the appropriate actions are taken based on the peer's
-     * GraphicsConfig, whether it is a CGraphicsConfig or a
-     * CGLGraphicsConfig.
-     */
-
-    /**
-     * Creates a new SurfaceData that will be associated with the given
-     * LWWindowPeer.
-     */
     @Override
     public SurfaceData createSurfaceData(CPlatformView pView) {
         return CGLSurfaceData.createData(pView);
     }
 
-    /**
-     * Creates a new SurfaceData that will be associated with the given
-     * CGLLayer.
-     */
     @Override
     public SurfaceData createSurfaceData(CGLLayer layer) {
         return CGLSurfaceData.createData(layer);
     }
 
-    /**
-     * Creates a new hidden-acceleration image of the given width and height
-     * that is associated with the target Component.
-     */
     @Override
     public Image createAcceleratedImage(Component target,
                                         int width, int height)
     {
         ColorModel model = getColorModel(Transparency.OPAQUE);
-        WritableRaster wr =
-            model.createCompatibleWritableRaster(width, height);
+        WritableRaster wr = model.createCompatibleWritableRaster(width, height);
         return new OffScreenImage(target, model, wr,
                                   model.isAlphaPremultiplied());
     }
 
-    /**
-     * The following methods correspond to the multibuffering methods in
-     * CWindowPeer.java...
-     */
-
-    /**
-     * Attempts to create a OGL-based backbuffer for the given peer.  If
-     * the requested configuration is not natively supported, an AWTException
-     * is thrown.  Otherwise, if the backbuffer creation is successful, a
-     * value of 1 is returned.
-     */
     @Override
-    public long createBackBuffer(CPlatformView pView,
-                                 int numBuffers, BufferCapabilities caps)
-        throws AWTException
-    {
-        if (numBuffers > 2) {
-            throw new AWTException(
-                "Only double or single buffering is supported");
+    public void assertOperationSupported(final int numBuffers,
+                                         final BufferCapabilities caps)
+            throws AWTException {
+        // Assume this method is never called with numBuffers != 2, as 0 is
+        // unsupported, and 1 corresponds to a SingleBufferStrategy which
+        // doesn't depend on the peer. Screen is considered as a separate
+        // "buffer".
+        if (numBuffers != 2) {
+            throw new AWTException("Only double buffering is supported");
         }
-        BufferCapabilities configCaps = getBufferCapabilities();
+        final BufferCapabilities configCaps = getBufferCapabilities();
         if (!configCaps.isPageFlipping()) {
             throw new AWTException("Page flipping is not supported");
         }
         if (caps.getFlipContents() == BufferCapabilities.FlipContents.PRIOR) {
             throw new AWTException("FlipContents.PRIOR is not supported");
         }
-
-        // non-zero return value means backbuffer creation was successful
-        // (checked in CPlatformWindow.flip(), etc.)
-        return 1;
     }
 
-    /**
-     * Destroys the backbuffer object represented by the given handle value.
-     */
     @Override
-    public void destroyBackBuffer(long backBuffer) {
+    public Image createBackBuffer(final LWComponentPeer<?, ?> peer) {
+        final Rectangle r = peer.getBounds();
+        // It is possible for the component to have size 0x0, adjust it to
+        // be at least 1x1 to avoid IAE
+        final int w = Math.max(1, r.width);
+        final int h = Math.max(1, r.height);
+        final int transparency = peer.isTranslucent() ? Transparency.TRANSLUCENT
+                                                      : Transparency.OPAQUE;
+        return new SunVolatileImage(this, w, h, transparency, null);
     }
 
-    /**
-     * Creates a VolatileImage that essentially wraps the target Component's
-     * backbuffer (the provided backbuffer handle is essentially ignored).
-     */
     @Override
-    public VolatileImage createBackBufferImage(Component target,
-                                               long backBuffer)
-    {
-        return new SunVolatileImage(target,
-                                    target.getWidth(), target.getHeight(),
-                                    Boolean.TRUE);
-    }
-
-    /**
-     * Performs the native OGL flip operation for the given target Component.
-     */
-    @Override
-    public void flip(CPlatformView pView,
-                     Component target, VolatileImage xBackBuffer,
-                     int x1, int y1, int x2, int y2,
-                     BufferCapabilities.FlipContents flipAction)
-    {
-        if (flipAction == BufferCapabilities.FlipContents.COPIED) {
-            SurfaceManager vsm = SurfaceManager.getManager(xBackBuffer);
-            SurfaceData sd = vsm.getPrimarySurfaceData();
-
-            if (sd instanceof CGLVSyncOffScreenSurfaceData) {
-                CGLVSyncOffScreenSurfaceData vsd =
-                    (CGLVSyncOffScreenSurfaceData)sd;
-                SurfaceData bbsd = vsd.getFlipSurface();
-                Graphics2D bbg =
-                    new SunGraphics2D(bbsd, Color.black, Color.white, null);
-                try {
-                    bbg.drawImage(xBackBuffer, 0, 0, null);
-                } finally {
-                    bbg.dispose();
-                }
-            } else {
-                pView.drawImageOnPeer(xBackBuffer, x1, y1, x2, y2);
-                return;
-            }
-        } else if (flipAction == BufferCapabilities.FlipContents.PRIOR) {
-            // not supported by CGL...
-            return;
+    public void destroyBackBuffer(final Image backBuffer) {
+        if (backBuffer != null) {
+            backBuffer.flush();
         }
+    }
 
-        OGLSurfaceData.swapBuffers(pView.getAWTView());
-
+    @Override
+    public void flip(final LWComponentPeer<?, ?> peer, final Image backBuffer,
+                     final int x1, final int y1, final int x2, final int y2,
+                     final BufferCapabilities.FlipContents flipAction) {
+        final Graphics g = peer.getGraphics();
+        try {
+            g.drawImage(backBuffer, x1, y1, x2, y2, x1, y1, x2, y2, null);
+        } finally {
+            g.dispose();
+        }
         if (flipAction == BufferCapabilities.FlipContents.BACKGROUND) {
-            Graphics g = xBackBuffer.getGraphics();
+            final Graphics2D bg = (Graphics2D) backBuffer.getGraphics();
             try {
-                g.setColor(target.getBackground());
-                g.fillRect(0, 0,
-                           xBackBuffer.getWidth(),
-                           xBackBuffer.getHeight());
+                bg.setBackground(peer.getBackground());
+                bg.clearRect(0, 0, backBuffer.getWidth(null),
+                             backBuffer.getHeight(null));
             } finally {
-                g.dispose();
+                bg.dispose();
             }
         }
     }
@@ -429,15 +367,10 @@ public class CGLGraphicsConfig extends CGraphicsConfig
         return imageCaps;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see sun.java2d.pipe.hw.AccelGraphicsConfig#createCompatibleVolatileImage
-     */
-    public VolatileImage
-        createCompatibleVolatileImage(int width, int height,
-                                      int transparency, int type)
-    {
+    @Override
+    public VolatileImage createCompatibleVolatileImage(int width, int height,
+                                                       int transparency,
+                                                       int type) {
         if (type == FLIP_BACKBUFFER || type == WINDOW || type == UNDEFINED ||
             transparency == Transparency.BITMASK)
         {
@@ -473,15 +406,18 @@ public class CGLGraphicsConfig extends CGraphicsConfig
      *
      * @see sun.java2d.pipe.hw.AccelGraphicsConfig#getContextCapabilities
      */
+    @Override
     public ContextCapabilities getContextCapabilities() {
         return oglCaps;
     }
 
+    @Override
     public void addDeviceEventListener(AccelDeviceEventListener l) {
         int screen = getDevice().getCoreGraphicsScreen();
         AccelDeviceEventNotifier.addListener(l, screen);
     }
 
+    @Override
     public void removeDeviceEventListener(AccelDeviceEventListener l) {
         AccelDeviceEventNotifier.removeListener(l);
     }

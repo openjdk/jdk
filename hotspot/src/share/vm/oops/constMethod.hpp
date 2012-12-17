@@ -45,7 +45,7 @@
 // | constMethod_size                                     |
 // | interp_kind  | flags    | code_size                  |
 // | name index              | signature index            |
-// | method_idnum            | generic_signature_index    |
+// | method_idnum            | max_stack                  |
 // |------------------------------------------------------|
 // |                                                      |
 // | byte codes                                           |
@@ -55,26 +55,29 @@
 // |  (see class CompressedLineNumberReadStream)          |
 // |  (note that length is unknown until decompressed)    |
 // |  (access flags bit tells whether table is present)   |
-// |  (indexed from start of ConstMethod*)              |
+// |  (indexed from start of ConstMethod*)                |
 // |  (elements not necessarily sorted!)                  |
 // |------------------------------------------------------|
 // | localvariable table elements + length (length last)  |
 // |  (length is u2, elements are 6-tuples of u2)         |
 // |  (see class LocalVariableTableElement)               |
 // |  (access flags bit tells whether table is present)   |
-// |  (indexed from end of ConstMethod*)                |
+// |  (indexed from end of ConstMethod*)                  |
 // |------------------------------------------------------|
 // | exception table + length (length last)               |
 // |  (length is u2, elements are 4-tuples of u2)         |
 // |  (see class ExceptionTableElement)                   |
 // |  (access flags bit tells whether table is present)   |
-// |  (indexed from end of ConstMethod*)                |
+// |  (indexed from end of ConstMethod*)                  |
 // |------------------------------------------------------|
 // | checked exceptions elements + length (length last)   |
 // |  (length is u2, elements are u2)                     |
 // |  (see class CheckedExceptionElement)                 |
 // |  (access flags bit tells whether table is present)   |
-// |  (indexed from end of ConstMethod*)                |
+// |  (indexed from end of ConstMethod*)                  |
+// |------------------------------------------------------|
+// | generic signature index (u2)                         |
+// |  (indexed from start of constMethodOop)              |
 // |------------------------------------------------------|
 
 
@@ -118,7 +121,8 @@ private:
     _has_checked_exceptions = 2,
     _has_localvariable_table = 4,
     _has_exception_table = 8,
-    _is_overpass = 16
+    _has_generic_signature = 16,
+    _is_overpass = 32
   };
 
   // Bit vector of signature
@@ -145,7 +149,7 @@ private:
   u2                _method_idnum;               // unique identification number for the method within the class
                                                  // initially corresponds to the index into the methods array.
                                                  // but this may change with redefinition
-  u2                _generic_signature_index;    // Generic signature (index in constant pool, 0 if absent)
+  u2                _max_stack;                  // Maximum number of entries on the expression stack
 
 
   // Constructor
@@ -154,6 +158,7 @@ private:
               int localvariable_table_length,
               int exception_table_length,
               int checked_exceptions_length,
+              u2  generic_signature_index,
               MethodType is_overpass,
               int size);
 public:
@@ -164,16 +169,21 @@ public:
                                int localvariable_table_length,
                                int exception_table_length,
                                int checked_exceptions_length,
+                               u2  generic_signature_index,
                                MethodType mt,
                                TRAPS);
 
   bool is_constMethod() const { return true; }
 
   // Inlined tables
-  void set_inlined_tables_length(int checked_exceptions_len,
+  void set_inlined_tables_length(u2  generic_signature_index,
+                                 int checked_exceptions_len,
                                  int compressed_line_number_size,
                                  int localvariable_table_len,
                                  int exception_table_len);
+
+  bool has_generic_signature() const
+    { return (_flags & _has_generic_signature) != 0; }
 
   bool has_linenumber_table() const
     { return (_flags & _has_linenumber_table) != 0; }
@@ -252,8 +262,18 @@ public:
   void set_signature_index(int index)            { _signature_index = index; }
 
   // generics support
-  int generic_signature_index() const            { return _generic_signature_index; }
-  void set_generic_signature_index(int index)    { _generic_signature_index = index; }
+  int generic_signature_index() const            {
+    if (has_generic_signature()) {
+      return *generic_signature_index_addr();
+    } else {
+      return 0;
+    }
+  }
+  void set_generic_signature_index(u2 index)    {
+    assert(has_generic_signature(), "");
+    u2* addr = generic_signature_index_addr();
+    *addr = index;
+  }
 
   // Sizing
   static int header_size() {
@@ -264,7 +284,8 @@ public:
   static int size(int code_size, int compressed_line_number_size,
                          int local_variable_table_length,
                          int exception_table_length,
-                         int checked_exceptions_length);
+                         int checked_exceptions_length,
+                         u2  generic_signature_index);
 
   int size() const                    { return _constMethod_size;}
   void set_constMethod_size(int size)     { _constMethod_size = size; }
@@ -281,6 +302,7 @@ public:
   // linenumber table - note that length is unknown until decompression,
   // see class CompressedLineNumberReadStream.
   u_char* compressed_linenumber_table() const;         // not preserved by gc
+  u2* generic_signature_index_addr() const;
   u2* checked_exceptions_length_addr() const;
   u2* localvariable_table_length_addr() const;
   u2* exception_table_length_addr() const;
@@ -314,11 +336,18 @@ public:
   static ByteSize constants_offset()
                             { return byte_offset_of(ConstMethod, _constants); }
 
+  static ByteSize max_stack_offset()
+                            { return byte_offset_of(ConstMethod, _max_stack); }
+
   // Unique id for the method
   static const u2 MAX_IDNUM;
   static const u2 UNSET_IDNUM;
   u2 method_idnum() const                        { return _method_idnum; }
   void set_method_idnum(u2 idnum)                { _method_idnum = idnum; }
+
+  // max stack
+  int  max_stack() const                         { return _max_stack; }
+  void set_max_stack(int size)                   { _max_stack = size; }
 
   // Deallocation for RedefineClasses
   void deallocate_contents(ClassLoaderData* loader_data);

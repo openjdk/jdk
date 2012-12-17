@@ -371,6 +371,10 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return scan(node.getTypeAlternatives(), p);
     }
 
+    public R visitIntersectionType(IntersectionTypeTree node, P p) {
+        return scan(node.getBounds(), p);
+    }
+
     public R visitTypeParameter(TypeParameterTree node, P p) {
         R r = scan(node.getBounds(), p);
         return r;

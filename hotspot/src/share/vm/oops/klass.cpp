@@ -373,29 +373,22 @@ void Klass::append_to_sibling_list() {
   debug_only(verify();)
 }
 
-void Klass::remove_from_sibling_list() {
-  // remove receiver from sibling list
-  InstanceKlass* super = superklass();
-  assert(super != NULL || this == SystemDictionary::Object_klass(), "should have super");
-  if (super == NULL) return;        // special case: class Object
-  if (super->subklass() == this) {
-    // first subklass
-    super->set_subklass(_next_sibling);
-  } else {
-    Klass* sib = super->subklass();
-    while (sib->next_sibling() != this) {
-      sib = sib->next_sibling();
-    };
-    sib->set_next_sibling(_next_sibling);
-  }
-}
-
 bool Klass::is_loader_alive(BoolObjectClosure* is_alive) {
   assert(is_metadata(), "p is not meta-data");
   assert(ClassLoaderDataGraph::contains((address)this), "is in the metaspace");
+
+#ifdef ASSERT
   // The class is alive iff the class loader is alive.
   oop loader = class_loader();
-  return (loader == NULL) || is_alive->do_object_b(loader);
+  bool loader_alive = (loader == NULL) || is_alive->do_object_b(loader);
+#endif // ASSERT
+
+  // The class is alive if it's mirror is alive (which should be marked if the
+  // loader is alive) unless it's an anoymous class.
+  bool mirror_alive = is_alive->do_object_b(java_mirror());
+  assert(!mirror_alive || loader_alive, "loader must be alive if the mirror is"
+                        " but not the other way around with anonymous classes");
+  return mirror_alive;
 }
 
 void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
@@ -416,10 +409,10 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
     Klass* sub = current->subklass_oop();
     while (sub != NULL && !sub->is_loader_alive(is_alive)) {
 #ifndef PRODUCT
-        if (TraceClassUnloading && WizardMode) {
-          ResourceMark rm;
+      if (TraceClassUnloading && WizardMode) {
+        ResourceMark rm;
         tty->print_cr("[Unlinking class (subclass) %s]", sub->external_name());
-        }
+      }
 #endif
       sub = sub->next_sibling_oop();
     }
@@ -431,16 +424,16 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
     // Find and set the first alive sibling
     Klass* sibling = current->next_sibling_oop();
     while (sibling != NULL && !sibling->is_loader_alive(is_alive)) {
-          if (TraceClassUnloading && WizardMode) {
-            ResourceMark rm;
+      if (TraceClassUnloading && WizardMode) {
+        ResourceMark rm;
         tty->print_cr("[Unlinking class (sibling) %s]", sibling->external_name());
-          }
-      sibling = sibling->next_sibling_oop();
       }
+      sibling = sibling->next_sibling_oop();
+    }
     current->set_next_sibling(sibling);
     if (sibling != NULL) {
       stack.push(sibling);
-}
+    }
 
     // Clean the implementors list and method data.
     if (current->oop_is_instance()) {
@@ -554,7 +547,11 @@ const char* Klass::external_name() const {
     InstanceKlass* ik = (InstanceKlass*) this;
     if (ik->is_anonymous()) {
       assert(EnableInvokeDynamic, "");
-      intptr_t hash = ik->java_mirror()->identity_hash();
+      intptr_t hash = 0;
+      if (ik->java_mirror() != NULL) {
+        // java_mirror might not be created yet, return 0 as hash.
+        hash = ik->java_mirror()->identity_hash();
+      }
       char     hash_buf[40];
       sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
       size_t   hash_len = strlen(hash_buf);

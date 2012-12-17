@@ -25,6 +25,7 @@
 package java.lang;
 
 import java.io.*;
+import java.lang.annotation.Annotation;
 import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.StringTokenizer;
@@ -1194,6 +1195,9 @@ public final class System {
             }
             public AnnotationType getAnnotationType(Class<?> klass) {
                 return klass.getAnnotationType();
+            }
+            public <A extends Annotation> A getDirectDeclaredAnnotation(Class<?> klass, Class<A> anno) {
+                return klass.getDirectDeclaredAnnotation(anno);
             }
             public <E extends Enum<E>>
                     E[] getEnumConstantsShared(Class<E> klass) {

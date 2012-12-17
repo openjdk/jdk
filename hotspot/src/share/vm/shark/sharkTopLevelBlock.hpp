@@ -290,7 +290,7 @@ class SharkTopLevelBlock : public SharkBlock {
                           int           exception_action) {
     decache_for_VM_call();
     stack()->CreateSetLastJavaFrame();
-    llvm::CallInst *res = builder()->CreateCall(callee, args_start, args_end);
+    llvm::CallInst *res = builder()->CreateCall(callee, llvm::makeArrayRef(args_start, args_end));
     stack()->CreateResetLastJavaFrame();
     cache_after_VM_call();
     if (exception_action & EAM_CHECK) {

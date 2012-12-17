@@ -129,10 +129,6 @@ static bool isInAquaSession() {
     return true;
 }
 
-static bool isXDisplayDefined() {
-    return getenv("DISPLAY") != NULL;
-}
-
 PreferredToolkit getPreferredToolkit() {
     static PreferredToolkit pref = unset;
     if (pref != unset) return pref;
@@ -141,7 +137,6 @@ PreferredToolkit getPreferredToolkit() {
     if (prefFromEnv != unset) return pref = prefFromEnv;
 
     if (isInAquaSession()) return pref = CToolkit;
-    if (isXDisplayDefined()) return pref = XToolkit;
     return pref = HToolkit;
 }
 
