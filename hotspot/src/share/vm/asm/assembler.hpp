@@ -277,9 +277,6 @@ class AbstractAssembler : public ResourceObj  {
   };
 #endif
 
-  // Label functions
-  void print(Label& L);
-
  public:
 
   // Creation
@@ -441,15 +438,6 @@ class AbstractAssembler : public ResourceObj  {
    */
   void pd_patch_instruction(address branch, address target);
 
-#ifndef PRODUCT
-  /**
-   * Platform-dependent method of printing an instruction that needs to be
-   * patched.
-   *
-   * @param branch the instruction to be patched in the buffer.
-   */
-  static void pd_print_patched_instruction(address branch);
-#endif // PRODUCT
 };
 
 #ifdef TARGET_ARCH_x86
