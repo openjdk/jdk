@@ -448,7 +448,7 @@ public class Main {
                             try {
                                 if (task == null)
                                     task = JavacTask.instance(pEnv);
-                                plugin.call(task, p.tail.toArray(new String[p.tail.size()]));
+                                plugin.init(task, p.tail.toArray(new String[p.tail.size()]));
                             } catch (Throwable ex) {
                                 if (apiMode)
                                     throw new RuntimeException(ex);
