@@ -54,9 +54,9 @@ abstract public class Enumerated  implements Serializable {
     * @exception IllegalArgumentException One of the arguments passed to the method is illegal or inappropriate.
    */
   public Enumerated() throws IllegalArgumentException {
-    Enumeration e =getIntTable().keys() ;
+    Enumeration<Integer> e =getIntTable().keys();
     if (e.hasMoreElements()) {
-      value = ((Integer)e.nextElement()).intValue() ;
+      value = e.nextElement().intValue() ;
     }
     else {
       throw new IllegalArgumentException() ;
@@ -100,7 +100,7 @@ abstract public class Enumerated  implements Serializable {
    *  to the method is illegal or inappropriate.
    */
   public Enumerated(String valueString) throws IllegalArgumentException {
-    Integer index = (Integer)getStringTable().get(valueString) ;
+    Integer index = getStringTable().get(valueString) ;
     if (index == null) {
       throw new IllegalArgumentException() ;
     }
@@ -127,7 +127,7 @@ abstract public class Enumerated  implements Serializable {
    * @return An enumeration of Integer instances
    */
 
-  public Enumeration valueIndexes() {
+  public Enumeration<Integer> valueIndexes() {
     return getIntTable().keys() ;
   }
 
@@ -138,7 +138,7 @@ abstract public class Enumerated  implements Serializable {
    * @return An enumeration of String instances
    */
 
-  public Enumeration valueStrings() {
+  public Enumeration<String> valueStrings() {
     return getStringTable().keys() ;
   }
 
@@ -153,6 +153,7 @@ abstract public class Enumerated  implements Serializable {
    *
    * @return True if this and obj are the same; false otherwise
    */
+  @Override
   public boolean equals(Object obj) {
 
     return ((obj != null) &&
@@ -166,6 +167,7 @@ abstract public class Enumerated  implements Serializable {
    *
    * @return A hash code value for this object.
    */
+  @Override
   public int hashCode() {
     String hashString = getClass().getName() + String.valueOf(value) ;
     return hashString.hashCode() ;
@@ -177,9 +179,9 @@ abstract public class Enumerated  implements Serializable {
    *
    * @return The string for for this object.
    */
-
+  @Override
   public String toString() {
-    return (String)getIntTable().get(new Integer(value)) ;
+    return getIntTable().get(new Integer(value)) ;
   }
 
 
@@ -193,7 +195,7 @@ abstract public class Enumerated  implements Serializable {
    * @return An hashtable for read-only purpose
    */
 
-  protected abstract Hashtable getIntTable() ;
+  protected abstract Hashtable<Integer,String>  getIntTable() ;
 
 
 
@@ -207,12 +209,12 @@ abstract public class Enumerated  implements Serializable {
    * @return An hashtable for read-only purpose
    */
 
-  protected abstract Hashtable getStringTable() ;
+  protected abstract Hashtable<String,Integer> getStringTable() ;
 
 
   /**
    * This variable keeps the integer form of the enumerated.
-   * The string form is retreived using getIntTable().
+   * The string form is retrieved using getIntTable().
    */
   protected int value ;
 

@@ -210,8 +210,9 @@ TraceCPUTime::~TraceCPUTime() {
     } else {
       _logfile->print("[Error in TraceCPUTime]");
     }
-     if (_print_cr) {
+    if (_print_cr) {
       _logfile->print_cr("");
     }
+    _logfile->flush();
   }
 }

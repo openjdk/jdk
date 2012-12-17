@@ -30,14 +30,10 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.awt.image.WritableRaster;
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.EOFException;
-import java.io.InputStream;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import javax.imageio.IIOException;
@@ -48,6 +44,11 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
 import com.sun.imageio.plugins.common.ReaderUtil;
+import java.awt.image.ColorModel;
+import java.awt.image.IndexColorModel;
+import java.awt.image.MultiPixelPackedSampleModel;
+import java.awt.image.PixelInterleavedSampleModel;
+import java.awt.image.SampleModel;
 
 public class GIFImageReader extends ImageReader {
 
@@ -194,6 +195,36 @@ public class GIFImageReader extends ImageReader {
         return imageMetadata.imageHeight;
     }
 
+    // We don't check all parameters as ImageTypeSpecifier.createIndexed do
+    // since this method is private and we pass consistent data here
+    private ImageTypeSpecifier createIndexed(byte[] r, byte[] g, byte[] b,
+                                             int bits) {
+        ColorModel colorModel;
+        if (imageMetadata.transparentColorFlag) {
+            // Some files erroneously have a transparent color index
+            // of 255 even though there are fewer than 256 colors.
+            int idx = Math.min(imageMetadata.transparentColorIndex,
+                    r.length - 1);
+            colorModel = new IndexColorModel(bits, r.length, r, g, b, idx);
+        } else {
+            colorModel = new IndexColorModel(bits, r.length, r, g, b);
+        }
+
+        SampleModel sampleModel;
+        if (bits == 8) {
+            int[] bandOffsets = {0};
+            sampleModel =
+                    new PixelInterleavedSampleModel(DataBuffer.TYPE_BYTE,
+                    1, 1, 1, 1,
+                    bandOffsets);
+        } else {
+            sampleModel =
+                    new MultiPixelPackedSampleModel(DataBuffer.TYPE_BYTE,
+                    1, 1, bits);
+        }
+        return new ImageTypeSpecifier(colorModel, sampleModel);
+    }
+
     public Iterator getImageTypes(int imageIndex) throws IIOException {
         checkIndex(imageIndex);
 
@@ -239,22 +270,7 @@ public class GIFImageReader extends ImageReader {
             b[i] = colorTable[rgbIndex++];
         }
 
-        byte[] a = null;
-        if (imageMetadata.transparentColorFlag) {
-            a = new byte[lutLength];
-            Arrays.fill(a, (byte)255);
-
-            // Some files erroneously have a transparent color index
-            // of 255 even though there are fewer than 256 colors.
-            int idx = Math.min(imageMetadata.transparentColorIndex,
-                               lutLength - 1);
-            a[idx] = (byte)0;
-        }
-
-        int[] bitsPerSample = new int[1];
-        bitsPerSample[0] = bits;
-        l.add(ImageTypeSpecifier.createIndexed(r, g, b, a, bits,
-                                               DataBuffer.TYPE_BYTE));
+        l.add(createIndexed(r, g, b, bits));
         return l.iterator();
     }
 

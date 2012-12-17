@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
