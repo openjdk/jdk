@@ -1,0 +1,5 @@
+EmptyParamTest.java:10: warning: no description for @param
+    /** @param i */
+        ^
+1 warning
+

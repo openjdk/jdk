@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,16 @@
 
 package com.sun.tools.javac.model;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.EnumSet;
+
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
+
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.*;
@@ -300,5 +305,32 @@ public class JavacTypes implements javax.lang.model.util.Types {
         if (! clazz.isInstance(o))
             throw new IllegalArgumentException(o.toString());
         return clazz.cast(o);
+    }
+
+    public Set<MethodSymbol> getOverriddenMethods(Element elem) {
+        if (elem.getKind() != ElementKind.METHOD
+                || elem.getModifiers().contains(Modifier.STATIC)
+                || elem.getModifiers().contains(Modifier.PRIVATE))
+            return Collections.emptySet();
+
+        if (!(elem instanceof MethodSymbol))
+            throw new IllegalArgumentException();
+
+        MethodSymbol m = (MethodSymbol) elem;
+        ClassSymbol origin = (ClassSymbol) m.owner;
+
+        Set<MethodSymbol> results = new LinkedHashSet<MethodSymbol>();
+        for (Type t : types.closure(origin.type)) {
+            if (t != origin.type) {
+                ClassSymbol c = (ClassSymbol) t.tsym;
+                for (Scope.Entry e = c.members().lookup(m.name); e.scope != null; e = e.next()) {
+                    if (e.sym.kind == Kinds.MTH && m.overrides(e.sym, origin, types, true)) {
+                        results.add((MethodSymbol) e.sym);
+                    }
+                }
+            }
+        }
+
+        return results;
     }
 }

@@ -1,0 +1,17 @@
+BadEnd.java:12: warning: nested tag not allowed: <code>
+ * <code> text <code>
+               ^
+BadEnd.java:12: error: element not closed: code
+ * <code> text <code>
+               ^
+BadEnd.java:12: error: element not closed: code
+ * <code> text <code>
+   ^
+BadEnd.java:11: error: element not closed: a
+ * <a name="here"> text <a>
+                        ^
+BadEnd.java:11: error: element not closed: a
+ * <a name="here"> text <a>
+   ^
+4 errors
+1 warning
