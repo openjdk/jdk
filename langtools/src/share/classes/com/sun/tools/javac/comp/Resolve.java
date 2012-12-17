@@ -3064,16 +3064,20 @@ public class Resolve {
             if (hasLocation) {
                 return diags.create(dkind, log.currentSource(), pos,
                         errKey, kindname, idname, //symbol kindname, name
-                        typeargtypes, argtypes, //type parameters and arguments (if any)
+                        typeargtypes, args(argtypes), //type parameters and arguments (if any)
                         getLocationDiag(location, site)); //location kindname, type
             }
             else {
                 return diags.create(dkind, log.currentSource(), pos,
                         errKey, kindname, idname, //symbol kindname, name
-                        typeargtypes, argtypes); //type parameters and arguments (if any)
+                        typeargtypes, args(argtypes)); //type parameters and arguments (if any)
             }
         }
         //where
+        private Object args(List<Type> args) {
+            return args.isEmpty() ? args : methodArguments(args);
+        }
+
         private String getErrorKey(KindName kindname, boolean hasTypeArgs, boolean hasLocation) {
             String key = "cant.resolve";
             String suffix = hasLocation ? ".location" : "";
