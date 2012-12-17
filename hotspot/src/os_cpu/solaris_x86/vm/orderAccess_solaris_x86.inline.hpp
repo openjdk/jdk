@@ -27,6 +27,7 @@
 
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.hpp"
 #include "vm_version_x86.hpp"
 
 // Implementation of class OrderAccess.

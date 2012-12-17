@@ -46,7 +46,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import sun.util.resources.OpenListResourceBundle;
+import sun.util.resources.TimeZoneNamesBundle;
 
 /**
  * Central accessor to locale-dependent resources.
@@ -67,13 +67,13 @@ public class LocaleResources {
         this.locale = locale;
     }
 
-    public OpenListResourceBundle getTimeZoneNames() {
-        OpenListResourceBundle tznames = (OpenListResourceBundle) cache.get("TimeZoneNames");
+    public TimeZoneNamesBundle getTimeZoneNames() {
+        TimeZoneNamesBundle tznames = (TimeZoneNamesBundle) cache.get("TimeZoneNames");
         if (tznames == null) {
             tznames = adapter.getLocaleData().getTimeZoneNames(locale);
-            OpenListResourceBundle olrb = (OpenListResourceBundle) cache.putIfAbsent("TimeZoneNames", tznames);
-            if (olrb != null) {
-                tznames = olrb;
+            TimeZoneNamesBundle tznb = (TimeZoneNamesBundle) cache.putIfAbsent("TimeZoneNames", tznames);
+            if (tznb != null) {
+                tznames = tznb;
             }
         }
         return tznames;

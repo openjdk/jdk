@@ -708,6 +708,7 @@ CXX
 ac_ct_PROPER_COMPILER_CXX
 PROPER_COMPILER_CXX
 POTENTIAL_CXX
+TOOLS_DIR_CXX
 OBJEXT
 EXEEXT
 ac_ct_CC
@@ -718,6 +719,7 @@ CC
 ac_ct_PROPER_COMPILER_CC
 PROPER_COMPILER_CC
 POTENTIAL_CC
+TOOLS_DIR_CC
 BUILD_LD
 BUILD_CXX
 BUILD_CC
@@ -3672,7 +3674,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1354721616
+DATE_WHEN_GENERATED=1355849613
 
 ###############################################################################
 #
@@ -8163,14 +8165,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving FOUND_MAKE (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving FOUND_MAKE (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving FOUND_MAKE (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving FOUND_MAKE (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -8180,21 +8194,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    FOUND_MAKE="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
-  fi
+    fi
 
         fi
       fi
@@ -8509,14 +8522,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving FOUND_MAKE (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving FOUND_MAKE (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving FOUND_MAKE (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving FOUND_MAKE (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -8526,21 +8551,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    FOUND_MAKE="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
-  fi
+    fi
 
         fi
       fi
@@ -8852,14 +8876,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving FOUND_MAKE (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving FOUND_MAKE (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving FOUND_MAKE (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving FOUND_MAKE (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -8869,21 +8905,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    FOUND_MAKE="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
-  fi
+    fi
 
         fi
       fi
@@ -9200,14 +9235,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving FOUND_MAKE (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving FOUND_MAKE (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving FOUND_MAKE (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving FOUND_MAKE (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -9217,21 +9264,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    FOUND_MAKE="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
-  fi
+    fi
 
         fi
       fi
@@ -9542,14 +9588,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving FOUND_MAKE (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving FOUND_MAKE (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving FOUND_MAKE (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving FOUND_MAKE (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -9559,21 +9617,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    FOUND_MAKE="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
-  fi
+    fi
 
         fi
       fi
@@ -16371,14 +16428,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving VS_ENV_CMD (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving VS_ENV_CMD (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving VS_ENV_CMD (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving VS_ENV_CMD (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of VS_ENV_CMD, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of VS_ENV_CMD, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -16388,21 +16457,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of VS_ENV_CMD" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    VS_ENV_CMD="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting VS_ENV_CMD to \"$new_complete\"" >&5
+      VS_ENV_CMD="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting VS_ENV_CMD to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting VS_ENV_CMD to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 
     # Lets extract the variables that are set by vcvarsall.bat/vsvars32.bat/vsvars64.bat
@@ -16960,14 +17028,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving BUILD_CC (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving BUILD_CC (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving BUILD_CC (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving BUILD_CC (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_CC, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of BUILD_CC, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -16977,21 +17057,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of BUILD_CC" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    BUILD_CC="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_CC to \"$new_complete\"" >&5
+      BUILD_CC="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_CC to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting BUILD_CC to \"$new_complete\"" >&6;}
-  fi
+    fi
 
     for ac_prog in cl CC g++
 do
@@ -17260,14 +17339,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving BUILD_CXX (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving BUILD_CXX (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving BUILD_CXX (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving BUILD_CXX (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_CXX, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of BUILD_CXX, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -17277,21 +17368,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of BUILD_CXX" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    BUILD_CXX="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_CXX to \"$new_complete\"" >&5
+      BUILD_CXX="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_CXX to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting BUILD_CXX to \"$new_complete\"" >&6;}
-  fi
+    fi
 
     # Extract the first word of "ld", so it can be a program name with args.
 set dummy ld; ac_word=$2
@@ -17555,14 +17645,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving BUILD_LD (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving BUILD_LD (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving BUILD_LD (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving BUILD_LD (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -17572,21 +17674,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of BUILD_LD" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    BUILD_LD="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_LD to \"$new_complete\"" >&5
+      BUILD_LD="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_LD to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting BUILD_LD to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 fi
 
@@ -17786,10 +17887,65 @@ fi
 
   COMPILER_NAME=C
 
-  # Do a first initial attempt at searching the list of compiler names.
+  CC=
+  # If TOOLS_DIR is set, check for all compiler names in there first
+  # before checking the rest of the PATH.
+  if test -n "$TOOLS_DIR"; then
+    PATH_save="$PATH"
+    PATH="$TOOLS_DIR"
+    for ac_prog in $COMPILER_CHECK_LIST
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_TOOLS_DIR_CC+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TOOLS_DIR_CC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TOOLS_DIR_CC="$TOOLS_DIR_CC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_TOOLS_DIR_CC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TOOLS_DIR_CC=$ac_cv_path_TOOLS_DIR_CC
+if test -n "$TOOLS_DIR_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CC" >&5
+$as_echo "$TOOLS_DIR_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TOOLS_DIR_CC" && break
+done
+
+    CC=$TOOLS_DIR_CC
+    PATH="$PATH_save"
+  fi
+
   # AC_PATH_PROGS can't be run multiple times with the same variable,
   # so create a new name for this run.
-  for ac_prog in $COMPILER_CHECK_LIST
+  if test "x$CC" = x; then
+    for ac_prog in $COMPILER_CHECK_LIST
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -17834,9 +17990,10 @@ fi
   test -n "$POTENTIAL_CC" && break
 done
 
-  CC=$POTENTIAL_CC
+    CC=$POTENTIAL_CC
+  fi
 
-  if test "x$$CC" = x; then
+  if test "x$CC" = x; then
 
     # Print a helpful message on how to acquire the necessary build dependency.
     # devkit is the help tag: freetyp2, cups, pulse, alsa etc
@@ -18086,14 +18243,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving CC (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving CC (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving CC (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving CC (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CC, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of CC, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -18103,21 +18272,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of CC" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    CC="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CC to \"$new_complete\"" >&5
+      CC="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CC to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting CC to \"$new_complete\"" >&6;}
-  fi
+    fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking resolved symbolic links for CC" >&5
 $as_echo_n "checking resolved symbolic links for CC... " >&6; }
@@ -18511,14 +18679,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving PROPER_COMPILER_CC (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving PROPER_COMPILER_CC (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving PROPER_COMPILER_CC (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving PROPER_COMPILER_CC (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of PROPER_COMPILER_CC, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of PROPER_COMPILER_CC, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -18528,21 +18708,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of PROPER_COMPILER_CC" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    PROPER_COMPILER_CC="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting PROPER_COMPILER_CC to \"$new_complete\"" >&5
+      PROPER_COMPILER_CC="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting PROPER_COMPILER_CC to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting PROPER_COMPILER_CC to \"$new_complete\"" >&6;}
-  fi
+    fi
 
     PATH="$RETRY_COMPILER_SAVED_PATH"
 
@@ -19277,10 +19456,65 @@ fi
 
   COMPILER_NAME=C++
 
-  # Do a first initial attempt at searching the list of compiler names.
+  CXX=
+  # If TOOLS_DIR is set, check for all compiler names in there first
+  # before checking the rest of the PATH.
+  if test -n "$TOOLS_DIR"; then
+    PATH_save="$PATH"
+    PATH="$TOOLS_DIR"
+    for ac_prog in $COMPILER_CHECK_LIST
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_TOOLS_DIR_CXX+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TOOLS_DIR_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TOOLS_DIR_CXX="$TOOLS_DIR_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_TOOLS_DIR_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TOOLS_DIR_CXX=$ac_cv_path_TOOLS_DIR_CXX
+if test -n "$TOOLS_DIR_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CXX" >&5
+$as_echo "$TOOLS_DIR_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TOOLS_DIR_CXX" && break
+done
+
+    CXX=$TOOLS_DIR_CXX
+    PATH="$PATH_save"
+  fi
+
   # AC_PATH_PROGS can't be run multiple times with the same variable,
   # so create a new name for this run.
-  for ac_prog in $COMPILER_CHECK_LIST
+  if test "x$CXX" = x; then
+    for ac_prog in $COMPILER_CHECK_LIST
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -19325,9 +19559,10 @@ fi
   test -n "$POTENTIAL_CXX" && break
 done
 
-  CXX=$POTENTIAL_CXX
+    CXX=$POTENTIAL_CXX
+  fi
 
-  if test "x$$CXX" = x; then
+  if test "x$CXX" = x; then
 
     # Print a helpful message on how to acquire the necessary build dependency.
     # devkit is the help tag: freetyp2, cups, pulse, alsa etc
@@ -19577,14 +19812,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving CXX (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving CXX (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving CXX (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving CXX (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CXX, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of CXX, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -19594,21 +19841,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of CXX" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    CXX="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CXX to \"$new_complete\"" >&5
+      CXX="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CXX to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting CXX to \"$new_complete\"" >&6;}
-  fi
+    fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking resolved symbolic links for CXX" >&5
 $as_echo_n "checking resolved symbolic links for CXX... " >&6; }
@@ -20002,14 +20248,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving PROPER_COMPILER_CXX (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving PROPER_COMPILER_CXX (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving PROPER_COMPILER_CXX (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving PROPER_COMPILER_CXX (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of PROPER_COMPILER_CXX, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of PROPER_COMPILER_CXX, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -20019,21 +20277,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of PROPER_COMPILER_CXX" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    PROPER_COMPILER_CXX="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting PROPER_COMPILER_CXX to \"$new_complete\"" >&5
+      PROPER_COMPILER_CXX="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting PROPER_COMPILER_CXX to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting PROPER_COMPILER_CXX to \"$new_complete\"" >&6;}
-  fi
+    fi
 
     PATH="$RETRY_COMPILER_SAVED_PATH"
 
@@ -20892,14 +21149,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving OBJC (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving OBJC (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving OBJC (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving OBJC (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJC, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of OBJC, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -20909,21 +21178,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of OBJC" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    OBJC="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJC to \"$new_complete\"" >&5
+      OBJC="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJC to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting OBJC to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 else
     OBJC=
@@ -21262,14 +21530,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving AR (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving AR (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving AR (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving AR (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of AR, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of AR, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -21279,21 +21559,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of AR" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    AR="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting AR to \"$new_complete\"" >&5
+      AR="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting AR to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting AR to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 fi
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
@@ -21598,14 +21877,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving WINLD (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving WINLD (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving WINLD (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving WINLD (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of WINLD, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of WINLD, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -21615,21 +21906,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of WINLD" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    WINLD="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting WINLD to \"$new_complete\"" >&5
+      WINLD="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting WINLD to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting WINLD to \"$new_complete\"" >&6;}
-  fi
+    fi
 
     printf "Windows linker was found at $WINLD\n"
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the found link.exe is actually the Visual Studio linker" >&5
@@ -21924,14 +22214,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving MT (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving MT (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving MT (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving MT (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MT, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of MT, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -21941,21 +22243,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of MT" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    MT="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MT to \"$new_complete\"" >&5
+      MT="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MT to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting MT to \"$new_complete\"" >&6;}
-  fi
+    fi
 
     # The resource compiler
     # Extract the first word of "rc", so it can be a program name with args.
@@ -22234,14 +22535,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving RC (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving RC (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving RC (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving RC (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of RC, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of RC, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -22251,21 +22564,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of RC" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    RC="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting RC to \"$new_complete\"" >&5
+      RC="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting RC to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting RC to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 
     # For hotspot, we need these in Windows mixed path,
@@ -22597,14 +22909,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving WINAR (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving WINAR (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving WINAR (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving WINAR (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of WINAR, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of WINAR, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -22614,21 +22938,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of WINAR" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    WINAR="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting WINAR to \"$new_complete\"" >&5
+      WINAR="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting WINAR to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting WINAR to \"$new_complete\"" >&6;}
-  fi
+    fi
 
     AR="$WINAR"
     ARFLAGS="-nologo -NODEFAULTLIB:MSVCRT"
@@ -22892,14 +23215,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving DUMPBIN (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving DUMPBIN (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving DUMPBIN (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving DUMPBIN (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of DUMPBIN, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of DUMPBIN, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -22909,21 +23244,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of DUMPBIN" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    DUMPBIN="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting DUMPBIN to \"$new_complete\"" >&5
+      DUMPBIN="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting DUMPBIN to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting DUMPBIN to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 
     COMPILER_TYPE=CL
@@ -23292,14 +23626,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving CPP (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving CPP (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving CPP (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving CPP (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CPP, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of CPP, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -23309,21 +23655,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of CPP" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    CPP="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CPP to \"$new_complete\"" >&5
+      CPP="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CPP to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting CPP to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 
 ac_ext=cpp
@@ -23681,14 +24026,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving CXXCPP (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving CXXCPP (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving CXXCPP (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving CXXCPP (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CXXCPP, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of CXXCPP, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -23698,21 +24055,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of CXXCPP" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    CXXCPP="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CXXCPP to \"$new_complete\"" >&5
+      CXXCPP="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting CXXCPP to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting CXXCPP to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 
 if test "x$COMPILE_TYPE" != "xcross"; then
@@ -23999,14 +24355,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving AS (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving AS (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving AS (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving AS (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of AS, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of AS, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -24016,21 +24384,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of AS" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    AS="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting AS to \"$new_complete\"" >&5
+      AS="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting AS to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting AS to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 else
     AS="$CC -c"
@@ -24305,14 +24672,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving NM (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving NM (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving NM (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving NM (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of NM, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of NM, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -24322,21 +24701,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of NM" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    NM="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting NM to \"$new_complete\"" >&5
+      NM="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting NM to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
-  fi
+    fi
 
     # Extract the first word of "strip", so it can be a program name with args.
 set dummy strip; ac_word=$2
@@ -24600,14 +24978,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving STRIP (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving STRIP (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving STRIP (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving STRIP (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of STRIP, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of STRIP, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -24617,21 +25007,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of STRIP" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    STRIP="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting STRIP to \"$new_complete\"" >&5
+      STRIP="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting STRIP to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting STRIP to \"$new_complete\"" >&6;}
-  fi
+    fi
 
     # Extract the first word of "mcs", so it can be a program name with args.
 set dummy mcs; ac_word=$2
@@ -24895,14 +25284,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving MCS (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving MCS (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving MCS (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving MCS (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MCS, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of MCS, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -24912,21 +25313,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of MCS" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    MCS="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MCS to \"$new_complete\"" >&5
+      MCS="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MCS to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting MCS to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 elif test "x$OPENJDK_TARGET_OS" != xwindows; then
     if test -n "$ac_tool_prefix"; then
@@ -25243,14 +25643,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving NM (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving NM (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving NM (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving NM (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of NM, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of NM, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -25260,21 +25672,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of NM" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    NM="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting NM to \"$new_complete\"" >&5
+      NM="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting NM to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
-  fi
+    fi
 
     if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}strip", so it can be a program name with args.
@@ -25590,14 +26001,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving STRIP (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving STRIP (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving STRIP (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving STRIP (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of STRIP, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of STRIP, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -25607,21 +26030,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of STRIP" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    STRIP="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting STRIP to \"$new_complete\"" >&5
+      STRIP="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting STRIP to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting STRIP to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 fi
 
@@ -25952,14 +26374,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving OBJCOPY (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving OBJCOPY (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving OBJCOPY (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving OBJCOPY (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJCOPY, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of OBJCOPY, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -25969,21 +26403,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of OBJCOPY" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    OBJCOPY="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJCOPY to \"$new_complete\"" >&5
+      OBJCOPY="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJCOPY to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting OBJCOPY to \"$new_complete\"" >&6;}
-  fi
+    fi
 
     fi
 fi
@@ -26312,14 +26745,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving OBJDUMP (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving OBJDUMP (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving OBJDUMP (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving OBJDUMP (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJDUMP, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of OBJDUMP, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -26329,21 +26774,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of OBJDUMP" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    OBJDUMP="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJDUMP to \"$new_complete\"" >&5
+      OBJDUMP="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting OBJDUMP to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting OBJDUMP to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 fi
 
@@ -26610,14 +27054,26 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving LIPO (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving LIPO (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving LIPO (as $path) with 'which' failed, using $path directly." >&5
-$as_echo "$as_me: Resolving LIPO (as $path) with 'which' failed, using $path directly." >&6;}
-        new_path="$path"
-      else
         { $as_echo "$as_me:${as_lineno-$LINENO}: The path of LIPO, which resolves as \"$complete\", is not found." >&5
 $as_echo "$as_me: The path of LIPO, which resolves as \"$complete\", is not found." >&6;}
         has_space=`$ECHO "$complete" | $GREP " "`
@@ -26627,21 +27083,20 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
         fi
         as_fn_error $? "Cannot locate the the path of LIPO" "$LINENO" 5
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    LIPO="$new_complete"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting LIPO to \"$new_complete\"" >&5
+      LIPO="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting LIPO to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting LIPO to \"$new_complete\"" >&6;}
-  fi
+    fi
 
 fi
 
@@ -27706,34 +28161,34 @@ esac
 # ENABLE_DEBUG_SYMBOLS
 # This must be done after the toolchain is setup, since we're looking at objcopy.
 #
-ENABLE_DEBUG_SYMBOLS=default
-
-# default on macosx is no...
-if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-   ENABLE_DEBUG_SYMBOLS=no
-fi
-
 # Check whether --enable-debug-symbols was given.
 if test "${enable_debug_symbols+set}" = set; then :
-  enableval=$enable_debug_symbols; ENABLE_DEBUG_SYMBOLS=${enable_debug_symbols}
+  enableval=$enable_debug_symbols;
 fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we should generate debug symbols" >&5
 $as_echo_n "checking if we should generate debug symbols... " >&6; }
 
-if test "x$ENABLE_DEBUG_SYMBOLS" = "xyes" && test "x$OBJCOPY" = x; then
+if test "x$enable_debug_symbols" = "xyes" && test "x$OBJCOPY" = x; then
    # explicit enabling of enable-debug-symbols and can't find objcopy
    #   this is an error
    as_fn_error $? "Unable to find objcopy, cannot enable debug-symbols" "$LINENO" 5
 fi
 
-if test "x$ENABLE_DEBUG_SYMBOLS" = "xdefault"; then
+if test "x$enable_debug_symbols" = "xyes"; then
+  ENABLE_DEBUG_SYMBOLS=true
+elif test "x$enable_debug_symbols" = "xno"; then
+  ENABLE_DEBUG_SYMBOLS=false
+else
+  # default on macosx is false
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    ENABLE_DEBUG_SYMBOLS=false
   # Default is on if objcopy is found, otherwise off
-  if test "x$OBJCOPY" != x || test "x$OPENJDK_TARGET_OS" = xwindows; then
-     ENABLE_DEBUG_SYMBOLS=yes
+  elif test "x$OBJCOPY" != x || test "x$OPENJDK_TARGET_OS" = xwindows; then
+    ENABLE_DEBUG_SYMBOLS=true
   else
-     ENABLE_DEBUG_SYMBOLS=no
+    ENABLE_DEBUG_SYMBOLS=false
   fi
 fi
 
@@ -27743,25 +28198,21 @@ $as_echo "$ENABLE_DEBUG_SYMBOLS" >&6; }
 #
 # ZIP_DEBUGINFO_FILES
 #
-ZIP_DEBUGINFO_FILES=yes
-
 # Check whether --enable-zip-debug-info was given.
 if test "${enable_zip_debug_info+set}" = set; then :
-  enableval=$enable_zip_debug_info; ZIP_DEBUGINFO_FILES=${enable_zip_debug_info}
+  enableval=$enable_zip_debug_info;
 fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we should zip debug-info files" >&5
 $as_echo_n "checking if we should zip debug-info files... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP_DEBUGINFO_FILES" >&5
-$as_echo "$ZIP_DEBUGINFO_FILES" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${enable_zip_debug_info}" >&5
+$as_echo "${enable_zip_debug_info}" >&6; }
 
-# Hotspot wants ZIP_DEBUGINFO_FILES to be 1 for yes
-#   use that...
-if test "x$ZIP_DEBUGINFO_FILES" = "xyes"; then
-   ZIP_DEBUGINFO_FILES=1
+if test "x${enable_zip_debug_info}" = "xno"; then
+   ZIP_DEBUGINFO_FILES=false
 else
-   ZIP_DEBUGINFO_FILES=0
+   ZIP_DEBUGINFO_FILES=true
 fi
 
 

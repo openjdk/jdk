@@ -23,7 +23,7 @@
  */
 
 // no precompiled headers
-#include "assembler_x86.inline.hpp"
+#include "asm/macroAssembler.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -33,7 +33,6 @@
 #include "jvm_linux.h"
 #include "memory/allocation.inline.hpp"
 #include "mutex_linux.inline.hpp"
-#include "nativeInst_x86.hpp"
 #include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm.h"

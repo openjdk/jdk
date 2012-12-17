@@ -85,10 +85,12 @@ final class RenegotiationInfoExtension extends HelloExtension {
 
 
     // Length of the encoded extension, including the type and length fields
+    @Override
     int length() {
         return 5 + renegotiated_connection.length;
     }
 
+    @Override
     void send(HandshakeOutStream s) throws IOException {
         s.putInt16(type.id);
         s.putInt16(renegotiated_connection.length + 1);
@@ -103,6 +105,7 @@ final class RenegotiationInfoExtension extends HelloExtension {
         return renegotiated_connection;
     }
 
+    @Override
     public String toString() {
         return "Extension " + type + ", renegotiated_connection: " +
                     (renegotiated_connection.length == 0 ? "<empty>" :

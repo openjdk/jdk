@@ -2079,7 +2079,11 @@ jint G1CollectedHeap::initialize() {
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
-  _cm       = new ConcurrentMark(heap_rs, max_regions());
+  _cm = new ConcurrentMark(this, heap_rs);
+  if (_cm == NULL || !_cm->completed_initialization()) {
+    vm_shutdown_during_initialization("Could not create/initialize ConcurrentMark");
+    return JNI_ENOMEM;
+  }
   _cmThread = _cm->cmThread();
 
   // Initialize the from_card cache structure of HeapRegionRemSet.
@@ -2087,7 +2091,7 @@ jint G1CollectedHeap::initialize() {
 
   // Now expand into the initial heap size.
   if (!expand(init_byte_size)) {
-    vm_exit_during_initialization("Failed to allocate initial heap.");
+    vm_shutdown_during_initialization("Failed to allocate initial heap.");
     return JNI_ENOMEM;
   }
 
@@ -3690,6 +3694,7 @@ void G1CollectedHeap::log_gc_footer(double pause_time_sec) {
     g1_policy()->print_heap_transition();
     gclog_or_tty->print_cr(", %3.7f secs]", pause_time_sec);
   }
+  gclog_or_tty->flush();
 }
 
 bool
@@ -4036,9 +4041,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 #endif
 
       gc_epilogue(false);
-
-      log_gc_footer(os::elapsedTime() - pause_start_sec);
     }
+
+    // Print the remainder of the GC log output.
+    log_gc_footer(os::elapsedTime() - pause_start_sec);
 
     // It is not yet to safe to tell the concurrent mark to
     // start as we have some optional output below. We don't want the

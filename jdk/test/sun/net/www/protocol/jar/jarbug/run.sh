@@ -71,7 +71,7 @@ mv jar1.jar ..
 #
 ${TESTJAVA}${FS}bin${FS}javac -d ${DEST} ${TESTSRC}${FS}src${FS}test${FS}*.java
 cd ${DEST}
-${TESTJAVA}${FS}bin${FS}java RunAllTests
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} RunAllTests
 result=$?
 if [ "$result" -ne "0" ]; then
     exit 1

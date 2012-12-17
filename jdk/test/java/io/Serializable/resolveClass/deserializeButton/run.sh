@@ -26,7 +26,7 @@
 # @summary Verify that class loaded outside of application class loader is
 #          correctly resolved during deserialization when read in by custom
 #          readObject() method of a bootstrap class (in this case,
-#          java.awt.Button).
+#          java.util.Vector).
 
 if [ "${TESTJAVA}" = "" ]
 then
@@ -46,5 +46,5 @@ ${TESTJAVA}/bin/javac -d . ${TESTSRC}/Foo.java
 ${TESTJAVA}/bin/jar cf cb.jar *.class
 rm -f *.class
 ${TESTJAVA}/bin/javac -d . ${TESTSRC}/Test.java
-${TESTJAVA}/bin/java Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} Test
 rm -f *.class *.jar

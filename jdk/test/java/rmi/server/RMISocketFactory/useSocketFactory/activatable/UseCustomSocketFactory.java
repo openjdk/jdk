@@ -28,11 +28,7 @@
  * @author Ann Wollrath
  *
  * @library ../../../../testlibrary
- * @build Echo
- * @build EchoImpl
- * @build EchoImpl_Stub
- * @build UseCustomSocketFactory
- * @build TestLibrary
+ * @build TestLibrary Echo EchoImpl EchoImpl_Stub
  * @run main/othervm/policy=security.policy/timeout=360 UseCustomSocketFactory
  */
 

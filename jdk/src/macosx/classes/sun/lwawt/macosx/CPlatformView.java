@@ -26,9 +26,11 @@
 package sun.lwawt.macosx;
 
 import java.awt.*;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.VolatileImage;
 
 import sun.awt.CGraphicsConfig;
+import sun.awt.CGraphicsEnvironment;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.macosx.event.NSEvent;
 
@@ -38,6 +40,10 @@ import sun.java2d.opengl.CGLSurfaceData;
 
 public class CPlatformView extends CFRetainedResource {
     private native long nativeCreateView(int x, int y, int width, int height, long windowLayerPtr);
+    private static native void nativeSetAutoResizable(long awtView, boolean toResize);
+    private static native int nativeGetNSViewDisplayID(long awtView);
+    private static native Rectangle2D nativeGetLocationOnScreen(long awtView);
+    private static native boolean nativeIsViewUnderMouse(long ptr);
 
     private LWWindowPeer peer;
     private SurfaceData surfaceData;
@@ -60,7 +66,7 @@ public class CPlatformView extends CFRetainedResource {
 
     public long getAWTView() {
         return ptr;
-    }
+        }
 
     public boolean isOpaque() {
         return !peer.isTranslucent();
@@ -115,26 +121,6 @@ public class CPlatformView extends CFRetainedResource {
     // ----------------------------------------------------------------------
     // PAINTING METHODS
     // ----------------------------------------------------------------------
-
-    public void drawImageOnPeer(VolatileImage xBackBuffer, int x1, int y1, int x2, int y2) {
-        Graphics g = peer.getGraphics();
-        try {
-            g.drawImage(xBackBuffer, x1, y1, x2, y2, x1, y1, x2, y2, null);
-        } finally {
-            g.dispose();
-        }
-    }
-
-    public Image createBackBuffer() {
-        Rectangle r = peer.getBounds();
-        Image im = null;
-        if (!r.isEmpty()) {
-            int transparency = (isOpaque() ? Transparency.OPAQUE : Transparency.TRANSLUCENT);
-            im = peer.getGraphicsConfiguration().createCompatibleImage(r.width, r.height, transparency);
-        }
-        return im;
-    }
-
     public SurfaceData replaceSurfaceData() {
         if (!LWCToolkit.getSunAwtDisableCALayers()) {
             surfaceData = windowLayer.replaceSurfaceData();
@@ -179,9 +165,45 @@ public class CPlatformView extends CFRetainedResource {
         }
     }
 
+    public void setAutoResizable(boolean toResize) {
+        nativeSetAutoResizable(this.getAWTView(), toResize);
+    }
+
+    public boolean isUnderMouse() {
+        return nativeIsViewUnderMouse(getAWTView());
+    }
+
+    public GraphicsDevice getGraphicsDevice() {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        CGraphicsEnvironment cge = (CGraphicsEnvironment)ge;
+        int displayID = nativeGetNSViewDisplayID(getAWTView());
+        GraphicsDevice gd = cge.getScreenDevice(displayID);
+        if (gd == null) {
+            // this could possibly happen during device removal
+            // use the default screen device in this case
+            gd = ge.getDefaultScreenDevice();
+        }
+        return gd;
+    }
+
+    public Point getLocationOnScreen() {
+        Rectangle r = nativeGetLocationOnScreen(this.getAWTView()).getBounds();
+        return new Point(r.x, r.y);
+    }
+
     // ----------------------------------------------------------------------
     // NATIVE CALLBACKS
     // ----------------------------------------------------------------------
+
+    /*
+     * The callback is called only in the embedded case when the view is
+     * automatically resized by the superview.
+     * In normal mode this method is never called.
+     */
+    private void deliverResize(int x, int y, int w, int h) {
+        peer.notifyReshape(x, y, w, h);
+    }
+
 
     private void deliverMouseEvent(NSEvent event) {
         int x = event.getX();

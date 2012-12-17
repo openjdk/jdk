@@ -141,6 +141,9 @@ java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
 
 # jdk_management
 
+# 7158614
+sun/management/jmxremote/startstop/JMXStartStopTest.sh		linux-all
+
 ############################################################################
 
 # jdk_jmx
@@ -162,26 +165,9 @@ javax/management/remote/mandatory/notif/DiffHBTest.java 	generic-all
 # 6988950
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
-# 7162111
-demo/jvmti/mtrace/TraceJFrame.java                              macosx-all
-javax/script/CauseExceptionTest.java                            macosx-all
-javax/script/GetInterfaceTest.java                              macosx-all
-javax/script/JavaScriptScopeTest.java                           macosx-all
-javax/script/NullUndefinedVarTest.java                          macosx-all
-javax/script/PluggableContextTest.java                          macosx-all
-javax/script/ProviderTest.sh                                    macosx-all
-javax/script/RhinoExceptionTest.java                            macosx-all
-javax/script/StringWriterPrintTest.java                         macosx-all
-javax/script/Test1.java                                         macosx-all
-javax/script/Test2.java                                         macosx-all
-javax/script/Test3.java                                         macosx-all
-javax/script/Test4.java                                         macosx-all
-javax/script/Test5.java                                         macosx-all
-javax/script/Test6.java                                         macosx-all
-javax/script/Test7.java                                         macosx-all
-javax/script/Test8.java                                         macosx-all
-javax/script/UnescapedBracketRegExTest.java                     macosx-all
-javax/script/VersionTest.java                                   macosx-all
+# 7027502
+demo/jvmti/hprof/MonitorTest.java                               generic-all
+
 ############################################################################
 
 # jdk_net
@@ -224,10 +210,8 @@ java/net/CookieHandler/CookieManagerTest.java                   macosx-all
 
 # jdk_io
 
-# 7162111 - these tests need to be updated to run headless
-java/io/Serializable/resolveClass/deserializeButton/run.sh      macosx-all
-java/io/Serializable/serialver/classpath/run.sh                 macosx-all
-java/io/Serializable/serialver/nested/run.sh                    macosx-all
+# 7160013
+java/io/File/MaxPathLength.java                                 windows-all
 
 ############################################################################
 
@@ -250,6 +234,9 @@ java/nio/channels/DatagramChannel/ChangingAddress.java          macosx-all
 # 7132677
 java/nio/channels/Selector/OutOfBand.java                       macosx-all
 
+# 8003895
+java/nio/channels/AsynchronousChannelGroup/Unbounded.java       windows-amd64
+
 ############################################################################
 
 # jdk_rmi
@@ -267,7 +254,7 @@ java/rmi/reliability/benchmark/runRmiBench.sh                   generic-all
 java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       generic-all
 
 # 7195095
-sun/rmi/transport/proxy/EagerHttpFallback.java                  linux-all
+sun/rmi/transport/proxy/EagerHttpFallback.java                  generic-all
 
 ############################################################################
 
@@ -275,10 +262,6 @@ sun/rmi/transport/proxy/EagerHttpFallback.java                  linux-all
 
 # 7164518: no PortUnreachableException on Mac
 sun/security/krb5/auto/Unreachable.java                         macosx-all
-
-# 7193792
-sun/security/pkcs11/ec/TestECDSA.java				solaris-all
-sun/security/pkcs11/ec/TestECDSA.java				linux-all
 
 # 7193793
 sun/security/pkcs11/ec/TestECDH.java				linux-all
@@ -307,6 +290,12 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 
 # 8000439: NPG: REGRESSION : sun/security/krb5/auto/MaxRetries.java fails with timeout
 sun/security/krb5/auto/MaxRetries.java                          solaris-sparcv9
+
+# 7194428
+sun/security/mscapi/ShortRSAKey1024.sh                          windows-all
+
+# 8000897, vm crash
+sun/security/provider/DSA/TestAlgParameterGenerator.java        generic-all
 
 ############################################################################
 
@@ -364,17 +353,11 @@ com/sun/jdi/ProcessAttachTest.sh                                generic-all
 
 # jdk_util
 
-# 7162111 - test needs to be changed to run headless
-java/util/ResourceBundle/Control/Bug6530694.java		macosx-all
-
 # Filed 6933803
 java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
-
-# 8003596
-java/util/logging/CheckLockLocationTest.java			windows-all
 
 # 7041639, Solaris DSA keypair generation bug
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all

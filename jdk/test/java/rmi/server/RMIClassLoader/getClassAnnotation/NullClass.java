@@ -29,7 +29,6 @@
  *
  * @library ../../../testlibrary
  * @build TestLibrary
- * @build NullClass
  * @run main/othervm NullClass
  */
 

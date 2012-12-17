@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
+#include "asm/macroAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterGenerator.hpp"
@@ -423,8 +423,6 @@ void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
 
   // C++ interpreter only
   // rsi - previous interpreter state pointer
-
-  const Address size_of_parameters(rbx, Method::size_of_parameters_offset());
 
   // InterpreterRuntime::frequency_counter_overflow takes one argument
   // indicating if the counter overflow occurs at a backwards branch (non-NULL bcp).
@@ -868,12 +866,13 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // rsi: previous interpreter state (C++ interpreter) must preserve
   address entry_point = __ pc();
 
-
-  const Address size_of_parameters(rbx, Method::size_of_parameters_offset());
+  const Address constMethod       (rbx, Method::const_offset());
   const Address invocation_counter(rbx, Method::invocation_counter_offset() + InvocationCounter::counter_offset());
   const Address access_flags      (rbx, Method::access_flags_offset());
+  const Address size_of_parameters(rcx, ConstMethod::size_of_parameters_offset());
 
   // get parameter size (always needed)
+  __ movptr(rcx, constMethod);
   __ load_unsigned_short(rcx, size_of_parameters);
 
   // native calls don't need the stack size check since they have no expression stack
@@ -988,7 +987,9 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // allocate space for parameters
   __ get_method(method);
-  __ load_unsigned_short(t, Address(method, Method::size_of_parameters_offset()));
+  __ movptr(t, Address(method, Method::const_offset()));
+  __ load_unsigned_short(t, Address(t, ConstMethod::size_of_parameters_offset()));
+
   __ shlptr(t, Interpreter::logStackElementSize);
   __ addptr(t, 2*wordSize);     // allocate two more slots for JNIEnv and possible mirror
   __ subptr(rsp, t);
@@ -1297,13 +1298,14 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // rsi: sender sp
   address entry_point = __ pc();
 
-
-  const Address size_of_parameters(rbx, Method::size_of_parameters_offset());
-  const Address size_of_locals    (rbx, Method::size_of_locals_offset());
+  const Address constMethod       (rbx, Method::const_offset());
   const Address invocation_counter(rbx, Method::invocation_counter_offset() + InvocationCounter::counter_offset());
   const Address access_flags      (rbx, Method::access_flags_offset());
+  const Address size_of_parameters(rdx, ConstMethod::size_of_parameters_offset());
+  const Address size_of_locals    (rdx, ConstMethod::size_of_locals_offset());
 
   // get parameter size (always needed)
+  __ movptr(rdx, constMethod);
   __ load_unsigned_short(rcx, size_of_parameters);
 
   // rbx,: Method*
@@ -1734,7 +1736,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
     // Compute size of arguments for saving when returning to deoptimized caller
     __ get_method(rax);
-    __ load_unsigned_short(rax, Address(rax, in_bytes(Method::size_of_parameters_offset())));
+    __ movptr(rax, Address(rax, Method::const_offset()));
+    __ load_unsigned_short(rax, Address(rax, ConstMethod::size_of_parameters_offset()));
     __ shlptr(rax, Interpreter::logStackElementSize);
     __ restore_locals();
     __ subptr(rdi, rax);

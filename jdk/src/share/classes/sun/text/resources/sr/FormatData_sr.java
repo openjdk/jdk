@@ -103,10 +103,33 @@ public class FormatData_sr extends ListResourceBundle {
                     "\u0441\u0443\u0431",
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "\u043d",
+                    "\u043f",
+                    "\u0443",
+                    "\u0441",
+                    "\u0447",
+                    "\u043f",
+                    "\u0441",
+                }
+            },
             { "Eras",
                 new String[] {
                     "\u043f. \u043d. \u0435.",
                     "\u043d. \u0435",
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "\u043f. \u043d. \u0435.",
+                    "\u043d. \u0435.",
+                }
+            },
+            { "narrow.Eras",
+                new String[] {
+                    "\u043f.\u043d.\u0435.",
+                    "\u043d.\u0435.",
                 }
             },
             { "NumberPatterns",

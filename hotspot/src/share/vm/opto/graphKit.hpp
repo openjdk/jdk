@@ -41,6 +41,7 @@
 class FastLockNode;
 class FastUnlockNode;
 class IdealKit;
+class LibraryCallKit;
 class Parse;
 class RootNode;
 
@@ -60,9 +61,11 @@ class GraphKit : public Phase {
   PhaseGVN         &_gvn;       // Some optimizations while parsing
   SafePointNode*    _map;       // Parser map from JVM to Nodes
   SafePointNode*    _exceptions;// Parser map(s) for exception state(s)
-  int               _sp;        // JVM Expression Stack Pointer
   int               _bci;       // JVM Bytecode Pointer
   ciMethod*         _method;    // JVM Current Method
+
+ private:
+  int               _sp;        // JVM Expression Stack Pointer; don't modify directly!
 
  private:
   SafePointNode*     map_not_null() const {
@@ -80,7 +83,8 @@ class GraphKit : public Phase {
   }
 #endif
 
-  virtual Parse* is_Parse() const { return NULL; }
+  virtual Parse*          is_Parse()          const { return NULL; }
+  virtual LibraryCallKit* is_LibraryCallKit() const { return NULL; }
 
   ciEnv*        env()           const { return _env; }
   PhaseGVN&     gvn()           const { return _gvn; }
@@ -141,7 +145,7 @@ class GraphKit : public Phase {
                                         _bci = jvms->bci();
                                         _method = jvms->has_method() ? jvms->method() : NULL; }
   void set_map(SafePointNode* m)      { _map = m; debug_only(verify_map()); }
-  void set_sp(int i)                  { assert(i >= 0, "must be non-negative"); _sp = i; }
+  void set_sp(int sp)                 { assert(sp >= 0, err_msg_res("sp must be non-negative: %d", sp)); _sp = sp; }
   void clean_stack(int from_sp); // clear garbage beyond from_sp to top
 
   void inc_sp(int i)                  { set_sp(sp() + i); }
@@ -149,7 +153,9 @@ class GraphKit : public Phase {
   void set_bci(int bci)               { _bci = bci; }
 
   // Make sure jvms has current bci & sp.
-  JVMState* sync_jvms()     const;
+  JVMState* sync_jvms() const;
+  JVMState* sync_jvms_for_reexecute();
+
 #ifdef ASSERT
   // Make sure JVMS has an updated copy of bci and sp.
   // Also sanity-check method, depth, and monitor depth.
@@ -286,7 +292,7 @@ class GraphKit : public Phase {
   // How many stack inputs does the current BC consume?
   // And, how does the stack change after the bytecode?
   // Returns false if unknown.
-  bool compute_stack_effects(int& inputs, int& depth, bool for_parse = false);
+  bool compute_stack_effects(int& inputs, int& depth);
 
   // Add a fixed offset to a pointer
   Node* basic_plus_adr(Node* base, Node* ptr, intptr_t offset) {
@@ -337,20 +343,37 @@ class GraphKit : public Phase {
   Node* load_object_klass(Node* object);
   // Find out the length of an array.
   Node* load_array_length(Node* array);
+
+
   // Helper function to do a NULL pointer check or ZERO check based on type.
-  Node* null_check_common(Node* value, BasicType type,
-                          bool assert_null, Node* *null_control);
   // Throw an exception if a given value is null.
   // Return the value cast to not-null.
   // Be clever about equivalent dominating null checks.
-  Node* do_null_check(Node* value, BasicType type) {
-    return null_check_common(value, type, false, NULL);
+  Node* null_check_common(Node* value, BasicType type,
+                          bool assert_null = false, Node* *null_control = NULL);
+  Node* null_check(Node* value, BasicType type = T_OBJECT) {
+    return null_check_common(value, type);
+  }
+  Node* null_check_receiver() {
+    assert(argument(0)->bottom_type()->isa_ptr(), "must be");
+    return null_check(argument(0));
+  }
+  Node* zero_check_int(Node* value) {
+    assert(value->bottom_type()->basic_type() == T_INT,
+        err_msg_res("wrong type: %s", type2name(value->bottom_type()->basic_type())));
+    return null_check_common(value, T_INT);
+  }
+  Node* zero_check_long(Node* value) {
+    assert(value->bottom_type()->basic_type() == T_LONG,
+        err_msg_res("wrong type: %s", type2name(value->bottom_type()->basic_type())));
+    return null_check_common(value, T_LONG);
   }
   // Throw an uncommon trap if a given value is __not__ null.
   // Return the value cast to null, and be clever about dominating checks.
-  Node* do_null_assert(Node* value, BasicType type) {
-    return null_check_common(value, type, true, NULL);
+  Node* null_assert(Node* value, BasicType type = T_OBJECT) {
+    return null_check_common(value, type, true);
   }
+
   // Null check oop.  Return null-path control into (*null_control).
   // Return a cast-not-null node which depends on the not-null control.
   // If never_see_null, use an uncommon trap (*null_control sees a top).
@@ -371,9 +394,9 @@ class GraphKit : public Phase {
   // Replace all occurrences of one node by another.
   void replace_in_map(Node* old, Node* neww);
 
-  void  push(Node* n)     { map_not_null();        _map->set_stack(_map->_jvms,   _sp++, n); }
-  Node* pop()             { map_not_null(); return _map->stack(    _map->_jvms, --_sp); }
-  Node* peek(int off = 0) { map_not_null(); return _map->stack(    _map->_jvms,   _sp - off - 1); }
+  void  push(Node* n)     { map_not_null();        _map->set_stack(_map->_jvms,   _sp++        , n); }
+  Node* pop()             { map_not_null(); return _map->stack(    _map->_jvms, --_sp             ); }
+  Node* peek(int off = 0) { map_not_null(); return _map->stack(    _map->_jvms,   _sp - off - 1   ); }
 
   void push_pair(Node* ldval) {
     push(ldval);
@@ -580,19 +603,15 @@ class GraphKit : public Phase {
 
   //---------- help for generating calls --------------
 
-  // Do a null check on the receiver, which is in argument(0).
-  Node* null_check_receiver(ciMethod* callee) {
+  // Do a null check on the receiver as it would happen before the call to
+  // callee (with all arguments still on the stack).
+  Node* null_check_receiver_before_call(ciMethod* callee) {
     assert(!callee->is_static(), "must be a virtual method");
-    int nargs = 1 + callee->signature()->size();
-    // Null check on self without removing any arguments.  The argument
-    // null check technically happens in the wrong place, which can lead to
-    // invalid stack traces when the primitive is inlined into a method
-    // which handles NullPointerExceptions.
-    Node* receiver = argument(0);
-    _sp += nargs;
-    receiver = do_null_check(receiver, T_OBJECT);
-    _sp -= nargs;
-    return receiver;
+    const int nargs = callee->arg_size();
+    inc_sp(nargs);
+    Node* n = null_check_receiver();
+    dec_sp(nargs);
+    return n;
   }
 
   // Fill in argument edges for the call from argument(0), argument(1), ...
@@ -644,6 +663,9 @@ class GraphKit : public Phase {
     uncommon_trap(Deoptimization::make_trap_request(reason, action),
                   klass, reason_string, must_throw, keep_exact_action);
   }
+
+  // SP when bytecode needs to be reexecuted.
+  virtual int reexecute_sp() { return sp(); }
 
   // Report if there were too many traps at the current method and bci.
   // Report if a trap was recorded, and/or PerMethodTrapLimit was exceeded.

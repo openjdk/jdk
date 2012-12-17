@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -1899,6 +1899,7 @@ load_library(char *name)
      */
     getSystemProperty("sun.boot.library.path", &boot_path);
     md_build_library_name(lname, FILENAME_MAX, boot_path, name);
+    jvmtiDeallocate(boot_path);
     handle = md_load_library(lname, err_buf, (int)sizeof(err_buf));
     if ( handle == NULL ) {
         /* This may be necessary on Windows. */
@@ -1941,6 +1942,9 @@ lookup_library_symbol(void *library, char **symbols, int nsymbols)
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
 {
+    char *boot_path = NULL;
+    char npt_lib[JVM_MAXPATHLEN];
+
     /* See if it's already loaded */
     if ( gdata!=NULL && gdata->isLoaded==JNI_TRUE ) {
         HPROF_ERROR(JNI_TRUE, "Cannot load this JVM TI agent twice, check your java command line for duplicate hprof options.");
@@ -1957,9 +1961,15 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
 
     gdata->jvm = vm;
 
+    /* Get the JVMTI environment */
+    getJvmti();
+
 #ifndef SKIP_NPT
+    getSystemProperty("sun.boot.library.path", &boot_path);
     /* Load in NPT library for character conversions */
-    NPT_INITIALIZE(&(gdata->npt), NPT_VERSION, NULL);
+    md_build_library_name(npt_lib, sizeof(npt_lib), boot_path, NPT_LIBNAME);
+    jvmtiDeallocate(boot_path);
+    NPT_INITIALIZE(npt_lib, &(gdata->npt), NPT_VERSION, NULL);
     if ( gdata->npt == NULL ) {
         HPROF_ERROR(JNI_TRUE, "Cannot load npt library");
     }
@@ -1968,9 +1978,6 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
         HPROF_ERROR(JNI_TRUE, "Cannot initialize npt utf functions");
     }
 #endif
-
-    /* Get the JVMTI environment */
-    getJvmti();
 
     /* Lock needed to protect debug_malloc() code, which is not MT safe */
     #ifdef DEBUG

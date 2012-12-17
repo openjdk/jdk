@@ -25,16 +25,15 @@
 
 package java.lang.invoke;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jdk.internal.org.objectweb.asm.*;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import sun.misc.Unsafe;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * InnerClassLambdaMetafactory
@@ -121,13 +120,34 @@ import sun.misc.Unsafe;
      *
      * @return a CallSite, which, when invoked, will return an instance of the
      * functional interface
-     * @throws ReflectiveOperationException
+     * @throws ReflectiveOperationException, LambdaConversionException
      */
     @Override
     CallSite buildCallSite() throws ReflectiveOperationException, LambdaConversionException {
         final Class<?> innerClass = spinInnerClass();
         if (invokedType.parameterCount() == 0) {
-            return new ConstantCallSite(MethodHandles.constant(samBase, innerClass.newInstance()));
+            final Constructor[] ctrs = AccessController.doPrivileged(
+                    new PrivilegedAction<Constructor[]>() {
+                @Override
+                public Constructor[] run() {
+                    return innerClass.getDeclaredConstructors();
+                }
+            });
+            if (ctrs.length != 1) {
+                throw new ReflectiveOperationException("Expected one lambda constructor for "
+                        + innerClass.getCanonicalName() + ", got " + ctrs.length);
+            }
+            // The lambda implementing inner class constructor is private, set
+            // it accessible (by us) before creating the constant sole instance
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    ctrs[0].setAccessible(true);
+                    return null;
+                }
+            });
+            Object inst = ctrs[0].newInstance();
+            return new ConstantCallSite(MethodHandles.constant(samBase, inst));
         } else {
             return new ConstantCallSite(
                     MethodHandles.Lookup.IMPL_LOOKUP
@@ -145,7 +165,7 @@ import sun.misc.Unsafe;
     private <T> Class<? extends T> spinInnerClass() throws LambdaConversionException {
         String samName = samBase.getName().replace('.', '/');
 
-        cw.visit(CLASSFILE_VERSION, ACC_PUBLIC + ACC_SUPER, lambdaClassName, null, NAME_MAGIC_ACCESSOR_IMPL,
+        cw.visit(CLASSFILE_VERSION, ACC_SUPER, lambdaClassName, null, NAME_MAGIC_ACCESSOR_IMPL,
                  isSerializable ? new String[]{samName, NAME_SERIALIZABLE} : new String[]{samName});
 
         // Generate final fields to be filled in by constructor
@@ -187,17 +207,27 @@ import sun.misc.Unsafe;
 
         final byte[] classBytes = cw.toByteArray();
 
-        if (System.getProperty("debug.dump.generated") != null) {
+        /*** Uncomment to dump the generated file
             System.out.printf("Loaded: %s (%d bytes) %n", lambdaClassName, classBytes.length);
             try (FileOutputStream fos = new FileOutputStream(lambdaClassName.replace('/', '.') + ".class")) {
                 fos.write(classBytes);
             } catch (IOException ex) {
                 Logger.getLogger(InnerClassLambdaMetafactory.class.getName()).log(Level.SEVERE, null, ex);
             }
-        }
+        ***/
 
         ClassLoader loader = targetClass.getClassLoader();
-        ProtectionDomain pd = (loader == null) ? null : targetClass.getProtectionDomain();
+        ProtectionDomain pd = (loader == null)
+            ? null
+            : AccessController.doPrivileged(
+            new PrivilegedAction<ProtectionDomain>() {
+                @Override
+                public ProtectionDomain run() {
+                    return targetClass.getProtectionDomain();
+                }
+            }
+        );
+
         return (Class<? extends T>) Unsafe.getUnsafe().defineClass(lambdaClassName, classBytes, 0, classBytes.length, loader, pd);
     }
 
@@ -206,7 +236,7 @@ import sun.misc.Unsafe;
      */
     private void generateConstructor() {
         // Generate constructor
-        MethodVisitor ctor = cw.visitMethod(ACC_PUBLIC, NAME_CTOR, constructorDesc, null, null);
+        MethodVisitor ctor = cw.visitMethod(ACC_PRIVATE, NAME_CTOR, constructorDesc, null, null);
         ctor.visitCode();
         ctor.visitVarInsn(ALOAD, 0);
         ctor.visitMethodInsn(INVOKESPECIAL, NAME_MAGIC_ACCESSOR_IMPL, NAME_CTOR, METHOD_DESCRIPTOR_VOID);

@@ -94,7 +94,7 @@ go() {
   cp="$1"; shift
   if [ -z "$cp" ]; then cp="$TESTCLASSES"; else cp="$TESTCLASSES$SEP$cp"; fi
   vmargs="$1"; shift
-  sh -xc "'$JAVA' -cp $cp $vmargs $T $*" 2>&1
+  sh -xc "'$JAVA' ${TESTVMOPTS} -cp $cp $vmargs $T $*" 2>&1
   if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }
 
