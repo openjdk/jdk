@@ -271,7 +271,7 @@ public class DocLint implements Plugin {
     }
 
     @Override
-    public void call(JavacTask task, String... args) {
+    public void init(JavacTask task, String... args) {
         init(task, args, true);
     }
 
