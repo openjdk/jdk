@@ -1,0 +1,10 @@
+InvalidTag.java:11: error: unknown tag: String
+ * List<String> list = new ArrayList<>();
+       ^
+InvalidTag.java:11: error: malformed HTML
+ * List<String> list = new ArrayList<>();
+                                    ^
+InvalidTag.java:11: error: bad use of '>'
+ * List<String> list = new ArrayList<>();
+                                     ^
+3 errors

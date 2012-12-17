@@ -26,6 +26,7 @@
 package com.sun.tools.javac.tree;
 
 
+
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.comp.AttrContext;
@@ -328,6 +329,13 @@ public class TreeInfo {
                 ? ((JCCompilationUnit) tree).docComments
                 : env.toplevel.docComments;
         return (docComments == null) ? null : docComments.getCommentText(tree);
+    }
+
+    public static DCTree.DCDocComment getCommentTree(Env<?> env, JCTree tree) {
+        DocCommentTable docComments = (tree.hasTag(JCTree.Tag.TOPLEVEL))
+                ? ((JCCompilationUnit) tree).docComments
+                : env.toplevel.docComments;
+        return (docComments == null) ? null : docComments.getCommentTree(tree);
     }
 
     /** The position of the first statement in a block, or the position of

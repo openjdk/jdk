@@ -1675,7 +1675,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     /** Print numbers of errors and warnings.
      */
-    protected void printCount(String kind, int count) {
+    public void printCount(String kind, int count) {
         if (count != 0) {
             String key;
             if (count == 1)

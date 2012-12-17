@@ -1,0 +1,8 @@
+AccessTest.java:21: error: malformed HTML
+     * public a < b
+                ^
+AccessTest.java:26: error: malformed HTML
+     * protected a < b
+                   ^
+2 errors
+
