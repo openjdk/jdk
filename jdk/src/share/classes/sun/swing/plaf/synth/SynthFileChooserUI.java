@@ -256,6 +256,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
         if (getFileChooser().getControlButtonsAreShown()) {
             approveButton.setText(getApproveButtonText(getFileChooser()));
             approveButton.setToolTipText(getApproveButtonToolTipText(getFileChooser()));
+            approveButton.setMnemonic(getApproveButtonMnemonic(getFileChooser()));
         }
     }
 

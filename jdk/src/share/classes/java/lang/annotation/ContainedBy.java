@@ -26,10 +26,35 @@
 package java.lang.annotation;
 
 /**
- * A meta-annotation to indicate which annotation type should be used
- * as a container for repeated values of the annotation type modified
- * by the {@code ContainedBy} annotation.
+ * The annotation type {@code java.lang.annotation.ContainedBy} is
+ * used to indicate that the annotation type whose declaration it
+ * (meta-)annotates is <em>repeatable</em>. The value of
+ * {@code @ContainedBy} indicates the <em>containing annotation
+ * type</em> for the repeatable annotation type.
  *
+ * <p>The pair of annotation types {@code @ContainedBy} and
+ * {@link java.lang.annotation.ContainerFor @ContainerFor} are used to
+ * indicate that annotation types are repeatable. Specifically:
+ *
+ * <ul>
+ * <li>The annotation type {@code @ContainedBy} is used on the
+ * declaration of a repeatable annotation type (JLS 9.6) to indicate
+ * its containing annotation type.
+ *
+ * <li>The annotation type {@code @ContainerFor} is used on the
+ * declaration of a containing annotation type (JLS 9.6) to indicate
+ * the repeatable annotation type for which it serves as the
+ * containing annotation type.
+ * </ul>
+ *
+ * <p>
+ * An inconsistent pair of {@code @ContainedBy} and
+ * {@code @ContainerFor} annotations on a repeatable annotation type
+ * and its containing annotation type (JLS 9.6) will lead to
+ * compile-time errors and runtime exceptions when using reflection to
+ * read annotations of a repeatable type.
+ *
+ * @see java.lang.annotation.ContainerFor
  * @since 1.8
  * @jls 9.6 Annotation Types
  * @jls 9.7 Annotations
@@ -39,8 +64,8 @@ package java.lang.annotation;
 @Target(ElementType.ANNOTATION_TYPE)
 public @interface ContainedBy {
     /**
-     * The annotation type to use to store repeated values of another
-     * annotation.
+     * Indicates the <em>containing annotation type</em> for the
+     * repeatable annotation type.
      */
     Class<? extends Annotation> value();
 }

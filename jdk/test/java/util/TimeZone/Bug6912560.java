@@ -40,6 +40,9 @@ public class Bug6912560 {
         // set the user.timezone property
         String tzname = "Asia/Tokyo";
         System.setProperty("user.timezone", tzname);
+        // make sure the timezone will be initialized by
+        // the next call to TimeZone.getDefault()
+        TimeZone.setDefault(null);
 
         System.setSecurityManager(new SecurityManager());
         TimeZone tz = TimeZone.getDefault();

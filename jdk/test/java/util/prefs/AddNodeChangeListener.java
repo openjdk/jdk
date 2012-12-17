@@ -24,9 +24,10 @@
  */
 
  /* @test
-  * @bug  7160252
+  * @bug  7160252 7197662
   * @summary Checks if events are delivered to a listener
   *          when a child node is added or removed
+  * @run main/othervm -Djava.util.prefs.userRoot=. AddNodeChangeListener
   */
 
 import java.util.prefs.*;

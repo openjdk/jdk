@@ -26,12 +26,9 @@
 
 package sun.lwawt;
 
-import java.awt.AWTException;
-import java.awt.BufferCapabilities;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
-import java.awt.Image;
 import java.awt.peer.CanvasPeer;
 
 import javax.swing.JComponent;
@@ -42,35 +39,10 @@ class LWCanvasPeer<T extends Component, D extends JComponent>
     LWCanvasPeer(final T target, final PlatformComponent platformComponent) {
         super(target, platformComponent);
     }
-    // ---- PEER METHODS ---- //
-
-    @Override
-    public void createBuffers(int numBuffers, BufferCapabilities caps)
-            throws AWTException {
-        // TODO
-    }
-
-    @Override
-    public Image getBackBuffer() {
-        // TODO
-        return null;
-    }
-
-    @Override
-    public void flip(int x1, int y1, int x2, int y2,
-                     BufferCapabilities.FlipContents flipAction) {
-        // TODO
-    }
-
-    @Override
-    public void destroyBuffers() {
-        // TODO
-    }
 
     @Override
     public final GraphicsConfiguration getAppropriateGraphicsConfiguration(
-            GraphicsConfiguration gc)
-    {
+            final GraphicsConfiguration gc) {
         // TODO
         return gc;
     }

@@ -102,29 +102,34 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     // public methods
     //
 
+    @Override
     public X509Certificate[] getCertificateChain(String alias) {
         PrivateKeyEntry entry = getEntry(alias);
         return entry == null ? null :
                 (X509Certificate[])entry.getCertificateChain();
     }
 
+    @Override
     public PrivateKey getPrivateKey(String alias) {
         PrivateKeyEntry entry = getEntry(alias);
         return entry == null ? null : entry.getPrivateKey();
     }
 
+    @Override
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers,
             Socket socket) {
         return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
                         getAlgorithmConstraints(socket));
     }
 
+    @Override
     public String chooseEngineClientAlias(String[] keyTypes,
             Principal[] issuers, SSLEngine engine) {
         return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
                         getAlgorithmConstraints(engine));
     }
 
+    @Override
     public String chooseServerAlias(String keyType,
             Principal[] issuers, Socket socket) {
         return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
@@ -142,6 +147,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                          // It is not a really HTTPS endpoint identification.
     }
 
+    @Override
     public String chooseEngineServerAlias(String keyType,
             Principal[] issuers, SSLEngine engine) {
         return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
@@ -159,10 +165,12 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                          // It is not a really HTTPS endpoint identification.
     }
 
+    @Override
     public String[] getClientAliases(String keyType, Principal[] issuers) {
         return getAliases(keyType, issuers, CheckType.CLIENT, null);
     }
 
+    @Override
     public String[] getServerAliases(String keyType, Principal[] issuers) {
         return getAliases(keyType, issuers, CheckType.SERVER, null);
     }
@@ -488,11 +496,13 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             this.checkResult = checkResult;
         }
 
+        @Override
         public int compareTo(EntryStatus other) {
             int result = this.checkResult.compareTo(other.checkResult);
             return (result == 0) ? (this.keyIndex - other.keyIndex) : result;
         }
 
+        @Override
         public String toString() {
             String s = alias + " (verified: " + checkResult + ")";
             if (builderIndex == 0) {

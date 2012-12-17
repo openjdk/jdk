@@ -48,8 +48,8 @@ import sun.security.util.SecurityConstants;
  * convention follows the  hierarchical property naming convention.
  * Also, an asterisk
  * may appear at the end of the name, following a ".", or by itself, to
- * signify a wildcard match. For example: "java.*" or "*" is valid,
- * "*java" or "a*b" is not valid.
+ * signify a wildcard match. For example: "java.*" and "*" signify a wildcard
+ * match, while "*java" and "a*b" do not.
  * <P>
  * <P>
  * The actions to be granted are passed to the constructor in a string containing
