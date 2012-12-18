@@ -1229,7 +1229,7 @@ void Assembler::cmpw(Address dst, int imm16) {
   emit_byte(0x66);
   emit_byte(0x81);
   emit_operand(rdi, dst, 2);
-  emit_word(imm16);
+  emit_int16(imm16);
 }
 
 // The 32-bit cmpxchg compares the value at adr with the contents of rax,
@@ -1879,7 +1879,7 @@ void Assembler::movw(Address dst, int imm16) {
   prefix(dst);
   emit_byte(0xC7);
   emit_operand(rax, dst, 2);
-  emit_word(imm16);
+  emit_int16(imm16);
 }
 
 void Assembler::movw(Register dst, Address src) {
@@ -2571,7 +2571,7 @@ void Assembler::ret(int imm16) {
     emit_byte(0xC3);
   } else {
     emit_byte(0xC2);
-    emit_word(imm16);
+    emit_int16(imm16);
   }
 }
 
