@@ -159,7 +159,7 @@ public final class JavacTool implements JavaCompiler {
         }
     }
 
-    private static void processOptions(Context context,
+    public static void processOptions(Context context,
                                        JavaFileManager fileManager,
                                        Iterable<String> options)
     {
